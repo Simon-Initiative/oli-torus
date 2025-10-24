@@ -117,7 +117,7 @@ defmodule Oli.Authoring.Course do
          text_search,
          filters
        ) do
-    tag_ids = Map.get(filters, :tag_ids, [])
+    tag_ids = Map.get(filters, :tag_ids, []) || []
     visibility_filter = Map.get(filters, :visibility)
     published_filter = Map.get(filters, :published)
     status_filter_value = Map.get(filters, :status)
@@ -140,7 +140,7 @@ defmodule Oli.Authoring.Course do
       |> project_search_patterns()
       |> Enum.reduce(dynamic([p], true), fn pattern, acc ->
         dynamic(
-          [p, ap, a, _, _, _, owner, _],
+          [p, ap, a, _, _, _, owner],
           ^acc and
             (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
                ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
@@ -179,7 +179,7 @@ defmodule Oli.Authoring.Course do
 
     where_clause =
       dynamic(
-        [p, ap, a, pv, pub, op, owner, pt],
+        [p, ap, a, pv, pub, op, owner],
         ^filter_by_status and ^filter_by_text and ^filter_by_date and ^filter_by_visibility and
           ^filter_by_institution
       )
@@ -188,6 +188,7 @@ defmodule Oli.Authoring.Course do
 
     query =
       from p in Project,
+        as: :project,
         join: ap in AuthorProject,
         on: ap.project_id == p.id,
         join: a in Author,
@@ -200,8 +201,6 @@ defmodule Oli.Authoring.Course do
         on: op.project_id == p.id and op.project_role_id == ^owner_id,
         left_join: owner in Author,
         on: owner.id == op.author_id,
-        left_join: pt in ProjectTag,
-        on: pt.project_id == p.id,
         where: ^where_clause,
         group_by: [
           p.id,
@@ -239,29 +238,55 @@ defmodule Oli.Authoring.Course do
 
     query =
       query
-      |> maybe_apply_tag_filter(tag_ids)
       |> maybe_apply_published_filter(published_filter)
+      |> maybe_apply_tag_filter(tag_ids)
 
     query =
-      case field do
-        :name ->
+      case {field, Enum.empty?(tag_ids)} do
+        {:name, true} ->
+          order_by(query, [_, _, _, _, _, _, owner], {^direction, owner.name})
+
+        {:name, false} ->
           order_by(query, [_, _, _, _, _, _, owner, _], {^direction, owner.name})
 
-        :collaborators ->
+        {:collaborators, true} ->
+          order_by(
+            query,
+            [_, _, a, _, _, _, _],
+            {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
+          )
+
+        {:collaborators, false} ->
           order_by(
             query,
             [_, _, a, _, _, _, _, _],
             {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
           )
 
-        :published ->
+        {:published, true} ->
+          order_by(
+            query,
+            [_, _, _, _, pub, _, _],
+            {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
+          )
+
+        {:published, false} ->
           order_by(
             query,
             [_, _, _, _, pub, _, _, _],
             {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
           )
 
-        :visibility ->
+        {:visibility, true} ->
+          order_by(query, [p, _, _, _, _, _, _], {
+            ^direction,
+            fragment(
+              "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
+              p.visibility
+            )
+          })
+
+        {:visibility, false} ->
           order_by(query, [p, _, _, _, _, _, _, _], {
             ^direction,
             fragment(
@@ -270,7 +295,10 @@ defmodule Oli.Authoring.Course do
             )
           })
 
-        _ ->
+        {_, true} ->
+          order_by(query, [p, _, _, _, _, _, _], {^direction, field(p, ^field)})
+
+        {_, false} ->
           order_by(query, [p, _, _, _, _, _, _, _], {^direction, field(p, ^field)})
       end
 
@@ -280,8 +308,9 @@ defmodule Oli.Authoring.Course do
   defp maybe_apply_tag_filter(query, []), do: query
 
   defp maybe_apply_tag_filter(query, tag_ids) do
-    having(
-      query,
+    query
+    |> join(:left, [project: p], pt in ProjectTag, on: pt.project_id == p.id)
+    |> having(
       [_, _, _, _, _, _, _, pt],
       fragment(
         "COUNT(DISTINCT CASE WHEN ? = ANY(?) THEN ? END) = ?",
@@ -298,7 +327,7 @@ defmodule Oli.Authoring.Course do
   defp maybe_apply_published_filter(query, value) when is_boolean(value) do
     having(
       query,
-      [_, _, _, _, pub, _, _, _],
+      [_, _, _, _, pub, _, _],
       fragment("COALESCE(bool_or(?), false) = ?", not is_nil(pub.id), ^value)
     )
   end
@@ -313,7 +342,7 @@ defmodule Oli.Authoring.Course do
        ) do
     owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
 
-    tag_ids = Map.get(filters, :tag_ids, [])
+    tag_ids = Map.get(filters, :tag_ids, []) || []
     visibility_filter = Map.get(filters, :visibility)
     published_filter = Map.get(filters, :published)
     status_filter_value = Map.get(filters, :status)
@@ -324,27 +353,27 @@ defmodule Oli.Authoring.Course do
 
     filter_by_collaborator =
       dynamic(
-        [ap, _p, _a, _pv, _pub, _op, _owner, _pt],
+        [ap, _p, _a, _pv, _pub, _op, _owner],
         ap.author_id == ^id and ap.status == :accepted
       )
 
     filter_by_status =
       case status_filter_value do
         status when status in [:active, :deleted] ->
-          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.status == ^status)
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.status == ^status)
 
         _ ->
           if include_deleted,
-            do: dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true),
-            else: dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.status == :active)
+            do: dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true),
+            else: dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.status == :active)
       end
 
     filter_by_text =
       text_search
       |> project_search_patterns()
-      |> Enum.reduce(dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], true), fn pattern, acc ->
+      |> Enum.reduce(dynamic([_ap, p, _a, _pv, _pub, _op, _owner], true), fn pattern, acc ->
         dynamic(
-          [_ap, p, a, _pv, _pub, _op, owner, _pt],
+          [_ap, p, a, _pv, _pub, _op, owner],
           ^acc and
             (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
                ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
@@ -354,17 +383,17 @@ defmodule Oli.Authoring.Course do
     filter_by_date =
       case {date_from, date_to} do
         {nil, nil} ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
 
         {from, nil} ->
-          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], field(p, ^date_field) >= ^from)
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner], field(p, ^date_field) >= ^from)
 
         {nil, to} ->
-          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], field(p, ^date_field) <= ^to)
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner], field(p, ^date_field) <= ^to)
 
         {from, to} ->
           dynamic(
-            [_ap, p, _a, _pv, _pub, _op, _owner, _pt],
+            [_ap, p, _a, _pv, _pub, _op, _owner],
             field(p, ^date_field) >= ^from and field(p, ^date_field) <= ^to
           )
       end
@@ -372,27 +401,27 @@ defmodule Oli.Authoring.Course do
     filter_by_visibility =
       case visibility_filter do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
 
         visibility ->
-          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.visibility == ^visibility)
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.visibility == ^visibility)
       end
 
     filter_by_institution =
       case institution_id do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
 
         institution ->
           dynamic(
-            [_ap, p, _a, pv, _pub, _op, _owner, _pt],
+            [_ap, p, _a, pv, _pub, _op, _owner],
             p.visibility == :global or pv.institution_id == ^institution
           )
       end
 
     where_clause =
       dynamic(
-        [ap, p, a, pv, pub, op, owner, pt],
+        [ap, p, a, pv, pub, op, owner],
         ^filter_by_collaborator and ^filter_by_status and ^filter_by_text and
           ^filter_by_date and ^filter_by_visibility and ^filter_by_institution
       )
@@ -400,6 +429,7 @@ defmodule Oli.Authoring.Course do
     query =
       from ap in AuthorProject,
         join: p in Project,
+        as: :project,
         on: ap.project_id == p.id,
         join: a in Author,
         on: ap.author_id == a.id,
@@ -411,8 +441,6 @@ defmodule Oli.Authoring.Course do
         on: op.project_id == p.id and op.project_role_id == ^owner_id,
         left_join: owner in Author,
         on: owner.id == op.author_id,
-        left_join: pt in ProjectTag,
-        on: pt.project_id == p.id,
         where: ^where_clause,
         group_by: [
           p.id,
@@ -450,29 +478,55 @@ defmodule Oli.Authoring.Course do
 
     query =
       query
-      |> maybe_apply_tag_filter(tag_ids)
       |> maybe_apply_published_filter(published_filter)
+      |> maybe_apply_tag_filter(tag_ids)
 
     query =
-      case field do
-        :name ->
-          order_by(query, [_, _, _, _, _, _, _, owner], {^direction, owner.name})
+      case {field, Enum.empty?(tag_ids)} do
+        {:name, true} ->
+          order_by(query, [_, _, _, _, _, _, owner], {^direction, owner.name})
 
-        :collaborators ->
+        {:name, false} ->
+          order_by(query, [_, _, _, _, _, _, owner, _], {^direction, owner.name})
+
+        {:collaborators, true} ->
+          order_by(
+            query,
+            [_, _, a, _, _, _, _],
+            {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
+          )
+
+        {:collaborators, false} ->
           order_by(
             query,
             [_, _, a, _, _, _, _, _],
             {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
           )
 
-        :published ->
+        {:published, true} ->
+          order_by(
+            query,
+            [_, _, _, _, _, pub, _],
+            {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
+          )
+
+        {:published, false} ->
           order_by(
             query,
             [_, _, _, _, _, pub, _, _],
             {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
           )
 
-        :visibility ->
+        {:visibility, true} ->
+          order_by(query, [_, p, _, _, _, _, _], {
+            ^direction,
+            fragment(
+              "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
+              p.visibility
+            )
+          })
+
+        {:visibility, false} ->
           order_by(query, [_, p, _, _, _, _, _, _], {
             ^direction,
             fragment(
@@ -481,7 +535,10 @@ defmodule Oli.Authoring.Course do
             )
           })
 
-        _ ->
+        {_, true} ->
+          order_by(query, [_, p, _, _, _, _, _], {^direction, field(p, ^field)})
+
+        {_, false} ->
           order_by(query, [_, p, _, _, _, _, _, _], {^direction, field(p, ^field)})
       end
 
@@ -535,7 +592,7 @@ defmodule Oli.Authoring.Course do
          text_search,
          filters
        ) do
-    tag_ids = Map.get(filters, :tag_ids, [])
+    tag_ids = Map.get(filters, :tag_ids, []) || []
     visibility_filter = Map.get(filters, :visibility)
     published_filter = Map.get(filters, :published)
     status_filter_value = Map.get(filters, :status)
@@ -558,7 +615,7 @@ defmodule Oli.Authoring.Course do
       |> project_search_patterns()
       |> Enum.reduce(dynamic([p], true), fn pattern, acc ->
         dynamic(
-          [p, ap, a, _, _, _, owner, _],
+          [p, ap, a, _, _, _, owner],
           ^acc and
             (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
                ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
@@ -597,7 +654,7 @@ defmodule Oli.Authoring.Course do
 
     where_clause =
       dynamic(
-        [p, ap, a, pv, pub, op, owner, pt],
+        [p, ap, a, pv, pub, op, owner],
         ^filter_by_status and ^filter_by_text and ^filter_by_date and ^filter_by_visibility and
           ^filter_by_institution
       )
@@ -606,6 +663,7 @@ defmodule Oli.Authoring.Course do
 
     query =
       from p in Project,
+        as: :project,
         join: ap in AuthorProject,
         on: ap.project_id == p.id,
         join: a in Author,
@@ -618,8 +676,6 @@ defmodule Oli.Authoring.Course do
         on: op.project_id == p.id and op.project_role_id == ^owner_id,
         left_join: owner in Author,
         on: owner.id == op.author_id,
-        left_join: pt in ProjectTag,
-        on: pt.project_id == p.id,
         where: ^where_clause,
         group_by: [
           p.id,
@@ -654,29 +710,55 @@ defmodule Oli.Authoring.Course do
 
     query =
       query
-      |> maybe_apply_tag_filter(tag_ids)
       |> maybe_apply_published_filter(published_filter)
+      |> maybe_apply_tag_filter(tag_ids)
 
     query =
-      case field do
-        :name ->
+      case {field, Enum.empty?(tag_ids)} do
+        {:name, true} ->
+          order_by(query, [_, _, _, _, _, _, owner], {^direction, owner.name})
+
+        {:name, false} ->
           order_by(query, [_, _, _, _, _, _, owner, _], {^direction, owner.name})
 
-        :collaborators ->
+        {:collaborators, true} ->
+          order_by(
+            query,
+            [_, _, a, _, _, _, _],
+            {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
+          )
+
+        {:collaborators, false} ->
           order_by(
             query,
             [_, _, a, _, _, _, _, _],
             {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
           )
 
-        :published ->
+        {:published, true} ->
+          order_by(
+            query,
+            [_, _, _, _, pub, _, _],
+            {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
+          )
+
+        {:published, false} ->
           order_by(
             query,
             [_, _, _, _, pub, _, _, _],
             {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
           )
 
-        :visibility ->
+        {:visibility, true} ->
+          order_by(query, [p, _, _, _, _, _, _], {
+            ^direction,
+            fragment(
+              "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
+              p.visibility
+            )
+          })
+
+        {:visibility, false} ->
           order_by(query, [p, _, _, _, _, _, _, _], {
             ^direction,
             fragment(
@@ -685,7 +767,10 @@ defmodule Oli.Authoring.Course do
             )
           })
 
-        _ ->
+        {_, true} ->
+          order_by(query, [p, _, _, _, _, _, _], {^direction, field(p, ^field)})
+
+        {_, false} ->
           order_by(query, [p, _, _, _, _, _, _, _], {^direction, field(p, ^field)})
       end
 
@@ -701,7 +786,7 @@ defmodule Oli.Authoring.Course do
        ) do
     owner_id = ProjectRole.role_id().owner
 
-    tag_ids = Map.get(filters, :tag_ids, [])
+    tag_ids = Map.get(filters, :tag_ids, []) || []
     visibility_filter = Map.get(filters, :visibility)
     published_filter = Map.get(filters, :published)
     status_filter_value = Map.get(filters, :status)
@@ -712,27 +797,27 @@ defmodule Oli.Authoring.Course do
 
     filter_by_collaborator =
       dynamic(
-        [ap, _p, _a, _pv, _pub, _op, _owner, _pt],
+        [ap, _p, _a, _pv, _pub, _op, _owner],
         ap.author_id == ^id and ap.status == :accepted
       )
 
     filter_by_status =
       case status_filter_value do
         status when status in [:active, :deleted] ->
-          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.status == ^status)
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.status == ^status)
 
         _ ->
           if include_deleted,
-            do: dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true),
-            else: dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.status == :active)
+            do: dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true),
+            else: dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.status == :active)
       end
 
     filter_by_text =
       text_search
       |> project_search_patterns()
-      |> Enum.reduce(dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], true), fn pattern, acc ->
+      |> Enum.reduce(dynamic([_ap, p, _a, _pv, _pub, _op, _owner], true), fn pattern, acc ->
         dynamic(
-          [_ap, p, a, _pv, _pub, _op, owner, _pt],
+          [_ap, p, a, _pv, _pub, _op, owner],
           ^acc and
             (ilike(p.title, ^pattern) or ilike(p.slug, ^pattern) or ilike(owner.name, ^pattern) or
                ilike(owner.email, ^pattern) or ilike(a.name, ^pattern))
@@ -742,17 +827,17 @@ defmodule Oli.Authoring.Course do
     filter_by_date =
       case {date_from, date_to} do
         {nil, nil} ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
 
         {from, nil} ->
-          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], field(p, ^date_field) >= ^from)
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner], field(p, ^date_field) >= ^from)
 
         {nil, to} ->
-          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], field(p, ^date_field) <= ^to)
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner], field(p, ^date_field) <= ^to)
 
         {from, to} ->
           dynamic(
-            [_ap, p, _a, _pv, _pub, _op, _owner, _pt],
+            [_ap, p, _a, _pv, _pub, _op, _owner],
             field(p, ^date_field) >= ^from and field(p, ^date_field) <= ^to
           )
       end
@@ -760,27 +845,27 @@ defmodule Oli.Authoring.Course do
     filter_by_visibility =
       case visibility_filter do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
 
         visibility ->
-          dynamic([_ap, p, _a, _pv, _pub, _op, _owner, _pt], p.visibility == ^visibility)
+          dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.visibility == ^visibility)
       end
 
     filter_by_institution =
       case institution_id do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner, _pt], true)
+          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
 
         institution ->
           dynamic(
-            [_ap, p, _a, pv, _pub, _op, _owner, _pt],
+            [_ap, p, _a, pv, _pub, _op, _owner],
             p.visibility == :global or pv.institution_id == ^institution
           )
       end
 
     where_clause =
       dynamic(
-        [ap, p, a, pv, pub, op, owner, pt],
+        [ap, p, a, pv, pub, op, owner],
         ^filter_by_collaborator and ^filter_by_status and ^filter_by_text and
           ^filter_by_date and ^filter_by_visibility and ^filter_by_institution
       )
@@ -788,6 +873,7 @@ defmodule Oli.Authoring.Course do
     query =
       from ap in AuthorProject,
         join: p in Project,
+        as: :project,
         on: ap.project_id == p.id,
         join: a in Author,
         on: ap.author_id == a.id,
@@ -799,8 +885,6 @@ defmodule Oli.Authoring.Course do
         on: op.project_id == p.id and op.project_role_id == ^owner_id,
         left_join: owner in Author,
         on: owner.id == op.author_id,
-        left_join: pt in ProjectTag,
-        on: pt.project_id == p.id,
         where: ^where_clause,
         group_by: [
           p.id,
@@ -835,29 +919,55 @@ defmodule Oli.Authoring.Course do
 
     query =
       query
-      |> maybe_apply_tag_filter(tag_ids)
       |> maybe_apply_published_filter(published_filter)
+      |> maybe_apply_tag_filter(tag_ids)
 
     query =
-      case field do
-        :name ->
+      case {field, Enum.empty?(tag_ids)} do
+        {:name, true} ->
+          order_by(query, [_, _, _, _, _, _, owner], {^direction, owner.name})
+
+        {:name, false} ->
           order_by(query, [_, _, _, _, _, _, owner, _], {^direction, owner.name})
 
-        :collaborators ->
+        {:collaborators, true} ->
+          order_by(
+            query,
+            [_, _, a, _, _, _, _],
+            {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
+          )
+
+        {:collaborators, false} ->
           order_by(
             query,
             [_, _, a, _, _, _, _, _],
             {^direction, fragment("string_agg(DISTINCT ?, ', ')", a.name)}
           )
 
-        :published ->
+        {:published, true} ->
+          order_by(
+            query,
+            [_, _, _, _, pub, _, _],
+            {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
+          )
+
+        {:published, false} ->
           order_by(
             query,
             [_, _, _, _, pub, _, _, _],
             {^direction, fragment("bool_or(?)", not is_nil(pub.id))}
           )
 
-        :visibility ->
+        {:visibility, true} ->
+          order_by(query, [_, p, _, _, _, _, _], {
+            ^direction,
+            fragment(
+              "CASE ? WHEN 'global' THEN 0 WHEN 'selected' THEN 1 WHEN 'authors' THEN 2 ELSE 3 END",
+              p.visibility
+            )
+          })
+
+        {:visibility, false} ->
           order_by(query, [_, p, _, _, _, _, _, _], {
             ^direction,
             fragment(
@@ -866,7 +976,10 @@ defmodule Oli.Authoring.Course do
             )
           })
 
-        _ ->
+        {_, true} ->
+          order_by(query, [_, p, _, _, _, _, _], {^direction, field(p, ^field)})
+
+        {_, false} ->
           order_by(query, [_, p, _, _, _, _, _, _], {^direction, field(p, ^field)})
       end
 
