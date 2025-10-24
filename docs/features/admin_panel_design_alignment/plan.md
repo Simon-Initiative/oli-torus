@@ -86,7 +86,7 @@ Parallel: Phase 2 can run concurrently with Phase 3 once Phase 1 completes, prov
 - [ ] Run `mix test test/oli_web/controllers/admin_layout_controller_test.exs`.
 
 **Definition of Done**
-- Admin controllers and community routes render within the shared workspace layout without missing assigns or crashes, and admin views no longer rely on `{OliWeb.LayoutView, :workspace}`; legacy layout templates are removed once unused.
+- Admin controllers and community routes render within the shared workspace layout without missing assigns or crashes; legacy workspace templates are removed once unused.
 - Admin nav remains active across community routes and LiveDashboard with automated tests proving coverage.
 - Any non-conforming routes have approved remediation or documented rationale.
 

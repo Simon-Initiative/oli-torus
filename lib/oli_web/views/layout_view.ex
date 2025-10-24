@@ -4,11 +4,9 @@ defmodule OliWeb.LayoutView do
 
   import Oli.Branding
 
-  alias Oli.Accounts
   alias Oli.Authoring.Course.CreativeCommons
   alias Oli.Delivery.Paywall.AccessSummary
   alias Oli.Publishing.AuthoringResolver
-  alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 
   @non_empty_license_opts Map.keys(CreativeCommons.cc_options()) -- [:none]
 
