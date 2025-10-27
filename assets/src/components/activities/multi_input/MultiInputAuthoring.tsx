@@ -61,7 +61,7 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
 
   return (
     <>
-      <ul className="nav nav-tabs my-2 flex justify-between" role="tablist">
+      <ul className="nav nav-tabs my-2 flex gap-2" role="tablist">
         {validChildren.map((child, index) => (
           <li key={'tab-' + index} className="nav-item" role="presentation">
             <button
