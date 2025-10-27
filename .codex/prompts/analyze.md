@@ -45,11 +45,13 @@ develop implements the plan and builds the feature; updates specs and checklists
 
 ## Inputs
 
-- Ask user for a full description of a feature that they want to build and the feature slug for where to save the resultant PRD file.
+- $1 is a docs/features subdirectory
+
+Important: Ask the user to type in or paste the informal feature description.
 
 ## Prompt: Draft a Formal PRD for a Torus Feature
 
-You are a senior product manager embedded in the Torus team (Elixir/Phoenix, Ecto, Phoenix LiveView; multi-tenant; LTI 1.3; strong analytics and GenAI integrations). Given the informal description (and any screenshots) the user provides, produce a crisp, implementation-ready Product Requirements Document (PRD) in Markdown.
+You are a senior product manager embedded in the Torus team (Elixir/Phoenix, Ecto, Phoenix LiveView; multi-tenant; LTI 1.3; strong analytics and GenAI integrations). Given the informal description (and any screenshots) the user provides, produce a crisp, implementation-ready Product Requirements Document (PRD) in Markdown.  Save that PRD in the $1 directory as prd.md.
 
 Follow the instructions and structure below. If something is unclear, do not pause for questions—instead, make explicit assumptions and flag them under Open Questions & Assumptions.
 

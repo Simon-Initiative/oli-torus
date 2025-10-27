@@ -137,13 +137,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
 
       assert view
              |> element(
-               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_1.resource_id}_0'] > td:nth-child(2)"
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_1.resource_id}'] > td:nth-child(2)"
              )
              |> render() =~ obj_revision_1.title
 
       assert view
              |> element(
-               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_2.resource_id}_1'] > td:nth-child(2)"
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_2.resource_id}'] > td:nth-child(2)"
              )
              |> render() =~ obj_revision_2.title
 
@@ -153,13 +153,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
 
       assert view
              |> element(
-               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_2.resource_id}_0'] > td:nth-child(2)"
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_2.resource_id}'] > td:nth-child(2)"
              )
              |> render() =~ obj_revision_2.title
 
       assert view
              |> element(
-               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_1.resource_id}_1'] > td:nth-child(2)"
+               "#objectives-table table.instructor_dashboard_table > tbody > tr[data-row-id='row_#{obj_revision_1.resource_id}'] > td:nth-child(2)"
              )
              |> render() =~ obj_revision_1.title
     end
@@ -323,10 +323,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
 
-      # Has info tooltip
-      assert has_element?(view, "#filter-disabled-tooltip")
-      # Select is disabled
-      assert has_element?(view, ".torus-select[disabled]")
+      ## List navigator is not displayed
+      refute has_element?(view, "#objectives_containers_navigator")
     end
 
     test "filter by proficiency works correctly", %{

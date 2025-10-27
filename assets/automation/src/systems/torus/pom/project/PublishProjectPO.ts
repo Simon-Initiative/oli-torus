@@ -1,19 +1,33 @@
+import { Waiter } from '@core/wait/Waiter';
 import { Locator, Page } from '@playwright/test';
 
 export class PublishProjectPO {
-  private publishButton: Locator;
-  private okButton: Locator;
+  private readonly publishButton: Locator;
+  private readonly okButton: Locator;
+  private readonly autoPushCheckbox: Locator;
+  private readonly descriptionTextarea: Locator;
 
-  constructor(private page: Page) {
-    this.publishButton = this.page.locator('#button-publish');
-    this.okButton = this.page.getByRole('button', { name: 'Ok' });
+  constructor(private readonly page: Page) {
+    this.publishButton = page.locator('#button-publish');
+    this.okButton = page.getByRole('button', { name: 'Ok' });
+    this.autoPushCheckbox = page.locator('#publication_auto_push_update');
+    this.descriptionTextarea = page.locator('#publication_description');
   }
 
-  async clickPublishButton() {
+  async clickPublish() {
     await this.publishButton.click();
   }
 
-  async clickOkButton() {
+  async clickOk() {
+    await Waiter.waitForLoadState(this.page);
     await this.okButton.click();
+  }
+
+  async clickAutoPush() {
+    await this.autoPushCheckbox.click();
+  }
+
+  async fillDescription(description: string) {
+    await this.descriptionTextarea.fill(description);
   }
 }

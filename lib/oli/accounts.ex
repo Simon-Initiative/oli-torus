@@ -31,6 +31,11 @@ defmodule Oli.Accounts do
   alias Oli.Delivery.Sections.{Section, Enrollment}
   alias Lti_1p3.DataProviders.EctoProvider
 
+  @spec browse_users(
+          Oli.Repo.Paging.t(),
+          Oli.Repo.Sorting.t(),
+          Oli.Accounts.UserBrowseOptions.t()
+        ) :: any()
   def browse_users(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
@@ -174,6 +179,21 @@ defmodule Oli.Accounts do
       on: a.id == u.author_id,
       where: u.guest == false,
       preload: [author: a]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns a list of full User structs for the given user IDs.
+  ## Examples
+      iex> get_users_by_ids([1, 2, 3])
+      [%User{id: 1}, %User{id: 2}, %User{id: 3}]
+  """
+  @spec get_users_by_ids(list(integer())) :: list(User.t())
+  def get_users_by_ids(user_ids) when is_list(user_ids) do
+    from(u in User,
+      where: u.id in ^user_ids,
+      select: struct(u, [:id, :name, :given_name, :family_name, :email])
     )
     |> Repo.all()
   end

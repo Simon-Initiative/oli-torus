@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTab do
 
   def render(assigns) do
     ~H"""
-    <div>
+    <div class="container mx-auto">
       <.live_component
         id="content_table"
         module={OliWeb.Components.Delivery.Content}

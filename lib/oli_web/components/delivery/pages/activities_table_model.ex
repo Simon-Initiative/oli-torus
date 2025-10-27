@@ -1,33 +1,46 @@
 defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   use Phoenix.Component
 
+  import OliWeb.Components.Common
+
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
 
   def new(activities) do
     column_specs = [
       %ColumnSpec{
+        render_fn: &render_expanded/3,
+        sortable: false,
+        th_class: "w-4"
+      },
+      %ColumnSpec{
+        name: :order,
+        label: "#",
+        th_class: "w-8"
+      },
+      %ColumnSpec{
         name: :title,
-        label: "QUESTION",
-        render_fn: &__MODULE__.render_question_column/3,
+        label: "Question Stem",
+        render_fn: &render_question_column/3,
         th_class: "pl-10",
         td_class: "pl-10"
       },
       %ColumnSpec{
         name: :learning_objectives,
-        label: "LEARNING OBJECTIVES",
-        render_fn: &__MODULE__.render_learning_objectives_column/3,
-        sortable: false
-      },
-      %ColumnSpec{
-        name: :avg_score,
-        label: "% CORRECT",
-        render_fn: &__MODULE__.render_avg_score_column/3
+        label: "Learning Objectives",
+        render_fn: &render_learning_objectives_column/3
       },
       %ColumnSpec{
         name: :total_attempts,
-        label: "ATTEMPTS",
-        render_fn: &__MODULE__.render_attempts_column/3
+        label: "Attempts",
+        render_fn: &render_attempts_column/3
+      },
+      %ColumnSpec{
+        name: :avg_score,
+        label: "% Correct",
+        render_fn: &render_avg_score_column/3
       }
     ]
 
@@ -35,7 +48,8 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
       rows: activities,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:resource_id]
+      id_field: [:resource_id],
+      data: %{expandable_rows: true, view_type: :activities_instructor_dashboard}
     )
   end
 
@@ -67,6 +81,104 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
       </div>
     <% else %>
       <.question_text header={@header} title={@title} />
+    <% end %>
+    """
+  end
+
+  defp render_expanded(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        id: "#{assessment.resource_id}",
+        target: assigns.model.data.target,
+        assessment: assessment
+      })
+
+    ~H"""
+    <.button
+      id={"button_#{@id}"}
+      class="flex !p-0"
+      phx-click={
+        JS.push("paged_table_selection_change",
+          value: %{id: @assessment.resource_id},
+          target: @target
+        )
+        |> JS.toggle(to: "#details-row_#{@id}")
+        |> JS.toggle_class("rotate-180", to: "#button_#{@id} svg")
+        |> JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="row_#{@id}"]))
+      }
+    >
+      <Icons.chevron_down class="fill-Text-text-high transition-transform duration-200" />
+    </.button>
+    """
+  end
+
+  # RENDER EXPANDED DETAILS FOR STRIPED TABLE
+  def render_assessment_details(assigns, assessment) do
+    selected_activities = assigns.model.data.selected_activities
+
+    # Find the specific activity data for this assessment
+    current_activity =
+      selected_activities
+      |> Enum.reject(&is_nil/1)
+      |> Enum.find(&(&1.resource_id == assessment.resource_id))
+
+    # Only show details if this specific activity is selected/expanded
+    should_show_details = current_activity != nil
+
+    assigns =
+      Map.merge(assigns, %{
+        id: assessment.resource_id,
+        current_activity: current_activity,
+        activity_types_map: assigns[:activity_types_map],
+        should_show_details: should_show_details
+      })
+
+    ~H"""
+    <%= if @should_show_details do %>
+      <div class="p-6" id={"details-#{@id}"}>
+        <div
+          role="activity_title"
+          class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4"
+        >
+          Question details
+        </div>
+        <div
+          class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
+          id={"activity_detail_#{@id}"}
+          phx-hook="LoadSurveyScripts"
+          phx-update="ignore"
+        >
+          <%= if Map.get(@current_activity, :preview_rendered) != nil do %>
+            <ActivityHelpers.rendered_activity
+              activity={@current_activity}
+              activity_types_map={@activity_types_map}
+            />
+          <% else %>
+            <p class="pt-9 pb-5">No attempt registered for this question</p>
+          <% end %>
+        </div>
+        <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
+          <ActivityHelpers.percentage_bar
+            id={Integer.to_string(@current_activity.id) <> "_first_try_correct"}
+            value={@current_activity.first_attempt_pct}
+            label="First Try Correct"
+          />
+          <ActivityHelpers.percentage_bar
+            id={Integer.to_string(@current_activity.id) <> "_eventually_correct"}
+            value={@current_activity.all_attempt_pct}
+            label="Eventually Correct"
+          />
+        </div>
+      </div>
+    <% else %>
+      <div class="p-6 flex justify-center items-center">
+        <span
+          class="spinner-border spinner-border-sm h-8 w-8 text-Text-text-button"
+          role="status"
+          aria-hidden="true"
+        >
+        </span>
+      </div>
     <% end %>
     """
   end

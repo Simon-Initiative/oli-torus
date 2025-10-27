@@ -39,6 +39,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Remix
   alias OliWeb.Common.Cancel
+  alias Oli.Delivery.Gating
 
   alias Phoenix.LiveView.JS
 
@@ -172,6 +173,9 @@ defmodule OliWeb.Delivery.RemixSection do
     publications_table_model_total_count = length(available_publications)
     publications_table_model_params = params
 
+    # Get source page resource IDs for gating conditions
+    source_page_resource_ids = Gating.source_page_resource_map(state.section.id)
+
     {:ok,
      assign(socket,
        title: "Customize Content",
@@ -193,7 +197,8 @@ defmodule OliWeb.Delivery.RemixSection do
        publications_table_model_total_count: publications_table_model_total_count,
        publications_table_model_params: publications_table_model_params,
        is_product: is_product?(socket),
-       remix_state: state
+       remix_state: state,
+       source_page_resource_ids: source_page_resource_ids
      )}
   end
 

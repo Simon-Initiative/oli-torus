@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.Remix.Actions do
 
   def render(assigns) do
     ~H"""
-    <div class="entry-actions">
+    <div class="entry-actions flex items-center gap-2">
       <button
         type="button"
         class="btn btn-outline-primary btn-sm ml-2"
@@ -30,11 +30,22 @@ defmodule OliWeb.Delivery.Remix.Actions do
       </button>
       <button
         type="button"
-        class="btn btn-danger btn-sm ml-2"
-        phx-click="show_remove_modal"
-        phx-value-uuid={@uuid}
+        class={"flex flex-row items-center gap-2 btn btn-danger btn-sm ml-2 #{if @is_used_as_source_page, do: "disabled"}"}
+        phx-click={if @is_used_as_source_page, do: nil, else: "show_remove_modal"}
+        phx-value-uuid={if @is_used_as_source_page, do: nil, else: @uuid}
+        disabled={@is_used_as_source_page}
       >
-        <i class="far fa-trash-alt"></i> Remove
+        <i class="far fa-trash-alt"></i>
+        Remove
+        <span
+          :if={@is_used_as_source_page}
+          class="cursor-pointer"
+          data-bs-toggle="tooltip"
+          data-bs-placement="top"
+          title="In order to remove this page, you first need to remove the gating condition associated with it."
+        >
+          <OliWeb.Icons.circle_exclamation />
+        </span>
       </button>
     </div>
     """

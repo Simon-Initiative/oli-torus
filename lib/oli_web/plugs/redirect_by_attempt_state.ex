@@ -81,6 +81,9 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
 
         {:practice, :adaptive_chromeless, _, false} ->
           ensure_path(conn, :adaptive_lesson)
+
+        {:practice, :adaptive_chromeless, _, true} ->
+          ensure_path(conn, :review, :adaptive)
       end
     else
       _ ->
