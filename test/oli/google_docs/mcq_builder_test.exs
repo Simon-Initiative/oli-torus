@@ -147,6 +147,60 @@ defmodule Oli.GoogleDocs.McqBuilderTest do
     assert title != ""
   end
 
+  test "build/2 preserves rich content including LaTeX, formatting, and multiple blocks" do
+    markdown = """
+    | CustomElement | MCQ |
+    | --- | --- |
+    | stem | <p>First paragraph with <strong>bold</strong> text and \\(x + y\\).</p><p>Second paragraph with ![stem image](data:image/png;base64,QUJD).</p> |
+    | choice1 | Option with *italic* text and \\(a^2\\). |
+    | feedback1 | Great job!\n\n$$\\frac{1}{2}$$ |
+    | choice2 | <p>Paragraph one.</p><p>$$\frac{3}{4}$$</p><p>Paragraph two with <em>emphasis</em> and an image ![choice image](data:image/png;base64,QUJD).</p> |
+    | feedback2 | Needs revision |
+    | hint1 | <p>Hint paragraph one.</p><p>Hint paragraph two with \\(z\\).</p> |
+    | correct | choice1 |
+    """
+
+    assert {:ok, parsed} = MarkdownParser.parse(markdown)
+    assert {:ok, resolved} = CustomElements.resolve(parsed.custom_elements)
+    mcq = resolved.elements |> Map.fetch!(hd(resolved.order))
+
+    assert {:ok, result} =
+             McqBuilder.build(mcq,
+               project_slug: "project-slug",
+               author: %{id: 1},
+               activity_editor: StubActivityEditor
+             )
+
+    stem_nodes = get_in(result.model, ["stem", "content"])
+    assert length(stem_nodes) == 2
+    assert contains_formula?(stem_nodes, "x + y")
+    assert contains_inline_image?(stem_nodes)
+    refute contains_backslash_text?(stem_nodes)
+
+    choices = result.model["choices"]
+    choice1 = Enum.find(choices, &(&1["id"] == "choice1"))
+    choice2 = Enum.find(choices, &(&1["id"] == "choice2"))
+
+    assert contains_mark?(choice1["content"], :em)
+    assert contains_formula?(choice1["content"], "a^2")
+    assert Enum.map(choice2["content"], & &1["type"]) == ["p", "formula", "p"]
+    assert contains_inline_image?(choice2["content"])
+    assert contains_formula?(choice2["content"], "\\frac{3}{4}")
+    refute contains_backslash_text?(choice1["content"])
+    refute contains_backslash_text?(choice2["content"])
+
+    part = hd(result.model["authoring"]["parts"])
+    responses = part["responses"]
+    choice1_response = Enum.find(responses, &String.contains?(&1["rule"], "choice1"))
+    assert contains_formula?(choice1_response["feedback"]["content"], "\\frac{1}{2}")
+    refute contains_backslash_text?(choice1_response["feedback"]["content"])
+
+    first_hint = hd(part["hints"])
+    assert length(first_hint["content"]) > 1
+    assert contains_formula?(first_hint["content"], "z")
+    refute contains_backslash_text?(first_hint["content"])
+  end
+
   test "returns warnings and success when optional feedback is missing" do
     mcq =
       mcq_fixture()
@@ -223,5 +277,44 @@ defmodule Oli.GoogleDocs.McqBuilderTest do
              )
 
     assert Enum.any?(warnings, &(&1.code == :mcq_activity_creation_failed))
+  end
+
+  defp contains_formula?(nodes, needle) do
+    Enum.any?(List.wrap(nodes), fn
+      %{"type" => type, "src" => src} when type in ["formula", "formula_inline"] ->
+        String.contains?(src, needle)
+
+      %{"children" => children} ->
+        contains_formula?(children, needle)
+
+      _ ->
+        false
+    end)
+  end
+
+  defp contains_inline_image?(nodes) do
+    Enum.any?(List.wrap(nodes), fn
+      %{"type" => type} when type in ["img_inline", "img"] -> true
+      %{"children" => children} -> contains_inline_image?(children)
+      _ -> false
+    end)
+  end
+
+  defp contains_mark?(nodes, mark) do
+    key = Atom.to_string(mark)
+
+    Enum.any?(List.wrap(nodes), fn
+      %{"text" => _} = node -> Map.get(node, key, false) || Map.get(node, mark, false)
+      %{"children" => children} -> contains_mark?(children, mark)
+      _ -> false
+    end)
+  end
+
+  defp contains_backslash_text?(nodes) do
+    Enum.any?(List.wrap(nodes), fn
+      %{"text" => text} -> String.trim(to_string(text)) == "\\"
+      %{"children" => children} -> contains_backslash_text?(children)
+      _ -> false
+    end)
   end
 end

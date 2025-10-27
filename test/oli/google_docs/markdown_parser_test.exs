@@ -68,6 +68,45 @@ defmodule Oli.GoogleDocs.MarkdownParserTest do
       assert Enum.count(placeholders) == 2
       assert Enum.map(placeholders, & &1.element_type) == ["youtube", "mcq"]
     end
+
+    test "preserves inline markup, LaTeX, and block content inside MCQ tables" do
+      markdown = """
+      | CustomElement | MCQ |
+      | --- | --- |
+      | stem | <p>First paragraph with <strong>bold</strong> text and \\(x + y\\).</p><p>Second paragraph with ![stem image](data:image/png;base64,QUJD).</p> |
+      | choice1 | Option with *italic* text and \\(a^2\\). |
+      | feedback1 | Great job!\n\n$$\\frac{1}{2}$$ |
+      | choice2 | <p>Paragraph one.</p><p>Paragraph two with <em>emphasis</em> and an image ![choice image](data:image/png;base64,QUJD).</p> |
+      | feedback2 | Needs revision |
+      | hint1 | <p>Hint paragraph one.</p><p>Hint paragraph two with \\(z\\).</p> |
+      | correct | choice1 |
+      """
+
+      assert {:ok, result} = MarkdownParser.parse(markdown)
+      assert [%CustomElement{element_type: "mcq", data: data}] = result.custom_elements
+
+      stem = Map.fetch!(data, "stem")
+      assert String.contains?(stem, "**bold**")
+      assert String.contains?(stem, "\\(x + y\\)")
+      assert String.contains?(stem, "![stem image](data:image/png;base64,QUJD)")
+      assert String.contains?(stem, "\n\n")
+
+      choice1 = Map.fetch!(data, "choice1")
+      assert String.contains?(choice1, "*italic*")
+      assert String.contains?(choice1, "\\(a^2\\)")
+
+      choice2 = Map.fetch!(data, "choice2")
+      assert String.contains?(choice2, "\n\n")
+      assert String.contains?(choice2, "![choice image](data:image/png;base64,QUJD)")
+      assert String.contains?(choice2, "$$\\frac{3}{4}$$")
+
+      feedback1 = Map.fetch!(data, "feedback1")
+      assert String.contains?(feedback1, "$$\\frac{1}{2}$$")
+
+      hint1 = Map.fetch!(data, "hint1")
+      assert String.contains?(hint1, "\n\n")
+      assert String.contains?(hint1, "\\(z\\)")
+    end
   end
 
   describe "parse/2 media references" do

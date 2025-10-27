@@ -28,6 +28,8 @@ defmodule Oli.GoogleDocs.ActivityBuilder.Utils do
     case MarkdownParser.parse(text || "") do
       {:ok, content} ->
         content
+        |> cleanup_formula_artifacts()
+        |> normalize_formulas()
 
       {:error, _reason} ->
         [
@@ -92,4 +94,81 @@ defmodule Oli.GoogleDocs.ActivityBuilder.Utils do
   end
 
   def parse_indexed_key(_, _), do: :error
+
+  defp cleanup_formula_artifacts(nodes) when is_list(nodes) do
+    nodes
+    |> Enum.map(&cleanup_formula_artifacts/1)
+    |> cleanup_adjacent_formula_text([])
+    |> Enum.reverse()
+  end
+
+  defp cleanup_formula_artifacts(%{"children" => children} = node) do
+    %{node | "children" => cleanup_formula_artifacts(children)}
+  end
+
+  defp cleanup_formula_artifacts(node), do: node
+
+  defp cleanup_adjacent_formula_text([], acc), do: acc
+
+  defp cleanup_adjacent_formula_text(
+         [%{"text" => text} = node | rest = [%{"type" => "formula_inline"} | _]],
+         acc
+       ) do
+    cond do
+      blank_or_backslash?(text) ->
+        cleanup_adjacent_formula_text(rest, acc)
+
+      String.ends_with?(text, "\\") ->
+        updated = %{node | "text" => String.trim_trailing(text, "\\")}
+        cleanup_adjacent_formula_text([updated | rest], acc)
+
+      true ->
+        cleanup_adjacent_formula_text(rest, [node | acc])
+    end
+  end
+
+  defp cleanup_adjacent_formula_text(
+         [%{"type" => "formula_inline"} = formula, %{"text" => text} = node | rest],
+         acc
+       ) do
+    cond do
+      blank_or_backslash?(text) ->
+        cleanup_adjacent_formula_text(rest, [formula | acc])
+
+      String.starts_with?(text, "\\") ->
+        updated = %{node | "text" => String.trim_leading(text, "\\")}
+        cleanup_adjacent_formula_text([formula, updated | rest], acc)
+
+      true ->
+        cleanup_adjacent_formula_text(rest, [node, formula | acc])
+    end
+  end
+
+  defp cleanup_adjacent_formula_text([node | rest], acc) do
+    cleanup_adjacent_formula_text(rest, [node | acc])
+  end
+
+  defp blank_or_backslash?(text) do
+    trimmed = String.trim(to_string(text))
+    trimmed == "" or trimmed == "\\"
+  end
+
+  defp normalize_formulas(nodes) when is_list(nodes) do
+    Enum.map(nodes, &normalize_formulas/1)
+  end
+
+  defp normalize_formulas(%{"type" => type} = node) when type in ["formula_inline", "formula"] do
+    children =
+      node
+      |> Map.get("children", [%{"text" => ""}])
+      |> normalize_formulas()
+
+    Map.put(node, "children", children)
+  end
+
+  defp normalize_formulas(%{"children" => children} = node) do
+    Map.put(node, "children", normalize_formulas(children))
+  end
+
+  defp normalize_formulas(node), do: node
 end
