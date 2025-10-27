@@ -28,6 +28,7 @@ defmodule Oli.GoogleDocs.ActivityBuilder.Utils do
     case MarkdownParser.parse(text || "") do
       {:ok, content} ->
         content
+        |> collapse_inline_paragraphs(text || "")
         |> cleanup_formula_artifacts()
         |> normalize_formulas()
 
@@ -94,6 +95,28 @@ defmodule Oli.GoogleDocs.ActivityBuilder.Utils do
   end
 
   def parse_indexed_key(_, _), do: :error
+
+  defp collapse_inline_paragraphs(content, original_text) do
+    has_paragraph_breaks? = Regex.match?(~r/(\r?\n){2,}/, original_text)
+
+    cond do
+      has_paragraph_breaks? ->
+        content
+
+      Enum.empty?(content) ->
+        content
+
+      Enum.all?(content, &match?(%{"type" => "p"}, &1)) ->
+        merged_children =
+          content
+          |> Enum.flat_map(&Map.get(&1, "children", []))
+
+        [%{"type" => "p", "children" => merged_children}]
+
+      true ->
+        content
+    end
+  end
 
   defp cleanup_formula_artifacts(nodes) when is_list(nodes) do
     nodes
