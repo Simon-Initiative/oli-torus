@@ -388,6 +388,7 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(transformed["source_line"], 1)
         self.assertEqual(transformed["source_etag"], "etag")
         self.assertEqual(transformed["event_hash"], hashlib.sha256(raw_line).hexdigest())
+
     def test_build_insert_query_uses_default_columns(self):
         with mock.patch.dict(
             os.environ,
