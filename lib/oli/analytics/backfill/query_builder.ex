@@ -33,7 +33,9 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         now64(3) AS event_version,
         _path AS source_file,
         _file AS source_etag,
-        rowNumberInAllBlocks() AS source_line,
+        rowNumberInAllBlocks()
+          - min(rowNumberInAllBlocks()) OVER (PARTITION BY _path)
+          + 1 AS source_line,
         now() AS inserted_at,
 
         coalesce(JSON_VALUE(json, '$.event_id'), toString(generateUUIDv4())) AS event_id,

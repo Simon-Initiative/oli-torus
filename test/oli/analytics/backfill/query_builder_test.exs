@@ -21,6 +21,9 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
              "FROM s3('s3://bucket/section/**/*.jsonl', 'AKIA_TEST', 'secret', 'JSONAsString', 'json String')"
 
     assert sql =~ "cityHash64(json) AS event_hash"
+
+    assert sql =~
+             "rowNumberInAllBlocks()\n          - min(rowNumberInAllBlocks()) OVER (PARTITION BY _path)\n          + 1 AS source_line"
   end
 
   test "builds dry run sql and uses NULL bytes expression for non JSONAsString format" do
