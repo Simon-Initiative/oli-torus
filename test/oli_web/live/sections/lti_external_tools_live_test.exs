@@ -170,7 +170,7 @@ defmodule OliWeb.Sections.LtiExternalToolsLiveTest do
       assert has_element?(view, "div[id='lti_external_tool_#{tool2.id}'] li", "Page Two")
     end
 
-    test "shows warning icon and message when tool is removed", %{
+    test "shows warning icon and message when tool is removed or disabled", %{
       conn: conn,
       section: section,
       instructor: instructor,
@@ -185,6 +185,13 @@ defmodule OliWeb.Sections.LtiExternalToolsLiveTest do
         )
 
       Ecto.Changeset.change(deployment, status: :deleted) |> Oli.Repo.update!()
+
+      {:ok, view, _html} = live(conn, live_view_lti_external_tools_route(section.slug))
+
+      assert has_element?(view, "#lti_external_tool_#{tool1.id} svg")
+      assert render(view) =~ "This tool is no longer registered in the system"
+
+      Ecto.Changeset.change(deployment, status: :disabled) |> Oli.Repo.update!()
 
       {:ok, view, _html} = live(conn, live_view_lti_external_tools_route(section.slug))
 
