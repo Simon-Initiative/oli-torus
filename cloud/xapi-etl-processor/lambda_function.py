@@ -437,18 +437,21 @@ def load_json_lines_as_table(ref: S3ObjectRef) -> Optional[pa.Table]:
     log_interval_seconds = float(os.getenv("ITER_LOG_INTERVAL_SECONDS", "5"))
     next_log_deadline = fetch_started + log_interval_seconds
 
-    for index, raw_line in enumerate(body.iter_lines(chunk_size=1024 * 64), start=1):
+    processed_rows = 0
+
+    for physical_line, raw_line in enumerate(body.iter_lines(chunk_size=1024 * 64), start=1):
         if not raw_line:
             continue
         try:
             statement = json.loads(raw_line)
+            processed_rows += 1
             transformed = transform_xapi_statement(
                 statement,
                 raw_bytes=raw_line,
                 bucket=ref.bucket,
                 key=ref.key,
                 etag=response.get("ETag"),
-                line_number=index,
+                line_number=processed_rows,
             )
             rows.append(transformed)
         except json.JSONDecodeError as exc:
@@ -457,14 +460,15 @@ def load_json_lines_as_table(ref: S3ObjectRef) -> Optional[pa.Table]:
             ) from exc
         except Exception as exc:  # pylint: disable=broad-except
             raise ValueError(
-                f"Failed to transform JSON in s3://{ref.bucket}/{ref.key}: line {index}"
+                f"Failed to transform JSON in s3://{ref.bucket}/{ref.key}: line {physical_line}"
             ) from exc
 
         now = time.perf_counter()
         if now >= next_log_deadline:
             logger.debug(
-                "Read %d lines from s3://%s/%s (%.2fs elapsed)",
-                index,
+                "Read %d lines (%d statements) from s3://%s/%s (%.2fs elapsed)",
+                physical_line,
+                processed_rows,
                 ref.bucket,
                 ref.key,
                 now - fetch_started,

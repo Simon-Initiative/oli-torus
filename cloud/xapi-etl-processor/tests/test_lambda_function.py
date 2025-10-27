@@ -181,6 +181,26 @@ class LambdaFunctionTests(TestCase):
         ])
         insert_mock.assert_not_called()
 
+    def test_load_json_lines_assigns_sequential_source_line_numbers(self):
+        statements = [
+            {"id": "evt-1", "actor": {"account": {"name": "alice"}}},
+            {"id": "evt-2", "actor": {"account": {"name": "bob"}}},
+        ]
+
+        payload_lines = ["", "", *(json.dumps(item) for item in statements)]
+        self.mock_s3.get_object.return_value = {
+            "Body": FakeBody(payload_lines),
+            "ETag": '"etag-value"',
+        }
+
+        table = lambda_function.load_json_lines_as_table(
+            lambda_function.S3ObjectRef(bucket="bucket", key="events/file.jsonl")
+        )
+
+        self.assertIsNotNone(table)
+        source_lines = table.column("source_line").to_pylist()
+        self.assertEqual(source_lines, [1, 2])
+
     def test_lambda_handler_sends_failed_prepare_to_dlq(self):
         body = json.dumps({"bucket": "bucket", "key": "events/file.jsonl"})
         event = {
