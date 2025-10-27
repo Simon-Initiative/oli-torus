@@ -105,6 +105,10 @@ defmodule OliWeb.LayoutView do
     render(layout, Map.put(assigns, :inner_layout, content))
   end
 
+  def render("workspace.html", assigns) do
+    OliWeb.Layouts.workspace(assigns)
+  end
+
   def dev_mode?() do
     Application.fetch_env!(:oli, :env) == :dev
   end

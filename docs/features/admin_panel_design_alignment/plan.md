@@ -126,35 +126,22 @@ Dependencies: Requires Phases 2 and 3 merged to avoid dead code; telemetry work 
 
 ---
 
-## Phase 5: QA, Accessibility, and Rollout Readiness
+## Phase 5: Authoring Workspace Route Migration
 
-**Goal** Validate end-to-end experience, finalize documentation, and prepare for deployment.
+**Goal** Retire legacy `/authoring/**` product/project routes by moving functionality under `/workspaces/course_author/**`.
 
-**Tasks**
+**Plan**
 
-- [ ] Execute cross-browser and dark-mode manual QA across key admin flows, referencing the checklist from Phase 0.
-- [ ] Perform keyboard-only and screen reader (VoiceOver/NVDA) checks; ensure focus outlines and ARIA attributes mirror the authoring workspace.
-- [ ] Confirm multi-tenant scoping by spot-checking admin access in multiple institutions and ensuring non-admin roles cannot see the `Admin` nav.
-- [ ] Update release notes, admin support docs, and ensure `prd.md`/`fdd.md` reflect final decisions (feature flag outcome, telemetry dashboards).
-- [ ] Run full automated suite touching admin areas: `mix test test/oli_web/live/admin`, `mix test test/oli_web/controllers/admin_layout_controller_test.exs`, and smoke the asset build (`mix assets.deploy --quiet`).
-- [ ] Capture staging sign-off from Product, Design, and Support; log verification in rollout checklist.
-
-**Definition of Done**
-
-- Accessibility, security, and tenancy checks signed off; no outstanding high-severity defects.
-- Documentation, screenshots, and telemetry dashboards ready for launch.
-- Staging sign-off complete; rollback steps documented if needed.
-
-Gate: Production deploy proceeds only after Phase 5 checklist is complete.
-
----
-
-**Parallelization & Dependency Notes**
-
-- Phase 0 is mandatory upfront and unlocks all subsequent phases.
-- Phase 1 establishes the shared shell; Phases 2 and 3 may progress in parallel afterwards with tight coordination on shared templates.
-- Telemetry wiring from Phase 4 can start once nav routing is stable (post-Phase 1) but cannot close until CSS consolidation completes (post-Phase 2/3).
-- QA in Phase 5 depends on completion of all prior phases; however, accessibility audits can begin opportunistically during Phase 2/3 implementations.
+1. **Products & Payments**
+   - [ ] Add workspace routes for product list/detail/payments/certificate settings under `/workspaces/course_author/:project_id/products/**`.
+   - [ ] Update LiveViews (`overview`, `products`, `remix`, etc.), components, and tests to rely on the new paths and breadcrumbs.
+   - [ ] Bring admin discount flows onto the shared workspace navigation while preserving role gating.
+2. **Project Management Actions**
+   - [ ] Replace controller endpoints (`create`, `clone`, `enable_triggers`, CSV exports) with workspace-compatible routes or LiveView events.
+   - [ ] Update workspace UI (modals, buttons) and tests to use the new endpoints.
+3. **Cleanup**
+   - [ ] Remove unused `/authoring/**` routes, controllers, and tests once all callers use workspace equivalents.
+   - [ ] Re-run targeted suites (products, payments, projects, imports) to confirm parity.
 
 **Verification Checklist Before Handoff**
 

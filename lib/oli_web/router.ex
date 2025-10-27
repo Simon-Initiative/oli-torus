@@ -442,13 +442,7 @@ defmodule OliWeb.Router do
 
     live("/projects", Projects.ProjectsLive)
     get("/projects/export", ProjectsController, :export_csv)
-    live("/products/:product_id", Products.DetailsView)
-    live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
-
-    live("/products/:product_id/certificate_settings", Certificates.CertificatesSettingsLive,
-      metadata: %{route_name: :authoring}
-    )
 
     live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
       as: :product_remix
@@ -520,8 +514,6 @@ defmodule OliWeb.Router do
     live("/:project_id/review", Qa.QaLive)
 
     # Author facing product view
-    live("/:project_id/products", Products.ProductsView)
-
     # Preview
     get("/:project_id/preview", ResourceController, :preview)
     get("/:project_id/preview/:revision_slug", ResourceController, :preview)
@@ -947,6 +939,7 @@ defmodule OliWeb.Router do
         scope "/:project_id/products" do
           live("/", ProductsLive)
           live("/:product_id", Products.DetailsLive)
+          live("/:product_id/payments", Products.PaymentsLive)
 
           scope "/", alias: false do
             live(

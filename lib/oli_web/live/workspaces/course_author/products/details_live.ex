@@ -23,7 +23,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
-  def mount(%{"product_id" => product_slug}, _session, socket) do
+  def mount(%{"project_id" => project_slug, "product_id" => product_slug}, _session, socket) do
     case Mount.for(product_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
@@ -39,7 +39,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         latest_publications =
           Sections.check_for_available_publication_updates(product)
 
-        {:ok,
+        if is_nil(project) or project.slug != project_slug do
+          {:ok,
+           redirect(socket,
+             to: ~p"/workspaces/course_author/#{project_slug}/products/#{product.slug}"
+           )}
+        else
+          breadcrumbs = set_breadcrumbs(product, project)
+
+          {:ok,
          assign(socket,
            publishers: publishers,
            updates: latest_publications,
@@ -53,7 +61,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
            resource_slug: project.slug,
            resource_title: project.title,
            active_workspace: :course_author,
-           active_view: :products
+           active_view: :products,
+           breadcrumbs: breadcrumbs
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -61,7 +70,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
            auto_upload: true,
            max_file_size: 5_000_000
          )}
+        end
     end
+  end
+
+  def set_breadcrumbs(%Section{} = product) do
+    project = Course.get_project!(product.base_project_id)
+    set_breadcrumbs(product, project)
+  end
+
+  def set_breadcrumbs(%Section{} = product, %{slug: project_slug}) do
+    [
+      Breadcrumb.new(%{
+        full_title: "Product Overview",
+        link: ~p"/workspaces/course_author/#{project_slug}/products/#{product.slug}"
+      })
+    ]
   end
 
   def render(assigns) do
@@ -192,7 +216,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         {:noreply,
          redirect(socket,
            to:
-             ~p"/workspaces/course_author/#{socket.assigns.base_project}/products/#{duplicate.slug}"
+             ~p"/workspaces/course_author/#{socket.assigns.base_project.slug}/products/#{duplicate.slug}"
          )}
 
       {:error, _} ->
@@ -288,7 +312,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
           socket = put_flash(socket, :info, "Payment codes transferred successfully")
 
           redirect(socket,
-            to: ~p"/authoring/products/#{socket.assigns.product.slug}"
+            to:
+              ~p"/workspaces/course_author/#{socket.assigns.base_project.slug}/products/#{socket.assigns.product.slug}"
           )
       end
 

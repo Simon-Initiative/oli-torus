@@ -1,6 +1,5 @@
 defmodule OliWeb.Products.Details.Actions do
   use OliWeb, :html
-  alias OliWeb.Router.Helpers, as: Routes
 
   attr(:product, :any, required: true)
   attr(:is_admin, :boolean, required: true)
@@ -23,7 +22,9 @@ defmodule OliWeb.Products.Details.Actions do
         <div>
           <a
             class="btn btn-link action-button"
-            href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.PaymentsView, @product.slug)}
+            href={
+              ~p"/workspaces/course_author/#{@base_project.slug}/products/#{@product.slug}/payments"
+            }
           >
             Manage Payments
           </a>

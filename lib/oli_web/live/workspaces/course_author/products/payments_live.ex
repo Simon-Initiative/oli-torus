@@ -1,4 +1,4 @@
-defmodule OliWeb.Products.PaymentsView do
+defmodule OliWeb.Workspaces.CourseAuthor.Products.PaymentsLive do
   use OliWeb, :live_view
 
   import OliWeb.DelegatedEvents
@@ -8,7 +8,8 @@ defmodule OliWeb.Products.PaymentsView do
   alias OliWeb.Common.{Breadcrumb, Params, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Products.Payments.CreateCodes
-  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Sections.Mount
+  alias OliWeb.Workspaces.CourseAuthor.Products.DetailsLive
 
   @limit 20
   @text_search_tooltip """
@@ -18,38 +19,61 @@ defmodule OliWeb.Products.PaymentsView do
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
-  def live_path(socket, params) do
-    Routes.live_path(socket, OliWeb.Products.PaymentsView, socket.assigns.product_slug, params)
-  end
-
-  def mount(%{"product_id" => product_slug}, _session, socket) do
+  def mount(%{"project_id" => project_slug, "product_id" => product_slug}, _session, socket) do
     ctx = socket.assigns.ctx
 
-    payments =
-      browse_payments(product_slug, %Paging{offset: 0, limit: @limit}, %Sorting{
-        direction: :asc,
-        field: :type
-      })
+    case Mount.for(product_slug, socket) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
 
-    total_count = determine_total(payments)
+      {_, _, product} ->
+        project = socket.assigns.project
 
-    {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments, ctx)
+        if is_nil(project) or project.slug != project_slug do
+          {:ok,
+           redirect(socket,
+             to: ~p"/workspaces/course_author/#{project_slug}/products/#{product_slug}"
+           )}
+        else
+          payments =
+            browse_payments(product_slug, %Paging{offset: 0, limit: @limit}, %Sorting{
+              direction: :asc,
+              field: :type
+            })
 
-    {:ok,
-     assign(socket,
-       product: Oli.Delivery.Sections.get_section_by(slug: product_slug),
-       product_slug: product_slug,
-       total_count: total_count,
-       table_model: table_model,
-       breadcrumbs: [Breadcrumb.new(%{full_title: "Payments"})],
-       title: "Payments",
-       code_count: 50,
-       offset: 0,
-       limit: @limit,
-       text_search: "",
-       text_search_tooltip: @text_search_tooltip,
-       download_enabled: false
-     )}
+          total_count = determine_total(payments)
+          {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments, ctx)
+
+          breadcrumbs =
+            DetailsLive.set_breadcrumbs(product, project) ++
+              [
+                Breadcrumb.new(%{
+                  full_title: "Payments",
+                  link:
+                    ~p"/workspaces/course_author/#{project.slug}/products/#{product.slug}/payments"
+                })
+              ]
+
+          {:ok,
+           assign(socket,
+             project_slug: project.slug,
+             product: product,
+             product_slug: product_slug,
+             total_count: total_count,
+             table_model: table_model,
+             breadcrumbs: breadcrumbs,
+             title: "Payments",
+             code_count: 50,
+             offset: 0,
+             limit: @limit,
+             text_search: "",
+             text_search_tooltip: @text_search_tooltip,
+             download_enabled: false,
+             active_workspace: :course_author,
+             active_view: :products
+           )}
+        end
+    end
   end
 
   def render(assigns) do
@@ -203,21 +227,21 @@ defmodule OliWeb.Products.PaymentsView do
   end
 
   def patch_with(socket, changes) do
+    params =
+      Map.merge(
+        %{
+          sort_by: socket.assigns.table_model.sort_by_spec.name,
+          sort_order: socket.assigns.table_model.sort_order,
+          offset: socket.assigns.offset,
+          text_search: socket.assigns.text_search
+        },
+        changes
+      )
+
     {:noreply,
      push_patch(socket,
        to:
-         live_path(
-           socket,
-           Map.merge(
-             %{
-               sort_by: socket.assigns.table_model.sort_by_spec.name,
-               sort_order: socket.assigns.table_model.sort_order,
-               offset: socket.assigns.offset,
-               text_search: socket.assigns.text_search
-             },
-             changes
-           )
-         ),
+         ~p"/workspaces/course_author/#{socket.assigns.project_slug}/products/#{socket.assigns.product_slug}/payments?#{params}",
        replace: true
      )}
   end
