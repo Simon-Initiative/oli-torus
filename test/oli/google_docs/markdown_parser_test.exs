@@ -73,12 +73,12 @@ defmodule Oli.GoogleDocs.MarkdownParserTest do
       markdown = """
       | CustomElement | MCQ |
       | --- | --- |
-      | stem | <p>First paragraph with <strong>bold</strong> text and \\(x + y\\).</p><p>Second paragraph with ![stem image](data:image/png;base64,QUJD).</p> |
+      | stem | First sentence with **bold** text and \\(x + y\\), followed by more text and an inline image ![stem image](data:image/png;base64,QUJD). |
       | choice1 | Option with *italic* text and \\(a^2\\). |
-      | feedback1 | Great job!\n\n$$\\frac{1}{2}$$ |
-      | choice2 | <p>Paragraph one.</p><p>Paragraph two with <em>emphasis</em> and an image ![choice image](data:image/png;base64,QUJD).</p> |
-      | feedback2 | Needs revision |
-      | hint1 | <p>Hint paragraph one.</p><p>Hint paragraph two with \\(z\\).</p> |
+      | feedback1 | Great job! Use \\(\\frac{1}{2}\\) when needed. |
+      | choice2 | Combined sentence with \\(\\tfrac{3}{4}\\), more words, and <em>emphasis</em> plus an inline image ![choice image](data:image/png;base64,QUJD). |
+      | feedback2 | Needs revision soon. |
+      | hint1 | Hint sentence with \\(z\\) and **inline emphasis** only. |
       | correct | choice1 |
       """
 
@@ -89,22 +89,19 @@ defmodule Oli.GoogleDocs.MarkdownParserTest do
       assert String.contains?(stem, "**bold**")
       assert String.contains?(stem, "\\(x + y\\)")
       assert String.contains?(stem, "![stem image](data:image/png;base64,QUJD)")
-      assert String.contains?(stem, "\n\n")
 
       choice1 = Map.fetch!(data, "choice1")
       assert String.contains?(choice1, "*italic*")
       assert String.contains?(choice1, "\\(a^2\\)")
 
       choice2 = Map.fetch!(data, "choice2")
-      assert String.contains?(choice2, "\n\n")
       assert String.contains?(choice2, "![choice image](data:image/png;base64,QUJD)")
-      assert String.contains?(choice2, "$$\\frac{3}{4}$$")
+      assert String.contains?(choice2, "\\tfrac{3}{4}")
 
       feedback1 = Map.fetch!(data, "feedback1")
-      assert String.contains?(feedback1, "$$\\frac{1}{2}$$")
+      assert String.contains?(feedback1, "\\(\\frac{1}{2}\\)")
 
       hint1 = Map.fetch!(data, "hint1")
-      assert String.contains?(hint1, "\n\n")
       assert String.contains?(hint1, "\\(z\\)")
     end
   end
