@@ -374,6 +374,7 @@ class LambdaFunctionTests(TestCase):
         )
 
         self.assertEqual(transformed["event_type"], "part_attempt")
+        self.assertEqual(transformed["user_id"], "15474")
         self.assertEqual(transformed["section_id"], 2161)
         self.assertEqual(transformed["project_id"], 1719)
         self.assertEqual(transformed["publication_id"], 8625)
