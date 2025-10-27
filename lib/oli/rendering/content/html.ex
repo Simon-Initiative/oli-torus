@@ -23,11 +23,17 @@ defmodule Oli.Rendering.Content.Html do
 
   def trigger(%Context{} = context, _, attrs) do
     {:safe, trigger} =
-      OliWeb.Common.React.component(context, "Components.TriggerButton", %{
-        "trigger" => attrs,
-        "resourceId" => context.page_id,
-        "sectionSlug" => context.section_slug
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.TriggerButton",
+        %{
+          "trigger" => attrs,
+          "resourceId" => context.page_id,
+          "sectionSlug" => context.section_slug
+        },
+        # Generate a stable ID for the LiveReact hook
+        id: "trigger-#{context.page_id}-#{attrs["target"]}"
+      )
 
     trigger
   end
@@ -95,6 +101,12 @@ defmodule Oli.Rendering.Content.Html do
 
   def img_inline(%Context{} = _context, _, _e), do: ""
 
+  # Helper function to extract URL from src attribute which can be a string or list of maps
+  defp extract_src_url(src) when is_binary(src), do: src
+  defp extract_src_url([%{"url" => url} | _]) when is_binary(url), do: url
+  defp extract_src_url([%{"url" => url} | _]) when is_list(url), do: Enum.join(url, "")
+  defp extract_src_url(_), do: "unknown"
+
   def video(%Context{} = context, _, attrs) do
     attempt_guid =
       case context.resource_attempt do
@@ -102,15 +114,23 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
+    # Generate a stable ID for the LiveReact hook using element ID when available
+    element_id = attrs["id"] || extract_src_url(attrs["src"])
+
     {:safe, video_player} =
-      OliWeb.Common.React.component(context, "Components.VideoPlayer", %{
-        "video" => attrs,
-        "pageAttemptGuid" => attempt_guid,
-        "pointMarkerContext" => %{
-          renderPointMarkers: context.render_opts.render_point_markers,
-          isAnnotationLevel: context.is_annotation_level
-        }
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.VideoPlayer",
+        %{
+          "video" => attrs,
+          "pageAttemptGuid" => attempt_guid,
+          "pointMarkerContext" => %{
+            renderPointMarkers: context.render_opts.render_point_markers,
+            isAnnotationLevel: context.is_annotation_level
+          }
+        },
+        id: "video-#{attempt_guid}-#{element_id}"
+      )
 
     video_player
   end
@@ -148,15 +168,23 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
+    # Generate a stable ID for the LiveReact hook using element ID when available
+    element_id = attrs["id"] || extract_src_url(attrs["src"])
+
     {:safe, video_player} =
-      OliWeb.Common.React.component(context, "Components.YoutubePlayer", %{
-        "video" => attrs,
-        "pageAttemptGuid" => attempt_guid,
-        "pointMarkerContext" => %{
-          renderPointMarkers: context.render_opts.render_point_markers,
-          isAnnotationLevel: context.is_annotation_level
-        }
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.YoutubePlayer",
+        %{
+          "video" => attrs,
+          "pageAttemptGuid" => attempt_guid,
+          "pointMarkerContext" => %{
+            renderPointMarkers: context.render_opts.render_point_markers,
+            isAnnotationLevel: context.is_annotation_level
+          }
+        },
+        id: "youtube-#{attempt_guid}-#{element_id}"
+      )
 
     video_player
   end
