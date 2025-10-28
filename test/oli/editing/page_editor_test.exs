@@ -568,8 +568,7 @@ defmodule Oli.EditingTest do
              objective1: %{revision: objective1},
              objective2: %{revision: objective2},
              subobjective12A: %{
-               revision:
-                 %Revision{resource_id: subobjective12A_resource_id} = subobjective12A
+               revision: %Revision{resource_id: subobjective12A_resource_id} = subobjective12A
              }
            }
          } do
