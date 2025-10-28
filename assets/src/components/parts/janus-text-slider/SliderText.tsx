@@ -240,7 +240,7 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
       {showLabel && (
-        <label className="input-label" htmlFor={internalId}>
+        <label id={`label-${internalId}`} className="input-label" htmlFor={internalId}>
           {label}
         </label>
       )}
@@ -257,6 +257,14 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
             value={sliderValue}
             onChange={handleChange}
             className="slider-track"
+            aria-labelledby={showLabel ? `label-${internalId}` : undefined}
+            aria-label={!showLabel ? 'Slider' : undefined}
+            aria-valuemin={minimum}
+            aria-valuemax={sliderOptionLabels?.length ? sliderOptionLabels?.length - 1 : 3}
+            aria-valuenow={sliderValue}
+            aria-valuetext={`value: ${sliderValue}, ${
+              sliderOptionLabels?.[sliderValue] || `${sliderValue}`
+            }`}
           />
 
           <div className="tick-container">
