@@ -2546,6 +2546,10 @@ select {
   accent-color: #EEEBF5BF;
 }
 
+.bg-Text-text-button {
+  background-color: #006CD9;
+}
+
 .dark .bg-Text-text-button {
   background-color: #4CA6FF;
 }
@@ -4232,6 +4236,10 @@ select {
 
 .dark .accent-Specially-Tokens-Fill-fill-dot-message-bold {
   accent-color: #363B59;
+}
+
+.bg-Specially-Tokens-Fill-fill-dot-message-default {
+  background-color: #F2F9FF;
 }
 
 .dark .bg-Specially-Tokens-Fill-fill-dot-message-default {
@@ -10273,6 +10281,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 40%;
 }
 
+.w-\[430px\] {
+  width: 430px;
+}
+
 .w-\[461px\] {
   width: 461px;
 }
@@ -10394,6 +10406,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-w-0 {
   min-width: 0px;
+}
+
+.min-w-\[1\.25rem\] {
+  min-width: 1.25rem;
 }
 
 .min-w-\[1024px\] {
@@ -14967,6 +14983,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow-\[0px_0px_8px_0px_rgba\(0\2c 0\2c 0\2c 0\.15\)\] {
   --tw-shadow: 0px 0px 8px 0px rgba(0,0,0,0.15);
   --tw-shadow-colored: 0px 0px 8px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_12px_24px_0px_rgba\(53\2c 55\2c 64\2c 0\.12\)\] {
+  --tw-shadow: 0px 12px 24px 0px rgba(53,55,64,0.12);
+  --tw-shadow-colored: 0px 12px 24px 0px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -19834,6 +19856,14 @@ Not supports in Firefox and IE */
   color: #FFFFFF;
 }
 
+.hover\:bg-Specially-Tokens-Fill-fill-dot-message-default:hover {
+  background-color: #F2F9FF;
+}
+
+.dark .hover\:bg-Specially-Tokens-Fill-fill-dot-message-default:hover {
+  background-color: #2C2D40;
+}
+
 .focus\:ring-Fill-Buttons-fill-primary:focus {
   --tw-ring-color: #0080FF;
 }
@@ -19848,6 +19878,14 @@ Not supports in Firefox and IE */
 
 .dark .focus\:border-Border-border-active:focus {
   border-color: #EEEBF5;
+}
+
+.focus\:border-Text-text-button:focus {
+  border-color: #006CD9;
+}
+
+.dark .focus\:border-Text-text-button:focus {
+  border-color: #4CA6FF;
 }
 
 .focus\:bg-Table-table-hover:focus {
@@ -22052,6 +22090,10 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-stone-900 {
   --tw-bg-opacity: 1;
   background-color: rgb(28 25 23 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-transparent {
+  background-color: transparent;
 }
 
 .dark .dark\:bg-white {
