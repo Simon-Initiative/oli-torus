@@ -96,6 +96,7 @@ export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }
                     onPartResize={() => true}
                     onPartSetData={async () => true}
                     onPartGetData={async () => true}
+                    responsiveLayout={false}
                   />
                 </div>
               </div>
