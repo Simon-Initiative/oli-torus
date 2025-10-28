@@ -23,16 +23,21 @@ export type ObjectivesProps = {
 };
 
 // Custom filterBy function for the Typeahead. This allows searches to
-// pick up child objectives for text that matches the parent
+// pick up child objectives for text that matches any of their parents
 function filterBy(byId: any, option: Objective, props: AllTypeaheadOwnAndInjectedProps<Objective>) {
-  if (option.title.toLocaleLowerCase().indexOf(props.text.toLocaleLowerCase()) > -1) {
+  const searchText = props.text.toLocaleLowerCase();
+
+  // First check if the objective's own title matches
+  if (option.title.toLocaleLowerCase().indexOf(searchText) > -1) {
     return true;
   }
 
-  if (option.parentId !== null) {
-    return (
-      byId[option.parentId].title.toLocaleLowerCase().indexOf(props.text.toLocaleLowerCase()) > -1
-    );
+  // If it has parents, check if any parent's title matches
+  if (option.parentIds !== null && option.parentIds.length > 0) {
+    return option.parentIds.some((parentId) => {
+      const parent = byId[parentId];
+      return parent && parent.title.toLocaleLowerCase().indexOf(searchText) > -1;
+    });
   }
 
   return false;
@@ -77,9 +82,10 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
     _props: TypeaheadMenuProps<Objective>,
     _index: number,
   ) => {
+    const isChild = option.parentIds !== null && option.parentIds.length > 0;
     return (
       <div>
-        {option.parentId !== null ? <span className="ml-3">&nbsp;</span> : null}
+        {isChild ? <span className="ml-3">&nbsp;</span> : null}
         <input className="mr-2" type="checkbox" readOnly checked={allSelected[option.id]}></input>
         {option.title}
       </div>
@@ -113,7 +119,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
                   onRegisterNewObjective({
                     id: result.resourceId,
                     title: createdObjective.title,
-                    parentId: null,
+                    parentIds: null,
                   });
 
                   // Use the newly created resource id instead of the id of
