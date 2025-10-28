@@ -5,6 +5,7 @@ defmodule OliWeb.ProjectsController do
   alias Oli.Authoring.Course
   alias Oli.Repo.Sorting
   alias Oli.Utils.Time
+  alias OliWeb.Admin.BrowseFilters
 
   @csv_headers [
     "Slug",
@@ -83,6 +84,9 @@ defmodule OliWeb.ProjectsController do
         nil -> Accounts.get_author_preference(author, :admin_show_deleted_projects, false)
       end
 
+    filter_state = BrowseFilters.parse(params)
+    course_filters = BrowseFilters.to_course_filters(filter_state)
+
     # Build sorting struct
     sorting = %Sorting{direction: sort_order, field: sort_by}
 
@@ -90,7 +94,8 @@ defmodule OliWeb.ProjectsController do
     opts = [
       include_deleted: show_deleted,
       admin_show_all: show_all,
-      text_search: text_search
+      text_search: text_search,
+      filters: course_filters
     ]
 
     # Get projects for export with error handling
