@@ -1,6 +1,9 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
   use ExUnit.Case, async: true
   alias OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics
+  import Phoenix.LiveViewTest
+
+  @endpoint OliWeb.Endpoint
 
   # Since most functions are private, we test through the public interface
   # The main issue was in parse_tsv_data which is called by get_analytics_data_and_spec
@@ -19,6 +22,66 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
       assert function_exported?(SectionAnalytics, :render, 1)
       assert function_exported?(SectionAnalytics, :handle_event, 3)
       assert function_exported?(SectionAnalytics, :get_analytics_data_and_spec, 2)
+    end
+  end
+
+  describe "event summary rendering" do
+    test "aggregates rows per canonical event type" do
+      analytics_payload = %{
+        parsed_body: %{
+          "data" => [
+            %{
+              "event_type" => "video",
+              "total_events" => 5,
+              "unique_users" => 2,
+              "additional_info" => "Watch time tracked"
+            },
+            %{
+              "event_type" => "video_events",
+              "total_events" => 3,
+              "unique_users" => 1,
+              "additional_info" => "Legacy watch time tracked"
+            },
+            %{
+              "event_type" => "activity_attempt",
+              "total_events" => 7,
+              "unique_users" => 4,
+              "additional_info" => "Avg score: 0.72"
+            }
+          ]
+        }
+      }
+
+      rendered =
+        render_component(SectionAnalytics,
+          id: "section_analytics",
+          section: %{id: 123},
+          selected_analytics_category: "video",
+          analytics_data: nil,
+          analytics_spec: nil,
+          section_analytics_load_state: :loaded,
+          comprehensive_section_analytics: {:ok, analytics_payload},
+          custom_sql_query: nil,
+          custom_vega_spec: nil,
+          custom_query_result: nil,
+          custom_visualization_spec: nil,
+          engagement_start_date: "2024-01-01",
+          engagement_end_date: "2024-01-31",
+          engagement_max_pages: 25,
+          resource_title_map: %{}
+        )
+
+      html = rendered_to_string(rendered)
+
+      assert html =~ "Video Interactions"
+      assert html =~ ">8</p>"
+      assert html =~ "events from 2 users"
+      assert html =~ "Activity Attempts"
+      assert html =~ ">7</p>"
+      assert html =~ "events from 4 users"
+      # Ensure we only rendered one combined video card
+      assert String.contains?(html, "Video Interactions")
+      refute String.contains?(html, "video_events")
     end
   end
 

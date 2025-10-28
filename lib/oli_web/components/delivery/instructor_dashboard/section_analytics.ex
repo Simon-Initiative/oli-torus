@@ -5,6 +5,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
 
   require Logger
 
+  @summary_event_type_order [
+    "video",
+    "activity_attempt",
+    "page_attempt",
+    "page_viewed",
+    "part_attempt"
+  ]
+
+  @legacy_event_type_map %{
+    "video_events" => "video",
+    "activity_attempts" => "activity_attempt",
+    "page_attempts" => "page_attempt",
+    "page_views" => "page_viewed",
+    "part_attempts" => "part_attempt"
+  }
+
   @impl true
   def mount(socket) do
     {:ok, socket}
@@ -102,8 +118,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
               </p>
             </div>
           <% _ -> %>
-
-    <!-- Comprehensive Section Analytics -->
+            <!-- Comprehensive Section Analytics -->
             <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6 mb-6">
               <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
                 Event Summary
@@ -322,8 +337,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                 </button>
               </div>
             </div>
-
-    <!-- Analytics Visualization -->
+            <!-- Analytics Visualization -->
             <%= if @selected_analytics_category do %>
               <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-6">
                 <h2 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
@@ -344,8 +358,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                       Analytics Visualization
                   <% end %>
                 </h2>
-
-    <!-- Engagement Analytics Controls -->
+                <!-- Engagement Analytics Controls -->
                 <%= if @selected_analytics_category == "engagement" do %>
                   <div class="mb-6 bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                     <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">
@@ -409,8 +422,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                     </form>
                   </div>
                 <% end %>
-
-    <!-- Custom Analytics Interface -->
+                <!-- Custom Analytics Interface -->
                 <%= if @selected_analytics_category == "custom" do %>
                   <div class="mb-4">
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -480,8 +492,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                         Execute Query
                       </button>
                     </div>
-
-    <!-- Query Results -->
+                    <!-- Query Results -->
                     <%= if @custom_query_result do %>
                       <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                         <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">
@@ -506,8 +517,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                         <% end %>
                       </div>
                     <% end %>
-
-    <!-- VegaLite Spec Editor -->
+                    <!-- VegaLite Spec Editor -->
                     <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                       <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white">
                         VegaLite Visualization Spec
@@ -554,8 +564,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                         Render Visualization
                       </button>
                     </div>
-
-    <!-- Custom Visualization -->
+                    <!-- Custom Visualization -->
                     <%= if @custom_visualization_spec do %>
                       <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border">
                         <h4 class="text-md font-semibold mb-3 text-gray-900 dark:text-white text-center">
@@ -574,8 +583,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                     <% end %>
                   </div>
                 <% else %>
-
-    <!-- Regular Analytics Interface -->
+                  <!-- Regular Analytics Interface -->
                   <%= cond do %>
                     <% @analytics_spec == nil -> %>
                       <div class="flex items-center justify-center py-8">
@@ -615,8 +623,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
                             </p>
                         <% end %>
                       </div>
-
-    <!-- Render all charts vertically -->
+                      <!-- Render all charts vertically -->
                       <%= for {chart, index} <- Enum.with_index(@analytics_spec) do %>
                         <div class="mb-6">
                           <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
@@ -726,9 +733,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
     </div>
     """
   end
-
-
-
 
   @impl true
   def handle_event("select_analytics_category", %{"category" => category}, socket) do
@@ -975,21 +979,26 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
        when is_list(data) do
     meta = Map.get(parsed_body, "meta", [])
 
-    Enum.map(data, fn
+    data
+    |> Enum.map(fn
       row when is_map(row) ->
         build_summary_row(row)
 
       row when is_list(row) ->
-        row_map = build_row_from_meta(row, meta)
-        build_summary_row(row_map)
+        row
+        |> build_row_from_meta(meta)
+        |> build_summary_row()
 
       _ ->
         build_summary_row(%{})
     end)
+    |> normalize_summary_rows()
   end
 
   defp comprehensive_summary_rows(%{parsed_body: data}) when is_list(data) do
-    Enum.map(data, &build_summary_row/1)
+    data
+    |> Enum.map(&build_summary_row/1)
+    |> normalize_summary_rows()
   end
 
   defp comprehensive_summary_rows(%{body: body}) when is_binary(body) do
@@ -1005,6 +1014,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
           []
       end
     end)
+    |> normalize_summary_rows()
   end
 
   defp comprehensive_summary_rows(_), do: []
@@ -1038,6 +1048,142 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       unique_users: unique_users,
       additional_info: additional
     }
+  end
+
+  defp normalize_summary_rows(rows) when is_list(rows) do
+    rows
+    |> Enum.map(&sanitize_summary_row/1)
+    |> Enum.reduce(%{}, fn row, acc ->
+      Map.update(acc, row.event_type, row, &merge_summary_rows(&1, row))
+    end)
+    |> Map.values()
+    |> Enum.sort_by(&event_type_sort_key/1)
+  end
+
+  defp normalize_summary_rows(_), do: []
+
+  defp sanitize_summary_row(row) when is_map(row) do
+    %{
+      event_type: canonical_event_type(Map.get(row, :event_type)),
+      total_events: integer_to_string(Map.get(row, :total_events)),
+      unique_users: integer_to_string(Map.get(row, :unique_users)),
+      additional_info: sanitize_optional_string(Map.get(row, :additional_info))
+    }
+  end
+
+  defp sanitize_summary_row(_),
+    do: %{
+      event_type: "unknown",
+      total_events: "0",
+      unique_users: "0",
+      additional_info: nil
+    }
+
+  defp merge_summary_rows(existing, incoming) do
+    %{
+      event_type: existing.event_type,
+      total_events: sum_numeric_strings(existing.total_events, incoming.total_events),
+      unique_users: max_numeric_strings(existing.unique_users, incoming.unique_users),
+      additional_info: pick_additional_info(existing.additional_info, incoming.additional_info)
+    }
+  end
+
+  defp canonical_event_type(nil), do: "unknown"
+
+  defp canonical_event_type(event_type) when is_atom(event_type) do
+    event_type
+    |> Atom.to_string()
+    |> canonical_event_type()
+  end
+
+  defp canonical_event_type(event_type) when is_binary(event_type) do
+    normalized = String.trim(event_type)
+    Map.get(@legacy_event_type_map, normalized, normalized)
+  end
+
+  defp canonical_event_type(_), do: "unknown"
+
+  defp integer_to_string(value) do
+    value
+    |> parse_integer()
+    |> Integer.to_string()
+  end
+
+  defp sanitize_optional_string(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp sanitize_optional_string(_), do: nil
+
+  defp sum_numeric_strings(a, b) do
+    (parse_integer(a) + parse_integer(b))
+    |> Integer.to_string()
+  end
+
+  defp max_numeric_strings(a, b) do
+    max(parse_integer(a), parse_integer(b))
+    |> Integer.to_string()
+  end
+
+  defp parse_integer(value) when is_integer(value), do: value
+
+  defp parse_integer(value) when is_float(value) do
+    value
+    |> Float.round()
+    |> trunc()
+  end
+
+  defp parse_integer(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    cond do
+      trimmed == "" ->
+        0
+
+      true ->
+        case Integer.parse(trimmed) do
+          {int_val, _} ->
+            int_val
+
+          :error ->
+            case Float.parse(trimmed) do
+              {float_val, _} ->
+                float_val
+                |> Float.round()
+                |> trunc()
+
+              :error ->
+                0
+            end
+        end
+    end
+  end
+
+  defp parse_integer(_), do: 0
+
+  defp pick_additional_info(existing, incoming) do
+    cond do
+      not blank?(existing) -> existing
+      not blank?(incoming) -> incoming
+      true -> nil
+    end
+  end
+
+  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank?(nil), do: true
+  defp blank?(_), do: false
+
+  defp event_type_sort_key(%{event_type: event_type}) do
+    order_index =
+      case Enum.find_index(@summary_event_type_order, &(&1 == event_type)) do
+        nil -> length(@summary_event_type_order)
+        idx -> idx
+      end
+
+    {order_index, event_type}
   end
 
   defp build_row_from_meta(values, meta) when is_list(values) and is_list(meta) do
