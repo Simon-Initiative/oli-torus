@@ -416,7 +416,11 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_info({OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView, component_id, loaded_data}, socket) do
+  def handle_info(
+        {OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView, component_id,
+         loaded_data},
+        socket
+      ) do
     # Forward the async loaded data to the component
     Phoenix.LiveView.send_update(
       OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView,
