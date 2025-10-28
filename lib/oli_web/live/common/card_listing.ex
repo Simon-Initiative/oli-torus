@@ -27,7 +27,7 @@ defmodule OliWeb.Common.CardListing do
                   {render_title_column(item)}
                 </h5>
                 <div class="fade-text">
-                  <p class="card-text text-sm">{render_description(item)}</p>
+                  <p class="card-text text-sm text-Text-text-high">{render_description(item)}</p>
                 </div>
               </div>
               <div class="card-footer bg-transparent d-flex justify-content-between align-items-center border-0">
