@@ -45,11 +45,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
     objective_id = objective.resource_id
     is_expanded = Map.get(assigns, :is_expanded, false)
     has_loaded_data = not is_nil(socket.assigns[:estimated_students])
+    already_loading = Map.get(socket.assigns, :loading, false)
 
     # Check if we need to load data
-    # Load if: expanded AND (new objective OR no data loaded yet)
+    # Load if: expanded AND NOT already loading AND (new objective OR no data loaded yet)
     needs_loading =
       is_expanded and
+        not already_loading and
         (is_nil(socket.assigns[:objective_id]) or
            socket.assigns[:objective_id] != objective_id or
            not has_loaded_data)
