@@ -1055,6 +1055,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
+  def handle_info({:analytics_data_loaded, category, data, spec}, socket) do
+    if socket.assigns.selected_analytics_category == category do
+      {:noreply,
+       assign(socket,
+         analytics_data: data,
+         analytics_spec: spec
+       )}
+    else
+      {:noreply, socket}
+    end
+  end
+
   @impl Phoenix.LiveView
   def handle_info({:select_analytics_category, category}, socket) do
     # Navigate to the section analytics page with the selected category
