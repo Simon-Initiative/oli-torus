@@ -169,33 +169,45 @@ defmodule Oli.GoogleDocs.Markdown.Renderer do
   defp render_paragraph_segment(_), do: ""
 
   defp join_segments_preserving_space(segments) do
-    Enum.reduce(segments, "", fn segment, acc ->
-      cond do
-        acc == "" ->
-          segment
+    {iodata, _last_char} =
+      Enum.reduce(segments, {[], nil}, fn segment, {acc, last_char} ->
+        segment = segment || ""
 
-        trailing_whitespace?(acc) or leading_whitespace?(segment) ->
-          acc <> segment
+        if segment == "" do
+          {acc, last_char}
+        else
+          needs_space? =
+            last_char != nil and
+              not whitespace_char?(last_char) and
+              not leading_whitespace?(segment)
 
-        true ->
-          acc <> " " <> segment
-      end
-    end)
+          updated_acc =
+            if needs_space? do
+              [segment, " " | acc]
+            else
+              [segment | acc]
+            end
+
+          {updated_acc, last_char_of(segment)}
+        end
+      end)
+
+    iodata
+    |> Enum.reverse()
+    |> IO.iodata_to_binary()
   end
 
-  defp trailing_whitespace?(string) do
-    case String.last(string) do
-      nil -> false
-      char -> char in [" ", "\n", "\t"]
-    end
-  end
+  defp whitespace_char?(?\s), do: true
+  defp whitespace_char?(?\n), do: true
+  defp whitespace_char?(?\t), do: true
+  defp whitespace_char?(_), do: false
 
-  defp leading_whitespace?(string) do
-    case String.first(string) do
-      nil -> false
-      char -> char in [" ", "\n", "\t"]
-    end
-  end
+  defp leading_whitespace?(<<>>), do: false
+  defp leading_whitespace?(<<char, _::binary>>) when char in [?\s, ?\n, ?\t], do: true
+  defp leading_whitespace?(_), do: false
+
+  defp last_char_of(<<>>), do: nil
+  defp last_char_of(binary), do: :binary.last(binary)
 
   defp render_list(items, marker_fun) do
     items
