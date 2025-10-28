@@ -198,8 +198,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
             >
             </span>
           </div>
-        <% @is_expanded or @has_data -> %>
-          <!-- Show content when expanded OR data already loaded -->
+        <% @is_expanded and @has_data -> %>
+          <!-- Show content only when expanded AND data is loaded -->
           <div class="mb-4">
             <h3 class="text-lg font-medium text-Text-text-high">
               Estimated Learning: {@estimated_students} {ngettext(
@@ -209,12 +209,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
               )}
             </h3>
           </div>
-          
+
     <!-- Proficiency Distribution Dots Chart -->
           <div class="mb-6">
             {render_dots_chart(assigns)}
           </div>
-          
+
     <!-- Student Proficiency List (when a level is selected) -->
           <%= if @selected_proficiency_level do %>
             <div class="mb-6">
@@ -229,7 +229,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
               />
             </div>
           <% end %>
-          
+
     <!-- Sub-objectives Table (always shown) -->
           <div id={"sub-objectives-list-container-#{@unique_id}"} class="mt-4">
             <%= if @sub_objectives_data == [] do %>
@@ -244,7 +244,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
             <% end %>
           </div>
         <% true -> %>
-          <!-- Not expanded and no data loaded yet - show nothing -->
+          <!-- Not expanded or no data - show nothing (data remains cached) -->
           <div></div>
       <% end %>
     </div>
