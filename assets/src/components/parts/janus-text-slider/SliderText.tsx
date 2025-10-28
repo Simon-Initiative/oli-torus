@@ -262,7 +262,9 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
             aria-valuemin={minimum}
             aria-valuemax={sliderOptionLabels?.length ? sliderOptionLabels?.length - 1 : 3}
             aria-valuenow={sliderValue}
-            aria-valuetext={`value: ${sliderValue}, ${sliderOptionLabels?.[sliderValue] || `${sliderValue}`}`}
+            aria-valuetext={`value: ${sliderValue}, ${
+              sliderOptionLabels?.[sliderValue] || `${sliderValue}`
+            }`}
           />
 
           <div className="tick-container">
