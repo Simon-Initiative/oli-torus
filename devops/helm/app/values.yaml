@@ -58,12 +58,12 @@ readinessProbe:
   periodSeconds: 10
 
 resources:
-  limits:
-    cpu: 500m
-    memory: 6Gi
   requests:
-    cpu: 200m
+    cpu: "1"
     memory: 2Gi
+  limits:
+    cpu: "2"
+    memory: 8Gi
 
 autoscaling:
   enabled: false
@@ -83,11 +83,11 @@ releaseSetup:
   command: /app/bin/oli eval "Oli.Release.setup"
   resources:
     requests:
-      cpu: 200m
-      memory: 1Gi
+      cpu: 500m
+      memory: 2Gi
     limits:
-      cpu: 1
-      memory: 4Gi
+      cpu: "2"
+      memory: 8Gi
 
 postgres:
   enabled: true
@@ -104,11 +104,11 @@ postgres:
     storageClass: ""
   resources:
     requests:
-      cpu: 500m
-      memory: 1Gi
-    limits:
       cpu: "1"
       memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 8Gi
 
 minio:
   enabled: true
@@ -134,16 +134,16 @@ minio:
       policy: public
   resources:
     requests:
-      cpu: 200m
-      memory: 512Mi
-    limits:
       cpu: 500m
       memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 6Gi
   bucketJob:
     resources:
       requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
         cpu: 200m
-        memory: 256Mi
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
