@@ -12,7 +12,6 @@ export PR_NAMESPACE="$NAMESPACE"
 kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
 for manifest in devops/k8s/policies/resource-quota.yaml \
-                 devops/k8s/policies/limit-range.yaml \
                  devops/k8s/policies/network-policy.yaml; do
   envsubst < "$manifest" | kubectl -n "$NAMESPACE" apply -f -
 done

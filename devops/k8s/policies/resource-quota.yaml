@@ -5,9 +5,5 @@ metadata:
   namespace: ${PR_NAMESPACE}
 spec:
   hard:
-    requests.cpu: "1000m"
-    requests.memory: 10Gi
-    limits.cpu: "2000m"
-    limits.memory: 12Gi
     persistentvolumeclaims: "2"
     requests.storage: 20Gi

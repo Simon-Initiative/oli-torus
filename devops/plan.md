@@ -75,7 +75,7 @@ Exit criteria: HAProxy routes preview hostnames to Traefik; DNS updated.
 - Author baseline manifests under `devops/k8s/`:
   - `namespaces/pr-template.yaml` for templated namespace creation.
   - `rbac/pr-admin.yaml` defining ServiceAccount/RoleBinding for GitHub Actions.
-  - `policies/resource-quota.yaml`, `policies/limit-range.yaml`, and `policies/network-policy.yaml` aligned with migration guidance.
+  - `policies/resource-quota.yaml` and `policies/network-policy.yaml` aligned with migration guidance.
 - Provide README snippets describing how CI applies these manifests.
 - Supply helper script `devops/scripts/apply-preview-policies.sh` for namespace bootstrap via CI.
 - Translate `devops/default.env` into chart defaults so application environment variables are sourced from a Kubernetes secret by default, while allowing overrides.
@@ -90,7 +90,7 @@ Exit criteria: HAProxy routes preview hostnames to Traefik; DNS updated.
   - If continuing HAProxy-managed TLS, skip cert-manager.
   - If cluster-managed certs desired, install cert-manager using helm commands from the migration plan and create `ClusterIssuer` secrets (API tokens, email).
 - Document applied resources and location of secrets for audits.
-- When onboarding new namespaces manually, run `devops/scripts/apply-preview-policies.sh pr-<n>` to guarantee quota, limits, and NetworkPolicy are applied consistently.
+- When onboarding new namespaces manually, run `devops/scripts/apply-preview-policies.sh pr-<n>` to guarantee quota and NetworkPolicy are applied consistently.
 
 Exit criteria: cluster RBAC/policies in place; registry access configured; TLS approach confirmed.
 
