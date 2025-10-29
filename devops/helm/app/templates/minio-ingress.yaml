@@ -1,0 +1,49 @@
+{{- if and .Values.ingress.enabled .Values.minio.enabled }}
+{{- $middlewareName := printf "%s-minio-strip" (include "oli-torus-preview.fullname" .) -}}
+{{- $annotations := dict -}}
+{{- range $k, $v := .Values.ingress.annotations }}
+  {{- $_ := set $annotations $k $v -}}
+{{- end -}}
+{{- $_ := set $annotations "traefik.ingress.kubernetes.io/router.middlewares" (printf "%s-%s@kubernetescrd" .Release.Namespace $middlewareName) -}}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $middlewareName }}
+  labels:
+    {{- include "oli-torus-preview.labels" . | nindent 4 }}
+spec:
+  stripPrefix:
+    prefixes:
+      - {{ .Values.ingress.minioPathPrefix | default "/s3" | quote }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ printf "%s-minio" (include "oli-torus-preview.fullname" .) }}
+  labels:
+    {{- include "oli-torus-preview.labels" . | nindent 4 }}
+  {{- if $annotations }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  rules:
+    - host: {{ include "oli-torus-preview.hostname" . }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.minioPathPrefix | default "/s3" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "oli-torus-preview.minioName" . }}
+                port:
+                  number: {{ .Values.minio.service.port }}
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
