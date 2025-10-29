@@ -87,16 +87,16 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       {:ok, view, _html} =
         live_component_isolated(conn, ExpandedObjectiveView, %{
           id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
           objective: objective_data,
           section_id: section.id,
           section_slug: section.slug,
-          current_user: instructor
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
         })
 
-      # Check that the component renders
-      assert has_element?(view, ".expanded-objective-view")
-
-      # Check estimated learning header
+      # Data loads synchronously when sync_load and is_expanded are true
       assert has_element?(view, "h3", ~r/Estimated Learning:/)
       assert has_element?(view, "h3", ~r/\d+ Students?/)
     end
@@ -115,10 +115,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       {:ok, view, _html} =
         live_component_isolated(conn, ExpandedObjectiveView, %{
           id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
           objective: objective_data,
           section_id: section.id,
           section_slug: section.slug,
-          current_user: instructor
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
         })
 
       # Should show 3 students (excluding instructor)
@@ -153,10 +156,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       {:ok, view, _html} =
         live_component_isolated(conn, ExpandedObjectiveView, %{
           id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
           objective: objective_data,
           section_id: single_student_section.id,
           section_slug: single_student_section.slug,
-          current_user: instructor
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
         })
 
       # Should show "1 Student" (singular)
@@ -177,15 +183,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       {:ok, view, _html} =
         live_component_isolated(conn, ExpandedObjectiveView, %{
           id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
           objective: objective_data,
           section_id: section.id,
           section_slug: section.slug,
-          current_user: instructor
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
         })
 
       # Check that the DotDistributionChart React component is rendered
       assert has_element?(view, "[data-live-react-class='Components.DotDistributionChart']")
-      assert has_element?(view, "#dot-distribution-chart-#{objective.resource_id}")
+      assert has_element?(view, "#dot-distribution-chart-test-#{objective.resource_id}")
     end
 
     test "handles no sub-objectives case", %{
@@ -202,10 +211,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       {:ok, view, _html} =
         live_component_isolated(conn, ExpandedObjectiveView, %{
           id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
           objective: objective_data,
           section_id: section.id,
           section_slug: section.slug,
-          current_user: instructor
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
         })
 
       # Should show "No sub-objectives found" when there are no sub-objectives
@@ -226,10 +238,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       {:ok, view, _html} =
         live_component_isolated(conn, ExpandedObjectiveView, %{
           id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
           objective: objective_data,
           section_id: section.id,
           section_slug: section.slug,
-          current_user: instructor
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
         })
 
       # Check that the component renders with correct data structure
@@ -253,10 +268,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       {:ok, view, _html} =
         live_component_isolated(conn, ExpandedObjectiveView, %{
           id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
           objective: objective_data,
           section_id: section.id,
           section_slug: section.slug,
-          current_user: instructor
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
         })
 
       # Should still render without errors
@@ -286,10 +304,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       {:ok, view, _html} =
         live_component_isolated(conn, ExpandedObjectiveView, %{
           id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
           objective: objective_data,
           section_id: section.id,
           section_slug: section.slug,
-          current_user: instructor
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
         })
 
       # Should still show 3 students (instructors excluded)
@@ -317,10 +338,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveViewTes
       {:ok, view, _html} =
         live_component_isolated(conn, ExpandedObjectiveView, %{
           id: "expanded-objective-test",
+          unique_id: "test-#{objective.resource_id}",
           objective: objective_data,
           section_id: empty_section.id,
           section_slug: empty_section.slug,
-          current_user: instructor
+          current_user: instructor,
+          sync_load: true,
+          is_expanded: true
         })
 
       # Should show 0 students
