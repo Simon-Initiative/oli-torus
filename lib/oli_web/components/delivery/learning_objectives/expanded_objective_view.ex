@@ -209,12 +209,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
               )}
             </h3>
           </div>
-
+          
     <!-- Proficiency Distribution Dots Chart -->
           <div class="mb-6">
             {render_dots_chart(assigns)}
           </div>
-
+          
     <!-- Student Proficiency List (when a level is selected) -->
           <%= if @selected_proficiency_level do %>
             <div class="mb-6">
@@ -229,7 +229,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
               />
             </div>
           <% end %>
-
+          
     <!-- Sub-objectives Table (always shown) -->
           <div id={"sub-objectives-list-container-#{@unique_id}"} class="mt-4">
             <%= if @sub_objectives_data == [] do %>
