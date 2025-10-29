@@ -14,4 +14,4 @@ spec:
         memory: 1Gi
       max:
         cpu: "1"
-        memory: 2Gi
+        memory: 6Gi
