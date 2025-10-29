@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: preview-default-deny
-  namespace: {{PR_NAMESPACE}}
+  namespace: ${PR_NAMESPACE}
 spec:
   podSelector: {}
   policyTypes:

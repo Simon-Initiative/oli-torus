@@ -5,7 +5,7 @@ This directory contains the infrastructure assets that support the k3s-based pre
 ## Structure
 
 - `plan.md` – implementation plan and phase breakdown.
-- `k8s/` – Kubernetes manifests applied cluster-wide (RBAC, policies, namespace templates). Files using `{{PR_NAMESPACE}}` require substitution before applying (e.g., `env PR_NAMESPACE=pr-123 envsubst < ...`). Requires GNU `envsubst` (gettext). Adjust egress ports in `policies/network-policy.yaml` to match downstream services (DB, caches, HTTP).
+- `k8s/` – Kubernetes manifests applied cluster-wide (RBAC, policies, namespace templates). Files using `${PR_NAMESPACE}` require substitution before applying (e.g., `env PR_NAMESPACE=pr-123 envsubst < ...`). Requires GNU `envsubst` (gettext). Adjust egress ports in `policies/network-policy.yaml` to match downstream services (DB, caches, HTTP).
 - `helm/` – Helm charts used to deploy preview environments.
 - `scripts/` – Helper scripts consumed by CI and operators.
 - `change-log.md` – Record of operational changes and procedures.
