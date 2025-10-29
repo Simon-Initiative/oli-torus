@@ -22,7 +22,7 @@ services:
       - "traefik.enable=true"
       # Specify the network for Traefik to use
       - "traefik.docker.network=webproxy-public"
-      # Route everything except /s3 to app
+      # Route everything except /minio to app
       - "traefik.http.routers.${DEPLOYMENT}-app.rule=Host(`${HOST}`) && PathPrefix(`/`)"
       - "traefik.http.routers.${DEPLOYMENT}-app.priority=10"
       - "traefik.http.routers.${DEPLOYMENT}-app.entrypoints=web"
@@ -71,13 +71,13 @@ services:
       - "traefik.enable=true"
       # Specify the network for Traefik to use
       - "traefik.docker.network=webproxy-public"
-      # Route only /s3 to minio
-      - "traefik.http.routers.${DEPLOYMENT}-minio.rule=Host(`${HOST}`) && PathPrefix(`/s3`)"
+      # Route only /minio to minio
+      - "traefik.http.routers.${DEPLOYMENT}-minio.rule=Host(`${HOST}`) && PathPrefix(`/minio`)"
       - "traefik.http.routers.${DEPLOYMENT}-minio.priority=20"
       - "traefik.http.routers.${DEPLOYMENT}-minio.entrypoints=web"
       - "traefik.http.services.${DEPLOYMENT}-minio.loadbalancer.server.port=9000"
-      # Strip /s3 prefix before forwarding
-      - "traefik.http.middlewares.${DEPLOYMENT}-stripprefix.stripprefix.prefixes=/s3"
+      # Strip /minio prefix before forwarding
+      - "traefik.http.middlewares.${DEPLOYMENT}-stripprefix.stripprefix.prefixes=/minio"
       - "traefik.http.routers.${DEPLOYMENT}-minio.middlewares=${DEPLOYMENT}-stripprefix"
     command: ["server", "--console-address", ":9001", "/data"]
 

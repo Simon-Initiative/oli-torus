@@ -33,7 +33,7 @@ ingress:
   className: ""
   annotations: {}
   tls: []
-  minioPathPrefix: "/s3"
+  minioPathPrefix: "/minio"
 
 appEnv:
   overrides: {}

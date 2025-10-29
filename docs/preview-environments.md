@@ -39,7 +39,7 @@ Customise storage sizes, images, or bucket policies through `values.yaml` (`post
 appEnv:
   overrides:
     ADMIN_PASSWORD: "more-secure-pass"
-    MEDIA_URL: "https://custom.example.edu/s3/torus-media"
+    MEDIA_URL: "https://custom.example.edu/minio/torus-media"
 extraEnv:
   - name: FEATURE_FLAG_EXAMPLE
     value: "true"
