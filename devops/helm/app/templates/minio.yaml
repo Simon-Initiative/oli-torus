@@ -1,4 +1,5 @@
-{{- if .Values.minio.enabled }}
+{{- $minio := .Values.minio | default dict }}
+{{- if ($minio.enabled | default false) }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,11 +10,11 @@ spec:
   type: ClusterIP
   ports:
     - name: http
-      port: {{ .Values.minio.service.port }}
-      targetPort: {{ .Values.minio.service.port }}
+      port: {{ $minio.service.port }}
+      targetPort: {{ $minio.service.port }}
     - name: console
-      port: {{ .Values.minio.service.consolePort }}
-      targetPort: {{ .Values.minio.service.consolePort }}
+      port: {{ $minio.service.consolePort }}
+      targetPort: {{ $minio.service.consolePort }}
   selector:
     {{- include "oli-torus-preview.selectorLabels" . | nindent 4 }}
     component: minio
@@ -39,22 +40,22 @@ spec:
     spec:
       containers:
         - name: minio
-          image: {{ .Values.minio.image }}
+          image: {{ $minio.image }}
           imagePullPolicy: IfNotPresent
           args:
             - server
             - --console-address
-            - ":{{ .Values.minio.service.consolePort }}"
+            - ":{{ $minio.service.consolePort }}"
             - /data
           env:
             - name: MINIO_ROOT_USER
-              value: {{ .Values.minio.rootUser | quote }}
+              value: {{ $minio.rootUser | quote }}
             - name: MINIO_ROOT_PASSWORD
-              value: {{ .Values.minio.rootPassword | quote }}
+              value: {{ $minio.rootPassword | quote }}
           ports:
-            - containerPort: {{ .Values.minio.service.port }}
+            - containerPort: {{ $minio.service.port }}
               name: http
-            - containerPort: {{ .Values.minio.service.consolePort }}
+            - containerPort: {{ $minio.service.consolePort }}
               name: console
           volumeMounts:
             - name: data
@@ -71,7 +72,7 @@ spec:
               port: http
             initialDelaySeconds: 20
             periodSeconds: 10
-          {{- with .Values.minio.resources }}
+          {{- with $minio.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -80,15 +81,15 @@ spec:
         name: data
       spec:
         accessModes:
-          {{- range .Values.minio.persistence.accessModes }}
+          {{- range $minio.persistence.accessModes }}
           - {{ . }}
           {{- end }}
-        {{- if .Values.minio.persistence.storageClass }}
-        storageClassName: {{ .Values.minio.persistence.storageClass }}
+        {{- if $minio.persistence.storageClass }}
+        storageClassName: {{ $minio.persistence.storageClass }}
         {{- end }}
         resources:
           requests:
-            storage: {{ .Values.minio.persistence.size }}
+            storage: {{ $minio.persistence.size }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -109,15 +110,15 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: create-buckets
-          image: {{ .Values.minio.mcImage }}
+          image: {{ $minio.mcImage }}
           imagePullPolicy: IfNotPresent
           env:
             - name: MINIO_ENDPOINT
-              value: http://{{ include "oli-torus-preview.minioName" . }}:{{ .Values.minio.service.port }}
+              value: http://{{ include "oli-torus-preview.minioName" . }}:{{ $minio.service.port }}
             - name: MINIO_ROOT_USER
-              value: {{ .Values.minio.rootUser | quote }}
+              value: {{ $minio.rootUser | quote }}
             - name: MINIO_ROOT_PASSWORD
-              value: {{ .Values.minio.rootPassword | quote }}
+              value: {{ $minio.rootPassword | quote }}
           command:
             - /bin/sh
             - -c
@@ -127,7 +128,7 @@ spec:
                 echo "Waiting for MinIO..."
                 sleep 3
               done
-              {{- range .Values.minio.buckets }}
+              {{- range $minio.buckets }}
               mc mb --ignore-existing local/{{ .name }}
               {{- if eq .policy "public" }}
               mc anonymous set public local/{{ .name }}
@@ -135,4 +136,8 @@ spec:
               mc anonymous set private local/{{ .name }}
               {{- end }}
               {{- end }}
+          {{- with $minio.bucketJob }}{{- with .resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}{{- end }}
 {{- end }}

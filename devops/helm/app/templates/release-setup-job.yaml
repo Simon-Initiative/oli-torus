@@ -41,6 +41,10 @@ spec:
               value: {{ tpl (printf "%v" .value) $ | quote }}
             {{- end }}
           {{- end }}
+          {{- with .Values.releaseSetup.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           command:
             - /bin/sh
             - -c

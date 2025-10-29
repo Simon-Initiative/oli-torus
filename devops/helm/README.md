@@ -27,7 +27,7 @@ Override `previewDomain` if you use a non-default host suffix. Additional config
 
 ## Configuration highlights
 
-- **Supporting services** – Postgres (pgvector) and MinIO are bundled as StatefulSets with persistent volumes. Bucket creation and public policies mirror the Docker Compose workflow.
+- **Supporting services** – Postgres (pgvector) and MinIO are bundled as StatefulSets with persistent volumes. Bucket creation and public policies mirror the Docker Compose workflow, and default requests/limits are provided so namespace quotas are satisfied.
 - **Application environment** – `devops/default.env` seeds the generated secret. Override keys with:
   ```yaml
   appEnv:
@@ -35,7 +35,7 @@ Override `previewDomain` if you use a non-default host suffix. Additional config
       ADMIN_PASSWORD: secure-change-me
       MEDIA_URL: "https://custom.example/s3/torus-media"
   ```
-- **Database setup job** – After each install/upgrade, a hook job runs the release setup command (`Oli.Release.setup`). Disable or customise via `releaseSetup.*` values.
+- **Database setup job** – After each install/upgrade, a hook job runs the release setup command (`Oli.Release.setup`). Disable or customise via `releaseSetup.*` values (including resource requests/limits).
 - **Image overrides** – Set `image.repository` and `image.tag` per PR; GitHub Actions supplies these automatically.
 - **Scaling/resources** – Adjust container sizing via `resources`, `postgres.resources`, and `minio.resources`; tweak PVC sizes under the respective `persistence` blocks.
 
