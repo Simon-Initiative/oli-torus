@@ -286,7 +286,7 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
       {showLabel && (
-        <label className="input-label" htmlFor={internalId}>
+        <label id={`label-${internalId}`} className="input-label" htmlFor={internalId}>
           {label}
         </label>
       )}
@@ -322,6 +322,12 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
               id={internalId}
               onChange={handleSliderChange}
               list={showTicks ? `datalist${internalId}` : ''}
+              aria-labelledby={showLabel ? `label-${internalId}` : undefined}
+              aria-label={!showLabel ? 'Slider' : undefined}
+              aria-valuemin={minimum}
+              aria-valuemax={maximum}
+              aria-valuenow={sliderValue}
+              aria-valuetext={`current value: ${sliderValue}, minimum: ${minimum}, maximum: ${maximum}`}
             />
             {showTicks && (
               <datalist style={{ display: 'none' }} id={`datalist${internalId}`}>

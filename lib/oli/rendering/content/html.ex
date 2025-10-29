@@ -23,11 +23,17 @@ defmodule Oli.Rendering.Content.Html do
 
   def trigger(%Context{} = context, _, attrs) do
     {:safe, trigger} =
-      OliWeb.Common.React.component(context, "Components.TriggerButton", %{
-        "trigger" => attrs,
-        "resourceId" => context.page_id,
-        "sectionSlug" => context.section_slug
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.TriggerButton",
+        %{
+          "trigger" => attrs,
+          "resourceId" => context.page_id,
+          "sectionSlug" => context.section_slug
+        },
+        # Generate a stable ID for the LiveReact hook
+        id: "trigger-#{context.page_id}-#{attrs["target"]}"
+      )
 
     trigger
   end
@@ -77,6 +83,8 @@ defmodule Oli.Rendering.Content.Html do
       context,
       attrs,
       [
+        ~s|<div class="text-sm md:hidden flex justify-center">
+        <div class="inline-block w-full text-right"#{maybe_img_responsive_width(attrs)} >Pinch to Zoom</div></div>|,
         ~s|<img class="figure-img img-fluid"#{maybe_alt(attrs)}#{maybe_width(attrs)} src="#{escape_xml!(src)}"|,
         maybe_point_marker_attr(context, attrs),
         ~s| />\n|
@@ -95,6 +103,12 @@ defmodule Oli.Rendering.Content.Html do
 
   def img_inline(%Context{} = _context, _, _e), do: ""
 
+  # Helper function to extract URL from src attribute which can be a string or list of maps
+  defp extract_src_url(src) when is_binary(src), do: src
+  defp extract_src_url([%{"url" => url} | _]) when is_binary(url), do: url
+  defp extract_src_url([%{"url" => url} | _]) when is_list(url), do: Enum.join(url, "")
+  defp extract_src_url(_), do: "unknown"
+
   def video(%Context{} = context, _, attrs) do
     attempt_guid =
       case context.resource_attempt do
@@ -102,15 +116,23 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
+    # Generate a stable ID for the LiveReact hook using element ID when available
+    element_id = attrs["id"] || extract_src_url(attrs["src"])
+
     {:safe, video_player} =
-      OliWeb.Common.React.component(context, "Components.VideoPlayer", %{
-        "video" => attrs,
-        "pageAttemptGuid" => attempt_guid,
-        "pointMarkerContext" => %{
-          renderPointMarkers: context.render_opts.render_point_markers,
-          isAnnotationLevel: context.is_annotation_level
-        }
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.VideoPlayer",
+        %{
+          "video" => attrs,
+          "pageAttemptGuid" => attempt_guid,
+          "pointMarkerContext" => %{
+            renderPointMarkers: context.render_opts.render_point_markers,
+            isAnnotationLevel: context.is_annotation_level
+          }
+        },
+        id: "video-#{attempt_guid}-#{element_id}"
+      )
 
     video_player
   end
@@ -148,15 +170,23 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
+    # Generate a stable ID for the LiveReact hook using element ID when available
+    element_id = attrs["id"] || extract_src_url(attrs["src"])
+
     {:safe, video_player} =
-      OliWeb.Common.React.component(context, "Components.YoutubePlayer", %{
-        "video" => attrs,
-        "pageAttemptGuid" => attempt_guid,
-        "pointMarkerContext" => %{
-          renderPointMarkers: context.render_opts.render_point_markers,
-          isAnnotationLevel: context.is_annotation_level
-        }
-      })
+      OliWeb.Common.React.component(
+        context,
+        "Components.YoutubePlayer",
+        %{
+          "video" => attrs,
+          "pageAttemptGuid" => attempt_guid,
+          "pointMarkerContext" => %{
+            renderPointMarkers: context.render_opts.render_point_markers,
+            isAnnotationLevel: context.is_annotation_level
+          }
+        },
+        id: "youtube-#{attempt_guid}-#{element_id}"
+      )
 
     video_player
   end
@@ -1013,6 +1043,27 @@ defmodule Oli.Rendering.Content.Html do
     case attrs do
       %{"alt" => alt} -> " alt=\"#{escape_xml!(alt)}\""
       _ -> ""
+    end
+  end
+
+  defp maybe_img_responsive_width(attrs) do
+    case attrs do
+      %{"width" => width} ->
+        width_str = to_string(width)
+        # Only allow safe width values: numeric (with optional decimal) or specific units
+        if String.match?(width_str, ~r/^\d+(\.\d+)?(px|%|em|rem|vw|vh)?$/) do
+          if String.match?(width_str, ~r/^\d+(\.\d+)?$/) do
+            " style=\"width: 100%; max-width: #{escape_xml!(width_str)}px\""
+          else
+            " style=\"width: 100%; max-width: #{escape_xml!(width_str)}\""
+          end
+        else
+          # Invalid width value - don't include style attribute for security
+          ""
+        end
+
+      _ ->
+        ""
     end
   end
 
