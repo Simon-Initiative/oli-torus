@@ -26,13 +26,35 @@ securityContext: {}
 service:
   type: ClusterIP
   port: 80
-  targetPort: http
+  targetPort: 80
 
 ingress:
   enabled: true
   className: ""
   annotations: {}
   tls: []
+
+appEnv:
+  overrides: {}
+
+extraEnv:
+  - name: MIX_ENV
+    value: prod
+extraEnvFrom: []
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 15
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 10
 
 resources:
   limits:
@@ -52,24 +74,44 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 
-env:
-  - name: MIX_ENV
-    value: "prod"
-extraEnvFrom: []
-
-livenessProbe:
-  httpGet:
-    path: /health
-    port: http
-  initialDelaySeconds: 30
-  periodSeconds: 15
-
-readinessProbe:
-  httpGet:
-    path: /health
-    port: http
-  initialDelaySeconds: 15
-  periodSeconds: 10
-
 volumes: []
 volumeMounts: []
+
+postgres:
+  enabled: true
+  image: ankane/pgvector:latest
+  auth:
+    username: postgres
+    password: postgres
+    database: postgres
+  persistence:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    storageClass: ""
+  resources: {}
+
+minio:
+  enabled: true
+  image: minio/minio:latest
+  mcImage: minio/mc:latest
+  rootUser: minio-user
+  rootPassword: minio-password
+  persistence:
+    enabled: true
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    storageClass: ""
+  service:
+    port: 9000
+    consolePort: 9001
+  buckets:
+    - name: torus-media
+      policy: public
+    - name: torus-xapi
+      policy: public
+    - name: torus-blob-dev
+      policy: public
+  resources: {}

@@ -9,6 +9,7 @@ This directory contains the infrastructure assets that support the k3s-based pre
 - `helm/` – Helm charts used to deploy preview environments.
 - `scripts/` – Helper scripts consumed by CI and operators.
 - `change-log.md` – Record of operational changes and procedures.
+- `default.env` – Baseline application environment used to seed the Helm chart secret (`appEnv` values) for preview deployments.
 
 ### Scripts
 

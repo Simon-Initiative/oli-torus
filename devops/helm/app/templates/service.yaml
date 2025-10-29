@@ -8,6 +8,7 @@ spec:
   type: {{ .Values.service.type }}
   selector:
     {{- include "oli-torus-preview.selectorLabels" . | nindent 4 }}
+    component: app
   ports:
     - protocol: TCP
       port: {{ .Values.service.port }}

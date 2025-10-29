@@ -9,10 +9,12 @@ spec:
   selector:
     matchLabels:
       {{- include "oli-torus-preview.selectorLabels" . | nindent 6 }}
+      component: app
   template:
     metadata:
       labels:
         {{- include "oli-torus-preview.selectorLabels" . | nindent 8 }}
+        component: app
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -28,25 +30,34 @@ spec:
         - name: {{ . }}
         {{- end }}
       {{- end }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- if .Values.env }}
-          env:
-            {{- toYaml .Values.env | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if .Values.extraEnvFrom }}
           envFrom:
-            {{- toYaml .Values.extraEnvFrom | nindent 12 }}
+            - secretRef:
+                name: {{ include "oli-torus-preview.fullname" . }}-env
+            {{- range .Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.extraEnv }}
+          env:
+            {{- range .Values.extraEnv }}
+            - name: {{ .name }}
+              value: {{ tpl (printf "%v" .value) $ | quote }}
+            {{- end }}
           {{- end }}
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 80
               protocol: TCP
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}

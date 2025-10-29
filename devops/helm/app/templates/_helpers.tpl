@@ -16,6 +16,10 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "oli-torus-preview.hostname" -}}
+{{- printf "pr-%s.%s" (include "oli-torus-preview.prNumber" .) .Values.previewDomain -}}
+{{- end -}}
+
 {{- define "oli-torus-preview.labels" -}}
 app.kubernetes.io/name: {{ include "oli-torus-preview.name" . }}
 app.kubernetes.io/instance: {{ include "oli-torus-preview.fullname" . }}
@@ -35,4 +39,12 @@ app.kubernetes.io/instance: {{ include "oli-torus-preview.fullname" . }}
 {{- else -}}
 {{- default "default" .Values.serviceAccount.name -}}
 {{- end -}}
+{{- end -}}
+
+{{- define "oli-torus-preview.postgresName" -}}
+{{- printf "%s-postgres" (include "oli-torus-preview.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "oli-torus-preview.minioName" -}}
+{{- printf "%s-minio" (include "oli-torus-preview.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}

@@ -1,6 +1,6 @@
 # OLI Torus Preview Helm Chart
 
-The chart at `devops/helm/app/` deploys a pull-request preview environment in k3s.
+The chart at `devops/helm/app/` deploys a full pull-request preview stack (application, Postgres, and MinIO) into k3s.
 
 ## Usage
 
@@ -24,3 +24,18 @@ helm upgrade --install pr-123 devops/helm/app \
 ```
 
 Override `previewDomain` if you use a non-default host suffix. Additional configuration options are documented in `values.yaml`.
+
+## Configuration highlights
+
+- **Supporting services** – Postgres (pgvector) and MinIO are bundled as StatefulSets with persistent volumes. Bucket creation and public policies mirror the Docker Compose workflow.
+- **Application environment** – `devops/default.env` seeds the generated secret. Override keys with:
+  ```yaml
+  appEnv:
+    overrides:
+      ADMIN_PASSWORD: secure-change-me
+      MEDIA_URL: "https://custom.example/s3/torus-media"
+  ```
+- **Image overrides** – Set `image.repository` and `image.tag` per PR; GitHub Actions supplies these automatically.
+- **Scaling/resources** – Adjust container sizing via `resources`, `postgres.resources`, and `minio.resources`; tweak PVC sizes under the respective `persistence` blocks.
+
+See `values.yaml` for all available knobs (e.g., disabling supporting services, customizing MinIO buckets, or injecting additional environment variables with `extraEnv`/`extraEnvFrom`).

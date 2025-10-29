@@ -78,6 +78,7 @@ Exit criteria: HAProxy routes preview hostnames to Traefik; DNS updated.
   - `policies/resource-quota.yaml`, `policies/limit-range.yaml`, and `policies/network-policy.yaml` aligned with migration guidance.
 - Provide README snippets describing how CI applies these manifests.
 - Supply helper script `devops/scripts/apply-preview-policies.sh` for namespace bootstrap via CI.
+- Translate `devops/default.env` into chart defaults so application environment variables are sourced from a Kubernetes secret by default, while allowing overrides.
 
 - Apply infrastructure RBAC baseline:
   ```bash
@@ -99,14 +100,15 @@ Exit criteria: cluster RBAC/policies in place; registry access configured; TLS a
 
 **Codex**
 - Scaffold Helm chart at `devops/helm/app/`:
-  - Templates for Deployment, Service, Ingress (host `{{ printf "pr-%s.plasma.oli.cmu.edu" .Values.prNumber }}`), ConfigMap/Secret handling, optional jobs.
-  - Values supporting `image.repository`, `image.tag`, replica count (default 1), environment variables (DB URLs, Redis, etc.).
-  - Namespace-independent resources (Quota, NetworkPolicy) parameterized or referenced via CI apply step.
-- Include `README.md` with usage examples:
-  ```bash
-  helm upgrade --install pr-123 devops/helm/app \
-    --namespace pr-123 --create-namespace \
-    --set prNumber=123 \
+  - Templates for Deployment, Service, and Ingress for the application (host `{{ printf "pr-%s.plasma.oli.cmu.edu" .Values.prNumber }}`).
+  - Bundle preview-friendly Postgres (pgvector image) and MinIO StatefulSets with PVCs, Services, and a bucket-initialisation job mirroring `devops/docker-compose.yml`.
+  - Generate an application env secret derived from `devops/default.env`, with support for overrides via `values.yaml`.
+  - Values supporting `image.repository`, `image.tag`, replica count (default 1), environment variables, and optional resource overrides for supporting services.
+  - Include `README.md` with usage examples:
+    ```bash
+    helm upgrade --install pr-123 devops/helm/app \
+      --namespace pr-123 --create-namespace \
+      --set prNumber=123 \
     --set image.repository=ghcr.io/org/app \
     --set image.tag=pr-123
   ```
@@ -132,7 +134,7 @@ Exit criteria: Helm chart merged; validated by DevOps in dry run.
   - `preview-teardown.yml` triggered on PR close to uninstall release and delete namespace.
   - Include steps to copy kubeconfig from runner path (export `KUBECONFIG=/etc/rancher/k3s/k3s.yaml`) and run `helm/kubectl`.
 - Parameterize workflows for repository secrets (`CR_PAT`, `GH_USER`, optional DNS/CF tokens) and handle retries/backoff. Image pushes rely on the job-scoped `GITHUB_TOKEN`, so no additional secret is required for that step.
-- Document workflow behaviour in repo (e.g., `docs/preview-environments.md`) so developers know preview URL patterns.
+- Document workflow behaviour in repo (e.g., `docs/preview-environments.md`) so developers know preview URL patterns, available Helm values (Postgres/MinIO tuning), and how to override the default environment secret via `appEnv.overrides`.
 
 **DevOps engineer**
 - Prepare runner environment:
