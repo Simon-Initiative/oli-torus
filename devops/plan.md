@@ -85,7 +85,7 @@ Exit criteria: HAProxy routes preview hostnames to Traefik; DNS updated.
   kubectl apply -f devops/k8s/rbac/pr-admin.yaml
   ```
 - Confirm the CI runner has `docker`, `kubectl`, `helm`, and `envsubst` available; install if missing.
-- Validate that the deploy workflow can create `ghcr-creds` secrets in PR namespaces (requires `CR_PAT` with `write:packages` scope and `GH_USER` secrets configured in GitHub).
+- Validate that the deploy workflow can create `ghcr-creds` secrets in PR namespaces (requires `SIMON_BOT_PERSONAL_ACCESS_TOKEN` or equivalent PAT with `read:packages` scope stored in GitHub secrets).
 - Decide on TLS strategy:
   - If continuing HAProxy-managed TLS, skip cert-manager.
   - If cluster-managed certs desired, install cert-manager using helm commands from the migration plan and create `ClusterIssuer` secrets (API tokens, email).
@@ -133,7 +133,7 @@ Exit criteria: Helm chart merged; validated by DevOps in dry run.
   - `preview-deploy.yml` triggered on PR open/sync to build image, push to GHCR, create namespace (idempotent), apply quotas/policies, run `helm upgrade --install`.
   - `preview-teardown.yml` triggered on PR close to uninstall release and delete namespace.
   - Include steps to copy kubeconfig from runner path (export `KUBECONFIG=/etc/rancher/k3s/k3s.yaml`) and run `helm/kubectl`.
-- Parameterize workflows for repository secrets (`CR_PAT`, `GH_USER`, optional DNS/CF tokens) and handle retries/backoff. Image pushes rely on the job-scoped `GITHUB_TOKEN`, so no additional secret is required for that step.
+- Workflows should lean on the job-scoped `GITHUB_TOKEN` for building/pushing images, while using `secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN` (or an equivalent long-lived PAT) strictly for populating namespace pull secrets.
 - Document workflow behaviour in repo (e.g., `docs/preview-environments.md`) so developers know preview URL patterns, available Helm values (Postgres/MinIO tuning), and how to override the default environment secret via `appEnv.overrides`.
 
 **DevOps engineer**
@@ -141,9 +141,8 @@ Exit criteria: Helm chart merged; validated by DevOps in dry run.
   - Ensure the self-hosted runner on the k3s node is registered with the `plasma` label (or the exact name referenced in the workflow).
   - Grant runner user read access to kubeconfig; install Helm via `curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash` and ensure the binary is on the runner’s `PATH`.
 - Create GitHub secrets:
-  - `PREVIEW_IMAGE_REPO` pointing to the GHCR repository that stores preview images.
-  - `CR_PAT` (long-lived PAT with at least `read:packages`) and `GH_USER` for namespace pull secrets, plus any DNS API tokens if cert-manager/ExternalDNS used.
-  - `PREVIEW_DOMAIN` if workflows read from env rather than hardcoding.
+  - `SIMON_BOT_PERSONAL_ACCESS_TOKEN` (or equivalent long-lived PAT with `read:packages`) used to seed namespace pull secrets.
+  - Optional DNS API tokens if cert-manager/ExternalDNS used.
 - Test workflows:
   - Open test PR; observe action logs.
   - Verify image pushes succeed (`docker pull` from GHCR).
@@ -157,7 +156,7 @@ Exit criteria: CI workflows run end-to-end creating functional preview environme
 ## Phase 6 – Migration Cutover & Validation
 
 **Codex**
-- Provide smoke-test script template (`scripts/smoke-test-preview.sh`) hitting health endpoints (HTTP 200) for use in CI and manual validation.
+- Provide smoke-test script template (`devops/scripts/smoke-test-preview.sh`) hitting health endpoints (HTTP 200) for use in CI and manual validation.
 - Update documentation referencing preview URLs in developer onboarding guides.
 
 **DevOps engineer**

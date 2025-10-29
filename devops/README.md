@@ -14,6 +14,7 @@ This directory contains the infrastructure assets that support the k3s-based pre
 ### Scripts
 
 - `devops/scripts/apply-preview-policies.sh` – Creates/updates a PR namespace and applies quota, limit range, and network policy manifests (requires `PR_NAMESPACE` argument).
+- `devops/scripts/smoke-test-preview.sh` – Simple curl-based probe runner for verifying preview endpoints locally or in CI.
 
 ## k3s Installation Checklist
 

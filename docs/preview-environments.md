@@ -11,6 +11,14 @@ Every PR is exposed at `https://pr-<number>.<domain>`, where `<domain>` defaults
 - `.github/workflows/preview-deploy.yml` builds a PR image, pushes it to GHCR, applies namespace policies, and deploys the Helm chart on PR open/sync events.
 - `.github/workflows/preview-teardown.yml` removes the release and namespace when the PR closes.
 
+### Required Secrets and Variables
+
+Set these in repository settings before enabling the workflows:
+
+- `SIMON_BOT_PERSONAL_ACCESS_TOKEN` – long-lived PAT with at least `read:packages` scope used to create per-namespace GHCR pull secrets. Replace with your own service user if desired.
+- Optional repository variable `PREVIEW_DOMAIN` if you need a host suffix other than `plasma.oli.cmu.edu`.
+- Image publishes use the ephemeral `GITHUB_TOKEN`, so no additional secrets are required.
+
 ## Supporting Services
 
 Each preview release installs dedicated Postgres (pgvector) and MinIO instances alongside the application:
@@ -51,17 +59,14 @@ For each new PR namespace the CI workflow runs:
 devops/scripts/apply-preview-policies.sh pr-123
 ```
 
-The script templatises quota, limit range, and network policy manifests and applies them to the namespace.
-
-GHCR credentials are created per namespace by the deploy workflow using the configured `CR_PAT`/`GH_USER` secrets; no manual secret rotation is required unless those credentials change.
-The workflow logs in for image pushes with the ephemeral `GITHUB_TOKEN`, so no additional secret is required for publishing images.
+The script templatises quota, limit range, and network policy manifests and applies them to the namespace. Namespace pull secrets are refreshed automatically using `SIMON_BOT_PERSONAL_ACCESS_TOKEN`.
 
 ## Smoke Testing
 
-Use `scripts/smoke-test-preview.sh` to validate a deployed preview:
+Use `devops/scripts/smoke-test-preview.sh` to validate a deployed preview:
 
 ```bash
-scripts/smoke-test-preview.sh https://pr-123.plasma.oli.cmu.edu/healthz
+devops/scripts/smoke-test-preview.sh https://pr-123.plasma.oli.cmu.edu/healthz
 ```
 
 The script exits non-zero if any probe fails. Integrate it into CI if desired.
