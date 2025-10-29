@@ -35,6 +35,7 @@ Override `previewDomain` if you use a non-default host suffix. Additional config
       ADMIN_PASSWORD: secure-change-me
       MEDIA_URL: "https://custom.example/s3/torus-media"
   ```
+- **Database setup job** – After each install/upgrade, a hook job runs the release setup command (`Oli.Release.setup`). Disable or customise via `releaseSetup.*` values.
 - **Image overrides** – Set `image.repository` and `image.tag` per PR; GitHub Actions supplies these automatically.
 - **Scaling/resources** – Adjust container sizing via `resources`, `postgres.resources`, and `minio.resources`; tweak PVC sizes under the respective `persistence` blocks.
 

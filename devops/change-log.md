@@ -2,6 +2,6 @@
 
 | Date       | Owner | Change Summary |
 |------------|-------|----------------|
-| 2025-10-28 | Codex | Scaffolded k3s preview environment assets (Helm chart with Postgres/MinIO, env secret defaults, Kubernetes manifests, CI workflows, smoke tests). |
+| 2025-10-28 | Codex | Scaffolded k3s preview environment assets (Helm chart with Postgres/MinIO, env secret defaults, release setup job, Kubernetes manifests, CI workflows, smoke tests). |
 
 > Update this log whenever operational assets change. Include rollback notes in commit messages or linked runbooks.

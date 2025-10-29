@@ -26,6 +26,7 @@ Each preview release installs dedicated Postgres (pgvector) and MinIO instances 
 - Persistent volumes are created via the k3s local-path provisioner (10 GiB default for both services).
 - A post-install job seeds MinIO buckets (`torus-media`, `torus-xapi`, `torus-blob-dev`) and grants public access where required.
 - Connection details are injected into the app via the generated environment secret so no manual setup is required.
+- Another Helm hook runs the Elixir release setup task (`/app/bin/oli eval "Oli.Release.setup"`) after each deployment to mirror Docker Compose initialisation.
 
 Customise storage sizes, images, or bucket policies through `values.yaml` (`postgres.*`, `minio.*`).
 

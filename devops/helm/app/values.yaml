@@ -56,13 +56,15 @@ readinessProbe:
   initialDelaySeconds: 15
   periodSeconds: 10
 
-resources:
-  limits:
-    cpu: 500m
-    memory: 4Gi
-  requests:
-    cpu: 200m
-    memory: 1Gi
+# resources:
+#   limits:
+#     cpu: 500m
+#     memory: 4Gi
+#   requests:
+#     cpu: 200m
+#     memory: 1Gi
+
+resources: {}
 
 autoscaling:
   enabled: false
@@ -76,6 +78,10 @@ affinity: {}
 
 volumes: []
 volumeMounts: []
+
+releaseSetup:
+  enabled: true
+  command: /app/bin/oli eval "Oli.Release.setup"
 
 postgres:
   enabled: true

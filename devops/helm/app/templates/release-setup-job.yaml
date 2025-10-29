@@ -1,0 +1,52 @@
+{{- if .Values.releaseSetup.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "oli-torus-preview.fullname" . }}-setup
+  labels:
+    {{- include "oli-torus-preview.labels" . | nindent 4 }}
+    component: app-setup
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "oli-torus-preview.labels" . | nindent 8 }}
+        component: app-setup
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "oli-torus-preview.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range . }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: release-setup
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "oli-torus-preview.fullname" . }}-env
+            {{- range .Values.extraEnvFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.extraEnv }}
+          env:
+            {{- range .Values.extraEnv }}
+            - name: {{ .name }}
+              value: {{ tpl (printf "%v" .value) $ | quote }}
+            {{- end }}
+          {{- end }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until {{ tpl .Values.releaseSetup.command . }}; do
+                echo "Release setup not ready yet; retrying in 5s..."
+                sleep 5
+              done
+{{- end }}

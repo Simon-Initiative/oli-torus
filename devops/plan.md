@@ -103,6 +103,7 @@ Exit criteria: cluster RBAC/policies in place; registry access configured; TLS a
   - Templates for Deployment, Service, and Ingress for the application (host `{{ printf "pr-%s.plasma.oli.cmu.edu" .Values.prNumber }}`).
   - Bundle preview-friendly Postgres (pgvector image) and MinIO StatefulSets with PVCs, Services, and a bucket-initialisation job mirroring `devops/docker-compose.yml`.
   - Generate an application env secret derived from `devops/default.env`, with support for overrides via `values.yaml`.
+  - Add a post-install/upgrade Job that runs the Elixir release setup task (`/app/bin/oli eval "Oli.Release.setup"`) so the database schema mirrors compose deployments.
   - Values supporting `image.repository`, `image.tag`, replica count (default 1), environment variables, and optional resource overrides for supporting services.
   - Include `README.md` with usage examples:
     ```bash
