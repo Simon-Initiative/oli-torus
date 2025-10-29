@@ -19,6 +19,10 @@ spec:
           port: 80
         - protocol: TCP
           port: 443
+        - protocol: TCP
+          port: 9000
+        - protocol: TCP
+          port: 9001
   egress:
     - to:
         - namespaceSelector: {}
