@@ -38,5 +38,6 @@ Override `previewDomain` if you use a non-default host suffix. Additional config
 - **Database setup job** – After each install/upgrade, a hook job runs the release setup command (`Oli.Release.setup`). Disable or customise via `releaseSetup.*` values (including resource requests/limits).
 - **Image overrides** – Set `image.repository` and `image.tag` per PR; GitHub Actions supplies these automatically.
 - **Scaling/resources** – Adjust container sizing via `resources`, `postgres.resources`, and `minio.resources`; tweak PVC sizes under the respective `persistence` blocks.
+- **MinIO routing** – Bucket traffic is proxied through `/minio/<bucket>` while the MinIO console is available at `/minio` via Traefik; both prefixes can be overridden with `ingress.minioPathPrefix`.
 
 See `values.yaml` for all available knobs (e.g., disabling supporting services, customizing MinIO buckets, or injecting additional environment variables with `extraEnv`/`extraEnvFrom`).

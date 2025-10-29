@@ -47,6 +47,8 @@ extraEnv:
 
 The chart automatically derives `HOST`, `DATABASE_URL`, `AWS_S3_*`, and `MEDIA_URL` unless explicitly overridden.
 
+MinIO assets are served from `https://pr-<PR>.plasma.oli.cmu.edu/minio/<bucket>/...`, and the MinIO console is exposed at `https://pr-<PR>.plasma.oli.cmu.edu/minio`.
+
 ## Cluster Preparation Checklist
 
 The DevOps engineer must apply the following once per cluster (see `devops/plan.md` Phase 3):
