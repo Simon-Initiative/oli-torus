@@ -8,10 +8,10 @@ spec:
     - type: Container
       defaultRequest:
         cpu: 200m
-        memory: 512Mi
+        memory: 1Gi
       default:
         cpu: 500m
-        memory: 1Gi
+        memory: 4Gi
       max:
         cpu: "1"
-        memory: 6Gi
+        memory: 8Gi

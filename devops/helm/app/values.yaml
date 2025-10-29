@@ -56,15 +56,13 @@ readinessProbe:
   initialDelaySeconds: 15
   periodSeconds: 10
 
-# resources:
-#   limits:
-#     cpu: 500m
-#     memory: 4Gi
-#   requests:
-#     cpu: 200m
-#     memory: 1Gi
-
-resources: {}
+resources:
+  limits:
+    cpu: 500m
+    memory: 6Gi
+  requests:
+    cpu: 200m
+    memory: 2Gi
 
 autoscaling:
   enabled: false
@@ -96,7 +94,13 @@ postgres:
       - ReadWriteOnce
     size: 10Gi
     storageClass: ""
-  resources: {}
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "1"
+      memory: 2Gi
 
 minio:
   enabled: true
@@ -120,4 +124,10 @@ minio:
       policy: public
     - name: torus-blob-dev
       policy: public
-  resources: {}
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi

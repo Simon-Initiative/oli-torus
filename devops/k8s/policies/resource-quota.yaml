@@ -6,8 +6,8 @@ metadata:
 spec:
   hard:
     requests.cpu: "1000m"
-    requests.memory: 4Gi
+    requests.memory: 6Gi
     limits.cpu: "2000m"
-    limits.memory: 6Gi
+    limits.memory: 8Gi
     persistentvolumeclaims: "2"
     requests.storage: 10Gi
