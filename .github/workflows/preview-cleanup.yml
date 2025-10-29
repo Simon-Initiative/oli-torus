@@ -1,11 +1,11 @@
-name: Preview Teardown
+name: Preview Cleanup
 
 on:
   pull_request:
     types: [closed]
 
 jobs:
-  teardown:
+  cleanup:
     runs-on: plasma
     env:
       PR: ${{ github.event.number }}
