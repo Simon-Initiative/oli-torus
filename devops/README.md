@@ -26,7 +26,15 @@ Perform these steps on each Amazon Linux 2023 host before joining it to the clus
    sudo systemctl enable --now dnf-automatic.timer
    ```
 2. Enforce SSH hardening (key-based auth only) and confirm `sshd` restarts cleanly.
-3. Configure firewall rules for inbound `tcp/22`, `tcp/80`, `tcp/443`, and NodePort range `30000-32767` from HAProxy.
+3. Configure firewall rules for inbound `tcp/22`, `tcp/80`, `tcp/443`, and the Traefik NodePorts (`tcp/30080`, `tcp/31505` by default) from HAProxy. Trust the k3s pod network interfaces so in-cluster routes work:
+   ```bash
+   sudo firewall-cmd --zone=trusted --add-interface=cni0 --permanent
+   sudo firewall-cmd --zone=trusted --add-interface=flannel.1 --permanent
+   sudo firewall-cmd --zone=trusted --add-source=10.42.0.0/16 --permanent
+   sudo firewall-cmd --zone=trusted --add-port=30080/tcp --permanent
+   sudo firewall-cmd --zone=trusted --add-port=31505/tcp --permanent
+   sudo firewall-cmd --reload
+   ```
 4. Install k3s:
    ```bash
    curl -sfL https://get.k3s.io | sh -s - \

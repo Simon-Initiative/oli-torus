@@ -78,5 +78,6 @@ The script exits non-zero if any probe fails. Integrate it into CI if desired.
 - Preview namespaces enforce resource quotas and default limits aligned with `devops/k8s/policies/`.
 - Each Helm release uses the image tag `pr-<number>` published to GHCR by the deploy workflow.
 - Postgres and MinIO pods are namespaced per PR (`pr-<n>`), so cleanup on failure should remove related PVCs (`kubectl delete pvc -n pr-<n> -l app.kubernetes.io/instance=oli-torus-preview-<n>`).
+- Remember to trust the pod network on the k3s node (e.g., add `cni0`/`flannel.1` to the trusted zone and open Traefik NodePorts) so Traefik can reach preview pods.
 - Manual clean-up: run `helm uninstall pr-<number> -n pr-<number>` and `kubectl delete ns pr-<number>` if a workflow fails.
 - Record significant changes to infra assets in `devops/change-log.md`.
