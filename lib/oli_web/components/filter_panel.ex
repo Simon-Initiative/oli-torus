@@ -71,7 +71,7 @@ defmodule OliWeb.Components.FilterPanel do
     assigns =
       assigns
       |> assign_new(:form_id, fn -> "#{assigns.id}-form" end)
-      |> assign_new(:active_count, fn -> BrowseFilters.active_count(assigns.filters) end)
+      |> assign(:active_count, BrowseFilters.active_count(assigns.filters))
       |> assign_new(:date_field_options, fn -> [] end)
       |> assign_new(:visibility_options, fn -> [] end)
       |> assign_new(:status_options, fn -> [] end)
