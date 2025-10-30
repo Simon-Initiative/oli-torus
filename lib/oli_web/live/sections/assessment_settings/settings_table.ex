@@ -144,12 +144,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           for="search"
           phx-target={@myself}
           phx-change="search_assessment"
-          class="pb-6 ml-9 sm:pb-0 w-44"
+          class="pb-6 ml-9 sm:pb-0 w-56"
         >
           <SearchInput.render
             id="assessments_search_input"
             name="assessment_name"
             text={@params.text_search}
+            class="!w-full"
           />
         </form>
       </div>
