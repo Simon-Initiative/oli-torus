@@ -34,7 +34,7 @@ vars:
 
 patches:
   - path: patches/app-ingress.yaml
-  - path: patches/minio-ingress-api.yaml
-  - path: patches/minio-ingress-console.yaml
+  - path: patches/ingress-minio-api.yaml
+  - path: patches/ingress-minio-console.yaml
   - path: patches/app-deployment.yaml
   - path: patches/minio-statefulset.yaml

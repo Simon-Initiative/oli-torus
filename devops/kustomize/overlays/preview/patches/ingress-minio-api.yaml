@@ -2,14 +2,11 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: minio-api
-  labels:
-    app.kubernetes.io/component: minio
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: minio-api-strip@kubernetescrd
-    traefik.ingress.kubernetes.io/router.priority: "200"
+    traefik.ingress.kubernetes.io/router.middlewares: $(PREVIEW_SLUG)-minio-api-strip@kubernetescrd
 spec:
   rules:
-    - host: preview.local
+    - host: $(PREVIEW_SLUG).$(PREVIEW_DOMAIN)
       http:
         paths:
           - path: /buckets
