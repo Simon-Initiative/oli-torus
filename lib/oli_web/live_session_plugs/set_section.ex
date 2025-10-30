@@ -30,8 +30,8 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
   end
 
   defp get_license_from_section(section) do
-    case section.base_project.attributes do
-      %{license: %{license_type: license_type} = license}
+    case section do
+      %{base_project: %{attributes: %{license: %{license_type: license_type} = license}}}
       when license_type != :none and license_type != nil ->
         Map.from_struct(license)
 
