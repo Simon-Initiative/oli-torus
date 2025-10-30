@@ -22,7 +22,6 @@ resources:
   - minio-middleware-console.yaml
   - ingress-minio-api.yaml
   - ingress-minio-console.yaml
-  - release-setup-job.yaml
   - minio-buckets-job.yaml
 
 configMapGenerator:
