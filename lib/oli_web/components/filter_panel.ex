@@ -36,6 +36,7 @@ defmodule OliWeb.Components.FilterPanel do
   alias Phoenix.LiveView.JS
   alias OliWeb.Icons
   alias OliWeb.Admin.BrowseFilters
+  alias OliWeb.Live.Components.Tags.TagsComponent
   alias Oli.Tags
 
   @impl true
@@ -76,7 +77,9 @@ defmodule OliWeb.Components.FilterPanel do
       |> assign_new(:status_options, fn -> [] end)
       |> assign_new(:published_options, fn -> [] end)
       |> assign_new(:institution_options, fn -> [] end)
-      |> assign_new(:fields, fn -> [:date, :tags, :visibility, :published, :status, :institution] end)
+      |> assign_new(:fields, fn ->
+        [:date, :tags, :visibility, :published, :status, :institution]
+      end)
 
     ~H"""
     <div id={@id} class="relative flex items-center gap-4">
@@ -176,11 +179,11 @@ defmodule OliWeb.Components.FilterPanel do
               <span class="text-sm font-semibold text-Text-text-high">Tags</span>
               <div class="flex flex-wrap gap-2">
                 <%= for tag <- @filters.tags || [] do %>
-                  <span class="inline-flex items-center gap-2 rounded-full bg-Specially-Tokens-Fill-fill-dot-message-default px-3 py-1 text-xs font-medium text-Text-text-button">
+                  <span class={"inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium #{TagsComponent.get_tag_pill_classes(tag.name)}"}>
                     {tag.name}
                     <button
                       type="button"
-                      class="text-Text-text-button hover:text-Text-text-button-hover"
+                      class="hover:opacity-80"
                       phx-click="filter_remove_tag"
                       phx-target={@myself}
                       phx-value-id={tag.id}

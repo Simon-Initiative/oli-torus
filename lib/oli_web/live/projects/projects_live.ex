@@ -302,7 +302,12 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     {:noreply,
      push_patch(socket,
-       to: Routes.live_path(socket, __MODULE__, Map.merge(base_params, Map.merge(filter_params, %{offset: 0}))),
+       to:
+         Routes.live_path(
+           socket,
+           __MODULE__,
+           Map.merge(base_params, Map.merge(filter_params, %{offset: 0}))
+         ),
        replace: true
      )}
   end
