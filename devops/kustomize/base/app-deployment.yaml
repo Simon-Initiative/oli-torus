@@ -29,7 +29,7 @@ spec:
             - /bin/sh
             - -c
             - |
-              set -euo pipefail
+              set -eu
               until /app/bin/oli eval "Oli.Release.setup"; do
                 echo "Release setup not ready yet; retrying in 5s..."
                 sleep 5
