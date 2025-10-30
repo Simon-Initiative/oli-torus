@@ -10,6 +10,9 @@ Every PR is exposed at `https://pr-<number>.<domain>`, where `<domain>` defaults
 
 - `.github/workflows/preview-deploy.yml` builds a PR image, pushes it to GHCR, applies namespace policies, and now runs `kustomize build devops/kustomize/overlays/preview | kubectl apply -f -` on PR open/sync events (after editing the overlay literals for the active PR number).
 - `.github/workflows/preview-teardown.yml` deletes the namespace when the PR closes (`kubectl delete namespace pr-<n>`). The preview manifests are idempotent, so re-running the deploy workflow reconciles existing previews without uninstall steps.
+- Both workflows also support manual runs via `workflow_dispatch`; supply the `ref`
+  (branch/tag) and `preview_id` (namespace/host slug) to deploy or clean up a
+  branch outside the PR flow.
 
 ### Required Secrets and Variables
 
@@ -28,7 +31,7 @@ The manifests live under `devops/kustomize/`:
 
 To create an overlay for a PR at runtime:
 
-1. Copy `devops/kustomize/overlays/preview/` (or modify it in-place) and set the values in `params.env` **and** `app-overrides.env` to the target PR number and domain (the deploy workflow rewrites both automatically).
+1. Copy `devops/kustomize/overlays/preview/` (or modify it in-place) and set the values in `params.env` **and** `app-overrides.env` to the target slug and domain (the deploy workflow rewrites both automatically).
 2. Run `kustomize build --load-restrictor LoadRestrictionsNone devops/kustomize/overlays/preview | kubectl apply -f -` with `KUBECONFIG` pointing at the k3s cluster.
 3. (Optional) After pods become ready, rerun the MinIO bucket job by deleting the corresponding Job resource and re-applying the overlay.
 

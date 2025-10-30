@@ -4,7 +4,7 @@ metadata:
   name: minio-console
 spec:
   rules:
-    - host: pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)
+    - host: $(PREVIEW_SLUG).$(PREVIEW_DOMAIN)
       http:
         paths:
           - path: /minio

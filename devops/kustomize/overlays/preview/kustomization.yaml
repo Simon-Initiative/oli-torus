@@ -17,13 +17,13 @@ secretGenerator:
       - app-overrides.env
 
 vars:
-  - name: PR_NUMBER
+  - name: PREVIEW_SLUG
     objref:
       kind: ConfigMap
       name: preview-params
       apiVersion: v1
     fieldref:
-      fieldpath: data.PR_NUMBER
+      fieldpath: data.PREVIEW_SLUG
   - name: PREVIEW_DOMAIN
     objref:
       kind: ConfigMap

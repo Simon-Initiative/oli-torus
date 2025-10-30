@@ -4,9 +4,16 @@ metadata:
   name: minio-api
 spec:
   rules:
-    - host: pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)
+    - host: $(PREVIEW_SLUG).$(PREVIEW_DOMAIN)
       http:
         paths:
+          - path: /minio
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  name: http
           - path: /minio/torus-media
             pathType: Prefix
             backend:

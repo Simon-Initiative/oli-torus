@@ -3,20 +3,27 @@ name: Preview Cleanup
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
+    inputs:
+      preview_id:
+        description: "Preview identifier (namespace to delete)"
+        required: true
 
 jobs:
   cleanup:
     runs-on: plasma
     env:
-      PR: ${{ github.event.number }}
+      PREVIEW_SLUG: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || inputs.preview_id }}
+      IS_PR: ${{ github.event_name == 'pull_request' }}
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
     steps:
       - uses: actions/checkout@v4
 
       - name: Delete namespace
-        run: kubectl delete namespace "pr-${PR}" --ignore-not-found --wait=false
+        run: kubectl delete namespace "${PREVIEW_SLUG}" --ignore-not-found --wait=false
 
       - name: Remove preview comment
+        if: env.IS_PR == 'true'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           delete: true

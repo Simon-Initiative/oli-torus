@@ -27,7 +27,7 @@ resources:
 configMapGenerator:
   - name: preview-params
     literals:
-      - PR_NUMBER=0
+      - PREVIEW_SLUG=pr-0
       - PREVIEW_DOMAIN=plasma.oli.cmu.edu
     options:
       disableNameSuffixHash: true

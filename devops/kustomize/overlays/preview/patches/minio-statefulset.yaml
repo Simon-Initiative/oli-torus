@@ -9,6 +9,6 @@ spec:
         - name: minio
           env:
             - name: MINIO_SERVER_URL
-              value: https://pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)/minio
+              value: https://$(PREVIEW_SLUG).$(PREVIEW_DOMAIN)/minio
             - name: MINIO_BROWSER_REDIRECT_URL
-              value: https://pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)/minio
+              value: https://$(PREVIEW_SLUG).$(PREVIEW_DOMAIN)/minio

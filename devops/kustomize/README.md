@@ -26,9 +26,9 @@ by both CI and local operators to provision pull-request previews.
    devops/scripts/apply-preview-policies.sh pr-123
    ```
 3. Deploy the preview (after adjusting placeholders):
-  ```bash
-  kustomize build --load-restrictor LoadRestrictionsNone devops/kustomize/overlays/preview | kubectl apply -f -
-  ```
+   ```bash
+   kustomize build --load-restrictor LoadRestrictionsNone devops/kustomize/overlays/preview | kubectl apply -f -
+   ```
 4. Clean up by deleting the namespace when the PR closes:
    ```bash
    kubectl delete namespace pr-123
@@ -38,6 +38,9 @@ by both CI and local operators to provision pull-request previews.
 
 - To set additional environment variables, append lines to
   `app-overrides.env` (`KEY=value`).
+- To deploy/cleanup manually from GitHub, trigger the "Preview Deploy" or
+  "Preview Cleanup" workflows with the appropriate `workflow_dispatch` inputs
+  (`ref`, `preview_id`, and optional `preview_domain`).
 - Update the ingress patches if your Traefik deployment expects different
   annotations.
 - Use `kustomize edit set image ghcr.io/simon-initiative/oli-torus=ghcr.io/simon-initiative/oli-torus:<tag>`
