@@ -12,6 +12,12 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureRollout do
   @stages [:off, :internal_only, :five_percent, :fifty_percent, :full]
   @scope_types [:global, :project, :section]
 
+  @type stage :: :off | :internal_only | :five_percent | :fifty_percent | :full
+  @type scope_type :: :global | :project | :section
+
+  def stages, do: @stages
+  def scope_types, do: @scope_types
+
   schema "scoped_feature_rollouts" do
     field :feature_name, :string
     field :scope_type, Ecto.Enum, values: @scope_types

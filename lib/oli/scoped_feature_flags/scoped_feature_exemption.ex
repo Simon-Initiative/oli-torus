@@ -12,6 +12,10 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureExemption do
 
   @effects [:deny, :force_enable]
 
+  @type effect :: :deny | :force_enable
+
+  def effects, do: @effects
+
   schema "scoped_feature_exemptions" do
     field :feature_name, :string
     field :effect, Ecto.Enum, values: @effects

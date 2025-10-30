@@ -10,17 +10,22 @@ defmodule Oli.ScopedFeatureFlags.FeaturesTest do
       deffeature(:test_feature, [:authoring], "Test feature description")
       deffeature(:another_feature, [:delivery], "Another test feature")
       deffeature(:both_feature, [:both], "Feature for both contexts")
+      deffeature(:canary_feature, [:both], "Feature using canary rollout", rollout_mode: :canary)
     end
 
     test "all_features/0 returns all defined features" do
       features = TestFeatures.all_features()
 
-      assert length(features) == 3
+      assert length(features) == 4
 
       feature_names = Enum.map(features, & &1.name)
       assert :test_feature in feature_names
       assert :another_feature in feature_names
       assert :both_feature in feature_names
+      assert :canary_feature in feature_names
+
+      assert Enum.find(features, &(&1.name == :test_feature)).metadata.rollout_mode == :scoped_only
+      assert Enum.find(features, &(&1.name == :canary_feature)).metadata.rollout_mode == :canary
     end
 
     test "feature_names/0 returns feature names as atoms" do
@@ -69,6 +74,7 @@ defmodule Oli.ScopedFeatureFlags.FeaturesTest do
 
       assert TestFeatures.feature_supports_scope?(:both_feature, :authoring)
       assert TestFeatures.feature_supports_scope?(:both_feature, :delivery)
+      assert TestFeatures.feature_supports_scope?(:canary_feature, :authoring)
     end
 
     test "features_for_scope/1 returns features for specific scope" do
@@ -80,10 +86,12 @@ defmodule Oli.ScopedFeatureFlags.FeaturesTest do
 
       assert :test_feature in authoring_names
       assert :both_feature in authoring_names
+      assert :canary_feature in authoring_names
       refute :another_feature in authoring_names
 
       assert :another_feature in delivery_names
       assert :both_feature in delivery_names
+      assert :canary_feature in delivery_names
       refute :test_feature in delivery_names
     end
   end
@@ -149,6 +157,19 @@ defmodule Oli.ScopedFeatureFlags.FeaturesTest do
             defmodule ConflictingScopes do
               use Oli.ScopedFeatureFlags.Features
               deffeature(:test, [:both, :authoring], "Description")
+            end
+          end
+        )
+      end
+    end
+
+    test "validates rollout mode metadata" do
+      assert_raise CompileError, ~r/Invalid rollout_mode/, fn ->
+        Code.eval_quoted(
+          quote do
+            defmodule InvalidRolloutMode do
+              use Oli.ScopedFeatureFlags.Features
+              deffeature(:invalid_rollout, [:authoring], "Desc", rollout_mode: :unknown)
             end
           end
         )
