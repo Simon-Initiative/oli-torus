@@ -57,11 +57,11 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              cpu: "1"
-              memory: 2Gi
+              cpu: 500m
+              memory: 1Gi
             limits:
-              cpu: "2"
-              memory: 8Gi
+              cpu: "1.5"
+              memory: 4Gi
   volumeClaimTemplates:
     - metadata:
         name: data

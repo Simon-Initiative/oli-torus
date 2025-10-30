@@ -32,8 +32,8 @@ spec:
               done
           resources:
             requests:
-              cpu: 500m
-              memory: 2Gi
+              cpu: 300m
+              memory: 1Gi
             limits:
-              cpu: "2"
-              memory: 8Gi
+              cpu: "1"
+              memory: 4Gi
