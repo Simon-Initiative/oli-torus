@@ -100,7 +100,7 @@ Exit criteria: cluster RBAC/policies in place; registry access configured; TLS a
 
 **Codex**
 - Scaffold Kustomize assets under `devops/kustomize/`:
-  - `base/` contains canonical manifests for the app Deployment/Service, Postgres & MinIO StatefulSets, Traefik ingresses/middlewares, release setup job, and MinIO bucket job. Ensure the base references the shared `app-env` secret generator fed by `devops/default.env`.
+  - `base/` contains canonical manifests for the app Deployment/Service (with an init container that runs the release setup), Postgres & MinIO StatefulSets, Traefik ingresses/middlewares, and the MinIO bucket job. Ensure the base references the shared `app-env` secret generator fed by `devops/default.env`.
   - `overlays/preview/` demonstrates how to merge PR-specific values (namespace, image tag, ingress host, secret overrides, image pull secrets). Include example patches for forwarded header annotations and MinIO console routing.
   - Keep resource requests/limits generous (3 CPU/12 Gi app cap, 2 CPU/8 Gi Postgres, 2 CPU/6 Gi MinIO, etc.) while ensuring they stay under the namespace LimitRange ceiling.
 - Document how to tune the overlay (image names, host literal, additional env vars) in `docs/preview-environments.md` and add a README snippet explaining `kustomize build … | kubectl apply -f -`.

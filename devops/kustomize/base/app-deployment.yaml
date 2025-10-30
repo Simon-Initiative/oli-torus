@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/component: app
     app.kubernetes.io/name: app
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/component: app

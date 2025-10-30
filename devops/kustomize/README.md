@@ -5,9 +5,9 @@ by both CI and local operators to provision pull-request previews.
 
 ## Layout
 
-- `base/` – canonical manifests for the application Deployment/Service,
-  supporting Postgres and MinIO StatefulSets, Traefik ingress + middleware, and
-  helper Jobs (release setup and MinIO bucket seeding). The base also includes a
+- `base/` – canonical manifests for the application Deployment/Service (with an
+  init container that runs `Oli.Release.setup`), supporting Postgres and MinIO
+  StatefulSets, Traefik ingress + middleware, and the MinIO bucket job. The base also includes a
   `secretGenerator` that renders the application environment variables from
   `devops/default.env`.
 - `overlays/preview/` – example overlay showing how to set the namespace, image

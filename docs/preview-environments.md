@@ -23,14 +23,14 @@ Set these in repository settings before enabling the workflows:
 
 The manifests live under `devops/kustomize/`:
 
-- `base/` – generic resources for the app Deployment/Service, Postgres & MinIO StatefulSets, Traefik ingress + middleware, release setup job, and MinIO bucket job. The base references the shared secret generated from `devops/default.env`.
+- `base/` – generic resources for the app Deployment/Service (with an init container that runs `Oli.Release.setup`), Postgres & MinIO StatefulSets, Traefik ingress + middleware, and the MinIO bucket job. The base references the shared secret generated from `devops/default.env`.
 - `overlays/preview/` – sample overlay that merges PR-specific values (namespace, image tag, host literals, etc.). The overlay uses `secretGenerator` merge behaviour to set `HOST`, `MEDIA_URL`, and other environment values per PR, and patches ingresses to the live hostname.
 
 To create an overlay for a PR at runtime:
 
 1. Copy `devops/kustomize/overlays/preview/` (or modify it in-place) and set the values in `params.env` to the target PR number and domain (CI overwrites this file automatically).
 2. Run `kustomize build --load-restrictor LoadRestrictionsNone devops/kustomize/overlays/preview | kubectl apply -f -` with `KUBECONFIG` pointing at the k3s cluster.
-3. (Optional) After pods become ready, rerun the MinIO bucket job or release setup job by deleting the corresponding Job resources and re-applying the overlay.
+3. (Optional) After pods become ready, rerun the MinIO bucket job by deleting the corresponding Job resource and re-applying the overlay.
 
 `devops/default.env` seeds the application environment secret. When the overlay sets a new `HOST`, it also recomputes `MEDIA_URL` so assets resolve at `/minio/<bucket>`. Additional environment overrides can be appended to the overlay’s `secretGenerator` literals.
 
@@ -39,7 +39,7 @@ To create an overlay for a PR at runtime:
 Each preview release installs dedicated Postgres (pgvector) and MinIO instances alongside the application:
 
 - Persistent volumes are created via the k3s local-path provisioner (default 10 GiB for both services).
-- A one-shot “release setup” job (`/app/bin/oli eval "Oli.Release.setup"`) runs after each apply to mirror Docker Compose initialisation.
+- The application init container runs `Oli.Release.setup` before the Phoenix server starts, mirroring the Docker Compose initialisation step.
 - The MinIO bucket job provisions `torus-media`, `torus-xapi`, and `torus-blob-dev` and sets public policies. Both jobs use elevated resource limits defined in the manifests to avoid repeated OOMs.
 - Supporting workloads request generous CPU/memory while remaining under the namespace LimitRange cap (4 CPU / 16 GiB).
 
@@ -74,7 +74,7 @@ The script exits non-zero if any probe fails. Integrate it into CI if desired.
 ## Operational Notes
 
 - Preview namespaces enforce resource quotas and default limits aligned with `devops/k8s/policies/`.
-- Application pods, the release setup job, and the bucket job all mount the `app-env` secret generated from `devops/default.env`; update the overlay literals when introducing new env keys.
+- Application pods (including the setup init container) and the bucket job all mount the `app-env` secret generated from `devops/default.env`; update the overlay literals when introducing new env keys.
 - Postgres and MinIO resources are namespace-scoped, so cleanup on failure should remove related PVCs (`kubectl delete pvc -n pr-<n> -l app.kubernetes.io/component=minio`).
 - Remember to trust the pod network on the k3s node (e.g., add `cni0`/`flannel.1` to the trusted zone and open Traefik NodePorts) so Traefik can reach preview pods.
 - Manual clean-up: run `kubectl delete namespace pr-<number>` if a workflow fails.

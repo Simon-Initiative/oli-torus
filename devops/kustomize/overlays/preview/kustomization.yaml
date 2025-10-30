@@ -36,8 +36,8 @@ vars:
       fieldpath: data.PREVIEW_DOMAIN
 
 patches:
-  - patches/app-ingress.yaml
-  - patches/minio-ingress-api.yaml
-  - patches/minio-ingress-console.yaml
-  - patches/app-deployment.yaml
-  - patches/minio-statefulset.yaml
+  - path: patches/app-ingress.yaml
+  - path: patches/minio-ingress-api.yaml
+  - path: patches/minio-ingress-console.yaml
+  - path: patches/app-deployment.yaml
+  - path: patches/minio-statefulset.yaml
