@@ -998,7 +998,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # Verify that the first assessment is selected by default
       assert view
-             |> element(~s{select[id="assessment_select"] option[selected][value="#{page_1.resource_id}"]})
+             |> element(
+               ~s{select[id="assessment_select"] option[selected][value="#{page_1.resource_id}"]}
+             )
              |> has_element?()
     end
 
@@ -1017,7 +1019,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # Verify the new selection is now shown in the dropdown (which means the URL param was updated)
       assert view
-             |> element(~s{select[id="assessment_select"] option[selected][value="#{page_2.resource_id}"]})
+             |> element(
+               ~s{select[id="assessment_select"] option[selected][value="#{page_2.resource_id}"]}
+             )
              |> has_element?()
     end
 
@@ -1043,7 +1047,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # Verify the bulk_apply_selected_assessment_id is still selected in the dropdown
       assert view
-             |> element(~s{select[id="assessment_select"] option[selected][value="#{page_3.resource_id}"]})
+             |> element(
+               ~s{select[id="assessment_select"] option[selected][value="#{page_3.resource_id}"]}
+             )
              |> has_element?()
     end
 
@@ -1071,7 +1077,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # Verify the bulk_apply_selected_assessment_id is still selected in the dropdown
       assert view
-             |> element(~s{select[id="assessment_select"] option[selected][value="#{page_2.resource_id}"]})
+             |> element(
+               ~s{select[id="assessment_select"] option[selected][value="#{page_2.resource_id}"]}
+             )
              |> has_element?()
     end
 
@@ -1097,7 +1105,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # Verify the bulk_apply_selected_assessment_id is still selected in the dropdown
       assert view
-             |> element(~s{select[id="assessment_select"] option[selected][value="#{page_4.resource_id}"]})
+             |> element(
+               ~s{select[id="assessment_select"] option[selected][value="#{page_4.resource_id}"]}
+             )
              |> has_element?()
     end
 
