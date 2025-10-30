@@ -27,7 +27,7 @@ by both CI and local operators to provision pull-request previews.
    ```
 3. Deploy the preview (after adjusting placeholders):
   ```bash
-  kustomize build devops/kustomize/overlays/preview | kubectl apply -f -
+  kustomize build --load-restrictor LoadRestrictionsNone devops/kustomize/overlays/preview | kubectl apply -f -
   ```
 4. Clean up by deleting the namespace when the PR closes:
    ```bash

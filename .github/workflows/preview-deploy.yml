@@ -125,7 +125,7 @@ jobs:
           kustomize edit set namespace "pr-${PR}"
           kustomize edit set image ${IMAGE_REPO}=${IMAGE_REPO}:${IMAGE_TAG}
 
-          kustomize build . | kubectl apply -f -
+          kustomize build --load-restrictor LoadRestrictionsNone . | kubectl apply -f -
 
       - name: Wait for application rollout
         run: kubectl -n "pr-${PR}" rollout status deployment/app --timeout=5m
