@@ -13,11 +13,8 @@ configMapGenerator:
 secretGenerator:
   - name: app-env
     behavior: merge
-    literals:
-      - HOST=pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)
-      - MEDIA_URL=https://pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)/minio/torus-media
-      - AWS_S3_HOST=minio
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres
+    envs:
+      - app-overrides.env
 
 vars:
   - name: PR_NUMBER

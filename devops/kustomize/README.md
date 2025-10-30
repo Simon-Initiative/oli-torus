@@ -17,10 +17,10 @@ by both CI and local operators to provision pull-request previews.
 
 ## Day-to-day usage
 
-1. Copy or edit the overlay (especially `params.env`) so the placeholder strings
-   (`PLACEHOLDER`, `DOMAIN_PLACEHOLDER`) are replaced with the live PR number and
-   domain. The GitHub workflow overwrites `params.env` automatically; locally you
-   can edit the file by hand or recreate it with `cat <<EOF > params.env ...`.
+1. Copy or edit the overlay (both `params.env` and `app-overrides.env`) so the
+   placeholder strings are replaced with the live PR number and domain. The
+   GitHub workflow overwrites these files automatically; locally you can edit
+   them by hand or recreate them with a small shell script.
 2. Apply namespace policies:
    ```bash
    devops/scripts/apply-preview-policies.sh pr-123
@@ -36,8 +36,8 @@ by both CI and local operators to provision pull-request previews.
 
 ### Customisation
 
-- To set additional environment variables, add literals to the overlay’s
-  `secretGenerator` section.
+- To set additional environment variables, append lines to
+  `app-overrides.env` (`KEY=value`).
 - Update the ingress patches if your Traefik deployment expects different
   annotations.
 - Use `kustomize edit set image ghcr.io/simon-initiative/oli-torus=ghcr.io/simon-initiative/oli-torus:<tag>`

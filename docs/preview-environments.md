@@ -24,15 +24,15 @@ Set these in repository settings before enabling the workflows:
 The manifests live under `devops/kustomize/`:
 
 - `base/` – generic resources for the app Deployment/Service (with an init container that runs `Oli.Release.setup`), Postgres & MinIO StatefulSets, Traefik ingress + middleware, and the MinIO bucket job. The base references the shared secret generated from `devops/default.env`.
-- `overlays/preview/` – sample overlay that merges PR-specific values (namespace, image tag, host literals, etc.). The overlay uses `secretGenerator` merge behaviour to set `HOST`, `MEDIA_URL`, and other environment values per PR, and patches ingresses to the live hostname.
+- `overlays/preview/` – sample overlay that merges PR-specific values (namespace, image tag, host literals, etc.). `params.env` feeds ingress host substitutions, and `app-overrides.env` overrides environment keys like `HOST`/`MEDIA_URL` inside the generated secret.
 
 To create an overlay for a PR at runtime:
 
-1. Copy `devops/kustomize/overlays/preview/` (or modify it in-place) and set the values in `params.env` to the target PR number and domain (CI overwrites this file automatically).
+1. Copy `devops/kustomize/overlays/preview/` (or modify it in-place) and set the values in `params.env` **and** `app-overrides.env` to the target PR number and domain (the deploy workflow rewrites both automatically).
 2. Run `kustomize build --load-restrictor LoadRestrictionsNone devops/kustomize/overlays/preview | kubectl apply -f -` with `KUBECONFIG` pointing at the k3s cluster.
 3. (Optional) After pods become ready, rerun the MinIO bucket job by deleting the corresponding Job resource and re-applying the overlay.
 
-`devops/default.env` seeds the application environment secret. When the overlay sets a new `HOST`, it also recomputes `MEDIA_URL` so assets resolve at `/minio/<bucket>`. Additional environment overrides can be appended to the overlay’s `secretGenerator` literals.
+`devops/default.env` seeds the application environment secret. `app-overrides.env` supplies the concrete `HOST`/`MEDIA_URL` overrides (and any additional key/value pairs you append).
 
 ## Supporting Services
 

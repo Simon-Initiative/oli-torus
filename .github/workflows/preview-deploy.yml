@@ -121,6 +121,9 @@ jobs:
 
           printf 'PR_NUMBER=%s\nPREVIEW_DOMAIN=%s\n' "${PR}" "${PREVIEW_DOMAIN}" > "${OVERLAY_DIR}/params.env"
 
+          PREVIEW_HOST=pr-${PR}.${PREVIEW_DOMAIN}
+          printf 'HOST=%s\nMEDIA_URL=https://%s/minio/torus-media\n' "${PREVIEW_HOST}" "${PREVIEW_HOST}" > "${OVERLAY_DIR}/app-overrides.env"
+
           cd "${OVERLAY_DIR}"
           kustomize edit set namespace "pr-${PR}"
           kustomize edit set image ${IMAGE_REPO}=${IMAGE_REPO}:${IMAGE_TAG}
