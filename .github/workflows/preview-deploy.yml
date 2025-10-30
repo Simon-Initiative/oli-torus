@@ -6,7 +6,7 @@ on:
 
 jobs:
   simon-token-available:
-    name: Check if simon-bot access token is available
+    name: Check simon-bot Access Token
     runs-on: ubuntu-latest
     outputs:
       available: ${{ steps.check_token.outputs.available }}
