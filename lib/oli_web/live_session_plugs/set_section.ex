@@ -29,14 +29,10 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
     {:cont, assign(socket, section: nil)}
   end
 
-  defp get_license_from_section(section) do
-    case section do
-      %{base_project: %{attributes: %{license: %{license_type: license_type} = license}}}
-      when license_type != :none and license_type != nil ->
-        Map.from_struct(license)
-
-      _ ->
-        nil
-    end
+  defp get_license_from_section(%{base_project: %{attributes: %{license: license}}})
+       when is_map(license) and license.license_type not in [nil, :none] do
+    Map.from_struct(license)
   end
+
+  defp get_license_from_section(_), do: nil
 end

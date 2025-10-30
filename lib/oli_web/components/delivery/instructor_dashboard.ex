@@ -34,7 +34,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
       <div class="relative flex-1 flex flex-col pt-4 pb-[60px]">
         {render_slot(@inner_block)}
-        <OliWeb.Components.Footer.delivery_footer license={assigns[:license]} />
+        <OliWeb.Components.Footer.delivery_footer license={@license} />
       </div>
     </div>
     """
