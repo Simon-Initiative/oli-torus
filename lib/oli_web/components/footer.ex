@@ -110,7 +110,7 @@ defmodule OliWeb.Components.Footer do
     assigns = assign(assigns, privacy_policies_url: privacy_policies_url())
 
     ~H"""
-    <div class="text-center md:text-left w-full md:w-3/12">
+    <div class="text-left w-full md:w-3/12">
       <a
         href="javascript:;"
         onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{@privacy_policies_url}'})"}

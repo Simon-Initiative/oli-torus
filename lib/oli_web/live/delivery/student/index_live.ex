@@ -179,12 +179,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
       has_scheduled_resources?={@has_scheduled_resources?}
     />
-    <div id="home-view" class="bg-stone-950 dark:text-white" phx-hook="Countdown">
+    <div id="home-view" phx-hook="Countdown">
       <div class="flex flex-col md:flex-row p-3 md:p-8 justify-start items-start gap-6">
         <div class={[
           if(@section.agenda,
-            do:
-              "flex flex-col-reverse md:flex-col w-full md:w-2/5 md:h-48 justify-start items-start gap-6",
+            do: "flex flex-col-reverse md:flex-col w-full md:w-2/5 justify-start items-start gap-6",
             else: "flex w-full gap-6"
           )
         ]}>
@@ -364,7 +363,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       </div>
 
-      <div class="flex flex-col w-full px-9 absolute flex-col justify-center items-start gap-2 md:gap-6">
+      <div class="flex flex-col w-full px-9 absolute justify-center items-start gap-2 md:gap-6">
         <h3 class="w-full text-white text-2xl font-bold tracking-wide">
           Hi, {user_given_name(@ctx)} !
         </h3>
