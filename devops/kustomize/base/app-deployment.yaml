@@ -6,7 +6,7 @@ metadata:
     app.kubernetes.io/component: app
     app.kubernetes.io/name: app
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app.kubernetes.io/component: app
@@ -41,10 +41,3 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 10
-          resources:
-            requests:
-              cpu: 500m
-              memory: 2Gi
-            limits:
-              cpu: "2"
-              memory: 8Gi

@@ -14,6 +14,8 @@ spec:
     spec:
       restartPolicy: OnFailure
       serviceAccountName: app
+      imagePullSecrets:
+        - name: ghcr-creds
       containers:
         - name: release-setup
           image: ghcr.io/simon-initiative/oli-torus:latest
@@ -30,10 +32,3 @@ spec:
                 echo "Release setup not ready yet; retrying in 5s..."
                 sleep 5
               done
-          resources:
-            requests:
-              cpu: 300m
-              memory: 1Gi
-            limits:
-              cpu: "1"
-              memory: 4Gi

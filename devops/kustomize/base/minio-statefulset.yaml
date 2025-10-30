@@ -56,13 +56,6 @@ spec:
               port: http
             initialDelaySeconds: 20
             periodSeconds: 10
-          resources:
-            requests:
-              cpu: 300m
-              memory: 768Mi
-            limits:
-              cpu: "1"
-              memory: 3Gi
   volumeClaimTemplates:
     - metadata:
         name: data

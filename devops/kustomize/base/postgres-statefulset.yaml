@@ -55,13 +55,6 @@ spec:
                 - pg_isready -U postgres -h 127.0.0.1
             initialDelaySeconds: 30
             periodSeconds: 10
-          resources:
-            requests:
-              cpu: 500m
-              memory: 1Gi
-            limits:
-              cpu: "1.5"
-              memory: 4Gi
   volumeClaimTemplates:
     - metadata:
         name: data

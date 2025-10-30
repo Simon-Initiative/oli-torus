@@ -35,10 +35,9 @@ vars:
     fieldref:
       fieldpath: data.PREVIEW_DOMAIN
 
-patchesStrategicMerge:
+patches:
   - patches/app-ingress.yaml
   - patches/minio-ingress-api.yaml
   - patches/minio-ingress-console.yaml
   - patches/app-deployment.yaml
-  - patches/release-setup-job.yaml
   - patches/minio-statefulset.yaml

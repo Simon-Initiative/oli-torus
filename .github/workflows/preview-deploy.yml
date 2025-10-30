@@ -121,14 +121,21 @@ jobs:
 
           printf 'PR_NUMBER=%s\nPREVIEW_DOMAIN=%s\n' "${PR}" "${PREVIEW_DOMAIN}" > "${OVERLAY_DIR}/params.env"
 
+          kubectl -n "pr-${PR}" delete job release-setup --ignore-not-found
+
           cd "${OVERLAY_DIR}"
           kustomize edit set namespace "pr-${PR}"
           kustomize edit set image ${IMAGE_REPO}=${IMAGE_REPO}:${IMAGE_TAG}
 
           kustomize build --load-restrictor LoadRestrictionsNone . | kubectl apply -f -
 
-      - name: Wait for application rollout
-        run: kubectl -n "pr-${PR}" rollout status deployment/app --timeout=5m
+      - name: Wait for release setup job
+        run: kubectl -n "pr-${PR}" wait --for=condition=complete --timeout=10m job/release-setup
+
+      - name: Scale application
+        run: |
+          kubectl -n "pr-${PR}" scale deployment/app --replicas=1
+          kubectl -n "pr-${PR}" rollout status deployment/app --timeout=5m
 
       - name: Post preview URL
         if: always()

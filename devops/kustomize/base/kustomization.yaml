@@ -4,9 +4,10 @@ kind: Kustomization
 generatorOptions:
   disableNameSuffixHash: true
 
-commonLabels:
-  app.kubernetes.io/part-of: oli-torus-preview
-  app.kubernetes.io/managed-by: kustomize
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: oli-torus-preview
+      app.kubernetes.io/managed-by: kustomize
 
 resources:
   - serviceaccount.yaml
@@ -29,8 +30,12 @@ configMapGenerator:
     literals:
       - PR_NUMBER=0
       - PREVIEW_DOMAIN=plasma.oli.cmu.edu
+    options:
+      disableNameSuffixHash: true
 
 secretGenerator:
   - name: app-env
     envs:
       - ../../default.env
+    options:
+      disableNameSuffixHash: true
