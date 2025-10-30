@@ -256,13 +256,15 @@ config :oli, :clickhouse,
   password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
   database: System.get_env("CLICKHOUSE_DATABASE", "default")
 
-config :ex_aws, :s3,
-  region: [{:system, "AWS_S3_REGION"}, {:system, "AWS_REGION"}, "us-east-1"],
-  access_key_id: [{:system, "AWS_S3_ACCESS_KEY_ID"}, {:system, "AWS_ACCESS_KEY_ID"}],
-  secret_access_key: [{:system, "AWS_S3_SECRET_ACCESS_KEY"}, {:system, "AWS_SECRET_ACCESS_KEY"}],
-  scheme: System.get_env("AWS_S3_SCHEME", "https") <> "://",
-  port: System.get_env("AWS_S3_PORT", "443") |> String.to_integer(),
-  host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
+if config_env() != :test do
+  config :ex_aws, :s3,
+    region: [{:system, "AWS_S3_REGION"}, {:system, "AWS_REGION"}, "us-east-1"],
+    access_key_id: [{:system, "AWS_S3_ACCESS_KEY_ID"}, {:system, "AWS_ACCESS_KEY_ID"}],
+    secret_access_key: [{:system, "AWS_S3_SECRET_ACCESS_KEY"}, {:system, "AWS_SECRET_ACCESS_KEY"}],
+    scheme: System.get_env("AWS_S3_SCHEME", "https") <> "://",
+    port: System.get_env("AWS_S3_PORT", "443") |> String.to_integer(),
+    host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
+end
 
 ####################### Production-only configurations ########################
 ## Note: These configurations are only applied in production

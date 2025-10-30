@@ -664,6 +664,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
         with {:ok, resumed_run} <- transition_run(run, :running, attrs),
              :ok <- resume_run_batches(resumed_run.batches),
+             :ok <- clear_pause_requests(resumed_run.batches),
              {:ok, rebalanced_run} <- maybe_recompute_run(resumed_run),
              :ok <- maybe_enqueue_pending_batches(rebalanced_run) do
           {:ok, Repo.preload(rebalanced_run, :batches)}
@@ -985,6 +986,28 @@ defmodule Oli.Analytics.Backfill.Inventory do
         {:ok, _} -> {:cont, :ok}
         {:error, :not_paused} -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp clear_pause_requests(batches) do
+    batches
+    |> Enum.reduce_while(:ok, fn batch, :ok ->
+      metadata = ensure_map(batch.metadata)
+
+      if Map.has_key?(metadata, "pause_requested") or Map.has_key?(metadata, "pause_requested_at") do
+        updated_metadata =
+          metadata
+          |> Map.delete("pause_requested")
+          |> Map.delete("pause_requested_at")
+          |> Map.put("resumed_at", DateTime.utc_now())
+
+        case update_batch(batch, %{metadata: updated_metadata}) do
+          {:ok, _} -> {:cont, :ok}
+          {:error, reason} -> {:halt, {:error, reason}}
+        end
+      else
+        {:cont, :ok}
       end
     end)
   end

@@ -155,11 +155,17 @@ config :oli, :section_cache, dispatcher: Oli.TestHelpers.CustomDispatcher
 config :assent, http_adapter: Oli.Test.MockHTTP
 
 config :ex_aws,
-  region: System.get_env("AWS_REGION", "us-east-1"),
-  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "your_minio_access_key"),
-  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "your_minio_secret_key")
+  region: "us-east-1",
+  access_key_id: "test-access-key",
+  secret_access_key: "test-secret-key"
 
-config :ex_aws, :s3, region: System.get_env("AWS_REGION", "us-east-1")
+config :ex_aws, :s3,
+  region: "us-east-1",
+  access_key_id: "test-access-key",
+  secret_access_key: "test-secret-key",
+  scheme: "https://",
+  port: 443,
+  host: "s3.amazonaws.com"
 
 config :ex_aws, :emr, region: System.get_env("AWS_REGION", "us-east-1")
 

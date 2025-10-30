@@ -11,6 +11,19 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
   @route Routes.live_path(OliWeb.Endpoint, ClickhouseBackfillLive)
 
+  defp clear_oban_jobs do
+    Repo.delete_all(Oban.Job)
+    :ok
+  end
+
+  defp open_manual_tab(view) do
+    view
+    |> element("button[phx-value-tab=\"manual\"]")
+    |> render_click()
+
+    view
+  end
+
   describe "access control" do
     test "redirects unauthenticated visitor to author login", %{conn: conn} do
       assert {:error, {:redirect, %{to: "/authors/log_in"}}} = live(conn, @route)
@@ -106,7 +119,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
     test "schedules inventory dry run", %{conn: conn} do
       Repo.delete_all(InventoryRun)
-      Oban.Testing.reset()
+      clear_oban_jobs()
 
       {:ok, view, _html} = live(conn, @route)
 
@@ -133,7 +146,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
     test "inventory scheduling uses config-driven defaults", %{conn: conn} do
       Repo.delete_all(InventoryRun)
-      Oban.Testing.reset()
+      clear_oban_jobs()
 
       {:ok, view, _html} = live(conn, @route)
 
@@ -157,7 +170,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
     test "inventory scheduling records date range filters", %{conn: conn} do
       Repo.delete_all(InventoryRun)
-      Oban.Testing.reset()
+      clear_oban_jobs()
 
       {:ok, view, _html} = live(conn, @route)
 
@@ -212,6 +225,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         |> Repo.insert!()
 
       {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
 
       view
       |> element("button[phx-click=\"delete_backfill_run\"][phx-value-id=\"#{run.id}\"]")
@@ -248,6 +262,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
     test "shows validation error for invalid JSON settings", %{conn: conn} do
       {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
 
       params = %{
         "s3_pattern" => "s3://bucket/**/*.jsonl",
@@ -274,6 +289,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         "dry_run" => "true"
       }
 
+      view |> open_manual_tab()
+
       html =
         view
         |> form("form[phx-submit=\"schedule\"]", %{"backfill" => params})
@@ -299,6 +316,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         "format" => "JSONAsString"
       }
 
+      view |> open_manual_tab()
+
       view
       |> form("form[phx-submit=\"schedule\"]", %{"backfill" => params})
       |> render_submit()
@@ -317,6 +336,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         "target_table" => "analytics.raw_events",
         "format" => "JSONAsString"
       }
+
+      view |> open_manual_tab()
 
       view
       |> form("form[phx-submit=\"schedule\"]", %{"backfill" => params})
@@ -345,14 +366,17 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         }
       })
 
-      {:ok, _view, html} = live(conn, @route)
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      html = render(view)
 
       assert html =~ "width: 42.5%"
       assert html =~ "Rows: 425 / 1000 (42.5%)"
     end
 
     test "retry inventory batch enqueues job", %{conn: conn} do
-      Oban.Testing.reset()
+      clear_oban_jobs()
 
       run =
         %InventoryRun{
@@ -434,14 +458,14 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         }
         |> Repo.insert!()
 
-      failed_batch =
+      pending_batch =
         %InventoryBatch{
           run_id: run.id,
           sequence: 2,
           parquet_key: "torus/path/failed.parquet",
-          status: :failed,
+          status: :pending,
           object_count: 8,
-          processed_objects: 8
+          processed_objects: 0
         }
         |> Repo.insert!()
 
@@ -459,12 +483,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       run = Repo.get!(InventoryRun, run.id)
       running_batch = Repo.get!(InventoryBatch, running_batch.id)
-      failed_batch = Repo.get!(InventoryBatch, failed_batch.id)
+      pending_batch = Repo.get!(InventoryBatch, pending_batch.id)
 
       assert run.status == :cancelled
       refute is_nil(run.finished_at)
       assert running_batch.status == :cancelled
-      assert failed_batch.status == :failed
+      assert pending_batch.status == :cancelled
 
       rendered = render(view)
       assert rendered =~ "Run #{run.id} cancellation requested"

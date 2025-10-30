@@ -465,6 +465,10 @@ defmodule OliWeb.GradesLiveTest do
 
       assert has_element?(view, "samp", "Starting test")
       assert has_element?(view, "samp", "Requesting access token...")
+      Process.sleep(200)
+
+      wait_until(fn -> has_element?(view, "samp", "error fetching access token") end)
+
       assert has_element?(view, "samp", "error fetching access token")
     end
 

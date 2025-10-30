@@ -16,6 +16,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
 
   describe "module structure" do
     test "module has required functions" do
+      assert Code.ensure_loaded?(SectionAnalytics)
       # Test that the public functions we expect are available
       assert function_exported?(SectionAnalytics, :mount, 1)
       assert function_exported?(SectionAnalytics, :update, 2)
@@ -71,13 +72,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
           resource_title_map: %{}
         )
 
-      html = rendered_to_string(rendered)
+      html = rendered
 
       assert html =~ "Video Interactions"
-      assert html =~ ">8</p>"
+      assert html =~ ~r/>\s*8\s*<\/p>/
       assert html =~ "events from 2 users"
       assert html =~ "Activity Attempts"
-      assert html =~ ">7</p>"
+      assert html =~ ~r/>\s*7\s*<\/p>/
       assert html =~ "events from 4 users"
       # Ensure we only rendered one combined video card
       assert String.contains?(html, "Video Interactions")
