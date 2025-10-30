@@ -5,5 +5,7 @@ metadata:
 spec:
   template:
     spec:
-      imagePullSecrets:
-        - name: ghcr-creds
+      initContainers:
+        - name: patch-release-setup
+          image: alpine:3.20
+          command: ["sh", "-c", "exit 0"]
