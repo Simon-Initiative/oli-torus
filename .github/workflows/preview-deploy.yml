@@ -81,7 +81,7 @@ jobs:
       KUBECONFIG: /etc/rancher/k3s/k3s.yaml
       IMAGE_REPO: ghcr.io/simon-initiative/oli-torus
       IMAGE_TAG: sha-${{ github.sha }}
-      PREVIEW_DOMAIN: plasma.oli.cmu.edu
+      PREVIEW_DOMAIN: ${{ vars.PREVIEW_DOMAIN || 'plasma.oli.cmu.edu' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -103,19 +103,32 @@ jobs:
             --docker-password="${CR_PAT}" \
             --docker-email="${REGISTRY_USER}@users.noreply.github.com"
 
-      - name: Deploy Helm release
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v1
+        with:
+          kustomize-version: "5.4.1"
+
+      - name: Render and apply Kustomize overlay
         run: |
-          DOMAIN_FLAG=""
-          if [[ -n "${PREVIEW_DOMAIN}" ]]; then
-            DOMAIN_FLAG="--set previewDomain=${PREVIEW_DOMAIN}"
-          fi
-          helm upgrade --install "pr-${PR}" devops/helm/app \
-            --namespace "pr-${PR}" --create-namespace \
-            --set prNumber=${PR} \
-            --set image.repository=${IMAGE_REPO} \
-            --set image.tag=${IMAGE_TAG} \
-            --set imagePullSecrets[0]=ghcr-creds \
-            ${DOMAIN_FLAG}
+          set -euo pipefail
+
+          BUILD_ROOT="$(mktemp -d)"
+          trap 'rm -rf "$BUILD_ROOT"' EXIT
+
+          cp -R devops "${BUILD_ROOT}/"
+
+          OVERLAY_DIR="${BUILD_ROOT}/devops/kustomize/overlays/preview"
+
+          printf 'PR_NUMBER=%s\nPREVIEW_DOMAIN=%s\n' "${PR}" "${PREVIEW_DOMAIN}" > "${OVERLAY_DIR}/params.env"
+
+          cd "${OVERLAY_DIR}"
+          kustomize edit set namespace "pr-${PR}"
+          kustomize edit set image ${IMAGE_REPO}=${IMAGE_REPO}:${IMAGE_TAG}
+
+          kustomize build . | kubectl apply -f -
+
+      - name: Wait for application rollout
+        run: kubectl -n "pr-${PR}" rollout status deployment/app --timeout=5m
 
       - name: Post preview URL
         if: always()

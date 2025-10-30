@@ -1,0 +1,44 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: preview-params
+    envs:
+      - params.env
+    behavior: replace
+
+secretGenerator:
+  - name: app-env
+    behavior: merge
+    literals:
+      - HOST=pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)
+      - MEDIA_URL=https://pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)/minio/torus-media
+      - AWS_S3_HOST=minio
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/postgres
+
+vars:
+  - name: PR_NUMBER
+    objref:
+      kind: ConfigMap
+      name: preview-params
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.PR_NUMBER
+  - name: PREVIEW_DOMAIN
+    objref:
+      kind: ConfigMap
+      name: preview-params
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.PREVIEW_DOMAIN
+
+patchesStrategicMerge:
+  - patches/app-ingress.yaml
+  - patches/minio-ingress-api.yaml
+  - patches/minio-ingress-console.yaml
+  - patches/app-deployment.yaml
+  - patches/release-setup-job.yaml
+  - patches/minio-statefulset.yaml

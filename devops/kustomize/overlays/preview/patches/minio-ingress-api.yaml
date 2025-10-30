@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio-api
+spec:
+  rules:
+    - host: pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)
+      http:
+        paths:
+          - path: /minio/torus-media
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  name: http
+          - path: /minio/torus-xapi
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  name: http
+          - path: /minio/torus-blob-dev
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  name: http

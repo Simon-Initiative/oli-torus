@@ -13,10 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Uninstall Helm release
-        run: |
-          helm uninstall "pr-${PR}" --namespace "pr-${PR}" || true
-
       - name: Delete namespace
         run: kubectl delete namespace "pr-${PR}" --ignore-not-found --wait=false
 

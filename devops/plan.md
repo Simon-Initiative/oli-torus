@@ -7,7 +7,7 @@ This plan translates the high-level migration approach in `devops/k8s_migration_
 ## Phase 0 – Alignment & Readiness
 
 **Codex**
-- Validate repository layout supports infra assets (e.g., ensure `devops/` directory hosts Helm and supporting manifests). Create tracking issues/tasks (GitHub Projects or similar) mirroring the phases below.
+- Validate repository layout supports infra assets (e.g., ensure `devops/` hosts the Kustomize base/overlays and supporting manifests). Create tracking issues/tasks (GitHub Projects or similar) mirroring the phases below.
 
 **DevOps engineer**
 - Confirm target host specifications: 4+ vCPU, 8+ GB RAM, 80+ GB SSD free; Amazon Linux 2023 (or current production baseline). Document host inventory and access controls.
@@ -78,13 +78,13 @@ Exit criteria: HAProxy routes preview hostnames to Traefik; DNS updated.
   - `policies/resource-quota.yaml` and `policies/network-policy.yaml` aligned with migration guidance.
 - Provide README snippets describing how CI applies these manifests.
 - Supply helper script `devops/scripts/apply-preview-policies.sh` for namespace bootstrap via CI.
-- Translate `devops/default.env` into chart defaults so application environment variables are sourced from a Kubernetes secret by default, while allowing overrides.
+- Translate `devops/default.env` into a Kustomize `secretGenerator` so application environment variables are sourced from a Kubernetes secret by default, while allowing overlay-level overrides.
 
 - Apply infrastructure RBAC baseline:
   ```bash
   kubectl apply -f devops/k8s/rbac/pr-admin.yaml
   ```
-- Confirm the CI runner has `docker`, `kubectl`, `helm`, and `envsubst` available; install if missing.
+- Confirm the CI runner has `docker`, `kubectl`, `kustomize`, and `envsubst` available; install if missing.
 - Validate that the deploy workflow can create `ghcr-creds` secrets in PR namespaces (requires `SIMON_BOT_PERSONAL_ACCESS_TOKEN` or equivalent PAT with `read:packages` scope stored in GitHub secrets).
 - Decide on TLS strategy:
   - If continuing HAProxy-managed TLS, skip cert-manager.
@@ -96,35 +96,25 @@ Exit criteria: cluster RBAC/policies in place; registry access configured; TLS a
 
 ---
 
-## Phase 4 – Helm Chart Authoring
+## Phase 4 – Kustomize Base & Overlay Authoring
 
 **Codex**
-- Scaffold Helm chart at `devops/helm/app/`:
-  - Templates for Deployment, Service, and Ingress for the application (host `{{ printf "pr-%s.plasma.oli.cmu.edu" .Values.prNumber }}`).
-  - Bundle preview-friendly Postgres (pgvector image) and MinIO StatefulSets with PVCs, Services, and a bucket-initialisation job mirroring `devops/docker-compose.yml`.
-  - Generate an application env secret derived from `devops/default.env`, with support for overrides via `values.yaml`.
-  - Add a post-install/upgrade Job that runs the Elixir release setup task (`/app/bin/oli eval "Oli.Release.setup"`) so the database schema mirrors compose deployments.
-  - Provide sensible default resource requests/limits for supporting workloads (Postgres, MinIO, and the bucket/setup jobs) to comply with namespace quotas while remaining overrideable.
-  - Values supporting `image.repository`, `image.tag`, replica count (default 1), environment variables, and optional resource overrides for supporting services.
-  - Include `README.md` with usage examples:
-    ```bash
-    helm upgrade --install pr-123 devops/helm/app \
-      --namespace pr-123 --create-namespace \
-      --set prNumber=123 \
-    --set image.repository=ghcr.io/org/app \
-    --set image.tag=pr-123
-  ```
-- Add `helm lint` step to project docs and optionally a CI job for chart validation.
+- Scaffold Kustomize assets under `devops/kustomize/`:
+  - `base/` contains canonical manifests for the app Deployment/Service, Postgres & MinIO StatefulSets, Traefik ingresses/middlewares, release setup job, and MinIO bucket job. Ensure the base references the shared `app-env` secret generator fed by `devops/default.env`.
+  - `overlays/preview/` demonstrates how to merge PR-specific values (namespace, image tag, ingress host, secret overrides, image pull secrets). Include example patches for forwarded header annotations and MinIO console routing.
+  - Keep resource requests/limits generous (3 CPU/12 Gi app cap, 2 CPU/8 Gi Postgres, 2 CPU/6 Gi MinIO, etc.) while ensuring they stay under the namespace LimitRange ceiling.
+- Document how to tune the overlay (image names, host literal, additional env vars) in `docs/preview-environments.md` and add a README snippet explaining `kustomize build … | kubectl apply -f -`.
+- Provide `make preview-deploy` or script snippets if helpful for local testing (`kustomize build devops/kustomize/overlays/preview | kubectl apply -f -`).
 
 **DevOps engineer**
-- Review chart defaults against infrastructure limits (CPU/memory). Supply Codex with required secret names and config keys.
-- After Codex delivers chart, perform manual validation:
+- Review default resource requests and PVC sizes relative to cluster capacity; feedback any adjustments required for production parity.
+- Validate generated manifests locally:
   ```bash
-  helm template pr-0 devops/helm/app --set prNumber=0
+  kustomize build devops/kustomize/overlays/preview
   ```
-  Ensure generated manifests match expectations (Ingress host, service ports).
+  Ensure the rendered YAML matches expectations (ingress host, image tags, secret literals) before CI adopts it.
 
-Exit criteria: Helm chart merged; validated by DevOps in dry run.
+Exit criteria: Kustomize base/overlay merged; DevOps signs off on rendered manifests.
 
 ---
 
@@ -132,23 +122,23 @@ Exit criteria: Helm chart merged; validated by DevOps in dry run.
 
 **Codex**
 - Implement GitHub Actions workflows:
-  - `preview-deploy.yml` triggered on PR open/sync to build image, push to GHCR, create namespace (idempotent), apply quotas/policies, run `helm upgrade --install`.
-  - `preview-teardown.yml` triggered on PR close to uninstall release and delete namespace.
-  - Include steps to copy kubeconfig from runner path (export `KUBECONFIG=/etc/rancher/k3s/k3s.yaml`) and run `helm/kubectl`.
+  - `preview-deploy.yml` triggered on PR open/sync to build the image, push to GHCR, create/patch the namespace, apply quotas/policies, template the overlay (update `PLACEHOLDER` tokens), and run `kustomize build devops/kustomize/overlays/preview | kubectl apply -f -`.
+  - `preview-teardown.yml` triggered on PR close to delete the namespace (which removes all preview resources).
+  - Include steps to copy kubeconfig from the runner path (`export KUBECONFIG=/etc/rancher/k3s/k3s.yaml`) and install `kustomize` (or use `kubectl kustomize`).
 - Workflows should lean on the job-scoped `GITHUB_TOKEN` for building/pushing images, while using `secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN` (or an equivalent long-lived PAT) strictly for populating namespace pull secrets.
-- Document workflow behaviour in repo (e.g., `docs/preview-environments.md`) so developers know preview URL patterns, available Helm values (Postgres/MinIO tuning), and how to override the default environment secret via `appEnv.overrides`.
+- Document workflow behaviour in repo (e.g., `docs/preview-environments.md`) so developers know preview URL patterns, which overlay fields must be substituted per PR (host, namespace, tag), and how to append extra environment variables via the overlay’s `secretGenerator`.
 
 **DevOps engineer**
 - Prepare runner environment:
   - Ensure the self-hosted runner on the k3s node is registered with the `plasma` label (or the exact name referenced in the workflow).
-  - Grant runner user read access to kubeconfig; install Helm via `curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash` and ensure the binary is on the runner’s `PATH`.
+  - Grant runner user read access to kubeconfig; install `kustomize` (or confirm `kubectl kustomize` is available) and ensure the binary is on the runner’s `PATH`.
 - Create GitHub secrets:
   - `SIMON_BOT_PERSONAL_ACCESS_TOKEN` (or equivalent long-lived PAT with `read:packages`) used to seed namespace pull secrets.
   - Optional DNS API tokens if cert-manager/ExternalDNS used.
 - Test workflows:
   - Open test PR; observe action logs.
   - Verify image pushes succeed (`docker pull` from GHCR).
-  - Confirm namespace/Helm release created (`kubectl get ns pr-<n>`).
+  - Confirm namespace and workloads created (`kubectl get ns pr-<n>` and `kubectl -n pr-<n> get deploy,sts,ing`).
 - Configure cleanup safeguard: add scheduled workflow (monthly) to list and prune orphaned namespaces; Codex can script if requested.
 
 Exit criteria: CI workflows run end-to-end creating functional preview environment and tearing down on PR close.
@@ -176,9 +166,9 @@ Exit criteria: preview environments exclusively served from k3s; legacy pipeline
 
 **Codex**
 - Track backlog items:
-  - Automate Helm chart publishing to GHCR as OCI artifact.
+  - Add automated validation for Kustomize overlays (e.g., `kustomize build` + `kubectl apply --dry-run=server` in CI).
   - Add ExternalDNS integration if unique DNS records per PR desired.
-  - Add lint/unit tests for chart templates.
+  - Add lint/unit tests for rendered manifests.
 
 **DevOps engineer**
 - Evaluate storage backend upgrade (Longhorn/CSI) when multiple worker nodes introduced; plan data migration.

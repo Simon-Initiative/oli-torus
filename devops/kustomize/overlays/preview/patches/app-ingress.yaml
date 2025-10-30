@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app
+  annotations:
+    traefik.ingress.kubernetes.io/forwardedHeaders.trustedIPs: 10.0.0.0/24
+    traefik.ingress.kubernetes.io/forwardedHeaders.insecure: "true"
+spec:
+  rules:
+    - host: pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app
+                port:
+                  name: http

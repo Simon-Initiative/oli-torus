@@ -1,0 +1,9 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: release-setup
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: ghcr-creds

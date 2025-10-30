@@ -1,0 +1,16 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio-console
+spec:
+  rules:
+    - host: pr-$(PR_NUMBER).$(PREVIEW_DOMAIN)
+      http:
+        paths:
+          - path: /minio
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  name: console

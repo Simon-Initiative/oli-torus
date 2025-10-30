@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+commonLabels:
+  app.kubernetes.io/part-of: oli-torus-preview
+  app.kubernetes.io/managed-by: kustomize
+
+resources:
+  - serviceaccount.yaml
+  - app-service.yaml
+  - app-deployment.yaml
+  - postgres-service.yaml
+  - postgres-statefulset.yaml
+  - minio-service.yaml
+  - minio-statefulset.yaml
+  - ingress-app.yaml
+  - minio-middleware-api.yaml
+  - minio-middleware-console.yaml
+  - ingress-minio-api.yaml
+  - ingress-minio-console.yaml
+  - release-setup-job.yaml
+  - minio-buckets-job.yaml
+
+secretGenerator:
+  - name: app-env
+    envs:
+      - ../../default.env
+    options:
+      disableNameSuffixHash: true
