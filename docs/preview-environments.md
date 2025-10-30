@@ -46,7 +46,7 @@ Each preview release installs dedicated Postgres (pgvector) and MinIO instances 
 - The MinIO bucket job provisions `torus-media`, `torus-xapi`, and `torus-blob-dev` and sets public policies. Both jobs use elevated resource limits defined in the manifests to avoid repeated OOMs.
 - Supporting workloads request generous CPU/memory while remaining under the namespace LimitRange cap (4 CPU / 16 GiB).
 
-MinIO assets are served from `https://pr-<PR>.plasma.oli.cmu.edu/minio/<bucket>/...`, and the MinIO console is exposed at `https://pr-<PR>.plasma.oli.cmu.edu/minio`.
+MinIO assets are served from `https://pr-<PR>.plasma.oli.cmu.edu/buckets/<bucket>/...`, and the MinIO console is exposed at `https://pr-<PR>.plasma.oli.cmu.edu/minio`.
 
 ## Cluster Preparation Checklist
 

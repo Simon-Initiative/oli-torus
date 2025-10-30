@@ -166,7 +166,7 @@ jobs:
           printf 'PREVIEW_SLUG=%s\nPREVIEW_DOMAIN=%s\n' "${PREVIEW_SLUG}" "${PREVIEW_DOMAIN}" > "${OVERLAY_DIR}/params.env"
 
           PREVIEW_HOST=${PREVIEW_SLUG}.${PREVIEW_DOMAIN}
-          printf 'HOST=%s\nMEDIA_URL=https://%s/minio/torus-media\n' "${PREVIEW_HOST}" "${PREVIEW_HOST}" > "${OVERLAY_DIR}/app-overrides.env"
+          printf 'HOST=%s\nMEDIA_URL=https://%s/buckets/torus-media\n' "${PREVIEW_HOST}" "${PREVIEW_HOST}" > "${OVERLAY_DIR}/app-overrides.env"
 
           cd "${OVERLAY_DIR}"
           kustomize edit set namespace "${PREVIEW_SLUG}"

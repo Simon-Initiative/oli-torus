@@ -12,28 +12,28 @@ spec:
     - host: preview.local
       http:
         paths:
-          - path: /minio
+          - path: /buckets
             pathType: Prefix
             backend:
               service:
                 name: minio
                 port:
                   name: http
-          - path: /minio/torus-media
+          - path: /buckets/torus-media
             pathType: Prefix
             backend:
               service:
                 name: minio
                 port:
                   name: http
-          - path: /minio/torus-xapi
+          - path: /buckets/torus-xapi
             pathType: Prefix
             backend:
               service:
                 name: minio
                 port:
                   name: http
-          - path: /minio/torus-blob-dev
+          - path: /buckets/torus-blob-dev
             pathType: Prefix
             backend:
               service:
