@@ -1,6 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+generatorOptions:
+  disableNameSuffixHash: true
+
 commonLabels:
   app.kubernetes.io/part-of: oli-torus-preview
   app.kubernetes.io/managed-by: kustomize
@@ -21,9 +24,13 @@ resources:
   - release-setup-job.yaml
   - minio-buckets-job.yaml
 
+configMapGenerator:
+  - name: preview-params
+    literals:
+      - PR_NUMBER=0
+      - PREVIEW_DOMAIN=plasma.oli.cmu.edu
+
 secretGenerator:
   - name: app-env
     envs:
       - ../../default.env
-    options:
-      disableNameSuffixHash: true

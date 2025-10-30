@@ -8,7 +8,7 @@ configMapGenerator:
   - name: preview-params
     envs:
       - params.env
-    behavior: replace
+    behavior: merge
 
 secretGenerator:
   - name: app-env
