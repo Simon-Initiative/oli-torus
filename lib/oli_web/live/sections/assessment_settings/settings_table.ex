@@ -31,7 +31,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     limit: 10,
     sort_order: :asc,
     sort_by: :index,
-    text_search: nil
+    text_search: nil,
+    bulk_apply_selected_assessment_id: nil
   }
 
   def mount(socket) do
@@ -78,7 +79,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        assessments: assigns.assessments,
        form_id: UUID.uuid4(),
        bulk_apply_selected_assessment_id:
-         if(assigns.assessments != [], do: hd(assigns.assessments).resource_id, else: nil),
+         get_valid_assessment_id(assigns.assessments, params.bulk_apply_selected_assessment_id),
        selected_assessment: nil
      )}
   end
@@ -116,7 +117,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         >
           <label>Copy and apply settings from one assessment to all:</label>
           <div class="flex lg:space-x-4 lg:mt-2">
-            <select class="torus-select" name="assessment_id">
+            <select
+              id="assessment_select"
+              class="torus-select"
+              name="assessment_id"
+              phx-target={@myself}
+              phx-change="select_assessment"
+            >
               <option
                 :for={assessment <- @assessments}
                 selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
@@ -401,8 +408,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   def handle_event("hide_modal", _params, socket) do
     {:noreply,
      assign(socket,
-       modal_assigns: %{show: false},
-       bulk_apply_selected_assessment_id: hd(socket.assigns.assessments).resource_id
+       modal_assigns: %{show: false}
      )}
   end
 
@@ -423,6 +429,22 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
      )}
   end
 
+  def handle_event("select_assessment", %{"assessment_id" => assessment_id}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Sections.AssessmentSettings.SettingsLive,
+           socket.assigns.section.slug,
+           :all,
+           update_params(socket.assigns.params, %{
+             bulk_apply_selected_assessment_id: String.to_integer(assessment_id)
+           })
+         )
+     )}
+  end
+
   def handle_event(
         "search_assessment",
         %{"assessment_name" => assessment_name},
@@ -436,7 +458,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            OliWeb.Sections.AssessmentSettings.SettingsLive,
            socket.assigns.section.slug,
            :all,
-           update_params(socket.assigns.params, %{text_search: assessment_name, offset: 0})
+           update_params(socket.assigns.params, %{
+             text_search: assessment_name,
+             offset: 0,
+             bulk_apply_selected_assessment_id: socket.assigns.bulk_apply_selected_assessment_id
+           })
          )
      )}
   end
@@ -500,7 +526,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            OliWeb.Sections.AssessmentSettings.SettingsLive,
            socket.assigns.section.slug,
            :all,
-           socket.assigns.params
+           update_params(socket.assigns.params, %{
+             bulk_apply_selected_assessment_id: socket.assigns.bulk_apply_selected_assessment_id
+           })
          )
      )}
   end
@@ -518,7 +546,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            OliWeb.Sections.AssessmentSettings.SettingsLive,
            socket.assigns.section.slug,
            :all,
-           update_params(socket.assigns.params, %{limit: limit, offset: offset})
+           update_params(socket.assigns.params, %{
+             limit: limit,
+             offset: offset,
+             bulk_apply_selected_assessment_id: socket.assigns.bulk_apply_selected_assessment_id
+           })
          )
      )}
   end
@@ -537,7 +569,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            socket.assigns.section.slug,
            :all,
            update_params(socket.assigns.params, %{
-             sort_by: String.to_existing_atom(sort_by)
+             sort_by: String.to_existing_atom(sort_by),
+             bulk_apply_selected_assessment_id: socket.assigns.bulk_apply_selected_assessment_id
            })
          )
      )}
@@ -977,7 +1010,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           ],
           @default_params.sort_by
         ),
-      text_search: Params.get_param(params, "text_search", @default_params.text_search)
+      text_search: Params.get_param(params, "text_search", @default_params.text_search),
+      bulk_apply_selected_assessment_id:
+        Params.get_int_param(
+          params,
+          "bulk_apply_selected_assessment_id",
+          @default_params.bulk_apply_selected_assessment_id
+        )
     }
   end
 
@@ -1083,5 +1122,18 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         select: s
       )
     )
+  end
+
+  defp get_valid_assessment_id([], _), do: nil
+
+  defp get_valid_assessment_id(assessments, nil) when assessments != [],
+    do: hd(assessments).resource_id
+
+  defp get_valid_assessment_id(assessments, id) do
+    if Enum.any?(assessments, fn a -> a.resource_id == id end) do
+      id
+    else
+      hd(assessments).resource_id
+    end
   end
 end

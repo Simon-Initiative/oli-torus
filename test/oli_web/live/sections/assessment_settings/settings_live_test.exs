@@ -989,6 +989,147 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert initial_assessment_4 == final_assessment_4
     end
 
+    test "bulk apply dropdown defaults to first assessment when no param is provided",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # Verify that the first assessment is selected by default
+      assert view
+             |> element(~s{select[id="assessment_select"] option[selected][value="#{page_1.resource_id}"]})
+             |> has_element?()
+    end
+
+    test "changing the bulk apply dropdown updates the URL with the selected assessment id",
+         %{
+           conn: conn,
+           section: section,
+           page_2: page_2
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # Change the selection to page 2
+      view
+      |> element(~s{select[id="assessment_select"]})
+      |> render_change(%{"assessment_id" => page_2.resource_id})
+
+      # Verify the new selection is now shown in the dropdown (which means the URL param was updated)
+      assert view
+             |> element(~s{select[id="assessment_select"] option[selected][value="#{page_2.resource_id}"]})
+             |> has_element?()
+    end
+
+    test "bulk apply selection persists after searching",
+         %{
+           conn: conn,
+           section: section,
+           page_3: page_3
+         } do
+      # Start with page_3 selected via URL param
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "settings", "all", %{
+            bulk_apply_selected_assessment_id: page_3.resource_id
+          })
+        )
+
+      # Perform a search
+      view
+      |> form(~s{form[for="search"]})
+      |> render_change(%{"assessment_name" => "Page"})
+
+      # Verify the bulk_apply_selected_assessment_id is still selected in the dropdown
+      assert view
+             |> element(~s{select[id="assessment_select"] option[selected][value="#{page_3.resource_id}"]})
+             |> has_element?()
+    end
+
+    test "bulk apply selection persists after pagination",
+         %{
+           conn: conn,
+           section: section,
+           page_2: page_2
+         } do
+      # Start with page_2 selected and limit to 2 assessments per page
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "settings", "all", %{
+            limit: 2,
+            offset: 0,
+            bulk_apply_selected_assessment_id: page_2.resource_id
+          })
+        )
+
+      # Click on the next page button
+      view
+      |> element("button[phx-value-offset='2'][phx-value-limit='2']", "2")
+      |> render_click()
+
+      # Verify the bulk_apply_selected_assessment_id is still selected in the dropdown
+      assert view
+             |> element(~s{select[id="assessment_select"] option[selected][value="#{page_2.resource_id}"]})
+             |> has_element?()
+    end
+
+    test "bulk apply selection persists after sorting",
+         %{
+           conn: conn,
+           section: section,
+           page_4: page_4
+         } do
+      # Start with page_4 selected
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "settings", "all", %{
+            bulk_apply_selected_assessment_id: page_4.resource_id
+          })
+        )
+
+      # Sort by name
+      view
+      |> element("th[phx-value-sort_by=name]")
+      |> render_click()
+
+      # Verify the bulk_apply_selected_assessment_id is still selected in the dropdown
+      assert view
+             |> element(~s{select[id="assessment_select"] option[selected][value="#{page_4.resource_id}"]})
+             |> has_element?()
+    end
+
+    test "bulk apply selection persists after confirm and redirect",
+         %{
+           conn: conn,
+           section: section,
+           page_2: page_2
+         } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "settings", "all", %{
+            bulk_apply_selected_assessment_id: page_2.resource_id
+          })
+        )
+
+      # Open and confirm bulk apply modal
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_2.resource_id})
+
+      {:error, {:redirect, %{to: redirect_path}}} =
+        view
+        |> form(~s{form[phx-submit=confirm_bulk_apply]})
+        |> render_submit(%{})
+
+      # Verify the redirect URL includes the bulk_apply_selected_assessment_id parameter
+      assert redirect_path =~ "bulk_apply_selected_assessment_id=#{page_2.resource_id}"
+    end
+
     test "search input filters assessments by the provided text input",
          %{
            conn: conn,
