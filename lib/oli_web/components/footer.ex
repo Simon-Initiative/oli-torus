@@ -4,7 +4,7 @@ defmodule OliWeb.Components.Footer do
 
   def delivery_footer(assigns) do
     ~H"""
-    <footer class="w-full py-4 md:container md:mx-auto lg:px-10 text-xs bg-delivery-footer dark:bg-delivery-footer-dark">
+    <footer class="w-full py-4 md:container lg:px-10 text-xs bg-delivery-footer dark:bg-delivery-footer-dark">
       <div class="flex flex-col">
         <div class="flex flex-row gap-2">
           <.cookie_preferences />
@@ -110,11 +110,11 @@ defmodule OliWeb.Components.Footer do
     assigns = assign(assigns, privacy_policies_url: privacy_policies_url())
 
     ~H"""
-    <div class="text-center md:text-left w-full md:w-3/12">
+    <div class="text-left w-full md:w-3/12">
       <a
         href="javascript:;"
         onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{@privacy_policies_url}'})"}
-        class={@class}
+        class={[@class, "whitespace-nowrap"]}
       >
         Cookie Preferences
       </a>

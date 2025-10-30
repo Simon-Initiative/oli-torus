@@ -3255,6 +3255,21 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "get_section_by_slug_with_base_project/1" do
+    test "returns section with base_project preloaded when slug exists" do
+      section = insert(:section)
+
+      assert fetched = Sections.get_section_by_slug_with_base_project(section.slug)
+      assert fetched.id == section.id
+      assert fetched.base_project != nil
+      assert fetched.base_project.id == section.base_project.id
+    end
+
+    test "returns nil when slug does not exist" do
+      assert Sections.get_section_by_slug_with_base_project("non-existent-slug") == nil
+    end
+  end
+
   # Helper function for creating attempts
   # activities_data should be a map of activity_id => %{score: X, out_of: Y, revision: revision}
   # If an activity is not provided, it will get a score of 0

@@ -7,7 +7,7 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
   alias Oli.Delivery.Sections
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
-    case Sections.get_section_by_slug(section_slug) do
+    case Sections.get_section_by_slug_with_base_project(section_slug) do
       nil ->
         {:halt,
          socket
@@ -21,11 +21,18 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
             _ -> Map.put(section, :required_survey, Sections.get_survey(section_slug))
           end
 
-        {:cont, assign(socket, section: section)}
+        {:cont, assign(socket, section: section, license: get_license_from_section(section))}
     end
   end
 
   def on_mount(:default, _params, _session, socket) do
     {:cont, assign(socket, section: nil)}
   end
+
+  defp get_license_from_section(%{base_project: %{attributes: %{license: license}}})
+       when is_map(license) and license.license_type not in [nil, :none] do
+    Map.from_struct(license)
+  end
+
+  defp get_license_from_section(_), do: nil
 end
