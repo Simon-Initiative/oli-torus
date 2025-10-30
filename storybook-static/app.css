@@ -9232,6 +9232,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-right: 0.5rem;
 }
 
+.mr-28 {
+  margin-right: 7rem;
+}
+
 .mr-3 {
   margin-right: 0.75rem;
 }
@@ -9366,6 +9370,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .mt-\[9px\] {
   margin-top: 9px;
+}
+
+.mt-auto {
+  margin-top: auto;
 }
 
 .box-content {
@@ -9939,6 +9947,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[84px\] {
   min-height: 84px;
+}
+
+.min-h-\[calc\(100vh-56px\)\] {
+  min-height: calc(100vh - 56px);
 }
 
 .min-h-full {
@@ -23660,6 +23672,10 @@ Not supports in Firefox and IE */
     line-height: 1.75rem;
   }
 
+  .sm\:text-xs {
+    font-size: 0.8rem;
+  }
+
   .sm\:leading-\[60px\] {
     line-height: 60px;
   }
@@ -23768,10 +23784,6 @@ Not supports in Firefox and IE */
 
   .md\:hidden {
     display: none;
-  }
-
-  .md\:h-48 {
-    height: 12rem;
   }
 
   .md\:h-72 {
@@ -24061,10 +24073,6 @@ Not supports in Firefox and IE */
 
   .md\:pt-\[25px\] {
     padding-top: 25px;
-  }
-
-  .md\:text-left {
-    text-align: left;
   }
 
   .md\:text-2xl {
