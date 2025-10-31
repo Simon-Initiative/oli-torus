@@ -279,6 +279,9 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   def handle_event("validate", %{"certificate" => params}, socket) do
     base = socket.assigns.certificate_changeset.data || %Certificate{}
 
+    # Ensure hidden required field is present during live validation
+    params = Map.put(params, "section_id", socket.assigns.section.id)
+
     changeset =
       base
       |> Certificate.changeset(params)
