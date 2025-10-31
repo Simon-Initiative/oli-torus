@@ -254,23 +254,38 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   end
 
   def update(assigns, socket) do
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(
-       show_preview: false,
-       preview_page: 0,
-       logo_upload_errors: []
-     )
-     |> assign_new(:certificate_changeset, fn ->
-       assigns[:certificate_changeset] || certificate_changeset(assigns.certificate)
-     end)}
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign_new(:show_preview, fn -> false end)
+      |> assign_new(:preview_page, fn -> 0 end)
+      |> assign(logo_upload_errors: [])
+      |> assign_new(:certificate_changeset, fn ->
+        assigns[:certificate_changeset] || certificate_changeset(assigns.certificate)
+      end)
+
+    socket =
+      if Map.has_key?(assigns, :certificate) and socket.assigns.show_preview and
+           assigns.certificate do
+        assign(socket, certificate_html: generate_previews(assigns.certificate))
+      else
+        socket
+      end
+
+    {:ok, socket}
   end
 
   @impl true
   def handle_event("validate", %{"certificate" => params}, socket) do
-    changes = for {key, value} <- params, into: %{}, do: {String.to_existing_atom(key), value}
-    changeset = certificate_changeset(socket.assigns.certificate_changeset, changes)
+    base = socket.assigns.certificate_changeset.data || %Certificate{}
+
+    # Ensure hidden required field is present during live validation
+    params = Map.put(params, "section_id", socket.assigns.section.id)
+
+    changeset =
+      base
+      |> Certificate.changeset(params)
+      |> Map.put(:action, :validate)
 
     {:noreply,
      assign(socket,
@@ -301,18 +316,21 @@ defmodule OliWeb.Certificates.Components.DesignTab do
       |> Map.put(:logo1, updated_logos[:logo1])
       |> Map.put(:logo2, updated_logos[:logo2])
       |> Map.put(:logo3, updated_logos[:logo3])
+      |> Map.put(:section_id, socket.assigns.section.id)
 
     socket.assigns.certificate
     |> certificate_changeset(attrs)
     |> Repo.insert_or_update()
     |> case do
       {:ok, certificate} ->
+        send(self(), {:certificate_updated, certificate})
+
         {:noreply,
          assign(socket,
            certificate: certificate,
            certificate_changeset: certificate_changeset(certificate),
            show_preview: true,
-           certificate_html: generate_previews(socket, Keyword.values(updated_logos))
+           certificate_html: generate_previews(certificate)
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -325,9 +343,13 @@ defmodule OliWeb.Certificates.Components.DesignTab do
 
     socket.assigns.certificate_changeset
     |> Ecto.Changeset.put_change(logo_field, nil)
+    |> Ecto.Changeset.put_change(:section_id, socket.assigns.section.id)
+    |> Map.put(:action, nil)
     |> Repo.update()
     |> case do
       {:ok, certificate} ->
+        send(self(), {:certificate_updated, certificate})
+
         {:noreply,
          assign(socket,
            show_preview: false,
@@ -450,30 +472,6 @@ defmodule OliWeb.Certificates.Components.DesignTab do
     attrs = %{
       course_name: certificate.title,
       course_description: certificate.description,
-      administrators: admins,
-      logos: logos
-    }
-
-    render_sample_certificates(attrs)
-  end
-
-  defp generate_previews(%Phoenix.LiveView.Socket{} = socket, logos) do
-    changeset = socket.assigns.certificate_changeset
-
-    admins =
-      [
-        {changeset.changes[:admin_name1] || changeset.data.admin_name1,
-         changeset.changes[:admin_title1] || changeset.data.admin_title1},
-        {changeset.changes[:admin_name2] || changeset.data.admin_name2,
-         changeset.changes[:admin_title2] || changeset.data.admin_title2},
-        {changeset.changes[:admin_name3] || changeset.data.admin_name3,
-         changeset.changes[:admin_title3] || changeset.data.admin_title3}
-      ]
-      |> Enum.reject(fn {name, _} -> name == "" || !name end)
-
-    attrs = %{
-      course_name: changeset.changes[:title] || changeset.data.title,
-      course_description: changeset.changes[:description] || changeset.data.description,
       administrators: admins,
       logos: logos
     }

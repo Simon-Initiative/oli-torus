@@ -10,11 +10,16 @@ defmodule OliWeb.Certificates.Components.DesignTabTest do
   describe "certificate design component" do
     setup [:setup_certificate]
 
-    test "renders design component correctly", %{conn: conn, certificate: certificate} do
+    test "renders design component correctly", %{
+      conn: conn,
+      certificate: certificate,
+      section: section
+    } do
       {:ok, comp, _html} =
         live_component_isolated(conn, DesignTab, %{
           id: "certificate_design_component",
           certificate: certificate,
+          section: section,
           read_only: false
         })
 
@@ -29,12 +34,14 @@ defmodule OliWeb.Certificates.Components.DesignTabTest do
 
     test "validates certificate design changes on input change", %{
       conn: conn,
-      certificate: certificate
+      certificate: certificate,
+      section: section
     } do
       {:ok, comp, _html} =
         live_component_isolated(conn, DesignTab, %{
           id: "certificate_design_component",
           certificate: certificate,
+          section: section,
           read_only: false
         })
 
@@ -48,6 +55,110 @@ defmodule OliWeb.Certificates.Components.DesignTabTest do
                comp,
                "input[name=\"certificate[title]\"][value=\"New Course Title\"]"
              )
+    end
+
+    test "handles validation with unknown fields gracefully", %{
+      conn: conn,
+      certificate: certificate,
+      section: section
+    } do
+      {:ok, comp, _html} =
+        live_component_isolated(conn, DesignTab, %{
+          id: "certificate_design_component",
+          certificate: certificate,
+          section: section,
+          read_only: false
+        })
+
+      # Simulate form change with unknown fields (like _unused_* fields from Phoenix)
+      comp
+      |> element("form#certificate-settings-design-form")
+      |> render_change(%{
+        "certificate" => %{
+          "title" => "Test Title",
+          "description" => "Test Description",
+          "_unused_admin_name1" => "",
+          "_unused_admin_name2" => "",
+          "_unused_description" => ""
+        }
+      })
+
+      # Should not crash and should update the known fields
+      assert has_element?(
+               comp,
+               "input[name=\"certificate[title]\"][value=\"Test Title\"]"
+             )
+
+      assert has_element?(
+               comp,
+               "input[name=\"certificate[description]\"][value=\"Test Description\"]"
+             )
+    end
+
+    test "saves certificate with all required fields", %{
+      conn: conn,
+      certificate: certificate,
+      section: section
+    } do
+      {:ok, comp, _html} =
+        live_component_isolated(conn, DesignTab, %{
+          id: "certificate_design_component",
+          certificate: certificate,
+          section: section,
+          read_only: false
+        })
+
+      # Fill in the form
+      comp
+      |> element("form#certificate-settings-design-form")
+      |> render_change(%{
+        "certificate" => %{
+          "title" => "Updated Course Title",
+          "description" => "Updated Course Description",
+          "admin_name1" => "John Doe",
+          "admin_title1" => "Professor"
+        }
+      })
+
+      # Submit the form
+      comp
+      |> element("form#certificate-settings-design-form")
+      |> render_submit()
+
+      # Should show preview after save
+      assert has_element?(comp, ".fixed.inset-0.z-50", "Certificate Preview")
+    end
+
+    test "shows preview immediately after save without double click", %{
+      conn: conn,
+      certificate: certificate,
+      section: section
+    } do
+      {:ok, comp, _html} =
+        live_component_isolated(conn, DesignTab, %{
+          id: "certificate_design_component",
+          certificate: certificate,
+          section: section,
+          read_only: false
+        })
+
+      # Fill and submit form
+      comp
+      |> element("form#certificate-settings-design-form")
+      |> render_change(%{
+        "certificate" => %{
+          "title" => "Test Course",
+          "description" => "Test Description"
+        }
+      })
+
+      comp
+      |> element("form#certificate-settings-design-form")
+      |> render_submit()
+
+      # Preview should appear immediately
+      assert has_element?(comp, ".fixed.inset-0.z-50", "Certificate Preview")
+      assert has_element?(comp, "iframe")
     end
   end
 
@@ -106,7 +217,8 @@ defmodule OliWeb.Certificates.Components.DesignTabTest do
   end
 
   defp setup_certificate(_context) do
-    certificate = insert(:certificate)
-    %{certificate: certificate}
+    section = insert(:section)
+    certificate = insert(:certificate, section: section)
+    %{certificate: certificate, section: section}
   end
 end
