@@ -268,6 +268,112 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
         ~p"/sections/#{section.slug}/adaptive_lesson/#{page_revision.slug}"
       )
     end
+
+    # Test: {:graded, :adaptive_with_chrome, _, true} -> ensure_path(conn, :review, :not_adaptive)
+    test "redirects graded adaptive with chrome to review when review path", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      # Update the existing page_revision to be graded adaptive with chrome
+      page_revision
+      |> Changeset.change(%{
+        graded: true,
+        content: %{
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => true
+        }
+      })
+      |> Repo.update!()
+
+      conn =
+        prepare_conn(conn, section, page_revision, %{
+          extra_params: %{
+            "attempt_guid" => "test-attempt"
+          }
+        })
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}/attempt/test-attempt/review"
+      )
+    end
+
+    # Test: {:graded, :adaptive_with_chrome, nil, false} -> ensure_path(conn, :prologue)
+    test "redirects graded adaptive with chrome to prologue when no attempt", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      # Update the existing page_revision to be graded adaptive with chrome
+      page_revision
+      |> Changeset.change(%{
+        graded: true,
+        content: %{
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => true
+        }
+      })
+      |> Repo.update!()
+
+      conn = prepare_conn(conn, section, page_revision)
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        "/sections/#{section.slug}/prologue/#{page_revision.slug}?"
+      )
+    end
+
+    # Test: {:graded, :adaptive_with_chrome, %ResourceAttempt{lifecycle_state: :active}, false} -> ensure_path(conn, :lesson)
+    test "redirects graded adaptive with chrome to lesson when active attempt", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision,
+      user: user
+    } do
+      # Update the existing page_revision to be graded adaptive with chrome
+      page_revision
+      |> Changeset.change(%{
+        graded: true,
+        content: %{
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => true
+        }
+      })
+      |> Repo.update!()
+
+      # Create a resource access for the user and section
+      resource_access =
+        insert(:resource_access, %{
+          user: user,
+          section: section,
+          resource: page_revision.resource
+        })
+
+      # Create a resource attempt with active state
+      resource_attempt =
+        insert(:resource_attempt, %{
+          lifecycle_state: :active,
+          revision: page_revision,
+          resource_access: resource_access
+        })
+
+      # Debug: verify the lifecycle_state was set correctly
+      assert resource_attempt.lifecycle_state == :active
+
+      conn = prepare_conn(conn, section, page_revision)
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        "/sections/#{section.slug}/lesson/#{page_revision.slug}?"
+      )
+    end
   end
 
   describe "call/2 for practice pages" do
@@ -384,6 +490,65 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       assert_redirected_to_path(
         result_conn,
         ~p"/sections/#{section.slug}/adaptive_lesson/#{page_2_revision.slug}/attempt/test-attempt/review"
+      )
+    end
+
+    # Test: {:practice, :adaptive_with_chrome, _, false} -> ensure_path(conn, :lesson)
+    test "redirects practice adaptive with chrome to lesson when not review path", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      # Update the existing page_revision to be practice adaptive with chrome
+      page_revision
+      |> Changeset.change(%{
+        graded: false,
+        content: %{
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => true
+        }
+      })
+      |> Repo.update!()
+
+      conn = prepare_conn(conn, section, page_revision)
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        "/sections/#{section.slug}/lesson/#{page_revision.slug}?"
+      )
+    end
+
+    # Test: {:practice, :adaptive_with_chrome, _, true} -> ensure_path(conn, :review, :not_adaptive)
+    test "redirects practice adaptive with chrome to review when review path", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      # Update the existing page_revision to be practice adaptive with chrome
+      page_revision
+      |> Changeset.change(%{
+        graded: false,
+        content: %{
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => true
+        }
+      })
+      |> Repo.update!()
+
+      conn =
+        prepare_conn(conn, section, page_revision, %{
+          extra_params: %{
+            "attempt_guid" => "test-attempt"
+          }
+        })
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}/attempt/test-attempt/review"
       )
     end
 

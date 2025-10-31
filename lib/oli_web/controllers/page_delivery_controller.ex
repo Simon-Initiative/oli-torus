@@ -331,14 +331,17 @@ defmodule OliWeb.PageDeliveryController do
 
   # Route to render adaptive pages in a full screen mode with no torus navigation.
   # Used within an iframe when the adaptive page is embedded in a torus page.
-  def page_fullscreen(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
+  def page_fullscreen(
+        conn,
+        %{"section_slug" => section_slug, "revision_slug" => revision_slug}
+      ) do
     user = conn.assigns.current_user
     section = conn.assigns.section
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
     if Sections.is_enrolled?(user.id, section_slug) do
       PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
-      |> render_adaptive_chromeless_page(conn, section_slug, false)
+      |> render_adaptive_fullscreen_content(conn, section_slug, false)
     else
       render(conn, "not_authorized.html")
     end
@@ -500,7 +503,7 @@ defmodule OliWeb.PageDeliveryController do
        ) do
     case Map.get(content, "displayApplicationChrome", false) do
       false ->
-        render_adaptive_chromeless_page(context, conn, section_slug, preview_mode)
+        render_adaptive_fullscreen_content(context, conn, section_slug, preview_mode)
 
       _ ->
         render_page_body(context, conn, section_slug)
@@ -700,12 +703,22 @@ defmodule OliWeb.PageDeliveryController do
   # Renders an adaptive page fullscreen with no torus nav around it.
   #   Used in adaptive delivery full screen mode and when displayApplicationChrome is true
   #   inside an iframe.
-  defp render_adaptive_chromeless_page(
+  defp render_adaptive_fullscreen_content(
          context,
          conn,
          section_slug,
          preview_mode
        ) do
+    # Control idle timeout based on rendering context.
+    # This function is reused in two scenarios:
+    #   1. True chromeless pages (displayApplicationChrome = false) - timeout enabled
+    #   2. Iframe rendering for chrome pages (displayApplicationChrome = true) - timeout disabled
+    # When rendered in an iframe (case #2), the parent page manages the user session,
+    # so we disable idle timeout here to prevent duplicate/conflicting logout behavior.
+
+    screen_idle_timeout_disabled? =
+      Map.get(context.page.content, "displayApplicationChrome", false)
+
     section = conn.assigns.section
 
     author = conn.assigns[:current_author]
@@ -751,7 +764,7 @@ defmodule OliWeb.PageDeliveryController do
           |> to_epoch,
         lateSubmit: context.effective_settings.late_submit,
         activityGuidMapping: context.activities,
-        signoutUrl: ~p"/users/log_out",
+        signoutUrl: unless(screen_idle_timeout_disabled?, do: ~p"/users/log_out"),
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
@@ -769,7 +782,10 @@ defmodule OliWeb.PageDeliveryController do
             "deprecated"
           end,
         screenIdleTimeOutInSeconds:
-          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
+          if(screen_idle_timeout_disabled?,
+            do: 0,
+            else: String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+          ),
         isAuthor: !is_nil(author),
         isAdmin: Accounts.is_admin?(author),
         isInstructor: context.is_instructor
