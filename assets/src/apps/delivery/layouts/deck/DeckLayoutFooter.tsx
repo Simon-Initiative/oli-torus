@@ -626,6 +626,7 @@ const DeckLayoutFooter: React.FC = () => {
       } else if (!currentActivity?.custom?.showCheckBtn) {
         dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else {
+        dispatch(triggerCheck({ activityId: currentActivityId as string }));
         dispatch(setIsGoodFeedback({ isGoodFeedback: false }));
         setDisplayFeedbackIcon(false);
         setIsLoading(false);
