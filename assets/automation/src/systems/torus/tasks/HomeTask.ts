@@ -49,6 +49,10 @@ export class HomeTask {
     await this.loginpo.fillPassword(dataUser.pass);
     await this.loginpo.clickSignInButton();
     await this.loginpo.verifyWelcomeTitle(dataUser.welcomeTitle);
+
+    if (role === 'administrator') {
+      await this.dismissFlashMessages();
+    }
   }
 
   @step('Logout')
@@ -106,5 +110,47 @@ export class HomeTask {
     variable4?: string,
   ) {
     console.log('algo');
+  }
+
+  private async dismissFlashMessages() {
+    const possibleFlash = this.page
+      .locator(
+        '#live_flash_container [role="alert"], #live_flash_container .alert, .alert[role="alert"], .alert-info, .alert-danger',
+      )
+      .first();
+
+    for (let attempts = 0; attempts < 3; attempts += 1) {
+      try {
+        await possibleFlash.waitFor({ state: 'visible', timeout: 2000 });
+      } catch {
+        break;
+      }
+
+      const isVisible = await possibleFlash.isVisible().catch(() => false);
+
+      if (!isVisible) {
+        break;
+      }
+
+      const closeButton = possibleFlash
+        .locator('button[aria-label="Close"], button.close, [data-bs-dismiss="alert"]')
+        .first();
+
+      if ((await closeButton.count()) > 0) {
+        await closeButton.click();
+      } else {
+        await possibleFlash.evaluate((node) => node.remove());
+      }
+
+      try {
+        await Waiter.waitFor(possibleFlash, 'hidden');
+      } catch {
+        const hidden = await possibleFlash.waitFor({ state: 'hidden', timeout: 1000 }).catch(() => undefined);
+
+        if (!hidden) {
+          break;
+        }
+      }
+    }
   }
 }
