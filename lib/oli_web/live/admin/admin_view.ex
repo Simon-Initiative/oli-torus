@@ -73,7 +73,7 @@ defmodule OliWeb.Admin.AdminView do
         <Group.render label="Content Management" description="Access and manage created content">
           <ul class="list-none space-y-2 p-0 m-0">
             <li>
-              <a href={~p"/authoring/projects"}>
+              <a href={~p"/workspaces/course_author"}>
                 Browse all Projects
               </a>
             </li>

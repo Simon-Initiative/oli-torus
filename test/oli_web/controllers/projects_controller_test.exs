@@ -41,7 +41,7 @@ defmodule OliWeb.ProjectsControllerTest do
     test "admin can export all projects", %{conn: conn, admin: admin} do
       conn = log_in_author(conn, admin)
 
-      conn = get(conn, ~p"/authoring/projects/export")
+      conn = get(conn, ~p"/workspaces/course_author/projects/export")
 
       assert response(conn, 200)
       assert get_resp_header(conn, "content-type") == ["text/csv"]
@@ -61,7 +61,7 @@ defmodule OliWeb.ProjectsControllerTest do
     test "author can only export their own projects", %{conn: conn, author: author} do
       conn = log_in_author(conn, author)
 
-      conn = get(conn, ~p"/authoring/projects/export")
+      conn = get(conn, ~p"/workspaces/course_author/projects/export")
 
       assert response(conn, 200)
       csv_content = response(conn, 200)
@@ -73,7 +73,7 @@ defmodule OliWeb.ProjectsControllerTest do
     test "exports respect text search filter", %{conn: conn, admin: admin} do
       conn = log_in_author(conn, admin)
 
-      conn = get(conn, ~p"/authoring/projects/export?text_search=Admin")
+      conn = get(conn, ~p"/workspaces/course_author/projects/export?text_search=Admin")
 
       assert response(conn, 200)
       csv_content = response(conn, 200)
@@ -84,13 +84,13 @@ defmodule OliWeb.ProjectsControllerTest do
     test "exports respect show_deleted filter", %{conn: conn, admin: admin} do
       # Without show_deleted
       conn = log_in_author(conn, admin)
-      conn = get(conn, ~p"/authoring/projects/export?show_deleted=false")
+      conn = get(conn, ~p"/workspaces/course_author/projects/export?show_deleted=false")
       csv_content = response(conn, 200)
       refute String.contains?(csv_content, "Deleted Project")
 
       # With show_deleted - get fresh connection
       conn = build_conn() |> log_in_author(admin)
-      conn = get(conn, ~p"/authoring/projects/export?show_deleted=true")
+      conn = get(conn, ~p"/workspaces/course_author/projects/export?show_deleted=true")
       csv_content = response(conn, 200)
       assert String.contains?(csv_content, "Deleted Project")
     end
@@ -99,7 +99,7 @@ defmodule OliWeb.ProjectsControllerTest do
       conn = log_in_author(conn, admin)
 
       # show_all=false should show only admin's projects
-      conn = get(conn, ~p"/authoring/projects/export?show_all=false")
+      conn = get(conn, ~p"/workspaces/course_author/projects/export?show_all=false")
       csv_content = response(conn, 200)
       assert String.contains?(csv_content, "Admin Project")
       refute String.contains?(csv_content, "Author Project")
@@ -110,7 +110,7 @@ defmodule OliWeb.ProjectsControllerTest do
 
       # Test ascending sort
       conn =
-        get(conn, ~p"/authoring/projects/export?sort_by=title&sort_order=asc&text_search=Admin")
+        get(conn, ~p"/workspaces/course_author/projects/export?sort_by=title&sort_order=asc&text_search=Admin")
 
       csv_content = response(conn, 200)
       lines = String.split(csv_content, "\n")
@@ -130,7 +130,7 @@ defmodule OliWeb.ProjectsControllerTest do
     test "CSV format is valid", %{conn: conn, admin: admin} do
       conn = log_in_author(conn, admin)
 
-      conn = get(conn, ~p"/authoring/projects/export")
+      conn = get(conn, ~p"/workspaces/course_author/projects/export")
       csv_content = response(conn, 200)
 
       lines = String.split(csv_content, "\n")
@@ -155,7 +155,7 @@ defmodule OliWeb.ProjectsControllerTest do
         Course.create_project("Project, with \"quotes\" and\nnewlines", admin)
 
       conn = log_in_author(conn, admin)
-      conn = get(conn, ~p"/authoring/projects/export?text_search=quotes")
+      conn = get(conn, ~p"/workspaces/course_author/projects/export?text_search=quotes")
       csv_content = response(conn, 200)
 
       # Should properly escape the title with quotes
@@ -165,7 +165,7 @@ defmodule OliWeb.ProjectsControllerTest do
     test "filename includes current date", %{conn: conn, admin: admin} do
       conn = log_in_author(conn, admin)
 
-      conn = get(conn, ~p"/authoring/projects/export")
+      conn = get(conn, ~p"/workspaces/course_author/projects/export")
 
       [disposition_header] = get_resp_header(conn, "content-disposition")
       assert String.contains?(disposition_header, "projects-")
@@ -180,7 +180,7 @@ defmodule OliWeb.ProjectsControllerTest do
       conn = log_in_author(conn, admin)
 
       # Try invalid sort_by and sort_order parameters
-      conn = get(conn, ~p"/authoring/projects/export?sort_by=invalid&sort_order=invalid")
+      conn = get(conn, ~p"/workspaces/course_author/projects/export?sort_by=invalid&sort_order=invalid")
 
       assert response(conn, 200)
       csv_content = response(conn, 200)

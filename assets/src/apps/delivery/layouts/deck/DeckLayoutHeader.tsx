@@ -55,7 +55,9 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   useEffect(() => {
     if (isPreviewMode && !isInstructor) {
       // return to authoring
-      setBackButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
+      setBackButtonUrl(
+        `/workspaces/course_author/${projectSlug}/curriculum/${resourceSlug}/edit`,
+      );
       setBackButtonText('Back to Authoring');
     } else {
       // if no backUrl is provided, then set it to the section root url

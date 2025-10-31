@@ -9,21 +9,21 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   alias Oli.Publishing.Publications.{Publication, PublicationDiff}
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Delivery.ManageSourceMaterials.{ApplyUpdateModal, ProjectInfo, ProjectCard}
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
 
-  def set_breadcrumbs(section, type) do
+  def set_breadcrumbs(section, type, project_slug) do
     type
     |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
-    |> breadcrumb(section)
+    |> breadcrumb(section, project_slug)
   end
 
-  def breadcrumb(previous, section) do
+  def breadcrumb(previous, section, project_slug) do
     previous ++
       [
         Breadcrumb.new(%{
           full_title: "Manage Source Materials",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+          link:
+            ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/source_materials"
         })
       ]
   end
@@ -36,7 +36,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
     section_slug =
       case params do
         :not_mounted_at_router -> Map.get(session, "section_slug")
-        _ -> Map.get(params, "section_slug")
+        _ -> Map.get(params, "product_id") || Map.get(params, "section_slug")
       end
 
     case Mount.for(section_slug, socket) do
@@ -47,6 +47,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
         updates = Sections.check_for_available_publication_updates(section)
         updates_in_progress = Sections.check_for_updates_in_progress(section)
         base_project_details = Course.get_project!(section.base_project_id)
+        project_slug = Map.get(params, "project_id") || base_project_details.slug
 
         current_publication =
           Sections.get_current_publication(section.id, base_project_details.id)
@@ -60,7 +61,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
            section: section,
            updates: updates,
            updates_in_progress: updates_in_progress,
-           breadcrumbs: set_breadcrumbs(section, user_type),
+           breadcrumbs: set_breadcrumbs(section, user_type, project_slug),
            base_project_details: base_project_details,
            current_publication: current_publication,
            remixed_projects: remixed_projects

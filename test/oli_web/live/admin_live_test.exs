@@ -157,7 +157,7 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href='#{~p"/authoring/projects"}']"
+               "a[href='#{~p"/workspaces/course_author"}']"
              )
 
       assert has_element?(
@@ -279,7 +279,7 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href='#{~p"/authoring/projects"}']",
+               "a[href='#{~p"/workspaces/course_author"}']",
                "Browse all Projects"
              )
 
@@ -417,7 +417,7 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href='#{~p"/authoring/projects"}']",
+               "a[href='#{~p"/workspaces/course_author"}']",
                "Browse all Projects"
              )
 

@@ -74,7 +74,7 @@ export const PageLinkEditor = ({ model, commandContext, attributes, children }: 
       pages.find((p) => p.id === model?.idref) as Persistence.Page,
     ).valueOrThrow();
 
-    const authoringHref = `/authoring/project/${commandContext.projectSlug}/resource/${slug}`;
+    const authoringHref = `/workspaces/course_author/${commandContext.projectSlug}/curriculum/${slug}/edit`;
 
     return (
       <div

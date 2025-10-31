@@ -229,7 +229,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         <a
           role="button"
           class="group mr-4 inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover"
-          href={~p"/authoring/projects/export?#{current_params(assigns)}"}
+          href={~p"/workspaces/course_author/projects/export?#{current_params(assigns)}"}
           download={@export_filename}
         >
           Download CSV
@@ -322,7 +322,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   end
 
   def handle_event("clear_all_filters", _params, socket) do
-    {:noreply, push_patch(socket, to: ~p"/authoring/projects")}
+    {:noreply, push_patch(socket, to: ~p"/workspaces/course_author")}
   end
 
   def handle_event(event, params, socket) do

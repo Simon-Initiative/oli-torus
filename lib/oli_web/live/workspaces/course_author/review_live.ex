@@ -54,7 +54,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ReviewLive do
 
           <.link
             class="btn btn-outline-primary mt-3 ml-2"
-            href={~p"/authoring/project/#{@project.slug}/preview"}
+            href={~p"/workspaces/course_author/#{@project.slug}/preview"}
             target={"preview-#{@project.slug}"}
           >
             Preview Course <i class="fas fa-external-link-alt ml-1"></i>

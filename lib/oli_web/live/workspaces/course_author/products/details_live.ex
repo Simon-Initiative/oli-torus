@@ -10,6 +10,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Delivery.Sections.Section
   alias Oli.Inventories
   alias Oli.Utils.S3Storage
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Confirm
   alias OliWeb.Products.Details.Actions
   alias OliWeb.Products.Details.Content
@@ -122,6 +123,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         <div class="md:col-span-8">
           <Content.render
             product={@product}
+            project_slug={@project.slug}
             changeset={to_form(@changeset)}
             save="save"
             updates={@updates}

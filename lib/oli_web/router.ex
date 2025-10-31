@@ -436,100 +436,70 @@ defmodule OliWeb.Router do
     get("/jwks.json", Api.LtiController, :jwks)
   end
 
-  # authorization protected routes
-  scope "/authoring", OliWeb do
+  scope "/workspaces/course_author", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace])
 
-    live("/projects", Projects.ProjectsLive)
+    post("/projects", ProjectController, :create)
     get("/projects/export", ProjectsController, :export_csv)
-    live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
 
-    live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
-      as: :product_remix
-    )
+    scope "/:project_id" do
+      pipe_through([:authorize_project])
 
-    get(
-      "/products/:product_id/downloads/granted_certificates",
-      GrantedCertificatesController,
-      :download_granted_certificates
-    )
+      post("/duplicate", ProjectController, :clone_project)
+      post("/triggers", ProjectController, :enable_triggers)
 
-    get(
-      "/products/:product_id/payments/download_codes",
-      PaymentController,
-      :download_payment_codes
-    )
+      get("/experiments/segment.json", ExperimentController, :segment_download)
+      get("/experiments/experiment.json", ExperimentController, :experiment_download)
 
-    get("/products/:product_id/payments/:count", PaymentController, :download_codes)
-  end
+      get("/preview", ResourceController, :preview)
+      get("/preview/:revision_slug", ResourceController, :preview)
+      get("/preview_fullscreen/:revision_slug", ResourceController, :preview_fullscreen)
+      get("/preview/:revision_slug/page/:page", ResourceController, :preview)
 
-  scope "/authoring/project", OliWeb do
-    pipe_through([:browser, :authoring_protected, :workspace])
-    post("/", ProjectController, :create)
-  end
+      get("/resource/:revision_slug", ResourceController, :edit)
 
-  scope "/authoring/project", OliWeb do
-    pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
+      post("/collaborators", CollaboratorController, :create)
+      put("/collaborators/:author_email", CollaboratorController, :update)
+      delete("/collaborators/:author_email", CollaboratorController, :delete)
 
-    # Project display pages
-    live("/:project_id/publish", Projects.PublishView)
-    post("/:project_id/duplicate", ProjectController, :clone_project)
-    post("/:project_id/triggers", ProjectController, :enable_triggers)
+      scope "/products/:product_id" do
+        live("/source_materials", Delivery.ManageSourceMaterials)
 
-    live("/:project_id/embeddings", Search.EmbeddingsLive)
+        live("/remix", Delivery.RemixSection, :product_remix,
+          as: :product_remix
+        )
 
-    # Alternatives Groups
-    live("/:project_id/alternatives", Resources.AlternativesEditor)
+        live("/discounts", Products.Payments.Discounts.ProductsIndexView)
 
-    # Activity Bank
-    get("/:project_id/bank", ActivityBankController, :index)
+        live(
+          "/discounts/new",
+          Products.Payments.Discounts.ShowView,
+          :product_new,
+          as: :discount
+        )
 
-    # Bibliography
-    get("/:project_id/bibliography", BibliographyController, :index)
+        live(
+          "/discounts/:discount_id",
+          Products.Payments.Discounts.ShowView,
+          :product,
+          as: :discount
+        )
 
-    # Objectives
-    live("/:project_id/objectives", ObjectivesLive.Objectives)
+        get(
+          "/downloads/granted_certificates",
+          GrantedCertificatesController,
+          :download_granted_certificates
+        )
 
-    # Experiment management
+        get(
+          "/payments/download_codes",
+          PaymentController,
+          :download_payment_codes
+        )
 
-    get("/:project_id/experiments/segment.json", ExperimentController, :segment_download)
-    get("/:project_id/experiments/experiment.json", ExperimentController, :experiment_download)
-    live("/:project_id/experiments", Experiments.ExperimentsView)
-
-    # Curriculum
-    live(
-      "/:project_id/curriculum/:container_slug/edit/:revision_slug",
-      Curriculum.ContainerLive,
-      :edit
-    )
-
-    live("/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index)
-
-    live("/:project_id/curriculum/", Curriculum.ContainerLive, :index)
-
-    live("/:project_id/pages/", Resources.PagesView)
-    live("/:project_id/activities/", Resources.ActivitiesView)
-
-    # Review/QA
-    live("/:project_id/review", Qa.QaLive)
-
-    # Author facing product view
-    # Preview
-    get("/:project_id/preview", ResourceController, :preview)
-    get("/:project_id/preview/:revision_slug", ResourceController, :preview)
-    get("/:project_id/preview_fullscreen/:revision_slug", ResourceController, :preview_fullscreen)
-    get("/:project_id/preview/:revision_slug/page/:page", ResourceController, :preview)
-
-    # Editors
-    get("/:project_id/resource/:revision_slug", ResourceController, :edit)
-
-    # Collaborators
-    post("/:project_id/collaborators", CollaboratorController, :create)
-    put("/:project_id/collaborators/:author_email", CollaboratorController, :update)
-    delete("/:project_id/collaborators/:author_email", CollaboratorController, :delete)
-
-    # Insights
-    live "/:project_id/insights", Insights
+        get("/payments/:count", PaymentController, :download_codes)
+      end
+    end
   end
 
   if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
@@ -1602,21 +1572,6 @@ defmodule OliWeb.Router do
       live("/gen_ai/service_configs", GenAI.ServiceConfigsView)
       live("/gen_ai/feature_configs", GenAI.FeatureConfigsView)
 
-      live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
-
-      live(
-        "/products/:product_id/discounts/new",
-        Products.Payments.Discounts.ShowView,
-        :product_new,
-        as: :discount
-      )
-
-      live(
-        "/products/:product_id/discounts/:discount_id",
-        Products.Payments.Discounts.ShowView,
-        :product,
-        as: :discount
-      )
 
       live("/sections", Sections.SectionsView)
       live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)

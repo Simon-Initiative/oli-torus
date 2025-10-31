@@ -103,6 +103,7 @@ defmodule OliWeb.Products.DetailsView do
         <div class="md:col-span-8">
           <Content.render
             product={@product}
+            project_slug={@base_project.slug}
             changeset={to_form(@changeset)}
             save="save"
             updates={@updates}
@@ -143,7 +144,7 @@ defmodule OliWeb.Products.DetailsView do
             currently produce a certificate.
           </div>
           <div>
-            <a href={~p"/authoring/products/#{@product.slug}/certificate_settings"}>
+            <a href={~p"/workspaces/course_author/#{@base_project.slug}/products/#{@product.slug}/certificate_settings"}>
               Manage Certificate Settings
             </a>
           </div>
@@ -322,7 +323,7 @@ defmodule OliWeb.Products.DetailsView do
           socket = put_flash(socket, :info, "Payment codes transferred successfully")
 
           redirect(socket,
-            to: ~p"/authoring/products/#{socket.assigns.product.slug}"
+            to: Routes.live_path(socket, __MODULE__, socket.assigns.product.slug)
           )
       end
 

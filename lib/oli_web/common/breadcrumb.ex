@@ -10,7 +10,6 @@ defmodule OliWeb.Common.Breadcrumb do
 
   alias OliWeb.Common.Breadcrumb
   alias Oli.Resources.Numbering
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Links
   alias Oli.Delivery.Hierarchy.HierarchyNode
 
@@ -173,7 +172,7 @@ defmodule OliWeb.Common.Breadcrumb do
   def curriculum(project_slug, _space) do
     new(%{
       full_title: "Curriculum",
-      link: Routes.container_path(OliWeb.Endpoint, :index, project_slug)
+      link: ~p"/workspaces/course_author/#{project_slug}/curriculum"
     })
   end
 

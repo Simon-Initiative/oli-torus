@@ -52,16 +52,18 @@ defmodule OliWeb.Delivery.RemixSection do
   defp redirect_after_save(:instructor, %Section{slug: slug}, _socket),
     do: ~p"/sections/#{slug}/manage"
 
-  defp redirect_after_save(:product_creator, %Section{slug: slug}, socket),
-    do: Routes.live_path(socket, OliWeb.Products.DetailsView, slug)
-
-  def set_breadcrumbs(type, section) do
-    type
-    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
-    |> breadcrumb(section)
+  defp redirect_after_save(:product_creator, %Section{slug: slug}, socket) do
+    project_slug = socket.assigns.project_slug
+    ~p"/workspaces/course_author/#{project_slug}/products/#{slug}"
   end
 
-  def breadcrumb(previous, section) do
+  def set_breadcrumbs(type, section, project_slug \\ nil) do
+    type
+    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
+    |> breadcrumb(section, project_slug)
+  end
+
+  def breadcrumb(previous, section, nil) do
     previous ++
       [
         Breadcrumb.new(%{
@@ -71,13 +73,21 @@ defmodule OliWeb.Delivery.RemixSection do
       ]
   end
 
-  def mount(
-        %{
-          "section_slug" => section_slug
-        },
-        _session,
-        socket
-      ) do
+  def breadcrumb(previous, section, project_slug) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Customize Content",
+          link: ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/remix"
+        })
+      ]
+  end
+
+  def mount(params, _session, socket) do
+    section_slug = Map.get(params, "product_id") || Map.get(params, "section_slug")
+    project_slug = Map.get(params, "project_id")
+    socket = assign(socket, project_slug: project_slug)
+
     case Mount.for(section_slug, socket) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
@@ -143,7 +153,7 @@ defmodule OliWeb.Delivery.RemixSection do
       {:ok, state} = Remix.init_open_and_free(section)
 
       init_state_from_remix(socket, state,
-        breadcrumbs: set_breadcrumbs(:user, state.section),
+        breadcrumbs: set_breadcrumbs(:user, state.section, socket.assigns.project_slug),
         redirect_after_save: redirect_after_save(:product_creator, state.section, socket)
       )
     else

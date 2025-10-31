@@ -117,7 +117,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     bottom: bottomPanelState,
   };
 
-  const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
+  const url = `/workspaces/course_author/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
 
   const [sidebarExpanded, setSidebarExpanded] = useState(props.initialSidebarExpanded);

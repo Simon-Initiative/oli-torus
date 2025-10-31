@@ -77,8 +77,8 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
         contentItem.strategy === 'upgrade_decision_point' ? 'Select Option' : 'Select Alternative';
       const linkHref =
         contentItem.strategy === 'upgrade_decision_point'
-          ? `/authoring/project/${projectSlug}/experiments`
-          : `/authoring/project/${projectSlug}/alternatives`;
+          ? `/workspaces/course_author/${projectSlug}/experiments`
+          : `/workspaces/course_author/${projectSlug}/alternatives`;
       const linkText =
         contentItem.strategy === 'upgrade_decision_point'
           ? 'Manage Upgrade Options'
@@ -337,7 +337,7 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
       integrated with UpGrade.
       <a
         className="btn btn-link"
-        href={`/authoring/project/${projectSlug}/experiments`}
+        href={`/workspaces/course_author/${projectSlug}/experiments`}
         target="_blank"
         rel="noreferrer"
       >

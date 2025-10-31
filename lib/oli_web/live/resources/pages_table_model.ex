@@ -4,6 +4,7 @@ defmodule OliWeb.Resources.PagesTableModel do
   alias Oli.Resources.Revision
   alias OliWeb.Curriculum.Actions
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   def render(assigns) do
     ~H"""
@@ -86,7 +87,7 @@ defmodule OliWeb.Resources.PagesTableModel do
 
     ~H"""
     <%= if @parent !== nil do %>
-      <a href={Routes.container_path(OliWeb.Endpoint, :index, @project_slug, @parent.slug)}>
+      <a href={~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@parent.slug}"}>
         {@parent.title}
       </a>
     <% end %>

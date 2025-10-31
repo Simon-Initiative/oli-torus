@@ -60,7 +60,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
     cond do
       # Explicitly routing to root_container, strip off the container param
       container_slug == root_container.slug && socket.assigns.live_action == :index ->
-        {:ok, redirect(socket, to: Routes.container_path(socket, :index, project_slug))}
+        {:ok,
+         redirect(socket, to: ~p"/workspaces/course_author/#{project_slug}/curriculum")}
 
       # Routing to missing container
       container_slug && is_nil(AuthoringResolver.from_revision_slug(project_slug, container_slug)) ->
@@ -557,20 +558,15 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply,
      push_patch(socket,
        to:
-         Routes.container_path(
-           socket,
-           :index,
-           socket.assigns.project.slug,
-           socket.assigns.container.slug,
-           %{view: view}
-         )
+         ~p"/workspaces/course_author/#{socket.assigns.project.slug}/curriculum/#{socket.assigns.container.slug}?#{[view: view]}"
      )}
   end
 
   defp proceed_with_deletion_warning(socket, container, project, author, item) do
     modal_assigns = %{
       id: "delete_#{item.slug}",
-      redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
+      redirect_url:
+        ~p"/workspaces/course_author/#{project.slug}/curriculum/#{container.slug}",
       revision: item,
       container: container,
       project: project,

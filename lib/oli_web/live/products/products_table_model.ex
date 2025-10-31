@@ -5,6 +5,7 @@ defmodule OliWeb.Products.ProductsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Common.Utils
+  alias OliWeb.Router.Helpers, as: Routes
 
   def new(products, ctx, project_slug \\ "", opts \\ []) do
     default_td_class = "!border-r border-Table-table-border"
@@ -93,7 +94,7 @@ defmodule OliWeb.Products.ProductsTableModel do
   def render_title_column(assigns, %{title: title, slug: slug}, _) do
     route_path =
       case Map.get(assigns, :project_slug) do
-        "" -> ~p"/authoring/products/#{slug}"
+        "" -> Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, slug)
         project_slug -> ~p"/workspaces/course_author/#{project_slug}/products/#{slug}"
       end
 

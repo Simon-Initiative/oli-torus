@@ -739,7 +739,7 @@ defmodule Oli.Rendering.Content.Html do
     href =
       case mode do
         :author_preview ->
-          ~p"/authoring/project/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
+          ~p"/workspaces/course_author/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
 
         # rewrite internal link using section slug and revision slug
         :instructor_preview ->

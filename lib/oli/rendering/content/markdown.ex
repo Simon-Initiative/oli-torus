@@ -471,7 +471,7 @@ defmodule Oli.Rendering.Content.Markdown do
         nil ->
           case mode do
             :author_preview ->
-              "/authoring/project/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
+              "/workspaces/course_author/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
 
             _ ->
               "#"

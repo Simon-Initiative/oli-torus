@@ -23,7 +23,7 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrameTest do
       assert result =~ "iframe"
       assert result =~ "width=\"1150\""
       assert result =~ "height=\"975\""
-      assert result =~ "/authoring/project/test-project/preview_fullscreen/test-revision"
+      assert result =~ "/workspaces/course_author/test-project/preview_fullscreen/test-revision"
       assert result =~ "class=\"bg-white mx-auto mb-24\""
     end
 

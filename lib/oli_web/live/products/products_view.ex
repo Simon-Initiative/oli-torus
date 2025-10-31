@@ -26,7 +26,7 @@ defmodule OliWeb.Products.ProductsView do
   def live_path(socket, params) do
     if socket.assigns.is_admin_view,
       do: ~p"/admin/products",
-      else: ~p"/authoring/project/#{socket.assigns.project.slug}/products?#{params}"
+      else: ~p"/workspaces/course_author/#{socket.assigns.project.slug}/products?#{params}"
   end
 
   defp admin_breadcrumbs() do

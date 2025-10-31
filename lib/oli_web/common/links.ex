@@ -14,7 +14,7 @@ defmodule OliWeb.Common.Links do
     do_resource_path(revision, parent_pages, project_slug, workspace)
   end
 
-  def do_resource_path(revision, parent_pages, project_slug, workspace) do
+  def do_resource_path(revision, parent_pages, project_slug, _workspace) do
     case Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id) do
       "objective" ->
         Routes.live_path(
@@ -46,16 +46,7 @@ defmodule OliWeb.Common.Links do
         end
 
       "container" ->
-        if workspace == :workspace do
-          ~p"/workspaces/course_author/#{project_slug}/curriculum/#{revision.slug}"
-        else
-          Routes.container_path(
-            OliWeb.Endpoint,
-            :index,
-            project_slug,
-            revision.slug
-          )
-        end
+        ~p"/workspaces/course_author/#{project_slug}/curriculum/#{revision.slug}"
 
       "tag" ->
         Routes.activity_bank_path(

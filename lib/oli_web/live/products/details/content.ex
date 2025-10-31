@@ -4,6 +4,7 @@ defmodule OliWeb.Products.Details.Content do
   alias OliWeb.Router.Helpers, as: Routes
 
   attr(:product, :any, required: true)
+  attr(:project_slug, :string, required: true)
   attr(:updates, :any, required: true)
   attr(:changeset, :any, default: nil)
   attr(:save, :any, required: true)
@@ -15,22 +16,30 @@ defmodule OliWeb.Products.Details.Content do
         <p :if={Enum.count(@updates) == 0}>There are <b>no updates</b> available for this product.</p>
         <div :if={Enum.count(@updates) == 1}>
           <p>There is <b>one</b> update available for this product.</p>
-          <.link href={
-            Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
-          }>
+          <.link
+            href={
+              ~p"/workspaces/course_author/#{@project_slug}/products/#{@product.slug}/source_materials"
+            }
+          >
             Manage Source Materials
           </.link>
         </div>
         <div :if={Enum.count(@updates) not in [0, 1]}>
           <p>There are <b>{Enum.count(@updates)}</b> updates available for this product.</p>
-          <.link href={
-            Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
-          }>
+          <.link
+            href={
+              ~p"/workspaces/course_author/#{@project_slug}/products/#{@product.slug}/source_materials"
+            }
+          >
             Manage Source Materials
           </.link>
         </div>
         <p>
-          <.link href={Routes.product_remix_path(OliWeb.Endpoint, :product_remix, @product.slug)}>
+          <.link
+            href={
+              ~p"/workspaces/course_author/#{@project_slug}/products/#{@product.slug}/remix"
+            }
+          >
             Customize content
           </.link>
         </p>

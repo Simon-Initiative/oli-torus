@@ -1,8 +1,8 @@
 defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
+  use OliWeb, :verified_routes
   import Phoenix.Component, only: [assign: 2, assign: 3]
   import Phoenix.LiveView, only: [push_navigate: 2, put_flash: 3]
   alias Oli.Publishing.AuthoringResolver
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Resources
   import OliWeb.Curriculum.Utils
   alias Oli.Delivery.Hierarchy
@@ -22,8 +22,8 @@ defmodule OliWeb.Curriculum.Container.ContainerLiveHelpers do
     }
   end
 
-  def build_redirect_url(socket, project_slug, container_slug) do
-    Routes.container_path(socket, :index, project_slug, container_slug)
+  def build_redirect_url(_socket, project_slug, container_slug) do
+    ~p"/workspaces/course_author/#{project_slug}/curriculum/#{container_slug}"
   end
 
   def decode_revision_params(revision_params) do

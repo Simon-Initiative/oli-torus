@@ -440,7 +440,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         <div class="flex items-center">
           <div>
             {button("Duplicate",
-              to: Routes.project_path(@socket, :clone_project, @project),
+              to: ~p"/workspaces/course_author/#{@project.slug}/duplicate",
               method: :post,
               class:
                 "text-Text-text-button hover:text-Text-text-button-hover hover:underline pr-3 py-2",
@@ -540,7 +540,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         </p>
 
         {button("Enable AI Activation Points",
-          to: Routes.project_path(@socket, :enable_triggers, @project),
+          to: ~p"/workspaces/course_author/#{@project.slug}/triggers",
           method: :post,
           class: "text-Text-text-button hover:text-Text-text-button-hover hover:underline pr-3 py-2",
           data_confirm:

@@ -1,10 +1,12 @@
 defmodule OliWeb.Products.Payments.Discounts.TableModel do
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
 
-  def new(discounts, ctx) do
+  def new(discounts, ctx, opts \\ []) do
+    project_slug = Keyword.get(opts, :project_slug)
+
     SortableTableModel.new(
       rows: discounts,
       column_specs: [
@@ -43,7 +45,8 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        ctx: ctx
+        ctx: ctx,
+        project_slug: project_slug
       }
     )
   end
@@ -66,11 +69,26 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
   end
 
   def render_actions_column(assigns, item, _) do
-    assigns = Map.merge(assigns, %{item: item})
+    project_slug = Map.get(assigns, :project_slug)
+    path =
+      case project_slug do
+        nil ->
+          raise ArgumentError, "project_slug is required to build workspace discount links"
+
+        slug ->
+          ~p"/workspaces/course_author/#{slug}/products/#{item.section.slug}/discounts/#{item.id}"
+      end
+
+    assigns =
+      Map.merge(assigns, %{
+        item: item,
+        project_slug: project_slug,
+        edit_path: path
+      })
 
     ~H"""
     <.link
-      href={Routes.discount_path(OliWeb.Endpoint, :product, @item.section.slug, @item.id)}
+      href={@edit_path}
       class="btn btn-outline-primary"
     >
       Edit

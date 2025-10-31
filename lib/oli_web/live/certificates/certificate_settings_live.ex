@@ -321,11 +321,11 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     ]
   end
 
-  defp breadcrumbs(:authoring, _project_slug, section) do
+  defp breadcrumbs(:authoring, project_slug, section) do
     [
       Breadcrumb.new(%{
-        full_title: "Manage Section",
-        link: ~p"/authoring/products/#{section.slug}"
+        full_title: "Product Overview",
+        link: ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
       }),
       Breadcrumb.new(%{full_title: "Manage Certificate Settings"})
     ]

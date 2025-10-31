@@ -153,7 +153,7 @@ const url = (
     ? isPreview
       ? `/sections/${sectionSlug}/preview/${type}/${slug}`
       : `/sections/${sectionSlug}/${type}/${slug}`
-    : `/authoring/project/${projectSlug}/preview/${slug}`;
+    : `/workspaces/course_author/${projectSlug}/preview/${slug}`;
 
 const isCurrentUrl = (
   sectionSlug: MaybeSlug,

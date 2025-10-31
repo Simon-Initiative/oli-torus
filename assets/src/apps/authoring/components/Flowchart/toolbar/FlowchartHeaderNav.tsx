@@ -155,7 +155,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
 
   const hasQuestion = questionType !== 'none';
   const isLessonEndScreen = currentActivity ? isEndScreen(currentActivity) : false;
-  const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
+  const url = `/workspaces/course_author/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
 
   useEffect(() => {

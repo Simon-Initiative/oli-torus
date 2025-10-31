@@ -1,11 +1,8 @@
 defmodule OliWeb.Projects.CreateProjectModal do
-  use Phoenix.LiveComponent
-  use Phoenix.HTML
+  use OliWeb, :live_component
 
   import Phoenix.HTML.Form
   import OliWeb.ErrorHelpers
-
-  alias OliWeb.Router.Helpers, as: Routes
 
   def render(assigns) do
     ~H"""
@@ -23,7 +20,7 @@ defmodule OliWeb.Projects.CreateProjectModal do
             :let={f}
             for={@changeset}
             phx-change="validate_project"
-            action={Routes.project_path(OliWeb.Endpoint, :create)}
+            action={~p"/workspaces/course_author/projects"}
           >
             <div class="modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md">
               <h5

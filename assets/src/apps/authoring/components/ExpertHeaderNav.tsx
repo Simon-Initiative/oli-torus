@@ -34,7 +34,7 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
 
   const dispatch = useDispatch();
 
-  const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
+  const url = `/workspaces/course_author/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
 
   const handleReadOnlyClick = () => {

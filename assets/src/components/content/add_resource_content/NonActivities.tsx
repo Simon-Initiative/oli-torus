@@ -202,7 +202,7 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
         description="Select an Alternatives Group"
         additionalControls={
           <ManageAlternativesLink
-            linkHref={`/authoring/project/${projectSlug}/alternatives`}
+            linkHref={`/workspaces/course_author/${projectSlug}/alternatives`}
             linkText="Manage Alternatives"
           />
         }
