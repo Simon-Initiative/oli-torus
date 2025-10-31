@@ -3,14 +3,17 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
   alias Oli.Seeder
   alias Oli.Accounts.SystemRole
 
+  import Phoenix.LiveViewTest
+
   setup [:project_seed]
 
   describe "activity bank endpoint tests" do
     test "can launch activity bank editor", %{conn: conn, project: project} do
-      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
 
-      assert html_response(conn, 200) =~
-               "<div data-react-class=\"Components.ActivityBank\" data-react-props=\""
+      rendered = render_hook(view, "survey_scripts_loaded", %{})
+
+      assert rendered =~ "Components.ActivityBank"
     end
 
     test "can query all", %{conn: conn, project: project} do
@@ -51,8 +54,18 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
 
     test "can view revision history if logged in as an admin", %{conn: conn, project: project} do
       # as an author we should not see the revision history link
-      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
-      assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:false]
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
+
+      rendered = render_hook(view, "survey_scripts_loaded", %{})
+
+      props =
+        rendered
+        |> Floki.find("#activity-bank")
+        |> Floki.attribute("data-react-props")
+        |> List.first()
+        |> Jason.decode!()
+
+      assert props["revisionHistoryLink"] == false
 
       # as an admin we should see the revision history link
       admin = author_fixture(%{system_role_id: SystemRole.role_id().system_admin})
@@ -62,8 +75,18 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
         |> recycle()
         |> log_in_author(admin)
 
-      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
-      assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:true]
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
+
+      rendered = render_hook(view, "survey_scripts_loaded", %{})
+
+      props =
+        rendered
+        |> Floki.find("#activity-bank")
+        |> Floki.attribute("data-react-props")
+        |> List.first()
+        |> Jason.decode!()
+
+      assert props["revisionHistoryLink"] == true
     end
   end
 

@@ -20,8 +20,14 @@ defmodule OliWeb.ResourceControllerTest do
     } do
       conn = get(conn, Routes.resource_path(conn, :edit, project.slug, revision.slug))
 
-      assert html_response(conn, 200) =~
-               "<h3 class=\"truncate\">\n      #{revision.title}"
+      html = html_response(conn, 200)
+
+      props =
+        html
+        |> extract_page_editor_props()
+        |> Enum.find(&Map.has_key?(&1, "title"))
+
+      assert props["title"] == revision.title
     end
 
     test "renders truncate breadcrumbs when page title is too long", %{
@@ -31,8 +37,13 @@ defmodule OliWeb.ResourceControllerTest do
     } do
       conn = get(conn, Routes.resource_path(conn, :edit, project.slug, revision.slug))
 
-      assert html_response(conn, 200) =~
-               "<li class=\"breadcrumb-item active truncate\" aria-current=\"page\">\n  #{revision.title}\n</li>"
+      _html = html_response(conn, 200)
+
+      breadcrumbs = conn.assigns[:breadcrumbs]
+
+      assert breadcrumbs
+             |> List.last()
+             |> Map.get(:full_title) == revision.title
     end
 
     test "renders adaptive editor", %{
@@ -187,6 +198,20 @@ defmodule OliWeb.ResourceControllerTest do
       assert html_response(conn, 302) =~
                Routes.resource_path(conn, :preview, project.slug, revision1.slug)
     end
+  end
+
+  defp extract_page_editor_props(html) do
+    Regex.scan(~r/data-react-class="Components.PageEditor" data-react-props="([^"]+)"/, html)
+    |> Enum.map(fn [_, raw_props] -> raw_props |> decode_html_entities() |> Jason.decode!() end)
+  end
+
+  defp decode_html_entities(str) do
+    str
+    |> String.replace("&quot;", "\"")
+    |> String.replace("&#39;", "'")
+    |> String.replace("&amp;", "&")
+    |> String.replace("&lt;", "<")
+    |> String.replace("&gt;", ">")
   end
 
   def project_seed(%{conn: conn}) do

@@ -20,7 +20,7 @@ defmodule OliWeb.ProjectControllerTest do
       _user_associated = insert(:user, author: author)
       _user2_associated = insert(:user, author: author)
 
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+      conn = get(conn, ~p"/workspaces/course_author")
 
       assert html_response(conn, 200) =~ "Projects"
     end

@@ -4,6 +4,7 @@ defmodule OliWeb.PaymentControllerTest do
   import Oli.Factory
 
   alias Oli.Seeder
+  alias Oli.Authoring.Course
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Paywall.Payment
 
@@ -158,9 +159,12 @@ defmodule OliWeb.PaymentControllerTest do
     end
 
     test "download .txt file with the last payment codes created", %{conn: conn} do
+      project = insert(:project)
+
       product =
         insert(:section, %{
-          type: :blueprint
+          type: :blueprint,
+          base_project: project
         })
 
       {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
@@ -172,10 +176,18 @@ defmodule OliWeb.PaymentControllerTest do
       code3 = generate_payment_code(product, 111_111_111)
 
       # Simulate response with 2 payment codes
+      project_slug = project_slug(product)
+
       conn_with_codes =
         get(
           conn,
-          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 2)
+          Routes.payment_path(
+            conn,
+            :download_payment_codes,
+            project_slug,
+            product.slug,
+            %{count: 2}
+          )
         )
 
       assert response(conn_with_codes, 200) =~ "#{code3}\n#{code2}"
@@ -184,7 +196,13 @@ defmodule OliWeb.PaymentControllerTest do
       conn_without_codes =
         get(
           conn,
-          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 0)
+          Routes.payment_path(
+            conn,
+            :download_payment_codes,
+            project_slug,
+            product.slug,
+            %{count: 0}
+          )
         )
 
       assert response(conn_without_codes, 200) =~ ""
@@ -193,24 +211,40 @@ defmodule OliWeb.PaymentControllerTest do
       conn_without_count =
         get(
           conn,
-          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug)
+          Routes.payment_path(
+            conn,
+            :download_payment_codes,
+            project_slug,
+            product.slug
+          )
         )
 
       assert response(conn_without_count, 200) =~ "#{code3}\n#{code2}\n#{code1}"
     end
 
     test "download .txt file of a product that has no payment codes generated", %{conn: conn} do
+      project = insert(:project)
+
       product =
         insert(:section, %{
-          type: :blueprint
+          type: :blueprint,
+          base_project: project
         })
 
       {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
 
+      project_slug = project_slug(product)
+
       conn =
         get(
           conn,
-          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 2)
+          Routes.payment_path(
+            conn,
+            :download_payment_codes,
+            project_slug,
+            product.slug,
+            %{count: 2}
+          )
         )
 
       assert response(conn, 200) =~ ""
@@ -234,5 +268,12 @@ defmodule OliWeb.PaymentControllerTest do
     {:ok, key} = Oli.Interop.create_key(api_key, "hint")
 
     {:ok, conn: conn, map: map, api_key: api_key, key: key}
+  end
+
+  defp project_slug(section) do
+    case section.base_project do
+      %{slug: slug} -> slug
+      _ -> Course.get_project!(section.base_project_id).slug
+    end
   end
 end

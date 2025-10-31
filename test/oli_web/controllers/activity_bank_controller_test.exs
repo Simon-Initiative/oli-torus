@@ -2,15 +2,17 @@ defmodule OliWeb.ActivityBankControllerTest do
   use OliWeb.ConnCase
 
   import Oli.Factory
+  import Phoenix.LiveViewTest
 
   setup [:project_seed]
 
   describe "index" do
     test "can launch activity bank editor", %{conn: conn, project: project} do
-      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
 
-      assert html_response(conn, 200) =~
-               "<div data-react-class=\"Components.ActivityBank\" data-react-props=\""
+      rendered = render_hook(view, "survey_scripts_loaded", %{})
+
+      assert rendered =~ "Components.ActivityBank"
     end
 
     test "shows revision history link for admin users", %{conn: conn, project: project} do
@@ -18,24 +20,44 @@ defmodule OliWeb.ActivityBankControllerTest do
         insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().system_admin)
 
       conn = conn |> log_in_author(admin_author)
-      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
 
-      assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:true]
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
+
+      rendered = render_hook(view, "survey_scripts_loaded", %{})
+
+      props =
+        rendered
+        |> Floki.find("#activity-bank")
+        |> Floki.attribute("data-react-props")
+        |> List.first()
+        |> Jason.decode!()
+
+      assert props["revisionHistoryLink"] == true
     end
 
     test "does not show revision history link for non-admin users", %{
       conn: conn,
       project: project
     } do
-      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
 
-      assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:false]
+      rendered = render_hook(view, "survey_scripts_loaded", %{})
+
+      props =
+        rendered
+        |> Floki.find("#activity-bank")
+        |> Floki.attribute("data-react-props")
+        |> List.first()
+        |> Jason.decode!()
+
+      assert props["revisionHistoryLink"] == false
     end
 
     test "returns not found for non-existent project", %{conn: conn} do
-      conn = get(conn, Routes.activity_bank_path(conn, :index, "non-existent-project"))
+      {:error, {:redirect, %{to: to}}} =
+        live(conn, ~p"/workspaces/course_author/non-existent-project/activity_bank")
 
-      assert response(conn, 302)
+      assert to == "/workspaces/course_author"
     end
   end
 

@@ -6,7 +6,7 @@ defmodule OliWeb.WorkspaceControllerTest do
   describe "projects" do
     test "displays the projects page", %{conn: conn} do
       {:ok, conn: conn, author: _author} = author_conn(%{conn: conn})
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+      conn = get(conn, ~p"/workspaces/course_author")
       assert html_response(conn, 200) =~ "Projects"
     end
 
@@ -14,7 +14,7 @@ defmodule OliWeb.WorkspaceControllerTest do
       {:ok, conn: conn, author: author} = author_conn(%{conn: conn})
       make_n_projects(3, author)
 
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+      conn = get(conn, ~p"/workspaces/course_author")
       assert length(Repo.preload(author, [:projects]).projects) == 3
       assert !(html_response(conn, 200) =~ "None exist")
     end
@@ -23,14 +23,14 @@ defmodule OliWeb.WorkspaceControllerTest do
       {:ok, conn: conn, author: author} = author_conn(%{conn: conn})
       make_n_projects(0, author)
 
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+      conn = get(conn, ~p"/workspaces/course_author")
       assert Enum.empty?(Repo.preload(author, [:projects]).projects)
       assert html_response(conn, 200) =~ "None exist"
     end
 
     test "Has a `create project` button", %{conn: conn} do
       {:ok, conn: conn, author: _author} = author_conn(%{conn: conn})
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+      conn = get(conn, ~p"/workspaces/course_author")
       assert html_response(conn, 200) =~ "New Project"
     end
 
@@ -39,7 +39,7 @@ defmodule OliWeb.WorkspaceControllerTest do
 
       {:ok, _} = Oli.Accounts.delete_author(author)
 
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+      conn = get(conn, ~p"/workspaces/course_author")
       assert html_response(conn, 302) =~ "You are being <a href=\"/authors/log_in"
     end
 
@@ -51,7 +51,7 @@ defmodule OliWeb.WorkspaceControllerTest do
       conn =
         log_in_author(conn, author2)
 
-      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+      conn = get(conn, ~p"/workspaces/course_author")
       assert html_response(conn, 200) =~ "Projects"
       assert html_response(conn, 200) =~ "Example Open and Free Course"
     end

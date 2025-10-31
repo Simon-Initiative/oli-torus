@@ -45,10 +45,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
     setup [:create_project, :login_as_author]
 
     test "redirects to not found when project does not exist", %{conn: conn} do
-      {:error,
-       {:redirect,
-        %{flash: %{"info" => "That project does not exist"}, to: "/workspaces/course_author"}}} =
+      {:error, {:redirect, %{flash: flash, to: "/workspaces/course_author"}}} =
         live(conn, ~p"/workspaces/course_author/slug_does_not_exist/alternatives")
+
+      assert flash["error"] == "Project not found"
     end
 
     test "renders when there are no alternatives groups", %{conn: conn, project: project} do
