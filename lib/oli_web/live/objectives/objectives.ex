@@ -15,6 +15,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   alias Oli.Resources.{Revision, ResourceType}
   alias OliWeb.Common.{Breadcrumb, Filter, FilterBox}
   alias OliWeb.Common.Listing, as: Table
+  alias Oli.Tasks
 
   alias OliWeb.ObjectivesLive.{
     DeleteModal,
@@ -121,7 +122,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     pid = self()
 
     if first_load do
-      Task.async(fn ->
+      Tasks.async(fn ->
         publication = Publishing.project_working_publication(project.slug)
         objectives_attachments = Publishing.find_attached_objectives(publication.id)
 

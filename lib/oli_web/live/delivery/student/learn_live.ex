@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias OliWeb.Common.FormatDateTime
   alias Oli.Delivery.{Hierarchy, Metrics, Sections}
   alias Phoenix.LiveView.JS
+  alias Oli.Tasks
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias OliWeb.Components.Delivery.Student
@@ -3163,7 +3164,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          section,
          %User{id: current_user_id}
        ) do
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+    Tasks.start_child(fn ->
       send(
         liveview_pid,
         {:student_metrics_and_enable_slider_buttons,
@@ -3177,7 +3178,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          _section,
          _current_user
        ) do
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+    Tasks.start_child(fn ->
       send(
         liveview_pid,
         {:student_metrics_and_enable_slider_buttons, nil}
@@ -3298,7 +3299,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          section_slug,
          resource_id
        ) do
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+    Tasks.start_child(fn ->
       student_enrollment =
         Sections.get_enrollment(section_slug, student_id)
 

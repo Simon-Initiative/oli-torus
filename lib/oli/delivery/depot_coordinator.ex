@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.DepotCoordinator do
   alias Oli.Delivery.Depot.DepotDesc
+  alias Oli.Tasks
 
   def get() do
     Application.get_env(:oli, :depot_coordinator)
@@ -14,8 +15,8 @@ defmodule Oli.Delivery.DepotCoordinator do
   def refresh(%DepotDesc{} = depot_desc, table_id, caller_module) do
     clear(depot_desc, table_id)
 
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+    Tasks.start_child(fn ->
       init_if_necessary(depot_desc, table_id, caller_module)
-    end)
+    end, sync_in_test: true)
   end
 end

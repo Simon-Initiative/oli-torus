@@ -1,6 +1,8 @@
 defmodule OliWeb.Delivery.Student.ScheduleLive do
   use OliWeb, :live_view
 
+  alias Oli.Tasks
+
   alias OliWeb.Common.{FormatDateTime, SessionContext}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Scheduling
@@ -202,7 +204,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   end
 
   defp async_scroll_to_current_week(liveview_pid) do
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+    Tasks.start_child(fn ->
       Process.sleep(500)
       send(liveview_pid, {:scroll_to_current_week})
     end)

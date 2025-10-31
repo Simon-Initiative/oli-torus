@@ -4,10 +4,11 @@ defmodule Oli.TestHelpers do
   import Oli.Factory
   import Oli.Utils.Seeder.AccountsFixtures
 
-  alias Oli.Repo
-  alias Oli.Accounts
-  alias Oli.Accounts.{AuthorPreferences}
-  alias Oli.Activities
+alias Oli.Repo
+alias Oli.Accounts
+alias Oli.Accounts.{AuthorPreferences}
+alias Oli.Activities
+  require Logger
   alias Oli.Analytics.Summary
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
@@ -3616,17 +3617,42 @@ defmodule Oli.TestHelpers do
 
   ### Begins helper that waits for Tasks to complete ###
 
-  def wait_for_completion() do
-    pids = Task.Supervisor.children(Oli.TaskSupervisor)
-    Enum.each(pids, &Process.monitor/1)
-    wait_for_pids(pids)
+  def wait_for_completion(timeout_ms \\ 60_000) do
+    start_time = System.monotonic_time(:millisecond)
+    wait_for_completion_loop(start_time, timeout_ms)
   end
 
-  defp wait_for_pids([]), do: nil
+  defp wait_for_completion_loop(start_time, timeout_ms) do
+    elapsed = System.monotonic_time(:millisecond) - start_time
 
-  defp wait_for_pids(pids) do
-    receive do
-      {:DOWN, _ref, :process, pid, _reason} -> wait_for_pids(List.delete(pids, pid))
+    cond do
+      elapsed >= timeout_ms ->
+        Logger.warning(
+          "Timed out waiting for Oli.TaskSupervisor tasks to finish after #{timeout_ms}ms"
+        )
+
+        :timeout
+
+      true ->
+        case Task.Supervisor.children(Oli.TaskSupervisor) do
+          [] ->
+            :ok
+
+          pids ->
+            refs = Enum.map(pids, &Process.monitor/1)
+
+            Enum.each(refs, fn ref ->
+              receive do
+                {:DOWN, ^ref, :process, _pid, _reason} -> :ok
+              after
+                max(0, timeout_ms - (System.monotonic_time(:millisecond) - start_time)) ->
+                  :ok
+              end
+            end)
+
+            Enum.each(refs, &Process.demonitor(&1, [:flush]))
+            wait_for_completion_loop(start_time, timeout_ms)
+        end
     end
   end
 

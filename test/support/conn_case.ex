@@ -38,6 +38,8 @@ defmodule OliWeb.ConnCase do
       Ecto.Adapters.SQL.Sandbox.mode(Oli.Repo, {:shared, self()})
     end
 
+    on_exit(fn -> Oli.TestHelpers.wait_for_completion() end)
+
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

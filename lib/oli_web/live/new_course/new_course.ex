@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Oli.Delivery.DepotCoordinator
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, SectionResourceDepot, SectionSpecification}
+  alias Oli.Tasks
   alias OliWeb.Common.{Breadcrumb, Stepper, FormatDateTime}
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Components.Common
@@ -267,7 +268,7 @@ defmodule OliWeb.Delivery.NewCourse do
     liveview_pid = self()
 
     # start an async task to create the section and send the result back to the liveview
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+    Tasks.start_child(fn ->
       case Delivery.create_section(
              changeset,
              source,
@@ -286,7 +287,7 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   def handle_info({:section_created, section_id, section_slug}, socket) do
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+    Tasks.start_child(fn ->
       depot_desc = SectionResourceDepot.depot_desc()
       DepotCoordinator.init_if_necessary(depot_desc, section_id, SectionResourceDepot)
     end)

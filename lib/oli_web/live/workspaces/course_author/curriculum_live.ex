@@ -34,6 +34,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   alias Oli.Accounts
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Resources.Numbering
+  alias Oli.Tasks
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Breadcrumb
   alias Oli.Delivery.Hierarchy
@@ -220,7 +221,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
           author = socket.assigns.author
 
           task =
-            Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
+            Tasks.async_nolink(fn ->
               importer.import(project_slug, container_slug, file_id, author, opts)
             end)
 

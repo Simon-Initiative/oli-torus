@@ -9,6 +9,7 @@ defmodule Oli.Resources.Collaboration do
   alias Oli.Resources.{ResourceType, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, UserReadPost, UserReactionPost}
   alias Oli.Repo
+  alias Oli.Tasks
   alias Oli.Accounts.User
 
   import Ecto.Query, warn: false
@@ -1083,7 +1084,7 @@ defmodule Oli.Resources.Collaboration do
   end
 
   def mark_posts_as_read(posts, user_id, true) do
-    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+    Tasks.start_child(fn ->
       Enum.reduce(posts, [], fn post, acc ->
         if post.user_id != user_id, do: [post.id | acc], else: acc
       end)

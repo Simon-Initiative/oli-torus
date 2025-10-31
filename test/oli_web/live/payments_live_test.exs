@@ -8,6 +8,7 @@ defmodule OliWeb.PaymentsLiveTest do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Paywall.Payment
+  alias Floki
 
   defp create_product(_conn) do
     product =
@@ -216,8 +217,8 @@ defmodule OliWeb.PaymentsLiveTest do
     end
 
     test "applies sorting", %{conn: conn, product: product} do
-      {_, _product, payment1} = create_payment_code(product)
-      {_, _product, payment2} = create_payment_code(product)
+      {user1, _product, payment1} = create_payment_code(product)
+      {user2, _product, payment2} = create_payment_code(product)
 
       {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
 
@@ -226,17 +227,25 @@ defmodule OliWeb.PaymentsLiveTest do
 
       assert view
              |> element("tr:first-child > td:first-child")
-             |> render() =~
-               code1
+             |> render() =~ code1
 
       view
       |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "user"})
 
-      assert view
-             |> element("tr:first-child > td:first-child")
-             |> render() =~
-               code2
+      expected_codes =
+        [{user1, code1}, {user2, code2}]
+        |> Enum.sort_by(fn {user, _code} -> {user.family_name, user.given_name} end, &>=/2)
+        |> Enum.map(&elem(&1, 1))
+
+      rendered_codes =
+        view
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("table tbody tr td:first-child code")
+        |> Enum.map(&Floki.text/1)
+
+      assert rendered_codes == expected_codes
     end
   end
 end
