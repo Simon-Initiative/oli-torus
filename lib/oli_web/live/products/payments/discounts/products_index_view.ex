@@ -44,8 +44,7 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
       [
         Breadcrumb.new(%{
           full_title: "Discounts",
-          link:
-            ~p"/workspaces/course_author/#{project.slug}/products/#{product.slug}/discounts"
+          link: ~p"/workspaces/course_author/#{project.slug}/products/#{product.slug}/discounts"
         })
       ]
   end
@@ -124,6 +123,7 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
     case Paywall.delete_discount(discount) do
       {:ok, _discount} ->
         discounts = Paywall.get_product_discounts(socket.assigns.product.id)
+
         {:ok, table_model} =
           TableModel.new(discounts, socket.assigns.ctx, project_slug: socket.assigns.project_slug)
 

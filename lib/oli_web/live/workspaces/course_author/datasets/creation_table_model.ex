@@ -129,7 +129,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel do
           _ -> Course.get_project!(section.blueprint.base_project_id).slug
         end
 
-      route_path = ~p"/workspaces/course_author/#{project_slug}/products/#{section.blueprint.slug}"
+      route_path =
+        ~p"/workspaces/course_author/#{project_slug}/products/#{section.blueprint.slug}"
 
       SortableTableModel.render_link_column(assigns, section.blueprint.title, route_path)
     else

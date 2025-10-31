@@ -70,6 +70,7 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
 
   def render_actions_column(assigns, item, _) do
     project_slug = Map.get(assigns, :project_slug)
+
     path =
       case project_slug do
         nil ->

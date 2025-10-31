@@ -234,29 +234,31 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def user_menu_items(assigns) do
     ~H"""
-    <.menu_item_edit_account
-      :if={is_independent_learner?(@ctx.user) && !Accounts.user_confirmation_pending?(@ctx.user)}
-      href={~p"/users/settings"}
-    />
-    <.menu_item_confirm_user_account :if={
-      is_independent_learner?(@ctx.user) && Accounts.user_confirmation_pending?(@ctx.user)
-    } />
-    <.maybe_my_courses_menu_item_link user={@ctx.user} />
-    <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
-    <.menu_divider />
-    <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
-    <.menu_divider />
-    <.maybe_research_consent_link ctx={@ctx} />
-    <.menu_item_maybe_linked_account
-      :if={Accounts.can_manage_linked_account?(@ctx.user)}
-      user={@ctx.user}
-    />
-    <.menu_item :if={@show_support_link}>
-      {OliWeb.Components.Common.tech_support_button(%{id: "tech_support_user_menu"})}
-    </.menu_item>
-    <.menu_item_link href={~p"/users/log_out"} method={:delete}>
-      Sign out
-    </.menu_item_link>
+    <%= if @ctx.user do %>
+      <.menu_item_edit_account
+        :if={is_independent_learner?(@ctx.user) && !Accounts.user_confirmation_pending?(@ctx.user)}
+        href={~p"/users/settings"}
+      />
+      <.menu_item_confirm_user_account :if={
+        is_independent_learner?(@ctx.user) && Accounts.user_confirmation_pending?(@ctx.user)
+      } />
+      <.maybe_my_courses_menu_item_link user={@ctx.user} />
+      <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
+      <.menu_divider />
+      <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
+      <.menu_divider />
+      <.maybe_research_consent_link ctx={@ctx} />
+      <.menu_item_maybe_linked_account
+        :if={Accounts.can_manage_linked_account?(@ctx.user)}
+        user={@ctx.user}
+      />
+      <.menu_item :if={@show_support_link}>
+        {OliWeb.Components.Common.tech_support_button(%{id: "tech_support_user_menu"})}
+      </.menu_item>
+      <.menu_item_link href={~p"/users/log_out"} method={:delete}>
+        Sign out
+      </.menu_item_link>
+    <% end %>
     """
   end
 
@@ -409,22 +411,28 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  attr(:user, User, required: true)
+  attr(:user, User, default: nil)
 
   def maybe_my_courses_menu_item_link(assigns) do
-    assigns = assign(assigns, :my_courses_path, Links.my_courses_path(assigns[:user]))
+    assigns = assign_new(assigns, :user, fn -> nil end)
 
-    ~H"""
-    <%= if is_independent_learner?(@user) do %>
-      <.menu_item>
-        <.menu_item_link href={@my_courses_path}>
-          My Courses
-        </.menu_item_link>
-      </.menu_item>
+    if is_nil(assigns.user) do
+      ~H""
+    else
+      assigns = assign(assigns, :my_courses_path, Links.my_courses_path(assigns.user))
 
-      <.menu_divider />
-    <% end %>
-    """
+      ~H"""
+      <%= if is_independent_learner?(@user) do %>
+        <.menu_item>
+          <.menu_item_link href={@my_courses_path}>
+            My Courses
+          </.menu_item_link>
+        </.menu_item>
+
+        <.menu_divider />
+      <% end %>
+      """
+    end
   end
 
   attr(:id, :string, required: true)
@@ -514,16 +522,22 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:user, :map)
 
   def user_picture_icon(assigns) do
+    assigns = assign_new(assigns, :user, fn -> nil end)
+
     ~H"""
-    <%= case @user.picture do %>
-      <% nil -> %>
-        <div class="w-8 h-8 bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]">
-          {to_initials(@user)}
-        </div>
-      <% picture -> %>
-        <div class="flex justify-center items-center">
-          <img src={picture} referrerpolicy="no-referrer" class="rounded-full h-8 w-8" />
-        </div>
+    <%= if @user do %>
+      <%= case Map.get(@user, :picture) do %>
+        <% nil -> %>
+          <div class="w-8 h-8 bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]">
+            {to_initials(@user)}
+          </div>
+        <% picture -> %>
+          <div class="flex justify-center items-center">
+            <img src={picture} referrerpolicy="no-referrer" class="rounded-full h-8 w-8" />
+          </div>
+      <% end %>
+    <% else %>
+      <.default_user_icon />
     <% end %>
     """
   end

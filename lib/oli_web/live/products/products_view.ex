@@ -243,7 +243,10 @@ defmodule OliWeb.Products.ProductsView do
         {:noreply,
          socket
          |> put_flash(:info, "Product successfully created.")
-         |> redirect(to: ~p"/workspaces/course_author/#{socket.assigns.project.slug}/products/#{blueprint.slug}")}
+         |> redirect(
+           to:
+             ~p"/workspaces/course_author/#{socket.assigns.project.slug}/products/#{blueprint.slug}"
+         )}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not create product")}

@@ -1,13 +1,11 @@
-<%
-  assigns =
-    assigns
-    |> Map.put_new(:preview_mode, false)
-    |> Map.put_new(:sidebar_expanded, true)
-    |> Map.put_new(:disable_sidebar?, false)
-    |> Map.put_new(:footer_enabled?, true)
-    |> Map.put_new(:is_admin, false)
-    |> Map.put_new(:active_workspace, nil)
-%>
+<% assigns =
+  assigns
+  |> Map.put_new(:preview_mode, false)
+  |> Map.put_new(:sidebar_expanded, true)
+  |> Map.put_new(:disable_sidebar?, false)
+  |> Map.put_new(:footer_enabled?, true)
+  |> Map.put_new(:is_admin, false)
+  |> Map.put_new(:active_workspace, nil) %>
 <main role="main" class="relative flex flex-col">
   <div class="sticky top-0 z-50">
     <Components.Delivery.Layouts.header

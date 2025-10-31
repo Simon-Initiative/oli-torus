@@ -703,7 +703,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
       unscored_page: unscored_page,
       lti_activity: lti_activity
     } do
-      {resource_attempt, _activity_attempt, part_attempt} =
+      {resource_attempt, activity_attempt, part_attempt} =
         setup_activity_attempt(section, unscored_page, student_1, lti_activity, 2.0)
 
       assert part_attempt.score == nil
@@ -761,9 +761,10 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         |> hd()
 
       assert resource_attempt.lifecycle_state == :active
-
-      assert latest_part_attempt.score == nil
-      assert latest_part_attempt.out_of == nil
+      assert latest_activity_attempt.attempt_guid == activity_attempt.attempt_guid
+      assert latest_part_attempt.attempt_guid == updated_part_attempt.attempt_guid
+      assert latest_part_attempt.score == updated_part_attempt.score
+      assert latest_part_attempt.out_of == updated_part_attempt.out_of
     end
 
     @tag capture_log: true

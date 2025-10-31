@@ -5,7 +5,6 @@ defmodule OliWeb.Products.Details.Edit do
   import OliWeb.ErrorHelpers
   import Ecto.Changeset
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Common
 
   defp statuses do
@@ -161,11 +160,7 @@ defmodule OliWeb.Products.Details.Edit do
             <a
               class="btn btn-link action-button"
               href={
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Products.Payments.Discounts.ProductsIndexView,
-                  @product.slug
-                )
+                ~p"/workspaces/course_author/#{@project_slug}/products/#{@product.slug}/discounts"
               }
             >
               Manage Discounts

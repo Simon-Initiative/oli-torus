@@ -66,6 +66,15 @@ defmodule OliWeb.LiveSessionPlugs.AssignActiveMenu do
               socket
           end
 
+        ["OliWeb", "Delivery", "RemixSection"] ->
+          case Map.get(socket.assigns, :live_action) do
+            :product_remix ->
+              assign(socket, active_workspace: :course_author, active_view: :products)
+
+            _ ->
+              assign(socket, active_workspace: :instructor, active_view: :course_content)
+          end
+
         _ ->
           socket
       end

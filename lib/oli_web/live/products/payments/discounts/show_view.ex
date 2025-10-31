@@ -46,7 +46,11 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
       ]
   end
 
-  defp mount_for(:product_new = live_action, %{"project_id" => project_slug, "product_id" => product_slug}, socket) do
+  defp mount_for(
+         :product_new = live_action,
+         %{"project_id" => project_slug, "product_id" => product_slug},
+         socket
+       ) do
     case fetch_project_and_product(project_slug, product_slug) do
       {:ok, project, product} ->
         institutions = Institutions.list_institutions()
@@ -72,7 +76,11 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
 
   defp mount_for(
          :product = live_action,
-         %{"project_id" => project_slug, "product_id" => product_slug, "discount_id" => discount_id},
+         %{
+           "project_id" => project_slug,
+           "product_id" => product_slug,
+           "discount_id" => discount_id
+         },
          socket
        ) do
     with {:ok, project, product} <- fetch_project_and_product(project_slug, product_slug),

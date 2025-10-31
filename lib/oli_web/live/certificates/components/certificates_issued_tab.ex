@@ -20,6 +20,12 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
   }
 
   def render(assigns) do
+    assigns =
+      assigns
+      |> assign(:project_slug, project_slug(assigns[:project]))
+
+    assigns = assign(assigns, :download_href, download_href(assigns))
+
     ~H"""
     <div class="grid grid-cols-12 w-full">
       <div id="certificates_issued-table" class="col-span-12">
@@ -32,11 +38,9 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
             class="w-[500px]"
           />
           <a
-            :if={!@read_only}
+            :if={!@read_only && @download_href}
             role="export"
-            href={
-              ~p"/workspaces/course_author/#{@project.slug}/products/#{@section_id}/downloads/granted_certificates"
-            }
+            href={@download_href}
             class="flex items-center justify-center gap-x-2"
           >
             <Icons.download /> Download CSV
@@ -171,4 +175,15 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
       [hd | _] -> hd.total_count
     end
   end
+
+  defp project_slug(%{slug: slug}) when is_binary(slug), do: slug
+  defp project_slug(slug) when is_binary(slug), do: slug
+  defp project_slug(_), do: nil
+
+  defp download_href(%{route_name: :workspaces, project_slug: slug, section_id: section_id})
+       when is_binary(slug) do
+    ~p"/workspaces/course_author/#{slug}/products/#{section_id}/downloads/granted_certificates"
+  end
+
+  defp download_href(_assigns), do: nil
 end

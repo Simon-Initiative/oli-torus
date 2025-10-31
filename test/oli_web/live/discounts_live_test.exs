@@ -23,7 +23,9 @@ defmodule OliWeb.DiscountsLiveTest do
 
   defp create_product(_conn) do
     project = insert(:project)
-    product = insert(:section, type: :blueprint, base_project: project, base_project_id: project.id)
+
+    product =
+      insert(:section, type: :blueprint, base_project: project, base_project_id: project.id)
 
     [product: product, project: project]
   end
@@ -80,7 +82,6 @@ defmodule OliWeb.DiscountsLiveTest do
       conn = get(conn, live_view_products_index_route(project.slug, product.slug))
 
       assert redirected_to(conn) =~ "/workspaces/course_author"
-
     end
 
     test "returns forbidden when accessing the new show view - product", %{conn: conn} do
@@ -89,7 +90,6 @@ defmodule OliWeb.DiscountsLiveTest do
       conn = get(conn, live_view_product_new_show_route(project.slug, product.slug))
 
       assert redirected_to(conn) =~ "/workspaces/course_author"
-
     end
 
     test "returns forbidden when accessing the show view - product", %{conn: conn} do
@@ -99,7 +99,6 @@ defmodule OliWeb.DiscountsLiveTest do
       conn = get(conn, live_view_product_show_route(project.slug, product.slug, discount.id))
 
       assert redirected_to(conn) =~ "/workspaces/course_author"
-
     end
 
     test "returns forbidden when accessing the show view - institution", %{conn: conn} do
@@ -108,22 +107,33 @@ defmodule OliWeb.DiscountsLiveTest do
       conn = get(conn, live_view_institution_show_route(institution.id))
 
       assert redirected_to(conn) =~ "/workspaces/course_author"
-
     end
   end
 
   describe "products discounts index view" do
     setup [:admin_conn, :create_product]
 
-    test "loads correctly when there are no discounts", %{conn: conn, product: product, project: project} do
+    test "loads correctly when there are no discounts", %{
+      conn: conn,
+      product: product,
+      project: project
+    } do
       {:ok, view, _html} = live(conn, live_view_products_index_route(project.slug, product.slug))
 
       assert has_element?(view, "#discounts-table")
       assert has_element?(view, "p", "None exist")
-      assert has_element?(view, "a[href=\"#{live_view_product_new_show_route(project.slug, product.slug)}\"]")
+
+      assert has_element?(
+               view,
+               "a[href=\"#{live_view_product_new_show_route(project.slug, product.slug)}\"]"
+             )
     end
 
-    test "loads correctly when there are discounts", %{conn: conn, product: product, project: project} do
+    test "loads correctly when there are discounts", %{
+      conn: conn,
+      product: product,
+      project: project
+    } do
       first_discount =
         insert(:discount, section: product, type: :fixed_amount, amount: Money.new(25, "USD"))
 
@@ -190,7 +200,8 @@ defmodule OliWeb.DiscountsLiveTest do
       assert has_element?(view, "##{last_discount.id}")
     end
 
-    test "renders datetimes using the local timezone", %{product: product, project: project} = context do
+    test "renders datetimes using the local timezone",
+         %{product: product, project: project} = context do
       {:ok, conn: conn, ctx: session_context} = set_timezone(context)
 
       discount = insert(:discount, section: product)
@@ -209,7 +220,10 @@ defmodule OliWeb.DiscountsLiveTest do
 
     test "redirects to not found when not exists", %{conn: conn} do
       project = insert(:project)
-      product = insert(:section, type: :enrollable, base_project: project, base_project_id: project.id)
+
+      product =
+        insert(:section, type: :enrollable, base_project: project, base_project_id: project.id)
+
       discount = insert(:discount)
 
       {:error, {:redirect, %{to: "/not_found"}}} =
@@ -234,7 +248,11 @@ defmodule OliWeb.DiscountsLiveTest do
       assert has_element?(view, "input[value='#{discount.percentage}']")
     end
 
-    test "displays error message when data is invalid", %{conn: conn, product: product, project: project} do
+    test "displays error message when data is invalid", %{
+      conn: conn,
+      product: product,
+      project: project
+    } do
       discount = insert(:discount, section: product)
 
       {:ok, view, _html} =
@@ -290,7 +308,9 @@ defmodule OliWeb.DiscountsLiveTest do
 
     test "redirects to not found when not exists", %{conn: conn} do
       project = insert(:project)
-      product = insert(:section, type: :enrollable, base_project: project, base_project_id: project.id)
+
+      product =
+        insert(:section, type: :enrollable, base_project: project, base_project_id: project.id)
 
       {:error, {:redirect, %{to: "/not_found"}}} =
         live(conn, live_view_product_new_show_route(project.slug, product.slug))
@@ -312,7 +332,11 @@ defmodule OliWeb.DiscountsLiveTest do
       refute has_element?(view, "button[phx-click='clear']")
     end
 
-    test "displays error message when data is invalid", %{conn: conn, product: product, project: project} do
+    test "displays error message when data is invalid", %{
+      conn: conn,
+      product: product,
+      project: project
+    } do
       {:ok, view, _html} =
         live(conn, live_view_product_new_show_route(project.slug, product.slug))
 
@@ -428,7 +452,7 @@ defmodule OliWeb.DiscountsLiveTest do
       })
 
       flash =
-      assert_redirected(view, ~p"/admin/institutions/#{institution.id}")
+        assert_redirected(view, ~p"/admin/institutions/#{institution.id}")
 
       assert flash["info"] == "Discount successfully created/updated."
 

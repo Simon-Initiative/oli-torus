@@ -10,8 +10,8 @@ defmodule OliWeb.GrantedCertificatesControllerTest do
   describe "download_granted_certificates" do
     test "returns a csv with the granted certificates - state = earned - of the provided product id",
          %{conn: conn} do
-      {:ok, conn: conn, author: _} = author_conn(%{conn: conn})
-      product = insert(:section, type: :blueprint)
+      {:ok, conn: conn, author: _author, project: project} = author_project_conn(%{conn: conn})
+      product = insert(:section, type: :blueprint, base_project: project)
       section = insert(:section, type: :enrollable, blueprint_id: product.id)
       certificate = insert(:certificate, section: section)
       [gc_1, gc_2] = insert_pair(:granted_certificate, certificate: certificate, state: :earned)
@@ -30,7 +30,7 @@ defmodule OliWeb.GrantedCertificatesControllerTest do
       assert Enum.any?(conn.resp_headers, fn h ->
                h ==
                  {"content-disposition",
-                  "attachment; filename="#{product.id}_granted_certificates_content.csv""}
+                  "attachment; filename=\"#{product.id}_granted_certificates_content.csv\""}
              end)
 
       assert Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)

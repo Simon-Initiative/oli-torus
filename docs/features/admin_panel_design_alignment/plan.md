@@ -150,9 +150,10 @@ Dependencies: Requires Phases 2 and 3 merged to avoid dead code; telemetry work 
 - Clarifications either resolved or documented for the implementer to confirm.
 ---
 
+
 ## Current Status (2025-02-14)
 
-- Updated multiple product and objectives LiveView tests plus supporting helpers to target `/workspaces/course_author/**` routes; removed the legacy `Products.DetailsView` module and its scoped-features suite.
-- Certificates and granted-certificate controllers now point to workspace URLs, but workspace remix flows still fail because `project_slug` assignment in `OliWeb.Delivery.RemixSection` is incomplete (nil slug during redirect) and migrating tests remain red.
-- Next up: finish the `RemixSection` migration (derive `project_slug` for every mount path, replace `Routes.product_remix_path` callers, add helper coverage), audit remaining workspace migrations (publish, insights, etc.), and rerun `mix test` once the targeted suites are green.
-
+- CertificatesIssuedTab now derives workspace download links from a safe project slug fallback and isolates the export link in component tests; LTI AGS reset coverage reflects the persisted-score behaviour.
+- Granted certificates controller and admin products suites exercise the workspace routes (search, tags, archived toggle) and are green; stray Python `__pycache__` cleaned.
+- `mix compile` runs without warnings and targeted suites (`test/oli_web/live/products_test.exs`, `test/oli_web/live/workspaces/course_author/products_live_test.exs`, `test/oli_web/live/payments_live_test.exs`, `test/oli_web/live/workspaces/course_author/overview_live_test.exs`, `test/oli_web/live/workspaces/course_author/curriculum_live_import_test.exs`) all pass to cover products, payments, projects, and imports.
+- Next steps: consider a full `mix test` sweep once remaining phase reviewers are ready, and keep monitoring workspace regressions as downstream teams update specs.

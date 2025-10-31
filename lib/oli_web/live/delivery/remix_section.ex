@@ -55,7 +55,10 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp redirect_after_save(:product_creator, %Section{slug: slug} = section, socket) do
     project_slug =
-      case socket.assigns.project_slug do
+      socket
+      |> Map.get(:assigns, %{})
+      |> Map.get(:project_slug)
+      |> case do
         nil -> project_slug(section)
         "" -> project_slug(section)
         slug_val -> slug_val
@@ -172,7 +175,6 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-
   defp ensure_project_slug(socket, section) do
     case socket.assigns[:project_slug] do
       nil -> assign(socket, project_slug: project_slug(section))
@@ -182,7 +184,19 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   defp project_slug(%Section{base_project: %{slug: slug}}), do: slug
-  defp project_slug(%Section{base_project_id: id}), do: Course.get_project!(id).slug
+
+  defp project_slug(%Section{base_project_id: id}) when not is_nil(id) do
+    Course.get_project!(id).slug
+  end
+
+  defp project_slug(%Section{blueprint: %{base_project: %{slug: slug}}}), do: slug
+
+  defp project_slug(%Section{blueprint_id: blueprint_id}) when not is_nil(blueprint_id) do
+    blueprint = Sections.get_section!(blueprint_id)
+    project_slug(blueprint)
+  end
+
+  defp project_slug(_section), do: nil
 
   defp init_state_from_remix(socket, state, opts) do
     params = %{
@@ -936,7 +950,7 @@ defmodule OliWeb.Delivery.RemixSection do
     <div class="breadcrumb custom-breadcrumb p-1 px-2">
       <button
         disabled={@arrow_disabled}
-        id="curriculum-back"
+        id="curriculum-back-btn"
         class="btn btn-sm btn-link"
         phx-click="set_active"
         phx-value-uuid={previous_uuid(@breadcrumbs)}

@@ -65,7 +65,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Qa.WarningDetails do
     </p>
     <p>
       Fix this issue by adding a value for the criteria in the
-      <.link navigate={~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@selected.revision.slug}/edit"}>
+      <.link navigate={
+        ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@selected.revision.slug}/edit"
+      }>
         selection logic in the page.
       </.link>
     </p>
@@ -84,7 +86,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Qa.WarningDetails do
     <ol>
       <li>
         Edit the
-        <.link navigate={~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@selected.revision.slug}/edit"}>
+        <.link navigate={
+          ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@selected.revision.slug}/edit"
+        }>
           selection logic in the page
         </.link>
         to allow it to select more activities

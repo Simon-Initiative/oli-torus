@@ -110,7 +110,10 @@ defmodule OliWeb.ProjectsControllerTest do
 
       # Test ascending sort
       conn =
-        get(conn, ~p"/workspaces/course_author/projects/export?sort_by=title&sort_order=asc&text_search=Admin")
+        get(
+          conn,
+          ~p"/workspaces/course_author/projects/export?sort_by=title&sort_order=asc&text_search=Admin"
+        )
 
       csv_content = response(conn, 200)
       lines = String.split(csv_content, "\n")
@@ -180,7 +183,11 @@ defmodule OliWeb.ProjectsControllerTest do
       conn = log_in_author(conn, admin)
 
       # Try invalid sort_by and sort_order parameters
-      conn = get(conn, ~p"/workspaces/course_author/projects/export?sort_by=invalid&sort_order=invalid")
+      conn =
+        get(
+          conn,
+          ~p"/workspaces/course_author/projects/export?sort_by=invalid&sort_order=invalid"
+        )
 
       assert response(conn, 200)
       csv_content = response(conn, 200)

@@ -164,7 +164,9 @@ defmodule OliWeb.Sections.OverviewView do
           <div class="flex flex-col form-group">
             <label>Product</label>
             <a
-              href={~p"/workspaces/course_author/#{project_slug_for(@section.blueprint)}/products/#{@section.blueprint.slug}"}
+              href={
+                ~p"/workspaces/course_author/#{project_slug_for(@section.blueprint)}/products/#{@section.blueprint.slug}"
+              }
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               {@section.blueprint.title}

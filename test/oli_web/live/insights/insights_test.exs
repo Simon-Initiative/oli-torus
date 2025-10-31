@@ -204,7 +204,7 @@ defmodule OliWeb.Insights.InsightsTest do
               {:redirect,
                %{
                  to: "/workspaces/course_author",
-                 flash: %{"info" => "You don't have access to that project"}
+                 flash: %{"error" => "You don't have access to that project"}
                }}} =
                live(conn, insights_path(another_project.slug))
     end

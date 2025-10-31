@@ -49,28 +49,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
           breadcrumbs = set_breadcrumbs(product, project)
 
           {:ok,
-         assign(socket,
-           publishers: publishers,
-           updates: latest_publications,
-           author: author,
-           product: product,
-           is_admin: is_admin,
-           changeset: changeset,
-           title: "Edit Product",
-           show_confirm: false,
-           base_project: base_project,
-           resource_slug: project.slug,
-           resource_title: project.title,
-           active_workspace: :course_author,
-           active_view: :products,
-           breadcrumbs: breadcrumbs
-         )
-         |> Phoenix.LiveView.allow_upload(:cover_image,
-           accept: ~w(.jpg .jpeg .png),
-           max_entries: 1,
-           auto_upload: true,
-           max_file_size: 5_000_000
-         )}
+           assign(socket,
+             publishers: publishers,
+             updates: latest_publications,
+             author: author,
+             product: product,
+             is_admin: is_admin,
+             changeset: changeset,
+             title: "Edit Product",
+             show_confirm: false,
+             base_project: base_project,
+             resource_slug: project.slug,
+             resource_title: project.title,
+             active_workspace: :course_author,
+             active_view: :products,
+             breadcrumbs: breadcrumbs
+           )
+           |> Phoenix.LiveView.allow_upload(:cover_image,
+             accept: ~w(.jpg .jpeg .png),
+             max_entries: 1,
+             auto_upload: true,
+             max_file_size: 5_000_000
+           )}
         end
     end
   end

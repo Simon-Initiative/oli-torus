@@ -214,7 +214,6 @@ defmodule OliWeb.Products.ProductsTableModel do
      end, {order, Decimal}}
   end
 
-
   defp base_project_slug(%{base_project: %{slug: slug}}), do: slug
   defp base_project_slug(%{base_project_id: id}), do: Course.get_project!(id).slug
 

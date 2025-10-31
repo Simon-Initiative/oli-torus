@@ -292,7 +292,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # navigate back to root container
       view
-      |> element("#curriculum-back")
+      |> element("#curriculum-back-btn")
       |> render_click()
 
       assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
@@ -880,13 +880,8 @@ defmodule OliWeb.RemixSectionLiveTest do
       revision2: revision2,
       project_slug: project_slug
     } do
-      conn =
-        get(
-          conn,
-          Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug)
-        )
-
-      {:ok, view, _html} = live(conn)
+      {:ok, view, _html} =
+        live(conn, ~p"/workspaces/course_author/#{project_slug}/products/#{prod.slug}/remix")
 
       assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
       assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
@@ -915,13 +910,8 @@ defmodule OliWeb.RemixSectionLiveTest do
       prod: prod,
       project_slug: project_slug
     } do
-      conn =
-        get(
-          conn,
-          Routes.product_remix_path(OliWeb.Endpoint, :product_remix, prod.slug)
-        )
-
-      {:ok, view, _html} = live(conn)
+      {:ok, view, _html} =
+        live(conn, ~p"/workspaces/course_author/#{project_slug}/products/#{prod.slug}/remix")
 
       render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
@@ -1668,8 +1658,10 @@ defmodule OliWeb.RemixSectionLiveTest do
     {:ok, _prod} = Sections.create_section_resources(prod, publication)
 
     conn =
-      Plug.Test.init_test_session(conn, %{})
+      conn
       |> log_in_author(product_author)
+      |> get(~p"/workspaces/course_author/#{project.slug}/overview")
+      |> recycle()
 
     {:ok,
      conn: conn,

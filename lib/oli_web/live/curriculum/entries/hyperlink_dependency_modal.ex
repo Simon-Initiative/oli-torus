@@ -29,7 +29,9 @@ defmodule OliWeb.Curriculum.HyperlinkDependencyModal do
                 {hyperlink.title}
                 <.link
                   class="entry-title mx-3"
-                  href={~p"/workspaces/course_author/#{@project.slug}/curriculum/#{hyperlink.slug}/edit"}
+                  href={
+                    ~p"/workspaces/course_author/#{@project.slug}/curriculum/#{hyperlink.slug}/edit"
+                  }
                 >
                   Edit Page
                 </.link>

@@ -58,7 +58,9 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
     case item.unique_type do
       "product" ->
         project_slug = project_slug_for_item(item)
-        route_path = ~p"/workspaces/course_author/#{project_slug}/products/#{get_field(:slug, item)}"
+
+        route_path =
+          ~p"/workspaces/course_author/#{project_slug}/products/#{get_field(:slug, item)}"
 
         SortableTableModel.render_link_column(assigns, get_field(:title, item), route_path)
 
@@ -74,7 +76,9 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
 
   defp project_slug_for_item(item) do
     case get_field(:base_project, item) do
-      %{slug: slug} -> slug
+      %{slug: slug} ->
+        slug
+
       _ ->
         case get_field(:base_project_id, item) do
           nil -> nil

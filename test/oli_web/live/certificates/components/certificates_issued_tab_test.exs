@@ -5,6 +5,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
   import Oli.Factory
   import Phoenix.LiveViewTest
 
+  alias Oli.Authoring.Course
   alias Oli.Delivery.Certificates
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
@@ -21,8 +22,8 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
       id = "certificates_issued_component"
       section_slug = section.slug
       section_id = section.id
-      route_name = :authoring
-      project = nil
+      route_name = :workspaces
+      project = project_for(section)
 
       %{
         "direction" => direction,
@@ -54,6 +55,11 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
       }
 
       {:ok, lcd, _html} = live_component_isolated(conn, CertificatesIssuedTab, attrs)
+
+      assert has_element?(
+               lcd,
+               "a[role=\"export\"][href='/workspaces/course_author/#{project.slug}/products/#{section_id}/downloads/granted_certificates']"
+             )
 
       ## Columns
       [{1, "Student"}, {2, "Issue Date"}, {3, "Issued By"}, {4, "ID"}]
@@ -106,8 +112,8 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
       id = "certificates_issued_component"
       section_slug = section.slug
       section_id = section.id
-      route_name = :authoring
-      project = nil
+      route_name = :workspaces
+      project = project_for(section)
 
       %{
         "direction" => direction,
@@ -214,5 +220,12 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
       sorting: sorting,
       section: section
     }
+  end
+
+  defp project_for(section) do
+    case section.base_project do
+      %{slug: _} = project -> project
+      _ -> Course.get_project!(section.base_project_id)
+    end
   end
 end

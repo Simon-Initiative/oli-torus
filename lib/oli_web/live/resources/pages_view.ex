@@ -252,7 +252,10 @@ defmodule OliWeb.Resources.PagesView do
           </:extra_opts>
         </FilterBox.render>
         <div>
-          <.link href={~p"/workspaces/course_author/#{@project.slug}/curriculum"} role="go_to_curriculum">
+          <.link
+            href={~p"/workspaces/course_author/#{@project.slug}/curriculum"}
+            role="go_to_curriculum"
+          >
             Curriculum
           </.link>
         </div>

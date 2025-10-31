@@ -465,9 +465,7 @@ defmodule OliWeb.Router do
       scope "/products/:product_id" do
         live("/source_materials", Delivery.ManageSourceMaterials)
 
-        live("/remix", Delivery.RemixSection, :product_remix,
-          as: :product_remix
-        )
+        live("/remix", Delivery.RemixSection, :product_remix, as: :product_remix)
 
         live("/discounts", Products.Payments.Discounts.ProductsIndexView)
 
@@ -964,7 +962,12 @@ defmodule OliWeb.Router do
       live("/:project_id/curriculum/:container_slug", CourseAuthor.CurriculumLive)
       live("/:project_id/curriculum/:revision_slug/edit", CourseAuthor.Curriculum.EditorLive)
       live("/:project_id/curriculum/:revision_slug/history", CourseAuthor.HistoryLive)
-      live("/:project_id/curriculum/:container_slug/:revision_slug", CourseAuthor.Curriculum.EditorLive)
+
+      live(
+        "/:project_id/curriculum/:container_slug/:revision_slug",
+        CourseAuthor.Curriculum.EditorLive
+      )
+
       live("/:project_id/pages", CourseAuthor.PagesLive)
       live("/:project_id/activities", CourseAuthor.ActivitiesLive)
       live("/:project_id/activities/activity_review", CourseAuthor.Activities.ActivityReviewLive)
@@ -1635,7 +1638,6 @@ defmodule OliWeb.Router do
       live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
       live("/gen_ai/service_configs", GenAI.ServiceConfigsView)
       live("/gen_ai/feature_configs", GenAI.FeatureConfigsView)
-
 
       live("/sections", Sections.SectionsView)
       live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)
