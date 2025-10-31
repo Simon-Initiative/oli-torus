@@ -1,6 +1,6 @@
 defmodule OliWeb.Products.Payments.CreateCodes do
   use OliWeb, :html
-  alias OliWeb.Router.Helpers, as: Routes
+  attr(:project_slug, :string, required: true)
   attr(:product_slug, :string, required: true)
   attr(:count, :integer, required: true)
   attr(:create_codes, :any, required: true)
@@ -39,12 +39,7 @@ defmodule OliWeb.Products.Payments.CreateCodes do
 
   defp route_or_disabled(assigns) do
     if assigns.download_enabled do
-      Routes.payment_path(
-        OliWeb.Endpoint,
-        :download_payment_codes,
-        assigns.product_slug,
-        count: assigns.count
-      )
+      ~p"/workspaces/course_author/#{assigns.project_slug}/products/#{assigns.product_slug}/payments/download_codes?#{[count: assigns.count]}"
     else
       "#"
     end

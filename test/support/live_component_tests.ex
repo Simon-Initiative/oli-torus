@@ -44,6 +44,7 @@ defmodule LiveComponentTests do
   """
   defmacro live_component_isolated(conn, module, attrs \\ []) do
     quote bind_quoted: binding() do
+      require Phoenix.LiveViewTest
       # Starts the Driver LiveView. It will render empty until we give it a `@module`.
       {:ok, lcd, _html} = Phoenix.LiveViewTest.live_isolated(conn, Driver)
 

@@ -14,7 +14,13 @@ defmodule OliWeb.ObjectivesLiveTest do
   alias Oli.Resources.ResourceType
 
   defp live_view_route(project_slug, params \\ %{}),
-    do: Routes.live_path(OliWeb.Endpoint, OliWeb.ObjectivesLive.Objectives, project_slug, params)
+    do:
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Workspaces.CourseAuthor.ObjectivesLive,
+        project_slug,
+        params
+      )
 
   defp create_project(_conn) do
     author = insert(:author)

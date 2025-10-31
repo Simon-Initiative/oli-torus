@@ -3,6 +3,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
+  alias Oli.Authoring.Course
   import Oli.Factory
   import Ecto.Query, warn: false
 
@@ -42,7 +43,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirected(
         view,
-        ~p"/authoring/products/#{section.slug}"
+        product_details_path(section)
       )
     end
 
@@ -78,7 +79,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirected(
         view,
-        ~p"/authoring/products/#{section.slug}"
+        product_details_path(section)
       )
     end
   end
@@ -911,7 +912,8 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "saving redirects product manager correctly", %{
       conn: conn,
-      prod: prod
+      prod: prod,
+      project_slug: project_slug
     } do
       conn =
         get(
@@ -929,7 +931,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirect(
         view,
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, prod.slug)
+        ~p"/workspaces/course_author/#{project_slug}/products/#{prod.slug}"
       )
     end
   end
@@ -965,7 +967,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirect(
         view,
-        ~p"/authoring/products/#{section.slug}"
+        product_details_path(section)
       )
     end
 
@@ -1675,5 +1677,15 @@ defmodule OliWeb.RemixSectionLiveTest do
      revision1: revision1,
      revision2: revision2,
      project_slug: project.slug}
+  end
+
+  defp product_details_path(section) do
+    project_slug =
+      case section.base_project do
+        %{slug: slug} -> slug
+        _ -> Course.get_project!(section.base_project_id).slug
+      end
+
+    ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
   end
 end

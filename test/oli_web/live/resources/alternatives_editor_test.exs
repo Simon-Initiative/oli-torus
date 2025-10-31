@@ -1,4 +1,4 @@
-defmodule OliWeb.Resources.AlternativesEditorTest do
+defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.ConnTest
@@ -37,14 +37,7 @@ defmodule OliWeb.Resources.AlternativesEditorTest do
         "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
-        live(
-          conn,
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Resources.AlternativesEditor,
-            project.slug
-          )
-        )
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/alternatives")
     end
   end
 
@@ -55,26 +48,12 @@ defmodule OliWeb.Resources.AlternativesEditorTest do
       {:error,
        {:redirect,
         %{flash: %{"info" => "That project does not exist"}, to: "/workspaces/course_author"}}} =
-        live(
-          conn,
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Resources.AlternativesEditor,
-            "slug_does_not_exist"
-          )
-        )
+        live(conn, ~p"/workspaces/course_author/slug_does_not_exist/alternatives")
     end
 
     test "renders when there are no alternatives groups", %{conn: conn, project: project} do
       {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Resources.AlternativesEditor,
-            project.slug
-          )
-        )
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/alternatives")
 
       assert has_element?(view, "h2", "Alternatives")
       assert has_element?(view, "div", "There are no alternatives groups")
@@ -85,14 +64,7 @@ defmodule OliWeb.Resources.AlternativesEditorTest do
       project: project
     } do
       {:ok, view, _html} =
-        live(
-          conn,
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Resources.AlternativesEditor,
-            project.slug
-          )
-        )
+        live(conn, ~p"/workspaces/course_author/#{project.slug}/alternatives")
 
       # show create alternatives modal
       view

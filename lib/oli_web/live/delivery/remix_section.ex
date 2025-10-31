@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.RemixSection do
     ]
 
   alias Oli.Repo
+  alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
@@ -52,8 +53,14 @@ defmodule OliWeb.Delivery.RemixSection do
   defp redirect_after_save(:instructor, %Section{slug: slug}, _socket),
     do: ~p"/sections/#{slug}/manage"
 
-  defp redirect_after_save(:product_creator, %Section{slug: slug}, socket) do
-    project_slug = socket.assigns.project_slug
+  defp redirect_after_save(:product_creator, %Section{slug: slug} = section, socket) do
+    project_slug =
+      case socket.assigns.project_slug do
+        nil -> project_slug(section)
+        "" -> project_slug(section)
+        slug_val -> slug_val
+      end
+
     ~p"/workspaces/course_author/#{project_slug}/products/#{slug}"
   end
 
@@ -93,6 +100,8 @@ defmodule OliWeb.Delivery.RemixSection do
         Mount.handle_error(socket, {:error, e})
 
       {:admin, current_author, section} ->
+        socket = ensure_project_slug(socket, section)
+
         cond do
           section.open_and_free ->
             mount_as_open_and_free(socket, section)
@@ -105,9 +114,11 @@ defmodule OliWeb.Delivery.RemixSection do
         end
 
       {:user, current_user, section} ->
+        socket = ensure_project_slug(socket, section)
         mount_as_instructor(socket, section, current_user)
 
       {:author, current_author, section} ->
+        socket = ensure_project_slug(socket, section)
         mount_as_product_creator(socket, section, current_author)
     end
   end
@@ -160,6 +171,18 @@ defmodule OliWeb.Delivery.RemixSection do
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
     end
   end
+
+
+  defp ensure_project_slug(socket, section) do
+    case socket.assigns[:project_slug] do
+      nil -> assign(socket, project_slug: project_slug(section))
+      "" -> assign(socket, project_slug: project_slug(section))
+      _ -> socket
+    end
+  end
+
+  defp project_slug(%Section{base_project: %{slug: slug}}), do: slug
+  defp project_slug(%Section{base_project_id: id}), do: Course.get_project!(id).slug
 
   defp init_state_from_remix(socket, state, opts) do
     params = %{

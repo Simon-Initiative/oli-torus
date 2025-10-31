@@ -133,7 +133,7 @@ Dependencies: Requires Phases 2 and 3 merged to avoid dead code; telemetry work 
 **Plan**
 
 1. **Products & Payments**
-   - [ ] Add workspace routes for product list/detail/payments/certificate settings under `/workspaces/course_author/:project_id/products/**`.
+   - [ ] Add workspace routes for product list/detail/payments/certificate settings under `/workspaces/course_author/:project_id/products/**` (tests partially updated; LiveViews still need full routing + redirects).
    - [ ] Update LiveViews (`overview`, `products`, `remix`, etc.), components, and tests to rely on the new paths and breadcrumbs.
    - [ ] Bring admin discount flows onto the shared workspace navigation while preserving role gating.
 2. **Project Management Actions**
@@ -148,3 +148,11 @@ Dependencies: Requires Phases 2 and 3 merged to avoid dead code; telemetry work 
 - All phases include automated test additions with explicit commands.
 - Non-functional requirements traced back to guardrails with validation steps.
 - Clarifications either resolved or documented for the implementer to confirm.
+---
+
+## Current Status (2025-02-14)
+
+- Updated multiple product and objectives LiveView tests plus supporting helpers to target `/workspaces/course_author/**` routes; removed the legacy `Products.DetailsView` module and its scoped-features suite.
+- Certificates and granted-certificate controllers now point to workspace URLs, but workspace remix flows still fail because `project_slug` assignment in `OliWeb.Delivery.RemixSection` is incomplete (nil slug during redirect) and migrating tests remain red.
+- Next up: finish the `RemixSection` migration (derive `project_slug` for every mount path, replace `Routes.product_remix_path` callers, add helper coverage), audit remaining workspace migrations (publish, insights, etc.), and rerun `mix test` once the targeted suites are green.
+

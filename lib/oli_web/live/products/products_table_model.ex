@@ -2,10 +2,10 @@ defmodule OliWeb.Products.ProductsTableModel do
   use Phoenix.Component
   use OliWeb, :verified_routes
 
+  alias Oli.Authoring.Course
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Common.Utils
-  alias OliWeb.Router.Helpers, as: Routes
 
   def new(products, ctx, project_slug \\ "", opts \\ []) do
     default_td_class = "!border-r border-Table-table-border"
@@ -91,13 +91,14 @@ defmodule OliWeb.Products.ProductsTableModel do
     end
   end
 
-  def render_title_column(assigns, %{title: title, slug: slug}, _) do
-    route_path =
+  def render_title_column(assigns, %{title: title, slug: slug} = product, _) do
+    project_slug =
       case Map.get(assigns, :project_slug) do
-        "" -> Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, slug)
-        project_slug -> ~p"/workspaces/course_author/#{project_slug}/products/#{slug}"
+        "" -> base_project_slug(product)
+        other -> other
       end
 
+    route_path = ~p"/workspaces/course_author/#{project_slug}/products/#{slug}"
     search_term = Map.get(assigns, :search_term, "")
 
     assigns =
@@ -123,13 +124,14 @@ defmodule OliWeb.Products.ProductsTableModel do
     """
   end
 
-  def render_project_column(assigns, %{base_project: base_project}, _) do
-    route_path =
+  def render_project_column(assigns, %{base_project: base_project} = product, _) do
+    project_slug =
       case Map.get(assigns, :project_slug) do
-        "" -> ~p"/workspaces/course_author/#{base_project.slug}/overview"
-        _project_slug -> ~p"/workspaces/course_author/#{base_project}/overview"
+        "" -> base_project_slug(product)
+        other -> other
       end
 
+    route_path = ~p"/workspaces/course_author/#{project_slug}/overview"
     search_term = Map.get(assigns, :search_term, "")
 
     assigns =
@@ -211,6 +213,10 @@ defmodule OliWeb.Products.ProductsTableModel do
        _ -> Decimal.new(0)
      end, {order, Decimal}}
   end
+
+
+  defp base_project_slug(%{base_project: %{slug: slug}}), do: slug
+  defp base_project_slug(%{base_project_id: id}), do: Course.get_project!(id).slug
 
   defp highlight_search_term(text, search_term),
     do:

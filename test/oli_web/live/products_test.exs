@@ -7,18 +7,27 @@ defmodule OliWeb.ProductsLiveTest do
   import Mox
 
   alias Oli.Delivery.{Paywall, Sections}
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Utils.Seeder
   alias Oli.Authoring.Course
 
-  @live_view_all_products Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)
-
   defp live_view_products_route(project_slug) do
-    Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView, project_slug)
+    ~p"/workspaces/course_author/#{project_slug}/products"
   end
 
-  defp live_view_details_route(product_slug) do
-    Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, product_slug)
+  defp live_view_all_products_route(product) do
+    live_view_products_route(project_slug_for(product))
+  end
+
+  defp project_slug_for(product) do
+    case product.base_project do
+      %{slug: slug} -> slug
+      _ -> Course.get_project!(product.base_project_id).slug
+    end
+  end
+
+  defp live_view_details_route(product) do
+    project_slug = project_slug_for(product)
+    ~p"/workspaces/course_author/#{project_slug}/products/#{product.slug}"
   end
 
   defp create_product(_conn) do
@@ -38,11 +47,25 @@ defmodule OliWeb.ProductsLiveTest do
     [product: product]
   end
 
+  defp create_product_in_project(product, attrs \\ []) do
+    default_attrs = %{
+      type: :blueprint,
+      requires_payment: true,
+      amount: Money.new(10, "USD"),
+      base_project: product.base_project,
+      base_project_id: product.base_project_id
+    }
+
+    attrs = Enum.into(attrs, %{})
+
+    insert(:section, Map.merge(default_attrs, attrs))
+  end
+
   describe "product overview content settings" do
     setup [:admin_conn, :create_product]
 
     test "save event updates curriculum numbering visibility", %{conn: conn, product: product} do
-      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       assert view
              |> element("#section_display_curriculum_item_numbering")
@@ -63,7 +86,7 @@ defmodule OliWeb.ProductsLiveTest do
     end
 
     test "save event updates apply_major_updates", %{conn: conn, product: product} do
-      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       refute view
              |> element("#section_apply_major_updates")
@@ -88,18 +111,20 @@ defmodule OliWeb.ProductsLiveTest do
     setup [:admin_conn, :create_product]
 
     test "shows all products list", %{conn: conn, product: product} do
-      [{_, product_2} | _] = create_product(conn)
+      product_2 = create_product_in_project(product)
 
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      {:ok, view, _html} =
+        live(conn, live_view_products_route(project_slug_for(product)))
 
       assert has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
     end
 
     test "search product by title", %{conn: conn, product: product} do
-      [{_, product_2} | _] = create_product(conn)
+      product_2 = create_product_in_project(product)
 
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      {:ok, view, _html} =
+        live(conn, live_view_products_route(project_slug_for(product)))
 
       assert has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
@@ -120,9 +145,9 @@ defmodule OliWeb.ProductsLiveTest do
     end
 
     test "search product by base project title", %{conn: conn, product: product} do
-      [{_, product_2} | _] = create_product(conn)
+      product_2 = create_product_in_project(product)
 
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      {:ok, view, _html} = live(conn, live_view_all_products_route(product))
 
       assert has_element?(view, "a", product.base_project.title)
       assert has_element?(view, "a", product_2.base_project.title)
@@ -131,8 +156,8 @@ defmodule OliWeb.ProductsLiveTest do
       |> element("form[phx-change=\"text_search_change\"]")
       |> render_change(%{product_name: product_2.base_project.title})
 
-      refute has_element?(view, "a", product.base_project.title)
-      assert has_element?(view, "a", product_2.base_project.title)
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "span.search-highlight", product.base_project.title)
 
       view
       |> element("form[phx-change='text_search_change']")
@@ -144,14 +169,14 @@ defmodule OliWeb.ProductsLiveTest do
 
     @tag :flaky
     test "search product by amount", %{conn: conn, product: product} do
-      [{_, product_2} | _] = create_product(conn)
+      product_2 = create_product_in_project(product)
 
       {:ok, product_2} =
         Sections.update_section(product_2, %{
           amount: Money.new(250, "USD")
         })
 
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      {:ok, view, _html} = live(conn, live_view_all_products_route(product))
 
       assert has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
@@ -177,9 +202,9 @@ defmodule OliWeb.ProductsLiveTest do
       conn: conn,
       product: product
     } do
-      [{_, other_product} | _] = create_product(conn)
+      other_product = create_product_in_project(product)
 
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      {:ok, view, _html} = live(conn, live_view_all_products_route(product))
 
       view
       |> element("form[phx-change=\"text_search_change\"]")
@@ -218,7 +243,7 @@ defmodule OliWeb.ProductsLiveTest do
           inserted_at: yesterday(product.inserted_at)
         )
 
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      {:ok, view, _html} = live(conn, live_view_all_products_route(product))
 
       view
       |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='inserted_at']")
@@ -247,15 +272,12 @@ defmodule OliWeb.ProductsLiveTest do
 
     test "include archived products", %{conn: conn, product: product} do
       product_2 =
-        insert(:section,
-          type: :blueprint,
-          requires_payment: true,
-          amount: Money.new(10, "USD"),
+        create_product_in_project(product,
           inserted_at: yesterday(),
           status: :archived
         )
 
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      {:ok, view, _html} = live(conn, live_view_all_products_route(product))
 
       assert has_element?(view, "a", product.base_project.title)
       refute has_element?(view, "a", product_2.base_project.title)
@@ -268,13 +290,24 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product_2.base_project.title)
     end
 
-    test "applies paging", %{conn: conn} do
-      first_p = insert(:section, title: "First Product", inserted_at: yesterday())
-      last_p = insert(:section, title: "Last Product", inserted_at: tomorrow())
+    test "applies paging", %{conn: conn, product: product} do
+      first_p =
+        create_product_in_project(product,
+          title: "First Product",
+          inserted_at: yesterday()
+        )
 
-      insert_list(21, :section, inserted_at: DateTime.now!("Etc/UTC"))
+      last_p =
+        create_product_in_project(product,
+          title: "Last Product",
+          inserted_at: tomorrow()
+        )
 
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      Enum.each(1..21, fn _ ->
+        create_product_in_project(product, inserted_at: DateTime.now!("Etc/UTC"))
+      end)
+
+      {:ok, view, _html} = live(conn, live_view_all_products_route(product))
 
       assert has_element?(view, "##{last_p.id}")
       refute has_element?(view, "##{first_p.id}")
@@ -295,13 +328,11 @@ defmodule OliWeb.ProductsLiveTest do
       conn: conn,
       product: product
     } do
-      product_slug = product.slug
-
       redirect_path =
         "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
-        live(conn, live_view_details_route(product_slug))
+        live(conn, live_view_details_route(product))
     end
   end
 
@@ -312,7 +343,7 @@ defmodule OliWeb.ProductsLiveTest do
       conn: conn,
       product: product
     } do
-      conn = get(conn, live_view_details_route(product.slug))
+      conn = get(conn, live_view_details_route(product))
 
       redirect_path = "/unauthorized"
       assert redirected_to(conn, 302) =~ redirect_path
@@ -322,24 +353,27 @@ defmodule OliWeb.ProductsLiveTest do
   describe "details live view" do
     setup [:admin_conn, :create_product]
 
-    test "returns 404 when product not exists", %{conn: conn} do
-      conn = get(conn, live_view_details_route("not_exists"))
+    test "returns 404 when product not exists", %{conn: conn, product: product} do
+      project_slug = project_slug_for(product)
+      conn = get(conn, ~p"/workspaces/course_author/#{project_slug}/products/not_exists")
 
       redirect_path = "/not_found"
       assert redirected_to(conn, 302) =~ redirect_path
     end
 
     test "loads product data correctly", %{conn: conn, product: product} do
-      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       assert render(view) =~ "Details"
       assert render(view) =~ "The Product title and description"
       assert has_element?(view, "input[value=\"#{product.title}\"]")
       assert has_element?(view, "input[name=\"section[pay_by_institution]\"]")
 
+      project_slug = project_slug_for(product)
+
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts.ProductsIndexView, product.slug)}\"]"
+               "a[href=\"/workspaces/course_author/#{project_slug}/products/#{product.slug}/discounts\"]"
              )
     end
   end
@@ -351,7 +385,7 @@ defmodule OliWeb.ProductsLiveTest do
       product =
         insert(:section, type: :blueprint, cover_image: "https://example.com/some-image-url.png")
 
-      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       assert view
              |> element("#img-preview img")
@@ -359,7 +393,7 @@ defmodule OliWeb.ProductsLiveTest do
     end
 
     test "submit button is disabled if no file has been uploaded", %{conn: conn, product: product} do
-      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       assert view
              |> element("#img-upload-form button[type=\"submit\"]")
@@ -372,7 +406,7 @@ defmodule OliWeb.ProductsLiveTest do
         {:ok, %{status_code: 200}}
       end)
 
-      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       path = "assets/static/images/course_default.png"
 
@@ -406,7 +440,7 @@ defmodule OliWeb.ProductsLiveTest do
       current_image = "https://example.com/some-image-url.png"
       product = insert(:section, type: :blueprint, cover_image: current_image)
 
-      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       path = "assets/static/images/course_default.png"
 
@@ -468,7 +502,7 @@ defmodule OliWeb.ProductsLiveTest do
          %{conn: conn, product: product} do
       allow_transfer_payment_codes(product.base_project)
 
-      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       assert view
              |> element("button[phx-click='show_products_to_transfer']")
@@ -481,7 +515,7 @@ defmodule OliWeb.ProductsLiveTest do
       conn: conn,
       product: product
     } do
-      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       refute has_element?(view, "button", "Transfer Payment Codes")
 
@@ -496,7 +530,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       allow_transfer_payment_codes(product.base_project)
 
-      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       refute has_element?(view, "button", "Transfer Payment Codes")
 
@@ -516,7 +550,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       allow_transfer_payment_codes(product.base_project)
 
-      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       view
       |> element("button[phx-click='show_products_to_transfer']")
@@ -539,7 +573,7 @@ defmodule OliWeb.ProductsLiveTest do
     } do
       allow_transfer_payment_codes(product.base_project)
 
-      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       view
       |> element("button[phx-click='show_products_to_transfer']")
@@ -564,7 +598,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       allow_transfer_payment_codes(product.base_project)
 
-      {:ok, view, _html} = live(conn, ~p"/authoring/products/#{product.slug}")
+      {:ok, view, _html} = live(conn, live_view_details_route(product))
 
       view
       |> element("button[phx-click='show_products_to_transfer']")
@@ -582,7 +616,7 @@ defmodule OliWeb.ProductsLiveTest do
       flash =
         assert_redirected(
           view,
-          ~p"/authoring/products/#{product.slug}"
+        live_view_details_route(product)
         )
 
       assert flash["info"] == "Payment codes transferred successfully"
@@ -605,7 +639,7 @@ defmodule OliWeb.ProductsLiveTest do
       {:ok, _} = Oli.Tags.associate_tag_with_section(product, biology_tag)
       {:ok, _} = Oli.Tags.associate_tag_with_section(product, chemistry_tag)
 
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      {:ok, view, _html} = live(conn, live_view_all_products_route(product))
 
       # Check that tags are displayed in the product row
       product_row = view |> element("##{product.id}") |> render()
@@ -614,7 +648,7 @@ defmodule OliWeb.ProductsLiveTest do
     end
 
     test "displays empty tags column when product has no tags", %{conn: conn, product: product} do
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      {:ok, view, _html} = live(conn, live_view_all_products_route(product))
 
       # Should not show any tag pills for this product
       product_row = view |> element("##{product.id}") |> render()
@@ -622,8 +656,8 @@ defmodule OliWeb.ProductsLiveTest do
       refute product_row =~ "bg-[#f7def8]"
     end
 
-    test "tags component is rendered in table cell", %{conn: conn} do
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+    test "tags component is rendered in table cell", %{conn: conn, product: product} do
+      {:ok, view, _html} = live(conn, live_view_all_products_route(product))
 
       # Check that the TagsComponent is rendered
       assert has_element?(view, "div[phx-hook='TagsComponent']")
@@ -639,7 +673,7 @@ defmodule OliWeb.ProductsLiveTest do
       {:ok, product_tag} = Oli.Tags.create_tag(%{name: "ProductTag"})
       {:ok, _} = Oli.Tags.associate_tag_with_section(product, product_tag)
 
-      {:ok, view, _html} = live(conn, @live_view_all_products)
+      {:ok, view, _html} = live(conn, live_view_all_products_route(product))
 
       # Should display the tag
       product_row = view |> element("##{product.id}") |> render()

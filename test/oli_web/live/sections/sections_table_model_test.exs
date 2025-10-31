@@ -384,7 +384,7 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
 
       assert rendered_str =~ blueprint.title
       assert rendered_str =~ blueprint.slug
-      assert rendered_str =~ "/products/#{blueprint.slug}"
+      assert rendered_str =~ "/workspaces/course_author/#{blueprint.base_project.slug}/products/#{blueprint.slug}"
     end
 
     test "renders instructor column", %{

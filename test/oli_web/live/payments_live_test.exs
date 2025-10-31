@@ -5,7 +5,7 @@ defmodule OliWeb.PaymentsLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Authoring.Course
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Paywall.Payment
 
@@ -27,12 +27,21 @@ defmodule OliWeb.PaymentsLiveTest do
     {user, product, payment}
   end
 
-  defp live_view_payments_route(product_slug) do
-    Routes.live_path(OliWeb.Endpoint, OliWeb.Products.PaymentsView, product_slug)
+  defp project_slug(product) do
+    case product.base_project do
+      %{slug: slug} -> slug
+      _ -> Course.get_project!(product.base_project_id).slug
+    end
   end
 
-  defp live_view_product_route(product_slug) do
-    Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView, product_slug)
+  defp live_view_payments_route(product) do
+    project_slug = project_slug(product)
+    ~p"/workspaces/course_author/#{project_slug}/products/#{product.slug}/payments"
+  end
+
+  defp live_view_product_route(product) do
+    project_slug = project_slug(product)
+    ~p"/workspaces/course_author/#{project_slug}/products/#{product.slug}"
   end
 
   describe "user cannot access when is not logged in" do
@@ -42,13 +51,11 @@ defmodule OliWeb.PaymentsLiveTest do
       conn: conn,
       product: product
     } do
-      product_slug = product.slug
-
       redirect_path =
         "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
-        live(conn, live_view_payments_route(product_slug))
+        live(conn, live_view_payments_route(product))
     end
   end
 
@@ -59,11 +66,10 @@ defmodule OliWeb.PaymentsLiveTest do
       conn: conn,
       product: product
     } do
-      product_slug = product.slug
       redirect_path = "/workspaces/course_author"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
-        live(conn, live_view_product_route(product_slug))
+        live(conn, live_view_product_route(product))
     end
   end
 
@@ -71,7 +77,7 @@ defmodule OliWeb.PaymentsLiveTest do
     setup [:admin_conn, :create_product, :stub_real_current_time]
 
     test "loads correctly when there are no payments", %{conn: conn, product: product} do
-      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_payments_route(product))
 
       refute has_element?(view, ".table .table-striped .table-bordered .table-sm")
     end
@@ -80,7 +86,7 @@ defmodule OliWeb.PaymentsLiveTest do
       conn: conn,
       product: product
     } do
-      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_payments_route(product))
 
       assert has_element?(
                view,
@@ -93,7 +99,7 @@ defmodule OliWeb.PaymentsLiveTest do
       conn: conn,
       product: product
     } do
-      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_payments_route(product))
 
       view
       |> element("button[phx-click='create']")
@@ -110,7 +116,7 @@ defmodule OliWeb.PaymentsLiveTest do
       conn: conn,
       product: product
     } do
-      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_payments_route(product))
 
       # Test that before I click the create code button, the table has no rows
       assert has_element?(view, "p", "None exist")
@@ -141,7 +147,7 @@ defmodule OliWeb.PaymentsLiveTest do
     test "section title is a link to the instructor dashboard", %{conn: conn, product: product} do
       {user, product, _} = create_payment_code(product)
 
-      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_payments_route(product))
 
       assert has_element?(
                view,
@@ -160,7 +166,7 @@ defmodule OliWeb.PaymentsLiveTest do
          %{conn: conn, product: product} do
       {user, product, _} = create_payment_code(product)
 
-      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_payments_route(product))
 
       assert has_element?(
                view,
@@ -179,7 +185,7 @@ defmodule OliWeb.PaymentsLiveTest do
       {_, product, payment1} = create_payment_code(product)
       {_, product, payment2} = create_payment_code(product)
 
-      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_payments_route(product))
 
       code1 = Paywall.Payment.to_human_readable(payment1.code)
       code2 = Paywall.Payment.to_human_readable(payment2.code)
@@ -204,7 +210,7 @@ defmodule OliWeb.PaymentsLiveTest do
       {_, _product, _payment1} = create_payment_code(product)
       {_, _product, _payment2} = create_payment_code(product)
 
-      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_payments_route(product))
 
       assert has_element?(view, "div", product.title)
       assert has_element?(view, "div", product.title)
@@ -219,7 +225,7 @@ defmodule OliWeb.PaymentsLiveTest do
       {_, _product, payment1} = create_payment_code(product)
       {_, _product, payment2} = create_payment_code(product)
 
-      {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
+      {:ok, view, _html} = live(conn, live_view_payments_route(product))
 
       code1 = Paywall.Payment.to_human_readable(payment1.code)
       code2 = Paywall.Payment.to_human_readable(payment2.code)

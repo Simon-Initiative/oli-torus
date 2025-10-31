@@ -5,6 +5,7 @@ defmodule OliWeb.Sections.EditLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
+  alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Lti_1p3.Roles.ContextRoles
@@ -13,8 +14,14 @@ defmodule OliWeb.Sections.EditLiveTest do
     ~p"/sections/#{section_slug}/edit"
   end
 
-  defp live_view_edit_section_route(section_slug) do
-    Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section_slug)
+  defp live_view_edit_section_route(section) do
+    project_slug =
+      case section.base_project do
+        %{slug: slug} -> slug
+        _ -> Course.get_project!(section.base_project_id).slug
+      end
+
+    ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
   end
 
   defp create_section(_conn) do
@@ -349,7 +356,7 @@ defmodule OliWeb.Sections.EditLiveTest do
     end
 
     test "update section with a long title shows an error alert", %{conn: conn, section: section} do
-      {:ok, view, _html} = live(conn, live_view_edit_section_route(section.slug))
+      {:ok, view, _html} = live(conn, live_view_edit_section_route(section))
 
       long_title =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
@@ -374,7 +381,7 @@ defmodule OliWeb.Sections.EditLiveTest do
     end
 
     test "update section with a valid title shows an info alert", %{conn: conn, section: section} do
-      {:ok, view, _html} = live(conn, live_view_edit_section_route(section.slug))
+      {:ok, view, _html} = live(conn, live_view_edit_section_route(section))
 
       valid_title = "Valid title"
 
@@ -399,7 +406,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, live_view_edit_section_route(section.slug))
+      {:ok, view, _html} = live(conn, live_view_edit_section_route(section))
 
       welcome_title = %{
         "type" => "p",
@@ -436,7 +443,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       conn: conn,
       section: section
     } do
-      {:ok, view, _html} = live(conn, live_view_edit_section_route(section.slug))
+      {:ok, view, _html} = live(conn, live_view_edit_section_route(section))
 
       valid_subtitle = "Valid subtitle"
 

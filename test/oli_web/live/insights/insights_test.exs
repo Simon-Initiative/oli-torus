@@ -8,7 +8,7 @@ defmodule OliWeb.Insights.InsightsTest do
   alias Oli.Resources.ResourceType
 
   defp insights_path(project_slug) do
-    ~p"/authoring/project/#{project_slug}/insights"
+    ~p"/workspaces/course_author/#{project_slug}/insights"
   end
 
   defp create_elixir_project(%{author: author}) do

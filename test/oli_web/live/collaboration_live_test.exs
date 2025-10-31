@@ -174,7 +174,7 @@ defmodule OliWeb.CollaborationLiveTest do
                "You are being <a href=\"/authors/log_in\">redirected</a>"
 
       assert Plug.Conn.get_session(conn, :author_return_to) ==
-               "/authoring/project/#{project.slug}/resource/#{page_revision.slug}"
+               "/workspaces/course_author/#{project.slug}/resource/#{page_revision.slug}"
     end
 
     test "returns forbidden when accessing the instructor preview page view", %{
@@ -235,7 +235,7 @@ defmodule OliWeb.CollaborationLiveTest do
                "You are being <a href=\"/authors/log_in\">redirected</a>"
 
       assert Plug.Conn.get_session(conn, :author_return_to) ==
-               "/authoring/project/#{project.slug}/resource/#{page_revision.slug}"
+               "/workspaces/course_author/#{project.slug}/resource/#{page_revision.slug}"
     end
 
     test "redirects to page when accessing the instructor preview page view", %{

@@ -49,7 +49,7 @@ defmodule OliWeb.StaticPageControllerTest do
     test "updates the author timezone preference and redirects correctly", context do
       {:ok, conn: conn, author: author} = author_conn(context)
       new_timezone = "America/Montevideo"
-      redirect_to = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+      redirect_to = ~p"/workspaces/course_author"
 
       conn =
         post(conn, Routes.static_page_path(conn, :update_timezone), %{

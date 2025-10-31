@@ -82,6 +82,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.PaymentsLive do
       <CreateCodes.render
         disabled={!@product.requires_payment}
         count={@code_count}
+        project_slug={@project_slug}
         product_slug={@product_slug}
         download_enabled={@download_enabled}
         create_codes="create"

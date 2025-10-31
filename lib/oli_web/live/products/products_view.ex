@@ -11,7 +11,7 @@ defmodule OliWeb.Products.ProductsView do
   alias OliWeb.Common.{Breadcrumb, Check, PagingParams, StripedPagedTable, Params, SearchInput}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Icons
-  alias OliWeb.Products.{Create, DetailsView, ProductsTableModel}
+  alias OliWeb.Products.{Create, ProductsTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
   @limit 20
@@ -243,7 +243,7 @@ defmodule OliWeb.Products.ProductsView do
         {:noreply,
          socket
          |> put_flash(:info, "Product successfully created.")
-         |> redirect(to: Routes.live_path(socket, DetailsView, blueprint.slug))}
+         |> redirect(to: ~p"/workspaces/course_author/#{socket.assigns.project.slug}/products/#{blueprint.slug}")}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not create product")}

@@ -2,6 +2,10 @@ defmodule OliWeb.GrantedCertificatesControllerTest do
   use OliWeb.ConnCase
 
   import Oli.Factory
+  alias Oli.Authoring.Course
+
+  defp project_slug(%{base_project: %{slug: slug}}), do: slug
+  defp project_slug(%{base_project_id: id}), do: Course.get_project!(id).slug
 
   describe "download_granted_certificates" do
     test "returns a csv with the granted certificates - state = earned - of the provided product id",
@@ -13,14 +17,20 @@ defmodule OliWeb.GrantedCertificatesControllerTest do
       [gc_1, gc_2] = insert_pair(:granted_certificate, certificate: certificate, state: :earned)
       [gc_3, gc_4] = insert_pair(:granted_certificate, certificate: certificate, state: :denied)
 
-      conn = get(conn, ~p"/authoring/products/#{product.id}/downloads/granted_certificates")
+      project_slug = project_slug(product)
+
+      conn =
+        get(
+          conn,
+          ~p"/workspaces/course_author/#{project_slug}/products/#{product.id}/downloads/granted_certificates"
+        )
 
       assert response(conn, 200)
 
       assert Enum.any?(conn.resp_headers, fn h ->
                h ==
                  {"content-disposition",
-                  "attachment; filename=\"#{product.id}_granted_certificates_content.csv\""}
+                  "attachment; filename="#{product.id}_granted_certificates_content.csv""}
              end)
 
       assert Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)

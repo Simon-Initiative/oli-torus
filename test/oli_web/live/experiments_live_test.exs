@@ -8,7 +8,7 @@ defmodule OliWeb.ExperimentsLiveTest do
   import Phoenix.LiveViewTest
 
   defp live_view_experiments_route(project_slug) do
-    ~p"/authoring/project/#{project_slug}/experiments"
+    ~p"/workspaces/course_author/#{project_slug}/experiments"
   end
 
   defp put_view(context) do

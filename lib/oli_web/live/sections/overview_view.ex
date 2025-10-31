@@ -6,6 +6,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Sections
+  alias Oli.Authoring.Course
   alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Details.ImageUpload
@@ -163,13 +164,7 @@ defmodule OliWeb.Sections.OverviewView do
           <div class="flex flex-col form-group">
             <label>Product</label>
             <a
-              href={
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Products.DetailsView,
-                  @section.blueprint.slug
-                )
-              }
+              href={~p"/workspaces/course_author/#{project_slug_for(@section.blueprint)}/products/#{@section.blueprint.slug}"}
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               {@section.blueprint.title}
@@ -729,6 +724,9 @@ defmodule OliWeb.Sections.OverviewView do
     </div>
     """
   end
+
+  defp project_slug_for(%{base_project: %{slug: slug}}), do: slug
+  defp project_slug_for(%{base_project_id: id}), do: Course.get_project!(id).slug
 
   defp ext(entry) do
     [ext | _] = MIME.extensions(entry.client_type)

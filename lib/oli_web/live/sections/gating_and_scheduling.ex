@@ -37,7 +37,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   end
 
   def intermediate_breadcrumb(_user_type, previous, %Section{type: :blueprint} = section),
-    do: previous ++ OliWeb.Products.DetailsView.set_breadcrumbs(section)
+    do: previous ++ OliWeb.Workspaces.CourseAuthor.Products.DetailsLive.set_breadcrumbs(section)
 
   def intermediate_breadcrumb(user_type, previous, section),
     do: previous ++ OliWeb.Sections.OverviewView.set_breadcrumbs(user_type, section)

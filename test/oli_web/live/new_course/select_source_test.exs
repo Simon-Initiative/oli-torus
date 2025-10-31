@@ -6,6 +6,7 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
   alias Oli.Publishing.Publications.Publication
 
   import Phoenix.LiveViewTest
+  alias Oli.Authoring.Course
   import Oli.Factory
 
   describe "user cannot access when is not logged in" do
@@ -438,8 +439,15 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     end
   end
 
-  defp details_view(%Section{type: :blueprint} = section),
-    do: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
+  defp details_view(%Section{type: :blueprint} = section) do
+    project_slug =
+      case section.base_project do
+        %{slug: slug} -> slug
+        _ -> Course.get_project!(section.base_project_id).slug
+      end
+
+    ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
+  end
 
   defp details_view(section),
     do: ~p"/workspaces/course_author/#{section.project.slug}/overview"

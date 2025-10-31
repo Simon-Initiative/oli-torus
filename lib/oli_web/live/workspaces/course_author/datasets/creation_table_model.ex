@@ -2,9 +2,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel do
   use Phoenix.Component
   use OliWeb, :verified_routes
 
+  alias Oli.Authoring.Course
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
 
   def new(%SessionContext{} = ctx, sections) do
     SortableTableModel.new(
@@ -123,8 +123,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel do
 
   def custom_render(assigns, section, %ColumnSpec{name: :base}) do
     if section.blueprint_id do
-      route_path =
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.blueprint.slug)
+      project_slug =
+        case section.blueprint.base_project do
+          %{slug: slug} -> slug
+          _ -> Course.get_project!(section.blueprint.base_project_id).slug
+        end
+
+      route_path = ~p"/workspaces/course_author/#{project_slug}/products/#{section.blueprint.slug}"
 
       SortableTableModel.render_link_column(assigns, section.blueprint.title, route_path)
     else

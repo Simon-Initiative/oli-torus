@@ -6,11 +6,7 @@ defmodule OliWeb.AllPagesLiveTest do
   import Phoenix.LiveViewTest
 
   defp live_view_all_pages_route(project_slug) do
-    Routes.live_path(
-      OliWeb.Endpoint,
-      OliWeb.Resources.PagesView,
-      project_slug
-    )
+    ~p"/workspaces/course_author/#{project_slug}/pages"
   end
 
   defp insert_pages(project, publication, count) do
@@ -205,7 +201,7 @@ defmodule OliWeb.AllPagesLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"/authoring/project/#{project.slug}/curriculum\"]",
+               "a[href^=\"/workspaces/course_author/#{project.slug}/curriculum\"]",
                "Curriculum"
              )
 
@@ -389,12 +385,15 @@ defmodule OliWeb.AllPagesLiveTest do
         live(conn, live_view_all_pages_route(project.slug))
 
       view
-      |> element("a[role='go_to_curriculum']", "Curriculum")
+      |> element(
+        "a[href^=\"/workspaces/course_author/#{project.slug}/curriculum\"][data-phx-link]",
+        "Curriculum"
+      )
       |> render_click()
 
       assert_redirect(
         view,
-        ~p"/authoring/project/#{project.slug}/curriculum"
+        ~p"/workspaces/course_author/#{project.slug}/curriculum?sidebar_expanded=true"
       )
     end
 
@@ -478,7 +477,7 @@ defmodule OliWeb.AllPagesLiveTest do
 
       {path, flash} = assert_redirect(view)
 
-      assert path =~ "/authoring/project/#{project.slug}/pages"
+      assert path =~ "/workspaces/course_author/#{project.slug}/pages"
       assert flash == %{"info" => "Page options saved"}
 
       {:ok, view, _html} =

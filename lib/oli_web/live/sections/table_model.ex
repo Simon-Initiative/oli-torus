@@ -2,11 +2,11 @@ defmodule OliWeb.Sections.SectionsTableModel do
   use Phoenix.Component
   use OliWeb, :verified_routes
 
+  alias Oli.Authoring.Course
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Common.Utils
-  alias OliWeb.Router.Helpers, as: Routes
 
   @default_opts [
     render_institution_action: false,
@@ -254,7 +254,13 @@ defmodule OliWeb.Sections.SectionsTableModel do
   def custom_render(assigns, section, %ColumnSpec{name: :base}) do
     {route_path, title, slug} =
       if section.blueprint_id do
-        {Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.blueprint.slug),
+        project_slug =
+          case section.blueprint.base_project do
+            %{slug: slug} -> slug
+            _ -> Course.get_project!(section.blueprint.base_project_id).slug
+          end
+
+        {~p"/workspaces/course_author/#{project_slug}/products/#{section.blueprint.slug}",
          section.blueprint.title, section.blueprint.slug}
       else
         {~p"/workspaces/course_author/#{section.base_project.slug}/overview",

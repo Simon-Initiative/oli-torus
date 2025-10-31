@@ -13,7 +13,7 @@ defmodule OliWeb.PublishLiveTest do
   @instructor_context_role_id Lti_1p3.Roles.ContextRoles.get_role(:context_instructor).id
 
   defp live_view_publish_route(project_slug),
-    do: ~p"/authoring/project/#{project_slug}/publish"
+    do: ~p"/workspaces/course_author/#{project_slug}/publish"
 
   defp create_project_and_section(_conn) do
     author = insert(:author)
@@ -172,7 +172,7 @@ defmodule OliWeb.PublishLiveTest do
                "You are being <a href=\"/authors/log_in\">redirected</a>"
 
       assert Plug.Conn.get_session(conn, :author_return_to) ==
-               "/authoring/project/#{project.slug}/publish"
+               "/workspaces/course_author/#{project.slug}/publish"
     end
   end
 
@@ -207,7 +207,7 @@ defmodule OliWeb.PublishLiveTest do
                "You are being <a href=\"/authors/log_in\">redirected</a>"
 
       assert Plug.Conn.get_session(conn, :author_return_to) ==
-               "/authoring/project/#{project.slug}/publish"
+               "/workspaces/course_author/#{project.slug}/publish"
     end
   end
 
@@ -227,7 +227,7 @@ defmodule OliWeb.PublishLiveTest do
                "You are being <a href=\"/authors/log_in\">redirected</a>"
 
       assert Plug.Conn.get_session(conn, :author_return_to) ==
-               "/authoring/project/#{project.slug}/publish"
+               "/workspaces/course_author/#{project.slug}/publish"
     end
   end
 
