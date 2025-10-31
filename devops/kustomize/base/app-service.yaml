@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: app
+  labels:
+    app.kubernetes.io/component: app
+    app.kubernetes.io/name: app
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/component: app
+    app.kubernetes.io/name: app
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

@@ -3659,6 +3659,18 @@ defmodule Oli.TestHelpers do
     end
   end
 
+  @doc """
+  Waits for the given condition to be false. The condition is checked every `interval` milliseconds.
+  """
+  def wait_until(f, opts \\ []) do
+    wait_while_helper(
+      fn -> not f.() end,
+      Keyword.get(opts, :interval, 100),
+      Keyword.get(opts, :timeout, 5000),
+      :os.system_time(:millisecond)
+    )
+  end
+
   def create_hyperlink_content(revision_2_slug) do
     %{
       "model" => [

@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: preview-params
+    envs:
+      - params.env
+    behavior: merge
+
+secretGenerator:
+  - name: app-env
+    behavior: merge
+    envs:
+      - app-overrides.env
+
+vars:
+  - name: PREVIEW_SLUG
+    objref:
+      kind: ConfigMap
+      name: preview-params
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.PREVIEW_SLUG
+  - name: PREVIEW_DOMAIN
+    objref:
+      kind: ConfigMap
+      name: preview-params
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.PREVIEW_DOMAIN
+
+patches:
+  - path: patches/app-ingress.yaml
+  - path: patches/ingress-minio-api.yaml
+  - path: patches/ingress-minio-console.yaml
+  - path: patches/app-deployment.yaml
+  - path: patches/minio-statefulset.yaml

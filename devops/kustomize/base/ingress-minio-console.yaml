@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio-console
+  labels:
+    app.kubernetes.io/component: minio
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: minio-console-strip@kubernetescrd
+    traefik.ingress.kubernetes.io/router.priority: "100"
+spec:
+  rules:
+    - host: preview.local
+      http:
+        paths:
+          - path: /minio
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  name: console
