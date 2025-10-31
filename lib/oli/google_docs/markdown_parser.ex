@@ -9,6 +9,7 @@ defmodule Oli.GoogleDocs.MarkdownParser do
   """
 
   alias Oli.GoogleDocs.Warnings
+  alias Oli.GoogleDocs.Markdown.Renderer
 
   @default_max_nodes 50_000
   @earmark_options %Earmark.Options{
@@ -500,13 +501,13 @@ defmodule Oli.GoogleDocs.MarkdownParser do
 
   defp parse_custom_row({"tr", _, [key_cell, value_cell], _}) do
     key = extract_plain_text(cell_children(key_cell)) |> String.trim()
-    value = extract_plain_text(cell_children(value_cell)) |> String.trim()
+    value = Renderer.render_cell_to_markdown(cell_children(value_cell))
     {key, value}
   end
 
   defp parse_custom_row({"tr", _, cells, _}) when length(cells) >= 2 do
     key = extract_plain_text(cell_children(Enum.at(cells, 0))) |> String.trim()
-    value = extract_plain_text(cell_children(Enum.at(cells, 1))) |> String.trim()
+    value = Renderer.render_cell_to_markdown(cell_children(Enum.at(cells, 1)))
     {key, value}
   end
 

@@ -40,13 +40,30 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
     setActiveTab(0);
   }, [isInstructorPreview]);
 
-  const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child),
+  // Render the tabs and the activity settings (aka "3 dots menu") separately
+  const { validChildren, activitySettings } = React.Children.toArray(children).reduce<{
+    validChildren: React.ReactElement[];
+    activitySettings?: React.ReactElement;
+  }>(
+    (acc, child) => {
+      if (!React.isValidElement(child)) {
+        return acc;
+      }
+
+      if (child.type === ActivitySettings && !acc.activitySettings) {
+        acc.activitySettings = child;
+      } else {
+        acc.validChildren.push(child);
+      }
+
+      return acc;
+    },
+    { validChildren: [] },
   );
 
   return (
     <>
-      <ul className="nav nav-tabs my-2 flex justify-between" role="tablist">
+      <ul className="nav nav-tabs my-2 flex gap-2" role="tablist">
         {validChildren.map((child, index) => (
           <li key={'tab-' + index} className="nav-item" role="presentation">
             <button
@@ -65,6 +82,11 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
             </button>
           </li>
         ))}
+        {activitySettings && (
+          <li className="nav-item ml-auto" role="presentation">
+            {activitySettings}
+          </li>
+        )}
       </ul>
       <div className="tab-content">
         {validChildren.map((child, index) => (

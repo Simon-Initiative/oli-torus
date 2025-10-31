@@ -183,6 +183,38 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       assert has_element?(view, "##{project.id}")
       assert has_element?(view, "span.search-highlight", admin.email)
     end
+
+    test "shows filter indicator when filters are active", %{conn: conn} do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(Endpoint, ProjectsLive,
+            filter_status: "deleted",
+            show_deleted: true
+          )
+        )
+
+      assert has_element?(view, "#projects-filter-panel span.inline-flex", "1")
+    end
+
+    test "clear all filters resets indicator", %{conn: conn} do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(Endpoint, ProjectsLive,
+            filter_status: "deleted",
+            show_deleted: true
+          )
+        )
+
+      assert has_element?(view, "#projects-filter-panel span.inline-flex", "1")
+
+      view
+      |> element("#projects-filter-panel button", "Clear All Filters")
+      |> render_click()
+
+      refute has_element?(view, "#projects-filter-panel span.inline-flex")
+    end
   end
 
   describe "projects live as author" do

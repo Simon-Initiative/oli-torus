@@ -46,6 +46,7 @@ import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { SubmitForm } from './submit_form';
 import { SubmitTechSupportForm } from './submit_tech_support_form';
+import { SyncChevronState } from './sync_chevron_state';
 import { SystemMessage } from './system_message';
 import { TagsComponent } from './tags_component';
 import { TextInputListener } from './text_input_listener';
@@ -118,6 +119,7 @@ export const Hooks = {
   OnMountAndUpdate,
   FixedNavigationBar,
   SubmitTechSupportForm,
+  SyncChevronState,
   ConditionalToggle,
   CopyToClipboard,
   TagsComponent,

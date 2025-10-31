@@ -1674,7 +1674,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       # select single response activity
       view
       |> element(
-        "table tbody tr td div button[id='button_#{single_response_activity.resource_id}_1']"
+        "table tbody tr td div button[id='button_#{single_response_activity.resource_id}']"
       )
       |> render_click()
 
