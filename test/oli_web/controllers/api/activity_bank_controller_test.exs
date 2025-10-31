@@ -11,9 +11,9 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
     test "can launch activity bank editor", %{conn: conn, project: project} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
 
-      rendered = render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "survey_scripts_loaded", %{})
 
-      assert rendered =~ "Components.ActivityBank"
+      assert render(view) =~ "Activity Bank"
     end
 
     test "can query all", %{conn: conn, project: project} do
@@ -56,16 +56,9 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
       # as an author we should not see the revision history link
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
 
-      rendered = render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "survey_scripts_loaded", %{})
 
-      props =
-        rendered
-        |> Floki.find("#activity-bank")
-        |> Floki.attribute("data-react-props")
-        |> List.first()
-        |> Jason.decode!()
-
-      assert props["revisionHistoryLink"] == false
+      assert render(view) =~ "&quot;revisionHistoryLink&quot;:false"
 
       # as an admin we should see the revision history link
       admin = author_fixture(%{system_role_id: SystemRole.role_id().system_admin})
@@ -77,16 +70,9 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
 
-      rendered = render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "survey_scripts_loaded", %{})
 
-      props =
-        rendered
-        |> Floki.find("#activity-bank")
-        |> Floki.attribute("data-react-props")
-        |> List.first()
-        |> Jason.decode!()
-
-      assert props["revisionHistoryLink"] == true
+      assert render(view) =~ "&quot;revisionHistoryLink&quot;:true"
     end
   end
 
