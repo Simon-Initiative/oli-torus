@@ -119,4 +119,4 @@ MnesiaCore.nonode@nohost_1698_943806_800396
 
 # Python cache files
 ./**/*.pyc
-
+test/support/dataset/python/dataset/__pycache__
