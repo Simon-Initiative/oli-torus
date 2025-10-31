@@ -26,6 +26,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.Metrics
   alias OliWeb.Components.Delivery.AdaptiveIFrame
   alias OliWeb.PageDeliveryView
+  alias Lti_1p3.Roles.ContextRoles
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -1420,10 +1421,18 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp build_enrollments_text(enrollments) do
-    ([["Student name", "Student email", "Enrolled on"]] ++
-       Enum.map(enrollments, fn record ->
-         [record.user.name, record.user.email, date(record.inserted_at)]
-       end))
+    learner_role = ContextRoles.get_role(:context_learner)
+
+    rows =
+      enrollments
+      |> Enum.filter(fn record ->
+        ContextRoles.contains_role?(record.context_roles, learner_role)
+      end)
+      |> Enum.map(fn record ->
+        [record.user.name, record.user.email, date(record.inserted_at)]
+      end)
+
+    ([["Student name", "Student email", "Enrolled on"]] ++ rows)
     |> CSV.encode()
     |> Enum.to_list()
     |> to_string()
