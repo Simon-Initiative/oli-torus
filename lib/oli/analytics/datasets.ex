@@ -534,8 +534,10 @@ defmodule Oli.Analytics.Datasets do
   end
 
   defp build_json_context(%DatasetJob{project_id: project_id, configuration: config}) do
+    include_users? = config.anonymize == false
+
     result =
-      Oli.Analytics.Datasets.Utils.context_sql(config.section_ids)
+      Oli.Analytics.Datasets.Utils.context_sql(config.section_ids, include_users?)
       |> Repo.query([project_id, project_id, project_id, project_id])
 
     case result do

@@ -962,6 +962,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_info(
+        {OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView, component_id,
+         loaded_data},
+        socket
+      ) do
+    # Forward the async loaded data to the component
+    Phoenix.LiveView.send_update(
+      OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView,
+      id: component_id,
+      loaded_data: loaded_data
+    )
+
+    {:noreply, socket}
+  end
+
   def handle_info(_any, socket) do
     {:noreply, socket}
   end
