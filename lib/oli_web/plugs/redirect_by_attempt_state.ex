@@ -16,10 +16,15 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     - lesson route (if the attempt is :active)
     - review route (an attempt guid is provided in the request as a param and that attempt is finished)
 
-  Adaptive graded page's possible destinations:
+  Adaptive chromeless graded page's possible destinations:
     - prologue route (if the attempt is :submitted or :evaluated)
     - adaptive lesson route (if the attempt is :active)
     - adaptive review route (an attempt guid is provided in the request as a param and that attempt is finished)
+
+  Adaptive with chrome graded page's possible destinations:
+    - prologue route (if the attempt is :submitted or :evaluated)
+    - lesson route (if the attempt is :active)
+    - review route (an attempt guid is provided in the request as a param and that attempt is finished)
 
 
   The main objective of this plug is to prematurely redirecting the user to the appropiate page
@@ -53,6 +58,9 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
           ensure_path(conn, :review, :adaptive)
 
         {:graded, :not_adaptive, _, true} ->
+          ensure_path(conn, :review, :not_adaptive)
+
+        {:graded, :adaptive_with_chrome, _, true} ->
           ensure_path(conn, :review, :not_adaptive)
 
         {:graded, _, nil, false} ->
