@@ -1,9 +1,0 @@
-# Helm ignores
-.DS_Store
-*.swp
-*.tmp
-*.orig
-.git/
-.github/
-node_modules/
-tmp/
