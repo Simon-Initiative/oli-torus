@@ -14427,6 +14427,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(163 163 163 / var(--tw-text-opacity));
 }
 
+.text-\[\#B0B4BF\] {
+  --tw-text-opacity: 1;
+  color: rgb(176 180 191 / var(--tw-text-opacity));
+}
+
 .text-\[\#CE2C31\] {
   --tw-text-opacity: 1;
   color: rgb(206 44 49 / var(--tw-text-opacity));
@@ -22312,6 +22317,11 @@ Not supports in Firefox and IE */
 .dark .dark\:text-\[\#39e581\] {
   --tw-text-opacity: 1;
   color: rgb(57 229 129 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-\[\#3B3740\] {
+  --tw-text-opacity: 1;
+  color: rgb(59 55 64 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-\[\#4CA6FF\] {
