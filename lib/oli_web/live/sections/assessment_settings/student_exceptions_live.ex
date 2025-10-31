@@ -30,9 +30,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsLive do
            student_exceptions: student_exceptions,
            assessments: AssessmentSettings.get_assessments(section.slug, student_exceptions),
            students:
-             Sections.enrolled_students(section.slug)
-             |> Enum.reject(fn s -> s.user_role_id != 4 end)
-             |> Enum.sort(),
+             Sections.enrolled_students(section.slug, [:context_learner])
+             |> Enum.reject(fn s -> s.enrollment_status != :enrolled end),
            breadcrumbs: set_breadcrumbs(user_type, section)
          )}
     end

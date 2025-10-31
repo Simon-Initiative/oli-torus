@@ -1,6 +1,7 @@
 defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Common.Utils
   alias OliWeb.Sections.AssessmentSettings.Tooltips
   alias Phoenix.LiveView.JS
 
@@ -134,7 +135,10 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
 
   def render_student_column(assigns, student_exception, _) do
     assigns =
-      Map.merge(assigns, %{name: student_exception.user.name, id: student_exception.user_id})
+      Map.merge(assigns, %{
+        name: Utils.name(student_exception.user),
+        id: student_exception.user_id
+      })
 
     ~H"""
     <div class="pl-1 pr-4">
