@@ -3,6 +3,7 @@ defmodule Oli.GenAI.Agent.LLMBridgeTest do
   alias Oli.GenAI.Agent.{LLMBridge, Decision, ToolBroker}
   alias Oli.GenAI.Completions.{ServiceConfig, RegisteredModel}
   import Mox
+  import ExUnit.CaptureLog
 
   setup :verify_on_exit!
 
@@ -183,8 +184,13 @@ defmodule Oli.GenAI.Agent.LLMBridgeTest do
 
       opts = %{service_config: invalid_config}
 
-      assert {:error, "ServiceConfig missing primary model"} =
-               LLMBridge.next_decision(messages, opts)
+      log =
+        capture_log(fn ->
+          assert {:error, "ServiceConfig missing primary model"} =
+                   LLMBridge.next_decision(messages, opts)
+        end)
+
+      assert log =~ "ServiceConfig missing primary model"
     end
   end
 
