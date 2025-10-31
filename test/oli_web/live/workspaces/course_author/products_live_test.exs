@@ -116,10 +116,10 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
 
       # Table content - Status
       assert render(element(view, "table tbody tr td:last-of-type div span")) =~ "Active"
-      assert render(element(view, "table tbody tr td:nth-of-type(4) div")) =~ "None"
+      assert render(element(view, "table tbody tr td:nth-of-type(3) div")) =~ "None"
 
       # Table content - Base project
-      base_project_col = render(element(view, "table tbody tr td:nth-of-type(5) div a"))
+      base_project_col = render(element(view, "table tbody tr td:nth-of-type(4) div a"))
 
       # Table content - Base project - text
       assert base_project_col =~ "#{project.title}"

@@ -12,15 +12,34 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
+  alias Oli.Institutions
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Tags
   alias OliWeb.Common.{PagingParams, Params, SearchInput, StripedPagedTable}
   alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Components.FilterPanel
   alias OliWeb.Icons
   alias OliWeb.Projects.{CreateProjectModal, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Admin.BrowseFilters
 
   @limit 20
   @min_search_length 3
+  @visibility_options [
+    {:global, "Open"},
+    {:selected, "Restricted"},
+    {:authors, "Author Only"}
+  ]
+  @status_options [
+    {:active, "Active"},
+    {:deleted, "Deleted"}
+  ]
+  @published_options [
+    {true, "Yes"},
+    {false, "No"}
+  ]
+  @date_field_options [{"inserted_at", "Created Date"}]
+  @filter_fields [:date, :tags, :visibility, :published, :status, :institution]
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -40,6 +59,10 @@ defmodule OliWeb.Projects.ProjectsLive do
     initial_search = ""
     applied_search = sanitize_search_term(initial_search)
 
+    filters = BrowseFilters.default()
+    course_filters = BrowseFilters.to_course_filters(filters)
+    institutions = Institutions.list_institutions()
+
     projects =
       Course.browse_projects(
         author,
@@ -47,14 +70,16 @@ defmodule OliWeb.Projects.ProjectsLive do
         %Sorting{direction: :desc, field: :inserted_at},
         include_deleted: show_deleted,
         admin_show_all: show_all,
-        text_search: applied_search
+        text_search: applied_search,
+        filters: course_filters
       )
 
     {:ok, table_model} =
       TableModel.new(ctx, projects,
         sort_by_spec: :inserted_at,
         sort_order: :desc,
-        search_term: applied_search
+        search_term: applied_search,
+        is_admin: is_content_admin
       )
 
     total_count = determine_total(projects)
@@ -75,7 +100,18 @@ defmodule OliWeb.Projects.ProjectsLive do
        limit: @limit,
        export_filename: export_filename,
        text_search: initial_search,
-       offset: 0
+       offset: 0,
+       filters: filters,
+       filter_panel_open: false,
+       filter_active_count: BrowseFilters.active_count(filters),
+       tag_search: "",
+       tag_suggestions: [],
+       visibility_options: @visibility_options,
+       status_options: @status_options,
+       published_options: @published_options,
+       institution_options: institutions,
+       date_field_options: @date_field_options,
+       filter_fields: @filter_fields
      )}
   end
 
@@ -100,6 +136,8 @@ defmodule OliWeb.Projects.ProjectsLive do
     text_search = params |> get_param("text_search", "") |> String.trim()
     applied_search = sanitize_search_term(text_search)
     limit = get_int_param(params, "limit", @limit)
+    filters_state = BrowseFilters.parse(params)
+    course_filters = BrowseFilters.to_course_filters(filters_state)
 
     # if author is an admin, get the show_all value and update if its changed
     {show_all, author} =
@@ -133,7 +171,8 @@ defmodule OliWeb.Projects.ProjectsLive do
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         include_deleted: show_deleted,
         admin_show_all: show_all,
-        text_search: applied_search
+        text_search: applied_search,
+        filters: course_filters
       )
 
     table_model =
@@ -153,7 +192,9 @@ defmodule OliWeb.Projects.ProjectsLive do
        show_deleted: show_deleted,
        show_all: show_all,
        text_search: text_search,
-       limit: limit
+       limit: limit,
+       filters: filters_state,
+       filter_active_count: BrowseFilters.active_count(filters_state)
      )}
   end
 
@@ -161,7 +202,7 @@ defmodule OliWeb.Projects.ProjectsLive do
     ~H"""
     {render_modal(assigns)}
 
-    <div>
+    <div class="h-full">
       <div class="flex justify-between items-center px-4">
         <span class="text-[#353740] dark:text-[#EEEBF5] text-2xl font-bold leading-loose">
           Browse Projects
@@ -214,16 +255,21 @@ defmodule OliWeb.Projects.ProjectsLive do
             <SearchInput.render id="text-search" name="project_name" text={@text_search} />
           </.form>
 
-          <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
-            <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Filter
-          </button>
-
-          <button
-            class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
-            phx-click="clear_all_filters"
-          >
-            <Icons.trash /> Clear All Filters
-          </button>
+          <FilterPanel.render
+            id="projects-filter-panel"
+            filters={Map.from_struct(@filters)}
+            fields={@filter_fields}
+            open={@filter_panel_open}
+            active_count={@filter_active_count}
+            clear_event="clear_all_filters"
+            visibility_options={@visibility_options}
+            status_options={@status_options}
+            published_options={@published_options}
+            institution_options={@institution_options}
+            date_field_options={@date_field_options}
+            tag_search={@tag_search}
+            tag_suggestions={@tag_suggestions}
+          />
         </div>
         <a
           role="button"
@@ -256,12 +302,107 @@ defmodule OliWeb.Projects.ProjectsLive do
     """
   end
 
+  def handle_event("toggle_filters", _, socket) do
+    {:noreply, assign(socket, filter_panel_open: !socket.assigns.filter_panel_open)}
+  end
+
+  def handle_event("close_filters", _, socket) do
+    {:noreply, assign(socket, filter_panel_open: false)}
+  end
+
+  def handle_event("cancel_filters", _, socket) do
+    {:noreply, assign(socket, filter_panel_open: false, tag_suggestions: [])}
+  end
+
   def handle_event("toggle_show_all", _, socket) do
     patch_with(socket, %{show_all: !socket.assigns.show_all})
   end
 
   def handle_event("toggle_show_deleted", _, socket) do
     patch_with(socket, %{show_deleted: !socket.assigns.show_deleted})
+  end
+
+  def handle_event("filter_tag_search", %{"value" => value}, socket) do
+    term = value || ""
+    trimmed = String.trim(term)
+
+    suggestions =
+      if trimmed == "" do
+        []
+      else
+        Tags.list_tags(%{search: trimmed, limit: 8})
+        |> Enum.map(&%{id: &1.id, name: &1.name})
+      end
+
+    {:noreply, assign(socket, tag_search: term, tag_suggestions: suggestions)}
+  end
+
+  def handle_event("filter_add_tag", %{"id" => id_str} = params, socket) do
+    with {:ok, id} <- parse_positive_int(id_str),
+         {:ok, tag} <- fetch_tag_from_params(params, id) do
+      filters = BrowseFilters.add_tag(socket.assigns.filters, tag)
+      suggestions = Enum.reject(socket.assigns.tag_suggestions, &(&1.id == id))
+
+      {:noreply,
+       assign(socket,
+         filters: filters,
+         filter_active_count: BrowseFilters.active_count(filters),
+         tag_search: "",
+         tag_suggestions: suggestions
+       )}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("filter_remove_tag", %{"id" => id_str}, socket) do
+    with {:ok, id} <- parse_positive_int(id_str) do
+      filters = BrowseFilters.remove_tag(socket.assigns.filters, id)
+
+      {:noreply,
+       assign(socket,
+         filters: filters,
+         filter_active_count: BrowseFilters.active_count(filters)
+       )}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("apply_filters", %{"filters" => filters_params}, socket) do
+    normalized = BrowseFilters.normalize_form_params(filters_params)
+    filters = BrowseFilters.parse(normalized)
+    filter_params = BrowseFilters.to_query_params(filters, as: :atoms)
+
+    socket =
+      assign(socket,
+        filters: filters,
+        filter_active_count: BrowseFilters.active_count(filters),
+        filter_panel_open: false,
+        tag_search: "",
+        tag_suggestions: []
+      )
+
+    patch_with(socket, Map.merge(filter_params, %{offset: 0}))
+  end
+
+  def handle_event("apply_filters", _params, socket) do
+    handle_event("apply_filters", %{"filters" => %{}}, socket)
+  end
+
+  def handle_event("clear_all_filters", _params, socket) do
+    filters = BrowseFilters.default()
+
+    socket =
+      assign(socket,
+        filters: filters,
+        filter_active_count: 0,
+        filter_panel_open: false,
+        tag_search: "",
+        tag_suggestions: []
+      )
+
+    patch_with(socket, %{offset: 0})
   end
 
   def handle_event("show_create_project_modal", _, socket) do
@@ -320,13 +461,30 @@ defmodule OliWeb.Projects.ProjectsLive do
     patch_with(socket, %{limit: new_limit, offset: new_offset})
   end
 
-  def handle_event("clear_all_filters", _params, socket) do
-    {:noreply, push_patch(socket, to: ~p"/authoring/projects")}
-  end
-
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
     |> delegate_to([&StripedPagedTable.handle_delegated/4])
+  end
+
+  defp parse_positive_int(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {int, ""} when int >= 0 -> {:ok, int}
+      _ -> :error
+    end
+  end
+
+  defp parse_positive_int(value) when is_integer(value) and value >= 0, do: {:ok, value}
+  defp parse_positive_int(_), do: :error
+
+  defp fetch_tag_from_params(%{"name" => name}, id) when is_binary(name) and name != "" do
+    {:ok, %{id: id, name: name}}
+  end
+
+  defp fetch_tag_from_params(_params, id) do
+    case Tags.list_tags_by_ids([id]) do
+      [tag] -> {:ok, %{id: tag.id, name: tag.name}}
+      _ -> :error
+    end
   end
 
   def patch_with(socket, changes) do
@@ -340,7 +498,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   defp current_params(%Phoenix.LiveView.Socket{} = socket), do: current_params(socket.assigns)
 
   defp current_params(assigns) do
-    %{
+    base = %{
       sort_by: assigns.table_model.sort_by_spec.name,
       sort_order: assigns.table_model.sort_order,
       offset: assigns.offset,
@@ -349,6 +507,14 @@ defmodule OliWeb.Projects.ProjectsLive do
       text_search: assigns.text_search,
       show_all: assigns.show_all
     }
+
+    filter_params =
+      case Map.get(assigns, :filters) do
+        nil -> %{}
+        filters -> BrowseFilters.to_query_params(filters, as: :atoms)
+      end
+
+    Map.merge(base, filter_params)
   end
 
   defp toggle_sort_order(:asc), do: :desc

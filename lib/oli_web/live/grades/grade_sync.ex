@@ -27,20 +27,20 @@ defmodule OliWeb.Grades.GradeSync do
     ~H"""
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title">{dgettext("grades", "Synchronize Grades")}</h5>
+        <h5 class="card-title">{dgettext("grades", "Synchronize Scores")}</h5>
 
         <p class="card-text">
           {dgettext(
             "grades",
             "If an instructor changes the maximum score for an LMS gradebook line item after students
-          have submitted an attempt, it is necessary to synchronize the grades for that LMS gradebook item."
+          have submitted an attempt, it is necessary to synchronize the scores for that LMS gradebook item."
           )}
         </p>
 
         <div class="alert alert-danger" role="alert">
           <strong>{dgettext("grades", "Warning!")}</strong>
 
-          {dgettext("grades", "This operation will overwrite any grades in the LMS gradebook that
+          {dgettext("grades", "This operation will overwrite any scores in the LMS gradebook that
           were manually adjusted or overridden by the instructor.")}
         </div>
 
@@ -61,7 +61,7 @@ defmodule OliWeb.Grades.GradeSync do
 
         <%= if !is_nil(assigns.total_jobs) do %>
           <p>
-            Pending grade updates: {assigns.total_jobs -
+            Pending score updates: {assigns.total_jobs -
               (assigns.failed_jobs + assigns.succeeded_jobs)}
           </p>
           <p>Succeeded: {assigns.succeeded_jobs}</p>
@@ -71,7 +71,7 @@ defmodule OliWeb.Grades.GradeSync do
 
       <div class="card-footer mt-4">
         <a class="btn btn-primary" phx-click="send_grades" phx-throttle={3000} {@disabled}>
-          {dgettext("grades", "Synchronize Grades")}
+          {dgettext("grades", "Synchronize Scores")}
         </a>
       </div>
     </div>

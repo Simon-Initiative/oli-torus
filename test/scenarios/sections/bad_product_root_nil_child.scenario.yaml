@@ -1,0 +1,68 @@
+# Scenario: Section creation from product tolerates nil child entries in product root hierarchy
+
+- project:
+    name: "nil_child_product_project"
+    title: "Nil Child Product Project"
+    root:
+      children:
+        - container: "Unit 1"
+          children:
+            - page: "Practice Page A"
+            - page: "Practice Page B"
+
+- edit_page:
+    project: "nil_child_product_project"
+    page: "Practice Page A"
+    content: |
+      title: "Practice Page A"
+      graded: false
+      model:
+        - type: "content"
+          children:
+            - type: "p"
+              children:
+                - text: "Practice content A"
+
+- edit_page:
+    project: "nil_child_product_project"
+    page: "Practice Page B"
+    content: |
+      title: "Practice Page B"
+      graded: false
+      model:
+        - type: "content"
+          children:
+            - type: "p"
+              children:
+                - text: "Practice content B"
+
+- publish:
+    to: "nil_child_product_project"
+    description: "Publish project before creating product"
+
+- product:
+    name: "nil_child_product"
+    title: "Nil Child Product"
+    from: "nil_child_product_project"
+
+- hook:
+    # Inject nil into the product root after creation to simulate persisted corruption
+    function: "Oli.Scenarios.Sections.CourseSectionHooks.insert_nil_child_in_product_root/1"
+
+- section:
+    name: "nil_child_product_section"
+    title: "Nil Child Product Section"
+    from: "nil_child_product"
+
+- assert:
+    structure:
+      to: "nil_child_product_section"
+      root:
+        children:
+          - container: "Unit 1"
+            children:
+              - page: "Practice Page A"
+              - page: "Practice Page B"
+
+- hook:
+    function: "Oli.Scenarios.Sections.CourseSectionHooks.assert_product_nil_child_structure/1"

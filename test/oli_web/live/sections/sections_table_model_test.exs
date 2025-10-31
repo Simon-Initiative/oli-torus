@@ -95,14 +95,15 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
     test "creates table model with default columns", %{ctx: ctx, sections: sections} do
       {:ok, model} = SectionsTableModel.new(ctx, sections)
 
-      assert length(model.column_specs) == 11
+      assert length(model.column_specs) == 10
       assert model.rows == Enum.sort_by(sections, & &1.start_date, :desc)
       assert model.event_suffix == ""
       assert model.id_field == [:id]
 
       column_names = Enum.map(model.column_specs, & &1.name)
       assert :title in column_names
-      assert :tags in column_names
+      # only admin can see tags column
+      refute :tags in column_names
       assert :enrollments_count in column_names
       assert :requires_payment in column_names
       assert :start_date in column_names
@@ -118,7 +119,8 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       {:ok, model} =
         SectionsTableModel.new(ctx, sections,
           render_institution_action: true,
-          exclude_columns: []
+          exclude_columns: [],
+          is_admin: true
         )
 
       assert length(model.column_specs) == 11
@@ -132,9 +134,20 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
     test "creates table model with only required options", %{ctx: ctx, sections: sections} do
       {:ok, model} = SectionsTableModel.new(ctx, sections, [])
 
-      assert length(model.column_specs) == 11
+      assert length(model.column_specs) == 10
       assert model.data.render_institution_action == false
       assert model.data.fade_data == true
+    end
+
+    test "creates table model with admin privileges includes tags column", %{
+      ctx: ctx,
+      sections: sections
+    } do
+      {:ok, model} = SectionsTableModel.new(ctx, sections, is_admin: true)
+
+      assert length(model.column_specs) == 11
+      column_names = Enum.map(model.column_specs, & &1.name)
+      assert :tags in column_names
     end
   end
 
@@ -530,7 +543,8 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       {:ok, model} = SectionsTableModel.new(ctx, [section])
 
       assert model.rows == [section]
-      assert length(model.column_specs) == 11
+      # only admin can see tags column
+      assert length(model.column_specs) == 10
       assert model.data.ctx == ctx
 
       Enum.each(model.column_specs, fn column_spec ->
@@ -558,7 +572,8 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       {:ok, model} = SectionsTableModel.new(ctx, [])
 
       assert model.rows == []
-      assert length(model.column_specs) == 11
+      # only admin can see tags column
+      assert length(model.column_specs) == 10
     end
 
     test "handles sections with missing optional fields", %{ctx: ctx} do
@@ -578,7 +593,8 @@ defmodule OliWeb.Sections.SectionsTableModelTest do
       {:ok, model} = SectionsTableModel.new(ctx, [minimal_section])
 
       assert length(model.rows) == 1
-      assert length(model.column_specs) == 11
+      # only admin can see tags column
+      assert length(model.column_specs) == 10
 
       Enum.each(model.column_specs, fn column_spec ->
         cond do

@@ -981,6 +981,34 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Gets a single section by slug with base_project preloaded.
+  ## Examples
+      iex> get_section_by_slug_with_base_project("123")
+      %Section{}
+      iex> get_section_by_slug_with_base_project("111")
+      nil
+  """
+  def get_section_by_slug_with_base_project(slug) do
+    from(s in Section,
+      left_join: b in assoc(s, :brand),
+      left_join: d in assoc(s, :lti_1p3_deployment),
+      left_join: r in assoc(d, :registration),
+      left_join: i in assoc(d, :institution),
+      left_join: default_brand in assoc(i, :default_brand),
+      left_join: blueprint in assoc(s, :blueprint),
+      left_join: bp in assoc(s, :base_project),
+      where: s.slug == ^slug,
+      preload: [
+        brand: b,
+        lti_1p3_deployment: {d, institution: {i, default_brand: default_brand}},
+        blueprint: blueprint,
+        base_project: bp
+      ]
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Gets a section using the given LTI params
 
   ## Examples
@@ -1495,8 +1523,13 @@ defmodule Oli.Delivery.Sections do
          revision,
          definition
        ) do
+    # we filter the children to only those that are published in this publication. This is
+    # an important robustness measure to be able to handle cases where there is bad data in the project
     child_revisions =
-      Enum.map(revision.children, fn id -> published_resources_by_resource_id[id].revision end)
+      Enum.filter(revision.children, fn id ->
+        Map.has_key?(published_resources_by_resource_id, id)
+      end)
+      |> Enum.map(fn id -> published_resources_by_resource_id[id].revision end)
 
     Enum.reduce(
       child_revisions,
@@ -4365,8 +4398,8 @@ defmodule Oli.Delivery.Sections do
 
         # Single query to update all objectives at once
         sql = """
-        UPDATE section_resources 
-        SET 
+        UPDATE section_resources
+        SET
           children = updates.new_children,
           updated_at = $1
         FROM (VALUES #{values_clauses}) AS updates(sr_id, new_children)

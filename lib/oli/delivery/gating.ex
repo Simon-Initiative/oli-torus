@@ -380,4 +380,25 @@ defmodule Oli.Delivery.Gating do
       ct.details(gating_condition, format_datetime: format_datetime)
     end)
   end
+
+  @doc """
+  Returns a map of resource_id -> boolean indicating which resources are used as source pages
+  in gating conditions for a given section.
+  """
+  def source_page_resource_map(section_id) do
+    from(gc in GatingCondition,
+      where: gc.section_id == ^section_id,
+      where: not is_nil(gc.data),
+      select: fragment("?->>'resource_id'", gc.data)
+    )
+    |> Repo.all()
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&String.to_integer/1)
+    |> MapSet.new()
+    |> then(fn resource_ids ->
+      # Create a map where all resource IDs in the set are true, others are false
+      # We'll use this as a lookup map
+      resource_ids
+    end)
+  end
 end

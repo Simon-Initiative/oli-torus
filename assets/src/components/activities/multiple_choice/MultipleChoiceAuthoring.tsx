@@ -13,6 +13,7 @@ import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringC
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { mcV1toV2 } from 'components/activities/multiple_choice/transformations/v2';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { modeIsDark } from 'components/misc/DarkModeSelector';
 import { VegaLiteRenderer } from 'components/misc/VegaLiteRenderer';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
@@ -45,13 +46,30 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
     setActiveTab(0);
   }, [isInstructorPreview]);
 
-  const validChildren = React.Children.toArray(children).filter(
-    (child): child is React.ReactElement => React.isValidElement(child),
+  // Render the tabs and the activity settings (aka "3 dots menu") separately
+  const { validChildren, activitySettings } = React.Children.toArray(children).reduce<{
+    validChildren: React.ReactElement[];
+    activitySettings?: React.ReactElement;
+  }>(
+    (acc, child) => {
+      if (!React.isValidElement(child)) {
+        return acc;
+      }
+
+      if (child.type === ActivitySettings && !acc.activitySettings) {
+        acc.activitySettings = child;
+      } else {
+        acc.validChildren.push(child);
+      }
+
+      return acc;
+    },
+    { validChildren: [] },
   );
 
   return (
     <>
-      <ul className="nav nav-tabs my-2 flex justify-between" role="tablist">
+      <ul className="nav nav-tabs my-2 flex gap-2" role="tablist">
         {validChildren.map((child, index) => (
           <li key={'tab-' + index} className="nav-item" role="presentation">
             <button
@@ -70,6 +88,11 @@ const ControlledTabs: React.FC<{ isInstructorPreview: boolean; children: React.R
             </button>
           </li>
         ))}
+        {activitySettings && (
+          <li className="nav-item ml-auto" role="presentation">
+            {activitySettings}
+          </li>
+        )}
       </ul>
       <div className="tab-content">
         {validChildren.map((child, index) => (
@@ -193,6 +216,8 @@ function viz(values: any) {
   const maxCount = Math.max(...values.map((v: any) => v.count), 0);
   const domain = [0, maxCount];
 
+  const isDarkMode = modeIsDark();
+
   const viz = {
     ...studentResponsesSpec,
     data: {
@@ -200,6 +225,13 @@ function viz(values: any) {
     },
   } as any;
 
+  // Ensure a single top-level param so VegaLiteRenderer can set the signal
+  const existingParams = Array.isArray(viz.params)
+    ? viz.params.filter((p: any) => p?.name !== 'isDarkMode')
+    : [];
+  viz.params = [...existingParams, { name: 'isDarkMode', value: isDarkMode }];
+
+  // x scale domain/ticks derived from data
   viz.layer[0].encoding.x.scale.domain = domain;
   viz.layer[0].encoding.x.axis.values = domain;
 

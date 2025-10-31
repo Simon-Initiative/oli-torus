@@ -46,9 +46,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
         async_calculate_proficiency(socket.assigns.section)
 
-        assign(socket, :selected_container, selected_container)
+        socket
+        |> assign(:selected_container, selected_container)
+        |> assign(
+          :navigator_items,
+          if(selected_container,
+            do:
+              Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
+                numbering_level: selected_container.numbering_level
+              ),
+            else: Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id)
+          )
+        )
       else
         socket
+        |> assign(
+          :navigator_items,
+          Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id)
+        )
       end
 
     {:noreply, socket}
@@ -85,8 +100,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
               exclude_sub_objectives: false,
               include_related_activities_count: true
             ),
-          filter_options:
-            Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
+          navigator_items:
+            Oli.Delivery.Sections.SectionResourceDepot.containers(socket.assigns.section.id,
+              numbering_level: {:in, [1, 2]}
+            )
         }
       end)
 
@@ -532,6 +549,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         certificate={@certificate}
         certificate_pending_email_notification_count={@certificate_pending_email_notification_count}
         dropdown_options={@dropdown_options}
+        navigator_items={@navigator_items}
       />
     </div>
     """
@@ -596,6 +614,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{view: :insights, active_tab: :content, params: %{container_id: _container_id}} = assigns
       ) do
     ~H"""
+    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+
     <div class="container mx-auto">
       <.live_component
         id="container_details_table"
@@ -610,6 +630,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active_tab={@active_tab}
         students={@users}
         dropdown_options={@dropdown_options}
+        navigator_items={@navigator_items}
       />
     </div>
     """
@@ -648,6 +669,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         objectives_tab={@objectives_tab}
         section_slug={@section_slug}
         section_id={@section.id}
+        section_title={@section.title}
         v25_migration={@section.v25_migration}
         patch_url_type={:instructor_dashboard}
         current_user={@current_user}
@@ -1011,7 +1033,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, put_flash(socket, type, message)}
   end
 
-  def handle_info({:show_email_modal, _assigns}, socket) do
+  def handle_info({:show_email_modal, caller_assigns}, socket) do
     # Only send update if the Students component is currently rendered
     case {socket.assigns.view, socket.assigns.active_tab} do
       {:overview, :students} ->
@@ -1023,6 +1045,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {:insights, :content} ->
         send_update(OliWeb.Components.Delivery.Students,
           id: "container_details_table",
+          show_email_modal: true
+        )
+
+      {:insights, :learning_objectives} ->
+        send_update(OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList,
+          id: caller_assigns.email_handler_id,
           show_email_modal: true
         )
 
@@ -1033,18 +1061,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
-  def handle_info({:hide_email_modal}, socket) do
+  def handle_info({:hide_email_modal, email_handler_id}, socket) do
     # Only send update if the Students component is currently rendered
     case {socket.assigns.view, socket.assigns.active_tab} do
       {:overview, :students} ->
         send_update(OliWeb.Components.Delivery.Students,
-          id: "students_table",
+          id: email_handler_id || "students_table",
           show_email_modal: false
         )
 
       {:insights, :content} ->
         send_update(OliWeb.Components.Delivery.Students,
-          id: "container_details_table",
+          id: email_handler_id || "container_details_table",
+          show_email_modal: false
+        )
+
+      {:insights, :learning_objectives} ->
+        send_update(OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList,
+          id: email_handler_id,
           show_email_modal: false
         )
 
@@ -1078,6 +1112,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_info(
+        {OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView, component_id,
+         loaded_data},
+        socket
+      ) do
+    # Forward the async loaded data to the component
+    Phoenix.LiveView.send_update(
+      OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView,
+      id: component_id,
+      loaded_data: loaded_data
+    )
+
+    {:noreply, socket}
+  end
+
   def handle_info(_any, socket) do
     {:noreply, socket}
   end

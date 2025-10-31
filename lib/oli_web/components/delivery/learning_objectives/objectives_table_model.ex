@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   alias Phoenix.LiveView.JS
 
   @proficiency_labels ["Not enough data", "Low", "Medium", "High"]
+  @student_proficiency_tooltip_text "Proficiency is based on the percentage of correct answers on first attempts for activities linked to this learning objective or its sub-objectives."
 
   def render(assigns) do
     ~H"""
@@ -36,8 +37,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         label:
           HTMLComponents.render_label(%{
             title: "Student Proficiency",
-            info_tooltip:
-              "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+            info_tooltip: @student_proficiency_tooltip_text
           }),
         render_fn: &custom_render/3
       },
@@ -80,14 +80,12 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %ColumnSpec{
         name: :student_proficiency_obj,
         label: "STUDENT PROFICIENCY OBJ.",
-        tooltip:
-          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+        tooltip: @student_proficiency_tooltip_text
       },
       %ColumnSpec{
         name: :student_proficiency_subobj,
         label: "STUDENT PROFICIENCY (SUB OBJ.)",
-        tooltip:
-          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+        tooltip: @student_proficiency_tooltip_text
       }
     ]
 
@@ -192,11 +190,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       })
 
     ~H"""
-    <div class="group flex relative">
+    <div class="group relative flex">
       {render_proficiency_data_chart(@objective_id, @proficiency_distribution)}
-      <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
+      <div class="absolute top-[calc(100%+5px)] left-1/2 -translate-x-1/2 p-0 m-0 w-60 min-h-[100px] rounded-md border border-Border-border-default bg-white dark:bg-gray-900 px-4 py-2 text-left text-sm font-normal leading-normal text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] hidden flex-col gap-1 group-hover:flex z-50">
         <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
-          <p>{label}: {value}%</p>
+          <div class="w-full text-left">
+            <span class="font-medium">{label}</span>: {value}%
+          </div>
         <% end %>
       </div>
     </div>
@@ -245,7 +245,17 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   # RENDER EXPANDED
   defp render_expanded(assigns, objective, _) do
-    assigns = Map.merge(assigns, %{id: objective.unique_id})
+    component_target = assigns[:component_target]
+    expanded_objectives = assigns.model.data[:expanded_objectives] || MapSet.new()
+    row_id = "row_#{objective.resource_id}"
+    is_expanded = MapSet.member?(expanded_objectives, row_id)
+
+    assigns =
+      Map.merge(assigns, %{
+        id: row_id,
+        component_target: component_target,
+        is_expanded: is_expanded
+      })
 
     ~H"""
     <.button
@@ -253,11 +263,15 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       class="flex !p-0"
       phx-click={
         JS.toggle(to: "#details-#{@id}")
-        |> JS.toggle_class("rotate-180", to: "#button_#{@id} svg")
         |> JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="#{@id}"]))
+        |> JS.push("toggle_objective_details", value: %{objective_id: @id}, target: @component_target)
       }
     >
-      <Icons.chevron_down class="fill-Text-text-high transition-transform duration-200" />
+      <%= if @is_expanded do %>
+        <Icons.chevron_up class="fill-Text-text-high" />
+      <% else %>
+        <Icons.chevron_down class="fill-Text-text-high" />
+      <% end %>
     </.button>
     """
   end
@@ -294,6 +308,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       end
 
     spec = %{
+      height: 12,
       mark: "bar",
       data: %{values: data_with_positions},
       encoding: %{
@@ -323,7 +338,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     OliWeb.Common.React.component(
       %{is_liveview: true},
       "Components.VegaLiteRenderer",
-      %{spec: spec},
+      %{
+        spec: spec,
+        dark_mode_colors: %{
+          light: ["#C2C2C2", "#E6D4FA", "#B37CEA", "#7B19C1"],
+          dark: ["#C2C2C2", "#F6EEFF", "#C6A0EB", "#AC57E9"]
+        }
+      },
       id: "proficiency-data-bar-chart-for-objective-#{objective_id}"
     )
   end
@@ -349,8 +370,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       student_proficiency_obj_dist: student_proficiency_obj_dist
     } = objective
 
+    expanded_objectives = assigns.model.data[:expanded_objectives] || MapSet.new()
+    row_id = "row_#{objective_id}"
+    is_expanded = MapSet.member?(expanded_objectives, row_id)
+
     section_slug = assigns[:section_slug] || assigns.model.data[:section_slug]
     section_id = assigns[:section_id] || assigns.model.data[:section_id]
+    section_title = assigns[:section_title] || assigns.model.data[:section_title]
 
     proficiency_distribution =
       case Map.get(objective, :student_proficiency_subobj_dist) do
@@ -367,19 +393,24 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       |> Map.put(:unique_id, unique_id)
       |> Map.put(:section_slug, section_slug)
       |> Map.put(:section_id, section_id)
+      |> Map.put(:section_title, section_title)
       |> Map.put(:proficiency_distribution, proficiency_distribution)
       |> Map.put(:current_user, current_user)
+      |> Map.put(:is_expanded, is_expanded)
 
     ~H"""
     <div class="p-6">
       <.live_component
         module={OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView}
         id={"expanded-objective-#{@unique_id}"}
+        unique_id={@unique_id}
         objective={@objective}
         section_id={@section_id}
         section_slug={@section_slug}
+        section_title={@section_title}
         proficiency_distribution={@proficiency_distribution}
         current_user={@current_user}
+        is_expanded={@is_expanded}
       />
     </div>
     """

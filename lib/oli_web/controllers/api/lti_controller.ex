@@ -143,9 +143,9 @@ defmodule OliWeb.Api.LtiController do
           client_id: platform_instance.client_id,
           target_link_uri: platform_instance.target_link_uri,
           login_url: platform_instance.login_url,
-          status: status,
           lti_message_type: "LtiDeepLinkingRequest"
-        }
+        },
+        status: status
       })
     else
       _ ->

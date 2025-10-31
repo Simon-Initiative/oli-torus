@@ -124,3 +124,8 @@ devops/.env
 .codex/config.toml
 .codex/history.jsonl
 .codex/version.json
+.codex/internal_storage.json
+
+# Python cache files
+./**/*.pyc
+test/support/dataset/python/dataset/__pycache__

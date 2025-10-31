@@ -663,9 +663,9 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert length(result) == 3
 
       # Find each user's result
-      user1_result = Enum.find(result, &(&1.student_id == Integer.to_string(user1.id)))
-      user2_result = Enum.find(result, &(&1.student_id == Integer.to_string(user2.id)))
-      user3_result = Enum.find(result, &(&1.student_id == Integer.to_string(user3.id)))
+      user1_result = Enum.find(result, &(&1.id == user1.id))
+      user2_result = Enum.find(result, &(&1.id == user2.id))
+      user3_result = Enum.find(result, &(&1.id == user3.id))
 
       # Verify user 1 (High proficiency)
       assert_in_delta user1_result.proficiency, 0.9, 0.05
@@ -737,7 +737,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       result = Metrics.student_proficiency_for_objective(section.id, objective_resource.id)
 
-      zero_result = Enum.find(result, &(&1.student_id == Integer.to_string(user.id)))
+      zero_result = Enum.find(result, &(&1.id == user.id))
 
       assert zero_result.proficiency == 0.2
       assert zero_result.proficiency_range == "Low"
@@ -795,7 +795,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       result = Metrics.student_proficiency_for_objective(section.id, objective_resource.id)
 
-      perfect_result = Enum.find(result, &(&1.student_id == Integer.to_string(user.id)))
+      perfect_result = Enum.find(result, &(&1.id == user.id))
 
       assert perfect_result.proficiency == 1.0
       assert perfect_result.proficiency_range == "High"
@@ -852,7 +852,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       # Test new function
       new_result = Metrics.student_proficiency_for_objective(section.id, objective_resource.id)
-      user_new_result = Enum.find(new_result, &(&1.student_id == Integer.to_string(user.id)))
+      user_new_result = Enum.find(new_result, &(&1.id == user.id))
 
       # Test existing function
       existing_result =
@@ -862,6 +862,551 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       # Results should be consistent
       assert user_new_result.proficiency_range == user_existing_result
+    end
+  end
+
+  describe "student_activities_attempted_count/3" do
+    setup do
+      # Create test data
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      section = insert(:section)
+      publication = insert(:publication, project: project)
+
+      insert(:section_project_publication,
+        section: section,
+        project: project,
+        publication: publication
+      )
+
+      # Create users
+      user1 = insert(:user)
+      user2 = insert(:user)
+      user3 = insert(:user)
+
+      # Create activities
+      activity1_resource = insert(:resource)
+
+      activity1_revision =
+        insert(:revision,
+          resource: activity1_resource,
+          author: author,
+          title: "Activity 1",
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          content: %{}
+        )
+
+      activity2_resource = insert(:resource)
+
+      activity2_revision =
+        insert(:revision,
+          resource: activity2_resource,
+          author: author,
+          title: "Activity 2",
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          content: %{}
+        )
+
+      activity3_resource = insert(:resource)
+
+      activity3_revision =
+        insert(:revision,
+          resource: activity3_resource,
+          author: author,
+          title: "Activity 3",
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          content: %{}
+        )
+
+      # Publish activities
+      insert(:published_resource,
+        publication: publication,
+        resource: activity1_resource,
+        revision: activity1_revision
+      )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: activity2_resource,
+        revision: activity2_revision
+      )
+
+      insert(:published_resource,
+        publication: publication,
+        resource: activity3_resource,
+        revision: activity3_revision
+      )
+
+      %{
+        section: section,
+        user1: user1,
+        user2: user2,
+        user3: user3,
+        activity1_resource: activity1_resource,
+        activity1_revision: activity1_revision,
+        activity2_resource: activity2_resource,
+        activity2_revision: activity2_revision,
+        activity3_resource: activity3_resource,
+        activity3_revision: activity3_revision
+      }
+    end
+
+    test "returns empty map when given empty related_activity_ids", %{
+      section: section,
+      user1: user1,
+      user2: user2
+    } do
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          []
+        )
+
+      assert result == %{}
+    end
+
+    test "returns empty map when no students have attempted any activities", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      activity1_resource: activity1_resource,
+      activity2_resource: activity2_resource
+    } do
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          [activity1_resource.id, activity2_resource.id]
+        )
+
+      assert result == %{}
+    end
+
+    test "counts distinct activities attempted by each student", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      user3: user3,
+      activity1_resource: activity1_resource,
+      activity2_resource: activity2_resource,
+      activity3_resource: activity3_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Create ResourceSummary records for each user and activity
+      # User1 attempts activity1 with 2 attempts (should count as 1 activity)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        2,
+        0,
+        2,
+        1
+      ])
+
+      # User2 attempts activity1 and activity2 (should count as 2 activities)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity2_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      # User3 attempts all three activities (should count as 3 activities)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity2_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity3_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id, user3.id],
+          [activity1_resource.id, activity2_resource.id, activity3_resource.id]
+        )
+
+      # attempted activity1 only
+      assert result[user1.id] == 1
+      # attempted activity1 and activity2
+      assert result[user2.id] == 2
+      # attempted all three activities
+      assert result[user3.id] == 3
+    end
+
+    test "only counts activities in the provided related_activity_ids list", %{
+      section: section,
+      user1: user1,
+      activity1_resource: activity1_resource,
+      activity2_resource: activity2_resource,
+      activity3_resource: activity3_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Create ResourceSummary records for all three activities
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity2_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity3_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      # Only include activity1 and activity2 in the filter
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id],
+          [activity1_resource.id, activity2_resource.id]
+        )
+
+      # Should only count 2 activities, not 3
+      assert result[user1.id] == 2
+    end
+
+    test "only includes students from the provided student_ids list", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      user3: user3,
+      activity1_resource: activity1_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Create ResourceSummary records for all three users
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user3.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      # Only include user1 and user2 in the query
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          [activity1_resource.id]
+        )
+
+      # Should only include user1 and user2, not user3
+      assert Map.has_key?(result, user1.id)
+      assert Map.has_key?(result, user2.id)
+      refute Map.has_key?(result, user3.id)
+      assert result[user1.id] == 1
+      assert result[user2.id] == 1
+    end
+
+    test "only includes attempts from the specified section", %{
+      section: section,
+      user1: user1,
+      activity1_resource: activity1_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Create another section
+      other_section = insert(:section)
+
+      # Create ResourceSummary records in both sections
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        other_section.id,
+        user1.id,
+        activity1_resource.id,
+        nil,
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id],
+          [activity1_resource.id]
+        )
+
+      # Should only count the attempt from the correct section
+      assert result[user1.id] == 1
+    end
+
+    test "handles empty student_ids list", %{
+      section: section,
+      activity1_resource: activity1_resource
+    } do
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [],
+          [activity1_resource.id]
+        )
+
+      assert result == %{}
+    end
+
+    test "counts activities with multiple parts correctly", %{
+      section: section,
+      user1: user1,
+      user2: user2,
+      activity1_resource: activity1_resource,
+      activity2_resource: activity2_resource
+    } do
+      activity_type_id = Oli.Resources.ResourceType.id_for_activity()
+
+      # Activity1 has 3 parts, user1 attempted 2 of them (should still count as 1 activity)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        "part1",
+        activity_type_id,
+        1,
+        2,
+        0,
+        2,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        # No attempts on this part
+        "part2",
+        activity_type_id,
+        0,
+        0,
+        0,
+        0,
+        0
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user1.id,
+        activity1_resource.id,
+        "part3",
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      # Activity2 has 2 parts, user2 attempted only 1 of them (should still count as 1 activity)
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity2_resource.id,
+        "part1",
+        activity_type_id,
+        1,
+        1,
+        0,
+        1,
+        1
+      ])
+
+      add_resource_summary([
+        -1,
+        -1,
+        section.id,
+        user2.id,
+        activity2_resource.id,
+        # No attempts on this part
+        "part2",
+        activity_type_id,
+        0,
+        0,
+        0,
+        0,
+        0
+      ])
+
+      result =
+        Metrics.student_activities_attempted_count(
+          section.id,
+          [user1.id, user2.id],
+          [activity1_resource.id, activity2_resource.id]
+        )
+
+      # Each user attempted 1 activity (even though activities have multiple parts)
+      # attempted activity1 (at least one part)
+      assert result[user1.id] == 1
+      # attempted activity2 (at least one part)
+      assert result[user2.id] == 1
     end
   end
 end

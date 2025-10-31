@@ -6,7 +6,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
 
   @proficiency_labels ["Not enough data", "Low", "Medium", "High"]
 
-  def new(sub_objectives) do
+  def new(sub_objectives, parent_unique_id \\ nil) do
     column_specs = [
       %ColumnSpec{
         name: :sub_objective,
@@ -40,7 +40,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
-      data: %{}
+      data: %{parent_unique_id: parent_unique_id}
     )
   end
 
@@ -92,7 +92,11 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
 
     ~H"""
     <div class="group flex relative">
-      {render_proficiency_chart(@sub_objective_id, @proficiency_distribution)}
+      {render_proficiency_chart(
+        @sub_objective_id,
+        @proficiency_distribution,
+        @parent_unique_id
+      )}
       <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
         <%= for label <- @proficiency_labels, value = Map.get(calc_percentages(@proficiency_distribution), label, 0) do %>
           <p>{label}: {value}%</p>
@@ -114,7 +118,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
   end
 
   # RENDER PROFICIENCY CHART (same as main table but for sub-objectives)
-  defp render_proficiency_chart(sub_objective_id, data) do
+  defp render_proficiency_chart(sub_objective_id, data, parent_unique_id) do
     # Order labels correctly and calculate positions manually
     counts = Enum.map(@proficiency_labels, fn label -> Map.get(data, label, 0) end)
     total = Enum.sum(counts)
@@ -145,6 +149,7 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
       end
 
     spec = %{
+      height: 12,
       mark: "bar",
       data: %{values: data_with_positions},
       encoding: %{
@@ -174,9 +179,23 @@ defmodule OliWeb.Delivery.LearningObjectives.SubObjectivesTableModel do
     OliWeb.Common.React.component(
       %{is_liveview: true},
       "Components.VegaLiteRenderer",
-      %{spec: spec},
-      id: "proficiency-chart-sub-objective-#{sub_objective_id}"
+      %{
+        spec: spec,
+        dark_mode_colors: %{
+          light: ["#C2C2C2", "#E6D4FA", "#B37CEA", "#7B19C1"],
+          dark: ["#C2C2C2", "#F6EEFF", "#C6A0EB", "#AC57E9"]
+        }
+      },
+      id: build_chart_id(sub_objective_id, parent_unique_id)
     )
+  end
+
+  # BUILD UNIQUE CHART ID
+  defp build_chart_id(sub_objective_id, parent_unique_id) do
+    case parent_unique_id do
+      nil -> "proficiency-chart-sub-objective-#{sub_objective_id}"
+      parent_id -> "proficiency-chart-sub-objective-#{sub_objective_id}-#{parent_id}"
+    end
   end
 
   # CALCULATE PERCENTAGES

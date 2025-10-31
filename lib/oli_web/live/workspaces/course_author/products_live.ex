@@ -35,7 +35,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
     {:ok, table_model} =
       ProductsTableModel.new(products, ctx, project.slug,
         sort_by_spec: :inserted_at,
-        sort_order: :desc
+        sort_order: :desc,
+        is_admin: false
       )
 
     published? = Publishing.project_published?(project.slug)

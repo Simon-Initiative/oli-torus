@@ -23,7 +23,7 @@ defmodule OliWeb.Grades.LineItems do
         <p class="card-text">
           {dgettext(
             "grades",
-            "Update Line Items adds all gradable items to the LMS gradebook. Otherwise, each gradable item is added to the gradebook when the first student completes it."
+            "Update Line Items adds all scored items to the LMS gradebook. Otherwise, each scored item is added to the LMS gradebook when the first student completes it."
           )}
         </p>
       </div>

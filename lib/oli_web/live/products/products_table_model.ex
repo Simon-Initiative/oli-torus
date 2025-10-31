@@ -10,23 +10,28 @@ defmodule OliWeb.Products.ProductsTableModel do
     default_td_class = "!border-r border-Table-table-border"
     default_th_class = "!border-r border-Table-table-border"
     search_term = Keyword.get(opts, :search_term, "")
+    is_admin = Keyword.get(opts, :is_admin, false)
 
-    column_specs = [
+    base_columns = [
       %ColumnSpec{
         name: :title,
         label: "Title",
         render_fn: &render_title_column(Map.put(&1, :project_slug, project_slug), &2, &3),
         th_class: "!sticky left-0 z-[60] " <> default_th_class,
         td_class: "!sticky left-0 z-[1] bg-inherit " <> default_td_class
-      },
-      %ColumnSpec{
-        name: :tags,
-        label: "Tags",
-        render_fn: &render_tags_column/3,
-        sortable: false,
-        td_class: "w-[200px] min-w-[200px] max-w-[200px] !p-0 " <> default_td_class,
-        th_class: "w-[200px] min-w-[200px] max-w-[200px] " <> default_th_class
-      },
+      }
+    ]
+
+    tags_column = %ColumnSpec{
+      name: :tags,
+      label: "Tags",
+      render_fn: &render_tags_column/3,
+      sortable: false,
+      td_class: "w-[200px] min-w-[200px] max-w-[200px] !p-0 " <> default_td_class,
+      th_class: "w-[200px] min-w-[200px] max-w-[200px] " <> default_th_class
+    }
+
+    remaining_columns = [
       %ColumnSpec{
         name: :inserted_at,
         label: "Created",
@@ -51,6 +56,13 @@ defmodule OliWeb.Products.ProductsTableModel do
       },
       %ColumnSpec{name: :status, label: "Status", render_fn: &render_status_column/3}
     ]
+
+    column_specs =
+      if is_admin do
+        base_columns ++ [tags_column] ++ remaining_columns
+      else
+        base_columns ++ remaining_columns
+      end
 
     sort_by = Keyword.get(opts, :sort_by_spec, :inserted_at)
     sort_order = Keyword.get(opts, :sort_order, :desc)

@@ -39,7 +39,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
           Showing all results ({@total_count} total)
         </div>
-        <div class="relative max-h-[650px] overflow-y-auto overflow-x-auto mx-4">
+        <div class="relative mx-4 overflow-y-auto max-h-[calc(100vh-400px)]">
           {render_table(%{
             allow_selection: @allow_selection,
             table_model: @table_model,

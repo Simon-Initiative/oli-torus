@@ -421,10 +421,8 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
 
-      # Has info tooltip
-      assert has_element?(view, "#filter-disabled-tooltip")
-      # Select is disabled
-      assert has_element?(view, ".torus-select[disabled]")
+      # List navigator is not displayed
+      refute has_element?(view, "#objectives_containers_navigator")
     end
   end
 

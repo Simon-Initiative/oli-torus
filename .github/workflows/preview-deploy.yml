@@ -1,0 +1,186 @@
+name: Preview Deploy
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref (branch or tag) to deploy"
+        required: true
+        default: main
+      preview_id:
+        description: "Preview identifier (namespace/hostname prefix)"
+        required: true
+      preview_domain:
+        description: "Override preview domain"
+        required: false
+
+jobs:
+  simon-token-available:
+    name: Check simon-bot Access Token
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.check_token.outputs.available }}
+    steps:
+      - name: Check whether SIMON_BOT_PERSONAL_ACCESS_TOKEN is set
+        id: check_token
+        run: echo "available=$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
+
+  preview-context:
+    name: Determine Preview Context
+    runs-on: ubuntu-latest
+    needs: simon-token-available
+    if: needs.simon-token-available.outputs.available == 'true'
+    outputs:
+      preview_slug: ${{ steps.compute.outputs.preview_slug }}
+      target_ref: ${{ steps.compute.outputs.target_ref }}
+      preview_domain: ${{ steps.compute.outputs.preview_domain }}
+      is_pr: ${{ steps.compute.outputs.is_pr }}
+    steps:
+      - id: compute
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "preview_slug=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+            echo "target_ref=${{ github.head_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "preview_domain=${{ vars.PREVIEW_DOMAIN || 'plasma.oli.cmu.edu' }}" >> $GITHUB_OUTPUT
+            echo "is_pr=true" >> $GITHUB_OUTPUT
+          else
+            echo "preview_slug=${{ inputs.preview_id }}" >> $GITHUB_OUTPUT
+            echo "target_ref=${{ inputs.ref }}" >> $GITHUB_OUTPUT
+            domain="${{ inputs.preview_domain }}"
+            if [ -z "$domain" ]; then
+              domain="${{ vars.PREVIEW_DOMAIN || 'plasma.oli.cmu.edu' }}"
+            fi
+            echo "preview_domain=$domain" >> $GITHUB_OUTPUT
+            echo "is_pr=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-container:
+    name: Build Container
+    runs-on: ubuntu-latest
+    needs: [simon-token-available, preview-context]
+    if: needs.simon-token-available.outputs.available == 'true'
+    env:
+      TARGET_REF: ${{ needs.preview-context.outputs.target_ref }}
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      app_version: ${{ steps.info.outputs.app_version }}
+      sha_short: ${{ steps.info.outputs.sha_short }}
+
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.TARGET_REF }}
+
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+
+      - name: 🧾 Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ghcr.io/simon-initiative/oli-torus
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=sha,prefix=sha-,format=long
+
+      - name: 🔑 Log in to Github Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # builds the official oli-torus app image
+      - name: 🐳 Docker Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          build-args: APP_VERSION=${{ steps.info.outputs.app_version }}
+            SHA_SHORT=${{ steps.info.outputs.sha_short }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    name: Preview Deploy
+    runs-on: plasma
+    needs: [build-container, preview-context]
+    env:
+      PREVIEW_SLUG: ${{ needs.preview-context.outputs.preview_slug }}
+      PREVIEW_DOMAIN: ${{ needs.preview-context.outputs.preview_domain }}
+      IS_PR: ${{ needs.preview-context.outputs.is_pr }}
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      IMAGE_REPO: ghcr.io/simon-initiative/oli-torus
+      IMAGE_TAG: sha-${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply cluster RBAC baseline
+        run: kubectl apply -f devops/k8s/rbac/pr-admin.yaml
+
+      - name: Prepare namespace and policies
+        run: devops/scripts/apply-preview-policies.sh "${PREVIEW_SLUG}"
+
+      - name: Ensure image pull secret
+        env:
+          CR_PAT: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          REGISTRY_USER: simon-bot
+        run: |
+          kubectl -n "${PREVIEW_SLUG}" delete secret ghcr-creds --ignore-not-found
+          kubectl -n "${PREVIEW_SLUG}" create secret docker-registry ghcr-creds \
+            --docker-server=ghcr.io \
+            --docker-username="${REGISTRY_USER}" \
+            --docker-password="${CR_PAT}" \
+            --docker-email="${REGISTRY_USER}@users.noreply.github.com"
+
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v1
+        with:
+          kustomize-version: "5.4.1"
+
+      - name: Render and apply Kustomize overlay
+        run: |
+          set -euo pipefail
+
+          BUILD_ROOT="$(mktemp -d)"
+          trap 'rm -rf "$BUILD_ROOT"' EXIT
+
+          cp -R devops "${BUILD_ROOT}/"
+
+          OVERLAY_DIR="${BUILD_ROOT}/devops/kustomize/overlays/preview"
+
+          printf 'PREVIEW_SLUG=%s\nPREVIEW_DOMAIN=%s\n' "${PREVIEW_SLUG}" "${PREVIEW_DOMAIN}" > "${OVERLAY_DIR}/params.env"
+
+          PREVIEW_HOST=${PREVIEW_SLUG}.${PREVIEW_DOMAIN}
+          printf 'HOST=%s\nMEDIA_URL=https://%s/buckets/torus-media\n' "${PREVIEW_HOST}" "${PREVIEW_HOST}" > "${OVERLAY_DIR}/app-overrides.env"
+
+          cd "${OVERLAY_DIR}"
+          kustomize edit set namespace "${PREVIEW_SLUG}"
+          kustomize edit set image ${IMAGE_REPO}=${IMAGE_REPO}:${IMAGE_TAG}
+
+          kustomize build --load-restrictor LoadRestrictionsNone . | kubectl apply -f -
+
+      - name: Wait for application rollout
+        run: kubectl -n "${PREVIEW_SLUG}" rollout status deployment/app --timeout=5m
+
+      - name: Post preview URL
+        if: env.IS_PR == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          message: |
+            Preview deployed to: https://${{ env.PREVIEW_SLUG }}.${{ env.PREVIEW_DOMAIN }}
