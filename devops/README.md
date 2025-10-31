@@ -6,10 +6,10 @@ This directory contains the infrastructure assets that support the k3s-based pre
 
 - `plan.md` – implementation plan and phase breakdown.
 - `k8s/` – Kubernetes manifests applied cluster-wide (RBAC, policies, namespace templates). Files using `${PR_NAMESPACE}` require substitution before applying (e.g., `env PR_NAMESPACE=pr-123 envsubst < ...`). Requires GNU `envsubst` (gettext). Adjust egress ports in `policies/network-policy.yaml` to match downstream services (DB, caches, HTTP).
-- `helm/` – Helm charts used to deploy preview environments.
+- `kustomize/` – Base manifests and overlays used to render per-preview (per namespace) resources.
 - `scripts/` – Helper scripts consumed by CI and operators.
 - `change-log.md` – Record of operational changes and procedures.
-- `default.env` – Baseline application environment used to seed the Helm chart secret (`appEnv` values) for preview deployments.
+- `default.env` – Baseline application environment consumed by the Kustomize secret generator for preview deployments.
 
 ### Scripts
 
@@ -52,10 +52,11 @@ Perform these steps on each Amazon Linux 2023 host before joining it to the clus
    sudo install -m 600 -o runner -g runner \
      /etc/rancher/k3s/k3s.yaml /home/runner/.kube/config
    ```
-7. Install Helm (latest 3.x) so the runner can execute `helm` commands:
+7. Install the Kustomize CLI (or ensure `kubectl kustomize` is available):
    ```bash
-   curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-   helm version
+   curl -sS https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh | bash
+   sudo mv kustomize /usr/local/bin/
+   kustomize version
    ```
 8. Record the node token from `/var/lib/rancher/k3s/server/node-token` for future worker joins.
 

@@ -2,7 +2,7 @@
 
 **Audience:** infra/dev owner (solo today), app engineers.\
 **Current state:** Single host running Docker Compose + Traefik, deployed via GitHub Actions on PR events.\
-**Target state:** Single‑node **k3s** cluster (control‑plane + workload on 1 machine) with the ability to add worker nodes later. Per‑PR ephemeral environments delivered via Helm, Traefik Ingress, cert‑manager, and GitHub Actions.
+**Target state:** Single‑node **k3s** cluster (control‑plane + workload on 1 machine) with the ability to add worker nodes later. Per‑PR ephemeral environments delivered via Kustomize overlays, Traefik Ingress, and GitHub Actions (with optional cert-manager when cluster-managed TLS is desired).
 
 ---
 
@@ -30,7 +30,7 @@
 - **Ingress inside cluster:** **Traefik** (bundled with k3s) handles Kubernetes **Ingress** resources and routes to Services/Pods.
 - **Connectivity HAProxy → Traefik:** HAProxy forwards **plain HTTP** to Traefik’s **NodePort** service on the k3s node (single node today; add workers later without changing HAProxy).
 - **DNS/TLS:** You already manage wildcard DNS and certs at HAProxy; **no cert-manager is required**. Ingress objects can be HTTP‑only.
-- **Per‑PR delivery:** **Helm** chart per PR (`pr-<n>`) in namespace `pr-<n>`, exposed by Ingress host `pr-<n>.plasma.oli.cmu.edu`.
+- **Per‑PR delivery:** **Kustomize** base + overlay per PR (`pr-<n>`) in namespace `pr-<n>`, exposed by Ingress host `pr-<n>.plasma.oli.cmu.edu`.
 - **CI runner:** GitHub Actions uses the self‑hosted runner `` on the k3s node; workflows run `kubectl`/`helm` **locally** (no SSH).
 - **Storage:** k3s **local-path-provisioner** now; plan for **Longhorn/CSI** when adding workers.
 
@@ -84,7 +84,7 @@ backend traefik
 ### 3.2 Ingress & TLS
 
 - Keep bundled **Traefik** for Ingress.
-- Install **cert-manager** (Helm) + ClusterIssuer for your DNS provider (DNS‑01 challenge):
+- (Optional) Install **cert-manager** (e.g., via Helm) + a ClusterIssuer for your DNS provider (DNS‑01 challenge):
   ```bash
   helm repo add jetstack https://charts.jetstack.io
   helm repo update
@@ -200,61 +200,77 @@ spec:
 
 ---
 
-## 5) Helm Chart (Per‑PR Release)
+## 5) Kustomize Base & Preview Overlays
 
-- Chart remains the same structure, but **Ingress is HTTP‑only** (no `spec.tls`).
-- Host pattern: `pr-<n>.plasma.oli.cmu.edu`.
+- Store cluster-wide manifests (RBAC, quotas, policies) under `devops/k8s/`.
+- Store namespace-scoped resources under `devops/kustomize/`:
+  - `base/` defines the canonical Deployment, Postgres/MinIO StatefulSets, Jobs, Ingresses, middlewares, and the shared secret generator sourced from `devops/default.env`.
+  - `overlays/preview/` overlays per-preview values (namespace slug, host, image tag, secret overrides, image pull secrets). The deploy workflow renders this overlay for each PR or manual deploy.
 
-``** (Traefik, HTTP‑only)**
+Minimal preview overlay (`devops/kustomize/overlays/preview/kustomization.yaml`):
 
 ```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ include "app.fullname" . }}
-  annotations:
-    kubernetes.io/ingress.class: traefik
-spec:
-  rules:
-    - host: {{ .Values.host }}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "app.fullname" . }}
-                port:
-                  number: 80
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+configMapGenerator:
+  - name: preview-params
+    envs:
+      - params.env  # contains PREVIEW_SLUG + PREVIEW_DOMAIN
+    behavior: merge
+
+secretGenerator:
+  - name: app-env
+    behavior: merge
+    envs:
+      - app-overrides.env  # concrete HOST/MEDIA_URL overrides per preview
+
+vars:
+  - name: PREVIEW_SLUG
+    objref:
+      kind: ConfigMap
+      name: preview-params
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.PREVIEW_SLUG
+  - name: PREVIEW_DOMAIN
+    objref:
+      kind: ConfigMap
+      name: preview-params
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.PREVIEW_DOMAIN
+
+patches:
+  - path: patches/app-ingress.yaml
+  - path: patches/ingress-minio-api.yaml
+  - path: patches/ingress-minio-console.yaml
+  - path: patches/app-deployment.yaml
+  - path: patches/minio-statefulset.yaml
 ```
 
----
+`params.env` supplies the namespace slug and domain (e.g., `PREVIEW_SLUG=pr-123`). `app-overrides.env` overrides a subset of env vars (HOST, MEDIA_URL, etc.). The workflow rewrites both files before running `kustomize build`.
 
-## 5.1 Where to store Helm charts
-
-**Now (recommended):** keep the chart **inside the app repo** at `deploy/helm/app/` so PRs can evolve code + templates together.\
-**Later:** publish the chart as an **OCI artifact to GHCR** for reuse/versioning across repos; optionally maintain source in a small **infra repo**.
-
-**Publish to GHCR (example):**
+To render locally:
 
 ```bash
-export HELM_EXPERIMENTAL_OCI=1
-helm package deploy/helm/app
-helm registry login ghcr.io -u "$GH_USER" -p "$CR_PAT"
-helm push app-0.1.0.tgz oci://ghcr.io/your-org/helm
+export PREVIEW_SLUG=pr-123
+export PREVIEW_DOMAIN=plasma.oli.cmu.edu
+cat <<EOF > devops/kustomize/overlays/preview/params.env
+PREVIEW_SLUG=$PREVIEW_SLUG
+PREVIEW_DOMAIN=$PREVIEW_DOMAIN
+EOF
+cat <<EOF > devops/kustomize/overlays/preview/app-overrides.env
+HOST=${PREVIEW_SLUG}.${PREVIEW_DOMAIN}
+MEDIA_URL=https://${PREVIEW_SLUG}.${PREVIEW_DOMAIN}/buckets/torus-media
+EOF
+kustomize build --load-restrictor LoadRestrictionsNone devops/kustomize/overlays/preview | kubectl apply -f -
 ```
 
-**Consume from GHCR:**
-
-```bash
-helm registry login ghcr.io -u "$GH_USER" -p "$CR_PAT"
-helm upgrade --install pr-$PR oci://ghcr.io/your-org/helm/app \
-  --version 0.1.0 \
-  --namespace pr-$PR --create-namespace \
-  --set image.repository=ghcr.io/your-org/your-app \
-  --set image.tag=pr-$PR \
-  --set host=pr-$PR.plasma.oli.cmu.edu
-```
+When the namespace is deleted, PVCs for Postgres/MinIO are deleted too. As long as you redeploy with the same slug, data persists across `kubectl apply` runs.
 
 ---
 
@@ -262,90 +278,36 @@ helm upgrade --install pr-$PR oci://ghcr.io/your-org/helm/app \
 
 ### 6.1 Prereqs (runner on `plasma`)
 
-- Use the **self‑hosted runner** labels: `runs-on: [self-hosted, plasma]`.
-- Use the node’s kubeconfig (`/etc/rancher/k3s/k3s.yaml`) or a readonly copy for the runner user.
-- No SSH required; run `kubectl`/`helm` locally in the workflow.
+- Use the **self-hosted runner** labels: `runs-on: plasma` (or `[self-hosted, plasma]`).
+- Provide the runner user read access to `/etc/rancher/k3s/k3s.yaml`.
+- Ensure Docker, `kubectl`, and `kustomize` are installed (workflows use `imranismail/setup-kustomize`).
+- Store `SIMON_BOT_PERSONAL_ACCESS_TOKEN` (PAT with `read:packages`) for GHCR pulls; the workflow recreates a `ghcr-creds` secret per namespace.
 
-### 6.2 Deploy/Update on PR open/sync
+### 6.2 Deploy/Update
 
-```yaml
-name: preview-deploy
-on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+- Triggered on PR open/sync and via `workflow_dispatch`.
+- Steps:
+  1. Checkout the requested ref.
+  2. Build & push the PR image to GHCR (`ghcr.io/...:sha-<commit>`).
+  3. Apply baseline namespace policies via `devops/scripts/apply-preview-policies.sh`.
+  4. Create/refresh the `ghcr-creds` secret in the namespace.
+  5. Rewrite `params.env` and `app-overrides.env` with the slug/domain.
+  6. `kustomize build … | kubectl apply -f -` to reconcile workloads.
+  7. Wait for the app deployment to roll out.
+  8. Post (or refresh) a sticky PR comment with the preview URL (only on PR events).
 
-jobs:
-  deploy:
-    runs-on: [self-hosted, plasma]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build & push image
-        run: |
-          TAG=pr-${{ github.event.number }}
-          echo $CR_PAT | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
-          docker build -t ghcr.io/your-org/your-app:$TAG .
-          docker push ghcr.io/your-org/your-app:$TAG
-      - name: Create namespace & baseline
-        env:
-          PR: ${{ github.event.number }}
-        run: |
-          kubectl create ns pr-$PR --dry-run=client -o yaml | kubectl apply -f -
-          # (optional) apply ResourceQuota/LimitRange/NetworkPolicy here
-      - name: Helm upgrade/install
-        env:
-          PR: ${{ github.event.number }}
-        run: |
-          helm upgrade --install pr-$PR deploy/helm/app \
-            --namespace pr-$PR --create-namespace \
-            --set image.repository=ghcr.io/your-org/your-app \
-            --set image.tag=pr-$PR \
-            --set host=pr-$PR.plasma.oli.cmu.edu
-```
+Manual dispatch accepts a `ref` (branch/tag) and `preview_id` (slug) so you can deploy arbitrary branches without opening a PR.
 
-### 6.3 Teardown on PR close
+### 6.3 Cleanup
 
-```yaml
-on:
-  pull_request:
-    types: [closed]
-
-jobs:
-  teardown:
-    runs-on: [self-hosted, plasma]
-    steps:
-      - name: Uninstall
-        env:
-          PR: ${{ github.event.number }}
-        run: |
-          helm uninstall pr-$PR -n pr-$PR || true
-          kubectl delete ns pr-$PR --wait=false || true
-```
-
-**Note:** ensure HAProxy default backend points at Traefik’s NodePort so newly created Ingress hosts immediately work.
+- Triggered on PR close or manual dispatch with a `preview_id`.
+- Deletes the namespace (and removes the sticky comment only for PR-triggered runs).
+- PVCs are namespace-scoped, so deleting the namespace is the authoritative cleanup mechanism.
 
 ---
 
-### 6.1 Prereqs
+### 6.4 Additional Considerations
 
-- Store kubeconfig on runner via secrets (or use `appleboy/ssh-action` to run `helm` on the node).
-- Create a read‑only **ServiceAccount** with limited RBAC (namespace admin for `pr-*`).
-- Create a registry **imagePullSecret** named `ghcr-creds` in each PR namespace (or at default + serviceAccount).
-- Ensure `cloudflare-dns-token` (or your DNS provider token) exists in `cert-manager` namespace.
-
-### 6.2 Deploy/Update on PR open/sync
-
-```yaml
-name: preview-deploy
-on:
-  pull_request:
-    types: [opened, reopened, synchronize]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build & push image
-        run: |
-          TAG=pr-${{ github.event.number 
-```
+- Keep kubeconfig access limited (consider a dedicated ServiceAccount scoped to `pr-*`).
+- If you adopt cert-manager later, add a `ClusterIssuer` and annotate ingresses accordingly; the Kustomize overlays can template TLS blocks when needed.
+- HAProxy must continue pointing its default backend at Traefik’s NodePort so newly created hosts start routing immediately.
