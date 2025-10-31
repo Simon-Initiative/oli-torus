@@ -10,11 +10,16 @@ defmodule OliWeb.Certificates.Components.DesignTabTest do
   describe "certificate design component" do
     setup [:setup_certificate]
 
-    test "renders design component correctly", %{conn: conn, certificate: certificate} do
+    test "renders design component correctly", %{
+      conn: conn,
+      certificate: certificate,
+      section: section
+    } do
       {:ok, comp, _html} =
         live_component_isolated(conn, DesignTab, %{
           id: "certificate_design_component",
           certificate: certificate,
+          section: section,
           read_only: false
         })
 
@@ -29,12 +34,14 @@ defmodule OliWeb.Certificates.Components.DesignTabTest do
 
     test "validates certificate design changes on input change", %{
       conn: conn,
-      certificate: certificate
+      certificate: certificate,
+      section: section
     } do
       {:ok, comp, _html} =
         live_component_isolated(conn, DesignTab, %{
           id: "certificate_design_component",
           certificate: certificate,
+          section: section,
           read_only: false
         })
 
@@ -52,12 +59,14 @@ defmodule OliWeb.Certificates.Components.DesignTabTest do
 
     test "handles validation with unknown fields gracefully", %{
       conn: conn,
-      certificate: certificate
+      certificate: certificate,
+      section: section
     } do
       {:ok, comp, _html} =
         live_component_isolated(conn, DesignTab, %{
           id: "certificate_design_component",
           certificate: certificate,
+          section: section,
           read_only: false
         })
 
