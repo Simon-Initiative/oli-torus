@@ -370,6 +370,8 @@ if config_env() == :prod do
     secret_key_base: secret_key_base,
     live_view: [signing_salt: live_view_salt]
 
+  config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", "true")
+
   if System.get_env("SSL_CERT_PATH") && System.get_env("SSL_KEY_PATH") do
     config :oli, OliWeb.Endpoint,
       https: [

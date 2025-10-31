@@ -2,17 +2,23 @@ name: Preview Deploy
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, reopened, synchronize]
   workflow_dispatch:
-
-# Limit concurrent deployments to prevent resource exhaustion
-concurrency:
-  group: preview-deployment-${{ github.repository }}
-  cancel-in-progress: false # Don't cancel running deployments
+    inputs:
+      ref:
+        description: "Git ref (branch or tag) to deploy"
+        required: true
+        default: main
+      preview_id:
+        description: "Preview identifier (namespace/hostname prefix)"
+        required: true
+      preview_domain:
+        description: "Override preview domain"
+        required: false
 
 jobs:
   simon-token-available:
-    name: Check if simon-bot access token is available
+    name: Check simon-bot Access Token
     runs-on: ubuntu-latest
     outputs:
       available: ${{ steps.check_token.outputs.available }}
@@ -21,10 +27,42 @@ jobs:
         id: check_token
         run: echo "available=$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
 
-  build-container:
+  preview-context:
+    name: Determine Preview Context
     runs-on: ubuntu-latest
     needs: simon-token-available
     if: needs.simon-token-available.outputs.available == 'true'
+    outputs:
+      preview_slug: ${{ steps.compute.outputs.preview_slug }}
+      target_ref: ${{ steps.compute.outputs.target_ref }}
+      preview_domain: ${{ steps.compute.outputs.preview_domain }}
+      is_pr: ${{ steps.compute.outputs.is_pr }}
+    steps:
+      - id: compute
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "preview_slug=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+            echo "target_ref=${{ github.head_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "preview_domain=${{ vars.PREVIEW_DOMAIN || 'plasma.oli.cmu.edu' }}" >> $GITHUB_OUTPUT
+            echo "is_pr=true" >> $GITHUB_OUTPUT
+          else
+            echo "preview_slug=${{ inputs.preview_id }}" >> $GITHUB_OUTPUT
+            echo "target_ref=${{ inputs.ref }}" >> $GITHUB_OUTPUT
+            domain="${{ inputs.preview_domain }}"
+            if [ -z "$domain" ]; then
+              domain="${{ vars.PREVIEW_DOMAIN || 'plasma.oli.cmu.edu' }}"
+            fi
+            echo "preview_domain=$domain" >> $GITHUB_OUTPUT
+            echo "is_pr=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-container:
+    name: Build Container
+    runs-on: ubuntu-latest
+    needs: [simon-token-available, preview-context]
+    if: needs.simon-token-available.outputs.available == 'true'
+    env:
+      TARGET_REF: ${{ needs.preview-context.outputs.target_ref }}
     permissions:
       contents: read
       packages: write
@@ -37,7 +75,7 @@ jobs:
       - name: 🛎️ Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.head_ref || github.ref_name }}
+          ref: ${{ env.TARGET_REF }}
 
       - name: 🔧 Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -80,150 +118,69 @@ jobs:
   deploy:
     name: Preview Deploy
     runs-on: plasma
-    needs: build-container
+    needs: [build-container, preview-context]
+    env:
+      PREVIEW_SLUG: ${{ needs.preview-context.outputs.preview_slug }}
+      PREVIEW_DOMAIN: ${{ needs.preview-context.outputs.preview_domain }}
+      IS_PR: ${{ needs.preview-context.outputs.is_pr }}
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      IMAGE_REPO: ghcr.io/simon-initiative/oli-torus
+      IMAGE_TAG: sha-${{ github.sha }}
     steps:
-      - name: 🛎️ Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
+      - uses: actions/checkout@v4
 
-      - name: 🧾 Build info
-        id: info
+      - name: Apply cluster RBAC baseline
+        run: kubectl apply -f devops/k8s/rbac/pr-admin.yaml
+
+      - name: Prepare namespace and policies
+        run: devops/scripts/apply-preview-policies.sh "${PREVIEW_SLUG}"
+
+      - name: Ensure image pull secret
+        env:
+          CR_PAT: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          REGISTRY_USER: simon-bot
         run: |
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          kubectl -n "${PREVIEW_SLUG}" delete secret ghcr-creds --ignore-not-found
+          kubectl -n "${PREVIEW_SLUG}" create secret docker-registry ghcr-creds \
+            --docker-server=ghcr.io \
+            --docker-username="${REGISTRY_USER}" \
+            --docker-password="${CR_PAT}" \
+            --docker-email="${REGISTRY_USER}@users.noreply.github.com"
 
-      - name: 📑 Preflight check
-        id: preflight
-        run: |
-          # Get available memory in MB
-          AVAILABLE_MEMORY=$(free -m | awk 'NR==2{printf "%.0f", $7}')
-          REQUIRED_MEMORY=1024  # Require at least 1GB available
-
-          echo "📊 Current system status:"
-          echo "  Available memory: ${AVAILABLE_MEMORY}MB"
-          echo "  Required memory: ${REQUIRED_MEMORY}MB"
-
-          if [ $AVAILABLE_MEMORY -lt $REQUIRED_MEMORY ]; then
-            echo "❌ Insufficient memory available. Need at least ${REQUIRED_MEMORY}MB, but only ${AVAILABLE_MEMORY}MB available."
-            echo "memory_insufficient=true" >> $GITHUB_OUTPUT
-            echo "available_memory=${AVAILABLE_MEMORY}" >> $GITHUB_OUTPUT
-          else
-            echo "✅ Sufficient memory available for deployment"
-            echo "memory_insufficient=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: 💬 Post memory error comment
-        if: steps.preflight.outputs.memory_insufficient == 'true' && github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v4
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v1
         with:
-          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
-          issue-number: ${{ github.event.number }}
-          body: |
-            ⚠️ **Deployment skipped due to insufficient memory**
+          kustomize-version: "5.4.1"
 
-            **Current system status:**
-            - Available memory: ${{ steps.preflight.outputs.available_memory }}MB
-            - Required memory: 1024MB
-
-            **What you can do:**
-            - Wait for other deployments to be cleaned up automatically
-            - Ask maintainers to manually clean up old deployments
-            - Try again later when system resources are available
-
-            The deployment will automatically retry when you push new commits to this PR.
-
-            *Last checked: ${{ github.event.pull_request.updated_at }}*
-
-      - name: 🔑 Log in to Github Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 🐳 Pull Docker image
+      - name: Render and apply Kustomize overlay
         run: |
-          docker pull ghcr.io/simon-initiative/oli-torus:sha-${{ github.sha }}
+          set -euo pipefail
 
-      - name: 🚀 Deploy
-        if: steps.preflight.outputs.memory_insufficient != 'true'
-        run: |
-          export DEPLOYMENT=$(echo ${{ github.event_name == 'workflow_dispatch' && format('{0}', github.ref_name) || format('pr{0}', github.event.number) }} | tr '/#?' '-' | cut -c1-32)
-          export APP_IMAGE_TAG=sha-${{ github.sha }}
-          export HOST=$DEPLOYMENT.plasma.oli.cmu.edu
+          BUILD_ROOT="$(mktemp -d)"
+          trap 'rm -rf "$BUILD_ROOT"' EXIT
 
-          ENVIRONMENT=oli-torus
-          CONFIG_URL="https://plasma.oli.cmu.edu/api/environments/$ENVIRONMENT/deployments/$DEPLOYMENT/env"
-          ENV_FILE="devops/.env"
+          cp -R devops "${BUILD_ROOT}/"
 
-          # Always clean up the generated env file at exit
-          trap 'rm -f "$ENV_FILE" && touch .env' EXIT
+          OVERLAY_DIR="${BUILD_ROOT}/devops/kustomize/overlays/preview"
 
-          # Fetch environment config or render fallback from devops/default.env
-          if curl -fsSL --max-time 10 -H "Authorization: Bearer ${{ secrets.PLASMA_CORE_SERVICE_TOKEN }}" "$CONFIG_URL" -o "$ENV_FILE"; then
-            echo "Downloaded environment config from $CONFIG_URL"
-          else
-            echo "Failed to download environment config; building fallback from devops/default.env"
-            if [ -f devops/default.env ]; then
-              envsubst < devops/default.env > "$ENV_FILE"
-              echo "Generated fallback env file from devops/default.env"
-            else
-              echo "devops/default.env not found; using empty file"
-              : > "$ENV_FILE"
-            fi
-          fi
+          printf 'PREVIEW_SLUG=%s\nPREVIEW_DOMAIN=%s\n' "${PREVIEW_SLUG}" "${PREVIEW_DOMAIN}" > "${OVERLAY_DIR}/params.env"
 
-          # Setup database
-          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml run --rm app /app/bin/oli eval "Oli.Release.setup"
+          PREVIEW_HOST=${PREVIEW_SLUG}.${PREVIEW_DOMAIN}
+          printf 'HOST=%s\nMEDIA_URL=https://%s/buckets/torus-media\n' "${PREVIEW_HOST}" "${PREVIEW_HOST}" > "${OVERLAY_DIR}/app-overrides.env"
 
-          # Run minio first and wait for it to be ready
-          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml up -d minio && sleep 5
+          cd "${OVERLAY_DIR}"
+          kustomize edit set namespace "${PREVIEW_SLUG}"
+          kustomize edit set image ${IMAGE_REPO}=${IMAGE_REPO}:${IMAGE_TAG}
 
-          # Create minio buckets and set policies
-          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-media"
-          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-xapi"
-          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc mb --ignore-existing localminio/torus-blob-dev"
+          kustomize build --load-restrictor LoadRestrictionsNone . | kubectl apply -f -
 
-          # Set minio bucket policies
-          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-media"
-          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-xapi"
-          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml exec minio /bin/sh -c "mc alias set localminio http://localhost:9000 minio-user minio-password && mc anonymous set public localminio/torus-blob-dev"
+      - name: Wait for application rollout
+        run: kubectl -n "${PREVIEW_SLUG}" rollout status deployment/app --timeout=5m
 
-          # Run deployment
-          docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml up -d
-
-      - name: ⏳ Wait for deployment to become available
-        if: steps.preflight.outputs.memory_insufficient != 'true'
-        run: |
-          export HOST=pr${{ github.event.number }}.plasma.oli.cmu.edu
-          for i in {1..30}; do
-            if curl -k -fsSL --max-time 5 https://$HOST/healthz; then
-              echo "Deployment is up!"
-              exit 0
-            fi
-            echo "Waiting for deployment to be available... ($i)"
-            sleep 10
-          done
-          echo "Deployment did not become available in time." >&2
-          exit 1
-
-      - name: 🔍 Find existing PR preview comment
-        if: steps.preflight.outputs.memory_insufficient != 'true' && github.event_name == 'pull_request'
-        uses: peter-evans/find-comment@v3
-        id: fc
+      - name: Post preview URL
+        if: env.IS_PR == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
         with:
-          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
-          issue-number: ${{ github.event.number }}
-          comment-author: "simon-bot"
-          body-includes: "PR preview deployed at:"
-
-      - name: 💬 Post/Update PR Preview URL Comment
-        if: steps.preflight.outputs.memory_insufficient != 'true' && github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.number }}
-          body: |
-            PR preview deployed at: https://pr${{ github.event.number }}.plasma.oli.cmu.edu
-          edit-mode: replace
+          recreate: true
+          message: |
+            Preview deployed to: https://${{ env.PREVIEW_SLUG }}.${{ env.PREVIEW_DOMAIN }}
