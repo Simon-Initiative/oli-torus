@@ -245,7 +245,17 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   # RENDER EXPANDED
   defp render_expanded(assigns, objective, _) do
-    assigns = Map.merge(assigns, %{id: objective.unique_id})
+    component_target = assigns[:component_target]
+    expanded_objectives = assigns.model.data[:expanded_objectives] || MapSet.new()
+    row_id = "row_#{objective.resource_id}"
+    is_expanded = MapSet.member?(expanded_objectives, row_id)
+
+    assigns =
+      Map.merge(assigns, %{
+        id: row_id,
+        component_target: component_target,
+        is_expanded: is_expanded
+      })
 
     ~H"""
     <.button
@@ -253,11 +263,15 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       class="flex !p-0"
       phx-click={
         JS.toggle(to: "#details-#{@id}")
-        |> JS.toggle_class("rotate-180", to: "#button_#{@id} svg")
         |> JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="#{@id}"]))
+        |> JS.push("toggle_objective_details", value: %{objective_id: @id}, target: @component_target)
       }
     >
-      <Icons.chevron_down class="fill-Text-text-high transition-transform duration-200" />
+      <%= if @is_expanded do %>
+        <Icons.chevron_up class="fill-Text-text-high" />
+      <% else %>
+        <Icons.chevron_down class="fill-Text-text-high" />
+      <% end %>
     </.button>
     """
   end
@@ -356,6 +370,10 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       student_proficiency_obj_dist: student_proficiency_obj_dist
     } = objective
 
+    expanded_objectives = assigns.model.data[:expanded_objectives] || MapSet.new()
+    row_id = "row_#{objective_id}"
+    is_expanded = MapSet.member?(expanded_objectives, row_id)
+
     section_slug = assigns[:section_slug] || assigns.model.data[:section_slug]
     section_id = assigns[:section_id] || assigns.model.data[:section_id]
     section_title = assigns[:section_title] || assigns.model.data[:section_title]
@@ -378,18 +396,21 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       |> Map.put(:section_title, section_title)
       |> Map.put(:proficiency_distribution, proficiency_distribution)
       |> Map.put(:current_user, current_user)
+      |> Map.put(:is_expanded, is_expanded)
 
     ~H"""
     <div class="p-6">
       <.live_component
         module={OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView}
         id={"expanded-objective-#{@unique_id}"}
+        unique_id={@unique_id}
         objective={@objective}
         section_id={@section_id}
         section_slug={@section_slug}
         section_title={@section_title}
         proficiency_distribution={@proficiency_distribution}
         current_user={@current_user}
+        is_expanded={@is_expanded}
       />
     </div>
     """

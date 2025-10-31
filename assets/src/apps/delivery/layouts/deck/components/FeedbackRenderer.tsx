@@ -51,7 +51,11 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
           className="feedback-item"
           tabIndex={index}
         >
-          <PartsLayoutRenderer parts={feedback.partsLayout} onPartInit={handlePartInit} />
+          <PartsLayoutRenderer
+            parts={feedback.partsLayout}
+            onPartInit={handlePartInit}
+            responsiveLayout={false}
+          />
         </div>
       ))}
     </Fragment>

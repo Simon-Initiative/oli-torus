@@ -128,6 +128,13 @@
             {react_component("Components.OfflineDetector")}
           </div>
           {@inner_content}
+
+          <div class={[
+            "mb-20 px-4 mt-auto",
+            if(@section && @section.assistant_enabled, do: "mr-28", else: "")
+          ]}>
+            <OliWeb.Components.Footer.delivery_footer license={assigns[:license]} />
+          </div>
         </div>
       </div>
 

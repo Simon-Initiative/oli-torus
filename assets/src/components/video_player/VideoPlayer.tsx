@@ -8,6 +8,7 @@ import {
   Player,
   PlayerState,
   ProgressControl,
+  Shortcut,
   TimeDivider,
 } from 'video-react';
 import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
@@ -89,7 +90,20 @@ export const VideoPlayer: React.FC<{
       return;
     }
     // This handles stopping at the correct point if a cue-point command previously came in with an end-timestamp set.
+
+    // For suppressing keyboard shortcuts while letting keyboard events through: AI-generated solution stops
+    // player from ever being "active" to the Shortcut component so latter doesn't consume keyboard evts
+    const actions = player.manager?.getActions?.();
+    actions?.activate(false);
+    actions?.userActivate(false);
+
     player.subscribeToStateChange((state: PlayerState, prev: PlayerState) => {
+      // to suppress shortcuts: immediately undo any change of player state to "active"
+      if (state.isActive) {
+        actions?.activate(false);
+        actions?.userActivate(false);
+      }
+
       if (
         pauseAtPosition.current > 0 &&
         state.hasStarted &&
@@ -246,6 +260,9 @@ export const VideoPlayer: React.FC<{
       {...maybePointMarkerAttr(video, pointMarkerContext)}
     >
       <Player poster={video.poster} {...sizeAttributes} ref={onPlayer} crossOrigin="anonymous">
+        {/* To suppress keyboard shortcuts: use custom Shortcut component to override builtin default */}
+        {/* Still need to suppress player ever activating to prevent keystrokes from being consumed */}
+        <Shortcut clickable={false} dblclickable={false} shortcuts={[]} />
         {/* Hide the video-react big play button so we can render our own that fits with our icon styles */}
         <BigPlayButton className="big-play-button-hide" />
         <InitialPlayButton />

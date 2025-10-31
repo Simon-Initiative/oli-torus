@@ -50,6 +50,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     {:ok, objectives_table_model} =
       ObjectivesTableModel.new(indexed_rows, assigns[:patch_url_type])
 
+    expanded_objectives = socket.assigns[:expanded_objectives] || MapSet.new()
+
     objectives_table_model =
       Map.merge(objectives_table_model, %{
         rows: indexed_rows,
@@ -64,7 +66,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             section_id: assigns[:section_id],
             section_title: assigns[:section_title],
             current_user: assigns[:current_user],
-            current_params: params
+            current_params: params,
+            component_target: socket.assigns.myself,
+            expanded_objectives: expanded_objectives
           })
       })
 
@@ -101,7 +105,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       end)
 
     {:ok,
-     assign(socket,
+     socket
+     |> assign(
        table_model: objectives_table_model,
        total_count: total_count,
        params: params,
@@ -115,7 +120,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        selected_proficiency_options: selected_proficiency_options,
        selected_proficiency_ids: selected_proficiency_ids,
        card_props: card_props
-     )}
+     )
+     |> assign_new(:expanded_objectives, fn -> MapSet.new() end)}
   end
 
   attr(:params, :any)
@@ -378,6 +384,30 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   def handle_event("paged_table_selection_change", %{"id" => _selected_objective_id}, socket) do
     {:noreply, socket}
+  end
+
+  def handle_event("toggle_objective_details", %{"objective_id" => objective_id}, socket) do
+    # Get current expanded state
+    expanded_objectives = socket.assigns.expanded_objectives
+
+    # Toggle the state
+    expanded_objectives =
+      if MapSet.member?(expanded_objectives, objective_id) do
+        MapSet.delete(expanded_objectives, objective_id)
+      else
+        MapSet.put(expanded_objectives, objective_id)
+      end
+
+    # Update the table model with the new expanded_objectives
+    updated_table_model =
+      Map.update!(socket.assigns.table_model, :data, fn data ->
+        Map.put(data, :expanded_objectives, expanded_objectives)
+      end)
+
+    {:noreply,
+     socket
+     |> assign(expanded_objectives: expanded_objectives)
+     |> assign(table_model: updated_table_model)}
   end
 
   defp do_update_selection(socket, selected_id) do
