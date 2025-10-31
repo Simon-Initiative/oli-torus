@@ -340,9 +340,13 @@ defmodule OliWeb.Certificates.Components.DesignTab do
 
     socket.assigns.certificate_changeset
     |> Ecto.Changeset.put_change(logo_field, nil)
+    |> Ecto.Changeset.put_change(:section_id, socket.assigns.section.id)
+    |> Map.put(:action, nil)
     |> Repo.update()
     |> case do
       {:ok, certificate} ->
+        send(self(), {:certificate_updated, certificate})
+
         {:noreply,
          assign(socket,
            show_preview: false,
