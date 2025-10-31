@@ -70,6 +70,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
         "id" => "source_enrollment_id",
         "value" => Integer.to_string(source_enrollment.id)
       })
+
       render_click(view, "preview", %{})
 
       html = render(view)
@@ -95,6 +96,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
       access = insert(:resource_access, user: other_user, section: section, resource: resource)
 
       {:ok, view, _} = live(conn, @route)
+
       view
       |> element("#target_enrollment_id")
       |> render_hook("target_enrollment", %{
@@ -108,6 +110,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
         "id" => "source_enrollment_id",
         "value" => Integer.to_string(source_enrollment.id)
       })
+
       render_click(view, "preview", %{})
       render_click(view, "commit", %{})
 
@@ -152,6 +155,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
       attempt = insert(:resource_attempt, resource_access: access_from)
 
       {:ok, view, _} = live(conn, @route)
+
       view
       |> element("#target_enrollment_id")
       |> render_hook("target_enrollment", %{
@@ -165,6 +169,7 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
         "id" => "source_enrollment_id",
         "value" => Integer.to_string(source_enrollment.id)
       })
+
       render_click(view, "preview", %{})
       render_click(view, "commit", %{})
 
