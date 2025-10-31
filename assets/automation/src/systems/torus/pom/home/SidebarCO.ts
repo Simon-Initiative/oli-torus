@@ -72,6 +72,6 @@ export class SidebarCO {
 
   private createLocator(role: 'button' | 'link', name: SidebarButtonName | SidebarLinkName) {
     if (name === 'PublishBTN') name = 'Publish';
-    return this.page.getByRole(role, { name });
+    return this.page.getByRole(role, { name, exact: true });
   }
 }
