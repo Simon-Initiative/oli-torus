@@ -105,7 +105,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       |> element("form")
       |> render_change(%{"user" => %{"is_internal" => "true"}})
 
-      assert view.assigns.user_name == "#{user.given_name} #{user.family_name}"
+      assert render(view) =~ "#{user.given_name} #{user.family_name}"
     end
 
     test "shows lms user lti params", %{

@@ -453,7 +453,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       |> element("form#edit_author")
       |> render_change(%{"author" => %{"is_internal" => "true"}})
 
-      assert view.assigns.author_name == "#{author.given_name} #{author.family_name}"
+      assert render(view) =~ "#{author.given_name} #{author.family_name}"
     end
   end
 
