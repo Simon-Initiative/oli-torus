@@ -9,9 +9,14 @@ defmodule Oli.Utils.BibUtils do
 
     activity_bib_ids =
       if activities != nil do
-        Enum.map(activities, fn a ->
-          activity_bib_provider_fn.(a)
+        Enum.map(activities, fn
+          nil ->
+            nil
+
+          a ->
+            activity_bib_provider_fn.(a)
         end)
+        |> Enum.reject(&is_nil/1)
         |> List.flatten()
       else
         []

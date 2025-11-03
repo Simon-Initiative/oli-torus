@@ -165,6 +165,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     require_transformations =
       Enum.filter(prototypes, fn p -> is_nil(p.transformed_model) end)
       |> Enum.map(fn p -> p.revision end)
+      |> Enum.reject(&is_nil/1)
 
     transformation_results_map =
       Transformers.apply_transforms(require_transformations)
@@ -176,7 +177,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     # Normalize the prototypes so that they all have transformed_model updated (if needed)
     # and scoreable attrs set
     prototypes =
-      Enum.map(prototypes, fn prototype ->
+      Enum.reject(prototypes, fn p -> is_nil(p.revision) end)
+      |> Enum.map(fn prototype ->
         unscored = MapSet.member?(unscored, prototype.revision.resource_id)
         scoreable = !unscored && is_nil(prototype.survey_id)
 
