@@ -88,7 +88,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
         <div
           key={partDefinition.id}
           data-part-id={partDefinition.id}
-          style={{ height: partDefinition?.custom?.height }}
+          style={{ height: 'auto', minHeight: 'fit-content' }}
           className={`responsive-item ${widthClass} ${alignmentClass}`}
         >
           <PartComponent key={partDefinition.id} {...partProps} />
