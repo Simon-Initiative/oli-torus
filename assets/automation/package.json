@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test-config": "npx playwright test config.spec.ts",
+    "pw": "npx playwright test",
+    "test-config": "npm run pw config.spec.ts",
     "test-config:headed": "npm run test-config -- --headed",
+    "test-useraccounts": "npm run pw user-accounts.spec",
+    "test-all": "npm run pw user-accounts.spec",
     "show-report": "npx playwright show-report",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

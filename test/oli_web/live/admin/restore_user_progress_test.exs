@@ -41,8 +41,8 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
       true_user = insert(:user, independent_learner: false, email: "u1@example.edu")
       other_user = insert(:user, independent_learner: false, email: "u1@example.edu")
 
-      insert(:enrollment, user: true_user, section: institution_section)
-      insert(:enrollment, user: other_user, section: institution_section)
+      target_enrollment = insert(:enrollment, user: true_user, section: institution_section)
+      source_enrollment = insert(:enrollment, user: other_user, section: institution_section)
 
       # Practice resource: graded? false
       resource = insert(:resource)
@@ -57,8 +57,20 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
 
       {:ok, view, _} = live(conn, @route)
 
-      # Provide the email shared by both users
-      view |> element("#email") |> render_hook("email", %{"value" => true_user.email})
+      view
+      |> element("#target_enrollment_id")
+      |> render_hook("target_enrollment", %{
+        "id" => "target_enrollment_id",
+        "value" => Integer.to_string(target_enrollment.id)
+      })
+
+      view
+      |> element("#source_enrollment_id")
+      |> render_hook("source_enrollment", %{
+        "id" => "source_enrollment_id",
+        "value" => Integer.to_string(source_enrollment.id)
+      })
+
       render_click(view, "preview", %{})
 
       html = render(view)
@@ -77,14 +89,28 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
       true_user = insert(:user, independent_learner: false, email: "shared@example.edu")
       other_user = insert(:user, independent_learner: false, email: "shared@example.edu")
 
-      insert(:enrollment, user: true_user, section: section)
-      insert(:enrollment, user: other_user, section: section)
+      target_enrollment = insert(:enrollment, user: true_user, section: section)
+      source_enrollment = insert(:enrollment, user: other_user, section: section)
 
       resource = insert(:resource)
       access = insert(:resource_access, user: other_user, section: section, resource: resource)
 
       {:ok, view, _} = live(conn, @route)
-      view |> element("#email") |> render_hook("email", %{"value" => true_user.email})
+
+      view
+      |> element("#target_enrollment_id")
+      |> render_hook("target_enrollment", %{
+        "id" => "target_enrollment_id",
+        "value" => Integer.to_string(target_enrollment.id)
+      })
+
+      view
+      |> element("#source_enrollment_id")
+      |> render_hook("source_enrollment", %{
+        "id" => "source_enrollment_id",
+        "value" => Integer.to_string(source_enrollment.id)
+      })
+
       render_click(view, "preview", %{})
       render_click(view, "commit", %{})
 
@@ -99,8 +125,8 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
       true_user = insert(:user, independent_learner: false, email: "shared2@example.edu")
       other_user = insert(:user, independent_learner: false, email: "shared2@example.edu")
 
-      insert(:enrollment, user: true_user, section: section)
-      insert(:enrollment, user: other_user, section: section)
+      target_enrollment = insert(:enrollment, user: true_user, section: section)
+      source_enrollment = insert(:enrollment, user: other_user, section: section)
 
       resource = insert(:resource)
 
@@ -129,7 +155,21 @@ defmodule OliWeb.Admin.RestoreUserProgressTest do
       attempt = insert(:resource_attempt, resource_access: access_from)
 
       {:ok, view, _} = live(conn, @route)
-      view |> element("#email") |> render_hook("email", %{"value" => true_user.email})
+
+      view
+      |> element("#target_enrollment_id")
+      |> render_hook("target_enrollment", %{
+        "id" => "target_enrollment_id",
+        "value" => Integer.to_string(target_enrollment.id)
+      })
+
+      view
+      |> element("#source_enrollment_id")
+      |> render_hook("source_enrollment", %{
+        "id" => "source_enrollment_id",
+        "value" => Integer.to_string(source_enrollment.id)
+      })
+
       render_click(view, "preview", %{})
       render_click(view, "commit", %{})
 

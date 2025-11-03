@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: preview-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: preview-deployer
+  namespace: preview-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: preview-namespace-admin
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources:
+      - configmaps
+      - secrets
+      - services
+      - pods
+      - pods/exec
+      - persistentvolumeclaims
+    verbs: ["*"]
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+    verbs: ["*"]
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs: ["*"]
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - ingresses
+      - networkpolicies
+    verbs: ["*"]
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: preview-namespace-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: preview-namespace-admin
+subjects:
+  - kind: ServiceAccount
+    name: preview-deployer
+    namespace: preview-system
