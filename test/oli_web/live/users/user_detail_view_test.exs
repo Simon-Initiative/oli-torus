@@ -61,7 +61,9 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       assert has_element?(view, "input[name='user[is_internal]']")
 
-      render_click(view, "button", "Edit")
+      view
+      |> element("button", "Edit")
+      |> render_click()
 
       params = %{
         "user" => %{
@@ -95,7 +97,9 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       {:ok, view, _html} = live(conn)
 
-      render_click(view, "button", "Edit")
+      view
+      |> element("button", "Edit")
+      |> render_click()
 
       view
       |> element("form")

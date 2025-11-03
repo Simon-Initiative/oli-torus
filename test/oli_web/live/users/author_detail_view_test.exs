@@ -415,7 +415,9 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       assert has_element?(view, "input[name='author[is_internal]']")
 
-      render_click(view, "button", "Edit")
+      view
+      |> element("button", "Edit")
+      |> render_click()
 
       params = %{
         "author" => %{
@@ -443,7 +445,9 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       {:ok, view, _html} = live(conn, authors_detail_view(author.id))
 
-      render_click(view, "button", "Edit")
+      view
+      |> element("button", "Edit")
+      |> render_click()
 
       view
       |> element("form#edit_author")
