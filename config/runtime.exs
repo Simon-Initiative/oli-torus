@@ -23,6 +23,23 @@ get_env_as_integer = fn key, default ->
   |> String.to_integer()
 end
 
+runtime_env =
+  case System.get_env("MIX_ENV") do
+    nil ->
+      config_env()
+
+    env ->
+      env
+      |> String.trim()
+      |> String.downcase()
+      |> case do
+        "prod" -> :prod
+        "dev" -> :dev
+        "test" -> :test
+        _ -> config_env()
+      end
+  end
+
 # Appsignal client key is required for appsignal integration
 config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 
@@ -256,7 +273,7 @@ config :oli, :clickhouse,
   password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
   database: System.get_env("CLICKHOUSE_DATABASE", "default")
 
-if config_env() != :test do
+if runtime_env != :test do
   config :ex_aws, :s3,
     region: [{:system, "AWS_S3_REGION"}, {:system, "AWS_REGION"}, "us-east-1"],
     access_key_id: [{:system, "AWS_S3_ACCESS_KEY_ID"}, {:system, "AWS_ACCESS_KEY_ID"}],
@@ -266,10 +283,13 @@ if config_env() != :test do
     host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
 end
 
+force_ssl_default = if runtime_env == :prod, do: "true", else: "false"
+config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", force_ssl_default)
+
 ####################### Production-only configurations ########################
 ## Note: These configurations are only applied in production
 ###############################################################################
-if config_env() == :prod do
+if runtime_env == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -545,8 +565,6 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base,
     live_view: [signing_salt: live_view_salt]
-
-  config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", "true")
 
   if System.get_env("SSL_CERT_PATH") && System.get_env("SSL_KEY_PATH") do
     config :oli, OliWeb.Endpoint,
