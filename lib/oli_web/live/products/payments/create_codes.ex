@@ -10,28 +10,37 @@ defmodule OliWeb.Products.Payments.CreateCodes do
 
   def render(assigns) do
     ~H"""
-    <div class="d-flex justify-content-between align-items-center">
-      <div class="form-inline">
-        <p>Download a new batch of payment codes:</p>
-        <input
-          class="ml-2 form-control form-control-sm"
-          disabled={@disabled}
-          type="number"
-          value={@count}
-          style="width: 90px;"
-          phx-blur={@change}
-          phx-focus={@change}
-        />
+    <div>
+      <%= if @disabled do %>
+        <div class="alert alert-info mb-3" role="alert">
+          <i class="fas fa-info-circle mr-2"></i>
+          Payment code quantity cannot be edited because this product does not require payment. To enable editing, please enable "Requires Payment" in the product settings.
+        </div>
+      <% end %>
 
-        <button class="btn btn-primary btn-sm ml-1" phx-click={@create_codes}>Create</button>
-      </div>
-      <div>
-        <a
-          class={"btn btn-outline-primary btn-sm ml-1 fs-button-download" <> if @download_enabled, do: "", else: " disabled"}
-          href={route_or_disabled(assigns)}
-        >
-          Download last created
-        </a>
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="form-inline">
+          <p>Download a new batch of payment codes:</p>
+          <input
+            class="ml-2 form-control form-control-sm"
+            disabled={@disabled}
+            type="number"
+            value={@count}
+            style="width: 90px;"
+            phx-blur={@change}
+            phx-focus={@change}
+          />
+
+          <button class="btn btn-primary btn-sm ml-1" phx-click={@create_codes}>Create</button>
+        </div>
+        <div>
+          <a
+            class={"btn btn-outline-primary btn-sm ml-1 fs-button-download" <> if @download_enabled, do: "", else: " disabled"}
+            href={route_or_disabled(assigns)}
+          >
+            Download last created
+          </a>
+        </div>
       </div>
     </div>
     """
