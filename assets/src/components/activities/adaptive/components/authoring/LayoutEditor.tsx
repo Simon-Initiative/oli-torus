@@ -733,6 +733,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                 <div
                   key={part.id}
                   data-part-id={part.id}
+                  style={{ height: 'auto', minHeight: 'fit-content' }}
                   className={`responsive-item ${widthClass} ${alignmentClass}`}
                 >
                   {renderPart(part, idx)}

@@ -68,10 +68,18 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   );
 
   useEffect(() => {
-    if (src?.length && src !== defaultSrc && lockAspectRatio) {
+    // Only adjust size if lockAspectRatio is checked AND we're not in responsive layout with scaleContent
+    // When scaleContent is true (including when both flags are checked), CSS handles sizing
+    const shouldAdjust =
+      src?.length &&
+      src !== defaultSrc &&
+      lockAspectRatio &&
+      !(isResponsiveLayout && scaleContent === true);
+
+    if (shouldAdjust) {
       debounceImageAdjust(model);
     }
-  }, [model, lockAspectRatio]);
+  }, [model, lockAspectRatio, scaleContent, isResponsiveLayout]);
   const imageContainerRef = useRef<HTMLImageElement>(null);
   const manipulateImageSize = (updatedModel: ImageModel, isfromDebaunce: boolean) => {
     if (!imageContainerRef?.current || !isfromDebaunce) {
@@ -79,12 +87,13 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     }
 
     // Skip saving dimensions when in responsive layout with scaleContent enabled
-    // Dimensions will be handled via CSS in this case
-    const isInResponsiveWithScaleContent =
-      (updatedModel.width === '100%' || (typeof updatedModel.width === 'string' && updatedModel.width.includes('%'))) &&
-      updatedModel.scaleContent === true;
+    // Dimensions will be handled via CSS in this case (either scale-only or both flags)
+    const isInResponsiveLayout =
+      updatedModel.width === '100%' ||
+      (typeof updatedModel.width === 'string' && updatedModel.width.includes('%'));
 
-    if (isInResponsiveWithScaleContent) {
+    // Skip when scaleContent is true (CSS handles sizing for scale-only and both flags)
+    if (isInResponsiveLayout && updatedModel.scaleContent === true) {
       return;
     }
 
@@ -126,7 +135,11 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     <img
       ref={imageContainerRef}
       onLoad={() => {
-        lockAspectRatio && manipulateImageSize(model, false);
+        // Only manipulate size if lockAspectRatio is checked AND we're not in responsive layout with scaleContent
+        // When scaleContent is true (including when both flags are checked), CSS handles sizing
+        if (lockAspectRatio && !(isResponsiveLayout && scaleContent === true)) {
+          manipulateImageSize(model, false);
+        }
       }}
       draggable="false"
       alt={alt}

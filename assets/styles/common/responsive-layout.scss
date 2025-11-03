@@ -85,6 +85,26 @@
     width: 100% !important;
   }
 
+  // Override react-rnd absolute positioning in responsive layout
+  .responsive-item .react-draggable,
+  .responsive-item .react-rnd {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  // Ensure the wrapper expands to fit content
+  .responsive-item {
+    overflow: visible;
+    height: auto;
+    min-height: fit-content;
+  }
+
   /*------------------------------
       Answerable Components
   ------------------------------*/
