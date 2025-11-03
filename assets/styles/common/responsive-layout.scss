@@ -154,6 +154,71 @@
   janus-text-slider {
     padding-bottom: 20px;
   }
+
+  /*------------------------------
+      Mobile Breakpoint (600px)
+  ------------------------------*/
+  @media (max-width: 600px) {
+    // Ensure container respects viewport width
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+
+    // Reduce padding on mobile to prevent overflow
+    padding: 10px;
+
+    // Prevent horizontal overflow
+    overflow-x: hidden;
+
+    // Force all items to full width and stack vertically
+    .responsive-item {
+      box-sizing: border-box;
+
+      &.half-width {
+        width: 100% !important;
+        max-width: 100% !important;
+        float: none !important;
+        clear: both !important;
+      }
+
+      &.full-width {
+        width: 100% !important;
+        max-width: 100% !important;
+        clear: both !important;
+      }
+    }
+
+    // Remove float positioning and make all aligned items full-width
+    .responsive-align-left,
+    .responsive-align-right {
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box;
+      float: none !important;
+      clear: both !important;
+      margin-right: 0 !important;
+      margin-left: 0 !important;
+    }
+
+    .responsive-align-left {
+      clear: both !important;
+
+      & + .responsive-align-left,
+      & + .responsive-align-right {
+        margin-top: 0;
+      }
+    }
+
+    .responsive-align-right {
+      clear: both !important;
+
+      & + .responsive-align-right,
+      & + .responsive-align-left {
+        clear: both !important;
+        margin-top: 0;
+      }
+    }
+  }
 }
 
 .responsive-layout-section .stage-content-wrapper,
