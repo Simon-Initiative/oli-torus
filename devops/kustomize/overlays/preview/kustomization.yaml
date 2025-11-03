@@ -16,21 +16,95 @@ secretGenerator:
     envs:
       - app-overrides.env
 
-vars:
-  - name: PREVIEW_SLUG
-    objref:
+replacements:
+  - source:
       kind: ConfigMap
       name: preview-params
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.PREVIEW_SLUG
-  - name: PREVIEW_DOMAIN
-    objref:
+      fieldPath: data.PREVIEW_SLUG
+    targets:
+      - select:
+          kind: Ingress
+          name: app
+        fieldPaths:
+          - spec.rules.[0].host
+        options:
+          delimiter: "."
+          index: 0
+      - select:
+          kind: Ingress
+          name: minio-api
+        fieldPaths:
+          - spec.rules.[0].host
+        options:
+          delimiter: "."
+          index: 0
+      - select:
+          kind: Ingress
+          name: minio-console
+        fieldPaths:
+          - spec.rules.[0].host
+        options:
+          delimiter: "."
+          index: 0
+      - select:
+          kind: Ingress
+          name: minio-api
+        fieldPaths:
+          - metadata.annotations.[traefik.ingress.kubernetes.io/router.middlewares]
+        options:
+          delimiter: "-"
+          index: 0
+      - select:
+          kind: Ingress
+          name: minio-console
+        fieldPaths:
+          - metadata.annotations.[traefik.ingress.kubernetes.io/router.middlewares]
+        options:
+          delimiter: "-"
+          index: 0
+  - source:
       kind: ConfigMap
       name: preview-params
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.PREVIEW_DOMAIN
+      fieldPath: data.PREVIEW_DOMAIN
+    targets:
+      - select:
+          kind: Ingress
+          name: app
+        fieldPaths:
+          - spec.rules.[0].host
+        options:
+          delimiter: "."
+          index: 1
+      - select:
+          kind: Ingress
+          name: minio-api
+        fieldPaths:
+          - spec.rules.[0].host
+        options:
+          delimiter: "."
+          index: 1
+      - select:
+          kind: Ingress
+          name: minio-console
+        fieldPaths:
+          - spec.rules.[0].host
+        options:
+          delimiter: "."
+          index: 1
+  - source:
+      kind: Ingress
+      name: app
+      fieldPath: spec.rules.[0].host
+    targets:
+      - select:
+          kind: StatefulSet
+          name: minio
+        fieldPaths:
+          - spec.template.spec.containers.[name=minio].env.[name=MINIO_SERVER_URL].value
+          - spec.template.spec.containers.[name=minio].env.[name=MINIO_BROWSER_REDIRECT_URL].value
+        options:
+          delimiter: "/"
+          index: 2
 
 patches:
   - path: patches/app-ingress.yaml

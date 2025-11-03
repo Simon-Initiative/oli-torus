@@ -3,10 +3,10 @@ kind: Ingress
 metadata:
   name: minio-console
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: $(PREVIEW_SLUG)-minio-console-strip@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: placeholder-minio-console-strip@kubernetescrd
 spec:
   rules:
-    - host: $(PREVIEW_SLUG).$(PREVIEW_DOMAIN)
+    - host: placeholder.domain-placeholder
       http:
         paths:
           - path: /minio
