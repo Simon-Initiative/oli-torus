@@ -626,7 +626,7 @@ const DeckLayoutFooter: React.FC = () => {
       } else if (!currentActivity?.custom?.showCheckBtn) {
         dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else {
-        //We need to trigger the check on every click of Next button when wrong feedback is shown
+        //We need to trigger the check on every click of Next button when wrong feedback is shown.
         dispatch(triggerCheck({ activityId: currentActivityId as string }));
         dispatch(setIsGoodFeedback({ isGoodFeedback: false }));
         setDisplayFeedbackIcon(false);
