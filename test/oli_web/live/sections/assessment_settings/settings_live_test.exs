@@ -1739,6 +1739,49 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert length(changes) == 34
     end
 
+    test "bulk apply dropdown displays assessments sorted by numbering_index", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # Get the bulk apply dropdown options
+      html = render(view)
+
+      # Extract option text from the select dropdown
+      options =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find("form[for=\"bulk_apply_settings\"] select option")
+        |> Enum.map(&Floki.text/1)
+        |> Enum.map(&String.trim/1)
+
+      # Verify that assessments appear in curriculum order (by numbering_index)
+      # The first option should be "Select an assessment" placeholder (or empty)
+      assert length(options) >= 4
+
+      # Find the indices of each page title in the options
+      page_1_index = Enum.find_index(options, &String.contains?(&1, page_1.title))
+      page_2_index = Enum.find_index(options, &String.contains?(&1, page_2.title))
+      page_3_index = Enum.find_index(options, &String.contains?(&1, page_3.title))
+      page_4_index = Enum.find_index(options, &String.contains?(&1, page_4.title))
+
+      # Verify all pages are present
+      assert not is_nil(page_1_index)
+      assert not is_nil(page_2_index)
+      assert not is_nil(page_3_index)
+      assert not is_nil(page_4_index)
+
+      # Verify pages are in numbering_index order (curriculum order)
+      assert page_1_index < page_2_index
+      assert page_2_index < page_3_index
+      assert page_3_index < page_4_index
+    end
+
     test "can change allow hints setting", %{
       conn: conn,
       section: section,
