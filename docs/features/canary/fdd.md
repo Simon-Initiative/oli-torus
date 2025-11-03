@@ -26,7 +26,7 @@ Explicit Assumptions
 - A5: Single Erlang cluster per deployment; per-node caches acceptable with PubSub invalidation. False assumptions imply additional schema or infra work.
 
 **Torus Context Summary**
-- `Oli.ScopedFeatureFlags` handles feature definitions, enable/disable flows, and auditing; LiveView component in `OliWeb.Components.ScopedFeatureFlagsComponent` presents toggles.
+- `Oli.ScopedFeatureFlags` handles feature definitions, enable/disable flows, and auditing; scoped toggles surface via `OliWeb.Components.ScopedFeatureToggleComponent`, while canary rollouts are managed in the admin-facing `OliWeb.Admin.CanaryRolloutsLive` view.
 - `scoped_feature_flag_states` stores resource-specific flags (presence = enabled).
 - Publishers live under `Oli.Inventories`; projects/sections reference them.
 - Guides stress immutable publications, tenant boundaries, and audit compliance; scoped feature doc clarifies compile-time safety and state storage.
@@ -69,11 +69,8 @@ Explicit Assumptions
 - No new public REST endpoints. Potential future read-only admin API noted but not in scope.
 
 *LiveView*
-- Update `ScopedFeatureFlagsComponent` events:
-  - `"set_rollout"`: validates stage transitions and persists via Rollouts context.
-  - `"toggle_exemption"`: toggles publisher effect; requires admin authorization.
-- Assigns: `:current_stage`, `:inherited_stage`, `:publisher_status`, `:stage_history`.
-- Subscribe to `"feature_rollouts"` topic; handle `{:invalidate, feature}` by refreshing relevant assigns.
+- Scoped toggles remain on project/section pages via `ScopedFeatureToggleComponent` (no rollout controls).
+- New admin dashboard `OliWeb.Admin.CanaryRolloutsLive` renders all canary features, subscribes to the `"feature_rollouts"` topic, and orchestrates stage/exemption changes after entering explicit edit mode.
 - Update account detail LiveViews/pages to render a system-admin-only `is_internal` checkbox, wiring `handle_event/3` callbacks through existing account contexts to persist the flag and emit audit events.
 
 *Processes*

@@ -48,9 +48,9 @@ Parallelism: Within the phase, telemetry wiring can follow core logic but requir
 ## Phase 3: Admin UI & LiveView Integration
 - **Goal:** Update administrative UX to manage canary rollouts, exemptions, and display inherited states.
 - **Tasks**
-  - [ ] Enhance `OliWeb.Components.ScopedFeatureFlagsComponent` (and related LiveViews) with stage controls (`Off → Internal → 5% → 50% → Full`) respecting sequential progression.
-  - [ ] Add publisher exemption management UI (lists, toggle buttons, note input).
-  - [ ] Hook UI actions to backend context calls; subscribe to PubSub for live updates.
+  - [ ] Introduce `OliWeb.Components.ScopedFeatureToggleComponent` for project/section pages to manage scoped enablement only.
+  - [ ] Deliver a dedicated system-admin LiveView (`OliWeb.Admin.CanaryRolloutsLive`) that surfaces all canary rollouts, exemptions, and supports staged edits after entering an explicit edit mode.
+  - [ ] Hook dashboard actions to backend context calls; subscribe to PubSub for live updates.
   - [ ] Add system-admin-only checkbox to Author/User admin detail pages to toggle `is_internal`, wiring through existing contexts and audit logging.
   - [ ] Add LiveView tests using `Phoenix.LiveViewTest` covering stage transitions, permission enforcement, and broadcaster refresh.
   - [ ] Run `mix test test/oli_web/components/scoped_feature_flags_component_test.exs test/oli_web/live/features/*`.
@@ -58,38 +58,3 @@ Parallelism: Within the phase, telemetry wiring can follow core logic but requir
 
 Dependencies: Phase 2 backend logic available.
 Parallelism: UI styling and test writing can proceed concurrently once API signatures settled.
-
-## Phase 4: Observability, Ops & Performance Readiness
-- **Goal:** Validate non-functional aspects (telemetry, cache behavior, performance, rollout procedures).
-- **Tasks**
-  - [ ] Configure AppSignal metrics dashboards for new telemetry events; document alert thresholds (error rate >1%, cache hit <80%).
-  - [ ] Implement load test harness (k6/bombardier) exercising `can_access?/3` via representative endpoint; capture latency/QPS.
-  - [ ] Draft runbook covering stage change process, cache invalidation behavior, rollback
-  - [ ] Validate PubSub invalidation across multi-node dev cluster (simulate second node or use ExUnit cluster tests).
-  - [ ] Document hashing contract (`@cohort_hash_version`) and policy for future changes.
-  - [ ] Run load/perf tests and compile report; ensure telemetry events observed in staging/AppSignal sandbox.
-- **Definition of Done:** Performance metrics meet guardrails; runbook stored (e.g., `docs/features/canary/runbook.md` or ops wiki); telemetry verified; no outstanding alerts.
-
-Dependencies: Phases 2–3 must be functionally complete (observability needs full stack).
-Parallelism: Load testing and telemetry dashboard setup can run simultaneously once decision pipeline is stable.
-
-## Phase 5: QA, Rollout & Launch Prep
-- **Goal:** Final verification, documentation, and deployment readiness.
-- **Tasks**
-  - [ ] Execute full test suite `mix test` (including umbrella if applicable)
-  - [ ] Conduct exploratory testing in staging with staged rollouts, publisher exemptions, and fallback scenarios (Repo outage simulation).
-  - [ ] Validate migration on sanitized production snapshot (dry run).
-  - [ ] Update release notes, changelog, and internal comms (support, product).
-- [ ] Confirm `is_internal` flag rollout plan with product/ops (manual updates or future tooling).
-  - [ ] Secure product sign-off on open questions (force_enable behavior, scheduling, telemetry reporting).
-- **Definition of Done:** All tests green, staging sign-off completed, migrations rehearsed, documentation published, approvals captured; ready for deploy guard gate.
-
-Dependencies: All prior phases completed.
-Parallelism: Dry-run migration and exploratory testing can proceed in parallel with documentation once staging build available.
-
----
-
-**Parallel Execution Notes**
-- Phase 2 and Phase 3 may overlap partially once Phase 1 delivers schemas; coordinate API contracts early.
-- Phase 4 tasks can start (telemetry planning, runbook drafting) during late Phase 3 but require stable backend to finalize.
-- Ensure cross-functional checkpoints (product, ops) scheduled at end of Phases 2, 3, and 4 before advancing.

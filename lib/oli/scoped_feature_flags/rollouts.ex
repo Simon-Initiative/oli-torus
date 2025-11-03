@@ -38,11 +38,8 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
     scope_id = normalize_scope_id(scope_type, scope_id)
 
     ScopedFeatureRollout
-    |> where(
-      [r],
-      r.feature_name == ^feature_name and r.scope_type == ^scope_type and
-        r.scope_id == ^scope_id
-    )
+    |> where([r], r.feature_name == ^feature_name and r.scope_type == ^scope_type)
+    |> where(^scope_match_clause(scope_id))
     |> Repo.one()
   end
 
@@ -140,6 +137,7 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
     |> case do
       {:ok, rollout} ->
         broadcast_stage_invalidation(feature_name, scope_type, scope_id)
+
         :telemetry.execute(
           [:torus, :feature_flag, :rollout_stage_deleted],
           %{count: 1},
@@ -190,6 +188,7 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
     |> where([e], e.feature_name == ^feature_name)
     |> order_by([e], asc: e.publisher_id)
     |> Repo.all()
+    |> Repo.preload([:publisher, :updated_by_author])
   end
 
   @doc """
@@ -206,6 +205,7 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
   def upsert_exemption(feature_name, publisher_id, effect, actor, opts \\ []) do
     feature_name = normalize_feature_name(feature_name)
     effect = normalize_effect(effect)
+
     attrs = %{
       feature_name: feature_name,
       publisher_id: publisher_id,
@@ -268,6 +268,7 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
     |> case do
       {:ok, exemption} ->
         broadcast_exemption_invalidation(feature_name, publisher_id)
+
         :telemetry.execute(
           [:torus, :feature_flag, :rollout_exemption_deleted],
           %{count: 1},
@@ -471,12 +472,17 @@ defmodule Oli.ScopedFeatureFlags.Rollouts do
   end
 
   defp normalize_scope_id(:global, _scope_id), do: nil
-  defp normalize_scope_id(_scope_type, scope_id) when is_integer(scope_id) and scope_id > 0, do: scope_id
+
+  defp normalize_scope_id(_scope_type, scope_id) when is_integer(scope_id) and scope_id > 0,
+    do: scope_id
 
   defp normalize_scope_id(scope_type, scope_id) do
     raise ArgumentError,
           "Invalid scope_id #{inspect(scope_id)} for scope type #{inspect(scope_type)}"
   end
+
+  defp scope_match_clause(nil), do: dynamic([r], is_nil(r.scope_id))
+  defp scope_match_clause(scope_id), do: dynamic([r], r.scope_id == ^scope_id)
 
   defp normalize_effect(effect) do
     valid = ScopedFeatureExemption.effects()

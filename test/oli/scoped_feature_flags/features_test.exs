@@ -24,7 +24,9 @@ defmodule Oli.ScopedFeatureFlags.FeaturesTest do
       assert :both_feature in feature_names
       assert :canary_feature in feature_names
 
-      assert Enum.find(features, &(&1.name == :test_feature)).metadata.rollout_mode == :scoped_only
+      assert Enum.find(features, &(&1.name == :test_feature)).metadata.rollout_mode ==
+               :scoped_only
+
       assert Enum.find(features, &(&1.name == :canary_feature)).metadata.rollout_mode == :canary
     end
 

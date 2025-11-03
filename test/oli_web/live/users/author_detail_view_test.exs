@@ -5,8 +5,10 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
+  alias Oli.Accounts
   alias Oli.Authoring.Authors.ProjectRole
   alias Oli.Accounts.SystemRole
+  alias Oli.Auditing
 
   defp authors_detail_view(author_id) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, author_id)
@@ -400,6 +402,54 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       # Assert that the author role select is disabled
       assert has_element?(view, "select[name='author[system_role_id]'][disabled]")
+    end
+  end
+
+  describe "internal flag management" do
+    setup [:admin_conn]
+
+    test "system admin toggles internal flag and records audit event", %{conn: conn} do
+      author = insert(:author, is_internal: false)
+
+      {:ok, view, _html} = live(conn, authors_detail_view(author.id))
+
+      assert has_element?(view, "input[name='author[is_internal]']")
+
+      render_click(view, "button", "Edit")
+
+      params = %{
+        "author" => %{
+          "given_name" => author.given_name,
+          "family_name" => author.family_name,
+          "email" => author.email,
+          "system_role_id" => Integer.to_string(author.system_role_id),
+          "is_internal" => "true"
+        }
+      }
+
+      render_submit(element(view, "form#edit_author"), params)
+
+      updated = Accounts.get_author!(author.id)
+      assert updated.is_internal
+
+      [event] = Auditing.list_events(event_type: :account_internal_flag_changed, limit: 1)
+      assert event.details["account_type"] == "author"
+      assert event.details["is_internal"] == true
+      assert event.details["previous"] == false
+    end
+
+    test "toggling internal checkbox preserves name display", %{conn: conn} do
+      author = insert(:author, is_internal: false)
+
+      {:ok, view, _html} = live(conn, authors_detail_view(author.id))
+
+      render_click(view, "button", "Edit")
+
+      view
+      |> element("form#edit_author")
+      |> render_change(%{"author" => %{"is_internal" => "true"}})
+
+      assert view.assigns.author_name == "#{author.given_name} #{author.family_name}"
     end
   end
 

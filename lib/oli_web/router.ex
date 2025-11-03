@@ -1750,6 +1750,7 @@ defmodule OliWeb.Router do
       live("/system_messages", SystemMessageLive.IndexView)
 
       live("/features", Features.FeaturesLive)
+      live("/canary_rollouts", Admin.CanaryRolloutsLive)
       live("/api_keys", ApiKeys.ApiKeysLive)
     end
   end

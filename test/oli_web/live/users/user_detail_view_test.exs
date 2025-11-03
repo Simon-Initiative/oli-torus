@@ -7,6 +7,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
   alias Oli.Seeder
   alias Oli.Accounts
+  alias Oli.Auditing
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
 
@@ -44,6 +45,63 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       assert html =~ "User details"
       assert html =~ independent_student.name
+    end
+
+    test "system admin toggles internal flag and records audit event", %{
+      conn: conn,
+      admin: admin,
+      independent_student: user
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, user.id))
+
+      {:ok, view, _html} = live(conn)
+
+      assert has_element?(view, "input[name='user[is_internal]']")
+
+      render_click(view, "button", "Edit")
+
+      params = %{
+        "user" => %{
+          "given_name" => user.given_name,
+          "family_name" => user.family_name,
+          "email" => user.email,
+          "is_internal" => "true"
+        }
+      }
+
+      render_submit(element(view, "form"), params)
+
+      updated = Accounts.get_user!(user.id)
+      assert updated.is_internal
+
+      [event] = Auditing.list_events(event_type: :account_internal_flag_changed, limit: 1)
+      assert event.details["account_type"] == "user"
+      assert event.details["is_internal"] == true
+      assert event.details["previous"] == false
+    end
+
+    test "toggling internal checkbox preserves name display", %{
+      conn: conn,
+      admin: admin,
+      independent_student: user
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, user.id))
+
+      {:ok, view, _html} = live(conn)
+
+      render_click(view, "button", "Edit")
+
+      view
+      |> element("form")
+      |> render_change(%{"user" => %{"is_internal" => "true"}})
+
+      assert view.assigns.user_name == "#{user.given_name} #{user.family_name}"
     end
 
     test "shows lms user lti params", %{

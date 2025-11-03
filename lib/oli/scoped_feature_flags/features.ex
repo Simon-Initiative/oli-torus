@@ -196,8 +196,7 @@ defmodule Oli.ScopedFeatureFlags.Features do
       metadata |> Enum.into(%{})
     else
       raise CompileError,
-        description:
-          "Metadata must be a keyword list or map, got list #{inspect(metadata)}"
+        description: "Metadata must be a keyword list or map, got list #{inspect(metadata)}"
     end
   end
 

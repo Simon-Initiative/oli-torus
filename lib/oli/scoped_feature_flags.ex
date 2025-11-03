@@ -472,6 +472,63 @@ defmodule Oli.ScopedFeatureFlags do
   end
 
   @doc """
+  Returns a snapshot of rollout data for the given feature within the provided resource scope.
+
+  The snapshot includes the effective stage (after inheritance), per-scope rollout records
+  (global, project, section), and any publisher exemption that applies to the resource.
+  This is primarily intended for administrative UX that needs to surface rollout context
+  without performing its own DB queries.
+  """
+  @spec rollout_snapshot(atom() | String.t(), Project.t() | Section.t(), keyword()) ::
+          {:ok, map()} | {:error, term()}
+  def rollout_snapshot(feature_name, resource, opts \\ []) do
+    bypass_cache? = Keyword.get(opts, :bypass_cache, false)
+    feature_string = normalize_feature_name(feature_name)
+
+    with {:ok, scope} <- derive_scope(resource),
+         {:ok, stage_info} <- resolve_stage(feature_string, scope, bypass_cache?) do
+      stages =
+        scope
+        |> stage_scopes_for()
+        |> Enum.map(fn {scope_type, scope_id} ->
+          rollout = Rollouts.get_rollout(feature_string, scope_type, scope_id)
+          {scope_type, rollout_to_map(rollout)}
+        end)
+        |> Enum.into(%{})
+
+      exemption =
+        case scope.publisher_id do
+          nil -> nil
+          publisher_id -> exemption_to_map(Rollouts.get_exemption(feature_string, publisher_id))
+        end
+
+      snapshot = %{
+        feature: feature_string,
+        scope: %{
+          type: scope.scope_type,
+          id: scope.scope_id,
+          project_id: scope.project_id,
+          section_id: scope.section_id,
+          publisher_id: scope.publisher_id
+        },
+        effective_stage: stage_info.stage,
+        effective_rollout_percentage: stage_info.rollout_percentage,
+        effective_source: %{
+          scope_type: stage_info.scope_type,
+          scope_id: stage_info.scope_id
+        },
+        stages: stages,
+        direct_stage: Map.get(stages, scope.scope_type),
+        exemption: exemption
+      }
+
+      {:ok, snapshot}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
   Determines whether an actor can access a feature within the provided scope resource.
 
   When `opts[:diagnostics]` is true, returns `{:ok, diagnostics_map}` or `{:error, reason}`.
@@ -877,11 +934,13 @@ defmodule Oli.ScopedFeatureFlags do
             case cohort_allows?(feature_name, actor_info, stage, bypass_cache?) do
               {:ok, %{result: true} = cohort_diag} ->
                 {true, :cohort_allow,
-                 merge_cache_hits(stage_info, exemption_info, cohort_diag.cache_hits), cohort_diag}
+                 merge_cache_hits(stage_info, exemption_info, cohort_diag.cache_hits),
+                 cohort_diag}
 
               {:ok, %{result: false} = cohort_diag} ->
                 {false, :cohort_deny,
-                 merge_cache_hits(stage_info, exemption_info, cohort_diag.cache_hits), cohort_diag}
+                 merge_cache_hits(stage_info, exemption_info, cohort_diag.cache_hits),
+                 cohort_diag}
 
               {:error, reason} ->
                 {false, reason, merge_cache_hits(stage_info, exemption_info), nil}
@@ -922,6 +981,7 @@ defmodule Oli.ScopedFeatureFlags do
 
   defp merge_cache_hits(stage_info, exemption_info, extra \\ %{}) do
     stage_hits = Map.get(stage_info, :cache_hits, %{})
+
     exemption_hits =
       exemption_info
       |> case do
@@ -1047,6 +1107,49 @@ defmodule Oli.ScopedFeatureFlags do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp stage_scopes_for(%{scope_type: scope_type, scope_id: scope_id} = scope) do
+    [
+      {scope_type, scope_id},
+      {:project, Map.get(scope, :project_id)},
+      {:section, Map.get(scope, :section_id)},
+      {:global, nil}
+    ]
+    |> Enum.reject(fn
+      {:global, _} -> false
+      {_type, nil} -> true
+      {_type, :undefined} -> true
+      _ -> false
+    end)
+    |> Enum.uniq_by(fn {type, id} -> {type, id} end)
+  end
+
+  defp rollout_to_map(nil), do: nil
+
+  defp rollout_to_map(%ScopedFeatureRollout{} = rollout) do
+    %{
+      stage: rollout.stage,
+      rollout_percentage: rollout.rollout_percentage,
+      scope_type: rollout.scope_type,
+      scope_id: rollout.scope_id,
+      updated_at: rollout.updated_at,
+      inserted_at: rollout.inserted_at,
+      updated_by_author_id: rollout.updated_by_author_id
+    }
+  end
+
+  defp exemption_to_map(nil), do: nil
+
+  defp exemption_to_map(%ScopedFeatureExemption{} = exemption) do
+    %{
+      effect: exemption.effect,
+      note: exemption.note,
+      publisher_id: exemption.publisher_id,
+      updated_at: exemption.updated_at,
+      inserted_at: exemption.inserted_at,
+      updated_by_author_id: exemption.updated_by_author_id
+    }
   end
 
   defp cohort_allows?(feature_name, actor_info, stage, bypass_cache?) do
@@ -1186,15 +1289,17 @@ defmodule Oli.ScopedFeatureFlags do
 
   defp derive_scope(_), do: {:error, :unsupported_scope}
 
-  defp ensure_project_publisher_id(%Project{publisher_id: publisher_id}) when not is_nil(publisher_id),
-    do: publisher_id
+  defp ensure_project_publisher_id(%Project{publisher_id: publisher_id})
+       when not is_nil(publisher_id),
+       do: publisher_id
 
   defp ensure_project_publisher_id(%Project{id: id}) do
     Repo.get!(Project, id).publisher_id
   end
 
-  defp ensure_section_publisher_id(%Section{publisher_id: publisher_id}) when not is_nil(publisher_id),
-    do: publisher_id
+  defp ensure_section_publisher_id(%Section{publisher_id: publisher_id})
+       when not is_nil(publisher_id),
+       do: publisher_id
 
   defp ensure_section_publisher_id(%Section{id: id}) do
     Repo.get!(Section, id).publisher_id

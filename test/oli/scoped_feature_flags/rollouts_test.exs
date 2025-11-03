@@ -62,7 +62,8 @@ defmodule Oli.ScopedFeatureFlags.RolloutsTest do
 
       handler = attach_telemetry([[:torus, :feature_flag, :rollout_stage_deleted]])
 
-      assert :ok = Rollouts.delete_rollout(@feature, :project, project.id, author, note: "cleanup")
+      assert :ok =
+               Rollouts.delete_rollout(@feature, :project, project.id, author, note: "cleanup")
 
       assert_received {:stage_invalidated, "canary_test_feature", :project, ^project_id}
 

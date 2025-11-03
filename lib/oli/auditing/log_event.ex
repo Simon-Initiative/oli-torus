@@ -21,7 +21,8 @@ defmodule Oli.Auditing.LogEvent do
     :feature_rollout_stage_changed,
     :feature_rollout_stage_deleted,
     :feature_rollout_exemption_upserted,
-    :feature_rollout_exemption_deleted
+    :feature_rollout_exemption_deleted,
+    :account_internal_flag_changed
   ]
 
   schema "audit_log_events" do
@@ -143,7 +144,10 @@ defmodule Oli.Auditing.LogEvent do
       :feature_rollout_stage_changed ->
         feature = get_in(event.details, ["feature_name"]) || "unknown feature"
         scope_type = get_in(event.details, ["scope_type"]) || "scope"
-        to_stage = get_in(event.details, ["stage"]) || get_in(event.details, ["to_stage"]) || "stage"
+
+        to_stage =
+          get_in(event.details, ["stage"]) || get_in(event.details, ["to_stage"]) || "stage"
+
         "Updated rollout for #{feature} (#{scope_type}) to #{to_stage}"
 
       :feature_rollout_stage_deleted ->
@@ -159,6 +163,12 @@ defmodule Oli.Auditing.LogEvent do
       :feature_rollout_exemption_deleted ->
         feature = get_in(event.details, ["feature_name"]) || "unknown feature"
         "Removed exemption for #{feature}"
+
+      :account_internal_flag_changed ->
+        account_type = get_in(event.details, ["account_type"]) || "account"
+        new_value = get_in(event.details, ["is_internal"])
+        status = if(new_value, do: "internal", else: "external")
+        "Updated internal flag for #{account_type} (#{status})"
 
       _ ->
         "#{event.event_type}"

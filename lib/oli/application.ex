@@ -65,12 +65,10 @@ defmodule Oli.Application do
         Oli.Delivery.DistributedDepotCoordinator,
         Oli.Delivery.DepotWarmer,
         Supervisor.child_spec({Cachex, name: :page_content_cache}, id: :page_content_cache),
-
         Supervisor.child_spec(
           {Cachex, name: :feature_flag_stage, limit: 200_000, policy: Cachex.Policy.LRW},
           id: :feature_flag_stage_cache
         ),
-
         Supervisor.child_spec(
           {Cachex, name: :feature_flag_cohorts, limit: 200_000, policy: Cachex.Policy.LRW},
           id: :feature_flag_cohort_cache
@@ -91,7 +89,6 @@ defmodule Oli.Application do
 
         # Starts Cachex to store section info
         Oli.Delivery.Sections.SectionCache,
-
         Oli.ScopedFeatureFlags.CacheSubscriber,
 
         # Starts the LTI 1.3 examples key provider
