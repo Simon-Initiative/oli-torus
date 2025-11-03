@@ -108,7 +108,30 @@
     height: auto !important;
   }
 
-  janus-number-slider {
+  /*------------------------------
+      Image Flag Combinations in Responsive Layout
+  ------------------------------*/
+
+  // Only scaleContent is true: width 100%, height from model
+  img.responsive-image-scale-only {
+    width: 100% !important;
+    height: var(--image-height) !important;
+  }
+
+  // Only lockAspectRatio is true: maintain aspect ratio - use original width, height auto
+  img.responsive-image-lock-ratio-only {
+    width: var(--image-width) !important;
+    height: auto !important;
+  }
+
+  // Both scaleContent and lockAspectRatio are true: width 100%, height auto
+  img.responsive-image-scale-lock-both {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  janus-number-slider,
+  janus-text-slider {
     padding-bottom: 20px;
   }
 }

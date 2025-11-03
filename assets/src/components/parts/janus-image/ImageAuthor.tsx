@@ -22,11 +22,42 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, alt, defaultSrc, lockAspectRatio } = model;
-  const imageStyles: CSSProperties = {
-    width,
-    height,
-  };
+  const { width, height, src, alt, defaultSrc, lockAspectRatio, scaleContent } = model;
+
+  // Detect responsive layout mode (when width is '100%')
+  const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
+
+  // Build CSS classes based on flag combinations in responsive layout
+  const imageClasses = (() => {
+    if (!isResponsiveLayout) {
+      return '';
+    }
+
+    // Build class names based on flag combinations
+    const classes: string[] = [];
+    if (scaleContent && !lockAspectRatio) {
+      classes.push('responsive-image-scale-only');
+    } else if (lockAspectRatio && !scaleContent) {
+      classes.push('responsive-image-lock-ratio-only');
+    } else if (scaleContent && lockAspectRatio) {
+      classes.push('responsive-image-scale-lock-both');
+    }
+
+    return classes.join(' ');
+  })();
+
+  // For non-responsive or when no flags are set, use inline styles
+  // For responsive with flags, use CSS custom properties for dynamic values and CSS classes for rules
+  const imageStyles: CSSProperties = isResponsiveLayout && imageClasses
+    ? {
+        // Pass original width and height as CSS variables for CSS to use
+        ['--image-width' as string]: typeof width === 'number' ? `${width}px` : width,
+        ['--image-height' as string]: typeof height === 'number' ? `${height}px` : height,
+      }
+    : {
+        width,
+        height,
+      };
 
   const debounceWaitTime = 1000;
   const debounceImageAdjust = useCallback(
@@ -46,6 +77,17 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     if (!imageContainerRef?.current || !isfromDebaunce) {
       return;
     }
+
+    // Skip saving dimensions when in responsive layout with scaleContent enabled
+    // Dimensions will be handled via CSS in this case
+    const isInResponsiveWithScaleContent =
+      (updatedModel.width === '100%' || (typeof updatedModel.width === 'string' && updatedModel.width.includes('%'))) &&
+      updatedModel.scaleContent === true;
+
+    if (isInResponsiveWithScaleContent) {
+      return;
+    }
+
     const naturalWidth = imageContainerRef.current.naturalWidth;
     const naturalHeight = imageContainerRef.current.naturalHeight;
 
@@ -89,6 +131,7 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
       draggable="false"
       alt={alt}
       src={src}
+      className={imageClasses || undefined}
       style={imageStyles}
     />
   ) : null;

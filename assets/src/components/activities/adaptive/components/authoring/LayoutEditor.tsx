@@ -145,19 +145,23 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   // Helper function to render individual parts
   const renderPart = (part: AnyPartComponent, idx: number) => {
-    // Special handling for janus-image parts with lockAspectRatio in responsive mode
-    const isJanusImageWithLockAspectRatio =
+    // For images with only lockAspectRatio (no scaleContent), preserve original width to maintain aspect ratio
+    const isImageWithOnlyLockAspectRatio =
       isResponsive &&
       part.type === 'janus-image' &&
-      (part.custom.lockAspectRatio === true || part.custom.scaleContent === false);
+      part.custom.lockAspectRatio === true &&
+      !part.custom.scaleContent;
 
     const partProps = {
       id: part.id,
       type: part.type,
       model: {
         ...decorateModelWithDragWidthHeight(part.id, part.custom),
-        // In responsive mode, set width to 100% for the part, except for janus-image with lockAspectRatio
-        width: isResponsive && !isJanusImageWithLockAspectRatio ? '100%' : part.custom.width,
+        // In responsive mode, set width to 100% for all parts EXCEPT images with only lockAspectRatio
+        // Images with only lockAspectRatio keep original width to maintain aspect ratio
+        width: isResponsive && !isImageWithOnlyLockAspectRatio
+          ? '100%'
+          : part.custom.width,
         // Preserve original x & y positions in the model (they will be ignored in rendering)
         x: part.custom.x || 0,
         y: part.custom.y || 0,
