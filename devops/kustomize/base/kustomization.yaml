@@ -35,6 +35,6 @@ configMapGenerator:
 secretGenerator:
   - name: app-env
     envs:
-      - ../../app.env
+      - app.env
     options:
       disableNameSuffixHash: true

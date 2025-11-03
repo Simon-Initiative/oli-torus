@@ -6,7 +6,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.middlewares: placeholder-minio-api-strip@kubernetescrd
 spec:
   rules:
-    - host: placeholder.domain-placeholder
+    - host: placeholder-host
       http:
         paths:
           - path: /buckets

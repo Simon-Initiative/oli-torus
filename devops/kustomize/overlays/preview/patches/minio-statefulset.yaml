@@ -9,6 +9,6 @@ spec:
         - name: minio
           env:
             - name: MINIO_SERVER_URL
-              value: https://placeholder.domain-placeholder/buckets
+              value: https://placeholder-host/buckets
             - name: MINIO_BROWSER_REDIRECT_URL
-              value: https://placeholder.domain-placeholder/minio
+              value: https://placeholder-host/minio

@@ -161,21 +161,31 @@ jobs:
           REPO_ROOT=$(pwd)
           PREVIEW_HOST="${PREVIEW_SLUG}.${PREVIEW_DOMAIN}"
 
-          printf 'PREVIEW_SLUG=%s\nPREVIEW_DOMAIN=%s\n' "${PREVIEW_SLUG}" "${PREVIEW_DOMAIN}" > "${REPO_ROOT}/devops/kustomize/overlays/preview/params.env"
+          cat <<EOF > "${REPO_ROOT}/devops/kustomize/overlays/preview/params.env"
+
+          PREVIEW_SLUG=${PREVIEW_SLUG}
+          PREVIEW_DOMAIN=${PREVIEW_DOMAIN}
+          PREVIEW_HOST=${PREVIEW_HOST}
+          MINIO_API_MIDDLEWARE=${PREVIEW_SLUG}-minio-api-strip@kubernetescrd
+          MINIO_CONSOLE_MIDDLEWARE=${PREVIEW_SLUG}-minio-console-strip@kubernetescrd
+          MINIO_SERVER_URL=https://${PREVIEW_HOST}/buckets
+          MINIO_BROWSER_REDIRECT_URL=https://${PREVIEW_HOST}/minio
+          EOF
+
           printf 'HOST=%s\nMEDIA_URL=https://%s/buckets/torus-media\n' "${PREVIEW_HOST}" "${PREVIEW_HOST}" > "${REPO_ROOT}/devops/kustomize/overlays/preview/app-overrides.env"
 
           ENVIRONMENT="oli-torus"
           DEPLOYMENT="${PREVIEW_SLUG}"
           CONFIG_URL="https://plasma.oli.cmu.edu/api/environments/${ENVIRONMENT}/deployments/${DEPLOYMENT}/env"
           DEFAULT_ENV_PATH="${REPO_ROOT}/devops/default.env"
-          APP_ENV_PATH="${REPO_ROOT}/devops/app.env"
+          APP_ENV_PATH="${REPO_ROOT}/devops/kustomize/base/app.env"
 
           if curl -fsSL --max-time 10 -H "Authorization: Bearer ${PLASMA_CORE_SERVICE_TOKEN:-}" "${CONFIG_URL}" -o "${APP_ENV_PATH}"; then
             echo "Downloaded environment config from ${CONFIG_URL}"
           else
             echo "Failed to download environment config; building fallback from devops/default.env"
             if ! command -v envsubst >/dev/null 2>&1; then
-              echo "envsubst is required to render devops/app.env" >&2
+              echo "envsubst is required to render devops/kustomize/base/app.env" >&2
               exit 1
             fi
             HOST="${PREVIEW_HOST}" envsubst < "${DEFAULT_ENV_PATH}" > "${APP_ENV_PATH}"
