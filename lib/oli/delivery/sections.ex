@@ -2498,12 +2498,18 @@ defmodule Oli.Delivery.Sections do
       {sr.start_date, sr.end_date}
     end)
     |> Enum.sort(fn first, second ->
-      {{start_date_1, _end_date_1}, _} = first
-      {{start_date_2, _end_date_2}, _} = second
+      {{start_date_1, end_date_1}, resources1} = first
+      {{start_date_2, end_date_2}, resources2} = second
 
-      case start_date_1 do
-        nil -> true
-        _ -> start_date_1 < start_date_2
+      cond do
+        start_date_1 == nil -> true
+        start_date_2 == nil -> false
+        # When date ranges are identical, sort by minimum numbering_index (ordinal position)
+        start_date_1 == start_date_2 and end_date_1 == end_date_2 ->
+          min1 = Enum.min_by(resources1, & &1.resource.numbering_index).resource.numbering_index
+          min2 = Enum.min_by(resources2, & &1.resource.numbering_index).resource.numbering_index
+          min1 <= min2
+        true -> start_date_1 < start_date_2
       end
     end)
   end
@@ -2577,10 +2583,15 @@ defmodule Oli.Delivery.Sections do
   defp group_by_container_and_end_date(section_resources) do
     section_resources
     |> Enum.group_by(&{&1.end_date, {&1.module_id, &1.unit_id}})
-    |> Enum.sort(fn {{end_date1, {_, _}}, _}, {{end_date2, {_, _}}, _} ->
+    |> Enum.sort(fn {{end_date1, {_, _}}, resources1}, {{end_date2, {_, _}}, resources2} ->
       cond do
         end_date1 == nil -> false
         end_date2 == nil -> true
+        # When end dates are equal, sort by minimum numbering_index (ordinal position)
+        DateTime.compare(end_date1, end_date2) == :eq ->
+          min1 = Enum.min_by(resources1, & &1.resource.numbering_index).resource.numbering_index
+          min2 = Enum.min_by(resources2, & &1.resource.numbering_index).resource.numbering_index
+          min1 <= min2
         true -> DateTime.compare(end_date1, end_date2) == :lt
       end
     end)
@@ -2640,25 +2651,22 @@ defmodule Oli.Delivery.Sections do
     Enum.map(container_groups, fn {{_end_date, {module_id, unit_id}}, scheduled_resources} ->
       parent_id = module_id || unit_id
 
-      %ScheduledContainerGroup{
-        id: UUID.uuid4(),
-        module_id: module_id,
-        unit_id: unit_id,
-        module_label: get_in(containers_data_map, [module_id, :label]),
-        unit_label: get_in(containers_data_map, [unit_id, :label]),
-        container_title: get_in(containers_data_map, [parent_id, :title]),
-        progress: progress_percentage(progress_per_resource_id[parent_id]),
-        resources:
-          if(opts[:include_min_contained_numbering_index],
-            do: Enum.sort_by(scheduled_resources, & &1.resource.numbering_index),
-            else: scheduled_resources
-          ),
-        min_contained_numbering_index:
-          if(opts[:include_min_contained_numbering_index],
-            do:
-              Enum.min_by(scheduled_resources, & &1.resource.numbering_index).resource.numbering_index
-          )
-      }
+        %ScheduledContainerGroup{
+          id: UUID.uuid4(),
+          module_id: module_id,
+          unit_id: unit_id,
+          module_label: get_in(containers_data_map, [module_id, :label]),
+          unit_label: get_in(containers_data_map, [unit_id, :label]),
+          container_title: get_in(containers_data_map, [parent_id, :title]),
+          progress: progress_percentage(progress_per_resource_id[parent_id]),
+          # Always sort resources by numbering_index for consistent ordinal ordering
+          resources: Enum.sort_by(scheduled_resources, & &1.resource.numbering_index),
+          min_contained_numbering_index:
+            if(opts[:include_min_contained_numbering_index],
+              do:
+                Enum.min_by(scheduled_resources, & &1.resource.numbering_index).resource.numbering_index
+            )
+        }
     end)
   end
 
@@ -2673,26 +2681,23 @@ defmodule Oli.Delivery.Sections do
     |> Enum.map(fn {{{module_id, unit_id}, graded}, scheduled_resources} ->
       parent_id = module_id || unit_id
 
-      %ScheduledContainerGroup{
-        id: UUID.uuid4(),
-        module_id: module_id,
-        unit_id: unit_id,
-        module_label: get_in(containers_data_map, [module_id, :label]),
-        unit_label: get_in(containers_data_map, [unit_id, :label]),
-        container_title: get_in(containers_data_map, [parent_id, :title]),
-        progress: progress_percentage(progress_per_resource_id[parent_id]),
-        graded: graded,
-        resources:
-          if(opts[:include_min_contained_numbering_index],
-            do: Enum.sort_by(scheduled_resources, & &1.resource.numbering_index),
-            else: scheduled_resources
-          ),
-        min_contained_numbering_index:
-          if(opts[:include_min_contained_numbering_index],
-            do:
-              Enum.min_by(scheduled_resources, & &1.resource.numbering_index).resource.numbering_index
-          )
-      }
+        %ScheduledContainerGroup{
+          id: UUID.uuid4(),
+          module_id: module_id,
+          unit_id: unit_id,
+          module_label: get_in(containers_data_map, [module_id, :label]),
+          unit_label: get_in(containers_data_map, [unit_id, :label]),
+          container_title: get_in(containers_data_map, [parent_id, :title]),
+          progress: progress_percentage(progress_per_resource_id[parent_id]),
+          graded: graded,
+          # Always sort resources by numbering_index for consistent ordinal ordering
+          resources: Enum.sort_by(scheduled_resources, & &1.resource.numbering_index),
+          min_contained_numbering_index:
+            if(opts[:include_min_contained_numbering_index],
+              do:
+                Enum.min_by(scheduled_resources, & &1.resource.numbering_index).resource.numbering_index
+            )
+        }
     end)
   end
 
