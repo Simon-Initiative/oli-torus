@@ -8578,6 +8578,10 @@ table.table-striped tbody tr:nth-child(even) {
   right: 1px;
 }
 
+.right-\[380px\] {
+  right: 380px;
+}
+
 .top-0 {
   top: 0px;
 }
@@ -8732,6 +8736,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .z-\[10000\] {
   z-index: 10000;
+}
+
+.z-\[1001\] {
+  z-index: 1001;
 }
 
 .z-\[1\] {
