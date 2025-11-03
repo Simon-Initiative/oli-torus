@@ -156,23 +156,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          BUILD_ROOT="$(mktemp -d)"
-          trap 'rm -rf "$BUILD_ROOT"' EXIT
-
-          cp -R devops "${BUILD_ROOT}/"
-
-          OVERLAY_DIR="${BUILD_ROOT}/devops/kustomize/overlays/preview"
-
-          printf 'PREVIEW_SLUG=%s\nPREVIEW_DOMAIN=%s\n' "${PREVIEW_SLUG}" "${PREVIEW_DOMAIN}" > "${OVERLAY_DIR}/params.env"
+          printf 'PREVIEW_SLUG=%s\nPREVIEW_DOMAIN=%s\n' "${PREVIEW_SLUG}" "${PREVIEW_DOMAIN}" > devops/kustomize/overlays/preview/params.env
 
           PREVIEW_HOST=${PREVIEW_SLUG}.${PREVIEW_DOMAIN}
-          printf 'HOST=%s\nMEDIA_URL=https://%s/buckets/torus-media\n' "${PREVIEW_HOST}" "${PREVIEW_HOST}" > "${OVERLAY_DIR}/app-overrides.env"
+          printf 'HOST=%s\nMEDIA_URL=https://%s/buckets/torus-media\n' "${PREVIEW_HOST}" "${PREVIEW_HOST}" > devops/kustomize/overlays/preview/app-overrides.env
 
-          cd "${OVERLAY_DIR}"
+          cd devops/kustomize/overlays/preview
           kustomize edit set namespace "${PREVIEW_SLUG}"
           kustomize edit set image ${IMAGE_REPO}=${IMAGE_REPO}:${IMAGE_TAG}
 
           kustomize build --load-restrictor LoadRestrictionsNone . | kubectl apply -f -
+
+      - name: Restart app deployment
+        run: kubectl -n "${PREVIEW_SLUG}" rollout restart deployment/app
 
       - name: Wait for application rollout
         run: kubectl -n "${PREVIEW_SLUG}" rollout status deployment/app --timeout=5m
@@ -184,3 +180,9 @@ jobs:
           recreate: true
           message: |
             Preview deployed to: https://${{ env.PREVIEW_SLUG }}.${{ env.PREVIEW_DOMAIN }}
+
+      - name: Cleanup workspace
+        if: always()
+        run: |
+          git reset --hard HEAD
+          git clean -fdx
