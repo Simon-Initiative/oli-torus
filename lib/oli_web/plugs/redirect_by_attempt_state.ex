@@ -16,10 +16,15 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     - lesson route (if the attempt is :active)
     - review route (an attempt guid is provided in the request as a param and that attempt is finished)
 
-  Adaptive graded page's possible destinations:
+  Adaptive chromeless graded page's possible destinations:
     - prologue route (if the attempt is :submitted or :evaluated)
     - adaptive lesson route (if the attempt is :active)
     - adaptive review route (an attempt guid is provided in the request as a param and that attempt is finished)
+
+  Adaptive with chrome graded page's possible destinations:
+    - prologue route (if the attempt is :submitted or :evaluated)
+    - lesson route (if the attempt is :active)
+    - review route (an attempt guid is provided in the request as a param and that attempt is finished)
 
 
   The main objective of this plug is to prematurely redirecting the user to the appropiate page
@@ -55,6 +60,9 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
         {:graded, :not_adaptive, _, true} ->
           ensure_path(conn, :review, :not_adaptive)
 
+        {:graded, :adaptive_with_chrome, _, true} ->
+          ensure_path(conn, :review, :not_adaptive)
+
         {:graded, _, nil, false} ->
           # all graded pages (adaptive or not) with no active attempt should be redirected to the prologue
           ensure_path(conn, :prologue)
@@ -71,6 +79,10 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
          %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false} ->
           ensure_path(conn, :adaptive_lesson)
 
+        {:graded, :adaptive_with_chrome,
+         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false} ->
+          ensure_path(conn, :lesson)
+
         {:practice, :not_adaptive, _, false} ->
           # practice pages do not have prologue page.
           ensure_path(conn, :lesson)
@@ -84,6 +96,12 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
 
         {:practice, :adaptive_chromeless, _, true} ->
           ensure_path(conn, :review, :adaptive)
+
+        {:practice, :adaptive_with_chrome, _, false} ->
+          ensure_path(conn, :lesson)
+
+        {:practice, :adaptive_with_chrome, _, true} ->
+          ensure_path(conn, :review, :not_adaptive)
       end
     else
       _ ->
@@ -117,14 +135,23 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
 
     case {page_revision.graded, page_revision.content["advancedDelivery"],
           page_revision.content["displayApplicationChrome"]} do
+      # Adaptive chromeless (fullscreen)
       {false, true, display_application_chrome} when display_application_chrome in [nil, false] ->
         {:practice, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?}
 
-      {false, _, _} ->
-        {:practice, :not_adaptive, page_revision.resource_id, is_attempt_review_path?}
-
       {true, true, display_application_chrome} when display_application_chrome in [nil, false] ->
         {:graded, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?}
+
+      # Adaptive with chrome
+      {false, true, true} ->
+        {:practice, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?}
+
+      {true, true, true} ->
+        {:graded, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?}
+
+      # Not adaptive
+      {false, _, _} ->
+        {:practice, :not_adaptive, page_revision.resource_id, is_attempt_review_path?}
 
       {true, _, _} ->
         {:graded, :not_adaptive, page_revision.resource_id, is_attempt_review_path?}
