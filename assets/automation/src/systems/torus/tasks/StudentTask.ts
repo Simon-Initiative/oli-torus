@@ -5,6 +5,7 @@ import { InstructorDashboardPO } from '@pom/dashboard/InstructorDashboardPO';
 import { StudentDashboardPO } from '@pom/dashboard/StudentDashboardPO';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
 import { Waiter } from '@core/wait/Waiter';
+import { step } from '@core/decoration/step';
 
 export class StudentTask {
   private readonly sidebar: SidebarCO;
@@ -21,6 +22,7 @@ export class StudentTask {
     this.studentCourse = new StudentCoursePO(page);
   }
 
+  @step('Verify that you can create a section')
   async verifyCanCreateSections(textToVerify: string) {
     await this.sidebar.clickInMenu('Instructor');
     await this.instructorDB.clickCreateNewSection();

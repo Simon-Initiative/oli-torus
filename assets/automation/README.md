@@ -54,6 +54,12 @@ Run it in headed mode (visible browser)
 npm run test-config:headed
 ```
 
+Run all suites
+
+```bash
+npm run test-all
+```
+
 Open the latest Playwright HTML report
 
 ```bash

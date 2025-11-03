@@ -96,7 +96,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     ~H"""
     <.password_attempt_modal />
 
-    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+    <div class="flex flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center inline-flex">
         <.page_header
           page_context={@page_context}
@@ -206,7 +206,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         )
       }
       class={[
-        "mb-24 cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
+        "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
         if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
       ]}
     >

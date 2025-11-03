@@ -72,6 +72,20 @@ function buildConfirmMessage(uiState: ActivityDeliveryState): any {
   );
 }
 
+const isResetDisabled = (uiState: ActivityDeliveryState, mode: DeliveryMode) => {
+  const { maxAttempts } = uiState.activityContext;
+  const { attemptNumber } = uiState.attemptState;
+
+  return mode !== 'delivery' || (maxAttempts > 0 && attemptNumber >= maxAttempts);
+};
+
+const isSubmitDisabled = (uiState: ActivityDeliveryState, mode: DeliveryMode) => {
+  const { maxAttempts } = uiState.activityContext;
+  const { attemptNumber } = uiState.attemptState;
+
+  return mode !== 'delivery' || (maxAttempts > 0 && attemptNumber > maxAttempts);
+};
+
 export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mode }) => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const { attemptState } = uiState;
@@ -103,11 +117,7 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
         return (
           <div className="mt-3 flex justify-between">
             <button
-              disabled={
-                mode != 'delivery' ||
-                (uiState.activityContext.maxAttempts > 0 &&
-                  attemptState.attemptNumber >= uiState.activityContext.maxAttempts)
-              }
+              disabled={isResetDisabled(uiState, mode)}
               onClick={() => {
                 if (modalOpen) return; // debounce: ignore if modal is already open
                 setModalOpen(true);
@@ -132,7 +142,13 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
                 );
               }}
             >
-              <span className="text-red-700">
+              <span
+                className={` ${
+                  isResetDisabled(uiState, mode)
+                    ? 'cursor-not-allowed text-[#B0B4BF] dark:text-[#3B3740]'
+                    : 'text-[#CE2C31] dark:text-[#FF8787]'
+                }`}
+              >
                 <i className="fa-solid fa-rotate-right mr-2"></i>Reset Question
               </span>
             </button>
@@ -149,11 +165,7 @@ export const ScoreAsYouGoSubmitReset: React.FC<Props> = ({ onSubmit, onReset, mo
       return (
         <div className="flex justify-center">
           <button
-            disabled={
-              mode != 'delivery' ||
-              (uiState.activityContext.maxAttempts > 0 &&
-                attemptState.attemptNumber > uiState.activityContext.maxAttempts)
-            }
+            disabled={isSubmitDisabled(uiState, mode)}
             className="btn btn-primary"
             onClick={() => onSubmit()}
           >

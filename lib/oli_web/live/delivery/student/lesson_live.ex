@@ -805,7 +805,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def render(%{show_blocking_gates?: true} = assigns) do
     ~H"""
-    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+    <div class="flex flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex-1 w-full max-w-[1040px] px-4 sm:px-[80px] pt-4 sm:pt-20 pb-10 flex-col justify-start items-center inline-flex">
         <.page_header
           page_context={@page_context}

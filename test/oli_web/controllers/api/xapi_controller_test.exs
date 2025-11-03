@@ -296,8 +296,10 @@ defmodule OliWeb.XAPIControllerTest do
 
     defp prep_pipeline() do
       # Allow the pipeline to receive events
+      previous_env = Application.get_env(:oli, :xapi_upload_pipeline, [])
+
       env =
-        Application.get_env(:oli, :xapi_upload_pipeline)
+        previous_env
         |> Keyword.put(:suppress_event_emitting, false)
 
       Application.put_env(:oli, :xapi_upload_pipeline, env)
@@ -306,6 +308,7 @@ defmodule OliWeb.XAPIControllerTest do
 
       on_exit(fn ->
         File.rm_rf!("./test_bundles")
+        Application.put_env(:oli, :xapi_upload_pipeline, previous_env)
       end)
     end
 
