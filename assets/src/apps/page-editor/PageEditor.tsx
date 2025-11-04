@@ -92,10 +92,7 @@ function prepareSaveFn(
     Persistence.edit(project, resource, update, releaseLock).then((result) => {
       // check if the slug has changed as a result of the edit and reload the page if it has
       if (result.type === 'success' && result.revision_slug !== resource) {
-        if (
-          window.location.pathname.startsWith('/authoring/project') ||
-          window.location.pathname.startsWith('/workspaces/course_author')
-        ) {
+        if (window.location.pathname.startsWith('/workspaces/course_author')) {
           window.location.replace(
             `/workspaces/course_author/${project}/curriculum/${result.revision_slug}/edit`,
           );

@@ -133,15 +133,15 @@ Dependencies: Requires Phases 2 and 3 merged to avoid dead code; telemetry work 
 **Plan**
 
 1. **Products & Payments**
-   - [ ] Add workspace routes for product list/detail/payments/certificate settings under `/workspaces/course_author/:project_id/products/**` (tests partially updated; LiveViews still need full routing + redirects).
-   - [ ] Update LiveViews (`overview`, `products`, `remix`, etc.), components, and tests to rely on the new paths and breadcrumbs.
-   - [ ] Bring admin discount flows onto the shared workspace navigation while preserving role gating.
+   - [x] Add workspace routes for product list/detail/payments/certificate settings under `/workspaces/course_author/:project_id/products/**` (tests partially updated; LiveViews still need full routing + redirects).
+   - [x] Update LiveViews (`overview`, `products`, `remix`, etc.), components, and tests to rely on the new paths and breadcrumbs.
+   - [x] Bring admin discount flows onto the shared workspace navigation while preserving role gating.
 2. **Project Management Actions**
-   - [ ] Replace controller endpoints (`create`, `clone`, `enable_triggers`, CSV exports) with workspace-compatible routes or LiveView events.
-   - [ ] Update workspace UI (modals, buttons) and tests to use the new endpoints.
+   - [x] Replace controller endpoints (`create`, `clone`, `enable_triggers`, CSV exports) with workspace-compatible routes or LiveView events.
+   - [x] Update workspace UI (modals, buttons) and tests to use the new endpoints.
 3. **Cleanup**
-   - [ ] Remove unused `/authoring/**` routes, controllers, and tests once all callers use workspace equivalents.
-   - [ ] Re-run targeted suites (products, payments, projects, imports) to confirm parity.
+   - [x] Remove unused `/authoring/**` routes, controllers, and tests once all callers use workspace equivalents.
+   - [x] Re-run targeted suites (products, payments, projects, imports) to confirm parity.
 
 **Verification Checklist Before Handoff**
 
@@ -151,9 +151,9 @@ Dependencies: Requires Phases 2 and 3 merged to avoid dead code; telemetry work 
 ---
 
 
-## Current Status (2025-02-14)
+## Current Status (2025-11-04)
 
-- CertificatesIssuedTab now derives workspace download links from a safe project slug fallback and isolates the export link in component tests; LTI AGS reset coverage reflects the persisted-score behaviour.
-- Granted certificates controller and admin products suites exercise the workspace routes (search, tags, archived toggle) and are green; stray Python `__pycache__` cleaned.
-- `mix compile` runs without warnings and targeted suites (`test/oli_web/live/products_test.exs`, `test/oli_web/live/workspaces/course_author/products_live_test.exs`, `test/oli_web/live/payments_live_test.exs`, `test/oli_web/live/workspaces/course_author/overview_live_test.exs`, `test/oli_web/live/workspaces/course_author/curriculum_live_import_test.exs`) all pass to cover products, payments, projects, and imports.
-- Next steps: consider a full `mix test` sweep once remaining phase reviewers are ready, and keep monitoring workspace regressions as downstream teams update specs.
+- Legacy `/authoring/project` entry points are removed; `/workspaces/course_author/**` now owns the authoring router scope end-to-end.
+- The page editor slug-change redirect only targets the workspace prefix, preventing attempts to reload retired authoring URLs.
+- `mix clean && mix compile` completes without warnings and targeted suites (`test/oli_web/live/products_test.exs`, `test/oli_web/live/workspaces/course_author/products_live_test.exs`, `test/oli_web/live/payments_live_test.exs`, `test/oli_web/live/workspaces/course_author/overview_live_test.exs`, `test/oli_web/live/workspaces/course_author/curriculum_live_import_test.exs`) pass to cover products, payments, projects, and imports.
+- CertificatesIssuedTab download fallbacks, granted certificates controller flows, and admin products regression suites remain green from prior validation; continue to monitor for downstream spec updates.
