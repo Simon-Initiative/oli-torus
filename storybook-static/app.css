@@ -1394,6 +1394,10 @@ select {
   accent-color: #0D70FF;
 }
 
+.bg-Fill-Buttons-fill-primary-muted {
+  background-color: #DEECFF;
+}
+
 .dark .bg-Fill-Buttons-fill-primary-muted {
   background-color: #003179;
 }
@@ -4236,10 +4240,6 @@ select {
 
 .dark .accent-Specially-Tokens-Fill-fill-dot-message-bold {
   accent-color: #363B59;
-}
-
-.bg-Specially-Tokens-Fill-fill-dot-message-default {
-  background-color: #F2F9FF;
 }
 
 .dark .bg-Specially-Tokens-Fill-fill-dot-message-default {
