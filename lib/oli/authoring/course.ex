@@ -117,7 +117,7 @@ defmodule Oli.Authoring.Course do
          text_search,
          filters
        ) do
-    tag_ids = Map.get(filters, :tag_ids, [])
+    tag_ids = Map.get(filters, :tag_ids, []) || []
     visibility_filter = Map.get(filters, :visibility)
     published_filter = Map.get(filters, :published)
     status_filter_value = Map.get(filters, :status)
@@ -342,7 +342,7 @@ defmodule Oli.Authoring.Course do
        ) do
     owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
 
-    tag_ids = Map.get(filters, :tag_ids, [])
+    tag_ids = Map.get(filters, :tag_ids, []) || []
     visibility_filter = Map.get(filters, :visibility)
     published_filter = Map.get(filters, :published)
     status_filter_value = Map.get(filters, :status)
@@ -592,7 +592,7 @@ defmodule Oli.Authoring.Course do
          text_search,
          filters
        ) do
-    tag_ids = Map.get(filters, :tag_ids, [])
+    tag_ids = Map.get(filters, :tag_ids, []) || []
     visibility_filter = Map.get(filters, :visibility)
     published_filter = Map.get(filters, :published)
     status_filter_value = Map.get(filters, :status)
@@ -786,7 +786,7 @@ defmodule Oli.Authoring.Course do
        ) do
     owner_id = ProjectRole.role_id().owner
 
-    tag_ids = Map.get(filters, :tag_ids, [])
+    tag_ids = Map.get(filters, :tag_ids, []) || []
     visibility_filter = Map.get(filters, :visibility)
     published_filter = Map.get(filters, :published)
     status_filter_value = Map.get(filters, :status)
