@@ -308,32 +308,55 @@ defmodule OliWeb.DeliveryController do
       section ->
         students = Helpers.get_students(section, :context_learner)
 
+        base_headers = [
+          name: "Name",
+          email: "Email",
+          lms_id: "LMS ID",
+          last_interaction: "Last Interaction",
+          progress: "Progress (Pct)",
+          overall_proficiency: "Proficiency",
+          requires_payment: "Requires Payment",
+          status: "Status"
+        ]
+
+        headers =
+          if section.certificate_enabled,
+            do: base_headers ++ [certificate_status: "Certificate Status"],
+            else: base_headers
+
         contents =
           Enum.map(
             students,
-            &%{
-              status: Utils.parse_enrollment_status(&1.enrollment_status),
-              name: OliWeb.Common.Utils.name(&1),
-              email: &1.email,
-              lms_id: &1.sub,
-              last_interaction: &1.last_interaction,
-              progress: convert_to_percentage(&1),
-              overall_proficiency: &1.overall_proficiency,
-              requires_payment: Map.get(&1, :requires_payment, "N/A")
-            }
+            fn student ->
+              base_map = %{
+                name: OliWeb.Common.Utils.name(student),
+                email: student.email,
+                lms_id: student.sub,
+                last_interaction: student.last_interaction,
+                progress: convert_to_percentage(student),
+                overall_proficiency: student.overall_proficiency,
+                requires_payment: Map.get(student, :requires_payment, "N/A"),
+                status: Utils.parse_enrollment_status(student.enrollment_status)
+              }
+
+              if section.certificate_enabled,
+                do:
+                  Map.put(
+                    base_map,
+                    :certificate_status,
+                    Utils.parse_certificate_status(
+                      case Map.get(student, :certificate) do
+                        nil -> nil
+                        cert -> cert.state
+                      end
+                    )
+                  ),
+                else: base_map
+            end
           )
           |> sort_data()
           |> DataTable.new()
-          |> DataTable.headers(
-            status: "Status",
-            name: "Name",
-            email: "Email",
-            lms_id: "LMS ID",
-            last_interaction: "Last Interaction",
-            progress: "Progress (Pct)",
-            overall_proficiency: "Proficiency",
-            requires_payment: "Requires Payment"
-          )
+          |> DataTable.headers(headers)
           |> DataTable.to_csv_content()
 
         conn
