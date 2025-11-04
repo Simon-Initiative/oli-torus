@@ -345,7 +345,9 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     # Check if late submissions are disallowed (meaning we enforce the deadline)
     late_submit_disallowed = effective_settings.late_submit == :disallow
 
-    if late_submit_disallowed do
+    is_read_by = effective_settings.scheduling_type == :read_by
+
+    if late_submit_disallowed && !is_read_by do
       # Determine the effective deadline
       effective_end_time =
         Oli.Delivery.Settings.determine_effective_deadline(
