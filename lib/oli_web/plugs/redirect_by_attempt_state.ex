@@ -44,7 +44,8 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
 
     with false <- already_been_redirected?(conn),
          {true, current_user_id} <- user_already_authenticated?(conn),
-         {lesson_type, page_type, resource_id, is_attempt_review_path?} <- classify_request(conn),
+         {lesson_type, page_type, resource_id, is_attempt_review_path?, page_revision} <-
+           classify_request(conn),
          latest_resource_attempt <-
            maybe_get_resource_attempt(
              lesson_type,
@@ -58,7 +59,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
         case {lesson_type, latest_resource_attempt} do
           {:graded,
            %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active} = attempt} ->
-            attempt_has_expired?(attempt, section_slug, resource_id, current_user_id)
+            attempt_has_expired?(attempt, conn.assigns.section, page_revision, current_user_id)
 
           _ ->
             false
@@ -155,24 +156,30 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
           page_revision.content["displayApplicationChrome"]} do
       # Adaptive chromeless (fullscreen)
       {false, true, display_application_chrome} when display_application_chrome in [nil, false] ->
-        {:practice, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?}
+        {:practice, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
 
       {true, true, display_application_chrome} when display_application_chrome in [nil, false] ->
-        {:graded, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?}
+        {:graded, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
 
       # Adaptive with chrome
       {false, true, true} ->
-        {:practice, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?}
+        {:practice, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
 
       {true, true, true} ->
-        {:graded, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?}
+        {:graded, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
 
       # Not adaptive
       {false, _, _} ->
-        {:practice, :not_adaptive, page_revision.resource_id, is_attempt_review_path?}
+        {:practice, :not_adaptive, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
 
       {true, _, _} ->
-        {:graded, :not_adaptive, page_revision.resource_id, is_attempt_review_path?}
+        {:graded, :not_adaptive, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
     end
   end
 
@@ -326,21 +333,11 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     end
   end
 
-  defp attempt_has_expired?(resource_attempt, section_slug, resource_id, user_id) do
-    # Get the revision for this resource
-    revision =
-      Oli.Publishing.DeliveryResolver.from_resource_id(
-        section_slug,
-        resource_id
-      )
-
-    # Get the section
-    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
-
-    # Get the effective settings for this resource
+  defp attempt_has_expired?(resource_attempt, section, page_revision, user_id) do
+    # Get the effective settings for this resource (reusing already-loaded data)
     effective_settings =
       Oli.Delivery.Settings.get_combined_settings(
-        revision,
+        page_revision,
         section.id,
         user_id
       )
