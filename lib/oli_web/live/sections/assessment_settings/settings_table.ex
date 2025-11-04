@@ -150,7 +150,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
             id="assessments_search_input"
             name="assessment_name"
             text={@params.text_search}
-            class="!w-full"
           />
         </form>
       </div>
@@ -1127,14 +1126,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   defp get_valid_assessment_id([], _), do: nil
 
-  defp get_valid_assessment_id(assessments, nil) when assessments != [],
+  defp get_valid_assessment_id(assessments, nil),
     do: hd(assessments).resource_id
 
-  defp get_valid_assessment_id(assessments, id) do
-    if Enum.any?(assessments, fn a -> a.resource_id == id end) do
-      id
-    else
-      hd(assessments).resource_id
-    end
-  end
+  defp get_valid_assessment_id(_assessments, id), do: id
 end
