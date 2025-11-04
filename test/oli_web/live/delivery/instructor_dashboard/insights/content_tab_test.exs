@@ -8,7 +8,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Resources.ResourceType
   alias Oli.Seeder
+  alias OliWeb.Router.Helpers, as: Routes
 
   defp live_view_content_route(section_slug, params \\ %{}) do
     Routes.live_path(
@@ -775,6 +777,96 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
 
       assert unit_for_tr_2 =~ "Unit 2"
     end
+
+    test "clear_all_filters resets all filters to default values", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{section: section, page_1: page_1} = create_section_with_units_and_modules()
+
+      user_1 = insert(:user, %{given_name: "Diego", family_name: "Forlán"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.resource_id, user_1.id, 1, page_1.revision)
+
+      # Start with filters applied
+      params = %{
+        text_search: "Unit 1",
+        selected_card_value: "zero_student_progress",
+        progress_percentage: "50",
+        progress_selector: "is_equal_to",
+        container_filter_by: :modules
+      }
+
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      # Verify filters are applied
+      assert element(view, "#content_search_input-input") |> render() =~ ~s'value="Unit 1"'
+
+      # Click clear all filters
+      view
+      |> element("button[phx-click='clear_all_filters']")
+      |> render_click()
+
+      # Verify redirect happened - clear_all_filters preserves container_filter_by
+      assert_patch(view, live_view_content_route(section.slug, %{container_filter_by: :modules}))
+
+      # Verify search input is empty after reload
+      {:ok, view, _html} =
+        live(conn, live_view_content_route(section.slug, %{container_filter_by: :modules}))
+
+      refute element(view, "#content_search_input-input") |> render() =~ ~s'value="Unit 1"'
+    end
+
+    test "filter_container resets other filters when changing container type", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{section: section, page_1: page_1} = create_section_with_units_and_modules()
+
+      user_1 = insert(:user, %{given_name: "Diego", family_name: "Forlán"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.resource_id, user_1.id, 1, page_1.revision)
+
+      # Start with filters applied (text search, progress, card selection)
+      params = %{
+        text_search: "Unit 1",
+        selected_card_value: "zero_student_progress",
+        progress_percentage: "50",
+        progress_selector: "is_equal_to",
+        container_filter_by: :units
+      }
+
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      # Verify filters are applied
+      assert element(view, "#content_search_input-input") |> render() =~ ~s'value="Unit 1"'
+
+      # Click filter_modules_button to switch to modules
+      element(view, "#filter_modules_button") |> render_click()
+
+      # Verify redirect happened
+      assert_patch(view, live_view_content_route(section.slug, %{container_filter_by: :modules}))
+
+      # Reload view to verify filters were reset
+      {:ok, view, _html} =
+        live(conn, live_view_content_route(section.slug, %{container_filter_by: :modules}))
+
+      # Verify search input is empty (text_search was reset)
+      refute element(view, "#content_search_input-input") |> render() =~ ~s'value="Unit 1"'
+
+      # Verify modules are shown (container_filter_by was preserved)
+      assert button_has_class?(view, "filter_modules_button", "bg-Fill-Buttons-fill-primary")
+    end
   end
 
   defp set_progress(section_id, resource_id, user_id, progress, revision) do
@@ -806,5 +898,114 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
     |> List.first()
     |> to_string()
     |> String.contains?(expected_class)
+  end
+
+  defp create_section_with_units_and_modules() do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # Create pages
+    page_1_resource = insert(:resource)
+
+    page_1_revision =
+      insert(:revision, %{
+        resource: page_1_resource,
+        resource_type_id: ResourceType.id_for_page(),
+        title: "Page 1",
+        slug: "page_1",
+        content: %{"model" => []},
+        children: [],
+        objectives: %{},
+        deleted: false
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: page_1_resource.id})
+
+    # Create module 1
+    module_1_resource = insert(:resource)
+
+    module_1_revision =
+      insert(:revision, %{
+        resource: module_1_resource,
+        resource_type_id: ResourceType.id_for_container(),
+        title: "Module 1",
+        slug: "module_1",
+        content: %{},
+        children: [page_1_resource.id],
+        objectives: %{},
+        deleted: false
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: module_1_resource.id})
+
+    # Create unit 1
+    unit_1_resource = insert(:resource)
+
+    unit_1_revision =
+      insert(:revision, %{
+        resource: unit_1_resource,
+        resource_type_id: ResourceType.id_for_container(),
+        title: "Unit 1",
+        slug: "unit_1",
+        content: %{},
+        children: [module_1_resource.id],
+        objectives: %{},
+        deleted: false
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: unit_1_resource.id})
+
+    # Create root container
+    root_resource = insert(:resource)
+
+    root_revision =
+      insert(:revision, %{
+        resource: root_resource,
+        resource_type_id: ResourceType.id_for_container(),
+        title: "Curriculum",
+        slug: "root_container",
+        content: %{},
+        children: [unit_1_resource.id],
+        objectives: %{},
+        deleted: false
+      })
+
+    insert(:project_resource, %{project_id: project.id, resource_id: root_resource.id})
+
+    # Create publication
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: root_resource.id
+      })
+
+    # Publish all resources
+    [page_1_resource, module_1_resource, unit_1_resource, root_resource]
+    |> Enum.zip([page_1_revision, module_1_revision, unit_1_revision, root_revision])
+    |> Enum.each(fn {resource, revision} ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    # Create section
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    %{
+      section: section,
+      page_1: %{resource_id: page_1_resource.id, revision: page_1_revision}
+    }
   end
 end
