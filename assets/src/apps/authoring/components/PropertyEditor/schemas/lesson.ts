@@ -361,9 +361,15 @@ export const transformSchemaToModel = (schema: any) => {
     // most likely just empty string
   }
 
+  const responsiveLayout = schema.Properties.Appearance.responsiveLayout;
+  // When responsiveLayout is true, width is treated as maxWidth
+  const width = responsiveLayout
+    ? schema.Properties.Size.width || 1200 // Default to 1200px if not set
+    : schema.Properties.Size.width;
+
   return {
     custom: {
-      defaultScreenWidth: schema.Properties.Size.width,
+      defaultScreenWidth: width,
       defaultScreenHeight: schema.Properties.Size.height,
       enableHistory: schema.Properties.enableHistory,
       displayRefreshWarningPopup: schema.Properties.displayRefreshWarningPopup,
@@ -373,7 +379,7 @@ export const transformSchemaToModel = (schema: any) => {
       backgroundImageURL: schema.Properties.Appearance.backgroundImageURL,
       backgroundImageScaleContent: schema.Properties.Appearance.backgroundImageScaleContent,
       darkModeSetting: schema.Properties.Appearance.darkModeSetting,
-      responsiveLayout: schema.Properties.Appearance.responsiveLayout,
+      responsiveLayout,
       grid: schema.Properties.InterfaceSettings.grid,
       centerpoint: schema.Properties.InterfaceSettings.centerpoint,
       columnGuides: schema.Properties.InterfaceSettings.columnGuides,
@@ -385,6 +391,61 @@ export const transformSchemaToModel = (schema: any) => {
     customCss: schema.Properties.customCSS || '',
     customScript: schema.CustomLogic.customScript || '',
   };
+};
+
+export const getLessonSchema = (responsiveLayout: boolean): JSONSchema7 => {
+  if (!responsiveLayout) {
+    return lessonSchema;
+  }
+
+  // Create a new schema object with the modified width title
+  const schema: JSONSchema7 = {
+    ...lessonSchema,
+    properties: {
+      ...lessonSchema.properties,
+      Properties: {
+        ...(lessonSchema.properties as any).Properties,
+        properties: {
+          ...((lessonSchema.properties as any).Properties.properties || {}),
+          Size: {
+            ...((lessonSchema.properties as any).Properties.properties?.Size || {}),
+            properties: {
+              ...(((lessonSchema.properties as any).Properties.properties?.Size?.properties as any) || {}),
+              width: {
+                ...((((lessonSchema.properties as any).Properties.properties?.Size?.properties as any)?.width as any) || {}),
+                title: 'Max Width',
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+  return schema;
+};
+
+export const getLessonUiSchema = (responsiveLayout: boolean): UiSchema => {
+  if (!responsiveLayout) {
+    return lessonUiSchema;
+  }
+
+  // Create a new UI schema object preserving all function references and structure
+  // Only modify the width field title, keep everything else exactly as is
+  const PropertiesSchema = lessonUiSchema.Properties as any;
+  const uiSchema: UiSchema = {
+    Properties: {
+      ...PropertiesSchema,
+      Size: {
+        ...PropertiesSchema.Size,
+        width: {
+          ...PropertiesSchema.Size.width,
+          title: 'Max Width',
+        },
+      },
+    },
+    CustomLogic: lessonUiSchema.CustomLogic,
+  };
+  return uiSchema;
 };
 
 export default lessonSchema;
