@@ -17,6 +17,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   attr(:preview_mode, :boolean, default: false)
   attr(:view, :atom, default: nil)
   slot(:inner_block, required: true)
+  attr(:license, :map, default: nil)
 
   def main_layout(assigns) do
     ~H"""
@@ -33,10 +34,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
       <div class="relative flex-1 flex flex-col pt-4 pb-[60px]">
         {render_slot(@inner_block)}
-
-        <OliWeb.Components.Footer.delivery_footer license={
-          Map.get(assigns, :has_license) && assigns[:license]
-        } />
+        <OliWeb.Components.Footer.delivery_footer license={@license} />
       </div>
     </div>
     """
@@ -256,11 +254,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
+  attr(:license, :map, default: nil)
+
   def footer(assigns) do
     ~H"""
-    <OliWeb.Components.Footer.delivery_footer license={
-      Map.get(assigns, :has_license) && assigns[:license]
-    } />
+    <OliWeb.Components.Footer.delivery_footer license={@license} />
     """
   end
 end

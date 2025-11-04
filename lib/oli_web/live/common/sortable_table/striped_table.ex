@@ -92,7 +92,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
            :objectives_instructor_dashboard,
            :activities_instructor_dashboard
          ],
-         do: "row_#{row.resource_id}_#{assigns.index}",
+         do: "row_#{row.resource_id}",
          else: id_field(row, assigns.model)
 
     assigns = Map.merge(assigns, %{row: row, row_class: row_class, row_id: row_id})
@@ -153,7 +153,11 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
   def render(assigns) do
     ~H"""
-    <table class={"min-w-full border table-fixed " <> @additional_table_class}>
+    <table
+      id={"sortable-table-#{@model.data[:view_type]}-#{Ecto.UUID.generate()}"}
+      class={"min-w-full border table-fixed " <> @additional_table_class}
+      phx-hook="SyncChevronState"
+    >
       <thead class="sticky top-0 z-10">
         <tr>
           <%= for column_spec <- @model.column_specs do %>
@@ -221,7 +225,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
 
   defp render_details_row(assigns, row) do
     col_span = length(assigns.model.column_specs)
-    unique_id = "row_#{row.resource_id}_#{assigns.index}"
+    unique_id = "row_#{row.resource_id}"
 
     assigns = Map.merge(assigns, %{col_span: col_span, unique_id: unique_id, row: row})
 

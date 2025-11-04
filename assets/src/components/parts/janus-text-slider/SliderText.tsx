@@ -231,16 +231,36 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
     saveState({ sliderVal: sliderValue, userModified: true });
   };
 
+  const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const currentValue = Number((e.target as HTMLInputElement).value);
+    // Update ARIA attributes immediately for screen readers
+    if (sliderRef.current) {
+      sliderRef.current.setAttribute('aria-valuenow', currentValue.toString());
+      sliderRef.current.setAttribute(
+        'aria-valuetext',
+        `value: ${currentValue}, ${sliderOptionLabels?.[currentValue] || `${currentValue}`}`,
+      );
+    }
+  };
+
   const handleTickClick = (index: number) => {
     saveState({ sliderVal: index, userModified: true });
     setSliderValue(index);
+    // Update ARIA attributes immediately for screen readers
+    if (sliderRef.current) {
+      sliderRef.current.setAttribute('aria-valuenow', index.toString());
+      sliderRef.current.setAttribute(
+        'aria-valuetext',
+        `value: ${index}, ${sliderOptionLabels?.[index] || `${index}`}`,
+      );
+    }
   };
   const internalId = `${id}__slider`;
 
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
       {showLabel && (
-        <label className="input-label" htmlFor={internalId}>
+        <label id={`label-${internalId}`} className="input-label" htmlFor={internalId}>
           {label}
         </label>
       )}
@@ -256,7 +276,16 @@ const SliderText: React.FC<PartComponentProps<SliderTextModel>> = (props) => {
             step={1}
             value={sliderValue}
             onChange={handleChange}
+            onInput={handleInput}
             className="slider-track"
+            aria-labelledby={showLabel ? `label-${internalId}` : undefined}
+            aria-label={!showLabel ? 'Slider' : undefined}
+            aria-valuemin={minimum}
+            aria-valuemax={sliderOptionLabels?.length ? sliderOptionLabels?.length - 1 : 3}
+            aria-valuenow={sliderValue}
+            aria-valuetext={`value: ${sliderValue}, ${
+              sliderOptionLabels?.[sliderValue] || `${sliderValue}`
+            }`}
           />
 
           <div className="tick-container">

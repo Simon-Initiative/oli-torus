@@ -26,8 +26,8 @@ defmodule OliWeb.Common.CardListing do
                 <h5 class="card-title mb-1 !whitespace-normal" title={render_title_column(item)}>
                   {render_title_column(item)}
                 </h5>
-                <div class="max-h-12 overflow-y-auto break-words">
-                  <p class="card-text text-sm">{render_description(item)}</p>
+                <div class="fade-text">
+                  <p class="card-text text-sm text-Text-text-high">{render_description(item)}</p>
                 </div>
               </div>
               <div class="card-footer bg-transparent d-flex justify-content-between align-items-center border-0">

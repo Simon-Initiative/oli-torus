@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  labels:
+    app.kubernetes.io/component: app
+    app.kubernetes.io/name: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: app
+      app.kubernetes.io/name: app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: app
+        app.kubernetes.io/name: app
+    spec:
+      serviceAccountName: app
+      initContainers:
+        - name: release-setup
+          image: ghcr.io/simon-initiative/oli-torus:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: app-env
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              until /app/bin/oli eval "Oli.Release.setup"; do
+                echo "Release setup not ready yet; retrying in 5s..."
+                sleep 5
+              done
+      containers:
+        - name: app
+          image: ghcr.io/simon-initiative/oli-torus:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: app-env
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10

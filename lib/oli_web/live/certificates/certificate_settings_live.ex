@@ -304,6 +304,10 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     end
   end
 
+  def handle_info({:certificate_updated, certificate}, socket) do
+    {:noreply, assign(socket, certificate: certificate)}
+  end
+
   def handle_info({:put_flash, [type, message]}, socket) do
     {:noreply,
      socket

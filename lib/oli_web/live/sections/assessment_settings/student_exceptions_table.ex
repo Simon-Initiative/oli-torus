@@ -182,7 +182,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     ~H"""
     <.live_component
       id="student_available_date_modal"
-      title={if @selected_setting, do: "Available date for #{@selected_setting.user.name}"}
+      title={
+        if @selected_setting, do: "Available date for #{CommonUtils.name(@selected_setting.user)}"
+      }
       module={OliWeb.Components.LiveModal}
       on_confirm={
         JS.dispatch("submit", to: "#student-available-date-form")
@@ -225,7 +227,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     ~H"""
     <.live_component
       id="student_due_date_modal"
-      title={if @selected_setting, do: "Due date for #{@selected_setting.user.name}"}
+      title={if @selected_setting, do: "Due date for #{CommonUtils.name(@selected_setting.user)}"}
       module={OliWeb.Components.LiveModal}
       on_confirm={
         JS.dispatch("submit", to: "#student-due-date-form")
@@ -495,8 +497,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         student_options =
           socket.assigns.students
           |> Enum.reduce([], fn s, acc ->
-            if s.id in student_with_exceptions, do: acc, else: [{s.name, s.id}] ++ acc
+            if s.id in student_with_exceptions,
+              do: acc,
+              else: [{CommonUtils.name(s), s.id}] ++ acc
           end)
+          |> Enum.sort_by(&elem(&1, 0))
 
         {:noreply,
          assign(socket,
@@ -936,7 +941,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   defp sort_by(student_exceptions, sort_by, sort_order) do
     case sort_by do
       :student ->
-        Enum.sort_by(student_exceptions, fn se -> se.user.name end, sort_order)
+        Enum.sort_by(student_exceptions, fn se -> CommonUtils.name(se.user) end, sort_order)
 
       :available_date ->
         Enum.sort_by(student_exceptions, fn se -> se.start_date end, sort_order)

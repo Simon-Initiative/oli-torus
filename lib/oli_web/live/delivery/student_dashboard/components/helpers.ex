@@ -33,9 +33,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
       <div class="flex-1 flex flex-col">
         <div class="relative flex-1 flex flex-col pb-[60px]">
           {render_slot(@inner_block)}
-          <OliWeb.Components.Footer.delivery_footer license={
-            Map.get(assigns, :has_license) && assigns[:license]
-          } />
+          <OliWeb.Components.Footer.delivery_footer license={assigns[:license]} />
         </div>
       </div>
     </div>

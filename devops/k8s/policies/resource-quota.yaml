@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: preview-quota
+  namespace: ${PR_NAMESPACE}
+spec:
+  hard:
+    persistentvolumeclaims: "2"
+    requests.storage: 20Gi

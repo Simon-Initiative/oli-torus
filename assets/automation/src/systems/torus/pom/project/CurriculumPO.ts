@@ -1,113 +1,96 @@
-import { Utils } from '@core/Utils';
-import { Locator, Page, expect } from '@playwright/test';
+import { Verifier } from '@core/verify/Verifier';
+import { Locator, Page } from '@playwright/test';
 
 export class CurriculumPO {
-  private utils: Utils;
-  private basicPracticeButton: Locator;
-  private basicScoredButton: Locator;
-  private editPageLink: Locator;
-  private pageDropdownToggle: Locator;
-  private showDeleteModalButton: Locator;
-  private confirmDeleteButton: Locator;
-  private createUnitButton: Locator;
-  private unitLink: Locator;
-  private createModuleButton: Locator;
-  private firstPracticeButton: Locator;
-  private moduleLink: Locator;
+  private readonly basicPracticeButton: Locator;
+  private readonly basicScoredButton: Locator;
+  private readonly editPageLink: Locator;
+  private readonly deleteButton: Locator;
+  private readonly confirmDeleteButton: Locator;
+  private readonly creationSectionButton: Locator;
+  private readonly createUnitButton: Locator;
+  private readonly unitLink: Locator;
+  private readonly createModuleButton: Locator;
+  private readonly moduleLink: Locator;
+  private readonly dropdown: Locator;
 
-  constructor(private page: Page) {
-    this.utils = new Utils(page);
-    this.basicPracticeButton = this.page.getByRole('button', { name: 'Practice' }).first();
-    this.basicScoredButton = this.page.getByRole('button', { name: 'Scored' }).first();
-    this.editPageLink = this.page.getByRole('link', { name: 'Edit Page' });
-    this.pageDropdownToggle = this.page.locator('div.dropdown>button.btn.dropdown-toggle').first();
-    this.showDeleteModalButton = this.page.locator('button[role="show_delete_modal"]').first();
-    this.confirmDeleteButton = this.page.getByRole('button', { name: 'Delete Page' });
-    this.createUnitButton = this.page.getByRole('button', { name: 'Create a Unit' });
-    this.unitLink = this.page.getByRole('link', { name: 'Unit 1: Unit' });
-    this.createModuleButton = this.page.getByRole('button', { name: 'Create a Module' });
-    this.firstPracticeButton = this.page.getByRole('button', { name: 'Practice' }).first();
-    this.moduleLink = this.page.getByRole('link', { name: 'Module 1: Module' });
+  constructor(private readonly page: Page) {
+    this.basicPracticeButton = page.getByRole('button', { name: 'Practice' }).first();
+    this.basicScoredButton = page.getByRole('button', { name: 'Scored' }).first();
+    this.createUnitButton = page.getByRole('button', { name: 'Create a Unit' });
+    this.createModuleButton = page.getByRole('button', { name: 'Create a Module' });
+    this.confirmDeleteButton = page.getByRole('button', { name: 'Delete Page' });
+    this.creationSectionButton = page.getByRole('button', { name: 'Create a Section' });
+    this.editPageLink = page.getByRole('link', { name: 'Edit Page' });
+    this.unitLink = page.getByRole('link', { name: 'Unit 1: Unit' });
+    this.moduleLink = page.getByRole('link', { name: 'Module 1: Module' });
+    this.deleteButton = page.locator('button[role="show_delete_modal"]');
+    this.dropdown = page.locator('button.btn.dropdown-toggle');
   }
 
-  private async clickPracticeButton() {
-    await expect(this.basicPracticeButton).toBeVisible();
+  async clickBasicPracticeButton() {
     await this.basicPracticeButton.click();
+    await this.verifyPage();
   }
 
-  get create() {
-    return {
-      clickBasicPracticeButton: async () => await this.clickPracticeButton(),
-      clickBasicScoredButton: async () => await this.basicScoredButton.click(),
-      clickEditPageLink: async () => await this.editPageLink.click(),
-
-      unit: {
-        add: async () => {
-          await this.utils.sleep(1);
-          await expect(this.createUnitButton).toBeVisible();
-          await this.createUnitButton.click();
-
-          await expect(this.unitLink).toBeVisible();
-        },
-        open: async () => {
-          await expect(this.unitLink).toBeVisible();
-          await this.unitLink.click();
-          await this.utils.sleep();
-        },
-        addPracticePage: async () => {
-          await this.clickPracticeButton();
-        },
-      },
-
-      module: {
-        add: async () => {
-          await expect(this.createModuleButton).toBeVisible();
-          await this.createModuleButton.click();
-          await this.utils.sleep();
-        },
-        open: async () => {
-          await expect(this.moduleLink).toBeVisible();
-          await this.moduleLink.click();
-          await this.utils.sleep();
-        },
-        addPracticePage: async () => {
-          await this.clickPracticeButton();
-        },
-      },
-
-      practicePage: {
-        add: async () => {
-          await this.clickPracticeButton();
-        },
-      },
-    };
+  async clickBasicScoredButton() {
+    await this.basicScoredButton.click();
+    await this.verifyPage('New Assessment');
   }
 
-  get delete() {
-    return {
-      openPageDropdownMenu: async () => {
-        await this.pageDropdownToggle.click();
-      },
-      clickShowDeleteModalButton: async () => {
-        await this.showDeleteModalButton.click();
-      },
-      confirmDeletePage: async () => {
-        await this.confirmDeleteButton.click();
-      },
-    };
+  async clickCreateUnitButton() {
+    await this.createUnitButton.click();
+    await Verifier.expectIsVisible(this.unitLink);
   }
 
-  get verify() {
-    return {
-      unitIsVisible: async () => {
-        await expect(this.unitLink).toBeVisible();
-      },
-      moduleIsVisible: async () => {
-        await expect(this.moduleLink).toBeVisible();
-      },
-      practicePageIsVisible: async () => {
-        await expect(this.basicPracticeButton).toBeVisible();
-      },
-    };
+  async clickCreateModuleButton() {
+    await this.createModuleButton.click();
+    await Verifier.expectIsVisible(this.moduleLink);
+  }
+
+  async clickEditPageLink(name = 'New Page', edit = 'Edit Page') {
+    const link = this.createLocatorPage(name, edit);
+    await link.locator(this.editPageLink).click();
+  }
+
+  async clickEditUnitLink(name = 'Unit 1: Unit') {
+    const l = this.page.getByRole('link', { name });
+    await l.click();
+    await Verifier.expectIsVisible(this.createModuleButton);
+  }
+
+  async clickEditModuleLink() {
+    await this.moduleLink.click();
+    await Verifier.expectIsVisible(this.creationSectionButton);
+  }
+
+  async deletePage(name = 'New Page', edit = 'Edit Page') {
+    const page = this.createLocatorPage(name, edit);
+    const dropdown = page.locator(this.dropdown);
+    const deleteButton = page.locator(this.deleteButton);
+
+    await Verifier.expectIsVisible(dropdown);
+    await dropdown.click();
+    await deleteButton.click();
+    await Verifier.expectIsVisible(this.confirmDeleteButton);
+    await this.confirmDeleteButton.click();
+    await Verifier.expectIsHidden(page);
+  }
+
+  async hasContent(text: string) {
+    const l = this.page.getByText(text);
+    await Verifier.expectIsVisible(l);
+  }
+
+  private async verifyPage(name = 'New Page', edit = 'Edit Page') {
+    const l = this.createLocatorPage(name, edit);
+    await Verifier.expectIsVisible(l);
+  }
+
+  private createLocatorPage(name: string, edit: string) {
+    return this.page
+      .locator('div.curriculum-entry')
+      .filter({ has: this.page.locator(`span:has-text("${name}")`) })
+      .filter({ has: this.page.locator(`a:has-text("${edit}")`) });
   }
 }

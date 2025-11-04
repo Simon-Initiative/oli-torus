@@ -503,15 +503,17 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
         )
 
       # assert that we have the correct exceptions in the view
-      assert view
-             |> element("tbody > tr:first-child > td:first-child a")
-             |> render() =~
+      assert has_element?(
+               view,
+               "tbody td:first-child a",
                "#{user.family_name}, #{user.given_name}"
+             )
 
-      assert view
-             |> element("tbody > tr:nth-child(2) > td:first-child a")
-             |> render() =~
+      assert has_element?(
+               view,
+               "tbody td:first-child a",
                "#{user_2.family_name}, #{user_2.given_name}"
+             )
 
       # assert that we have the button to create a new exception
       assert has_element?(view, "a", "New Student Exception")

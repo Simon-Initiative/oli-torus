@@ -381,5 +381,66 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       ra = Oli.Delivery.Attempts.Core.get_resource_attempt_by(id: aa.resource_attempt_id)
       assert ra.lifecycle_state == :evaluated
     end
+
+    test "preserves file upload responses during manual scoring", %{
+      section: section,
+      attempt_1a: attempt_1a
+    } do
+      # Create a part attempt
+      part_attempt =
+        Oli.Delivery.Attempts.Core.get_latest_part_attempts(attempt_1a.attempt_guid)
+        |> List.first()
+
+      # Update the part attempt
+      file_upload_response = %{
+        "files" => [
+          %{
+            "name" => "test_file.pdf",
+            "url" => "https://example.com/test_file.pdf",
+            "size" => 1024
+          }
+        ],
+        "input" => "some text input"
+      }
+
+      {:ok, _} =
+        part_attempt
+        |> Ecto.Changeset.change(response: file_upload_response)
+        |> Oli.Repo.update()
+
+      results =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      attempt = Enum.find(results, fn a -> a.id == attempt_1a.id end)
+
+      # Apply manual scoring
+      {:ok, _} =
+        Oli.Delivery.Attempts.ManualGrading.apply_manual_scoring(
+          section,
+          attempt,
+          create_score_feedbacks(attempt)
+        )
+
+      # Verify that the response is preserved
+      updated_part_attempts =
+        Oli.Delivery.Attempts.Core.get_latest_part_attempts(attempt_1a.attempt_guid)
+
+      updated_part_attempt = List.first(updated_part_attempts)
+
+      # The response should match the original response
+      assert updated_part_attempt.response["files"] == file_upload_response["files"]
+      assert updated_part_attempt.response["input"] == file_upload_response["input"]
+    end
   end
 end

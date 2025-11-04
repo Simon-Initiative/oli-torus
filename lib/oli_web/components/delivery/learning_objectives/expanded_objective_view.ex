@@ -6,67 +6,168 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   alias Oli.Accounts
   alias OliWeb.Common.Utils
 
+  attr :unique_id, :string, required: true
   attr :objective, :map, required: true
   attr :section_id, :integer, required: true
   attr :section_slug, :string, required: true
   attr :current_user, :map, required: true
+  attr :sync_load, :boolean, default: false
+  attr :is_expanded, :boolean, default: false
 
   def mount(socket) do
-    {:ok, socket}
+    {:ok, assign(socket, loading: false)}
   end
 
   def update(assigns, socket) do
+    cond do
+      # Handle async data loading completion
+      Map.has_key?(assigns, :loaded_data) ->
+        loaded_data = assigns.loaded_data
+
+        {:ok,
+         socket
+         |> assign(loading: false)
+         |> assign(loaded_data)}
+
+      # Handle initial render or updates
+      true ->
+        handle_initial_update(assigns, socket)
+    end
+  end
+
+  defp handle_initial_update(assigns, socket) do
     %{
       objective: objective,
       section_id: section_id,
       section_slug: section_slug
     } = assigns
 
-    # Get all enrolled students in the section (excludes instructors)
-    all_student_ids = Oli.Delivery.Sections.enrolled_student_ids(section_slug)
+    objective_id = objective.resource_id
+    is_expanded = Map.get(assigns, :is_expanded, false)
+    has_loaded_data = not is_nil(socket.assigns[:estimated_students])
+    already_loading = Map.get(socket.assigns, :loading, false)
 
-    # Calculate real estimated students count based on enrolled students
-    estimated_students = length(all_student_ids)
+    # Check if we need to load data
+    # Load if: expanded AND NOT already loading AND (new objective OR no data loaded yet)
+    needs_loading =
+      is_expanded and
+        not already_loading and
+        (is_nil(socket.assigns[:objective_id]) or
+           socket.assigns[:objective_id] != objective_id or
+           not has_loaded_data)
 
-    # Fetch sub-objectives data for the main objective
-    sub_objectives_data = get_sub_objectives_data(section_id, section_slug, objective.resource_id)
+    if needs_loading do
+      # Get the unique_id and construct component_id before assigning
+      unique_id = assigns.unique_id
+      component_id = "expanded-objective-#{unique_id}"
 
-    # Calculate proficiency distribution for the main objective
-    proficiency_distribution =
-      section_id
-      |> Metrics.proficiency_per_student_for_objective([objective.resource_id])
-      |> calculate_proficiency_distribution_from_student_data(
-        objective.resource_id,
-        all_student_ids
-      )
+      # Check if synchronous loading is requested
+      sync_load = Map.get(assigns, :sync_load, false)
 
-    # Get individual student proficiency for the dot distribution chart
-    # Start with real proficiency data and add missing students to ensure consistency
-    student_proficiency =
-      section_id
-      |> Metrics.student_proficiency_for_objective(objective.resource_id)
-      |> retrieve_students_data()
-      |> add_missing_students_to_proficiency_data(
-        all_student_ids,
-        section_id,
-        objective.resource_id
-      )
+      if sync_load do
+        # Load synchronously
+        all_student_ids = Oli.Delivery.Sections.enrolled_student_ids(section_slug)
+        estimated_students = length(all_student_ids)
+        sub_objectives_data = get_sub_objectives_data(section_id, section_slug, objective_id)
 
-    socket =
-      socket
-      |> assign(assigns)
-      |> assign(
-        objective_id: objective.resource_id,
-        objective_title: objective.title,
-        estimated_students: estimated_students,
-        sub_objectives_data: sub_objectives_data,
-        student_proficiency: student_proficiency,
-        proficiency_distribution: proficiency_distribution,
-        unique_id: assigns[:unique_id] || "#{objective.resource_id}",
-        selected_proficiency_level: nil
-      )
+        proficiency_distribution =
+          section_id
+          |> Metrics.proficiency_per_student_for_objective([objective_id])
+          |> calculate_proficiency_distribution_from_student_data(
+            objective_id,
+            all_student_ids
+          )
 
-    {:ok, socket}
+        student_proficiency =
+          section_id
+          |> Metrics.student_proficiency_for_objective(objective_id)
+          |> retrieve_students_data()
+          |> add_missing_students_to_proficiency_data(
+            all_student_ids,
+            section_id,
+            objective_id
+          )
+
+        socket =
+          socket
+          |> assign(assigns)
+          |> assign(
+            loading: false,
+            objective_id: objective_id,
+            objective_title: objective.title,
+            selected_proficiency_level: nil,
+            estimated_students: estimated_students,
+            sub_objectives_data: sub_objectives_data,
+            student_proficiency: student_proficiency,
+            proficiency_distribution: proficiency_distribution
+          )
+
+        {:ok, socket}
+      else
+        # Load asynchronously (default behavior)
+        socket =
+          socket
+          |> assign(assigns)
+          |> assign(
+            loading: true,
+            objective_id: objective_id,
+            objective_title: objective.title,
+            selected_proficiency_level: nil
+          )
+
+        # Schedule async data loading
+        pid = self()
+
+        Task.start(fn ->
+          # Get all enrolled students in the section (excludes instructors)
+          all_student_ids = Oli.Delivery.Sections.enrolled_student_ids(section_slug)
+
+          # Calculate real estimated students count based on enrolled students
+          estimated_students = length(all_student_ids)
+
+          # Fetch sub-objectives data for the main objective
+          sub_objectives_data = get_sub_objectives_data(section_id, section_slug, objective_id)
+
+          # Calculate proficiency distribution for the main objective
+          proficiency_distribution =
+            section_id
+            |> Metrics.proficiency_per_student_for_objective([objective_id])
+            |> calculate_proficiency_distribution_from_student_data(
+              objective_id,
+              all_student_ids
+            )
+
+          # Get individual student proficiency for the dot distribution chart
+          # Start with real proficiency data and add missing students to ensure consistency
+          student_proficiency =
+            section_id
+            |> Metrics.student_proficiency_for_objective(objective_id)
+            |> retrieve_students_data()
+            |> add_missing_students_to_proficiency_data(
+              all_student_ids,
+              section_id,
+              objective_id
+            )
+
+          # Send message to parent process
+          send(
+            pid,
+            {__MODULE__, component_id,
+             %{
+               estimated_students: estimated_students,
+               sub_objectives_data: sub_objectives_data,
+               student_proficiency: student_proficiency,
+               proficiency_distribution: proficiency_distribution
+             }}
+          )
+        end)
+
+        {:ok, socket}
+      end
+    else
+      # Data already loaded, just update assigns
+      {:ok, assign(socket, assigns)}
+    end
   end
 
   def handle_event("show_students_list", %{"proficiency_level" => proficiency_level}, socket) do
@@ -78,52 +179,74 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
   end
 
   def render(assigns) do
+    # Safely check if data is loaded
+    has_data =
+      Map.has_key?(assigns, :estimated_students) and not is_nil(assigns.estimated_students)
+
+    assigns = assign(assigns, :has_data, has_data)
+
     ~H"""
     <div id={"expanded-objective-#{@unique_id}"} class="expanded-objective-view w-full">
-      <!-- Estimated Learning Header -->
-      <div class="mb-4">
-        <h3 class="text-lg font-medium text-Text-text-high">
-          Estimated Learning: {@estimated_students} {ngettext(
-            "Student",
-            "Students",
-            @estimated_students
-          )}
-        </h3>
-      </div>
-      
+      <%= cond do %>
+        <% @is_expanded and @loading -> %>
+          <!-- Loading Spinner - only show when expanded and loading -->
+          <div class="flex justify-center items-center py-8">
+            <span
+              class="spinner-border spinner-border-sm h-8 w-8 text-Text-text-button"
+              role="status"
+              aria-hidden="true"
+            >
+            </span>
+          </div>
+        <% @is_expanded and @has_data -> %>
+          <!-- Show content only when expanded AND data is loaded -->
+          <div class="mb-4">
+            <h3 class="text-lg font-medium text-Text-text-high">
+              Estimated Learning: {@estimated_students} {ngettext(
+                "Student",
+                "Students",
+                @estimated_students
+              )}
+            </h3>
+          </div>
+          
     <!-- Proficiency Distribution Dots Chart -->
-      <div class="mb-6">
-        {render_dots_chart(assigns)}
-      </div>
-      
+          <div class="mb-6">
+            {render_dots_chart(assigns)}
+          </div>
+          
     <!-- Student Proficiency List (when a level is selected) -->
-      <%= if @selected_proficiency_level do %>
-        <div class="mb-6">
-          <.live_component
-            module={OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList}
-            id={"student-proficiency-list-#{@unique_id}"}
-            selected_proficiency_level={@selected_proficiency_level}
-            student_proficiency={@student_proficiency}
-            section_slug={@section_slug}
-            section_title={@section_title}
-            instructor_email={@current_user.email}
-          />
-        </div>
-      <% end %>
-      
+          <%= if @selected_proficiency_level do %>
+            <div class="mb-6">
+              <.live_component
+                module={OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList}
+                id={"student-proficiency-list-#{@unique_id}"}
+                selected_proficiency_level={@selected_proficiency_level}
+                student_proficiency={@student_proficiency}
+                section_slug={@section_slug}
+                section_title={@section_title}
+                instructor_email={@current_user.email}
+              />
+            </div>
+          <% end %>
+          
     <!-- Sub-objectives Table (always shown) -->
-      <div id={"sub-objectives-list-container-#{@unique_id}"} class="mt-4">
-        <%= if @sub_objectives_data == [] do %>
-          No sub-objectives found
-        <% else %>
-          <.live_component
-            module={OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList}
-            id={"sub-objectives-list-#{@unique_id}"}
-            sub_objectives_data={@sub_objectives_data}
-            parent_unique_id={@unique_id}
-          />
-        <% end %>
-      </div>
+          <div id={"sub-objectives-list-container-#{@unique_id}"} class="mt-4">
+            <%= if @sub_objectives_data == [] do %>
+              No sub-objectives found
+            <% else %>
+              <.live_component
+                module={OliWeb.Components.Delivery.LearningObjectives.SubObjectivesList}
+                id={"sub-objectives-list-#{@unique_id}"}
+                sub_objectives_data={@sub_objectives_data}
+                parent_unique_id={@unique_id}
+              />
+            <% end %>
+          </div>
+        <% true -> %>
+          <!-- Not expanded or no data - show nothing (data remains cached) -->
+          <div></div>
+      <% end %>
     </div>
     """
   end

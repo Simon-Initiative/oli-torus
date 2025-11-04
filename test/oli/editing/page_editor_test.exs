@@ -504,7 +504,7 @@ defmodule Oli.EditingTest do
              ]
     end
 
-    test "construct_parent_references/1", %{
+    test "construct_parent_references/1 returns objectives with parentIds array", %{
       map: %{
         objective1: %{
           revision:
@@ -526,31 +526,81 @@ defmodule Oli.EditingTest do
         }
       }
     } do
-      assert [
-               %{
-                 id: subobjective2B_resource_id,
-                 parentId: objective2_resource_id,
-                 title: subobjective2B_title
-               },
-               %{
-                 id: subobjective12A_resource_id,
-                 parentId: objective1_resource_id,
-                 title: subobjective12A_title
-               },
-               %{
-                 id: subobjective12A_resource_id,
-                 parentId: objective2_resource_id,
-                 title: subobjective12A_title
-               },
-               %{id: objective2_resource_id, parentId: nil, title: objective2_title},
-               %{id: objective1_resource_id, parentId: nil, title: objective1_title}
-             ] ==
-               PageEditor.construct_parent_references([
-                 objective1,
-                 objective2,
-                 subobjective12A,
-                 subobjective2B
-               ])
+      result =
+        PageEditor.construct_parent_references([
+          objective1,
+          objective2,
+          subobjective12A,
+          subobjective2B
+        ])
+
+      # Verify we have exactly 4 objectives (no duplicates)
+      assert length(result) == 4
+
+      # Find each objective in the result
+      objective1_result = Enum.find(result, fn o -> o.id == objective1_resource_id end)
+      objective2_result = Enum.find(result, fn o -> o.id == objective2_resource_id end)
+      subobjective12A_result = Enum.find(result, fn o -> o.id == subobjective12A_resource_id end)
+      subobjective2B_result = Enum.find(result, fn o -> o.id == subobjective2B_resource_id end)
+
+      # Verify top-level objectives have nil parentIds
+      assert objective1_result.parentIds == nil
+      assert objective1_result.title == objective1_title
+
+      assert objective2_result.parentIds == nil
+      assert objective2_result.title == objective2_title
+
+      # Verify sub-objective with multiple parents has array of both parent ids
+      assert is_list(subobjective12A_result.parentIds)
+      assert length(subobjective12A_result.parentIds) == 2
+      assert objective1_resource_id in subobjective12A_result.parentIds
+      assert objective2_resource_id in subobjective12A_result.parentIds
+      assert subobjective12A_result.title == subobjective12A_title
+
+      # Verify sub-objective with single parent has array with one parent id
+      assert subobjective2B_result.parentIds == [objective2_resource_id]
+      assert subobjective2B_result.title == subobjective2B_title
+    end
+
+    test "construct_parent_references/1 does not create duplicate entries for sub-objectives with multiple parents",
+         %{
+           map: %{
+             objective1: %{revision: objective1},
+             objective2: %{revision: objective2},
+             subobjective12A: %{
+               revision: %Revision{resource_id: subobjective12A_resource_id} = subobjective12A
+             }
+           }
+         } do
+      result =
+        PageEditor.construct_parent_references([
+          objective1,
+          objective2,
+          subobjective12A
+        ])
+
+      # Count how many times subobjective12A appears in the result
+      subobjective12A_count =
+        Enum.count(result, fn o -> o.id == subobjective12A_resource_id end)
+
+      # Should appear exactly once, not twice (once per parent)
+      assert subobjective12A_count == 1
+    end
+
+    test "construct_parent_references/1 handles objectives with no parents", %{
+      map: %{
+        objective1: %{
+          revision:
+            %Revision{resource_id: objective1_resource_id, title: objective1_title} = objective1
+        }
+      }
+    } do
+      result = PageEditor.construct_parent_references([objective1])
+
+      assert length(result) == 1
+      assert hd(result).id == objective1_resource_id
+      assert hd(result).parentIds == nil
+      assert hd(result).title == objective1_title
     end
   end
 end

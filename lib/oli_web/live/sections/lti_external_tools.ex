@@ -235,7 +235,7 @@ defmodule OliWeb.Sections.LtiExternalToolsView do
         aria-expanded={"#{@tool.expanded}"}
       >
         <div class="text-lg font-semibold leading-normal flex items-center space-x-1">
-          <%= if @tool.deployment_status == :deleted do %>
+          <%= if @tool.deployment_status in [:deleted, :disabled] do %>
             <div class="relative group mr-2">
               <Icons.alert />
               <div class="absolute top-full left-0 mt-2 w-64 p-2 bg-white border rounded shadow-lg text-sm text-gray-500 font-normal hidden group-hover:block z-10">

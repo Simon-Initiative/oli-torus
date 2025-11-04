@@ -1,19 +1,20 @@
 import { defineConfig } from '@playwright/test';
-import dotenv from 'dotenv';
-import path from 'path';
+import * as dotenv from 'dotenv';
+import * as path from 'node:path';
 
-const pathResolver = path.resolve(__dirname, 'tests/resources/', 'login.env');
-dotenv.config({ path: pathResolver });
+const pathLoginEnv = path.resolve(__dirname, 'tests/resources/', 'login.env');
+const pathConfigEnv = path.resolve(__dirname, 'tests/resources/', 'config.env');
+dotenv.config({ path: [pathLoginEnv, pathConfigEnv] });
 
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  timeout: 120_000,
+  timeout: 60_000,
   expect: { timeout: 10_000 },
   testDir: './tests',
   /* Run tests in files in parallel */
-  fullyParallel: true,
+  fullyParallel: false,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
@@ -21,7 +22,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: [['html', { open: 'always' }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     launchOptions: {
@@ -31,14 +32,15 @@ export default defineConfig({
     baseURL: process.env.BASE_URL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: 'on',
+    screenshot: 'on',
   },
 
   /* Configure projects for major browsers */
   projects: [
     {
       name: 'Google Chrome',
-      use: { channel: 'chrome', viewport: null },
+      use: { channel: 'chrome', viewport: { width: 1920, height: 1080 } },
     },
 
     // {

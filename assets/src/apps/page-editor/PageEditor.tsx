@@ -110,13 +110,21 @@ function mapChildrenObjectives(
   objectives: Objective[],
 ): Immutable.Map<ResourceId, Immutable.List<Objective>> {
   return objectives.reduce((map, o) => {
-    if (o.parentId !== null) {
+    if (o.parentIds !== null && o.parentIds.length > 0) {
       let updatedMap = map;
-      if (o.parentId !== null && !map.has(o.parentId)) {
-        updatedMap = updatedMap.set(o.parentId, Immutable.List());
-      }
-      const appended = (updatedMap.get(o.parentId) as any).push(o);
-      return updatedMap.set(o.parentId, appended);
+      // Add this objective to each parent's children list
+      o.parentIds.forEach((parentId) => {
+        if (!updatedMap.has(parentId)) {
+          updatedMap = updatedMap.set(parentId, Immutable.List());
+        }
+        const currentList = updatedMap.get(parentId) as Immutable.List<Objective>;
+        // Check if objective is already in the list to avoid duplicates
+        if (!currentList.find((obj) => obj.id === o.id)) {
+          const appended = currentList.push(o);
+          updatedMap = updatedMap.set(parentId, appended);
+        }
+      });
+      return updatedMap;
     }
     return map;
   }, Immutable.Map<ResourceId, Immutable.List<Objective>>());

@@ -154,7 +154,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                 )
               )
 
-            next_attempt_number = attempt_count + 1
+            next_attempt_number = (max_attempt_number || 0) + 1
 
             if effective_settings.max_attempts > 0 and
                  effective_settings.max_attempts <= attempt_count do
