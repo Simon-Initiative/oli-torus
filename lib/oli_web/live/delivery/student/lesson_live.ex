@@ -1272,7 +1272,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         height: 100vh !important;
         margin: 0 !important;
         padding: 0 !important;
-        z-index: 999 !important;
+        z-index: 1000 !important;
       }
 
       .fullscreen-iframe {
