@@ -401,16 +401,16 @@ defmodule OliWeb.DeliveryControllerTest do
       assert Enum.count(students) == 8
 
       # CSV Student data
-      assert ["Five, Student", _, _, _, "100", "High", "N/A", "Enrolled", "Pending"] =
+      assert ["Five, Student", _, _, _, "100", "High", "N/A", "Enrolled", "In Progress"] =
                Enum.at(students, 0)
 
-      assert ["Four, Student", _, _, _, "33.03", "High", "N/A", "Enrolled", "Pending"] =
+      assert ["Four, Student", _, _, _, "33.03", "High", "N/A", "Enrolled", "In Progress"] =
                Enum.at(students, 1)
 
-      assert ["One, Student", _, _, _, "0", "Not enough data", "N/A", "Enrolled", "Earned"] =
+      assert ["One, Student", _, _, _, "0", "Not enough data", "N/A", "Enrolled", "Approved"] =
                Enum.at(students, 2)
 
-      assert ["Three, Student", _, _, _, "22.22", "Medium", "N/A", "Enrolled", "Pending"] =
+      assert ["Three, Student", _, _, _, "22.22", "Medium", "N/A", "Enrolled", "In Progress"] =
                Enum.at(students, 3)
 
       assert ["Two, Student", _, _, _, "11.11", "Low", "N/A", "Enrolled", "Denied"] =
@@ -425,7 +425,7 @@ defmodule OliWeb.DeliveryControllerTest do
                "Not enough data",
                "N/A",
                "Pending confirmation",
-               "Pending"
+               "In Progress"
              ] =
                Enum.at(students, 5)
 
@@ -438,11 +438,11 @@ defmodule OliWeb.DeliveryControllerTest do
                "Not enough data",
                "N/A",
                "Rejected invitation",
-               "Pending"
+               "In Progress"
              ] =
                Enum.at(students, 6)
 
-      assert ["Six, Student", _, _, _, "0", "Not enough data", "N/A", "Suspended", "Pending"] =
+      assert ["Six, Student", _, _, _, "0", "Not enough data", "N/A", "Suspended", "In Progress"] =
                Enum.at(students, 7)
     end
 
