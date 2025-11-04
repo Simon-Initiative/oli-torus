@@ -160,7 +160,7 @@ defmodule OliWeb.Products.DetailsView do
           </div>
           <div class="md:col-span-8">
             <.live_component
-              module={OliWeb.Components.ScopedFeatureFlagsComponent}
+              module={OliWeb.Components.ScopedFeatureToggleComponent}
               id="section_scoped_features"
               scopes={[:delivery, :both]}
               source_id={@product.id}
@@ -348,6 +348,11 @@ defmodule OliWeb.Products.DetailsView do
   def handle_info({:scoped_feature_error, feature_name, error_message}, socket) do
     message = "Failed to update feature '#{feature_name}': #{error_message}"
     {:noreply, put_flash(socket, :error, message)}
+  end
+
+  def handle_info({:scoped_feature_notice, type, message}, socket) do
+    level = if type == :error, do: :error, else: :info
+    {:noreply, put_flash(socket, level, message)}
   end
 
   defp ext(entry) do
