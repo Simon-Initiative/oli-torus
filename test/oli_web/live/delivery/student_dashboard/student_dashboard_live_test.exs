@@ -208,10 +208,11 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
       # Check that selected state classes are not present
       # The selected background class should not be present
       refute card_html_before =~ "bg-[#F2F9FF]"
+
       # The selected outline class should not be present (hover:outline-[#006CD9] is in base classes)
       refute String.contains?(card_html_before, "outline-[#006CD9]") and
                not String.contains?(card_html_before, "hover:outline-[#006CD9]")
-      
+
       # Verify default outline is present instead
       assert card_html_before =~ "outline-gray-300"
 
