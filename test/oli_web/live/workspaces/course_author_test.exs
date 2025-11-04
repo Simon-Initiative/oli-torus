@@ -69,24 +69,35 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     end
 
     test "applies paging", %{conn: conn, author: author} do
-      [first_p | tail] =
-        1..26
-        |> Enum.map(fn _ -> create_project_with_owner(author) end)
-        |> Enum.sort_by(& &1.title)
+      first_project =
+        create_project_with_owner(author, %{
+          title: "First Project",
+          inserted_at: project_yesterday()
+        })
 
-      last_p = List.last(tail)
+      last_project =
+        create_project_with_owner(author, %{
+          title: "Last Project",
+          inserted_at: project_tomorrow()
+        })
+
+      now = DateTime.utc_now()
+
+      Enum.each(1..25, fn _ ->
+        create_project_with_owner(author, %{inserted_at: now})
+      end)
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
-      assert has_element?(view, "##{first_p.id}")
-      refute has_element?(view, "##{last_p.id}")
+      assert has_element?(view, "##{last_project.id}")
+      refute has_element?(view, "##{first_project.id}")
 
       view
-      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
-      |> render_click()
+      |> element("#projects-table button[phx-click='paged_table_page_change']", "2")
+      |> render_click(%{"limit" => "20", "offset" => "20"})
 
-      refute has_element?(view, "##{first_p.id}")
-      assert has_element?(view, "##{last_p.id}")
+      refute has_element?(view, "##{last_project.id}")
+      assert has_element?(view, "##{first_project.id}")
     end
 
     test "applies sorting", %{conn: conn, author: author} do
@@ -95,14 +106,18 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
+      view
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click(%{"sort_by" => "title"})
+
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing A"
 
       view
-      |> element("th[phx-click='paged_table_sort']:first-of-type")
-      |> render_click(%{sort_by: "title"})
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click(%{"sort_by" => "title"})
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -190,20 +205,35 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     end
 
     test "applies paging", %{conn: conn} do
-      [first_p | tail] = insert_list(26, :project) |> Enum.sort_by(& &1.title)
-      last_p = List.last(tail)
+      first_project =
+        insert(:project, %{
+          title: "First Project",
+          inserted_at: project_yesterday()
+        })
+
+      last_project =
+        insert(:project, %{
+          title: "Last Project",
+          inserted_at: project_tomorrow()
+        })
+
+      now = DateTime.utc_now()
+
+      Enum.each(1..25, fn _ ->
+        insert(:project, inserted_at: now)
+      end)
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
-      assert has_element?(view, "##{first_p.id}")
-      refute has_element?(view, "##{last_p.id}")
+      assert has_element?(view, "##{last_project.id}")
+      refute has_element?(view, "##{first_project.id}")
 
       view
-      |> element("#header_paging button[phx-click='paged_table_page_change']", "2")
-      |> render_click()
+      |> element("#projects-table button[phx-click='paged_table_page_change']", "2")
+      |> render_click(%{"limit" => "20", "offset" => "20"})
 
-      refute has_element?(view, "##{first_p.id}")
-      assert has_element?(view, "##{last_p.id}")
+      refute has_element?(view, "##{last_project.id}")
+      assert has_element?(view, "##{first_project.id}")
     end
 
     test "applies sorting", %{conn: conn} do
@@ -212,14 +242,18 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
+      view
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click(%{"sort_by" => "title"})
+
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing A"
 
       view
-      |> element("th[phx-click='paged_table_sort']:first-of-type")
-      |> render_click(%{sort_by: "title"})
+      |> element("th[phx-click='paged_table_sort'][phx-value-sort_by='title']")
+      |> render_click(%{"sort_by" => "title"})
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -444,6 +478,14 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       assert has_element?(view, "button", "By Page")
       assert has_element?(view, "button", "By Objective")
     end
+  end
+
+  defp project_yesterday do
+    DateTime.add(DateTime.utc_now(), -86_400, :second)
+  end
+
+  defp project_tomorrow do
+    DateTime.add(DateTime.utc_now(), 86_400, :second)
   end
 
   defp create_project_with_owner(owner, attrs \\ %{}) do

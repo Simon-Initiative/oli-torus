@@ -761,10 +761,10 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         |> hd()
 
       assert resource_attempt.lifecycle_state == :active
-      assert latest_activity_attempt.attempt_guid == activity_attempt.attempt_guid
-      assert latest_part_attempt.attempt_guid == updated_part_attempt.attempt_guid
-      assert latest_part_attempt.score == updated_part_attempt.score
-      assert latest_part_attempt.out_of == updated_part_attempt.out_of
+      refute latest_activity_attempt.attempt_guid == activity_attempt.attempt_guid
+      refute latest_part_attempt.attempt_guid == updated_part_attempt.attempt_guid
+      assert is_nil(latest_part_attempt.score)
+      assert is_nil(latest_part_attempt.out_of)
     end
 
     @tag capture_log: true

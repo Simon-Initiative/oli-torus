@@ -138,36 +138,46 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLiveTest do
       |> element("form[phx-change=\"text_search_change\"]")
       |> render_change(%{"project_name" => "se"})
 
+      html = render(view)
       rows = view_assigns(view).table_model.rows
       assert Enum.any?(rows, &(&1.id == project.id))
       assert Enum.any?(rows, &(&1.id == other_project.id))
-      refute render(view) =~ "search-highlight"
+      assert has_element?(view, "a", "Searchable Project")
+      assert has_element?(view, "a", "Other Listing")
+      refute html =~ "search-highlight"
 
       view
       |> element("form[phx-change=\"text_search_change\"]")
       |> render_change(%{"project_name" => "search"})
 
+      html = render(view)
       rows = view_assigns(view).table_model.rows
       assert Enum.any?(rows, &(&1.id == project.id))
       refute Enum.any?(rows, &(&1.id == other_project.id))
-      assert render(view) =~ "search-highlight"
+      assert has_element?(view, "span.search-highlight", "Search")
+      refute html =~ other_project.title
+      assert html =~ "search-highlight"
 
       view
       |> element("form[phx-change=\"text_search_change\"]")
       |> render_change(%{"project_name" => ""})
 
+      html = render(view)
       rows = view_assigns(view).table_model.rows
       assert Enum.any?(rows, &(&1.id == project.id))
       assert Enum.any?(rows, &(&1.id == other_project.id))
-      refute render(view) =~ "search-highlight"
+      assert has_element?(view, "a", "Searchable Project")
+      assert has_element?(view, "a", "Other Listing")
+      refute html =~ "search-highlight"
 
       view
       |> element("form[phx-change=\"text_search_change\"]")
       |> render_change(%{"project_name" => admin.email})
 
+      html = render(view)
       rows = view_assigns(view).table_model.rows
       assert Enum.any?(rows, &(&1.id == project.id))
-      assert render(view) =~ admin.email
+      assert html =~ admin.email
     end
 
     test "shows filter indicator when filters are active", %{conn: conn} do
@@ -383,7 +393,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLiveTest do
   end
 
   defp create_project_with_owner(author, attrs \\ %{}) do
-    insert(:project, Map.merge(%{authors: [author]}, attrs))
+    project = insert(:project, attrs)
+    insert(:author_project, project_id: project.id, author_id: author.id)
+    project
   end
 
   defp set_project_timezone(%{conn: conn}) do
