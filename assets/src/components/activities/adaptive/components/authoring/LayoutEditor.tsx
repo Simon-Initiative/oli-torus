@@ -159,9 +159,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         ...decorateModelWithDragWidthHeight(part.id, part.custom),
         // In responsive mode, set width to 100% for all parts EXCEPT images with only lockAspectRatio
         // Images with only lockAspectRatio keep original width to maintain aspect ratio
-        width: isResponsive && !isImageWithOnlyLockAspectRatio
-          ? '100%'
-          : part.custom.width,
+        width: isResponsive && !isImageWithOnlyLockAspectRatio ? '100%' : part.custom.width,
         // Preserve original x & y positions in the model (they will be ignored in rendering)
         x: part.custom.x || 0,
         y: part.custom.y || 0,
