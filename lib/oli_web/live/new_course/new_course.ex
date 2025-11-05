@@ -362,6 +362,7 @@ defmodule OliWeb.Delivery.NewCourse do
           section
       end
       |> convert_dates(socket.assigns.ctx)
+      |> Map.put_new("timezone", Ecto.Changeset.get_field(socket.assigns.changeset, :timezone))
 
     changeset =
       socket.assigns.changeset
