@@ -85,13 +85,19 @@ defmodule OliWeb.Components.FilterPanel do
     <div id={@id} class="relative flex items-center gap-4">
       <button
         class={[
-          "ml-2 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-1 rounded px-2 py-1.5 transition-colors hover:text-Text-text-button",
-          if(@active_count > 0, do: "bg-Fill-Buttons-fill-primary-muted", else: "")
+          "ml-2 text-center text-sm font-normal leading-none flex items-center gap-x-1 rounded px-2 py-1.5 transition-colors hover:text-Text-text-button",
+          if(@filter_panel_open, do: "text-Text-text-button", else: "text-Text-text-high"),
+          if(@active_count > 0 or @filter_panel_open,
+            do: "bg-Fill-Buttons-fill-primary-muted",
+            else: ""
+          )
         ]}
         phx-click={JS.toggle(to: "##{@id}-panel") |> JS.push("toggle_filters", target: @myself)}
         type="button"
       >
-        <Icons.filter class="stroke-Text-text-high" />
+        <Icons.filter class={
+          if(@filter_panel_open, do: "stroke-Text-text-button", else: "stroke-Text-text-high")
+        } />
         <span>Filter</span>
         <span
           :if={@active_count > 0}
