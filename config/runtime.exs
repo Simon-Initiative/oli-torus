@@ -23,6 +23,23 @@ get_env_as_integer = fn key, default ->
   |> String.to_integer()
 end
 
+runtime_env =
+  case System.get_env("MIX_ENV") do
+    nil ->
+      config_env()
+
+    env ->
+      env
+      |> String.trim()
+      |> String.downcase()
+      |> case do
+        "prod" -> :prod
+        "dev" -> :dev
+        "test" -> :test
+        _ -> config_env()
+      end
+  end
+
 # Appsignal client key is required for appsignal integration
 config :appsignal, :client_key, System.get_env("APPSIGNAL_PUSH_API_KEY", nil)
 
@@ -83,10 +100,23 @@ config :oli, :certificates,
   generate_pdf_lambda: System.get_env("CERTIFICATES_GENERATE_PDF_LAMBDA", "generate-certificate"),
   s3_pdf_bucket: System.get_env("CERTIFICATES_S3_PDF_URL", "torus-pdf-certificates")
 
+if runtime_env != :test do
+  config :ex_aws, :s3,
+    region: [{:system, "AWS_S3_REGION"}, {:system, "AWS_REGION"}, "us-east-1"],
+    access_key_id: [{:system, "AWS_S3_ACCESS_KEY_ID"}, {:system, "AWS_ACCESS_KEY_ID"}],
+    secret_access_key: [{:system, "AWS_S3_SECRET_ACCESS_KEY"}, {:system, "AWS_SECRET_ACCESS_KEY"}],
+    scheme: System.get_env("AWS_S3_SCHEME", "https") <> "://",
+    port: System.get_env("AWS_S3_PORT", "443") |> String.to_integer(),
+    host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
+end
+
+force_ssl_default = if runtime_env == :prod, do: "true", else: "false"
+config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", force_ssl_default)
+
 ####################### Production-only configurations ########################
 ## Note: These configurations are only applied in production
 ###############################################################################
-if config_env() == :prod do
+if runtime_env == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -111,14 +141,6 @@ if config_env() == :prod do
     queue_interval: String.to_integer(System.get_env("DB_QUEUE_INTERVAL") || "1000"),
     ownership_timeout: 600_000,
     socket_options: maybe_ipv6
-
-  config :ex_aws, :s3,
-    region: System.get_env("AWS_REGION", "us-east-1"),
-    access_key_id: [{:system, "AWS_S3_ACCESS_KEY_ID"}, {:system, "AWS_ACCESS_KEY_ID"}],
-    secret_access_key: [{:system, "AWS_S3_SECRET_ACCESS_KEY"}, {:system, "AWS_SECRET_ACCESS_KEY"}],
-    scheme: System.get_env("AWS_S3_SCHEME", "https") <> "://",
-    port: System.get_env("AWS_S3_PORT", "443") |> String.to_integer(),
-    host: System.get_env("AWS_S3_HOST", "s3.amazonaws.com")
 
   secret_key_base =
     System.get_env("SECRET_KEY_BASE") ||
@@ -369,8 +391,6 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base,
     live_view: [signing_salt: live_view_salt]
-
-  config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", "true")
 
   if System.get_env("SSL_CERT_PATH") && System.get_env("SSL_KEY_PATH") do
     config :oli, OliWeb.Endpoint,
