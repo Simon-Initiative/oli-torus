@@ -431,6 +431,17 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
     {:noreply, socket}
   end
 
+  @impl Phoenix.LiveView
+  def handle_info({:selected_card_containers, value}, socket) do
+    params = Map.merge(socket.assigns.params, %{"selected_card_value" => value})
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/student_dashboard/#{socket.assigns.student.id}/content?#{params}"
+     )}
+  end
+
   def handle_info(_any, socket) do
     {:noreply, socket}
   end
