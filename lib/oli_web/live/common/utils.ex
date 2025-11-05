@@ -7,6 +7,14 @@ defmodule OliWeb.Common.Utils do
 
   require Logger
 
+  def name_and_email(%User{email: email} = user) when email in ["", nil] do
+    name(user)
+  end
+
+  def name_and_email(%User{} = user) do
+    "#{name(user)} (#{user.email})"
+  end
+
   def name(%User{guest: true}) do
     "Guest Student"
   end
