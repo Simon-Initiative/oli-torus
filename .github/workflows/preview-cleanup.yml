@@ -11,6 +11,7 @@ on:
 
 jobs:
   cleanup:
+    name: Preview Cleanup
     runs-on: plasma
     env:
       PREVIEW_SLUG: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || inputs.preview_id }}

@@ -12,7 +12,7 @@ defmodule OliWeb.Products.DetailsViewTest.ScopedFeatures do
 
       # Should show the Feature Flags section
       assert has_element?(view, "h4", "Feature Flags")
-      assert has_element?(view, "div.scoped-feature-flags-component")
+      assert has_element?(view, "div.scoped-feature-toggle-component")
     end
 
     test "redirects non-admin users to unauthorized page", %{section: section} do
@@ -79,7 +79,7 @@ defmodule OliWeb.Products.DetailsViewTest.ScopedFeatures do
       {:ok, view, _html} = live(conn, ~p"/authoring/products/#{section.slug}")
 
       # Should not show authoring-only features like mcp_authoring
-      refute has_element?(view, "td", "mcp_authoring")
+      refute has_element?(view, "h4", "Mcp authoring")
     end
   end
 

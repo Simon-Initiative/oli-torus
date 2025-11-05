@@ -14,6 +14,40 @@ This directory contains the infrastructure assets that support the k3s-based pre
 - `devops/scripts/apply-preview-policies.sh` – Creates/updates a PR namespace and applies quota and network policy manifests (requires `PR_NAMESPACE` argument).
 - `devops/scripts/smoke-test-preview.sh` – Simple curl-based probe runner for verifying preview endpoints locally or in CI.
 
+### Manually updating preview environment config
+
+Use these steps to adjust application environment variables for an existing preview deployment when you have shell access to the cluster host:
+
+1. Ensure the repository (and this directory) is present on the host so you can reuse the baseline files in `devops/`.
+2. Set helpers for the namespace and domain you are updating (replace the slug/domain with your target):
+   ```bash
+   export PREVIEW_SLUG=pr-123
+   export PREVIEW_DOMAIN=plasma.oli.cmu.edu
+   export PREVIEW_HOST="${PREVIEW_SLUG}.${PREVIEW_DOMAIN}"
+   ```
+3. Build a complete environment file. Start from the default template so required keys exist, then append overrides:
+   ```bash
+   cd /path/to/oli-torus
+   HOST="${PREVIEW_HOST}" envsubst < devops/default.env > /tmp/app.env
+   cat <<'EOF' >> /tmp/app.env
+   MY_FEATURE_FLAG=true
+   OTHER_SECRET=value
+   EOF
+   ```
+4. Apply the updated secret in place; name stability is required because the kustomize generator disables suffix hashes:
+   ```bash
+   kubectl create secret generic app-env \
+     --from-env-file=/tmp/app.env \
+     --dry-run=client -o yaml \
+   | kubectl -n "${PREVIEW_SLUG}" apply -f -
+   ```
+5. Restart the application deployment and wait for rollout completion so pods pick up the new environment:
+   ```bash
+   kubectl -n "${PREVIEW_SLUG}" rollout restart deployment/app
+   kubectl -n "${PREVIEW_SLUG}" rollout status deployment/app --timeout=5m
+   ```
+6. Optionally run `devops/scripts/smoke-test-preview.sh "https://${PREVIEW_HOST}"` (or your own checks) to verify behaviour after the update.
+
 ## k3s Installation Checklist
 
 Perform these steps on each Amazon Linux 2023 host before joining it to the cluster:

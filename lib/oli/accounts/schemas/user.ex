@@ -46,6 +46,7 @@ defmodule Oli.Accounts.User do
     field :age_verified, :boolean
 
     field :hidden, :boolean, default: false
+    field :is_internal, :boolean, default: false
 
     has_many :user_identities,
              Oli.AssentAuth.UserIdentity,
@@ -398,7 +399,8 @@ defmodule Oli.Accounts.User do
       :can_create_sections,
       :age_verified,
       :lti_institution_id,
-      :hidden
+      :hidden,
+      :is_internal
     ])
     |> cast_embed(:preferences)
     |> common_name_validations()
