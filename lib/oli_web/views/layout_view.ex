@@ -168,7 +168,7 @@ defmodule OliWeb.LayoutView do
             alt="Common Creative Logo"
           />
         </a>
-        <p>
+        <p class="text-[10px] sm:text-xs">
           Unless otherwise noted this work is licensed under a Creative Commons{@cc_text} 4.0 Unported License.
         </p>
       </div>

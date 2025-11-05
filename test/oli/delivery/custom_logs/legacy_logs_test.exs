@@ -161,8 +161,10 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogsTest do
 
   defp prep_pipeline(map) do
     # Allow the pipeline to receive events
+    previous_env = Application.get_env(:oli, :xapi_upload_pipeline, [])
+
     env =
-      Application.get_env(:oli, :xapi_upload_pipeline)
+      previous_env
       |> Keyword.put(:suppress_event_emitting, false)
       |> Keyword.put(:uploader_module, Oli.Analytics.XAPI.LocalFileUploader)
 
@@ -179,6 +181,7 @@ defmodule Oli.Delivery.CustomLogs.LegacyLogsTest do
 
     on_exit(fn ->
       File.rm_rf!(xapi_output)
+      Application.put_env(:oli, :xapi_upload_pipeline, previous_env)
     end)
 
     map

@@ -262,7 +262,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     let customClasses = currentActivity.content?.custom?.customCssClass || '';
 
     if (currentActivityTree.length) {
-      customClasses = `${customClasses} ${getCustomClassAncestry()}`;
+      customClasses = `${customClasses} ${getCustomClassAncestry()} ${
+        responsiveLayout ? 'responsive-layout-section' : ''
+      }`;
     }
     setActivityClasses([...defaultClasses, customClasses]);
     if (fieldRef.current) {
@@ -646,7 +648,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       styles.zIndex = config.z || 0;
     }
     if (config?.height) {
-      styles.height = config.height;
+      styles.height = responsiveLayout ? 'auto' : config.height;
     }
 
     // attempts are being constantly updated, if we are not careful it will re-render the activity

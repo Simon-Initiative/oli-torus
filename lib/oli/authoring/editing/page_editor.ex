@@ -566,11 +566,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # %{
   #   id: the slug of the objective
   #   title: the title of the objective
-  #   parentId: the id of the parent objective, nil if no parent objective
+  #   parentIds: a list of parent objective ids, nil if no parent objectives
   # }
   #
-  # Take into account that more than one entry with the same id could be present, as the sub
-  # objectives can have more than one parent.
+  # Note: This function returns a unique entry per objective, with parentIds as a list
+  # to support sub-objectives that have multiple parents.
   #
   def construct_parent_references(revisions) do
     # create a map of ids to their parent ids
@@ -584,30 +584,16 @@ defmodule Oli.Authoring.Editing.PageEditor do
         end)
       end)
 
-    # now just transform the revision list to pair it down to including
-    # id, title, and the new parent_id
-    Enum.reduce(revisions, [], fn revision, result ->
-      case Map.get(parents, revision.resource_id) do
-        nil ->
-          concatenate_to_revision_parent_result(revision, nil, result)
+    # Transform the revision list to include id, title, and parentIds (as a list or nil)
+    Enum.map(revisions, fn revision ->
+      parent_ids = Map.get(parents, revision.resource_id)
 
-        parents ->
-          Enum.reduce(parents, result, fn parent_id, result ->
-            concatenate_to_revision_parent_result(revision, parent_id, result)
-          end)
-      end
-    end)
-  end
-
-  defp concatenate_to_revision_parent_result(revision, parent_id, result) do
-    [
       %{
         id: revision.resource_id,
         title: revision.title,
-        parentId: parent_id
+        parentIds: parent_ids
       }
-      | result
-    ]
+    end)
   end
 
   # Retrieve the latest (current) revision for a resource given the

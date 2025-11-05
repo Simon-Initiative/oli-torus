@@ -4,36 +4,27 @@ on:
   pull_request:
     types: [closed]
   workflow_dispatch:
+    inputs:
+      preview_id:
+        description: "Preview identifier (namespace to delete)"
+        required: true
 
 jobs:
   cleanup:
-    name: Cleanup Preview
+    name: Preview Cleanup
     runs-on: plasma
+    env:
+      PREVIEW_SLUG: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || inputs.preview_id }}
+      IS_PR: ${{ github.event_name == 'pull_request' }}
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
     steps:
-      - name: 🧹 Cleanup Preview Deployment
-        run: |
-          export DEPLOYMENT=$(echo ${{ github.event_name == 'workflow_dispatch' && format('{0}', github.ref_name) || format('pr{0}', github.event.number) }} | tr '/#?' '-' | cut -c1-32)
+      - uses: actions/checkout@v4
 
-          echo "Cleaning up preview deployment: $DEPLOYMENT"
+      - name: Delete namespace
+        run: kubectl delete namespace "${PREVIEW_SLUG}" --ignore-not-found --wait=false
 
-          # Primary cleanup - this should handle most cases
-          if docker-compose -p $DEPLOYMENT -f devops/docker-compose.yml down -v; then
-            echo "Docker compose cleanup successful"
-          else
-            echo "Docker compose cleanup failed, performing manual cleanup..."
-
-            # Fallback cleanup for edge cases
-            docker ps -a --filter "name=$DEPLOYMENT" -q | xargs -r docker rm -f || true
-            docker network ls --filter "name=$DEPLOYMENT" -q | xargs -r docker network rm || true
-            docker volume ls --filter "name=$DEPLOYMENT" -q | xargs -r docker volume rm || true
-          fi
-
-          echo "Cleanup completed for $DEPLOYMENT"
-
-      - name: 💬 Post cleanup notification
-        if: github.event_name == 'pull_request'
-        uses: peter-evans/create-or-update-comment@v3
+      - name: Remove preview comment
+        if: env.IS_PR == 'true'
+        uses: marocchino/sticky-pull-request-comment@v2
         with:
-          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
-          issue-number: ${{ github.event.number }}
-          body: "🧹 Preview deployment has been cleaned up."
+          delete: true

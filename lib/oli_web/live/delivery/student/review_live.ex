@@ -156,7 +156,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
   def render(assigns) do
     ~H"""
-    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+    <div class="flex flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <div class="w-full h-[120px] lg:px-20 px-40 py-9 bg-blue-600 bg-opacity-10 flex flex-col justify-center items-center gap-2.5">
           <div class="px-3 py-1.5 rounded justify-start items-start gap-2.5 flex">
