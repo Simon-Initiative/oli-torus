@@ -219,10 +219,16 @@ defmodule Oli.Delivery.Sections.Blueprint do
   defp build_amount(nil), do: Money.new(@default_amount, "USD")
 
   defp build_amount(amount_map) do
-    Money.new(
-      amount_map["amount"] || @default_amount,
-      amount_map["currency"] || "USD"
-    )
+    currency =
+      case amount_map["currency"] do
+        currency when is_binary(currency) and currency != "" -> currency
+        _ -> "USD"
+      end
+
+    case Decimal.cast(amount_map["amount"]) do
+      {:ok, decimal} -> Money.new(decimal, currency)
+      :error -> Money.new(@default_amount, currency)
+    end
   end
 
   defp migrate_section_resources(section_id) do

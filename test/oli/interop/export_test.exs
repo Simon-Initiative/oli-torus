@@ -190,6 +190,65 @@ defmodule Oli.Interop.ExportTest do
       # description, welcome_title, encouraging_subtitle should fallback to project values
       assert imported_product.description == project.description
     end
+
+    test "check invalid amount values fall back to default during ingestion", %{
+      project: project,
+      author: author
+    } do
+      # Test with invalid amount and currency values
+      test_cases = [
+        {%{"amount" => "", "currency" => "USD"}, :USD},
+        {%{"amount" => "abc", "currency" => "USD"}, :USD},
+        {%{"amount" => nil, "currency" => "EUR"}, :EUR},
+        {%{"amount" => "33.50", "currency" => ""}, :USD},
+        {%{"amount" => "33.50", "currency" => nil}, :USD}
+      ]
+
+      Enum.each(test_cases, fn {amount_data, expected_currency} ->
+        product_json = %{
+          "type" => "Product",
+          "title" => "Product with Invalid Amount",
+          "amount" => amount_data
+        }
+
+        project_json =
+          Jason.encode!(%{"title" => project.title, "description" => project.description})
+
+        product_json_str = Jason.encode!(product_json)
+        hierarchy_json = Jason.encode!(%{"children" => []})
+        media_manifest_json = Jason.encode!(%{"mediaItems" => []})
+
+        digest = %{
+          ~c"_project.json" => project_json,
+          ~c"_product-test.json" => product_json_str,
+          ~c"_hierarchy.json" => hierarchy_json,
+          ~c"_media-manifest.json" => media_manifest_json
+        }
+
+        {:ok, imported_project} = Oli.Interop.Ingest.process(digest, author)
+
+        imported_product =
+          Sections.get_section_by(base_project_id: imported_project.id, type: :blueprint)
+
+        # For invalid amounts, verify fallback to default $25
+        # For valid amounts with invalid currency, verify amount is preserved but currency defaults to USD
+        case Decimal.cast(amount_data["amount"]) do
+          {:ok, _} ->
+            # Valid amount, should be preserved
+            assert Decimal.equal?(
+                     imported_product.amount.amount,
+                     Decimal.new(amount_data["amount"])
+                   )
+
+          :error ->
+            # Invalid amount, should fall back to $25
+            assert Decimal.equal?(imported_product.amount.amount, Decimal.new("25"))
+        end
+
+        # Verify currency handling
+        assert imported_product.amount.currency == expected_currency
+      end)
+    end
   end
 
   defp setup_export(ctx) do
