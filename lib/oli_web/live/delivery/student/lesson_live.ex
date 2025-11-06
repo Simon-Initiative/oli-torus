@@ -203,32 +203,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       %{page_context: page_context} = socket.assigns
 
       # Check if attempt has expired and should be finalized
-      attempt_expired_auto_submit =
-        if page_context.page.graded && length(page_context.resource_attempts) > 0 do
-          resource_attempt = hd(page_context.resource_attempts)
-
-          effective_end_time =
-            Settings.determine_effective_deadline(
-              resource_attempt,
-              page_context.effective_settings
-            )
-            |> to_epoch()
-
-          late_submit_disallowed = page_context.effective_settings.late_submit == :disallow
-          now = DateTime.utc_now() |> to_epoch
-
-          with true <- !is_nil(effective_end_time),
-               true <- now > effective_end_time,
-               true <- late_submit_disallowed,
-               false <- page_context.review_mode do
-            true
-          else
-            _ ->
-              false
-          end
-        else
-          false
-        end
+      attempt_expired_auto_submit = check_attempt_expired_auto_submit(page_context)
 
       socket =
         socket
@@ -270,32 +245,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       is_graded = page_context.page.graded
 
       # Check if attempt has expired and should be finalized
-      attempt_expired_auto_submit =
-        if is_graded && length(page_context.resource_attempts) > 0 do
-          resource_attempt = hd(page_context.resource_attempts)
-
-          effective_end_time =
-            Settings.determine_effective_deadline(
-              resource_attempt,
-              page_context.effective_settings
-            )
-            |> to_epoch()
-
-          late_submit_disallowed = page_context.effective_settings.late_submit == :disallow
-          now = DateTime.utc_now() |> to_epoch
-
-          with true <- !is_nil(effective_end_time),
-               true <- now > effective_end_time,
-               true <- late_submit_disallowed,
-               false <- page_context.review_mode do
-            true
-          else
-            _ ->
-              false
-          end
-        else
-          false
-        end
+      attempt_expired_auto_submit = check_attempt_expired_auto_submit(page_context)
 
       socket =
         socket
@@ -2021,6 +1971,34 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     date_time
     |> DateTime.to_unix(:second)
     |> Kernel.*(1000)
+  end
+
+  defp check_attempt_expired_auto_submit(page_context) do
+    if page_context.page.graded && length(page_context.resource_attempts) > 0 do
+      resource_attempt = hd(page_context.resource_attempts)
+
+      effective_end_time =
+        Settings.determine_effective_deadline(
+          resource_attempt,
+          page_context.effective_settings
+        )
+        |> to_epoch()
+
+      late_submit_disallowed = page_context.effective_settings.late_submit == :disallow
+      now = DateTime.utc_now() |> to_epoch
+
+      with true <- !is_nil(effective_end_time),
+           true <- now > effective_end_time,
+           true <- late_submit_disallowed,
+           false <- page_context.review_mode do
+        true
+      else
+        _ ->
+          false
+      end
+    else
+      false
+    end
   end
 
   defp get_selected_view(params) do
