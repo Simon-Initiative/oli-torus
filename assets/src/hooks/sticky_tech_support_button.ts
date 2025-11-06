@@ -25,7 +25,7 @@ export const StickyTechSupportButton = {
         // Reset to default on smaller devices - remove positioning classes
         button.style.position = '';
         button.style.bottom = '';
-        button.style.right = '';
+        button.style.left = '';
         return;
       }
 
@@ -41,7 +41,7 @@ export const StickyTechSupportButton = {
         // If no footer found, keep it fixed
         button.style.position = 'fixed';
         button.style.bottom = '0.5rem';
-        button.style.right = '1rem';
+        button.style.left = '2.5rem';
         return;
       }
 
@@ -70,12 +70,12 @@ export const StickyTechSupportButton = {
 
         button.style.position = 'absolute';
         button.style.bottom = `${distanceFromParentBottom + spacing}px`;
-        button.style.right = '1rem';
+        button.style.left = '2.5rem';
       } else {
-        // Keep it fixed (floating at bottom right)
+        // Keep it fixed (floating at bottom left)
         button.style.position = 'fixed';
         button.style.bottom = '0.5rem';
-        button.style.right = '1rem';
+        button.style.left = '2.5rem';
       }
     };
 
