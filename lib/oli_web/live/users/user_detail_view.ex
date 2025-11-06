@@ -7,6 +7,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.Auditing
   alias Oli.Delivery.{Metrics, Paywall, Sections}
   alias Oli.Lti.LtiParams
 
@@ -60,6 +61,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
         {:ok,
          assign(socket,
+           current_author: socket.assigns.current_author,
            breadcrumbs: set_breadcrumbs(user),
            user: user,
            form: user_form(user),
@@ -152,6 +154,25 @@ defmodule OliWeb.Users.UsersDetailView do
                 />
               </div>
             </section>
+            <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
+              <div class="form-control mb-3">
+                <.input
+                  field={@form[:is_internal]}
+                  type="checkbox"
+                  label="Internal staff"
+                  class="form-check-input"
+                  disabled={@disabled_edit}
+                />
+                <p class="mt-1 text-xs text-gray-500">
+                  Internal users gain early access to internal-only and canary features.
+                </p>
+              </div>
+            <% else %>
+              <ReadOnly.render
+                label="Internal actor"
+                value={if(@user.is_internal, do: "Yes", else: "No")}
+              />
+            <% end %>
             <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)} />
             <ReadOnly.render
               label="Email Confirmed"
@@ -410,25 +431,34 @@ defmodule OliWeb.Users.UsersDetailView do
   def handle_event("change", %{"user" => params}, socket) do
     form = user_form(socket.assigns.user, params)
 
+    user_name = combined_user_name(form, socket.assigns.user)
+
     socket =
       socket
       |> assign(form: form)
       |> assign(disabled_submit: !Enum.empty?(form.errors))
-      |> assign(user_name: "#{params["given_name"]} #{params["family_name"]}")
+      |> assign(user_name: user_name)
 
     {:noreply, socket}
   end
 
   def handle_event("submit", %{"user" => params}, socket) do
-    case Accounts.update_user(socket.assigns.user, params) do
+    admin? = Accounts.has_admin_role?(socket.assigns.current_author, :system_admin)
+    filtered_params = if admin?, do: params, else: Map.delete(params, "is_internal")
+    previous_user = socket.assigns.user
+
+    case Accounts.update_user(previous_user, filtered_params) do
       {:ok, user} ->
+        updated_form = user_form(user, params)
+        maybe_audit_internal_toggle(socket.assigns.current_author, :user, previous_user, user)
+
         {:noreply,
          socket
          |> put_flash(:info, "User successfully updated.")
          |> assign(user: user)
-         |> assign(form: user_form(user, params))
+         |> assign(form: updated_form)
          |> assign(disabled_edit: true)
-         |> assign(user_name: "#{params["given_name"]} #{params["family_name"]}")}
+         |> assign(user_name: combined_user_name(updated_form, user))}
 
       {:error, error} ->
         form = to_form(error)
@@ -442,6 +472,44 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("start_edit", _, socket) do
     {:noreply, socket |> assign(disabled_edit: false)}
+  end
+
+  defp maybe_audit_internal_toggle(admin, :user, %User{} = previous, %User{} = updated) do
+    cond do
+      is_nil(admin) ->
+        :ok
+
+      previous.is_internal == updated.is_internal ->
+        :ok
+
+      true ->
+        Auditing.capture(
+          admin,
+          :account_internal_flag_changed,
+          updated,
+          %{
+            "account_type" => "user",
+            "user_id" => updated.id,
+            "previous" => previous.is_internal,
+            "is_internal" => updated.is_internal
+          }
+        )
+
+        :ok
+    end
+  end
+
+  defp combined_user_name(form, fallback_user) do
+    given = form[:given_name].value || fallback_user.given_name || ""
+    family = form[:family_name].value || fallback_user.family_name || ""
+
+    [given, family]
+    |> Enum.reject(&(is_nil(&1) or &1 == ""))
+    |> Enum.join(" ")
+    |> case do
+      "" -> fallback_user.name || ""
+      name -> name
+    end
   end
 
   defp user_with_platform_roles(id) do

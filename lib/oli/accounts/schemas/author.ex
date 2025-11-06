@@ -44,6 +44,7 @@ defmodule Oli.Accounts.Author do
     field :collaborations_count, :integer, virtual: true
     field :total_count, :integer, virtual: true
     field :community_admin_count, :integer, virtual: true
+    field :is_internal, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end
@@ -306,7 +307,8 @@ defmodule Oli.Accounts.Author do
       :picture,
       :system_role_id,
       :locked_at,
-      :email_confirmed_at
+      :email_confirmed_at,
+      :is_internal
     ])
     |> cast_embed(:preferences)
     |> validate_change(:email, &Oli.Accounts.validate_email/2)
@@ -332,7 +334,8 @@ defmodule Oli.Accounts.Author do
       :password,
       :system_role_id,
       :locked_at,
-      :email_confirmed_at
+      :email_confirmed_at,
+      :is_internal
     ])
     |> maybe_hash_password([])
     |> maybe_name_from_given_and_family()

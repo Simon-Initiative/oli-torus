@@ -150,7 +150,7 @@ defmodule Oli.Authoring.Course do
     filter_by_date =
       case {date_from, date_to} do
         {nil, nil} ->
-          dynamic([p], true)
+          true
 
         {from, nil} ->
           dynamic([p], field(p, ^date_field) >= ^from)
@@ -164,14 +164,14 @@ defmodule Oli.Authoring.Course do
 
     filter_by_visibility =
       case visibility_filter do
-        nil -> dynamic([p], true)
+        nil -> true
         visibility -> dynamic([p], p.visibility == ^visibility)
       end
 
     filter_by_institution =
       case institution_id do
         nil ->
-          dynamic([p, _ap, _a, _pv], true)
+          true
 
         id ->
           dynamic([p, _ap, _a, pv], p.visibility == :global or pv.institution_id == ^id)
@@ -364,7 +364,7 @@ defmodule Oli.Authoring.Course do
 
         _ ->
           if include_deleted,
-            do: dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true),
+            do: true,
             else: dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.status == :active)
       end
 
@@ -383,7 +383,7 @@ defmodule Oli.Authoring.Course do
     filter_by_date =
       case {date_from, date_to} do
         {nil, nil} ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         {from, nil} ->
           dynamic([_ap, p, _a, _pv, _pub, _op, _owner], field(p, ^date_field) >= ^from)
@@ -401,7 +401,7 @@ defmodule Oli.Authoring.Course do
     filter_by_visibility =
       case visibility_filter do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         visibility ->
           dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.visibility == ^visibility)
@@ -410,7 +410,7 @@ defmodule Oli.Authoring.Course do
     filter_by_institution =
       case institution_id do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         institution ->
           dynamic(
@@ -607,7 +607,7 @@ defmodule Oli.Authoring.Course do
           dynamic([p], p.status == ^status)
 
         _ ->
-          if include_deleted, do: dynamic([p], true), else: dynamic([p], p.status == :active)
+          if include_deleted, do: true, else: dynamic([p], p.status == :active)
       end
 
     filter_by_text =
@@ -625,7 +625,7 @@ defmodule Oli.Authoring.Course do
     filter_by_date =
       case {date_from, date_to} do
         {nil, nil} ->
-          dynamic([p], true)
+          true
 
         {from, nil} ->
           dynamic([p], field(p, ^date_field) >= ^from)
@@ -639,14 +639,14 @@ defmodule Oli.Authoring.Course do
 
     filter_by_visibility =
       case visibility_filter do
-        nil -> dynamic([p], true)
+        nil -> true
         visibility -> dynamic([p], p.visibility == ^visibility)
       end
 
     filter_by_institution =
       case institution_id do
         nil ->
-          dynamic([p, _ap, _a, _pv], true)
+          true
 
         id ->
           dynamic([p, _ap, _a, pv], p.visibility == :global or pv.institution_id == ^id)
@@ -808,7 +808,7 @@ defmodule Oli.Authoring.Course do
 
         _ ->
           if include_deleted,
-            do: dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true),
+            do: true,
             else: dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.status == :active)
       end
 
@@ -827,7 +827,7 @@ defmodule Oli.Authoring.Course do
     filter_by_date =
       case {date_from, date_to} do
         {nil, nil} ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         {from, nil} ->
           dynamic([_ap, p, _a, _pv, _pub, _op, _owner], field(p, ^date_field) >= ^from)
@@ -845,7 +845,7 @@ defmodule Oli.Authoring.Course do
     filter_by_visibility =
       case visibility_filter do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         visibility ->
           dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.visibility == ^visibility)
@@ -854,7 +854,7 @@ defmodule Oli.Authoring.Course do
     filter_by_institution =
       case institution_id do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         institution ->
           dynamic(

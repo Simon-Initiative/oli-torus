@@ -36,11 +36,12 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
 }) => {
   // Helper function to create part props
   const createPartProps = (partDefinition: PartComponentDefinition) => {
-    // Special handling for janus-image parts with lockAspectRatio in responsive mode
-    const isJanusImageWithLockAspectRatio =
+    // For images with only lockAspectRatio (no scaleContent), preserve original width to maintain aspect ratio
+    const isImageWithOnlyLockAspectRatio =
       responsiveLayout &&
       partDefinition.type === 'janus-image' &&
-      partDefinition.custom.lockAspectRatio === true;
+      partDefinition.custom.lockAspectRatio === true &&
+      !partDefinition.custom.scaleContent;
 
     return {
       id: partDefinition.id,
@@ -51,8 +52,9 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
             // In responsive mode, ignore x,y positions but preserve original data
             x: 0, // Ignore x position in responsive mode (but preserve original x in data)
             y: 0, // Ignore y position in responsive mode (but preserve original y in data)
-            // In responsive mode, set width to 100% for the part, except for janus-image with lockAspectRatio
-            width: !isJanusImageWithLockAspectRatio ? '100%' : partDefinition.custom.width,
+            // In responsive mode, set width to 100% for all parts EXCEPT images with only lockAspectRatio
+            // Images with only lockAspectRatio keep original width to maintain aspect ratio
+            width: isImageWithOnlyLockAspectRatio ? partDefinition.custom.width : '100%',
           }
         : partDefinition.custom, // Use original model in non-responsive mode
       state,
@@ -88,7 +90,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
         <div
           key={partDefinition.id}
           data-part-id={partDefinition.id}
-          style={{ height: partDefinition?.custom?.height }}
+          style={{ height: 'auto', minHeight: 'fit-content' }}
           className={`responsive-item ${widthClass} ${alignmentClass}`}
         >
           <PartComponent key={partDefinition.id} {...partProps} />
