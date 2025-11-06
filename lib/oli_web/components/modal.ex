@@ -53,7 +53,7 @@ defmodule OliWeb.Components.Modal do
       id={@id}
       phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
-      class="relative z-50 hidden"
+      class="relative z-[2000] hidden"
     >
       <div
         id={"#{@id}-bg"}
@@ -175,7 +175,7 @@ defmodule OliWeb.Components.Modal do
       id={@id}
       phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
-      class="relative z-50 hidden"
+      class="relative z-[1000] hidden"
     >
       <div
         id={"#{@id}-bg"}
