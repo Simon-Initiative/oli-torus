@@ -124,16 +124,17 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
 
   // For non-responsive or when no flags are set, use inline styles
   // For responsive with flags, use CSS custom properties for dynamic values and CSS classes for rules
-  const imageStyles: CSSProperties = isResponsiveLayout && imageClasses
-    ? {
-        // Pass original width and height as CSS variables for CSS to use
-        ['--image-width' as string]: typeof width === 'number' ? `${width}px` : width,
-        ['--image-height' as string]: typeof height === 'number' ? `${height}px` : height,
-      }
-    : {
-        width,
-        height,
-      };
+  const imageStyles: CSSProperties =
+    isResponsiveLayout && imageClasses
+      ? {
+          // Pass original width and height as CSS variables for CSS to use
+          ['--image-width' as string]: typeof width === 'number' ? `${width}px` : width,
+          ['--image-height' as string]: typeof height === 'number' ? `${height}px` : height,
+        }
+      : {
+          width,
+          height,
+        };
 
   useEffect(() => {
     const styleChanges: any = {};

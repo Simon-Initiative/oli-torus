@@ -159,9 +159,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         ...decorateModelWithDragWidthHeight(part.id, part.custom),
         // In responsive mode, set width to 100% for all parts EXCEPT images with only lockAspectRatio
         // Images with only lockAspectRatio keep original width to maintain aspect ratio
-        width: isResponsive && !isImageWithOnlyLockAspectRatio
-          ? '100%'
-          : part.custom.width,
+        width: isResponsive && !isImageWithOnlyLockAspectRatio ? '100%' : part.custom.width,
         // Preserve original x & y positions in the model (they will be ignored in rendering)
         x: part.custom.x || 0,
         y: part.custom.y || 0,
@@ -596,9 +594,15 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
               ${isResponsive ? 'position: relative;' : 'position: absolute;'}
               border: 1px solid #ccc;
               background-color: ${props.backgroundColor || '#fff'};
-              ${isResponsive
-                ? `width: 100%; max-width: ${props.width || 1200}px; height: auto; min-height: auto; box-sizing: border-box;`
-                : `width: ${props.width || 1000}px; height: ${props?.height || 500}px; min-height: 500px;`}
+              ${
+                isResponsive
+                  ? `width: 100%; max-width: ${
+                      props.width || 1200
+                    }px; height: auto; min-height: auto; box-sizing: border-box;`
+                  : `width: ${props.width || 1000}px; height: ${
+                      props?.height || 500
+                    }px; min-height: 500px;`
+              }
             }
             .react-draggable {
               position: absolute;

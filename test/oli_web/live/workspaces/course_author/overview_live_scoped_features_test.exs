@@ -14,7 +14,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest.ScopedFeatures do
 
       # Should show the Feature Flags section
       assert has_element?(view, "h4", "Feature Flags")
-      assert has_element?(view, "div.scoped-feature-flags-component")
+      assert has_element?(view, "div.scoped-feature-toggle-component")
     end
 
     test "does not show feature flags section for non-admin users", %{project: project} do
@@ -27,14 +27,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest.ScopedFeatures do
 
       # Should not show the Feature Flags section
       refute has_element?(view, "h4", "Feature Flags")
-      refute has_element?(view, "div.scoped-feature-flags-component")
+      refute has_element?(view, "div.scoped-feature-toggle-component")
     end
 
     test "displays project-appropriate features", %{conn: conn, project: project} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
 
       # Should show authoring-scoped features
-      assert has_element?(view, "td", "mcp_authoring")
+      assert has_element?(view, "h4", "Mcp authoring")
       # Only mcp_authoring is defined for authoring context
     end
 

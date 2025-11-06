@@ -54,9 +54,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
             y: 0, // Ignore y position in responsive mode (but preserve original y in data)
             // In responsive mode, set width to 100% for all parts EXCEPT images with only lockAspectRatio
             // Images with only lockAspectRatio keep original width to maintain aspect ratio
-            width: isImageWithOnlyLockAspectRatio
-              ? partDefinition.custom.width
-              : '100%',
+            width: isImageWithOnlyLockAspectRatio ? partDefinition.custom.width : '100%',
           }
         : partDefinition.custom, // Use original model in non-responsive mode
       state,
