@@ -130,9 +130,15 @@
           {@inner_content}
 
           <div class={[
-            "mb-20 px-4 mt-auto",
+            "mb-20 px-4 mt-auto relative",
             if(@section && @section.assistant_enabled, do: "mr-28", else: "")
           ]}>
+            <div id="tech-support-wrapper" phx-hook="StickyTechSupportButton">
+              <OliWeb.Components.Common.tech_support_button
+                id="tech-support"
+                class="-ml-4 lg:ml-0 lg:fixed lg:bottom-2 lg:left-10 lg:z-[999]"
+              />
+            </div>
             <OliWeb.Components.Footer.delivery_footer license={assigns[:license]} />
           </div>
         </div>
