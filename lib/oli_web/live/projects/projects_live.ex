@@ -38,7 +38,14 @@ defmodule OliWeb.Projects.ProjectsLive do
     {false, "No"}
   ]
   @date_field_options [{"inserted_at", "Created Date"}]
-  @filter_fields [:date, :tags, :visibility, :published, :status, :institution]
+  @filter_fields [
+    :date,
+    :tags,
+    :visibility,
+    :published,
+    :status,
+    :institution
+  ]
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx

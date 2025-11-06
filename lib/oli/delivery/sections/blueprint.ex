@@ -516,9 +516,66 @@ defmodule Oli.Delivery.Sections.Blueprint do
       end
 
     filter_by_status =
-      if opts[:include_archived],
-        do: dynamic([s, _], s.status in [:active, :archived, :deleted]),
-        else: dynamic([s, _], s.status in [:active, :deleted])
+      cond do
+        opts[:filter_status] == :active ->
+          dynamic([s, _], s.status == :active)
+
+        opts[:filter_status] == :deleted ->
+          dynamic([s, _], s.status == :deleted)
+
+        opts[:include_archived] ->
+          dynamic([s, _], s.status in [:active, :archived, :deleted])
+
+        true ->
+          dynamic([s, _], s.status in [:active, :deleted])
+      end
+
+    filter_by_institution =
+      case opts[:institution_id] do
+        nil -> true
+        institution_id -> dynamic([s, _], s.institution_id == ^institution_id)
+      end
+
+    filter_by_requires_payment =
+      if is_nil(opts[:filter_requires_payment]),
+        do: true,
+        else: dynamic([s, _], s.requires_payment == ^opts[:filter_requires_payment])
+
+    filter_by_tags =
+      if is_nil(opts[:filter_tag_ids]) or opts[:filter_tag_ids] == [],
+        do: true,
+        else:
+          dynamic(
+            [s, _],
+            fragment(
+              "EXISTS (SELECT 1 FROM section_tags WHERE section_id = ? AND tag_id = ANY(?))",
+              s.id,
+              type(^opts[:filter_tag_ids], {:array, :integer})
+            )
+          )
+
+    filter_by_date =
+      cond do
+        not is_nil(opts[:filter_date_from]) and not is_nil(opts[:filter_date_to]) ->
+          field = opts[:filter_date_field] || :inserted_at
+
+          dynamic(
+            [s, _],
+            field(s, ^field) >= ^opts[:filter_date_from] and
+              field(s, ^field) <= ^opts[:filter_date_to]
+          )
+
+        not is_nil(opts[:filter_date_from]) ->
+          field = opts[:filter_date_field] || :inserted_at
+          dynamic([s, _], field(s, ^field) >= ^opts[:filter_date_from])
+
+        not is_nil(opts[:filter_date_to]) ->
+          field = opts[:filter_date_field] || :inserted_at
+          dynamic([s, _], field(s, ^field) <= ^opts[:filter_date_to])
+
+        true ->
+          true
+      end
 
     filter_by_text =
       opts[:text_search]
@@ -552,6 +609,10 @@ defmodule Oli.Delivery.Sections.Blueprint do
       |> where(^filter_by_text)
       |> where(^filter_by_project)
       |> where(^filter_by_status)
+      |> where(^filter_by_institution)
+      |> where(^filter_by_requires_payment)
+      |> where(^filter_by_tags)
+      |> where(^filter_by_date)
       |> limit(^limit)
       |> offset(^offset)
       |> select([s, bp, i], %{

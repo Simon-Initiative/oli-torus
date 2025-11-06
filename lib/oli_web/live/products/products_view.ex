@@ -5,12 +5,14 @@ defmodule OliWeb.Products.ProductsView do
 
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Institutions
   alias Oli.Publishing
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Admin.AdminView
+  alias OliWeb.Admin.BrowseFilters
   alias OliWeb.Common.{Breadcrumb, Check, PagingParams, StripedPagedTable, Params, SearchInput}
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Icons
+  alias OliWeb.Components.FilterPanel
   alias OliWeb.Products.{Create, DetailsView, ProductsTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -19,6 +21,16 @@ defmodule OliWeb.Products.ProductsView do
   @text_search_tooltip """
     Search by section title, amount or base project title.
   """
+  @status_options [
+    {:active, "Active"},
+    {:deleted, "Deleted"}
+  ]
+  @requires_payment_options [
+    {true, "Yes"},
+    {false, "No"}
+  ]
+  @date_field_options [{"inserted_at", "Created Date"}]
+  @filter_fields [:date, :tags, :status, :requires_payment, :institution]
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -76,13 +88,24 @@ defmodule OliWeb.Products.ProductsView do
     raw_text_search = params |> Params.get_param("text_search", "") |> String.trim()
     applied_search = sanitize_search_term(raw_text_search)
 
+    filters = BrowseFilters.default()
+    institutions = Institutions.list_institutions()
+    course_filters = BrowseFilters.to_course_filters(filters)
+
     products =
       Blueprint.browse(
         %Paging{offset: 0, limit: @limit},
         %Sorting{direction: :desc, field: :inserted_at},
         text_search: applied_search,
         include_archived: Params.get_boolean_param(params, "include_archived", false),
-        project_id: project_id
+        project_id: project_id,
+        filter_requires_payment: course_filters.requires_payment,
+        filter_tag_ids: course_filters.tag_ids,
+        filter_date_from: course_filters.date_from,
+        filter_date_to: course_filters.date_to,
+        filter_date_field: course_filters.date_field,
+        filter_status: course_filters.status,
+        institution_id: course_filters.institution_id
       )
 
     total_count = determine_total(products)
@@ -114,13 +137,19 @@ defmodule OliWeb.Products.ProductsView do
        total_count: total_count,
        table_model: table_model,
        include_archived: Params.get_boolean_param(params, "include_archived", false),
+       filters: filters,
        title: title,
        offset: 0,
        limit: @limit,
        query: "",
        text_search: raw_text_search,
        text_search_tooltip: @text_search_tooltip,
-       creation_title: ""
+       creation_title: "",
+       status_options: @status_options,
+       requires_payment_options: @requires_payment_options,
+       institution_options: institutions,
+       date_field_options: @date_field_options,
+       filter_fields: @filter_fields
      )}
   end
 
@@ -145,16 +174,17 @@ defmodule OliWeb.Products.ProductsView do
                 <SearchInput.render id="text-search" name="product_name" text={@text_search} />
               </.form>
 
-              <button class="ml-2 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
-                <Icons.filter class="stroke-Text-text-high" /> Filter
-              </button>
-
-              <button
-                class="ml-2 mr-4 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-1 hover:text-Text-text-button"
-                phx-click="clear_all_filters"
-              >
-                <Icons.trash /> Clear All Filters
-              </button>
+              <.live_component
+                module={FilterPanel}
+                id="products-filter-panel"
+                parent_pid={self()}
+                filters={@filters}
+                fields={@filter_fields}
+                status_options={@status_options}
+                requires_payment_options={@requires_payment_options}
+                institution_options={@institution_options}
+                date_field_options={@date_field_options}
+              />
             </div>
           <% else %>
             <Create.render title={@creation_title} change="title" click="create" />
@@ -188,6 +218,10 @@ defmodule OliWeb.Products.ProductsView do
     include_archived = Params.get_boolean_param(params, "include_archived", false)
     limit = Params.get_int_param(params, "limit", @limit)
 
+    # Parse filter state from URL params
+    filters_state = BrowseFilters.parse(params)
+    course_filters = BrowseFilters.to_course_filters(filters_state)
+
     products =
       Blueprint.browse(
         %Paging{offset: offset, limit: limit},
@@ -197,7 +231,14 @@ defmodule OliWeb.Products.ProductsView do
         },
         text_search: applied_search,
         include_archived: include_archived,
-        project_id: socket.assigns.project && socket.assigns.project.id
+        project_id: socket.assigns.project && socket.assigns.project.id,
+        filter_requires_payment: course_filters.requires_payment,
+        filter_tag_ids: course_filters.tag_ids,
+        filter_date_from: course_filters.date_from,
+        filter_date_to: course_filters.date_to,
+        filter_date_field: course_filters.date_field,
+        filter_status: course_filters.status,
+        institution_id: course_filters.institution_id
       )
 
     table_model =
@@ -214,7 +255,45 @@ defmodule OliWeb.Products.ProductsView do
        total_count: total_count,
        text_search: raw_text_search,
        include_archived: include_archived,
+       filters: filters_state,
        limit: limit
+     )}
+  end
+
+  def handle_info({:filter_panel, :apply, filters}, socket) do
+    filter_params = BrowseFilters.to_query_params(filters, as: :atoms)
+
+    # Drop all existing filter keys from current params before merging
+    # This ensures cleared filters are properly removed from the URL
+    base_params = Map.drop(current_params(socket), BrowseFilters.param_keys(:atoms))
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           __MODULE__,
+           Map.merge(base_params, Map.merge(filter_params, %{offset: 0}))
+         ),
+       replace: true
+     )}
+  end
+
+  def handle_info({:filter_panel, :clear}, socket) do
+    # Explicitly build params without any filter params to clear them from URL
+    params = %{
+      sort_by: socket.assigns.table_model.sort_by_spec.name,
+      sort_order: socket.assigns.table_model.sort_order,
+      offset: 0,
+      limit: socket.assigns.limit,
+      include_archived: socket.assigns.include_archived,
+      text_search: socket.assigns.text_search
+    }
+
+    {:noreply,
+     push_patch(socket,
+       to: Routes.live_path(socket, __MODULE__, params),
+       replace: true
      )}
   end
 
@@ -296,7 +375,8 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   def handle_event("clear_all_filters", _params, socket) do
-    {:noreply, push_patch(socket, to: live_path(socket, %{}))}
+    # This is handled by the FilterPanel component now
+    {:noreply, socket}
   end
 
   def handle_event(event, params, socket) do
@@ -313,7 +393,7 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   defp current_params(socket) do
-    %{
+    base = %{
       sort_by: socket.assigns.table_model.sort_by_spec.name,
       sort_order: socket.assigns.table_model.sort_order,
       offset: socket.assigns.offset,
@@ -321,6 +401,14 @@ defmodule OliWeb.Products.ProductsView do
       include_archived: socket.assigns.include_archived,
       text_search: socket.assigns.text_search
     }
+
+    filter_params =
+      case Map.get(socket.assigns, :filters) do
+        nil -> %{}
+        filters -> BrowseFilters.to_query_params(filters, as: :atoms)
+      end
+
+    Map.merge(base, filter_params)
   end
 
   defp toggle_sort_order(:asc), do: :desc
