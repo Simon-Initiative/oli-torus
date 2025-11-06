@@ -201,13 +201,13 @@ defmodule Oli.Delivery.Sections.Blueprint do
       "start_date" => nil,
       "end_date" => nil,
       "title" => title,
+      "description" => attrs["description"] || project.description,
       "requires_payment" => attrs["requires_payment"] || false,
       "payment_options" => attrs["payment_options"] || "direct_and_deferred",
       "pay_by_institution" => attrs["pay_by_institution"] || false,
       "registration_open" => attrs["registration_open"] || false,
       "grace_period_days" => attrs["grace_period_days"] || 1,
-      "amount" =>
-        Money.new(parse_amount(attrs["amount"]["amount"]), attrs["amount"]["currency"] || "USD"),
+      "amount" => build_amount(attrs["amount"]),
       "publisher_id" => project.publisher_id,
       "customizations" => custom_labels,
       "welcome_title" => attrs["welcome_title"] || project.welcome_title,
@@ -216,15 +216,13 @@ defmodule Oli.Delivery.Sections.Blueprint do
     }
   end
 
-  defp parse_amount(nil), do: @default_amount
+  defp build_amount(nil), do: Money.new(@default_amount, "USD")
 
-  defp parse_amount(amount) when is_integer(amount), do: amount
-
-  defp parse_amount(amount) when is_binary(amount) do
-    case Integer.parse(amount) do
-      {amount, ""} -> amount
-      _ -> @default_amount
-    end
+  defp build_amount(amount_map) do
+    Money.new(
+      amount_map["amount"] || @default_amount,
+      amount_map["currency"] || "USD"
+    )
   end
 
   defp migrate_section_resources(section_id) do

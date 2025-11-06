@@ -50,7 +50,7 @@ defmodule Oli.Interop.Ingest.Processor.Products do
 
     # Recursive processing to track new containers and build the hierarchy definition
     {container_id_map, hierarchy_definition} =
-      Map.get(product, "children")
+      Map.get(product, "children", [])
       |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
       |> Enum.reduce({container_id_map, hierarchy_definition}, fn item,
                                                                   {container_id_map,
@@ -73,7 +73,7 @@ defmodule Oli.Interop.Ingest.Processor.Products do
     end
 
     labels =
-      Map.get(product, "children")
+      Map.get(product, "children", [])
       |> Enum.filter(fn c -> c["type"] == "labels" end)
       |> Enum.reduce(%{}, fn item, acc ->
         Map.merge(acc, %{
@@ -93,6 +93,7 @@ defmodule Oli.Interop.Ingest.Processor.Products do
       end
 
     new_product_attrs = %{
+      "description" => Map.get(product, "description"),
       "welcome_title" => Map.get(product, "welcomeTitle"),
       "encouraging_subtitle" => Map.get(product, "encouragingSubtitle"),
       "requires_payment" => Map.get(product, "requiresPayment"),
