@@ -67,7 +67,7 @@ research and propose a sound technical approach for the feature.
 - Ops & rollout: Feature flags, config toggles, online migrations/backfills, canarying, rollback plan, disaster recovery.
 - Backwards compatibility (particularly for activity changes or page content model changes)
 - Developer ergonomics: Testability, clear module boundaries, documentation
-
+- Incremental feature rollout:  For features with incremental rollout requirements, consider a technical design approach that allows for this incremental rollout AND that supports rollback. Incremental features must be guarded by the `Oli.ScopedFeatureFlags` and its `can_access?/4` function.
 
 ## Approach
 

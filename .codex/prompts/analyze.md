@@ -61,7 +61,24 @@ Translate informal inputs into a clear, testable PRD suitable for engineers, des
 
 Balance product clarity with Torus-specific constraints: multi-tenancy, performance, LTI roles/permissions, accessibility, security, and observability.
 
+Unless you are told otherwise, you must specify the incremental rollout strategy for the feature. This is to
+include the use of Torus feature flags to allow
+
 Provide acceptance criteria that are directly automatable and non-functional requirements that reflect Torus scale and reliability needs.
+
+## Incremental Rollout
+
+Torus features must use the new incremental rollout feature flag system, which allows a feature to progress through defined visibility stages: internal-only, 5%, 50%, and 100% (full rollout). Each stage represents a controlled exposure cohort—beginning with internal staff for validation, then small randomized user subsets, before reaching general availability. This approach ensures that performance, telemetry, and user experience can be validated progressively, minimizing risk and allowing rapid rollback if issues arise.
+
+In the PRD, you must explicitly describe this incremental rollout plan under the “Feature Flagging, Rollout & Migration” section, including:
+
+- The feature flag name.
+- The gating rules and progression criteria for each stage.
+- The telemetry and metrics used to evaluate stability and readiness for promotion between stages.
+- The kill-switch or rollback behavior if regressions are detected.
+
+The default expectation is that every new feature follows this staged rollout unless explicitly exempted.
+
 
 ## Output Format (Markdown)
 
