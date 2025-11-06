@@ -4,7 +4,7 @@ import { MultiInputSize } from 'components/activities/multi_input/schema';
 import { classNames } from 'utils/classNames';
 
 interface Props {
-  selected: any;
+  selected: string;
   options: SelectOption[];
   disabled?: boolean;
   size?: MultiInputSize;
@@ -29,7 +29,13 @@ export const DropdownInput: React.FC<Props> = (props) => {
       )} // see: multi-input.scss
     >
       {options.map((option, i) => (
-        <option selected={option.value === props.selected} key={i} value={option.value}>
+        <option
+          selected={option.value === props.selected}
+          key={i}
+          value={option.value}
+          // prevent selection of initial blank choice prepended above
+          disabled={i === 0 ? true : false}
+        >
           {option.displayValue}
         </option>
       ))}

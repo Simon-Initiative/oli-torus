@@ -641,7 +641,7 @@ export class HtmlParser implements WriterImpl {
           <DropdownInput
             {...shared}
             options={inputData.input.options}
-            selected={inputData.value}
+            selected={shared.value}
             size={(inputData.input as MultiInputDelivery).size}
           />,
         );
