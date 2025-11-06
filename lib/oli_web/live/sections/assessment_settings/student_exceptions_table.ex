@@ -68,7 +68,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
        students: assigns.students,
        form_id: UUID.uuid4(),
        assessment_student_exceptions: assessment_student_exceptions,
-       options_for_select: Enum.map(assigns.assessments, fn a -> {a.name, a.resource_id} end),
+       options_for_select:
+         Enum.map(assigns.assessments, fn a -> {a.name_with_container_label, a.resource_id} end),
        selected_setting: socket.assigns[:selected_setting] || nil,
        selected_assessment: selected_assessment
      )}

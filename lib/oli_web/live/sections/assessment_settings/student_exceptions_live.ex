@@ -28,7 +28,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsLive do
            section: section,
            user: user,
            student_exceptions: student_exceptions,
-           assessments: AssessmentSettings.get_assessments(section.slug, student_exceptions),
+           assessments: AssessmentSettings.get_assessments(section, student_exceptions),
            students:
              Sections.enrolled_students(section.slug, [:context_learner])
              |> Enum.reject(fn s -> s.enrollment_status != :enrolled end),
