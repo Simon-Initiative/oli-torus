@@ -81,6 +81,40 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> emit([:oli, :resolvers, :authoring], :duration)
   end
 
+  @doc """
+  Retrieves revisions by title for a given project, optionally filtered by resource type.
+  The title matching is case-insensitive using ILIKE.
+
+  Returns a list of revisions that match the title (can be multiple if there are duplicates).
+  """
+  def from_title(project_slug, title, resource_type_id \\ nil) do
+    fn ->
+      query =
+        from(m in PublishedResource,
+          join: rev in Revision,
+          on: rev.id == m.revision_id,
+          where:
+            m.publication_id in subquery(project_working_publication(project_slug)) and
+              ilike(rev.title, ^title) and
+              rev.deleted == false,
+          select: rev
+        )
+
+      query =
+        if resource_type_id do
+          from([m, rev] in query,
+            where: rev.resource_type_id == ^resource_type_id
+          )
+        else
+          query
+        end
+
+      Repo.all(query)
+    end
+    |> run()
+    |> emit([:oli, :resolvers, :authoring], :duration)
+  end
+
   @impl Resolver
   def root_container(project_slug) do
     fn ->
