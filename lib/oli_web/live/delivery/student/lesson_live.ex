@@ -43,7 +43,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          :lti_1p3_deployment,
          :customizations,
          :open_and_free,
-         :root_section_resource_id
+         :root_section_resource_id,
+         :assistant_enabled
        ], %Sections.Section{}},
     current_user: {[:id, :name, :email, :sub], %User{}}
   }
