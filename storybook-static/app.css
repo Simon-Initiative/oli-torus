@@ -8761,6 +8761,10 @@ table.table-striped tbody tr:nth-child(even) {
   z-index: 10000;
 }
 
+.z-\[1000\] {
+  z-index: 1000;
+}
+
 .z-\[1001\] {
   z-index: 1001;
 }
@@ -9011,6 +9015,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: -6rem;
 }
 
+.-ml-4 {
+  margin-left: -1rem;
+}
+
 .-mt-1 {
   margin-top: -0.25rem;
 }
@@ -9253,6 +9261,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .mr-1 {
   margin-right: 0.25rem;
+}
+
+.mr-10 {
+  margin-right: 2.5rem;
 }
 
 .mr-16 {
@@ -24265,8 +24277,16 @@ Not supports in Firefox and IE */
     bottom: 0px;
   }
 
+  .lg\:bottom-2 {
+    bottom: 0.5rem;
+  }
+
   .lg\:left-0 {
     left: 0px;
+  }
+
+  .lg\:left-10 {
+    left: 2.5rem;
   }
 
   .lg\:right-\[-23px\] {
@@ -24279,6 +24299,10 @@ Not supports in Firefox and IE */
 
   .lg\:top-0 {
     top: 0px;
+  }
+
+  .lg\:z-\[999\] {
+    z-index: 999;
   }
 
   .lg\:col-span-2 {
@@ -24311,12 +24335,20 @@ Not supports in Firefox and IE */
     margin-bottom: 3.5rem;
   }
 
+  .lg\:ml-0 {
+    margin-left: 0px;
+  }
+
   .lg\:ml-4 {
     margin-left: 1rem;
   }
 
   .lg\:ml-auto {
     margin-left: auto;
+  }
+
+  .lg\:mr-28 {
+    margin-right: 7rem;
   }
 
   .lg\:mt-0 {
