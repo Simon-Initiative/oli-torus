@@ -143,7 +143,7 @@ defmodule OliWeb.Components.FilterPanel do
               <div class="flex flex-col gap-2">
                 <select
                   name="filters[date_field]"
-                  class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
+                  class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
                   value={encode_atom(@filters.date_field)}
                 >
                   <option
@@ -245,7 +245,7 @@ defmodule OliWeb.Components.FilterPanel do
               </label>
               <select
                 name="filters[visibility]"
-                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
+                class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
                 value={encode_atom(@filters.visibility)}
               >
                 <option value="">Select option</option>
@@ -267,7 +267,7 @@ defmodule OliWeb.Components.FilterPanel do
               </label>
               <select
                 name="filters[published]"
-                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
+                class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
                 value={encode_boolean(@filters.published)}
               >
                 <option value="">Select option</option>
@@ -287,7 +287,7 @@ defmodule OliWeb.Components.FilterPanel do
               <label class="text-sm font-semibold text-Text-text-high">Status</label>
               <select
                 name="filters[status]"
-                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
+                class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
                 value={encode_atom(@filters.status)}
               >
                 <option value="">Select option</option>
@@ -309,7 +309,7 @@ defmodule OliWeb.Components.FilterPanel do
               </label>
               <select
                 name="filters[institution]"
-                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
+                class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
                 value={encode_integer(@filters.institution_id)}
               >
                 <option value="">Select option</option>
