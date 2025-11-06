@@ -164,8 +164,8 @@
     width: 100%;
     box-sizing: border-box;
 
-    // Reduce padding on mobile to prevent overflow
-    padding: 10px;
+    // Maintain 20px padding on either side at 600px breakpoint
+    padding: 20px;
 
     // Prevent horizontal overflow
     overflow-x: hidden;
@@ -225,4 +225,23 @@
 .responsive-layout-section .content {
   height: auto;
   min-height: 500px;
+}
+
+// Ensure parent containers in delivery mode allow smooth scaling
+// These containers should scale down with the viewport, respecting max-width
+.responsive-layout-section .stageContainer {
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+.responsive-layout-section .content {
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+// Ensure the responsive layout container can scale down smoothly
+// It should respect the parent's max-width but scale down as viewport shrinks
+.responsive-layout-section .advance-authoring-responsive-layout {
+  width: 100% !important;
+  box-sizing: border-box;
 }
