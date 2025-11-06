@@ -4,7 +4,7 @@ import { MultiInputSize } from 'components/activities/multi_input/schema';
 import { classNames } from 'utils/classNames';
 
 interface Props {
-  selected: string;
+  value?: string;
   options: SelectOption[];
   disabled?: boolean;
   size?: MultiInputSize;
@@ -30,7 +30,7 @@ export const DropdownInput: React.FC<Props> = (props) => {
     >
       {options.map((option, i) => (
         <option
-          selected={option.value === props.selected}
+          selected={option.value === props.value}
           key={i}
           value={option.value}
           // prevent selection of initial blank choice prepended above
