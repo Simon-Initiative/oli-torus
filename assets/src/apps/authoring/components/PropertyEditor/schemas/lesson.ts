@@ -410,9 +410,12 @@ export const getLessonSchema = (responsiveLayout: boolean): JSONSchema7 => {
           Size: {
             ...((lessonSchema.properties as any).Properties.properties?.Size || {}),
             properties: {
-              ...(((lessonSchema.properties as any).Properties.properties?.Size?.properties as any) || {}),
+              ...(((lessonSchema.properties as any).Properties.properties?.Size
+                ?.properties as any) || {}),
               width: {
-                ...((((lessonSchema.properties as any).Properties.properties?.Size?.properties as any)?.width as any) || {}),
+                ...(((
+                  (lessonSchema.properties as any).Properties.properties?.Size?.properties as any
+                )?.width as any) || {}),
                 title: 'Max Width',
               },
             },

@@ -617,7 +617,8 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (responsiveLayout) {
       // In responsive layout, use max-width instead of width
       styles.width = '100%';
-      styles.maxWidth = lessonStyles.maxWidth ||
+      styles.maxWidth =
+        lessonStyles.maxWidth ||
         (typeof lessonStyles.width === 'number' ? `${lessonStyles.width}px` : lessonStyles.width) ||
         config?.width ||
         '1200px';
