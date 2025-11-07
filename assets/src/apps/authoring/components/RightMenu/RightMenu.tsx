@@ -38,19 +38,17 @@ import bankPropsSchema, {
   transformBankPropsModeltoSchema,
   transformBankPropsSchematoModel,
 } from '../PropertyEditor/schemas/bankScreen';
-import lessonSchema, {
+import {
   getLessonSchema,
   getLessonUiSchema,
-  lessonUiSchema,
   simpleLessonSchema,
   simpleLessonUiSchema,
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
-import screenSchema, {
+import {
   getScreenSchema,
   getScreenUiSchema,
-  screenUiSchema,
   simpleScreenSchema,
   simpleScreenUiSchema,
   transformScreenModeltoSchema,
