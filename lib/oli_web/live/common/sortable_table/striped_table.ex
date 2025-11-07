@@ -39,7 +39,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     <th
       class={[
         @column_spec.th_class,
-        "pl-2.5 font-semibold !sticky top-0",
+        "pl-2.5 font-semibold",
         if(@column_spec.sortable, do: "cursor-pointer", else: "")
       ]}
       phx-click={if @column_spec.sortable, do: @sort, else: nil}
@@ -141,6 +141,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   attr :select, :string, default: ""
   attr :additional_table_class, :string, default: "table-sm"
   attr :additional_row_class, :string, default: ""
+  attr :sticky_header_offset, :integer, default: 57
 
   attr :details_render_fn, :any,
     default: nil,
@@ -154,8 +155,11 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
       class={"min-w-full border table-fixed " <> @additional_table_class}
       phx-hook="SyncChevronState"
     >
-      <thead class="sticky top-0 z-10">
-        <tr>
+      <thead
+        class="sticky z-[40]"
+        style={"top: #{@sticky_header_offset}px"}
+      >
+        <tr class="!bg-white dark:!bg-black">
           <%= for column_spec <- @model.column_specs do %>
             {render_th(
               with_data(
@@ -172,7 +176,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
           <% end %>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="relative z-0">
         <%= for {row, index} <- Enum.with_index(@model.rows) do %>
           {render_row(
             with_data(
