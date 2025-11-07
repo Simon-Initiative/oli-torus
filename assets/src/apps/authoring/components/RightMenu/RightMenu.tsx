@@ -38,15 +38,17 @@ import bankPropsSchema, {
   transformBankPropsModeltoSchema,
   transformBankPropsSchematoModel,
 } from '../PropertyEditor/schemas/bankScreen';
-import lessonSchema, {
-  lessonUiSchema,
+import {
+  getLessonSchema,
+  getLessonUiSchema,
   simpleLessonSchema,
   simpleLessonUiSchema,
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
-import screenSchema, {
-  screenUiSchema,
+import {
+  getScreenSchema,
+  getScreenUiSchema,
   simpleScreenSchema,
   simpleScreenUiSchema,
   transformScreenModeltoSchema,
@@ -77,14 +79,17 @@ const RightMenu: React.FC<any> = () => {
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
+  // Get responsiveLayout from currentLesson
+  const responsiveLayout = currentLesson?.custom?.responsiveLayout || false;
+
   const scrUiSchema = useMemo(
     () =>
       currentSequence?.custom.isBank
         ? BankPropsUiSchema
         : flowchartMode
         ? simpleScreenUiSchema
-        : screenUiSchema,
-    [currentSequence?.custom.isBank, flowchartMode],
+        : getScreenUiSchema(responsiveLayout),
+    [currentSequence?.custom.isBank, flowchartMode, responsiveLayout],
   );
 
   const scrSchema = useMemo(
@@ -93,8 +98,8 @@ const RightMenu: React.FC<any> = () => {
         ? bankPropsSchema
         : flowchartMode
         ? simpleScreenSchema
-        : screenSchema,
-    [currentSequence?.custom.isBank, flowchartMode],
+        : getScreenSchema(responsiveLayout),
+    [currentSequence?.custom.isBank, flowchartMode, responsiveLayout],
   );
 
   const questionBankData = useMemo(
@@ -108,8 +113,8 @@ const RightMenu: React.FC<any> = () => {
         ? null
         : currentSequence?.custom.isBank
         ? transformBankPropsModeltoSchema(currentActivity)
-        : transformScreenModeltoSchema(currentActivity),
-    [currentActivity, currentSequence],
+        : transformScreenModeltoSchema(currentActivity, responsiveLayout),
+    [currentActivity, currentSequence, responsiveLayout],
   );
 
   const existingIds = useMemo(
@@ -154,7 +159,7 @@ const RightMenu: React.FC<any> = () => {
       if (currentActivity) {
         const modelChanges = currentSequence?.custom.isBank
           ? transformBankPropsSchematoModel(properties)
-          : transformScreenSchematoModel(properties);
+          : transformScreenSchematoModel(properties, responsiveLayout);
         /* console.log('Screen Property Change...', { properties, modelChanges }); */
         const { title, ...screenModelChanges } = modelChanges;
         const objectives = modelChanges.objectives || [];
@@ -189,7 +194,7 @@ const RightMenu: React.FC<any> = () => {
         }
       }
     },
-    [currentActivity],
+    [currentActivity, currentSequence, dispatch, responsiveLayout],
   );
 
   const lessonPropertyChangeHandler = useCallback(
@@ -260,8 +265,8 @@ const RightMenu: React.FC<any> = () => {
       <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
         <div className="lesson-tab overflow-hidden">
           <PropertyEditor
-            schema={flowchartMode ? simpleLessonSchema : lessonSchema}
-            uiSchema={flowchartMode ? simpleLessonUiSchema : lessonUiSchema}
+            schema={flowchartMode ? simpleLessonSchema : getLessonSchema(responsiveLayout)}
+            uiSchema={flowchartMode ? simpleLessonUiSchema : getLessonUiSchema(responsiveLayout)}
             value={lessonData}
             triggerOnChange={['CustomLogic']}
             onChangeHandler={lessonPropertyChangeHandler}
