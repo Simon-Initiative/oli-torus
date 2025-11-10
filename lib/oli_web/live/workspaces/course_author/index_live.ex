@@ -37,6 +37,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   ]
   @date_field_options [{"inserted_at", "Created Date"}]
   @filter_fields [:date, :tags, :visibility, :published, :status, :institution]
+  @projects_table_dom_id "course-author-projects-table"
 
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{ctx: %{author: nil}}} = socket) do
@@ -87,7 +88,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
         sort_by_spec: :inserted_at,
         sort_order: :desc,
         search_term: applied_search,
-        is_admin: is_admin
+        is_admin: is_admin,
+        table_dom_id: @projects_table_dom_id
       )
 
     total_count = determine_total(projects)
@@ -198,7 +200,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
         sort_by_spec: sort_by,
         sort_order: sort_order,
         search_term: applied_search,
-        is_admin: is_admin
+        is_admin: is_admin,
+        table_dom_id: @projects_table_dom_id
       )
 
     total_count = determine_total(projects)

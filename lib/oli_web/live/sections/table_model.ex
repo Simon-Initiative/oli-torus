@@ -28,6 +28,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
     default_th_class = "!border-r border-Table-table-border"
 
     search_term = Keyword.get(opts, :search_term, "")
+    table_dom_id = Keyword.get(opts, :table_dom_id, "sections-table")
+    rows = Enum.uniq_by(sections, & &1.id)
     is_admin = Keyword.get(opts, :is_admin, false)
 
     base_columns = [
@@ -131,7 +133,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
       Enum.reject(column_specs, fn column -> column.name in opts[:exclude_columns] end)
 
     SortableTableModel.new(
-      rows: sections,
+      rows: rows,
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
@@ -141,7 +143,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
         ctx: ctx,
         fade_data: true,
         render_institution_action: opts[:render_institution_action],
-        search_term: search_term
+        search_term: search_term,
+        table_dom_id: table_dom_id
       }
     )
   end
@@ -167,13 +170,20 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
   # Tags
   def custom_render(assigns, section, %ColumnSpec{name: :tags}) do
-    assigns = Map.merge(assigns, %{section: section})
+    table_dom_id =
+      Map.get(assigns, :table_dom_id) ||
+        Map.get(assigns.model.data, :table_dom_id, "sections-table")
+
+    assigns =
+      assigns
+      |> Map.put_new(:index, Map.get(assigns, :index, 0))
+      |> Map.merge(%{section: section, table_dom_id: table_dom_id})
 
     ~H"""
     <div>
       <.live_component
         module={OliWeb.Live.Components.Tags.TagsComponent}
-        id={"tags-#{@section.id}"}
+        id={"tags-section-#{@section.id}-#{@table_dom_id}"}
         entity_type={:section}
         entity_id={@section.id}
         current_tags={Map.get(@section, :tags, [])}

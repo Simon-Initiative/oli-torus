@@ -11,6 +11,8 @@ defmodule OliWeb.Products.ProductsTableModel do
     default_td_class = "!border-r border-Table-table-border"
     default_th_class = "!border-r border-Table-table-border"
     search_term = Keyword.get(opts, :search_term, "")
+    table_dom_id = Keyword.get(opts, :table_dom_id, "products-table")
+    rows = Enum.uniq_by(products, & &1.id)
     is_admin = Keyword.get(opts, :is_admin, false)
 
     base_columns = [
@@ -72,13 +74,13 @@ defmodule OliWeb.Products.ProductsTableModel do
       Enum.find(column_specs, fn spec -> spec.name == sort_by end)
 
     SortableTableModel.new(
-      rows: products,
+      rows: rows,
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
       sort_by_spec: sort_by_spec,
       sort_order: sort_order,
-      data: %{ctx: ctx, search_term: search_term}
+      data: %{ctx: ctx, search_term: search_term, table_dom_id: table_dom_id}
     )
   end
 
@@ -191,13 +193,23 @@ defmodule OliWeb.Products.ProductsTableModel do
   end
 
   defp render_tags_column(assigns, product, _) do
-    assigns = Map.merge(assigns, %{product: product})
+    table_dom_id =
+      Map.get(assigns, :table_dom_id) ||
+        Map.get(assigns.model.data, :table_dom_id, "products-table")
+
+    assigns =
+      assigns
+      |> Map.put_new(:index, Map.get(assigns, :index, 0))
+      |> Map.merge(%{
+        product: product,
+        table_dom_id: table_dom_id
+      })
 
     ~H"""
     <div>
       <.live_component
         module={OliWeb.Live.Components.Tags.TagsComponent}
-        id={"tags-#{@product.id}"}
+        id={"tags-product-#{@product.id}-#{@table_dom_id}"}
         entity_type={:section}
         entity_id={@product.id}
         current_tags={Map.get(@product, :tags, [])}

@@ -9,6 +9,8 @@ defmodule OliWeb.Projects.TableModel do
     default_td_class = "!border-r border-Table-table-border"
     default_th_class = "!border-r border-Table-table-border"
     search_term = Keyword.get(opts, :search_term, "")
+    table_dom_id = Keyword.get(opts, :table_dom_id, "projects-table")
+    rows = Enum.uniq_by(sections, & &1.id)
     is_admin = Keyword.get(opts, :is_admin, false)
 
     base_columns = [
@@ -87,7 +89,7 @@ defmodule OliWeb.Projects.TableModel do
       Enum.find(column_specs, fn spec -> spec.name == sort_by end)
 
     SortableTableModel.new(
-      rows: sections,
+      rows: rows,
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
@@ -95,7 +97,8 @@ defmodule OliWeb.Projects.TableModel do
       sort_order: sort_order,
       data: %{
         ctx: ctx,
-        search_term: search_term
+        search_term: search_term,
+        table_dom_id: table_dom_id
       }
     )
   end
@@ -124,13 +127,23 @@ defmodule OliWeb.Projects.TableModel do
 
   # Tags
   def custom_render(assigns, project, %ColumnSpec{name: :tags}) do
-    assigns = Map.merge(assigns, %{project: project})
+    table_dom_id =
+      Map.get(assigns, :table_dom_id) ||
+        Map.get(assigns.model.data, :table_dom_id, "projects-table")
+
+    assigns =
+      assigns
+      |> Map.put_new(:index, Map.get(assigns, :index, 0))
+      |> Map.merge(%{
+        project: project,
+        table_dom_id: table_dom_id
+      })
 
     ~H"""
     <div>
       <.live_component
         module={OliWeb.Live.Components.Tags.TagsComponent}
-        id={"tags-#{@project.id}"}
+        id={"tags-project-#{@project.id}-#{@table_dom_id}"}
         entity_type={:project}
         entity_id={@project.id}
         current_tags={Map.get(@project, :tags, [])}
