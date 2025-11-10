@@ -31,11 +31,21 @@ defmodule Oli.Resources.PageContent do
     map_fn.(content, acc, tr_context)
   end
 
-  def map_reduce(%{"type" => "group", "id" => group_id} = content, acc, map_fn, %TraversalContext{} = tr_context) do
+  def map_reduce(
+        %{"type" => "group", "id" => group_id} = content,
+        acc,
+        map_fn,
+        %TraversalContext{} = tr_context
+      ) do
     item_with_children(content, acc, map_fn, %{tr_context | group_id: group_id})
   end
 
-  def map_reduce(%{"type" => "survey", "id" => survey_id} = content, acc, map_fn, %TraversalContext{} = tr_context) do
+  def map_reduce(
+        %{"type" => "survey", "id" => survey_id} = content,
+        acc,
+        map_fn,
+        %TraversalContext{} = tr_context
+      ) do
     item_with_children(content, acc, map_fn, %{tr_context | survey_id: survey_id})
   end
 
@@ -47,7 +57,12 @@ defmodule Oli.Resources.PageContent do
     map_fn.(item, acc, tr_context)
   end
 
-  defp item_with_children(%{"children" => _children} = item, acc, map_fn, %TraversalContext{} = tr_context) do
+  defp item_with_children(
+         %{"children" => _children} = item,
+         acc,
+         map_fn,
+         %TraversalContext{} = tr_context
+       ) do
     map_reduce_property = fn {item, acc}, property ->
       children = Map.get(item, property)
 

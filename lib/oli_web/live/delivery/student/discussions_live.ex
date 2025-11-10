@@ -499,22 +499,26 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     {:noreply,
      assign(socket,
        posts:
-         Annotations.find_and_update_post(posts, new_post.parent_post_id, fn %Collaboration.Post{} = post ->
-           if post.id == new_post.parent_post_id do
-             %{
+         Annotations.find_and_update_post(
+           posts,
+           new_post.parent_post_id,
+           fn %Collaboration.Post{} = post ->
+             if post.id == new_post.parent_post_id do
+               %{
+                 post
+                 | replies_count: post.replies_count + 1,
+                   # only append the new reply if the replies are expanded for the parent post
+                   replies:
+                     case post.replies do
+                       nil -> nil
+                       replies -> replies ++ [new_post]
+                     end
+               }
+             else
                post
-               | replies_count: post.replies_count + 1,
-                 # only append the new reply if the replies are expanded for the parent post
-                 replies:
-                   case post.replies do
-                     nil -> nil
-                     replies -> replies ++ [new_post]
-                   end
-             }
-           else
-             post
+             end
            end
-         end)
+         )
      )}
   end
 

@@ -2282,8 +2282,8 @@ defmodule Oli.Delivery.Sections do
 
   def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, :v2) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts,
-     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+     raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id} =
+      build_user_data_for_section_schedule(section, current_user_id)
 
     combined_settings_for_all_resources =
       case combined_settings_for_all_resources do
@@ -2353,8 +2353,8 @@ defmodule Oli.Delivery.Sections do
         current_user_id
       ) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts,
-     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+     raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id} =
+      build_user_data_for_section_schedule(section, current_user_id)
 
     combined_settings_for_all_resources =
       case combined_settings_for_all_resources do
@@ -2401,8 +2401,8 @@ defmodule Oli.Delivery.Sections do
         current_user_id
       ) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts,
-     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+     raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id} =
+      build_user_data_for_section_schedule(section, current_user_id)
 
     sorted_container_groups =
       Scheduling.retrieve(section, :pages)

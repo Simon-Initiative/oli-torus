@@ -379,7 +379,12 @@ defmodule Oli.Publishing.UniqueIds do
     map_fn.(item, acc, tr_context)
   end
 
-  defp item_with_children(%{"children" => children} = item, acc, map_fn, %TraversalContext{} = tr_context) do
+  defp item_with_children(
+         %{"children" => children} = item,
+         acc,
+         map_fn,
+         %TraversalContext{} = tr_context
+       ) do
     type = Map.get(item, "type", "")
 
     cond do
