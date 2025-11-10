@@ -204,9 +204,13 @@ defmodule OliWeb.Workspaces.Utils do
 
   @urls_without_padding ~w[/workspaces/instructor /workspaces/course_author /workspaces/student]
 
-  def maybe_add_padding(nil), do: "container mx-auto p-8"
+  def maybe_add_padding(uri, active_workspace \\ nil)
+  def maybe_add_padding(nil, workspace) when workspace in [:instructor, :course_author, :student],
+    do: ""
 
-  def maybe_add_padding(uri) do
+  def maybe_add_padding(nil, _), do: "container mx-auto p-8"
+
+  def maybe_add_padding(uri, _active_workspace) do
     case URI.parse(uri).path do
       path when path in @urls_without_padding -> ""
       _ -> "container mx-auto p-8"

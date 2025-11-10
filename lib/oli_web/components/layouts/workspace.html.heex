@@ -91,7 +91,12 @@
         />
       <% end %>
     </div>
-    <div class={OliWeb.Workspaces.Utils.maybe_add_padding(assigns[:uri])}>
+    <div class={
+      OliWeb.Workspaces.Utils.maybe_add_padding(
+        assigns[:uri],
+        assigns[:active_workspace] || :student
+      )
+    }>
       <div class="-mt-[28px]">
         <Components.Delivery.Layouts.breadcrumb_trail
           :if={assigns[:breadcrumbs] && !assigns[:is_advanced_authoring]}
