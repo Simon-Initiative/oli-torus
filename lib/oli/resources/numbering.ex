@@ -219,8 +219,8 @@ defmodule Oli.Resources.Numbering do
         full_tree
 
       _ ->
-        Enum.reduce(full_tree, %{}, fn {k, val}, acc ->
-          Map.put(acc, k, %__MODULE__{val | labels: Map.from_struct(labels)})
+        Enum.reduce(full_tree, %{}, fn {k, %__MODULE__{} = val}, acc ->
+          Map.put(acc, k, %{val | labels: Map.from_struct(labels)})
         end)
     end
   end

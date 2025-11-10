@@ -358,7 +358,8 @@ defmodule Oli.Delivery.ActivityProvider do
       |> Enum.map(fn r -> BankEntry.from_map(r) end)
       |> Enum.shuffle()
 
-    source = %Source{fulfillment_state.source | bank: bank}
+    %Source{} = current_source = fulfillment_state.source
+    source = %{current_source | bank: bank}
 
     %{fulfillment_state | source: source}
   end

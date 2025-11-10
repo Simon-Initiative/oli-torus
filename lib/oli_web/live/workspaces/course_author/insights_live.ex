@@ -403,7 +403,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   end
 
   defp change_section_ids(socket, section_ids) do
-    options = %BrowseInsightsOptions{socket.assigns.options | section_ids: section_ids}
+    %BrowseInsightsOptions{} = current_options = socket.assigns.options
+    options = %{current_options | section_ids: section_ids}
     table_model = socket.assigns.table_model
 
     insights =

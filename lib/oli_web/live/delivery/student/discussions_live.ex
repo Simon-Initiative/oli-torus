@@ -267,11 +267,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
            attrs,
            require_certification_check
          ) do
-      {:ok, post} ->
+      {:ok, %Collaboration.Post{} = post} ->
         Phoenix.PubSub.broadcast(
           Oli.PubSub,
           "collab_space_discussion_#{socket.assigns.section.slug}",
-          {:reply_posted, %Collaboration.Post{post | reaction_summaries: %{}}}
+          {:reply_posted, %{post | reaction_summaries: %{}}}
         )
 
         {:noreply,
@@ -499,9 +499,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     {:noreply,
      assign(socket,
        posts:
-         Annotations.find_and_update_post(posts, new_post.parent_post_id, fn post ->
+         Annotations.find_and_update_post(posts, new_post.parent_post_id, fn %Collaboration.Post{} = post ->
            if post.id == new_post.parent_post_id do
-             %Collaboration.Post{
+             %{
                post
                | replies_count: post.replies_count + 1,
                  # only append the new reply if the replies are expanded for the parent post
@@ -1063,8 +1063,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         socket
         |> assign(
           posts:
-            Annotations.find_and_update_post(posts, post_id, fn post ->
-              %Collaboration.Post{post | status: :deleted}
+            Annotations.find_and_update_post(posts, post_id, fn %Collaboration.Post{} = post ->
+              %{post | status: :deleted}
             end)
         )
 
@@ -1072,8 +1072,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         socket
         |> assign(
           notes:
-            Annotations.find_and_update_post(notes, post_id, fn post ->
-              %Collaboration.Post{post | status: :deleted}
+            Annotations.find_and_update_post(notes, post_id, fn %Collaboration.Post{} = post ->
+              %{post | status: :deleted}
             end)
         )
     end

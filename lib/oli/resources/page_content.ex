@@ -16,10 +16,10 @@ defmodule Oli.Resources.PageContent do
   """
   def map_reduce(content, acc, map_fn, tr_context \\ %TraversalContext{})
 
-  def map_reduce(%{"model" => model} = content, acc, map_fn, tr_context) do
+  def map_reduce(%{"model" => model} = content, acc, map_fn, %TraversalContext{} = tr_context) do
     {items, acc} =
       Enum.reduce(model, {[], acc}, fn item, {items, acc} ->
-        {item, acc} = map_reduce(item, acc, map_fn, %TraversalContext{tr_context | level: 1})
+        {item, acc} = map_reduce(item, acc, map_fn, %{tr_context | level: 1})
 
         {items ++ [item], acc}
       end)
@@ -27,16 +27,16 @@ defmodule Oli.Resources.PageContent do
     {Map.put(content, "model", items), acc}
   end
 
-  def map_reduce(%{"type" => "content"} = content, acc, map_fn, tr_context) do
+  def map_reduce(%{"type" => "content"} = content, acc, map_fn, %TraversalContext{} = tr_context) do
     map_fn.(content, acc, tr_context)
   end
 
-  def map_reduce(%{"type" => "group", "id" => group_id} = content, acc, map_fn, tr_context) do
-    item_with_children(content, acc, map_fn, %TraversalContext{tr_context | group_id: group_id})
+  def map_reduce(%{"type" => "group", "id" => group_id} = content, acc, map_fn, %TraversalContext{} = tr_context) do
+    item_with_children(content, acc, map_fn, %{tr_context | group_id: group_id})
   end
 
-  def map_reduce(%{"type" => "survey", "id" => survey_id} = content, acc, map_fn, tr_context) do
-    item_with_children(content, acc, map_fn, %TraversalContext{tr_context | survey_id: survey_id})
+  def map_reduce(%{"type" => "survey", "id" => survey_id} = content, acc, map_fn, %TraversalContext{} = tr_context) do
+    item_with_children(content, acc, map_fn, %{tr_context | survey_id: survey_id})
   end
 
   def map_reduce(%{"children" => _children} = item, acc, map_fn, tr_context) do
@@ -47,7 +47,7 @@ defmodule Oli.Resources.PageContent do
     map_fn.(item, acc, tr_context)
   end
 
-  defp item_with_children(%{"children" => _children} = item, acc, map_fn, tr_context) do
+  defp item_with_children(%{"children" => _children} = item, acc, map_fn, %TraversalContext{} = tr_context) do
     map_reduce_property = fn {item, acc}, property ->
       children = Map.get(item, property)
 
@@ -55,7 +55,7 @@ defmodule Oli.Resources.PageContent do
         {mapped_children, acc} =
           Enum.reduce(children, {[], acc}, fn item, {items, acc} ->
             {item, acc} =
-              map_reduce(item, acc, map_fn, %TraversalContext{
+              map_reduce(item, acc, map_fn, %{
                 tr_context
                 | level: tr_context.level + 1
               })

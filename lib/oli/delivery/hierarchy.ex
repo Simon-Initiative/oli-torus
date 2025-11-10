@@ -471,7 +471,7 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   def reorder_children(
-        container_node,
+        %HierarchyNode{} = container_node,
         source_node,
         source_index,
         destination_index
@@ -489,7 +489,7 @@ defmodule Oli.Delivery.Hierarchy do
       end)
       |> List.insert_at(insert_index, source_node)
 
-    %HierarchyNode{container_node | children: children}
+    %{container_node | children: children}
     |> mark_unfinalized()
   end
 
@@ -501,11 +501,11 @@ defmodule Oli.Delivery.Hierarchy do
     |> mark_unfinalized()
   end
 
-  defp find_and_update_node_r(hierarchy, node) do
+  defp find_and_update_node_r(%HierarchyNode{} = hierarchy, node) do
     if hierarchy.uuid == node.uuid do
       node
     else
-      %HierarchyNode{
+      %{
         hierarchy
         | children:
             Enum.map(hierarchy.children, fn child -> find_and_update_node(child, node) end)
@@ -545,7 +545,7 @@ defmodule Oli.Delivery.Hierarchy do
     |> mark_unfinalized()
   end
 
-  defp find_and_toggle_hidden_r(hierarchy, uuid) do
+  defp find_and_toggle_hidden_r(%HierarchyNode{} = hierarchy, uuid) do
     if hierarchy.uuid == uuid do
       updated_section_resource =
         case hierarchy.section_resource do
@@ -553,12 +553,12 @@ defmodule Oli.Delivery.Hierarchy do
           sr -> Map.put(sr, :hidden, !sr.hidden)
         end
 
-      %HierarchyNode{
+      %{
         hierarchy
         | section_resource: updated_section_resource
       }
     else
-      %HierarchyNode{
+      %{
         hierarchy
         | children:
             Enum.map(hierarchy.children, fn child -> find_and_toggle_hidden_r(child, uuid) end)
@@ -574,8 +574,8 @@ defmodule Oli.Delivery.Hierarchy do
     hierarchy = find_and_remove_node(hierarchy, node.uuid)
 
     # add the node to it's destination container
-    destination = find_in_hierarchy(hierarchy, destination_uuid)
-    updated_container = %HierarchyNode{destination | children: [node | destination.children]}
+    %HierarchyNode{} = destination = find_in_hierarchy(hierarchy, destination_uuid)
+    updated_container = %{destination | children: [node | destination.children]}
 
     find_and_update_node(hierarchy, updated_container)
     |> mark_unfinalized()
@@ -592,7 +592,7 @@ defmodule Oli.Delivery.Hierarchy do
   """
   def add_materials_to_hierarchy(
         hierarchy,
-        active,
+        %HierarchyNode{} = active,
         selection,
         published_resources_by_resource_id_by_pub
       ) do
@@ -608,7 +608,7 @@ defmodule Oli.Delivery.Hierarchy do
         create_hierarchy(revision, published_resources_by_resource_id_by_pub[publication_id])
       end)
 
-    find_and_update_node(hierarchy, %HierarchyNode{active | children: active.children ++ nodes})
+    find_and_update_node(hierarchy, %{active | children: active.children ++ nodes})
     |> mark_unfinalized()
   end
 

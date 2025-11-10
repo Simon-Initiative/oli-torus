@@ -323,10 +323,10 @@ defmodule Oli.Publishing.UniqueIds do
   # this support here, as opposed to risking breaking the existing functionality
   def map_reduce(content, acc, map_fn, tr_context \\ %TraversalContext{})
 
-  def map_reduce(%{"model" => model} = content, acc, map_fn, tr_context) do
+  def map_reduce(%{"model" => model} = content, acc, map_fn, %TraversalContext{} = tr_context) do
     {items, acc} =
       Enum.reduce(model, {[], acc}, fn item, {items, acc} ->
-        {item, acc} = map_reduce(item, acc, map_fn, %TraversalContext{tr_context | level: 1})
+        {item, acc} = map_reduce(item, acc, map_fn, %{tr_context | level: 1})
 
         {items ++ [item], acc}
       end)
@@ -351,7 +351,7 @@ defmodule Oli.Publishing.UniqueIds do
     item_with_children(item, acc, map_fn, tr_context)
   end
 
-  def map_reduce(item, acc, map_fn, tr_context) when is_list(item) do
+  def map_reduce(item, acc, map_fn, %TraversalContext{} = tr_context) when is_list(item) do
     Enum.reduce(item, {[], acc}, fn item, {items, acc} ->
       type = Map.get(item, "type", "")
 
@@ -365,7 +365,7 @@ defmodule Oli.Publishing.UniqueIds do
 
         true ->
           {item, acc} =
-            map_reduce(item, acc, map_fn, %TraversalContext{
+            map_reduce(item, acc, map_fn, %{
               tr_context
               | level: tr_context.level + 1
             })
@@ -379,7 +379,7 @@ defmodule Oli.Publishing.UniqueIds do
     map_fn.(item, acc, tr_context)
   end
 
-  defp item_with_children(%{"children" => children} = item, acc, map_fn, tr_context) do
+  defp item_with_children(%{"children" => children} = item, acc, map_fn, %TraversalContext{} = tr_context) do
     type = Map.get(item, "type", "")
 
     cond do
@@ -393,7 +393,7 @@ defmodule Oli.Publishing.UniqueIds do
         {children, acc} =
           Enum.reduce(children, {[], acc}, fn item, {items, acc} ->
             {item, acc} =
-              map_reduce(item, acc, map_fn, %TraversalContext{
+              map_reduce(item, acc, map_fn, %{
                 tr_context
                 | level: tr_context.level + 1
               })

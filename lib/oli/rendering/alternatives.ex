@@ -68,11 +68,11 @@ defmodule Oli.Rendering.Alternatives do
     end
   end
 
-  defp render_selected_alternatives(selected_alternatives, context, writer) do
+  defp render_selected_alternatives(selected_alternatives, %Context{} = context, writer) do
     selected_alternatives
     |> Enum.flat_map(fn alternative ->
       writer.alternative(
-        %Context{context | pagination_mode: "normal"},
+        %{context | pagination_mode: "normal"},
         alternative
       )
     end)
