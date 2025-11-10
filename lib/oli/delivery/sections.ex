@@ -4250,9 +4250,9 @@ defmodule Oli.Delivery.Sections do
             conflict_target: [:section_id, :resource_id]
           )
 
-        %SectionResource{} ->
+        %SectionResource{} = section_resource ->
           # section resource record already exists, so we reuse it and update the fields which may have changed
-          %SectionResource{
+          %{
             section_resource
             | children: Enum.reverse(children_sr_ids),
               numbering_index: numbering.index,

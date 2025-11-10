@@ -521,14 +521,14 @@ defmodule Oli.Delivery.Hierarchy do
     |> mark_unfinalized()
   end
 
-  defp find_and_remove_node_r(hierarchy, uuid) do
+  defp find_and_remove_node_r(%HierarchyNode{} = hierarchy, uuid) do
     if uuid in Enum.map(hierarchy.children, & &1.uuid) do
-      %HierarchyNode{
+      %{
         hierarchy
         | children: Enum.filter(hierarchy.children, fn child -> child.uuid != uuid end)
       }
     else
-      %HierarchyNode{
+      %{
         hierarchy
         | children:
             Enum.map(hierarchy.children, fn child -> find_and_remove_node(child, uuid) end)
