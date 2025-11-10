@@ -71,7 +71,13 @@ defmodule OliWeb.Delivery.NewCourse do
     # Suggest a title for the course based on the LTI resource link or context title and provide
     # any reasonable default values for the course section.
     suggested_title = suggest_title(section_spec)
-    changeset = Sections.change_section(%Section{title: suggested_title, registration_open: true})
+
+    changeset =
+      Sections.change_section(%Section{
+        title: suggested_title,
+        registration_open: true,
+        timezone: "US/Eastern"
+      })
 
     {:ok,
      assign(socket,
@@ -356,6 +362,7 @@ defmodule OliWeb.Delivery.NewCourse do
           section
       end
       |> convert_dates(socket.assigns.ctx)
+      |> Map.put_new("timezone", Ecto.Changeset.get_field(socket.assigns.changeset, :timezone))
 
     changeset =
       socket.assigns.changeset

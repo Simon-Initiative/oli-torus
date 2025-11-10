@@ -1282,6 +1282,157 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       refute has_element?(view, "#page_submit_term", "<li id=\"page_submit_term\">")
     end
 
+    test "cannot start new attempt when entering page past due date with late start and late submit disallowed",
+         ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      due_date = DateTime.utc_now() |> DateTime.add(-30, :second)
+
+      params = %{
+        end_date: due_date,
+        late_start: :disallow,
+        late_submit: :disallow,
+        scheduling_type: :due_by
+      }
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_due_terms") |> render() =~ "This assignment was available on"
+
+      assert view
+             |> element("button[id='begin_attempt_button'][disabled]")
+             |> has_element?()
+    end
+
+    test "cannot start new attempt on adaptive page when entering page past due date with late start and late submit disallowed",
+         ctx do
+      %{
+        conn: conn,
+        user: user,
+        section: section,
+        graded_adaptive_page_revision: graded_adaptive_page
+      } = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      start_date = DateTime.utc_now() |> DateTime.add(-7, :day)
+      due_date = DateTime.utc_now() |> DateTime.add(-30, :second)
+
+      params = %{
+        start_date: start_date,
+        end_date: due_date,
+        late_start: :disallow,
+        late_submit: :disallow,
+        scheduling_type: :due_by
+      }
+
+      get_and_update_section_resource(section.id, graded_adaptive_page.resource_id, params)
+
+      {:ok, view, _html} =
+        live(conn, Utils.prologue_live_path(section.slug, graded_adaptive_page.slug))
+
+      assert view |> element("#page_due_terms") |> render() =~ "This assignment was available on"
+
+      assert view
+             |> element("button[id='begin_attempt_button'][disabled]")
+             |> has_element?()
+    end
+
+    test "redirects to prologue when trying to access adaptive page lesson URL directly after due date",
+         ctx do
+      %{
+        conn: conn,
+        user: user,
+        section: section,
+        graded_adaptive_page_revision: graded_adaptive_page
+      } = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      start_date = DateTime.utc_now() |> DateTime.add(-7, :day)
+      due_date = DateTime.utc_now() |> DateTime.add(-30, :second)
+
+      params = %{
+        start_date: start_date,
+        end_date: due_date,
+        late_start: :disallow,
+        late_submit: :disallow,
+        scheduling_type: :due_by
+      }
+
+      get_and_update_section_resource(section.id, graded_adaptive_page.resource_id, params)
+
+      # Try to access the lesson URL directly (without going through prologue)
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, Utils.lesson_live_path(section.slug, graded_adaptive_page.slug))
+
+      # Should redirect to the prologue page
+      assert redirect_path =~
+               Utils.prologue_live_path(section.slug, graded_adaptive_page.slug)
+    end
+
+    test "auto-submits active attempt on adaptive page when re-entering after due date has passed",
+         ctx do
+      %{
+        conn: conn,
+        user: user,
+        section: section,
+        graded_adaptive_page_revision: graded_adaptive_page
+      } = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      # Set due date in the future (1 hour from now)
+      start_date = DateTime.utc_now() |> DateTime.add(-7, :day)
+      due_date = DateTime.utc_now() |> DateTime.add(1, :hour)
+
+      params = %{
+        start_date: start_date,
+        end_date: due_date,
+        late_start: :disallow,
+        late_submit: :disallow,
+        scheduling_type: :due_by
+      }
+
+      get_and_update_section_resource(section.id, graded_adaptive_page.resource_id, params)
+
+      # Create an active attempt (simulating user starting the lesson before deadline)
+      _active_attempt =
+        create_attempt(user, section, graded_adaptive_page, %{lifecycle_state: :active})
+
+      # Now simulate the due date passing by updating it to the past
+      past_due_date = DateTime.utc_now() |> DateTime.add(-30, :second)
+
+      params = %{
+        end_date: past_due_date,
+        late_start: :disallow,
+        late_submit: :disallow,
+        scheduling_type: :due_by
+      }
+
+      get_and_update_section_resource(section.id, graded_adaptive_page.resource_id, params)
+
+      # Try to access the lesson URL (user re-entering after deadline)
+      result = live(conn, Utils.lesson_live_path(section.slug, graded_adaptive_page.slug))
+
+      # The system should auto-submit the attempt and redirect to review
+      case result do
+        {:error, {:redirect, %{to: redirect_path}}} ->
+          # Should redirect to the review page or prologue, not allow continuing the attempt
+          assert redirect_path =~ "review" or redirect_path =~ "prologue",
+                 "Expected redirect to review or prologue, got: #{redirect_path}"
+
+        {:ok, _view, _html} ->
+          flunk(
+            "User should not be able to continue the active attempt after the deadline has passed. The attempt should be auto-submitted."
+          )
+      end
+    end
+
     defp enroll_and_mark_visited(user, section) do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)

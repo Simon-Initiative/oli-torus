@@ -590,18 +590,19 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       >
         <style>
           {`
-
             .activity-content {
-              position: absolute;
+              ${isResponsive ? 'position: relative;' : 'position: absolute;'}
               border: 1px solid #ccc;
               background-color: ${props.backgroundColor || '#fff'};
-              width: ${props.width || 1000}px;
-              height: ${isResponsive ? 'auto' : props?.height || 500}px;
-              min-height: 500px;
-            }
-            .responsive-layout-active{
-              width: 1200px;
-              height:auto;
+              ${
+                isResponsive
+                  ? `max-width: ${
+                      props.width || 1200
+                    }px; min-width: 1000px; height: auto; min-height: auto; box-sizing: border-box;`
+                  : `width: ${props.width || 1000}px; height: ${
+                      props?.height || 500
+                    }px; min-height: 500px;`
+              }
             }
             .react-draggable {
               position: absolute;

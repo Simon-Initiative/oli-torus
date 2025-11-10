@@ -446,6 +446,10 @@ $element-margin-bottom: 1.5em;
     margin-bottom: $element-margin-bottom;
   }
 
+  .figure .figure-caption {
+    overflow-x: auto;
+  }
+
   .caption-wrapper {
     display: flex;
     justify-content: center;

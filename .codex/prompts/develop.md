@@ -118,6 +118,10 @@ After completing all tasks you MUST `mix compile` and fix all warnings, ensure n
 - Don’t cast protected fields set programmatically (e.g., user_id); assign explicitly.
 - Add appropriate indexes for new query paths, but only when actually used
 
+### Incremental Feature Rollout
+
+For features with incremental rollout requirements, guard the implementation by the `Oli.ScopedFeatureFlags` and its `can_access?/4` function.
+
 ### Observability & Reliability
 
 - Emit telemetry for critical actions;

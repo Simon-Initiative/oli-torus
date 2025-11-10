@@ -267,6 +267,15 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
     setSliderValue(sliderVal);
     saveState({ sliderVal, userModified: true });
   };
+
+  const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const currentValue = parseFloat((e.target as HTMLInputElement).value);
+    // Update ARIA attributes immediately for screen readers
+    if (inputTargetRef.current) {
+      inputTargetRef.current.setAttribute('aria-valuenow', currentValue.toString());
+    }
+  };
+
   const inputTargetRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (inputTargetRef && inputTargetRef.current) {
@@ -321,6 +330,7 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
               step={snapInterval}
               id={internalId}
               onChange={handleSliderChange}
+              onInput={handleInput}
               list={showTicks ? `datalist${internalId}` : ''}
               aria-labelledby={showLabel ? `label-${internalId}` : undefined}
               aria-label={!showLabel ? 'Slider' : undefined}

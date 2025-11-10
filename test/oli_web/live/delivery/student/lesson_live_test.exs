@@ -1057,6 +1057,25 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "#tech_support_user_menu", "Support")
     end
 
+    test "tech support button is rendered with sticky hook in layout", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      # Verify tech support button wrapper has the sticky hook
+      assert has_element?(view, "#tech-support-wrapper[phx-hook='StickyTechSupportButton']")
+
+      # Verify tech support button exists with correct id
+      assert has_element?(view, "#tech-support")
+    end
+
     @tag isolation: "serializable"
     test "timer will not be shown on practice pages", %{
       conn: conn,
