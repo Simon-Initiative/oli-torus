@@ -141,7 +141,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   attr :select, :string, default: ""
   attr :additional_table_class, :string, default: "table-sm"
   attr :additional_row_class, :string, default: ""
-  attr :sticky_header_offset, :integer, default: 57
+  attr :sticky_header_offset, :integer, default: 0
 
   attr :details_render_fn, :any,
     default: nil,

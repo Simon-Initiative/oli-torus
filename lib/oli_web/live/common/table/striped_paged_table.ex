@@ -22,7 +22,7 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :show_limit_change, :boolean, default: false
   attr :no_records_message, :string, default: "None exist"
   attr :overflow_class, :string, default: "inline"
-  attr :sticky_header_offset, :integer, default: 57
+  attr :sticky_header_offset, :integer, default: 0
 
   attr :details_render_fn, :any,
     default: nil,
