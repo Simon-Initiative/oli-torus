@@ -523,9 +523,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          update_post_replies(socket, parent_post_id, nil, fn replies ->
            Enum.map(
              replies,
-             fn post ->
+             fn %Collaboration.Post{} = post ->
                if post.id == post_id do
-                 %{
+                 %Collaboration.Post{
                    post
                    | reaction_summaries: update_reaction_summaries(post, reaction, change)
                  }
@@ -559,9 +559,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
            posts:
              Enum.map(
                posts,
-               fn post ->
+               fn %Collaboration.Post{} = post ->
                  if post.id == post_id do
-                   %{
+                   %Collaboration.Post{
                      post
                      | reaction_summaries: update_reaction_summaries(post, reaction, change)
                    }
@@ -631,7 +631,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          socket
          |> put_flash(:info, "Reply successfully created")
          |> optimistically_add_reply_post(
-           %{post | reaction_summaries: %{}},
+           %Collaboration.Post{post | reaction_summaries: %{}},
            parent_post_id
          )}
 
@@ -1707,7 +1707,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
                 Enum.map(posts, fn %Collaboration.Post{} = post ->
                   if post.id == load_replies_for_post_id do
-                    %{post | replies: post_replies}
+                    %Collaboration.Post{post | replies: post_replies}
                   else
                     post
                   end
@@ -1776,7 +1776,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     socket
     |> assign_annotations(
-      posts: [%{post | replies_count: 0, reaction_summaries: %{}} | posts],
+      posts: [%Collaboration.Post{post | replies_count: 0, reaction_summaries: %{}} | posts],
       post_counts: Map.update(post_counts, selected_point, 1, &(&1 + 1)),
       create_new_annotation: false
     )
@@ -1790,7 +1790,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       posts:
         Annotations.find_and_update_post(posts, parent_post_id, fn %Collaboration.Post{} = post ->
           if post.id == parent_post_id do
-            %{
+            %Collaboration.Post{
               post
               | replies_count: post.replies_count + 1,
                 replies:
@@ -1825,7 +1825,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     |> assign_annotations(
       posts:
         Annotations.find_and_update_post(posts, post_id, fn %Collaboration.Post{} = post ->
-          %{post | status: :deleted}
+          %Collaboration.Post{post | status: :deleted}
         end)
     )
   end

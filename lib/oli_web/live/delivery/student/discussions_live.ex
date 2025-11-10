@@ -271,7 +271,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         Phoenix.PubSub.broadcast(
           Oli.PubSub,
           "collab_space_discussion_#{socket.assigns.section.slug}",
-          {:reply_posted, %{post | reaction_summaries: %{}}}
+          {:reply_posted, %Collaboration.Post{post | reaction_summaries: %{}}}
         )
 
         {:noreply,
@@ -301,9 +301,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
          update_post_replies(socket, parent_post_id, nil, fn replies ->
            Enum.map(
              replies,
-             fn post ->
+             fn %Collaboration.Post{} = post ->
                if post.id == post_id do
-                 %{
+                 %Collaboration.Post{
                    post
                    | reaction_summaries: update_reaction_summaries(post, reaction, change)
                  }
@@ -337,9 +337,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
            posts:
              Enum.map(
                posts,
-               fn post ->
+               fn %Collaboration.Post{} = post ->
                  if post.id == post_id do
-                   %{
+                   %Collaboration.Post{
                      post
                      | reaction_summaries: update_reaction_summaries(post, reaction, change)
                    }
@@ -504,7 +504,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
            new_post.parent_post_id,
            fn %Collaboration.Post{} = post ->
              if post.id == new_post.parent_post_id do
-               %{
+               %Collaboration.Post{
                  post
                  | replies_count: post.replies_count + 1,
                    # only append the new reply if the replies are expanded for the parent post
@@ -1068,7 +1068,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         |> assign(
           posts:
             Annotations.find_and_update_post(posts, post_id, fn %Collaboration.Post{} = post ->
-              %{post | status: :deleted}
+              %Collaboration.Post{post | status: :deleted}
             end)
         )
 
@@ -1077,7 +1077,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         |> assign(
           notes:
             Annotations.find_and_update_post(notes, post_id, fn %Collaboration.Post{} = post ->
-              %{post | status: :deleted}
+              %Collaboration.Post{post | status: :deleted}
             end)
         )
     end

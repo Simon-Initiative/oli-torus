@@ -489,7 +489,7 @@ defmodule Oli.Delivery.Hierarchy do
       end)
       |> List.insert_at(insert_index, source_node)
 
-    %{container_node | children: children}
+    %HierarchyNode{container_node | children: children}
     |> mark_unfinalized()
   end
 
@@ -505,7 +505,7 @@ defmodule Oli.Delivery.Hierarchy do
     if hierarchy.uuid == node.uuid do
       node
     else
-      %{
+      %HierarchyNode{
         hierarchy
         | children:
             Enum.map(hierarchy.children, fn child -> find_and_update_node(child, node) end)
@@ -523,12 +523,12 @@ defmodule Oli.Delivery.Hierarchy do
 
   defp find_and_remove_node_r(%HierarchyNode{} = hierarchy, uuid) do
     if uuid in Enum.map(hierarchy.children, & &1.uuid) do
-      %{
+      %HierarchyNode{
         hierarchy
         | children: Enum.filter(hierarchy.children, fn child -> child.uuid != uuid end)
       }
     else
-      %{
+      %HierarchyNode{
         hierarchy
         | children:
             Enum.map(hierarchy.children, fn child -> find_and_remove_node(child, uuid) end)
@@ -553,12 +553,12 @@ defmodule Oli.Delivery.Hierarchy do
           sr -> Map.put(sr, :hidden, !sr.hidden)
         end
 
-      %{
+      %HierarchyNode{
         hierarchy
         | section_resource: updated_section_resource
       }
     else
-      %{
+      %HierarchyNode{
         hierarchy
         | children:
             Enum.map(hierarchy.children, fn child -> find_and_toggle_hidden_r(child, uuid) end)
@@ -575,7 +575,7 @@ defmodule Oli.Delivery.Hierarchy do
 
     # add the node to it's destination container
     %HierarchyNode{} = destination = find_in_hierarchy(hierarchy, destination_uuid)
-    updated_container = %{destination | children: [node | destination.children]}
+    updated_container = %HierarchyNode{destination | children: [node | destination.children]}
 
     find_and_update_node(hierarchy, updated_container)
     |> mark_unfinalized()
@@ -608,7 +608,7 @@ defmodule Oli.Delivery.Hierarchy do
         create_hierarchy(revision, published_resources_by_resource_id_by_pub[publication_id])
       end)
 
-    find_and_update_node(hierarchy, %{active | children: active.children ++ nodes})
+    find_and_update_node(hierarchy, %HierarchyNode{active | children: active.children ++ nodes})
     |> mark_unfinalized()
   end
 

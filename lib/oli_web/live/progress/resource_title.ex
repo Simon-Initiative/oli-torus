@@ -21,7 +21,7 @@ defmodule OliWeb.Progress.ResourceTitle do
         <small class="text-muted">
           <%= for {ancestor, index} <- Enum.with_index(@node.ancestors) do %>
             <span>
-              {Oli.Resources.Numbering.container_type_label(%{
+              {Oli.Resources.Numbering.container_type_label(%Oli.Resources.Numbering{
                 @numbering
                 | level: ancestor.section_resource.numbering_level,
                   index: ancestor.section_resource.numbering_index

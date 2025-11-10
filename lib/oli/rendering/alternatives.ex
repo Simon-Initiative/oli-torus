@@ -72,7 +72,7 @@ defmodule Oli.Rendering.Alternatives do
     selected_alternatives
     |> Enum.flat_map(fn alternative ->
       writer.alternative(
-        %{context | pagination_mode: "normal"},
+        %Context{context | pagination_mode: "normal"},
         alternative
       )
     end)

@@ -89,7 +89,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
   defp prune_feedback_from_state(state, true), do: state
 
   defp prune_feedback_from_state(%Oli.Activities.State.ActivityState{} = state, false) do
-    %{
+    %Oli.Activities.State.ActivityState{
       state
       | parts: prune_feedback_from_parts(state.parts),
         score: nil,
@@ -99,7 +99,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
 
   defp prune_feedback_from_parts(parts) do
     Enum.map(parts, fn %Oli.Activities.State.PartState{} = part ->
-      %{part | feedback: nil}
+      %Oli.Activities.State.PartState{part | feedback: nil}
     end)
   end
 

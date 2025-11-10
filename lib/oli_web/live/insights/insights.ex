@@ -326,7 +326,7 @@ defmodule OliWeb.Insights do
 
   defp change_section_ids(socket, section_ids) do
     %BrowseInsightsOptions{} = current_options = socket.assigns.options
-    options = %{current_options | section_ids: section_ids}
+    options = %BrowseInsightsOptions{current_options | section_ids: section_ids}
     table_model = socket.assigns.table_model
 
     insights =

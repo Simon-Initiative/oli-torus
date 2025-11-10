@@ -326,7 +326,7 @@ defmodule Oli.Publishing.UniqueIds do
   def map_reduce(%{"model" => model} = content, acc, map_fn, %TraversalContext{} = tr_context) do
     {items, acc} =
       Enum.reduce(model, {[], acc}, fn item, {items, acc} ->
-        {item, acc} = map_reduce(item, acc, map_fn, %{tr_context | level: 1})
+        {item, acc} = map_reduce(item, acc, map_fn, %TraversalContext{tr_context | level: 1})
 
         {items ++ [item], acc}
       end)
@@ -365,7 +365,7 @@ defmodule Oli.Publishing.UniqueIds do
 
         true ->
           {item, acc} =
-            map_reduce(item, acc, map_fn, %{
+            map_reduce(item, acc, map_fn, %TraversalContext{
               tr_context
               | level: tr_context.level + 1
             })
@@ -398,7 +398,7 @@ defmodule Oli.Publishing.UniqueIds do
         {children, acc} =
           Enum.reduce(children, {[], acc}, fn item, {items, acc} ->
             {item, acc} =
-              map_reduce(item, acc, map_fn, %{
+              map_reduce(item, acc, map_fn, %TraversalContext{
                 tr_context
                 | level: tr_context.level + 1
               })

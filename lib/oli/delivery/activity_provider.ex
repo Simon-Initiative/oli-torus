@@ -359,7 +359,7 @@ defmodule Oli.Delivery.ActivityProvider do
       |> Enum.shuffle()
 
     %Source{} = current_source = fulfillment_state.source
-    source = %{current_source | bank: bank}
+    source = %Source{current_source | bank: bank}
 
     %{fulfillment_state | source: source}
   end

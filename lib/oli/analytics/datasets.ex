@@ -506,7 +506,7 @@ defmodule Oli.Analytics.Datasets do
 
     %JobConfig{} = current_config = job.configuration
     chunk_size = Utils.determine_chunk_size(current_config.excluded_fields)
-    config = %{current_config | chunk_size: chunk_size}
+    config = %JobConfig{current_config | chunk_size: chunk_size}
 
     Logger.debug("Preprocessed dataset job #{job.job_id}")
 
@@ -531,7 +531,7 @@ defmodule Oli.Analytics.Datasets do
   defp set_ignore_student_ids(%DatasetJob{configuration: config} = job) do
     ignored_student_ids = Utils.determine_ignored_student_ids(config.section_ids)
     %JobConfig{} = current_config = job.configuration
-    config = %{current_config | ignored_student_ids: ignored_student_ids}
+    config = %JobConfig{current_config | ignored_student_ids: ignored_student_ids}
     %DatasetJob{job | configuration: config}
   end
 

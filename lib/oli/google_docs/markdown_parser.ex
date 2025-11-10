@@ -850,7 +850,7 @@ defmodule Oli.GoogleDocs.MarkdownParser do
     block_with_index =
       Map.put(block, :index, state.block_index)
 
-    %{
+    %State{
       state
       | blocks: [block_with_index | state.blocks],
         block_index: state.block_index + 1
