@@ -148,14 +148,19 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       setPageClasses([`skin-${pageContent.custom.viewerSkin}`]);
     }
 
-    const lessonWidth = pageContent.custom.defaultScreenWidth || '100%';
+    const lessonWidth = pageContent.custom.defaultScreenWidth || (responsiveLayout ? 1200 : '100%');
     const lessonHeight = pageContent.custom.defaultScreenHeight;
     // TODO: add a flag to lesson data use the height?
     const useLessonHeight = false;
     setLessonStyles(() => {
-      const styles: any = {
-        width: lessonWidth,
-      };
+      const styles: any = {};
+      if (responsiveLayout) {
+        // In responsive layout, use max-width instead of width
+        styles.width = '100%';
+        styles.maxWidth = typeof lessonWidth === 'number' ? `${lessonWidth}px` : lessonWidth;
+      } else {
+        styles.width = lessonWidth;
+      }
       if (useLessonHeight) {
         styles.height = lessonHeight;
       }
@@ -207,7 +212,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         }
       });
     }
-  }, [pageContent]);
+  }, [pageContent, responsiveLayout]);
 
   useEffect(() => {
     if (!currentActivityTree || currentActivityTree.length === 0) {
@@ -262,7 +267,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     let customClasses = currentActivity.content?.custom?.customCssClass || '';
 
     if (currentActivityTree.length) {
-      customClasses = `${customClasses} ${getCustomClassAncestry()}`;
+      customClasses = `${customClasses} ${getCustomClassAncestry()} ${
+        responsiveLayout ? 'responsive-layout-section' : ''
+      }`;
     }
     setActivityClasses([...defaultClasses, customClasses]);
     if (fieldRef.current) {
@@ -606,11 +613,18 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
     const actualCurrentActivity = localActivityTree[localActivityTree.length - 1];
     const config = actualCurrentActivity.content.custom;
-    const styles: CSSProperties = {
-      width: responsiveLayout
-        ? lessonStyles.width || config?.width // swap if responsiveLayout is true
-        : config?.width || lessonStyles.width, // original order if false
-    };
+    const styles: CSSProperties = {};
+    if (responsiveLayout) {
+      // In responsive layout, use max-width instead of width
+      styles.width = '100%';
+      styles.maxWidth =
+        lessonStyles.maxWidth ||
+        (typeof lessonStyles.width === 'number' ? `${lessonStyles.width}px` : lessonStyles.width) ||
+        config?.width ||
+        '1200px';
+    } else {
+      styles.width = config?.width || lessonStyles.width;
+    }
     if (config?.palette) {
       if (config.palette.useHtmlProps) {
         styles.backgroundColor = config.palette.backgroundColor;
@@ -646,7 +660,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       styles.zIndex = config.z || 0;
     }
     if (config?.height) {
-      styles.height = config.height;
+      styles.height = responsiveLayout ? 'auto' : config.height;
     }
 
     // attempts are being constantly updated, if we are not careful it will re-render the activity

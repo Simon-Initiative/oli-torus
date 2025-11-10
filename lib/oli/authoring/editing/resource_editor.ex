@@ -92,6 +92,44 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     end
   end
 
+  @doc """
+  Gets an existing tag with the given title or creates a new one if it doesn't exist.
+  Tag matching is case-insensitive to prevent duplicates.
+  """
+  def get_or_create_tag(project_slug, author, title) when is_binary(title) do
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project) do
+      case find_existing_tag(project_slug, author, title) do
+        {:ok, existing_revision} ->
+          {:ok, existing_revision}
+
+        {:error, :not_found} ->
+          create(project_slug, author, Oli.Resources.ResourceType.id_for_tag(), %{
+            "title" => title
+          })
+
+        error ->
+          error
+      end
+    else
+      error -> error
+    end
+  end
+
+  defp find_existing_tag(project_slug, _author, title) when is_binary(title) do
+    # Use AuthoringResolver to efficiently query for existing tags by title (case-insensitive)
+    case AuthoringResolver.from_title(
+           project_slug,
+           title,
+           Oli.Resources.ResourceType.id_for_tag()
+         ) do
+      # If at least one revision with this title exists, return the first one
+      [revision | _rest] -> {:ok, revision}
+      # If no revisions found, return not_found
+      [] -> {:error, :not_found}
+    end
+  end
+
   def delete(project_slug, resource_id, author) do
     edit(project_slug, resource_id, author, %{deleted: true})
   end

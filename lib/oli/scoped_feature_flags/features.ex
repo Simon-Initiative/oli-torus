@@ -34,7 +34,7 @@ defmodule Oli.ScopedFeatureFlags.Features do
   @doc false
   defmacro __using__(_opts) do
     quote do
-      import Oli.ScopedFeatureFlags.Features, only: [deffeature: 3]
+      import Oli.ScopedFeatureFlags.Features, only: [deffeature: 3, deffeature: 4]
 
       @before_compile Oli.ScopedFeatureFlags.Features
       @features []
@@ -55,40 +55,39 @@ defmodule Oli.ScopedFeatureFlags.Features do
       deffeature :advanced_analytics, [:both], "Advanced analytics dashboard"
       deffeature :auto_grading, [:delivery], "Automatic grading system"
   """
-  defmacro deffeature(name, scopes, description) do
+  defmacro deffeature(name, scopes, description, metadata \\ %{}) do
+    metadata = Macro.escape(metadata)
+
     quote do
-      @features [{unquote(name), unquote(scopes), unquote(description)} | @features]
+      @features [
+        %{
+          name: unquote(name),
+          scopes: unquote(scopes),
+          description: unquote(description),
+          metadata: unquote(metadata)
+        }
+        | @features
+      ]
     end
   end
 
   @doc false
   defmacro __before_compile__(env) do
-    features = Module.get_attribute(env.module, :features) |> Enum.reverse()
-
-    # Validate features at compile time
-    validate_features!(features)
+    features =
+      env.module
+      |> Module.get_attribute(:features)
+      |> Enum.reverse()
+      |> validate_features!()
 
     # Pre-compute the lists for efficiency
-    feature_names = Enum.map(features, fn {name, _scopes, _description} -> name end)
-
-    feature_strings =
-      Enum.map(features, fn {name, _scopes, _description} -> Atom.to_string(name) end)
+    feature_names = Enum.map(features, & &1.name)
+    feature_strings = Enum.map(features, & &1.string_name)
 
     quote do
       @doc """
       Returns all defined features with their metadata.
       """
-      def all_features do
-        unquote(Macro.escape(features))
-        |> Enum.map(fn {name, scopes, description} ->
-          %{
-            name: name,
-            scopes: scopes,
-            description: description,
-            string_name: Atom.to_string(name)
-          }
-        end)
-      end
+      def all_features, do: unquote(Macro.escape(features))
 
       @doc """
       Returns a list of all feature names as atoms.
@@ -120,20 +119,7 @@ defmodule Oli.ScopedFeatureFlags.Features do
       Returns nil if the feature is not defined.
       """
       def get_feature(feature_name) when is_atom(feature_name) do
-        case Enum.find(unquote(Macro.escape(features)), fn {name, _scopes, _description} ->
-               name == feature_name
-             end) do
-          {name, scopes, description} ->
-            %{
-              name: name,
-              scopes: scopes,
-              description: description,
-              string_name: Atom.to_string(name)
-            }
-
-          nil ->
-            nil
-        end
+        Enum.find(unquote(Macro.escape(features)), fn feature -> feature.name == feature_name end)
       end
 
       def get_feature(feature_name) when is_binary(feature_name) do
@@ -165,16 +151,8 @@ defmodule Oli.ScopedFeatureFlags.Features do
       """
       def features_for_scope(scope) when is_atom(scope) do
         unquote(Macro.escape(features))
-        |> Enum.filter(fn {_name, scopes, _description} ->
+        |> Enum.filter(fn %{scopes: scopes} ->
           scope in scopes or :both in scopes
-        end)
-        |> Enum.map(fn {name, scopes, description} ->
-          %{
-            name: name,
-            scopes: scopes,
-            description: description,
-            string_name: Atom.to_string(name)
-          }
         end)
       end
     end
@@ -183,7 +161,7 @@ defmodule Oli.ScopedFeatureFlags.Features do
   @doc false
   def validate_features!(features) do
     # Check for duplicate feature names
-    names = Enum.map(features, fn {name, _scopes, _description} -> name end)
+    names = Enum.map(features, & &1.name)
     duplicates = names -- Enum.uniq(names)
 
     if duplicates != [] do
@@ -192,11 +170,55 @@ defmodule Oli.ScopedFeatureFlags.Features do
     end
 
     # Validate each feature
-    Enum.each(features, fn {name, scopes, description} ->
+    Enum.map(features, fn feature ->
+      %{name: name, scopes: scopes, description: description, metadata: metadata} = feature
+
       validate_feature_name!(name)
       validate_scopes!(scopes)
       validate_description!(description)
+
+      metadata =
+        metadata
+        |> normalize_metadata!()
+        |> Map.put_new(:rollout_mode, :scoped_only)
+        |> validate_metadata!()
+
+      feature
+      |> Map.put(:metadata, metadata)
+      |> Map.put(:string_name, Atom.to_string(name))
     end)
+  end
+
+  defp normalize_metadata!(metadata) when metadata in [%{}, []], do: %{}
+
+  defp normalize_metadata!(metadata) when is_list(metadata) do
+    if Keyword.keyword?(metadata) do
+      metadata |> Enum.into(%{})
+    else
+      raise CompileError,
+        description: "Metadata must be a keyword list or map, got list #{inspect(metadata)}"
+    end
+  end
+
+  defp normalize_metadata!(%{} = metadata), do: metadata
+
+  defp normalize_metadata!(nil), do: %{}
+
+  defp normalize_metadata!(metadata) do
+    raise CompileError,
+      description: "Metadata must be a keyword list or map, got #{inspect(metadata)}"
+  end
+
+  defp validate_metadata!(metadata) do
+    rollout_mode = Map.get(metadata, :rollout_mode, :scoped_only)
+
+    unless rollout_mode in [:scoped_only, :canary] do
+      raise CompileError,
+        description:
+          "Invalid rollout_mode #{inspect(rollout_mode)}. Supported values are :scoped_only or :canary."
+    end
+
+    metadata
   end
 
   @doc false

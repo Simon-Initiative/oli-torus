@@ -1129,6 +1129,14 @@ defmodule OliWeb.Delivery.Student.Utils do
   def parse_enrollment_status(:rejected), do: "Rejected invitation"
   def parse_enrollment_status(_status), do: "Unknown"
 
+  @doc """
+  Parses the certificate status and returns a human-readable string.
+  """
+  @spec parse_certificate_status(atom()) :: String.t()
+  def parse_certificate_status(:earned), do: "Approved"
+  def parse_certificate_status(:denied), do: "Denied"
+  def parse_certificate_status(_), do: "In Progress"
+
   def emit_page_viewed_event(socket) do
     section = socket.assigns.section
     context = socket.assigns.page_context

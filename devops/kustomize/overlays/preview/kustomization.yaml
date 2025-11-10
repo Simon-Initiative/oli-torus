@@ -16,21 +16,67 @@ secretGenerator:
     envs:
       - app-overrides.env
 
-vars:
-  - name: PREVIEW_SLUG
-    objref:
+replacements:
+  - source:
       kind: ConfigMap
       name: preview-params
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.PREVIEW_SLUG
-  - name: PREVIEW_DOMAIN
-    objref:
+      fieldPath: data.PREVIEW_HOST
+    targets:
+      - select:
+          kind: Ingress
+          name: app
+        fieldPaths:
+          - spec.rules.[host=placeholder-host].host
+      - select:
+          kind: Ingress
+          name: minio-api
+        fieldPaths:
+          - spec.rules.[host=placeholder-host].host
+      - select:
+          kind: Ingress
+          name: minio-console
+        fieldPaths:
+          - spec.rules.[host=placeholder-host].host
+  - source:
       kind: ConfigMap
       name: preview-params
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.PREVIEW_DOMAIN
+      fieldPath: data.MINIO_API_MIDDLEWARE
+    targets:
+      - select:
+          kind: Ingress
+          name: minio-api
+        fieldPaths:
+          - metadata.annotations.[traefik.ingress.kubernetes.io/router.middlewares]
+  - source:
+      kind: ConfigMap
+      name: preview-params
+      fieldPath: data.MINIO_CONSOLE_MIDDLEWARE
+    targets:
+      - select:
+          kind: Ingress
+          name: minio-console
+        fieldPaths:
+          - metadata.annotations.[traefik.ingress.kubernetes.io/router.middlewares]
+  - source:
+      kind: ConfigMap
+      name: preview-params
+      fieldPath: data.MINIO_SERVER_URL
+    targets:
+      - select:
+          kind: StatefulSet
+          name: minio
+        fieldPaths:
+          - spec.template.spec.containers.[name=minio].env.[name=MINIO_SERVER_URL].value
+  - source:
+      kind: ConfigMap
+      name: preview-params
+      fieldPath: data.MINIO_BROWSER_REDIRECT_URL
+    targets:
+      - select:
+          kind: StatefulSet
+          name: minio
+        fieldPaths:
+          - spec.template.spec.containers.[name=minio].env.[name=MINIO_BROWSER_REDIRECT_URL].value
 
 patches:
   - path: patches/app-ingress.yaml

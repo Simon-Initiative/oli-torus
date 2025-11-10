@@ -305,5 +305,113 @@ defmodule Oli.Publishing.AuthoringResolverTest do
                "https://www.youtube.com/watch?v=1234"
              ]
     end
+
+    test "from_title/3 returns revisions matching the title (case-insensitive)", %{
+      author: author,
+      project: project
+    } do
+      # Create some tags
+      {:ok, tag1} =
+        ResourceEditor.create(
+          project.slug,
+          author,
+          ResourceType.id_for_tag(),
+          %{title: "JavaScript"}
+        )
+
+      {:ok, tag2} =
+        ResourceEditor.create(
+          project.slug,
+          author,
+          ResourceType.id_for_tag(),
+          %{title: "Python"}
+        )
+
+      # Test exact match
+      revisions =
+        AuthoringResolver.from_title(project.slug, "JavaScript", ResourceType.id_for_tag())
+
+      assert length(revisions) == 1
+      assert hd(revisions).resource_id == tag1.resource_id
+
+      # Test case-insensitive match (lowercase)
+      revisions =
+        AuthoringResolver.from_title(project.slug, "javascript", ResourceType.id_for_tag())
+
+      assert length(revisions) == 1
+      assert hd(revisions).resource_id == tag1.resource_id
+
+      # Test case-insensitive match (uppercase)
+      revisions =
+        AuthoringResolver.from_title(project.slug, "JAVASCRIPT", ResourceType.id_for_tag())
+
+      assert length(revisions) == 1
+      assert hd(revisions).resource_id == tag1.resource_id
+
+      # Test case-insensitive match (mixed case)
+      revisions =
+        AuthoringResolver.from_title(project.slug, "JaVaScRiPt", ResourceType.id_for_tag())
+
+      assert length(revisions) == 1
+      assert hd(revisions).resource_id == tag1.resource_id
+
+      # Test non-existent title
+      revisions = AuthoringResolver.from_title(project.slug, "Ruby", ResourceType.id_for_tag())
+      assert revisions == []
+
+      # Test that it returns the correct tag when multiple exist
+      revisions =
+        AuthoringResolver.from_title(project.slug, "python", ResourceType.id_for_tag())
+
+      assert length(revisions) == 1
+      assert hd(revisions).resource_id == tag2.resource_id
+    end
+
+    test "from_title/2 returns revisions matching the title without resource_type filter", %{
+      author: author,
+      project: project
+    } do
+      {:ok, tag} =
+        ResourceEditor.create(
+          project.slug,
+          author,
+          ResourceType.id_for_tag(),
+          %{title: "TestTag"}
+        )
+
+      # Without resource_type_id filter, should still find the tag
+      revisions = AuthoringResolver.from_title(project.slug, "TestTag")
+      assert length(revisions) >= 1
+      assert Enum.any?(revisions, fn rev -> rev.resource_id == tag.resource_id end)
+    end
+
+    test "from_title/3 handles deleted revisions correctly", %{
+      author: author,
+      project: project
+    } do
+      {:ok, tag} =
+        ResourceEditor.create(
+          project.slug,
+          author,
+          ResourceType.id_for_tag(),
+          %{title: "ToBeDeleted"}
+        )
+
+      # Should find the tag before deletion
+      revisions =
+        AuthoringResolver.from_title(project.slug, "ToBeDeleted", ResourceType.id_for_tag())
+
+      assert length(revisions) == 1
+      assert hd(revisions).resource_id == tag.resource_id
+
+      # Delete the tag
+      {:ok, _deleted} = ResourceEditor.delete(project.slug, tag.resource_id, author)
+
+      # Should not find deleted tag
+      revisions =
+        AuthoringResolver.from_title(project.slug, "ToBeDeleted", ResourceType.id_for_tag())
+
+      assert revisions == []
+    end
   end
 end

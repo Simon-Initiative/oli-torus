@@ -227,6 +227,17 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert %{"info" => "Section successfully created."} ==
                assert_redirect(view, ~p"/sections/new_instructor_course")
     end
+
+    test "timezone is set to the default timezone", %{conn: conn} = context do
+      %{section: section} = create_source(context)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      select_source(:instructor, view, section)
+      complete_course_name_form(view, %{title: "New instructor course"})
+
+      # Check that the timezone is set to the default timezone (US/Eastern)
+      assert has_element?(view, "select#section_timezone option[selected][value=\"US/Eastern\"]")
+    end
   end
 
   describe "LMS - Course Details" do

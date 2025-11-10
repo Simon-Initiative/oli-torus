@@ -22,11 +22,43 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, alt, defaultSrc, lockAspectRatio } = model;
-  const imageStyles: CSSProperties = {
-    width,
-    height,
-  };
+  const { width, height, src, alt, defaultSrc, lockAspectRatio, scaleContent } = model;
+
+  // Detect responsive layout mode (when width is '100%')
+  const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
+
+  // Build CSS classes based on flag combinations in responsive layout
+  const imageClasses = (() => {
+    if (!isResponsiveLayout) {
+      return '';
+    }
+
+    // Build class names based on flag combinations
+    const classes: string[] = [];
+    if (scaleContent && !lockAspectRatio) {
+      classes.push('responsive-image-scale-only');
+    } else if (lockAspectRatio && !scaleContent) {
+      classes.push('responsive-image-lock-ratio-only');
+    } else if (scaleContent && lockAspectRatio) {
+      classes.push('responsive-image-scale-lock-both');
+    }
+
+    return classes.join(' ');
+  })();
+
+  // For non-responsive or when no flags are set, use inline styles
+  // For responsive with flags, use CSS custom properties for dynamic values and CSS classes for rules
+  const imageStyles: CSSProperties =
+    isResponsiveLayout && imageClasses
+      ? {
+          // Pass original width and height as CSS variables for CSS to use
+          ['--image-width' as string]: typeof width === 'number' ? `${width}px` : width,
+          ['--image-height' as string]: typeof height === 'number' ? `${height}px` : height,
+        }
+      : {
+          width,
+          height,
+        };
 
   const debounceWaitTime = 1000;
   const debounceImageAdjust = useCallback(
@@ -37,15 +69,35 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   );
 
   useEffect(() => {
-    if (src?.length && src !== defaultSrc && lockAspectRatio) {
+    // Only adjust size if lockAspectRatio is checked AND we're not in responsive layout with scaleContent
+    // When scaleContent is true (including when both flags are checked), CSS handles sizing
+    const shouldAdjust =
+      src?.length &&
+      src !== defaultSrc &&
+      lockAspectRatio &&
+      !(isResponsiveLayout && scaleContent === true);
+
+    if (shouldAdjust) {
       debounceImageAdjust(model);
     }
-  }, [model, lockAspectRatio]);
+  }, [model, lockAspectRatio, scaleContent, isResponsiveLayout]);
   const imageContainerRef = useRef<HTMLImageElement>(null);
   const manipulateImageSize = (updatedModel: ImageModel, isfromDebaunce: boolean) => {
     if (!imageContainerRef?.current || !isfromDebaunce) {
       return;
     }
+
+    // Skip saving dimensions when in responsive layout with scaleContent enabled
+    // Dimensions will be handled via CSS in this case (either scale-only or both flags)
+    const isInResponsiveLayout =
+      updatedModel.width === '100%' ||
+      (typeof updatedModel.width === 'string' && updatedModel.width.includes('%'));
+
+    // Skip when scaleContent is true (CSS handles sizing for scale-only and both flags)
+    if (isInResponsiveLayout && updatedModel.scaleContent === true) {
+      return;
+    }
+
     const naturalWidth = imageContainerRef.current.naturalWidth;
     const naturalHeight = imageContainerRef.current.naturalHeight;
 
@@ -84,11 +136,16 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     <img
       ref={imageContainerRef}
       onLoad={() => {
-        lockAspectRatio && manipulateImageSize(model, false);
+        // Only manipulate size if lockAspectRatio is checked AND we're not in responsive layout with scaleContent
+        // When scaleContent is true (including when both flags are checked), CSS handles sizing
+        if (lockAspectRatio && !(isResponsiveLayout && scaleContent === true)) {
+          manipulateImageSize(model, false);
+        }
       }}
       draggable="false"
       alt={alt}
       src={src}
+      className={imageClasses || undefined}
       style={imageStyles}
     />
   ) : null;

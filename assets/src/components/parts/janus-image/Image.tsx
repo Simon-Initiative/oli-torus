@@ -98,12 +98,43 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, imageSrc, defaultSrc, alt } = model;
-  const imageStyles: CSSProperties = {
-    width,
-    height,
-    /* zIndex: z, */
-  };
+  const { width, height, src, imageSrc, defaultSrc, alt, lockAspectRatio, scaleContent } = model;
+
+  // Detect responsive layout mode (when width is '100%')
+  const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
+
+  // Build CSS classes based on flag combinations in responsive layout
+  const imageClasses = (() => {
+    if (!isResponsiveLayout) {
+      return '';
+    }
+
+    // Build class names based on flag combinations
+    const classes: string[] = [];
+    if (scaleContent && !lockAspectRatio) {
+      classes.push('responsive-image-scale-only');
+    } else if (lockAspectRatio && !scaleContent) {
+      classes.push('responsive-image-lock-ratio-only');
+    } else if (scaleContent && lockAspectRatio) {
+      classes.push('responsive-image-scale-lock-both');
+    }
+
+    return classes.join(' ');
+  })();
+
+  // For non-responsive or when no flags are set, use inline styles
+  // For responsive with flags, use CSS custom properties for dynamic values and CSS classes for rules
+  const imageStyles: CSSProperties =
+    isResponsiveLayout && imageClasses
+      ? {
+          // Pass original width and height as CSS variables for CSS to use
+          ['--image-width' as string]: typeof width === 'number' ? `${width}px` : width,
+          ['--image-height' as string]: typeof height === 'number' ? `${height}px` : height,
+        }
+      : {
+          width,
+          height,
+        };
 
   useEffect(() => {
     const styleChanges: any = {};
@@ -122,7 +153,14 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     setImgSrc(imageSource);
   }, [model]);
   return ready ? (
-    <img data-janus-type={tagName} draggable="false" alt={alt} src={imgSrc} style={imageStyles} />
+    <img
+      data-janus-type={tagName}
+      draggable="false"
+      alt={alt}
+      src={imgSrc}
+      className={imageClasses || undefined}
+      style={imageStyles}
+    />
   ) : null;
 };
 

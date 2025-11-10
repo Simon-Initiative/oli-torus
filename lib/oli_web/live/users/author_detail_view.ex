@@ -8,6 +8,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, SystemRole}
+  alias Oli.Auditing
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -142,6 +143,25 @@ defmodule OliWeb.Users.AuthorsDetailView do
                 }
               />
             </div>
+            <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
+              <div class="form-control">
+                <.input
+                  type="checkbox"
+                  field={@form[:is_internal]}
+                  label="Internal staff"
+                  class="form-check-input"
+                  disabled={@disabled_edit}
+                />
+                <p class="mt-1 text-xs text-gray-500">
+                  Internal actors gain early access to internal-only and canary features.
+                </p>
+              </div>
+            <% else %>
+              <ReadOnly.render
+                label="Internal actor"
+                value={if(@author.is_internal, do: "Yes", else: "No")}
+              />
+            <% end %>
             <%= unless @disabled_edit do %>
               <.button
                 variant={:primary}
@@ -382,26 +402,41 @@ defmodule OliWeb.Users.AuthorsDetailView do
   def handle_event("change", %{"author" => params}, socket) do
     form = author_form(socket.assigns.author, params)
 
+    author_name = combined_name_from_form(form, socket.assigns.author)
+
     socket =
       socket
       |> assign(form: form)
       |> assign(disabled_submit: !Enum.empty?(form.errors))
-      |> assign(author_name: "#{params["given_name"]} #{params["family_name"]}")
+      |> assign(author_name: author_name)
 
     {:noreply, socket}
   end
 
   def handle_event("submit", %{"author" => params}, socket) do
-    case Accounts.admin_update_author(socket.assigns.author, params) do
+    admin? = Accounts.has_admin_role?(socket.assigns.current_author, :system_admin)
+    filtered_params = if admin?, do: params, else: Map.delete(params, "is_internal")
+    previous_author = socket.assigns.author
+
+    case Accounts.admin_update_author(previous_author, filtered_params) do
       {:ok, author} ->
+        updated_form = author_form(author, params)
+
+        maybe_audit_internal_toggle(
+          socket.assigns.current_author,
+          :author,
+          previous_author,
+          author
+        )
+
         {:noreply,
          socket
          |> put_flash(:info, "Author successfully updated.")
          |> assign(
            author: author,
-           form: author_form(author, params),
+           form: updated_form,
            disabled_edit: true,
-           author_name: author.name
+           author_name: combined_name_from_form(updated_form, author)
          )}
 
       {:error, error} ->
@@ -425,6 +460,44 @@ defmodule OliWeb.Users.AuthorsDetailView do
     # that don't need handling (like dropdown toggles)
     Logger.warning("Unhandled event in AuthorDetailView: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
+  end
+
+  defp maybe_audit_internal_toggle(admin, :author, %Author{} = previous, %Author{} = updated) do
+    cond do
+      is_nil(admin) ->
+        :ok
+
+      previous.is_internal == updated.is_internal ->
+        :ok
+
+      true ->
+        Auditing.capture(
+          admin,
+          :account_internal_flag_changed,
+          updated,
+          %{
+            "account_type" => "author",
+            "author_id" => updated.id,
+            "previous" => previous.is_internal,
+            "is_internal" => updated.is_internal
+          }
+        )
+
+        :ok
+    end
+  end
+
+  defp combined_name_from_form(form, fallback_author) do
+    given = form[:given_name].value || fallback_author.given_name || ""
+    family = form[:family_name].value || fallback_author.family_name || ""
+
+    [given, family]
+    |> Enum.reject(&(is_nil(&1) or &1 == ""))
+    |> Enum.join(" ")
+    |> case do
+      "" -> fallback_author.name || ""
+      name -> name
+    end
   end
 
   defp author_form(author, attrs \\ %{}) do

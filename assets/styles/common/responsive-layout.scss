@@ -1,7 +1,8 @@
 .advance-authoring-responsive-layout {
   display: block;
   width: 100%;
-  height: 100%;
+  min-height: 500px;
+  height: auto;
   padding: 20px;
   box-sizing: border-box;
 
@@ -72,4 +73,170 @@
       display: none;
     }
   }
+
+  // Override absolute positioning for all components in responsive layout
+  // This ensures components contribute to their parent's height
+  .responsive-item > * {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+  }
+
+  // Override react-rnd absolute positioning in responsive layout
+  .responsive-item .react-draggable,
+  .responsive-item .react-rnd {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  // Ensure the wrapper expands to fit content
+  .responsive-item {
+    overflow: visible;
+    height: auto;
+    min-height: fit-content;
+  }
+
+  /*------------------------------
+      Answerable Components
+  ------------------------------*/
+  janus-mcq,
+  janus-input-text,
+  janus-input-number,
+  janus-multi-line-text,
+  janus-dropdown,
+  janus-slider,
+  janus-text-slider,
+  janus-number-slider,
+  janus-text-flow {
+    height: fit-content !important;
+  }
+  /*------------------------------
+      Non-Answerable Components
+  ------------------------------*/
+  janus-image,
+  janus-video,
+  janus-audio {
+    height: auto !important;
+  }
+
+  /*------------------------------
+      Image Flag Combinations in Responsive Layout
+  ------------------------------*/
+
+  // Only scaleContent is true: width 100%, height from model
+  img.responsive-image-scale-only {
+    width: 100% !important;
+    height: var(--image-height) !important;
+  }
+
+  // Only lockAspectRatio is true: maintain aspect ratio - use original width, height auto
+  img.responsive-image-lock-ratio-only {
+    width: var(--image-width) !important;
+    height: auto !important;
+  }
+
+  // Both scaleContent and lockAspectRatio are true: width 100%, height auto
+  img.responsive-image-scale-lock-both {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  janus-number-slider,
+  janus-text-slider {
+    padding-bottom: 20px;
+  }
+
+  /*------------------------------
+      Mobile Breakpoint (600px)
+  ------------------------------*/
+  @media (max-width: 600px) {
+    // Ensure container respects viewport width
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+
+    // Maintain 20px padding on either side at 600px breakpoint
+    padding: 20px;
+
+    // Prevent horizontal overflow
+    overflow-x: hidden;
+
+    // Force all items to full width and stack vertically
+    .responsive-item {
+      box-sizing: border-box;
+
+      &.half-width {
+        width: 100% !important;
+        max-width: 100% !important;
+        float: none !important;
+        clear: both !important;
+      }
+
+      &.full-width {
+        width: 100% !important;
+        max-width: 100% !important;
+        clear: both !important;
+      }
+    }
+
+    // Remove float positioning and make all aligned items full-width
+    .responsive-align-left,
+    .responsive-align-right {
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box;
+      float: none !important;
+      clear: both !important;
+      margin-right: 0 !important;
+      margin-left: 0 !important;
+    }
+
+    .responsive-align-left {
+      clear: both !important;
+
+      & + .responsive-align-left,
+      & + .responsive-align-right {
+        margin-top: 0;
+      }
+    }
+
+    .responsive-align-right {
+      clear: both !important;
+
+      & + .responsive-align-right,
+      & + .responsive-align-left {
+        clear: both !important;
+        margin-top: 0;
+      }
+    }
+  }
+}
+
+.responsive-layout-section .stage-content-wrapper,
+.responsive-layout-section .content {
+  height: auto;
+  min-height: 500px;
+}
+
+// Ensure parent containers in delivery mode use box-sizing for proper width calculation
+.responsive-layout-section .stageContainer {
+  box-sizing: border-box;
+}
+
+.responsive-layout-section .content {
+  box-sizing: border-box;
+}
+
+// Ensure the responsive layout container uses box-sizing
+.responsive-layout-section .advance-authoring-responsive-layout {
+  box-sizing: border-box;
 }
