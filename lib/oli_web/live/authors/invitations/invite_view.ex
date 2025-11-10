@@ -8,14 +8,20 @@ defmodule OliWeb.Authors.Invitations.InviteView do
   import OliWeb.Backgrounds
 
   def mount(%{"token" => token}, session, socket) do
+    # Store token in process dictionary so it can be accessed when building SSO URLs
+    Process.put(:invitation_token, token)
+
     case Accounts.get_author_token_by_author_invitation_token(token) do
       nil ->
-        {:ok, assign(socket, author: nil)}
+        {:ok, assign(socket, author: nil, authentication_providers: [], token: token)}
 
       %AuthorToken{author: author} ->
         current_author =
           session["author_token"] &&
             Accounts.get_author_by_session_token(session["author_token"])
+
+        authentication_providers =
+          Oli.AssentAuth.AuthorAssentAuth.authentication_providers() |> Keyword.keys()
 
         case {new_invited_author?(author),
               current_author_is_the_invited_one?(current_author, author)} do
@@ -26,11 +32,13 @@ defmodule OliWeb.Authors.Invitations.InviteView do
             {:ok,
              assign(socket,
                author: author,
+               token: token,
                current_author: current_author,
                step: "new_author_account_creation",
                trigger_submit: false,
                check_errors: false,
-               recaptcha_error: false
+               recaptcha_error: false,
+               authentication_providers: authentication_providers
              )
              |> assign_form(changeset)}
 
@@ -47,10 +55,12 @@ defmodule OliWeb.Authors.Invitations.InviteView do
             {:ok,
              assign(socket,
                author: author,
+               token: token,
                current_author: current_author,
                step: "existing_author_login",
                form: form,
-               trigger_submit: false
+               trigger_submit: false,
+               authentication_providers: authentication_providers
              )}
         end
     end
@@ -78,6 +88,8 @@ defmodule OliWeb.Authors.Invitations.InviteView do
           recaptcha_error={@recaptcha_error}
           check_errors={@check_errors}
           disabled_inputs={[:email]}
+          authentication_providers={@authentication_providers}
+          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @author.email)}
         />
       </div>
     </.invite_container>
@@ -98,6 +110,8 @@ defmodule OliWeb.Authors.Invitations.InviteView do
           trigger_submit={@trigger_submit}
           submit_event="log_in_existing_author"
           disabled_inputs={[:email]}
+          authentication_providers={@authentication_providers}
+          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @author.email)}
         />
       </div>
 
@@ -223,6 +237,27 @@ defmodule OliWeb.Authors.Invitations.InviteView do
       assign(socket, form: form, check_errors: false)
     else
       assign(socket, form: form)
+    end
+  end
+
+  defp build_invitation_auth_provider_path(provider, invited_email) do
+    # Get the token from process dictionary
+    token = get_invitation_token()
+
+    params =
+      URI.encode_query([
+        {"from_invitation_link?", "true"},
+        {"invitation_email", invited_email},
+        {"invitation_token", token}
+      ])
+
+    "#{~p"/authors/auth/#{provider}/new"}?#{params}"
+  end
+
+  defp get_invitation_token do
+    case Process.get(:invitation_token) do
+      nil -> ""
+      token -> token
     end
   end
 end
