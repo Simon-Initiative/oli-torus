@@ -3999,8 +3999,10 @@ defmodule Oli.Delivery.Sections do
                 case current_children do
                   nil ->
                     # this section resource was just created so it can assume the newly published value
+                    %SectionResource{} = sr = section_resource
+
                     %SectionResource{
-                      section_resource
+                      sr
                       | children: Enum.map(new_children, &resource_id_to_sr_id[&1])
                     }
 
@@ -4020,8 +4022,10 @@ defmodule Oli.Delivery.Sections do
 
                       case Oli.Publishing.Updating.Merge.merge(base, source, target) do
                         {:ok, merged} ->
+                          %SectionResource{} = sr = section_resource
+
                           %SectionResource{
-                            section_resource
+                            sr
                             | children: Enum.map(merged, &resource_id_to_sr_id[&1])
                           }
 
