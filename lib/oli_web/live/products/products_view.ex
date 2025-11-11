@@ -172,6 +172,7 @@ defmodule OliWeb.Products.ProductsView do
           page_change="paged_table_page_change"
           limit_change="paged_table_limit_change"
           show_limit_change={true}
+          sticky_header_offset={64}
         />
       <% else %>
         <div>Products cannot be created until project is published.</div>

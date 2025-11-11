@@ -214,6 +214,7 @@ defmodule OliWeb.Sections.SectionsView do
           page_change="paged_table_page_change"
           limit_change="paged_table_limit_change"
           show_limit_change={true}
+          sticky_header_offset={64}
         />
       </div>
     </div>

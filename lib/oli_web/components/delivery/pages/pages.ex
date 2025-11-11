@@ -474,6 +474,7 @@ defmodule OliWeb.Components.Delivery.Pages do
           show_limit_change={true}
           no_records_message="There are no activities to show"
           details_render_fn={&ActivitiesTableModel.render_assessment_details/2}
+          sticky_header_offset={56}
         />
       </div>
     </div>
