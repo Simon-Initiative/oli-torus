@@ -44,6 +44,7 @@ import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
 import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
+import { StickyTechSupportButton } from './sticky_tech_support_button';
 import { SubmitForm } from './submit_form';
 import { SubmitTechSupportForm } from './submit_tech_support_form';
 import { SyncChevronState } from './sync_chevron_state';
@@ -119,6 +120,7 @@ export const Hooks = {
   OnMountAndUpdate,
   FixedNavigationBar,
   SubmitTechSupportForm,
+  StickyTechSupportButton,
   SyncChevronState,
   ConditionalToggle,
   CopyToClipboard,

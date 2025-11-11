@@ -246,7 +246,64 @@ export const screenUiSchema: UiSchema = {
   },
 };
 
-export const transformScreenModeltoSchema = (activity?: IActivity) => {
+export const getScreenSchema = (responsiveLayout: boolean): JSONSchema7 => {
+  if (!responsiveLayout) {
+    return screenSchema;
+  }
+
+  // Create a new schema object with modified width and height properties
+  const schema: JSONSchema7 = {
+    ...screenSchema,
+    properties: {
+      ...screenSchema.properties,
+      Size: {
+        ...(screenSchema.properties as any).Size,
+        properties: {
+          ...((screenSchema.properties as any).Size?.properties || {}),
+          width: {
+            type: 'string',
+            title: 'Width',
+            readOnly: true,
+          },
+          height: {
+            type: 'string',
+            title: 'Height',
+            readOnly: true,
+          },
+        },
+      },
+    },
+  };
+  return schema;
+};
+
+export const getScreenUiSchema = (responsiveLayout: boolean): UiSchema => {
+  if (!responsiveLayout) {
+    return screenUiSchema;
+  }
+
+  // Create a new UI schema object preserving all function references and structure
+  // Only modify width and height fields, keep everything else exactly as is
+  const uiSchema: UiSchema = {
+    ...screenUiSchema,
+    Size: {
+      ...screenUiSchema.Size,
+      width: {
+        classNames: 'col-span-6',
+        'ui:readonly': true,
+        'ui:emptyValue': 'Responsive',
+      },
+      height: {
+        classNames: 'col-span-6',
+        'ui:readonly': true,
+        'ui:emptyValue': 'Responsive',
+      },
+    },
+  };
+  return uiSchema;
+};
+
+export const transformScreenModeltoSchema = (activity?: IActivity, responsiveLayout?: boolean) => {
   if (activity) {
     const data = activity?.content?.custom;
     if (!data) {
@@ -283,7 +340,10 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
     return {
       ...data,
       title: activity?.title || '',
-      Size: { width: data.width, height: data.height },
+      Size: {
+        width: responsiveLayout ? 'Responsive' : data.width,
+        height: responsiveLayout ? 'Responsive' : data.height,
+      },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
       palette: data.palette.useHtmlProps ? data.palette : schemaPalette,
@@ -292,12 +352,22 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
   }
 };
 
-export const transformScreenSchematoModel = (schema: any): Partial<ScreenModel> => {
+export const transformScreenSchematoModel = (
+  schema: any,
+  responsiveLayout?: boolean,
+): Partial<ScreenModel> => {
+  // When responsive layout is enabled, preserve original width/height values
+  // Don't update them if they are set to "Responsive" string
+  const width =
+    responsiveLayout && schema.Size.width === 'Responsive' ? undefined : schema.Size.width;
+  const height =
+    responsiveLayout && schema.Size.height === 'Responsive' ? undefined : schema.Size.height;
+
   return {
     objectives: schema.learningObjectives,
     title: schema.title,
-    width: schema.Size.width,
-    height: schema.Size.height,
+    width,
+    height,
     customCssClass: schema.customCssClass,
     combineFeedback: schema.combineFeedback,
     showCheckBtn: schema.checkButton.showCheckBtn,

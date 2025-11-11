@@ -33,12 +33,7 @@ defmodule OliWeb.Api.TagController do
   def new(conn, %{"project" => project_slug, "title" => title}) do
     author = conn.assigns[:current_author]
 
-    case ResourceEditor.create(
-           project_slug,
-           author,
-           Oli.Resources.ResourceType.id_for_tag(),
-           %{"title" => title, "author_id" => author.id}
-         ) do
+    case ResourceEditor.get_or_create_tag(project_slug, author, title) do
       {:ok, revision} ->
         json(conn, %{"result" => "success", "tag" => serialize_revision(revision)})
 
