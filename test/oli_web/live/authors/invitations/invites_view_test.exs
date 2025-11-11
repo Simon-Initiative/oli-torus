@@ -6,6 +6,7 @@ defmodule OliWeb.Authors.Invitations.InviteViewTest do
   import Phoenix.LiveViewTest
 
   alias Oli.Accounts
+  alias Oli.AssentAuth.AuthorIdentity
 
   defp authors_invite_url(token), do: ~p"/authors/invite/#{token}"
 
@@ -13,6 +14,14 @@ defmodule OliWeb.Authors.Invitations.InviteViewTest do
     # non existing authors are inserted in the DB with no password
     # (password is set by the author in the invitation redemption process)
     insert(:author, password: nil)
+  end
+
+  defp social_author() do
+    # social authors have SSO identities but no password
+    insert(:author,
+      password: nil,
+      user_identities: [%AuthorIdentity{uid: "123", provider: "google"}]
+    )
   end
 
   defp insert_invitation_token(author, token) do
@@ -96,6 +105,24 @@ defmodule OliWeb.Authors.Invitations.InviteViewTest do
           "password" => "hello world!"
         }
       })
+    end
+
+    test "an existing social author can accept an SSO invitation", %{conn: conn} do
+      existing_author = social_author()
+
+      %{encode64_token: encode64_token} = insert_invitation_token(existing_author, "a_token")
+
+      {:ok, view, _html} = live(conn, authors_invite_url(encode64_token))
+
+      assert view
+             |> element("a[aria-label='Sign in with Google']")
+             |> render() =~
+               URI.encode_query([
+                 {"from_invitation_link?", "true"},
+                 {"invitation_email", existing_author.email},
+                 {"invitation_token", encode64_token}
+               ])
+               |> String.replace("&", "&amp;")
     end
 
     test "a logged in existing author gets redirected to course author workspace as soon as the invitation is accessed",

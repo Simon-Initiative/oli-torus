@@ -143,7 +143,10 @@ defmodule OliWeb.UserAuthorizationController do
         )
         |> redirect(to: redirect_to)
 
-      {:ok, _status, conn} ->
+      {:ok, status, conn} ->
+        # Check if this is from an enrollment invitation that needs to be accepted
+        conn = maybe_accept_pending_enrollment(conn, status)
+
         conn
         |> clear_enrollment_session_data()
         |> redirect(to: redirect_to)
@@ -189,10 +192,6 @@ defmodule OliWeb.UserAuthorizationController do
 
     email = user_params["email"]
 
-    Logger.info(
-      "SSO invitation linking check - from_invitation: #{inspect(from_invitation)}, email: #{inspect(email)}"
-    )
-
     case {from_invitation, email} do
       {true, email} when is_binary(email) ->
         # Coming from invitation, try to link SSO to existing invited user
@@ -210,19 +209,11 @@ defmodule OliWeb.UserAuthorizationController do
             # User exists, check if it's an invited user (no password set)
             is_invited = invited_user?(user)
 
-            Logger.info(
-              "User found - invited: #{inspect(is_invited)}, has password: #{inspect(!is_nil(user.password_hash))}"
-            )
-
             if is_invited do
               # Link SSO identity to invited user
-              Logger.info("Linking SSO identity to invited user: #{user.email}")
               link_sso_to_invited_user(conn, user, provider, user_params, nil, redirect_to)
             else
               # User has password, they need to log in with password first
-              Logger.warning(
-                "User #{user.email} has password or identities, cannot auto-link SSO"
-              )
 
               conn
               |> put_flash(
@@ -275,7 +266,6 @@ defmodule OliWeb.UserAuthorizationController do
                ),
              {:ok, user} <- accept_user_invitation(user, section_slug, sso_attrs) do
           # Successfully linked SSO and accepted invitation
-          Logger.info("Successfully linked SSO and accepted invitation for user: #{user.email}")
 
           conn = OliWeb.UserAuth.create_session(conn, user)
           conn = assign(conn, :current_user, user)
@@ -317,6 +307,40 @@ defmodule OliWeb.UserAuthorizationController do
         |> redirect(to: redirect_to)
     end
   end
+
+  # Check if there's a pending enrollment invitation and accept it for existing authenticated users
+  defp maybe_accept_pending_enrollment(conn, :authenticate) do
+    # Only for authenticate status (existing SSO users signing in)
+    section_slug = get_session(conn, :pending_section_enrollment)
+    user = conn.assigns.current_user
+
+    if section_slug && user do
+      case Oli.Delivery.Sections.get_enrollment(section_slug, user.id, filter_by_status: false) do
+        nil ->
+          Logger.warning("No enrollment found for #{user.email} in section #{section_slug}")
+          conn
+
+        %{status: :enrolled} = _enrollment ->
+          conn
+
+        enrollment ->
+          case enrollment
+               |> Oli.Delivery.Sections.Enrollment.changeset(%{status: :enrolled})
+               |> Oli.Repo.update() do
+            {:ok, _} ->
+              conn
+
+            {:error, changeset} ->
+              Logger.error("Failed to accept enrollment invitation: #{inspect(changeset)}")
+              conn
+          end
+      end
+    else
+      conn
+    end
+  end
+
+  defp maybe_accept_pending_enrollment(conn, _status), do: conn
 
   # Accept user invitation - handles enrollment if section_slug is provided
   # Accept user invitation via SSO

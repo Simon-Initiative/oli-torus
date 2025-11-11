@@ -101,7 +101,12 @@ defmodule OliWeb.AuthorAuth do
         "current_user_id",
         "datashop_session_id",
         "link_account_user_id",
-        "author_return_to"
+        "author_return_to",
+        # Preserve invitation data for SSO flows
+        "invitation_project_slug",
+        "invitation_email",
+        "invitation_token",
+        "validated_invitation_email"
       ])
 
     conn

@@ -303,7 +303,13 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
   defp emails_match?(_author_email, email_param) when is_nil(email_param), do: true
   defp emails_match?(author_email, email_param), do: author_email == email_param
 
-  defp new_invited_author?(%Author{password_hash: nil}), do: true
+  defp new_invited_author?(%Author{password_hash: nil} = author) do
+    # Preload user_identities to check if this is an SSO author
+    author = Oli.Repo.preload(author, :user_identities)
+    # A truly new invited author has no password AND no SSO identities
+    author.user_identities == []
+  end
+
   defp new_invited_author?(_), do: false
 
   defp current_author_is_the_invited_one?(nil, _author), do: false

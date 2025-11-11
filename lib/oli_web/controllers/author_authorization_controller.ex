@@ -128,10 +128,13 @@ defmodule OliWeb.AuthorAuthorizationController do
         )
         |> redirect(to: redirect_to)
 
-      {:ok, _status, conn} ->
-        conn
-        |> AuthorAuth.maybe_link_user_author_account(conn.assigns.current_author)
-        |> redirect(to: redirect_to)
+      {:ok, status, conn} ->
+        conn = AuthorAuth.maybe_link_user_author_account(conn, conn.assigns.current_author)
+
+        # Check if this is from a collaborator invitation that needs to be accepted
+        conn = maybe_accept_pending_invitation(conn, status)
+
+        redirect(conn, to: redirect_to)
 
       {:email_confirmation_required, _status, conn} ->
         conn
@@ -174,10 +177,6 @@ defmodule OliWeb.AuthorAuthorizationController do
 
     email = user_params["email"]
 
-    Logger.info(
-      "SSO invitation linking check (author) - from_invitation: #{inspect(from_invitation)}, email: #{inspect(email)}"
-    )
-
     case {from_invitation, email} do
       {true, email} when is_binary(email) ->
         # Coming from invitation, try to link SSO to existing invited author
@@ -195,13 +194,8 @@ defmodule OliWeb.AuthorAuthorizationController do
             # Author exists, check if it's an invited author (no password set)
             is_invited = invited_author?(author)
 
-            Logger.info(
-              "Author found - invited: #{inspect(is_invited)}, has password: #{inspect(!is_nil(author.password_hash))}"
-            )
-
             if is_invited do
               # Link SSO identity to invited author
-              Logger.info("Linking SSO identity to invited author: #{author.email}")
               link_sso_to_invited_author(conn, author, provider, user_params, nil, redirect_to)
             else
               # Author has password, they need to log in with password first
@@ -260,9 +254,6 @@ defmodule OliWeb.AuthorAuthorizationController do
                ),
              {:ok, author} <- accept_invitation(author, project_slug, sso_attrs) do
           # Successfully linked SSO and accepted invitation
-          Logger.info(
-            "Successfully linked SSO and accepted invitation for author: #{author.email}"
-          )
 
           conn = OliWeb.AuthorAuth.create_session(conn, author)
           conn = assign(conn, :current_author, author)
@@ -302,6 +293,42 @@ defmodule OliWeb.AuthorAuthorizationController do
         |> redirect(to: redirect_to)
     end
   end
+
+  # Check if there's a pending collaborator invitation and accept it for existing authenticated authors
+  defp maybe_accept_pending_invitation(conn, :authenticate) do
+    # Only for authenticate status (existing SSO authors signing in)
+    project_slug = get_session(conn, :invitation_project_slug)
+    author = conn.assigns.current_author
+
+    if project_slug && author do
+      case Oli.Authoring.Course.get_author_project(project_slug, author.id,
+             filter_by_status: false
+           ) do
+        nil ->
+          Logger.warning("No author_project found for #{author.email} in project #{project_slug}")
+          conn
+
+        %{status: :accepted} = _author_project ->
+          clear_invitation_session_data(conn)
+
+        author_project ->
+          case author_project
+               |> Oli.Authoring.Authors.AuthorProject.changeset(%{status: :accepted})
+               |> Oli.Repo.update() do
+            {:ok, _} ->
+              clear_invitation_session_data(conn)
+
+            {:error, changeset} ->
+              Logger.error("Failed to accept collaborator invitation: #{inspect(changeset)}")
+              conn
+          end
+      end
+    else
+      conn
+    end
+  end
+
+  defp maybe_accept_pending_invitation(conn, _status), do: conn
 
   # Accept author invitation via SSO - handles both general author invitations and collaborator invitations
   # For SSO, we skip password validation since the user authenticates via OAuth
