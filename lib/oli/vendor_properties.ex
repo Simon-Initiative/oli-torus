@@ -26,6 +26,10 @@ defmodule Oli.VendorProperties do
 
   def company_faq_url(), do: Application.fetch_env!(:oli, :vendor_property)[:faq_url]
 
+  def billing_descriptor() do
+    Application.get_env(:oli, :vendor_property, [])[:billing_descriptor]
+  end
+
   def normalized_workspace_logo(host) do
     case workspace_logo() do
       "https://" <> rest -> "https://#{rest}"
