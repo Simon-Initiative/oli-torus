@@ -7,6 +7,8 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
 
+  @suspended_message "Your access to this course has been suspended. Please contact your instructor."
+
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
     is_admin? = Oli.Accounts.is_admin?(socket.assigns[:current_author])
 
@@ -32,17 +34,28 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
               _ -> Sections.get_section_by(slug: section_slug)
             end
 
-          # If the section registration is open, redirect to enrollment page
+          # If the section registration is open and the user is not suspended, redirect to enrollment page
           # otherwise, redirect to student workspace with error message
-          if section.registration_open do
-            {:halt,
-             socket
-             |> redirect(to: ~p"/sections/#{section.slug}/enroll")}
-          else
-            {:halt,
-             socket
-             |> put_flash(:error, "You are not enrolled in this course")
-             |> redirect(to: ~p"/workspaces/student")}
+          enrollment =
+            Sections.get_enrollment(section_slug, user.id, filter_by_status: false)
+
+          cond do
+            section.registration_open && match?(%_{status: :suspended}, enrollment) ->
+              {:halt,
+               socket
+               |> put_flash(:error, @suspended_message)
+               |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")}
+
+            section.registration_open ->
+              {:halt,
+               socket
+               |> redirect(to: ~p"/sections/#{section.slug}/enroll")}
+
+            true ->
+              {:halt,
+               socket
+               |> put_flash(:error, "You are not enrolled in this course")
+               |> redirect(to: ~p"/workspaces/student")}
           end
         end
     end
