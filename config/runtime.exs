@@ -113,6 +113,9 @@ end
 force_ssl_default = if runtime_env == :prod, do: "true", else: "false"
 config :oli, :force_ssl_redirect?, get_env_as_boolean.("FORCE_SSL", force_ssl_default)
 
+config :oli, :vendor_property,
+  billing_descriptor: System.get_env("VENDOR_PROPERTY_BILLING_DESCRIPTOR", "CARNEGIE MELLON UNI")
+
 ####################### Production-only configurations ########################
 ## Note: These configurations are only applied in production
 ###############################################################################
@@ -298,9 +301,7 @@ if runtime_env == :prod do
       System.get_env(
         "VENDOR_PROPERTY_FAQ_URL",
         "https://olihelp.zohodesk.com/portal/en/kb/articles/frqu"
-      ),
-    billing_descriptor:
-      System.get_env("VENDOR_PROPERTY_BILLING_DESCRIPTOR", "CARNEGIE MELLON UNI")
+      )
 
   # optional emerald cloudlab configuration
   config :oli,
