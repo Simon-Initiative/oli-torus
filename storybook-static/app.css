@@ -8777,12 +8777,20 @@ table.table-striped tbody tr:nth-child(even) {
   z-index: 2000;
 }
 
+.z-\[40\] {
+  z-index: 40;
+}
+
 .z-\[5\] {
   z-index: 5;
 }
 
 .z-\[60\] {
   z-index: 60;
+}
+
+.z-\[90\] {
+  z-index: 90;
 }
 
 .z-\[9999\] {
@@ -9918,10 +9926,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-h-\[calc\(100vh-176px\)\] {
   max-height: calc(100vh - 176px);
-}
-
-.max-h-\[calc\(100vh-400px\)\] {
-  max-height: calc(100vh - 400px);
 }
 
 .max-h-screen {
@@ -12226,6 +12230,11 @@ table.table-striped tbody tr:nth-child(even) {
 .\!bg-delivery-primary-100 {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(233 244 255 / var(--tw-bg-opacity)) !important;
+}
+
+.\!bg-white {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity)) !important;
 }
 
 .bg-\[\#0062F2\] {
