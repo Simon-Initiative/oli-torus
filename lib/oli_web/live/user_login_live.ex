@@ -109,8 +109,13 @@ defmodule OliWeb.UserLoginLive do
 
     section =
       case unsigned_params["section"] do
-        nil -> nil
-        slug -> Oli.Delivery.Sections.get_section_by_slug(slug)
+        nil ->
+          nil
+
+        slug ->
+          # Lightweight query - only preload brand for layout branding, not all associations
+          Oli.Delivery.Sections.get_section_by(slug: slug)
+          |> Oli.Repo.preload([:brand, lti_1p3_deployment: [institution: :default_brand]])
       end
 
     {:noreply, assign(socket, from_invitation_link?: from_invitation_link?, section: section)}
