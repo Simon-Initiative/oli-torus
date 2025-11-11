@@ -11,14 +11,20 @@ update this file accordingly.
 
 ### Environment Configs
 
-| Name      | Required | Description                                                                     |
-| --------- | -------- | ------------------------------------------------------------------------------- |
-| MEDIA_URL | Yes      | HTTP/HTTPS URL for media assets (Default http://localhost:9000/oli-torus-media) |
+| Name                               | Required | Description                                                                     |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------- |
+| MEDIA_URL                          | Yes      | HTTP/HTTPS URL for media assets (Default http://localhost:9000/oli-torus-media) |
+| VENDOR_PROPERTY_BILLING_DESCRIPTOR | No       | Billing descriptor text shown on payment page (Default: "CARNEGIE MELLON UNI")  |
 
 - `MEDIA_URL` is now set to the full URL including the scheme (http/https) and (optionally) the
   port. The default value for development is now `http://localhost:9000/oli-torus-media` which
   corresponds to a local S3/minio service. This value is still required to be set in production,
   typically to the URL of the production S3 bucket.
+
+- `VENDOR_PROPERTY_BILLING_DESCRIPTOR` allows customization of the billing descriptor message
+  displayed on the student paywall page. This message informs students how the charge will appear
+  on their bank or credit card statement.
+  Defaults to "CARNEGIE MELLON UNI" if not specified.
 
 ### Infrastructure Changes
 
