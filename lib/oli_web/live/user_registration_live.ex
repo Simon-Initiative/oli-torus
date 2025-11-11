@@ -57,7 +57,12 @@ defmodule OliWeb.UserRegistrationLive do
 
   def handle_params(unsigned_params, _uri, socket) do
     from_invitation_link? = unsigned_params["from_invitation_link?"] == "true"
-    section = unsigned_params["section"]
+
+    section =
+      case unsigned_params["section"] do
+        nil -> nil
+        slug -> Oli.Delivery.Sections.get_section_by_slug(slug)
+      end
 
     {:noreply,
      assign(socket,
@@ -115,14 +120,17 @@ defmodule OliWeb.UserRegistrationLive do
   end
 
   defp maybe_section_param(nil), do: []
-  defp maybe_section_param(section), do: [section: section]
+  defp maybe_section_param(%{slug: slug}), do: [section: slug]
+  defp maybe_section_param(section) when is_binary(section), do: [section: section]
 
   defp build_auth_provider_path(provider, section, from_invitation_link?) do
     base_path = ~p"/users/auth/#{provider}/new"
 
+    section_slug = if section, do: section.slug, else: nil
+
     params =
       []
-      |> maybe_add_param("section", section)
+      |> maybe_add_param("section", section_slug)
       |> maybe_add_param("from_invitation_link?", from_invitation_link?)
       |> URI.encode_query()
 
