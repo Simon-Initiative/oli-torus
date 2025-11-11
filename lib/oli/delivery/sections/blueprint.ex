@@ -523,6 +523,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
         opts[:filter_status] == :deleted ->
           dynamic([s, _], s.status == :deleted)
 
+        opts[:filter_status] == :archived ->
+          dynamic([s, _], s.status == :archived)
+
         opts[:include_archived] ->
           dynamic([s, _], s.status in [:active, :archived, :deleted])
 
