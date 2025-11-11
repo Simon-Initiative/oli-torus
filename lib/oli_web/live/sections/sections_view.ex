@@ -6,20 +6,15 @@ defmodule OliWeb.Sections.SectionsView do
 
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.{Browse, BrowseOptions, Section}
+  alias Oli.Institutions
 
-  alias OliWeb.Common.{
-    Breadcrumb,
-    Check,
-    SearchInput,
-    StripedPagedTable,
-    Params,
-    PagingParams
-  }
+  alias OliWeb.Common.{Breadcrumb, Check, SearchInput, StripedPagedTable, Params, PagingParams}
 
   alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Components.FilterPanel
   alias OliWeb.Sections.SectionsTableModel
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Icons
+  alias OliWeb.Admin.BrowseFilters
 
   @limit 20
   @min_search_length 3
@@ -33,6 +28,20 @@ defmodule OliWeb.Sections.SectionsView do
     filter_type: nil
   }
   @type_opts [:open, :lms]
+  @status_options [
+    {:active, "Active"},
+    {:deleted, "Deleted"}
+  ]
+  @delivery_options [
+    {:dd, "DD"},
+    {:lti, "LTI"}
+  ]
+  @requires_payment_options [
+    {true, "Yes"},
+    {false, "No"}
+  ]
+  @date_field_options [{"inserted_at", "Created Date"}]
+  @filter_fields [:date, :tags, :delivery, :status, :requires_payment, :institution]
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -56,6 +65,9 @@ defmodule OliWeb.Sections.SectionsView do
     ctx = socket.assigns.ctx
     author = socket.assigns.current_author
     is_admin = Oli.Accounts.has_admin_role?(author, :content_admin)
+
+    filters = BrowseFilters.default()
+    institutions = Institutions.list_institutions()
 
     sections =
       Browse.browse_sections(
@@ -83,9 +95,16 @@ defmodule OliWeb.Sections.SectionsView do
        total_count: total_count,
        table_model: table_model,
        options: @default_options,
+       filters: filters,
        text_search_input: "",
        offset: 0,
-       limit: @limit
+       limit: @limit,
+       status_options: @status_options,
+       delivery_options: @delivery_options,
+       requires_payment_options: @requires_payment_options,
+       institution_options: institutions,
+       date_field_options: @date_field_options,
+       filter_fields: @filter_fields
      )}
   end
 
@@ -97,14 +116,25 @@ defmodule OliWeb.Sections.SectionsView do
     raw_search = params |> get_param("text_search", "") |> String.trim()
     applied_search = sanitize_search_term(raw_search)
 
+    # Parse filter state from URL params
+    filters_state = BrowseFilters.parse(params)
+    course_filters = BrowseFilters.to_course_filters(filters_state)
+
     options = %BrowseOptions{
       text_search: applied_search,
       active_today: get_boolean_param(params, "active_today", false),
       filter_status:
-        get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil),
-      filter_type: get_atom_param(params, "filter_type", @type_opts, nil),
-      # This view is currently for all institutions and all root products
-      institution_id: nil,
+        get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil) ||
+          course_filters.status,
+      filter_type:
+        get_atom_param(params, "filter_type", @type_opts, nil) || course_filters.delivery,
+      institution_id: course_filters.institution_id,
+      filter_requires_payment: course_filters.requires_payment,
+      filter_tag_ids: course_filters.tag_ids,
+      filter_date_from: course_filters.date_from,
+      filter_date_to: course_filters.date_to,
+      filter_date_field: course_filters.date_field,
+      # This view is currently for all root products
       blueprint_id: nil,
       project_id: nil
     }
@@ -131,52 +161,18 @@ defmodule OliWeb.Sections.SectionsView do
        total_count: total_count,
        limit: limit,
        options: options,
+       filters: filters_state,
        text_search_input: raw_search
      )}
   end
 
   def render(assigns) do
-    assigns = assign(assigns, type_opts: @type_opts)
-
     ~H"""
     <div>
       <div class="flex flex-row justify-between items-center px-4">
-        <div class="flex flex-col">
-          <span class="text-2xl font-bold text-[#353740] dark:text-[#EEEBF5] leading-loose">
-            Browse Course Sections
-          </span>
-          <div class="flex flex-row gap-4 mt-2 items-center">
-            <Check.render checked={@options.active_today} click="active_today">
-              <span class="justify-start text-[#353740] dark:text-[#EEEBF5] text-base font-normal leading-normal">
-                Active (start/end dates include today)
-              </span>
-            </Check.render>
-            <form phx-change="change_type" class="flex flex-row">
-              <select name="type" id="select_type" class="custom-select" style="width: 120px;">
-                <option value="" selected>Type</option>
-                <option
-                  :for={type_opt <- @type_opts}
-                  value={type_opt}
-                  selected={@options.filter_type == type_opt}
-                >
-                  {humanize_type_opt(type_opt)}
-                </option>
-              </select>
-            </form>
-            <form phx-change="change_status" class="flex flex-row">
-              <select name="status" id="select_status" class="custom-select" style="width: 120px;">
-                <option value="" selected>Status</option>
-                <option
-                  :for={status_opt <- Ecto.Enum.values(Section, :status)}
-                  value={status_opt}
-                  selected={@options.filter_status == status_opt}
-                >
-                  {Phoenix.Naming.humanize(status_opt)}
-                </option>
-              </select>
-            </form>
-          </div>
-        </div>
+        <span class="text-2xl font-bold text-[#353740] dark:text-[#EEEBF5] leading-loose">
+          Browse Course Sections
+        </span>
         <a
           id="button-new-section"
           class="btn btn-sm rounded-md bg-[#0080FF] text-[#FFFFFF] shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-4 py-2"
@@ -190,16 +186,29 @@ defmodule OliWeb.Sections.SectionsView do
           <SearchInput.render id="text-search" name="section_name" text={@text_search_input} />
         </.form>
 
-        <button class="ml-2 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 opacity-50 hover:cursor-not-allowed">
-          <Icons.filter class="stroke-[#353740] dark:stroke-[#EEEBF5]" /> Filter
-        </button>
-
-        <button
-          class="ml-2 mr-4 text-center text-[#353740] dark:text-[#EEEBF5] text-sm font-normal leading-none flex items-center gap-x-1 hover:text-[#006CD9] dark:hover:text-[#4CA6FF]"
-          phx-click="clear_all_filters"
+        <Check.render
+          id="filter-active-today"
+          checked={@options.active_today}
+          click="active_today"
+          class="text-Text-text-high"
         >
-          <Icons.trash /> Clear All Filters
-        </button>
+          <span class="text-sm font-normal leading-none">
+            Active (start/end dates include today)
+          </span>
+        </Check.render>
+
+        <.live_component
+          module={FilterPanel}
+          id="sections-filter-panel"
+          parent_pid={self()}
+          filters={@filters}
+          fields={@filter_fields}
+          status_options={@status_options}
+          delivery_options={@delivery_options}
+          requires_payment_options={@requires_payment_options}
+          institution_options={@institution_options}
+          date_field_options={@date_field_options}
+        />
       </div>
 
       <div class="sections-table">
@@ -221,14 +230,41 @@ defmodule OliWeb.Sections.SectionsView do
     """
   end
 
-  def handle_event("active_today", _, socket),
-    do: patch_with(socket, %{active_today: !socket.assigns.options.active_today})
+  def handle_info({:filter_panel, :apply, filters}, socket) do
+    filter_params = BrowseFilters.to_query_params(filters, as: :atoms)
 
-  def handle_event("change_status", %{"status" => status}, socket),
-    do: patch_with(socket, %{filter_status: status})
+    # Drop all existing filter keys from current params before merging
+    # This ensures cleared filters are properly removed from the URL
+    base_params = Map.drop(current_params(socket), BrowseFilters.param_keys(:atoms))
 
-  def handle_event("change_type", %{"type" => type}, socket),
-    do: patch_with(socket, %{filter_type: type})
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           __MODULE__,
+           Map.merge(base_params, Map.merge(filter_params, %{offset: 0}))
+         ),
+       replace: true
+     )}
+  end
+
+  def handle_info({:filter_panel, :clear}, socket) do
+    # Explicitly build params without any filter params to clear them from URL
+    params = %{
+      sort_by: socket.assigns.table_model.sort_by_spec.name,
+      sort_order: socket.assigns.table_model.sort_order,
+      offset: 0,
+      limit: socket.assigns.limit,
+      text_search: socket.assigns.text_search_input
+    }
+
+    {:noreply,
+     push_patch(socket,
+       to: Routes.live_path(socket, __MODULE__, params),
+       replace: true
+     )}
+  end
 
   def handle_event("text_search_change", %{"section_name" => section_name}, socket) do
     patch_with(socket, %{text_search: String.trim(section_name)})
@@ -249,6 +285,10 @@ defmodule OliWeb.Sections.SectionsView do
     patch_with(socket, %{limit: limit, offset: offset})
   end
 
+  def handle_event("active_today", _params, socket) do
+    patch_with(socket, %{active_today: !socket.assigns.options.active_today})
+  end
+
   def handle_event(
         "paged_table_limit_change",
         params,
@@ -264,10 +304,6 @@ defmodule OliWeb.Sections.SectionsView do
       )
 
     patch_with(socket, %{limit: new_limit, offset: new_offset})
-  end
-
-  def handle_event("clear_all_filters", _params, socket) do
-    {:noreply, push_patch(socket, to: ~p"/admin/sections")}
   end
 
   def handle_event(event, params, socket) do
@@ -291,23 +327,26 @@ defmodule OliWeb.Sections.SectionsView do
   end
 
   defp current_params(socket) do
-    %{
+    base = %{
       sort_by: socket.assigns.table_model.sort_by_spec.name,
       sort_order: socket.assigns.table_model.sort_order,
       offset: socket.assigns.offset,
       limit: socket.assigns.limit,
-      active_today: socket.assigns.options.active_today,
-      filter_status: socket.assigns.options.filter_status,
-      filter_type: socket.assigns.options.filter_type,
-      text_search: socket.assigns.text_search_input
+      text_search: socket.assigns.text_search_input,
+      active_today: socket.assigns.options.active_today
     }
+
+    filter_params =
+      case Map.get(socket.assigns, :filters) do
+        nil -> %{}
+        filters -> BrowseFilters.to_query_params(filters, as: :atoms)
+      end
+
+    Map.merge(base, filter_params)
   end
 
   defp toggle_sort_order(:asc), do: :desc
   defp toggle_sort_order(_), do: :asc
-
-  defp humanize_type_opt(:open), do: "DD"
-  defp humanize_type_opt(:lms), do: "LTI"
 
   defp sanitize_search_term(nil), do: ""
 

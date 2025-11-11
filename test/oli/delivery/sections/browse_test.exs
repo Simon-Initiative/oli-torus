@@ -192,6 +192,122 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       assert length(results) == 3
       assert hd(results).total_count == 30
     end
+
+    test "filtering by requires_payment" do
+      # Filter for sections that require payment (true)
+      results =
+        browse(
+          0,
+          :title,
+          :asc,
+          Map.merge(@default_opts, %{filter_requires_payment: true})
+        )
+
+      assert length(results) == 3
+      # All sections except the one we set to requires_payment: false should require payment
+      assert hd(results).total_count == 29
+      assert hd(results).requires_payment
+
+      # Filter for sections that don't require payment (false)
+      results =
+        browse(
+          0,
+          :title,
+          :asc,
+          Map.merge(@default_opts, %{filter_requires_payment: false})
+        )
+
+      assert length(results) == 1
+      assert hd(results).total_count == 1
+      refute hd(results).requires_payment
+    end
+
+    test "filtering by tags", %{sections: sections} do
+      # Create some tags
+      tag1 = insert(:tag, name: "Tag1")
+      tag2 = insert(:tag, name: "Tag2")
+
+      # Associate tags with sections
+      Oli.Tags.associate_tag_with_section(hd(sections), tag1)
+      Oli.Tags.associate_tag_with_section(Enum.at(sections, 1), tag1)
+      Oli.Tags.associate_tag_with_section(Enum.at(sections, 1), tag2)
+
+      # Filter by tag1 - should find 2 sections
+      results =
+        browse(
+          0,
+          :title,
+          :asc,
+          Map.merge(@default_opts, %{filter_tag_ids: [tag1.id]})
+        )
+
+      assert length(results) == 2
+      assert hd(results).total_count == 2
+
+      # Filter by tag2 - should find 1 section
+      results =
+        browse(
+          0,
+          :title,
+          :asc,
+          Map.merge(@default_opts, %{filter_tag_ids: [tag2.id]})
+        )
+
+      assert length(results) == 1
+      assert hd(results).total_count == 1
+    end
+
+    test "filtering by date range", %{sections: sections} do
+      # Set specific dates on some sections using direct Ecto updates
+      specific_date = ~N[2024-01-15 12:00:00]
+
+      Repo.update_all(
+        from(s in Oli.Delivery.Sections.Section, where: s.id == ^hd(sections).id),
+        set: [inserted_at: ~N[2024-01-10 12:00:00]]
+      )
+
+      Repo.update_all(
+        from(s in Oli.Delivery.Sections.Section, where: s.id == ^Enum.at(sections, 1).id),
+        set: [inserted_at: specific_date]
+      )
+
+      Repo.update_all(
+        from(s in Oli.Delivery.Sections.Section, where: s.id == ^Enum.at(sections, 2).id),
+        set: [inserted_at: ~N[2024-01-20 12:00:00]]
+      )
+
+      # Filter for sections inserted on or after specific date
+      results =
+        browse(
+          0,
+          :title,
+          :asc,
+          Map.merge(@default_opts, %{
+            filter_date_from: specific_date,
+            filter_date_field: :inserted_at
+          })
+        )
+
+      assert length(results) == 3
+      # Should find all sections inserted on or after 2024-01-15
+      assert hd(results).total_count >= 2
+
+      # Filter for sections inserted within a date range
+      results =
+        browse(
+          0,
+          :title,
+          :asc,
+          Map.merge(@default_opts, %{
+            filter_date_from: ~N[2024-01-14 00:00:00],
+            filter_date_to: ~N[2024-01-16 23:59:59],
+            filter_date_field: :inserted_at
+          })
+        )
+
+      # Should find at least the section with specific_date
+      assert hd(results).total_count >= 1
+    end
   end
 
   defp browse(offset, field, direction, browse_options) do

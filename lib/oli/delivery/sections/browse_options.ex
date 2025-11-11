@@ -20,16 +20,26 @@ defmodule Oli.Delivery.Sections.BrowseOptions do
     :text_search,
     :active_today,
     :filter_status,
-    :filter_type
+    :filter_type,
+    :filter_requires_payment,
+    :filter_tag_ids,
+    :filter_date_from,
+    :filter_date_to,
+    :filter_date_field
   ]
 
   @type t() :: %__MODULE__{
-          institution_id: integer(),
-          blueprint_id: integer(),
-          project_id: integer(),
+          institution_id: integer() | nil,
+          blueprint_id: integer() | nil,
+          project_id: integer() | nil,
           text_search: String.t(),
           active_today: boolean(),
-          filter_status: atom(),
-          filter_type: atom()
+          filter_status: atom() | nil,
+          filter_type: atom() | nil,
+          filter_requires_payment: boolean() | nil,
+          filter_tag_ids: [integer()] | nil,
+          filter_date_from: NaiveDateTime.t() | nil,
+          filter_date_to: NaiveDateTime.t() | nil,
+          filter_date_field: atom() | nil
         }
 end
