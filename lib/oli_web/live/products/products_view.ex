@@ -374,11 +374,6 @@ defmodule OliWeb.Products.ProductsView do
     patch_with(socket, %{limit: new_limit, offset: new_offset})
   end
 
-  def handle_event("clear_all_filters", _params, socket) do
-    # This is handled by the FilterPanel component now
-    {:noreply, socket}
-  end
-
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
     |> delegate_to([&StripedPagedTable.handle_delegated/4])
