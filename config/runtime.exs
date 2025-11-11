@@ -298,7 +298,9 @@ if runtime_env == :prod do
       System.get_env(
         "VENDOR_PROPERTY_FAQ_URL",
         "https://olihelp.zohodesk.com/portal/en/kb/articles/frqu"
-      )
+      ),
+    billing_descriptor:
+      System.get_env("VENDOR_PROPERTY_BILLING_DESCRIPTOR", "CARNEGIE MELLON UNI")
 
   # optional emerald cloudlab configuration
   config :oli,

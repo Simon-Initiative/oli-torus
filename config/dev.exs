@@ -42,7 +42,8 @@ config :oli, :vendor_property,
   workspace_logo:
     System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/branding/dev/oli_torus_icon.png"),
   support_email: System.get_env("VENDOR_PROPERTY_SUPPORT_EMAIL", "support@example.com"),
-  knowledgebase_url: System.get_env("KNOWLEDGEBASE_URL", "#")
+  knowledgebase_url: System.get_env("KNOWLEDGEBASE_URL", "#"),
+  billing_descriptor: System.get_env("VENDOR_PROPERTY_BILLING_DESCRIPTOR", "CARNEGIE MELLON UNI")
 
 # Configure your database
 config :oli, Oli.Repo,

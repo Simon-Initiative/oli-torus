@@ -163,7 +163,8 @@ config :oli, :vendor_property,
     System.get_env(
       "VENDOR_PROPERTY_FAQ_URL",
       "https://olihelp.zohodesk.com/portal/en/kb/articles/frqu"
-    )
+    ),
+  billing_descriptor: System.get_env("VENDOR_PROPERTY_BILLING_DESCRIPTOR", "CARNEGIE MELLON UNI")
 
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
