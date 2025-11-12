@@ -35,7 +35,7 @@ defmodule OliWeb.PaymentControllerTest do
            conn: conn,
            section: section
          } do
-      conn = get(conn, Routes.payment_path(conn, :guard, section.slug))
+      conn = get(conn, ~p"/sections/#{section.slug}/payment")
 
       html = html_response(conn, 200)
 
@@ -74,7 +74,7 @@ defmodule OliWeb.PaymentControllerTest do
         end
       end)
 
-      conn = get(conn, Routes.payment_path(conn, :guard, section.slug))
+      conn = get(conn, ~p"/sections/#{section.slug}/payment")
 
       html = html_response(conn, 200)
 
@@ -93,7 +93,7 @@ defmodule OliWeb.PaymentControllerTest do
           payment_options: :deferred
         })
 
-      conn = get(conn, Routes.payment_path(conn, :guard, section.slug))
+      conn = get(conn, ~p"/sections/#{section.slug}/payment")
 
       html = html_response(conn, 200)
 
@@ -116,7 +116,7 @@ defmodule OliWeb.PaymentControllerTest do
           payment_options: :direct_and_deferred
         })
 
-      conn = get(conn, Routes.payment_path(conn, :guard, section.slug))
+      conn = get(conn, ~p"/sections/#{section.slug}/payment")
 
       html = html_response(conn, 200)
 
@@ -131,7 +131,7 @@ defmodule OliWeb.PaymentControllerTest do
     end
 
     test "redirects to login when user is not authenticated", %{section: section} do
-      conn = build_conn() |> get(Routes.payment_path(build_conn(), :guard, section.slug))
+      conn = build_conn() |> get(~p"/sections/#{section.slug}/payment")
 
       assert html_response(conn, 302) =~
                "You are being <a href=\"/users/log_in\">redirected"
@@ -141,9 +141,59 @@ defmodule OliWeb.PaymentControllerTest do
       other_user = insert(:user)
       conn = log_in_user(build_conn(), other_user)
 
-      conn = get(conn, Routes.payment_path(conn, :guard, section.slug))
+      conn = get(conn, ~p"/sections/#{section.slug}/payment")
 
       assert html_response(conn, 200) =~ "You are not enrolled in this course section"
+    end
+
+    test "displays require account page with correct login link for guest users", %{
+      section: section
+    } do
+      guest_user = insert(:user, guest: true)
+      insert(:enrollment, %{user: guest_user, section: section})
+
+      conn = log_in_user(build_conn(), guest_user)
+      conn = get(conn, ~p"/sections/#{section.slug}/payment")
+
+      html = html_response(conn, 200)
+
+      # Assert that the require account page is displayed
+      assert html =~ "Payment and Account Required"
+      assert html =~ "You are currently accessing the system as a guest"
+
+      # Assert that the login link redirects to enrollment page, not payment page
+      assert html =~ "/users/log_in?"
+      assert html =~ URI.encode_query(%{request_path: "/sections/#{section.slug}/enroll"})
+      assert html =~ "Sign in / Create an account"
+    end
+
+    test "guest user can sign in and be redirected to enrollment page", %{section: section} do
+      # Create a regular (non-guest) user who will sign in
+      regular_user = user_fixture()
+
+      # Create a guest user and access the payment page as guest
+      guest_user = insert(:user, guest: true)
+      insert(:enrollment, %{user: guest_user, section: section})
+
+      conn = log_in_user(build_conn(), guest_user)
+      conn = get(conn, ~p"/sections/#{section.slug}/payment")
+
+      # Extract the login link from the page
+      html = html_response(conn, 200)
+      assert html =~ "/users/log_in?request_path="
+
+      # Now sign in as a regular user
+      conn = build_conn()
+      conn = post(conn, ~p"/users/log_in", %{
+        "user" => %{
+          "email" => regular_user.email,
+          "password" => valid_user_password()
+        },
+        "request_path" => "/sections/#{section.slug}/enroll"
+      })
+
+      # Should redirect to the enrollment page
+      assert redirected_to(conn) == "/sections/#{section.slug}/enroll"
     end
   end
 end

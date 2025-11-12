@@ -76,6 +76,7 @@ defmodule OliWeb.UserLoginLive do
             auth_provider_path_fn={&build_auth_provider_path(&1, @section, @from_invitation_link?)}
             from_invitation_link?={@from_invitation_link?}
             section={@section}
+            request_path={@request_path}
           />
         </div>
       </div>
@@ -99,13 +100,15 @@ defmodule OliWeb.UserLoginLive do
        form: form,
        authentication_providers: authentication_providers,
        from_invitation_link?: false,
-       section: nil
+       section: nil,
+       request_path: nil
      ), temporary_assigns: [form: form]}
   end
 
   @impl Phoenix.LiveView
   def handle_params(unsigned_params, _uri, socket) do
     from_invitation_link? = unsigned_params["from_invitation_link?"] == "true"
+    request_path = unsigned_params["request_path"]
 
     section =
       case unsigned_params["section"] do
@@ -118,7 +121,12 @@ defmodule OliWeb.UserLoginLive do
           |> Oli.Repo.preload([:brand, lti_1p3_deployment: [institution: :default_brand]])
       end
 
-    {:noreply, assign(socket, from_invitation_link?: from_invitation_link?, section: section)}
+    {:noreply,
+     assign(socket,
+       from_invitation_link?: from_invitation_link?,
+       section: section,
+       request_path: request_path
+     )}
   end
 
   defp build_auth_provider_path(provider, section, from_invitation_link?) do
