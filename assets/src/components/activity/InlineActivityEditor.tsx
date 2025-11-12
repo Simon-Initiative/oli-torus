@@ -185,7 +185,7 @@ export class InlineActivityEditor extends React.Component<
         onClick={this.props.onDuplicate}
         data-bs-toggle="tooltip"
         data-bs-placement="top"
-        title="Duplicate this activity"
+        title="Duplicate this question"
       >
         <i className="fa-solid fa-clone mr-2 fa-align-center"></i>
       </button>
