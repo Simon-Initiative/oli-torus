@@ -258,7 +258,8 @@ defmodule OliWeb.AuthorAuthorizationController do
           conn = OliWeb.AuthorAuth.create_session(conn, author)
           conn = assign(conn, :current_author, author)
           conn = OliWeb.AuthorAuth.maybe_link_user_author_account(conn, author)
-          conn = delete_session(conn, :invitation_project_slug)
+          # Clear all invitation session data to prevent interference with future logins
+          conn = clear_invitation_session_data(conn)
 
           redirect(conn, to: redirect_to)
         else
