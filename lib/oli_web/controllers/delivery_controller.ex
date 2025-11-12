@@ -110,8 +110,7 @@ defmodule OliWeb.DeliveryController do
 
     with {:available, section} <- Sections.available?(section),
          {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, create_guest),
-         {:enrolled?, false} <- {:enrolled?, Sections.is_enrolled?(user.id, section.slug)},
-         {:suspended?, false} <- {:suspended?, suspended_enrollment?(section.slug, user.id)} do
+         {:not_enrolled, nil} <- fetch_enrollment(section.slug, user.id) do
       render(conn, "enroll.html",
         section: Oli.Repo.preload(section, [:base_project]),
         from_invitation_link?: from_invitation_link?,
@@ -129,10 +128,10 @@ defmodule OliWeb.DeliveryController do
         )
 
       # redirect to course index if user is already signed in and enrolled
-      {:enrolled?, true} ->
+      {:enrolled, _} ->
         redirect(conn, to: ~p"/sections/#{section.slug}")
 
-      {:suspended?, true} ->
+      {:suspended, _} ->
         conn
         |> put_flash(:error, @suspended_message)
         |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")
@@ -254,11 +253,12 @@ defmodule OliWeb.DeliveryController do
     |> halt()
   end
 
-  defp suspended_enrollment?(section_slug, user_id) do
-    match?(
-      %_{status: :suspended},
-      Sections.get_enrollment(section_slug, user_id, filter_by_status: false)
-    )
+  defp fetch_enrollment(section_slug, user_id) do
+    case Sections.get_enrollment(section_slug, user_id, filter_by_status: false) do
+      %_{status: :enrolled} = enrollment -> {:enrolled, enrollment}
+      %_{status: :suspended} = enrollment -> {:suspended, enrollment}
+      _ -> {:not_enrolled, nil}
+    end
   end
 
   def download_course_content_info(conn, %{"section_slug" => slug} = params) do

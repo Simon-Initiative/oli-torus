@@ -14,31 +14,29 @@ defmodule OliWeb.Plugs.RequireEnrollment do
     user = conn.assigns[:current_user]
     section = conn.assigns[:section]
     is_admin = conn.assigns[:is_admin]
+    enrollment = Sections.get_enrollment(section.slug, user.id, filter_by_status: false)
 
     cond do
       is_admin ->
         conn
 
-      Sections.is_enrolled?(user.id, section.slug) ->
+      enrolled?(enrollment, section) ->
         conn
 
       !section.requires_enrollment ->
         # if section does not require enrollment this plug should do nothing
         conn
 
-      section.registration_open ->
-        case Sections.get_enrollment(section.slug, user.id, filter_by_status: false) do
-          %_{status: :suspended} ->
-            conn
-            |> put_flash(:error, @suspended_message)
-            |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")
-            |> halt()
+      section.registration_open && suspended?(enrollment) ->
+        conn
+        |> put_flash(:error, @suspended_message)
+        |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")
+        |> halt()
 
-          _ ->
-            conn
-            |> redirect(to: ~p"/sections/#{section.slug}/enroll")
-            |> halt()
-        end
+      section.registration_open ->
+        conn
+        |> redirect(to: ~p"/sections/#{section.slug}/enroll")
+        |> halt()
 
       true ->
         conn
@@ -47,4 +45,10 @@ defmodule OliWeb.Plugs.RequireEnrollment do
         |> halt()
     end
   end
+
+  defp enrolled?(%{status: :enrolled}, %{status: :active}), do: true
+  defp enrolled?(_, _), do: false
+
+  defp suspended?(%{status: :suspended}), do: true
+  defp suspended?(_), do: false
 end

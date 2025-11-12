@@ -22,41 +22,35 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
          redirect(socket, to: ~p"/users/log_in?request_path=%2Fsections%2F#{section_slug}")}
 
       {user, _} ->
-        is_enrolled = Sections.is_enrolled?(user.id, section_slug)
-
-        if is_enrolled do
-          {:cont, assign(socket, is_enrolled: is_enrolled)}
-        else
-          # Section should already be assigned by the SetSection plug, but if not, fetch it
-          section =
-            case socket.assigns[:section] do
-              %Section{} = s -> s
-              _ -> Sections.get_section_by(slug: section_slug)
-            end
-
-          # If the section registration is open and the user is not suspended, redirect to enrollment page
-          # otherwise, redirect to student workspace with error message
-          enrollment =
-            Sections.get_enrollment(section_slug, user.id, filter_by_status: false)
-
-          cond do
-            section.registration_open && match?(%_{status: :suspended}, enrollment) ->
-              {:halt,
-               socket
-               |> put_flash(:error, @suspended_message)
-               |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")}
-
-            section.registration_open ->
-              {:halt,
-               socket
-               |> redirect(to: ~p"/sections/#{section.slug}/enroll")}
-
-            true ->
-              {:halt,
-               socket
-               |> put_flash(:error, "You are not enrolled in this course")
-               |> redirect(to: ~p"/workspaces/student")}
+        section =
+          case socket.assigns[:section] do
+            %Section{} = s -> s
+            _ -> Sections.get_section_by(slug: section_slug)
           end
+
+        enrollment =
+          Sections.get_enrollment(section_slug, user.id, filter_by_status: false)
+
+        cond do
+          enrolled?(enrollment, section) ->
+            {:cont, assign(socket, is_enrolled: true)}
+
+          section.registration_open && suspended?(enrollment) ->
+            {:halt,
+             socket
+             |> put_flash(:error, @suspended_message)
+             |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")}
+
+          section.registration_open ->
+            {:halt,
+             socket
+             |> redirect(to: ~p"/sections/#{section.slug}/enroll")}
+
+          true ->
+            {:halt,
+             socket
+             |> put_flash(:error, "You are not enrolled in this course")
+             |> redirect(to: ~p"/workspaces/student")}
         end
     end
   end
@@ -64,4 +58,10 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
   def on_mount(:default, _params, _session, socket) do
     {:cont, socket}
   end
+
+  defp enrolled?(%{status: :enrolled}, %{status: :active}), do: true
+  defp enrolled?(_, _), do: false
+
+  defp suspended?(%{status: :suspended}), do: true
+  defp suspended?(_), do: false
 end
