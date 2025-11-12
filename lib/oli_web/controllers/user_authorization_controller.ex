@@ -37,11 +37,12 @@ defmodule OliWeb.UserAuthorizationController do
       end
 
     # Store section and invitation context for post-auth handling
+    # Store section context, invitation context, and token for validation
+    # The canonical invited email will be retrieved from the invitation token in the database.
     conn =
       conn
       |> maybe_store_section_context(params["section"])
       |> maybe_store_invitation_context(params["from_invitation_link?"])
-      |> maybe_store_invitation_email(params["invitation_email"])
       |> maybe_store_invitation_token(params["invitation_token"])
 
     provider
@@ -99,8 +100,9 @@ defmodule OliWeb.UserAuthorizationController do
     case AssentAuthWeb.provider_callback(provider, params, conn.assigns.session_params, config) do
       # Authorization successful
       {:ok, %{user: user_params} = _response} ->
-        # Validate email match if coming from invitation
-        case validate_invitation_email(conn, user_params) do
+        # Retrieve and validate the canonical invited email from the invitation token (if present)
+        # This prevents invitation email spoofing via URL parameters
+        case load_and_validate_invitation_email(conn, user_params) do
           {:ok, conn} ->
             handle_validated_authorization(conn, provider, user_params, config, redirect_to)
 
@@ -113,6 +115,17 @@ defmodule OliWeb.UserAuthorizationController do
             |> put_flash(
               :error,
               "The email associated with your #{String.capitalize(provider)} account (#{sso_email}) does not match the invitation email (#{invited_email}). Please use the correct account or sign in with your password."
+            )
+            |> redirect(to: invitation_redirect || redirect_to)
+
+          {:error, :invalid_token} ->
+            invitation_redirect = get_invitation_redirect_path(conn)
+
+            conn
+            |> clear_enrollment_session_data()
+            |> put_flash(
+              :error,
+              "The invitation link is invalid or has expired."
             )
             |> redirect(to: invitation_redirect || redirect_to)
         end
@@ -451,14 +464,6 @@ defmodule OliWeb.UserAuthorizationController do
 
   defp maybe_store_invitation_context(conn, _), do: conn
 
-  defp maybe_store_invitation_email(conn, nil), do: conn
-
-  defp maybe_store_invitation_email(conn, email) when is_binary(email) do
-    put_session(conn, :invitation_email, email)
-  end
-
-  defp maybe_store_invitation_email(conn, _), do: conn
-
   defp maybe_store_invitation_token(conn, nil), do: conn
 
   defp maybe_store_invitation_token(conn, token) when is_binary(token) do
@@ -467,24 +472,64 @@ defmodule OliWeb.UserAuthorizationController do
 
   defp maybe_store_invitation_token(conn, _), do: conn
 
-  defp validate_invitation_email(conn, user_params) do
-    case get_session(conn, :invitation_email) do
-      nil ->
-        # Not from invitation, no validation needed
+  # Securely retrieve and validate the invitation email from the database
+  # This prevents invitation email spoofing attacks by:
+  # 1. Retrieving the canonical invited email from the invitation token (not from URL params)
+  # 2. Validating the token exists and is not expired
+  # 3. Comparing the SSO email with the invited email from the database
+  defp load_and_validate_invitation_email(conn, user_params) do
+    invitation_token = get_session(conn, :invitation_token)
+    section_slug = get_session(conn, :pending_section_enrollment)
+
+    cond do
+      # No invitation context - regular SSO login
+      is_nil(invitation_token) && is_nil(section_slug) ->
         {:ok, conn}
 
-      invited_email ->
-        sso_email = normalize_email(user_params["email"])
-        normalized_invited_email = normalize_email(invited_email)
+      # Has invitation token - validate it and retrieve canonical email
+      not is_nil(invitation_token) ->
+        case retrieve_invited_email_from_token(invitation_token, section_slug) do
+          {:ok, invited_email} ->
+            # Now compare SSO email with the canonical invited email from database
+            sso_email = normalize_email(user_params["email"])
+            normalized_invited_email = normalize_email(invited_email)
 
-        conn = delete_session(conn, :invitation_email)
+            if sso_email == normalized_invited_email do
+              # Store the validated email for use in invitation acceptance logic
+              {:ok, put_session(conn, :validated_invitation_email, true)}
+            else
+              {:error, :email_mismatch, invited_email, user_params["email"]}
+            end
 
-        if sso_email == normalized_invited_email do
-          # Mark that we validated an invitation email for use in error handling
-          {:ok, put_session(conn, :validated_invitation_email, true)}
-        else
-          {:error, :email_mismatch, invited_email, user_params["email"]}
+          {:error, :invalid_token} ->
+            {:error, :invalid_token}
         end
+
+      # Has section slug but no token - invalid state
+      true ->
+        Logger.warning("Invitation context has section_slug but no invitation_token")
+        {:error, :invalid_token}
+    end
+  end
+
+  # Retrieve the canonical invited email from the invitation token in the database
+  defp retrieve_invited_email_from_token(token, section_slug) do
+    result =
+      if section_slug do
+        # Enrollment invitation
+        Accounts.get_user_token_by_enrollment_invitation_token(token)
+      else
+        # This shouldn't happen for users, but handle gracefully
+        nil
+      end
+
+    case result do
+      %{user: user} when not is_nil(user) ->
+        {:ok, user.email}
+
+      nil ->
+        Logger.warning("Invalid or expired invitation token")
+        {:error, :invalid_token}
     end
   end
 
@@ -499,7 +544,6 @@ defmodule OliWeb.UserAuthorizationController do
     |> delete_session(:pending_section_enrollment)
     |> delete_session(:from_invitation_link)
     |> delete_session(:validated_invitation_email)
-    |> delete_session(:invitation_email)
     |> delete_session(:invitation_token)
   end
 
