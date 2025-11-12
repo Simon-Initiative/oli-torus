@@ -696,20 +696,21 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
-  Gets the active payment for a given enrollment and section.
+  Gets the active payment for a given enrollment and section (or its associated blueprint).
   By active we mean a payment that has not been invalidated by an admin.
 
   Example:
-  iex> get_active_payment_for(1, 2)
+  iex> get_active_payment_for(1, %Section{id: 2})
   {:ok, %Payment{}}
-  iex> get_active_payment_for(1, 3)
+  iex> get_active_payment_for(1, %Section{id: 3})
   {:error, :no_active_payment_found}
   """
-  def get_active_payment_for(enrollment_id, section_id) do
+  def get_active_payment_for(enrollment_id, section) do
     from(
       p in Payment,
       where:
-        p.enrollment_id == ^enrollment_id and p.section_id == ^section_id and
+        p.enrollment_id == ^enrollment_id and
+          (p.section_id == ^section.id or p.section_id == ^section.blueprint_id) and
           p.type != :invalidated
     )
     |> Repo.one()
