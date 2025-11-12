@@ -9,7 +9,7 @@
 #   - https://hub.docker.com/r/hexpm/elixir/tags - for the build image
 #   - https://hub.docker.com/_/debian?tab=tags&page=1&name=bullseye-20240722-slim - for the release image
 #   - https://pkgs.org/ - resource for finding needed packages
-#   - Ex: hexpm/elixir:1.18.4-erlang-28.0.2-debian-bullseye-20250721-slim
+#   - Ex: hexpm/elixir:1.19.2-erlang-28.1.1-debian-bullseye-20251103-slim
 #
 ARG ELIXIR_VERSION=1.19.2
 ARG OTP_VERSION=28.1.1
