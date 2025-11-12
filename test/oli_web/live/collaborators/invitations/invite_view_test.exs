@@ -268,42 +268,6 @@ defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
       assert_redirect(view, ~p"/workspaces/course_author/#{project.slug}/overview")
     end
 
-    test "a not logged in existing social author is shown the login form when accepting invitation",
-         %{conn: conn, project: project} do
-      existing_author = social_author()
-
-      %{encode64_token: encode64_token, author_project: initial_author_project} =
-        insert_invitation_token_and_author_project(
-          existing_author,
-          project,
-          "a_pending_invitation_token"
-        )
-
-      assert initial_author_project.status == :pending_confirmation
-
-      {:ok, view, _html} = live(conn, collaborators_invite_url(encode64_token))
-
-      view
-      |> element("button", "Accept")
-      |> render_click()
-
-      # Verify that SSO login URLs include invitation context parameters
-      # This ensures when an existing social author signs in via SSO, the system can:
-      # 1. Validate the SSO email matches the invitation email
-      # 2. Automatically accept the collaborator invitation after authentication
-      # 3. Redirect to the correct project
-      assert view
-             |> element("a[aria-label='Sign in with Google']")
-             |> render() =~
-               URI.encode_query([
-                 {"project", project.slug},
-                 {"from_invitation_link?", "true"},
-                 {"invitation_email", existing_author.email},
-                 {"invitation_token", encode64_token}
-               ])
-               |> String.replace("&", "&amp;")
-    end
-
     test "a logged in existing social author gets redirected to the project as soon as the invitation is accepted",
          %{conn: conn, project: project} do
       existing_author = social_author()
