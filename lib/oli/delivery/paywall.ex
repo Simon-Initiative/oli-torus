@@ -471,7 +471,9 @@ defmodule Oli.Delivery.Paywall do
       query =
         from(
           p in Payment,
-          where: p.pending_section_id == ^section_id and p.pending_user_id == ^user_id
+          where:
+            p.pending_section_id == ^section_id and p.pending_user_id == ^user_id and
+              p.type != :invalidated
         )
 
       case Oli.Repo.one(query) do
