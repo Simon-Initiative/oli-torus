@@ -884,7 +884,7 @@ defmodule Oli.Delivery.PaywallTest do
       enrollment: enrollment,
       payment: active_payment
     } do
-      {:ok, payment} = Paywall.get_active_payment_for(enrollment.id, section.id)
+      {:ok, payment} = Paywall.get_active_payment_for(enrollment.id, section)
 
       assert payment.id == active_payment.id
     end
@@ -896,7 +896,134 @@ defmodule Oli.Delivery.PaywallTest do
     } do
       Paywall.update_payment(active_payment, %{type: :invalidated})
 
-      assert Paywall.get_active_payment_for(enrollment.id, section.id) ==
+      assert Paywall.get_active_payment_for(enrollment.id, section) ==
+               {:error, :no_active_payment_found}
+    end
+
+    test "returns payment associated with blueprint when section has blueprint_id" do
+      # Create a blueprint
+      blueprint = insert(:section, %{type: :blueprint})
+
+      # Create an enrollable section that references the blueprint
+      section =
+        insert(:section, %{
+          type: :enrollable,
+          blueprint_id: blueprint.id
+        })
+
+      user = insert(:user)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      # Payment is associated with the blueprint, not the section
+      payment = insert(:payment, section: blueprint, enrollment: enrollment)
+
+      {:ok, found_payment} = Paywall.get_active_payment_for(enrollment.id, section)
+
+      assert found_payment.id == payment.id
+      assert found_payment.section_id == blueprint.id
+    end
+
+    test "returns payment associated with section when section has blueprint_id" do
+      # Create a blueprint
+      blueprint = insert(:section, %{type: :blueprint})
+
+      # Create an enrollable section that references the blueprint
+      section =
+        insert(:section, %{
+          type: :enrollable,
+          blueprint_id: blueprint.id
+        })
+
+      user = insert(:user)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      # Payment is associated directly with the section
+      payment = insert(:payment, section: section, enrollment: enrollment)
+
+      {:ok, found_payment} = Paywall.get_active_payment_for(enrollment.id, section)
+
+      assert found_payment.id == payment.id
+      assert found_payment.section_id == section.id
+    end
+
+    test "does not return invalidated payment even if it matches section or blueprint" do
+      # Create a blueprint
+      blueprint = insert(:section, %{type: :blueprint})
+
+      # Create an enrollable section that references the blueprint
+      section =
+        insert(:section, %{
+          type: :enrollable,
+          blueprint_id: blueprint.id
+        })
+
+      user = insert(:user)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      # Create an invalidated payment on the section
+      insert(:payment,
+        section: section,
+        enrollment: enrollment,
+        type: :invalidated
+      )
+
+      # Create another invalidated payment on the blueprint
+      insert(:payment,
+        section: blueprint,
+        enrollment: enrollment,
+        type: :invalidated
+      )
+
+      assert Paywall.get_active_payment_for(enrollment.id, section) ==
+               {:error, :no_active_payment_found}
+    end
+
+    test "returns active payment when both active and invalidated payments exist" do
+      section = insert(:section, %{type: :blueprint})
+      user = insert(:user)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      # Create an invalidated payment
+      insert(:payment,
+        section: section,
+        enrollment: enrollment,
+        type: :invalidated
+      )
+
+      # Create an active payment
+      active_payment =
+        insert(:payment,
+          section: section,
+          enrollment: enrollment,
+          type: :direct
+        )
+
+      {:ok, found_payment} = Paywall.get_active_payment_for(enrollment.id, section)
+
+      assert found_payment.id == active_payment.id
+      assert found_payment.type == :direct
+    end
+
+    test "works correctly when section has no blueprint_id (nil)" do
+      # Section without blueprint_id
+      section = insert(:section, %{type: :enrollable, blueprint_id: nil})
+      user = insert(:user)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      payment = insert(:payment, section: section, enrollment: enrollment)
+
+      {:ok, found_payment} = Paywall.get_active_payment_for(enrollment.id, section)
+
+      assert found_payment.id == payment.id
+    end
+
+    test "returns error when no active payment exists for enrollment" do
+      section = insert(:section, %{type: :blueprint})
+      user = insert(:user)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      # No payment created
+      assert Paywall.get_active_payment_for(enrollment.id, section) ==
                {:error, :no_active_payment_found}
     end
   end
