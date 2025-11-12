@@ -38,7 +38,14 @@ defmodule OliWeb.Projects.ProjectsLive do
     {false, "No"}
   ]
   @date_field_options [{"inserted_at", "Created Date"}]
-  @filter_fields [:date, :tags, :visibility, :published, :status, :institution]
+  @filter_fields [
+    :date,
+    :tags,
+    :visibility,
+    :published,
+    :status,
+    :institution
+  ]
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -286,6 +293,7 @@ defmodule OliWeb.Projects.ProjectsLive do
             page_change="paged_table_page_change"
             limit_change="paged_table_limit_change"
             show_limit_change={true}
+            sticky_header_offset={64}
           />
         </div>
       </div>

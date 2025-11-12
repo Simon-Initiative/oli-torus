@@ -240,6 +240,7 @@ defmodule OliWeb.Components.Delivery.Content do
           page_change={JS.push("paged_table_page_change", target: @myself)}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
+          sticky_header_offset={if @patch_url_type == :instructor_dashboard, do: 56, else: 0}
         />
       </div>
     </div>

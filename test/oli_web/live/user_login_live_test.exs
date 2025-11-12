@@ -2,6 +2,7 @@ defmodule OliWeb.UserLoginLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  import Oli.Factory
 
   describe "Log in page" do
     test "renders log in page", %{conn: conn} do
@@ -20,6 +21,21 @@ defmodule OliWeb.UserLoginLiveTest do
         |> follow_redirect(conn, "/workspaces/student")
 
       assert {:ok, _conn} = result
+    end
+
+    test "renders log in page with section parameter from invitation link", %{conn: conn} do
+      section = insert(:section)
+
+      path =
+        "/users/log_in?section=#{section.slug}&from_invitation_link%3F=true&request_path=%2Fsections%2F#{section.slug}%2Fenroll"
+
+      # This would have caused BadMapError before the fix because section was a string instead of a struct
+      {:ok, _lv, html} = live(conn, path)
+
+      assert html =~ "Sign in"
+      assert html =~ "Create an account"
+      # Verify the section slug is in the hidden input field
+      assert html =~ "value=\"#{section.slug}\""
     end
   end
 
