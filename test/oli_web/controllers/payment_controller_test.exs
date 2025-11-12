@@ -184,13 +184,15 @@ defmodule OliWeb.PaymentControllerTest do
 
       # Now sign in as a regular user
       conn = build_conn()
-      conn = post(conn, ~p"/users/log_in", %{
-        "user" => %{
-          "email" => regular_user.email,
-          "password" => valid_user_password()
-        },
-        "request_path" => "/sections/#{section.slug}/enroll"
-      })
+
+      conn =
+        post(conn, ~p"/users/log_in", %{
+          "user" => %{
+            "email" => regular_user.email,
+            "password" => valid_user_password()
+          },
+          "request_path" => "/sections/#{section.slug}/enroll"
+        })
 
       # Should redirect to the enrollment page
       assert redirected_to(conn) == "/sections/#{section.slug}/enroll"
