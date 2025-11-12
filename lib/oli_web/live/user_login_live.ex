@@ -108,7 +108,7 @@ defmodule OliWeb.UserLoginLive do
   @impl Phoenix.LiveView
   def handle_params(unsigned_params, _uri, socket) do
     from_invitation_link? = unsigned_params["from_invitation_link?"] == "true"
-    request_path = unsigned_params["request_path"]
+    request_path = validate_request_path(unsigned_params["request_path"])
 
     section =
       case unsigned_params["section"] do
@@ -144,4 +144,7 @@ defmodule OliWeb.UserLoginLive do
   defp maybe_add_param(params, _key, nil), do: params
   defp maybe_add_param(params, _key, false), do: params
   defp maybe_add_param(params, key, value), do: [{key, value} | params]
+
+  defp validate_request_path("/" <> <<c, _::binary>> = path) when c != ?/, do: path
+  defp validate_request_path(_), do: nil
 end

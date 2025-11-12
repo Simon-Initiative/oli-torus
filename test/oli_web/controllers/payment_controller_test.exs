@@ -198,4 +198,66 @@ defmodule OliWeb.PaymentControllerTest do
       assert redirected_to(conn) == "/sections/#{section.slug}/enroll"
     end
   end
+
+  describe "request_path validation for open redirect prevention" do
+    setup do
+      {:ok, user: user_fixture()}
+    end
+
+    test "prevents open redirect attacks via absolute URLs", %{user: user} do
+      conn =
+        post(build_conn(), ~p"/users/log_in", %{
+          "user" => %{
+            "email" => user.email,
+            "password" => valid_user_password()
+          },
+          "request_path" => "https://evil.com/phishing"
+        })
+
+      # Should NOT redirect to the malicious URL, should go to default (student workspace)
+      assert redirected_to(conn) == ~p"/workspaces/student"
+    end
+
+    test "prevents protocol-relative URL attacks", %{user: user} do
+      conn =
+        post(build_conn(), ~p"/users/log_in", %{
+          "user" => %{
+            "email" => user.email,
+            "password" => valid_user_password()
+          },
+          "request_path" => "//evil.com/phishing"
+        })
+
+      # Should NOT redirect to the protocol-relative URL
+      assert redirected_to(conn) == ~p"/workspaces/student"
+    end
+
+    test "rejects paths with leading whitespace as suspicious", %{user: user} do
+      conn =
+        post(build_conn(), ~p"/users/log_in", %{
+          "user" => %{
+            "email" => user.email,
+            "password" => valid_user_password()
+          },
+          "request_path" => " /sections/some-section/enroll"
+        })
+
+      # Should reject the path with whitespace and use default redirect
+      assert redirected_to(conn) == ~p"/workspaces/student"
+    end
+
+    test "allows valid internal paths", %{user: user} do
+      conn =
+        post(build_conn(), ~p"/users/log_in", %{
+          "user" => %{
+            "email" => user.email,
+            "password" => valid_user_password()
+          },
+          "request_path" => "/sections/test-section/enroll"
+        })
+
+      # Should redirect to the valid internal path
+      assert redirected_to(conn) == "/sections/test-section/enroll"
+    end
+  end
 end
