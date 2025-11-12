@@ -708,13 +708,25 @@ defmodule Oli.Delivery.Paywall do
   {:error, :no_active_payment_found}
   """
   def get_active_payment_for(enrollment_id, section) do
-    from(
-      p in Payment,
-      where:
-        p.enrollment_id == ^enrollment_id and
-          (p.section_id == ^section.id or p.section_id == ^section.blueprint_id) and
-          p.type != :invalidated
-    )
+    # Build the complete where condition dynamically to handle nil blueprint_id
+    where_condition =
+      if is_nil(section.blueprint_id) do
+        dynamic(
+          [p],
+          p.enrollment_id == ^enrollment_id and
+            p.section_id == ^section.id and
+            p.type != :invalidated
+        )
+      else
+        dynamic(
+          [p],
+          p.enrollment_id == ^enrollment_id and
+            (p.section_id == ^section.id or p.section_id == ^section.blueprint_id) and
+            p.type != :invalidated
+        )
+      end
+
+    from(p in Payment, where: ^where_condition)
     |> Repo.one()
     |> case do
       nil -> {:error, :no_active_payment_found}
