@@ -125,7 +125,8 @@ defmodule Oli.GoogleDocs.Warnings do
     },
     dropdown_missing_markers: %{
       severity: :warn,
-      template: "Dropdown CustomElement stem must reference at least one [dropdownN] marker; rendered as table."
+      template:
+        "Dropdown CustomElement stem must reference at least one [dropdownN] marker; rendered as table."
     },
     dropdown_missing_input_data: %{
       severity: :warn,
