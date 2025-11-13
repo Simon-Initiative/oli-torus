@@ -39,13 +39,16 @@ defmodule OliWeb.Components.FilterPanel do
   alias OliWeb.Live.Components.Tags.TagsComponent
   alias Oli.Tags
 
+  @filter_limit 8
+
   @impl true
   def mount(socket) do
     {:ok,
      assign(socket,
        filter_panel_open: false,
        tag_search: "",
-       tag_suggestions: []
+       tag_suggestions: [],
+       institution_search: ""
      )}
   end
 
@@ -59,6 +62,8 @@ defmodule OliWeb.Components.FilterPanel do
         |> Map.delete(:filters)
         |> Map.delete(:tag_search)
         |> Map.delete(:tag_suggestions)
+        |> Map.delete(:institution_search)
+        |> Map.delete(:institution_suggestions)
       else
         assigns
       end
@@ -79,6 +84,10 @@ defmodule OliWeb.Components.FilterPanel do
       |> assign_new(:institution_options, fn -> [] end)
       |> assign_new(:delivery_options, fn -> [] end)
       |> assign_new(:requires_payment_options, fn -> [] end)
+      |> assign_new(:institution_search, fn -> "" end)
+      |> assign_new(:institution_suggestions, fn ->
+        Map.get(assigns, :institution_options, [])
+      end)
       |> assign_new(:fields, fn ->
         [
           :date,
@@ -151,6 +160,8 @@ defmodule OliWeb.Components.FilterPanel do
               filters={@filters}
               tag_search={@tag_search}
               tag_suggestions={@tag_suggestions}
+              institution_search={@institution_search}
+              institution_suggestions={@institution_suggestions}
               date_field_options={@date_field_options}
               visibility_options={@visibility_options}
               status_options={@status_options}
@@ -188,6 +199,8 @@ defmodule OliWeb.Components.FilterPanel do
   attr :filters, :map, required: true
   attr :tag_search, :string, default: ""
   attr :tag_suggestions, :list, default: []
+  attr :institution_search, :string, default: ""
+  attr :institution_suggestions, :list, default: []
   attr :date_field_options, :list, default: []
   attr :visibility_options, :list, default: []
   attr :status_options, :list, default: []
@@ -393,25 +406,73 @@ defmodule OliWeb.Components.FilterPanel do
   end
 
   defp render_institution_field(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :selected_institution,
+        Enum.find(assigns.institution_options, &(&1.id == assigns.filters.institution_id))
+      )
+
     ~H"""
     <div class="flex flex-col gap-2">
       <label class="text-sm font-semibold text-Text-text-high">
         Institution
       </label>
-      <select
-        name="filters[institution]"
-        class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
-        value={encode_integer(@filters.institution_id)}
+
+      <div
+        :if={@selected_institution}
+        class="flex items-center gap-2 rounded border border-Border-border-default bg-Specially-Tokens-Fill-fill-nav-hover px-3 py-2"
       >
-        <option value="">Select option</option>
-        <option
-          :for={institution <- @institution_options}
-          value={Integer.to_string(institution.id)}
-          selected={institution.id == @filters.institution_id}
+        <span class="flex-1 text-sm text-Text-text-high">{@selected_institution.name}</span>
+        <button
+          type="button"
+          class="text-Text-text-high hover:text-Text-text-button"
+          phx-click="filter_clear_institution"
+          phx-target={@myself}
         >
-          {institution.name}
-        </option>
-      </select>
+          ×
+        </button>
+      </div>
+
+      <input
+        :if={@selected_institution}
+        type="hidden"
+        name="filters[institution]"
+        value={@selected_institution.id}
+      />
+
+      <div class="relative">
+        <div class="absolute left-3 top-1/2 -translate-y-1/2">
+          <Icons.list_search />
+        </div>
+        <input
+          type="text"
+          id={"#{@id}-institution-search"}
+          name="filters[institution_search_input]"
+          value={@institution_search}
+          phx-keyup="filter_institution_search"
+          phx-target={@myself}
+          phx-debounce="300"
+          class="h-9 w-full rounded border border-Border-border-default pl-10 pr-3 text-sm text-Text-text-high focus:border-Text-text-button focus:outline-none dark:bg-transparent"
+        />
+      </div>
+
+      <div
+        :if={Enum.any?(@institution_suggestions)}
+        class="flex flex-col rounded border border-Border-border-default bg-Specially-Tokens-Fill-fill-nav-hover max-h-48 overflow-y-auto"
+      >
+        <button
+          :for={suggestion <- @institution_suggestions}
+          type="button"
+          class="px-3 py-2 text-left text-sm text-Text-text-high hover:bg-Specially-Tokens-Fill-fill-dot-message-default"
+          phx-click="filter_select_institution"
+          phx-target={@myself}
+          phx-value-id={suggestion.id}
+          phx-value-name={suggestion.name}
+        >
+          {suggestion.name}
+        </button>
+      </div>
     </div>
     """
   end
@@ -476,7 +537,15 @@ defmodule OliWeb.Components.FilterPanel do
 
   @impl true
   def handle_event("cancel_filters", _, socket) do
-    {:noreply, assign(socket, filter_panel_open: false, tag_suggestions: [])}
+    institution_options = Map.get(socket.assigns, :institution_options, [])
+
+    {:noreply,
+     assign(socket,
+       filter_panel_open: false,
+       tag_suggestions: [],
+       institution_search: "",
+       institution_suggestions: institution_options
+     )}
   end
 
   @impl true
@@ -488,7 +557,7 @@ defmodule OliWeb.Components.FilterPanel do
       if trimmed == "" do
         []
       else
-        Tags.list_tags(%{search: trimmed, limit: 8})
+        Tags.list_tags(%{search: trimmed, limit: @filter_limit})
         |> Enum.map(&%{id: &1.id, name: &1.name})
       end
 
@@ -525,9 +594,59 @@ defmodule OliWeb.Components.FilterPanel do
   end
 
   @impl true
+  def handle_event("filter_institution_search", %{"value" => value}, socket) do
+    term = value || ""
+    trimmed = String.trim(term)
+
+    institutions = Map.get(socket.assigns, :institution_options, [])
+
+    suggestions =
+      if trimmed == "" do
+        institutions
+      else
+        institutions
+        |> Enum.filter(fn institution ->
+          String.contains?(String.downcase(institution.name), String.downcase(trimmed))
+        end)
+      end
+
+    {:noreply, assign(socket, institution_search: term, institution_suggestions: suggestions)}
+  end
+
+  @impl true
+  def handle_event("filter_select_institution", %{"id" => id_str, "name" => _name}, socket) do
+    with {:ok, id} <- parse_positive_int(id_str) do
+      filters = %{socket.assigns.filters | institution_id: id}
+
+      {:noreply,
+       assign(socket,
+         filters: filters,
+         institution_search: "",
+         institution_suggestions: []
+       )}
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("filter_clear_institution", _params, socket) do
+    filters = %{socket.assigns.filters | institution_id: nil}
+    institution_options = Map.get(socket.assigns, :institution_options, [])
+
+    {:noreply,
+     assign(socket,
+       filters: filters,
+       institution_search: "",
+       institution_suggestions: institution_options
+     )}
+  end
+
+  @impl true
   def handle_event("apply_filters", %{"filters" => filters_params}, socket) do
     normalized = BrowseFilters.normalize_form_params(filters_params)
     filters = BrowseFilters.parse(normalized)
+    institution_options = Map.get(socket.assigns, :institution_options, [])
 
     send(socket.assigns.parent_pid, {:filter_panel, :apply, filters})
 
@@ -536,7 +655,9 @@ defmodule OliWeb.Components.FilterPanel do
        filters: filters,
        filter_panel_open: false,
        tag_search: "",
-       tag_suggestions: []
+       tag_suggestions: [],
+       institution_search: "",
+       institution_suggestions: institution_options
      )}
   end
 
@@ -548,6 +669,7 @@ defmodule OliWeb.Components.FilterPanel do
   @impl true
   def handle_event("clear_all_filters", _params, socket) do
     filters = BrowseFilters.default()
+    institution_options = Map.get(socket.assigns, :institution_options, [])
 
     send(socket.assigns.parent_pid, {:filter_panel, :clear})
 
@@ -556,7 +678,9 @@ defmodule OliWeb.Components.FilterPanel do
        filters: filters,
        filter_panel_open: false,
        tag_search: "",
-       tag_suggestions: []
+       tag_suggestions: [],
+       institution_search: "",
+       institution_suggestions: institution_options
      )}
   end
 
@@ -571,9 +695,6 @@ defmodule OliWeb.Components.FilterPanel do
 
   defp encode_boolean(nil), do: ""
   defp encode_boolean(value) when is_boolean(value), do: if(value, do: "true", else: "false")
-
-  defp encode_integer(nil), do: ""
-  defp encode_integer(int) when is_integer(int), do: Integer.to_string(int)
 
   defp parse_positive_int(value) when is_binary(value) do
     case Integer.parse(value) do
