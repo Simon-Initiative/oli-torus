@@ -604,9 +604,11 @@ defmodule OliWeb.Components.FilterPanel do
       if trimmed == "" do
         institutions
       else
+        trimmed_downcase = String.downcase(trimmed)
+
         institutions
         |> Enum.filter(fn institution ->
-          String.contains?(String.downcase(institution.name), String.downcase(trimmed))
+          String.contains?(String.downcase(institution.name), trimmed_downcase)
         end)
       end
 
