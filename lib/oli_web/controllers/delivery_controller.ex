@@ -14,12 +14,14 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.UserAuth
-  alias OliWeb.Common.Params
+  alias OliWeb.Common.{Params, FormatDateTime}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
   alias OliWeb.DeliveryWeb
   alias OliWeb.Delivery.Student.Utils
+  alias Timex
 
   require Logger
+  @learner_role_id ContextRoles.get_role(:context_learner).id
 
   @doc """
   This is the default entry point for delivery users. It will redirect to the appropriate page based
@@ -423,6 +425,44 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
+  def download_scored_pages(conn, %{"section_slug" => slug}) do
+    case Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn,
+          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+        )
+
+      section ->
+        students = instructor_dashboard_students(section.slug)
+
+        pages =
+          Helpers.get_assessments(section, students)
+          |> Helpers.load_metrics(section, students)
+
+        conn
+        |> send_pages_csv(section, pages, :scored)
+    end
+  end
+
+  def download_practice_pages(conn, %{"section_slug" => slug}) do
+    case Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn,
+          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+        )
+
+      section ->
+        students = instructor_dashboard_students(section.slug)
+
+        pages =
+          Helpers.get_practice_pages(section, students)
+          |> Helpers.load_metrics(section, students)
+
+        conn
+        |> send_pages_csv(section, pages, :practice)
+    end
+  end
+
   def download_quiz_scores(conn, %{"section_slug" => slug}) do
     case Oli.Delivery.Sections.get_section_by_slug(slug) do
       nil ->
@@ -551,6 +591,101 @@ defmodule OliWeb.DeliveryController do
           filename: "progress__#{slug}__#{generate_title(title)}.csv"
         )
     end
+  end
+
+  defp send_pages_csv(conn, section, pages, type) do
+    include_due_date = type == :scored
+
+    contents =
+      pages
+      |> build_pages_csv_rows(section, include_due_date: include_due_date)
+      |> DataTable.new()
+      |> DataTable.headers(pages_headers(include_due_date))
+      |> DataTable.to_csv_content()
+
+    filename =
+      case type do
+        :scored -> "#{section.slug}_scored_pages.csv"
+        :practice -> "#{section.slug}_practice_pages.csv"
+      end
+
+    conn
+    |> send_download({:binary, contents}, filename: filename)
+  end
+
+  defp pages_headers(include_due_date) do
+    base_headers = [
+      order: "#",
+      page_title: "Page Title",
+      avg_score: "Avg Score",
+      total_attempts: "Total Attempts",
+      student_progress: "Student Progress"
+    ]
+
+    if include_due_date,
+      do: List.insert_at(base_headers, 2, {:due_date, "Due Date"}),
+      else: base_headers
+  end
+
+  defp build_pages_csv_rows(pages, section, opts) do
+    include_due_date = Keyword.get(opts, :include_due_date, false)
+
+    Enum.map(pages, fn page ->
+      base_row = %{
+        order: page.order,
+        page_title: format_page_title_for_csv(page),
+        avg_score: format_percentage_value(page.avg_score),
+        total_attempts: format_total_attempts(page.total_attempts),
+        student_progress: format_percentage_value(page.students_completion)
+      }
+
+      if include_due_date,
+        do: Map.put(base_row, :due_date, format_due_date_for_csv(page, section)),
+        else: base_row
+    end)
+  end
+
+  defp format_page_title_for_csv(%{container_label: nil, title: title}), do: title
+
+  defp format_page_title_for_csv(%{container_label: container, title: title})
+       when container in [nil, ""] do
+    title
+  end
+
+  defp format_page_title_for_csv(%{container_label: container, title: title}),
+    do: "#{container} - #{title}"
+
+  defp format_percentage_value(nil), do: "-"
+
+  defp format_percentage_value(value) when is_float(value) or is_integer(value) do
+    value =
+      if value <= 1, do: value * 100, else: value
+
+    "#{Utils.parse_score(value)}%"
+  end
+
+  defp format_total_attempts(nil), do: "-"
+  defp format_total_attempts(value), do: value
+
+  defp format_due_date_for_csv(%{scheduling_type: :due_by, end_date: nil}, _section),
+    do: "No due date"
+
+  defp format_due_date_for_csv(%{scheduling_type: :due_by, end_date: datetime}, section) do
+    timezone = section.timezone || FormatDateTime.default_timezone()
+
+    datetime
+    |> FormatDateTime.convert_datetime(timezone)
+    |> case do
+      nil -> "No due date"
+      shifted -> Timex.format!(shifted, "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
+    end
+  end
+
+  defp format_due_date_for_csv(_, _), do: "No due date"
+
+  defp instructor_dashboard_students(section_slug) do
+    Sections.enrolled_students(section_slug)
+    |> Enum.reject(&(&1.user_role_id != @learner_role_id))
   end
 
   def generate_title(title) when is_binary(title) do
