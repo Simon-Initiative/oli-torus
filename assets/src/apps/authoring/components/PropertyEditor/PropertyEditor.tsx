@@ -76,6 +76,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
 }) => {
   const [formData, setFormData] = useState<any>(value);
   const backspacePressed = useRef(false);
+  const formContainerRef = useRef<HTMLDivElement>(null);
 
   const findDiffType = (changedProp: any): string => {
     const diffType: Record<string, unknown>[] = Object.values(changedProp);
@@ -144,16 +145,17 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
    * - User-initiated outside clicks (should clear focus tracking)
    * - Temporary blurs caused by re-renders (should preserve focus tracking)
    *
-   * We use capture phase to catch events early, before they bubble.
-   * Only sets pointerDownOutside if:
-   * 1. Click is outside the form
-   * 2. Click is not on an input/textarea element
-   * 3. We have a lastFocusedInputId to preserve
+   * We attach the listener to the document to catch clicks anywhere on the page,
+   * but only set the flag if the click is outside this specific form instance.
+   * This approach is necessary because we need to detect clicks outside the form
+   * before the blur event fires, and using capture phase ensures we catch it early.
+   *
+   * Uses pointerdown event which unifies mouse, touch, and pen interactions.
    */
   useEffect(() => {
-    const onPointerDown = (ev: MouseEvent | TouchEvent) => {
+    const onPointerDown = (ev: PointerEvent) => {
       const target = ev.target as HTMLElement | null;
-      const formRoot = document.querySelector('.rjsf');
+      const formRoot = formContainerRef.current?.querySelector('.rjsf');
 
       // Don't treat clicks on input elements as "outside" clicks
       const isInputElement =
@@ -162,23 +164,23 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
           target.tagName === 'TEXTAREA' ||
           target.closest('input, textarea'));
 
-      // Only set flag if click is truly outside form and we have focus to preserve
+      // Only set flag if click is truly outside this form instance and we have focus to preserve
       const isOutside = formRoot && target && !formRoot.contains(target) && !isInputElement;
       pointerDownOutside = !!(isOutside && lastFocusedInputId);
     };
 
-    // Use capture phase to catch events before they bubble
-    document.addEventListener('mousedown', onPointerDown, true);
-    document.addEventListener('touchstart', onPointerDown, true);
+    // Use capture phase to catch events before they bubble to other handlers
+    // pointerdown unifies mouse, touch, and pen interactions
+    document.addEventListener('pointerdown', onPointerDown, true);
 
     return () => {
-      document.removeEventListener('mousedown', onPointerDown, true);
-      document.removeEventListener('touchstart', onPointerDown, true);
+      document.removeEventListener('pointerdown', onPointerDown, true);
     };
   }, []);
 
   return (
     <div
+      ref={formContainerRef}
       onKeyDown={(e) => {
         backspacePressed.current = e.key === 'Backspace';
         if (backspacePressed.current) {
@@ -236,13 +238,6 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
           }
         }}
         onBlur={(key, changed) => {
-          // If backspace was pressed, trigger save now on blur
-          console.log({
-            key,
-            changed,
-            isExpertMode,
-            backspacePressedcurrent: backspacePressed.current,
-          });
           /**
            * Handle blur events with focus tracking logic.
            *
@@ -257,7 +252,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
 
           // Check if focus is moving to another input in the form
           const activeElement = document.activeElement;
-          const formRoot = document.querySelector('.rjsf');
+          const formRoot = formContainerRef.current?.querySelector('.rjsf');
           const focusMovingToFormInput =
             formRoot &&
             activeElement &&
