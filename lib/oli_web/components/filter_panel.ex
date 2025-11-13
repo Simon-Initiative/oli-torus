@@ -617,7 +617,10 @@ defmodule OliWeb.Components.FilterPanel do
 
   @impl true
   def handle_event("filter_select_institution", %{"id" => id_str, "name" => _name}, socket) do
-    with {:ok, id} <- parse_positive_int(id_str) do
+    institutions = Map.get(socket.assigns, :institution_options, [])
+
+    with {:ok, id} <- parse_positive_int(id_str),
+         true <- Enum.any?(institutions, &(&1.id == id)) do
       filters = %{socket.assigns.filters | institution_id: id}
 
       {:noreply,
