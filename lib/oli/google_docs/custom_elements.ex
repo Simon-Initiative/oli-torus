@@ -11,6 +11,8 @@ defmodule Oli.GoogleDocs.CustomElements do
   alias Oli.GoogleDocs.Warnings
 
   @type resolve_option :: {:warn_unknown, boolean()}
+  @dropdown_marker ~r/\[(dropdown\d+)\]/i
+  @dropdown_attribute ~r/^(dropdown\d+)-(.*)$/i
 
   defmodule Result do
     @moduledoc """
@@ -112,6 +114,22 @@ defmodule Oli.GoogleDocs.CustomElements do
     ]
   end
 
+  defmodule Dropdown do
+    @moduledoc """
+    Normalised representation of a dropdown question custom element.
+    """
+
+    @enforce_keys [:id, :block_index, :stem, :inputs, :data_by_input, :raw_rows]
+    defstruct [
+      :id,
+      :block_index,
+      :stem,
+      :inputs,
+      :data_by_input,
+      :raw_rows
+    ]
+  end
+
   @doc """
   Resolves the given list of custom element specs into typed structs.
 
@@ -173,6 +191,7 @@ defmodule Oli.GoogleDocs.CustomElements do
       "checkallthatapply" -> dispatch_cata(element)
       "short_answer" -> dispatch_short_answer(element)
       "shortanswer" -> dispatch_short_answer(element)
+      "dropdown" -> dispatch_dropdown(element)
       other -> dispatch_unknown(element, other, opts)
     end
   end
@@ -341,6 +360,76 @@ defmodule Oli.GoogleDocs.CustomElements do
 
       {:ok, sa, Enum.reverse(warnings)}
     end
+  end
+
+  defp dispatch_dropdown(%CustomElement{} = element) do
+    data = normalise_keys(element.data)
+    stem = Map.get(data, "stem", "") |> to_string()
+
+    inputs =
+      @dropdown_marker
+      |> Regex.scan(stem, capture: :all_but_first)
+      |> Enum.flat_map(& &1)
+      |> Enum.map(&String.downcase/1)
+      |> uniq_preserve_order()
+
+    if inputs == [] do
+      warning =
+        Warnings.build(:dropdown_missing_markers, %{
+          element_type: element.element_type
+        })
+
+      {:fallback, :invalid, [warning]}
+    else
+      dropdown = %Dropdown{
+        id: element.id,
+        block_index: element.block_index,
+        stem: stem,
+        inputs: inputs,
+        data_by_input: group_by_prefix(element.data),
+        raw_rows: element.raw_rows
+      }
+
+      {:ok, dropdown, []}
+    end
+  end
+
+  defp uniq_preserve_order(items) do
+    {result, _seen} =
+      Enum.reduce(items, {[], MapSet.new()}, fn item, {acc, seen} ->
+        if MapSet.member?(seen, item) do
+          {acc, seen}
+        else
+          {[item | acc], MapSet.put(seen, item)}
+        end
+      end)
+
+    Enum.reverse(result)
+  end
+
+  # group_by_prefix(%{"dropdown1-choice1" => "Dog"})
+  # => %{"dropdown1" => %{"choice1" => "Dog"}}
+  @spec group_by_prefix(Enumerable.t()) :: map()
+  defp group_by_prefix(entries) do
+    Enum.reduce(entries, %{}, fn {key, value}, acc ->
+      case Regex.run(@dropdown_attribute, to_string(key)) do
+        [_, prefix, suffix] ->
+          prefix = String.downcase(prefix)
+          suffix = String.downcase(String.trim(suffix))
+
+          if suffix == "" do
+            acc
+          else
+            update_in(acc, [prefix], fn
+              nil -> %{suffix => value}
+              inner_map -> Map.put(inner_map, suffix, value)
+            end)
+          end
+
+        _ ->
+          acc
+      end
+    end)
   end
 
   defp derive_youtube_urls(source) do
