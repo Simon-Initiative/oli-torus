@@ -34,6 +34,7 @@ defmodule Oli.GoogleDocs.Warnings do
           | :dropdown_missing_correct
           | :dropdown_choice_missing
           | :dropdown_feedback_missing
+          | :dropdown_duplicate_markers
           | :dropdown_activity_creation_failed
 
   @catalogue %{
@@ -130,6 +131,10 @@ defmodule Oli.GoogleDocs.Warnings do
     dropdown_missing_input_data: %{
       severity: :warn,
       template: "Dropdown CustomElement missing choice rows for `%{input}`; rendered as table."
+    },
+    dropdown_duplicate_markers: %{
+      severity: :warn,
+      template: "Dropdown CustomElement uses the same marker more than once (%{duplicates}); rendered as table."
     },
     dropdown_insufficient_choices: %{
       severity: :warn,

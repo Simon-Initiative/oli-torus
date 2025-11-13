@@ -371,7 +371,6 @@ defmodule Oli.GoogleDocs.CustomElements do
       |> Regex.scan(stem, capture: :all_but_first)
       |> Enum.flat_map(& &1)
       |> Enum.map(&String.downcase/1)
-      |> uniq_preserve_order()
 
     if inputs == [] do
       warning =
@@ -381,30 +380,45 @@ defmodule Oli.GoogleDocs.CustomElements do
 
       {:fallback, :invalid, [warning]}
     else
-      dropdown = %Dropdown{
-        id: element.id,
-        block_index: element.block_index,
-        stem: stem,
-        inputs: inputs,
-        data_by_input: group_by_prefix(element.data),
-        raw_rows: element.raw_rows
-      }
+      case duplicate_markers(inputs) do
+        [] ->
+          dropdown = %Dropdown{
+            id: element.id,
+            block_index: element.block_index,
+            stem: stem,
+            inputs: inputs,
+            data_by_input: group_by_prefix(element.data),
+            raw_rows: element.raw_rows
+          }
 
-      {:ok, dropdown, []}
+          {:ok, dropdown, []}
+
+        duplicates ->
+          warning =
+            Warnings.build(:dropdown_duplicate_markers, %{
+              duplicates: Enum.join(duplicates, ", ")
+            })
+
+          {:fallback, :invalid, [warning]}
+      end
     end
   end
 
-  defp uniq_preserve_order(items) do
-    {result, _seen} =
-      Enum.reduce(items, {[], MapSet.new()}, fn item, {acc, seen} ->
-        if MapSet.member?(seen, item) do
-          {acc, seen}
+  defp duplicate_markers(items) do
+    items
+    |> Enum.reduce({[], MapSet.new()}, fn item, {dupes, seen} ->
+      if MapSet.member?(seen, item) do
+        if item in dupes do
+          {dupes, seen}
         else
-          {[item | acc], MapSet.put(seen, item)}
+          {[item | dupes], seen}
         end
-      end)
-
-    Enum.reverse(result)
+      else
+        {dupes, MapSet.put(seen, item)}
+      end
+    end)
+    |> elem(0)
+    |> Enum.reverse()
   end
 
   # group_by_prefix(%{"dropdown1-choice1" => "Dog"})
