@@ -556,6 +556,76 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "download_scored_pages" do
+    setup [:setup_lti_session]
+
+    test "downloads scored pages csv when section exists", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_scored_pages, section.slug))
+
+      assert Enum.any?(conn.resp_headers, fn
+               {"content-disposition", value} ->
+                 value =~ "#{section.slug}_scored_pages.csv"
+
+               _ ->
+                 false
+             end)
+
+      assert Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+      assert response(conn, 200)
+    end
+
+    test "redirects to not found for invalid section", %{conn: conn, instructor: instructor} do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_scored_pages, "invalid_section_slug"))
+
+      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+    end
+  end
+
+  describe "download_practice_pages" do
+    setup [:setup_lti_session]
+
+    test "downloads practice pages csv when section exists", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_practice_pages, section.slug))
+
+      assert Enum.any?(conn.resp_headers, fn
+               {"content-disposition", value} ->
+                 value =~ "#{section.slug}_practice_pages.csv"
+
+               _ ->
+                 false
+             end)
+
+      assert Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+      assert response(conn, 200)
+    end
+
+    test "redirects to not found for invalid section", %{conn: conn, instructor: instructor} do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_practice_pages, "invalid_section_slug"))
+
+      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+    end
+  end
+
   describe "independent learner" do
     setup [:setup_independent_learner_session]
 
