@@ -23,7 +23,9 @@ defmodule OliWeb.Admin.BrowseFilters do
               visibility: nil,
               published: nil,
               status: nil,
-              institution_id: nil
+              institution_id: nil,
+              delivery: nil,
+              requires_payment: nil
   end
 
   @type t :: %State{
@@ -34,7 +36,9 @@ defmodule OliWeb.Admin.BrowseFilters do
           visibility: atom() | nil,
           published: boolean() | nil,
           status: atom() | nil,
-          institution_id: integer() | nil
+          institution_id: integer() | nil,
+          delivery: atom() | nil,
+          requires_payment: boolean() | nil
         }
 
   @date_field_default :inserted_at
@@ -42,6 +46,7 @@ defmodule OliWeb.Admin.BrowseFilters do
   @allowed_date_fields [:inserted_at]
   @allowed_visibility [:authors, :selected, :global]
   @allowed_status [:active, :deleted]
+  @allowed_delivery [:dd, :lti]
 
   @spec default(Keyword.t()) :: t()
   def default(_opts \\ []), do: %State{}
@@ -57,6 +62,8 @@ defmodule OliWeb.Admin.BrowseFilters do
     |> maybe_put(@param_prefix <> "status", Map.get(params, "status"))
     |> maybe_put(@param_prefix <> "institution", Map.get(params, "institution"))
     |> maybe_put(@param_prefix <> "tags", encode_tag_ids(Map.get(params, "tag_ids")))
+    |> maybe_put(@param_prefix <> "delivery", Map.get(params, "delivery"))
+    |> maybe_put(@param_prefix <> "requires_payment", Map.get(params, "requires_payment"))
   end
 
   defp maybe_put(acc, _key, value) when value in [nil, ""], do: acc
@@ -116,6 +123,16 @@ defmodule OliWeb.Admin.BrowseFilters do
       |> Map.get(@param_prefix <> "institution")
       |> parse_integer()
 
+    delivery =
+      params
+      |> Map.get(@param_prefix <> "delivery")
+      |> parse_enum(@allowed_delivery, nil)
+
+    requires_payment =
+      params
+      |> Map.get(@param_prefix <> "requires_payment")
+      |> parse_boolean()
+
     tags =
       params
       |> Map.get(@param_prefix <> "tags")
@@ -130,6 +147,8 @@ defmodule OliWeb.Admin.BrowseFilters do
       published: published,
       status: status,
       institution_id: institution_id,
+      delivery: delivery,
+      requires_payment: requires_payment,
       tags: tags
     }
   end
@@ -266,7 +285,9 @@ defmodule OliWeb.Admin.BrowseFilters do
       not is_nil(state.visibility),
       not is_nil(state.published),
       not is_nil(state.status),
-      not is_nil(state.institution_id)
+      not is_nil(state.institution_id),
+      not is_nil(state.delivery),
+      not is_nil(state.requires_payment)
     ]
     |> Enum.count(& &1)
   end
@@ -296,6 +317,11 @@ defmodule OliWeb.Admin.BrowseFilters do
       keys_fun.(@param_prefix <> "tags"),
       encode_tag_ids(tag_ids(state))
     )
+    |> maybe_put_query(keys_fun.(@param_prefix <> "delivery"), encode_atom(state.delivery))
+    |> maybe_put_query(
+      keys_fun.(@param_prefix <> "requires_payment"),
+      encode_boolean(state.requires_payment)
+    )
   end
 
   defp maybe_put_query(acc, _key, nil), do: acc
@@ -323,7 +349,9 @@ defmodule OliWeb.Admin.BrowseFilters do
       @param_prefix <> "published",
       @param_prefix <> "status",
       @param_prefix <> "institution",
-      @param_prefix <> "tags"
+      @param_prefix <> "tags",
+      @param_prefix <> "delivery",
+      @param_prefix <> "requires_payment"
     ]
 
     case format do
@@ -342,9 +370,18 @@ defmodule OliWeb.Admin.BrowseFilters do
       visibility: state.visibility,
       published: state.published,
       status: state.status,
-      institution_id: state.institution_id
+      institution_id: state.institution_id,
+      delivery: delivery_to_filter_type(state.delivery),
+      requires_payment: state.requires_payment
     }
   end
+
+  # Convert delivery option to filter_type format
+  # DD (Direct Delivery) = :open (open_and_free)
+  # LTI = :lms
+  defp delivery_to_filter_type(:dd), do: :open
+  defp delivery_to_filter_type(:lti), do: :lms
+  defp delivery_to_filter_type(nil), do: nil
 
   defp build_datetime(nil, _time), do: nil
 

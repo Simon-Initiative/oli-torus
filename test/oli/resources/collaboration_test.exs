@@ -1165,8 +1165,7 @@ defmodule Oli.Resources.CollaborationTest do
                 %Post{id: ^parent_post1_id, unread_replies_count: 1},
                 %Post{id: ^parent_post3_id, unread_replies_count: 0},
                 %Post{id: ^parent_post2_id, unread_replies_count: 0}
-              ],
-              _more_posts_exist?} =
+              ], _more_posts_exist?} =
                Collaboration.list_root_posts_for_section(
                  student1.id,
                  section.id,

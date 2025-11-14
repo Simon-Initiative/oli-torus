@@ -303,6 +303,154 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
                )
     end
 
+    test "browse/3 lists products and applies filtering by requires_payment" do
+      # Create products with different payment requirements
+      free_product = insert(:section, title: "Free", type: :blueprint, requires_payment: false)
+      paid_product = insert(:section, title: "Paid", type: :blueprint, requires_payment: true)
+
+      # Filter for products that require payment
+      results =
+        Blueprint.browse(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{direction: :asc, field: :title},
+          filter_requires_payment: true
+        )
+
+      assert Enum.any?(results, &(&1.id == paid_product.id))
+      refute Enum.any?(results, &(&1.id == free_product.id))
+
+      # Filter for products that don't require payment
+      results =
+        Blueprint.browse(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{direction: :asc, field: :title},
+          filter_requires_payment: false
+        )
+
+      assert Enum.any?(results, &(&1.id == free_product.id))
+      refute Enum.any?(results, &(&1.id == paid_product.id))
+    end
+
+    test "browse/3 lists products and applies filtering by tags" do
+      # Create tags
+      tag1 = insert(:tag, name: "Tag1")
+      tag2 = insert(:tag, name: "Tag2")
+
+      # Create products and associate tags
+      product1 = insert(:section, title: "Product1", type: :blueprint)
+      product2 = insert(:section, title: "Product2", type: :blueprint)
+      product3 = insert(:section, title: "Product3", type: :blueprint)
+
+      Oli.Tags.associate_tag_with_section(product1, tag1)
+      Oli.Tags.associate_tag_with_section(product2, tag1)
+      Oli.Tags.associate_tag_with_section(product2, tag2)
+
+      # Filter by tag1 - should find product1 and product2
+      results =
+        Blueprint.browse(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{direction: :asc, field: :title},
+          filter_tag_ids: [tag1.id]
+        )
+
+      product_ids = Enum.map(results, & &1.id)
+      assert product1.id in product_ids
+      assert product2.id in product_ids
+      refute product3.id in product_ids
+
+      # Filter by tag2 - should find only product2
+      results =
+        Blueprint.browse(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{direction: :asc, field: :title},
+          filter_tag_ids: [tag2.id]
+        )
+
+      product_ids = Enum.map(results, & &1.id)
+      refute product1.id in product_ids
+      assert product2.id in product_ids
+      refute product3.id in product_ids
+    end
+
+    test "browse/3 lists products and applies filtering by date range" do
+      # Create products with different insertion dates
+      old_product =
+        insert(:section,
+          title: "Old",
+          type: :blueprint,
+          inserted_at: ~N[2024-01-10 12:00:00]
+        )
+
+      middle_product =
+        insert(:section,
+          title: "Middle",
+          type: :blueprint,
+          inserted_at: ~N[2024-01-15 12:00:00]
+        )
+
+      recent_product =
+        insert(:section,
+          title: "Recent",
+          type: :blueprint,
+          inserted_at: ~N[2024-01-20 12:00:00]
+        )
+
+      # Filter for products inserted after 2024-01-15
+      results =
+        Blueprint.browse(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{direction: :asc, field: :title},
+          filter_date_from: ~N[2024-01-15 00:00:00],
+          filter_date_field: :inserted_at
+        )
+
+      product_ids = Enum.map(results, & &1.id)
+      refute old_product.id in product_ids
+      assert middle_product.id in product_ids
+      assert recent_product.id in product_ids
+
+      # Filter for products within a date range
+      results =
+        Blueprint.browse(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{direction: :asc, field: :title},
+          filter_date_from: ~N[2024-01-14 00:00:00],
+          filter_date_to: ~N[2024-01-16 23:59:59],
+          filter_date_field: :inserted_at
+        )
+
+      product_ids = Enum.map(results, & &1.id)
+      refute old_product.id in product_ids
+      assert middle_product.id in product_ids
+      refute recent_product.id in product_ids
+    end
+
+    test "browse/3 lists products and applies filtering by institution" do
+      institution1 = insert(:institution, name: "Institution 1")
+      institution2 = insert(:institution, name: "Institution 2")
+
+      product1 =
+        insert(:section, title: "Product1", type: :blueprint, institution: institution1)
+
+      product2 =
+        insert(:section, title: "Product2", type: :blueprint, institution: institution2)
+
+      product3 = insert(:section, title: "Product3", type: :blueprint, institution: nil)
+
+      # Filter by institution1
+      results =
+        Blueprint.browse(
+          %Paging{offset: 0, limit: 10},
+          %Sorting{direction: :asc, field: :title},
+          institution_id: institution1.id
+        )
+
+      product_ids = Enum.map(results, & &1.id)
+      assert product1.id in product_ids
+      refute product2.id in product_ids
+      refute product3.id in product_ids
+    end
+
     def get_resources(id) do
       query =
         from(

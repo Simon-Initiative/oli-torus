@@ -106,7 +106,17 @@ defmodule OliWeb.UserLoginLive do
   @impl Phoenix.LiveView
   def handle_params(unsigned_params, _uri, socket) do
     from_invitation_link? = unsigned_params["from_invitation_link?"] == "true"
-    section = unsigned_params["section"]
+
+    section =
+      case unsigned_params["section"] do
+        nil ->
+          nil
+
+        slug ->
+          # Lightweight query - only preload brand for layout branding, not all associations
+          Oli.Delivery.Sections.get_section_by(slug: slug)
+          |> Oli.Repo.preload([:brand, lti_1p3_deployment: [institution: :default_brand]])
+      end
 
     {:noreply, assign(socket, from_invitation_link?: from_invitation_link?, section: section)}
   end
@@ -116,7 +126,7 @@ defmodule OliWeb.UserLoginLive do
 
     params =
       []
-      |> maybe_add_param("section", section)
+      |> maybe_add_param("section", section && section.slug)
       |> maybe_add_param("from_invitation_link?", from_invitation_link?)
       |> URI.encode_query()
 
