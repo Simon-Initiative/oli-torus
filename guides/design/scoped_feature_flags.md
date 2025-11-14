@@ -172,3 +172,21 @@ end
 - **Auditing**: Automatic integration with `Oli.Auditing`
 
 This system provides a robust, scalable foundation for feature management across the OLI Torus platform while maintaining safety, auditability, and performance.
+
+## Telemetry & Instrumentation
+
+Feature flag decisions already emit `[:torus, :feature_flag, :decision]` telemetry events. To instrument the execution of the underlying feature code and surface feature/stage/action tags inside AppSignal dashboards, pair `Oli.FeatureGate` with `Oli.FeatureTelemetry`:
+
+```elixir
+def create(conn, params) do
+  stage = Oli.FeatureGate.stage(conn, :canary_test_feature)
+
+  Oli.FeatureTelemetry.span(:canary_test_feature, stage, "projects#create", fn ->
+    # business logic guarded by ScopedFeatureFlags.can_access?/3
+    Projects.create_project(params)
+  end, %{publisher_id: conn.assigns.project.publisher_id})
+end
+```
+
+- `Oli.FeatureGate.stage/3` accepts a `Plug.Conn`, `Phoenix.LiveView.Socket`, `Project`, or `Section`, and falls back to the `"internal"` tag when no scope is available. Pass `resource:` in the options to override the automatically discovered assigns.
+- `Oli.FeatureTelemetry.span/5` wraps any synchronous operation, emits the `[:torus, :feature, :exec]` start/stop/exception events, and automatically marks spans as failures when the wrapped function returns `{:error, _}` or `:error`. Supply free-form metadata (e.g., `publisher_id`, `actor_id`) to enrich AppSignal counters.
