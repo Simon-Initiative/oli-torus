@@ -375,6 +375,7 @@ defmodule OliWeb.DeliveryController do
           |> DataTable.to_csv_content()
 
         conn
+        |> put_resp_header("content-type", "text/csv")
         |> send_download({:binary, contents},
           filename: "#{slug}_students.csv"
         )
@@ -417,6 +418,7 @@ defmodule OliWeb.DeliveryController do
           |> DataTable.to_csv_content()
 
         conn
+        |> put_resp_header("content-type", "text/csv")
         |> send_download({:binary, contents},
           filename: "#{slug}_learning_objectives.csv"
         )
