@@ -129,10 +129,12 @@ defmodule Oli.Activities.Realizer.Selection do
   defp do_evaluate_expression(%Expression{operator: operator, value: value}, activity, field) do
     case operator do
       :contains ->
-        MapSet.new(value) |> MapSet.subset?(Map.get(activity, field))
+        # Check if activity contains ANY of the specified values (OR logic)
+        !MapSet.disjoint?(MapSet.new(value), Map.get(activity, field))
 
       :does_not_contain ->
-        MapSet.new(value) |> MapSet.subset?(Map.get(activity, field)) |> Kernel.!()
+        # Check if activity does NOT contain ANY of the specified values
+        MapSet.disjoint?(MapSet.new(value), Map.get(activity, field))
 
       :equals ->
         MapSet.equal?(Map.get(activity, field), MapSet.new(value))
