@@ -231,60 +231,11 @@
   }
 }
 
-.responsive-layout-section .stage-content-wrapper {
-  height: auto;
-  min-height: 500px;
-  width: 100%;
-
-  // Progressive min-width media queries to prevent shrinking while maintaining responsiveness
-  // Large screens (> 1200px): min-width matches max-width
-  @media (min-width: 1200px) {
-    min-width: 1200px;
-  }
-
-  // Medium-large screens (1000px - 1200px)
-  @media (min-width: 1000px) and (max-width: 1199px) {
-    min-width: 1000px;
-  }
-
-  // Medium screens (800px - 1000px)
-  @media (min-width: 800px) and (max-width: 999px) {
-    min-width: 800px;
-  }
-
-  // Small screens (< 800px): full width, no min-width constraint
-  @media (max-width: 799px) {
-    width: 100%;
-    min-width: 100%;
-  }
-}
-
+.responsive-layout-section .stage-content-wrapper,
 .responsive-layout-section .content {
   height: auto;
   min-height: 500px;
   width: 100%;
-
-  // Progressive min-width media queries to prevent shrinking while maintaining responsiveness
-  // Large screens (> 1200px): min-width matches max-width
-  @media (min-width: 1200px) {
-    min-width: 1200px;
-  }
-
-  // Medium-large screens (1000px - 1200px)
-  @media (min-width: 1000px) and (max-width: 1199px) {
-    min-width: 1000px;
-  }
-
-  // Medium screens (800px - 1000px)
-  @media (min-width: 800px) and (max-width: 999px) {
-    min-width: 800px;
-  }
-
-  // Small screens (< 800px): full width, no min-width constraint
-  @media (max-width: 799px) {
-    width: 100%;
-    min-width: 100%;
-  }
 }
 
 // Ensure parent containers in delivery mode use box-sizing for proper width calculation
@@ -324,4 +275,38 @@ janus-input-number .unitsLabel {
 }
 .slider {
   padding-bottom: 25px;
+}
+.responsive-layout-section .stageContainer,
+.responsive-layout-section .content,
+.responsive-layout-section .advance-authoring-responsive-layout {
+  width: 100vw;
+  max-width: 1200px;
+  min-width: 350px;
+}
+.checkContainer {
+  min-width: 350px;
+}
+.checkContainer .buttonContainer .checkBtn {
+  box-sizing: border-box;
+}
+.navigationContainer .theme-no-history-restart {
+  left: 120px;
+}
+.checkContainer.rowRestriction.columnRestriction {
+  max-width: 1200px;
+  width: 100vw !important;
+}
+@media (max-width: 600px) {
+  .feedbackContainer {
+    min-width: 50px;
+  }
+  span.theme-no-history-restart__label {
+    display: none;
+  }
+  .navigationContainer .theme-no-history-restart {
+    left: 120px;
+  }
+  .buttonContainer {
+    left: -40px;
+  }
 }

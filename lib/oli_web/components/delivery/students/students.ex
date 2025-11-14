@@ -516,6 +516,7 @@ defmodule OliWeb.Components.Delivery.Students do
                 href={
                   Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)
                 }
+                download={"#{@section_slug}_students.csv"}
                 class="flex flex-row items-center gap-x-1 text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
               >
                 Download <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
