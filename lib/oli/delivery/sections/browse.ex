@@ -71,6 +71,47 @@ defmodule Oli.Delivery.Sections.Browse do
         true
       end
 
+    filter_by_requires_payment =
+      if is_nil(options.filter_requires_payment),
+        do: true,
+        else: dynamic([s, _], s.requires_payment == ^options.filter_requires_payment)
+
+    filter_by_tags =
+      if is_nil(options.filter_tag_ids) or options.filter_tag_ids == [],
+        do: true,
+        else:
+          dynamic(
+            [s, _],
+            fragment(
+              "EXISTS (SELECT 1 FROM section_tags WHERE section_id = ? AND tag_id = ANY(?))",
+              s.id,
+              type(^options.filter_tag_ids, {:array, :integer})
+            )
+          )
+
+    filter_by_date =
+      cond do
+        not is_nil(options.filter_date_from) and not is_nil(options.filter_date_to) ->
+          field = options.filter_date_field || :inserted_at
+
+          dynamic(
+            [s, _],
+            field(s, ^field) >= ^options.filter_date_from and
+              field(s, ^field) <= ^options.filter_date_to
+          )
+
+        not is_nil(options.filter_date_from) ->
+          field = options.filter_date_field || :inserted_at
+          dynamic([s, _], field(s, ^field) >= ^options.filter_date_from)
+
+        not is_nil(options.filter_date_to) ->
+          field = options.filter_date_field || :inserted_at
+          dynamic([s, _], field(s, ^field) <= ^options.filter_date_to)
+
+        true ->
+          true
+      end
+
     # relationship filters
     filter_by_institution =
       if is_nil(options.institution_id),
@@ -136,6 +177,9 @@ defmodule Oli.Delivery.Sections.Browse do
       |> where(^filter_by_institution)
       |> where(^filter_by_blueprint)
       |> where(^filter_by_project)
+      |> where(^filter_by_requires_payment)
+      |> where(^filter_by_tags)
+      |> where(^filter_by_date)
       |> limit(^limit)
       |> offset(^offset)
       |> preload([:institution, :base_project, :blueprint])

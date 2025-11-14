@@ -83,7 +83,7 @@ defmodule OliWeb.Components.Auth do
           <% end %>
 
           <%= if @section do %>
-            {hidden_input(f, :section, value: @section)}
+            {hidden_input(f, :section, value: @section.slug)}
           <% end %>
 
           <.button
@@ -244,7 +244,7 @@ defmodule OliWeb.Components.Auth do
           <% end %>
 
           <%= if @section do %>
-            {hidden_input(f, :section, value: @section)}
+            {hidden_input(f, :section, value: @section.slug)}
           <% end %>
 
           <.button
@@ -487,7 +487,9 @@ defmodule OliWeb.Components.Auth do
         params
         |> Enum.reduce([], fn {k, v}, acc ->
           if v do
-            [{k, v} | acc]
+            # Extract slug if section is a struct
+            value = if k == :section && is_map(v) && Map.has_key?(v, :slug), do: v.slug, else: v
+            [{k, value} | acc]
           else
             acc
           end

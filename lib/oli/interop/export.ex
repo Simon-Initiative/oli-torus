@@ -485,6 +485,7 @@ defmodule Oli.Interop.Export do
       id: "_product-#{product.id}",
       originalFile: "",
       title: product.title,
+      description: product.description,
       welcomeTitle: product.welcome_title,
       encouragingSubtitle: product.encouraging_subtitle,
       requiresPayment: product.requires_payment,

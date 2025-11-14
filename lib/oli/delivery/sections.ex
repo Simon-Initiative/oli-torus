@@ -2282,8 +2282,8 @@ defmodule Oli.Delivery.Sections do
 
   def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, :v2) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts,
-     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+     raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id} =
+      build_user_data_for_section_schedule(section, current_user_id)
 
     combined_settings_for_all_resources =
       case combined_settings_for_all_resources do
@@ -2353,8 +2353,8 @@ defmodule Oli.Delivery.Sections do
         current_user_id
       ) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts,
-     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+     raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id} =
+      build_user_data_for_section_schedule(section, current_user_id)
 
     combined_settings_for_all_resources =
       case combined_settings_for_all_resources do
@@ -2401,8 +2401,8 @@ defmodule Oli.Delivery.Sections do
         current_user_id
       ) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts,
-     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+     raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id} =
+      build_user_data_for_section_schedule(section, current_user_id)
 
     sorted_container_groups =
       Scheduling.retrieve(section, :pages)
@@ -3999,8 +3999,10 @@ defmodule Oli.Delivery.Sections do
                 case current_children do
                   nil ->
                     # this section resource was just created so it can assume the newly published value
+                    %SectionResource{} = sr = section_resource
+
                     %SectionResource{
-                      section_resource
+                      sr
                       | children: Enum.map(new_children, &resource_id_to_sr_id[&1])
                     }
 
@@ -4020,8 +4022,10 @@ defmodule Oli.Delivery.Sections do
 
                       case Oli.Publishing.Updating.Merge.merge(base, source, target) do
                         {:ok, merged} ->
+                          %SectionResource{} = sr = section_resource
+
                           %SectionResource{
-                            section_resource
+                            sr
                             | children: Enum.map(merged, &resource_id_to_sr_id[&1])
                           }
 
@@ -4250,9 +4254,9 @@ defmodule Oli.Delivery.Sections do
             conflict_target: [:section_id, :resource_id]
           )
 
-        %SectionResource{} ->
+        %SectionResource{} = section_resource ->
           # section resource record already exists, so we reuse it and update the fields which may have changed
-          %SectionResource{
+          %{
             section_resource
             | children: Enum.reverse(children_sr_ids),
               numbering_index: numbering.index,

@@ -7,6 +7,7 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
+  alias Phoenix.{Controller, Flash}
 
   import Mox
   import Oli.Factory
@@ -167,6 +168,27 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, enrollment_path)
 
       assert_redirect_to_login(conn, section.slug)
+    end
+
+    test "suspended learner using invitation link is redirected to login", %{
+      conn: conn,
+      section: section
+    } do
+      suspended_user = user_fixture(%{independent_learner: false})
+      insert(:enrollment, user: suspended_user, section: section, status: :suspended)
+      invite = insert(:section_invite, section: section)
+
+      conn =
+        conn
+        |> log_in_user(suspended_user)
+        |> get(Routes.delivery_path(conn, :enroll_independent, invite.slug))
+        |> Controller.fetch_flash()
+
+      assert redirected_to(conn) ==
+               "/users/log_in?request_path=%2Fsections%2F#{section.slug}"
+
+      assert Flash.get(conn.assigns.flash, :error) ==
+               "Your access to this course has been suspended. Please contact your instructor."
     end
   end
 

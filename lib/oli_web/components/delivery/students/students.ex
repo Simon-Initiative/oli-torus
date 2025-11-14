@@ -615,6 +615,7 @@ defmodule OliWeb.Components.Delivery.Students do
           show_limit_change={true}
           allow_selection={true}
           selection_change={JS.push("paged_table_selection_change", target: @myself)}
+          sticky_header_offset={56}
         />
         <HTMLComponents.view_example_student_progress_modal />
 

@@ -233,6 +233,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               allow_selection={true}
               additional_row_class="!h-20"
               details_render_fn={&ObjectivesTableModel.render_objective_details/2}
+              sticky_header_offset={if @patch_url_type == :instructor_dashboard, do: 56, else: 0}
             />
           </div>
         <% else %>

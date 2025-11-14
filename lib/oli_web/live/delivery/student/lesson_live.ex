@@ -201,11 +201,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     if connected?(socket) do
       send(self(), :gc)
 
+      %{page_context: page_context} = socket.assigns
+
+      # Check if attempt has expired and should be finalized
+      attempt_expired_auto_submit = check_attempt_expired_auto_submit(page_context)
+
       socket =
         socket
         |> emit_page_viewed_event()
         |> assign_scripts()
         |> slim_assigns()
+        |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
 
       authoring_scripts =
         Enum.map(socket.assigns.activity_types, fn at -> at.authoring_script end)
@@ -236,7 +242,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     if connected?(socket) do
       send(self(), :gc)
-      is_graded = socket.assigns.page_context.page.graded
+      %{page_context: page_context} = socket.assigns
+      is_graded = page_context.page.graded
+
+      # Check if attempt has expired and should be finalized
+      attempt_expired_auto_submit = check_attempt_expired_auto_submit(page_context)
 
       socket =
         socket
@@ -245,6 +255,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> assign(is_graded: is_graded)
         |> maybe_sidebar_panel_assigns(params, is_graded)
         |> slim_assigns()
+        |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
 
       script_sources =
         Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
@@ -512,9 +523,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          update_post_replies(socket, parent_post_id, nil, fn replies ->
            Enum.map(
              replies,
-             fn post ->
+             fn %Collaboration.Post{} = post ->
                if post.id == post_id do
-                 %{
+                 %Collaboration.Post{
                    post
                    | reaction_summaries: update_reaction_summaries(post, reaction, change)
                  }
@@ -548,9 +559,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
            posts:
              Enum.map(
                posts,
-               fn post ->
+               fn %Collaboration.Post{} = post ->
                  if post.id == post_id do
-                   %{
+                   %Collaboration.Post{
                      post
                      | reaction_summaries: update_reaction_summaries(post, reaction, change)
                    }
@@ -615,7 +626,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
            attrs,
            require_certification_check
          ) do
-      {:ok, post} ->
+      {:ok, %Collaboration.Post{} = post} ->
         {:noreply,
          socket
          |> put_flash(:info, "Reply successfully created")
@@ -1694,7 +1705,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                     load_replies_for_post_id
                   )
 
-                Enum.map(posts, fn post ->
+                Enum.map(posts, fn %Collaboration.Post{} = post ->
                   if post.id == load_replies_for_post_id do
                     %Collaboration.Post{post | replies: post_replies}
                   else
@@ -1760,7 +1771,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp visibility_for_active_tab(:my_notes, _is_instructor), do: :private
   defp visibility_for_active_tab(_, _is_instructor), do: :private
 
-  defp optimistically_add_post(socket, selected_point, post) do
+  defp optimistically_add_post(socket, selected_point, %Collaboration.Post{} = post) do
     %{posts: posts, post_counts: post_counts} = socket.assigns.annotations
 
     socket
@@ -1777,7 +1788,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     socket
     |> assign_annotations(
       posts:
-        Annotations.find_and_update_post(posts, parent_post_id, fn post ->
+        Annotations.find_and_update_post(posts, parent_post_id, fn %Collaboration.Post{} = post ->
           if post.id == parent_post_id do
             %Collaboration.Post{
               post
@@ -1813,7 +1824,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     socket
     |> assign_annotations(
       posts:
-        Annotations.find_and_update_post(posts, post_id, fn post ->
+        Annotations.find_and_update_post(posts, post_id, fn %Collaboration.Post{} = post ->
           %Collaboration.Post{post | status: :deleted}
         end)
     )
@@ -1961,6 +1972,34 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     date_time
     |> DateTime.to_unix(:second)
     |> Kernel.*(1000)
+  end
+
+  defp check_attempt_expired_auto_submit(page_context) do
+    if page_context.page.graded && length(page_context.resource_attempts) > 0 do
+      resource_attempt = hd(page_context.resource_attempts)
+
+      effective_end_time =
+        Settings.determine_effective_deadline(
+          resource_attempt,
+          page_context.effective_settings
+        )
+        |> to_epoch()
+
+      late_submit_disallowed = page_context.effective_settings.late_submit == :disallow
+      now = DateTime.utc_now() |> to_epoch
+
+      with true <- !is_nil(effective_end_time),
+           true <- now > effective_end_time,
+           true <- late_submit_disallowed,
+           false <- page_context.review_mode do
+        true
+      else
+        _ ->
+          false
+      end
+    else
+      false
+    end
   end
 
   defp get_selected_view(params) do

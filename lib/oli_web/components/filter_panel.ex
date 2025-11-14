@@ -77,21 +77,38 @@ defmodule OliWeb.Components.FilterPanel do
       |> assign_new(:status_options, fn -> [] end)
       |> assign_new(:published_options, fn -> [] end)
       |> assign_new(:institution_options, fn -> [] end)
+      |> assign_new(:delivery_options, fn -> [] end)
+      |> assign_new(:requires_payment_options, fn -> [] end)
       |> assign_new(:fields, fn ->
-        [:date, :tags, :visibility, :published, :status, :institution]
+        [
+          :date,
+          :tags,
+          :delivery,
+          :status,
+          :requires_payment,
+          :institution,
+          :visibility,
+          :published
+        ]
       end)
 
     ~H"""
     <div id={@id} class="relative flex items-center gap-4">
       <button
         class={[
-          "ml-2 text-center text-Text-text-high text-sm font-normal leading-none flex items-center gap-x-1 rounded px-2 py-1.5 transition-colors hover:text-Text-text-button",
-          if(@active_count > 0, do: "bg-Fill-Buttons-fill-primary-muted", else: "")
+          "ml-2 text-center text-sm font-normal leading-none flex items-center gap-x-1 rounded px-2 py-1.5 transition-colors hover:text-Text-text-button",
+          if(@filter_panel_open, do: "text-Text-text-button", else: "text-Text-text-high"),
+          if(@active_count > 0 or @filter_panel_open,
+            do: "bg-Fill-Buttons-fill-primary-muted",
+            else: ""
+          )
         ]}
         phx-click={JS.toggle(to: "##{@id}-panel") |> JS.push("toggle_filters", target: @myself)}
         type="button"
       >
-        <Icons.filter class="stroke-Text-text-high" />
+        <Icons.filter class={
+          if(@filter_panel_open, do: "stroke-Text-text-button", else: "stroke-Text-text-high")
+        } />
         <span>Filter</span>
         <span
           :if={@active_count > 0}
@@ -126,196 +143,22 @@ defmodule OliWeb.Components.FilterPanel do
           phx-target={@myself}
           class="flex flex-col gap-4 p-5"
         >
-          <%= if :date in @fields do %>
-            <div class="flex flex-col gap-2">
-              <div class="flex flex-col gap-1">
-                <span class="text-sm font-semibold text-Text-text-high">Date</span>
-                <span class="text-xs text-Text-text-low-alpha">
-                  If both dates are specified, they will be interpreted as a range.
-                </span>
-              </div>
-              <div class="flex flex-col gap-2">
-                <select
-                  name="filters[date_field]"
-                  class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
-                  value={encode_atom(@filters.date_field)}
-                >
-                  <option
-                    :for={{value, label} <- date_field_option_values(@date_field_options)}
-                    value={value}
-                    selected={value == encode_atom(@filters.date_field)}
-                  >
-                    {label}
-                  </option>
-                </select>
-                <div class="flex items-center gap-2">
-                  <div class="flex flex-1 flex-col gap-1">
-                    <label class="text-xs font-medium text-Text-text-low-alpha">
-                      is after
-                    </label>
-                    <input
-                      type="date"
-                      name="filters[date_from]"
-                      value={format_date(@filters.date_from)}
-                      class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
-                    />
-                  </div>
-                  <div class="mt-6 text-xs text-Text-text-low-alpha">and/or before</div>
-                  <div class="flex flex-1 flex-col gap-1">
-                    <label class="text-xs font-medium text-Text-text-low-alpha invisible">
-                      and/or before
-                    </label>
-                    <input
-                      type="date"
-                      name="filters[date_to]"
-                      value={format_date(@filters.date_to)}
-                      class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          <% end %>
-
-          <%= if :tags in @fields do %>
-            <div class="flex flex-col gap-2">
-              <span class="text-sm font-semibold text-Text-text-high">Tags</span>
-              <div class="flex flex-wrap gap-2">
-                <%= for tag <- @filters.tags || [] do %>
-                  <span class={"inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium #{TagsComponent.get_tag_pill_classes(tag.name)}"}>
-                    {tag.name}
-                    <button
-                      type="button"
-                      class="hover:opacity-80"
-                      phx-click="filter_remove_tag"
-                      phx-target={@myself}
-                      phx-value-id={tag.id}
-                    >
-                      ×
-                    </button>
-                  </span>
-                <% end %>
-              </div>
-
-              <%= for tag <- @filters.tags || [] do %>
-                <input type="hidden" name="filters[tag_ids][]" value={tag.id} />
-              <% end %>
-
-              <input
-                type="text"
-                id={"#{@id}-tag-search"}
-                name="filters[tag_search_input]"
-                value={@tag_search}
-                placeholder="Enter tags"
-                phx-keyup="filter_tag_search"
-                phx-target={@myself}
-                phx-debounce="300"
-                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high focus:border-Text-text-button focus:outline-none dark:bg-transparent"
-              />
-
-              <div
-                :if={Enum.any?(@tag_suggestions)}
-                class="flex flex-col gap-1 rounded border border-Border-border-default bg-Specially-Tokens-Fill-fill-nav-hover p-2"
-              >
-                <button
-                  :for={suggestion <- @tag_suggestions}
-                  type="button"
-                  class="rounded px-2 py-1 text-left text-sm text-Text-text-high hover:bg-Specially-Tokens-Fill-fill-dot-message-default"
-                  phx-click="filter_add_tag"
-                  phx-target={@myself}
-                  phx-value-id={suggestion.id}
-                  phx-value-name={suggestion.name}
-                >
-                  {suggestion.name}
-                </button>
-              </div>
-            </div>
-          <% end %>
-
-          <%= if :visibility in @fields do %>
-            <div class="flex flex-col gap-2">
-              <label class="text-sm font-semibold text-Text-text-high">
-                Visibility
-              </label>
-              <select
-                name="filters[visibility]"
-                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
-                value={encode_atom(@filters.visibility)}
-              >
-                <option value="">Select option</option>
-                <option
-                  :for={{value, label} <- @visibility_options}
-                  value={Atom.to_string(value)}
-                  selected={value == @filters.visibility}
-                >
-                  {label}
-                </option>
-              </select>
-            </div>
-          <% end %>
-
-          <%= if :published in @fields do %>
-            <div class="flex flex-col gap-2">
-              <label class="text-sm font-semibold text-Text-text-high">
-                Published
-              </label>
-              <select
-                name="filters[published]"
-                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
-                value={encode_boolean(@filters.published)}
-              >
-                <option value="">Select option</option>
-                <option
-                  :for={{value, label} <- @published_options}
-                  value={encode_boolean(value)}
-                  selected={value == @filters.published}
-                >
-                  {label}
-                </option>
-              </select>
-            </div>
-          <% end %>
-
-          <%= if :status in @fields do %>
-            <div class="flex flex-col gap-2">
-              <label class="text-sm font-semibold text-Text-text-high">Status</label>
-              <select
-                name="filters[status]"
-                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
-                value={encode_atom(@filters.status)}
-              >
-                <option value="">Select option</option>
-                <option
-                  :for={{value, label} <- @status_options}
-                  value={Atom.to_string(value)}
-                  selected={value == @filters.status}
-                >
-                  {label}
-                </option>
-              </select>
-            </div>
-          <% end %>
-
-          <%= if :institution in @fields do %>
-            <div class="flex flex-col gap-2">
-              <label class="text-sm font-semibold text-Text-text-high">
-                Institution
-              </label>
-              <select
-                name="filters[institution]"
-                class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
-                value={encode_integer(@filters.institution_id)}
-              >
-                <option value="">Select option</option>
-                <option
-                  :for={institution <- @institution_options}
-                  value={Integer.to_string(institution.id)}
-                  selected={institution.id == @filters.institution_id}
-                >
-                  {institution.name}
-                </option>
-              </select>
-            </div>
+          <%= for field <- @fields do %>
+            <.filter_field
+              field={field}
+              id={@id}
+              myself={@myself}
+              filters={@filters}
+              tag_search={@tag_search}
+              tag_suggestions={@tag_suggestions}
+              date_field_options={@date_field_options}
+              visibility_options={@visibility_options}
+              status_options={@status_options}
+              published_options={@published_options}
+              institution_options={@institution_options}
+              delivery_options={@delivery_options}
+              requires_payment_options={@requires_payment_options}
+            />
           <% end %>
 
           <div class="flex justify-end gap-3 pt-2">
@@ -335,6 +178,288 @@ defmodule OliWeb.Components.FilterPanel do
           </div>
         </.form>
       </div>
+    </div>
+    """
+  end
+
+  attr :field, :atom, required: true
+  attr :id, :string, required: true
+  attr :myself, :any, required: true
+  attr :filters, :map, required: true
+  attr :tag_search, :string, default: ""
+  attr :tag_suggestions, :list, default: []
+  attr :date_field_options, :list, default: []
+  attr :visibility_options, :list, default: []
+  attr :status_options, :list, default: []
+  attr :published_options, :list, default: []
+  attr :institution_options, :list, default: []
+  attr :delivery_options, :list, default: []
+  attr :requires_payment_options, :list, default: []
+
+  defp filter_field(assigns) do
+    case assigns.field do
+      :date -> render_date_field(assigns)
+      :tags -> render_tags_field(assigns)
+      :delivery -> render_delivery_field(assigns)
+      :status -> render_status_field(assigns)
+      :requires_payment -> render_requires_payment_field(assigns)
+      :institution -> render_institution_field(assigns)
+      :visibility -> render_visibility_field(assigns)
+      :published -> render_published_field(assigns)
+      _ -> ~H""
+    end
+  end
+
+  defp render_date_field(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-1">
+        <span class="text-sm font-semibold text-Text-text-high">Date</span>
+        <span class="text-xs text-Text-text-low-alpha">
+          If both dates are specified, they will be interpreted as a range.
+        </span>
+      </div>
+      <div class="flex flex-col gap-2">
+        <select
+          name="filters[date_field]"
+          class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
+          value={encode_atom(@filters.date_field)}
+        >
+          <option
+            :for={{value, label} <- date_field_option_values(@date_field_options)}
+            value={value}
+            selected={value == encode_atom(@filters.date_field)}
+          >
+            {label}
+          </option>
+        </select>
+        <div class="flex items-center gap-2">
+          <div class="flex flex-1 flex-col gap-1">
+            <label class="text-xs font-medium text-Text-text-low-alpha">
+              is after
+            </label>
+            <input
+              type="date"
+              name="filters[date_from]"
+              value={format_date(@filters.date_from)}
+              class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
+            />
+          </div>
+          <div class="mt-6 text-xs text-Text-text-low-alpha">and/or before</div>
+          <div class="flex flex-1 flex-col gap-1">
+            <label class="text-xs font-medium text-Text-text-low-alpha invisible">
+              and/or before
+            </label>
+            <input
+              type="date"
+              name="filters[date_to]"
+              value={format_date(@filters.date_to)}
+              class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high dark:bg-transparent"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp render_tags_field(assigns) do
+    assigns = assign(assigns, :tags, assigns.filters.tags || [])
+
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <span class="text-sm font-semibold text-Text-text-high">Tags</span>
+      <div class="flex flex-wrap gap-2">
+        <%= for tag <- @tags do %>
+          <span class={"inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium #{TagsComponent.get_tag_pill_classes(tag.name)}"}>
+            {tag.name}
+            <button
+              type="button"
+              class="hover:opacity-80"
+              phx-click="filter_remove_tag"
+              phx-target={@myself}
+              phx-value-id={tag.id}
+            >
+              ×
+            </button>
+          </span>
+        <% end %>
+      </div>
+
+      <%= for tag <- @tags do %>
+        <input type="hidden" name="filters[tag_ids][]" value={tag.id} />
+      <% end %>
+
+      <input
+        type="text"
+        id={"#{@id}-tag-search"}
+        name="filters[tag_search_input]"
+        value={@tag_search}
+        placeholder="Enter tags"
+        phx-keyup="filter_tag_search"
+        phx-target={@myself}
+        phx-debounce="300"
+        class="h-9 rounded border border-Border-border-default px-3 text-sm text-Text-text-high focus:border-Text-text-button focus:outline-none dark:bg-transparent"
+      />
+
+      <div
+        :if={Enum.any?(@tag_suggestions)}
+        class="flex flex-col gap-1 rounded border border-Border-border-default bg-Specially-Tokens-Fill-fill-nav-hover p-2"
+      >
+        <button
+          :for={suggestion <- @tag_suggestions}
+          type="button"
+          class="rounded px-2 py-1 text-left text-sm text-Text-text-high hover:bg-Specially-Tokens-Fill-fill-dot-message-default"
+          phx-click="filter_add_tag"
+          phx-target={@myself}
+          phx-value-id={suggestion.id}
+          phx-value-name={suggestion.name}
+        >
+          {suggestion.name}
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  defp render_delivery_field(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-semibold text-Text-text-high">
+        Delivery
+      </label>
+      <select
+        name="filters[delivery]"
+        class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
+        value={encode_atom(@filters.delivery)}
+      >
+        <option value="">Select option</option>
+        <option
+          :for={{value, label} <- @delivery_options}
+          value={Atom.to_string(value)}
+          selected={value == @filters.delivery}
+        >
+          {label}
+        </option>
+      </select>
+    </div>
+    """
+  end
+
+  defp render_status_field(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-semibold text-Text-text-high">Status</label>
+      <select
+        name="filters[status]"
+        class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
+        value={encode_atom(@filters.status)}
+      >
+        <option value="">Select option</option>
+        <option
+          :for={{value, label} <- @status_options}
+          value={Atom.to_string(value)}
+          selected={value == @filters.status}
+        >
+          {label}
+        </option>
+      </select>
+    </div>
+    """
+  end
+
+  defp render_requires_payment_field(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-semibold text-Text-text-high">
+        Requires Payment
+      </label>
+      <select
+        name="filters[requires_payment]"
+        class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
+        value={encode_boolean(@filters.requires_payment)}
+      >
+        <option value="">Select option</option>
+        <option
+          :for={{value, label} <- @requires_payment_options}
+          value={encode_boolean(value)}
+          selected={value == @filters.requires_payment}
+        >
+          {label}
+        </option>
+      </select>
+    </div>
+    """
+  end
+
+  defp render_institution_field(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-semibold text-Text-text-high">
+        Institution
+      </label>
+      <select
+        name="filters[institution]"
+        class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
+        value={encode_integer(@filters.institution_id)}
+      >
+        <option value="">Select option</option>
+        <option
+          :for={institution <- @institution_options}
+          value={Integer.to_string(institution.id)}
+          selected={institution.id == @filters.institution_id}
+        >
+          {institution.name}
+        </option>
+      </select>
+    </div>
+    """
+  end
+
+  defp render_visibility_field(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-semibold text-Text-text-high">
+        Visibility
+      </label>
+      <select
+        name="filters[visibility]"
+        class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
+        value={encode_atom(@filters.visibility)}
+      >
+        <option value="">Select option</option>
+        <option
+          :for={{value, label} <- @visibility_options}
+          value={Atom.to_string(value)}
+          selected={value == @filters.visibility}
+        >
+          {label}
+        </option>
+      </select>
+    </div>
+    """
+  end
+
+  defp render_published_field(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2">
+      <label class="text-sm font-semibold text-Text-text-high">
+        Published
+      </label>
+      <select
+        name="filters[published]"
+        class="custom-select h-9 border-Border-border-default px-3 text-sm text-Text-text-high"
+        value={encode_boolean(@filters.published)}
+      >
+        <option value="">Select option</option>
+        <option
+          :for={{value, label} <- @published_options}
+          value={encode_boolean(value)}
+          selected={value == @filters.published}
+        >
+          {label}
+        </option>
+      </select>
     </div>
     """
   end

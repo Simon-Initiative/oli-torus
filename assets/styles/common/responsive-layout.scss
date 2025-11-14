@@ -164,8 +164,8 @@
     width: 100%;
     box-sizing: border-box;
 
-    // Reduce padding on mobile to prevent overflow
-    padding: 10px;
+    // Maintain 20px padding on either side at 600px breakpoint
+    padding: 20px;
 
     // Prevent horizontal overflow
     overflow-x: hidden;
@@ -221,8 +221,72 @@
   }
 }
 
-.responsive-layout-section .stage-content-wrapper,
+.responsive-layout-section .stage-content-wrapper {
+  height: auto;
+  min-height: 500px;
+  width: 100%;
+
+  // Progressive min-width media queries to prevent shrinking while maintaining responsiveness
+  // Large screens (> 1200px): min-width matches max-width
+  @media (min-width: 1200px) {
+    min-width: 1200px;
+  }
+
+  // Medium-large screens (1000px - 1200px)
+  @media (min-width: 1000px) and (max-width: 1199px) {
+    min-width: 1000px;
+  }
+
+  // Medium screens (800px - 1000px)
+  @media (min-width: 800px) and (max-width: 999px) {
+    min-width: 800px;
+  }
+
+  // Small screens (< 800px): full width, no min-width constraint
+  @media (max-width: 799px) {
+    width: 100%;
+    min-width: 100%;
+  }
+}
+
 .responsive-layout-section .content {
   height: auto;
   min-height: 500px;
+  width: 100%;
+
+  // Progressive min-width media queries to prevent shrinking while maintaining responsiveness
+  // Large screens (> 1200px): min-width matches max-width
+  @media (min-width: 1200px) {
+    min-width: 1200px;
+  }
+
+  // Medium-large screens (1000px - 1200px)
+  @media (min-width: 1000px) and (max-width: 1199px) {
+    min-width: 1000px;
+  }
+
+  // Medium screens (800px - 1000px)
+  @media (min-width: 800px) and (max-width: 999px) {
+    min-width: 800px;
+  }
+
+  // Small screens (< 800px): full width, no min-width constraint
+  @media (max-width: 799px) {
+    width: 100%;
+    min-width: 100%;
+  }
+}
+
+// Ensure parent containers in delivery mode use box-sizing for proper width calculation
+.responsive-layout-section .stageContainer {
+  box-sizing: border-box;
+}
+
+.responsive-layout-section .content {
+  box-sizing: border-box;
+}
+
+// Ensure the responsive layout container uses box-sizing
+.responsive-layout-section .advance-authoring-responsive-layout {
+  box-sizing: border-box;
 }

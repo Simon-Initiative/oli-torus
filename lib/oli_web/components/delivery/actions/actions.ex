@@ -191,7 +191,7 @@ defmodule OliWeb.Components.Delivery.Actions do
 
   def handle_event("invalidate_payment", _params, socket) do
     with {:ok, active_payment} <-
-           Paywall.get_active_payment_for(socket.assigns.enrollment.id, socket.assigns.section.id),
+           Paywall.get_active_payment_for(socket.assigns.enrollment.id, socket.assigns.section),
          {:ok, _updated_payment} <-
            Paywall.update_payment(active_payment, %{
              type: :invalidated,
@@ -200,7 +200,12 @@ defmodule OliWeb.Components.Delivery.Actions do
       {:noreply, assign(socket, has_payment: false)}
     else
       _ ->
-        {:noreply, put_flash(socket, :error, "Could not update payment status.")}
+        send(
+          self(),
+          {:put_flash, :error, "Could not update payment status."}
+        )
+
+        {:noreply, socket}
     end
   end
 

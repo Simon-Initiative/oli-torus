@@ -201,13 +201,13 @@ defmodule Oli.Delivery.Sections.Blueprint do
       "start_date" => nil,
       "end_date" => nil,
       "title" => title,
+      "description" => attrs["description"] || project.description,
       "requires_payment" => attrs["requires_payment"] || false,
       "payment_options" => attrs["payment_options"] || "direct_and_deferred",
       "pay_by_institution" => attrs["pay_by_institution"] || false,
       "registration_open" => attrs["registration_open"] || false,
       "grace_period_days" => attrs["grace_period_days"] || 1,
-      "amount" =>
-        Money.new(parse_amount(attrs["amount"]["amount"]), attrs["amount"]["currency"] || "USD"),
+      "amount" => build_amount(attrs["amount"]),
       "publisher_id" => project.publisher_id,
       "customizations" => custom_labels,
       "welcome_title" => attrs["welcome_title"] || project.welcome_title,
@@ -216,14 +216,18 @@ defmodule Oli.Delivery.Sections.Blueprint do
     }
   end
 
-  defp parse_amount(nil), do: @default_amount
+  defp build_amount(nil), do: Money.new(@default_amount, "USD")
 
-  defp parse_amount(amount) when is_integer(amount), do: amount
+  defp build_amount(amount_map) do
+    currency =
+      case amount_map["currency"] do
+        currency when is_binary(currency) and currency != "" -> currency
+        _ -> "USD"
+      end
 
-  defp parse_amount(amount) when is_binary(amount) do
-    case Integer.parse(amount) do
-      {amount, ""} -> amount
-      _ -> @default_amount
+    case Decimal.cast(amount_map["amount"]) do
+      {:ok, decimal} -> Money.new(decimal, currency)
+      :error -> Money.new(@default_amount, currency)
     end
   end
 
@@ -516,9 +520,69 @@ defmodule Oli.Delivery.Sections.Blueprint do
       end
 
     filter_by_status =
-      if opts[:include_archived],
-        do: dynamic([s, _], s.status in [:active, :archived, :deleted]),
-        else: dynamic([s, _], s.status in [:active, :deleted])
+      cond do
+        opts[:filter_status] == :active ->
+          dynamic([s, _], s.status == :active)
+
+        opts[:filter_status] == :deleted ->
+          dynamic([s, _], s.status == :deleted)
+
+        opts[:filter_status] == :archived ->
+          dynamic([s, _], s.status == :archived)
+
+        opts[:include_archived] ->
+          dynamic([s, _], s.status in [:active, :archived, :deleted])
+
+        true ->
+          dynamic([s, _], s.status in [:active, :deleted])
+      end
+
+    filter_by_institution =
+      case opts[:institution_id] do
+        nil -> true
+        institution_id -> dynamic([s, _], s.institution_id == ^institution_id)
+      end
+
+    filter_by_requires_payment =
+      if is_nil(opts[:filter_requires_payment]),
+        do: true,
+        else: dynamic([s, _], s.requires_payment == ^opts[:filter_requires_payment])
+
+    filter_by_tags =
+      if is_nil(opts[:filter_tag_ids]) or opts[:filter_tag_ids] == [],
+        do: true,
+        else:
+          dynamic(
+            [s, _],
+            fragment(
+              "EXISTS (SELECT 1 FROM section_tags WHERE section_id = ? AND tag_id = ANY(?))",
+              s.id,
+              type(^opts[:filter_tag_ids], {:array, :integer})
+            )
+          )
+
+    filter_by_date =
+      cond do
+        not is_nil(opts[:filter_date_from]) and not is_nil(opts[:filter_date_to]) ->
+          field = opts[:filter_date_field] || :inserted_at
+
+          dynamic(
+            [s, _],
+            field(s, ^field) >= ^opts[:filter_date_from] and
+              field(s, ^field) <= ^opts[:filter_date_to]
+          )
+
+        not is_nil(opts[:filter_date_from]) ->
+          field = opts[:filter_date_field] || :inserted_at
+          dynamic([s, _], field(s, ^field) >= ^opts[:filter_date_from])
+
+        not is_nil(opts[:filter_date_to]) ->
+          field = opts[:filter_date_field] || :inserted_at
+          dynamic([s, _], field(s, ^field) <= ^opts[:filter_date_to])
+
+        true ->
+          true
+      end
 
     filter_by_text =
       opts[:text_search]
@@ -552,6 +616,10 @@ defmodule Oli.Delivery.Sections.Blueprint do
       |> where(^filter_by_text)
       |> where(^filter_by_project)
       |> where(^filter_by_status)
+      |> where(^filter_by_institution)
+      |> where(^filter_by_requires_payment)
+      |> where(^filter_by_tags)
+      |> where(^filter_by_date)
       |> limit(^limit)
       |> offset(^offset)
       |> select([s, bp, i], %{

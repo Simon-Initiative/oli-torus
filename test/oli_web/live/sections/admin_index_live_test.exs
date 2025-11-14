@@ -95,42 +95,46 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # by type
       view
-      |> element("form[phx-change='change_type']")
-      |> render_change(%{"type" => "open"})
+      |> render_patch(
+        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView, filter_type: :open)
+      )
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
 
       view
-      |> element("form[phx-change='change_type']")
-      |> render_change(%{"type" => "lms"})
+      |> render_patch(
+        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView, filter_type: :lms)
+      )
 
       refute has_element?(view, "td", s1.title)
       assert has_element?(view, "td", s2.title)
 
       # reset filter type
       view
-      |> element("form[phx-change='change_type']")
-      |> render_change(%{"type" => ""})
+      |> render_patch(Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView))
 
       # by status
       view
-      |> element("form[phx-change='change_status']")
-      |> render_change(%{"status" => "active"})
+      |> render_patch(
+        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView, filter_status: :active)
+      )
 
       assert has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)
 
       view
-      |> element("form[phx-change='change_status']")
-      |> render_change(%{"status" => "deleted"})
+      |> render_patch(
+        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView, filter_status: :deleted)
+      )
 
       refute has_element?(view, "td", s1.title)
       assert has_element?(view, "td", s2.title)
 
       view
-      |> element("form[phx-change='change_status']")
-      |> render_change(%{"status" => "archived"})
+      |> render_patch(
+        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView, filter_status: :archived)
+      )
 
       refute has_element?(view, "td", s1.title)
       refute has_element?(view, "td", s2.title)

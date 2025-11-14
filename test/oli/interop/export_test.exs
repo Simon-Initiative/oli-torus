@@ -3,12 +3,10 @@ defmodule Oli.Interop.ExportTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Certificate
-  alias Oli.Delivery.Sections.Section
   alias Oli.Interop.Export
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
 
-  import Ecto.Query
   import Oli.Factory
 
   @certificate_params %{
@@ -66,6 +64,7 @@ defmodule Oli.Interop.ExportTest do
 
       assert product_json["type"] == "Product"
       assert product_json["title"] == section.title
+      assert product_json["description"] == section.description
 
       assert product_json["welcomeTitle"] == %{"test" => "Product welcome title test"}
       assert product_json["encouragingSubtitle"] == "Product encouraging subtitle test"
@@ -75,6 +74,8 @@ defmodule Oli.Interop.ExportTest do
       assert product_json["paymentOptions"] == "#{section.payment_options}"
       assert product_json["amount"]["amount"] == "#{section.amount.amount}"
       assert product_json["amount"]["currency"] == "#{section.amount.currency}"
+      assert product_json["amount"]["amount"] == "33.50"
+      assert product_json["amount"]["currency"] == "USD"
       assert product_json["requiresPayment"] == section.requires_payment
     end
 
@@ -88,13 +89,11 @@ defmodule Oli.Interop.ExportTest do
         |> Oli.Interop.Ingest.process(author)
 
       imported_product =
-        Section
-        |> where([s], s.base_project_id == ^project_id)
-        |> preload([s], :certificate)
-        |> Oli.Repo.one!()
+        Sections.get_section_by(base_project_id: project_id) |> Oli.Repo.preload(:certificate)
 
       assert imported_product.type == exported_product.type
       assert imported_product.title == exported_product.title
+      assert imported_product.description == exported_product.description
 
       assert imported_product.welcome_title == imported_product.welcome_title
       assert imported_product.encouraging_subtitle == imported_product.encouraging_subtitle
@@ -104,6 +103,7 @@ defmodule Oli.Interop.ExportTest do
       assert imported_product.payment_options == exported_product.payment_options
       assert imported_product.amount.amount == exported_product.amount.amount
       assert imported_product.amount.currency == exported_product.amount.currency
+      assert Decimal.equal?(imported_product.amount.amount, Decimal.new("33.50"))
       assert imported_product.requires_payment == exported_product.requires_payment
 
       assert %Certificate{} = imported_product.certificate
@@ -147,12 +147,107 @@ defmodule Oli.Interop.ExportTest do
         |> Oli.Interop.Ingest.process(author)
 
       imported_product =
-        Section
-        |> where([s], s.base_project_id == ^project_id)
-        |> preload([s], :certificate)
-        |> Oli.Repo.one!()
+        Sections.get_section_by(base_project_id: project_id) |> Oli.Repo.preload(:certificate)
 
       refute imported_product.certificate
+    end
+
+    test "check default values are applied when product fields are missing during ingestion", %{
+      project: project,
+      author: author
+    } do
+      product_json = %{"type" => "Product", "title" => "Minimal Product"}
+
+      # Manually create a digest with this product
+      project_json =
+        Jason.encode!(%{"title" => project.title, "description" => project.description})
+
+      product_json_str = Jason.encode!(product_json)
+      hierarchy_json = Jason.encode!(%{"children" => []})
+      media_manifest_json = Jason.encode!(%{"mediaItems" => []})
+
+      digest = %{
+        ~c"_project.json" => project_json,
+        ~c"_product-test.json" => product_json_str,
+        ~c"_hierarchy.json" => hierarchy_json,
+        ~c"_media-manifest.json" => media_manifest_json
+      }
+
+      {:ok, imported_project} = Oli.Interop.Ingest.process(digest, author)
+
+      imported_product =
+        Sections.get_section_by(base_project_id: imported_project.id, type: :blueprint)
+
+      # Verify all defaults were correctly applied
+      assert imported_product.title == "Minimal Product"
+      assert Decimal.equal?(imported_product.amount.amount, Decimal.new("25"))
+      assert imported_product.amount.currency == :USD
+      assert imported_product.requires_payment == false
+      assert imported_product.payment_options == :direct_and_deferred
+      assert imported_product.pay_by_institution == false
+      assert imported_product.grace_period_days == 1
+      assert imported_product.certificate_enabled == false
+      # description, welcome_title, encouraging_subtitle should fallback to project values
+      assert imported_product.description == project.description
+    end
+
+    test "check invalid amount values fall back to default during ingestion", %{
+      project: project,
+      author: author
+    } do
+      # Test with invalid amount and currency values
+      test_cases = [
+        {%{"amount" => "", "currency" => "USD"}, :USD},
+        {%{"amount" => "abc", "currency" => "USD"}, :USD},
+        {%{"amount" => nil, "currency" => "EUR"}, :EUR},
+        {%{"amount" => "33.50", "currency" => ""}, :USD},
+        {%{"amount" => "33.50", "currency" => nil}, :USD}
+      ]
+
+      Enum.each(test_cases, fn {amount_data, expected_currency} ->
+        product_json = %{
+          "type" => "Product",
+          "title" => "Product with Invalid Amount",
+          "amount" => amount_data
+        }
+
+        project_json =
+          Jason.encode!(%{"title" => project.title, "description" => project.description})
+
+        product_json_str = Jason.encode!(product_json)
+        hierarchy_json = Jason.encode!(%{"children" => []})
+        media_manifest_json = Jason.encode!(%{"mediaItems" => []})
+
+        digest = %{
+          ~c"_project.json" => project_json,
+          ~c"_product-test.json" => product_json_str,
+          ~c"_hierarchy.json" => hierarchy_json,
+          ~c"_media-manifest.json" => media_manifest_json
+        }
+
+        {:ok, imported_project} = Oli.Interop.Ingest.process(digest, author)
+
+        imported_product =
+          Sections.get_section_by(base_project_id: imported_project.id, type: :blueprint)
+
+        # For invalid amounts, verify fallback to default $25
+        # For valid amounts with invalid currency, verify amount is preserved but currency defaults to USD
+        case Decimal.cast(amount_data["amount"]) do
+          {:ok, _} ->
+            # Valid amount, should be preserved
+            assert Decimal.equal?(
+                     imported_product.amount.amount,
+                     Decimal.new(amount_data["amount"])
+                   )
+
+          :error ->
+            # Invalid amount, should fall back to $25
+            assert Decimal.equal?(imported_product.amount.amount, Decimal.new("25"))
+        end
+
+        # Verify currency handling
+        assert imported_product.amount.currency == expected_currency
+      end)
     end
   end
 
@@ -191,7 +286,8 @@ defmodule Oli.Interop.ExportTest do
         base_project: project,
         status: :active,
         type: :blueprint,
-        amount: Money.new(88, "USD"),
+        description: "Test product description",
+        amount: Money.new("33.50", "USD"),
         grace_period_days: 12,
         welcome_title: %{test: "Product welcome title test"},
         encouraging_subtitle: "Product encouraging subtitle test",

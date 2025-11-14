@@ -44,7 +44,8 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
 
     with false <- already_been_redirected?(conn),
          {true, current_user_id} <- user_already_authenticated?(conn),
-         {lesson_type, page_type, resource_id, is_attempt_review_path?} <- classify_request(conn),
+         {lesson_type, page_type, resource_id, is_attempt_review_path?, page_revision} <-
+           classify_request(conn),
          latest_resource_attempt <-
            maybe_get_resource_attempt(
              lesson_type,
@@ -53,54 +54,72 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
              current_user_id,
              section_slug
            ) do
-      case {lesson_type, page_type, latest_resource_attempt, is_attempt_review_path?} do
-        {:graded, :adaptive_chromeless, _, true} ->
+      # Check if attempt is expired for graded pages with active attempts
+      attempt_expired? =
+        case {lesson_type, latest_resource_attempt} do
+          {:graded,
+           %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active} = attempt} ->
+            attempt_has_expired?(attempt, conn.assigns.section, page_revision, current_user_id)
+
+          _ ->
+            false
+        end
+
+      case {lesson_type, page_type, latest_resource_attempt, is_attempt_review_path?,
+            attempt_expired?} do
+        {:graded, :adaptive_chromeless, _, true, _} ->
           ensure_path(conn, :review, :adaptive)
 
-        {:graded, :not_adaptive, _, true} ->
+        {:graded, :not_adaptive, _, true, _} ->
           ensure_path(conn, :review, :not_adaptive)
 
-        {:graded, :adaptive_with_chrome, _, true} ->
+        {:graded, :adaptive_with_chrome, _, true, _} ->
           ensure_path(conn, :review, :not_adaptive)
 
-        {:graded, _, nil, false} ->
+        {:graded, _, nil, false, _} ->
           # all graded pages (adaptive or not) with no active attempt should be redirected to the prologue
           ensure_path(conn, :prologue)
 
-        {:graded, _, %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: state}, false}
+        {:graded, _, %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: state}, false,
+         _}
         when state in [:submitted, :evaluated] ->
           ensure_path(conn, :prologue)
 
+        # If attempt has expired, redirect to prologue where it will be handled
+        {:graded, _, %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false,
+         true} ->
+          ensure_path(conn, :prologue)
+
         {:graded, :not_adaptive,
-         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false} ->
+         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false, false} ->
           ensure_path(conn, :lesson)
 
         {:graded, :adaptive_chromeless,
-         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false} ->
+         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false, false} ->
           ensure_path(conn, :adaptive_lesson)
 
         {:graded, :adaptive_with_chrome,
-         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false} ->
+         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false, false} ->
           ensure_path(conn, :lesson)
 
-        {:practice, :not_adaptive, _, false} ->
+        {:practice, :not_adaptive, _, false, _} ->
           # practice pages do not have prologue page.
           ensure_path(conn, :lesson)
 
-        {:practice, :not_adaptive, _, true} ->
+        {:practice, :not_adaptive, _, true, _} ->
           # practice pages do not have prologue page.
           ensure_path(conn, :review, :not_adaptive)
 
-        {:practice, :adaptive_chromeless, _, false} ->
+        {:practice, :adaptive_chromeless, _, false, _} ->
           ensure_path(conn, :adaptive_lesson)
 
-        {:practice, :adaptive_chromeless, _, true} ->
+        {:practice, :adaptive_chromeless, _, true, _} ->
           ensure_path(conn, :review, :adaptive)
 
-        {:practice, :adaptive_with_chrome, _, false} ->
+        {:practice, :adaptive_with_chrome, _, false, _} ->
           ensure_path(conn, :lesson)
 
-        {:practice, :adaptive_with_chrome, _, true} ->
+        {:practice, :adaptive_with_chrome, _, true, _} ->
           ensure_path(conn, :review, :not_adaptive)
       end
     else
@@ -137,24 +156,30 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
           page_revision.content["displayApplicationChrome"]} do
       # Adaptive chromeless (fullscreen)
       {false, true, display_application_chrome} when display_application_chrome in [nil, false] ->
-        {:practice, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?}
+        {:practice, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
 
       {true, true, display_application_chrome} when display_application_chrome in [nil, false] ->
-        {:graded, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?}
+        {:graded, :adaptive_chromeless, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
 
       # Adaptive with chrome
       {false, true, true} ->
-        {:practice, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?}
+        {:practice, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
 
       {true, true, true} ->
-        {:graded, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?}
+        {:graded, :adaptive_with_chrome, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
 
       # Not adaptive
       {false, _, _} ->
-        {:practice, :not_adaptive, page_revision.resource_id, is_attempt_review_path?}
+        {:practice, :not_adaptive, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
 
       {true, _, _} ->
-        {:graded, :not_adaptive, page_revision.resource_id, is_attempt_review_path?}
+        {:graded, :not_adaptive, page_revision.resource_id, is_attempt_review_path?,
+         page_revision}
     end
   end
 
@@ -305,6 +330,41 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
       |> Phoenix.Controller.redirect(
         to: "/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"
       )
+    end
+  end
+
+  defp attempt_has_expired?(resource_attempt, section, page_revision, user_id) do
+    # Get the effective settings for this resource (reusing already-loaded data)
+    effective_settings =
+      Oli.Delivery.Settings.get_combined_settings(
+        page_revision,
+        section.id,
+        user_id
+      )
+
+    # Check if late submissions are disallowed (meaning we enforce the deadline)
+    late_submit_disallowed = effective_settings.late_submit == :disallow
+
+    is_read_by = effective_settings.scheduling_type == :read_by
+
+    if late_submit_disallowed && !is_read_by do
+      # Determine the effective deadline
+      effective_end_time =
+        Oli.Delivery.Settings.determine_effective_deadline(
+          resource_attempt,
+          effective_settings
+        )
+
+      # Check if current time is past the deadline
+      case effective_end_time do
+        nil ->
+          false
+
+        deadline ->
+          DateTime.compare(DateTime.utc_now(), deadline) == :gt
+      end
+    else
+      false
     end
   end
 end

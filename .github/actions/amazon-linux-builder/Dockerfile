@@ -1,7 +1,7 @@
 FROM amazonlinux:2
 
-ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=28.0
+ARG ELIXIR_VERSION=1.19.2
+ARG OTP_VERSION=28.1.1
 
 RUN yum update -y
 RUN yum install -y tar wget git

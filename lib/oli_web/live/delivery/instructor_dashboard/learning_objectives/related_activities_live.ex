@@ -187,6 +187,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectives.RelatedActiviti
                 show_bottom_paging={false}
                 allow_selection={false}
                 additional_row_class="!h-20"
+                sticky_header_offset={56}
               />
             </div>
           <% else %>
