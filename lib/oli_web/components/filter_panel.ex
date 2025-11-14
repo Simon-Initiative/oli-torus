@@ -48,7 +48,9 @@ defmodule OliWeb.Components.FilterPanel do
        filter_panel_open: false,
        tag_search: "",
        tag_suggestions: [],
-       institution_search: ""
+       institution_search: "",
+       institution_dropdown_open: false,
+       applied_filters: nil
      )}
   end
 
@@ -56,19 +58,23 @@ defmodule OliWeb.Components.FilterPanel do
   def update(assigns, socket) do
     # Preserve draft filters and search state when panel is open (user is editing)
     # Otherwise, accept new filters from parent (e.g., from URL params on navigation)
-    assigns =
+    {assigns, should_update_applied_filters?} =
       if socket.assigns[:filter_panel_open] do
-        assigns
-        |> Map.delete(:filters)
-        |> Map.delete(:tag_search)
-        |> Map.delete(:tag_suggestions)
-        |> Map.delete(:institution_search)
-        |> Map.delete(:institution_suggestions)
+        {assigns
+         |> Map.delete(:filters)
+         |> Map.delete(:tag_search)
+         |> Map.delete(:tag_suggestions)
+         |> Map.delete(:institution_search)
+         |> Map.delete(:institution_suggestions)
+         |> Map.delete(:institution_dropdown_open), false}
       else
-        assigns
+        {assigns, Map.has_key?(assigns, :filters)}
       end
 
-    {:ok, assign(socket, assigns)}
+    socket = assign(socket, assigns)
+    socket = maybe_assign_applied_filters(socket, assigns, should_update_applied_filters?)
+
+    {:ok, socket}
   end
 
   @impl true
@@ -76,7 +82,10 @@ defmodule OliWeb.Components.FilterPanel do
     assigns =
       assigns
       |> assign_new(:form_id, fn -> "#{assigns.id}-form" end)
-      |> assign(:active_count, BrowseFilters.active_count(assigns.filters))
+      |> assign(
+        :active_count,
+        BrowseFilters.active_count(assigns.applied_filters || assigns.filters)
+      )
       |> assign_new(:date_field_options, fn -> [] end)
       |> assign_new(:visibility_options, fn -> [] end)
       |> assign_new(:status_options, fn -> [] end)
@@ -88,6 +97,7 @@ defmodule OliWeb.Components.FilterPanel do
       |> assign_new(:institution_suggestions, fn ->
         Map.get(assigns, :institution_options, [])
       end)
+      |> assign_new(:institution_dropdown_open, fn -> false end)
       |> assign_new(:fields, fn ->
         [
           :date,
@@ -169,6 +179,7 @@ defmodule OliWeb.Components.FilterPanel do
               institution_options={@institution_options}
               delivery_options={@delivery_options}
               requires_payment_options={@requires_payment_options}
+              institution_dropdown_open={@institution_dropdown_open}
             />
           <% end %>
 
@@ -208,6 +219,7 @@ defmodule OliWeb.Components.FilterPanel do
   attr :institution_options, :list, default: []
   attr :delivery_options, :list, default: []
   attr :requires_payment_options, :list, default: []
+  attr :institution_dropdown_open, :boolean, default: false
 
   defp filter_field(assigns) do
     case assigns.field do
@@ -441,7 +453,10 @@ defmodule OliWeb.Components.FilterPanel do
         value={@selected_institution.id}
       />
 
-      <div class="relative">
+      <div
+        class="relative"
+        phx-click-away={JS.push("filter_close_institution_dropdown", target: @myself)}
+      >
         <div class="absolute left-3 top-1/2 -translate-y-1/2">
           <Icons.list_search />
         </div>
@@ -450,28 +465,28 @@ defmodule OliWeb.Components.FilterPanel do
           id={"#{@id}-institution-search"}
           name="filters[institution_search_input]"
           value={@institution_search}
+          phx-focus="filter_open_institution_dropdown"
           phx-keyup="filter_institution_search"
           phx-target={@myself}
           phx-debounce="300"
           class="h-9 w-full rounded border border-Border-border-default pl-10 pr-3 text-sm text-Text-text-high focus:border-Text-text-button focus:outline-none dark:bg-transparent"
         />
-      </div>
-
-      <div
-        :if={Enum.any?(@institution_suggestions)}
-        class="flex flex-col rounded border border-Border-border-default bg-Specially-Tokens-Fill-fill-nav-hover max-h-48 overflow-y-auto"
-      >
-        <button
-          :for={suggestion <- @institution_suggestions}
-          type="button"
-          class="px-3 py-2 text-left text-sm text-Text-text-high hover:bg-Specially-Tokens-Fill-fill-dot-message-default"
-          phx-click="filter_select_institution"
-          phx-target={@myself}
-          phx-value-id={suggestion.id}
-          phx-value-name={suggestion.name}
+        <div
+          :if={@institution_dropdown_open and Enum.any?(@institution_suggestions)}
+          class="mt-2 flex max-h-48 flex-col overflow-y-auto rounded border border-Border-border-default bg-Specially-Tokens-Fill-fill-nav-hover"
         >
-          {suggestion.name}
-        </button>
+          <button
+            :for={suggestion <- @institution_suggestions}
+            type="button"
+            class="px-3 py-2 text-left text-sm text-Text-text-high hover:bg-Specially-Tokens-Fill-fill-dot-message-default"
+            phx-click="filter_select_institution"
+            phx-target={@myself}
+            phx-value-id={suggestion.id}
+            phx-value-name={suggestion.name}
+          >
+            {suggestion.name}
+          </button>
+        </div>
       </div>
     </div>
     """
@@ -527,12 +542,30 @@ defmodule OliWeb.Components.FilterPanel do
 
   @impl true
   def handle_event("toggle_filters", _, socket) do
-    {:noreply, assign(socket, filter_panel_open: !socket.assigns.filter_panel_open)}
+    filter_panel_open = !socket.assigns.filter_panel_open
+
+    assigns =
+      if filter_panel_open do
+        [filter_panel_open: true, institution_dropdown_open: false]
+      else
+        [
+          filter_panel_open: false,
+          institution_dropdown_open: false,
+          filters: socket.assigns.applied_filters || socket.assigns.filters
+        ]
+      end
+
+    {:noreply, assign(socket, assigns)}
   end
 
   @impl true
   def handle_event("close_filters", _, socket) do
-    {:noreply, assign(socket, filter_panel_open: false)}
+    {:noreply,
+     assign(socket,
+       filter_panel_open: false,
+       institution_dropdown_open: false,
+       filters: socket.assigns.applied_filters || socket.assigns.filters
+     )}
   end
 
   @impl true
@@ -544,7 +577,9 @@ defmodule OliWeb.Components.FilterPanel do
        filter_panel_open: false,
        tag_suggestions: [],
        institution_search: "",
-       institution_suggestions: institution_options
+       institution_suggestions: institution_options,
+       institution_dropdown_open: false,
+       filters: socket.assigns.applied_filters || socket.assigns.filters
      )}
   end
 
@@ -612,7 +647,21 @@ defmodule OliWeb.Components.FilterPanel do
         end)
       end
 
-    {:noreply, assign(socket, institution_search: term, institution_suggestions: suggestions)}
+    {:noreply,
+     assign(socket,
+       institution_search: term,
+       institution_suggestions: suggestions
+     )}
+  end
+
+  @impl true
+  def handle_event("filter_open_institution_dropdown", _params, socket) do
+    {:noreply, assign(socket, institution_dropdown_open: true)}
+  end
+
+  @impl true
+  def handle_event("filter_close_institution_dropdown", _params, socket) do
+    {:noreply, assign(socket, institution_dropdown_open: false)}
   end
 
   @impl true
@@ -627,7 +676,8 @@ defmodule OliWeb.Components.FilterPanel do
        assign(socket,
          filters: filters,
          institution_search: "",
-         institution_suggestions: []
+         institution_suggestions: [],
+         institution_dropdown_open: false
        )}
     else
       _ -> {:noreply, socket}
@@ -643,7 +693,8 @@ defmodule OliWeb.Components.FilterPanel do
      assign(socket,
        filters: filters,
        institution_search: "",
-       institution_suggestions: institution_options
+       institution_suggestions: institution_options,
+       institution_dropdown_open: false
      )}
   end
 
@@ -662,7 +713,9 @@ defmodule OliWeb.Components.FilterPanel do
        tag_search: "",
        tag_suggestions: [],
        institution_search: "",
-       institution_suggestions: institution_options
+       institution_suggestions: institution_options,
+       institution_dropdown_open: false,
+       applied_filters: filters
      )}
   end
 
@@ -685,8 +738,25 @@ defmodule OliWeb.Components.FilterPanel do
        tag_search: "",
        tag_suggestions: [],
        institution_search: "",
-       institution_suggestions: institution_options
+       institution_suggestions: institution_options,
+       institution_dropdown_open: false,
+       applied_filters: filters
      )}
+  end
+
+  defp maybe_assign_applied_filters(socket, assigns, true) do
+    case Map.fetch(assigns, :filters) do
+      {:ok, filters} -> assign(socket, applied_filters: filters)
+      :error -> socket
+    end
+  end
+
+  defp maybe_assign_applied_filters(socket, _assigns, false) do
+    cond do
+      socket.assigns[:applied_filters] -> socket
+      socket.assigns[:filters] -> assign(socket, applied_filters: socket.assigns.filters)
+      true -> socket
+    end
   end
 
   defp date_field_option_values([]), do: [{"inserted_at", "Created Date"}]
