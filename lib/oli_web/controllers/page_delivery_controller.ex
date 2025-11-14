@@ -1333,7 +1333,9 @@ defmodule OliWeb.PageDeliveryController do
 
     filename = "#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
 
-    send_download(conn, {:binary, gradebook_csv}, filename: filename)
+    conn
+    |> put_resp_header("content-type", "text/csv")
+    |> send_download({:binary, gradebook_csv}, filename: filename)
   end
 
   def export_enrollments(conn, %{"section_slug" => section_slug}) do
