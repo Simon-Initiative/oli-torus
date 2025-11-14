@@ -27,7 +27,7 @@ export const MIMETYPE_FILTERS = {
   VIDEO: ['video/mp4', 'video/mpeg', 'video/webm', 'video/ogg', 'video/quicktime'],
   HTML: ['text/html'],
   CSV: ['text/csv'],
-  CAPTIONS: ['text/vtt', 'application/octet-stream'],
+  CAPTIONS: ['text/vtt'],
   ALL: undefined,
 };
 
@@ -150,7 +150,6 @@ const getMediaManagerLayoutSetting = (): LAYOUTS => {
  * MediaManager React Component
  */
 export class MediaManager extends React.PureComponent<MediaManagerProps, MediaManagerState> {
-
   scrollView: HTMLElement;
   scrollContent: HTMLElement;
 
@@ -434,9 +433,15 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
   }
 
   isItemSelectable = (selectionType: SELECTION_TYPES, item: MediaItem) => {
+    // pre-MER-5091 .vtt files got MIME-type octet-stream
+    const isLegacyVtt = (item: MediaItem) =>
+      item.mimeType === 'application/octet-stream' && item.fileName.toLowerCase().endsWith('.vtt');
+
     return (
       selectionType !== SELECTION_TYPES.NONE &&
-      (!this.props.mimeFilter || this.props.mimeFilter.includes(item.mimeType))
+      (!this.props.mimeFilter ||
+        this.props.mimeFilter.includes(item.mimeType) ||
+        (this.props.mimeFilter === MIMETYPE_FILTERS.CAPTIONS && isLegacyVtt(item)))
     );
   };
 
