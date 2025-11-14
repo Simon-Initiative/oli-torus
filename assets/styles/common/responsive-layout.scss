@@ -155,6 +155,16 @@
     padding-bottom: 20px;
   }
 
+  janus-popup:has(input)[model*='question'],
+  .responsive-item .react-draggable janus-popup:has(input) {
+    background-size: 20px !important;
+    width: 40px !important;
+    height: auto !important;
+    aspect-ratio: 1;
+    input {
+      width: 40px !important;
+    }
+  }
   /*------------------------------
       Mobile Breakpoint (600px)
   ------------------------------*/
@@ -242,6 +252,30 @@
   box-sizing: border-box;
 }
 
+janus-navigation-button button {
+  box-sizing: border-box;
+}
+
+janus-input-number .number-input {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+janus-input-number label {
+  flex-basis: 100%;
+}
+janus-input-number input {
+  flex-grow: 1;
+}
+janus-input-number .unitsLabel {
+  position: initial !important;
+}
+.number-input input {
+  width: auto !important;
+}
+.slider {
+  padding-bottom: 25px;
+}
 .responsive-layout-section .stageContainer,
 .responsive-layout-section .content,
 .responsive-layout-section .advance-authoring-responsive-layout {
