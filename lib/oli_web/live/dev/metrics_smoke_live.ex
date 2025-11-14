@@ -28,11 +28,12 @@ defmodule OliWeb.Dev.MetricsSmokeLive do
   def handle_event("dist", _params, socket) do
     tags = %{"feature" => socket.assigns.feature, "stage" => "smoke", "action" => "dist"}
 
-    result = Appsignal.add_distribution_value(
-      "torus.feature.duration_ms",
-      socket.assigns.duration_ms,
-      tags
-    )
+    result =
+      Appsignal.add_distribution_value(
+        "torus.feature.duration_ms",
+        socket.assigns.duration_ms,
+        tags
+      )
 
     {:noreply, assign(socket, last_result: {:dist, result})}
   end
@@ -75,7 +76,7 @@ defmodule OliWeb.Dev.MetricsSmokeLive do
           <code>&lbrace;"feature" =&gt; "<%= @feature %>", "stage" =&gt; "smoke", "action" =&gt; "inc|dist"&rbrace;</code>
         </pre>
         <%= if @last_result do %>
-          <p class="mt-2">Last call result: <%= inspect(@last_result) %></p>
+          <p class="mt-2">Last call result: {inspect(@last_result)}</p>
         <% end %>
       </div>
     </div>
