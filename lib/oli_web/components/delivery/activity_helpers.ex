@@ -516,13 +516,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         ]
       }
       """)
+      |> VegaLite.config(signals: [%{"name" => "isDarkMode", "value" => true}])
       |> VegaLite.to_spec()
 
-    spec =
-      %{spec: spec}
-      |> VegaLite.config(signals: [%{"name" => "isDarkMode", "value" => true}])
-
-    assigns = Map.merge(assigns, spec)
+    assigns = Map.merge(assigns, %{spec: spec})
 
     ~H"""
     <div class="mt-5 overflow-x-hidden w-full flex justify-center">
