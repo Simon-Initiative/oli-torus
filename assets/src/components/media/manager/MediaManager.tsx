@@ -441,7 +441,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       selectionType !== SELECTION_TYPES.NONE &&
       (!this.props.mimeFilter ||
         this.props.mimeFilter.includes(item.mimeType) ||
-        (this.props.mimeFilter === MIMETYPE_FILTERS.CAPTIONS && isLegacyVtt(item)))
+        (this.props.mimeFilter.includes('text/vtt') && isLegacyVtt(item)))
     );
   };
 
