@@ -150,7 +150,6 @@ const getMediaManagerLayoutSetting = (): LAYOUTS => {
  * MediaManager React Component
  */
 export class MediaManager extends React.PureComponent<MediaManagerProps, MediaManagerState> {
-
   scrollView: HTMLElement;
   scrollContent: HTMLElement;
 
