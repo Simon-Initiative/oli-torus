@@ -453,24 +453,23 @@ defmodule OliWeb.Components.FilterPanel do
         value={@selected_institution.id}
       />
 
-      <div
-        class="relative"
-        phx-click-away={JS.push("filter_close_institution_dropdown", target: @myself)}
-      >
-        <div class="absolute left-3 top-1/2 -translate-y-1/2">
-          <Icons.list_search />
+      <div phx-click-away={JS.push("filter_close_institution_dropdown", target: @myself)}>
+        <div class="relative">
+          <div class="absolute left-3 top-1/2 -translate-y-1/2">
+            <Icons.list_search />
+          </div>
+          <input
+            type="text"
+            id={"#{@id}-institution-search"}
+            name="filters[institution_search_input]"
+            value={@institution_search}
+            phx-focus="filter_open_institution_dropdown"
+            phx-keyup="filter_institution_search"
+            phx-target={@myself}
+            phx-debounce="300"
+            class="h-9 w-full rounded border border-Border-border-default pl-10 pr-3 text-sm text-Text-text-high focus:border-Text-text-button focus:outline-none dark:bg-transparent"
+          />
         </div>
-        <input
-          type="text"
-          id={"#{@id}-institution-search"}
-          name="filters[institution_search_input]"
-          value={@institution_search}
-          phx-focus="filter_open_institution_dropdown"
-          phx-keyup="filter_institution_search"
-          phx-target={@myself}
-          phx-debounce="300"
-          class="h-9 w-full rounded border border-Border-border-default pl-10 pr-3 text-sm text-Text-text-high focus:border-Text-text-button focus:outline-none dark:bg-transparent"
-        />
         <div
           :if={@institution_dropdown_open and Enum.any?(@institution_suggestions)}
           class="mt-2 flex max-h-48 flex-col overflow-y-auto rounded border border-Border-border-default bg-Specially-Tokens-Fill-fill-nav-hover"
