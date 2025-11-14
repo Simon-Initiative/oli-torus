@@ -561,14 +561,12 @@ defmodule OliWeb.Components.Delivery.Pages do
   def handle_event("paged_table_selection_change", %{"id" => activity_resource_id}, socket)
       when not is_nil(socket.assigns.current_page) do
     activity_id = String.to_integer("#{activity_resource_id}")
+    current_selected = socket.assigns.params.selected_activities
 
     selected_activities =
-      socket.assigns.params.selected_activities
-      |> then(fn ids ->
-        if activity_id in ids,
-          do: Enum.reject(ids, &(&1 == activity_id)),
-          else: [activity_id | ids]
-      end)
+      if activity_id in current_selected,
+        do: current_selected,
+        else: [activity_id | current_selected]
 
     {:noreply,
      push_patch(socket,
@@ -745,16 +743,13 @@ defmodule OliWeb.Components.Delivery.Pages do
 
     # Single query for all selected activities
     activity_summaries =
-      case ActivityHelpers.summarize_activity_performance(
-             section,
-             page_revision,
-             activity_types_map,
-             students,
-             resource_ids
-           ) do
-        summaries when is_list(summaries) -> summaries
-        _ -> []
-      end
+      ActivityHelpers.summarize_activity_performance(
+        section,
+        page_revision,
+        activity_types_map,
+        students,
+        resource_ids
+      )
 
     # Create a lookup map for O(1) access
     summary_map = Map.new(activity_summaries, &{&1.resource_id, &1})
