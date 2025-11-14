@@ -12,17 +12,7 @@ defmodule Oli.Search.EmbeddingWorker do
   def perform(%Oban.Job{
         args: %{"revision_id" => revision_id, "publication_id" => publication_id}
       }) do
-    # Cancel job if OpenAI API key is not configured
-    case System.get_env("OPENAI_API_KEY") do
-      nil ->
-        {:cancel, "OpenAI API key not configured"}
-
-      "" ->
-        {:cancel, "OpenAI API key not configured"}
-
-      _key ->
-        perform_now(revision_id, publication_id)
-    end
+    perform_now(revision_id, publication_id)
   end
 
   def perform_now(revision_id, publication_id) do
