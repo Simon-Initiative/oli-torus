@@ -135,7 +135,8 @@ defmodule Oli.GoogleDocs.Warnings do
     },
     dropdown_duplicate_markers: %{
       severity: :warn,
-      template: "Dropdown CustomElement uses the same marker more than once (%{duplicates}); rendered as table."
+      template:
+        "Dropdown CustomElement uses the same marker more than once (%{duplicates}); rendered as table."
     },
     dropdown_insufficient_choices: %{
       severity: :warn,
