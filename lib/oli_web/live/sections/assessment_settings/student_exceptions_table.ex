@@ -68,7 +68,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
        students: assigns.students,
        form_id: UUID.uuid4(),
        assessment_student_exceptions: assessment_student_exceptions,
-       options_for_select: Enum.map(assigns.assessments, fn a -> {a.name, a.resource_id} end),
+       options_for_select:
+         Enum.map(assigns.assessments, fn a -> {a.name_with_container_label, a.resource_id} end),
        selected_setting: socket.assigns[:selected_setting] || nil,
        selected_assessment: selected_assessment
      )}
@@ -183,7 +184,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     <.live_component
       id="student_available_date_modal"
       title={
-        if @selected_setting, do: "Available date for #{CommonUtils.name(@selected_setting.user)}"
+        if @selected_setting,
+          do: "Available date for #{CommonUtils.name_and_email(@selected_setting.user)}"
       }
       module={OliWeb.Components.LiveModal}
       on_confirm={
@@ -227,7 +229,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
     ~H"""
     <.live_component
       id="student_due_date_modal"
-      title={if @selected_setting, do: "Due date for #{CommonUtils.name(@selected_setting.user)}"}
+      title={
+        if @selected_setting, do: "Due date for #{CommonUtils.name_and_email(@selected_setting.user)}"
+      }
       module={OliWeb.Components.LiveModal}
       on_confirm={
         JS.dispatch("submit", to: "#student-due-date-form")
@@ -499,7 +503,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           |> Enum.reduce([], fn s, acc ->
             if s.id in student_with_exceptions,
               do: acc,
-              else: [{CommonUtils.name(s), s.id}] ++ acc
+              else: [{CommonUtils.name_and_email(s), s.id}] ++ acc
           end)
           |> Enum.sort_by(&elem(&1, 0))
 
@@ -941,7 +945,11 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   defp sort_by(student_exceptions, sort_by, sort_order) do
     case sort_by do
       :student ->
-        Enum.sort_by(student_exceptions, fn se -> CommonUtils.name(se.user) end, sort_order)
+        Enum.sort_by(
+          student_exceptions,
+          fn se -> CommonUtils.name_and_email(se.user) end,
+          sort_order
+        )
 
       :available_date ->
         Enum.sort_by(student_exceptions, fn se -> se.start_date end, sort_order)

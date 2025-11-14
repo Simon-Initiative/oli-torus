@@ -30,6 +30,7 @@ defmodule OliWeb.DeploymentController do
 
   defp available_institutions() do
     Institutions.list_institutions()
+    |> Enum.sort_by(& &1.name)
     |> Enum.map(fn i -> {i.name, i.id} end)
   end
 

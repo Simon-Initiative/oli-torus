@@ -153,7 +153,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               label="Project Publisher"
               type="select"
               class="form-control"
-              options={Enum.map(@publishers, &{&1.name, &1.id})}
+              options={
+                @publishers
+                |> Enum.sort_by(& &1.name)
+                |> Enum.map(&{&1.name, &1.id})
+              }
               error_position={:top}
               errors={f.errors}
             />

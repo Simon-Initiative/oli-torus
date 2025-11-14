@@ -44,10 +44,12 @@ defmodule OliWeb.Sections.EditView do
       {type, _, section} ->
         available_brands =
           Branding.list_brands()
+          |> Enum.sort_by(& &1.name)
           |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
         available_institutions =
           Institutions.list_institutions()
+          |> Enum.sort_by(& &1.name)
           |> Enum.map(fn institution -> {institution.name, institution.id} end)
 
         labels =
