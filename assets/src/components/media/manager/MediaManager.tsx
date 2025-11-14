@@ -27,7 +27,7 @@ export const MIMETYPE_FILTERS = {
   VIDEO: ['video/mp4', 'video/mpeg', 'video/webm', 'video/ogg', 'video/quicktime'],
   HTML: ['text/html'],
   CSV: ['text/csv'],
-  CAPTIONS: ['text/vtt'],
+  CAPTIONS: ['text/vtt', 'application/octet-stream'],
   ALL: undefined,
 };
 
@@ -150,6 +150,7 @@ const getMediaManagerLayoutSetting = (): LAYOUTS => {
  * MediaManager React Component
  */
 export class MediaManager extends React.PureComponent<MediaManagerProps, MediaManagerState> {
+
   scrollView: HTMLElement;
   scrollContent: HTMLElement;
 
@@ -433,10 +434,10 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
   }
 
   isItemSelectable = (selectionType: SELECTION_TYPES, item: MediaItem) => {
-    const ret =
+    return (
       selectionType !== SELECTION_TYPES.NONE &&
-      (!this.props.mimeFilter || this.props.mimeFilter.includes(item.mimeType));
-    return ret;
+      (!this.props.mimeFilter || this.props.mimeFilter.includes(item.mimeType))
+    );
   };
 
   renderMediaList(disabled: boolean) {
