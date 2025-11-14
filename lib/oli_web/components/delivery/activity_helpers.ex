@@ -43,7 +43,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         page_revision,
         activity_types_map,
         students,
-        only_for_activity_ids \\ nil
+        only_for_activity_ids \\ []
       ) do
     page_id = page_revision.resource_id
     graded = page_revision.graded

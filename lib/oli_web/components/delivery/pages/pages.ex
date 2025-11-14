@@ -739,16 +739,13 @@ defmodule OliWeb.Components.Delivery.Pages do
 
     # Single query for all selected activities
     activity_summaries =
-      case ActivityHelpers.summarize_activity_performance(
-             section,
-             page_revision,
-             activity_types_map,
-             students,
-             resource_ids
-           ) do
-        summaries when is_list(summaries) -> summaries
-        _ -> []
-      end
+      ActivityHelpers.summarize_activity_performance(
+        section,
+        page_revision,
+        activity_types_map,
+        students,
+        resource_ids
+      )
 
     # Create a lookup map for O(1) access
     summary_map = Map.new(activity_summaries, &{&1.resource_id, &1})
