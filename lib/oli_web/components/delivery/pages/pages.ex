@@ -557,14 +557,7 @@ defmodule OliWeb.Components.Delivery.Pages do
   def handle_event("paged_table_selection_change", %{"id" => activity_resource_id}, socket)
       when not is_nil(socket.assigns.current_page) do
     activity_id = String.to_integer("#{activity_resource_id}")
-
-    selected_activities =
-      socket.assigns.params.selected_activities
-      |> then(fn ids ->
-        if activity_id in ids,
-          do: Enum.reject(ids, &(&1 == activity_id)),
-          else: [activity_id | ids]
-      end)
+    selected_activities = Enum.uniq([activity_id | socket.assigns.params.selected_activities])
 
     {:noreply,
      push_patch(socket,
