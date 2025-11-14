@@ -2,7 +2,7 @@ defmodule Oli.GoogleDocs.CustomElementsTest do
   use ExUnit.Case, async: true
 
   alias Oli.GoogleDocs.CustomElements
-  alias Oli.GoogleDocs.CustomElements.{Mcq, YouTube}
+  alias Oli.GoogleDocs.CustomElements.{Dropdown, Mcq, YouTube}
   alias Oli.GoogleDocs.MarkdownParser
   alias Oli.GoogleDocs.MarkdownParser.CustomElement
   alias Oli.GoogleDocsImport.TestHelpers
@@ -95,6 +95,52 @@ defmodule Oli.GoogleDocs.CustomElementsTest do
       assert %Mcq{} = mcq = Map.fetch!(result.elements, hd(result.order))
       assert mcq.stem == "Which of the following is an animal?"
       assert Enum.map(mcq.choices, & &1.id) == ["choice1", "choice2"]
+    end
+
+    test "resolves dropdown custom element with per-input data" do
+      markdown = """
+      | CustomElement | Dropdown |
+      | --- | --- |
+      | stem | [dropdown1] and [dropdown2] are both animals. |
+      | dropdown1-choice1 | Dog |
+      | dropdown1-feedback1 | Correct! |
+      | dropdown1-choice2 | Computer |
+      | dropdown1-feedback2 | Incorrect. |
+      | dropdown1-correct | choice1 |
+      | dropdown1-hint1 | Think about pets. |
+      | dropdown2-choice1 | Cat |
+      | dropdown2-feedback1 | Correct! |
+      | dropdown2-choice2 | Tree |
+      | dropdown2-feedback2 | Incorrect. |
+      | dropdown2-correct | choice1 |
+      | dropdown2-hint1 | Which one needs food? |
+      """
+
+      assert {:ok, parsed} = MarkdownParser.parse(markdown)
+      assert {:ok, resolved} = CustomElements.resolve(parsed.custom_elements)
+
+      dropdown = Map.fetch!(resolved.elements, hd(resolved.order))
+      assert %Dropdown{} = dropdown
+      assert dropdown.inputs == ["dropdown1", "dropdown2"]
+      assert dropdown.data_by_input["dropdown1"]["choice1"] == "Dog"
+      assert dropdown.data_by_input["dropdown2"]["hint1"] == "Which one needs food?"
+    end
+
+    test "dropdown custom element with duplicate markers falls back" do
+      markdown = """
+      | CustomElement | Dropdown |
+      | --- | --- |
+      | stem | [dropdown1] and again [dropdown1]. |
+      | dropdown1-choice1 | Dog |
+      | dropdown1-choice2 | Cat |
+      | dropdown1-correct | choice1 |
+      """
+
+      assert {:ok, parsed} = MarkdownParser.parse(markdown)
+      assert {:ok, resolved} = CustomElements.resolve(parsed.custom_elements)
+
+      assert %{"custom-element-1" => %{reason: :invalid}} = resolved.fallbacks
+      assert Enum.any?(resolved.warnings, &(&1.code == :dropdown_duplicate_markers))
     end
   end
 end

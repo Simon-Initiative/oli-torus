@@ -252,7 +252,8 @@ defmodule Oli.GoogleDocs.McqBuilderTest do
   end
 
   test "returns error when correct key is missing or invalid" do
-    mcq = %Mcq{mcq_fixture() | correct_key: nil}
+    %Mcq{} = mcq_fixture_data = mcq_fixture()
+    mcq = %Mcq{mcq_fixture_data | correct_key: nil}
 
     assert {:error, :missing_correct, warnings} =
              McqBuilder.build(mcq,
