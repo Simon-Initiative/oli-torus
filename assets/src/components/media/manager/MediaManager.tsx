@@ -433,10 +433,16 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
   }
 
   isItemSelectable = (selectionType: SELECTION_TYPES, item: MediaItem) => {
-    const ret =
+    // pre-MER-5091 .vtt files got MIME-type octet-stream
+    const isLegacyVtt = (item: MediaItem) =>
+      item.mimeType === 'application/octet-stream' && item.fileName.toLowerCase().endsWith('.vtt');
+
+    return (
       selectionType !== SELECTION_TYPES.NONE &&
-      (!this.props.mimeFilter || this.props.mimeFilter.includes(item.mimeType));
-    return ret;
+      (!this.props.mimeFilter ||
+        this.props.mimeFilter.includes(item.mimeType) ||
+        (this.props.mimeFilter.includes('text/vtt') && isLegacyVtt(item)))
+    );
   };
 
   renderMediaList(disabled: boolean) {
