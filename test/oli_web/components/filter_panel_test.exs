@@ -33,8 +33,7 @@ defmodule OliWeb.Components.FilterPanelTest do
           institution_options: institutions
         })
 
-      # Open the filter panel - use a more specific selector
-      view |> element("button[phx-click*='toggle_filters']") |> render_click()
+      view |> open_filter_panel() |> focus_institution_search()
 
       # Check search input exists
       assert has_element?(view, "#test-filter-institution-search")
@@ -57,8 +56,7 @@ defmodule OliWeb.Components.FilterPanelTest do
           institution_options: institutions
         })
 
-      # Open the filter panel
-      view |> element("button[phx-click*='toggle_filters']") |> render_click()
+      view |> open_filter_panel() |> focus_institution_search()
 
       # Search for "university"
       view
@@ -81,8 +79,7 @@ defmodule OliWeb.Components.FilterPanelTest do
           institution_options: institutions
         })
 
-      # Open the filter panel
-      view |> element("button[phx-click*='toggle_filters']") |> render_click()
+      view |> open_filter_panel() |> focus_institution_search()
 
       # Search with lowercase "institute" (which should match MIT)
       view
@@ -108,8 +105,7 @@ defmodule OliWeb.Components.FilterPanelTest do
           institution_options: institutions
         })
 
-      # Open the filter panel
-      view |> element("button[phx-click*='toggle_filters']") |> render_click()
+      view |> open_filter_panel() |> focus_institution_search()
 
       # Search for "University"
       view
@@ -140,8 +136,7 @@ defmodule OliWeb.Components.FilterPanelTest do
           institution_options: institutions
         })
 
-      # Open the filter panel
-      view |> element("button[phx-click*='toggle_filters']") |> render_click()
+      view |> open_filter_panel() |> focus_institution_search()
 
       # Search for something first to filter the list
       view
@@ -174,8 +169,7 @@ defmodule OliWeb.Components.FilterPanelTest do
           institution_options: institutions
         })
 
-      # Open the filter panel
-      view |> element("button[phx-click*='toggle_filters']") |> render_click()
+      view |> open_filter_panel() |> focus_institution_search()
 
       # Search for "harvard"
       view
@@ -207,8 +201,7 @@ defmodule OliWeb.Components.FilterPanelTest do
           institution_options: institutions
         })
 
-      # Open the filter panel
-      view |> element("button[phx-click*='toggle_filters']") |> render_click()
+      view |> open_filter_panel() |> focus_institution_search()
 
       html = render(view)
       assert html =~ "Harvard University"
@@ -236,8 +229,7 @@ defmodule OliWeb.Components.FilterPanelTest do
           institution_options: institutions
         })
 
-      # Open the filter panel
-      view |> element("button[phx-click*='toggle_filters']") |> render_click()
+      view |> open_filter_panel() |> focus_institution_search()
 
       # Search and select an institution
       view
@@ -271,8 +263,7 @@ defmodule OliWeb.Components.FilterPanelTest do
           institution_options: institutions
         })
 
-      # Open the filter panel
-      view |> element("button[phx-click*='toggle_filters']") |> render_click()
+      view |> open_filter_panel() |> focus_institution_search()
 
       # Search for something to filter the list
       view
@@ -289,8 +280,7 @@ defmodule OliWeb.Components.FilterPanelTest do
       |> element("button", "Cancel")
       |> render_click()
 
-      # Reopen the filter panel
-      view |> element("button[phx-click*='toggle_filters']") |> render_click()
+      view |> open_filter_panel() |> focus_institution_search()
 
       # Search input should be cleared
       assert view |> element("#test-filter-institution-search") |> render() =~ "value=\"\""
@@ -415,5 +405,15 @@ defmodule OliWeb.Components.FilterPanelTest do
       html = render(view)
       refute html =~ "hidden"
     end
+  end
+
+  defp open_filter_panel(view) do
+    view |> element("button[phx-click*='toggle_filters']") |> render_click()
+    view
+  end
+
+  defp focus_institution_search(view) do
+    view |> element("#test-filter-institution-search") |> render_focus(%{})
+    view
   end
 end
