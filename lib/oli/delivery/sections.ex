@@ -5520,6 +5520,112 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  @doc """
+  Gets a map of page_id => parent container info (numbering_level, numbering_index, container_id)
+  for the given page IDs in a section.
+
+  Only includes non-root containers (numbering_level > 0). If a page has multiple parent containers,
+  returns the one with the highest numbering_level (most specific parent).
+
+  ## Parameters
+    - `section_id` - The ID of the section
+    - `page_ids` - A list of page resource IDs to look up
+
+  ## Returns
+    A map where keys are page resource IDs and values are maps containing:
+    - `container_id` - The resource ID of the parent container
+    - `numbering_level` - The numbering level of the container (1 = Unit, 2 = Module, etc.)
+    - `numbering_index` - The numbering index of the container
+
+  ## Examples
+      iex> get_parent_containers_map(section.id, [123, 456])
+      %{
+        123 => %{container_id: 10, numbering_level: 1, numbering_index: 2},
+        456 => %{container_id: 11, numbering_level: 2, numbering_index: 1}
+      }
+  """
+  @spec get_parent_containers_map(integer() | nil, [integer()]) :: %{
+          integer() => %{
+            container_id: integer(),
+            numbering_level: integer(),
+            numbering_index: integer()
+          }
+        }
+  def get_parent_containers_map(_section_id, page_ids) when page_ids == [], do: %{}
+  def get_parent_containers_map(nil, _page_ids), do: %{}
+
+  def get_parent_containers_map(section_id, page_ids) do
+    from(cp in ContainedPage,
+      join: sr in SectionResource,
+      on: sr.section_id == ^section_id and sr.resource_id == cp.container_id,
+      where:
+        cp.section_id == ^section_id and cp.page_id in ^page_ids and
+          not is_nil(cp.container_id),
+      select: %{
+        page_id: cp.page_id,
+        container_id: cp.container_id,
+        numbering_level: sr.numbering_level,
+        numbering_index: sr.numbering_index
+      }
+    )
+    |> Repo.all()
+    |> Enum.group_by(& &1.page_id)
+    |> Enum.map(fn {page_id, containers} ->
+      # Get the container with the highest numbering_level (most specific parent)
+      parent_container =
+        containers
+        |> Enum.filter(fn c -> c.numbering_level > 0 end)
+        |> Enum.max_by(& &1.numbering_level, fn -> nil end)
+
+      {page_id, parent_container}
+    end)
+    |> Enum.filter(fn {_page_id, container} -> container != nil end)
+    |> Map.new()
+  end
+
+  @doc """
+  Formats a page title with its parent container label and numbering.
+
+  If the page has no parent container (or parent is root), returns just the page title.
+  Otherwise, formats as: "<container_label> <numbering_index>: <page title>"
+
+  Container labels respect customizations from the section (e.g., "Unidad", "Módulo", "Sección")
+  and fall back to defaults ("Unit", "Module", "Section") if not customized.
+
+  ## Parameters
+    - `page_title` - The title of the page
+    - `parent_container_info` - A map with `numbering_level` and `numbering_index`, or `nil` if no parent
+    - `customizations` - A map of container label customizations (e.g., `%{unit: "Unidad", module: "Módulo"}`)
+
+  ## Returns
+    A formatted string with the container label and page title, or just the page title if no parent.
+
+  ## Examples
+      iex> name_with_container_label("Introduction Quiz", nil, %{})
+      "Introduction Quiz"
+
+      iex> parent_info = %{numbering_level: 1, numbering_index: 2}
+      iex> name_with_container_label("Introduction Quiz", parent_info, %{unit: "Unidad"})
+      "Unidad 2: Introduction Quiz"
+  """
+  @spec name_with_container_label(String.t(), map() | nil, map() | nil) :: String.t()
+  def name_with_container_label(page_title, nil, _customizations) do
+    # No parent container (or parent is root), just show page title
+    page_title
+  end
+
+  def name_with_container_label(page_title, parent_container_info, customizations) do
+    # Parent container exists and is not root, format as: <container_label> <numbering_index>: <page title>
+    container_label_with_numbering =
+      get_container_label_and_numbering(
+        parent_container_info.numbering_level,
+        parent_container_info.numbering_index,
+        customizations
+      )
+
+    "#{container_label_with_numbering}: #{page_title}"
+  end
+
   def get_units_and_modules_from_a_section(section_slug) do
     all =
       Repo.all(

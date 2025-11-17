@@ -7,7 +7,6 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
-  alias Oli.Delivery.Settings.AssessmentSettings
   alias Oli.Lti.AccessTokenLibrary
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.Breadcrumb
@@ -405,12 +404,12 @@ defmodule OliWeb.Grades.GradesLive do
     graded_page_ids = Enum.map(graded_pages, & &1.resource_id)
 
     parent_containers_map =
-      AssessmentSettings.get_parent_containers_map(section.id, graded_page_ids)
+      Sections.get_parent_containers_map(section.id, graded_page_ids)
 
     Enum.map(graded_pages, fn p ->
       Map.merge(p, %{
         name_with_container_label:
-          AssessmentSettings.name_with_container_label(
+          Sections.name_with_container_label(
             p.title,
             Map.get(parent_containers_map, p.resource_id),
             section.customizations
