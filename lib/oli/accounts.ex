@@ -842,8 +842,34 @@ defmodule Oli.Accounts do
     update_user(user, %{preferences: updated_preferences})
   end
 
+  @doc """
+  Determines if an author can access a specific project.
+
+  Admin authors (system admins, account admins, or content admins) have access to all projects.
+  Regular authors only have access to projects they are explicitly associated with through the authors_projects join table.
+
+  ## Parameters
+    - author: An Author struct representing the user
+    - project: A Project struct representing the project to check access for
+
+  ## Returns
+    - `true` if the author can access the project
+    - `false` if the author cannot access the project
+
+  ## Examples
+
+      iex> can_access?(admin_author, project)
+      true
+
+      iex> can_access?(regular_author, assigned_project)
+      true
+
+      iex> can_access?(regular_author, unassigned_project)
+      false
+  """
+  @spec can_access?(Author.t(), Project.t()) :: boolean()
   def can_access?(author, project) do
-    if has_admin_role?(author, :content_admin) do
+    if at_least_content_admin?(author) do
       # Admin authors have access to every project
       true
     else

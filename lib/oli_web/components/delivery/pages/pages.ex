@@ -317,12 +317,16 @@ defmodule OliWeb.Components.Delivery.Pages do
             <span class="self-stretch justify-center text-zinc-700 text-lg font-bold leading-normal dark:text-white">
               {page_type(@active_tab)} Pages
             </span>
-            <a
-              href=""
-              class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold leading-none"
-            >
-              Download CSV <Icons.download />
-            </a>
+            <%= if path = pages_download_path(@section, @active_tab) do %>
+              <a
+                role="button"
+                href={path}
+                class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold leading-none"
+                download={filename_from_active_tab(@section, @active_tab)}
+              >
+                Download CSV <Icons.download />
+              </a>
+            <% end %>
           <% end %>
         </div>
         <%= if is_nil(@current_page) do %>
@@ -557,14 +561,12 @@ defmodule OliWeb.Components.Delivery.Pages do
   def handle_event("paged_table_selection_change", %{"id" => activity_resource_id}, socket)
       when not is_nil(socket.assigns.current_page) do
     activity_id = String.to_integer("#{activity_resource_id}")
+    current_selected = socket.assigns.params.selected_activities
 
     selected_activities =
-      socket.assigns.params.selected_activities
-      |> then(fn ids ->
-        if activity_id in ids,
-          do: Enum.reject(ids, &(&1 == activity_id)),
-          else: [activity_id | ids]
-      end)
+      if activity_id in current_selected,
+        do: current_selected,
+        else: [activity_id | current_selected]
 
     {:noreply,
      push_patch(socket,
@@ -741,16 +743,13 @@ defmodule OliWeb.Components.Delivery.Pages do
 
     # Single query for all selected activities
     activity_summaries =
-      case ActivityHelpers.summarize_activity_performance(
-             section,
-             page_revision,
-             activity_types_map,
-             students,
-             resource_ids
-           ) do
-        summaries when is_list(summaries) -> summaries
-        _ -> []
-      end
+      ActivityHelpers.summarize_activity_performance(
+        section,
+        page_revision,
+        activity_types_map,
+        students,
+        resource_ids
+      )
 
     # Create a lookup map for O(1) access
     summary_map = Map.new(activity_summaries, &{&1.resource_id, &1})
@@ -1014,6 +1013,20 @@ defmodule OliWeb.Components.Delivery.Pages do
         end)
     }
   end
+
+  defp pages_download_path(%Section{slug: slug}, :scored_pages),
+    do: ~p"/sections/#{slug}/instructor_dashboard/downloads/scored_pages"
+
+  defp pages_download_path(%Section{slug: slug}, :practice_pages),
+    do: ~p"/sections/#{slug}/instructor_dashboard/downloads/practice_pages"
+
+  defp pages_download_path(_, _), do: nil
+
+  defp filename_from_active_tab(%Section{slug: slug}, :scored_pages),
+    do: "#{slug}_scored_pages.csv"
+
+  defp filename_from_active_tab(%Section{slug: slug}, :practice_pages),
+    do: "#{slug}_practice_pages.csv"
 
   defp update_attempts_options(selected_attempts_ids, attempts_options) do
     Enum.map(attempts_options, fn option ->

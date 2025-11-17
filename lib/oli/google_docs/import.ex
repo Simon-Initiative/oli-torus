@@ -17,7 +17,15 @@ defmodule Oli.GoogleDocs.Import do
   alias Oli.GoogleDocs.MarkdownParser.CustomElement
   alias Oli.GoogleDocs.MarkdownParser.MediaReference
   alias Oli.GoogleDocs.McqBuilder
-  alias Oli.GoogleDocs.{MediaIngestor, Warnings, CheckAllThatApplyBuilder, ShortAnswerBuilder}
+
+  alias Oli.GoogleDocs.{
+    MediaIngestor,
+    Warnings,
+    CheckAllThatApplyBuilder,
+    ShortAnswerBuilder,
+    DropdownBuilder
+  }
+
   alias Oli.GoogleDocs.Client
   alias Oli.GoogleDocs.CustomElements.YouTube
   alias Oli.Publishing.AuthoringResolver
@@ -284,7 +292,8 @@ defmodule Oli.GoogleDocs.Import do
             {Keyword.get(config, :mcq_builder, McqBuilder),
              Keyword.get(config, :mcq_builder_opts, [])},
             {CheckAllThatApplyBuilder, Keyword.get(config, :cata_builder_opts, [])},
-            {ShortAnswerBuilder, Keyword.get(config, :short_answer_builder_opts, [])}
+            {ShortAnswerBuilder, Keyword.get(config, :short_answer_builder_opts, [])},
+            {DropdownBuilder, Keyword.get(config, :dropdown_builder_opts, [])}
           ]
 
         list when is_list(list) ->

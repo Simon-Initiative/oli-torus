@@ -2193,6 +2193,169 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "get_parent_containers_map/2" do
+    setup [:create_elixir_project]
+
+    test "returns empty map for empty page_ids list", %{section: section} do
+      result = Sections.get_parent_containers_map(section.id, [])
+      assert result == %{}
+    end
+
+    test "returns empty map for nil section_id" do
+      result = Sections.get_parent_containers_map(nil, [1, 2, 3])
+      assert result == %{}
+    end
+
+    test "returns parent container info for pages in containers", %{
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      module_1: module_1,
+      module_2: module_2
+    } do
+      # Rebuild contained_pages to ensure the data is set up correctly
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      page_ids = [page_1.resource_id, page_2.resource_id, page_3.resource_id]
+      result = Sections.get_parent_containers_map(section.id, page_ids)
+
+      # Page 1 and Page 2 are in module_1, which is in unit_1
+      # Should return module_1 (higher numbering_level = 2) as the parent
+      assert Map.has_key?(result, page_1.resource_id)
+      assert Map.has_key?(result, page_2.resource_id)
+
+      page_1_parent = result[page_1.resource_id]
+      assert page_1_parent.container_id == module_1.resource_id
+      assert page_1_parent.numbering_level == 2
+      assert page_1_parent.numbering_index == 1
+
+      # Page 3 is in module_2, which is in unit_1
+      assert Map.has_key?(result, page_3.resource_id)
+      page_3_parent = result[page_3.resource_id]
+      assert page_3_parent.container_id == module_2.resource_id
+      assert page_3_parent.numbering_level == 2
+      assert page_3_parent.numbering_index == 2
+    end
+
+    test "excludes pages in root container (numbering_level 0)", %{
+      section: section,
+      page_4: page_4
+    } do
+      # Rebuild contained_pages to ensure the data is set up correctly
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      # Page 4 is directly in root container
+      result = Sections.get_parent_containers_map(section.id, [page_4.resource_id])
+
+      # Root container has numbering_level 0, so it should not be included
+      refute Map.has_key?(result, page_4.resource_id)
+    end
+
+    test "returns highest numbering_level parent when page has multiple containers", %{
+      section: section,
+      page_1: page_1,
+      module_1: module_1,
+      unit_1: unit_1
+    } do
+      # Rebuild contained_pages to ensure the data is set up correctly
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      # Page 1 is in module_1 (level 2) which is in unit_1 (level 1)
+      # Should return module_1 (higher level) as the parent
+      result = Sections.get_parent_containers_map(section.id, [page_1.resource_id])
+
+      page_1_parent = result[page_1.resource_id]
+      assert page_1_parent.container_id == module_1.resource_id
+      assert page_1_parent.numbering_level == 2
+      # Should not return unit_1 (level 1) since module_1 (level 2) is higher
+      refute page_1_parent.container_id == unit_1.resource_id
+    end
+
+    test "handles pages that don't exist in section", %{section: section} do
+      # Rebuild contained_pages to ensure the data is set up correctly
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      # Use non-existent page IDs
+      result = Sections.get_parent_containers_map(section.id, [999_999, 999_998])
+      assert result == %{}
+    end
+  end
+
+  describe "name_with_container_label/3" do
+    test "returns just page title when parent_container_info is nil" do
+      page_title = "Introduction Quiz"
+      result = Sections.name_with_container_label(page_title, nil, %{})
+      assert result == page_title
+    end
+
+    test "returns just page title when parent_container_info is nil with customizations" do
+      page_title = "Introduction Quiz"
+      customizations = %{unit: "Unidad", module: "Módulo"}
+      result = Sections.name_with_container_label(page_title, nil, customizations)
+      assert result == page_title
+    end
+
+    test "formats page title with unit container label and numbering" do
+      page_title = "Introduction Quiz"
+      parent_info = %{numbering_level: 1, numbering_index: 2}
+      result = Sections.name_with_container_label(page_title, parent_info, nil)
+
+      assert result == "Unit 2: Introduction Quiz"
+    end
+
+    test "formats page title with module container label and numbering" do
+      page_title = "Quiz 1"
+      parent_info = %{numbering_level: 2, numbering_index: 3}
+      result = Sections.name_with_container_label(page_title, parent_info, nil)
+
+      assert result == "Module 3: Quiz 1"
+    end
+
+    test "formats page title with section container label and numbering" do
+      page_title = "Practice Exercise"
+      parent_info = %{numbering_level: 3, numbering_index: 1}
+      result = Sections.name_with_container_label(page_title, parent_info, nil)
+
+      assert result == "Section 1: Practice Exercise"
+    end
+
+    test "respects custom container labels" do
+      page_title = "Introduction Quiz"
+      parent_info = %{numbering_level: 1, numbering_index: 2}
+      customizations = %{unit: "Unidad", module: "Módulo", section: "Sección"}
+      result = Sections.name_with_container_label(page_title, parent_info, customizations)
+
+      assert result == "Unidad 2: Introduction Quiz"
+    end
+
+    test "respects custom module labels" do
+      page_title = "Quiz 1"
+      parent_info = %{numbering_level: 2, numbering_index: 3}
+      customizations = %{unit: "Unidad", module: "Módulo", section: "Sección"}
+      result = Sections.name_with_container_label(page_title, parent_info, customizations)
+
+      assert result == "Módulo 3: Quiz 1"
+    end
+
+    test "respects custom section labels" do
+      page_title = "Practice Exercise"
+      parent_info = %{numbering_level: 3, numbering_index: 1}
+      customizations = %{unit: "Unidad", module: "Módulo", section: "Sección"}
+      result = Sections.name_with_container_label(page_title, parent_info, customizations)
+
+      assert result == "Sección 1: Practice Exercise"
+    end
+
+    test "handles nil customizations by using defaults" do
+      page_title = "Introduction Quiz"
+      parent_info = %{numbering_level: 1, numbering_index: 2}
+      result = Sections.name_with_container_label(page_title, parent_info, nil)
+
+      assert result == "Unit 2: Introduction Quiz"
+    end
+  end
+
   describe "get_last_completed_or_started_assignments/3" do
     setup [:create_elixir_project]
 

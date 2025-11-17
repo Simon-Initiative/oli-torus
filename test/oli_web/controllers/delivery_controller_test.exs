@@ -7,6 +7,7 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
+  alias Phoenix.{Controller, Flash}
 
   import Mox
   import Oli.Factory
@@ -167,6 +168,27 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, enrollment_path)
 
       assert_redirect_to_login(conn, section.slug)
+    end
+
+    test "suspended learner using invitation link is redirected to login", %{
+      conn: conn,
+      section: section
+    } do
+      suspended_user = user_fixture(%{independent_learner: false})
+      insert(:enrollment, user: suspended_user, section: section, status: :suspended)
+      invite = insert(:section_invite, section: section)
+
+      conn =
+        conn
+        |> log_in_user(suspended_user)
+        |> get(Routes.delivery_path(conn, :enroll_independent, invite.slug))
+        |> Controller.fetch_flash()
+
+      assert redirected_to(conn) ==
+               "/users/log_in?request_path=%2Fsections%2F#{section.slug}"
+
+      assert Flash.get(conn.assigns.flash, :error) ==
+               "Your access to this course has been suspended. Please contact your instructor."
     end
   end
 
@@ -529,6 +551,76 @@ defmodule OliWeb.DeliveryControllerTest do
         conn
         |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_quiz_scores, "invalid_section_slug"))
+
+      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+    end
+  end
+
+  describe "download_scored_pages" do
+    setup [:setup_lti_session]
+
+    test "downloads scored pages csv when section exists", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_scored_pages, section.slug))
+
+      assert Enum.any?(conn.resp_headers, fn
+               {"content-disposition", value} ->
+                 value =~ "#{section.slug}_scored_pages.csv"
+
+               _ ->
+                 false
+             end)
+
+      assert Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+      assert response(conn, 200)
+    end
+
+    test "redirects to not found for invalid section", %{conn: conn, instructor: instructor} do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_scored_pages, "invalid_section_slug"))
+
+      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+    end
+  end
+
+  describe "download_practice_pages" do
+    setup [:setup_lti_session]
+
+    test "downloads practice pages csv when section exists", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_practice_pages, section.slug))
+
+      assert Enum.any?(conn.resp_headers, fn
+               {"content-disposition", value} ->
+                 value =~ "#{section.slug}_practice_pages.csv"
+
+               _ ->
+                 false
+             end)
+
+      assert Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+      assert response(conn, 200)
+    end
+
+    test "redirects to not found for invalid section", %{conn: conn, instructor: instructor} do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_practice_pages, "invalid_section_slug"))
 
       assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
     end

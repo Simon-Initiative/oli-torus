@@ -295,4 +295,97 @@ defmodule Oli.CourseTest do
       refute Oli.Authoring.Course.get_project_license(page.id, section.slug)
     end
   end
+
+  describe "get_projects_for_author/1" do
+    setup do
+      # Create a regular author
+      author = insert(:author)
+
+      # Create an author with system_admin role
+      system_admin =
+        insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().system_admin)
+
+      # Create an author with account_admin role
+      account_admin =
+        insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().account_admin)
+
+      # Create an author with content_admin role
+      content_admin =
+        insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+
+      # Create projects
+      project1 = insert(:project)
+      project2 = insert(:project)
+      project3 = insert(:project)
+
+      # Associate author with project1 only
+      insert(:author_project, author_id: author.id, project_id: project1.id)
+
+      {:ok,
+       %{
+         author: author,
+         system_admin: system_admin,
+         account_admin: account_admin,
+         content_admin: content_admin,
+         project1: project1,
+         project2: project2,
+         project3: project3
+       }}
+    end
+
+    test "returns only assigned projects for a regular author", %{
+      author: author,
+      project1: project1
+    } do
+      projects = Course.get_projects_for_author(author)
+
+      assert length(projects) == 1
+      assert Enum.any?(projects, fn p -> p.id == project1.id end)
+    end
+
+    test "returns all projects for a system admin", %{
+      system_admin: system_admin,
+      project1: project1,
+      project2: project2,
+      project3: project3
+    } do
+      projects = Course.get_projects_for_author(system_admin)
+
+      # Should return all projects (including any from other tests)
+      assert length(projects) >= 3
+      assert Enum.any?(projects, fn p -> p.id == project1.id end)
+      assert Enum.any?(projects, fn p -> p.id == project2.id end)
+      assert Enum.any?(projects, fn p -> p.id == project3.id end)
+    end
+
+    test "returns all projects for an account admin", %{
+      account_admin: account_admin,
+      project1: project1,
+      project2: project2,
+      project3: project3
+    } do
+      projects = Course.get_projects_for_author(account_admin)
+
+      # Should return all projects (including any from other tests)
+      assert length(projects) >= 3
+      assert Enum.any?(projects, fn p -> p.id == project1.id end)
+      assert Enum.any?(projects, fn p -> p.id == project2.id end)
+      assert Enum.any?(projects, fn p -> p.id == project3.id end)
+    end
+
+    test "returns all projects for a content admin", %{
+      content_admin: content_admin,
+      project1: project1,
+      project2: project2,
+      project3: project3
+    } do
+      projects = Course.get_projects_for_author(content_admin)
+
+      # Should return all projects (including any from other tests)
+      assert length(projects) >= 3
+      assert Enum.any?(projects, fn p -> p.id == project1.id end)
+      assert Enum.any?(projects, fn p -> p.id == project2.id end)
+      assert Enum.any?(projects, fn p -> p.id == project3.id end)
+    end
+  end
 end

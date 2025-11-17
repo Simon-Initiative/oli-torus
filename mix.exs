@@ -5,7 +5,7 @@ defmodule Oli.MixProject do
     [
       app: :oli,
       version: "0.32.0",
-      elixir: "~> 1.18.4",
+      elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
@@ -14,16 +14,6 @@ defmodule Oli.MixProject do
       aliases: aliases(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
-        test: :test,
-        "test.ecto.reset": :test,
-        scenarios: :test,
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test,
-        "coveralls.xml": :test
-      ],
 
       # Docs
       name: "OLI Torus",
@@ -37,6 +27,21 @@ defmodule Oli.MixProject do
         ]
       ],
       default_release: :oli
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
+        test: :test,
+        "test.ecto.reset": :test,
+        scenarios: :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.xml": :test
+      ]
     ]
   end
 

@@ -551,6 +551,12 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     end
   end
 
+  def handle_event("prevent_default", _params, socket) do
+    # This handler prevents default form submission behavior
+    # The form should not be submitted, individual inputs are handled separately
+    {:noreply, socket}
+  end
+
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
     |> delegate_to([

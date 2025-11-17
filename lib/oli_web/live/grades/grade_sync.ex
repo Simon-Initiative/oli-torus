@@ -54,7 +54,7 @@ defmodule OliWeb.Grades.GradeSync do
         >
           <%= for page <- @graded_pages do %>
             <option value={page.resource_id} selected={@selected_page == page.resource_id}>
-              {page.title}
+              {page.name_with_container_label}
             </option>
           <% end %>
         </select>

@@ -238,8 +238,10 @@ defmodule OliWeb.Api.LtiAgsController do
        }),
        do: {:ok, part_attempt}
 
-  defp get_single_part_attempt_from_activity_attempt(%ActivityAttempt{attempt_guid: attempt_guid}),
-    do: {:error, "Activity part attempt not found for activity attempt guid: #{attempt_guid}"}
+  defp get_single_part_attempt_from_activity_attempt(%ActivityAttempt{
+         attempt_guid: attempt_guid
+       }),
+       do: {:error, "Activity part attempt not found for activity attempt guid: #{attempt_guid}"}
 
   defp get_section_slug_from_activity_attempt_guid(activity_attempt_guid) do
     case Core.get_section_by_activity_attempt_guid(activity_attempt_guid) do

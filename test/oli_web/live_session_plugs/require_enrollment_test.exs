@@ -42,6 +42,40 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
       assert redirected_to == "/sections/#{section.slug}/enroll"
     end
 
+    test "redirects suspended learner to login even when registration is open",
+         %{
+           user: user
+         } do
+      section = insert(:section, registration_open: true)
+      insert(:enrollment, user: user, section: section, status: :suspended)
+
+      socket = %LiveView.Socket{
+        endpoint: OliWeb.Endpoint,
+        assigns: %{
+          __changed__: %{},
+          current_user: user,
+          current_author: nil,
+          section: section,
+          flash: %{}
+        }
+      }
+
+      assert {:halt, redirected_socket} =
+               RequireEnrollment.on_mount(
+                 :default,
+                 %{"section_slug" => section.slug},
+                 %{},
+                 socket
+               )
+
+      assert {:redirect, %{to: redirected_to}} = redirected_socket.redirected
+
+      assert redirected_to == "/users/log_in?request_path=%2Fsections%2F#{section.slug}"
+
+      assert redirected_socket.assigns.flash["error"] ==
+               "Your access to this course has been suspended. Please contact your instructor."
+    end
+
     test "redirects to login when current_user is nil" do
       section = insert(:section, requires_enrollment: false)
 

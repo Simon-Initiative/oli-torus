@@ -402,16 +402,10 @@ defmodule Oli.Analytics.Summary do
 
   @doc """
   Retrieves the resource summaries for the activities present on a specified page in a
-  specified section. If `only_for_activity_ids` is provided, only the activities with the
-  specified IDs will be included in the result. If `only_for_activity_ids` is nil, all
-  activities on the page will be included in the result.
+  specified section, filtered by the provided activity IDs.
   """
   def summarize_activities_for_page(section_id, page_id, only_for_activity_ids) do
-    activity_constraint =
-      case only_for_activity_ids do
-        nil -> true
-        _ -> dynamic([rs, _], rs.activity_id in ^only_for_activity_ids)
-      end
+    activity_constraint = dynamic([rs, _], rs.activity_id in ^only_for_activity_ids)
 
     # The only way to query resource summary for all activities in a page is
     # to go through the response summary and constrain by page_id
@@ -458,16 +452,8 @@ defmodule Oli.Analytics.Summary do
           section_id :: integer(),
           activity_resource_ids :: [integer()]
         ) :: [map()]
-  def get_response_summary_for(
-        page_resource_id,
-        section_id,
-        only_for_activity_ids \\ nil
-      ) do
-    activity_constraint =
-      case only_for_activity_ids do
-        nil -> true
-        _ -> dynamic([s, _], s.activity_id in ^only_for_activity_ids)
-      end
+  def get_response_summary_for(page_resource_id, section_id, only_for_activity_ids) do
+    activity_constraint = dynamic([s, _], s.activity_id in ^only_for_activity_ids)
 
     from(rs in ResponseSummary,
       join: rpp in ResourcePartResponse,
