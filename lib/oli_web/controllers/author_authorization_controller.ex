@@ -207,7 +207,7 @@ defmodule OliWeb.AuthorAuthorizationController do
 
             if is_invited do
               # Link SSO identity to invited author
-              link_sso_to_invited_author(conn, author, provider, user_params, nil, redirect_to)
+              link_sso_to_invited_author(conn, author, provider, user_params, redirect_to)
             else
               # Author has password, they need to log in with password first
               Logger.warning(
