@@ -400,7 +400,7 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   defp fetch_graded_pages(section) do
-    graded_pages = Sections.fetch_scored_pages(section.slug)
+    graded_pages = Sections.fetch_scored_pages(section.slug, :numbering_index)
     graded_page_ids = Enum.map(graded_pages, & &1.resource_id)
 
     parent_containers_map =
