@@ -456,21 +456,35 @@ defmodule OliWeb.UserAuthorizationController do
     put_session(conn, :pending_section_enrollment, section)
   end
 
-  defp maybe_store_invitation_context(conn, nil), do: conn
+  defp maybe_store_invitation_context(conn, nil) do
+    # Clear stale invitation context when starting a new non-invitation flow
+    delete_session(conn, :from_invitation_link)
+  end
 
   defp maybe_store_invitation_context(conn, "true") do
     put_session(conn, :from_invitation_link, true)
   end
 
-  defp maybe_store_invitation_context(conn, _), do: conn
+  defp maybe_store_invitation_context(conn, _) do
+    delete_session(conn, :from_invitation_link)
+  end
 
-  defp maybe_store_invitation_token(conn, nil), do: conn
+  defp maybe_store_invitation_token(conn, nil) do
+    # Clear stale invitation token when starting a new non-invitation flow
+    conn
+    |> delete_session(:invitation_token)
+    |> delete_session(:validated_invitation_email)
+  end
 
   defp maybe_store_invitation_token(conn, token) when is_binary(token) do
     put_session(conn, :invitation_token, token)
   end
 
-  defp maybe_store_invitation_token(conn, _), do: conn
+  defp maybe_store_invitation_token(conn, _) do
+    conn
+    |> delete_session(:invitation_token)
+    |> delete_session(:validated_invitation_email)
+  end
 
   # Securely retrieve and validate the invitation email from the database
   # This prevents invitation email spoofing attacks by:
