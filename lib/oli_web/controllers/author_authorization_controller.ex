@@ -423,13 +423,18 @@ defmodule OliWeb.AuthorAuthorizationController do
     |> delete_session(:validated_invitation_email)
   end
 
-  defp maybe_store_project_context(conn, nil), do: conn
+  defp maybe_store_project_context(conn, nil) do
+    # Clear stale project context when starting a new non-invitation flow
+    delete_session(conn, :invitation_project_slug)
+  end
 
   defp maybe_store_project_context(conn, project_slug) when is_binary(project_slug) do
     put_session(conn, :invitation_project_slug, project_slug)
   end
 
-  defp maybe_store_project_context(conn, _), do: conn
+  defp maybe_store_project_context(conn, _) do
+    delete_session(conn, :invitation_project_slug)
+  end
 
   # Securely retrieve and validate the invitation email from the database
   # This prevents invitation email spoofing attacks by:

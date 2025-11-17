@@ -401,10 +401,17 @@ defmodule OliWeb.UserAuthorizationController do
 
   defp maybe_store_user_return_to(conn), do: conn
 
-  defp maybe_store_section_context(conn, nil), do: conn
+  defp maybe_store_section_context(conn, nil) do
+    # Clear stale section context when starting a new SSO flow without a section
+    delete_session(conn, :pending_section_enrollment)
+  end
 
   defp maybe_store_section_context(conn, section) when is_binary(section) do
     put_session(conn, :pending_section_enrollment, section)
+  end
+
+  defp maybe_store_section_context(conn, _) do
+    delete_session(conn, :pending_section_enrollment)
   end
 
   defp maybe_store_invitation_context(conn, nil) do
