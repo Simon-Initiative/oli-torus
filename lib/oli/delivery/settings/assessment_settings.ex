@@ -7,7 +7,6 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
   alias Oli.Delivery.Settings.AutoSubmitCustodian
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Delivery.Sections.ContainedPage
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Publishing.DeliveryResolver
@@ -126,6 +125,9 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
   Container labels respect customizations from the section (e.g., "Unidad", "Módulo", "Sección")
   and fall back to defaults ("Unit", "Module", "Section") if not customized.
 
+  Uses `Sections.get_parent_containers_map/2` and `Sections.name_with_container_label/3` for
+  container relationship lookups and display name formatting.
+
   ## Parameters
     - `section` - The section struct containing the section to get assessments for
     - `student_exceptions` - A list of student exception records to calculate exception counts
@@ -156,7 +158,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
 
     # Get parent container info for all pages in a single query
     page_ids = Enum.map(assessments, fn {rev, _sr} -> rev.resource_id end)
-    parent_containers_map = get_parent_containers_map(section.id, page_ids)
+    parent_containers_map = Sections.get_parent_containers_map(section.id, page_ids)
     customizations = section.customizations
 
     assessments
@@ -165,7 +167,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
       parent_container_info = Map.get(parent_containers_map, rev.resource_id)
 
       name_with_container_label =
-        name_with_container_label(
+        Sections.name_with_container_label(
           rev.title,
           parent_container_info,
           customizations
@@ -182,57 +184,6 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
           Enum.count(student_exceptions, fn se -> se.resource_id == rev.resource_id end)
       })
     end)
-  end
-
-  # Gets a map of page_id => parent container info (numbering_level, numbering_index, container_id)
-  # Only includes non-root containers (numbering_level > 0)
-  defp get_parent_containers_map(_section_id, page_ids) when page_ids == [], do: %{}
-  defp get_parent_containers_map(nil, _page_ids), do: %{}
-
-  defp get_parent_containers_map(section_id, page_ids) do
-    from(cp in ContainedPage,
-      join: sr in SectionResource,
-      on: sr.section_id == ^section_id and sr.resource_id == cp.container_id,
-      where:
-        cp.section_id == ^section_id and cp.page_id in ^page_ids and
-          not is_nil(cp.container_id),
-      select: %{
-        page_id: cp.page_id,
-        container_id: cp.container_id,
-        numbering_level: sr.numbering_level,
-        numbering_index: sr.numbering_index
-      }
-    )
-    |> Repo.all()
-    |> Enum.group_by(& &1.page_id)
-    |> Enum.map(fn {page_id, containers} ->
-      # Get the container with the highest numbering_level (most specific parent)
-      parent_container =
-        containers
-        |> Enum.filter(fn c -> c.numbering_level > 0 end)
-        |> Enum.max_by(& &1.numbering_level, fn -> nil end)
-
-      {page_id, parent_container}
-    end)
-    |> Enum.filter(fn {_page_id, container} -> container != nil end)
-    |> Map.new()
-  end
-
-  defp name_with_container_label(page_title, nil, _customizations) do
-    # No parent container (or parent is root), just show page title
-    page_title
-  end
-
-  defp name_with_container_label(page_title, parent_container_info, customizations) do
-    # Parent container exists and is not root, format as: <container_label> <numbering_index>: <page title>
-    container_label_with_numbering =
-      Sections.get_container_label_and_numbering(
-        parent_container_info.numbering_level,
-        parent_container_info.numbering_index,
-        customizations
-      )
-
-    "#{container_label_with_numbering}: #{page_title}"
   end
 
   defp get_user_type(%Author{} = _), do: :author
