@@ -9884,6 +9884,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 100vh;
 }
 
+.max-h-48 {
+  max-height: 12rem;
+}
+
 .max-h-52 {
   max-height: 13rem;
 }
