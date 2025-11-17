@@ -9,9 +9,6 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   import OliWeb.Backgrounds
 
   def mount(%{"token" => token}, session, socket) do
-    # Store token in process dictionary so it can be accessed when building SSO URLs
-    Process.put(:invitation_token, token)
-
     case Accounts.get_user_token_by_enrollment_invitation_token(token) do
       nil ->
         {:ok,
@@ -118,7 +115,9 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           check_errors={@check_errors}
           disabled_inputs={[:email]}
           authentication_providers={@authentication_providers}
-          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @section.slug, @user.email)}
+          auth_provider_path_fn={
+            &build_invitation_auth_provider_path(&1, @section.slug, @user.email, @token)
+          }
         />
       </div>
     </.invite_container>
@@ -140,7 +139,9 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           submit_event="log_in_existing_user"
           disabled_inputs={[:email]}
           authentication_providers={@authentication_providers}
-          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @section.slug, @user.email)}
+          auth_provider_path_fn={
+            &build_invitation_auth_provider_path(&1, @section.slug, @user.email, @token)
+          }
         />
       </div>
 
@@ -341,10 +342,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
     end
   end
 
-  defp build_invitation_auth_provider_path(provider, section_slug, invited_email) do
-    # Get the token from process dictionary
-    token = get_invitation_token()
-
+  defp build_invitation_auth_provider_path(provider, section_slug, invited_email, token) do
     params =
       URI.encode_query([
         {"section", section_slug},
@@ -354,12 +352,5 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
       ])
 
     "#{~p"/users/auth/#{provider}/new"}?#{params}"
-  end
-
-  defp get_invitation_token do
-    case Process.get(:invitation_token) do
-      nil -> ""
-      token -> token
-    end
   end
 end

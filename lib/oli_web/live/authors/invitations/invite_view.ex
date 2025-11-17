@@ -8,9 +8,6 @@ defmodule OliWeb.Authors.Invitations.InviteView do
   import OliWeb.Backgrounds
 
   def mount(%{"token" => token}, session, socket) do
-    # Store token in process dictionary so it can be accessed when building SSO URLs
-    Process.put(:invitation_token, token)
-
     case Accounts.get_author_token_by_author_invitation_token(token) do
       nil ->
         {:ok, assign(socket, author: nil, authentication_providers: [], token: token)}
@@ -89,7 +86,7 @@ defmodule OliWeb.Authors.Invitations.InviteView do
           check_errors={@check_errors}
           disabled_inputs={[:email]}
           authentication_providers={@authentication_providers}
-          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @author.email)}
+          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @author.email, @token)}
         />
       </div>
     </.invite_container>
@@ -111,7 +108,7 @@ defmodule OliWeb.Authors.Invitations.InviteView do
           submit_event="log_in_existing_author"
           disabled_inputs={[:email]}
           authentication_providers={@authentication_providers}
-          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @author.email)}
+          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @author.email, @token)}
         />
       </div>
 
@@ -246,10 +243,7 @@ defmodule OliWeb.Authors.Invitations.InviteView do
     end
   end
 
-  defp build_invitation_auth_provider_path(provider, invited_email) do
-    # Get the token from process dictionary
-    token = get_invitation_token()
-
+  defp build_invitation_auth_provider_path(provider, invited_email, token) do
     params =
       URI.encode_query([
         {"from_invitation_link?", "true"},
@@ -258,12 +252,5 @@ defmodule OliWeb.Authors.Invitations.InviteView do
       ])
 
     "#{~p"/authors/auth/#{provider}/new"}?#{params}"
-  end
-
-  defp get_invitation_token do
-    case Process.get(:invitation_token) do
-      nil -> ""
-      token -> token
-    end
   end
 end
