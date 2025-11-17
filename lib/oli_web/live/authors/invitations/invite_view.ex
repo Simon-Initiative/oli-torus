@@ -244,13 +244,12 @@ defmodule OliWeb.Authors.Invitations.InviteView do
   end
 
   defp build_invitation_auth_provider_path(provider, invited_email, token) do
-    params =
-      URI.encode_query([
-        {"from_invitation_link?", "true"},
-        {"invitation_email", invited_email},
-        {"invitation_token", token}
-      ])
+    params = [
+      from_invitation_link?: "true",
+      invitation_email: invited_email,
+      invitation_token: token
+    ]
 
-    "#{~p"/authors/auth/#{provider}/new"}?#{params}"
+    ~p"/authors/auth/#{provider}/new?#{params}"
   end
 end

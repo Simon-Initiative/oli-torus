@@ -325,14 +325,13 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
   end
 
   defp build_invitation_auth_provider_path(provider, project_slug, invited_email, token) do
-    params =
-      URI.encode_query([
-        {"project", project_slug},
-        {"from_invitation_link?", "true"},
-        {"invitation_email", invited_email},
-        {"invitation_token", token}
-      ])
+    params = [
+      project: project_slug,
+      from_invitation_link?: "true",
+      invitation_email: invited_email,
+      invitation_token: token
+    ]
 
-    "#{~p"/authors/auth/#{provider}/new"}?#{params}"
+    ~p"/authors/auth/#{provider}/new?#{params}"
   end
 end
