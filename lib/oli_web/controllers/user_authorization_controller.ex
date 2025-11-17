@@ -505,10 +505,9 @@ defmodule OliWeb.UserAuthorizationController do
             {:error, :invalid_token}
         end
 
-      # Has section slug but no token - invalid state
+      # Has section slug but no token - regular section SSO login (not from invitation)
       true ->
-        Logger.warning("Invitation context has section_slug but no invitation_token")
-        {:error, :invalid_token}
+        {:ok, conn}
     end
   end
 
