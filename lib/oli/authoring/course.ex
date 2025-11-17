@@ -87,8 +87,29 @@ defmodule Oli.Authoring.Course do
     |> Repo.all()
   end
 
+  @doc """
+  Retrieves all projects accessible to the given author.
+
+  Admin authors (system admins, account admins, or content admins) receive all projects in the system.
+  Regular authors only receive projects they are explicitly associated with.
+
+  ## Parameters
+    - author: An Author struct representing the user
+
+  ## Returns
+    - A list of Project structs
+
+  ## Examples
+
+      iex> get_projects_for_author(admin_author)
+      [%Project{}, %Project{}, ...]
+
+      iex> get_projects_for_author(regular_author)
+      [%Project{id: 1}, %Project{id: 2}]  # Only projects assigned to this author
+  """
+  @spec get_projects_for_author(Author.t()) :: [Project.t()]
   def get_projects_for_author(author) do
-    if Accounts.has_admin_role?(author, :content_admin),
+    if Accounts.at_least_content_admin?(author),
       do: Repo.all(Project),
       else: Repo.preload(author, [:projects]).projects
   end
@@ -104,7 +125,7 @@ defmodule Oli.Authoring.Course do
     text_search = Keyword.get(opts, :text_search, "")
     filters = Keyword.get(opts, :filters, %{})
 
-    if Accounts.has_admin_role?(author, :content_admin) and admin_show_all,
+    if Accounts.at_least_content_admin?(author) and admin_show_all,
       do: browse_projects_as_admin(paging, sorting, include_deleted, text_search, filters),
       else:
         browse_projects_as_author(author, paging, sorting, include_deleted, text_search, filters)
