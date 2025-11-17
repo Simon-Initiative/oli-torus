@@ -148,8 +148,8 @@ Dependencies: Requires Phases 2 and 3 merged to avoid dead code; telemetry work 
 - All phases include automated test additions with explicit commands.
 - Non-functional requirements traced back to guardrails with validation steps.
 - Clarifications either resolved or documented for the implementer to confirm.
----
 
+---
 
 ## Current Status (2025-11-04)
 
@@ -157,3 +157,40 @@ Dependencies: Requires Phases 2 and 3 merged to avoid dead code; telemetry work 
 - The page editor slug-change redirect only targets the workspace prefix, preventing attempts to reload retired authoring URLs.
 - `mix clean && mix compile` completes without warnings and targeted suites (`test/oli_web/live/products_test.exs`, `test/oli_web/live/workspaces/course_author/products_live_test.exs`, `test/oli_web/live/payments_live_test.exs`, `test/oli_web/live/workspaces/course_author/overview_live_test.exs`, `test/oli_web/live/workspaces/course_author/curriculum_live_import_test.exs`) pass to cover products, payments, projects, and imports.
 - CertificatesIssuedTab download fallbacks, granted certificates controller flows, and admin products regression suites remain green from prior validation; continue to monitor for downstream spec updates.
+
+---
+
+## Code Review Comments for MER-4687: Admin UX - Update Workspace Layout
+
+- [ ] Use 'resource' instead of 'curriculum' in resource routes. e.g. change
+      `/workspaces/course_author/${projectSlug}/curriculum/${resourceSlug}/edit` to
+      `/workspaces/course_author/${projectSlug}/resource/${resourceSlug}/edit`
+
+- [ ] We dont need to track telemetry for curriculum routes. Update the implementation accordingly and remove lib/oli/telemetry/admin_workspace.ex. Remove this requirement from fdd.md and all
+      other relevant documents. i.e.
+
+```
+  ## 11. Observability
+
+- Telemetry events: `[:oli, :admin_workspace, :nav_click]` with metadata `{user_id, institution_id, from, to, route_type}`; `[:oli, :admin_workspace, :breadcrumb_use]` when breadcrumbs are followed.
+- Structured logs: `info` log on layout mount with `%{workspace: :admin, module: socket.view}`.
+- AppSignal dashboards updated to chart nav click counts, latency, and error ratio; alert when nav
+  click error ratio exceeds 0.5 % or latency breaches SLOs.
+```
+
+- [ ] Product (and maybe project?) sidebar menu appearance is broken. The Product title is rendered
+      behind other toolbar elements
+
+- [ ] assigning assigns in the workspace.html.heex seems like an anti-pattern. Consider refactoring to
+      avoid. e.g.
+
+  <% assigns =
+  assigns
+  |> Map.put_new(:preview_mode, false)
+  |> Map.put_new(:sidebar_expanded, true)
+  |> Map.put_new(:disable_sidebar?, false)
+  |> Map.put_new(:footer_enabled?, true)
+  |> Map.put_new(:is_admin, false)
+  |> Map.put_new(:active_workspace, nil) %>
+
+  -
