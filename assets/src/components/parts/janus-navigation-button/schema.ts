@@ -93,10 +93,11 @@ export const adaptivitySchema = {
 export const createSchema = (): Partial<NavButtonModel> => ({
   enabled: true,
   visible: true,
-  textColor: '#000',
+  textColor: 'rgba(255,255,255,1)',
+  buttonColor: 'rgba(5,106,139,1)',
   transparent: false,
   width: 100,
-  height: 30,
+  height: 44,
   title: 'Nav Button',
   ariaLabel: 'Nav Button',
   imageSource: '',

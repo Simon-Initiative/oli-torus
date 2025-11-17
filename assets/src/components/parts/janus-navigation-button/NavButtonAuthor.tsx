@@ -85,6 +85,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
             style={{
               height: isVertical && title ? '60%' : '100%',
               width: title ? '50%' : '100%',
+              padding: '10px 20px',
             }}
           />
         )}
