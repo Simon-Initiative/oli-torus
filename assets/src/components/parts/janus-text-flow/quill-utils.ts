@@ -26,10 +26,10 @@ const convertFontName = (fontCode: string) => {
     .join(' ');
   return result;
 };
-const maxmimumFontSizeAvailableForSelection = 20;
+const maxmimumFontSizeAvailableForSelection = 32;
 const convertFontSize = (fontSize: string, conversionType: 'px' | 'rem'): string => {
   const numericValue = parseFloat(fontSize);
-  // With the new REM-based font size rendering, the selectable font sizes range from 12px to 20px.
+  // With the new REM-based font size rendering, the selectable font sizes now range from 14px to 32px.
   // Font sizes above this range are not converted, as they belong to existing migrated lessons that should remain unaffected by these changes.
   if (
     typeof fontSize !== 'string' ||
