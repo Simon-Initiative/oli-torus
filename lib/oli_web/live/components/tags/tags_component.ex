@@ -311,9 +311,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     """
   end
 
-  # Private functions
-
-  defp get_tag_pill_classes(tag_name) do
+  def get_tag_pill_classes(tag_name) do
     color_combinations = [
       "bg-Fill-Accent-fill-accent-purple text-Text-text-accent-purple",
       "bg-Fill-Accent-fill-accent-blue text-Text-text-accent-blue",
@@ -325,6 +323,8 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     hash = :erlang.phash2(tag_name, 4)
     "#{Enum.at(color_combinations, hash)} shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
   end
+
+  # Private functions
 
   defp load_available_tags(socket, search \\ "") do
     try do

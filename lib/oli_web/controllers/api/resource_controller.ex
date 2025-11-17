@@ -6,6 +6,7 @@ defmodule OliWeb.Api.ResourceController do
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
+  alias Oli.Resources.Numbering
 
   def index(conn, %{"project" => project_slug}) do
     case Course.get_project_by_slug(project_slug) do
@@ -13,13 +14,28 @@ defmodule OliWeb.Api.ResourceController do
         error(conn, 404, "not found")
 
       project ->
+        pages = AuthoringResolver.all_pages(project.slug)
+
+        # Note: We need to compute numbering separately because:
+        # 1. `all_pages` returns a flat list of page revisions without hierarchy context or ordering
+        # 2. In authoring context, numbering is computed JIT (Just In Time) rather than stored,
+        #    because the course hierarchy can change frequently during active development
+        numberings =
+          Numbering.number_full_tree(
+            AuthoringResolver,
+            project.slug,
+            project.customizations
+          )
+
         pages =
-          AuthoringResolver.all_pages(project.slug)
-          |> Enum.map(fn r ->
+          Enum.map(pages, fn r ->
+            numbering = Map.get(numberings, r.id)
+
             %{
               id: r.resource_id,
               slug: r.slug,
-              title: r.title
+              title: r.title,
+              numbering_index: numbering && numbering.index
             }
           end)
 

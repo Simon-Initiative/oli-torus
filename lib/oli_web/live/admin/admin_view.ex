@@ -122,6 +122,9 @@ defmodule OliWeb.Admin.AdminView do
         >
           <ul class="link-list">
             <li>
+              <a href={~p"/admin/canary_rollouts"}>Incremental Feature Rollout</a>
+            </li>
+            <li>
               <a href={~p"/admin/manage_activities"}>Manage Activities</a>
             </li>
             <li>

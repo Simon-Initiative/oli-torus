@@ -23,10 +23,11 @@ defmodule OliWeb.UserSessionController do
     %{"email" => email, "password" => password} = user_params
 
     user_params =
-      if Map.get(params, "request_path") do
-        Map.put(user_params, "request_path", Map.get(params, "request_path"))
+      with request_path when not is_nil(request_path) <- Map.get(params, "request_path"),
+           validated_path when not is_nil(validated_path) <- build_redirect_path(request_path) do
+        Map.put(user_params, "request_path", validated_path)
       else
-        user_params
+        _ -> user_params
       end
 
     if user = Accounts.get_independent_user_by_email_and_password(email, password) do
@@ -66,24 +67,6 @@ defmodule OliWeb.UserSessionController do
     |> UserAuth.log_out_user(%{"redirect_to" => redirect_to})
   end
 
-  defp build_redirect_path(request_path) when is_binary(request_path) do
-    request_path
-    |> String.trim()
-    |> case do
-      "" ->
-        nil
-
-      "/" <> _ = value ->
-        if String.starts_with?(value, "//") do
-          nil
-        else
-          value
-        end
-
-      _ ->
-        nil
-    end
-  end
-
+  defp build_redirect_path("/" <> <<c, _::binary>> = path) when c != ?/, do: path
   defp build_redirect_path(_), do: nil
 end

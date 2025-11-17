@@ -43,7 +43,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          :lti_1p3_deployment,
          :customizations,
          :open_and_free,
-         :root_section_resource_id
+         :root_section_resource_id,
+         :assistant_enabled
        ], %Sections.Section{}},
     current_user: {[:id, :name, :email, :sub], %User{}}
   }
@@ -55,24 +56,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
-      thin_hierarchy =
-        socket.assigns.section
-        |> SectionResourceDepot.get_full_hierarchy(hidden: false)
-        |> Hierarchy.thin_hierarchy(
-          [
-            "id",
-            "slug",
-            "title",
-            "numbering",
-            "resource_id",
-            "resource_type_id",
-            "children",
-            "graded",
-            "section_resource"
-          ],
-          # only include units, modules, sections or pages until level 3
-          fn node -> node["numbering"]["level"] <= 3 end
-        )
+      thin_hierarchy = get_thin_hierarchy(socket.assigns.section)
 
       %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
       is_instructor = Sections.has_instructor_role?(current_user, section.slug)
@@ -217,11 +201,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     if connected?(socket) do
       send(self(), :gc)
 
+      %{page_context: page_context} = socket.assigns
+
+      # Check if attempt has expired and should be finalized
+      attempt_expired_auto_submit = check_attempt_expired_auto_submit(page_context)
+
       socket =
         socket
         |> emit_page_viewed_event()
         |> assign_scripts()
         |> slim_assigns()
+        |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
 
       authoring_scripts =
         Enum.map(socket.assigns.activity_types, fn at -> at.authoring_script end)
@@ -240,6 +230,44 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       # These temp assigns were disabled in MER-3672
       #  , temporary_assigns: [scripts: [], page_context: %{}]}
+    else
+      {:ok, socket}
+    end
+  end
+
+  def mount(
+        params,
+        _session,
+        %{assigns: %{view: :adaptive_with_chrome}} = socket
+      ) do
+    if connected?(socket) do
+      send(self(), :gc)
+      %{page_context: page_context} = socket.assigns
+      is_graded = page_context.page.graded
+
+      # Check if attempt has expired and should be finalized
+      attempt_expired_auto_submit = check_attempt_expired_auto_submit(page_context)
+
+      socket =
+        socket
+        |> emit_page_viewed_event()
+        |> assign_scripts()
+        |> assign(is_graded: is_graded)
+        |> maybe_sidebar_panel_assigns(params, is_graded)
+        |> slim_assigns()
+        |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
+
+      script_sources =
+        Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
+
+      if is_graded do
+        {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources})}
+      else
+        thin_hierarchy = get_thin_hierarchy(socket.assigns.section)
+
+        {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources}),
+         temporary_assigns: [hierarchy: thin_hierarchy]}
+      end
     else
       {:ok, socket}
     end
@@ -495,9 +523,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          update_post_replies(socket, parent_post_id, nil, fn replies ->
            Enum.map(
              replies,
-             fn post ->
+             fn %Collaboration.Post{} = post ->
                if post.id == post_id do
-                 %{
+                 %Collaboration.Post{
                    post
                    | reaction_summaries: update_reaction_summaries(post, reaction, change)
                  }
@@ -531,9 +559,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
            posts:
              Enum.map(
                posts,
-               fn post ->
+               fn %Collaboration.Post{} = post ->
                  if post.id == post_id do
-                   %{
+                   %Collaboration.Post{
                      post
                      | reaction_summaries: update_reaction_summaries(post, reaction, change)
                    }
@@ -598,7 +626,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
            attrs,
            require_certification_check
          ) do
-      {:ok, post} ->
+      {:ok, %Collaboration.Post{} = post} ->
         {:noreply,
          socket
          |> put_flash(:info, "Reply successfully created")
@@ -886,15 +914,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     </div>
 
     <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
-      <:header>
-        <.page_header
-          page_context={@page_context}
-          ctx={@ctx}
-          index={@current_page["index"]}
-          objectives={@objectives}
-          container_label={Utils.get_container_label(@current_page["id"], @section)}
-        />
-      </:header>
+      <.page_header
+        page_context={@page_context}
+        ctx={@ctx}
+        index={@current_page["index"]}
+        objectives={@objectives}
+        container_label={Utils.get_container_label(@current_page["id"], @section)}
+      />
 
       <div
         id="page_content"
@@ -972,15 +998,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </div>
     </div>
     <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
-      <:header>
-        <.page_header
-          page_context={@page_context}
-          ctx={@ctx}
-          objectives={@objectives}
-          index={@current_page["index"]}
-          container_label={Utils.get_container_label(@current_page["id"], @section)}
-        />
-      </:header>
+      <.page_header
+        page_context={@page_context}
+        ctx={@ctx}
+        objectives={@objectives}
+        index={@current_page["index"]}
+        container_label={Utils.get_container_label(@current_page["id"], @section)}
+      />
 
       <div id="page_content" class="content" phx-update="ignore" role="page content">
         {raw(@html)}
@@ -1102,6 +1126,194 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </div>
 
       {OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets})}
+    </div>
+    """
+  end
+
+  # Display only sidebar panel when it is a practice page
+  def render(%{view: :adaptive_with_chrome, is_graded: false} = assigns) do
+    iframe_url =
+      Routes.page_delivery_path(
+        OliWeb.Endpoint,
+        :page_fullscreen,
+        assigns.section.slug,
+        assigns.page_context.page.slug
+      )
+
+    assigns = assign(assigns, iframe_url: iframe_url)
+
+    ~H"""
+    <style>
+      #adaptive_with_chrome_container {
+        overflow: auto;
+      }
+
+      #adaptive_content_iframe {
+        display: block;
+        width: 85%;
+        height: calc(100vh - 180px);
+        min-height: 600px;
+        border: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: white;
+      }
+
+      .fullscreen-container {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 1000 !important;
+      }
+
+      .fullscreen-iframe {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        z-index: 1000 !important;
+      }
+    </style>
+    <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
+      <div class="sticky ml-auto top-20 right-0">
+        <div class={[
+          "absolute top-24",
+          if(@active_sidebar_panel == :outline, do: "right-[380px]", else: "right-0")
+        ]}>
+          <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
+            <div class={[
+              "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
+              if(@active_sidebar_panel,
+                do: "rounded-t-xl rounded-b-xl",
+                else: "rounded-tl-xl rounded-bl-xl"
+              )
+            ]}>
+              <OutlineComponent.toggle_outline_button is_active={@active_sidebar_panel == :outline}>
+                <OutlineComponent.outline_icon />
+              </OutlineComponent.toggle_outline_button>
+            </div>
+          </div>
+        </div>
+
+        <.live_component
+          :if={@active_sidebar_panel == :outline}
+          module={OutlineComponent}
+          id="outline_component"
+          hierarchy={@hierarchy}
+          section_slug={@section.slug}
+          section_id={@section.id}
+          user_id={@current_user.id}
+          page_resource_id={@page_resource_id}
+          selected_view={@selected_view}
+        />
+      </div>
+    </div>
+
+    <div class="flex-1 flex flex-col w-full">
+      <div class={[
+        "flex-1 flex flex-col overflow-auto",
+        if(@active_sidebar_panel == :notes, do: "xl:mr-[550px]"),
+        if(@active_sidebar_panel == :outline, do: "xl:mr-[360px]")
+      ]}>
+        <div class={[
+          "flex-1 px-[80px] relative",
+          if(@active_sidebar_panel == :notes, do: "xl:mr-[80px]")
+        ]}>
+          <div
+            class="flex justify-center items-start self-start w-full"
+            id="adaptive_with_chrome_container"
+          >
+            <iframe
+              id="adaptive_content_iframe"
+              src={@iframe_url}
+              allow="autoplay; fullscreen"
+              frameborder="0"
+              marginheight="0"
+              marginwidth="0"
+              scrolling="auto"
+            >
+            </iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def render(%{view: :adaptive_with_chrome} = assigns) do
+    iframe_url =
+      Routes.page_delivery_path(
+        OliWeb.Endpoint,
+        :page_fullscreen,
+        assigns.section.slug,
+        assigns.page_context.page.slug
+      )
+
+    assigns = assign(assigns, iframe_url: iframe_url)
+
+    ~H"""
+    <style>
+      #adaptive_with_chrome_container {
+        overflow: auto;
+      }
+
+      #adaptive_content_iframe {
+        display: block;
+        width: 80%;
+        height: calc(100vh - 180px);
+        min-height: 600px;
+        border: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: white;
+      }
+
+      .fullscreen-container {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 1000 !important;
+      }
+
+      .fullscreen-iframe {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        z-index: 1000 !important;
+      }
+    </style>
+
+    <div
+      class="flex justify-center items-start self-start w-full"
+      id="adaptive_with_chrome_container"
+    >
+      <iframe
+        id="adaptive_content_iframe"
+        src={@iframe_url}
+        allow="autoplay; fullscreen"
+        frameborder="0"
+        marginheight="0"
+        marginwidth="0"
+        scrolling="auto"
+      >
+      </iframe>
     </div>
     """
   end
@@ -1228,7 +1440,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   attr :show_sidebar, :boolean, default: false
   attr :active_sidebar_panel, :atom, default: nil
-  slot :header, required: true
   slot :inner_block, required: true
   slot :point_markers
 
@@ -1247,8 +1458,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           )
         ]}>
           <div class="container mx-auto max-w-[880px] pb-20">
-            {render_slot(@header)}
-
             {render_slot(@inner_block)}
           </div>
 
@@ -1496,7 +1705,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                     load_replies_for_post_id
                   )
 
-                Enum.map(posts, fn post ->
+                Enum.map(posts, fn %Collaboration.Post{} = post ->
                   if post.id == load_replies_for_post_id do
                     %Collaboration.Post{post | replies: post_replies}
                   else
@@ -1562,7 +1771,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp visibility_for_active_tab(:my_notes, _is_instructor), do: :private
   defp visibility_for_active_tab(_, _is_instructor), do: :private
 
-  defp optimistically_add_post(socket, selected_point, post) do
+  defp optimistically_add_post(socket, selected_point, %Collaboration.Post{} = post) do
     %{posts: posts, post_counts: post_counts} = socket.assigns.annotations
 
     socket
@@ -1579,7 +1788,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     socket
     |> assign_annotations(
       posts:
-        Annotations.find_and_update_post(posts, parent_post_id, fn post ->
+        Annotations.find_and_update_post(posts, parent_post_id, fn %Collaboration.Post{} = post ->
           if post.id == parent_post_id do
             %Collaboration.Post{
               post
@@ -1615,7 +1824,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     socket
     |> assign_annotations(
       posts:
-        Annotations.find_and_update_post(posts, post_id, fn post ->
+        Annotations.find_and_update_post(posts, post_id, fn %Collaboration.Post{} = post ->
           %Collaboration.Post{post | status: :deleted}
         end)
     )
@@ -1765,6 +1974,34 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     |> Kernel.*(1000)
   end
 
+  defp check_attempt_expired_auto_submit(page_context) do
+    if page_context.page.graded && length(page_context.resource_attempts) > 0 do
+      resource_attempt = hd(page_context.resource_attempts)
+
+      effective_end_time =
+        Settings.determine_effective_deadline(
+          resource_attempt,
+          page_context.effective_settings
+        )
+        |> to_epoch()
+
+      late_submit_disallowed = page_context.effective_settings.late_submit == :disallow
+      now = DateTime.utc_now() |> to_epoch
+
+      with true <- !is_nil(effective_end_time),
+           true <- now > effective_end_time,
+           true <- late_submit_disallowed,
+           false <- page_context.review_mode do
+        true
+      else
+        _ ->
+          false
+      end
+    else
+      false
+    end
+  end
+
   defp get_selected_view(params) do
     case params["selected_view"] do
       nil -> @default_selected_view
@@ -1789,4 +2026,46 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         :ok
     end
   end
+
+  defp get_thin_hierarchy(section) do
+    section
+    |> SectionResourceDepot.get_full_hierarchy(hidden: false)
+    |> Hierarchy.thin_hierarchy(
+      [
+        "id",
+        "slug",
+        "title",
+        "numbering",
+        "resource_id",
+        "resource_type_id",
+        "children",
+        "graded",
+        "section_resource"
+      ],
+      # only include units, modules, sections or pages until level 3
+      fn node -> node["numbering"]["level"] <= 3 end
+    )
+  end
+
+  defp maybe_sidebar_panel_assigns(socket, params, false = _is_graded) do
+    %{current_user: current_user, page_context: page_context} = socket.assigns
+
+    assign(
+      socket,
+      active_sidebar_panel:
+        if(
+          Accounts.get_user_preference(
+            current_user.id,
+            :page_outline_panel_active?,
+            false
+          ),
+          do: :outline,
+          else: nil
+        ),
+      selected_view: get_selected_view(params),
+      page_resource_id: page_context.page.resource_id
+    )
+  end
+
+  defp maybe_sidebar_panel_assigns(socket, _, _), do: socket
 end

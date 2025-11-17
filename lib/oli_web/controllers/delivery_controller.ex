@@ -14,12 +14,14 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.UserAuth
-  alias OliWeb.Common.Params
+  alias OliWeb.Common.{Params, FormatDateTime}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
   alias OliWeb.DeliveryWeb
   alias OliWeb.Delivery.Student.Utils
+  alias Timex
 
   require Logger
+  @learner_role_id ContextRoles.get_role(:context_learner).id
 
   @doc """
   This is the default entry point for delivery users. It will redirect to the appropriate page based
@@ -32,6 +34,8 @@ defmodule OliWeb.DeliveryController do
   dashboard. If they are not allowed to configure the section, the student will be redirected to the
   page delivery.
   """
+  @suspended_message "Your access to this course has been suspended. Please contact your instructor."
+
   def index(conn, _params) do
     conn
     |> DeliveryWeb.redirect_user()
@@ -108,7 +112,7 @@ defmodule OliWeb.DeliveryController do
 
     with {:available, section} <- Sections.available?(section),
          {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, create_guest),
-         {:enrolled?, false} <- {:enrolled?, Sections.is_enrolled?(user.id, section.slug)} do
+         {:not_enrolled, nil} <- fetch_enrollment(section.slug, user.id) do
       render(conn, "enroll.html",
         section: Oli.Repo.preload(section, [:base_project]),
         from_invitation_link?: from_invitation_link?,
@@ -126,8 +130,13 @@ defmodule OliWeb.DeliveryController do
         )
 
       # redirect to course index if user is already signed in and enrolled
-      {:enrolled?, true} ->
+      {:enrolled, _} ->
         redirect(conn, to: ~p"/sections/#{section.slug}")
+
+      {:suspended, _} ->
+        conn
+        |> put_flash(:error, @suspended_message)
+        |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")
 
       # guest user cannot access courses that require enrollment
       {:redirect, nil} ->
@@ -246,6 +255,14 @@ defmodule OliWeb.DeliveryController do
     |> halt()
   end
 
+  defp fetch_enrollment(section_slug, user_id) do
+    case Sections.get_enrollment(section_slug, user_id, filter_by_status: false) do
+      %_{status: :enrolled} = enrollment -> {:enrolled, enrollment}
+      %_{status: :suspended} = enrollment -> {:suspended, enrollment}
+      _ -> {:not_enrolled, nil}
+    end
+  end
+
   def download_course_content_info(conn, %{"section_slug" => slug} = params) do
     case Oli.Delivery.Sections.get_section_by_slug(slug) do
       nil ->
@@ -308,35 +325,59 @@ defmodule OliWeb.DeliveryController do
       section ->
         students = Helpers.get_students(section, :context_learner)
 
+        base_headers = [
+          name: "Name",
+          email: "Email",
+          lms_id: "LMS ID",
+          last_interaction: "Last Interaction",
+          progress: "Progress (Pct)",
+          overall_proficiency: "Proficiency",
+          requires_payment: "Requires Payment",
+          status: "Status"
+        ]
+
+        headers =
+          if section.certificate_enabled,
+            do: base_headers ++ [certificate_status: "Certificate Status"],
+            else: base_headers
+
         contents =
           Enum.map(
             students,
-            &%{
-              status: Utils.parse_enrollment_status(&1.enrollment_status),
-              name: OliWeb.Common.Utils.name(&1),
-              email: &1.email,
-              lms_id: &1.sub,
-              last_interaction: &1.last_interaction,
-              progress: convert_to_percentage(&1),
-              overall_proficiency: &1.overall_proficiency,
-              requires_payment: Map.get(&1, :requires_payment, "N/A")
-            }
+            fn student ->
+              base_map = %{
+                name: OliWeb.Common.Utils.name(student),
+                email: student.email,
+                lms_id: student.sub,
+                last_interaction: student.last_interaction,
+                progress: convert_to_percentage(student),
+                overall_proficiency: student.overall_proficiency,
+                requires_payment: Map.get(student, :requires_payment, "N/A"),
+                status: Utils.parse_enrollment_status(student.enrollment_status)
+              }
+
+              if section.certificate_enabled,
+                do:
+                  Map.put(
+                    base_map,
+                    :certificate_status,
+                    Utils.parse_certificate_status(
+                      case Map.get(student, :certificate) do
+                        nil -> nil
+                        cert -> cert.state
+                      end
+                    )
+                  ),
+                else: base_map
+            end
           )
           |> sort_data()
           |> DataTable.new()
-          |> DataTable.headers(
-            status: "Status",
-            name: "Name",
-            email: "Email",
-            lms_id: "LMS ID",
-            last_interaction: "Last Interaction",
-            progress: "Progress (Pct)",
-            overall_proficiency: "Proficiency",
-            requires_payment: "Requires Payment"
-          )
+          |> DataTable.headers(headers)
           |> DataTable.to_csv_content()
 
         conn
+        |> put_resp_header("content-type", "text/csv")
         |> send_download({:binary, contents},
           filename: "#{slug}_students.csv"
         )
@@ -379,9 +420,48 @@ defmodule OliWeb.DeliveryController do
           |> DataTable.to_csv_content()
 
         conn
+        |> put_resp_header("content-type", "text/csv")
         |> send_download({:binary, contents},
           filename: "#{slug}_learning_objectives.csv"
         )
+    end
+  end
+
+  def download_scored_pages(conn, %{"section_slug" => slug}) do
+    case Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn,
+          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+        )
+
+      section ->
+        students = instructor_dashboard_students(section.slug)
+
+        pages =
+          Helpers.get_assessments(section, students)
+          |> Helpers.load_metrics(section, students)
+
+        conn
+        |> send_pages_csv(section, pages, :scored)
+    end
+  end
+
+  def download_practice_pages(conn, %{"section_slug" => slug}) do
+    case Sections.get_section_by_slug(slug) do
+      nil ->
+        Phoenix.Controller.redirect(conn,
+          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+        )
+
+      section ->
+        students = instructor_dashboard_students(section.slug)
+
+        pages =
+          Helpers.get_practice_pages(section, students)
+          |> Helpers.load_metrics(section, students)
+
+        conn
+        |> send_pages_csv(section, pages, :practice)
     end
   end
 
@@ -513,6 +593,101 @@ defmodule OliWeb.DeliveryController do
           filename: "progress__#{slug}__#{generate_title(title)}.csv"
         )
     end
+  end
+
+  defp send_pages_csv(conn, section, pages, type) do
+    include_due_date = type == :scored
+
+    contents =
+      pages
+      |> build_pages_csv_rows(section, include_due_date: include_due_date)
+      |> DataTable.new()
+      |> DataTable.headers(pages_headers(include_due_date))
+      |> DataTable.to_csv_content()
+
+    filename =
+      case type do
+        :scored -> "#{section.slug}_scored_pages.csv"
+        :practice -> "#{section.slug}_practice_pages.csv"
+      end
+
+    conn
+    |> send_download({:binary, contents}, filename: filename)
+  end
+
+  defp pages_headers(include_due_date) do
+    base_headers = [
+      order: "#",
+      page_title: "Page Title",
+      avg_score: "Avg Score",
+      total_attempts: "Total Attempts",
+      student_progress: "Student Progress"
+    ]
+
+    if include_due_date,
+      do: List.insert_at(base_headers, 2, {:due_date, "Due Date"}),
+      else: base_headers
+  end
+
+  defp build_pages_csv_rows(pages, section, opts) do
+    include_due_date = Keyword.get(opts, :include_due_date, false)
+
+    Enum.map(pages, fn page ->
+      base_row = %{
+        order: page.order,
+        page_title: format_page_title_for_csv(page),
+        avg_score: format_percentage_value(page.avg_score),
+        total_attempts: format_total_attempts(page.total_attempts),
+        student_progress: format_percentage_value(page.students_completion)
+      }
+
+      if include_due_date,
+        do: Map.put(base_row, :due_date, format_due_date_for_csv(page, section)),
+        else: base_row
+    end)
+  end
+
+  defp format_page_title_for_csv(%{container_label: nil, title: title}), do: title
+
+  defp format_page_title_for_csv(%{container_label: container, title: title})
+       when container in [nil, ""] do
+    title
+  end
+
+  defp format_page_title_for_csv(%{container_label: container, title: title}),
+    do: "#{container} - #{title}"
+
+  defp format_percentage_value(nil), do: "-"
+
+  defp format_percentage_value(value) when is_float(value) or is_integer(value) do
+    value =
+      if value <= 1, do: value * 100, else: value
+
+    "#{Utils.parse_score(value)}%"
+  end
+
+  defp format_total_attempts(nil), do: "-"
+  defp format_total_attempts(value), do: value
+
+  defp format_due_date_for_csv(%{scheduling_type: :due_by, end_date: nil}, _section),
+    do: "No due date"
+
+  defp format_due_date_for_csv(%{scheduling_type: :due_by, end_date: datetime}, section) do
+    timezone = section.timezone || FormatDateTime.default_timezone()
+
+    datetime
+    |> FormatDateTime.convert_datetime(timezone)
+    |> case do
+      nil -> "No due date"
+      shifted -> Timex.format!(shifted, "{Mshort}. {0D}, {YYYY} - {h12}:{m} {AM}")
+    end
+  end
+
+  defp format_due_date_for_csv(_, _), do: "No due date"
+
+  defp instructor_dashboard_students(section_slug) do
+    Sections.enrolled_students(section_slug)
+    |> Enum.reject(&(&1.user_role_id != @learner_role_id))
   end
 
   def generate_title(title) when is_binary(title) do

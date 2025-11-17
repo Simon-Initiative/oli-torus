@@ -47,5 +47,6 @@ defmodule Oli.ScopedFeatureFlags.DefinedFeatures do
     deffeature(:another_feature, [:both], "Another test feature")
     deffeature(:m_feature, [:both], "M test feature for ordering tests")
     deffeature(:test_delivery_feature, [:delivery], "Test feature for delivery scope only")
+    deffeature(:canary_test_feature, [:both], "Canary test feature", rollout_mode: :canary)
   end
 end

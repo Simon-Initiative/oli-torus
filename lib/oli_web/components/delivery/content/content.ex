@@ -27,6 +27,14 @@ defmodule OliWeb.Components.Delivery.Content do
     selected_proficiency_ids: Jason.encode!([])
   }
 
+  @reset_filter_params %{
+    text_search: @default_params.text_search,
+    selected_card_value: @default_params.selected_card_value,
+    progress_percentage: @default_params.progress_percentage,
+    progress_selector: @default_params.progress_selector,
+    selected_proficiency_ids: @default_params.selected_proficiency_ids
+  }
+
   @proficiency_options [
     %{id: 1, name: "Low", selected: false},
     %{id: 2, name: "Medium", selected: false},
@@ -232,6 +240,7 @@ defmodule OliWeb.Components.Delivery.Content do
           page_change={JS.push("paged_table_page_change", target: @myself)}
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
+          sticky_header_offset={if @patch_url_type == :instructor_dashboard, do: 56, else: 0}
         />
       </div>
     </div>
@@ -280,28 +289,19 @@ defmodule OliWeb.Components.Delivery.Content do
   end
 
   def handle_event("clear_all_filters", _params, socket) do
-    section_slug = socket.assigns.section_slug
-    path = ~p"/sections/#{section_slug}/instructor_dashboard/insights/content"
-
-    {:noreply, push_patch(socket, to: path)}
+    {:noreply,
+     push_patch(socket,
+       to: route_for(socket, @reset_filter_params, socket.assigns.patch_url_type)
+     )}
   end
 
   def handle_event("filter_container", %{"filter" => filter}, socket) do
-    socket =
-      update(socket, :params, fn params ->
-        %{params | progress_percentage: 100, progress_selector: nil}
-      end)
-
     {:noreply,
      push_patch(socket,
        to:
          route_for(
            socket,
-           %{
-             container_filter_by: filter,
-             text_search: @default_params.text_search,
-             selected_card_value: @default_params.selected_card_value
-           },
+           Map.merge(@reset_filter_params, %{container_filter_by: filter}),
            socket.assigns.patch_url_type
          )
      )}

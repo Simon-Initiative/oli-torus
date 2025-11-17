@@ -3,10 +3,10 @@ kind: Ingress
 metadata:
   name: minio-api
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: $(PREVIEW_SLUG)-minio-api-strip@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: placeholder-minio-api-strip@kubernetescrd
 spec:
   rules:
-    - host: $(PREVIEW_SLUG).$(PREVIEW_DOMAIN)
+    - host: placeholder-host
       http:
         paths:
           - path: /buckets

@@ -78,6 +78,16 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     end
   end
 
+  defmacro safe_div_fragment(numerator, denominator) do
+    quote do
+      fragment(
+        "?::float8 / NULLIF(?::float8, 0::float8)",
+        unquote(numerator),
+        unquote(denominator)
+      )
+    end
+  end
+
   defp add_select(query, total_count, %BrowseInsightsOptions{section_ids: section_ids}) do
     {alpha, beta, gamma} = get_relative_difficulty_parameters()
 
@@ -97,16 +107,16 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           pr_resource: pr.resource_id,
           num_attempts: s.num_attempts,
           num_first_attempts: s.num_first_attempts,
-          eventually_correct: fragment("?::float8 / ?::float8", s.num_correct, s.num_attempts),
+          eventually_correct: safe_div_fragment(s.num_correct, s.num_attempts),
           first_attempt_correct:
-            fragment("?::float8 / ?::float8", s.num_first_attempts_correct, s.num_first_attempts),
+            safe_div_fragment(s.num_first_attempts_correct, s.num_first_attempts),
           relative_difficulty:
             fragment(
               "?::float8 * (1.0 - ?::float8) + ?::float8 * (1.0 - ?::float8) + ?::float8 * ?::float8",
               ^alpha,
-              s.num_first_attempts_correct / s.num_first_attempts,
+              safe_div_fragment(s.num_first_attempts_correct, s.num_first_attempts),
               ^beta,
-              s.num_correct / s.num_attempts,
+              safe_div_fragment(s.num_correct, s.num_attempts),
               ^gamma,
               s.num_hints
             )
@@ -132,21 +142,16 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           activity_type_id: rev.activity_type_id,
           num_attempts: sum(s.num_attempts),
           num_first_attempts: sum(s.num_first_attempts),
-          eventually_correct:
-            fragment("?::float8 / ?::float8", sum(s.num_correct), sum(s.num_attempts)),
+          eventually_correct: safe_div_fragment(sum(s.num_correct), sum(s.num_attempts)),
           first_attempt_correct:
-            fragment(
-              "?::float8 / ?::float8",
-              sum(s.num_first_attempts_correct),
-              sum(s.num_first_attempts)
-            ),
+            safe_div_fragment(sum(s.num_first_attempts_correct), sum(s.num_first_attempts)),
           relative_difficulty:
             fragment(
               "?::float8 * (1.0 - (?::float8)) + ?::float8 * (1.0 - (?::float8)) + ?::float8 * (?::float8)",
               ^alpha,
-              sum(s.num_first_attempts_correct) / sum(s.num_first_attempts),
+              safe_div_fragment(sum(s.num_first_attempts_correct), sum(s.num_first_attempts)),
               ^beta,
-              sum(s.num_correct) / sum(s.num_attempts),
+              safe_div_fragment(sum(s.num_correct), sum(s.num_attempts)),
               ^gamma,
               sum(s.num_hints)
             )
@@ -177,15 +182,14 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           order_by(
             query,
             [s],
-            {^direction, fragment("?::float8 / ?::float8", s.num_correct, s.num_attempts)}
+            {^direction, safe_div_fragment(s.num_correct, s.num_attempts)}
           )
 
         :first_attempt_correct ->
           order_by(
             query,
             [s],
-            {^direction,
-             fragment("?::float8 / ?::float8", s.num_first_attempts_correct, s.num_first_attempts)}
+            {^direction, safe_div_fragment(s.num_first_attempts_correct, s.num_first_attempts)}
           )
 
         :relative_difficulty ->
@@ -196,9 +200,9 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
              fragment(
                "?::float8 * (1.0 - ?::float8) + ?::float8 * (1.0 - ?::float8) + ?::float8 * ?::float8",
                ^alpha,
-               s.num_first_attempts_correct / s.num_first_attempts,
+               safe_div_fragment(s.num_first_attempts_correct, s.num_first_attempts),
                ^beta,
-               s.num_correct / s.num_attempts,
+               safe_div_fragment(s.num_correct, s.num_attempts),
                ^gamma,
                s.num_hints
              )}
@@ -235,8 +239,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           order_by(
             query,
             [s],
-            {^direction,
-             fragment("?::float8 / ?::float8", sum(s.num_correct), sum(s.num_attempts))}
+            {^direction, safe_div_fragment(sum(s.num_correct), sum(s.num_attempts))}
           )
 
         :first_attempt_correct ->
@@ -244,11 +247,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
             query,
             [s],
             {^direction,
-             fragment(
-               "?::float8 / ?::float8",
-               sum(s.num_first_attempts_correct),
-               sum(s.num_first_attempts)
-             )}
+             safe_div_fragment(sum(s.num_first_attempts_correct), sum(s.num_first_attempts))}
           )
 
         :relative_difficulty ->
@@ -259,9 +258,9 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
              fragment(
                "?::float8 * (1.0 - (?::float8)) + ?::float8 * (1.0 - (?::float8)) + ?::float8 * (?::float8)",
                ^alpha,
-               sum(s.num_first_attempts_correct) / sum(s.num_first_attempts),
+               safe_div_fragment(sum(s.num_first_attempts_correct), sum(s.num_first_attempts)),
                ^beta,
-               sum(s.num_correct) / sum(s.num_attempts),
+               safe_div_fragment(sum(s.num_correct), sum(s.num_attempts)),
                ^gamma,
                sum(s.num_hints)
              )}

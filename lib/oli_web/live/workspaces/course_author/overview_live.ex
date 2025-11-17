@@ -153,7 +153,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               label="Project Publisher"
               type="select"
               class="form-control"
-              options={Enum.map(@publishers, &{&1.name, &1.id})}
+              options={
+                @publishers
+                |> Enum.sort_by(& &1.name)
+                |> Enum.map(&{&1.name, &1.id})
+              }
               error_position={:top}
               errors={f.errors}
             />
@@ -412,7 +416,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           description="Manage scoped feature flags for this project."
         >
           <.live_component
-            module={OliWeb.Components.ScopedFeatureFlagsComponent}
+            module={OliWeb.Components.ScopedFeatureToggleComponent}
             id="project_scoped_features"
             scopes={[:authoring, :both]}
             source_id={@project.id}
@@ -733,6 +737,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   def handle_info({:scoped_feature_error, feature_name, error_message}, socket) do
     message = "Failed to update feature '#{feature_name}': #{error_message}"
     {:noreply, put_flash(socket, :error, message)}
+  end
+
+  def handle_info({:scoped_feature_notice, type, message}, socket) do
+    level = if type == :error, do: :error, else: :info
+    {:noreply, put_flash(socket, level, message)}
   end
 
   attr :collaborators, :map, required: true

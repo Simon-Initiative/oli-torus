@@ -165,8 +165,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
           <a
             href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)}
-            target="_blank"
-            rel="noopener noreferrer"
+            download={"#{@section_slug}_learning_objectives.csv"}
             class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold"
           >
             Download CSV <Icons.download />
@@ -233,6 +232,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               allow_selection={true}
               additional_row_class="!h-20"
               details_render_fn={&ObjectivesTableModel.render_objective_details/2}
+              sticky_header_offset={if @patch_url_type == :instructor_dashboard, do: 56, else: 0}
             />
           </div>
         <% else %>

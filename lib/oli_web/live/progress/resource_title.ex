@@ -20,12 +20,15 @@ defmodule OliWeb.Progress.ResourceTitle do
       <div>
         <small class="text-muted">
           <%= for {ancestor, index} <- Enum.with_index(@node.ancestors) do %>
+            <% %Oli.Resources.Numbering{} = base_numbering = @numbering
+
+            ancestor_numbering = %Oli.Resources.Numbering{
+              base_numbering
+              | level: ancestor.section_resource.numbering_level,
+                index: ancestor.section_resource.numbering_index
+            } %>
             <span>
-              {Oli.Resources.Numbering.container_type_label(%Oli.Resources.Numbering{
-                @numbering
-                | level: ancestor.section_resource.numbering_level,
-                  index: ancestor.section_resource.numbering_index
-              })} {ancestor.section_resource.numbering_index}
+              {Oli.Resources.Numbering.container_type_label(ancestor_numbering)} {ancestor.section_resource.numbering_index}
             </span>
             <%= if index + 1 < @length do %>
               <span> / </span>

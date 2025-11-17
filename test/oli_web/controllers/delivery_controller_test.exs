@@ -7,6 +7,7 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
+  alias Phoenix.{Controller, Flash}
 
   import Mox
   import Oli.Factory
@@ -168,6 +169,27 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert_redirect_to_login(conn, section.slug)
     end
+
+    test "suspended learner using invitation link is redirected to login", %{
+      conn: conn,
+      section: section
+    } do
+      suspended_user = user_fixture(%{independent_learner: false})
+      insert(:enrollment, user: suspended_user, section: section, status: :suspended)
+      invite = insert(:section_invite, section: section)
+
+      conn =
+        conn
+        |> log_in_user(suspended_user)
+        |> get(Routes.delivery_path(conn, :enroll_independent, invite.slug))
+        |> Controller.fetch_flash()
+
+      assert redirected_to(conn) ==
+               "/users/log_in?request_path=%2Fsections%2F#{section.slug}"
+
+      assert Flash.get(conn.assigns.flash, :error) ==
+               "Your access to this course has been suspended. Please contact your instructor."
+    end
   end
 
   describe "download_course_content_info" do
@@ -291,7 +313,8 @@ defmodule OliWeb.DeliveryControllerTest do
 
   describe "download_students_progress/2" do
     test "downloads student progress with different proficiency levels", %{conn: conn} do
-      %{instructor: instructor, section: section} = prepare_student_progress_data()
+      %{instructor: instructor, section: section} =
+        prepare_student_progress_data()
 
       # Download the CSV
       conn =
@@ -312,38 +335,136 @@ defmodule OliWeb.DeliveryControllerTest do
       [headers | students] = NimbleCSV.RFC4180.parse_string(resp, skip_headers: false)
       # CSV Headers
       assert [
-               "Status",
                "Name",
                "Email",
                "LMS ID",
                "Last Interaction",
                "Progress (Pct)",
                "Proficiency",
-               "Requires Payment"
+               "Requires Payment",
+               "Status"
              ] == headers
 
       #  We have 8 students and 1 instructor
       assert Enum.count(students) == 8
 
       # CSV Student data
-      assert ["Enrolled", "Five, Student", _, _, _, "100", "High", "N/A"] = Enum.at(students, 0)
-      assert ["Enrolled", "Four, Student", _, _, _, "33.03", "High", "N/A"] = Enum.at(students, 1)
+      assert ["Five, Student", _, _, _, "100", "High", "N/A", "Enrolled"] = Enum.at(students, 0)
+      assert ["Four, Student", _, _, _, "33.03", "High", "N/A", "Enrolled"] = Enum.at(students, 1)
 
-      assert ["Enrolled", "One, Student", _, _, _, "0", "Not enough data", "N/A"] =
+      assert ["One, Student", _, _, _, "0", "Not enough data", "N/A", "Enrolled"] =
                Enum.at(students, 2)
 
-      assert ["Enrolled", "Three, Student", _, _, _, "22.22", "Medium", "N/A"] =
+      assert ["Three, Student", _, _, _, "22.22", "Medium", "N/A", "Enrolled"] =
                Enum.at(students, 3)
 
-      assert ["Enrolled", "Two, Student", _, _, _, "11.11", "Low", "N/A"] = Enum.at(students, 4)
+      assert ["Two, Student", _, _, _, "11.11", "Low", "N/A", "Enrolled"] = Enum.at(students, 4)
 
-      assert ["Pending confirmation", "Seven, Student", _, _, _, "0", "Not enough data", "N/A"] =
+      assert ["Seven, Student", _, _, _, "0", "Not enough data", "N/A", "Pending confirmation"] =
                Enum.at(students, 5)
 
-      assert ["Rejected invitation", "Eight, Student", _, _, _, "0", "Not enough data", "N/A"] =
+      assert ["Eight, Student", _, _, _, "0", "Not enough data", "N/A", "Rejected invitation"] =
                Enum.at(students, 6)
 
-      assert ["Suspended", "Six, Student", _, _, _, "0", "Not enough data", "N/A"] =
+      assert ["Six, Student", _, _, _, "0", "Not enough data", "N/A", "Suspended"] =
+               Enum.at(students, 7)
+    end
+
+    test "downloads student progress with certificate status", %{conn: conn} do
+      %{instructor: instructor, section: section, student1: student_1, student2: student_2} =
+        prepare_student_progress_data()
+
+      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+      certificate = insert(:certificate, section: section)
+
+      insert(:granted_certificate, %{
+        certificate: certificate,
+        user: student_1,
+        state: :earned
+      })
+
+      insert(:granted_certificate, %{
+        certificate: certificate,
+        user: student_2,
+        state: :denied
+      })
+
+      # Download the CSV
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(~p"/sections/#{section.slug}/instructor_dashboard/downloads/students_progress")
+
+      assert get_resp_header(conn, "content-disposition") == [
+               "attachment; filename=\"#{section.slug}_students.csv\""
+             ]
+
+      assert get_resp_header(conn, "content-type") == ["text/csv"]
+      assert response(conn, 200)
+
+      # Verify CSV content
+      resp = conn.resp_body
+
+      [headers | students] = NimbleCSV.RFC4180.parse_string(resp, skip_headers: false)
+      # CSV Headers
+      assert [
+               "Name",
+               "Email",
+               "LMS ID",
+               "Last Interaction",
+               "Progress (Pct)",
+               "Proficiency",
+               "Requires Payment",
+               "Status",
+               "Certificate Status"
+             ] == headers
+
+      #  We have 8 students and 1 instructor
+      assert Enum.count(students) == 8
+
+      # CSV Student data
+      assert ["Five, Student", _, _, _, "100", "High", "N/A", "Enrolled", "In Progress"] =
+               Enum.at(students, 0)
+
+      assert ["Four, Student", _, _, _, "33.03", "High", "N/A", "Enrolled", "In Progress"] =
+               Enum.at(students, 1)
+
+      assert ["One, Student", _, _, _, "0", "Not enough data", "N/A", "Enrolled", "Approved"] =
+               Enum.at(students, 2)
+
+      assert ["Three, Student", _, _, _, "22.22", "Medium", "N/A", "Enrolled", "In Progress"] =
+               Enum.at(students, 3)
+
+      assert ["Two, Student", _, _, _, "11.11", "Low", "N/A", "Enrolled", "Denied"] =
+               Enum.at(students, 4)
+
+      assert [
+               "Seven, Student",
+               _,
+               _,
+               _,
+               "0",
+               "Not enough data",
+               "N/A",
+               "Pending confirmation",
+               "In Progress"
+             ] =
+               Enum.at(students, 5)
+
+      assert [
+               "Eight, Student",
+               _,
+               _,
+               _,
+               "0",
+               "Not enough data",
+               "N/A",
+               "Rejected invitation",
+               "In Progress"
+             ] =
+               Enum.at(students, 6)
+
+      assert ["Six, Student", _, _, _, "0", "Not enough data", "N/A", "Suspended", "In Progress"] =
                Enum.at(students, 7)
     end
 
@@ -430,6 +551,76 @@ defmodule OliWeb.DeliveryControllerTest do
         conn
         |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_quiz_scores, "invalid_section_slug"))
+
+      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+    end
+  end
+
+  describe "download_scored_pages" do
+    setup [:setup_lti_session]
+
+    test "downloads scored pages csv when section exists", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_scored_pages, section.slug))
+
+      assert Enum.any?(conn.resp_headers, fn
+               {"content-disposition", value} ->
+                 value =~ "#{section.slug}_scored_pages.csv"
+
+               _ ->
+                 false
+             end)
+
+      assert Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+      assert response(conn, 200)
+    end
+
+    test "redirects to not found for invalid section", %{conn: conn, instructor: instructor} do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_scored_pages, "invalid_section_slug"))
+
+      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+    end
+  end
+
+  describe "download_practice_pages" do
+    setup [:setup_lti_session]
+
+    test "downloads practice pages csv when section exists", %{
+      conn: conn,
+      section: section,
+      instructor: instructor
+    } do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_practice_pages, section.slug))
+
+      assert Enum.any?(conn.resp_headers, fn
+               {"content-disposition", value} ->
+                 value =~ "#{section.slug}_practice_pages.csv"
+
+               _ ->
+                 false
+             end)
+
+      assert Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+      assert response(conn, 200)
+    end
+
+    test "redirects to not found for invalid section", %{conn: conn, instructor: instructor} do
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(Routes.delivery_path(conn, :download_practice_pages, "invalid_section_slug"))
 
       assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
     end
@@ -1153,6 +1344,12 @@ defmodule OliWeb.DeliveryControllerTest do
     instructor_ctx = [ContextRoles.get_role(:context_instructor)]
     Sections.enroll(instructor.id, section.id, instructor_ctx)
 
-    %{instructor: instructor, section: section, unit_1_revision: unit_1_revision}
+    %{
+      instructor: instructor,
+      section: section,
+      unit_1_revision: unit_1_revision,
+      student1: student_1,
+      student2: student_2
+    }
   end
 end

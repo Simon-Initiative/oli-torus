@@ -989,6 +989,157 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert initial_assessment_4 == final_assessment_4
     end
 
+    test "bulk apply dropdown defaults to first assessment when no param is provided",
+         %{
+           conn: conn,
+           section: section,
+           page_1: page_1
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # Verify that the first assessment is selected by default
+      assert view
+             |> element(
+               ~s{select[id="assessment_select"] option[selected][value="#{page_1.resource_id}"]}
+             )
+             |> has_element?()
+    end
+
+    test "changing the bulk apply dropdown updates the URL with the selected assessment id",
+         %{
+           conn: conn,
+           section: section,
+           page_2: page_2
+         } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # Change the selection to page 2
+      view
+      |> element(~s{select[id="assessment_select"]})
+      |> render_change(%{"assessment_id" => page_2.resource_id})
+
+      # Verify the new selection is now shown in the dropdown (which means the URL param was updated)
+      assert view
+             |> element(
+               ~s{select[id="assessment_select"] option[selected][value="#{page_2.resource_id}"]}
+             )
+             |> has_element?()
+    end
+
+    test "bulk apply selection persists after searching",
+         %{
+           conn: conn,
+           section: section,
+           page_3: page_3
+         } do
+      # Start with page_3 selected via URL param
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "settings", "all", %{
+            bulk_apply_selected_assessment_id: page_3.resource_id
+          })
+        )
+
+      # Perform a search
+      view
+      |> form(~s{form[for="search"]})
+      |> render_change(%{"assessment_name" => "Page"})
+
+      # Verify the bulk_apply_selected_assessment_id is still selected in the dropdown
+      assert view
+             |> element(
+               ~s{select[id="assessment_select"] option[selected][value="#{page_3.resource_id}"]}
+             )
+             |> has_element?()
+    end
+
+    test "bulk apply selection persists after pagination",
+         %{
+           conn: conn,
+           section: section,
+           page_2: page_2
+         } do
+      # Start with page_2 selected and limit to 2 assessments per page
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "settings", "all", %{
+            limit: 2,
+            offset: 0,
+            bulk_apply_selected_assessment_id: page_2.resource_id
+          })
+        )
+
+      # Click on the next page button
+      view
+      |> element("button[phx-value-offset='2'][phx-value-limit='2']", "2")
+      |> render_click()
+
+      # Verify the bulk_apply_selected_assessment_id is still selected in the dropdown
+      assert view
+             |> element(
+               ~s{select[id="assessment_select"] option[selected][value="#{page_2.resource_id}"]}
+             )
+             |> has_element?()
+    end
+
+    test "bulk apply selection persists after sorting",
+         %{
+           conn: conn,
+           section: section,
+           page_4: page_4
+         } do
+      # Start with page_4 selected
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "settings", "all", %{
+            bulk_apply_selected_assessment_id: page_4.resource_id
+          })
+        )
+
+      # Sort by name
+      view
+      |> element("th[phx-value-sort_by=name]")
+      |> render_click()
+
+      # Verify the bulk_apply_selected_assessment_id is still selected in the dropdown
+      assert view
+             |> element(
+               ~s{select[id="assessment_select"] option[selected][value="#{page_4.resource_id}"]}
+             )
+             |> has_element?()
+    end
+
+    test "bulk apply selection persists after confirm and redirect",
+         %{
+           conn: conn,
+           section: section,
+           page_2: page_2
+         } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "settings", "all", %{
+            bulk_apply_selected_assessment_id: page_2.resource_id
+          })
+        )
+
+      # Open and confirm bulk apply modal
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_2.resource_id})
+
+      {:error, {:redirect, %{to: redirect_path}}} =
+        view
+        |> form(~s{form[phx-submit=confirm_bulk_apply]})
+        |> render_submit(%{})
+
+      # Verify the redirect URL includes the bulk_apply_selected_assessment_id parameter
+      assert redirect_path =~ "bulk_apply_selected_assessment_id=#{page_2.resource_id}"
+    end
+
     test "search input filters assessments by the provided text input",
          %{
            conn: conn,
@@ -1739,6 +1890,49 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert length(changes) == 34
     end
 
+    test "bulk apply dropdown displays assessments sorted by numbering_index", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # Get the bulk apply dropdown options
+      html = render(view)
+
+      # Extract option text from the select dropdown
+      options =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find("form[for=\"bulk_apply_settings\"] select option")
+        |> Enum.map(&Floki.text/1)
+        |> Enum.map(&String.trim/1)
+
+      # Verify that assessments appear in curriculum order (by numbering_index)
+      # The first option should be "Select an assessment" placeholder (or empty)
+      assert length(options) >= 4
+
+      # Find the indices of each page title in the options
+      page_1_index = Enum.find_index(options, &String.contains?(&1, page_1.title))
+      page_2_index = Enum.find_index(options, &String.contains?(&1, page_2.title))
+      page_3_index = Enum.find_index(options, &String.contains?(&1, page_3.title))
+      page_4_index = Enum.find_index(options, &String.contains?(&1, page_4.title))
+
+      # Verify all pages are present
+      assert not is_nil(page_1_index)
+      assert not is_nil(page_2_index)
+      assert not is_nil(page_3_index)
+      assert not is_nil(page_4_index)
+
+      # Verify pages are in numbering_index order (curriculum order)
+      assert page_1_index < page_2_index
+      assert page_2_index < page_3_index
+      assert page_3_index < page_4_index
+    end
+
     test "can change allow hints setting", %{
       conn: conn,
       section: section,
@@ -1808,8 +2002,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_change(%{"assessment_id" => page_1.resource.id})
 
       assert [se_1, se_2] = table_as_list_of_maps(view, :student_exceptions)
-      assert se_1.student =~ Utils.name(student_1)
-      assert se_2.student =~ Utils.name(student_2)
+      assert se_1.student =~ Utils.name_and_email(student_1)
+      assert se_2.student =~ Utils.name_and_email(student_2)
       refute render(view) =~ "None exist"
 
       # select assessment 2
@@ -1818,7 +2012,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_change(%{"assessment_id" => page_2.resource.id})
 
       assert [se_1] = table_as_list_of_maps(view, :student_exceptions)
-      assert se_1.student =~ Utils.name(student_1)
+      assert se_1.student =~ Utils.name_and_email(student_1)
       refute render(view) =~ "None exist"
 
       # select assessment 3
@@ -1867,7 +2061,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       [student_exception] = table_as_list_of_maps(view, :student_exceptions)
 
-      assert student_exception.student =~ Utils.name(student_1)
+      assert student_exception.student =~ Utils.name_and_email(student_1)
 
       # check the student exception
       view
@@ -2000,7 +2194,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> render_submit(%{"student_exception" => %{"student_id" => student_1.id}})
 
       assert [se_1] = table_as_list_of_maps(view, :student_exceptions)
-      assert se_1.student =~ Utils.name(student_1)
+      assert se_1.student =~ Utils.name_and_email(student_1)
       refute render(view) =~ "None exist"
     end
 
@@ -2189,7 +2383,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_available_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Available date for #{Utils.name(student_1)}")
+      assert has_element?(view, "h5", "Available date for #{Utils.name_and_email(student_1)}")
 
       assert has_element?(
                view,
@@ -2244,7 +2438,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_available_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Available date for #{Utils.name(student_1)}")
+      assert has_element?(view, "h5", "Available date for #{Utils.name_and_email(student_1)}")
 
       assert has_element?(
                view,
@@ -2297,7 +2491,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_available_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Available date for #{Utils.name(student_1)}")
+      assert has_element?(view, "h5", "Available date for #{Utils.name_and_email(student_1)}")
 
       assert has_element?(
                view,
@@ -2376,7 +2570,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_due_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Due date for #{Utils.name(student_1)}")
+      assert has_element?(view, "h5", "Due date for #{Utils.name_and_email(student_1)}")
 
       assert has_element?(
                view,
@@ -2431,7 +2625,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_due_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Due date for #{Utils.name(student_1)}")
+      assert has_element?(view, "h5", "Due date for #{Utils.name_and_email(student_1)}")
 
       assert has_element?(
                view,
@@ -2484,7 +2678,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       |> with_target("#student_due_date_modal")
       |> render_click("open", %{})
 
-      assert has_element?(view, "h5", "Due date for #{Utils.name(student_1)}")
+      assert has_element?(view, "h5", "Due date for #{Utils.name_and_email(student_1)}")
 
       assert has_element?(
                view,
@@ -2528,25 +2722,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
-               "#{Utils.name(student_1)}"
+               "#{Utils.name_and_email(student_1)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
-               "#{Utils.name(student_2)}"
+               "#{Utils.name_and_email(student_2)}"
              )
 
       refute has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr > td > div",
-               "#{Utils.name(student_3)}"
+               "#{Utils.name_and_email(student_3)}"
              )
 
       refute has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr > td > div",
-               "#{Utils.name(student_4)}"
+               "#{Utils.name_and_email(student_4)}"
              )
 
       # click on the next page button
@@ -2558,25 +2752,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
-               "#{Utils.name(student_3)}"
+               "#{Utils.name_and_email(student_3)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
-               "#{Utils.name(student_4)}"
+               "#{Utils.name_and_email(student_4)}"
              )
 
       refute has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr > td > div",
-               "#{Utils.name(student_1)}"
+               "#{Utils.name_and_email(student_1)}"
              )
 
       refute has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr > td > div",
-               "#{Utils.name(student_2)}"
+               "#{Utils.name_and_email(student_2)}"
              )
     end
 
@@ -2604,25 +2798,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
-               "#{Utils.name(student_1)}"
+               "#{Utils.name_and_email(student_1)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
-               "#{Utils.name(student_2)}"
+               "#{Utils.name_and_email(student_2)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(3) > td > div",
-               "#{Utils.name(student_3)}"
+               "#{Utils.name_and_email(student_3)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(4) > td > div",
-               "#{Utils.name(student_4)}"
+               "#{Utils.name_and_email(student_4)}"
              )
 
       # sort by student column in descending order
@@ -2634,25 +2828,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(1) > td > div",
-               "#{Utils.name(student_4)}"
+               "#{Utils.name_and_email(student_4)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(2) > td > div",
-               "#{Utils.name(student_3)}"
+               "#{Utils.name_and_email(student_3)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(3) > td > div",
-               "#{Utils.name(student_2)}"
+               "#{Utils.name_and_email(student_2)}"
              )
 
       assert has_element?(
                view,
                "table.instructor_dashboard_table > tbody > tr:nth-child(4) > td > div",
-               "#{Utils.name(student_1)}"
+               "#{Utils.name_and_email(student_1)}"
              )
     end
 
@@ -2751,7 +2945,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       # and only exceptions for that first assessment are shown
       [se] = table_as_list_of_maps(view, :student_exceptions)
-      assert se.student =~ Utils.name(student_1)
+      assert se.student =~ Utils.name_and_email(student_1)
     end
   end
 end

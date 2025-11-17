@@ -516,6 +516,7 @@ defmodule OliWeb.Components.Delivery.Students do
                 href={
                   Routes.delivery_path(OliWeb.Endpoint, :download_students_progress, @section_slug)
                 }
+                download={"#{@section_slug}_students.csv"}
                 class="flex flex-row items-center gap-x-1 text-Fill-Buttons-fill-primary text-sm font-bold leading-none"
               >
                 Download <Icons.download stroke_class="stroke-Fill-Buttons-fill-primary" />
@@ -615,6 +616,7 @@ defmodule OliWeb.Components.Delivery.Students do
           show_limit_change={true}
           allow_selection={true}
           selection_change={JS.push("paged_table_selection_change", target: @myself)}
+          sticky_header_offset={56}
         />
         <HTMLComponents.view_example_student_progress_modal />
 

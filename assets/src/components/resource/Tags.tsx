@@ -29,6 +29,13 @@ export const Tags = (props: TagsProps) => {
   const map = Immutable.Map<ResourceId, Tag>(tags.map((o) => [o.id, o]));
   const asTags = selected.map((s) => map.get(s) as Tag);
 
+  // Callback to prevent creating duplicate tags (case-insensitive)
+  const allowNewTag = (_results: Tag[], props: any): boolean => {
+    const normalizedInput = (props.text || '').toLowerCase().trim();
+    // Don't allow creating a new tag if one with the same title already exists
+    return !tags.some((tag) => tag.title.toLowerCase() === normalizedInput);
+  };
+
   return (
     <div className="d-flex flex-row align-items-baseline">
       <div className="flex-grow-1">
@@ -36,6 +43,7 @@ export const Tags = (props: TagsProps) => {
           id={id}
           multiple={true}
           disabled={!editMode}
+          allowNew={allowNewTag}
           onChange={(updated: (Tag & { customOption?: boolean })[]) => {
             // we can safely assume that only one objective will ever be selected at a time
             const createdTag = updated.find((o) => o.customOption);
@@ -75,7 +83,6 @@ export const Tags = (props: TagsProps) => {
             }
           }}
           options={props.tags}
-          allowNew={true}
           newSelectionPrefix="Create new tag: "
           labelKey="title"
           selected={asTags}

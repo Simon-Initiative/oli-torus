@@ -87,8 +87,29 @@ defmodule Oli.Authoring.Course do
     |> Repo.all()
   end
 
+  @doc """
+  Retrieves all projects accessible to the given author.
+
+  Admin authors (system admins, account admins, or content admins) receive all projects in the system.
+  Regular authors only receive projects they are explicitly associated with.
+
+  ## Parameters
+    - author: An Author struct representing the user
+
+  ## Returns
+    - A list of Project structs
+
+  ## Examples
+
+      iex> get_projects_for_author(admin_author)
+      [%Project{}, %Project{}, ...]
+
+      iex> get_projects_for_author(regular_author)
+      [%Project{id: 1}, %Project{id: 2}]  # Only projects assigned to this author
+  """
+  @spec get_projects_for_author(Author.t()) :: [Project.t()]
   def get_projects_for_author(author) do
-    if Accounts.has_admin_role?(author, :content_admin),
+    if Accounts.at_least_content_admin?(author),
       do: Repo.all(Project),
       else: Repo.preload(author, [:projects]).projects
   end
@@ -104,7 +125,7 @@ defmodule Oli.Authoring.Course do
     text_search = Keyword.get(opts, :text_search, "")
     filters = Keyword.get(opts, :filters, %{})
 
-    if Accounts.has_admin_role?(author, :content_admin) and admin_show_all,
+    if Accounts.at_least_content_admin?(author) and admin_show_all,
       do: browse_projects_as_admin(paging, sorting, include_deleted, text_search, filters),
       else:
         browse_projects_as_author(author, paging, sorting, include_deleted, text_search, filters)
@@ -150,7 +171,7 @@ defmodule Oli.Authoring.Course do
     filter_by_date =
       case {date_from, date_to} do
         {nil, nil} ->
-          dynamic([p], true)
+          true
 
         {from, nil} ->
           dynamic([p], field(p, ^date_field) >= ^from)
@@ -164,14 +185,14 @@ defmodule Oli.Authoring.Course do
 
     filter_by_visibility =
       case visibility_filter do
-        nil -> dynamic([p], true)
+        nil -> true
         visibility -> dynamic([p], p.visibility == ^visibility)
       end
 
     filter_by_institution =
       case institution_id do
         nil ->
-          dynamic([p, _ap, _a, _pv], true)
+          true
 
         id ->
           dynamic([p, _ap, _a, pv], p.visibility == :global or pv.institution_id == ^id)
@@ -364,7 +385,7 @@ defmodule Oli.Authoring.Course do
 
         _ ->
           if include_deleted,
-            do: dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true),
+            do: true,
             else: dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.status == :active)
       end
 
@@ -383,7 +404,7 @@ defmodule Oli.Authoring.Course do
     filter_by_date =
       case {date_from, date_to} do
         {nil, nil} ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         {from, nil} ->
           dynamic([_ap, p, _a, _pv, _pub, _op, _owner], field(p, ^date_field) >= ^from)
@@ -401,7 +422,7 @@ defmodule Oli.Authoring.Course do
     filter_by_visibility =
       case visibility_filter do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         visibility ->
           dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.visibility == ^visibility)
@@ -410,7 +431,7 @@ defmodule Oli.Authoring.Course do
     filter_by_institution =
       case institution_id do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         institution ->
           dynamic(
@@ -607,7 +628,7 @@ defmodule Oli.Authoring.Course do
           dynamic([p], p.status == ^status)
 
         _ ->
-          if include_deleted, do: dynamic([p], true), else: dynamic([p], p.status == :active)
+          if include_deleted, do: true, else: dynamic([p], p.status == :active)
       end
 
     filter_by_text =
@@ -625,7 +646,7 @@ defmodule Oli.Authoring.Course do
     filter_by_date =
       case {date_from, date_to} do
         {nil, nil} ->
-          dynamic([p], true)
+          true
 
         {from, nil} ->
           dynamic([p], field(p, ^date_field) >= ^from)
@@ -639,14 +660,14 @@ defmodule Oli.Authoring.Course do
 
     filter_by_visibility =
       case visibility_filter do
-        nil -> dynamic([p], true)
+        nil -> true
         visibility -> dynamic([p], p.visibility == ^visibility)
       end
 
     filter_by_institution =
       case institution_id do
         nil ->
-          dynamic([p, _ap, _a, _pv], true)
+          true
 
         id ->
           dynamic([p, _ap, _a, pv], p.visibility == :global or pv.institution_id == ^id)
@@ -808,7 +829,7 @@ defmodule Oli.Authoring.Course do
 
         _ ->
           if include_deleted,
-            do: dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true),
+            do: true,
             else: dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.status == :active)
       end
 
@@ -827,7 +848,7 @@ defmodule Oli.Authoring.Course do
     filter_by_date =
       case {date_from, date_to} do
         {nil, nil} ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         {from, nil} ->
           dynamic([_ap, p, _a, _pv, _pub, _op, _owner], field(p, ^date_field) >= ^from)
@@ -845,7 +866,7 @@ defmodule Oli.Authoring.Course do
     filter_by_visibility =
       case visibility_filter do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         visibility ->
           dynamic([_ap, p, _a, _pv, _pub, _op, _owner], p.visibility == ^visibility)
@@ -854,7 +875,7 @@ defmodule Oli.Authoring.Course do
     filter_by_institution =
       case institution_id do
         nil ->
-          dynamic([_ap, _p, _a, _pv, _pub, _op, _owner], true)
+          true
 
         institution ->
           dynamic(

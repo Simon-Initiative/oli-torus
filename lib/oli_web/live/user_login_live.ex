@@ -76,6 +76,7 @@ defmodule OliWeb.UserLoginLive do
             auth_provider_path_fn={&build_auth_provider_path(&1, @section, @from_invitation_link?)}
             from_invitation_link?={@from_invitation_link?}
             section={@section}
+            request_path={@request_path}
           />
         </div>
       </div>
@@ -99,16 +100,33 @@ defmodule OliWeb.UserLoginLive do
        form: form,
        authentication_providers: authentication_providers,
        from_invitation_link?: false,
-       section: nil
+       section: nil,
+       request_path: nil
      ), temporary_assigns: [form: form]}
   end
 
   @impl Phoenix.LiveView
   def handle_params(unsigned_params, _uri, socket) do
     from_invitation_link? = unsigned_params["from_invitation_link?"] == "true"
-    section = unsigned_params["section"]
+    request_path = validate_request_path(unsigned_params["request_path"])
 
-    {:noreply, assign(socket, from_invitation_link?: from_invitation_link?, section: section)}
+    section =
+      case unsigned_params["section"] do
+        nil ->
+          nil
+
+        slug ->
+          # Lightweight query - only preload brand for layout branding, not all associations
+          Oli.Delivery.Sections.get_section_by(slug: slug)
+          |> Oli.Repo.preload([:brand, lti_1p3_deployment: [institution: :default_brand]])
+      end
+
+    {:noreply,
+     assign(socket,
+       from_invitation_link?: from_invitation_link?,
+       section: section,
+       request_path: request_path
+     )}
   end
 
   defp build_auth_provider_path(provider, section, from_invitation_link?) do
@@ -116,7 +134,7 @@ defmodule OliWeb.UserLoginLive do
 
     params =
       []
-      |> maybe_add_param("section", section)
+      |> maybe_add_param("section", section && section.slug)
       |> maybe_add_param("from_invitation_link?", from_invitation_link?)
       |> URI.encode_query()
 
@@ -126,4 +144,7 @@ defmodule OliWeb.UserLoginLive do
   defp maybe_add_param(params, _key, nil), do: params
   defp maybe_add_param(params, _key, false), do: params
   defp maybe_add_param(params, key, value), do: [{key, value} | params]
+
+  defp validate_request_path("/" <> <<c, _::binary>> = path) when c != ?/, do: path
+  defp validate_request_path(_), do: nil
 end
