@@ -28,6 +28,14 @@ defmodule Oli.GoogleDocs.Warnings do
           | :media_decode_failed
           | :media_dedupe_warning
           | :download_redirect
+          | :dropdown_missing_markers
+          | :dropdown_missing_input_data
+          | :dropdown_insufficient_choices
+          | :dropdown_missing_correct
+          | :dropdown_choice_missing
+          | :dropdown_feedback_missing
+          | :dropdown_duplicate_markers
+          | :dropdown_activity_creation_failed
 
   @catalogue %{
     download_failed: %{
@@ -115,6 +123,40 @@ defmodule Oli.GoogleDocs.Warnings do
       severity: :error,
       template:
         "Google Docs redirected the request (HTTP %{status}) to `%{location}`. Verify the document is shared publicly and try again."
+    },
+    dropdown_missing_markers: %{
+      severity: :warn,
+      template:
+        "Dropdown CustomElement stem must reference at least one [dropdownN] marker; rendered as table."
+    },
+    dropdown_missing_input_data: %{
+      severity: :warn,
+      template: "Dropdown CustomElement missing choice rows for `%{input}`; rendered as table."
+    },
+    dropdown_duplicate_markers: %{
+      severity: :warn,
+      template:
+        "Dropdown CustomElement uses the same marker more than once (%{duplicates}); rendered as table."
+    },
+    dropdown_insufficient_choices: %{
+      severity: :warn,
+      template: "Dropdown `%{input}` must define at least two choices; rendered as table."
+    },
+    dropdown_missing_correct: %{
+      severity: :warn,
+      template: "Dropdown `%{input}` is missing a valid `-correct` entry; rendered as table."
+    },
+    dropdown_choice_missing: %{
+      severity: :warn,
+      template: "Dropdown entry `%{choice_key}` has no text; omitted from the activity."
+    },
+    dropdown_feedback_missing: %{
+      severity: :warn,
+      template: "Dropdown feedback `%{feedback_key}` missing; default feedback applied."
+    },
+    dropdown_activity_creation_failed: %{
+      severity: :error,
+      template: "Failed to create dropdown activity: %{reason}."
     }
   }
 
