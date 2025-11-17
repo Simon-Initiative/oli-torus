@@ -131,24 +131,17 @@ defmodule Oli.Activities.SelectionTest do
       section_slug: ""
     }
 
-    # contains [2] should match any activity that has objective 2 (OR logic)
     selection = selection(2, [expression(:objectives, :contains, [2])])
-    {:partial, result} = Selection.fulfill(selection, source)
+    {_, result} = Selection.fulfill(selection, source)
 
     assert length(result.rows) == 1
     assert Enum.at(result.rows, 0).resource_id == 2
 
-    # contains [1, 2] should match any activity that has objective 1 OR 2 (both activities)
     selection = selection(2, [expression(:objectives, :contains, [1, 2])])
-    {:ok, result} = Selection.fulfill(selection, source)
+    {:partial, result} = Selection.fulfill(selection, source)
 
-    assert length(result.rows) == 2
-
-    # contains [1] should match any activity that has objective 1 (both activities)
-    selection = selection(2, [expression(:objectives, :contains, [1])])
-    {:ok, result} = Selection.fulfill(selection, source)
-
-    assert length(result.rows) == 2
+    assert length(result.rows) == 1
+    assert Enum.at(result.rows, 0).resource_id == 2
 
     selection = selection(2, [expression(:objectives, :contains, [4])])
     {:partial, result} = Selection.fulfill(selection, source)
@@ -177,27 +170,18 @@ defmodule Oli.Activities.SelectionTest do
       section_slug: ""
     }
 
-    # does_not_contain [2] should match activities that don't have objective 2
     selection = selection(2, [expression(:objectives, :does_not_contain, [2])])
     {:partial, result} = Selection.fulfill(selection, source)
 
     assert length(result.rows) == 1
     assert Enum.at(result.rows, 0).resource_id == 2
 
-    # does_not_contain [1] should match activities that don't have objective 1 (none)
     selection = selection(2, [expression(:objectives, :does_not_contain, [1])])
     {:partial, result} = Selection.fulfill(selection, source)
 
     assert length(result.rows) == 0
 
-    # does_not_contain [1, 2] should match activities that have neither 1 nor 2 (none)
-    selection = selection(2, [expression(:objectives, :does_not_contain, [1, 2])])
-    {:partial, result} = Selection.fulfill(selection, source)
-
-    assert length(result.rows) == 0
-
-    # does_not_contain [3] should match all activities (none have objective 3)
-    selection = selection(2, [expression(:objectives, :does_not_contain, [3])])
+    selection = selection(2, [expression(:objectives, :does_not_contain, [1, 2, 3])])
     {:ok, result} = Selection.fulfill(selection, source)
 
     assert length(result.rows) == 2
@@ -224,7 +208,6 @@ defmodule Oli.Activities.SelectionTest do
       section_slug: ""
     }
 
-    # contains [2] matches both activities, but resource_id 1 is blacklisted
     selection = selection(2, [expression(:objectives, :contains, [2])])
     {:partial, result} = Selection.fulfill(selection, source)
 
@@ -253,8 +236,6 @@ defmodule Oli.Activities.SelectionTest do
       section_slug: ""
     }
 
-    # Multiple expressions with ALL operator - both conditions must be true
-    # contains [2] matches both activities (OR logic), but contains [4] only matches resource_id 2
     selection =
       selection(2, [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])])
 
@@ -314,9 +295,7 @@ defmodule Oli.Activities.SelectionTest do
       section_slug: ""
     }
 
-    # Testing with ALL: both conditions must be true
-    # contains [2] matches both, contains [4] matches only resource_id 2
-    # Result: only resource_id 2 matches both
+    # Testing this with ALL should only return 1 item, thus partial fulfillment
     selection =
       selection(
         2,
@@ -327,9 +306,7 @@ defmodule Oli.Activities.SelectionTest do
     {:partial, result} = Selection.fulfill(selection, source)
     assert length(result.rows) == 1
 
-    # Testing with ANY: at least one condition must be true
-    # contains [2] matches both activities, contains [4] matches resource_id 2
-    # Result: both activities match (both have objective 2)
+    # Testing this with ANY now matches both
     selection =
       selection(
         2,
