@@ -186,10 +186,10 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
 
   # Gets a map of page_id => parent container info (numbering_level, numbering_index, container_id)
   # Only includes non-root containers (numbering_level > 0)
-  defp get_parent_containers_map(_section_id, page_ids) when page_ids == [], do: %{}
-  defp get_parent_containers_map(nil, _page_ids), do: %{}
+  def get_parent_containers_map(_section_id, page_ids) when page_ids == [], do: %{}
+  def get_parent_containers_map(nil, _page_ids), do: %{}
 
-  defp get_parent_containers_map(section_id, page_ids) do
+  def get_parent_containers_map(section_id, page_ids) do
     from(cp in ContainedPage,
       join: sr in SectionResource,
       on: sr.section_id == ^section_id and sr.resource_id == cp.container_id,
@@ -218,12 +218,12 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     |> Map.new()
   end
 
-  defp name_with_container_label(page_title, nil, _customizations) do
+  def name_with_container_label(page_title, nil, _customizations) do
     # No parent container (or parent is root), just show page title
     page_title
   end
 
-  defp name_with_container_label(page_title, parent_container_info, customizations) do
+  def name_with_container_label(page_title, parent_container_info, customizations) do
     # Parent container exists and is not root, format as: <container_label> <numbering_index>: <page title>
     container_label_with_numbering =
       Sections.get_container_label_and_numbering(

@@ -7,6 +7,7 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
+  alias Oli.Delivery.Settings.AssessmentSettings
   alias Oli.Lti.AccessTokenLibrary
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.Breadcrumb
@@ -36,7 +37,7 @@ defmodule OliWeb.Grades.GradesLive do
       {type, _, section} ->
         {_d, registration} = Sections.get_deployment_registration_from_section(section)
         line_items_url = section.line_items_service_url
-        graded_pages = Sections.fetch_scored_pages(section.slug)
+        graded_pages = fetch_graded_pages(section)
 
         selected_page =
           if length(graded_pages) > 0 do
@@ -397,6 +398,25 @@ defmodule OliWeb.Grades.GradesLive do
       _ ->
         {:error, dgettext("grades", "Error getting LMS access token")}
     end
+  end
+
+  defp fetch_graded_pages(section) do
+    graded_pages = Sections.fetch_scored_pages(section.slug)
+    graded_page_ids = Enum.map(graded_pages, & &1.resource_id)
+
+    parent_containers_map =
+      AssessmentSettings.get_parent_containers_map(section.id, graded_page_ids)
+
+    Enum.map(graded_pages, fn p ->
+      Map.merge(p, %{
+        name_with_container_label:
+          AssessmentSettings.name_with_container_label(
+            p.title,
+            Map.get(parent_containers_map, p.resource_id),
+            section.customizations
+          )
+      })
+    end)
   end
 
   def handle_info({:test_status, status, decoration, is_done}, socket) do
