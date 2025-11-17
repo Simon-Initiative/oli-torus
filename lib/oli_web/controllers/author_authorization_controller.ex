@@ -1,7 +1,6 @@
 defmodule OliWeb.AuthorAuthorizationController do
   use OliWeb, :controller
 
-  import Ecto.Query, warn: false
   import OliWeb.AuthorAuth, only: [require_authenticated_author: 2]
 
   alias Phoenix.Naming
@@ -236,12 +235,10 @@ defmodule OliWeb.AuthorAuthorizationController do
   end
 
   defp invited_author?(author) do
-    # Invited authors have no password hash and no SSO identities
-    author = Oli.Repo.preload(author, :user_identities)
-    is_nil(author.password_hash) && Enum.empty?(author.user_identities)
+    Accounts.invited_author?(author)
   end
 
-  defp link_sso_to_invited_author(conn, author, provider, user_params, _config, redirect_to) do
+  defp link_sso_to_invited_author(conn, author, provider, user_params, redirect_to) do
     # Extract user identity params
     case user_params do
       %{"sub" => uid} ->
@@ -258,13 +255,24 @@ defmodule OliWeb.AuthorAuthorizationController do
           |> Enum.reject(fn {_k, v} -> is_nil(v) end)
           |> Map.new()
 
+        # Get author_project if project_slug is present
+        author_project =
+          if project_slug do
+            Oli.Authoring.Course.get_author_project(project_slug, author.id,
+              filter_by_status: false
+            )
+          else
+            nil
+          end
+
         # Add SSO identity and accept invitation
         with {:ok, _author_identity} <-
                Oli.AssentAuth.AuthorAssentAuth.add_identity_provider(
                  author,
                  user_identity_params
                ),
-             {:ok, author} <- accept_invitation(author, project_slug, sso_attrs) do
+             {:ok, author} <-
+               accept_invitation_via_sso(author, author_project, sso_attrs) do
           # Successfully linked SSO and accepted invitation
 
           conn = OliWeb.AuthorAuth.create_session(conn, author)
@@ -275,16 +283,6 @@ defmodule OliWeb.AuthorAuthorizationController do
 
           redirect(conn, to: redirect_to)
         else
-          {:error, :author_project_not_found} ->
-            Logger.error("Author project not found for collaborator invitation")
-
-            conn
-            |> put_flash(
-              :error,
-              "Unable to accept the invitation. The project may no longer exist."
-            )
-            |> redirect(to: redirect_to)
-
           {:error, changeset} ->
             Logger.error(
               "Failed to link SSO identity or accept invitation for invited author: #{inspect(author.email)}, error: #{inspect(changeset)}"
@@ -307,6 +305,16 @@ defmodule OliWeb.AuthorAuthorizationController do
     end
   end
 
+  defp accept_invitation_via_sso(author, nil, attrs) do
+    # General author invitation (no project)
+    Accounts.accept_author_invitation_via_sso(author, attrs)
+  end
+
+  defp accept_invitation_via_sso(author, author_project, attrs) do
+    # Collaborator invitation (with project)
+    Accounts.accept_collaborator_invitation_via_sso(author, author_project, attrs)
+  end
+
   # Check if there's a pending collaborator invitation and accept it for existing authenticated authors
   defp maybe_accept_pending_invitation(conn, :authenticate) do
     # Only for authenticate status (existing SSO authors signing in)
@@ -325,9 +333,7 @@ defmodule OliWeb.AuthorAuthorizationController do
           clear_invitation_session_data(conn)
 
         author_project ->
-          case author_project
-               |> Oli.Authoring.Authors.AuthorProject.changeset(%{status: :accepted})
-               |> Oli.Repo.update() do
+          case Oli.Authoring.Course.update_author_project(author_project, %{status: :accepted}) do
             {:ok, _} ->
               clear_invitation_session_data(conn)
 
@@ -342,55 +348,6 @@ defmodule OliWeb.AuthorAuthorizationController do
   end
 
   defp maybe_accept_pending_invitation(conn, _status), do: conn
-
-  # Accept author invitation via SSO - handles both general author invitations and collaborator invitations
-  # For SSO, we skip password validation since the user authenticates via OAuth
-  defp accept_invitation(author, project_slug, attrs) when is_binary(project_slug) do
-    # This is a collaborator invitation - need to update author_project status
-    case Oli.Authoring.Course.get_author_project(project_slug, author.id, filter_by_status: false) do
-      nil ->
-        {:error, :author_project_not_found}
-
-      author_project ->
-        accept_collaborator_invitation_sso(author, author_project, attrs)
-    end
-  end
-
-  defp accept_invitation(author, _project_slug, attrs) do
-    # General author invitation
-    accept_author_invitation_sso(author, attrs)
-  end
-
-  # Accept author invitation for SSO users (no password validation)
-  defp accept_author_invitation_sso(author, attrs) do
-    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
-
-    author
-    |> Ecto.Changeset.cast(attrs, [:given_name, :family_name, :picture])
-    |> Ecto.Changeset.put_change(:invitation_accepted_at, now)
-    |> Ecto.Changeset.put_change(:email_confirmed_at, now)
-    |> Oli.Repo.update()
-  end
-
-  # Accept collaborator invitation for SSO users (no password validation)
-  defp accept_collaborator_invitation_sso(author, author_project, attrs) do
-    Oli.Repo.transaction(fn ->
-      now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
-
-      author =
-        author
-        |> Ecto.Changeset.cast(attrs, [:given_name, :family_name, :picture])
-        |> Ecto.Changeset.put_change(:invitation_accepted_at, now)
-        |> Ecto.Changeset.put_change(:email_confirmed_at, now)
-        |> Oli.Repo.update!()
-
-      author_project
-      |> Oli.Authoring.Authors.AuthorProject.changeset(%{status: :accepted})
-      |> Oli.Repo.update!()
-
-      author
-    end)
-  end
 
   ## Plugs
 

@@ -1,7 +1,6 @@
 defmodule OliWeb.UserAuthorizationController do
   use OliWeb, :controller
 
-  import Ecto.Query, warn: false
   import OliWeb.UserAuth, only: [require_authenticated_user: 2]
 
   alias Phoenix.Naming
@@ -224,7 +223,7 @@ defmodule OliWeb.UserAuthorizationController do
 
             if is_invited do
               # Link SSO identity to invited user
-              link_sso_to_invited_user(conn, user, provider, user_params, nil, redirect_to)
+              link_sso_to_invited_user(conn, user, provider, user_params, redirect_to)
             else
               # User has password, they need to log in with password first
 
@@ -249,12 +248,10 @@ defmodule OliWeb.UserAuthorizationController do
   end
 
   defp invited_user?(user) do
-    # Invited users have no password hash and may have SSO identities
-    user = Oli.Repo.preload(user, :user_identities)
-    is_nil(user.password_hash) && Enum.empty?(user.user_identities)
+    Accounts.invited_user?(user)
   end
 
-  defp link_sso_to_invited_user(conn, user, provider, user_params, _config, redirect_to) do
+  defp link_sso_to_invited_user(conn, user, provider, user_params, redirect_to) do
     # Extract user identity params
     case user_params do
       %{"sub" => uid} ->
@@ -271,13 +268,21 @@ defmodule OliWeb.UserAuthorizationController do
           |> Enum.reject(fn {_k, v} -> is_nil(v) end)
           |> Map.new()
 
-        # Add SSO identity and accept invitation if there's a pending enrollment
+        # Get enrollment if section_slug is present
+        enrollment =
+          if section_slug do
+            Oli.Delivery.Sections.get_enrollment(section_slug, user.id, filter_by_status: false)
+          else
+            nil
+          end
+
+        # Add SSO identity and accept invitation
         with {:ok, _user_identity} <-
                Oli.AssentAuth.UserAssentAuth.add_identity_provider(
                  user,
                  user_identity_params
                ),
-             {:ok, user} <- accept_user_invitation(user, section_slug, sso_attrs) do
+             {:ok, user} <- Accounts.accept_user_invitation_via_sso(user, enrollment, sso_attrs) do
           # Successfully linked SSO and accepted invitation
 
           conn = OliWeb.UserAuth.create_session(conn, user)
@@ -287,17 +292,6 @@ defmodule OliWeb.UserAuthorizationController do
           |> clear_enrollment_session_data()
           |> redirect(to: redirect_to)
         else
-          {:error, :enrollment_not_found} ->
-            Logger.error("Enrollment not found for user invitation")
-
-            conn
-            |> clear_enrollment_session_data()
-            |> put_flash(
-              :error,
-              "Unable to accept the invitation. The section may no longer exist."
-            )
-            |> redirect(to: redirect_to)
-
           {:error, changeset} ->
             Logger.error(
               "Failed to link SSO identity or accept invitation for invited user: #{inspect(user.email)}, error: #{inspect(changeset)}"
@@ -337,9 +331,7 @@ defmodule OliWeb.UserAuthorizationController do
           conn
 
         enrollment ->
-          case enrollment
-               |> Oli.Delivery.Sections.Enrollment.changeset(%{status: :enrolled})
-               |> Oli.Repo.update() do
+          case Oli.Delivery.Sections.update_enrollment(enrollment, %{status: :enrolled}) do
             {:ok, _} ->
               conn
 
@@ -354,47 +346,6 @@ defmodule OliWeb.UserAuthorizationController do
   end
 
   defp maybe_accept_pending_enrollment(conn, _status), do: conn
-
-  # Accept user invitation - handles enrollment if section_slug is provided
-  # Accept user invitation via SSO
-  # For SSO, we skip password validation since the user authenticates via OAuth
-  defp accept_user_invitation(user, section_slug, attrs) when is_binary(section_slug) do
-    # This is a section invitation - need to update enrollment status
-    case Oli.Delivery.Sections.get_enrollment(section_slug, user.id, filter_by_status: false) do
-      nil ->
-        {:error, :enrollment_not_found}
-
-      enrollment ->
-        accept_user_invitation_sso(user, enrollment, attrs)
-    end
-  end
-
-  defp accept_user_invitation(user, _section_slug, attrs) do
-    # No section enrollment, just update user timestamps
-    accept_user_invitation_sso(user, nil, attrs)
-  end
-
-  # Accept user invitation for SSO users (no password validation)
-  defp accept_user_invitation_sso(user, enrollment, attrs) do
-    Oli.Repo.transaction(fn ->
-      now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
-
-      user =
-        user
-        |> Ecto.Changeset.cast(attrs, [:given_name, :family_name, :picture])
-        |> Ecto.Changeset.put_change(:invitation_accepted_at, now)
-        |> Ecto.Changeset.put_change(:email_confirmed_at, now)
-        |> Oli.Repo.update!()
-
-      if enrollment do
-        enrollment
-        |> Oli.Delivery.Sections.Enrollment.changeset(%{status: :enrolled})
-        |> Oli.Repo.update!()
-      end
-
-      user
-    end)
-  end
 
   ## Plugs
 
