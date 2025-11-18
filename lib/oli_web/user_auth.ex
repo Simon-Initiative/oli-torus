@@ -96,7 +96,12 @@ defmodule OliWeb.UserAuth do
         "browser_timezone",
         "author_token",
         "author_live_socket_id",
-        "current_author_id"
+        "current_author_id",
+        # Preserve enrollment invitation data for SSO flows
+        "pending_section_enrollment",
+        "invitation_email",
+        "invitation_token",
+        "validated_invitation_email"
       ])
 
     conn
