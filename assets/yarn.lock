@@ -14141,9 +14141,9 @@ mimic-fn@^3.1.0:
   integrity sha512-Ysbi9uYW9hFyfrThdDEQuykN4Ey6BuwPD2kpI5ES/nFTDn/98yxYNLZJcgUAKPT/mcrLLKaGzJR9YVxJrIdASQ==
 
 min-document@^2.19.0:
-  version "2.19.0"
-  resolved "https://registry.npmjs.org/min-document/-/min-document-2.19.0.tgz"
-  integrity sha512-9Wy1B3m3f66bPPmU5hdA4DR4PB2OfDU/+GS3yAB7IQozE3tqXaVv2zOjgla7MEGSRv95+ILmOuvhLkOK6wJtCQ==
+  version "2.19.2"
+  resolved "https://registry.yarnpkg.com/min-document/-/min-document-2.19.2.tgz#f95db44639eaae3ac8ea85ae6809ae85ff7e3b81"
+  integrity sha512-8S5I8db/uZN8r9HSLFVWPdJCvYOejMcEC82VIzNUc6Zkklf/d1gg2psfE79/vyhWOj4+J8MtwmoOz3TmvaGu5A==
   dependencies:
     dom-walk "^0.1.0"
 
@@ -19582,9 +19582,11 @@ vega-hierarchy@~5.1.0:
     vega-util "^2.1.0"
 
 vega-interpreter@^1.0.5:
-  version "1.0.5"
-  resolved "https://registry.npmjs.org/vega-interpreter/-/vega-interpreter-1.0.5.tgz"
-  integrity sha512-po6oTOmeQqr1tzTCdD15tYxAQLeUnOVirAysgVEemzl+vfmvcEP7jQmlc51jz0jMA+WsbmE6oJywisQPu/H0Bg==
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/vega-interpreter/-/vega-interpreter-1.2.1.tgz#54d6af77f45c0a8c0f0b3d11914a64b68a7f0dc9"
+  integrity sha512-EMHLGxJ+SWfh1K/fHDRlHEZtLA/2ZNAXItYb5e8CxuAIm/Ha/3DHX/8VlvbTGIciUpuwmcKx4tVhJWlKreQ/Yw==
+  dependencies:
+    vega-util "^1.17.4"
 
 vega-label@~2.1.0:
   version "2.1.0"

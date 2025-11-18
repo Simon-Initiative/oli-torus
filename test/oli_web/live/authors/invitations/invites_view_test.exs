@@ -6,6 +6,7 @@ defmodule OliWeb.Authors.Invitations.InviteViewTest do
   import Phoenix.LiveViewTest
 
   alias Oli.Accounts
+  alias Oli.AssentAuth.AuthorIdentity
 
   defp authors_invite_url(token), do: ~p"/authors/invite/#{token}"
 

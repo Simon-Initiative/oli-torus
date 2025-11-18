@@ -10,12 +10,15 @@ defmodule OliWeb.Authors.Invitations.InviteView do
   def mount(%{"token" => token}, session, socket) do
     case Accounts.get_author_token_by_author_invitation_token(token) do
       nil ->
-        {:ok, assign(socket, author: nil)}
+        {:ok, assign(socket, author: nil, authentication_providers: [], token: token)}
 
       %AuthorToken{author: author} ->
         current_author =
           session["author_token"] &&
             Accounts.get_author_by_session_token(session["author_token"])
+
+        authentication_providers =
+          Oli.AssentAuth.AuthorAssentAuth.authentication_providers() |> Keyword.keys()
 
         case {new_invited_author?(author),
               current_author_is_the_invited_one?(current_author, author)} do
@@ -26,11 +29,13 @@ defmodule OliWeb.Authors.Invitations.InviteView do
             {:ok,
              assign(socket,
                author: author,
+               token: token,
                current_author: current_author,
                step: "new_author_account_creation",
                trigger_submit: false,
                check_errors: false,
-               recaptcha_error: false
+               recaptcha_error: false,
+               authentication_providers: authentication_providers
              )
              |> assign_form(changeset)}
 
@@ -47,10 +52,12 @@ defmodule OliWeb.Authors.Invitations.InviteView do
             {:ok,
              assign(socket,
                author: author,
+               token: token,
                current_author: current_author,
                step: "existing_author_login",
                form: form,
-               trigger_submit: false
+               trigger_submit: false,
+               authentication_providers: authentication_providers
              )}
         end
     end
@@ -78,6 +85,8 @@ defmodule OliWeb.Authors.Invitations.InviteView do
           recaptcha_error={@recaptcha_error}
           check_errors={@check_errors}
           disabled_inputs={[:email]}
+          authentication_providers={@authentication_providers}
+          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @author.email, @token)}
         />
       </div>
     </.invite_container>
@@ -98,6 +107,8 @@ defmodule OliWeb.Authors.Invitations.InviteView do
           trigger_submit={@trigger_submit}
           submit_event="log_in_existing_author"
           disabled_inputs={[:email]}
+          authentication_providers={@authentication_providers}
+          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @author.email, @token)}
         />
       </div>
 
@@ -208,7 +219,13 @@ defmodule OliWeb.Authors.Invitations.InviteView do
   defp emails_match?(_author_email, email_param) when is_nil(email_param), do: true
   defp emails_match?(author_email, email_param), do: author_email == email_param
 
-  defp new_invited_author?(%Author{password_hash: nil}), do: true
+  defp new_invited_author?(%Author{password_hash: nil} = author) do
+    # Preload user_identities to check if this is an SSO author
+    author = Oli.Repo.preload(author, :user_identities)
+    # A truly new invited author has no password AND no SSO identities
+    author.user_identities == []
+  end
+
   defp new_invited_author?(_), do: false
 
   defp current_author_is_the_invited_one?(nil, _author), do: false
@@ -224,5 +241,15 @@ defmodule OliWeb.Authors.Invitations.InviteView do
     else
       assign(socket, form: form)
     end
+  end
+
+  defp build_invitation_auth_provider_path(provider, invited_email, token) do
+    params = [
+      from_invitation_link?: "true",
+      invitation_email: invited_email,
+      invitation_token: token
+    ]
+
+    ~p"/authors/auth/#{provider}/new?#{params}"
   end
 end
