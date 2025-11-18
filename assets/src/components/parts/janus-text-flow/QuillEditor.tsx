@@ -13,7 +13,7 @@ import {
 } from '../janus-fill-blanks/FIBUtils';
 import { OptionItem, QuillFIBOptionEditor } from './QuillFIBOptionEditor';
 import { QuillImageUploader } from './QuillImageUploader';
-import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
+import { convertJanusToQuill, convertQuillToJanus, fontFamilyMapping } from './quill-utils';
 
 interface QuillEditorProps {
   tree: any[];
@@ -29,19 +29,19 @@ interface QuillEditorProps {
 
 const supportedFonts = ['Open Sans', 'Aleo', 'Courier Prime', 'Brawler', 'Montserrat', 'Patrick Hand'];
 
-const fontFamilyOverrides: Record<string, string> = {
-  'Open Sans': '"Open Sans", "Helvetica Neue", Arial, sans-serif',
-  Aleo: '"Aleo", Georgia, serif',
-  'Courier Prime': '"Courier Prime", "Courier New", monospace',
-  Brawler: '"Brawler", Georgia, serif',
-  Montserrat: '"Montserrat", "Helvetica Neue", Arial, sans-serif',
-  'Patrick Hand': '"Patrick Hand", "Comic Sans MS", cursive',
-};
-
 // get code friendly font names
 const getFontName = (font: string) => {
   return font.toLowerCase().replace(/\s/g, '-');
 };
+
+// Create fontFamilyOverrides from shared mapping using display names as keys
+const fontFamilyOverrides: Record<string, string> = {};
+supportedFonts.forEach((font) => {
+  const fontCode = getFontName(font);
+  if (fontFamilyMapping[fontCode]) {
+    fontFamilyOverrides[font] = fontFamilyMapping[fontCode];
+  }
+});
 Quill.import('ui/icons')['insertFIBOption'] =
   '<i class="fa-solid fa-square-caret-down" style="color:rgb(55, 58, 68)"></i>';
 
@@ -56,19 +56,21 @@ Quill.register(FontSizeAttributor, true);
 
 const getCssForFonts = (fonts: string[]) => {
   return fonts
-    .map(
-      (font) => `
-    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value='${getFontName(font)}']::before,
-    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value='${getFontName(font)}']::before
+    .map((font) => {
+      const fontCode = getFontName(font);
+      const fontFamily = fontFamilyMapping[fontCode] || fontFamilyOverrides[font] || `'${font}'`;
+      return `
+    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value='${fontCode}']::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value='${fontCode}']::before
     {
       content: '${font}';
-      font-family: ${fontFamilyOverrides[font] || `'${font}'`};
+      font-family: ${fontFamily};
     }
-    .ql-font-${getFontName(font)} {
-      font-family: ${fontFamilyOverrides[font] || `'${font}'`};
+    .ql-font-${fontCode} {
+      font-family: ${fontFamily};
     }
-  `,
-    )
+  `;
+    })
     .join('\n');
 };
 
