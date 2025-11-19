@@ -187,6 +187,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const dropDownStyle: CSSProperties = {
     width: '100%',
     height: 'auto',
+    minHeight: '42px',
   };
 
   const srOnlyStyle: CSSProperties = {
@@ -428,7 +429,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     if (prompt) {
       return prompt;
     }
-    return 'Select an option';
+    return '';
   }, [selectedIndex, optionLabels, selectedItem, prompt]);
 
   useEffect(() => {
