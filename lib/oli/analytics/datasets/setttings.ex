@@ -28,7 +28,7 @@ defmodule Oli.Analytics.Datasets.Settings do
   end
 
   def region() do
-    Application.get_env(:ex_aws, :s3)[:region]
+    ExAws.Config.new(:s3).region
   end
 
   def enabled?() do
