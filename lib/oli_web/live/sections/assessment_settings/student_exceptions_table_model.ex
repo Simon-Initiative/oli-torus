@@ -136,7 +136,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   def render_student_column(assigns, student_exception, _) do
     assigns =
       Map.merge(assigns, %{
-        name: Utils.name(student_exception.user),
+        name: Utils.name_and_email(student_exception.user),
         id: student_exception.user_id
       })
 

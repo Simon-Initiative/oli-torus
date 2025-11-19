@@ -34,10 +34,12 @@ defmodule OliWeb.InstitutionController do
 
     institution_brands =
       Branding.list_available_brands(institution_id)
+      |> Enum.sort_by(& &1.name)
       |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
     other_brands =
       Branding.list_available_brands()
+      |> Enum.sort_by(& &1.name)
       |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
     []
@@ -51,6 +53,7 @@ defmodule OliWeb.InstitutionController do
 
   defp available_brands() do
     Branding.list_available_brands()
+    |> Enum.sort_by(& &1.name)
     |> Enum.map(fn brand -> {brand.name, brand.id} end)
   end
 

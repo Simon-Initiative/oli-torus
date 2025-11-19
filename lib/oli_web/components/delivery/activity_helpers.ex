@@ -43,7 +43,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         page_revision,
         activity_types_map,
         students,
-        only_for_activity_ids \\ nil
+        only_for_activity_ids
       ) do
     page_id = page_revision.resource_id
     graded = page_revision.graded
@@ -516,13 +516,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         ]
       }
       """)
+      |> VegaLite.config(signals: [%{"name" => "isDarkMode", "value" => true}])
       |> VegaLite.to_spec()
 
-    spec =
-      %{spec: spec}
-      |> VegaLite.config(signals: [%{"name" => "isDarkMode", "value" => true}])
-
-    assigns = Map.merge(assigns, spec)
+    assigns = Map.merge(assigns, %{spec: spec})
 
     ~H"""
     <div class="mt-5 overflow-x-hidden w-full flex justify-center">

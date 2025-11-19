@@ -1335,4 +1335,80 @@ defmodule Oli.AccountsTest do
       assert user_token_2.sent_to == "lionel_messi@afa.com"
     end
   end
+
+  describe "can_access?/2" do
+    setup do
+      # Create a regular author
+      author = insert(:author)
+      # Create an author with system_admin role
+      system_admin =
+        insert(:author, system_role_id: Accounts.SystemRole.role_id().system_admin)
+
+      # Create an author with account_admin role
+      account_admin =
+        insert(:author, system_role_id: Accounts.SystemRole.role_id().account_admin)
+
+      # Create an author with content_admin role
+      content_admin =
+        insert(:author, system_role_id: Accounts.SystemRole.role_id().content_admin)
+
+      # Create projects
+      project1 = insert(:project)
+      project2 = insert(:project)
+
+      # Associate author with project1 only
+      insert(:author_project, author_id: author.id, project_id: project1.id)
+
+      {:ok,
+       %{
+         author: author,
+         system_admin: system_admin,
+         account_admin: account_admin,
+         content_admin: content_admin,
+         project1: project1,
+         project2: project2
+       }}
+    end
+
+    test "regular author can access their assigned project", %{
+      author: author,
+      project1: project1
+    } do
+      assert Accounts.can_access?(author, project1)
+    end
+
+    test "regular author cannot access projects they are not assigned to", %{
+      author: author,
+      project2: project2
+    } do
+      refute Accounts.can_access?(author, project2)
+    end
+
+    test "system admin can access all projects", %{
+      system_admin: system_admin,
+      project1: project1,
+      project2: project2
+    } do
+      assert Accounts.can_access?(system_admin, project1)
+      assert Accounts.can_access?(system_admin, project2)
+    end
+
+    test "account admin can access all projects", %{
+      account_admin: account_admin,
+      project1: project1,
+      project2: project2
+    } do
+      assert Accounts.can_access?(account_admin, project1)
+      assert Accounts.can_access?(account_admin, project2)
+    end
+
+    test "content admin can access all projects", %{
+      content_admin: content_admin,
+      project1: project1,
+      project2: project2
+    } do
+      assert Accounts.can_access?(content_admin, project1)
+      assert Accounts.can_access?(content_admin, project2)
+    end
+  end
 end

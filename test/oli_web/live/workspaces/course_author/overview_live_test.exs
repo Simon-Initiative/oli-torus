@@ -105,6 +105,50 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       |> hd() =~ "Welcome Title"
     end
 
+    test "publisher dropdown displays publishers sorted alphabetically", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+
+      # Create publishers in non-alphabetical order
+      insert(:publisher, name: "Zebra Publisher", default: false)
+      insert(:publisher, name: "Alpha Publisher", default: false)
+      insert(:publisher, name: "Middle Publisher", default: false)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Extract publisher options from the dropdown
+      html = render(view)
+
+      publisher_options =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find("select[name=\"project[publisher_id]\"] option")
+        |> Enum.map(&Floki.text/1)
+        |> Enum.map(&String.trim/1)
+        |> Enum.reject(&(&1 == ""))
+
+      # Verify publishers are sorted alphabetically (ignoring default status)
+      alpha_index = Enum.find_index(publisher_options, &String.contains?(&1, "Alpha"))
+      middle_index = Enum.find_index(publisher_options, &String.contains?(&1, "Middle"))
+      zebra_index = Enum.find_index(publisher_options, &String.contains?(&1, "Zebra"))
+
+      # Verify all publishers are present
+      assert not is_nil(alpha_index),
+             "Alpha publisher not found in: #{inspect(publisher_options)}"
+
+      assert not is_nil(middle_index),
+             "Middle publisher not found in: #{inspect(publisher_options)}"
+
+      assert not is_nil(zebra_index),
+             "Zebra publisher not found in: #{inspect(publisher_options)}"
+
+      # Verify publishers are sorted alphabetically
+      assert alpha_index < middle_index
+      assert middle_index < zebra_index
+    end
+
     test "project gets validated correctly", %{conn: conn, author: author} do
       project = create_project_with_author(author)
 

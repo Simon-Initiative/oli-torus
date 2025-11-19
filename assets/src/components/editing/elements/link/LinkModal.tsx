@@ -56,9 +56,14 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
     Persistence.pages(commandContext.projectSlug, getCurrentSlugFromLink(model.href)).then(
       (result) => {
         if (result.type === 'success') {
-          Maybe.maybe(result.pages.find((p) => toInternalLink(p) === href)).caseOf({
+          const sortedPages = [...result.pages].sort((a, b) => {
+            const aIndex = a.numbering_index ?? 0;
+            const bIndex = b.numbering_index ?? 0;
+            return aIndex - bIndex;
+          });
+          Maybe.maybe(sortedPages.find((p) => toInternalLink(p) === href)).caseOf({
             just: (found) => setSelectedPage(found),
-            nothing: () => setSelectedPage(result.pages[0]),
+            nothing: () => setSelectedPage(sortedPages[0]),
           });
         }
 
@@ -76,7 +81,14 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
       const value = e.target.value as ContentModel.HyperlinkType;
       switch (value) {
         case 'page':
-          if (pages.pages.length > 1) setHref(toInternalLink(pages.pages[0]));
+          if (pages.pages.length > 0) {
+            const sortedPages = [...pages.pages].sort((a, b) => {
+              const aIndex = a.numbering_index ?? 0;
+              const bIndex = b.numbering_index ?? 0;
+              return aIndex - bIndex;
+            });
+            setHref(toInternalLink(sortedPages[0]));
+          }
           break;
         case 'url':
         case 'media_library':
@@ -193,25 +205,33 @@ const PageSelect: React.FC<{
   selectedPage: Persistence.Page | null;
   setSelectedPage: (x: Persistence.Page) => void;
   pages: Persistence.PagesReceived;
-}> = ({ href, setHref, selectedPage, setSelectedPage, pages }) => (
-  <form className="form-inline">
-    <label className="sr-only">Link</label>
+}> = ({ href, setHref, selectedPage, setSelectedPage, pages }) => {
+  const sortedPages = [...pages.pages].sort((a, b) => {
+    const aIndex = a.numbering_index ?? 0;
+    const bIndex = b.numbering_index ?? 0;
+    return aIndex - bIndex;
+  });
 
-    <select
-      className="form-control mr-2"
-      value={toInternalLink(selectedPage)}
-      onChange={(e) => {
-        const href = e.target.value;
-        setHref(href);
-        const item = pages.pages.find((p) => toInternalLink(p) === href);
-        if (item) setSelectedPage(item);
-      }}
-      style={{ minWidth: '300px' }}
-    >
-      {pages.pages.map(PageOption)}
-    </select>
-  </form>
-);
+  return (
+    <form className="form-inline">
+      <label className="sr-only">Link</label>
+
+      <select
+        className="form-control mr-2"
+        value={toInternalLink(selectedPage)}
+        onChange={(e) => {
+          const href = e.target.value;
+          setHref(href);
+          const item = sortedPages.find((p) => toInternalLink(p) === href);
+          if (item) setSelectedPage(item);
+        }}
+        style={{ minWidth: '300px' }}
+      >
+        {sortedPages.map(PageOption)}
+      </select>
+    </form>
+  );
+};
 
 const HrefInput: React.FC<{
   href: string;

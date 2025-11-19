@@ -28,8 +28,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         name: :name,
         label: "ASSESSMENT",
         render_fn: &render_assessment_column/3,
-        th_class: "!sticky left-20 bg-white z-10",
-        td_class: "sticky left-20 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap",
+        th_class: "!sticky left-20 !bg-white dark:!bg-[#0d0c0f] z-10",
+        td_class: "sticky left-20 !bg-white dark:!bg-neutral-800 z-10 whitespace-nowrap",
         tooltip: Tooltips.for(:name)
       },
       %ColumnSpec{

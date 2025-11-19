@@ -1,6 +1,8 @@
 defmodule OliWeb.InstitutionControllerTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
+
   alias Oli.Accounts
   alias Oli.Institutions
   alias Oli.Institutions.Institution
@@ -81,6 +83,52 @@ defmodule OliWeb.InstitutionControllerTest do
     test "renders form for editing chosen institution", %{conn: conn, institution: institution} do
       conn = get(conn, Routes.institution_path(conn, :edit, institution))
       assert html_response(conn, 200) =~ "Edit Institution"
+    end
+
+    test "default brand dropdown displays brands sorted alphabetically", %{
+      conn: conn,
+      institution: institution
+    } do
+      _brand_z = insert(:brand, name: "Zebra Brand", institution_id: nil, institution: nil)
+      _brand_a = insert(:brand, name: "Alpha Brand", institution_id: nil, institution: nil)
+      _brand_m = insert(:brand, name: "Middle Brand", institution_id: nil, institution: nil)
+
+      conn = get(conn, Routes.institution_path(conn, :edit, institution))
+      html = html_response(conn, 200)
+
+      # Extract brand options from the dropdown (including options within optgroups)
+      brand_options =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find(
+          "select[id=institution_default_brand_id] optgroup option, select[id=institution_default_brand_id] option"
+        )
+        |> Enum.map(&Floki.text/1)
+        |> Enum.map(&String.trim/1)
+        |> Enum.reject(&(&1 in ["Select Brand", ""]))
+
+      # Verify we have brands in the dropdown
+      assert length(brand_options) >= 3,
+             "Expected at least 3 brands, got: #{inspect(brand_options)}"
+
+      # Find indices of our test brands
+      alpha_index = Enum.find_index(brand_options, &String.contains?(&1, "Alpha"))
+      middle_index = Enum.find_index(brand_options, &String.contains?(&1, "Middle"))
+      zebra_index = Enum.find_index(brand_options, &String.contains?(&1, "Zebra"))
+
+      # Verify all three brands are present
+      assert not is_nil(alpha_index),
+             "Alpha brand not found in options: #{inspect(brand_options)}"
+
+      assert not is_nil(middle_index),
+             "Middle brand not found in options: #{inspect(brand_options)}"
+
+      assert not is_nil(zebra_index),
+             "Zebra brand not found in options: #{inspect(brand_options)}"
+
+      # Verify brands are sorted alphabetically
+      assert alpha_index < middle_index
+      assert middle_index < zebra_index
     end
   end
 
