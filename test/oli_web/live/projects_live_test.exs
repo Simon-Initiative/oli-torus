@@ -215,6 +215,31 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
 
       refute has_element?(view, "#projects-filter-panel span.inline-flex")
     end
+
+    test "clear all filters clears text search", %{conn: conn, admin: admin} do
+      searchable_project = create_project_with_owner(admin, %{title: "Searchable Project"})
+      other_project = create_project_with_owner(admin, %{title: "Other Project"})
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/projects")
+
+      # Apply text search
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{"project_name" => "Searchable"})
+
+      assert has_element?(view, "##{searchable_project.id}")
+      refute has_element?(view, "##{other_project.id}")
+
+      # Clear all filters
+      view |> element("#projects-filter-panel button", "Clear All Filters") |> render_click()
+
+      # Both projects should now be visible
+      assert has_element?(view, "##{searchable_project.id}")
+      assert has_element?(view, "##{other_project.id}")
+
+      # Search input should be empty
+      assert view |> element("#text-search-input") |> render() =~ ~s(value="")
+    end
   end
 
   describe "projects live as author" do

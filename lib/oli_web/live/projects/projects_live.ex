@@ -328,7 +328,7 @@ defmodule OliWeb.Projects.ProjectsLive do
       offset: 0,
       limit: socket.assigns.limit,
       show_deleted: socket.assigns.show_deleted,
-      text_search: socket.assigns.text_search,
+      text_search: "",
       show_all: socket.assigns.show_all
     }
 
