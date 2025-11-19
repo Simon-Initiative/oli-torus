@@ -7,7 +7,7 @@
     "test-config": "npm run pw config.spec.ts",
     "test-config:headed": "npm run test-config -- --headed",
     "test-useraccounts": "npm run pw user-accounts.spec",
-    "test-all": "npm run pw user-accounts.spec",
+    "test-all": "npm run pw user-accounts.spec course-authoring.spec.ts",
     "show-report": "npx playwright show-report",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

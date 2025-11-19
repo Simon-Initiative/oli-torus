@@ -16,8 +16,8 @@ export class OverviewProjectPO {
     this.projecIDInput = page.locator('#project_slug');
     this.toolbar = page.locator('.toolbar_nGbXING3');
     this.visibilityRadio = page.locator('#visibility_option_global');
-    this.learningLanguageSelect = page.getByLabel('Learning Language (optional)');
-    this.licenseSelect = page.getByLabel('License (optional)');
+    this.learningLanguageSelect = page.locator('#project_attributes_learning_language');
+    this.licenseSelect = page.locator('#project_attributes_license_license_type');
     this.saveButton = page.getByRole('button', { name: 'Save' }).nth(1);
   }
 
@@ -34,7 +34,7 @@ export class OverviewProjectPO {
     return {
       setActivityState: async (activity: TypeActivity, stateToClick: 'Enable' | 'Disable') => {
         const activityLabel = TYPE_ACTIVITY[activity].label;
-        const row = this.page.locator(`div.flex.flex-row:has-text("${activityLabel}")`);
+        const row = this.page.locator(`div.flex.flex-row:has-text("${activityLabel}")`).first();
 
         await Verifier.expectIsVisible(row);
 
@@ -79,8 +79,14 @@ export class OverviewProjectPO {
         await this.page.waitForTimeout(1500);
       },
       expectSelectedValues: async (language: TypeLanguage, license: TypeLicenseOption) => {
-        await Verifier.expectToHaveValue(this.learningLanguageSelect, language);
-        await Verifier.expectToHaveValue(this.licenseSelect, license);
+        await Verifier.expectHasText(
+          this.learningLanguageSelect.locator('option:checked'),
+          TYPE_LANGUAGE[language].visible,
+        );
+        await Verifier.expectHasText(
+          this.licenseSelect.locator('option:checked'),
+          TYPE_LICENSE_OPTIONS[license].visible,
+        );
       },
     };
   }

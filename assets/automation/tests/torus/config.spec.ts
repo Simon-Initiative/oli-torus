@@ -4,6 +4,7 @@ import { TestData } from './test-data';
 const testData = new TestData();
 const projectNames = testData.preconditions.projectNames;
 const multiMediaFilesUpload = testData.preconditions.multiMediaFilesUpload;
+const bibliography = testData.bibliography;
 
 test.describe('Enviroment configuration', () => {
   for (const name of projectNames) {
@@ -49,4 +50,14 @@ test.describe('Enviroment configuration', () => {
       await curriculumTask.deletePage();
     });
   }
+
+  test(`Add a bibliography to the project name: ${bibliography.projectName}`, async ({
+    homeTask,
+    projectTask,
+  }) => {
+    await homeTask.login('author');
+    await projectTask.searchAndEnterProject(bibliography.projectName);
+    await homeTask.enterToBibliography();
+    await projectTask.addBibliographyToProject(bibliography.bibtext);
+  });
 });
