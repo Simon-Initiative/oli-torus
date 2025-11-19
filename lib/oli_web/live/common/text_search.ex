@@ -11,31 +11,33 @@ defmodule OliWeb.Common.TextSearch do
   attr(:class, :string, default: "")
 
   def render(assigns) do
+    assigns = assign(assigns, :phx_target, normalize_target(assigns.event_target))
+
     ~H"""
-    <div class={"input-group max-w-[350px] #{@class}"}>
-      <i id={"#{@id}-icon"} class="absolute fa-solid fa-magnifying-glass pl-3 pt-3 h-4 w-4 "></i>
-      <input
-        id={"#{@id}-input"}
-        type="text"
-        class="h-9 w-full rounded border !pl-9 focus:ring-1 focus:ring-delivery-primary animate-none focus:outline-2 dark:bg-[#0F0D0F] dark:text-violet-100 text-base font-normal font-['Roboto']"
-        placeholder={@placeholder}
-        value={@text}
-        phx-hook="TextInputListener"
-        phx-hook-target={@event_target}
-        phx-target={@event_target}
-        phx-value-change={@change}
-      />
+    <div class={"flex items-center max-w-[350px] #{@class}"}>
+      <div class="relative flex-1">
+        <i id={"#{@id}-icon"} class="absolute fa-solid fa-magnifying-glass text-gray-500 left-3 top-1/2 -translate-y-1/2 h-4 w-4"></i>
+        <input
+          id={"#{@id}-input"}
+          type="text"
+          class="h-10 w-full border rounded-l rounded-r-none pl-9 pr-3 focus:ring-1 focus:ring-delivery-primary animate-none focus:outline-2 dark:bg-[#0F0D0F] dark:text-violet-100 text-base font-normal font-['Roboto']"
+          placeholder={@placeholder}
+          value={@text}
+          phx-hook="TextInputListener"
+          phx-hook-target={@event_target}
+          phx-target={@phx_target}
+          phx-value-change={@change}
+        />
+      </div>
       <%= if @text not in [nil, ""] do %>
-        <div class="input-group-append">
-          <button
-            class="btn btn-outline-secondary"
-            phx-click={@reset}
-            phx-target={@event_target}
-            phx-value-id={@id}
-          >
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+        <button
+          class="h-10 px-4 border border-l-0 rounded-r bg-white dark:bg-[#0F0D0F] hover:bg-gray-100 flex items-center justify-center"
+          phx-click={@reset}
+          phx-target={@phx_target}
+          phx-value-id={@id}
+        >
+          <i class="fas fa-times text-gray-600"></i>
+        </button>
       <% end %>
       <div :if={@tooltip} class="m-2 opacity-50 hover:cursor-help">
         <span
@@ -64,4 +66,7 @@ defmodule OliWeb.Common.TextSearch do
   def delegate_handle_event(_, _, _, _) do
     :not_handled
   end
+
+  defp normalize_target(target) when target in [:live_view, "live_view", nil], do: nil
+  defp normalize_target(target), do: target
 end
