@@ -16,7 +16,11 @@ defmodule OliWeb.Common.TextSearch do
     ~H"""
     <div class={"flex items-center max-w-[350px] #{@class}"}>
       <div class="relative flex-1">
-        <i id={"#{@id}-icon"} class="absolute fa-solid fa-magnifying-glass text-gray-500 left-3 top-1/2 -translate-y-1/2 h-4 w-4"></i>
+        <i
+          id={"#{@id}-icon"}
+          class="absolute fa-solid fa-magnifying-glass text-gray-500 left-3 top-1/2 -translate-y-1/2 h-4 w-4"
+        >
+        </i>
         <input
           id={"#{@id}-input"}
           type="text"
