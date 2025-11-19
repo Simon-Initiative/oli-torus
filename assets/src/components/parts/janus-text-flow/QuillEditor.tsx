@@ -13,7 +13,13 @@ import {
 } from '../janus-fill-blanks/FIBUtils';
 import { OptionItem, QuillFIBOptionEditor } from './QuillFIBOptionEditor';
 import { QuillImageUploader } from './QuillImageUploader';
-import { convertJanusToQuill, convertQuillToJanus, fontFamilyMapping } from './quill-utils';
+import {
+  convertJanusToQuill,
+  convertQuillToJanus,
+  fontFamilyMapping,
+  getFontName,
+  getSupportedFonts,
+} from './quill-utils';
 
 interface QuillEditorProps {
   tree: any[];
@@ -27,21 +33,8 @@ interface QuillEditorProps {
   options?: any;
 }
 
-const supportedFonts = ['Open Sans', 'Aleo', 'Courier Prime', 'Brawler', 'Montserrat', 'Patrick Hand'];
-
-// get code friendly font names
-const getFontName = (font: string) => {
-  return font.toLowerCase().replace(/\s/g, '-');
-};
-
-// Create fontFamilyOverrides from shared mapping using display names as keys
-const fontFamilyOverrides: Record<string, string> = {};
-supportedFonts.forEach((font) => {
-  const fontCode = getFontName(font);
-  if (fontFamilyMapping[fontCode]) {
-    fontFamilyOverrides[font] = fontFamilyMapping[fontCode];
-  }
-});
+// Get supported fonts from shared mapping (ensures consistency)
+const supportedFonts = getSupportedFonts();
 Quill.import('ui/icons')['insertFIBOption'] =
   '<i class="fa-solid fa-square-caret-down" style="color:rgb(55, 58, 68)"></i>';
 
@@ -58,7 +51,7 @@ const getCssForFonts = (fonts: string[]) => {
   return fonts
     .map((font) => {
       const fontCode = getFontName(font);
-      const fontFamily = fontFamilyMapping[fontCode] || fontFamilyOverrides[font] || `'${font}'`;
+      const fontFamily = fontFamilyMapping[fontCode] || `'${font}'`;
       return `
     .ql-snow .ql-picker.ql-font .ql-picker-label[data-value='${fontCode}']::before,
     .ql-snow .ql-picker.ql-font .ql-picker-item[data-value='${fontCode}']::before

@@ -36,6 +36,43 @@ export const fontFamilyMapping: Record<string, string> = {
   'sans-serif': 'Arial, "Helvetica Neue", Helvetica, sans-serif',
 };
 
+/**
+ * Converts a font display name to a font code (lowercase with hyphens).
+ * Example: "Open Sans" -> "open-sans"
+ * @param font - The font display name
+ * @returns The font code
+ */
+export const getFontName = (font: string) => {
+  return font.toLowerCase().replace(/\s/g, '-');
+};
+
+/**
+ * Converts a font code to a display name (capitalize words).
+ * Example: "open-sans" -> "Open Sans"
+ * @param fontCode - The font code
+ * @returns The font display name
+ */
+const getFontDisplayName = (fontCode: string): string => {
+  return fontCode
+    .split('-')
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join(' ');
+};
+
+/**
+ * Gets the list of supported fonts (new fonts only, excluding old fonts for backward compatibility).
+ * This ensures consistency between the font mapping and the supported fonts list.
+ * @returns Array of font display names (e.g., ['Open Sans', 'Aleo', ...])
+ */
+export const getSupportedFonts = (): string[] => {
+  // Old fonts to exclude (for backward compatibility only)
+  const oldFonts = ['initial', 'arial', 'times-new-roman', 'sans-serif'];
+
+  return Object.keys(fontFamilyMapping)
+    .filter((fontCode) => !oldFonts.includes(fontCode))
+    .map((fontCode) => getFontDisplayName(fontCode));
+};
+
 const convertFontName = (fontCode: string) => {
   // First check if we have a mapping for this font code
   if (fontFamilyMapping[fontCode]) {
@@ -79,8 +116,8 @@ const convertFontFamilyToCode = (fontFamily: string): string | null => {
   const quotedMatch = fontFamily.match(/^["']([^"']+)["']/);
   if (quotedMatch) {
     const fontName = quotedMatch[1];
-    // Convert to font code format (lowercase, spaces to hyphens)
-    const fontCode = fontName.toLowerCase().replace(/\s+/g, '-');
+    // Convert to font code format using shared utility
+    const fontCode = getFontName(fontName);
     // Check if this font code exists in our mapping (for backward compatibility)
     if (fontFamilyMapping[fontCode]) {
       return fontCode;
@@ -94,7 +131,8 @@ const convertFontFamilyToCode = (fontFamily: string): string | null => {
   const simpleMatch = fontFamily.match(/^([^,]+)/);
   if (simpleMatch) {
     const fontName = simpleMatch[1].trim();
-    const fontCode = fontName.toLowerCase().replace(/\s+/g, '-');
+    // Convert to font code format using shared utility
+    const fontCode = getFontName(fontName);
     if (fontFamilyMapping[fontCode]) {
       return fontCode;
     }
