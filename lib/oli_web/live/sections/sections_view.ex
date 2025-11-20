@@ -256,7 +256,7 @@ defmodule OliWeb.Sections.SectionsView do
       sort_order: socket.assigns.table_model.sort_order,
       offset: 0,
       limit: socket.assigns.limit,
-      text_search: socket.assigns.text_search_input
+      text_search: ""
     }
 
     {:noreply,

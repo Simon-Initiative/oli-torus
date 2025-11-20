@@ -268,6 +268,29 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product_2.base_project.title)
     end
 
+    test "clear all filters clears text search", %{conn: conn, product: product} do
+      [{_, product_2} | _] = create_product(conn)
+      {:ok, view, _html} = live(conn, @live_view_all_products)
+
+      # Apply text search
+      view
+      |> element("form[phx-change=\"text_search_change\"]")
+      |> render_change(%{product_name: product.title})
+
+      assert has_element?(view, "a", product.title)
+      refute has_element?(view, "a", product_2.title)
+
+      # Clear all filters
+      view |> element("#products-filter-panel button", "Clear All Filters") |> render_click()
+
+      # Both products should now be visible
+      assert has_element?(view, "a", product.title)
+      assert has_element?(view, "a", product_2.title)
+
+      # Search input should be empty
+      assert view |> element("#text-search-input") |> render() =~ ~s(value="")
+    end
+
     test "applies paging", %{conn: conn} do
       first_p = insert(:section, title: "First Product", inserted_at: yesterday())
       last_p = insert(:section, title: "Last Product", inserted_at: tomorrow())
