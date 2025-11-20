@@ -11,24 +11,47 @@ update this file accordingly.
 
 ### Environment Configs
 
-| Name                               | Required | Description                                                                     |
-| ---------------------------------- | -------- | ------------------------------------------------------------------------------- |
-| MEDIA_URL                          | Yes      | HTTP/HTTPS URL for media assets (Default http://localhost:9000/oli-torus-media) |
-| VENDOR_PROPERTY_BILLING_DESCRIPTOR | No       | Billing descriptor text shown on payment page (Default: "CARNEGIE MELLON UNI")  |
+| Name                               | Required | Description                                                                    |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------ |
+| CLOAK_VAULT_KEY                    | Yes      | Key used to encrypt/decrypt sensitive data stored in the database              |
+| MEDIA_URL                          | Yes      | HTTP/HTTPS URL for media assets (e.g. https://torus-media.s3.amazonaws.com)    |
+| VENDOR_PROPERTY_BILLING_DESCRIPTOR | No       | Billing descriptor text shown on payment page (Default: "CARNEGIE MELLON UNI") |
+| AWS_S3_SCHEME                      | No       | Scheme to use for S3 URLs (Default: "https")                                   |
+| AWS_S3_HOST                        | No       | Host to use for S3 URLs (Default: "s3.amazonaws.com")                          |
+| AWS_S3_PORT                        | No       | Port to use for S3 URLs (Default: 443)                                         |
+| AWS_S3_REGION                      | No       | AWS region for S3 URLs (Default: AWS_REGION or "us-east-1")                    |
+| AWS_S3_ACCESS_KEY_ID               | No       | AWS access key ID for S3 access (Default: AWS_ACCESS_KEY_ID)                   |
+| AWS_S3_SECRET_ACCESS_KEY           | No       | AWS secret access key for S3 access (Default: AWS_SECRET_ACCESS_KEY)           |
+
+- `CLOAK_VAULT_KEY` is now required. This key is used to encrypt and decrypt sensitive data
+  stored in the database. It should be a secure, random string of sufficient length
+  (e.g., at least 32 characters). If not set, the application will not start.
+
+  This can be generated using a command like:
+
+  ```bash
+  openssl rand -base64 32
+  ```
 
 - `MEDIA_URL` is now set to the full URL including the scheme (http/https) and (optionally) the
   port. The default value for development is now `http://localhost:9000/oli-torus-media` which
   corresponds to a local S3/minio service. This value is still required to be set in production,
-  typically to the URL of the production S3 bucket.
+  typically to the URL of the production S3 bucket. **Note:** When using CloudFront or another CDN in
+  front of S3, this should be set to the CDN URL and may not require the S3 bucket in the URL.
 
 - `VENDOR_PROPERTY_BILLING_DESCRIPTOR` allows customization of the billing descriptor message
   displayed on the student paywall page. This message informs students how the charge will appear
   on their bank or credit card statement.
   Defaults to "CARNEGIE MELLON UNI" if not specified.
 
+- `AWS_S3_*` environment variables allow customization of the S3 URL generation.
+  These are optional and will fallback to the configured AWS settings if not provided.
+  This is useful for deployments that use a different S3-compatible storage service
+  other than AWS.
+
 ### Infrastructure Changes
 
-- [ ] Update servers to use the new MEDIA_URL format
+- [ ] Configure required environment variables in deployment environments
 
 ---
 

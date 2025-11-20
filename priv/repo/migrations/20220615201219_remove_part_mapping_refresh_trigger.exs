@@ -8,32 +8,8 @@ defmodule Oli.Repo.Migrations.RemovePartMappingRefreshTrigger do
   def down do
     drop_trigger()
 
-    user = get_current_db_user()
-    create_trigger(user)
+    create_trigger()
     refresh_materialized_view()
-  end
-
-  def get_current_db_user() do
-    case System.get_env("DATABASE_URL", nil) do
-      nil -> "postgres"
-      url -> parse_user_from_db_url(url, "postgres")
-    end
-  end
-
-  def parse_user_from_db_url(url, default) do
-    case url do
-      "ecto://" <> rest ->
-        split = String.split(rest, ":")
-
-        case Enum.count(split) do
-          0 -> default
-          1 -> default
-          _ -> Enum.at(split, 0)
-        end
-
-      _ ->
-        default
-    end
   end
 
   def drop_trigger() do
@@ -44,7 +20,7 @@ defmodule Oli.Repo.Migrations.RemovePartMappingRefreshTrigger do
     execute "DROP FUNCTION IF EXISTS public.refresh_part_mapping() CASCADE;"
   end
 
-  def create_trigger(user) do
+  def create_trigger() do
     execute """
     CREATE OR REPLACE FUNCTION public.refresh_part_mapping()
         RETURNS trigger
@@ -61,7 +37,7 @@ defmodule Oli.Repo.Migrations.RemovePartMappingRefreshTrigger do
 
     execute """
     ALTER FUNCTION public.refresh_part_mapping()
-    OWNER TO #{user};
+    OWNER TO CURRENT_USER;
     """
 
     execute """
