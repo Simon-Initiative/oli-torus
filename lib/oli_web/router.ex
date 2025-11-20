@@ -318,6 +318,14 @@ defmodule OliWeb.Router do
     live "/users/link_account", LinkAccountLive, :link_account
   end
 
+  if Application.compile_env(:oli, :enable_playwright_scenarios, false) do
+    scope "/test", OliWeb do
+      pipe_through [:api]
+
+      post "/scenario-yaml", PlaywrightScenarioController, :run
+    end
+  end
+
   scope "/", OliWeb do
     pipe_through [:browser, :redirect_if_author_is_authenticated]
 

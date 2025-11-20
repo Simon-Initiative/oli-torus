@@ -24,6 +24,7 @@ PASS_INSTRUCTOR=your_instructor_password
 
 EMAIL_ADMIN=your_admin_email@example.com
 PASS_ADMIN=your_admin_password
+SCENARIO_TOKEN=shared_secret_string
 ```
 
 ### config.env
@@ -33,6 +34,12 @@ This file is located in `tests/resources/login.env`
 | Name                 | Accepted values | Description                                                                                                     |
 | -------------------- | --------------- | --------------------------------------------------------------------------------------------------------------- |
 | `AUTO_CLOSE_BROWSER` | `true`, `false` | Closes the browser automatically after the run. Set to `false` to keep it open for debugging between test runs. |
+
+### 🔐 Scenario endpoint token
+
+The Phoenix server must expose the Playwright scenario endpoint only in non-production environments. Set `PLAYWRIGHT_SCENARIO_TOKEN` (e.g., in `dev.env`) to a secret string and export the matching value to the `SCENARIO_TOKEN` entry in `tests/resources/login.env`. This shared secret authenticates `POST /test/scenario-yaml` calls that seed base data for tests.
+
+When running the backend locally, ensure `mix phx.server` starts with `PLAYWRIGHT_SCENARIO_TOKEN` defined (e.g., `PLAYWRIGHT_SCENARIO_TOKEN=local-secret mix phx.server`).
 
 ## 🧪 Configuration Tests & Report
 

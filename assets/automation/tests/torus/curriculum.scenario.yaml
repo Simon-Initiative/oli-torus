@@ -1,0 +1,7 @@
+- project:
+    name: "curriculum_project"
+    title: "Playwright Curriculum ${run_id}"
+    slug: "${project_slug}"
+    root:
+      children:
+        - page: "Scenario Landing"

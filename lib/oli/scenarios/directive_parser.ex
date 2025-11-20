@@ -66,7 +66,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Parse individual directive based on its type
   defp parse_directive(%{"project" => project_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "title", "root", "objectives", "tags"]
+    allowed_attrs = ["name", "title", "root", "objectives", "tags", "slug"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, project_data, "project") do
       :ok ->
@@ -75,7 +75,8 @@ defmodule Oli.Scenarios.DirectiveParser do
           title: project_data["title"],
           root: parse_node(project_data["root"]),
           objectives: parse_objectives(project_data["objectives"]),
-          tags: parse_tags(project_data["tags"])
+          tags: parse_tags(project_data["tags"]),
+          slug: project_data["slug"]
         }
 
       {:error, msg} ->
@@ -102,7 +103,7 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"section" => section_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "title", "from", "type", "registration_open"]
+    allowed_attrs = ["name", "title", "from", "type", "registration_open", "slug"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, section_data, "section") do
       :ok ->
@@ -111,7 +112,8 @@ defmodule Oli.Scenarios.DirectiveParser do
           title: section_data["title"],
           from: section_data["from"],
           type: parse_section_type(section_data["type"]),
-          registration_open: Map.get(section_data, "registration_open", true)
+          registration_open: Map.get(section_data, "registration_open", true),
+          slug: section_data["slug"]
         }
 
       {:error, msg} ->
@@ -268,7 +270,16 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"user" => user_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "type", "email", "given_name", "family_name"]
+    allowed_attrs = [
+      "name",
+      "type",
+      "email",
+      "given_name",
+      "family_name",
+      "password",
+      "system_role",
+      "can_create_sections"
+    ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, user_data, "user") do
       :ok ->
@@ -277,7 +288,10 @@ defmodule Oli.Scenarios.DirectiveParser do
           type: parse_user_type(user_data["type"]),
           email: user_data["email"] || "#{user_data["name"]}@test.edu",
           given_name: user_data["given_name"] || user_data["name"],
-          family_name: user_data["family_name"] || "Test"
+          family_name: user_data["family_name"] || "Test",
+          password: user_data["password"],
+          system_role: parse_system_role(user_data["system_role"]),
+          can_create_sections: parse_can_create_sections(user_data["can_create_sections"])
         }
 
       {:error, msg} ->
@@ -679,6 +693,46 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_user_type("instructor"), do: :instructor
   defp parse_user_type("student"), do: :student
   defp parse_user_type(type) when is_atom(type), do: type
+
+  defp parse_system_role(nil), do: :author
+  defp parse_system_role(role) when is_atom(role), do: role
+
+  defp parse_system_role(role) when is_binary(role) do
+    normalized = String.trim(role)
+
+    case normalized do
+      "author" ->
+        :author
+
+      "system_admin" ->
+        :system_admin
+
+      "account_admin" ->
+        :account_admin
+
+      "content_admin" ->
+        :content_admin
+
+      other ->
+        raise "Invalid system_role '#{other}' (allowed: author, system_admin, account_admin, content_admin)"
+    end
+  end
+
+  defp parse_can_create_sections(nil), do: false
+  defp parse_can_create_sections(value) when is_boolean(value), do: value
+
+  defp parse_can_create_sections(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "true" -> true
+      "false" -> false
+      other -> raise "Invalid boolean for can_create_sections: #{other}"
+    end
+  end
+
+  defp parse_can_create_sections(value) when is_integer(value), do: value != 0
+
+  defp parse_can_create_sections(value),
+    do: raise("Invalid boolean for can_create_sections: #{inspect(value)}")
 
   defp parse_enrollment_role(nil), do: :student
   defp parse_enrollment_role("instructor"), do: :instructor

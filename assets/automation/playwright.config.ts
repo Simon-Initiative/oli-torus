@@ -4,7 +4,8 @@ import * as path from 'node:path';
 
 const pathLoginEnv = path.resolve(__dirname, 'tests/resources/', 'login.env');
 const pathConfigEnv = path.resolve(__dirname, 'tests/resources/', 'config.env');
-dotenv.config({ path: [pathLoginEnv, pathConfigEnv] });
+dotenv.config({ path: pathLoginEnv });
+dotenv.config({ path: pathConfigEnv });
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -26,7 +27,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     launchOptions: {
-      args: ['--start-maximized'],
+      args: ['--start-maximized', '--ignore-certificate-errors'],
     },
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.BASE_URL,

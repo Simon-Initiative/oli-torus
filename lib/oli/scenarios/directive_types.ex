@@ -6,12 +6,12 @@ defmodule Oli.Scenarios.DirectiveTypes do
   # Directive types
   defmodule ProjectDirective do
     @moduledoc "Creates a new project with specified structure"
-    defstruct [:name, :title, :root, :objectives, :tags]
+    defstruct [:name, :title, :root, :objectives, :tags, :slug]
   end
 
   defmodule SectionDirective do
     @moduledoc "Creates a section from a project or standalone"
-    defstruct [:name, :title, :from, :type, :registration_open]
+    defstruct [:name, :title, :from, :type, :registration_open, :slug]
   end
 
   defmodule ProductDirective do
@@ -50,7 +50,16 @@ defmodule Oli.Scenarios.DirectiveTypes do
 
   defmodule UserDirective do
     @moduledoc "Creates users (authors, instructors, students)"
-    defstruct [:name, :type, :email, :given_name, :family_name]
+    defstruct [
+      :name,
+      :type,
+      :email,
+      :given_name,
+      :family_name,
+      :password,
+      :system_role,
+      :can_create_sections
+    ]
   end
 
   defmodule EnrollDirective do
