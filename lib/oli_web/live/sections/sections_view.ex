@@ -168,7 +168,7 @@ defmodule OliWeb.Sections.SectionsView do
 
   def render(assigns) do
     ~H"""
-    <div>
+    <div class="overflow-x-auto">
       <div class="flex flex-row justify-between items-center px-4">
         <span class="text-2xl font-bold text-[#353740] dark:text-[#EEEBF5] leading-loose">
           Browse Course Sections

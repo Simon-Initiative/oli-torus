@@ -155,7 +155,7 @@ defmodule OliWeb.Products.ProductsView do
 
   def render(assigns) do
     ~H"""
-    <div>
+    <div class="overflow-x-auto">
       <%= if @published? do %>
         <div class="px-4 text-[#353740] dark:text-[#EEEBF5] text-2xl font-bold leading-loose">
           Browse Products

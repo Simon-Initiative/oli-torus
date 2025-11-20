@@ -203,7 +203,7 @@ defmodule OliWeb.Projects.ProjectsLive do
     ~H"""
     {render_modal(assigns)}
 
-    <div class="h-full">
+    <div class="h-full overflow-x-auto">
       <div class="flex justify-between items-center px-4">
         <span class="text-[#353740] dark:text-[#EEEBF5] text-2xl font-bold leading-loose">
           Browse Projects
