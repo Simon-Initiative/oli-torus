@@ -191,19 +191,20 @@ defmodule OliWeb.Products.ProductsView do
           <% end %>
         </div>
 
-        <StripedPagedTable.render
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          render_top_info={false}
-          additional_table_class="instructor_dashboard_table"
-          sort="paged_table_sort"
-          page_change="paged_table_page_change"
-          limit_change="paged_table_limit_change"
-          show_limit_change={true}
-          sticky_header_offset={64}
-        />
+        <div class="overflow-x-auto">
+          <StripedPagedTable.render
+            table_model={@table_model}
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+            render_top_info={false}
+            additional_table_class="instructor_dashboard_table"
+            sort="paged_table_sort"
+            page_change="paged_table_page_change"
+            limit_change="paged_table_limit_change"
+            show_limit_change={true}
+          />
+        </div>
       <% else %>
         <div>Products cannot be created until project is published.</div>
       <% end %>

@@ -158,7 +158,7 @@ defmodule OliWeb.Components.FilterPanel do
           id={@form_id}
           for={%{}}
           as={:filters}
-          phx-submit="apply_filters"
+          phx-submit={JS.hide(to: "##{@id}-panel") |> JS.push("apply_filters", target: @myself)}
           phx-target={@myself}
           class="flex flex-col gap-4 p-5"
         >
