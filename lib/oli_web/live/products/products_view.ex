@@ -288,7 +288,7 @@ defmodule OliWeb.Products.ProductsView do
       offset: 0,
       limit: socket.assigns.limit,
       include_archived: socket.assigns.include_archived,
-      text_search: ""
+      text_search: socket.assigns.text_search
     }
 
     {:noreply,
