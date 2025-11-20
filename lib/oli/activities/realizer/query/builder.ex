@@ -159,10 +159,10 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     fragment =
       case operator do
         :contains ->
-          [build_objectives_disjunction(value)]
+          [build_objectives_conjunction(value)]
 
         :does_not_contain ->
-          ["(NOT (" <> build_objectives_disjunction(value) <> "))"]
+          ["(NOT (" <> build_objectives_conjunction(value) <> "))"]
 
         :equals ->
           ["(objectives_count = #{length(value)} AND #{build_objectives_conjunction(value)})"]

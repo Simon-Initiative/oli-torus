@@ -11,14 +11,18 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
   def mount(%{"token" => token}, session, socket) do
     case Accounts.get_author_token_by_collaboration_invitation_token(token) do
       nil ->
-        {:ok, assign(socket, author: nil)}
+        {:ok, assign(socket, author: nil, authentication_providers: [], token: token)}
 
       %AuthorToken{author: author, context: "collaborator_invitation:" <> project_slug} ->
         project = Course.get_project_by_slug(project_slug)
 
+        authentication_providers =
+          Oli.AssentAuth.AuthorAssentAuth.authentication_providers() |> Keyword.keys()
+
         {:ok,
          assign(socket,
            author: author,
+           token: token,
            # this current author refers to the one that is logged in
            # and might be different from the author that is being invited
            current_author:
@@ -28,7 +32,8 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
            # the author project is like the "enrollment" but for authors
            author_project:
              Course.get_author_project(project_slug, author.id, filter_by_status: false),
-           step: "accept_or_reject_invitation"
+           step: "accept_or_reject_invitation",
+           authentication_providers: authentication_providers
          )}
     end
   end
@@ -102,6 +107,10 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
           recaptcha_error={@recaptcha_error}
           check_errors={@check_errors}
           disabled_inputs={[:email]}
+          authentication_providers={@authentication_providers}
+          auth_provider_path_fn={
+            &build_invitation_auth_provider_path(&1, @project.slug, @author.email, @token)
+          }
         />
       </div>
     </.invite_container>
@@ -124,6 +133,10 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
           trigger_submit={@trigger_submit}
           submit_event="log_in_existing_author"
           disabled_inputs={[:email]}
+          authentication_providers={@authentication_providers}
+          auth_provider_path_fn={
+            &build_invitation_auth_provider_path(&1, @project.slug, @author.email, @token)
+          }
         />
       </div>
 
@@ -287,7 +300,13 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
   defp emails_match?(_author_email, email_param) when is_nil(email_param), do: true
   defp emails_match?(author_email, email_param), do: author_email == email_param
 
-  defp new_invited_author?(%Author{password_hash: nil}), do: true
+  defp new_invited_author?(%Author{password_hash: nil} = author) do
+    # Preload user_identities to check if this is an SSO author
+    author = Oli.Repo.preload(author, :user_identities)
+    # A truly new invited author has no password AND no SSO identities
+    author.user_identities == []
+  end
+
   defp new_invited_author?(_), do: false
 
   defp current_author_is_the_invited_one?(nil, _author), do: false
@@ -303,5 +322,16 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
     else
       assign(socket, form: form)
     end
+  end
+
+  defp build_invitation_auth_provider_path(provider, project_slug, invited_email, token) do
+    params = [
+      project: project_slug,
+      from_invitation_link?: "true",
+      invitation_email: invited_email,
+      invitation_token: token
+    ]
+
+    ~p"/authors/auth/#{provider}/new?#{params}"
   end
 end
