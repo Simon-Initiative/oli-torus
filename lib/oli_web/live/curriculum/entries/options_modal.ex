@@ -73,52 +73,54 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
   def render(%{step: :intro_content} = assigns) do
     ~H"""
-    <div id="intro_content_step">
-      <div class="form-group">
-        <label for="introduction_content">Introduction content</label>
-      </div>
-      <div id="rich_text_editor_wrapper" phx-update="ignore">
-        {React.component(
-          @ctx,
-          "Components.RichTextEditor",
-          %{
-            projectSlug: @project.slug,
-            onEdit: "initial_function_that_will_be_overwritten",
-            onEditEvent: "intro_content_change",
-            onEditTarget: "#intro_content_step",
-            editMode: true,
-            value:
-              (fetch_field(@form.source, :intro_content) &&
-                 fetch_field(@form.source, :intro_content)["children"]) || [],
-            fixedToolbar: true,
-            allowBlockElements: false
-          },
-          id: "rich_text_editor_react_component"
-        )}
-      </div>
+    <div>
+      <div id="intro_content_step">
+        <div class="form-group">
+          <label for="introduction_content">Introduction content</label>
+        </div>
+        <div id="rich_text_editor_wrapper" phx-update="ignore">
+          {React.component(
+            @ctx,
+            "Components.RichTextEditor",
+            %{
+              projectSlug: @project.slug,
+              onEdit: "initial_function_that_will_be_overwritten",
+              onEditEvent: "intro_content_change",
+              onEditTarget: "#intro_content_step",
+              editMode: true,
+              value:
+                (fetch_field(@form.source, :intro_content) &&
+                   fetch_field(@form.source, :intro_content)["children"]) || [],
+              fixedToolbar: true,
+              allowBlockElements: false
+            },
+            id: "rich_text_editor_react_component"
+          )}
+        </div>
 
-      <div class="modal-footer">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          phx-click="change_step"
-          phx-value-target_step="general"
-          phx-value-action="cancel"
-          phx-target={@myself}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          phx-disable-with="Selecting..."
-          class="btn btn-primary"
-          phx-click="change_step"
-          phx-value-target_step="general"
-          phx-value-action="save"
-          phx-target={@myself}
-        >
-          Save
-        </button>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            phx-click="change_step"
+            phx-value-target_step="general"
+            phx-value-action="cancel"
+            phx-target={@myself}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            phx-disable-with="Selecting..."
+            class="btn btn-primary"
+            phx-click="change_step"
+            phx-value-target_step="general"
+            phx-value-action="save"
+            phx-target={@myself}
+          >
+            Save
+          </button>
+        </div>
       </div>
     </div>
     """
