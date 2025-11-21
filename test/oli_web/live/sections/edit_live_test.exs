@@ -326,6 +326,29 @@ defmodule OliWeb.Sections.EditLiveTest do
                "#{brand.name}"
     end
 
+    test "brand dropdown displays brands sorted alphabetically", %{conn: conn} do
+      # Create brands in non-alphabetical order
+      _brand_m = insert(:brand, name: "Middle Brand")
+      _brand_a = insert(:brand, name: "Alpha Brand")
+
+      section = insert(:section)
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+      # Extract brand options from the dropdown
+      html = render(view)
+
+      brand_options =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find("select[id=section_brand_id] option")
+        |> Enum.map(&Floki.text/1)
+        |> Enum.reject(&(&1 == "None"))
+
+      # Verify brands are sorted alphabetically (excluding "None" option)
+      assert Enum.at(brand_options, 0) =~ "Alpha"
+      assert Enum.at(brand_options, 1) =~ "Middle"
+    end
+
     test "save event updates curriculum numbering visibility", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
       assert section.display_curriculum_item_numbering

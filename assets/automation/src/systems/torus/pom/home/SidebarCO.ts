@@ -1,9 +1,15 @@
 import { Verifier } from '@core/verify/Verifier';
 import { Page } from '@playwright/test';
 
-type SidebarButtonName = 'Minimize' | 'Expand' | 'Create' | 'PublishBTN' | 'Improve' | 'Support';
+export type SidebarButtonName =
+  | 'Minimize'
+  | 'Expand'
+  | 'Create'
+  | 'PublishBTN'
+  | 'Improve'
+  | 'Support';
 
-type SidebarLinkName =
+export type SidebarLinkName =
   | 'Course Author'
   | 'Instructor'
   | 'Student'

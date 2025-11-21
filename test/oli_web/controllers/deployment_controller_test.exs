@@ -1,6 +1,8 @@
 defmodule OliWeb.DeploymentControllerTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
+
   alias Oli.Accounts.SystemRole
   alias Oli.Institutions
 
@@ -23,6 +25,41 @@ defmodule OliWeb.DeploymentControllerTest do
         )
 
       assert html_response(conn, 200) =~ "Create Deployment"
+    end
+
+    test "institution dropdown displays institutions sorted alphabetically", %{
+      conn: conn,
+      registration: registration
+    } do
+      # Create institutions in non-alphabetical order
+      insert(:institution, name: "Zebra Institution")
+      insert(:institution, name: "Alpha Institution")
+      insert(:institution, name: "Middle Institution")
+
+      conn =
+        get(
+          conn,
+          Routes.registration_deployment_path(
+            conn,
+            :new,
+            registration.id
+          )
+        )
+
+      html = html_response(conn, 200)
+
+      # Extract institution options from the dropdown
+      institution_options =
+        html
+        |> Floki.parse_document!()
+        |> Floki.find("select[id=deployment_institution_id] option")
+        |> Enum.map(&Floki.text/1)
+        |> Enum.reject(&(&1 in ["Select Institution", "Example Institution"]))
+
+      # Verify institutions are sorted alphabetically
+      assert Enum.at(institution_options, 0) =~ "Alpha"
+      assert Enum.at(institution_options, 1) =~ "Middle"
+      assert Enum.at(institution_options, 2) =~ "Zebra"
     end
   end
 

@@ -842,8 +842,34 @@ defmodule Oli.Accounts do
     update_user(user, %{preferences: updated_preferences})
   end
 
+  @doc """
+  Determines if an author can access a specific project.
+
+  Admin authors (system admins, account admins, or content admins) have access to all projects.
+  Regular authors only have access to projects they are explicitly associated with through the authors_projects join table.
+
+  ## Parameters
+    - author: An Author struct representing the user
+    - project: A Project struct representing the project to check access for
+
+  ## Returns
+    - `true` if the author can access the project
+    - `false` if the author cannot access the project
+
+  ## Examples
+
+      iex> can_access?(admin_author, project)
+      true
+
+      iex> can_access?(regular_author, assigned_project)
+      true
+
+      iex> can_access?(regular_author, unassigned_project)
+      false
+  """
+  @spec can_access?(Author.t(), Project.t()) :: boolean()
   def can_access?(author, project) do
-    if has_admin_role?(author, :content_admin) do
+    if at_least_content_admin?(author) do
       # Admin authors have access to every project
       true
     else
@@ -1159,6 +1185,40 @@ defmodule Oli.Accounts do
       |> Enrollment.changeset(%{status: :enrolled})
       |> Repo.update!()
     end)
+  end
+
+  @doc """
+  Accepts a user invitation via SSO authentication.
+  Unlike accept_user_invitation/3, this does not require a password since
+  authentication is handled via OAuth/SSO.
+  """
+  def accept_user_invitation_via_sso(user, enrollment, attrs \\ %{}) do
+    Repo.transaction(fn ->
+      now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+
+      user =
+        user
+        |> Ecto.Changeset.cast(attrs, [:given_name, :family_name, :picture])
+        |> Ecto.Changeset.put_change(:invitation_accepted_at, now)
+        |> Ecto.Changeset.put_change(:email_confirmed_at, now)
+        |> Repo.update!()
+
+      if enrollment do
+        enrollment
+        |> Enrollment.changeset(%{status: :enrolled})
+        |> Repo.update!()
+      end
+
+      user
+    end)
+  end
+
+  @doc """
+  Checks if a user is an invited user (no password and no SSO identities yet).
+  """
+  def invited_user?(%User{} = user) do
+    user = Repo.preload(user, :user_identities)
+    is_nil(user.password_hash) && Enum.empty?(user.user_identities)
   end
 
   ## Settings
@@ -1648,6 +1708,53 @@ defmodule Oli.Accounts do
       |> AuthorProject.changeset(%{status: :accepted})
       |> Repo.update!()
     end)
+  end
+
+  @doc """
+  Accepts an author invitation via SSO authentication.
+  Unlike accept_author_invitation/2, this does not require a password since
+  authentication is handled via OAuth/SSO.
+  """
+  def accept_author_invitation_via_sso(author, attrs \\ %{}) do
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+
+    author
+    |> Ecto.Changeset.cast(attrs, [:given_name, :family_name, :picture])
+    |> Ecto.Changeset.put_change(:invitation_accepted_at, now)
+    |> Ecto.Changeset.put_change(:email_confirmed_at, now)
+    |> Repo.update()
+  end
+
+  @doc """
+  Accepts a collaborator invitation via SSO authentication.
+  Unlike accept_collaborator_invitation/3, this does not require a password since
+  authentication is handled via OAuth/SSO.
+  """
+  def accept_collaborator_invitation_via_sso(author, author_project, attrs \\ %{}) do
+    Repo.transaction(fn ->
+      now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+
+      author =
+        author
+        |> Ecto.Changeset.cast(attrs, [:given_name, :family_name, :picture])
+        |> Ecto.Changeset.put_change(:invitation_accepted_at, now)
+        |> Ecto.Changeset.put_change(:email_confirmed_at, now)
+        |> Repo.update!()
+
+      author_project
+      |> AuthorProject.changeset(%{status: :accepted})
+      |> Repo.update!()
+
+      author
+    end)
+  end
+
+  @doc """
+  Checks if an author is an invited author (no password and no SSO identities yet).
+  """
+  def invited_author?(%Author{} = author) do
+    author = Repo.preload(author, :user_identities)
+    is_nil(author.password_hash) && Enum.empty?(author.user_identities)
   end
 
   ## Settings

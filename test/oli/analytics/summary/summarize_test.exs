@@ -102,7 +102,7 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
       ]
       |> Enum.each(fn v -> add_resource_summary(v) end)
 
-      items = Summary.summarize_activities_for_page(section.id, page1.id, nil)
+      items = Summary.summarize_activities_for_page(section.id, page1.id, [id1, id2])
 
       # Since we are querying through response summary to JOIN to the resource summary,
       # let's assert that we did this correctly to ensure that we are getting the true
@@ -118,7 +118,7 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
       assert Enum.count(items) == 0
 
       # Very the responses are correct and include the user ids as a list
-      responses = Summary.get_response_summary_for(page1.id, section.id)
+      responses = Summary.get_response_summary_for(page1.id, section.id, [id1, id2])
 
       assert Enum.count(responses) == 4
       [r1, r2, r3, r4] = responses

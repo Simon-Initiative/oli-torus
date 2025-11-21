@@ -129,7 +129,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                 selected={assessment.resource_id == @bulk_apply_selected_assessment_id}
                 value={assessment.resource_id}
               >
-                {assessment.name}
+                {assessment.name_with_container_label}
               </option>
             </select>
             <button
@@ -917,7 +917,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   defp update_assessments(socket, assessment_setting_id, key_value_list, update_sort_order) do
     %{assigns: %{section: section, table_model: table_model}} = socket
     student_exceptions = AssessmentSettings.get_student_exceptions(section.id)
-    assessments = AssessmentSettings.get_assessments(section.slug, student_exceptions)
+    assessments = AssessmentSettings.get_assessments(section, student_exceptions)
 
     {updated_assessment, updated_assessments} =
       Enum.reduce(assessments, {nil, []}, fn assessment, acc ->

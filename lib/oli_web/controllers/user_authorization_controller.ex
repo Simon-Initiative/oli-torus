@@ -1,7 +1,6 @@
 defmodule OliWeb.UserAuthorizationController do
   use OliWeb, :controller
 
-  import Ecto.Query, warn: false
   import OliWeb.UserAuth, only: [require_authenticated_user: 2]
 
   alias Phoenix.Naming
@@ -37,10 +36,13 @@ defmodule OliWeb.UserAuthorizationController do
       end
 
     # Store section and invitation context for post-auth handling
+    # Store section context, invitation context, and token for validation
+    # The canonical invited email will be retrieved from the invitation token in the database.
     conn =
       conn
       |> maybe_store_section_context(params["section"])
       |> maybe_store_invitation_context(params["from_invitation_link?"])
+      |> maybe_store_invitation_token(params["invitation_token"])
 
     provider
     |> AssentAuthWeb.authorize_url(config)
@@ -97,59 +99,34 @@ defmodule OliWeb.UserAuthorizationController do
     case AssentAuthWeb.provider_callback(provider, params, conn.assigns.session_params, config) do
       # Authorization successful
       {:ok, %{user: user_params} = _response} ->
-        case AssentAuthWeb.handle_authorization_success(
-               conn,
-               provider,
-               user_params,
-               config
-             ) do
-          {:ok, :add_identity_provider, conn} ->
-            conn
-            |> put_flash(
-              :info,
-              "Successfully added #{String.capitalize(provider)} authentication provider."
-            )
-            |> redirect(to: redirect_to)
+        # Retrieve and validate the canonical invited email from the invitation token (if present)
+        # This prevents invitation email spoofing via URL parameters
+        case load_and_validate_invitation_email(conn, user_params) do
+          {:ok, conn} ->
+            handle_validated_authorization(conn, provider, user_params, config, redirect_to)
 
-          {:ok, _status, conn} ->
-            conn
-            |> clear_enrollment_session_data()
-            |> redirect(to: redirect_to)
+          {:error, :email_mismatch, invited_email, sso_email} ->
+            # Get the invitation token to redirect back to the invitation page
+            invitation_redirect = get_invitation_redirect_path(conn)
 
-          {:email_confirmation_required, _status, conn} ->
             conn
             |> clear_enrollment_session_data()
             |> put_flash(
-              :info,
-              "Please confirm your email address to continue. A confirmation email has been sent."
+              :error,
+              "The email associated with your #{String.capitalize(provider)} account (#{sso_email}) does not match the invitation email (#{invited_email}). Please use the correct account or sign in with your password."
             )
-            |> redirect(to: ~p"/users/confirm")
+            |> redirect(to: invitation_redirect || redirect_to)
 
-          {:error, error, conn} ->
-            Logger.error("Error handling authorization success: #{inspect(error)}")
+          {:error, :invalid_token} ->
+            invitation_redirect = get_invitation_redirect_path(conn)
 
-            case error do
-              {:add_identity_provider, {:bound_to_different_user, _changeset}} ->
-                conn
-                |> put_flash(
-                  :error,
-                  "The #{Naming.humanize(conn.params["provider"])} account is already bound to another user."
-                )
-                |> redirect(to: redirect_to)
-
-              {:create_user, {:email_already_exists, _}} ->
-                conn
-                |> put_flash(
-                  :error,
-                  "An account associated with this email already exists. Please log in with your password to continue."
-                )
-                |> redirect(to: redirect_to)
-
-              _ ->
-                conn
-                |> put_flash(:error, "Something went wrong. Please try again or contact support.")
-                |> redirect(to: redirect_to)
-            end
+            conn
+            |> clear_enrollment_session_data()
+            |> put_flash(
+              :error,
+              "The invitation link is invalid or has expired."
+            )
+            |> redirect(to: invitation_redirect || redirect_to)
         end
 
       {:error, error} ->
@@ -162,6 +139,213 @@ defmodule OliWeb.UserAuthorizationController do
         |> redirect(to: redirect_to)
     end
   end
+
+  defp handle_validated_authorization(conn, provider, user_params, config, redirect_to) do
+    case AssentAuthWeb.handle_authorization_success(
+           conn,
+           provider,
+           user_params,
+           config
+         ) do
+      {:ok, :add_identity_provider, conn} ->
+        conn
+        |> put_flash(
+          :info,
+          "Successfully added #{String.capitalize(provider)} authentication provider."
+        )
+        |> redirect(to: redirect_to)
+
+      {:ok, status, conn} ->
+        # Check if this is from an enrollment invitation that needs to be accepted
+        conn = maybe_accept_pending_enrollment(conn, status)
+
+        conn
+        |> clear_enrollment_session_data()
+        |> redirect(to: redirect_to)
+
+      {:email_confirmation_required, _status, conn} ->
+        conn
+        |> clear_enrollment_session_data()
+        |> put_flash(
+          :info,
+          "Please confirm your email address to continue. A confirmation email has been sent."
+        )
+        |> redirect(to: ~p"/users/confirm")
+
+      {:error, error, conn} ->
+        Logger.error("Error handling authorization success: #{inspect(error)}")
+
+        case error do
+          {:add_identity_provider, {:bound_to_different_user, _changeset}} ->
+            conn
+            |> put_flash(
+              :error,
+              "The #{Naming.humanize(conn.params["provider"])} account is already bound to another user."
+            )
+            |> redirect(to: redirect_to)
+
+          {:create_user, {:email_already_exists, _}} ->
+            # Check if this is an invitation scenario where we should link SSO to existing invited user
+            handle_invitation_sso_link(conn, provider, user_params, config, redirect_to)
+
+          _ ->
+            conn
+            |> put_flash(:error, "Something went wrong. Please try again or contact support.")
+            |> redirect(to: redirect_to)
+        end
+    end
+  end
+
+  defp handle_invitation_sso_link(conn, provider, user_params, _config, redirect_to) do
+    # Check if we validated an invitation email (which means this is from an invitation)
+    from_invitation =
+      get_session(conn, :validated_invitation_email) ||
+        get_session(conn, :from_invitation_link)
+
+    email = user_params["email"]
+
+    case {from_invitation, email} do
+      {true, email} when is_binary(email) ->
+        # Coming from invitation, try to link SSO to existing invited user
+        case Accounts.get_user_by(email: email) do
+          nil ->
+            # User doesn't exist, show standard error
+            conn
+            |> put_flash(
+              :error,
+              "An account associated with this email already exists. Please log in with your password to continue."
+            )
+            |> redirect(to: redirect_to)
+
+          user ->
+            # User exists, check if it's an invited user (no password set)
+            is_invited = invited_user?(user)
+
+            if is_invited do
+              # Link SSO identity to invited user
+              link_sso_to_invited_user(conn, user, provider, user_params, redirect_to)
+            else
+              # User has password, they need to log in with password first
+
+              conn
+              |> put_flash(
+                :error,
+                "An account associated with this email already exists. Please log in with your password to continue."
+              )
+              |> redirect(to: redirect_to)
+            end
+        end
+
+      _ ->
+        # Not from invitation, show standard error
+        conn
+        |> put_flash(
+          :error,
+          "An account associated with this email already exists. Please log in with your password to continue."
+        )
+        |> redirect(to: redirect_to)
+    end
+  end
+
+  defp invited_user?(user) do
+    Accounts.invited_user?(user)
+  end
+
+  defp link_sso_to_invited_user(conn, user, provider, user_params, redirect_to) do
+    # Extract user identity params
+    case user_params do
+      %{"sub" => uid} ->
+        user_identity_params = %{"uid" => uid, "provider" => provider}
+        section_slug = get_session(conn, :pending_section_enrollment)
+
+        # Build attrs from SSO params
+        sso_attrs =
+          %{
+            "given_name" => user_params["given_name"],
+            "family_name" => user_params["family_name"],
+            "picture" => user_params["picture"]
+          }
+          |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+          |> Map.new()
+
+        # Get enrollment if section_slug is present
+        enrollment =
+          if section_slug do
+            Oli.Delivery.Sections.get_enrollment(section_slug, user.id, filter_by_status: false)
+          else
+            nil
+          end
+
+        # Add SSO identity and accept invitation
+        with {:ok, _user_identity} <-
+               Oli.AssentAuth.UserAssentAuth.add_identity_provider(
+                 user,
+                 user_identity_params
+               ),
+             {:ok, user} <- Accounts.accept_user_invitation_via_sso(user, enrollment, sso_attrs) do
+          # Successfully linked SSO and accepted invitation
+
+          conn = OliWeb.UserAuth.create_session(conn, user)
+          conn = assign(conn, :current_user, user)
+
+          conn
+          |> clear_enrollment_session_data()
+          |> redirect(to: redirect_to)
+        else
+          {:error, changeset} ->
+            Logger.error(
+              "Failed to link SSO identity or accept invitation for invited user: #{inspect(user.email)}, error: #{inspect(changeset)}"
+            )
+
+            conn
+            |> clear_enrollment_session_data()
+            |> put_flash(
+              :error,
+              "Unable to link your #{String.capitalize(provider)} account. Please try again or contact support."
+            )
+            |> redirect(to: redirect_to)
+        end
+
+      _ ->
+        Logger.error("Missing 'sub' in SSO user params: #{inspect(user_params)}")
+
+        conn
+        |> put_flash(:error, "Something went wrong. Please try again or contact support.")
+        |> redirect(to: redirect_to)
+    end
+  end
+
+  # Check if there's a pending enrollment invitation and accept it for existing authenticated users
+  defp maybe_accept_pending_enrollment(conn, :authenticate) do
+    # Only for authenticate status (existing SSO users signing in)
+    section_slug = get_session(conn, :pending_section_enrollment)
+    user = conn.assigns.current_user
+
+    if section_slug && user do
+      case Oli.Delivery.Sections.get_enrollment(section_slug, user.id, filter_by_status: false) do
+        nil ->
+          Logger.warning("No enrollment found for #{user.email} in section #{section_slug}")
+          conn
+
+        %{status: :enrolled} = _enrollment ->
+          conn
+
+        enrollment ->
+          case Oli.Delivery.Sections.update_enrollment(enrollment, %{status: :enrolled}) do
+            {:ok, _} ->
+              conn
+
+            {:error, changeset} ->
+              Logger.error("Failed to accept enrollment invitation: #{inspect(changeset)}")
+              conn
+          end
+      end
+    else
+      conn
+    end
+  end
+
+  defp maybe_accept_pending_enrollment(conn, _status), do: conn
 
   ## Plugs
 
@@ -217,24 +401,132 @@ defmodule OliWeb.UserAuthorizationController do
 
   defp maybe_store_user_return_to(conn), do: conn
 
-  defp maybe_store_section_context(conn, nil), do: conn
+  defp maybe_store_section_context(conn, nil) do
+    # Clear stale section context when starting a new SSO flow without a section
+    delete_session(conn, :pending_section_enrollment)
+  end
 
   defp maybe_store_section_context(conn, section) when is_binary(section) do
     put_session(conn, :pending_section_enrollment, section)
   end
 
-  defp maybe_store_invitation_context(conn, nil), do: conn
+  defp maybe_store_section_context(conn, _) do
+    delete_session(conn, :pending_section_enrollment)
+  end
+
+  defp maybe_store_invitation_context(conn, nil) do
+    # Clear stale invitation context when starting a new non-invitation flow
+    delete_session(conn, :from_invitation_link)
+  end
 
   defp maybe_store_invitation_context(conn, "true") do
     put_session(conn, :from_invitation_link, true)
   end
 
-  defp maybe_store_invitation_context(conn, _), do: conn
+  defp maybe_store_invitation_context(conn, _) do
+    delete_session(conn, :from_invitation_link)
+  end
+
+  defp maybe_store_invitation_token(conn, nil) do
+    # Clear stale invitation token when starting a new non-invitation flow
+    conn
+    |> delete_session(:invitation_token)
+    |> delete_session(:validated_invitation_email)
+  end
+
+  defp maybe_store_invitation_token(conn, token) when is_binary(token) do
+    put_session(conn, :invitation_token, token)
+  end
+
+  defp maybe_store_invitation_token(conn, _) do
+    conn
+    |> delete_session(:invitation_token)
+    |> delete_session(:validated_invitation_email)
+  end
+
+  # Securely retrieve and validate the invitation email from the database
+  # This prevents invitation email spoofing attacks by:
+  # 1. Retrieving the canonical invited email from the invitation token (not from URL params)
+  # 2. Validating the token exists and is not expired
+  # 3. Comparing the SSO email with the invited email from the database
+  defp load_and_validate_invitation_email(conn, user_params) do
+    invitation_token = get_session(conn, :invitation_token)
+    section_slug = get_session(conn, :pending_section_enrollment)
+
+    cond do
+      # No invitation context - regular SSO login
+      is_nil(invitation_token) && is_nil(section_slug) ->
+        {:ok, conn}
+
+      # Has invitation token - validate it and retrieve canonical email
+      not is_nil(invitation_token) ->
+        case retrieve_invited_email_from_token(invitation_token, section_slug) do
+          {:ok, invited_email} ->
+            # Now compare SSO email with the canonical invited email from database
+            sso_email = normalize_email(user_params["email"])
+            normalized_invited_email = normalize_email(invited_email)
+
+            if sso_email == normalized_invited_email do
+              # Store the validated email for use in invitation acceptance logic
+              {:ok, put_session(conn, :validated_invitation_email, true)}
+            else
+              {:error, :email_mismatch, invited_email, user_params["email"]}
+            end
+
+          {:error, :invalid_token} ->
+            {:error, :invalid_token}
+        end
+
+      # Has section slug but no token - regular section SSO login (not from invitation)
+      true ->
+        {:ok, conn}
+    end
+  end
+
+  # Retrieve the canonical invited email from the invitation token in the database
+  defp retrieve_invited_email_from_token(token, section_slug) do
+    result =
+      if section_slug do
+        # Enrollment invitation
+        Accounts.get_user_token_by_enrollment_invitation_token(token)
+      else
+        # This shouldn't happen for users, but handle gracefully
+        nil
+      end
+
+    case result do
+      %{user: user} when not is_nil(user) ->
+        {:ok, user.email}
+
+      nil ->
+        Logger.warning("Invalid or expired invitation token")
+        {:error, :invalid_token}
+    end
+  end
+
+  defp normalize_email(nil), do: nil
+
+  defp normalize_email(email) when is_binary(email) do
+    email |> String.trim() |> String.downcase()
+  end
 
   defp clear_enrollment_session_data(conn) do
     conn
     |> delete_session(:pending_section_enrollment)
     |> delete_session(:from_invitation_link)
+    |> delete_session(:validated_invitation_email)
+    |> delete_session(:invitation_token)
+  end
+
+  # Get the invitation redirect path based on stored session data
+  defp get_invitation_redirect_path(conn) do
+    token = get_session(conn, :invitation_token)
+
+    if token do
+      ~p"/users/invite/#{token}"
+    else
+      nil
+    end
   end
 
   defp determine_redirect_path(conn) do

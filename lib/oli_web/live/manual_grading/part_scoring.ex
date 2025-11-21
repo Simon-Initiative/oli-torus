@@ -8,7 +8,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
 
   def render(%{part_attempt: %{lifecycle_state: :evaluated}} = assigns) do
     ~H"""
-    <form>
+    <form phx-submit="prevent_default">
       <div class="form-row">
         <div class="col-span-11">
           {feedback(assigns)}
@@ -35,7 +35,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
 
   def render(assigns) do
     ~H"""
-    <form>
+    <form phx-submit="prevent_default">
       <div class="form-row">
         <div class="col-span-10">
           <textarea

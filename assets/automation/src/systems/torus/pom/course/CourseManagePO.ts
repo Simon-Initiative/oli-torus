@@ -2,14 +2,18 @@ import { Verifier } from '@core/verify/Verifier';
 import { Page, Locator } from '@playwright/test';
 
 export class CourseManagePO {
+  private readonly titlePage: Locator;
   private readonly courseSectionIDInput: Locator;
   private readonly titleInput: Locator;
   private readonly urlInput: Locator;
+  private readonly expirationDate: Locator;
 
   constructor(private readonly page: Page) {
+    this.titlePage = this.page.locator('.font-bold.text-slate-300');
     this.courseSectionIDInput = this.inputLocator('Course Section ID');
     this.titleInput = this.inputLocator('Title');
     this.urlInput = this.inputLocator('URL');
+    this.expirationDate = this.page.getByText('Expired:', { exact: false });
   }
 
   async clickOnLink(text: string) {
@@ -20,8 +24,12 @@ export class CourseManagePO {
     await this.page.getByRole('button', { name: text, exact: true }).click();
   }
 
-  async verifyBreadcrumbTrail(projectName: string) {
-    const l = this.page.getByText(projectName, { exact: true });
+  async getCourseSectionID() {
+    return this.courseSectionIDInput.inputValue();
+  }
+
+  async verifyTitlePage(projectName: string) {
+    const l = this.titlePage.getByText(projectName);
     await Verifier.expectContainText(l, projectName);
   }
 
@@ -37,21 +45,20 @@ export class CourseManagePO {
 
   async verifyProductLink(productName: string) {
     const productLink = this.page.getByRole('link', { name: productName });
-    Verifier.expectIsVisible(productLink);
+    await Verifier.expectIsVisible(productLink);
   }
 
   async verifyExpirationDate() {
     const currentDate = new Date();
-    const l = this.page.getByText('Expired:', { exact: false });
 
-    await Verifier.expectIsVisible(l, 'Expiration date is not present');
+    await Verifier.expectIsVisible(this.expirationDate, 'Expiration date is not present');
     await Verifier.expectContainText(
-      l,
+      this.expirationDate,
       /Expired: \w+ \d{1,2}, \d{4}/,
       'Invalid expiration date format',
     );
 
-    const expirationDate = new Date(await l.innerText());
+    const expirationDate = new Date(await this.expirationDate.innerText());
 
     Verifier.expectTrue(
       currentDate < expirationDate,

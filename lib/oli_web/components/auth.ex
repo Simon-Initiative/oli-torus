@@ -6,6 +6,7 @@ defmodule OliWeb.Components.Auth do
   attr :action, :string, required: true
   attr :section, :string, default: nil
   attr :from_invitation_link?, :boolean, default: false
+  attr :request_path, :string, default: nil
   attr :class, :string, default: ""
   attr :authentication_providers, :list, default: []
   attr :auth_provider_path_fn, :any
@@ -84,6 +85,10 @@ defmodule OliWeb.Components.Auth do
 
           <%= if @section do %>
             {hidden_input(f, :section, value: @section.slug)}
+          <% end %>
+
+          <%= if @request_path do %>
+            {hidden_input(f, :request_path, value: @request_path)}
           <% end %>
 
           <.button

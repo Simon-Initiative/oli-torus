@@ -29,7 +29,7 @@ SCENARIO_TOKEN=shared_secret_string
 
 ### config.env
 
-This file is located in `tests/resources/login.env`
+This file is located in `tests/resources/config.env`
 
 | Name                 | Accepted values | Description                                                                                                     |
 | -------------------- | --------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -59,12 +59,6 @@ Run it in headed mode (visible browser)
 
 ```bash
 npm run test-config:headed
-```
-
-Run all suites
-
-```bash
-npm run test-all
 ```
 
 Open the latest Playwright HTML report
@@ -100,6 +94,12 @@ The upload of multimedia resources is automated for the following projects:
 | TQA-13-automation | img-mock-05-16-2025.jpg | image   |
 | TQA-13-automation | audio-test-01.mp3       | audio   |
 | TQA-13-automation | video-test-01.mp4       | video   |
+
+### 📚 Bibliography
+
+| 📂 Project Name   | 🏷️ Type                                                                                                                                                                                                                                   |
+| :---------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TQA-13-automation | `@book{Newton2015Philosophiae, address = {Garsington, England}, author = {Newton, Isaac}, year = {2015}, month = {5}, publisher = {Benediction Classics}, title = {Philosophiae {Naturalis} {Principia} {Mathematica} ({Latin},1687)}, }` |
 
 ## 🧩 Platform Features
 

@@ -1145,6 +1145,8 @@ defmodule OliWeb.Router do
     get("/downloads/students_progress", DeliveryController, :download_students_progress)
     get("/downloads/learning_objectives", DeliveryController, :download_learning_objectives)
     get("/downloads/quiz_scores", DeliveryController, :download_quiz_scores)
+    get("/downloads/scored_pages", DeliveryController, :download_scored_pages)
+    get("/downloads/practice_pages", DeliveryController, :download_practice_pages)
     get("/", DeliveryController, :instructor_dashboard)
     post("/enrollments", InviteController, :create_bulk)
 
@@ -1856,6 +1858,7 @@ defmodule OliWeb.Router do
       get("/flame_graphs", DevController, :flame_graphs)
       live("/icons", Dev.IconsLive)
       live("/tokens", Dev.TokensLive)
+      live("/metrics_smoke", Dev.MetricsSmokeLive)
     end
   end
 end

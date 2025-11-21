@@ -32,7 +32,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
              Sections.enrolled_students(section.slug)
              |> Enum.reject(fn s -> s.user_role_id != 4 end)
              |> Enum.sort(),
-           assessments: AssessmentSettings.get_assessments(section.slug, student_exceptions),
+           assessments: AssessmentSettings.get_assessments(section, student_exceptions),
            breadcrumbs: set_breadcrumbs(user_type, section)
          )}
     end
