@@ -11,11 +11,14 @@ export class BasicPracticePagePO {
   private readonly insertButtonIcon: Locator;
   private readonly changesSaved: Locator;
   private readonly paragraph: Locator;
+  private readonly paragraphText: Locator;
   private readonly chooseImageButton: Locator;
   private readonly deleteButton: Locator;
   private readonly resourceChoicesActivities: Locator;
   private readonly previewButton: Locator;
   private readonly captionAudio: Locator;
+  private readonly figure: Locator;
+  private readonly textbox: Locator;
   private readonly utils: Utils;
 
   constructor(private readonly page: Page) {
@@ -23,6 +26,7 @@ export class BasicPracticePagePO {
     this.insertButtonIcon = page.locator('span[data-bs-original-title="Insert Content"]').first();
     this.changesSaved = page.getByText('All changes saved');
     this.paragraph = page.locator('[id^="resource-editor-"]').getByRole('paragraph');
+    this.paragraphText = this.page.getByText('Type here or use + to begin...');
     this.chooseImageButton = page.getByRole('button', {
       name: 'Choose Image',
     });
@@ -32,11 +36,13 @@ export class BasicPracticePagePO {
     this.resourceChoicesActivities = page.locator('.resource-choices.activities');
     this.previewButton = page.locator('div.TitleBar button:has-text("Preview")');
     this.captionAudio = page.getByRole('paragraph').filter({ hasText: 'Caption (optional)' });
+    this.figure = this.page.getByRole('figure', { name: 'Figure Title' });
+    this.textbox = this.figure.getByRole('textbox');
     this.utils = new Utils(page);
   }
 
   async verifyTitlePage(titlePage = 'New Page') {
-    Verifier.expectHasText(this.pageTitle, titlePage);
+    await Verifier.expectHasText(this.pageTitle, titlePage);
   }
 
   async fillCaptionAudio(text: string) {
@@ -52,8 +58,7 @@ export class BasicPracticePagePO {
   }
 
   async clickParagraph(index = 0) {
-    const e = this.page.getByText('Type here or use + to begin...');
-    await Verifier.expectIsVisible(e);
+    await Verifier.expectIsVisible(this.paragraphText);
     await this.paragraph.nth(index).click();
   }
 
@@ -101,15 +106,8 @@ export class BasicPracticePagePO {
     }
   }
 
-  async expectActivityVisible(displayName: TypeActivity) {
-    const locator = this.page.getByText(TYPE_ACTIVITY[displayName].label, { exact: true });
-    await Verifier.expectIsVisible(locator);
-  }
-
   async fillFigureTitle(text: string) {
-    const figure = this.page.getByRole('figure', { name: 'Figure Title' });
-    const textbox = figure.getByRole('textbox');
-    await Verifier.expectIsVisible(textbox);
-    await textbox.fill(text);
+    await Verifier.expectIsVisible(this.textbox);
+    await this.textbox.fill(text);
   }
 }

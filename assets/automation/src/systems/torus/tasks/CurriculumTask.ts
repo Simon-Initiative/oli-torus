@@ -14,9 +14,8 @@ import { SelectPageCO } from '@pom/content/SelectPageCO';
 import { TermCO } from '@pom/content/TermCO';
 import { WebPageCO } from '@pom/content/WebPageCO';
 import { BasicPracticePagePO } from '@pom/page/BasicPracticePagePO';
-import { BasicScoredPagePO } from '@pom/page/BasicScoredPagePO';
 import { SelectMultimediaCO } from '@pom/page/SelectMultimediaCO';
-import { CurriculumPO } from '@pom/project/CurriculumPO';
+import { CurriculumPO, Index } from '@pom/project/CurriculumPO';
 import { OverviewProjectPO } from '@pom/project/OverviewProjectPO';
 import { TypeActivity } from '@pom/types/type-activity';
 import { TypeProgrammingLanguage } from '@pom/types/type-programming-language';
@@ -31,12 +30,12 @@ import { QuestionResponseCO } from '@pom/activities/QuestionResponseCO';
 import { QuestionMultiCO } from '@pom/activities/QuestionMultiCO';
 import { QuestionLikertCO } from '@pom/activities/QuestionLikertCO';
 import { step } from '@core/decoration/step';
+import { QuestionImageHotspot } from '@pom/activities/QuestionImageHotspot';
 
-type PageType = 'basic-practice' | 'basic-scored' | 'unit' | 'module';
+type PageType = 'basic-practice' | 'basic-scored' | 'adaptive-practice' | 'unit' | 'module';
 
 export class CurriculumTask {
   private readonly basicPP: BasicPracticePagePO;
-  private readonly basicSP: BasicScoredPagePO;
   private readonly selectM: SelectMultimediaCO;
   private readonly overviewP: OverviewProjectPO;
   private readonly curriculum: CurriculumPO;
@@ -47,7 +46,6 @@ export class CurriculumTask {
 
   constructor(private readonly page: Page) {
     this.basicPP = new BasicPracticePagePO(page);
-    this.basicSP = new BasicScoredPagePO(page);
     this.selectM = new SelectMultimediaCO(page);
     this.overviewP = new OverviewProjectPO(page);
     this.curriculum = new CurriculumPO(page);
@@ -83,6 +81,7 @@ export class CurriculumTask {
     await this.selectM.closeSelectMedia();
   }
 
+  @step("Select a media file '{fileName}'")
   async selectMediaFile(kind: MediaKind, fileName: string) {
     if (kind === 'image') {
       const selectImage = await this.basicPP.clickChoseImage();
@@ -92,58 +91,78 @@ export class CurriculumTask {
     }
   }
 
+  @step("Set the activity state to '{stateToClick}'")
   async setActivityState(activity: TypeActivity, stateToClick: 'Enable' | 'Disable') {
     await this.overviewP.advancedActivities.setActivityState(activity, stateToClick);
   }
 
-  async addPageAndEnter(type: PageType, namePage = 'New Page') {
+  @step('Add a page and enter. Type: {type}')
+  async addPageAndEnter(
+    type: PageType,
+    namePage = 'New Page',
+    link = 'Edit Page',
+    index: Index = 'last',
+  ) {
     await this.addPage(type);
-    await this.enterPage(type, namePage);
-    await this.basicPP.verifyTitlePage(namePage);
-  }
+    await this.enterPage(type, namePage, link, index);
 
-  async addPage(type: PageType) {
     if (type === 'basic-practice') {
-      await this.curriculum.clickBasicPracticeButton();
-    }
-    if (type === 'basic-scored') {
-      await this.curriculum.clickBasicScoredButton();
-    }
-    if (type === 'unit') {
-      await this.curriculum.clickCreateUnitButton();
-    }
-    if (type === 'module') {
-      await this.curriculum.clickCreateModuleButton();
+      await this.basicPP.verifyTitlePage(namePage);
     }
   }
 
-  async enterPage(type: PageType, namePage = 'New Page') {
+  @step('Add a page to the project. Type: {type}')
+  async addPage(type: PageType) {
+    switch (type) {
+      case 'basic-practice':
+        await this.curriculum.clickBasicPracticeButton();
+        break;
+      case 'basic-scored':
+        await this.curriculum.clickBasicScoredButton();
+        break;
+      case 'adaptive-practice':
+        await this.curriculum.clickAdaptivePracticeButton();
+        break;
+      case 'unit':
+        await this.curriculum.clickCreateUnitButton();
+        break;
+      case 'module':
+        await this.curriculum.clickCreateModuleButton();
+        break;
+    }
+  }
+
+  @step('Enter a page from the project. Type: {type}')
+  async enterPage(type: PageType, namePage: string, link: string, index: Index) {
     if (type === 'basic-practice' || type === 'basic-scored') {
-      await this.curriculum.clickEditPageLink(namePage);
+      await this.curriculum.clickEditPageLink(namePage, link, index);
     }
     if (type === 'unit') {
-      await this.curriculum.clickEditUnitLink();
+      await this.curriculum.clickEditUnitLink(link);
     }
     if (type === 'module') {
-      await this.curriculum.clickEditModuleLink();
+      await this.curriculum.clickEditModuleLink(link);
     }
   }
 
   @step('Delete a page from the project')
-  async deletePage(name = 'New Page') {
-    await this.curriculum.deletePage(name);
+  async deletePage(name = 'New Page', link = 'Edit Page', index: Index = 'last') {
+    await this.curriculum.waitingToBeCentered();
+    await this.curriculum.deletePage(name, link, index);
   }
 
   //region Content
+  @step('Add cite')
   async addCiteToolbar(name: string, expectText: string) {
     const sc = new SelectCitationCO(this.page);
     this.clickOnParagraphAndSelectContent(0, 'More', 'Cite');
     await sc.expectDialogTitle('Select citation');
     await sc.selectCitation(name);
     await sc.confirmSelection();
-    await this.waitChangeVisualize(expectText);
+    await this.waitChangeVisualizeCite(expectText);
   }
 
+  @step('Add foreign')
   async addForeignToolbar(paragraphText: string, language: TypeLanguage) {
     const sf = new SelectForeignLanguageCO(this.page);
     await this.fillOnParagraphAndSelectContent(paragraphText, 0, 'More', 'Foreign');
@@ -154,23 +173,27 @@ export class CurriculumTask {
     await this.waitChangeVisualize(paragraphText);
   }
 
+  @step('Add image')
   async addImageToolbar(nameImage: string) {
     await this.clickOnParagraphAndSelectContent(0, 'More', 'Image (Inline)');
     await this.selectM.selectMediaByName(nameImage);
     await this.selectM.confirmSelection();
-    await this.waitChangeVisualize(nameImage, 'img');
+    await this.waitChangeVisualizeMedia(nameImage, 'img');
   }
 
+  @step('Add formula')
   async addFormulaToolbar(formula: string) {
     await this.clickOnParagraphAndSelectContent(0, 'More', 'Formula (Inline)');
     await this.waitChangeVisualize(formula);
   }
 
+  @step('Add callout')
   async addCalloutToolbar(paragraphText: string) {
     await this.fillOnParagraphAndSelectContent(paragraphText, 0, 'More', 'Callout');
     await this.waitChangeVisualize(paragraphText);
   }
 
+  @step('Add popup')
   async addPopUpToolbar(paragraphText: string, popupText: string) {
     const popup = new PopUpCO(this.page);
     await this.fillOnParagraphAndSelectContent(paragraphText, 0, 'More', 'Popup Content');
@@ -180,6 +203,7 @@ export class CurriculumTask {
     await this.waitChangeVisualize(paragraphText);
   }
 
+  @step('Add definition')
   async addDefinitionToolbar(termText: string, description: string) {
     const term = new TermCO(this.page);
     await this.basicPP.clickParagraph();
@@ -189,9 +213,11 @@ export class CurriculumTask {
     await term.openEditMode();
     await term.fillTerm(termText);
     await term.fillDescription(description);
-    await this.waitChangeVisualize(termText, description);
+    await this.waitChangeVisualize(termText);
+    await this.waitChangeVisualize(description);
   }
 
+  @step('Add page link')
   async addPageLinkToolbar(pageName: string) {
     const sp = new SelectPageCO(this.page);
     await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Page Link');
@@ -203,12 +229,14 @@ export class CurriculumTask {
     await this.basicPP.waitForChangesSaved();
   }
 
+  @step('Add figure')
   async addFigureToolbar(title: string) {
     await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Figure');
     await this.basicPP.fillFigureTitle(title);
     await this.waitChangeVisualize(title);
   }
 
+  @step('Add web page')
   async addWebPageToolbar(webPageUrl: string) {
     const webPage = new WebPageCO(this.page);
     await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Webpage');
@@ -219,6 +247,7 @@ export class CurriculumTask {
     await this.waitChangeVisualizeMedia(webPageUrl, 'webpage');
   }
 
+  @step('Add youtube link')
   async addYoutubeToolbar(youtubeUrl: string, youtubeId: string) {
     const youtube = new InsertYouTubeCO(this.page);
     await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'YouTube');
@@ -229,6 +258,7 @@ export class CurriculumTask {
     await this.waitChangeVisualizeMedia(youtubeId, 'youtube');
   }
 
+  @step('Add video')
   async addVideoToolbar(videoFileName: string) {
     await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Video');
     await this.selectM.clickChooseVideo();
@@ -238,6 +268,7 @@ export class CurriculumTask {
     await this.waitChangeVisualizeMedia(videoFileName, 'video');
   }
 
+  @step('Add audio clip')
   async addAudioClipToolbar(audioFileName: string, audioCaption: string) {
     await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Audio Clip');
     await this.selectM.waitForLabel('Embed audio');
@@ -248,18 +279,22 @@ export class CurriculumTask {
     await this.waitChangeVisualizeMedia(audioFileName, 'audio');
   }
 
+  @step('Add description list')
   async addDescriptionListToolbar(title: string, term: string, definition: string) {
     const descriptionList = new DescriptionListCO(this.page);
-    await this.clickOnParagraphAndSelectContent(0, 'More', 'Description List');
+    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Description List');
     await this.basicPP.waitForChangesSaved();
     await descriptionList.fillTitle(title);
     await this.basicPP.waitForChangesSaved();
     await descriptionList.fillTerm(term);
     await this.basicPP.waitForChangesSaved();
     await descriptionList.fillDefinition(definition);
-    await this.waitChangeVisualize(title, term, definition);
+    await this.waitChangeVisualize(title);
+    await this.waitChangeVisualize(term);
+    await this.waitChangeVisualize(definition);
   }
 
+  @step('Add equation')
   async addConjugationToolbar(
     headColumn1: string,
     headColumn2: string,
@@ -268,9 +303,14 @@ export class CurriculumTask {
     headRow3: string,
   ) {
     await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Conjugation');
-    await this.waitChangeVisualize(headColumn1, headColumn2, headRow1, headRow2, headRow3);
+    await this.waitChangeVisualize(headColumn1);
+    await this.waitChangeVisualize(headColumn2);
+    await this.waitChangeVisualize(headRow1);
+    await this.waitChangeVisualize(headRow2);
+    await this.waitChangeVisualize(headRow3);
   }
 
+  @step('Add dialog')
   async addDialogToolbar(dialogTitle: string, dialogSpeaker: string, dialogContent: string) {
     const dialog = new DialogCO(this.page);
     await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Dialog');
@@ -281,9 +321,12 @@ export class CurriculumTask {
     await dialog.clickAddButton();
     await this.basicPP.waitForChangesSaved();
     await dialog.fillParagraph(dialogContent);
-    await this.waitChangeVisualize(dialogTitle, dialogSpeaker, dialogContent);
+    await this.waitChangeVisualize(dialogTitle);
+    await this.waitChangeVisualize(dialogSpeaker);
+    await this.waitChangeVisualize(dialogContent);
   }
 
+  @step('Add table')
   async addTableToolbar(tableCaption: string, cell1: string, cell2: string) {
     const table = new Table(this.page);
     await this.clickOnParagraphAndSelectContent(0, 'Insert Table');
@@ -293,23 +336,29 @@ export class CurriculumTask {
     await table.fillCell(1, 1, cell1);
     await this.basicPP.waitForChangesSaved();
     await table.fillCell(1, 2, cell2);
-    await this.waitChangeVisualize(cell1, cell2, tableCaption);
+    await this.waitChangeVisualize(cell1);
+    await this.waitChangeVisualize(cell2);
+    await this.waitChangeVisualize(tableCaption);
   }
 
+  @step('Add theorem')
   async addTheoremToolbar(title: string) {
     await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Theorem');
     await this.waitChangeVisualize(title);
   }
 
+  @step('Add code block')
   async addCodeBlockToolbar(codeType: TypeProgrammingLanguage, code: string, caption: string) {
     const cb = new CodeBlockCO(this.page);
     await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Code (Block)');
     await cb.selectLanguageCode(codeType);
     await cb.fillCodeEditor(code);
     await cb.fillCodeCaption(caption);
-    await this.waitChangeVisualize(code, caption);
+    await this.waitChangeVisualize(code);
+    await this.waitChangeVisualize(caption);
   }
 
+  @step('Click on paragraph and select content')
   async clickOnParagraphAndSelectContent(indexParagraph = 0, ...elements: TypeToolbar[]) {
     await this.basicPP.clickParagraph(indexParagraph);
     for (const element of elements) {
@@ -317,6 +366,7 @@ export class CurriculumTask {
     }
   }
 
+  @step('Fill on paragraph and select content')
   async fillOnParagraphAndSelectContent(
     text: string,
     indexParagraph = 0,
@@ -328,6 +378,16 @@ export class CurriculumTask {
     }
   }
 
+  @step('Wait for changes and view cite')
+  async waitChangeVisualizeCite(cite: string) {
+    await this.basicPP.waitForChangesSaved();
+
+    const preview = await this.basicPP.clickPreview();
+    await preview.verifyCite(cite);
+    await preview.close();
+  }
+
+  @step('Wait for changes and view them')
   async waitChangeVisualize(...str: string[]) {
     await this.basicPP.waitForChangesSaved();
 
@@ -336,6 +396,7 @@ export class CurriculumTask {
     await preview.close();
   }
 
+  @step('Wait for changes and view multimedia resources')
   async waitChangeVisualizeMedia(
     name: string,
     resourceType: 'audio' | 'img' | 'video' | 'youtube' | 'webpage',
@@ -349,12 +410,27 @@ export class CurriculumTask {
   //endregion Content
 
   //region Activity
+  @step("Build question activity '{editorTitle}', '{activityType}' and '{questionText}'")
+  async buildQuestionActivity(
+    editorTitle: EditorTitle,
+    activityType: TypeActivity,
+    questionText: string,
+  ) {
+    const activity = new QuestionActivities(this.page, editorTitle);
+    this.addQuestionActivity(activityType);
+    await activity.expectEditorLoaded();
+    await activity.fillQuestion(questionText);
+    await this.basicPP.waitForChangesSaved();
+  }
+
+  @step('Add question activity')
   async addQuestionActivity(activity: TypeActivity) {
     await this.basicPP.clickInsertButtonIcon();
     await this.basicPP.selectActivity(activity);
     await this.basicPP.waitForChangesSaved();
   }
 
+  @step("Add activities with questions '{editorTitle}', '{activityType}' and '{questionText}'")
   async addActivitiesWithQuestions(
     editorTitle: EditorTitle,
     activityType: TypeActivity,
@@ -367,27 +443,8 @@ export class CurriculumTask {
     await preview.close();
   }
 
-  async addActivityDD(questionText: string) {
-    this.buildQuestionActivity('Directed Discussion', 'dd', questionText);
-  }
-
-  async addActivityDnD(questionText: string) {
-    this.buildQuestionActivity('Custom Drag and Drop', 'dnd', questionText);
-  }
-
-  async addActivityUpload(questionText: string) {
-    this.buildQuestionActivity('File Upload', 'file_aupload', questionText);
-  }
-
-  async addActivityCoding(questionText: string) {
-    this.buildQuestionActivity('Image Coding', 'coding', questionText);
-  }
-
-  async addActivityHotspot(questionText: string) {
-    this.buildQuestionActivity('Image Hotspot', 'hotspot', questionText);
-  }
-
-  async addActivitiVlab(questionText: string) {
+  @step('Add activity vlab')
+  async addActivityVlab(questionText: string) {
     const vlab = new QuestionVlabCO(this.page);
     await this.addQuestionActivity('vlab');
     await vlab.expectEditorLoaded();
@@ -395,6 +452,7 @@ export class CurriculumTask {
     await vlab.clickAddInputButton();
   }
 
+  @step('Add activity response multi')
   async addActivityResponseMulti(questionText: string) {
     const response = new QuestionResponseCO(this.page);
     await this.addQuestionActivity('response_multi');
@@ -403,6 +461,7 @@ export class CurriculumTask {
     await response.clickAddInputButton();
   }
 
+  @step('Add activity multi')
   async addActivityMulti(questionText: string) {
     const multi = new QuestionMultiCO(this.page);
     await this.addQuestionActivity('multi');
@@ -411,48 +470,67 @@ export class CurriculumTask {
     await multi.clickAddInputButton();
   }
 
+  @step('Add activity likert')
   async addActivityLikert(questionText: string) {
     const likert = new QuestionLikertCO(this.page);
     await this.addQuestionActivity('likert');
     await likert.expectEditorLoaded();
     await likert.fillPrompt(questionText);
   }
+
+  @step('Add activity Image Hotspot')
+  async addActivityHotspot(questionText: string) {
+    const hotspot = new QuestionImageHotspot(this.page);
+    await this.addQuestionActivity('hotspot');
+    await hotspot.expectEditorLoaded();
+    await hotspot.fillPrompt(questionText);
+  }
   //endregion Activity
 
   //region Course
-  async createNewCourseSection(
+  @step("Create a new course section with name '{courseName}' project")
+  async createNewCourseSection(courseName: string, startDate: Date, endDate: Date) {
+    await this.instructorDB.clickCreateNewSection();
+    await this.newCS.step1.searchProject(courseName);
+    await this.newCS.step1.clickOnCardProject(courseName);
+    await this.newCS.step2.fillCourseName(courseName);
+    await this.newCS.step2.fillCourseSectionNumber(courseName);
+    await this.newCS.step2.goToNextStep();
+    await this.newCS.step3.fillStartDate(startDate);
+    await this.newCS.step3.fillEndDate(endDate);
+    await this.newCS.step3.submitSection();
+  }
+
+  @step("Create a new course section for the '{projectName}' project with id '{projectID}'")
+  async createCourseFromProject(
     projectName: string,
     projectID: string,
     startDate: Date,
     endDate: Date,
     baseUrl: string,
   ) {
-    await this.instructorDB.clickCreateNewSection();
-    await this.newCS.step1.searchProject(projectName);
-    await this.newCS.step1.clickOnCardProject(projectName);
-    await this.newCS.step2.fillCourseName(projectName);
-    await this.newCS.step2.fillCourseSectionNumber(projectName);
-    await this.newCS.step2.goToNextStep();
-    await this.newCS.step3.fillStartDate(startDate);
-    await this.newCS.step3.fillEndDate(endDate);
-    await this.newCS.step3.submitSection();
-    await this.detailCourse.verifyBreadcrumbTrail(projectName);
+    this.createNewCourseSection(projectName, startDate, endDate);
+
+    await this.detailCourse.verifyTitlePage(projectName);
     await this.detailCourse.verifyCourseSectionID(projectID);
     await this.detailCourse.verifyTitle(projectName);
     await this.detailCourse.verifyUrl(baseUrl, projectID);
   }
-  //endregion Course
 
-  //region Private method
-  private async buildQuestionActivity(
-    editorTitle: EditorTitle,
-    activityType: TypeActivity,
-    questionText: string,
+  @step("Create a new course section for the '{productName}' product")
+  async createCourseFromProduct(
+    productName: string,
+    startDate: Date,
+    endDate: Date,
+    baseUrl: string,
   ) {
-    const activity = new QuestionActivities(this.page, editorTitle);
-    this.addQuestionActivity(activityType);
-    await activity.expectEditorLoaded();
-    await activity.fillQuestion(questionText);
+    this.createNewCourseSection(productName, startDate, endDate);
+
+    await this.detailCourse.verifyTitlePage(productName);
+    await this.detailCourse.verifyTitle(productName);
+    const courseSectionID = await this.detailCourse.getCourseSectionID();
+    await this.detailCourse.verifyUrl(baseUrl, courseSectionID);
+    await this.detailCourse.verifyProductLink(productName);
   }
-  //endregion Private method
+  //endregion Course
 }
