@@ -83,7 +83,8 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
         phx-click="change_selected_view"
         phx-value-selected_view={:gallery}
         data-side="Left"
-        data-state={if @selected_view == :gallery, do: "Active", else: "Default"}
+        aria-selected={@selected_view == :gallery}
+        aria-label="Gallery View"
         class={[
           "flex-1 px-2 py-3 rounded-tl-lg rounded-bl-lg border-l border-t border-b flex justify-center items-center gap-1.5",
           if(@selected_view == :gallery,
@@ -116,7 +117,8 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
         phx-click="change_selected_view"
         phx-value-selected_view={:outline}
         data-side="Right"
-        data-state={if @selected_view == :outline, do: "Active", else: "Default"}
+        aria-selected={@selected_view == :outline}
+        aria-label="Outline View"
         class={[
           "flex-1 px-2 py-3 rounded-tr-lg rounded-br-lg border-r border-t border-b border-Specialty-Tokens-Border-border-input-focused flex justify-center items-center gap-1.5",
           if(@selected_view == :outline,
