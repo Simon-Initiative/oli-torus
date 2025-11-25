@@ -25,11 +25,7 @@ export const HintCard: React.FC<{
 }) => {
   return (
     <Card.Card>
-      <Card.Title>
-        <span className="font-bold text-base leading-6 text-[#353740] dark:text-white">
-          {title}
-        </span>
-      </Card.Title>
+      <Card.Title>{title}</Card.Title>
       <Card.Content>
         <SlateOrMarkdownEditor
           placeholder={placeholder}
