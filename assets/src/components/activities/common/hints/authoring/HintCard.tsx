@@ -26,7 +26,7 @@ export const HintCard: React.FC<{
   return (
     <Card.Card>
       <Card.Title>
-        <span style={{ fontWeight: 700, fontSize: '16px', lineHeight: '24px', color: '#353740' }}>
+        <span className="font-bold text-base leading-6 text-[#353740] dark:text-white">
           {title}
         </span>
       </Card.Title>

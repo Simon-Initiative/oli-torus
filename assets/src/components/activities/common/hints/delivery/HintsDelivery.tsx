@@ -33,7 +33,7 @@ export const HintsDelivery: React.FC<Props> = ({
   return (
     <Card.Card className="hints">
       <Card.Title>
-        <span style={{ fontWeight: 700, fontSize: '16px', lineHeight: '24px', color: '#353740' }}>
+        <span className="font-bold text-base leading-6 text-[#353740] dark:text-white">
           Hints
         </span>
       </Card.Title>
