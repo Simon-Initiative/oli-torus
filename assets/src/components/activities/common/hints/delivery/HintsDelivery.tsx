@@ -31,14 +31,14 @@ export const HintsDelivery: React.FC<Props> = ({
     return null;
   }
   return (
-    <Card.Card className="hints">
+    <Card.Card className="hints !bg-delivery-hints-bg dark:!bg-delivery-hints-bg-dark !rounded !border-0 !shadow-none">
       <Card.Title>
         <span className="font-bold text-base leading-6 text-delivery-hints-text dark:text-delivery-hints-text-dark">
           Hints
         </span>
       </Card.Title>
       <Card.Content>
-        <div className="flex flex-col items-start p-0 gap-1 self-stretch">
+        <div className="flex flex-col items-start p-0 gap-2 self-stretch">
           {hints.map((hint, index) => (
             <div
               aria-label={`hint ${index + 1}`}

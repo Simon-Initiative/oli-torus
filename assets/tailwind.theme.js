@@ -208,9 +208,9 @@ module.exports = {
       },
       hints: {
         bg: {
-          DEFAULT: colors.gray['100'],
+          DEFAULT: '#FFFFFF',
           dark: {
-            DEFAULT: colors.gray['700'],
+            DEFAULT: '#2B282E',
           },
         },
         border: {
