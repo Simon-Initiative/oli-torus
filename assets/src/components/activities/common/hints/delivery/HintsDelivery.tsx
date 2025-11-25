@@ -42,7 +42,7 @@ export const HintsDelivery: React.FC<Props> = ({
           <div
             aria-label={`hint ${index + 1}`}
             key={hint.id}
-            className="d-flex align-items-center mb-2"
+            className="d-flex align-items-center mb-2 text-base font-normal leading-6 text-[#353740] dark:text-[#EEEBF5]"
           >
             <span className="mr-2">{index + 1}.</span>
             <HtmlContentModelRenderer
