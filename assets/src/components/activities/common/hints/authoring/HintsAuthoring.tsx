@@ -109,7 +109,11 @@ export const CognitiveHints: React.FC<CognitiveProps> = ({
   updateOneEditor,
 }) => (
   <Card.Card>
-    <Card.Title>{title || '"Cognitive" hints'}</Card.Title>
+    <Card.Title>
+      <span style={{ fontWeight: 700, fontSize: '16px', lineHeight: '24px', color: '#353740' }}>
+        {title || '"Cognitive" hints'}
+      </span>
+    </Card.Title>
     <Card.Content>
       {hints.map((hint, index) => (
         <div key={hint.id} className="d-flex mb-2">

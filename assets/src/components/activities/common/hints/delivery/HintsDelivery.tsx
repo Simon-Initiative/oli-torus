@@ -32,7 +32,11 @@ export const HintsDelivery: React.FC<Props> = ({
   }
   return (
     <Card.Card className="hints">
-      <Card.Title>Hints</Card.Title>
+      <Card.Title>
+        <span style={{ fontWeight: 700, fontSize: '16px', lineHeight: '24px', color: '#353740' }}>
+          Hints
+        </span>
+      </Card.Title>
       <Card.Content>
         {hints.map((hint, index) => (
           <div
