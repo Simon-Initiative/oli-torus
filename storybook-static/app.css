@@ -8549,6 +8549,14 @@ table.table-striped tbody tr:nth-child(even) {
   left: 2.27px;
 }
 
+.left-\[3\.33px\] {
+  left: 3.33px;
+}
+
+.left-\[3\.75px\] {
+  left: 3.75px;
+}
+
 .left-\[52px\] {
   left: 52px;
 }
@@ -8685,6 +8693,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 16px;
 }
 
+.top-\[3\.33px\] {
+  top: 3.33px;
+}
+
 .top-\[3\.73px\] {
   top: 3.73px;
 }
@@ -8699,6 +8711,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .top-\[55px\] {
   top: 55px;
+}
+
+.top-\[5px\] {
+  top: 5px;
 }
 
 .top-\[60px\] {
@@ -10110,6 +10126,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-3 {
   width: 0.75rem;
+}
+
+.w-3\.5 {
+  width: 0.875rem;
 }
 
 .w-3\/4 {
@@ -23550,6 +23570,10 @@ Not supports in Firefox and IE */
     display: none;
   }
 
+  .sm\:h-16 {
+    height: 4rem;
+  }
+
   .sm\:h-\[60px\] {
     height: 60px;
   }
@@ -23647,6 +23671,10 @@ Not supports in Firefox and IE */
     align-items: center;
   }
 
+  .sm\:justify-center {
+    justify-content: center;
+  }
+
   .sm\:justify-between {
     justify-content: space-between;
   }
@@ -23704,6 +23732,11 @@ Not supports in Firefox and IE */
   .sm\:px-2 {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+  }
+
+  .sm\:px-3 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
   .sm\:px-4 {
