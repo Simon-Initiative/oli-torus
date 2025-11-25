@@ -33,7 +33,7 @@ export const HintsDelivery: React.FC<Props> = ({
   return (
     <Card.Card className="hints">
       <Card.Title>
-        <span className="font-bold text-base leading-6 text-[#353740] dark:text-white">
+        <span className="font-bold text-base leading-6 text-delivery-hints-text dark:text-delivery-hints-text-dark">
           Hints
         </span>
       </Card.Title>
@@ -43,7 +43,7 @@ export const HintsDelivery: React.FC<Props> = ({
             <div
               aria-label={`hint ${index + 1}`}
               key={hint.id}
-              className="flex items-center text-base font-normal leading-6 text-[#353740] dark:text-[#EEEBF5]"
+              className="flex items-center text-base font-normal leading-6 text-delivery-hints-text dark:text-delivery-hints-text-dark"
             >
               <span className="mr-2">{index + 1}.</span>
               <HtmlContentModelRenderer
@@ -58,9 +58,13 @@ export const HintsDelivery: React.FC<Props> = ({
               aria-label="request hint"
               onClick={onClick}
               disabled={requestHintDisabled}
-              className="flex flex-row items-center p-0 gap-2 h-6 font-bold text-sm leading-4 text-[#006CD9] dark:text-[#4CA6FF]"
+              className="flex flex-row items-center p-0 gap-2 w-[90px] h-6"
             >
-              Request hint
+              <div className="flex flex-row items-center py-1 px-0 w-[90px] h-6">
+                <span className="w-[90px] h-4 flex items-center justify-center font-bold text-sm leading-4 text-delivery-hints-button dark:text-delivery-hints-button-dark">
+                  Request hint
+                </span>
+              </div>
             </button>
           )}
         </div>

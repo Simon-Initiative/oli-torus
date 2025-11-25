@@ -219,6 +219,18 @@ module.exports = {
             DEFAULT: colors.gray['600'],
           },
         },
+        text: {
+          DEFAULT: '#353740',
+          dark: {
+            DEFAULT: '#EEEBF5',
+          },
+        },
+        button: {
+          DEFAULT: '#006CD9',
+          dark: {
+            DEFAULT: '#4CA6FF',
+          },
+        },
       },
       purpose: {
         label: {
