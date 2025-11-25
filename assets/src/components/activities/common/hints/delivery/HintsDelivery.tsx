@@ -57,10 +57,9 @@ export const HintsDelivery: React.FC<Props> = ({
             aria-label="request hint"
             onClick={onClick}
             disabled={requestHintDisabled}
-            className="btn btn-sm btn-link"
-            style={{ padding: 0 }}
+            className="flex flex-row items-center p-0 gap-2 h-6 font-bold text-sm leading-4 text-[#006CD9] dark:text-[#4CA6FF]"
           >
-            Request Hint
+            Request hint
           </button>
         )}
       </Card.Content>
