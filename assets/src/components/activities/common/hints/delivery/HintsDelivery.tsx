@@ -38,30 +38,32 @@ export const HintsDelivery: React.FC<Props> = ({
         </span>
       </Card.Title>
       <Card.Content>
-        {hints.map((hint, index) => (
-          <div
-            aria-label={`hint ${index + 1}`}
-            key={hint.id}
-            className="d-flex align-items-center mb-2 text-base font-normal leading-6 text-[#353740] dark:text-[#EEEBF5]"
-          >
-            <span className="mr-2">{index + 1}.</span>
-            <HtmlContentModelRenderer
-              content={hint.content}
-              context={context}
-              direction={hint.textDirection}
-            />
-          </div>
-        ))}
-        {hasMoreHints && (
-          <button
-            aria-label="request hint"
-            onClick={onClick}
-            disabled={requestHintDisabled}
-            className="flex flex-row items-center p-0 gap-2 h-6 font-bold text-sm leading-4 text-[#006CD9] dark:text-[#4CA6FF]"
-          >
-            Request hint
-          </button>
-        )}
+        <div className="flex flex-col items-start p-0 gap-1 self-stretch">
+          {hints.map((hint, index) => (
+            <div
+              aria-label={`hint ${index + 1}`}
+              key={hint.id}
+              className="flex items-center text-base font-normal leading-6 text-[#353740] dark:text-[#EEEBF5]"
+            >
+              <span className="mr-2">{index + 1}.</span>
+              <HtmlContentModelRenderer
+                content={hint.content}
+                context={context}
+                direction={hint.textDirection}
+              />
+            </div>
+          ))}
+          {hasMoreHints && (
+            <button
+              aria-label="request hint"
+              onClick={onClick}
+              disabled={requestHintDisabled}
+              className="flex flex-row items-center p-0 gap-2 h-6 font-bold text-sm leading-4 text-[#006CD9] dark:text-[#4CA6FF]"
+            >
+              Request hint
+            </button>
+          )}
+        </div>
       </Card.Content>
     </Card.Card>
   );
