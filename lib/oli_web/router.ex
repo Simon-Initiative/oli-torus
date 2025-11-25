@@ -1208,7 +1208,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetAnnotations,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetNotificationBadges,
-          OliWeb.LiveSessionPlugs.SetPaywallSummary
+          OliWeb.LiveSessionPlugs.SetPaywallSummary,
+          OliWeb.LiveSessionPlugs.SetDeviceType
         ] do
         live("/", Delivery.Student.IndexLive)
         live("/learn", Delivery.Student.LearnLive)
@@ -1236,7 +1237,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.SetAnnotations,
-          OliWeb.LiveSessionPlugs.RequireEnrollment
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.SetDeviceType
         ] do
         live("/", Delivery.Student.IndexLive, :preview)
         live("/learn", Delivery.Student.LearnLive, :preview)
