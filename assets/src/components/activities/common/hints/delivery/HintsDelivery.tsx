@@ -43,14 +43,16 @@ export const HintsDelivery: React.FC<Props> = ({
             <div
               aria-label={`hint ${index + 1}`}
               key={hint.id}
-              className="flex items-center text-base font-normal leading-6 text-delivery-hints-text dark:text-delivery-hints-text-dark"
+              className="flex items-baseline text-base font-normal leading-6 text-delivery-hints-text dark:text-delivery-hints-text-dark"
             >
-              <span className="mr-2">{index + 1}.</span>
-              <HtmlContentModelRenderer
-                content={hint.content}
-                context={context}
-                direction={hint.textDirection}
-              />
+              <span className="mr-2 flex-shrink-0">{index + 1}.</span>
+              <div className="flex-1">
+                <HtmlContentModelRenderer
+                  content={hint.content}
+                  context={context}
+                  direction={hint.textDirection}
+                />
+              </div>
             </div>
           ))}
           {hasMoreHints && (
