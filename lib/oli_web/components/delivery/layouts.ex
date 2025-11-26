@@ -855,103 +855,144 @@ defmodule OliWeb.Components.Delivery.Layouts do
     # and the page would not react to interactions after navigation to another page
     # ("working" loader kept spinning after interacting with an activity)
     ~H"""
-    <div
-      id="bottom-bar-wrapper"
-      phx-hook="FixedNavigationBar"
-      class="group fixed bottom-0 left-1/2 -translate-x-1/2 w-full lg:w-[720px] z-50 h-[10px] lg:h-[74px]"
-    >
+    <div :if={!is_nil(@current_page)}>
       <div
-        :if={!is_nil(@current_page)}
-        id="bottom-bar"
-        class="translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 absolute bottom-0 left-1/2 -translate-x-1/2 h-[74px] lg:py-4 shadow-lg bg-white dark:bg-black lg:rounded-tl-[40px] lg:rounded-tr-[40px] flex items-center gap-3 lg:w-[720px] w-full z-50 transition-all duration-500 ease-in-out"
+        id="bottom-bar-wrapper"
+        phx-hook="FixedNavigationBar"
+        data-trigger-point="200"
+        class="group fixed bottom-0 left-1/2 -translate-x-1/2 w-full lg:w-[720px] z-50 h-[10px] lg:h-[74px]"
       >
-        <div class="hidden lg:block absolute -left-[114px] z-0">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="170"
-            height="74"
-            viewBox="0 0 170 74"
-            fill="none"
-          >
-            <path
-              class="fill-white dark:fill-black"
-              d="M170 0H134C107 0 92.5 13 68.5 37C44.5 61 24.2752 74 0 74H170V0Z"
-            />
-          </svg>
-        </div>
-
         <div
-          :if={!is_nil(@previous_page)}
-          class="grow shrink basis-0 h-10 justify-start items-center flex z-10 overflow-hidden whitespace-nowrap"
-          role="prev_page"
+          id="bottom-bar"
+          class="translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 absolute bottom-0 left-1/2 -translate-x-1/2 h-auto lg:h-[74px] lg:py-4 shadow-lg bg-white dark:bg-black lg:rounded-tl-[40px] lg:rounded-tr-[40px] flex flex-col lg:flex-row items-center gap-2 lg:gap-3 lg:w-[720px] w-full z-50 transition-all duration-500 ease-in-out px-2 lg:px-0 lg:pb-0"
         >
           <div
-            class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex"
-            tooltip="Previous Page"
+            :if={!is_nil(@previous_page) or !is_nil(@next_page)}
+            class="flex w-full items-center gap-3 lg:hidden justify-center md:justify-between px-4 my-4"
           >
-            <.link
-              href={
-                resource_navigation_url(
-                  @previous_page,
-                  @section_slug,
-                  assigns[:request_path],
-                  assigns[:selected_view]
-                )
-              }
-              class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2]/50 flex items-center justify-center"
-            >
-              <.left_arrow />
-            </.link>
-          </div>
-          <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
-            {maybe_add_icon(@previous_page, @pages_progress)}
-            <span class="overflow-hidden text-ellipsis" title={@previous_page["title"]}>
-              {@previous_page["title"]}
-            </span>
-          </div>
-        </div>
+            <%= if @previous_page do %>
+              <.link
+                href={
+                  resource_navigation_url(
+                    @previous_page,
+                    @section_slug,
+                    assigns[:request_path],
+                    assigns[:selected_view]
+                  )
+                }
+                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted py-2 text-sm font-semibold hover:text-[#FFFFFF] hover:no-underline"
+              >
+                <Icons.chevron_right class="rotate-90" />
+                <span>Previous</span>
+              </.link>
+            <% end %>
 
-        <div
-          :if={!is_nil(@next_page)}
-          class="grow shrink basis-0 h-10 justify-end items-center flex z-10 overflow-hidden whitespace-nowrap"
-          role="next_page"
-        >
-          <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
-            {maybe_add_icon(@next_page, @pages_progress)}
-            <span class="overflow-hidden text-ellipsis" title={@next_page["title"]}>
-              {@next_page["title"]}
-            </span>
+            <%= if @next_page do %>
+              <.link
+                href={
+                  resource_navigation_url(
+                    @next_page,
+                    @section_slug,
+                    assigns[:request_path],
+                    assigns[:selected_view]
+                  )
+                }
+                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary text-[#FFFFFF] py-2 text-sm font-semibold hover:text-[#FFFFFF] hover:no-underline"
+              >
+                <span>Next</span>
+                <Icons.chevron_right class="-rotate-90" />
+              </.link>
+            <% end %>
           </div>
-          <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
-            <.link
-              href={
-                resource_navigation_url(
-                  @next_page,
-                  @section_slug,
-                  assigns[:request_path],
-                  assigns[:selected_view]
-                )
-              }
-              class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2] flex items-center justify-center"
-            >
-              <.right_arrow />
-            </.link>
-          </div>
-        </div>
 
-        <div class="hidden lg:block absolute -right-[114px] z-0">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="170"
-            height="74"
-            viewBox="0 0 170 74"
-            fill="none"
+          <div class="hidden lg:block absolute -left-[114px] z-0">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="170"
+              height="74"
+              viewBox="0 0 170 74"
+              fill="none"
+            >
+              <path
+                class="fill-white dark:fill-black"
+                d="M170 0H134C107 0 92.5 13 68.5 37C44.5 61 24.2752 74 0 74H170V0Z"
+              />
+            </svg>
+          </div>
+
+          <div
+            :if={!is_nil(@previous_page)}
+            class="hidden lg:flex grow shrink basis-0 h-10 justify-start items-center z-10 overflow-hidden whitespace-nowrap"
+            role="prev_page"
           >
-            <path
-              class="fill-white dark:fill-black"
-              d="M0 0H36C63 0 77.5 13 101.5 37C125.5 61 145.725 74 170 74H0V0Z"
-            />
-          </svg>
+            <div
+              class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex"
+              tooltip="Previous Page"
+            >
+              <.link
+                href={
+                  resource_navigation_url(
+                    @previous_page,
+                    @section_slug,
+                    assigns[:request_path],
+                    assigns[:selected_view]
+                  )
+                }
+                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2]/50 flex items-center justify-center"
+              >
+                <.left_arrow />
+              </.link>
+            </div>
+            <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
+              {maybe_add_icon(@previous_page, @pages_progress)}
+              <span class="overflow-hidden text-ellipsis" title={@previous_page["title"]}>
+                {@previous_page["title"]}
+              </span>
+            </div>
+          </div>
+
+          <div
+            :if={!is_nil(@next_page)}
+            class="hidden lg:flex grow shrink basis-0 h-10 justify-end items-center z-10 overflow-hidden whitespace-nowrap"
+            role="next_page"
+          >
+            <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
+              {maybe_add_icon(@next_page, @pages_progress)}
+              <span class="overflow-hidden text-ellipsis" title={@next_page["title"]}>
+                {@next_page["title"]}
+              </span>
+            </div>
+            <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
+              <.link
+                href={
+                  resource_navigation_url(
+                    @next_page,
+                    @section_slug,
+                    assigns[:request_path],
+                    assigns[:selected_view]
+                  )
+                }
+                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2] flex items-center justify-center"
+              >
+                <.right_arrow />
+              </.link>
+            </div>
+          </div>
+
+          <div class="hidden lg:block absolute -right-[114px] z-0">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="170"
+              height="74"
+              viewBox="0 0 170 74"
+              fill="none"
+            >
+              <path
+                class="fill-white dark:fill-black"
+                d="M0 0H36C63 0 77.5 13 101.5 37C125.5 61 145.725 74 170 74H0V0Z"
+              />
+            </svg>
+          </div>
         </div>
       </div>
     </div>

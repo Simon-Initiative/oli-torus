@@ -427,10 +427,11 @@ defmodule OliWeb.Icons do
 
   attr :width, :string, default: "24"
   attr :height, :string, default: "24"
+  attr :class, :string, default: "-rotate-90"
 
   def chevron_right(assigns) do
     ~H"""
-    <.chevron_down width={@width} height={@height} class="-rotate-90" />
+    <.chevron_down width={@width} height={@height} class={@class} />
     """
   end
 

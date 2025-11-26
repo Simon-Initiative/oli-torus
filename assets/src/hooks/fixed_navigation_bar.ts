@@ -43,7 +43,15 @@ export const FixedNavigationBar = {
       const windowHeight = window.innerHeight;
       const atBottom = scrollTop + windowHeight >= scrollHeight - 5;
       const noScroll = scrollHeight <= windowHeight;
+      const shortScroll = scrollHeight - windowHeight <= 100;
       const isMobileDevice = isMobile();
+
+      if (isMobileDevice && (atBottom || noScroll || shortScroll)) {
+        bottomBar.classList.add('translate-y-0', 'opacity-100');
+        bottomBar.classList.remove('translate-y-full', 'opacity-0');
+        updateDialoguePosition(true);
+        return;
+      }
 
       if (isMobileDevice) {
         // Mobile behavior: show on scroll down, hide immediately on scroll up
@@ -96,11 +104,12 @@ export const FixedNavigationBar = {
       }
     };
 
-    // Set initial state for mobile - hidden by default
+    // Set initial state
     if (isMobile()) {
       bottomBar.classList.remove('translate-y-0', 'opacity-100');
       bottomBar.classList.add('translate-y-full', 'opacity-0');
-      updateDialoguePosition(false); // Position dialogue at bottom on mobile initially
+      updateDialoguePosition(false);
+      requestAnimationFrame(updateBarVisibility);
     } else {
       requestAnimationFrame(updateBarVisibility);
     }
