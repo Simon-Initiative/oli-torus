@@ -23,6 +23,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     total_duration_minutes: 0
   }
 
+  @gallery_scroll_offset 125
+  @outline_scroll_offset 125
+  @mobile_gallery_scroll_offset 150
+
   @default_image "/images/course_default.png"
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
@@ -246,7 +250,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         push_event(socket, "scroll-y-to-target", %{
           id: "unit_#{resource_id}",
-          offset: 25,
+          offset: @gallery_scroll_offset,
           pulse: true,
           pulse_delay: 500
         })
@@ -278,7 +282,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               socket.assigns.student_progress_per_resource_id
             )
         )
-        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 25})
+        |> push_event("scroll-y-to-target", %{
+          id: "unit_#{unit_resource_id}",
+          offset: @gallery_scroll_offset
+        })
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "module_#{resource_id}",
           scroll_delay: 300,
@@ -293,7 +300,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         push_event(socket, "scroll-y-to-target", %{
           id: "top_level_page_#{resource_id}",
-          offset: 25,
+          offset: @gallery_scroll_offset,
           pulse: true,
           pulse_delay: 500
         })
@@ -310,7 +317,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           )["resource_id"]
 
         socket
-        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 25})
+        |> push_event("scroll-y-to-target", %{
+          id: "unit_#{unit_resource_id}",
+          offset: @gallery_scroll_offset
+        })
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "page_#{resource_id}",
           scroll_delay: 300,
@@ -353,7 +363,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               socket.assigns.student_progress_per_resource_id
             )
         )
-        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 25})
+        |> push_event("scroll-y-to-target", %{
+          id: "unit_#{unit_resource_id}",
+          offset: @gallery_scroll_offset
+        })
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "module_#{module_resource_id}",
           scroll_delay: 300,
@@ -370,10 +383,50 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp push_scroll_event_for_outline(socket, identifier) do
     push_event(socket, "scroll-y-to-target", %{
       role: identifier,
-      offset: 125,
+      offset: @outline_scroll_offset,
       pulse: true,
       pulse_delay: 500
     })
+  end
+
+  def handle_event("back_to_gallery_mobile_view", _params, socket) do
+    # the unit that contains the module that was clicked on
+    unit_resource_id =
+      socket.assigns.selected_module_per_unit_resource_id
+      |> Map.keys()
+      |> List.first()
+
+    # the module that was clicked on
+    module_resource_id =
+      socket.assigns.selected_module_per_unit_resource_id
+      |> Map.values()
+      |> List.first()
+      |> Map.get("resource_id")
+
+    full_hierarchy =
+      get_full_hierarchy(
+        socket.assigns.section,
+        socket.assigns.selected_view,
+        socket.assigns.params["search_term"]
+      )
+
+    socket =
+      socket
+      |> stream(:units, full_hierarchy["children"], reset: true)
+      |> assign(selected_module_per_unit_resource_id: %{})
+      |> push_event("scroll-y-to-target", %{
+        id: "unit_#{unit_resource_id}",
+        offset: @mobile_gallery_scroll_offset
+      })
+      |> push_event("scroll-x-to-card-in-slider", %{
+        card_id: "module_#{module_resource_id}",
+        scroll_delay: 300,
+        unit_resource_id: unit_resource_id,
+        pulse_target_id: "module_#{module_resource_id}",
+        pulse_delay: 500
+      })
+
+    {:noreply, socket}
   end
 
   def handle_event("search", %{"search_term" => search_term}, socket) do
@@ -885,6 +938,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   # needed to ignore results of Task invocation
   def handle_info(_, socket), do: {:noreply, socket}
+
+  def render(
+        %{
+          is_mobile: true,
+          selected_view: :gallery,
+          selected_module_per_unit_resource_id: selected_module_per_unit_resource_id
+        } = assigns
+      )
+      when selected_module_per_unit_resource_id != %{} do
+    ~H"""
+    <div>
+      <button phx-click="back_to_gallery_mobile_view">Back</button>
+      <h1>Mobile Expanded Placeholder</h1>
+    </div>
+    """
+  end
 
   def render(%{selected_view: :outline} = assigns) do
     %{section: %{id: _section_id}} = assigns
