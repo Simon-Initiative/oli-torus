@@ -23,16 +23,23 @@ defmodule OliWeb.AuthorResetPasswordLive do
               Reset Password
             </:title>
 
-            <.error :if={@form.errors != []}>
+            <.error :if={@check_errors}>
               Oops, something went wrong! Please check the errors below.
             </.error>
 
-            <.input field={@form[:password]} type="password" label="New password" required />
+            <.input
+              field={@form[:password]}
+              type="password"
+              label="New password"
+              required
+              phx-debounce={500}
+            />
             <.input
               field={@form[:password_confirmation]}
               type="password"
               label="Confirm new password"
               required
+              phx-debounce={500}
             />
             <:actions>
               <.button variant={:primary} phx-disable-with="Resetting..." class="w-full mt-4">
@@ -58,7 +65,9 @@ defmodule OliWeb.AuthorResetPasswordLive do
           %{}
       end
 
-    {:ok, assign_form(socket, form_source), temporary_assigns: [form: nil]}
+    socket = socket |> assign(check_errors: false) |> assign_form(form_source)
+
+    {:ok, socket, temporary_assigns: [form: nil]}
   end
 
   # Do not log in the author after reset password to avoid a
@@ -72,7 +81,10 @@ defmodule OliWeb.AuthorResetPasswordLive do
          |> redirect(to: ~p"/authors/log_in")}
 
       {:error, changeset} ->
-        {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}
+        {:noreply,
+         socket
+         |> assign(check_errors: true)
+         |> assign_form(Map.put(changeset, :action, :validate))}
     end
   end
 
@@ -88,6 +100,16 @@ defmodule OliWeb.AuthorResetPasswordLive do
       socket
       |> put_flash(:error, "Reset password link is invalid or it has expired.")
       |> redirect(to: ~p"/authors/log_in")
+    end
+  end
+
+  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
+    form = to_form(changeset)
+
+    if changeset.valid? do
+      assign(socket, form: form, check_errors: false)
+    else
+      assign(socket, form: form)
     end
   end
 
