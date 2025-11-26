@@ -58,7 +58,8 @@ defmodule Oli.Scenarios.DirectiveTypes do
       :family_name,
       :password,
       :system_role,
-      :can_create_sections
+      :can_create_sections,
+      :email_verified
     ]
   end
 

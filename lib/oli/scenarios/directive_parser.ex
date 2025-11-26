@@ -278,7 +278,8 @@ defmodule Oli.Scenarios.DirectiveParser do
       "family_name",
       "password",
       "system_role",
-      "can_create_sections"
+      "can_create_sections",
+      "email_verified"
     ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, user_data, "user") do
@@ -291,7 +292,8 @@ defmodule Oli.Scenarios.DirectiveParser do
           family_name: user_data["family_name"] || "Test",
           password: user_data["password"],
           system_role: parse_system_role(user_data["system_role"]),
-          can_create_sections: parse_can_create_sections(user_data["can_create_sections"])
+          can_create_sections: parse_can_create_sections(user_data["can_create_sections"]),
+          email_verified: parse_email_verified(user_data["email_verified"])
         }
 
       {:error, msg} ->
@@ -718,21 +720,27 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
-  defp parse_can_create_sections(nil), do: false
-  defp parse_can_create_sections(value) when is_boolean(value), do: value
+  defp parse_can_create_sections(value),
+    do: parse_boolean(value, false, "can_create_sections")
 
-  defp parse_can_create_sections(value) when is_binary(value) do
+  defp parse_email_verified(value),
+    do: parse_boolean(value, true, "email_verified")
+
+  defp parse_boolean(nil, default, _field), do: default
+  defp parse_boolean(value, _default, _field) when is_boolean(value), do: value
+
+  defp parse_boolean(value, _default, field) when is_binary(value) do
     case String.downcase(String.trim(value)) do
       "true" -> true
       "false" -> false
-      other -> raise "Invalid boolean for can_create_sections: #{other}"
+      other -> raise "Invalid boolean for #{field}: #{other}"
     end
   end
 
-  defp parse_can_create_sections(value) when is_integer(value), do: value != 0
+  defp parse_boolean(value, _default, _field) when is_integer(value), do: value != 0
 
-  defp parse_can_create_sections(value),
-    do: raise("Invalid boolean for can_create_sections: #{inspect(value)}")
+  defp parse_boolean(value, _default, field),
+    do: raise("Invalid boolean for #{field}: #{inspect(value)}")
 
   defp parse_enrollment_role(nil), do: :student
   defp parse_enrollment_role("instructor"), do: :instructor
