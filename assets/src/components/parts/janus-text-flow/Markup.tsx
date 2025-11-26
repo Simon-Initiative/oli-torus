@@ -128,15 +128,34 @@ const Markup: React.FC<any> = ({
 
   switch (renderTag) {
     case 'a':
+      const linkTarget = target || '_blank';
+      const isExternalLink = linkTarget === '_blank';
       return (
         <a
           ref={el}
           key={key}
           className={customCssClass}
           href={href}
-          target={target || '_blank'}
-          style={{ ...renderStyles, display: 'inline' }}
+          target={linkTarget}
+          style={{ ...renderStyles, display: 'inline', position: 'relative' }}
         >
+          {isExternalLink && (
+            <span
+              style={{
+                position: 'absolute',
+                width: '1px',
+                height: '1px',
+                padding: 0,
+                margin: '-1px',
+                overflow: 'hidden',
+                clipPath: 'inset(50%)',
+                whiteSpace: 'nowrap',
+                border: 0,
+              }}
+            >
+              Links to external site,{' '}
+            </span>
+          )}
           {processedText}
           {children}
         </a>
