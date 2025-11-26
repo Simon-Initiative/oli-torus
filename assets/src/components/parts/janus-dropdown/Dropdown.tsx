@@ -213,8 +213,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const labelId = `${id}-label`;
   const hasVisibleLabel = Boolean(showLabel && label);
   const fallbackLabel = label || prompt || 'Dropdown';
-  const activeDescendantId =
-    highlightedIndex >= 0 ? `${id}-option-${highlightedIndex}` : undefined;
+  const activeDescendantId = highlightedIndex >= 0 ? `${id}-option-${highlightedIndex}` : undefined;
 
   const saveState = ({
     selectedIndex,
