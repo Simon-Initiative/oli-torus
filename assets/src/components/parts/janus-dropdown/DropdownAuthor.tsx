@@ -10,18 +10,10 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
     width,
   };
   const dropDownStyle: CSSProperties = {
-    width: 'auto',
+    width: '100%',
     height: 'auto',
     cursor: 'move',
   };
-  if (!(showLabel && label)) {
-    dropDownStyle.width = `${Number(width) - 10}px`;
-  }
-  if (showLabel && label && width) {
-    //is this the best way to handle?
-    //if lable is visible then need to set the maxWidth otherwise it gets out of the container
-    dropDownStyle.maxWidth = `${Number(width) * 0.63}px`;
-  }
   useEffect(() => {
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
@@ -31,7 +23,7 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
     const options = [];
 
     if (prompt) {
-      // If a prompt exists and the selectedIndex is not set or is set to -1, set prompt as disabled first option
+      // If a prompt exists and the selectedIndex is not set or is set to -1, set prompt as disabled first option.
       options.push(
         <option key="-1" value="-1" style={{ display: 'none' }}>
           {prompt}
