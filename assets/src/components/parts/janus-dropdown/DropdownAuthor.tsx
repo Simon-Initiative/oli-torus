@@ -23,7 +23,7 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
     const options = [];
 
     if (prompt) {
-      // If a prompt exists and the selectedIndex is not set or is set to -1, set prompt as disabled first option
+      // If a prompt exists and the selectedIndex is not set or is set to -1, set prompt as disabled first option.
       options.push(
         <option key="-1" value="-1" style={{ display: 'none' }}>
           {prompt}
