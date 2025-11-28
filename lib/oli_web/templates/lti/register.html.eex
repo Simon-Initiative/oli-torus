@@ -27,7 +27,7 @@
         var issuer = <%= Poison.encode!(@issuer) |> raw %>
       </script>
 
-      <%= form_for @changeset, @submit_action, fn f -> %>
+      <%= form_for @changeset, @submit_action, [method: :post], fn f -> %>
         <%= if @changeset.action do %>
           <div class="alert alert-danger">
             <p>Something went wrong, please check the errors below.</p>
@@ -197,6 +197,8 @@
           <div>
             <%= submit "Register", disabled: true, class: "submit btn btn-md btn-primary btn-block" %>
           </div>
+
+        </div>
 
       <% end %>
 
