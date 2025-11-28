@@ -890,8 +890,6 @@ defmodule OliWeb.Router do
 
     get("/developer_key.json", Api.LtiController, :developer_key_json)
 
-    post("/register", LtiController, :request_registration)
-
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
@@ -899,6 +897,7 @@ defmodule OliWeb.Router do
   scope "/lti", OliWeb do
     pipe_through([:lti, :www_url_form, :delivery, :protect_from_forgery])
 
+    post("/register", LtiController, :request_registration)
     get("/register_form", LtiController, :show_registration_form)
   end
 
