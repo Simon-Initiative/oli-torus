@@ -77,7 +77,10 @@ defmodule OliWeb.LtiControllerTest do
       assert get_session(conn, "state") != nil
     end
 
-    test "login post fails on missing registration", %{conn: conn, registration: registration} do
+    test "login post fails on missing registration and redirects to register_form", %{
+      conn: conn,
+      registration: registration
+    } do
       body = %{
         "client_id" => registration.client_id,
         "iss" => "http://invalid.edu",
@@ -88,8 +91,12 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert html_response(conn, 200) =~ "Welcome to"
-      assert html_response(conn, 200) =~ "Register Your Institution"
+      assert redirected_to(conn) == "/lti/register_form"
+
+      # Get session from the redirect response
+      session_params = get_session(conn, :pending_registration_params)
+      assert session_params[:issuer] == "http://invalid.edu"
+      assert session_params[:client_id] == registration.client_id
 
       # validate still works when a user is already logged in
       user = user_fixture()
@@ -100,12 +107,10 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert html_response(conn, 200) =~ "Welcome to"
-      assert html_response(conn, 200) =~ "Register Your Institution"
+      assert redirected_to(conn) == "/lti/register_form"
 
-      # form contains a required text input for deployment id
-      assert html_response(conn, 200) =~
-               "<input class=\"deployment_id form-control \" id=\"pending_registration_deployment_id\" name=\"pending_registration[deployment_id]\" placeholder=\"Deployment ID\" required type=\"text\">"
+      session_params = get_session(conn, :pending_registration_params)
+      assert session_params[:issuer] == "http://invalid.edu"
     end
 
     test "registration form pre-populates deployment_id if it was included in oidc params", %{
@@ -123,17 +128,18 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert html_response(conn, 200) =~ "Welcome to Torus!"
-      assert html_response(conn, 200) =~ "Register Your Institution"
+      assert redirected_to(conn) == "/lti/register_form"
 
-      # validate still works when a user is already logged in
-      user = user_fixture()
+      session_params = get_session(conn, :pending_registration_params)
+      assert session_params[:deployment_id] == "prepopulated_deployment_id"
+
+      # Follow redirect to see the form - need to preserve session
+      redirect_path = redirected_to(conn)
 
       conn =
         recycle(conn)
-        |> log_in_user(user)
-
-      conn = post(conn, Routes.lti_path(conn, :login, body))
+        |> Plug.Test.init_test_session(session_params)
+        |> get(redirect_path)
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
@@ -181,6 +187,19 @@ defmodule OliWeb.LtiControllerTest do
                )
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert redirected_to(conn) == "/lti/register_form"
+
+      session_params = get_session(conn, :pending_registration_params)
+      assert session_params[:deployment_id] == deployment_id
+
+      # Follow redirect to see the form - need to preserve session
+      redirect_path = redirected_to(conn)
+
+      conn =
+        recycle(conn)
+        |> Plug.Test.init_test_session(session_params)
+        |> get(redirect_path)
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
@@ -347,7 +366,7 @@ defmodule OliWeb.LtiControllerTest do
       assert html_response(conn, 200) =~ "This course section is not available"
     end
 
-    test "launch handles invalid registration and shows registration form", %{conn: conn} do
+    test "launch handles invalid registration and redirects to registration form", %{conn: conn} do
       platform_jwk = jwk_fixture()
 
       state = "some-state"
@@ -368,6 +387,20 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert redirected_to(conn) == "/lti/register_form"
+
+      session_params = get_session(conn, :pending_registration_params)
+      assert session_params[:issuer] == "some different client_id"
+      assert session_params[:client_id] == "some different issuer"
+
+      # Follow redirect to see the form - need to preserve session
+      redirect_path = redirected_to(conn)
+
+      conn =
+        recycle(conn)
+        |> Plug.Test.init_test_session(session_params)
+        |> get(redirect_path)
 
       assert html_response(conn, 200) =~ "Welcome to"
       assert html_response(conn, 200) =~ "Register Your Institution"
@@ -471,6 +504,69 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~
                "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
+    end
+
+    test "show_registration_form displays registration page with params from session", %{
+      conn: conn
+    } do
+      # Set up session with pending registration params
+      conn =
+        conn
+        |> Plug.Test.init_test_session(%{
+          pending_registration_params: %{
+            "issuer" => "http://test-issuer.edu",
+            "client_id" => "test-client-id",
+            "deployment_id" => "test-deployment-id"
+          }
+        })
+
+      conn = get(conn, "/lti/register_form")
+
+      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
+      assert html_response(conn, 200) =~ "value=\"test-deployment-id\""
+    end
+
+    test "show_registration_form handles missing session params gracefully", %{conn: conn} do
+      conn = get(conn, "/lti/register_form")
+
+      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
+    end
+
+    test "show_registration_form with pending registration shows pending message", %{
+      conn: conn
+    } do
+      # Create a pending registration first
+      pending_registration_attrs = %{
+        "issuer" => "http://pending-issuer.edu",
+        "client_id" => "pending-client-id",
+        "name" => "Pending Institution",
+        "institution_url" => "http://pending.edu",
+        "institution_email" => "contact@pending.edu",
+        "country_code" => "US",
+        "key_set_url" => "http://pending.edu/jwks",
+        "auth_token_url" => "http://pending.edu/token",
+        "auth_login_url" => "http://pending.edu/login",
+        "auth_server" => "http://pending.edu",
+        "deployment_id" => "pending-deployment"
+      }
+
+      {:ok, _pending} = Institutions.create_pending_registration(pending_registration_attrs)
+
+      conn =
+        conn
+        |> Plug.Test.init_test_session(%{
+          pending_registration_params: %{
+            "issuer" => "http://pending-issuer.edu",
+            "client_id" => "pending-client-id",
+            "deployment_id" => "pending-deployment"
+          }
+        })
+
+      conn = get(conn, "/lti/register_form")
+
+      assert html_response(conn, 200) =~ "Pending Institution"
     end
   end
 

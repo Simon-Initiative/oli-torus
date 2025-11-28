@@ -878,6 +878,7 @@ defmodule OliWeb.Router do
     post("/deep_link/:section_slug/:resource_id", LtiController, :deep_link)
   end
 
+  # LTI routes WITHOUT CSRF protection (entry points from external LMS)
   scope "/lti", OliWeb do
     pipe_through([:lti, :www_url_form, :delivery])
 
@@ -892,6 +893,13 @@ defmodule OliWeb.Router do
     post("/register", LtiController, :request_registration)
 
     get("/authorize_redirect", LtiController, :authorize_redirect)
+  end
+
+  # LTI routes WITH CSRF protection (for rendering pages with LiveViews)
+  scope "/lti", OliWeb do
+    pipe_through([:lti, :www_url_form, :delivery, :protect_from_forgery])
+
+    get("/register_form", LtiController, :show_registration_form)
   end
 
   # LTI 1.3 AGS endpoints

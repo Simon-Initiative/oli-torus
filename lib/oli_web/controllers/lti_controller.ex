@@ -654,6 +654,23 @@ defmodule OliWeb.LtiController do
     :ok
   end
 
+  @doc """
+  Displays the registration form for institutions.
+
+  This route is accessed via GET with CSRF protection enabled, allowing LiveView
+  components (like TechSupportLive) to function properly. Registration params are
+  retrieved from the session, which were stored during the redirect from login/launch.
+  """
+  def show_registration_form(conn, _params) do
+    # Retrieve params from session that were stored during redirect from login/launch
+    params = get_session(conn, :pending_registration_params) || %{}
+    issuer = params[:issuer] || params["issuer"]
+    client_id = params[:client_id] || params["client_id"]
+    deployment_id = params[:deployment_id] || params["deployment_id"]
+
+    show_registration_page(conn, issuer, client_id, deployment_id)
+  end
+
   def request_registration(
         conn,
         %{"pending_registration" => pending_registration_attrs} = _params
@@ -734,18 +751,43 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  # Redirect to registration form instead of rendering directly.
+  # This allows the registration page to be served with CSRF protection,
+  # which is required for LiveView components to establish WebSocket connections.
   defp handle_invalid_registration(conn, issuer, client_id, deployment_id \\ nil) do
-    show_registration_page(conn, issuer, client_id, deployment_id)
+    conn
+    |> put_session(:pending_registration_params, %{
+      issuer: issuer,
+      client_id: client_id,
+      deployment_id: deployment_id
+    })
+    |> redirect(to: "/lti/register_form")
   end
 
+  # Similar to handle_invalid_registration - redirect to enable CSRF protection.
   defp handle_invalid_deployment(conn, _params, registration_id, deployment_id) do
     registration = Institutions.get_registration!(registration_id)
 
-    show_registration_page(conn, registration.issuer, registration.client_id, deployment_id)
+    conn
+    |> put_session(:pending_registration_params, %{
+      issuer: registration.issuer,
+      client_id: registration.client_id,
+      deployment_id: deployment_id
+    })
+    |> redirect(to: "/lti/register_form")
   end
 
   defp show_registration_page(conn, issuer, client_id, deployment_id) do
-    case Oli.Institutions.get_pending_registration(issuer, client_id, deployment_id) do
+    # Only try to fetch pending registration if we have valid params.
+    # Ecto queries don't allow comparison with nil, so we check first.
+    pending_registration =
+      if issuer != nil and client_id != nil do
+        Oli.Institutions.get_pending_registration(issuer, client_id, deployment_id)
+      else
+        nil
+      end
+
+    case pending_registration do
       nil ->
         conn
         |> render("register.html",
