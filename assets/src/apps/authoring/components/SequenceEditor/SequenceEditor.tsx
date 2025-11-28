@@ -590,8 +590,11 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     );
   });
   const manageTreeData = useCallback(
-    (data: any) => {
+    (data: any, parentIsBank = false) => {
       return data.map((item: any, index: number) => {
+        // Check if its parent is a bank
+        const isParentQB = parentIsBank || false;
+
         const newItem: any = {
           id: item?.id || guid(),
           ...item,
@@ -600,7 +603,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
             itemToRename,
             index, // This index is specific to the current level
             arr: data?.length,
-            isParentQB: item.custom.isBank,
+            isParentQB,
             currentSequenceId,
             setCurrentPartPropertyFocus,
             handleRenameItem,
@@ -610,8 +613,9 @@ const SequenceEditor: React.FC<any> = (props: any) => {
         };
 
         // 🚀 If the item has children, recursively call manageTreeData on them
+        // Pass down whether the current item is a bank so children know if they're inside a bank
         if (item.children && item.children.length > 0) {
-          newItem.children = manageTreeData(item.children); // Recursion!
+          newItem.children = manageTreeData(item.children, item.custom.isBank); // Recursion!
         }
         return newItem;
       });
