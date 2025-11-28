@@ -590,7 +590,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     );
   });
   const manageTreeData = useCallback(
-    (data: any, parentIsBank: boolean = false) => {
+    (data: any, parentIsBank = false) => {
       return data.map((item: any, index: number) => {
         // Check if its parent is a bank
         const isParentQB = parentIsBank || false;
