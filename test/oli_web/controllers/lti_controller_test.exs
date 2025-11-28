@@ -138,7 +138,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn =
         recycle(conn)
-        |> Plug.Test.init_test_session(session_params)
+        |> Plug.Test.init_test_session(%{pending_registration_params: session_params})
         |> get(redirect_path)
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
@@ -198,7 +198,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn =
         recycle(conn)
-        |> Plug.Test.init_test_session(session_params)
+        |> Plug.Test.init_test_session(%{pending_registration_params: session_params})
         |> get(redirect_path)
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
@@ -399,7 +399,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn =
         recycle(conn)
-        |> Plug.Test.init_test_session(session_params)
+        |> Plug.Test.init_test_session(%{pending_registration_params: session_params})
         |> get(redirect_path)
 
       assert html_response(conn, 200) =~ "Welcome to"
