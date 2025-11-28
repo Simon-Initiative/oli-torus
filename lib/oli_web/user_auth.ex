@@ -270,6 +270,30 @@ defmodule OliWeb.UserAuth do
     end
   end
 
+  def on_mount(:mount_current_instructor, _params, session, socket) do
+    socket = mount_current_user(socket, session)
+
+    # Allow access if user is an admin (even without a user account)
+    if socket.assigns.is_admin do
+      {:cont, socket}
+    else
+      # Check if user is a student using the utility function
+      if OliWeb.Components.Delivery.Utils.user_role_is_student(
+           socket.assigns,
+           socket.assigns.current_user
+         ) do
+        socket =
+          socket
+          |> Phoenix.LiveView.put_flash(:error, "You are not authorized to access this page.")
+          |> Phoenix.LiveView.redirect(to: ~p"/unauthorized")
+
+        {:halt, socket}
+      else
+        {:cont, socket}
+      end
+    end
+  end
+
   defp mount_current_user(socket, session) do
     # Note: When a user first accesses an application using LiveView, the LiveView is first rendered
     # in its disconnected state, as part of a regular HTML response. By using assign_new in the

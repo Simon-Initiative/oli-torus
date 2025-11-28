@@ -12,6 +12,9 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
 
+  on_mount({OliWeb.AuthorAuth, :mount_current_author})
+  on_mount({OliWeb.UserAuth, :mount_current_instructor})
+
   def set_breadcrumbs(section, type) do
     type
     |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)

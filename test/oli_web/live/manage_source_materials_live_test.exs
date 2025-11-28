@@ -135,11 +135,21 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
   describe "user can access when is logged in as system admin" do
     setup [:admin_conn, :create_project_and_section]
 
-    test "returns the manage source materials view", %{
+    test "returns the manage source materials view for a section", %{
       conn: conn,
       section: section
     } do
       conn = get(conn, live_view_source_materials(section.slug))
+
+      assert html_response(conn, 200)
+    end
+
+    test "returns the manage source materials view for a product", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, product} = Oli.Delivery.Sections.update_section(section, %{type: :blueprint})
+      conn = get(conn, live_view_source_materials(product.slug))
 
       assert html_response(conn, 200)
     end
