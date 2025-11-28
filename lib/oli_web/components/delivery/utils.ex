@@ -112,9 +112,6 @@ defmodule OliWeb.Components.Delivery.Utils do
       :student ->
         true
 
-      :other ->
-        true
-
       _ ->
         false
     end
