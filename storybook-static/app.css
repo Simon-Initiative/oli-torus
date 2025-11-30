@@ -4542,6 +4542,10 @@ select {
   background-color: #FFFFFF;
 }
 
+.text-Specially-Tokens-Text-text-button-muted {
+  color: #003163;
+}
+
 .dark .text-Specially-Tokens-Text-text-button-muted {
   color: #FFFFFF;
 }
@@ -20803,6 +20807,11 @@ Not supports in Firefox and IE */
   color: rgb(76 166 255 / var(--tw-text-opacity));
 }
 
+.hover\:text-\[\#FFFFFF\]:hover {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
 .hover\:text-\[\#dc2626\]:hover {
   --tw-text-opacity: 1;
   color: rgb(220 38 38 / var(--tw-text-opacity));
@@ -24021,6 +24030,10 @@ Not supports in Firefox and IE */
     width: 66.666667%;
   }
 
+  .md\:w-\[20\%\] {
+    width: 20%;
+  }
+
   .md\:w-\[200px\] {
     width: 200px;
   }
@@ -24655,6 +24668,11 @@ Not supports in Firefox and IE */
 
   .lg\:p-2 {
     padding: 0.5rem;
+  }
+
+  .lg\:px-0 {
+    padding-left: 0px;
+    padding-right: 0px;
   }
 
   .lg\:px-10 {
