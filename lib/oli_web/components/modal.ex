@@ -179,41 +179,54 @@ defmodule OliWeb.Components.Modal do
     >
       <div
         id={"#{@id}-bg"}
-        class="fixed inset-0 bg-black/20 transition-opacity backdrop-blur-sm"
+        class="fixed inset-x-0 top-[56px] bottom-0 sm:inset-0 bg-black/20 transition-opacity backdrop-blur-sm"
         aria-hidden="true"
       />
       <div
-        class="fixed inset-0 overflow-y-auto"
+        class="fixed inset-x-0 top-[56px] bottom-0 sm:inset-0 overflow-y-auto"
         aria-labelledby={"#{@id}-title"}
         aria-describedby={"#{@id}-description"}
         role="dialog"
         aria-modal="true"
         tabindex="0"
       >
-        <div class="flex min-h-full items-center justify-center">
-          <div class={["w-full p-4 sm:p-6 lg:py-8", @class]}>
+        <div class="flex min-h-full items-start sm:items-center justify-center">
+          <div class={["w-full h-full sm:h-auto p-0 sm:p-4 sm:p-6 lg:py-8", @class]}>
             <.focus_wrap
               id={"#{@id}-container"}
               phx-mounted={@show && show_modal(@id)}
               phx-window-keydown={hide_modal(@on_cancel, @id)}
               phx-key="escape"
               phx-click-away={hide_modal(@on_cancel, @id)}
-              class="max-h-[85vh] overflow-y-scroll hidden pt-0 p-8 sm:p-14 lg:p-16 xl:p-20 relative bg-white dark:bg-black shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
+              class="h-full sm:max-h-[85vh] overflow-y-scroll hidden p-0 sm:p-14 lg:p-16 xl:p-20 relative bg-Specially-Tokens-Background-lesson-page shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
             >
+              <!-- Mobile: Back button in dark header bar -->
+              <div class="sm:hidden sticky top-0 z-20 px-4 py-3 bg-Surface-surface-secondary">
+                <button
+                  type="button"
+                  class="text-Text-text-high hover:text-Text-text-low text-sm flex items-center gap-1.5"
+                  phx-click={hide_modal(@on_cancel, @id)}
+                  aria-label={gettext("close")}
+                >
+                  <OliWeb.Icons.back_arrow class="w-4 h-4 [&>path]:stroke-current" />
+                  <span class="hover:underline">Back</span>
+                </button>
+              </div>
               
     <!-- Modal header -->
-              <div class="flex items-start justify-between">
-                <div :if={@title != []} class="mb-6 lg:mb-11">
-                  <div class="flex items-start justify-between sticky top-0 z-10 pt-8 sm:pt-14 lg:pt-16 xl:pt-20 bg-white dark:bg-black w-full pb-2">
+              <div class="flex items-start justify-between px-4 sm:px-0">
+                <div :if={@title != []} class="mb-6 lg:mb-11 w-full">
+                  <div class="flex items-start justify-between sticky top-0 z-10 pt-8 sm:pt-14 lg:pt-16 xl:pt-20 bg-Specially-Tokens-Background-lesson-page w-full pb-2">
                     <h1
                       id={"#{@id}-title"}
-                      class="text-zinc-700 dark:text-neutral-300 text-2xl sm:text-3xl lg:text-[40px] font-bold font-['Inter'] leading-normal sm:leading-[60px]"
+                      class="text-zinc-700 dark:text-neutral-300 text-xl sm:text-3xl lg:text-[40px] font-bold font-['Inter'] leading-normal sm:leading-[60px]"
                     >
                       {render_slot(@title)}
                     </h1>
+                    <!-- Desktop: X icon -->
                     <button
                       type="button"
-                      class="dark:text-gray-400 dark:hover:text-white text-gray-900 hover:text-gray-400 text-sm w-8 h-8  flex items-center justify-center"
+                      class="hidden sm:flex dark:text-gray-400 dark:hover:text-white text-gray-900 hover:text-gray-400 text-sm w-8 h-8 items-center justify-center"
                       phx-click={hide_modal(@on_cancel, @id)}
                       aria-label={gettext("close")}
                     >
@@ -246,7 +259,7 @@ defmodule OliWeb.Components.Modal do
                 </div>
               </div>
               <!-- Modal body -->
-              <div class={@body_class}>
+              <div class={["px-4 sm:px-0 pb-8", @body_class]}>
                 {render_slot(@inner_block)}
               </div>
               <!-- Modal footer -->
