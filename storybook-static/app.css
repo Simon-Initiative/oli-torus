@@ -8717,6 +8717,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 55px;
 }
 
+.top-\[56px\] {
+  top: 56px;
+}
+
 .top-\[5px\] {
   top: 5px;
 }
@@ -9942,10 +9946,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-h-\[80vh\] {
   max-height: 80vh;
-}
-
-.max-h-\[85vh\] {
-  max-height: 85vh;
 }
 
 .max-h-\[calc\(100vh-176px\)\] {
@@ -19952,6 +19952,14 @@ Not supports in Firefox and IE */
   border-color: #EEEBF5;
 }
 
+.hover\:text-Text-text-low:hover {
+  color: #45464C;
+}
+
+.dark .hover\:text-Text-text-low:hover {
+  color: #BAB8BF;
+}
+
 .hover\:text-Text-text-button:hover {
   color: #006CD9;
 }
@@ -23421,6 +23429,13 @@ Not supports in Firefox and IE */
     position: sticky;
   }
 
+  .sm\:inset-0 {
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+  }
+
   .sm\:bottom-20 {
     bottom: 5rem;
   }
@@ -23607,6 +23622,10 @@ Not supports in Firefox and IE */
     max-height: 75vh;
   }
 
+  .sm\:max-h-\[85vh\] {
+    max-height: 85vh;
+  }
+
   .sm\:w-3\/4 {
     width: 75%;
   }
@@ -23722,6 +23741,10 @@ Not supports in Firefox and IE */
 
   .sm\:p-3 {
     padding: 0.75rem;
+  }
+
+  .sm\:p-4 {
+    padding: 1rem;
   }
 
   .sm\:p-6 {
@@ -24958,4 +24981,8 @@ Not supports in Firefox and IE */
   .hv2xl\:h-\[350px\] {
     height: 350px;
   }
+}
+
+.\[\&\>path\]\:stroke-current>path {
+  stroke: currentColor;
 }
