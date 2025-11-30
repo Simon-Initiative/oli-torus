@@ -5530,10 +5530,14 @@ select {
   --color-delivery-primary-dark: #2B8BFE;
   --color-delivery-primary-dark-active: #69B0FB;
   --color-delivery-primary-dark-hover: #69B0FB;
-  --color-delivery-hints-bg: #f5f5f5;
-  --color-delivery-hints-bg-dark: #404040;
+  --color-delivery-hints-bg: #FFFFFF;
+  --color-delivery-hints-bg-dark: #2B282E;
   --color-delivery-hints-border: #e5e5e5;
   --color-delivery-hints-border-dark: #525252;
+  --color-delivery-hints-text: #353740;
+  --color-delivery-hints-text-dark: #EEEBF5;
+  --color-delivery-hints-button: #006CD9;
+  --color-delivery-hints-button-dark: #4CA6FF;
   --color-delivery-purpose-label-bg: #ddd;
   --color-delivery-purpose-label-bg-dark: #404040;
   --color-delivery-instructor-dashboard-footer: #eceef1;
@@ -10448,6 +10452,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 84px;
 }
 
+.w-\[90px\] {
+  width: 90px;
+}
+
 .w-\[92px\] {
   width: 92px;
 }
@@ -11567,6 +11575,10 @@ table.table-striped tbody tr:nth-child(even) {
   word-break: break-all;
 }
 
+.\!rounded {
+  border-radius: 0.25rem !important;
+}
+
 .\!rounded-\[3px\] {
   border-radius: 3px !important;
 }
@@ -11735,6 +11747,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .rounded-tr-xl {
   border-top-right-radius: 0.75rem;
+}
+
+.\!border-0 {
+  border-width: 0px !important;
 }
 
 .\!border-2 {
@@ -12253,6 +12269,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .\!bg-\[\#0f6bf5\]\/5 {
   background-color: rgb(15 107 245 / 0.05) !important;
+}
+
+.\!bg-delivery-hints-bg {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity)) !important;
 }
 
 .\!bg-delivery-primary-100 {
@@ -14696,6 +14717,16 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(55 58 68 / var(--tw-text-opacity));
 }
 
+.text-delivery-hints-button {
+  --tw-text-opacity: 1;
+  color: rgb(0 108 217 / var(--tw-text-opacity));
+}
+
+.text-delivery-hints-text {
+  --tw-text-opacity: 1;
+  color: rgb(53 55 64 / var(--tw-text-opacity));
+}
+
 .text-delivery-primary {
   --tw-text-opacity: 1;
   color: rgb(1 101 217 / var(--tw-text-opacity));
@@ -15108,6 +15139,12 @@ table.table-striped tbody tr:nth-child(even) {
 
 .mix-blend-luminosity {
   mix-blend-mode: luminosity;
+}
+
+.\!shadow-none {
+  --tw-shadow: 0 0 #0000 !important;
+  --tw-shadow-colored: 0 0 #0000 !important;
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
 }
 
 .shadow {
@@ -21937,6 +21974,11 @@ Not supports in Firefox and IE */
   background-color: rgb(0 0 0 / var(--tw-bg-opacity)) !important;
 }
 
+.dark .dark\:\!bg-delivery-hints-bg-dark {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(43 40 46 / var(--tw-bg-opacity)) !important;
+}
+
 .dark .dark\:\!bg-neutral-800 {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity)) !important;
@@ -22627,6 +22669,16 @@ Not supports in Firefox and IE */
 .dark .dark\:text-delivery-body-color-dark {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-delivery-hints-button-dark {
+  --tw-text-opacity: 1;
+  color: rgb(76 166 255 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-delivery-hints-text-dark {
+  --tw-text-opacity: 1;
+  color: rgb(238 235 245 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-delivery-primary-dark {
