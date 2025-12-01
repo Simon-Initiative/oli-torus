@@ -88,8 +88,6 @@ RUN SHA=${RELEASE_SHA} mix release
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
 
-ARG DEBUG_USER=false
-
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
@@ -112,16 +110,6 @@ RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
-
-# debugging user with passwordless sudo for on-cluster troubleshooting
-RUN if [ "$DEBUG_USER" = "true" ]; then \
-      apt-get update -y && \
-      apt-get install -y sudo && \
-      useradd -m -s /bin/bash -G sudo debug && \
-      echo "debug ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/debug && \
-      chmod 440 /etc/sudoers.d/debug && \
-      apt-get clean && rm -f /var/lib/apt/lists/*_* ; \
-    fi
 
 WORKDIR "/app"
 RUN chown nobody /app
