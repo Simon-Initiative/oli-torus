@@ -12,6 +12,11 @@
 # General application configuration
 import Config
 
+# Ensure caption files uploaded through the media library keep their WebVTT mime type.
+config :mime, :types, %{
+  "text/vtt" => ["vtt"]
+}
+
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
 world_universities_and_domains_json =

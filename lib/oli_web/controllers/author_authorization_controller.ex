@@ -1,7 +1,6 @@
 defmodule OliWeb.AuthorAuthorizationController do
   use OliWeb, :controller
 
-  import Ecto.Query, warn: false
   import OliWeb.AuthorAuth, only: [require_authenticated_author: 2]
 
   alias Phoenix.Naming
@@ -21,6 +20,13 @@ defmodule OliWeb.AuthorAuthorizationController do
 
   def new(conn, %{"provider" => provider} = params) do
     config = conn.assigns.assent_auth_config
+
+    # Store invitation token and project context for validation
+    # The canonical invited email will be retrieved from the invitation token in the database.
+    conn =
+      conn
+      |> maybe_store_invitation_token(params["invitation_token"])
+      |> maybe_store_project_context(params["project"])
 
     provider
     |> AssentAuthWeb.authorize_url(config)
@@ -78,58 +84,34 @@ defmodule OliWeb.AuthorAuthorizationController do
     case AssentAuthWeb.provider_callback(provider, params, conn.assigns.session_params, config) do
       # Authorization successful
       {:ok, %{user: user_params} = _response} ->
-        case AssentAuthWeb.handle_authorization_success(
-               conn,
-               provider,
-               user_params,
-               config
-             ) do
-          {:ok, :add_identity_provider, conn} ->
+        # Retrieve and validate the canonical invited email from the invitation token (if present)
+        # This prevents invitation email spoofing via URL parameters
+        case load_and_validate_invitation_email(conn, user_params) do
+          {:ok, conn} ->
+            handle_validated_authorization(conn, provider, user_params, config, redirect_to)
+
+          {:error, :email_mismatch, invited_email, sso_email} ->
+            # Get the invitation token to redirect back to the invitation page
+            invitation_redirect = get_invitation_redirect_path(conn)
+
             conn
+            |> clear_invitation_session_data()
             |> put_flash(
-              :info,
-              "Successfully added #{String.capitalize(provider)} authentication provider."
+              :error,
+              "The email associated with your #{String.capitalize(provider)} account (#{sso_email}) does not match the invitation email (#{invited_email}). Please use the correct account or sign in with your password."
             )
-            |> redirect(to: redirect_to)
+            |> redirect(to: invitation_redirect || redirect_to)
 
-          {:ok, _status, conn} ->
-            conn
-            |> AuthorAuth.maybe_link_user_author_account(conn.assigns.current_author)
-            |> redirect(to: redirect_to)
+          {:error, :invalid_token} ->
+            invitation_redirect = get_invitation_redirect_path(conn)
 
-          {:email_confirmation_required, _status, conn} ->
             conn
+            |> clear_invitation_session_data()
             |> put_flash(
-              :info,
-              "Please confirm your email address to continue. A confirmation email has been sent."
+              :error,
+              "The invitation link is invalid or has expired."
             )
-            |> redirect(to: ~p"/authors/confirm")
-
-          {:error, error, conn} ->
-            Logger.error("Error handling authorization success: #{inspect(error)}")
-
-            case error do
-              {:add_identity_provider, {:bound_to_different_user, _changeset}} ->
-                conn
-                |> put_flash(
-                  :error,
-                  "The #{Naming.humanize(conn.params["provider"])} account is already bound to another user."
-                )
-                |> redirect(to: redirect_to)
-
-              {:create_user, {:email_already_exists, _}} ->
-                conn
-                |> put_flash(
-                  :error,
-                  "An account associated with this email already exists. Please log in with your password or a different provider to continue."
-                )
-                |> redirect(to: redirect_to)
-
-              _ ->
-                conn
-                |> put_flash(:error, "Something went wrong. Please try again or contact support.")
-                |> redirect(to: redirect_to)
-            end
+            |> redirect(to: invitation_redirect || redirect_to)
         end
 
       {:error, error} ->
@@ -141,6 +123,231 @@ defmodule OliWeb.AuthorAuthorizationController do
         |> redirect(to: redirect_to)
     end
   end
+
+  defp handle_validated_authorization(conn, provider, user_params, config, redirect_to) do
+    case AssentAuthWeb.handle_authorization_success(
+           conn,
+           provider,
+           user_params,
+           config
+         ) do
+      {:ok, :add_identity_provider, conn} ->
+        conn
+        |> put_flash(
+          :info,
+          "Successfully added #{String.capitalize(provider)} authentication provider."
+        )
+        |> redirect(to: redirect_to)
+
+      {:ok, status, conn} ->
+        conn = AuthorAuth.maybe_link_user_author_account(conn, conn.assigns.current_author)
+
+        # Check if this is from a collaborator invitation that needs to be accepted
+        conn = maybe_accept_pending_invitation(conn, status)
+
+        redirect(conn, to: redirect_to)
+
+      {:email_confirmation_required, _status, conn} ->
+        conn
+        |> put_flash(
+          :info,
+          "Please confirm your email address to continue. A confirmation email has been sent."
+        )
+        |> redirect(to: ~p"/authors/confirm")
+
+      {:error, error, conn} ->
+        Logger.error("Error handling authorization success: #{inspect(error)}")
+
+        case error do
+          {:add_identity_provider, {:bound_to_different_user, _changeset}} ->
+            conn
+            |> put_flash(
+              :error,
+              "The #{Naming.humanize(conn.params["provider"])} account is already bound to another user."
+            )
+            |> redirect(to: redirect_to)
+
+          {:create_user, {:email_already_exists, _}} ->
+            # Check if this is an invitation scenario where we should link SSO to existing invited author
+            handle_invitation_sso_link(conn, provider, user_params, config, redirect_to)
+
+          _ ->
+            conn
+            |> put_flash(:error, "Something went wrong. Please try again or contact support.")
+            |> redirect(to: redirect_to)
+        end
+    end
+  end
+
+  defp handle_invitation_sso_link(conn, provider, user_params, _config, redirect_to) do
+    # Check if we validated an invitation email (which means this is from an invitation)
+    from_invitation =
+      get_session(conn, :validated_invitation_email) ||
+        get_session(conn, :from_invitation_link) ||
+        not is_nil(conn.params["project"])
+
+    email = user_params["email"]
+
+    case {from_invitation, email} do
+      {true, email} when is_binary(email) ->
+        # Coming from invitation, try to link SSO to existing invited author
+        case Accounts.get_author_by_email(email) do
+          nil ->
+            # Author doesn't exist, show standard error
+            conn
+            |> put_flash(
+              :error,
+              "An account associated with this email already exists. Please log in with your password or a different provider to continue."
+            )
+            |> redirect(to: redirect_to)
+
+          author ->
+            # Author exists, check if it's an invited author (no password set)
+            is_invited = invited_author?(author)
+
+            if is_invited do
+              # Link SSO identity to invited author
+              link_sso_to_invited_author(conn, author, provider, user_params, redirect_to)
+            else
+              # Author has password, they need to log in with password first
+              Logger.warning(
+                "Author #{author.email} has password or identities, cannot auto-link SSO"
+              )
+
+              conn
+              |> put_flash(
+                :error,
+                "An account associated with this email already exists. Please log in with your password or a different provider to continue."
+              )
+              |> redirect(to: redirect_to)
+            end
+        end
+
+      _ ->
+        # Not from invitation, show standard error
+        conn
+        |> put_flash(
+          :error,
+          "An account associated with this email already exists. Please log in with your password or a different provider to continue."
+        )
+        |> redirect(to: redirect_to)
+    end
+  end
+
+  defp invited_author?(author) do
+    Accounts.invited_author?(author)
+  end
+
+  defp link_sso_to_invited_author(conn, author, provider, user_params, redirect_to) do
+    # Extract user identity params
+    case user_params do
+      %{"sub" => uid} ->
+        user_identity_params = %{"uid" => uid, "provider" => provider}
+        project_slug = get_session(conn, :invitation_project_slug)
+
+        # Build attrs from SSO params
+        sso_attrs =
+          %{
+            "given_name" => user_params["given_name"],
+            "family_name" => user_params["family_name"],
+            "picture" => user_params["picture"]
+          }
+          |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+          |> Map.new()
+
+        # Get author_project if project_slug is present
+        author_project =
+          if project_slug do
+            Oli.Authoring.Course.get_author_project(project_slug, author.id,
+              filter_by_status: false
+            )
+          else
+            nil
+          end
+
+        # Add SSO identity and accept invitation
+        with {:ok, _author_identity} <-
+               Oli.AssentAuth.AuthorAssentAuth.add_identity_provider(
+                 author,
+                 user_identity_params
+               ),
+             {:ok, author} <-
+               accept_invitation_via_sso(author, author_project, sso_attrs) do
+          # Successfully linked SSO and accepted invitation
+
+          conn = OliWeb.AuthorAuth.create_session(conn, author)
+          conn = assign(conn, :current_author, author)
+          conn = OliWeb.AuthorAuth.maybe_link_user_author_account(conn, author)
+          # Clear all invitation session data to prevent interference with future logins
+          conn = clear_invitation_session_data(conn)
+
+          redirect(conn, to: redirect_to)
+        else
+          {:error, changeset} ->
+            Logger.error(
+              "Failed to link SSO identity or accept invitation for invited author: #{inspect(author.email)}, error: #{inspect(changeset)}"
+            )
+
+            conn
+            |> put_flash(
+              :error,
+              "Unable to link your #{String.capitalize(provider)} account. Please try again or contact support."
+            )
+            |> redirect(to: redirect_to)
+        end
+
+      _ ->
+        Logger.error("Missing 'sub' in SSO user params: #{inspect(user_params)}")
+
+        conn
+        |> put_flash(:error, "Something went wrong. Please try again or contact support.")
+        |> redirect(to: redirect_to)
+    end
+  end
+
+  defp accept_invitation_via_sso(author, nil, attrs) do
+    # General author invitation (no project)
+    Accounts.accept_author_invitation_via_sso(author, attrs)
+  end
+
+  defp accept_invitation_via_sso(author, author_project, attrs) do
+    # Collaborator invitation (with project)
+    Accounts.accept_collaborator_invitation_via_sso(author, author_project, attrs)
+  end
+
+  # Check if there's a pending collaborator invitation and accept it for existing authenticated authors
+  defp maybe_accept_pending_invitation(conn, :authenticate) do
+    # Only for authenticate status (existing SSO authors signing in)
+    project_slug = get_session(conn, :invitation_project_slug)
+    author = conn.assigns.current_author
+
+    if project_slug && author do
+      case Oli.Authoring.Course.get_author_project(project_slug, author.id,
+             filter_by_status: false
+           ) do
+        nil ->
+          Logger.warning("No author_project found for #{author.email} in project #{project_slug}")
+          conn
+
+        %{status: :accepted} = _author_project ->
+          clear_invitation_session_data(conn)
+
+        author_project ->
+          case Oli.Authoring.Course.update_author_project(author_project, %{status: :accepted}) do
+            {:ok, _} ->
+              clear_invitation_session_data(conn)
+
+            {:error, changeset} ->
+              Logger.error("Failed to accept collaborator invitation: #{inspect(changeset)}")
+              conn
+          end
+      end
+    else
+      conn
+    end
+  end
+
+  defp maybe_accept_pending_invitation(conn, _status), do: conn
 
   ## Plugs
 
@@ -198,4 +405,128 @@ defmodule OliWeb.AuthorAuthorizationController do
     do: put_session(conn, :user_return_to, user_return_to)
 
   defp maybe_store_user_return_to(conn), do: conn
+
+  defp maybe_store_invitation_token(conn, nil) do
+    # Clear stale invitation token when starting a new non-invitation flow
+    conn
+    |> delete_session(:invitation_token)
+    |> delete_session(:validated_invitation_email)
+  end
+
+  defp maybe_store_invitation_token(conn, token) when is_binary(token) do
+    put_session(conn, :invitation_token, token)
+  end
+
+  defp maybe_store_invitation_token(conn, _) do
+    conn
+    |> delete_session(:invitation_token)
+    |> delete_session(:validated_invitation_email)
+  end
+
+  defp maybe_store_project_context(conn, nil) do
+    # Clear stale project context when starting a new non-invitation flow
+    delete_session(conn, :invitation_project_slug)
+  end
+
+  defp maybe_store_project_context(conn, project_slug) when is_binary(project_slug) do
+    put_session(conn, :invitation_project_slug, project_slug)
+  end
+
+  defp maybe_store_project_context(conn, _) do
+    delete_session(conn, :invitation_project_slug)
+  end
+
+  # Securely retrieve and validate the invitation email from the database
+  # This prevents invitation email spoofing attacks by:
+  # 1. Retrieving the canonical invited email from the invitation token (not from URL params)
+  # 2. Validating the token exists and is not expired
+  # 3. Comparing the SSO email with the invited email from the database
+  defp load_and_validate_invitation_email(conn, user_params) do
+    invitation_token = get_session(conn, :invitation_token)
+    project_slug = get_session(conn, :invitation_project_slug)
+
+    cond do
+      # No invitation context - regular SSO login
+      is_nil(invitation_token) && is_nil(project_slug) ->
+        {:ok, conn}
+
+      # Has invitation token - validate it and retrieve canonical email
+      not is_nil(invitation_token) ->
+        case retrieve_invited_email_from_token(invitation_token, project_slug) do
+          {:ok, invited_email} ->
+            # Now compare SSO email with the canonical invited email from database
+            sso_email = normalize_email(user_params["email"])
+            normalized_invited_email = normalize_email(invited_email)
+
+            if sso_email == normalized_invited_email do
+              # Store the validated email for use in invitation acceptance logic
+              {:ok, put_session(conn, :validated_invitation_email, true)}
+            else
+              {:error, :email_mismatch, invited_email, user_params["email"]}
+            end
+
+          {:error, :invalid_token} ->
+            {:error, :invalid_token}
+        end
+
+      # Has project slug but no token - invalid state
+      true ->
+        Logger.warning("Invitation context has project_slug but no invitation_token")
+        {:error, :invalid_token}
+    end
+  end
+
+  # Retrieve the canonical invited email from the invitation token in the database
+  defp retrieve_invited_email_from_token(token, project_slug) do
+    result =
+      if project_slug do
+        # Collaborator invitation
+        Accounts.get_author_token_by_collaboration_invitation_token(token)
+      else
+        # General author invitation
+        Accounts.get_author_token_by_author_invitation_token(token)
+      end
+
+    case result do
+      %{author: author} when not is_nil(author) ->
+        {:ok, author.email}
+
+      nil ->
+        Logger.warning("Invalid or expired invitation token")
+        {:error, :invalid_token}
+    end
+  end
+
+  defp normalize_email(nil), do: nil
+
+  defp normalize_email(email) when is_binary(email) do
+    email |> String.trim() |> String.downcase()
+  end
+
+  # Get the invitation redirect path based on stored session data
+  defp get_invitation_redirect_path(conn) do
+    token = get_session(conn, :invitation_token)
+    project_slug = get_session(conn, :invitation_project_slug)
+
+    cond do
+      token && project_slug ->
+        # Collaborator invitation
+        ~p"/collaborators/invite/#{token}"
+
+      token ->
+        # General author invitation
+        ~p"/authors/invite/#{token}"
+
+      true ->
+        nil
+    end
+  end
+
+  # Clear all invitation-related session data
+  defp clear_invitation_session_data(conn) do
+    conn
+    |> delete_session(:invitation_token)
+    |> delete_session(:invitation_project_slug)
+    |> delete_session(:validated_invitation_email)
+  end
 end

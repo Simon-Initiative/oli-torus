@@ -903,17 +903,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-hook="Scroller"
     >
       <.video_player />
-      <div class="px-3 md:px-[25px]">
+      <div class="px-1 sm:px-3 md:px-[25px]">
         <ComponentsUtils.timezone_info timezone={
           FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
       </div>
-      <div class="flex justify-between items-center h-16 p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center p-1 sm:h-16 sm:p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           target_selector="div[data-completed='true']"
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
         />
-        <div class="flex items-center gap-2 px-3">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:px-3">
           <DeliveryUtils.search_box
             search_term={@params["search_term"]}
             on_search="search"
@@ -981,12 +981,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-3 md:p-[25px]" phx-hook="Scroller">
       <.video_player />
-      <div class="px-3 md:px-[25px]">
+      <div class="px-1 sm:px-3 md:px-[25px]">
         <ComponentsUtils.timezone_info timezone={
           FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
       </div>
-      <div class="flex justify-between items-center h-16 p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center p-1 sm:h-16 sm:p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
           target_selector={completed_resources_css_selector()}

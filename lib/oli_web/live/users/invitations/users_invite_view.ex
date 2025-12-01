@@ -14,6 +14,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
         {:ok,
          assign(socket,
            user: nil,
+           token: token,
            invitation_role: :student,
            authentication_providers: []
          )}
@@ -31,6 +32,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
         {:ok,
          assign(socket,
            user: user,
+           token: token,
            # this current user refers to the one that is logged in
            # and might be different from the user that is being invited
            current_user:
@@ -113,7 +115,9 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           check_errors={@check_errors}
           disabled_inputs={[:email]}
           authentication_providers={@authentication_providers}
-          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @section.slug)}
+          auth_provider_path_fn={
+            &build_invitation_auth_provider_path(&1, @section.slug, @user.email, @token)
+          }
         />
       </div>
     </.invite_container>
@@ -135,7 +139,9 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           submit_event="log_in_existing_user"
           disabled_inputs={[:email]}
           authentication_providers={@authentication_providers}
-          auth_provider_path_fn={&build_invitation_auth_provider_path(&1, @section.slug)}
+          auth_provider_path_fn={
+            &build_invitation_auth_provider_path(&1, @section.slug, @user.email, @token)
+          }
         />
       </div>
 
@@ -336,13 +342,14 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
     end
   end
 
-  defp build_invitation_auth_provider_path(provider, section_slug) do
-    params =
-      URI.encode_query([
-        {"section", section_slug},
-        {"from_invitation_link?", "true"}
-      ])
+  defp build_invitation_auth_provider_path(provider, section_slug, invited_email, token) do
+    params = [
+      section: section_slug,
+      from_invitation_link?: "true",
+      invitation_email: invited_email,
+      invitation_token: token
+    ]
 
-    "#{~p"/users/auth/#{provider}/new"}?#{params}"
+    ~p"/users/auth/#{provider}/new?#{params}"
   end
 end

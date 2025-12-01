@@ -10,14 +10,12 @@ export class AuthorDashboardPO {
   private readonly projectNameInput: Locator;
   private readonly createButton: Locator;
   private readonly titleHeader: Locator;
-  private readonly tableRows: Locator;
 
   constructor(private readonly page: Page) {
     this.utils = new Utils(page);
     this.searchInput = page.locator('#text-search-input');
     this.newProjectButton = page.locator('#button-new-project');
     this.projectNameInput = page.locator('#project_title');
-    this.tableRows = page.locator('#projects-table table > tbody > tr');
     this.titleHeader = page.getByRole('cell', { name: 'Title', exact: true });
     this.createButton = page.getByRole('button', { name: 'Create' });
   }
@@ -29,11 +27,6 @@ export class AuthorDashboardPO {
   async getFirstRowTable() {
     const rows = await this.getAllRowsTable();
     return rows[0];
-  }
-
-  async getLastRowTable() {
-    const rows = await this.getAllRowsTable();
-    return rows.at(-1);
   }
 
   async clickProjectLink(projectName: string) {
