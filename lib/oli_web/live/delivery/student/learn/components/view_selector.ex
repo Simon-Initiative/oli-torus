@@ -51,9 +51,9 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
 
   def render(%{expanded: false} = assigns) do
     ~H"""
-    <div>
+    <div id={@id}>
       <.mobile_view_selector selected_view={@selected_view} />
-      <div id={@id} class="hidden sm:block w-48">
+      <div class="hidden sm:block w-48">
         <button
           phx-click="expand_select"
           phx-target={@myself}
