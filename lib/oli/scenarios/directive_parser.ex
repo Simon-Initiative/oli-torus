@@ -25,6 +25,9 @@ defmodule Oli.Scenarios.DirectiveParser do
     AnswerQuestionDirective,
     CloneDirective,
     UseDirective,
+    CollaboratorDirective,
+    MediaDirective,
+    BibliographyDirective,
     HookDirective
   }
 
@@ -66,7 +69,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Parse individual directive based on its type
   defp parse_directive(%{"project" => project_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "title", "root", "objectives", "tags", "slug"]
+    allowed_attrs = ["name", "title", "root", "objectives", "tags", "slug", "visibility"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, project_data, "project") do
       :ok ->
@@ -76,7 +79,8 @@ defmodule Oli.Scenarios.DirectiveParser do
           root: parse_node(project_data["root"]),
           objectives: parse_objectives(project_data["objectives"]),
           tags: parse_tags(project_data["tags"]),
-          slug: project_data["slug"]
+          slug: project_data["slug"],
+          visibility: parse_visibility(project_data["visibility"])
         }
 
       {:error, msg} ->
@@ -420,6 +424,52 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"collaborator" => collab_data}) do
+    allowed_attrs = ["user", "project"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, collab_data, "collaborator") do
+      :ok ->
+        %CollaboratorDirective{
+          user: collab_data["user"],
+          project: collab_data["project"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"media" => media_data}) do
+    allowed_attrs = ["project", "path", "mime"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, media_data, "media") do
+      :ok ->
+        %MediaDirective{
+          project: media_data["project"],
+          path: media_data["path"],
+          mime: media_data["mime"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"bibliography" => biblio_data}) do
+    allowed_attrs = ["project", "entry"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, biblio_data, "bibliography") do
+      :ok ->
+        %BibliographyDirective{
+          project: biblio_data["project"],
+          entry: biblio_data["entry"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"use" => use_data}) do
     # Validate attributes
     allowed_attrs = ["file"]
@@ -474,9 +524,12 @@ defmodule Oli.Scenarios.DirectiveParser do
          "view_practice_page",
          "answer_question",
          "use",
+         "collaborator",
+         "media",
+         "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, use, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -507,12 +560,15 @@ defmodule Oli.Scenarios.DirectiveParser do
              "update",
              "customize",
              "use",
+             "collaborator",
+             "media",
+             "bibliography",
              "hook"
            ] ->
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, use, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, use, collaborator, media, bibliography, hook"
     end)
   end
 
@@ -685,6 +741,29 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_tags(tags) when is_list(tags), do: tags
 
   # Helper functions for parsing enum values
+  defp parse_visibility(nil), do: nil
+
+  defp parse_visibility(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "authors" -> :authors
+      "selected" -> :selected
+      "global" -> :global
+      other -> raise "Invalid visibility '#{other}'. Expected one of: authors, selected, global"
+    end
+  end
+
+  defp parse_visibility(value) when is_atom(value) do
+    case value do
+      :authors -> :authors
+      :selected -> :selected
+      :global -> :global
+      other -> raise "Invalid visibility #{inspect(other)}. Expected :authors, :selected, or :global"
+    end
+  end
+
+  defp parse_visibility(value),
+    do: raise("Invalid visibility value #{inspect(value)}. Expected string or atom")
+
   defp parse_section_type(nil), do: :enrollable
   defp parse_section_type("enrollable"), do: :enrollable
   defp parse_section_type("open_and_free"), do: :open_and_free

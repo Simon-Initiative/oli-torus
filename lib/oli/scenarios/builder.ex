@@ -16,7 +16,8 @@ defmodule Oli.Scenarios.Builder do
           root: root_node,
           objectives: objectives,
           tags: tags,
-          slug: slug
+          slug: slug,
+          visibility: visibility
         },
         author,
         _institution
@@ -32,13 +33,18 @@ defmodule Oli.Scenarios.Builder do
       publication: publication
     } = project_setup
 
+    update_attrs =
+      []
+      |> maybe_put(:slug, slug)
+      |> maybe_put(:visibility, visibility)
+
     project =
-      case slug do
-        nil ->
+      case update_attrs do
+        [] ->
           project
 
-        slug_value ->
-          {:ok, updated_project} = Course.update_project(project, %{slug: slug_value})
+        attrs ->
+          {:ok, updated_project} = Course.update_project(project, Map.new(attrs))
           updated_project
       end
 
@@ -223,8 +229,11 @@ defmodule Oli.Scenarios.Builder do
           Map.put(acc, tag_title, revision)
 
         {:error, reason} ->
-          raise "Failed to create tag '#{tag_title}': #{inspect(reason)}"
+        raise "Failed to create tag '#{tag_title}': #{inspect(reason)}"
       end
     end)
   end
+
+  defp maybe_put(list, _key, nil), do: list
+  defp maybe_put(list, key, value), do: [{key, value} | list]
 end
