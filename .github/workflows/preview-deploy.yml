@@ -15,6 +15,10 @@ on:
       preview_domain:
         description: "Override preview domain"
         required: false
+      debug_user:
+        description: "Create debug user in image"
+        required: false
+        default: "false"
 
 jobs:
   simon-token-available:
@@ -63,6 +67,7 @@ jobs:
     if: needs.simon-token-available.outputs.available == 'true'
     env:
       TARGET_REF: ${{ needs.preview-context.outputs.target_ref }}
+      DEBUG_USER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_user || 'false' }}
     permissions:
       contents: read
       packages: write
@@ -112,6 +117,7 @@ jobs:
           push: true
           build-args: APP_VERSION=${{ steps.info.outputs.app_version }}
             SHA_SHORT=${{ steps.info.outputs.sha_short }}
+            DEBUG_USER=${{ env.DEBUG_USER }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
