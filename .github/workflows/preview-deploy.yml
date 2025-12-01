@@ -17,8 +17,9 @@ on:
         required: false
       debug_mode:
         description: "Enable debug mode in the image"
+        type: boolean
         required: false
-        default: "false"
+        default: false
 
 jobs:
   simon-token-available:
