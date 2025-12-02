@@ -14,13 +14,11 @@
 ARG ELIXIR_VERSION=1.19.2
 ARG OTP_VERSION=28.1.1
 ARG DEBIAN_VERSION=bullseye-20251103-slim
-ARG DEBUG_MODE=false
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} AS builder
-ARG DEBUG_MODE
 
 ARG SHA_SHORT
 
@@ -89,8 +87,6 @@ RUN SHA=${RELEASE_SHA} mix release
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
-ARG DEBUG_MODE
-ENV DEBUG_MODE=${DEBUG_MODE}
 
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
@@ -114,19 +110,6 @@ RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
-
-# record build-time debug flag inside the image for troubleshooting
-RUN echo "DEBUG_MODE=${DEBUG_MODE}" > /DEBUG_MODE
-
-# optionally grant passwordless sudo to the default user (nobody) for debugging
-RUN if [ "$DEBUG_MODE" = "true" ] || [ "$DEBUG_MODE" = "True" ] || [ "$DEBUG_MODE" = "1" ]; then \
-      apt-get update -y && \
-      apt-get install -y sudo && \
-      echo "nobody ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/nobody && \
-      chmod 440 /etc/sudoers.d/nobody && \
-      command -v sudo && sudo -V && \
-      apt-get clean && rm -f /var/lib/apt/lists/*_* ; \
-    fi
 
 WORKDIR "/app"
 RUN chown nobody /app
