@@ -1,6 +1,8 @@
 defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
   use OliWeb, :live_component
 
+  alias OliWeb.Icons
+
   @view_options [:outline, :gallery]
 
   def mount(socket) do
@@ -49,20 +51,100 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
 
   def render(%{expanded: false} = assigns) do
     ~H"""
-    <div id={@id} class="w-48">
+    <div id={@id}>
+      <.mobile_view_selector selected_view={@selected_view} />
+      <div class="hidden sm:block w-48">
+        <button
+          phx-click="expand_select"
+          phx-target={@myself}
+          class="h-[36px] justify-center items-center gap-2 inline-flex"
+        >
+          <div class="h-[36px] pl-2.5 pr-[7px] py-2.5 justify-center items-center gap-[5px] flex">
+            <div class="justify-center items-center flex"><.view_icon option={@selected_view} /></div>
+            <div class="ml-1 dark:text-white text-base font-normal">
+              {to_capitalized_string(@selected_view)} View
+            </div>
+          </div>
+          <div class="w-8 h-[36px] py-2.5 px-2.5 justify-center items-center gap-[5px] flex">
+            <.chevron_icon />
+          </div>
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  attr :selected_view, :atom
+
+  def mobile_view_selector(assigns) do
+    ~H"""
+    <div class="sm:hidden w-full inline-flex justify-start items-center">
       <button
-        phx-click="expand_select"
-        phx-target={@myself}
-        class="h-[36px] justify-center items-center gap-2 inline-flex"
+        phx-click="change_selected_view"
+        phx-value-selected_view={:gallery}
+        data-side="Left"
+        aria-selected={@selected_view == :gallery}
+        aria-label="Gallery View"
+        class={[
+          "flex-1 px-2 py-3 rounded-tl-lg rounded-bl-lg border-l border-t border-b flex justify-center items-center gap-1.5",
+          if(@selected_view == :gallery,
+            do: "bg-Fill-Buttons-fill-primary border-Fill-Buttons-fill-primary",
+            else: "border-Specialty-Tokens-Border-border-input-focused"
+          )
+        ]}
       >
-        <div class="h-[36px] pl-2.5 pr-[7px] py-2.5 justify-center items-center gap-[5px] flex">
-          <div class="justify-center items-center flex"><.view_icon option={@selected_view} /></div>
-          <div class="ml-1 dark:text-white text-base font-normal">
-            {to_capitalized_string(@selected_view)} View
+        <div class="flex justify-start items-center gap-1.5">
+          <div class="w-5 h-5 relative overflow-hidden">
+            <div class={[
+              "w-3.5 h-3.5 left-[3.33px] top-[3.33px] absolute",
+              if(@selected_view == :gallery,
+                do: "text-Text-text-white",
+                else: "text-Text-text-low"
+              )
+            ]}>
+              <Icons.gallery />
+            </div>
+          </div>
+          <div class={[
+            "text-center justify-center text-sm font-semibold font-['Open_Sans'] leading-4",
+            if(@selected_view == :gallery, do: "text-Text-text-white", else: "text-Text-text-low")
+          ]}>
+            Gallery View
           </div>
         </div>
-        <div class="w-8 h-[36px] py-2.5 px-2.5 justify-center items-center gap-[5px] flex">
-          <.chevron_icon />
+      </button>
+      <button
+        phx-click="change_selected_view"
+        phx-value-selected_view={:outline}
+        data-side="Right"
+        aria-selected={@selected_view == :outline}
+        aria-label="Outline View"
+        class={[
+          "flex-1 px-2 py-3 rounded-tr-lg rounded-br-lg border-r border-t border-b border-Specialty-Tokens-Border-border-input-focused flex justify-center items-center gap-1.5",
+          if(@selected_view == :outline,
+            do: "bg-Fill-Buttons-fill-primary border-Fill-Buttons-fill-primary",
+            else: "border-Specialty-Tokens-Border-border-input-focused"
+          )
+        ]}
+      >
+        <div class="flex justify-start items-center gap-1.5">
+          <div class="w-5 h-5 relative overflow-hidden">
+            <div class={[
+              "w-3 h-2.5 left-[3.75px] top-[5px] absolute",
+              if(@selected_view == :outline,
+                do: "text-Text-text-white",
+                else: "text-Text-text-low"
+              )
+            ]}>
+              <Icons.outline />
+            </div>
+          </div>
+          <div class={[
+            "text-center justify-center text-sm font-semibold font-['Open_Sans'] leading-4",
+            if(@selected_view == :outline, do: "text-Text-text-white", else: "text-Text-text-low")
+          ]}>
+            Outline View
+          </div>
         </div>
       </button>
     </div>
