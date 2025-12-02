@@ -89,6 +89,7 @@ RUN SHA=${RELEASE_SHA} mix release
 FROM ${RUNNER_IMAGE}
 
 ARG DEBUG_MODE=false
+ENV DEBUG_MODE=${DEBUG_MODE}
 
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
   && apt-get clean && rm -f /var/lib/apt/lists/*_*
