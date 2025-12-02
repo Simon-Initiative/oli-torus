@@ -117,7 +117,7 @@ ENV LC_ALL=en_US.UTF-8
 RUN echo "DEBUG_MODE=${DEBUG_MODE}" > /DEBUG_MODE
 
 # optionally grant passwordless sudo to the default user (nobody) for debugging
-RUN if [ "${DEBUG_MODE,,}" = "true" ] || [ "$DEBUG_MODE" = "1" ]; then \
+RUN if [ "$DEBUG_MODE" = "true" ] || [ "$DEBUG_MODE" = "True" ] || [ "$DEBUG_MODE" = "1" ]; then \
       apt-get update -y && \
       apt-get install -y sudo && \
       echo "nobody ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/nobody && \
