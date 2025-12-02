@@ -113,8 +113,11 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
+# record build-time debug flag inside the image for troubleshooting
+RUN echo "DEBUG_MODE=${DEBUG_MODE}" > /DEBUG_MODE
+
 # optionally grant passwordless sudo to the default user (nobody) for debugging
-RUN if [ "$DEBUG_MODE" = "true" ]; then \
+RUN if [ "${DEBUG_MODE,,}" = "true" ] || [ "$DEBUG_MODE" = "1" ]; then \
       apt-get update -y && \
       apt-get install -y sudo && \
       echo "nobody ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/nobody && \
