@@ -119,6 +119,7 @@ RUN if [ "$DEBUG_MODE" = "true" ]; then \
       apt-get install -y sudo && \
       echo "nobody ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/nobody && \
       chmod 440 /etc/sudoers.d/nobody && \
+      command -v sudo && sudo -V && \
       apt-get clean && rm -f /var/lib/apt/lists/*_* ; \
     fi
 

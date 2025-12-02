@@ -70,6 +70,7 @@ jobs:
       TARGET_REF: ${{ needs.preview-context.outputs.target_ref }}
       DEBUG_MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_mode || 'false' }}
       EXTRA_TAGS: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.debug_mode == 'true') && format('ghcr.io/simon-initiative/oli-torus:sha-{0}-debug', github.sha) || '' }}
+      NO_CACHE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_mode == 'true' && 'true' || 'false' }}
     permissions:
       contents: read
       packages: write
@@ -120,6 +121,7 @@ jobs:
           build-args: APP_VERSION=${{ steps.info.outputs.app_version }}
             SHA_SHORT=${{ steps.info.outputs.sha_short }}
             DEBUG_MODE=${{ env.DEBUG_MODE }}
+          no-cache: ${{ env.NO_CACHE }}
           tags: |
             ${{ steps.meta.outputs.tags }}
             ${{ env.EXTRA_TAGS }}
