@@ -14,11 +14,13 @@
 ARG ELIXIR_VERSION=1.19.2
 ARG OTP_VERSION=28.1.1
 ARG DEBIAN_VERSION=bullseye-20251103-slim
+ARG DEBUG_MODE=false
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} AS builder
+ARG DEBUG_MODE
 
 ARG SHA_SHORT
 
@@ -87,8 +89,7 @@ RUN SHA=${RELEASE_SHA} mix release
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
-
-ARG DEBUG_MODE=false
+ARG DEBUG_MODE
 ENV DEBUG_MODE=${DEBUG_MODE}
 
 RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
