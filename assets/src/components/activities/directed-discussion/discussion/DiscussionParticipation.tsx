@@ -18,7 +18,7 @@ export const DiscussionParticipation: React.FC<Props> = ({ requirements, partici
   if (!hasParticipationRequirement) return null;
 
   return (
-    <div className="absolute right-0 top-0 w-24 text-sm text-center">
+    <div className="float-right w-fit text-sm text-center">
       Participation
       <table
         style={
@@ -66,7 +66,7 @@ const ParticipationState: React.FC<{
   };
 
   return (
-    <tr className="bg-gray-100 rounded-md px-2 m-2 text-sm">
+    <tr className="dark:text-white px-2 m-2 text-sm">
       <td style={tailwindTablePageReset}>{children}</td>
       <td className="text-center" style={tailwindTablePageReset}>
         {current < target && `${current}/${target}`}
