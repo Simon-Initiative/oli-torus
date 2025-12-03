@@ -68,7 +68,7 @@ defmodule OliWeb.SectionsControllerTest do
 
       # header + rows
       assert hd(lines) =~
-               "Title,ID,Tags,# Enrolled,Cost,Start,End,Base Project/Product,Base ID,Instructors,Institution,Delivery,Status"
+               "Title,Section ID,Tags,# Enrolled,Cost,Start,End,Base Project/Product,Base ID,Instructors,Institution,Delivery,Status"
 
       [first_row | _] = tl(lines)
       assert String.contains?(first_row, active_section.title)

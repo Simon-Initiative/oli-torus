@@ -15,7 +15,7 @@ defmodule OliWeb.SectionsController do
 
   @csv_headers_admin [
     "Title",
-    "ID",
+    "Section ID",
     "Tags",
     "# Enrolled",
     "Cost",
@@ -31,7 +31,7 @@ defmodule OliWeb.SectionsController do
 
   @csv_headers_non_admin [
     "Title",
-    "ID",
+    "Section ID",
     "# Enrolled",
     "Cost",
     "Start",
