@@ -172,7 +172,10 @@ export const Popover = {
     };
 
     const handleOutsideClick = (event: MouseEvent) => {
-      if (!this.el.contains(event.target as Node) && !triggerElement.contains(event.target as Node)) {
+      if (
+        !this.el.contains(event.target as Node) &&
+        !triggerElement.contains(event.target as Node)
+      ) {
         hide();
       }
     };
