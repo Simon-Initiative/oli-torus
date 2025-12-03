@@ -112,19 +112,19 @@ export const AutoHideTooltip = {
   },
 };
 
-// NonDesktopTooltip Hook
+// Popover Hook
 
-// Provides tooltip functionality optimized for mobile and tablet devices where hover doesn't exist.
-// Shows the tooltip when the trigger element is clicked/tapped and dismisses it when clicking outside
-// the tooltip content or when clicking on a dismissal link.
+// Provides popover functionality with click-to-open interaction and click-outside-to-close behavior.
+// Shows the popover when the trigger element is clicked/tapped and dismisses it when clicking outside
+// the popover content or when clicking on a dismissal element.
 
 // Usage:
 
-// 1. Attach the Hook to the Tooltip Element:
+// 1. Attach the Hook to the Popover Element:
 
 //    ```html
-//    <div id="tooltip" phx-hook="NonDesktopTooltip" data-trigger-id="info-icon" class="hidden absolute ...">
-//      <!-- Tooltip content -->
+//    <div id="popover" phx-hook="Popover" data-trigger-id="info-icon" class="invisible absolute ...">
+//      <!-- Popover content -->
 //    </div>
 //    ```
 
@@ -138,104 +138,77 @@ export const AutoHideTooltip = {
 
 // 3. Required Data Attributes:
 
-//    - `data-trigger-id`: The ID of the element that will trigger the tooltip display when clicked.
+//    - `data-trigger-id`: The ID of the element that will trigger the popover display when clicked.
 
-// 4. Dismissing the Tooltip:
+// 4. Dismissing the Popover:
 
-//    - Clicking outside the tooltip content will dismiss it
+//    - Clicking outside the popover content will dismiss it
 //    - Clicking on any element with `data-dismiss-tooltip` attribute will dismiss it
 //    - Example: `<button data-dismiss-tooltip>Learn more</button>`
 
-export const NonDesktopTooltip = {
+export const Popover = {
   mounted() {
     const triggerId = this.el.dataset['triggerId'];
-    if (!triggerId) {
-      console.error('NonDesktopTooltip: data-trigger-id is required');
-      return;
-    }
+    const triggerElement = triggerId ? document.getElementById(triggerId) : null;
 
-    const triggerElement = document.getElementById(triggerId);
     if (!triggerElement) {
-      console.error(`NonDesktopTooltip: trigger element with id "${triggerId}" not found`);
+      console.error(`Popover: trigger element with id "${triggerId}" not found`);
       return;
     }
 
-    const updateTooltipPosition = () => {
+    const updatePosition = () => {
       const triggerRect = triggerElement.getBoundingClientRect();
-      const tooltipHeight = this.el.offsetHeight;
-
-      // Position tooltip just above the trigger icon
-      const topPosition = triggerRect.top - tooltipHeight - 8; // 8px gap (0.5rem)
-
+      const topPosition = triggerRect.top - this.el.offsetHeight - 8;
       this.el.style.setProperty('--trigger-top', `${topPosition}px`);
     };
 
-    const showTooltip = () => {
-      // Calculate position first (while invisible)
-      updateTooltipPosition();
-      // Then make visible with opacity transition
+    const show = () => {
+      updatePosition();
       this.el.classList.remove('invisible', 'opacity-0');
     };
 
-    const hideTooltip = () => {
+    const hide = () => {
       this.el.classList.add('invisible', 'opacity-0');
     };
 
     const handleOutsideClick = (event: MouseEvent) => {
       if (!this.el.contains(event.target as Node) && !triggerElement.contains(event.target as Node)) {
-        hideTooltip();
-      }
-    };
-
-    const handleDismissClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (target.hasAttribute('data-dismiss-tooltip') || target.closest('[data-dismiss-tooltip]')) {
-        hideTooltip();
+        hide();
       }
     };
 
     triggerElement.addEventListener('click', (event) => {
       event.stopPropagation();
-      const isHidden = this.el.classList.contains('invisible');
-      if (isHidden) {
-        showTooltip();
-        setTimeout(() => {
-          document.addEventListener('click', handleOutsideClick);
-        }, 0);
+      if (this.el.classList.contains('invisible')) {
+        show();
+        setTimeout(() => document.addEventListener('click', handleOutsideClick), 0);
       } else {
-        hideTooltip();
+        hide();
       }
     });
 
-    this.el.addEventListener('click', handleDismissClick);
-
-    // Update position on scroll and resize to keep it relative to the trigger
-    const handleScrollOrResize = () => {
-      if (!this.el.classList.contains('invisible')) {
-        updateTooltipPosition();
+    this.el.addEventListener('click', (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.hasAttribute('data-dismiss-tooltip') || target.closest('[data-dismiss-tooltip]')) {
+        hide();
       }
+    });
+
+    const updateOnScrollOrResize = () => {
+      if (!this.el.classList.contains('invisible')) updatePosition();
     };
 
-    window.addEventListener('scroll', handleScrollOrResize, true);
-    window.addEventListener('resize', handleScrollOrResize);
+    window.addEventListener('scroll', updateOnScrollOrResize, true);
+    window.addEventListener('resize', updateOnScrollOrResize);
 
-    // Store cleanup functions
     this.cleanup = () => {
-      window.removeEventListener('scroll', handleScrollOrResize, true);
-      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('scroll', updateOnScrollOrResize, true);
+      window.removeEventListener('resize', updateOnScrollOrResize);
       document.removeEventListener('click', handleOutsideClick);
-    };
-
-    this.handleEvent = (event: string) => {
-      if (event === 'hide') {
-        hideTooltip();
-      }
     };
   },
 
   destroyed() {
-    if (this.cleanup) {
-      this.cleanup();
-    }
+    if (this.cleanup) this.cleanup();
   },
 };
