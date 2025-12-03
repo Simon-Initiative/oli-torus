@@ -3,7 +3,6 @@ defmodule OliWeb.SectionsController do
 
   import OliWeb.Common.Params
 
-  alias Oli.Accounts
   alias Oli.Delivery.Sections.{Browse, BrowseOptions, Section}
   alias Oli.Repo.Sorting
   alias Oli.Utils.Time
@@ -13,7 +12,7 @@ defmodule OliWeb.SectionsController do
   @type_opts [:open, :lms]
   @max_export_limit 10_000
 
-  @csv_headers_admin [
+  @csv_headers [
     "Title",
     "Section ID",
     "Tags",
@@ -29,25 +28,7 @@ defmodule OliWeb.SectionsController do
     "Status"
   ]
 
-  @csv_headers_non_admin [
-    "Title",
-    "Section ID",
-    "# Enrolled",
-    "Cost",
-    "Start",
-    "End",
-    "Base Project/Product",
-    "Base ID",
-    "Instructors",
-    "Institution",
-    "Delivery",
-    "Status"
-  ]
-
   def export_csv(conn, params) do
-    author = conn.assigns.current_author
-    is_content_admin = Accounts.has_admin_role?(author, :content_admin)
-
     sorting = %Sorting{
       direction: parse_sort_order(params["sort_order"]),
       field: parse_sort_by(params["sort_by"])
@@ -81,7 +62,7 @@ defmodule OliWeb.SectionsController do
       Browse.browse_sections_for_export(sorting, options, @max_export_limit)
       |> Oli.Repo.preload([:tags, :institution, :base_project, :blueprint])
 
-    csv_content = sections_to_csv(sections, is_content_admin)
+    csv_content = sections_to_csv(sections)
     filename = "sections-" <> Timex.format!(Time.now(), "{YYYY}-{M}-{D}") <> ".csv"
 
     conn
@@ -89,9 +70,7 @@ defmodule OliWeb.SectionsController do
     |> send_download({:binary, csv_content}, filename: filename)
   end
 
-  defp sections_to_csv(sections, true = _include_tags) do
-    headers = @csv_headers_admin
-
+  defp sections_to_csv(sections) do
     rows =
       Enum.map(sections, fn section ->
         [
@@ -111,31 +90,7 @@ defmodule OliWeb.SectionsController do
         ]
       end)
 
-    encode_csv(headers, rows)
-  end
-
-  defp sections_to_csv(sections, _include_tags) do
-    headers = @csv_headers_non_admin
-
-    rows =
-      Enum.map(sections, fn section ->
-        [
-          escape_csv_field(format_title(section)),
-          escape_csv_field(section.slug || ""),
-          escape_csv_field(format_enrollments(section)),
-          escape_csv_field(format_cost(section)),
-          escape_csv_field(format_datetime(section.start_date)),
-          escape_csv_field(format_datetime(section.end_date)),
-          escape_csv_field(format_base(section)),
-          escape_csv_field(format_base_slug(section)),
-          escape_csv_field(format_instructors(section)),
-          escape_csv_field(format_institution(section)),
-          escape_csv_field(format_delivery(section)),
-          escape_csv_field(format_status(section.status))
-        ]
-      end)
-
-    encode_csv(headers, rows)
+    encode_csv(@csv_headers, rows)
   end
 
   defp encode_csv(headers, rows) do
