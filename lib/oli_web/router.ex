@@ -438,6 +438,7 @@ defmodule OliWeb.Router do
 
     live("/projects", Projects.ProjectsLive)
     get("/projects/export", ProjectsController, :export_csv)
+    get("/products/export", ProductsController, :export_csv)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
