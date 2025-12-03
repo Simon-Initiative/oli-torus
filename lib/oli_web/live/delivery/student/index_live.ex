@@ -434,11 +434,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   # Desktop tooltip with AutoHideTooltip hook (hover-based)
   defp course_progress_tooltip_desktop(assigns) do
     ~H"""
-    <div class="hidden lg:flex items-baseline gap-2.5 relative hover:cursor-pointer">
+    <div class="hidden xl:flex items-baseline gap-2.5 relative hover:cursor-pointer">
       <div
         id="course_progress_tooltip_desktop"
         phx-hook="AutoHideTooltip"
-        class="hidden absolute z-20 -top-[108px] -right-[323px] p-4"
+        class="hidden absolute z-50 -top-[108px] -right-[323px] p-4"
       >
         <div class="w-[320px] h-[88px] px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
           <.course_progress_tooltip_content />
@@ -458,7 +458,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   # Mobile/Tablet tooltip with Popover hook (click-based)
   defp course_progress_tooltip_mobile(assigns) do
     ~H"""
-    <div class="lg:hidden flex items-baseline gap-2.5">
+    <div class="xl:hidden flex items-baseline gap-2.5">
       <span id="course_progress_icon_mobile" class="size-5 cursor-pointer">
         <Icons.info />
       </span>
@@ -466,7 +466,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         id="course_progress_tooltip_mobile"
         phx-hook="Popover"
         data-trigger-id="course_progress_icon_mobile"
-        class="invisible fixed z-20 left-1/2 -translate-x-1/2 p-4 w-[80vw] max-w-[30rem] opacity-0 transition-opacity duration-150"
+        class="invisible fixed z-50 left-1/2 -translate-x-1/2 p-4 w-[80vw] max-w-[30rem] opacity-0 transition-opacity duration-150"
         style="top: var(--trigger-top, -9999px);"
       >
         <div class="w-full px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
