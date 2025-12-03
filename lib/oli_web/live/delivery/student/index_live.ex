@@ -420,7 +420,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         phx-click={
           Modal.show_modal("course_progress_calculation_modal")
           |> JS.hide(to: "#course_progress_tooltip_desktop")
-          |> JS.hide(to: "#course_progress_tooltip_mobile")
+          |> JS.add_class("invisible opacity-0", to: "#course_progress_tooltip_mobile")
         }
         data-dismiss-tooltip
         class="text-[#353740] dark:text-[#eeebf5] text-sm font-bold underline leading-normal"
@@ -458,20 +458,21 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   # Mobile/Tablet tooltip with NonDesktopTooltip hook (click-based)
   defp course_progress_tooltip_mobile(assigns) do
     ~H"""
-    <div class="lg:hidden relative flex items-baseline gap-2.5">
+    <div class="lg:hidden flex items-baseline gap-2.5">
+      <span id="course_progress_icon_mobile" class="size-5 cursor-pointer">
+        <Icons.info />
+      </span>
       <div
         id="course_progress_tooltip_mobile"
         phx-hook="NonDesktopTooltip"
         data-trigger-id="course_progress_icon_mobile"
-        class="hidden absolute z-50 bottom-full right-0 translate-x-[calc(50%-16vw)] mb-2 p-4 w-[80vw] max-w-[30rem]"
+        class="invisible fixed z-50 left-1/2 -translate-x-1/2 p-4 w-[80vw] max-w-[30rem] opacity-0 transition-opacity duration-150"
+        style="top: var(--trigger-top, -9999px);"
       >
         <div class="w-full px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
           <.course_progress_tooltip_content />
         </div>
       </div>
-      <span id="course_progress_icon_mobile" class="size-5 cursor-pointer">
-        <Icons.info />
-      </span>
     </div>
     """
   end

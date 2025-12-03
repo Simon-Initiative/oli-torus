@@ -160,14 +160,25 @@ export const NonDesktopTooltip = {
       return;
     }
 
+    const updateTooltipPosition = () => {
+      const triggerRect = triggerElement.getBoundingClientRect();
+      const tooltipHeight = this.el.offsetHeight;
+
+      // Position tooltip just above the trigger icon
+      const topPosition = triggerRect.top - tooltipHeight - 8; // 8px gap (0.5rem)
+
+      this.el.style.setProperty('--trigger-top', `${topPosition}px`);
+    };
+
     const showTooltip = () => {
-      this.el.classList.remove('hidden');
-      this.el.style.display = 'block';
+      // Calculate position first (while invisible)
+      updateTooltipPosition();
+      // Then make visible with opacity transition
+      this.el.classList.remove('invisible', 'opacity-0');
     };
 
     const hideTooltip = () => {
-      this.el.classList.add('hidden');
-      this.el.style.display = 'none';
+      this.el.classList.add('invisible', 'opacity-0');
     };
 
     const handleOutsideClick = (event: MouseEvent) => {
@@ -185,7 +196,7 @@ export const NonDesktopTooltip = {
 
     triggerElement.addEventListener('click', (event) => {
       event.stopPropagation();
-      const isHidden = this.el.classList.contains('hidden');
+      const isHidden = this.el.classList.contains('invisible');
       if (isHidden) {
         showTooltip();
         setTimeout(() => {
@@ -198,6 +209,23 @@ export const NonDesktopTooltip = {
 
     this.el.addEventListener('click', handleDismissClick);
 
+    // Update position on scroll and resize to keep it relative to the trigger
+    const handleScrollOrResize = () => {
+      if (!this.el.classList.contains('invisible')) {
+        updateTooltipPosition();
+      }
+    };
+
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    // Store cleanup functions
+    this.cleanup = () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+      document.removeEventListener('click', handleOutsideClick);
+    };
+
     this.handleEvent = (event: string) => {
       if (event === 'hide') {
         hideTooltip();
@@ -206,14 +234,8 @@ export const NonDesktopTooltip = {
   },
 
   destroyed() {
-    const handleOutsideClick = (event: MouseEvent) => {
-      const triggerId = this.el.dataset['triggerId'];
-      const triggerElement = triggerId ? document.getElementById(triggerId) : null;
-      if (!this.el.contains(event.target as Node) && (!triggerElement || !triggerElement.contains(event.target as Node))) {
-        this.el.classList.add('hidden');
-        this.el.style.display = 'none';
-      }
-    };
-    document.removeEventListener('click', handleOutsideClick);
+    if (this.cleanup) {
+      this.cleanup();
+    }
   },
 };
