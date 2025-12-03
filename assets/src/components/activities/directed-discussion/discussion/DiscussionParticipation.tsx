@@ -62,13 +62,14 @@ const ParticipationState: React.FC<{
     minWidth: 0,
     maxWidth: 48,
     padding: '0px 3px',
-    border: '1px solid #E6E6E6',
   };
 
   return (
     <tr className="dark:text-white px-2 m-2 text-sm">
-      <td style={tailwindTablePageReset}>{children}</td>
-      <td className="text-center" style={tailwindTablePageReset}>
+      <td style={tailwindTablePageReset} className="border border-Border-border-active">
+        {children}
+      </td>
+      <td className="text-center border border-Border-border-active" style={tailwindTablePageReset}>
         {current < target && `${current}/${target}`}
         {current >= target && `✅`}
       </td>
