@@ -143,7 +143,6 @@ defmodule OliWeb.Delivery.Student.Utils do
             LEARNING OBJECTIVES &
             <button
               phx-click={Modal.show_modal("proficiency_explanation_modal")}
-              aria-label="Explain proficiency"
               class="text-Text-text-high hover:underline cursor-pointer"
             >
               PROFICIENCY
