@@ -18,10 +18,8 @@ defmodule Oli.Delivery.Sections.Browse do
   def browse_sections_query(
         %Paging{limit: limit, offset: offset},
         %Sorting{direction: direction, field: field},
-        %BrowseOptions{} = options,
-        opts \\ []
+        %BrowseOptions{} = options
       ) do
-    include_tags = Keyword.get(opts, :include_tags, false)
     # text search
     filter_by_text =
       if options.text_search == "" or is_nil(options.text_search) do
@@ -201,7 +199,6 @@ defmodule Oli.Delivery.Sections.Browse do
         institution_name: i.name,
         instructor_name: u.name
       })
-      |> maybe_select_tags(include_tags)
 
     # sorting
     query =
@@ -257,19 +254,7 @@ defmodule Oli.Delivery.Sections.Browse do
         %BrowseOptions{} = options,
         limit \\ 10_000
       ) do
-    browse_sections_query(%Paging{offset: 0, limit: limit}, sorting, options, include_tags: true)
+    browse_sections_query(%Paging{offset: 0, limit: limit}, sorting, options)
     |> Repo.all()
   end
-
-  defp maybe_select_tags(query, true) do
-    select_merge(query, [s, _, _, _, _, _], %{
-      tag_names:
-        fragment(
-          "(SELECT array_to_string(array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL), ', ') FROM section_tags st JOIN tags t ON t.id = st.tag_id WHERE st.section_id = ?)",
-          s.id
-        )
-    })
-  end
-
-  defp maybe_select_tags(query, _), do: query
 end
