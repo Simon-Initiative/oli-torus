@@ -111,3 +111,109 @@ export const AutoHideTooltip = {
     });
   },
 };
+
+// NonDesktopTooltip Hook
+
+// Provides tooltip functionality optimized for mobile and tablet devices where hover doesn't exist.
+// Shows the tooltip when the trigger element is clicked/tapped and dismisses it when clicking outside
+// the tooltip content or when clicking on a dismissal link.
+
+// Usage:
+
+// 1. Attach the Hook to the Tooltip Element:
+
+//    ```html
+//    <div id="tooltip" phx-hook="NonDesktopTooltip" data-trigger-id="info-icon" class="hidden absolute ...">
+//      <!-- Tooltip content -->
+//    </div>
+//    ```
+
+// 2. Add the Trigger Element:
+
+//    ```html
+//    <span id="info-icon" class="cursor-pointer">
+//      <Icons.info />
+//    </span>
+//    ```
+
+// 3. Required Data Attributes:
+
+//    - `data-trigger-id`: The ID of the element that will trigger the tooltip display when clicked.
+
+// 4. Dismissing the Tooltip:
+
+//    - Clicking outside the tooltip content will dismiss it
+//    - Clicking on any element with `data-dismiss-tooltip` attribute will dismiss it
+//    - Example: `<button data-dismiss-tooltip>Learn more</button>`
+
+export const NonDesktopTooltip = {
+  mounted() {
+    const triggerId = this.el.dataset['triggerId'];
+    if (!triggerId) {
+      console.error('NonDesktopTooltip: data-trigger-id is required');
+      return;
+    }
+
+    const triggerElement = document.getElementById(triggerId);
+    if (!triggerElement) {
+      console.error(`NonDesktopTooltip: trigger element with id "${triggerId}" not found`);
+      return;
+    }
+
+    const showTooltip = () => {
+      this.el.classList.remove('hidden');
+      this.el.style.display = 'block';
+    };
+
+    const hideTooltip = () => {
+      this.el.classList.add('hidden');
+      this.el.style.display = 'none';
+    };
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!this.el.contains(event.target as Node) && !triggerElement.contains(event.target as Node)) {
+        hideTooltip();
+      }
+    };
+
+    const handleDismissClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.hasAttribute('data-dismiss-tooltip') || target.closest('[data-dismiss-tooltip]')) {
+        hideTooltip();
+      }
+    };
+
+    triggerElement.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const isHidden = this.el.classList.contains('hidden');
+      if (isHidden) {
+        showTooltip();
+        setTimeout(() => {
+          document.addEventListener('click', handleOutsideClick);
+        }, 0);
+      } else {
+        hideTooltip();
+      }
+    });
+
+    this.el.addEventListener('click', handleDismissClick);
+
+    this.handleEvent = (event: string) => {
+      if (event === 'hide') {
+        hideTooltip();
+      }
+    };
+  },
+
+  destroyed() {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const triggerId = this.el.dataset['triggerId'];
+      const triggerElement = triggerId ? document.getElementById(triggerId) : null;
+      if (!this.el.contains(event.target as Node) && (!triggerElement || !triggerElement.contains(event.target as Node))) {
+        this.el.classList.add('hidden');
+        this.el.style.display = 'none';
+      }
+    };
+    document.removeEventListener('click', handleOutsideClick);
+  },
+};
