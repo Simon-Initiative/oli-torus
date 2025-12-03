@@ -118,7 +118,6 @@ defmodule Oli.Delivery.Sections.Section do
     field(:skip_email_verification, :boolean, default: false)
 
     field(:enrollments_count, :integer, virtual: true)
-    field(:tag_names, :string, virtual: true)
     field(:total_count, :integer, virtual: true)
     field(:institution_name, :string, virtual: true)
     field(:instructor_name, :string, virtual: true)

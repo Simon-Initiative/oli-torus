@@ -175,9 +175,6 @@ defmodule OliWeb.SectionsController do
 
   defp format_tags(nil), do: ""
 
-  defp format_tags(%{tag_names: tag_names}) when is_binary(tag_names) and tag_names != "",
-    do: tag_names
-
   defp format_tags(%Section{} = section) do
     section
     |> Map.get(:tags, [])
