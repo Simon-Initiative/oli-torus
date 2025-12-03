@@ -26,7 +26,6 @@ janus-dropdown select {
 }
 /*-- dropdown arrow --*/
 janus-dropdown:before {
-  content: '';
   color: #006586;
   height: 14px;
   width: 14px;
@@ -40,6 +39,33 @@ janus-dropdown:before {
   display: inline-block;
   position: absolute;
   bottom: 16px;
+  right: 16px;
+  border-radius: 1px;
+}
+
+[data-janus-type='janus-dropdown']::before {
+  display: none !important;
+}
+
+janus-dropdown .dropdown {
+  position: relative;
+}
+
+janus-dropdown .dropdown::after {
+  content: '';
+  color: #006586;
+  height: 12px;
+  width: 12px;
+  border: 4px solid #006586;
+  border-right: 0;
+  border-top: 0;
+  transform: translateY(-55%) rotate(-45deg);
+  pointer-events: none;
+  line-height: 8px;
+  box-sizing: border-box;
+  display: inline-block;
+  position: absolute;
+  top: 50%;
   right: 16px;
   border-radius: 1px;
 }

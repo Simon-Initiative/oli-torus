@@ -137,3 +137,58 @@ janus-text-flow p span[style*='color:rgb(255, 153, 0)'] {
   color: var(--orange100) !important;
   font-family: 'OpenSansBold';
 }
+
+/*-----------------------------------------
+   Quill Font Classes (backup for delivery mode)
+   These ensure fonts render correctly even if inline styles are overridden
+-----------------------------------------*/
+janus-text-flow .ql-font-open-sans,
+janus-text-flow span.ql-font-open-sans {
+  font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
+}
+
+janus-text-flow .ql-font-aleo,
+janus-text-flow span.ql-font-aleo {
+  font-family: 'Aleo', Georgia, serif;
+}
+
+janus-text-flow .ql-font-courier-prime,
+janus-text-flow span.ql-font-courier-prime {
+  font-family: 'Courier Prime', 'Courier New', monospace;
+}
+
+janus-text-flow .ql-font-brawler,
+janus-text-flow span.ql-font-brawler {
+  font-family: 'Brawler', Georgia, serif;
+}
+
+janus-text-flow .ql-font-montserrat,
+janus-text-flow span.ql-font-montserrat {
+  font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+}
+
+janus-text-flow .ql-font-patrick-hand,
+janus-text-flow span.ql-font-patrick-hand {
+  font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
+}
+
+/* Old fonts (backward compatibility) */
+janus-text-flow .ql-font-initial,
+janus-text-flow span.ql-font-initial {
+  font-family: Times, 'Times New Roman', serif;
+}
+
+janus-text-flow .ql-font-arial,
+janus-text-flow span.ql-font-arial {
+  font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+}
+
+janus-text-flow .ql-font-times-new-roman,
+janus-text-flow span.ql-font-times-new-roman {
+  font-family: 'Times New Roman', Times, serif;
+}
+
+janus-text-flow .ql-font-sans-serif,
+janus-text-flow span.ql-font-sans-serif {
+  font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+}
