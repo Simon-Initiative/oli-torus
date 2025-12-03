@@ -193,11 +193,16 @@ defmodule Oli.Delivery.Sections.Browse do
         proj.slug,
         prod.slug
       ])
-      |> select_merge([_, e, i, _, _, u], %{
+      |> select_merge([s, e, i, _, _, u], %{
         enrollments_count: count(e.id),
         total_count: fragment("count(*) OVER()"),
         institution_name: i.name,
-        instructor_name: u.name
+        instructor_name: u.name,
+        tag_names:
+          fragment(
+            "(SELECT array_to_string(array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL), ', ') FROM section_tags st JOIN tags t ON t.id = st.tag_id WHERE st.section_id = ?)",
+            s.id
+          )
       })
 
     # sorting
@@ -240,6 +245,21 @@ defmodule Oli.Delivery.Sections.Browse do
         %BrowseOptions{} = options
       ) do
     browse_sections_query(paging, sorting, options)
+    |> Repo.all()
+  end
+
+  @doc """
+  Browse sections for CSV export without paging.
+
+  Applies the same filters and sorting as `browse_sections/3` but removes the
+  pagination limits. An optional `limit` can be provided as a safety cap.
+  """
+  def browse_sections_for_export(
+        %Sorting{} = sorting,
+        %BrowseOptions{} = options,
+        limit \\ 10_000
+      ) do
+    browse_sections_query(%Paging{offset: 0, limit: limit}, sorting, options)
     |> Repo.all()
   end
 end

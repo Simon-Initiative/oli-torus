@@ -73,10 +73,10 @@ defmodule Oli.Delivery.Sections.Section do
     field(:display_curriculum_item_numbering, :boolean, default: true)
     field(:contains_discussions, :boolean, default: false)
     field(:contains_explorations, :boolean, default: false)
-    field(:contains_deliberate_practice, :boolean, default: false)
+  field(:contains_deliberate_practice, :boolean, default: false)
 
-    field(:certificate_enabled, :boolean, default: false)
-    has_one(:certificate, Oli.Delivery.Sections.Certificate, on_replace: :delete)
+  field(:certificate_enabled, :boolean, default: false)
+  has_one(:certificate, Oli.Delivery.Sections.Certificate, on_replace: :delete)
 
     belongs_to(:required_survey, Oli.Resources.Resource,
       foreign_key: :required_survey_resource_id
@@ -117,7 +117,8 @@ defmodule Oli.Delivery.Sections.Section do
     # receive a confirmation email.
     field(:skip_email_verification, :boolean, default: false)
 
-    field(:enrollments_count, :integer, virtual: true)
+  field(:enrollments_count, :integer, virtual: true)
+  field(:tag_names, :string, virtual: true)
     field(:total_count, :integer, virtual: true)
     field(:institution_name, :string, virtual: true)
     field(:instructor_name, :string, virtual: true)
