@@ -32,9 +32,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
-        instructor_ids =
-          Sections.get_instructors_for_section(section.id)
-          |> Enum.map(& &1.id)
+        instructor_ids = Sections.get_instructors_for_section(section.id, ids_only: true)
 
         student_progress =
           Metrics.progress_across(
