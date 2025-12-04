@@ -8433,8 +8433,8 @@ table.table-striped tbody tr:nth-child(even) {
   right: -13px;
 }
 
-.-right-\[316px\] {
-  right: -316px;
+.-right-\[323px\] {
+  right: -323px;
 }
 
 .-top-1 {
@@ -8469,16 +8469,16 @@ table.table-striped tbody tr:nth-child(even) {
   top: -1.75rem;
 }
 
+.-top-\[108px\] {
+  top: -108px;
+}
+
 .-top-\[20px\] {
   top: -20px;
 }
 
 .-top-\[5px\] {
   top: -5px;
-}
-
-.-top-\[89px\] {
-  top: -89px;
 }
 
 .bottom-0 {
@@ -10450,6 +10450,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[80px\] {
   width: 80px;
+}
+
+.w-\[80vw\] {
+  width: 80vw;
 }
 
 .w-\[84px\] {
@@ -24904,6 +24908,10 @@ Not supports in Firefox and IE */
 
   .xl\:block {
     display: block;
+  }
+
+  .xl\:flex {
+    display: flex;
   }
 
   .xl\:hidden {
