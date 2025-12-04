@@ -947,10 +947,118 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         } = assigns
       )
       when selected_module_per_unit_resource_id != %{} do
+    {unit_resource_id, selected_module} = Enum.at(selected_module_per_unit_resource_id, 0)
+
+    page_metrics =
+      get_module_page_metrics(assigns.page_metrics_per_module_id, selected_module["resource_id"])
+
+    assigns =
+      assigns
+      |> assign(:selected_module, selected_module)
+      |> assign(:unit_resource_id, unit_resource_id)
+      |> assign(:page_metrics, page_metrics)
+
     ~H"""
-    <div>
-      <button phx-click="back_to_gallery_mobile_view">Back</button>
-      <h1>Mobile Expanded Placeholder</h1>
+    <div
+      id="mobile_gallery_module"
+      class="bg-Background-bg-primary min-h-screen text-Text-text-low"
+    >
+      <div class="relative">
+        <button
+          phx-click="back_to_gallery_mobile_view"
+          class="absolute left-3 top-3 z-10 inline-flex items-center"
+        >
+          <Icons.back_arrow class="w-5 h-5 fill-Icon-icon-white stroke-Icon-icon-white" />
+        </button>
+        <div class="relative h-60 w-full overflow-hidden shadow-[0px_4px_12px_rgba(0,52,99,0.25)]">
+          <div
+            class="absolute inset-0 bg-cover bg-center"
+            style={"background-image: url('#{if @selected_module["poster_image"] in [nil, ""], do: @default_image, else: @selected_module["poster_image"]}');"}
+          />
+          <div class="absolute inset-0 bg-blend-hard-light bg-gradient-to-b from-black/10 via-black/30 to-[#003263]/40 backdrop-blur-sm" />
+
+          <div class="relative h-full flex flex-col justify-end gap-4 p-[12px] pb-[20px]">
+            <div class="text-sm leading-4 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] sm:[text-shadow:_none] text-Specially-Tokens-Text-text-tile-details opacity-75 font-bold uppercase">
+              {container_label_and_numbering(
+                @selected_module["numbering"]["level"],
+                @selected_module["numbering"]["index"],
+                @section.customizations
+              )}
+            </div>
+            <h1 class="text-Text-text-white text-2xl font-semibold leading-8 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] line-clamp-3">
+              {@selected_module["title"]}
+            </h1>
+            <div class="h-8 flex items-center justify-between text-[13px] text-Specially-Tokens-Text-text-tile-details">
+              <.module_schedule_details
+                module={@selected_module}
+                contained_scheduling_types={@contained_scheduling_types}
+                ctx={@ctx}
+              />
+              <.module_card_badge
+                page_metrics={@page_metrics}
+                resource_id={@selected_module["resource_id"]}
+              />
+            </div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 z-10">
+            <.progress_bar
+              percent={
+                parse_student_progress_for_resource(
+                  @student_progress_per_resource_id,
+                  @selected_module["resource_id"]
+                )
+              }
+              role="module_hero_progress"
+              show_percent={false}
+              width="100%"
+              height="h-[6px]"
+              on_going_colour="bg-Fill-fill-progress"
+              completed_colour="bg-Fill-fill-progress"
+              not_completed_colour="bg-Fill-fill-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="px-4 py-6 flex flex-col gap-6">
+        <div :if={@selected_module["intro_content"]["children"]} class="flex flex-col gap-2">
+          <.intro_content
+            raw_content={@selected_module["intro_content"]["children"]}
+            resource_id={@selected_module["resource_id"]}
+          />
+        </div>
+
+        <.lets_discuss_button :if={@assistant_enabled} />
+
+        <div id="mobile_module_content" class="flex flex-col gap-4 mt-6">
+          <.module_content_header
+            module={@selected_module}
+            page_metrics={@page_metrics}
+            toggle_visibility_data={
+              %{
+                selector: completed_resources_css_selector("#mobile_module_content"),
+                on_toggle: &JS.push(&1, "toggle_completed_visibility"),
+                class: "text-sm font-semibold text-Text-text-low flex items-center justify-center"
+              }
+            }
+          />
+          <.module_index
+            module={@selected_module}
+            section={@section}
+            student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+            student_progress_per_resource_id={@student_progress_per_resource_id}
+            student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
+            student_available_date_exceptions_per_resource_id={
+              @student_available_date_exceptions_per_resource_id
+            }
+            ctx={@ctx}
+            student_id={@current_user.id}
+            intro_video_viewed={@selected_module["resource_id"] in @viewed_intro_video_resource_ids}
+            show_completed?={@show_completed?}
+            has_scheduled_resources?={@has_scheduled_resources?}
+          />
+        </div>
+      </div>
     </div>
     """
   end
@@ -1048,16 +1156,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def render(%{selected_view: :gallery} = assigns) do
     ~H"""
-    <div id="student_learn" class="lg:container lg:mx-auto p-3 md:p-[25px]" phx-hook="Scroller">
+    <div
+      id="student_learn"
+      class="lg:container lg:mx-auto sm:p-3 py-3 md:p-[25px]"
+      phx-hook="Scroller"
+    >
       <.video_player />
-      <div class="px-1 sm:px-3 md:px-[25px]">
+      <div class="px-3 md:px-[25px]">
         <ComponentsUtils.timezone_info timezone={
           FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
       </div>
-      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center p-1 sm:h-16 sm:p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-3 sm:py-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
-          class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
+          class="text-Text-text-low text-sm font-medium hover:text-black dark:hover:text-white"
           target_selector={completed_resources_css_selector()}
           on_toggle={&JS.push(&1, "toggle_completed_visibility")}
         />
@@ -1101,6 +1213,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           assistant_enabled={@assistant_enabled}
           show_completed?={@show_completed?}
           has_scheduled_resources?={@has_scheduled_resources?}
+          is_mobile={@is_mobile}
         />
       </div>
     </div>
@@ -1124,6 +1237,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :page_metrics_per_module_id, :map
   attr :show_completed?, :boolean, required: true
   attr :has_scheduled_resources?, :boolean, required: true
+  attr :is_mobile, :boolean, required: true
 
   # top level page as a card with title and header
   def gallery_row(%{unit: %{"resource_type_id" => 1}} = assigns) do
@@ -1135,7 +1249,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       role="resource top level"
     >
       <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
-        <div role="header" class="flex flex-col md:flex-row md:gap-[30px]">
+        <div role="header" class="px-3 sm:px-0 flex flex-col md:flex-row md:gap-[30px]">
           <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
             {"PAGE #{@unit["numbering"]["index"]}"}
           </div>
@@ -1168,8 +1282,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <.progress_bar
                 percent={@progress}
                 width="194px"
-                on_going_colour="bg-[#0CAF61]"
-                completed_colour="bg-[#0CAF61]"
+                on_going_colour="bg-Fill-fill-progress"
+                completed_colour="bg-Fill-fill-progress"
                 role={"unit_#{@unit["numbering"]["index"]}_progress"}
               />
             </div>
@@ -1205,7 +1319,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       role="resource top level"
     >
       <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
-        <div class="flex flex-col md:flex-row md:gap-[30px]">
+        <div class="flex flex-col px-3 sm:px-0 md:flex-row md:gap-[30px]">
           <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
             {container_label_and_numbering(
               @unit["numbering"]["level"],
@@ -1252,8 +1366,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <.progress_bar
                 percent={@progress}
                 width="194px"
-                on_going_colour="bg-[#0CAF61]"
-                completed_colour="bg-[#0CAF61]"
+                on_going_colour="bg-Fill-fill-progress"
+                completed_colour="bg-Fill-fill-progress"
                 role={"unit_#{@unit["numbering"]["index"]}_progress"}
               />
             </div>
@@ -1261,15 +1375,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         <div class="flex relative">
           <button
+            :if={!@is_mobile}
             id={"slider_left_button_#{@unit["resource_id"]}"}
-            class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-gray-100 dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-[#F3F4F8] dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
           >
             <i class="fa-solid fa-chevron-left ml-3"></i>
           </button>
           <button
+            :if={!@is_mobile}
             id={"slider_right_button_#{@unit["resource_id"]}"}
-            class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-gray-100 dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
+            class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-[#F3F4F8] dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
           >
             <i class="fa-solid fa-chevron-right mr-3"></i>
@@ -1277,9 +1393,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div
             id={"slider_#{@unit["resource_id"]}"}
             role="slider"
-            phx-hook="SliderScroll"
+            phx-hook={if !@is_mobile, do: "SliderScroll"}
             data-resource_id={@unit["resource_id"]}
-            class="overflow-y-hidden h-[187px] pt-[5px] px-[5px] scrollbar-hide"
+            class="overflow-y-hidden h-[187px] pt-[5px] px-3 sm:px-[5px] scrollbar-hide"
           >
             <.custom_focus_wrap
               id={"slider_focus_wrap_#{@unit["resource_id"]}"}
@@ -1374,96 +1490,25 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 "title"
               ]}
             </h2>
-            <span class="opacity-50 dark:text-white text-xs font-normal">
-              <span>
-                Available: {get_available_date(
-                  selected_module[
-                    "section_resource"
-                  ].start_date,
-                  @ctx,
-                  "{WDshort} {Mshort} {D}, {YYYY}"
-                )}
-              </span>
-              <span class="ml-6">
-                {Utils.container_label_for_scheduling_type(
-                  Map.get(@contained_scheduling_types, selected_module["resource_id"])
-                )}{format_date(
-                  selected_module[
-                    "section_resource"
-                  ].end_date,
-                  @ctx,
-                  "{WDshort} {Mshort} {D}, {YYYY}"
-                )}
-              </span>
-            </span>
+            <.module_schedule_details
+              module={selected_module}
+              contained_scheduling_types={@contained_scheduling_types}
+              ctx={@ctx}
+            />
           </div>
           <div
-            :if={
-              selected_module[
-                "intro_content"
-              ][
-                "children"
-              ]
-            }
-            id={"module_intro_contentin_unit_#{@unit["resource_id"]}"}
+            :if={selected_module["intro_content"]["children"]}
+            id={"module_#{selected_module["resource_id"]}_intro_content"}
             role="module intro content"
             class="max-w-[760px] w-full pt-4 md:pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
           >
-            <div class="flex flex-col opacity-80">
-              <span
-                data-toggle_read_more_button_id={"toggle_read_more_#{selected_module["resource_id"]}"}
-                phx-hook="ToggleReadMore"
-                id={"selected_module_in_unit_#{@unit["resource_id"]}_intro_content"}
-                class="text-sm font-normal leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
-                style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
-              >
-                {render_intro_content(
-                  selected_module[
-                    "intro_content"
-                  ][
-                    "children"
-                  ]
-                )}
-              </span>
-              <div id={"toggle_read_more_#{selected_module["resource_id"]}"} class="ml-auto">
-                <button
-                  id={"read_more_module_intro_in_unit_#{@unit["resource_id"]}"}
-                  phx-click={
-                    JS.remove_attribute("style",
-                      to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
-                    )
-                    |> JS.toggle(to: "#read_less_module_intro_in_unit_#{@unit["resource_id"]}")
-                    |> JS.toggle()
-                  }
-                  class="text-blue-500 text-sm font-normal leading-[30px] ml-auto"
-                >
-                  Read more
-                </button>
-                <button
-                  id={"read_less_module_intro_in_unit_#{@unit["resource_id"]}"}
-                  phx-click={
-                    JS.set_attribute(
-                      {"style",
-                       "display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"},
-                      to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
-                    )
-                    |> JS.toggle(to: "#read_more_module_intro_in_unit_#{@unit["resource_id"]}")
-                    |> JS.toggle()
-                  }
-                  class="hidden text-blue-500 text-sm font-normal leading-[30px] ml-auto"
-                >
-                  Read less
-                </button>
-              </div>
-            </div>
+            <.intro_content
+              raw_content={selected_module["intro_content"]["children"]}
+              resource_id={selected_module["resource_id"]}
+            />
           </div>
-          <button
-            :if={@assistant_enabled}
-            phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
-            class="h-[39px] p-2.5 bg-blue-500 hover:bg-blue-600 focus:bg-blue-600 dark:bg-blue-700 dark:hover:bg-opacity-60 dark:focus:bg-opacity-60 rounded text-white text-sm font-semibold tracking-tight"
-          >
-            Let's discuss?
-          </button>
+
+          <.lets_discuss_button :if={@assistant_enabled} />
 
           <div
             role="module index"
@@ -2041,6 +2086,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :module, :map
   attr :page_metrics, :map, default: @default_module_page_metrics
 
+  attr :toggle_visibility_data, :map,
+    default: nil,
+    doc:
+      "when included, a toggle visibility button will be rendered. The map should contain the following keys: selector, on_toggle, class"
+
   def module_content_header(assigns) do
     ~H"""
     <div class="w-full border-b dark:border-white/20 flex items-center justify-between pb-1.5">
@@ -2062,8 +2112,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
         </div>
       </div>
+      <DeliveryUtils.toggle_visibility_button
+        :if={@toggle_visibility_data}
+        target_selector={@toggle_visibility_data.selector}
+        on_toggle={@toggle_visibility_data.on_toggle}
+        class={["text-sm font-semibold text-Text-text-low", @toggle_visibility_data.class]}
+      />
     </div>
-    <div class="pt-6" />
+    <div class="hidden sm:block pt-6" />
     """
   end
 
@@ -2417,7 +2473,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           class="fill-black dark:fill-white"
           path_class={
             if(@intro_video_viewed,
-              do: "!opacity-100 fill-[#0CAF61] dark:fill-[#12E56A]",
+              do: "!opacity-100 fill-Fill-fill-progress",
               else: "opacity-60"
             )
           }
@@ -2515,8 +2571,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             width="100%"
             height="h-[4px]"
             show_percent={false}
-            on_going_colour="bg-[#0CAF61]"
-            completed_colour="bg-[#0CAF61]"
+            on_going_colour="bg-Fill-fill-progress"
+            completed_colour="bg-Fill-fill-progress"
             role="intro video card progress"
           />
         </div>
@@ -2583,8 +2639,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             width="100%"
             height="h-[4px]"
             show_percent={false}
-            on_going_colour="bg-[#0CAF61]"
-            completed_colour="bg-[#0CAF61]"
+            on_going_colour="bg-Fill-fill-progress"
+            completed_colour="bg-Fill-fill-progress"
             role="intro video card progress"
           />
         </div>
@@ -2684,8 +2740,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             width="100%"
             height="h-[4px]"
             show_percent={false}
-            on_going_colour="bg-[#0CAF61]"
-            completed_colour="bg-[#0CAF61]"
+            on_going_colour="bg-Fill-fill-progress"
+            completed_colour="bg-Fill-fill-progress"
             role={"card_#{@module_index}_progress"}
           />
         </div>
@@ -2714,7 +2770,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <h5 class="pointer-events-none text-[18px] leading-[25px] font-bold text-white z-10">
             {@card["title"]}
           </h5>
-          <div class="absolute bottom-4 right-3 h-[26px] pointer-events-none">
+          <div class="absolute bottom-4 right-3 h-6 pointer-events-none">
             <.module_card_badge
               :if={!@is_page}
               page_metrics={@page_metrics}
@@ -2751,13 +2807,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     <div
       role="card badge"
-      class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
+      class="h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <Icons.check />
       <div
         :if={parsed_minutes}
         id={"card_badge_details_#{@resource_id}"}
-        class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
+        class="hidden text-Text-text-white text-xs font-semibold leading-3 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] pointer-events-none"
       >
         {parsed_minutes}
       </div>
@@ -2772,9 +2828,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       :if={parsed_minutes}
       role="card badge"
-      class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
+      class="h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
-      <div class="dark:text-white text-[13px] font-semibold pointer-events-none">
+      <div class="text-Text-text-white text-xs font-semibold leading-3 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] pointer-events-none">
         {parsed_minutes}
       </div>
     </div>
@@ -2799,9 +2855,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       role="card badge"
       id={"in_progress_card_badge_#{@resource_id}"}
-      class="ml-auto h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
+      class="ml-auto h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex"
     >
-      <div class="dark:text-white text-[13px] font-semibold">
+      <div class="text-Text-text-white text-xs font-semibold leading-3 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)]">
         {parse_module_total_pages(@page_metrics.total_pages_count) <>
           maybe_add_separator(@page_metrics.total_pages_count, parsed_minutes) <> "#{parsed_minutes}"}
       </div>
@@ -2824,12 +2880,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     <div
       role="card badge"
-      class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
+      class="h-6 px-2 py-1 bg-Fill-fill-transparent rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <Icons.check />
       <div
         id={"card_badge_details_#{@resource_id}"}
-        class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
+        class="hidden text-Text-text-white text-xs font-semibold leading-3 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] pointer-events-none"
       >
         {parse_module_total_pages(@page_metrics.total_pages_count) <>
           maybe_add_separator(@page_metrics.total_pages_count, parsed_minutes) <> "#{parsed_minutes}"}
@@ -2848,6 +2904,111 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <video id="cloud_video" controls>
         <source src="" type="video/mp4" /> Your browser does not support the video tag.
       </video>
+    </div>
+    """
+  end
+
+  def lets_discuss_button(assigns) do
+    ~H"""
+    <button
+      phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
+      class="text-Text-text-white text-sm font-semibold font-['Open_Sans'] leading-4 px-8 py-3 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover rounded-lg shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] inline-flex justify-center items-center"
+    >
+      Let's discuss?
+    </button>
+    """
+  end
+
+  attr :raw_content, :any, required: true
+  attr :resource_id, :string, required: true
+
+  def intro_content(assigns) do
+    ~H"""
+    <div>
+      <span
+        id={"intro_content_module_#{@resource_id}"}
+        class="text-sm font-normal leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
+        style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
+      >
+        {render_intro_content(@raw_content)}
+      </span>
+      <.read_more_button
+        resource_id={@resource_id}
+        target_selector={"#intro_content_module_#{@resource_id}"}
+      />
+    </div>
+    """
+  end
+
+  attr :resource_id, :string,
+    required: true,
+    doc: "must be unique"
+
+  attr :target_selector, :string,
+    required: true,
+    doc: "the selector of the element to expand with the read more button"
+
+  def read_more_button(assigns) do
+    ~H"""
+    <div class="flex w-full">
+      <button
+        id={"read_more_#{@resource_id}"}
+        phx-click={
+          JS.remove_attribute("style",
+            to: @target_selector
+          )
+          |> JS.toggle(to: "#read_less_#{@resource_id}")
+          |> JS.toggle()
+        }
+        class="ml-auto text-Text-text-button text-sm font-semibold leading-6"
+      >
+        Read More
+      </button>
+      <button
+        id={"read_less_#{@resource_id}"}
+        phx-click={
+          JS.set_attribute(
+            {"style", "display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"},
+            to: @target_selector
+          )
+          |> JS.toggle(to: "#read_more_#{@resource_id}")
+          |> JS.toggle()
+        }
+        class="ml-auto hidden text-Text-text-button text-sm font-semibold leading-6"
+      >
+        Read Less
+      </button>
+    </div>
+    """
+  end
+
+  attr :module, :map, required: true
+  attr :ctx, :map, required: true
+  attr :contained_scheduling_types, :map, required: true
+
+  def module_schedule_details(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-2 sm:gap-0 sm:flex-row text-xs leading-3 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] sm:[text-shadow:_none] text-Specially-Tokens-Text-text-tile-details opacity-75 font-semibold">
+      <span>
+        Available: {get_available_date(
+          @module[
+            "section_resource"
+          ].start_date,
+          @ctx,
+          "{WDshort} {Mshort} {D}, {YYYY}"
+        )}
+      </span>
+      <span class="sm:ml-6">
+        {Utils.container_label_for_scheduling_type(
+          Map.get(@contained_scheduling_types, @module["resource_id"])
+        )}{format_date(
+          @module[
+            "section_resource"
+          ].end_date,
+          @ctx,
+          "{WDshort} {Mshort} {D}, {YYYY}"
+        )}
+      </span>
     </div>
     """
   end
@@ -3309,8 +3470,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   _docp = """
-  When rendering learn page in gallery view, we need to execute the Scroller hook to enable the slider buttons
+  When rendering learn page in gallery view, we need to execute the Scroller hook to enable the slider buttons, except for mobile
   """
+
+  defp enable_gallery_slider_buttons(%{assigns: %{is_mobile: true}} = socket, _units), do: socket
 
   defp enable_gallery_slider_buttons(socket, units) do
     push_event(socket, "enable-slider-buttons", %{
