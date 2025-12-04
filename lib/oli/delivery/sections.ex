@@ -5871,21 +5871,31 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-    Get all instructors for a given section.
+  Get all instructors for a given section.
+
+  ## Options
+    * `:ids_only` - when true, returns only user IDs instead of full user structs (default: false)
   """
-  def get_instructors_for_section(section_id) do
-    Repo.all(
+  def get_instructors_for_section(section_id, opts \\ []) do
+    ids_only = Keyword.get(opts, :ids_only, false)
+
+    query =
       from(enrollment in Enrollment,
         join: enrollment_context_role in EnrollmentContextRole,
         on: enrollment_context_role.enrollment_id == enrollment.id,
-        join: user in User,
-        on: enrollment.user_id == user.id,
         where:
           enrollment.section_id == ^section_id and
-            enrollment_context_role.context_role_id in ^@instructor_role_ids,
-        select: user
+            enrollment_context_role.context_role_id in ^@instructor_role_ids
       )
-    )
+
+    query =
+      if ids_only do
+        from([e, _] in query, select: e.user_id)
+      else
+        from([e, _] in query, join: user in User, on: e.user_id == user.id, select: user)
+      end
+
+    Repo.all(query)
   end
 
   @doc """
