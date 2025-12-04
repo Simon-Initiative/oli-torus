@@ -3450,6 +3450,10 @@ select {
   fill: #BAB8BF;
 }
 
+.stroke-Icon-icon-default {
+  stroke: #757682;
+}
+
 .dark .stroke-Icon-icon-default {
   stroke: #BAB8BF;
 }
@@ -20083,6 +20087,22 @@ Not supports in Firefox and IE */
 
 .dark .group:hover .group-hover\:stroke-Text-text-button-hover {
   stroke: #99CCFF;
+}
+
+.group:hover .group-hover\:stroke-Icon-icon-hover {
+  stroke: #353740;
+}
+
+.dark .group:hover .group-hover\:stroke-Icon-icon-hover {
+  stroke: #FFFFFF;
+}
+
+.dark .dark\:stroke-Icon-icon-default {
+  stroke: #757682;
+}
+
+.dark .dark .dark\:stroke-Icon-icon-default {
+  stroke: #BAB8BF;
 }
 
 @media (min-width: 768px) {
