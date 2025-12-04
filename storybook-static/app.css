@@ -2198,6 +2198,10 @@ select {
   color: #EEEBF5;
 }
 
+.border-Border-border-active {
+  border-color: #353740;
+}
+
 .dark .border-Border-border-active {
   border-color: #EEEBF5;
 }
@@ -10014,10 +10018,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[57px\] {
   min-height: 57px;
-}
-
-.min-h-\[5rem\] {
-  min-height: 5rem;
 }
 
 .min-h-\[756px\] {
@@ -23501,6 +23501,10 @@ Not supports in Firefox and IE */
 }
 
 @media (min-width: 640px) {
+  .sm\:absolute {
+    position: absolute;
+  }
+
   .sm\:sticky {
     position: sticky;
   }
@@ -23524,6 +23528,10 @@ Not supports in Firefox and IE */
     right: 0px;
   }
 
+  .sm\:right-1 {
+    right: 0.25rem;
+  }
+
   .sm\:right-\[-28px\] {
     right: -28px;
   }
@@ -23538,6 +23546,10 @@ Not supports in Firefox and IE */
 
   .sm\:right-\[505px\] {
     right: 505px;
+  }
+
+  .sm\:top-1 {
+    top: 0.25rem;
   }
 
   .sm\:top-20 {
