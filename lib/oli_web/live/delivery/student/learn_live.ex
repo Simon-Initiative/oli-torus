@@ -962,6 +962,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       id="mobile_gallery_module"
       class="bg-Background-bg-primary min-h-screen text-Text-text-low"
+      phx-hook="ScrollToTheTop"
     >
       <div class="relative">
         <button
