@@ -37,8 +37,8 @@ import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
-import { Recaptcha } from './recaptcha';
 import { ReadMoreToggle } from './read_more_toggle';
+import { Recaptcha } from './recaptcha';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { ScrollToTheTop } from './scroll_to_the_top';
@@ -85,6 +85,7 @@ export const Hooks = {
   TooltipInit,
   TooltipWithTarget,
   AutoHideTooltip,
+  Popover,
   ClickExecJS,
   HoverAway,
   BeforeUnloadListener,
