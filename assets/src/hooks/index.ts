@@ -40,6 +40,7 @@ import { ReactToLiveView } from './react_to_liveview';
 import { Recaptcha } from './recaptcha';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
+import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
 import { ShowTeaser } from './show_teaser';
@@ -123,4 +124,5 @@ export const Hooks = {
   ConditionalToggle,
   CopyToClipboard,
   TagsComponent,
+  ScrollToTheTop,
 };
