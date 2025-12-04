@@ -444,13 +444,15 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <.course_progress_tooltip_content />
         </div>
       </div>
-      <span
+      <button
+        type="button"
         id="course_progress_icon_desktop"
+        aria-label="Explain course progress calculation"
         xphx-mouseover={JS.show(to: "#course_progress_tooltip_desktop")}
-        class="size-5"
+        class="size-5 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
       >
         <Icons.info />
-      </span>
+      </button>
     </div>
     """
   end
@@ -459,9 +461,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp course_progress_tooltip_mobile(assigns) do
     ~H"""
     <div class="xl:hidden flex items-baseline gap-2.5">
-      <span id="course_progress_icon_mobile" class="size-5 cursor-pointer">
+      <button
+        id="course_progress_icon_mobile"
+        type="button"
+        aria-label="Explain course progress calculation"
+        class="size-5 cursor-pointer"
+      >
         <Icons.info />
-      </span>
+      </button>
       <div
         id="course_progress_tooltip_mobile"
         phx-hook="Popover"
