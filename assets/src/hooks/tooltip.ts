@@ -162,15 +162,6 @@ export const Popover = {
       this.el.style.setProperty('--trigger-top', `${topPosition}px`);
     };
 
-    const show = () => {
-      updatePosition();
-      this.el.classList.remove('invisible', 'opacity-0');
-    };
-
-    const hide = () => {
-      this.el.classList.add('invisible', 'opacity-0');
-    };
-
     const handleOutsideClick = (event: MouseEvent) => {
       if (
         !this.el.contains(event.target as Node) &&
@@ -180,11 +171,23 @@ export const Popover = {
       }
     };
 
+    const show = () => {
+      updatePosition();
+      this.el.classList.remove('invisible', 'opacity-0');
+      // Register the outside click handler after showing
+      setTimeout(() => document.addEventListener('click', handleOutsideClick), 0);
+    };
+
+    const hide = () => {
+      this.el.classList.add('invisible', 'opacity-0');
+      // Remove the outside click handler when hiding
+      document.removeEventListener('click', handleOutsideClick);
+    };
+
     triggerElement.addEventListener('click', (event) => {
       event.stopPropagation();
       if (this.el.classList.contains('invisible')) {
         show();
-        setTimeout(() => document.addEventListener('click', handleOutsideClick), 0);
       } else {
         hide();
       }
@@ -207,6 +210,7 @@ export const Popover = {
     this.cleanup = () => {
       window.removeEventListener('scroll', updateOnScrollOrResize, true);
       window.removeEventListener('resize', updateOnScrollOrResize);
+      // Clean up outside click handler if still registered
       document.removeEventListener('click', handleOutsideClick);
     };
   },
