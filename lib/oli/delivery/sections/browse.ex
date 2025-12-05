@@ -193,7 +193,7 @@ defmodule Oli.Delivery.Sections.Browse do
         proj.slug,
         prod.slug
       ])
-      |> select_merge([s, e, i, _, _, u], %{
+      |> select_merge([_, e, i, _, _, u], %{
         enrollments_count: count(e.id),
         total_count: fragment("count(*) OVER()"),
         institution_name: i.name,
