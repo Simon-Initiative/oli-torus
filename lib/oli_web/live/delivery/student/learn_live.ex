@@ -1251,18 +1251,26 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       data-completed={"#{@progress == 100}"}
       role="resource top level"
     >
-      <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
+      <div
+        class="mt-5 md:p-[25px] md:pl-[50px]"
+        role={"top_level_page_#{@unit["numbering"]["index"]}"}
+      >
         <div role="header" class="px-3 sm:px-0 flex flex-col md:flex-row md:gap-[30px]">
-          <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
+          <div class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
             {"PAGE #{@unit["numbering"]["index"]}"}
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
-            <div class="flex flex-col md:flex-row w-full">
-              <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
-                {@unit["title"]}
-              </h3>
-              <div class="ml-auto flex items-center gap-3" role="schedule_details">
-                <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
+            <div class="flex flex-col md:flex-row w-full gap-1 sm:gap-2">
+              <div class="flex justify-between">
+                <h3 class="text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1">
+                  {@unit["title"]}
+                </h3>
+                <span class="block sm:hidden text-Text-text-high text-lg font-semibold leading-6">
+                  {@progress}%
+                </span>
+              </div>
+              <div class="sm:ml-auto flex items-center gap-3" role="schedule_details">
+                <div class="flex flex-col gap-1 sm:flex-row text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
                       @unit["section_resource"].start_date,
@@ -1270,18 +1278,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                       "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
                     )}
                   </span>
-                  <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                    {Utils.label_for_scheduling_type(@unit["section_resource"].scheduling_type)}
-                  </span>
-                  {format_date(
-                    @unit["section_resource"].end_date,
-                    @ctx,
-                    "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                  )}
+                  <div class="flex flex-row sm:ml-6">
+                    <span class="mr-1">
+                      {Utils.label_for_scheduling_type(@unit["section_resource"].scheduling_type)}
+                    </span>
+                    <span class="whitespace-nowrap">
+                      {format_date(
+                        @unit["section_resource"].end_date,
+                        @ctx,
+                        "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                      )}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="flex items-center gap-6">
+            <div class="hidden sm:flex items-center gap-6">
               <.progress_bar
                 percent={@progress}
                 width="194px"
@@ -1292,7 +1304,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
           </div>
         </div>
-        <div class="flex">
+        <div class="flex px-3">
           <.card
             card={@unit}
             module_index={1}
@@ -1321,9 +1333,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       data-completed={"#{@progress == 100}"}
       role="resource top level"
     >
-      <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
+      <div class="mt-5 md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
         <div class="flex flex-col px-3 sm:px-0 md:flex-row md:gap-[30px]">
-          <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
+          <div class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
             {container_label_and_numbering(
               @unit["numbering"]["level"],
               @unit["numbering"]["index"],
@@ -1331,41 +1343,45 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             )}
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
-            <div class="flex flex-col md:flex-row w-full justify-between gap-2">
-              <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
-                {@unit["title"]}
-              </h3>
+            <div class="flex flex-col md:flex-row w-full justify-between gap-1 sm:gap-2">
+              <div class="flex justify-between">
+                <h3 class="text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1">
+                  {@unit["title"]}
+                </h3>
+                <span class="block sm:hidden text-Text-text-high text-lg font-semibold leading-6">
+                  {@progress}%
+                </span>
+              </div>
               <div class="flex items-center gap-3" role="schedule_details">
-                <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
+                <div class="flex flex-col gap-1 sm:flex-row text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
-                    <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                      Available:
-                    </span>
-                    {get_available_date(
+                    Available: {get_available_date(
                       @unit["section_resource"].start_date,
                       @ctx,
                       "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
                     )}
                   </span>
-                  <span class="ml-6 text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                    {if @unit["section_resource"].end_date in [nil, "Not yet scheduled"],
-                      do: "Due by:",
-                      else:
-                        Utils.container_label_for_scheduling_type(
-                          Map.get(@contained_scheduling_types, @unit["resource_id"])
-                        )}
-                  </span>
-                  <span class="whitespace-nowrap">
-                    {format_date(
-                      @unit["section_resource"].end_date,
-                      @ctx,
-                      "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                    )}
-                  </span>
+                  <div class="flex flex-row sm:ml-6">
+                    <span class="mr-1">
+                      {if @unit["section_resource"].end_date in [nil, "Not yet scheduled"],
+                        do: "Due by:",
+                        else:
+                          Utils.container_label_for_scheduling_type(
+                            Map.get(@contained_scheduling_types, @unit["resource_id"])
+                          )}
+                    </span>
+                    <span class="whitespace-nowrap">
+                      {format_date(
+                        @unit["section_resource"].end_date,
+                        @ctx,
+                        "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                      )}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="flex items-center gap-6">
+            <div class="hidden sm:flex items-center gap-6">
               <.progress_bar
                 percent={@progress}
                 width="194px"
