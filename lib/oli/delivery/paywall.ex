@@ -735,6 +735,66 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
+  Invalidates all active payments for a user in a section.
+
+  This function finds and invalidates payments using two criteria:
+  1. By enrollment_id (covers bypass and finalized payments)
+  2. By pending_section_id and pending_user_id (covers direct payments that may be orphaned)
+
+  This ensures that all payment records are properly invalidated regardless of how they were created,
+  which is important when a user has been re-enrolled or when both direct and bypass payments exist.
+
+  Returns {:ok, count} where count is the number of payments invalidated.
+  """
+  def invalidate_payments_for_user_section(user_id, section, invalidated_by_user_id) do
+    # Get the user's current enrollment in this section (if any)
+    enrollment = Sections.get_enrollment(section.slug, user_id, filter_by_status: false)
+
+    # Build conditions for payments to invalidate:
+    # 1. Payments linked to the user's enrollment (by enrollment_id)
+    # 2. Payments created by the user for this section (by pending fields)
+    # We also need to consider the blueprint_id for products
+    section_ids =
+      if is_nil(section.blueprint_id),
+        do: [section.id],
+        else: [section.id, section.blueprint_id]
+
+    # Build the where condition based on whether enrollment exists
+    # We need to handle this at the Elixir level because Ecto can't properly
+    # handle nil structs in dynamic queries
+    where_condition =
+      case enrollment do
+        nil ->
+          # No enrollment - only look for payments by pending fields
+          dynamic(
+            [p],
+            p.type != :invalidated and
+              not is_nil(p.pending_section_id) and
+              p.pending_section_id in ^section_ids and
+              p.pending_user_id == ^user_id
+          )
+
+        %{id: enrollment_id} ->
+          # Has enrollment - look for payments by both pending fields and enrollment_id
+          dynamic(
+            [p],
+            p.type != :invalidated and
+              ((not is_nil(p.pending_section_id) and p.pending_section_id in ^section_ids and
+                  p.pending_user_id == ^user_id) or
+                 (p.enrollment_id == ^enrollment_id and p.section_id in ^section_ids))
+          )
+      end
+
+    {count, _} =
+      from(p in Payment, where: ^where_condition)
+      |> Repo.update_all(
+        set: [type: :invalidated, invalidated_by_user_id: invalidated_by_user_id]
+      )
+
+    {:ok, count}
+  end
+
+  @doc """
   Fetches and filters payment records based on various parameters.
 
   This function retrieves payment records, optionally filtering them based on product, paging, sorting, and text search criteria.

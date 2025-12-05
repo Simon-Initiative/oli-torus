@@ -1028,6 +1028,168 @@ defmodule Oli.Delivery.PaywallTest do
     end
   end
 
+  describe "invalidate_payments_for_user_section/3" do
+    test "invalidates payment found by enrollment_id" do
+      section = insert(:section, %{type: :blueprint})
+      user = insert(:user)
+      admin = insert(:author)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      # Create a bypass payment (no pending fields)
+      payment =
+        insert(:payment,
+          section: section,
+          enrollment: enrollment,
+          type: :bypass
+        )
+
+      assert {:ok, 1} =
+               Paywall.invalidate_payments_for_user_section(user.id, section, admin.id)
+
+      # Verify the payment was invalidated
+      updated_payment = Repo.get(Payment, payment.id)
+      assert updated_payment.type == :invalidated
+      assert updated_payment.invalidated_by_user_id == admin.id
+    end
+
+    test "invalidates payment found by pending_section_id and pending_user_id" do
+      section = insert(:section, %{type: :blueprint})
+      user = insert(:user)
+      admin = insert(:author)
+
+      # Create a direct payment with pending fields but no enrollment
+      payment =
+        insert(:payment,
+          section: section,
+          pending_section_id: section.id,
+          pending_user_id: user.id,
+          enrollment: nil,
+          type: :direct
+        )
+
+      assert {:ok, 1} =
+               Paywall.invalidate_payments_for_user_section(user.id, section, admin.id)
+
+      updated_payment = Repo.get(Payment, payment.id)
+      assert updated_payment.type == :invalidated
+    end
+
+    test "invalidates multiple payments (both direct and bypass)" do
+      section = insert(:section, %{type: :blueprint})
+      user = insert(:user)
+      admin = insert(:author)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      # Create a direct payment (with pending fields)
+      direct_payment =
+        insert(:payment,
+          section: section,
+          enrollment: enrollment,
+          pending_section_id: section.id,
+          pending_user_id: user.id,
+          type: :direct
+        )
+
+      # Create a bypass payment (no pending fields)
+      bypass_payment =
+        insert(:payment,
+          section: section,
+          enrollment: enrollment,
+          type: :bypass
+        )
+
+      assert {:ok, 2} =
+               Paywall.invalidate_payments_for_user_section(user.id, section, admin.id)
+
+      assert Repo.get(Payment, direct_payment.id).type == :invalidated
+      assert Repo.get(Payment, bypass_payment.id).type == :invalidated
+    end
+
+    test "handles orphaned payments when user has both direct and bypass payments" do
+      section = insert(:section, %{type: :blueprint})
+      user = insert(:user)
+      admin = insert(:author)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      # Old direct payment with pending fields
+      direct_payment =
+        insert(:payment,
+          section: section,
+          enrollment: enrollment,
+          pending_section_id: section.id,
+          pending_user_id: user.id,
+          type: :direct
+        )
+
+      # Newer bypass payment (no pending fields)
+      bypass_payment =
+        insert(:payment,
+          section: section,
+          enrollment: enrollment,
+          type: :bypass
+        )
+
+      # Invalidate should find BOTH payments - both by enrollment_id and by pending fields
+      assert {:ok, count} =
+               Paywall.invalidate_payments_for_user_section(user.id, section, admin.id)
+
+      assert count >= 2
+
+      assert Repo.get(Payment, direct_payment.id).type == :invalidated
+      assert Repo.get(Payment, bypass_payment.id).type == :invalidated
+    end
+
+    test "does not invalidate already invalidated payments" do
+      section = insert(:section, %{type: :blueprint})
+      user = insert(:user)
+      admin = insert(:author)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      # Already invalidated payment
+      insert(:payment,
+        section: section,
+        enrollment: enrollment,
+        type: :invalidated
+      )
+
+      assert {:ok, 0} =
+               Paywall.invalidate_payments_for_user_section(user.id, section, admin.id)
+    end
+
+    test "returns 0 when no payments exist" do
+      section = insert(:section, %{type: :blueprint})
+      user = insert(:user)
+      admin = insert(:author)
+
+      assert {:ok, 0} =
+               Paywall.invalidate_payments_for_user_section(user.id, section, admin.id)
+    end
+
+    test "considers blueprint_id when finding payments" do
+      blueprint = insert(:section, %{type: :blueprint})
+      section = insert(:section, %{type: :enrollable, blueprint_id: blueprint.id})
+      user = insert(:user)
+      admin = insert(:author)
+      enrollment = insert(:enrollment, user: user, section: section)
+
+      # Payment on the blueprint (product)
+      payment =
+        insert(:payment,
+          section: blueprint,
+          enrollment: enrollment,
+          pending_section_id: blueprint.id,
+          pending_user_id: user.id,
+          type: :direct
+        )
+
+      # Should find payment even though it's on the blueprint
+      assert {:ok, 1} =
+               Paywall.invalidate_payments_for_user_section(user.id, section, admin.id)
+
+      assert Repo.get(Payment, payment.id).type == :invalidated
+    end
+  end
+
   describe "browse payments" do
     setup do
       product =

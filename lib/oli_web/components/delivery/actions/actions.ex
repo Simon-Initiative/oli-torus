@@ -190,15 +190,25 @@ defmodule OliWeb.Components.Delivery.Actions do
   end
 
   def handle_event("invalidate_payment", _params, socket) do
-    with {:ok, active_payment} <-
-           Paywall.get_active_payment_for(socket.assigns.enrollment.id, socket.assigns.section),
-         {:ok, _updated_payment} <-
-           Paywall.update_payment(active_payment, %{
-             type: :invalidated,
-             invalidated_by_user_id: socket.assigns.bypassed_by_user_id
-           }) do
-      {:noreply, assign(socket, has_payment: false)}
-    else
+    # Invalidate ALL payments for this user in this section
+    # This handles cases where the user has multiple payments (e.g., old direct payments
+    # and newer bypass payments) which could cause issues when trying to pay again
+    case Paywall.invalidate_payments_for_user_section(
+           socket.assigns.user.id,
+           socket.assigns.section,
+           socket.assigns.bypassed_by_user_id
+         ) do
+      {:ok, count} when count > 0 ->
+        {:noreply, assign(socket, has_payment: false)}
+
+      {:ok, 0} ->
+        send(
+          self(),
+          {:put_flash, :error, "No active payment found to invalidate."}
+        )
+
+        {:noreply, socket}
+
       _ ->
         send(
           self(),
