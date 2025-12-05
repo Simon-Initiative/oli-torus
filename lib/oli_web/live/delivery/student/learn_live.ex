@@ -2170,7 +2170,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         role={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
       >
         <div :if={@has_scheduled_resources?} class="h-[19px] mb-5">
-          <span class="dark:text-white text-sm font-bold">
+          <span class="text-Text-text-high text-sm font-bold leading-4">
             {"#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}"}
           </span>
         </div>
@@ -2383,7 +2383,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <button
       role={"resource #{@type} #{@numbering_index} details"}
       class={[
-        "w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5",
+        "w-full pl-[5px] pr-[7px] py-2.5 sm:rounded-lg justify-start items-start gap-5 flex sm:focus:bg-[#000000]/5 sm:hover:bg-[#000000]/5 sm:dark:focus:bg-[#FFFFFF]/5 sm:dark:hover:bg-[#FFFFFF]/5  border-b border-Border-border-default sm:border-b-0",
         if(@graded,
           do: "font-semibold hover:font-bold focus:font-bold",
           else: "font-normal hover:font-medium focus:font-medium"
@@ -2419,10 +2419,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="flex shrink items-center gap-3 w-full dark:text-white"
       >
         <div class={["flex flex-col gap-1 w-full", left_indentation(@numbering_level, @is_mobile)]}>
-          <div class="flex">
+          <div class="flex flex-col sm:flex-row">
             <span class={
               [
-                "text-left dark:text-white opacity-90 text-base",
+                "text-left text-Text-text-low-alpha text-base font-normal leading-6 opacity-90",
                 # Opacity is set if the item is visited, but not necessarily completed
                 if(@was_visited, do: "opacity-60")
               ]
@@ -2432,8 +2432,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
             <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
-          <div :if={@graded} role="due date and score" class="flex">
-            <span class="opacity-60 text-[13px] font-normal !font-normal opacity-60 dark:text-white">
+          <div :if={@graded} role="due date and score" class="flex flex-col sm:flex-row">
+            <span class="flex flex-col items-start sm:flex-row opacity-60 text-[13px] font-normal dark:text-white">
               <span>
                 Available: {get_available_date(
                   @available_date,
@@ -2441,7 +2441,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   "{WDshort} {Mshort} {D}, {YYYY}"
                 )}
               </span>
-              <span class="ml-6">
+              <span class="sm:ml-6">
                 {Utils.label_for_scheduling_type(@parent_scheduling_type)}{format_date(
                   @due_date,
                   @ctx,
@@ -2938,7 +2938,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div>
       <span
         id={"intro_content_module_#{@resource_id}"}
-        class="text-sm font-normal leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
+        class="text-Text-text-low text-sm sm:text-base font-normal leading-6 sm:leading-8 line-clamp-3 max-w-[760px] overflow-hidden"
         style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
       >
         {render_intro_content(@raw_content)}

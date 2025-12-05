@@ -411,8 +411,8 @@ defmodule OliWeb.Components.Delivery.Student do
     assigns = Map.put(assigns, :duration_minutes, parse_minutes(assigns.duration_minutes))
 
     ~H"""
-    <div :if={@duration_minutes} class="ml-auto items-center gap-1.5 flex">
-      <div :if={@graded} class="w-[22px] h-[22px] opacity-60 flex items-center justify-center">
+    <div :if={@duration_minutes} class="sm:ml-auto items-center gap-1.5 flex">
+      <div :if={@graded} class="w-4 h-4 sm:w-6 sm:h-6 opacity-60 flex items-center justify-center">
         <Icons.clock />
       </div>
       <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
