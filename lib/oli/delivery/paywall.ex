@@ -759,6 +759,10 @@ defmodule Oli.Delivery.Paywall do
         do: [section.id],
         else: [section.id, section.blueprint_id]
 
+    # Valid (non-invalidated) payment types - using explicit list for index usage
+    # Inequality predicates (type != :invalidated) prevent index usage
+    valid_types = [:direct, :deferred, :bypass]
+
     # Build the where condition based on whether enrollment exists
     # We need to handle this at the Elixir level because Ecto can't properly
     # handle nil structs in dynamic queries
@@ -768,7 +772,7 @@ defmodule Oli.Delivery.Paywall do
           # No enrollment - only look for payments by pending fields
           dynamic(
             [p],
-            p.type != :invalidated and
+            p.type in ^valid_types and
               not is_nil(p.pending_section_id) and
               p.pending_section_id in ^section_ids and
               p.pending_user_id == ^user_id
@@ -778,7 +782,7 @@ defmodule Oli.Delivery.Paywall do
           # Has enrollment - look for payments by both pending fields and enrollment_id
           dynamic(
             [p],
-            p.type != :invalidated and
+            p.type in ^valid_types and
               ((not is_nil(p.pending_section_id) and p.pending_section_id in ^section_ids and
                   p.pending_user_id == ^user_id) or
                  (p.enrollment_id == ^enrollment_id and p.section_id in ^section_ids))
