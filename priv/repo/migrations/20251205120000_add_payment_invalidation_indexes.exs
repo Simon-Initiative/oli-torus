@@ -18,12 +18,14 @@ defmodule Oli.Repo.Migrations.AddPaymentInvalidationIndexes do
     # Partial index excludes invalidated payments since they're never queried
     create index(:payments, [:type, :pending_section_id, :pending_user_id],
              where: "type != 'invalidated' AND pending_section_id IS NOT NULL",
-             name: :payments_pending_lookup_idx)
+             name: :payments_pending_lookup_idx
+           )
 
     # Index for finding payments by enrollment (used during invalidation)
     # Partial index excludes invalidated payments since they're never queried
     create index(:payments, [:type, :enrollment_id, :section_id],
              where: "type != 'invalidated' AND enrollment_id IS NOT NULL",
-             name: :payments_enrollment_lookup_idx)
+             name: :payments_enrollment_lookup_idx
+           )
   end
 end
