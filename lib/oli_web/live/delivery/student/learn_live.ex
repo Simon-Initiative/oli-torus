@@ -957,6 +957,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       |> assign(:selected_module, selected_module)
       |> assign(:unit_resource_id, unit_resource_id)
       |> assign(:page_metrics, page_metrics)
+      |> assign(:default_image, @default_image)
 
     ~H"""
     <div
@@ -1057,6 +1058,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             intro_video_viewed={@selected_module["resource_id"] in @viewed_intro_video_resource_ids}
             show_completed?={@show_completed?}
             has_scheduled_resources?={@has_scheduled_resources?}
+            is_mobile={true}
           />
         </div>
       </div>
@@ -1542,6 +1544,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 }
                 show_completed?={@show_completed?}
                 has_scheduled_resources?={@has_scheduled_resources?}
+                is_mobile={@is_mobile}
               />
             </div>
           </div>
@@ -2135,6 +2138,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_progress_per_resource_id, :map
   attr :show_completed?, :boolean, required: true
   attr :has_scheduled_resources?, :boolean, required: true
+  attr :is_mobile, :boolean, required: true
 
   def module_index(assigns) do
     assigns =
@@ -2225,6 +2229,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           completed={child["completed"]}
           show_completed?={@show_completed?}
           has_scheduled_resources?={@has_scheduled_resources?}
+          is_mobile={@is_mobile}
         />
       </div>
     </div>
@@ -2257,8 +2262,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :completed, :boolean
   attr :show_completed?, :boolean, required: true
   attr :has_scheduled_resources?, :boolean, required: true
+  attr :is_mobile, :boolean, required: true
 
   def index_item(%{type: "section"} = assigns) do
+    ## For mobile, the List of Content items in the gallery view are all aligned to the left side without reflecting section nesting.
+    ## This provides clear, readable lesson titles and seamless experience on small devices.
+    ## That is why we do not render the section per se, but rather the children of the section.
     assigns =
       Map.put(assigns, :section_attrs, %{
         "numbering" => %{"level" => assigns.numbering_level},
@@ -2275,7 +2284,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           @student_end_date_exceptions_per_resource_id,
           @section_attrs,
           @ctx
-        )
+        ) and !@is_mobile
       }
       role={"resource #{@type} #{@numbering_index} details"}
       class="w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-5 flex rounded-lg"
@@ -2299,7 +2308,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
       <div class="flex shrink items-center gap-3 w-full dark:text-white">
         <div class="flex flex-col gap-1 w-full">
-          <div class={["flex", left_indentation(@numbering_level)]}>
+          <div class={["flex", left_indentation(@numbering_level, @is_mobile)]}>
             <span class="opacity-90 dark:text-white text-base font-semibold">
               {"#{@title}"}
             </span>
@@ -2363,6 +2372,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         completed={child["completed"]}
         show_completed?={@show_completed?}
         has_scheduled_resources?={@has_scheduled_resources?}
+        is_mobile={@is_mobile}
       />
     </div>
     """
@@ -2408,7 +2418,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         id={"index_item_#{@numbering_index}_#{@resource_id}"}
         class="flex shrink items-center gap-3 w-full dark:text-white"
       >
-        <div class={["flex flex-col gap-1 w-full", left_indentation(@numbering_level)]}>
+        <div class={["flex flex-col gap-1 w-full", left_indentation(@numbering_level, @is_mobile)]}>
           <div class="flex">
             <span class={
               [
@@ -3634,9 +3644,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
-  defp left_indentation(numbering_level, view \\ :gallery)
+  _docp = """
+  For mobile, the List of Content items in the gallery view are all aligned to the left side without reflecting section nesting.
+  This provides clear, readable lesson titles and seamless experience on small devices.
+  """
 
-  defp left_indentation(numbering_level, view) do
+  defp left_indentation(numbering_level, is_mobile, view \\ :gallery)
+
+  defp left_indentation(_numbering_level, true = _is_mobile, :gallery), do: ""
+
+  defp left_indentation(numbering_level, _is_mobile, view) do
     level_adjustment = if view == :outline, do: 1, else: 0
 
     case numbering_level + level_adjustment do
