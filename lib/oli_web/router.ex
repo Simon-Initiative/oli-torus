@@ -1636,6 +1636,7 @@ defmodule OliWeb.Router do
     )
 
     # Section Management (+ Open and Free)
+    get("/sections/export", SectionsController, :export_csv)
     live("/sections", Sections.SectionsView)
     live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)
 
