@@ -42,7 +42,7 @@ janus-mcq {
       max-width: none;
     }
     label:hover,
-    input:focus + label {
+    label:has(input:focus) {
       background-color: var(--black5_a);
       outline: solid 10px var(--black5_a);
     }
@@ -62,27 +62,27 @@ janus-mcq {
       transform: translateY(-50%);
     }
 
-    input[type='radio'] + label:before {
+    label:has(input[type='radio']):before {
       border-radius: 50%;
     }
-    input:checked + label:before {
+    label:has(input:checked):before {
       box-shadow: inset 0 0 0 20px var(--blue100);
     }
-    input:checked:focus + label:before {
+    label:has(input:checked:focus):before {
       box-shadow: inset 0 0 0 20px var(--blue100), 0 0 0 4px rgba(0, 151, 167, 0.4);
     }
-    input:focus + label:before {
+    label:has(input:focus):before {
       box-shadow: inset 0 0 0 2px var(--blue100), 0 0 0 4px rgba(0, 151, 167, 0.4);
     }
-    input[type='checkbox']:checked + label:after {
+    label:has(input[type='checkbox']:checked):after {
       transform: rotate(45deg) scale(1) translate(-50%, -50%);
       opacity: 1;
     }
-    input[type='radio']:checked + label:after {
+    label:has(input[type='radio']:checked):after {
       transform: scale(1) translate(-50%, -50%);
       opacity: 1;
     }
-    input[type='radio'] + label:after {
+    label:has(input[type='radio']):after {
       height: 6px;
       width: 6px;
       content: '';
@@ -99,7 +99,7 @@ janus-mcq {
       border: 2px solid #ffffff;
       box-sizing: border-box;
     }
-    input[type='checkbox'] + label:after {
+    label:has(input[type='checkbox']):after {
       height: 11px;
       width: 6px;
       content: '';
@@ -118,7 +118,7 @@ janus-mcq {
     }
     //align checkbox to top-left of text
     label:before,
-    input[type='checkbox'] + label:after {
+    label:has(input[type='checkbox']):after {
       top: 0.75rem;
     }
 

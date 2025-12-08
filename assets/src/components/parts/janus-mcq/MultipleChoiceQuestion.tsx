@@ -56,6 +56,8 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   index,
   configureMode,
   verticalGap = 0,
+  onNavigateToItem,
+  registerInputRef,
 }) => {
   /* console.log('MCQItem RENDERED'); */
 
@@ -81,6 +83,34 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   }
 
   const textValue = getNodeText(nodes);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Create aria-label for checkboxes that includes position information
+  // This ensures screen readers announce: "{text}, {checked/unchecked}, checkbox, group, {position} of {total}"
+  const getAriaLabel = () => {
+    if (!multipleSelection) {
+      return undefined; // Radio buttons don't need explicit aria-label, they work naturally
+    }
+    const checkedState = selected ? 'checked' : 'unchecked';
+    const position = `${index + 1} of ${totalItems}`;
+    return `${textValue}, ${checkedState}, checkbox, group, ${position}`;
+  };
+
+  // Callback ref to register input with parent for keyboard navigation (for checkboxes only)
+  const setInputRef = React.useCallback(
+    (element: HTMLInputElement | null) => {
+      // Store ref for local use (e.g., Space key handling)
+      (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = element;
+      // Register with parent for navigation (only for checkboxes)
+      if (multipleSelection && registerInputRef) {
+        registerInputRef(index, element);
+      }
+    },
+    [registerInputRef, index, multipleSelection],
+  );
+
+  // Use callback ref for checkboxes, regular ref for radio buttons
+  const inputRefCallback = multipleSelection ? setInputRef : inputRef;
 
   const handleChanged = (e: { target: { checked: any } }) => {
     const selection = {
@@ -90,6 +120,41 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
     };
     if (onSelected) {
       onSelected(selection);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!multipleSelection || disabled) {
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        e.stopPropagation();
+        if (onNavigateToItem && index < totalItems - 1) {
+          onNavigateToItem(index + 1);
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        e.stopPropagation();
+        if (onNavigateToItem && index > 0) {
+          onNavigateToItem(index - 1);
+        }
+        break;
+      case ' ':
+        // Space key - prevent default page scroll, but allow normal checkbox toggle
+        e.preventDefault();
+        e.stopPropagation();
+        // Toggle the checkbox
+        if (inputRef.current) {
+          inputRef.current.checked = !inputRef.current.checked;
+          handleChanged({ target: { checked: inputRef.current.checked } });
+        }
+        break;
+      default:
+        break;
     }
   };
 
@@ -158,17 +223,24 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
             </button>
           </>
         )}
-        <input
-          style={{ position: 'absolute', marginTop: 5 }}
-          name={groupId}
-          id={itemId}
-          type={multipleSelection ? 'checkbox' : 'radio'}
-          value={val}
-          disabled={disabled}
-          checked={selected}
-          onChange={handleChanged}
-        />
         <label htmlFor={itemId}>
+          <input
+            ref={inputRefCallback}
+            style={{ position: 'absolute', marginTop: 5 }}
+            name={groupId}
+            id={itemId}
+            type={multipleSelection ? 'checkbox' : 'radio'}
+            value={val}
+            disabled={disabled}
+            checked={selected}
+            onChange={handleChanged}
+            onKeyDown={handleKeyDown}
+            tabIndex={disabled ? -1 : 0}
+            aria-label={getAriaLabel()}
+            aria-checked={multipleSelection ? (selected ? 'true' : 'false') : undefined}
+            aria-posinset={multipleSelection ? index + 1 : undefined}
+            aria-setsize={multipleSelection ? totalItems : undefined}
+          />
           <MCQItemContent itemId={itemId} nodes={nodes} state={state} />
         </label>
       </div>
@@ -268,7 +340,15 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     const dRandomized = parseBoolean(pModel.randomize);
     setRandomized(dRandomized);
 
-    const dMultipleSelection = parseBoolean(pModel.multipleSelection);
+    // Handle multipleSelection: explicitly check for boolean false, or parse if truthy, default to false
+    let dMultipleSelection = false;
+    if (pModel.multipleSelection !== undefined && pModel.multipleSelection !== null) {
+      if (typeof pModel.multipleSelection === 'boolean') {
+        dMultipleSelection = pModel.multipleSelection;
+      } else {
+        dMultipleSelection = parseBoolean(pModel.multipleSelection);
+      }
+    }
     setMultipleSelection(dMultipleSelection);
 
     // we need to set up a new list so that we can shuffle while maintaining correct index/values
@@ -412,7 +492,15 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     setReady(true);
   }, []);
 
-  const { width, customCssClass, layoutType, height, overrideHeight = false, verticalGap } = model;
+  const {
+    width,
+    customCssClass,
+    layoutType,
+    height,
+    overrideHeight = false,
+    verticalGap,
+    ariaLabelledBy,
+  } = model;
 
   useEffect(() => {
     let pModel;
@@ -884,31 +972,80 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     columns = 4;
   }
 
+  const groupLabelId = `mcq-group-label-${id}`;
+  const groupLabelText = ariaLabelledBy?.trim() || 'Multiple choice, group';
+  const groupLabel = multipleSelection
+    ? `${groupLabelText}, group, ${options.length} items`
+    : groupLabelText;
+
+  // Create refs for all checkbox inputs to enable keyboard navigation
+  const inputRefs = React.useRef<{ [key: number]: HTMLInputElement | null }>({});
+
+  const navigateToItem = React.useCallback(
+    (targetIndex: number) => {
+      let input = inputRefs.current[targetIndex];
+      // Fallback: if ref isn't available, try to find it by ID
+      if (!input) {
+        const targetItemId = `${id}-item-${targetIndex}`;
+        input = document.getElementById(targetItemId) as HTMLInputElement;
+      }
+      if (input && !input.disabled) {
+        // Use requestAnimationFrame to ensure focus happens after DOM updates
+        requestAnimationFrame(() => {
+          input?.focus();
+        });
+      }
+    },
+    [id],
+  );
+
+  // Callback to register input refs from child components
+  const registerInputRef = React.useCallback((index: number, ref: HTMLInputElement | null) => {
+    inputRefs.current[index] = ref;
+  }, []);
+
   return ready ? (
-    <div data-janus-type={tagName} style={styles} className={`mcq-input mcq-${layoutType}`}>
-      {options?.map((item, index) => (
-        <MCQItem
-          idx={index}
-          key={`${id}-item-${index}`}
-          title={item.title}
-          totalItems={options.length}
-          layoutType={layoutType}
-          itemId={`${id}-item-${index}`}
-          groupId={`mcq-${id}`}
-          selected={isItemSelected(item)}
-          val={item.value}
-          onSelected={handleItemSelection}
-          state={state}
-          {...item}
-          x={0}
-          y={0}
-          overrideHeight={overrideHeight}
-          disabled={!enabled}
-          multipleSelection={multipleSelection}
-          columns={columns}
-          verticalGap={verticalGap}
-        />
-      ))}
+    <div
+      data-janus-type={tagName}
+      style={styles}
+      className={`mcq-input mcq-${layoutType}`}
+      role="group"
+      aria-labelledby={groupLabelId}
+      aria-live="off"
+      aria-atomic="false"
+    >
+      <span id={groupLabelId} className="sr-only">
+        {groupLabel}
+      </span>
+      {options?.map((item, index) => {
+        const { index: _itemIndex, ...itemWithoutIndex } = item;
+        return (
+          <MCQItem
+            idx={index}
+            index={index}
+            key={`${id}-item-${index}`}
+            title={item.title}
+            totalItems={options.length}
+            layoutType={layoutType}
+            itemId={`${id}-item-${index}`}
+            groupId={`mcq-${id}`}
+            selected={isItemSelected(item)}
+            val={item.value}
+            onSelected={handleItemSelection}
+            state={state}
+            {...itemWithoutIndex}
+            x={0}
+            y={0}
+            overrideHeight={overrideHeight}
+            disabled={!enabled}
+            multipleSelection={multipleSelection}
+            columns={columns}
+            verticalGap={verticalGap}
+            onNavigateToItem={multipleSelection ? navigateToItem : undefined}
+            registerInputRef={multipleSelection ? registerInputRef : undefined}
+          />
+        );
+      })}
     </div>
   ) : null;
 };
