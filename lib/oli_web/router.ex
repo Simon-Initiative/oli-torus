@@ -438,6 +438,7 @@ defmodule OliWeb.Router do
 
     live("/projects", Projects.ProjectsLive)
     get("/projects/export", ProjectsController, :export_csv)
+    get("/products/export", ProductsController, :export_csv)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
@@ -1642,6 +1643,7 @@ defmodule OliWeb.Router do
     )
 
     # Section Management (+ Open and Free)
+    get("/sections/export", SectionsController, :export_csv)
     live("/sections", Sections.SectionsView)
     live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)
 

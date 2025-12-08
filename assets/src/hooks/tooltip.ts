@@ -111,3 +111,111 @@ export const AutoHideTooltip = {
     });
   },
 };
+
+// Popover Hook
+
+// Provides popover functionality with click-to-open interaction and click-outside-to-close behavior.
+// Shows the popover when the trigger element is clicked/tapped and dismisses it when clicking outside
+// the popover content or when clicking on a dismissal element.
+
+// Usage:
+
+// 1. Attach the Hook to the Popover Element:
+
+//    ```html
+//    <div id="popover" phx-hook="Popover" data-trigger-id="info-icon" class="invisible absolute ...">
+//      <!-- Popover content -->
+//    </div>
+//    ```
+
+// 2. Add the Trigger Element:
+
+//    ```html
+//    <span id="info-icon" class="cursor-pointer">
+//      <Icons.info />
+//    </span>
+//    ```
+
+// 3. Required Data Attributes:
+
+//    - `data-trigger-id`: The ID of the element that will trigger the popover display when clicked.
+
+// 4. Dismissing the Popover:
+
+//    - Clicking outside the popover content will dismiss it
+//    - Clicking on any element with `data-dismiss-tooltip` attribute will dismiss it
+//    - Example: `<button data-dismiss-tooltip>Learn more</button>`
+
+export const Popover = {
+  mounted() {
+    const triggerId = this.el.dataset['triggerId'];
+    const triggerElement = triggerId ? document.getElementById(triggerId) : null;
+
+    if (!triggerElement) {
+      console.error(`Popover: trigger element with id "${triggerId}" not found`);
+      return;
+    }
+
+    const updatePosition = () => {
+      const triggerRect = triggerElement.getBoundingClientRect();
+      const topPosition = triggerRect.top - this.el.offsetHeight - 8;
+      this.el.style.setProperty('--trigger-top', `${topPosition}px`);
+    };
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        !this.el.contains(event.target as Node) &&
+        !triggerElement.contains(event.target as Node)
+      ) {
+        hide();
+      }
+    };
+
+    const show = () => {
+      updatePosition();
+      this.el.classList.remove('invisible', 'opacity-0');
+      // Register the outside click handler after showing
+      setTimeout(() => document.addEventListener('click', handleOutsideClick), 0);
+    };
+
+    const hide = () => {
+      this.el.classList.add('invisible', 'opacity-0');
+      // Remove the outside click handler when hiding
+      document.removeEventListener('click', handleOutsideClick);
+    };
+
+    triggerElement.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (this.el.classList.contains('invisible')) {
+        show();
+      } else {
+        hide();
+      }
+    });
+
+    this.el.addEventListener('click', (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.hasAttribute('data-dismiss-tooltip') || target.closest('[data-dismiss-tooltip]')) {
+        hide();
+      }
+    });
+
+    const updateOnScrollOrResize = () => {
+      if (!this.el.classList.contains('invisible')) updatePosition();
+    };
+
+    window.addEventListener('scroll', updateOnScrollOrResize, true);
+    window.addEventListener('resize', updateOnScrollOrResize);
+
+    this.cleanup = () => {
+      window.removeEventListener('scroll', updateOnScrollOrResize, true);
+      window.removeEventListener('resize', updateOnScrollOrResize);
+      // Clean up outside click handler if still registered
+      document.removeEventListener('click', handleOutsideClick);
+    };
+  },
+
+  destroyed() {
+    if (this.cleanup) this.cleanup();
+  },
+};

@@ -1,4 +1,5 @@
 import { Locator, Page } from '@playwright/test';
+import { Utils } from './Utils';
 
 export class Table {
   private readonly header: Locator;
@@ -7,6 +8,7 @@ export class Table {
   private readonly td: Locator;
   private readonly th: Locator;
   private readonly caption: Locator;
+  private readonly utils: Utils;
 
   constructor(page: Page) {
     this.header = page.locator('thead');
@@ -15,6 +17,7 @@ export class Table {
     this.td = page.locator('td');
     this.th = page.locator('th');
     this.caption = page.locator('p span[data-slate-placeholder]:has-text("Caption (optional)")');
+    this.utils = new Utils(page);
   }
 
   async getColumnTitles() {
@@ -53,7 +56,7 @@ export class Table {
   }
 
   async fillCaptionTable(text: string) {
-    await this.caption.fill(text);
+    await this.utils.writeWithDelay(this.caption, text);
   }
 
   async getCellLocator(row: number, column: number) {

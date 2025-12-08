@@ -52,12 +52,12 @@ export class TestData {
   readonly preconditions = {
     projectNames: [
       'TQA-10-automation',
-      'TQA-11-Automation',
+      'TQA-11-automation',
       'TQA-12-automation',
       'TQA-13-automation',
-      'TQA-14-Automation',
-      'TQA-15-Automation',
-      'TQA-17-Automation',
+      'TQA-14-automation',
+      'TQA-15-automation',
+      'TQA-17-automation',
     ],
     multiMediaFilesUpload: [
       { projectName: 'TQA-12-automation', fileName: 'img-mock-05-16-2025.jpg', type: 'image' },
@@ -65,5 +65,11 @@ export class TestData {
       { projectName: 'TQA-13-automation', fileName: 'audio-test-01.mp3', type: 'audio' },
       { projectName: 'TQA-13-automation', fileName: 'video-test-01.mp4', type: 'video' },
     ],
+  };
+
+  readonly bibliography = {
+    projectName: 'TQA-13-automation',
+    bibtext:
+      '@book{Newton2015Philosophiae,address = {Garsington, England},author = {Newton, Isaac},year = {2015},month = {5},publisher = {Benediction Classics},title = {Philosophiae {Naturalis} {Principia} {Mathematica} ({Latin},1687)},}',
   };
 }

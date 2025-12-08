@@ -7,7 +7,7 @@ export class AdministrationTask {
   private readonly menu: MenuDropdownCO;
   private readonly adminP: AdminDashboardPO;
 
-  constructor(private readonly page: Page) {
+  constructor(page: Page) {
     this.menu = new MenuDropdownCO(page);
     this.adminP = new AdminDashboardPO(page);
   }

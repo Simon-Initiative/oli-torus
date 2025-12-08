@@ -5,8 +5,6 @@ import { TYPE_LANGUAGE, TypeLanguage } from '@pom/types/types-language';
 export class SelectForeignLanguageCO {
   private readonly dialog: Locator;
   private readonly dialogTitle: Locator;
-  private readonly closeButton: Locator;
-  private readonly cancelButton: Locator;
   private readonly saveButton: Locator;
   private readonly languageCombobox: Locator;
   private readonly changeLanguageButton: Locator;
@@ -14,8 +12,6 @@ export class SelectForeignLanguageCO {
   constructor(page: Page) {
     this.dialog = page.getByRole('dialog');
     this.dialogTitle = this.dialog.locator('#exampleModalLabel');
-    this.closeButton = this.dialog.getByRole('button', { name: 'Close' });
-    this.cancelButton = this.dialog.getByRole('button', { name: 'Cancel' });
     this.saveButton = this.dialog.getByRole('button', { name: 'Save' });
     this.languageCombobox = this.dialog.getByRole('combobox');
     this.changeLanguageButton = page.getByRole('button', { name: 'Change Language' });
