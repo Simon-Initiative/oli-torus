@@ -39,7 +39,8 @@ export async function seedScenarioFromFile(
   });
 
   if (!response.ok()) {
-    throw new Error(`Scenario seed request failed (${response.status()}): ${await response.text()}`);
+    const body = await response.text();
+    throw new Error(`Scenario seed request failed (${response.status()}): ${body}`);
   }
 
   const payload = (await response.json()) as SeedScenarioResponse;

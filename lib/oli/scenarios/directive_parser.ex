@@ -307,14 +307,15 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"enroll" => enroll_data}) do
     # Validate attributes
-    allowed_attrs = ["user", "section", "role"]
+    allowed_attrs = ["user", "section", "role", "email"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, enroll_data, "enroll") do
       :ok ->
         %EnrollDirective{
           user: enroll_data["user"],
           section: enroll_data["section"],
-          role: parse_enrollment_role(enroll_data["role"])
+          role: parse_enrollment_role(enroll_data["role"]),
+          email: enroll_data["email"]
         }
 
       {:error, msg} ->
@@ -425,13 +426,14 @@ defmodule Oli.Scenarios.DirectiveParser do
   end
 
   defp parse_directive(%{"collaborator" => collab_data}) do
-    allowed_attrs = ["user", "project"]
+    allowed_attrs = ["user", "project", "email"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, collab_data, "collaborator") do
       :ok ->
         %CollaboratorDirective{
           user: collab_data["user"],
-          project: collab_data["project"]
+          project: collab_data["project"],
+          email: collab_data["email"]
         }
 
       {:error, msg} ->

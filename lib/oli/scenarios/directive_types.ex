@@ -65,7 +65,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
 
   defmodule EnrollDirective do
     @moduledoc "Enrolls users in sections"
-    defstruct [:user, :section, :role]
+    defstruct [:user, :section, :role, :email]
   end
 
   defmodule InstitutionDirective do
@@ -190,8 +190,9 @@ defmodule Oli.Scenarios.DirectiveTypes do
     Adds an existing author as a collaborator to an existing project.
     user: scenario name of the author
     project: scenario name of the project
+    email: optional explicit email to resolve the author
     """
-    defstruct [:user, :project]
+    defstruct [:user, :project, :email]
   end
 
   defmodule MediaDirective do

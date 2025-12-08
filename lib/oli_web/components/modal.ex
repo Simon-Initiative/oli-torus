@@ -53,7 +53,7 @@ defmodule OliWeb.Components.Modal do
       id={@id}
       phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
-      class="relative z-[2000] hidden"
+      class={["relative z-[2000]", @show && "block", !@show && "hidden"]}
     >
       <div
         id={"#{@id}-bg"}
@@ -76,7 +76,11 @@ defmodule OliWeb.Components.Modal do
               phx-window-keydown={hide_modal(@on_cancel, @id)}
               phx-key="escape"
               phx-click-away={hide_modal(@on_cancel, @id)}
-              class="hidden relative bg-white dark:bg-body-dark shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
+              class={[
+                "relative bg-white dark:bg-body-dark shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition",
+                @show && "block",
+                !@show && "hidden"
+              ]}
             >
               <!-- Modal header -->
               <div class={@header_class}>

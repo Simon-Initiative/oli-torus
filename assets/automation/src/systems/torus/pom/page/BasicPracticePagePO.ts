@@ -5,6 +5,7 @@ import { TYPE_ACTIVITY, TypeActivity } from '@pom/types/type-activity';
 import { TypeToolbar } from '@pom/types/type-toolbar';
 import { PagePreviewPO } from './PagePreviewPO';
 import { Verifier } from '@core/verify/Verifier';
+import { step } from '@core/decoration/step';
 
 export class BasicPracticePagePO {
   private readonly pageTitle: Locator;
@@ -15,6 +16,7 @@ export class BasicPracticePagePO {
   private readonly chooseImageButton: Locator;
   private readonly deleteButton: Locator;
   private readonly resourceChoicesActivities: Locator;
+  private readonly resourceChoicesNonActivities: Locator;
   private readonly previewButton: Locator;
   private readonly captionAudio: Locator;
   private readonly figure: Locator;
@@ -34,6 +36,7 @@ export class BasicPracticePagePO {
       .locator('[id^="resource-editor-"]')
       .getByRole('button', { name: 'delete' });
     this.resourceChoicesActivities = page.locator('.resource-choices.activities');
+    this.resourceChoicesNonActivities = page.locator('.resource-choices.non-activities');
     this.previewButton = page.locator('div.TitleBar button:has-text("Preview")');
     this.captionAudio = page.getByRole('paragraph').filter({ hasText: 'Caption (optional)' });
     this.figure = this.page.getByRole('figure', { name: 'Figure Title' });
@@ -63,14 +66,65 @@ export class BasicPracticePagePO {
   }
 
   async clickInsertButtonIcon() {
-    await this.utils.forceClick(this.insertButtonIcon, this.resourceChoicesActivities);
+    const menu = this.resourceChoicesActivities;
+
+    // If already open, skip extra clicks
+    if (await menu.isVisible().catch(() => false)) return;
+
+    await Verifier.expectIsVisible(this.insertButtonIcon);
+
+    for (let i = 0; i < 4; i++) {
+      await this.insertButtonIcon.click({ force: true });
+
+      const appeared = await menu
+        .waitFor({ state: 'visible', timeout: 1200 })
+        .then(() => true)
+        .catch(() => false);
+
+      if (appeared) return;
+
+      // Try focusing the editor once to help the menu mount
+      if (i === 1) {
+        try {
+          await this.clickParagraph();
+        } catch (_) {
+          // ignore and retry
+        }
+      }
+
+      await this.page.waitForTimeout(150);
+    }
+
+    // Last resort: ensure it's in view and assert
+    await this.insertButtonIcon.scrollIntoViewIfNeeded();
+    await this.insertButtonIcon.click({ force: true });
+    await Verifier.expectIsVisible(menu, 'Insert content menu should be visible');
   }
 
+  @step('Select activity: {activityName}')
   async selectActivity(activityName: TypeActivity) {
     const label = TYPE_ACTIVITY[activityName].type;
-    const button = this.page.getByRole('button', { name: label }).first();
+
+    let menu: Locator;
+    let requiresVerification = true;
+    if (['ab_test', 'alt', 'group', 'survey', 'bank', 'report', 'paragraph'].includes(activityName)) {
+      menu = this.resourceChoicesNonActivities;
+      requiresVerification = false;
+    } else {
+      menu = this.resourceChoicesActivities;
+    }
+
+    await Verifier.expectIsVisible(menu, 'Insert content menu should be open');
+
+    const button = menu.getByRole('button', { name: label }).first();
+
     const confirmation = this.page.getByText(label, { exact: true });
-    await this.utils.forceClick(button, confirmation);
+
+    if (requiresVerification) {
+      await this.utils.forceClick(button, confirmation);
+    } else {
+      await button.click();
+    }
   }
 
   async fillParagraph(text: string, index = 0) {

@@ -13,7 +13,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
         loading?: true,
         tools: [],
         activities: [],
-        test_env?: test_env?()
+        test_env?: test_env?(),
+        show_modal?: false
       )
       |> reset_modal()
 
@@ -50,9 +51,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
        activities: activities,
        initial_selected_item_ids: selected_activity_ids,
        current_selected_item_ids: selected_activity_ids,
-       project_id: project_id
+       project_id: project_id,
+       show_modal?: true
      )
-     |> reset_modal()}
+     |> reset_modal(show_modal?: true)}
   end
 
   def handle_event("clear_search", _, socket) do
@@ -77,7 +79,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
   end
 
   def handle_event("reset_modal", _, socket) do
-    {:noreply, reset_modal(socket)}
+    {:noreply, reset_modal(socket, show_modal?: false)}
   end
 
   def handle_event("toggle_tab", %{"tab" => tab}, socket) do
@@ -135,7 +137,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
       :ok ->
         send(self(), {:flash_message, {:info, "Activities and tools updated successfully."}})
         send(self(), {:refresh_tools_and_activities})
-        {:noreply, reset_modal(socket)}
+        {:noreply, reset_modal(socket, show_modal?: false)}
 
       {:error, message} ->
         send(self(), {:flash_message, {:error, message}})
@@ -146,7 +148,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
   def render(%{loading?: true} = assigns) do
     ~H"""
     <div id={@id}>
-      <Modal.modal id={@id <> "-modal"} show={false} class="w-auto min-w-[75%]">
+      <Modal.modal id={@id <> "-modal"} show={@show_modal?} class="w-auto min-w-[75%]">
         <:title>Add Advanced Activities & External Tools</:title>
         <div>
           <Common.loading_spinner />
@@ -172,7 +174,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
     <div id={@id}>
       <Modal.modal
         id={@id <> "-modal"}
-        show={true}
+        show={@show_modal?}
         class="!w-[75%] h-[90vh]"
         on_cancel={JS.push("reset_modal", target: @myself)}
         header_class="flex items-center justify-between p-4 border-b border-[#CED1D9] dark:border-[#3B3740]"
@@ -504,7 +506,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
     end
   end
 
-  defp reset_modal(socket) do
+  defp reset_modal(socket, opts \\ []) do
+    show_modal? = Keyword.get(opts, :show_modal?, Map.get(socket.assigns, :show_modal?, false))
+
     assign(socket,
       pending_changes: %{
         activities_to_add: [],
@@ -514,7 +518,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
         has_changes: false
       },
       active_tab: "activities",
-      search_term: ""
+      search_term: "",
+      show_modal?: show_modal?
     )
   end
 

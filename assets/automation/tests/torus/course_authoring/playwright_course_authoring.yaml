@@ -1,0 +1,169 @@
+# Seeds Playwright course authoring data.
+# Parameters (via /test/scenario-yaml or mix task):
+#   RUN_ID      - optional suffix to make project names unique (defaults to "")
+#   MEDIA_DIR   - absolute path to media files (defaults to tests/resources/media_files)
+
+
+# Projects required by course_authoring.spec.ts
+- project:
+    name: "TQA-10-automation${RUN_ID}"
+    title: "TQA-10-automation${RUN_ID}"
+    visibility: global
+    root:
+      children:
+        - page: "Page 1"
+
+- project:
+    name: "TQA-11-automation${RUN_ID}"
+    title: "TQA-11-automation${RUN_ID}"
+    visibility: global
+    root:
+      children:
+        - page: "Page 1"
+
+- project:
+    name: "TQA-12-automation${RUN_ID}"
+    title: "TQA-12-automation${RUN_ID}"
+    visibility: global
+    root:
+      children:
+        - page: "Page 1"
+
+- project:
+    name: "TQA-13-automation${RUN_ID}"
+    title: "TQA-13-automation${RUN_ID}"
+    visibility: global
+    root:
+      children:
+        - page: "Page 1"
+
+- project:
+    name: "TQA-14-automation${RUN_ID}"
+    title: "TQA-14-automation${RUN_ID}"
+    visibility: global
+    root:
+      children:
+        - page: "Page 1"
+
+- project:
+    name: "TQA-15-automation${RUN_ID}"
+    title: "TQA-15-automation${RUN_ID}"
+    visibility: global
+    root:
+      children:
+        - page: "Page 1"
+
+- project:
+    name: "TQA-17-automation${RUN_ID}"
+    title: "TQA-17-automation${RUN_ID}"
+    visibility: global
+    root:
+      children:
+        - page: "Page 1"
+
+- project:
+    name: "TQA-19-automation${RUN_ID}"
+    title: "TQA-19-automation${RUN_ID}"
+    visibility: global
+    root:
+      children:
+        - page: "Page 1"
+        - page: "New Page"
+        - page: "New Assessment"
+        - page: "New Adaptive Page"
+
+# Publish all projects
+- publish:
+    to: "TQA-10-automation${RUN_ID}"
+- publish:
+    to: "TQA-11-automation${RUN_ID}"
+- publish:
+    to: "TQA-12-automation${RUN_ID}"
+- publish:
+    to: "TQA-13-automation${RUN_ID}"
+- publish:
+    to: "TQA-14-automation${RUN_ID}"
+- publish:
+    to: "TQA-15-automation${RUN_ID}"
+- publish:
+    to: "TQA-17-automation${RUN_ID}"
+- publish:
+    to: "TQA-19-automation${RUN_ID}"
+
+# Grant collaborator access to Playwright author/admin users created in playwright_seed.yaml
+- collaborator:
+    user: "playwright_author"
+    email: "author@example.com"
+    project: "TQA-10-automation${RUN_ID}"
+- collaborator:
+    user: "playwright_author"
+    email: "author@example.com"
+    project: "TQA-11-automation${RUN_ID}"
+- collaborator:
+    user: "playwright_author"
+    email: "author@example.com"
+    project: "TQA-12-automation${RUN_ID}"
+- collaborator:
+    user: "playwright_author"
+    email: "author@example.com"
+    project: "TQA-13-automation${RUN_ID}"
+- collaborator:
+    user: "playwright_author"
+    email: "author@example.com"
+    project: "TQA-14-automation${RUN_ID}"
+- collaborator:
+    user: "playwright_author"
+    email: "author@example.com"
+    project: "TQA-15-automation${RUN_ID}"
+- collaborator:
+    user: "playwright_author"
+    email: "author@example.com"
+    project: "TQA-17-automation${RUN_ID}"
+- collaborator:
+    user: "playwright_author"
+    email: "author@example.com"
+    project: "TQA-19-automation${RUN_ID}"
+
+# Media uploads
+- media:
+    project: "TQA-12-automation${RUN_ID}"
+    path: "${MEDIA_DIR}/img-mock-05-16-2025.jpg"
+    mime: "image/jpeg"
+
+- media:
+    project: "TQA-13-automation${RUN_ID}"
+    path: "${MEDIA_DIR}/img-mock-05-16-2025.jpg"
+    mime: "image/jpeg"
+
+- media:
+    project: "TQA-13-automation${RUN_ID}"
+    path: "${MEDIA_DIR}/audio-test-01.mp3"
+    mime: "audio/mpeg"
+
+- media:
+    project: "TQA-13-automation${RUN_ID}"
+    path: "${MEDIA_DIR}/video-test-01.mp4"
+    mime: "video/mp4"
+
+# Bibliography
+- bibliography:
+    project: "TQA-13-automation${RUN_ID}"
+    entry: "@book{Newton2015Philosophiae,address = {Garsington, England},author = {Newton, Isaac},year = {2015},month = {5},publisher = {Benediction Classics},title = {Philosophiae {Naturalis} {Principia} {Mathematica} ({Latin},1687)},}"
+
+# Section + enrollments for TQA-19
+- section:
+    name: "tqa19_section${RUN_ID}"
+    title: "TQA-19 Section ${RUN_ID}"
+    from: "TQA-19-automation${RUN_ID}"
+
+- enroll:
+    user: "playwright_instructor"
+    email: "instructor@example.com"
+    section: "tqa19_section${RUN_ID}"
+    role: instructor
+
+- enroll:
+    user: "playwright_student"
+    email: "student@example.com"
+    section: "tqa19_section${RUN_ID}"
+    role: student

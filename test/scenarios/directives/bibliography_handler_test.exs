@@ -2,6 +2,7 @@ defmodule Oli.Scenarios.Directives.BibliographyHandlerTest do
   use Oli.DataCase, async: true
 
   import Oli.Factory
+  alias Oli.Authoring.Course
 
   alias Oli.Scenarios.Directives.BibliographyHandler
   alias Oli.Scenarios.DirectiveTypes.{BibliographyDirective, ExecutionState}
@@ -21,19 +22,17 @@ defmodule Oli.Scenarios.Directives.BibliographyHandlerTest do
 
   test "adds bibliography entry" do
     author = insert(:author)
-    project = insert(:project, authors: [author])
+    {:ok, %{project: project}} = Course.create_project("bib test", author)
 
     state = %ExecutionState{
       current_author: author,
       projects: %{"proj" => built_project(project)}
     }
 
-    assert {:error, msg} =
+    assert {:ok, _} =
              BibliographyHandler.handle(
                %BibliographyDirective{project: "proj", entry: "@book{key,title={Hi}}"},
                state
              )
-
-    assert msg =~ ":not_found"
   end
 end

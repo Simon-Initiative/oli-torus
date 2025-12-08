@@ -15,7 +15,14 @@ defmodule Oli.Scenarios.Directives.BibliographyHandler do
 
       author = state.current_author || raise "current_author missing from execution state"
 
-      case BibEntryEditor.create(built_project.project.slug, author, %{content: entry, title: entry}) do
+      attrs = %{
+        "title" => entry,
+        "author_id" => author.id,
+        # store raw entry as-is; API wraps JSON under data
+        "content" => %{data: %{"bibtex" => entry}}
+      }
+
+      case BibEntryEditor.create(built_project.project.slug, author, attrs) do
         {:ok, _rev} ->
           {:ok, state}
 

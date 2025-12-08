@@ -111,6 +111,18 @@ export class CurriculumTask {
     }
   }
 
+  @step('Create and enter a unit')
+  async createAndEnterUnit(name: string) {
+    await this.addPage('unit');
+    await this.curriculum.clickEditUnitLink(name);
+  }
+
+  @step('Create and enter a module')
+  async createAndEnterModule(name: string) {
+    await this.addPage('module');
+    await this.curriculum.clickEditModuleLink(name);
+  }
+
   @step('Add a page to the project. Type: {type}')
   async addPage(type: PageType) {
     switch (type) {

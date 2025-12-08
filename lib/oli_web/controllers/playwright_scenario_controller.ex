@@ -24,8 +24,19 @@ defmodule OliWeb.PlaywrightScenarioController do
       {:error, :bad_request} ->
         send_resp(conn, :bad_request, "bad_request")
 
-      {:error, :scenario_failed} ->
-        send_resp(conn, :unprocessable_entity, "scenario_failed")
+      {:error, {:scenario_failed, result}} ->
+        Logger.error("Playwright scenario failed: #{inspect(result.errors)}")
+
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          ok: false,
+          errors:
+            Enum.map(result.errors, fn {directive, reason} ->
+              %{directive: inspect(directive), reason: reason}
+            end),
+          summary: Scenarios.summarize(result)
+        })
 
       {:error, reason} ->
         Logger.error("Playwright scenario execution failed: #{inspect(reason)}")
@@ -83,14 +94,14 @@ defmodule OliWeb.PlaywrightScenarioController do
       |> Scenarios.execute_yaml(RuntimeOpts.build())
 
     if Scenarios.has_errors?(result) do
-      {:error, :scenario_failed}
+      {:error, {:scenario_failed, result}}
     else
       {:ok, result}
     end
   rescue
     e ->
-      Logger.error("Scenario YAML execution error: #{Exception.message(e)}")
-      {:error, e}
+     Logger.error("Scenario YAML execution error: #{Exception.message(e)}")
+     {:error, e}
   end
 
   defp interpolate(yaml, params) do
