@@ -219,7 +219,13 @@ defmodule OliWeb.Common.Breadcrumb do
   end
 
   defp make_breadcrumb(%HierarchyNode{uuid: uuid, revision: rev, numbering: numbering}) do
-    case rev.resource_type do
+    resource_type =
+      case rev do
+        %{resource_type: type} -> type
+        %{resource_type_id: type_id} -> Oli.Resources.ResourceType.get_type_by_id(type_id)
+      end
+
+    case resource_type do
       "container" ->
         Breadcrumb.new(%{
           full_title:
