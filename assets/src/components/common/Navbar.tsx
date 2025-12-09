@@ -75,8 +75,8 @@ export const Navbar = ({
       <nav className="flex flex-col w-full lg:fixed lg:top-0 lg:left-0 lg:bottom-0 lg:w-[200px] py-2 bg-white dark:bg-gray-800 relative shadow-lg lg:flex select-none z-30">
         <div className="w-full">
           <a className="block w-[200px] lg:p-2 lg:mb-14 mx-auto" href={logo.href}>
-            <img src={logo.src.light} className="inline-block dark:hidden" alt="logo" />
-            <img src={logo.src.dark} className="hidden dark:inline-block" alt="logo dark" />
+            <img src={logo.src.light} className="inline-block dark:hidden" alt="OLI Torus logo" />
+            <img src={logo.src.dark} className="hidden dark:inline-block" alt="OLI Torus logo" />
           </a>
 
           <button

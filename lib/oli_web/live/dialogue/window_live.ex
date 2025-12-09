@@ -317,6 +317,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       <img
         class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]"
         src={~p"/images/assistant/footer_dot_ai.png"}
+        alt="Dot AI icon"
       />
       <div class={"#{orb_size_class(@size)} absolute bottom-0 right-0 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_6s_cubic-bezier(0.4,0,0.6,1)_infinite]"}>
       </div>
