@@ -1080,19 +1080,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             "button[aria-expanded='false'][data-bs-toggle='collapse'][data-child_matches_search_term]"
         )
       }
-      class="lg:container lg:mx-auto p-3 md:p-[25px]"
+      class="lg:container lg:mx-auto sm:p-3 py-3 md:p-[25px]"
       phx-hook="Scroller"
     >
       <.video_player />
-      <div class="px-1 sm:px-3 md:px-[25px]">
+      <div class="px-3 md:px-[25px]">
         <ComponentsUtils.timezone_info timezone={
           FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
       </div>
-      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center p-1 sm:h-16 sm:p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-3 sm:py-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           target_selector="div[data-completed='true']"
-          class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
+          class="text-Text-text-low text-sm font-medium hover:text-black dark:hover:text-white"
         />
         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:px-3">
           <DeliveryUtils.search_box
@@ -1102,8 +1102,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             on_clear_search={JS.push("clear_search") |> reset_toggle_buttons()}
             class="w-64"
           />
-
-          <DeliveryUtils.toggle_expand_button />
+          <div class="hidden sm:flex">
+            <DeliveryUtils.toggle_expand_button />
+          </div>
         </div>
 
         <.live_component
