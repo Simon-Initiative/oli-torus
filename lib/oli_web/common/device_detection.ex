@@ -19,13 +19,13 @@ defmodule OliWeb.Common.DeviceDetection do
       is_mobile = OliWeb.Common.DeviceDetection.is_mobile?(user_agent)
   """
 
-  import Phoenix.LiveView, only: [get_connect_info: 2]
-
   alias Plug.Conn
   alias Phoenix.LiveView.Socket
 
   @mobile_patterns ~r/(android|webos|iphone|ipod|blackberry|iemobile|opera mini|mobile)/i
   @tablet_patterns ~r/(ipad|tablet|playbook|silk)/i
+  # Android tablet model patterns (e.g., SM-T* for Samsung tablets, GT-P* for older Samsung tablets)
+  @android_tablet_patterns ~r/(SM-T\d+|GT-P\d+|SCH-I800|SC-01C|SHW-M180W|SGH-T849|GT-N\d+|SM-P\d+)/i
 
   @doc """
   Determines if a user agent string indicates a mobile device.
@@ -127,8 +127,15 @@ defmodule OliWeb.Common.DeviceDetection do
   def is_tablet?(""), do: false
 
   def is_tablet?(user_agent) when is_binary(user_agent) do
-    String.downcase(user_agent)
-    |> String.match?(@tablet_patterns)
+    user_agent_lower = String.downcase(user_agent)
+
+    # Check standard tablet patterns
+    matches_tablet_pattern = String.match?(user_agent_lower, @tablet_patterns)
+
+    # Check Android tablet model patterns (case-sensitive check on original)
+    matches_android_tablet = String.match?(user_agent, @android_tablet_patterns)
+
+    matches_tablet_pattern || matches_android_tablet
   end
 
   def is_tablet?(_), do: false
@@ -241,6 +248,10 @@ defmodule OliWeb.Common.DeviceDetection do
   end
 
   defp extract_user_agent(%Socket{} = socket) do
-    get_connect_info(socket, :user_agent) || ""
+    case socket.private do
+      %{connect_info: %{user_agent: user_agent}} when is_binary(user_agent) -> user_agent
+      %{connect_info: %{user_agent: user_agent}} when user_agent in [nil, ""] -> ""
+      _ -> ""
+    end
   end
 end
