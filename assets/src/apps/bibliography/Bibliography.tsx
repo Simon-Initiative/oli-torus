@@ -16,6 +16,7 @@ import { EditBibEntry } from './EditBibEntry';
 import { PlainEntryEditor } from './PlainEntryEditor';
 import { CitationModel, fromEntryType } from './citation_model';
 import { cslSchema, toFriendlyLabel } from './common';
+import { toCslArray } from 'utils/bibliography';
 
 const ajv = new Ajv({ removeAdditional: true, allowUnionTypes: true });
 const validate = ajv.compile(cslSchema);
@@ -244,7 +245,8 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
       const onManualEdit = () => {
         const bibEntry: BibEntry | undefined = bibEntrys.get(key);
         if (bibEntry) {
-          const citeModel: CitationModel = bibEntry.content.data[0];
+          const citeModel: CitationModel =
+            (toCslArray(bibEntry.content.data)[0] as CitationModel) || bibEntry.content.data[0];
           onManualCreateOrEdit(citeModel, bibEntry);
         }
       };

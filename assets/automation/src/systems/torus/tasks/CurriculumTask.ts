@@ -55,6 +55,11 @@ export class CurriculumTask {
     this.utils = new Utils(page);
   }
 
+  @step('Focus first paragraph')
+  async focusFirstParagraph() {
+    await this.basicPP.clickParagraph(0);
+  }
+
   @step("Add a resource '{fileName}' to the project")
   async uploadMediaFile(kind: MediaKind, fileName: string) {
     if (kind === 'image') {
@@ -165,145 +170,202 @@ export class CurriculumTask {
 
   //region Content
   @step('Add cite')
-  async addCiteToolbar(name: string, expectText: string) {
+  async addCiteToolbar(name: string, expectText: string, verify = true) {
     const sc = new SelectCitationCO(this.page);
-    this.clickOnParagraphAndSelectContent(0, 'More', 'Cite');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('More');
+    await this.basicPP.selectElementToolbar('Cite');
     await sc.expectDialogTitle('Select citation');
     await sc.selectCitation(name);
     await sc.confirmSelection();
-    await this.waitChangeVisualizeCite(expectText);
+    if (verify) {
+      await this.waitChangeVisualizeCite(expectText);
+    }
   }
 
   @step('Add foreign')
-  async addForeignToolbar(paragraphText: string, language: TypeLanguage) {
+  async addForeignToolbar(paragraphText: string, language: TypeLanguage, verify = true) {
     const sf = new SelectForeignLanguageCO(this.page);
-    await this.fillOnParagraphAndSelectContent(paragraphText, 0, 'More', 'Foreign');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.typeInFocusedParagraph(paragraphText);
+    await this.basicPP.selectElementToolbar('More');
+    await this.basicPP.selectElementToolbar('Foreign');
     await sf.open();
     await sf.expectDialogTitle('Foreign Language Settings');
     await sf.selectLanguage(language);
     await sf.save();
-    await this.waitChangeVisualize(paragraphText);
+    if (verify) {
+      await this.waitChangeVisualize(paragraphText);
+    }
   }
 
   @step('Add image')
-  async addImageToolbar(nameImage: string) {
-    await this.clickOnParagraphAndSelectContent(0, 'More', 'Image (Inline)');
+  async addImageToolbar(nameImage: string, verify = true) {
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('More');
+    await this.basicPP.selectElementToolbar('Image (Inline)');
     await this.selectM.selectMediaByName(nameImage);
     await this.selectM.confirmSelection();
-    await this.waitChangeVisualizeMedia(nameImage, 'img');
+    if (verify) {
+      await this.waitChangeVisualizeMedia(nameImage, 'img');
+    }
   }
 
   @step('Add formula')
-  async addFormulaToolbar(formula: string) {
-    await this.clickOnParagraphAndSelectContent(0, 'More', 'Formula (Inline)');
-    await this.waitChangeVisualize(formula);
+  async addFormulaToolbar(formula: string, verify = true) {
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.typeInFocusedParagraph('formula ');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('More');
+    await this.basicPP.selectElementToolbar('Formula (Inline)');
+    if (verify) {
+      await this.waitChangeVisualize(formula);
+    }
   }
 
   @step('Add callout')
-  async addCalloutToolbar(paragraphText: string) {
-    await this.fillOnParagraphAndSelectContent(paragraphText, 0, 'More', 'Callout');
-    await this.waitChangeVisualize(paragraphText);
+  async addCalloutToolbar(paragraphText: string, verify = true) {
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.typeInFocusedParagraph(paragraphText);
+    await this.basicPP.selectElementToolbar('More');
+    await this.basicPP.selectElementToolbar('Callout');
+    if (verify) {
+      await this.waitChangeVisualize(paragraphText);
+    }
   }
 
   @step('Add popup')
-  async addPopUpToolbar(paragraphText: string, popupText: string) {
+  async addPopUpToolbar(paragraphText: string, popupText: string, verify = true) {
     const popup = new PopUpCO(this.page);
-    await this.fillOnParagraphAndSelectContent(paragraphText, 0, 'More', 'Popup Content');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.typeInFocusedParagraph(paragraphText);
+    await this.basicPP.selectElementToolbar('More');
+    await this.basicPP.selectElementToolbar('Popup Content');
     await popup.openEditor();
     await popup.fillPopupText(popupText);
     await popup.save();
-    await this.waitChangeVisualize(paragraphText);
+    if (verify) {
+      await this.waitChangeVisualize(paragraphText);
+    }
   }
 
   @step('Add definition')
-  async addDefinitionToolbar(termText: string, description: string) {
+  async addDefinitionToolbar(termText: string, description: string, verify = true) {
     const term = new TermCO(this.page);
-    await this.basicPP.clickParagraph();
+    await this.basicPP.focusParagraphStart(0);
     await this.basicPP.selectElementToolbar('Insert...');
     await this.utils.scrollToBottom();
     await this.basicPP.selectElementToolbar('Definition');
     await term.openEditMode();
     await term.fillTerm(termText);
     await term.fillDescription(description);
-    await this.waitChangeVisualize(termText);
-    await this.waitChangeVisualize(description);
+    if (verify) {
+      await this.waitChangeVisualize(termText);
+      await this.waitChangeVisualize(description);
+    }
   }
 
   @step('Add page link')
-  async addPageLinkToolbar(pageName: string) {
+  async addPageLinkToolbar(pageName: string, verify = true) {
     const sp = new SelectPageCO(this.page);
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Page Link');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('Page Link');
     await sp.expectDialogTitle();
     await sp.selectPageLink(pageName);
     await sp.confirm();
-    await this.waitChangeVisualize('New Page');
-    await this.basicPP.deleteAllActivities();
-    await this.basicPP.waitForChangesSaved();
+    if (verify) {
+      await this.waitChangeVisualize(pageName);
+    }
   }
 
   @step('Add figure')
-  async addFigureToolbar(title: string) {
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Figure');
+  async addFigureToolbar(title: string, verify = true) {
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('Figure');
     await this.basicPP.fillFigureTitle(title);
-    await this.waitChangeVisualize(title);
+    if (verify) {
+      await this.waitChangeVisualize(title);
+    }
   }
 
   @step('Add web page')
-  async addWebPageToolbar(webPageUrl: string) {
+  async addWebPageToolbar(webPageUrl: string, verify = true) {
     const webPage = new WebPageCO(this.page);
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Webpage');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('Webpage');
     await webPage.expectDialogTitle('Settings');
     await webPage.fillWebpageUrl(webPageUrl);
     await webPage.confirm();
     await this.basicPP.waitForChangesSaved();
-    await this.waitChangeVisualizeMedia(webPageUrl, 'webpage');
+    if (verify) {
+      await this.waitChangeVisualizeMedia(webPageUrl, 'webpage');
+    }
   }
 
   @step('Add youtube link')
-  async addYoutubeToolbar(youtubeUrl: string, youtubeId: string) {
+  async addYoutubeToolbar(youtubeUrl: string, youtubeId: string, verify = true) {
     const youtube = new InsertYouTubeCO(this.page);
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'YouTube');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('YouTube');
     await youtube.expectDialogTitle('Insert YouTube');
     await youtube.fillYouTubeUrl(youtubeUrl);
     await youtube.confirm();
     await this.basicPP.waitForChangesSaved();
-    await this.waitChangeVisualizeMedia(youtubeId, 'youtube');
+    if (verify) {
+      await this.waitChangeVisualizeMedia(youtubeId, 'youtube');
+    }
   }
 
   @step('Add video')
-  async addVideoToolbar(videoFileName: string) {
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Video');
+  async addVideoToolbar(videoFileName: string, verify = true) {
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('Video');
     await this.selectM.clickChooseVideo();
     await this.selectM.waitForLabel('Select Video');
     await this.selectM.selectMediaByName(videoFileName);
     await this.selectM.confirmSelection();
-    await this.waitChangeVisualizeMedia(videoFileName, 'video');
+    if (verify) {
+      await this.waitChangeVisualizeMedia(videoFileName, 'video');
+    }
   }
 
   @step('Add audio clip')
-  async addAudioClipToolbar(audioFileName: string, audioCaption: string) {
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Audio Clip');
+  async addAudioClipToolbar(audioFileName: string, audioCaption: string, verify = true) {
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('Audio Clip');
     await this.selectM.waitForLabel('Embed audio');
     await this.selectM.selectMediaByName(audioFileName);
     await this.selectM.confirmOk();
     await this.basicPP.waitForChangesSaved();
     await this.basicPP.fillCaptionAudio(audioCaption);
-    await this.waitChangeVisualizeMedia(audioFileName, 'audio');
+    if (verify) {
+      await this.waitChangeVisualizeMedia(audioFileName, 'audio');
+    }
   }
 
   @step('Add description list')
-  async addDescriptionListToolbar(title: string, term: string, definition: string) {
+  async addDescriptionListToolbar(title: string, term: string, definition: string, verify = true) {
     const descriptionList = new DescriptionListCO(this.page);
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Description List');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('Description List');
     await this.basicPP.waitForChangesSaved();
     await descriptionList.fillTitle(title);
     await this.basicPP.waitForChangesSaved();
     await descriptionList.fillTerm(term);
     await this.basicPP.waitForChangesSaved();
     await descriptionList.fillDefinition(definition);
-    await this.waitChangeVisualize(title);
-    await this.waitChangeVisualize(term);
-    await this.waitChangeVisualize(definition);
+    if (verify) {
+      await this.waitChangeVisualize(title);
+      await this.waitChangeVisualize(term);
+      await this.waitChangeVisualize(definition);
+    }
   }
 
   @step('Add equation')
@@ -313,19 +375,26 @@ export class CurriculumTask {
     headRow1: string,
     headRow2: string,
     headRow3: string,
+    verify = true,
   ) {
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Conjugation');
-    await this.waitChangeVisualize(headColumn1);
-    await this.waitChangeVisualize(headColumn2);
-    await this.waitChangeVisualize(headRow1);
-    await this.waitChangeVisualize(headRow2);
-    await this.waitChangeVisualize(headRow3);
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('Conjugation');
+    if (verify) {
+      await this.waitChangeVisualize(headColumn1);
+      await this.waitChangeVisualize(headColumn2);
+      await this.waitChangeVisualize(headRow1);
+      await this.waitChangeVisualize(headRow2);
+      await this.waitChangeVisualize(headRow3);
+    }
   }
 
   @step('Add dialog')
-  async addDialogToolbar(dialogTitle: string, dialogSpeaker: string, dialogContent: string) {
+  async addDialogToolbar(dialogTitle: string, dialogSpeaker: string, dialogContent: string, verify = true) {
     const dialog = new DialogCO(this.page);
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Dialog');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('Dialog');
     await dialog.fillTitle(dialogTitle);
     await this.basicPP.waitForChangesSaved();
     await dialog.fillNameSpeaker(1, dialogSpeaker);
@@ -333,46 +402,62 @@ export class CurriculumTask {
     await dialog.clickAddButton();
     await this.basicPP.waitForChangesSaved();
     await dialog.fillParagraph(dialogContent);
-    await this.waitChangeVisualize(dialogTitle);
-    await this.waitChangeVisualize(dialogSpeaker);
-    await this.waitChangeVisualize(dialogContent);
+    if (verify) {
+      await this.waitChangeVisualize(dialogTitle);
+      await this.waitChangeVisualize(dialogSpeaker);
+      await this.waitChangeVisualize(dialogContent);
+    }
   }
 
   @step('Add table')
-  async addTableToolbar(tableCaption: string, cell1: string, cell2: string) {
+  async addTableToolbar(tableCaption: string, cell1: string, cell2: string, verify = true) {
     const table = new Table(this.page);
-    await this.clickOnParagraphAndSelectContent(0, 'Insert Table');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert Table');
     await this.basicPP.waitForChangesSaved();
     await table.fillCaptionTable(tableCaption);
     await this.basicPP.waitForChangesSaved();
     await table.fillCell(1, 1, cell1);
     await this.basicPP.waitForChangesSaved();
     await table.fillCell(1, 2, cell2);
-    await this.waitChangeVisualize(cell1);
-    await this.waitChangeVisualize(cell2);
-    await this.waitChangeVisualize(tableCaption);
+    if (verify) {
+      await this.waitChangeVisualize(cell1, cell2, tableCaption);
+    }
   }
 
   @step('Add theorem')
-  async addTheoremToolbar(title: string) {
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Theorem');
-    await this.waitChangeVisualize(title);
+  async addTheoremToolbar(title: string, verify = true) {
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('Theorem');
+    if (verify) {
+      await this.waitChangeVisualize(title);
+    }
   }
 
   @step('Add code block')
-  async addCodeBlockToolbar(codeType: TypeProgrammingLanguage, code: string, caption: string) {
+  async addCodeBlockToolbar(codeType: TypeProgrammingLanguage, code: string, caption: string, verify = true) {
     const cb = new CodeBlockCO(this.page);
-    await this.clickOnParagraphAndSelectContent(0, 'Insert...', 'Code (Block)');
+    await this.basicPP.focusParagraphStart(0);
+    await this.basicPP.selectElementToolbar('Insert...');
+    await this.basicPP.selectElementToolbar('Code (Block)');
     await cb.selectLanguageCode(codeType);
     await cb.fillCodeEditor(code);
     await cb.fillCodeCaption(caption);
-    await this.waitChangeVisualize(code);
-    await this.waitChangeVisualize(caption);
+    if (verify) {
+      await this.waitChangeVisualize(code, caption);
+    }
+  }
+
+  @step('Open preview')
+  async openPreview() {
+    return this.basicPP.clickPreview();
   }
 
   @step('Click on paragraph and select content')
-  async clickOnParagraphAndSelectContent(indexParagraph = 0, ...elements: TypeToolbar[]) {
-    await this.basicPP.clickParagraph(indexParagraph);
+  async clickOnParagraphAndSelectContent(indexParagraph: number | 'auto' = 'auto', ...elements: TypeToolbar[]) {
+    const targetIndex = await this.basicPP.prepareParagraphForInsertion(indexParagraph);
+    await this.basicPP.clickParagraph(targetIndex);
     for (const element of elements) {
       await this.basicPP.selectElementToolbar(element);
     }
@@ -381,10 +466,11 @@ export class CurriculumTask {
   @step('Fill on paragraph and select content')
   async fillOnParagraphAndSelectContent(
     text: string,
-    indexParagraph = 0,
+    indexParagraph: number | 'auto' = 'auto',
     ...elements: TypeToolbar[]
   ) {
-    await this.basicPP.fillParagraph(text, indexParagraph);
+    const targetIndex = await this.basicPP.prepareParagraphForInsertion(indexParagraph);
+    await this.basicPP.fillParagraph(text, targetIndex);
     for (const element of elements) {
       await this.basicPP.selectElementToolbar(element);
     }

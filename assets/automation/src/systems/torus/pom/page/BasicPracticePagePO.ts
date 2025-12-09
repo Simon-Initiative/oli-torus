@@ -60,9 +60,68 @@ export class BasicPracticePagePO {
     await this.utils.paintElement(this.changesSaved);
   }
 
+  @step('Click paragraph at index: {index}')
   async clickParagraph(index = 0) {
-    await Verifier.expectIsVisible(this.paragraphText);
+    await Verifier.expectIsVisible(this.paragraph.nth(index));
     await this.paragraph.nth(index).click();
+  }
+
+  async focusParagraphStart(index = 0) {
+    await this.clickParagraph(index);
+    await this.page.keyboard.press('Home');
+  }
+
+  async typeInFocusedParagraph(text: string) {
+    await this.page.keyboard.type(text);
+  }
+
+  async paragraphCount() {
+    return this.paragraph.count();
+  }
+
+  async paragraphHasText(index: number) {
+    const text = await this.paragraph.nth(index).innerText();
+    return text.trim().length > 0;
+  }
+
+  async lastParagraphIndex() {
+    const count = await this.paragraphCount();
+    return Math.max(0, count - 1);
+  }
+
+  /**
+   * Ensures we target a paragraph suitable for insertion.
+   * If indexParam is 'auto', it will prefer a fresh empty paragraph at the end,
+   * creating one if the last paragraph already has content.
+   */
+  async prepareParagraphForInsertion(indexParam: number | 'auto' = 'auto') {
+    if (indexParam !== 'auto') return indexParam;
+
+    let target = await this.lastParagraphIndex();
+    const initialCount = await this.paragraphCount();
+
+    if (await this.paragraphHasText(target)) {
+      await this.clickParagraph(target);
+      await this.page.keyboard.press('End');
+      await this.page.keyboard.press('Enter');
+
+      // wait briefly for Slate to create a new paragraph node
+      try {
+        await this.page.waitForFunction(
+          (expected) =>
+            document.querySelectorAll('[id^="resource-editor-"] [role="paragraph"]').length >
+            expected,
+          initialCount,
+          { timeout: 1200 },
+        );
+      } catch (_) {
+        // fall through; if no new paragraph, reuse last
+      }
+
+      target = await this.lastParagraphIndex();
+    }
+
+    return target;
   }
 
   async clickInsertButtonIcon() {

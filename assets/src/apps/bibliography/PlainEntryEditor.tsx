@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { BibEntry } from 'data/content/bibentry';
+import { toCiteInput } from 'utils/bibliography';
 
 const Cite = (window as any).cite;
 
@@ -14,15 +15,20 @@ export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEn
 
   useEffect(() => {
     if (props.bibEntry) {
-      const data = new Cite(JSON.stringify(props.bibEntry?.content.data[0]));
+      try {
+        const data = new Cite(toCiteInput(props.bibEntry?.content.data));
 
-      const cslData = data.get({
-        format: 'string',
-        type: 'string',
-        style: 'bibtex',
-        lang: 'en-US',
-      });
-      setValue(cslData);
+        const cslData = data.get({
+          format: 'string',
+          type: 'string',
+          style: 'bibtex',
+          lang: 'en-US',
+        });
+        setValue(cslData);
+        props.onContentChange(cslData);
+      } catch (e) {
+        // ignore parse errors for legacy entries; leave textarea empty
+      }
     }
   }, []);
 

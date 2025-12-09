@@ -15,11 +15,13 @@ defmodule Oli.Scenarios.Directives.BibliographyHandler do
 
       author = state.current_author || raise "current_author missing from execution state"
 
+      {normalized_content, title} = normalize_entry(entry)
+
       attrs = %{
-        "title" => entry,
+        "title" => title,
         "author_id" => author.id,
-        # store raw entry as-is; API wraps JSON under data
-        "content" => %{data: %{"bibtex" => entry}}
+        # store normalized content directly; UI/CitationJS can handle list | map | string
+        "content" => %{data: normalized_content}
       }
 
       case BibEntryEditor.create(built_project.project.slug, author, attrs) do
@@ -38,4 +40,30 @@ defmodule Oli.Scenarios.Directives.BibliographyHandler do
          "Failed to add bibliography entry to '#{project_name}': #{Exception.message(e)}"}
     end
   end
+
+  # Accepts bibtex strings, JSON strings, or already-parsed maps/lists and
+  # normalizes them for storage.
+  defp normalize_entry(entry) when is_binary(entry) do
+    parsed = Jason.decode(entry)
+
+    cond do
+      match?({:ok, _}, parsed) ->
+        {:ok, data} = parsed
+        {data, extract_title(data) || entry}
+
+      true ->
+        # Assume bibtex string; store raw string
+        {entry, entry}
+    end
+  end
+
+  defp normalize_entry(entry) when is_list(entry) or is_map(entry) do
+    {entry, extract_title(entry) || inspect(entry)}
+  end
+
+  defp normalize_entry(entry), do: {entry, inspect(entry)}
+
+  defp extract_title([%{"title" => title} | _]), do: title
+  defp extract_title(%{"title" => title}), do: title
+  defp extract_title(_), do: nil
 end
