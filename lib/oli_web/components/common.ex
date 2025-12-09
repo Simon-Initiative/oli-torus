@@ -1293,7 +1293,11 @@ defmodule OliWeb.Components.Common do
 
   def tech_support_link(assigns) do
     ~H"""
-    <span id={@id} phx-click={JS.push_focus() |> JS.dispatch("click", to: "#trigger-tech-support-modal")} class={@class}>
+    <span
+      id={@id}
+      phx-click={JS.push_focus() |> JS.dispatch("click", to: "#trigger-tech-support-modal")}
+      class={@class}
+    >
       {render_slot(@inner_block)}
     </span>
     """

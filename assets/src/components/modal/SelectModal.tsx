@@ -167,17 +167,13 @@ export const SelectModal = function <T extends Option>({
   const titleId = `${modalId.current}-title`;
 
   return (
-    <div
-      ref={modal}
-      className="modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-    >
+    <div ref={modal} className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div className="modal-dialog modal-dialog-centered modal-md">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title" id={titleId}>{title}</h5>
+            <h5 className="modal-title" id={titleId}>
+              {title}
+            </h5>
             <button
               type="button"
               className="btn-close focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
