@@ -1542,13 +1542,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert view
              |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
              |> render() =~
-               "Read by: \n              </span><span class=\"whitespace-nowrap\">\n                Sun, Dec 31, 2023 (8:00pm)"
+               "Read by:"
+
+      assert view
+             |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
+             |> render() =~
+               "Sun, Dec 31, 2023 (8:00pm)"
 
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
       assert view
              |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
              |> render() =~
-               "Due by:\n              </span><span class=\"whitespace-nowrap\">\n                None"
+               "Due by:\n                </span><span class=\"whitespace-nowrap\">\n                  None\n"
     end
 
     test "can see the 'None' label when the instructor has not set a schedule",
@@ -1761,7 +1766,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
         id: ^unit_id,
-        offset: 25,
+        offset: 125,
         pulse: true,
         pulse_delay: 500
       })
@@ -1785,7 +1790,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # scrolling and pulse animations are triggered
-      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 25})
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 125})
 
       assert_push_event(view, "scroll-x-to-card-in-slider", %{
         card_id: ^card_id,
@@ -1822,7 +1827,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
         id: ^top_level_page_id,
-        offset: 25,
+        offset: 125,
         pulse: true,
         pulse_delay: 500
       })
@@ -1846,7 +1851,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # scrolling and pulse animations are triggered
-      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 25})
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 125})
 
       assert_push_event(view, "scroll-x-to-card-in-slider", %{
         card_id: ^card_id,
@@ -1877,7 +1882,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # scrolling and pulse animations are triggered
-      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 25})
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 125})
 
       assert_push_event(
         view,
@@ -1915,7 +1920,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # scrolling and pulse animations are triggered
-      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 25})
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 125})
 
       assert_push_event(view, "scroll-x-to-card-in-slider", %{
         card_id: ^card_id,
@@ -3303,6 +3308,70 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       result = LearnLive.get_viewed_intro_video_resource_ids(section.slug, user.id)
       assert result == viewed_ids
+    end
+  end
+
+  describe "back_to_gallery_mobile_view event" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    test "resets selected_module_per_unit_resource_id and pushes scroll events with mobile offset",
+         %{
+           conn: conn,
+           section: section,
+           unit_2: unit_2,
+           module_3: module_3
+         } do
+      # Set up mobile user agent - this will trigger SetDeviceType plug to set is_mobile: true
+      mobile_conn =
+        conn
+        |> put_req_header("user-agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)")
+
+      {:ok, view, _html} =
+        live(
+          mobile_conn,
+          Utils.learn_live_path(section.slug, %{target_resource_id: module_3.resource_id})
+        )
+
+      # Wait for initial scroll events to complete
+      unit_id = "unit_#{unit_2.resource_id}"
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id})
+
+      # On mobile, when a module is selected, the mobile module view should render
+      # which includes the back button. Verify we're in mobile module view.
+      # Note: The mobile view renders when is_mobile: true and selected_module_per_unit_resource_id != %{}
+      assert has_element?(
+               view,
+               ~s{button[phx-click="back_to_gallery_mobile_view"]}
+             )
+
+      # Click the back button to return to gallery view
+      view
+      |> element(~s{button[phx-click="back_to_gallery_mobile_view"]})
+      |> render_click()
+
+      # Verify scroll events are pushed with correct mobile offset (@mobile_gallery_scroll_offset = 150)
+      card_id = "module_#{module_3.resource_id}"
+      unit_resource_id = unit_2.resource_id
+
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^unit_id,
+        offset: 150
+      })
+
+      assert_push_event(view, "scroll-x-to-card-in-slider", %{
+        card_id: ^card_id,
+        scroll_delay: 300,
+        unit_resource_id: ^unit_resource_id,
+        pulse_target_id: ^card_id,
+        pulse_delay: 500
+      })
+
+      # Verify we're back to gallery view (back button should no longer be visible)
+      # and selected_module_per_unit_resource_id should be reset to empty map
+      refute has_element?(
+               view,
+               ~s{button[phx-click="back_to_gallery_mobile_view"]}
+             )
     end
   end
 end
