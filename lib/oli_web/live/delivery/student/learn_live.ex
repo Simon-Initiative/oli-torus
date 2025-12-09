@@ -1142,6 +1142,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           student_id={@current_user.id}
           page_metrics={assigns.page_metrics_per_module_id}
           contained_scheduling_types={@contained_scheduling_types}
+          is_mobile={@is_mobile}
           progress={
             parse_student_progress_for_resource(
               @student_progress_per_resource_id,
@@ -1604,6 +1605,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :type, :atom
   attr :id, :string
   attr :has_scheduled_resources?, :boolean, required: true
+  attr :is_mobile, :boolean, required: true
 
   def outline_row(%{type: :unit} = assigns) do
     ~H"""
@@ -1720,6 +1722,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   contained_scheduling_types={@contained_scheduling_types}
                   search_term={@search_term}
                   has_scheduled_resources?={@has_scheduled_resources?}
+                  is_mobile={@is_mobile}
                 />
               </div>
             </div>
@@ -1752,6 +1755,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             search_term={@search_term}
             ctx={@ctx}
             has_scheduled_resources?={@has_scheduled_resources?}
+            is_mobile={@is_mobile}
           />
         </div>
       </div>
@@ -1769,7 +1773,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-update="replace"
     >
       <div class={[
-        left_indentation(@row["numbering"]["level"], :outline),
+        left_indentation(@row["numbering"]["level"], @is_mobile, :outline),
         "w-full pl-16 py-2.5 justify-start items-center gap-5 flex rounded-lg"
       ]}>
         <span class="search-result opacity-60 dark:text-white text-base font-semibold font-['Open Sans']">
@@ -1788,6 +1792,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         search_term={@search_term}
         ctx={@ctx}
         has_scheduled_resources?={@has_scheduled_resources?}
+        is_mobile={@is_mobile}
       />
     </div>
     """
@@ -1974,6 +1979,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     search_term={@search_term}
                     ctx={@ctx}
                     has_scheduled_resources?={@has_scheduled_resources?}
+                    is_mobile={@is_mobile}
                   />
                 </div>
               </div>
@@ -2051,7 +2057,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         >
           <div class={[
             "flex flex-col gap-1 w-full",
-            left_indentation(@row["numbering"]["level"], :outline)
+            left_indentation(@row["numbering"]["level"], @is_mobile, :outline)
           ]}>
             <div class="flex">
               <span
@@ -2136,7 +2142,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         :if={@toggle_visibility_data}
         target_selector={@toggle_visibility_data.selector}
         on_toggle={@toggle_visibility_data.on_toggle}
-        class={["text-sm font-semibold text-Text-text-low", @toggle_visibility_data.class]}
+        class={"text-sm font-semibold text-Text-text-low #{@toggle_visibility_data.class}"}
       />
     </div>
     <div class="hidden sm:block pt-6" />
