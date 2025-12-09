@@ -969,6 +969,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <button
           phx-click="back_to_gallery_mobile_view"
           class="absolute left-3 top-3 z-10 inline-flex items-center"
+          aria-label="Back to gallery"
         >
           <Icons.back_arrow class="w-5 h-5 fill-Icon-icon-white stroke-Icon-icon-white" />
         </button>
@@ -2963,6 +2964,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="text-Text-text-low text-sm sm:text-base font-normal leading-6 sm:leading-8 line-clamp-3 max-w-[760px] overflow-hidden"
         style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
         data-read-more-expanded="false"
+        aria-expanded="false"
       >
         {render_intro_content(@raw_content)}
       </span>
@@ -2983,6 +2985,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     doc: "the selector of the element to expand with the read more button"
 
   def read_more_button(assigns) do
+    assigns =
+      assigns
+      |> assign(:target_id, String.replace(assigns.target_selector, "#", ""))
+
     ~H"""
     <div
       class="flex w-full hidden"
@@ -2997,10 +3003,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             to: @target_selector
           )
           |> JS.set_attribute({"data-read-more-expanded", "true"}, to: @target_selector)
+          |> JS.set_attribute({"aria-expanded", "true"}, to: @target_selector)
+          |> JS.set_attribute({"aria-expanded", "true"}, to: "#read_less_#{@resource_id}")
           |> JS.toggle(to: "#read_less_#{@resource_id}")
           |> JS.toggle()
         }
         class="ml-auto text-Text-text-button text-sm font-semibold leading-6"
+        aria-controls={@target_id}
+        aria-expanded="false"
       >
         Read More
       </button>
@@ -3012,10 +3022,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             to: @target_selector
           )
           |> JS.set_attribute({"data-read-more-expanded", "false"}, to: @target_selector)
+          |> JS.set_attribute({"aria-expanded", "false"}, to: @target_selector)
+          |> JS.set_attribute({"aria-expanded", "false"}, to: "#read_more_#{@resource_id}")
           |> JS.toggle(to: "#read_more_#{@resource_id}")
           |> JS.toggle()
         }
         class="ml-auto hidden text-Text-text-button text-sm font-semibold leading-6"
+        aria-controls={@target_id}
+        aria-expanded="true"
       >
         Read Less
       </button>
