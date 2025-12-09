@@ -78,17 +78,18 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <input
                 type="checkbox"
                 role="switch"
+                aria-label="Strictly Necessary Cookies"
                 className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top focus:outline-none cursor-pointer shadow-sm"
                 id="strictCookies"
                 checked
                 disabled
               />
-              <label
+              <span
                 className="form-check-label inline-block text-gray-800 small"
-                htmlFor="strictCookies"
+                aria-hidden="true"
               >
                 On
-              </label>
+              </span>
             </div>
           </div>
           <div
@@ -164,14 +165,15 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <input
                 type="checkbox"
                 role="switch"
+                aria-label="Functionality Cookies"
                 className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm"
                 id="functionalCookies"
                 checked={functionalActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <label className="custom-control-label small" htmlFor="functionalCookies">
+              <span className="custom-control-label small" aria-hidden="true">
                 {functionalLabel}
-              </label>
+              </span>
             </div>
           </div>
           <div
@@ -238,14 +240,15 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <input
                 type="checkbox"
                 role="switch"
+                aria-label="Analytics Cookies"
                 className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm"
                 id="analyticsCookies"
                 checked={analyticsActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <label className="custom-control-label small" htmlFor="analyticsCookies">
+              <span className="custom-control-label small" aria-hidden="true">
                 {analyticsLabel}
-              </label>
+              </span>
             </div>
           </div>
           <div
@@ -321,14 +324,15 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               <input
                 type="checkbox"
                 role="switch"
+                aria-label="Targeting Cookies"
                 className="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm"
                 id="targetingCookies"
                 checked={targetingActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <label className="custom-control-label small" htmlFor="targetingCookies">
+              <span className="custom-control-label small" aria-hidden="true">
                 {targetingLabel}
-              </label>
+              </span>
             </div>
           </div>
           <div
