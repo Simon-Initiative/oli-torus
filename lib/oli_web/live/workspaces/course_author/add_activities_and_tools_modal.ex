@@ -216,7 +216,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AddActivitiesAndToolsModal do
             When you add an LTI 1.3 external tool, it becomes available for insertion into a page and automatically inherits the page's properties (e.g., scored or practice). The tool will transmit learner roles, names, and grades to the course assessment scores. Instructors can then configure the tool in their course section if needed.
           </p>
           <p>
-            <.link href="#" phx-click={JS.dispatch("click", to: "#trigger-tech-support-modal")}>
+            <.link href="#" phx-click={JS.push_focus() |> JS.dispatch("click", to: "#trigger-tech-support-modal")}>
               Contact Support
             </.link>
             if you would like to add a new LTI 1.3 tool to this list.
