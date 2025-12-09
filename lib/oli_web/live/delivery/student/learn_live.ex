@@ -2956,6 +2956,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         id={"intro_content_module_#{@resource_id}"}
         class="text-Text-text-low text-sm sm:text-base font-normal leading-6 sm:leading-8 line-clamp-3 max-w-[760px] overflow-hidden"
         style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
+        data-read-more-expanded="false"
       >
         {render_intro_content(@raw_content)}
       </span>
@@ -2977,13 +2978,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def read_more_button(assigns) do
     ~H"""
-    <div class="flex w-full">
+    <div
+      class="flex w-full hidden"
+      phx-hook="ReadMoreToggle"
+      id={"read_more_controls_#{@resource_id}"}
+      data-target-selector={@target_selector}
+    >
       <button
         id={"read_more_#{@resource_id}"}
         phx-click={
           JS.remove_attribute("style",
             to: @target_selector
           )
+          |> JS.set_attribute({"data-read-more-expanded", "true"}, to: @target_selector)
           |> JS.toggle(to: "#read_less_#{@resource_id}")
           |> JS.toggle()
         }
@@ -2998,6 +3005,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             {"style", "display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"},
             to: @target_selector
           )
+          |> JS.set_attribute({"data-read-more-expanded", "false"}, to: @target_selector)
           |> JS.toggle(to: "#read_more_#{@resource_id}")
           |> JS.toggle()
         }
