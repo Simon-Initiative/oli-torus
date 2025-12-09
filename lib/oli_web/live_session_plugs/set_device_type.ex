@@ -8,7 +8,16 @@ defmodule OliWeb.LiveSessionPlugs.SetDeviceType do
   alias OliWeb.Common.DeviceDetection
 
   def on_mount(:default, _params, _session, socket) do
-    device_type = DeviceDetection.device_type(socket)
+    device_type =
+      case socket.private do
+        %{connect_info: %{user_agent: user_agent}} when is_binary(user_agent) ->
+          DeviceDetection.device_type(socket)
+
+        _ ->
+          # Default to desktop when connect_info is not available
+          # (During disconnected mount phase, before websocket connects, connect_info is not available)
+          :desktop
+      end
 
     socket =
       assign(socket,
