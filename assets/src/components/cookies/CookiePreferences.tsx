@@ -172,7 +172,11 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 checked={functionalActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <label htmlFor="functionalCookies" className="custom-control-label small" aria-hidden="true">
+              <label
+                htmlFor="functionalCookies"
+                className="custom-control-label small"
+                aria-hidden="true"
+              >
                 {functionalLabel}
               </label>
             </div>
@@ -247,7 +251,11 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 checked={analyticsActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <label htmlFor="analyticsCookies" className="custom-control-label small" aria-hidden="true">
+              <label
+                htmlFor="analyticsCookies"
+                className="custom-control-label small"
+                aria-hidden="true"
+              >
                 {analyticsLabel}
               </label>
             </div>
@@ -331,7 +339,11 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 checked={targetingActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <label htmlFor="targetingCookies" className="custom-control-label small" aria-hidden="true">
+              <label
+                htmlFor="targetingCookies"
+                className="custom-control-label small"
+                aria-hidden="true"
+              >
                 {targetingLabel}
               </label>
             </div>
