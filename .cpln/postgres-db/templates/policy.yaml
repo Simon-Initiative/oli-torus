@@ -1,0 +1,12 @@
+kind: policy
+name: {{ .Release.Name }}-pg-policy
+tags:
+  {{- include "pg.tags" . | nindent 4 }}
+bindings:
+  - permissions:
+      - reveal
+    principalLinks:
+      - //gvc/{{ .Values.global.cpln.gvc }}/identity/{{ .Release.Name }}-pg-identity
+targetKind: secret
+targetLinks:
+  - //secret/{{ .Release.Name }}-pg-config

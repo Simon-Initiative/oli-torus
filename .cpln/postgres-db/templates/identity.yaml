@@ -1,0 +1,5 @@
+kind: identity
+name: {{ .Release.Name }}-pg-identity
+gvc: {{ .Values.global.cpln.gvc }}
+tags:
+  {{- include "pg.tags" . | nindent 4 }}

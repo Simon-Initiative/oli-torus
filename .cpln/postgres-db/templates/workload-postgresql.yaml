@@ -1,0 +1,41 @@
+kind: workload
+name: {{ .Release.Name }}-pg-db
+gvc: {{ .Values.global.cpln.gvc }}
+tags:
+  {{- include "pg.tags" . | nindent 2 }}
+spec:
+  type: stateful
+  identityLink: //identity/{{ .Release.Name }}-pg-identity
+  containers:
+    - name: postgresql
+      env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pg_data"
+        - name: POSTGRES_DB
+          value: {{ .Values.config.database }}
+        - name: POSTGRES_PASSWORD
+          value: 'cpln://secret/{{ .Release.Name }}-pg-config.password'
+        - name: POSTGRES_USER
+          value: 'cpln://secret/{{ .Release.Name }}-pg-config.username'
+      image: 'ankane/pgvector:v0.5.1'
+      inheritEnv: false
+      cpu: {{ .Values.resources.cpu }}
+      memory: {{ .Values.resources.memory }}
+      ports:
+        - number: 5432
+          protocol: tcp
+      volumes:
+        - path: /var/lib/postgresql/data
+          uri: 'cpln://volumeset/{{ .Release.Name }}-pg-vs'
+  defaultOptions:
+    autoscaling:
+      metric: disabled
+      minScale: 1
+      maxScale: 1
+    capacityAI: false
+  firewallConfig:
+    external:
+      outboundAllowCIDR:
+        - 0.0.0.0/0
+    internal:
+      inboundAllowType: same-gvc

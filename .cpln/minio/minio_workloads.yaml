@@ -1,0 +1,66 @@
+kind: workload
+name: minio-test
+description: minio-test
+tags: {}
+spec:
+  type: stateful
+  containers:
+    - name: minio
+      args:
+        - server
+        - /data
+      command: minio
+      cpu: '4'
+      env:
+        - name: MINIO_ROOT_PASSWORD
+          value: cpln://secret/minio-config.MINIO_ROOT_PASSWORD
+        - name: MINIO_ROOT_USER
+          value: cpln://secret/minio-config.MINIO_ROOT_USER
+      image: minio/minio
+      inheritEnv: false
+      memory: 4Gi
+      ports:
+        - number: 9000
+          protocol: http
+        - number: 9001
+          protocol: http
+      volumes:
+        - path: /data
+          recoveryPolicy: retain
+          uri: cpln://volumeset/minio-test-01
+  defaultOptions:
+    autoscaling:
+      keda:
+        cooldownPeriod: 1
+        initialCooldownPeriod: 1
+        pollingInterval: 1
+        triggers: []
+      maxConcurrency: 0
+      maxScale: 1
+      metric: disabled
+      minScale: 1
+      scaleToZeroDelay: 300
+      target: 100
+    capacityAI: false
+    debug: false
+    suspend: false
+    timeoutSeconds: 5
+  firewallConfig:
+    external:
+      inboundAllowCIDR:
+        - 0.0.0.0/0
+      inboundBlockedCIDR: []
+      outboundAllowCIDR: []
+      outboundAllowHostname: []
+      outboundAllowPort: []
+      outboundBlockedCIDR: []
+    internal:
+      inboundAllowType: same-gvc
+      inboundAllowWorkload: []
+  identityLink: //gvc/oli-rise-eval/identity/minio-config-46f981
+  loadBalancer:
+    direct:
+      enabled: false
+      ports: []
+    replicaDirect: false
+  supportDynamicTags: false

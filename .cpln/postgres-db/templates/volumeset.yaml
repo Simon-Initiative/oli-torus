@@ -1,0 +1,17 @@
+kind: volumeset
+name: {{ .Release.Name }}-pg-vs
+gvc: {{ .Values.global.cpln.gvc }}
+tags:
+  {{- include "pg.tags" . | nindent 4 }}
+spec:
+  autoscaling:
+    maxCapacity: 1000
+    minFreePercentage: 1
+    scalingFactor: 1.1
+  fileSystemType: ext4
+  initialCapacity: 20
+  performanceClass: general-purpose-ssd
+  snapshots:
+    createFinalSnapshot: true
+    retentionDuration: 7d
+  

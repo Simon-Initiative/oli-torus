@@ -1,0 +1,119 @@
+kind: workload
+name: oli-torus-app
+description: oli-torus-app
+tags: {}
+spec:
+  type: standard
+  containers:
+    - name: oli-torus-app
+      cpu: "12"
+      env:
+        - name: ADMIN_EMAIL
+          value: admin@example.edu
+        - name: ADMIN_PASSWORD
+          value: cpln://secret/oli-torus-app.ADMIN_PASSWORD
+        - name: AWS_S3_ACCESS_KEY_ID
+          value: cpln://secret/oli-torus-app.AWS_S3_ACCESS_KEY_ID
+        - name: AWS_S3_HOST
+          value: minio-test.oli-rise-eval.cpln.local
+        - name: AWS_S3_PORT
+          value: "9000"
+        - name: AWS_S3_SCHEME
+          value: http
+        - name: AWS_S3_SECRET_ACCESS_KEY
+          value: cpln://secret/oli-torus-app.AWS_S3_SECRET_ACCESS_KEY
+        - name: BRANDING_FAVICONS_DIR
+          value: /branding/dev/favicons
+        - name: BRANDING_LOGO
+          value: /branding/dev/oli_torus_logo.png
+        - name: BRANDING_LOGO_DARK
+          value: /branding/dev/oli_torus_logo_dark.png
+        - name: CLOAK_VAULT_KEY
+          value: cpln://secret/oli-torus-app.CLOAK_VAULT_KEY
+        - name: DATABASE_URL
+          value: cpln://secret/oli-torus-app.DATABASE_URL
+        - name: EMAIL_FROM_ADDRESS
+          value: no-reply@example.edu
+        - name: EMAIL_FROM_NAME
+          value: OLI Torus
+        - name: EMAIL_REPLY_TO
+          value: admin@example.edu
+        - name: FORCE_SSL
+          value: "false"
+        - name: HOST
+          value: oli-torus-app-ggfk71qjr4sb4.rwanda-central-1.controlplane.us
+        - name: LIVE_VIEW_SALT
+          value: cpln://secret/oli-torus-app.LIVE_VIEW_SALT
+        - name: MEDIA_URL
+          value: >-
+            https://minio-test-ggfk71qjr4sb4.rwanda-central-1.controlplane.us/torus-media
+        - name: PHX_SERVER
+          value: "true"
+        - name: PORT
+          value: "443"
+        - name: RECAPTCHA_PRIVATE_KEY
+          value: cpln://secret/oli-torus-app.RECAPTCHA_PRIVATE_KEY
+        - name: RECAPTCHA_SITE_KEY
+          value: cpln://secret/oli-torus-app.RECAPTCHA_SITE_KEY
+        - name: S3_MEDIA_BUCKET_NAME
+          value: torus-media
+        - name: S3_XAPI_BUCKET_NAME
+          value: torus-xapi
+        - name: SCHEME
+          value: https
+        - name: SECRET_KEY_BASE
+          value: cpln://secret/oli-torus-app.SECRET_KEY_BASE
+        - name: VENDOR_PROPERTY_WORKSPACE_LOGO
+          value: /branding/dev/oli_torus_icon.png
+      image: /org/cmu/image/oli-torus:v0.32.0
+      inheritEnv: false
+      memory: 10Gi
+      ports:
+        - number: 80
+          protocol: http
+      readinessProbe:
+        failureThreshold: 3
+        httpGet:
+          httpHeaders: []
+          path: /healthz
+          port: 80
+          scheme: HTTP
+        initialDelaySeconds: 0
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+  defaultOptions:
+    autoscaling:
+      keda:
+        cooldownPeriod: 1
+        initialCooldownPeriod: 1
+        pollingInterval: 1
+        triggers: []
+      maxConcurrency: 0
+      maxScale: 1
+      metric: disabled
+      minScale: 1
+      scaleToZeroDelay: 300
+      target: 100
+    capacityAI: false
+    debug: false
+    timeoutSeconds: 5
+  firewallConfig:
+    external:
+      inboundAllowCIDR:
+        - 0.0.0.0/0
+      inboundBlockedCIDR: []
+      outboundAllowCIDR: []
+      outboundAllowHostname: []
+      outboundAllowPort: []
+      outboundBlockedCIDR: []
+    internal:
+      inboundAllowType: none
+      inboundAllowWorkload: []
+  identityLink: //gvc/oli-rise-eval/identity/oli-torus-app
+  loadBalancer:
+    direct:
+      enabled: false
+      ports: []
+    replicaDirect: false
+  supportDynamicTags: false
