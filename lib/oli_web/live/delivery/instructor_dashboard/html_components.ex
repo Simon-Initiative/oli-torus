@@ -311,7 +311,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       class="flex items-center gap-2"
     >
       <Icons.plug />
-      <span class="uppercase">{@title}</span>
+      <span>{@title}</span>
     </div>
     """
   end

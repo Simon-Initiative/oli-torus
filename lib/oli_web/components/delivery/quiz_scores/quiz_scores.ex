@@ -6,7 +6,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
   alias Oli.Resources
-  alias OliWeb.Common.InstructorDashboardPagedTable
+  alias OliWeb.Common.StripedPagedTable
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput
   alias OliWeb.Grades.GradebookTableModel
@@ -95,7 +95,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
         </div>
 
         <%= if @total_count > 0 do %>
-          <InstructorDashboardPagedTable.render
+          <StripedPagedTable.render
             table_model={@grades_table_model}
             total_count={@total_count}
             offset={@params.offset}

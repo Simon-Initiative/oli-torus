@@ -30,10 +30,10 @@ defmodule OliWeb.Grades.GradebookTableModel do
       [
         %ColumnSpec{
           name: :name,
-          label: "STUDENT NAME",
+          label: "Student Name",
           render_fn: &__MODULE__.render_student/3,
           th_class: "pl-10 whitespace-nowrap !sticky left-0 z-10",
-          td_class: "sticky bg-white dark:bg-neutral-800 left-0 z-10"
+          td_class: "sticky left-0 z-10"
         }
       ] ++
         Enum.map(graded_pages, fn sr ->
@@ -42,7 +42,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
             label:
               if(sr.has_lti_activity,
                 do: HTMLComponents.lti_label_component(%{title: sr.title, id: sr.resource_id}),
-                else: String.upcase(sr.title)
+                else: sr.title
               ),
             render_fn: &__MODULE__.render_score/3,
             th_class: "whitespace-nowrap",
@@ -132,7 +132,6 @@ defmodule OliWeb.Grades.GradebookTableModel do
     <div>
       <a
         class={"ml-8 #{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black dark:text-gray-300"}"}
-        data-score-check={if @has_score? and @perc < 40, do: "false", else: "true"}
         href={
           Routes.live_path(
             OliWeb.Endpoint,
@@ -167,10 +166,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     assigns = Map.merge(assigns, %{disapproved_count: disapproved_count, row: row})
 
     ~H"""
-    <div
-      class="ml-8 text-gray-800 dark:text-gray-300"
-      data-score-check={if @disapproved_count > 0, do: "false", else: "true"}
-    >
+    <div class="text-Text-text-high">
       {OliWeb.Common.Utils.name(@row.user)}
     </div>
     """
