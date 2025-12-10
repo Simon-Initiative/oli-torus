@@ -84,12 +84,13 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 checked
                 disabled
               />
-              <span
+              <label
+                htmlFor="strictCookies"
                 className="form-check-label inline-block text-gray-800 small"
                 aria-hidden="true"
               >
                 On
-              </span>
+              </label>
             </div>
           </div>
           <div
@@ -171,9 +172,9 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 checked={functionalActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <span className="custom-control-label small" aria-hidden="true">
+              <label htmlFor="functionalCookies" className="custom-control-label small" aria-hidden="true">
                 {functionalLabel}
-              </span>
+              </label>
             </div>
           </div>
           <div
@@ -246,9 +247,9 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 checked={analyticsActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <span className="custom-control-label small" aria-hidden="true">
+              <label htmlFor="analyticsCookies" className="custom-control-label small" aria-hidden="true">
                 {analyticsLabel}
-              </span>
+              </label>
             </div>
           </div>
           <div
@@ -330,9 +331,9 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                 checked={targetingActive}
                 onChange={(e: any) => prefChange(e.target.id, e.target.checked)}
               />
-              <span className="custom-control-label small" aria-hidden="true">
+              <label htmlFor="targetingCookies" className="custom-control-label small" aria-hidden="true">
                 {targetingLabel}
-              </span>
+              </label>
             </div>
           </div>
           <div
