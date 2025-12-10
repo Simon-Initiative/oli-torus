@@ -149,18 +149,34 @@ export const AutoHideTooltip = {
     });
 
     // Keyboard accessibility: track focus on trigger element
-    if (triggerElement) {
-      triggerElement.addEventListener('focus', () => {
-        cancelHideTimeout();
-      });
+    const onTriggerFocus = () => {
+      cancelHideTimeout();
+    };
 
-      triggerElement.addEventListener('blur', (event: FocusEvent) => {
-        const relatedTarget = event.relatedTarget as HTMLElement | null;
-        if (!isFocusInTooltipOrTrigger(relatedTarget)) {
-          startHideTimeout();
-        }
-      });
+    const onTriggerBlur = (event: FocusEvent) => {
+      const relatedTarget = event.relatedTarget as HTMLElement | null;
+      if (!isFocusInTooltipOrTrigger(relatedTarget)) {
+        startHideTimeout();
+      }
+    };
+
+    if (triggerElement) {
+      triggerElement.addEventListener('focus', onTriggerFocus);
+      triggerElement.addEventListener('blur', onTriggerBlur);
     }
+
+    // Store cleanup function
+    this.cleanup = () => {
+      cancelHideTimeout();
+      if (triggerElement) {
+        triggerElement.removeEventListener('focus', onTriggerFocus);
+        triggerElement.removeEventListener('blur', onTriggerBlur);
+      }
+    };
+  },
+
+  destroyed() {
+    if (this.cleanup) this.cleanup();
   },
 };
 
