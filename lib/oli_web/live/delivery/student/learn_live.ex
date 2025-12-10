@@ -1257,12 +1257,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="mt-5 md:p-[25px] md:pl-[50px]"
         role={"top_level_page_#{@unit["numbering"]["index"]}"}
       >
-        <div role="header" class="px-3 sm:px-0 flex flex-col md:flex-row md:gap-[30px]">
-          <div class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
+        <div role="header" class="flex flex-col gap-2 sm:gap-0 px-3 sm:px-0 md:flex-row md:gap-[30px]">
+          <div class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap">
             {"PAGE #{@unit["numbering"]["index"]}"}
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
-            <div class="flex flex-col md:flex-row w-full gap-1 sm:gap-2">
+            <div class="flex flex-col md:flex-row w-full gap-2">
               <div class="flex justify-between">
                 <h3 class="text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1">
                   {@unit["title"]}
@@ -1272,7 +1272,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 </span>
               </div>
               <div class="sm:ml-auto flex items-center gap-3" role="schedule_details">
-                <div class="flex flex-col gap-1 sm:flex-row text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
+                <div class="flex flex-col gap-2 sm:flex-row text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
                       @unit["section_resource"].start_date,
@@ -1336,8 +1336,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       role="resource top level"
     >
       <div class="mt-5 md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
-        <div class="flex flex-col px-3 sm:px-0 md:flex-row md:gap-[30px]">
-          <div class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
+        <div class="flex flex-col gap-2 sm:gap-0 px-3 sm:px-0 md:flex-row md:gap-[30px]">
+          <div class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap">
             {container_label_and_numbering(
               @unit["numbering"]["level"],
               @unit["numbering"]["index"],
@@ -1345,7 +1345,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             )}
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
-            <div class="flex flex-col md:flex-row w-full justify-between gap-1 sm:gap-2">
+            <div class="flex flex-col md:flex-row w-full justify-between gap-2">
               <div class="flex justify-between">
                 <h3 class="text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1">
                   {@unit["title"]}
@@ -1355,7 +1355,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 </span>
               </div>
               <div class="flex items-center gap-3" role="schedule_details">
-                <div class="flex flex-col gap-1 sm:flex-row text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
+                <div class="flex flex-col gap-2 sm:gap-0 sm:flex-row text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
                       @unit["section_resource"].start_date,
