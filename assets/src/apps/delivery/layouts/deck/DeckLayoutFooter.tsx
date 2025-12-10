@@ -267,7 +267,7 @@ const DeckLayoutFooter: React.FC = () => {
 
       // Fallback: find the button by class name
       const checkButton = document.querySelector(
-        '.checkBtn:not([disabled]), .closeFeedbackBtn:not([disabled])'
+        '.checkBtn:not([disabled]), .closeFeedbackBtn:not([disabled])',
       ) as HTMLButtonElement;
       if (checkButton) {
         try {
