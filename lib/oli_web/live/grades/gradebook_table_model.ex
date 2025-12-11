@@ -149,7 +149,9 @@ defmodule OliWeb.Grades.GradebookTableModel do
         <% end %>
       </a>
       <%= if @was_late do %>
-        <span class="ml-2 badge badge-xs badge-pill badge-danger">LATE</span>
+        <span class="ml-2 inline-flex items-center justify-center px-2 py-1 rounded-[999px] bg-Icon-icon-danger text-white text-xs font-semibold shadow-[0px_2px_4px_0px_rgba(0,52,99,0.1)]">
+          LATE
+        </span>
       <% end %>
     </div>
     """
@@ -259,19 +261,16 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
     if out_of == 0 or out_of == 0.0 do
       ~H"""
-      <a
-        class="text-red-500"
-        href={
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Progress.StudentResourceView,
-            @row.section.slug,
-            @row.id,
-            @resource_id
-          )
-        }
-      >
-        <span>{"#{@score}/#{@out_of}"}</span>
+      <a href={
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Progress.StudentResourceView,
+          @row.section.slug,
+          @row.id,
+          @resource_id
+        )
+      }>
+        <.score_badge score={@score} out_of={@out_of} />
       </a>
       """
     else
@@ -295,22 +294,21 @@ defmodule OliWeb.Grades.GradebookTableModel do
         Map.merge(assigns, %{perc: perc, safe_out_of: safe_out_of, safe_score: safe_score})
 
       ~H"""
-      <a
-        class={if @perc < 50, do: "text-red-500", else: "text-black dark:text-gray-300"}
-        href={
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Progress.StudentResourceView,
-            @row.section.slug,
-            @row.id,
-            @resource_id
-          )
-        }
-      >
-        {"#{@safe_score}/#{@safe_out_of}"}
+      <a href={
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Progress.StudentResourceView,
+          @row.section.slug,
+          @row.id,
+          @resource_id
+        )
+      }>
+        <.score_badge score={@safe_score} out_of={@safe_out_of} perc={@perc} />
       </a>
       <%= if @was_late do %>
-        <span class="ml-2 badge badge-xs badge-pill badge-danger">LATE</span>
+        <span class="ml-2 w-11 h-5 inline-flex items-center justify-center px-2 py-1 rounded-[999px] bg-Icon-icon-danger text-white text-xs shadow-[0px_2px_4px_0px_rgba(0,52,99,0.1)]">
+          LATE
+        </span>
       <% end %>
       """
     end
@@ -319,6 +317,20 @@ defmodule OliWeb.Grades.GradebookTableModel do
   def render(assigns) do
     ~H"""
     <div>nothing</div>
+    """
+  end
+
+  attr :score, :any, required: true
+  attr :out_of, :any, required: true
+  attr :perc, :float, default: 0.0
+
+  defp score_badge(assigns) do
+    ~H"""
+    <%= if @perc < 50 do %>
+      <span class="text-Text-text-danger no-underline">{@score}</span><span class="text-Text-text-high">{"/#{@out_of}"}</span>
+    <% else %>
+      <span class="text-Text-text-button no-underline">{@score}</span><span class="text-Text-text-high">{"/#{@out_of}"}</span>
+    <% end %>
     """
   end
 end
