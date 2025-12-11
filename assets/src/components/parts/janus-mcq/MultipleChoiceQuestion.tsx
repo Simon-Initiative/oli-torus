@@ -103,15 +103,17 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
 
         {/* Position description is sr-only and referenced by aria-describedby.
             This ensures native checkboxes announce "1 of 4", "2 of 4", etc. */}
-        {multipleSelection && (
-          <span id={positionId} className="sr-only">
-            {`${(index !== undefined ? index : idx) + 1} of ${totalItems}`}
-          </span>
-        )}
 
         {/* Label contains only text, not input */}
         <label id={labelId} htmlFor={itemId} style={{ marginLeft: 24 }}>
-          <MCQItemContent itemId={itemId} nodes={nodes} state={state} />
+          {multipleSelection && (
+            <span id={positionId} className="sr-only" aria-live="polite">
+              {`${(index !== undefined ? index : idx) + 1} of ${totalItems}`}
+            </span>
+          )}
+          <span aria-live="polite">
+            <MCQItemContent itemId={itemId} nodes={nodes} state={state} />
+          </span>
         </label>
       </div>
 
@@ -848,7 +850,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   const groupLabel = multipleSelection
     ? `${groupLabelText}, group, ${options.length} items`
     : groupLabelText;
-
 
   return ready ? (
     <div
