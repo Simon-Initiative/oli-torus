@@ -26,6 +26,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   @gallery_scroll_offset 125
   @outline_scroll_offset 125
   @mobile_gallery_scroll_offset 150
+  @mobile_outline_scroll_offset 190
 
   @default_image "/images/course_default.png"
   # this is an optimization to reduce the memory footprint of the liveview process
@@ -383,15 +384,40 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp push_scroll_event_for_outline(socket, identifier) do
     push_event(socket, "scroll-y-to-target", %{
       role: identifier,
-      offset: @outline_scroll_offset,
+      offset:
+        if(socket.assigns.is_mobile,
+          do: @mobile_outline_scroll_offset,
+          else: @outline_scroll_offset
+        ),
       pulse: true,
       pulse_delay: 500
     })
   end
 
-  def handle_event("show_unit_layer", %{"id" => id}, socket) do
-    # here we will handle the logic to render the new outline layer
-    {:noreply, socket}
+  def handle_event("show_unit_layer", %{"id" => unit_resource_id}, socket) do
+    # handles the logic to show the unit layer when a unit is clicked on in the outline view for mobile
+
+    full_hierarchy =
+      get_full_hierarchy(
+        socket.assigns.section,
+        socket.assigns.selected_view,
+        socket.assigns.params["search_term"]
+      )
+
+    selected_unit =
+      Enum.find(full_hierarchy["children"], fn unit ->
+        unit["resource_id"] == String.to_integer(unit_resource_id)
+      end)
+      |> mark_visited_and_completed_pages(
+        socket.assigns.student_visited_pages,
+        socket.assigns.student_raw_avg_score_per_page_id,
+        socket.assigns.student_progress_per_resource_id
+      )
+
+    {:noreply,
+     socket
+     |> assign(selected_unit_resource_id: selected_unit["resource_id"])
+     |> stream(:units, [selected_unit], reset: true)}
   end
 
   def handle_event("back_to_gallery_mobile_view", _params, socket) do
@@ -430,6 +456,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         pulse_target_id: "module_#{module_resource_id}",
         pulse_delay: 500
       })
+
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "back_to_outline_mobile_view",
+        %{"unit_resource_id" => unit_resource_id},
+        socket
+      ) do
+    params = %{target_resource_id: unit_resource_id, selected_view: :outline}
+
+    socket =
+      socket
+      |> assign(selected_unit_resource_id: nil)
+      |> push_patch(to: ~p"/sections/#{socket.assigns.section.slug}/learn?#{params}")
 
     {:noreply, socket}
   end
@@ -1072,6 +1113,47 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
+  def render(
+        %{
+          is_mobile: true,
+          selected_view: :outline,
+          selected_unit_resource_id: selected_unit_resource_id
+        } = assigns
+      )
+      when not is_nil(selected_unit_resource_id) do
+    # this layer matches the case when a unit is clicked on in the outline view for mobile
+    ~H"""
+    <div
+      id="mobile_outline_unit"
+      class="bg-Background-bg-primary min-h-screen p-3 flex flex-col gap-3"
+      phx-hook="ScrollToTheTop"
+    >
+      <.video_player />
+
+      <button
+        phx-click="back_to_outline_mobile_view"
+        phx-value-unit_resource_id={@selected_unit_resource_id}
+        class="inline-flex justify-start items-center gap-2"
+        aria-label="Back to outline"
+      >
+        <Icons.back_arrow class="w-5 h-5 fill-Icon-icon-active stroke-Icon-icon-active" />
+        <span class="text-Text-text-high text-sm font-semibold leading-6">Back</span>
+      </button>
+      <ComponentsUtils.timezone_info timezone={
+        FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
+      } />
+
+      <div :for={{node_id, unit} <- @streams.units} id={node_id} class="flex flex-col gap-2">
+        <span class="text-Text-text-high text-lg font-semibold leading-6">{unit["title"]}</span>
+
+        <div :for={child <- unit["children"]} class="flex flex-col gap-2">
+          <span class="text-Text-text-low text-sm leading-6">{child["title"]}</span>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   def render(%{selected_view: :outline} = assigns) do
     %{section: %{id: _section_id}} = assigns
 
@@ -1620,6 +1702,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       id={@id}
       role={"unit_#{@row["resource_id"]}_outline"}
       data-completed={"#{@progress == 100}"}
+      phx-click={if @is_mobile, do: "show_unit_layer"}
+      phx-value-id={@row["resource_id"]}
       class="flex flex-col"
       phx-update="replace"
     >
@@ -1678,9 +1762,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   class="btn btn-block px-0 transition-transform duration-300 -rotate-90 sm:rotate-0 scale-75 sm:scale-100"
                   type="button"
                   phx-click={
-                    if @is_mobile,
-                      do: "show_unit_layer",
-                      else:
+                    if !@is_mobile,
+                      do:
                         JS.toggle_class("rotate-180",
                           to: "#icon-#{@row["resource_id"]}"
                         )
