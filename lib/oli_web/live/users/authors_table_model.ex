@@ -46,7 +46,7 @@ defmodule OliWeb.Users.AuthorsTableModel do
   end
 
   def render_role_column(assigns, author, _) do
-    has_admin_role? = Accounts.has_admin_role?(author, :account_admin)
+    has_admin_role? = Accounts.is_admin?(author)
 
     if has_admin_role? do
       ~H"""
