@@ -1,4 +1,6 @@
 janus-mcq {
+  .sr-only { border: 0; clip: rect(0 0 0 0); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; width: 1px; white-space: nowrap; }
+
   .mcq-input {
     border: none !important;
     padding: 0px;
@@ -42,7 +44,7 @@ janus-mcq {
       max-width: none;
     }
     label:hover,
-    label:has(input:focus) {
+    input:focus + label {
       background-color: var(--black5_a);
       outline: solid 10px var(--black5_a);
     }
@@ -62,27 +64,27 @@ janus-mcq {
       transform: translateY(-50%);
     }
 
-    label:has(input[type='radio']):before {
+    input[type='radio'] + label:before {
       border-radius: 50%;
     }
-    label:has(input:checked):before {
+    input:checked + label:before {
       box-shadow: inset 0 0 0 20px var(--blue100);
     }
-    label:has(input:checked:focus):before {
+    input:checked:focus + label:before {
       box-shadow: inset 0 0 0 20px var(--blue100), 0 0 0 4px rgba(0, 151, 167, 0.4);
     }
-    label:has(input:focus):before {
+    input:focus + label:before {
       box-shadow: inset 0 0 0 2px var(--blue100), 0 0 0 4px rgba(0, 151, 167, 0.4);
     }
-    label:has(input[type='checkbox']:checked):after {
+    input[type='checkbox']:checked + label:after {
       transform: rotate(45deg) scale(1) translate(-50%, -50%);
       opacity: 1;
     }
-    label:has(input[type='radio']:checked):after {
+    input[type='radio']:checked + label:after {
       transform: scale(1) translate(-50%, -50%);
       opacity: 1;
     }
-    label:has(input[type='radio']):after {
+    input[type='radio'] + label:after {
       height: 6px;
       width: 6px;
       content: '';
@@ -99,7 +101,7 @@ janus-mcq {
       border: 2px solid #ffffff;
       box-sizing: border-box;
     }
-    label:has(input[type='checkbox']):after {
+    input[type='checkbox'] + label:after {
       height: 11px;
       width: 6px;
       content: '';
@@ -118,7 +120,7 @@ janus-mcq {
     }
     //align checkbox to top-left of text
     label:before,
-    label:has(input[type='checkbox']):after {
+    input[type='checkbox'] + label:after {
       top: 0.75rem;
     }
 

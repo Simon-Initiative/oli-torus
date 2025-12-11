@@ -59,192 +59,94 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   onNavigateToItem,
   registerInputRef,
 }) => {
-  /* console.log('MCQItem RENDERED'); */
-
-  const mcqItemStyles: CSSProperties = {};
-  if (layoutType === 'horizontalLayout') {
-    if (columns === 1) {
-      mcqItemStyles.width = `calc(${Math.floor(100 / totalItems)}% - 6px)`;
-    } else {
-      mcqItemStyles.width = `calc(100% / ${columns} - 6px)`;
-    }
-    if (idx !== 0) {
-      mcqItemStyles.left = `calc(${(100 / totalItems) * idx}% - 6px)`;
-    }
-    mcqItemStyles.position = `absolute`;
-
-    mcqItemStyles.display = `inline-block`;
-  }
-  if (layoutType === 'verticalLayout' && overrideHeight) {
-    mcqItemStyles.height = `calc(${100 / totalItems}%)`;
-  }
-  if (layoutType === 'verticalLayout' && verticalGap && index > 0) {
-    mcqItemStyles.marginTop = `${verticalGap}px`;
-  }
-
   const textValue = getNodeText(nodes);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
 
-  // Create aria-label for checkboxes that includes position information
-  // This ensures screen readers announce: "{text}, {checked/unchecked}, checkbox, group, {position} of {total}"
-  const getAriaLabel = () => {
-    if (!multipleSelection) {
-      return undefined; // Radio buttons don't need explicit aria-label, they work naturally
-    }
-    const checkedState = selected ? 'checked' : 'unchecked';
-    const position = `${index + 1} of ${totalItems}`;
-    return `${textValue}, ${checkedState}, checkbox, group, ${position}`;
-  };
+  // Label ID for aria-labelledby
+  const labelId = `${itemId}-label`;
+  // Position description id for aria-describedby (used for multiselect position announcement)
+  const positionId = `${itemId}-position`;
 
-  // Callback ref to register input with parent for keyboard navigation (for checkboxes only)
-  const setInputRef = React.useCallback(
-    (element: HTMLInputElement | null) => {
-      // Store ref for local use (e.g., Space key handling)
-      (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = element;
-      // Register with parent for navigation (only for checkboxes)
-      if (multipleSelection && registerInputRef) {
-        registerInputRef(index, element);
-      }
-    },
-    [registerInputRef, index, multipleSelection],
-  );
-
-  // Use callback ref for checkboxes, regular ref for radio buttons
-  const inputRefCallback = multipleSelection ? setInputRef : inputRef;
-
-  const handleChanged = (e: { target: { checked: any } }) => {
+  const handleChanged = (e: { target: { checked: boolean } }) => {
     const selection = {
       value: val,
       textValue,
       checked: e.target.checked,
     };
-    if (onSelected) {
-      onSelected(selection);
+    onSelected && onSelected(selection);
+  };
+
+  /** Keyboard navigation for MSQ */
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!multipleSelection || disabled) return;
+
+    const curr = index !== undefined ? index : idx;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      onNavigateToItem && curr < totalItems - 1 && onNavigateToItem(curr + 1);
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      onNavigateToItem && curr > 0 && onNavigateToItem(curr - 1);
+    }
+
+    if (e.key === ' ') {
+      // space toggles checkbox
+      e.preventDefault();
+      const newChecked = !selected;
+      handleChanged({ target: { checked: newChecked } });
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!multipleSelection || disabled) {
-      return;
-    }
+  /** Register input for navigation */
+  const inputRefCallback = (el: HTMLInputElement | null) => {
+    // local ref (safe to mutate)
+    inputRef.current = el;
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        e.stopPropagation();
-        if (onNavigateToItem && index < totalItems - 1) {
-          onNavigateToItem(index + 1);
-        }
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        e.stopPropagation();
-        if (onNavigateToItem && index > 0) {
-          onNavigateToItem(index - 1);
-        }
-        break;
-      case ' ':
-        // Space key - prevent default page scroll, but allow normal checkbox toggle
-        e.preventDefault();
-        e.stopPropagation();
-        // Toggle the checkbox
-        if (inputRef.current) {
-          inputRef.current.checked = !inputRef.current.checked;
-          handleChanged({ target: { checked: inputRef.current.checked } });
-        }
-        break;
-      default:
-        break;
+    // pass element up to parent for navigation (do not pass a RefObject)
+    if (multipleSelection && registerInputRef) {
+      registerInputRef(index !== undefined ? index : idx, el);
     }
   };
 
   return (
     <React.Fragment>
-      <div style={mcqItemStyles} className="mcq-item">
-        {configureMode && (
-          <>
-            <button
-              className="aa-add-button btn btn-primary btn-sm"
-              type="button"
-              aria-describedby="button-tooltip"
-              onClick={() => onConfigOptionClick(index, 2)}
-              style={{
-                fontSize: '10px;',
-                padding: 1,
-                cursor: 'pointer',
-              }}
-            >
-              <i
-                className="fa fa-trash"
-                style={{ cursor: 'pointer', color: 'white' }}
-                aria-hidden="true"
-                title="Delete the option"
-              ></i>{' '}
-            </button>
+      <div style={{ position: 'relative' }} className="mcq-item">
+        {/* Input is OUTSIDE label (fixes double reading) */}
+        <input
+          ref={inputRefCallback}
+          id={itemId}
+          name={groupId}
+          type={multipleSelection ? 'checkbox' : 'radio'}
+          value={val}
+          disabled={disabled}
+          checked={selected}
+          onChange={handleChanged}
+          onKeyDown={handleKeyDown}
+          tabIndex={disabled ? -1 : 0}
+          aria-labelledby={labelId}
+          // For multiselect, include position using aria-describedby (supported reliably by SRs)
+          aria-describedby={multipleSelection ? positionId : undefined}
+          style={{ position: 'absolute', marginTop: 5 }}
+        />
 
-            <button
-              className="aa-add-button btn btn-primary btn-sm"
-              type="button"
-              aria-describedby="button-tooltip"
-              onClick={() => onConfigOptionClick(index, 1)}
-              style={{
-                fontSize: '10px;',
-                padding: 1,
-                marginLeft: 4,
-                cursor: 'pointer',
-              }}
-            >
-              <i
-                className="fas fa-edit"
-                style={{ cursor: 'pointer', color: 'white' }}
-                aria-hidden="true"
-                title="Edit the option"
-              ></i>{' '}
-            </button>
-            <button
-              className="aa-add-button btn btn-primary btn-sm"
-              type="button"
-              aria-describedby="button-tooltip"
-              onClick={() => onConfigOptionClick(index, 3)}
-              style={{
-                fontSize: '10px;',
-                padding: 1,
-                marginLeft: 4,
-                cursor: 'pointer',
-                marginRight: 2,
-              }}
-            >
-              <i
-                className="fas fa-plus"
-                style={{ cursor: 'pointer', color: 'white' }}
-                aria-hidden="true"
-                title="Add new option"
-              ></i>{' '}
-            </button>
-          </>
+        {/* Position description is sr-only and referenced by aria-describedby.
+            This ensures native checkboxes announce "1 of 4", "2 of 4", etc. */}
+        {multipleSelection && (
+          <span id={positionId} className="sr-only">
+            {`${(index !== undefined ? index : idx) + 1} of ${totalItems}`}
+          </span>
         )}
-        <label htmlFor={itemId}>
-          <input
-            ref={inputRefCallback}
-            style={{ position: 'absolute', marginTop: 5 }}
-            name={groupId}
-            id={itemId}
-            type={multipleSelection ? 'checkbox' : 'radio'}
-            value={val}
-            disabled={disabled}
-            checked={selected}
-            onChange={handleChanged}
-            onKeyDown={handleKeyDown}
-            tabIndex={disabled ? -1 : 0}
-            aria-label={getAriaLabel()}
-            aria-checked={multipleSelection ? (selected ? 'true' : 'false') : undefined}
-            aria-posinset={multipleSelection ? index + 1 : undefined}
-            aria-setsize={multipleSelection ? totalItems : undefined}
-          />
+
+        {/* Label contains only text, not input */}
+        <label id={labelId} htmlFor={itemId} style={{ marginLeft: 24 }}>
           <MCQItemContent itemId={itemId} nodes={nodes} state={state} />
         </label>
       </div>
-      {layoutType !== 'horizontalLayout' && <br style={{ padding: '0px' }} />}
+
+      {layoutType !== 'horizontalLayout' && <br />}
     </React.Fragment>
   );
 };
@@ -490,7 +392,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       setEnabled(false);
     }
     setReady(true);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
     width,
@@ -769,9 +671,9 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (sEnabled !== undefined) {
                 setEnabled(sEnabled);
               }
-              const sRandomized = changes[`stage.${id}.randomize`];
-              if (sRandomized !== undefined) {
-                setRandomized(parseBoolean(sRandomized));
+              const sRandomize = changes[`stage.${id}.randomize`];
+              if (sRandomize !== undefined) {
+                setRandomized(parseBoolean(sRandomize));
               }
               // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
               let hasDoneMultiple = false;
