@@ -30,6 +30,19 @@ export interface DotDatum {
   student_index: number;
 }
 
+// Define GroupedDotDatum for grouped students with same proficiency
+export interface GroupedDotDatum {
+  proficiency: ProficiencyLabel;
+  proficiency_value: number;
+  student_ids: string[];
+  student_count: number;
+  color: string;
+  x_position: number; // Position in percentage (0-100)
+  diameter: number; // Calculated diameter based on student count
+  is_tower: boolean; // If true, render as vertical tower instead of single grouped dot
+  tower_dots?: { student_id: string; y_position: number }[]; // Dots for vertical tower
+}
+
 // Define BarDatum type for type safety
 export interface BarDatum {
   proficiency: ProficiencyLabel;
@@ -76,6 +89,12 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   // State for section interactions
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  // State for dot tooltip
+  const [hoveredDot, setHoveredDot] = useState<{
+    studentCount: number;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const viewRef = useRef<View | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -325,6 +344,7 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
                     setHoveredSection,
                     setSelectedSection,
                     darkMode,
+                    setHoveredDot,
                     unique_id,
                     pushEventTo,
                   )}
@@ -438,68 +458,216 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
             </p>
           </div>
         )}
+
+        {/* Tooltip for dot hover */}
+        {hoveredDot && (
+          <div
+            style={{
+              position: 'fixed',
+              left: `${hoveredDot.x}px`,
+              top: `${hoveredDot.y - 35}px`,
+              transform: 'translateX(-50%)',
+              pointerEvents: 'none',
+              zIndex: 1000,
+            }}
+            className="px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded shadow-lg dark:bg-gray-700"
+          >
+            {hoveredDot.studentCount} {hoveredDot.studentCount === 1 ? 'student' : 'students'}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-// HELPER FUNCTION: Calculate symmetric distribution of subtowers for "Not enough data"
-function calculateSymmetricDistribution(totalStudents: number): { subtowers: number[] } {
-  if (totalStudents <= 0) return { subtowers: [] };
-  if (totalStudents <= 2) return { subtowers: [totalStudents] };
-
-  const maxTowerHeight = 5; // Maximum height per subtower to avoid too tall towers
-
-  // Calculate number of subtowers needed
-  const numTowers = Math.ceil(totalStudents / maxTowerHeight);
-
-  // Distribute students as evenly as possible
-  const baseHeight = Math.floor(totalStudents / numTowers);
-  const remainder = totalStudents % numTowers;
-
-  // Create subtowers array
-  const subtowers: number[] = [];
-  for (let i = 0; i < numTowers; i++) {
-    // Distribute remainder to middle towers for symmetry
-    const extraDot = i < remainder ? 1 : 0;
-    subtowers.push(baseHeight + extraDot);
+// HELPER FUNCTION: Calculate diameter based on student count
+// Uses a square root scale to prevent dots from growing too large
+function calculateDotDiameter(studentCount: number, baseDotSize = 9): number {
+  if (studentCount === 1) {
+    return baseDotSize;
   }
+  // Use square root scaling to slow down growth: diameter = baseDotSize * sqrt(studentCount) * scaleFactor
+  // This gives more reasonable sizes: 1→9px, 2→12.7px, 4→18px, 9→27px, 16→36px
+  const scaleFactor = 1.0;
+  return baseDotSize * Math.sqrt(studentCount) * scaleFactor;
+}
 
-  // Sort to create symmetric pattern (tallest in middle, shortest on edges)
-  subtowers.sort((a, b) => b - a); // Sort descending
+// HELPER FUNCTION: Detect and resolve collisions between dots
+function resolveCollisions(
+  dots: GroupedDotDatum[],
+  levelStartX: number,
+  levelWidth: number,
+): GroupedDotDatum[] {
+  // Sort dots by x position
+  const sortedDots = [...dots].sort((a, b) => a.x_position - b.x_position);
 
-  // Rearrange for symmetry: alternate placement from center outward
-  const symmetricTowers: number[] = [];
-  const center = Math.floor(subtowers.length / 2);
+  if (sortedDots.length === 0) return sortedDots;
 
-  if (subtowers.length % 2 === 1) {
-    // Odd number of towers: place tallest in center
-    symmetricTowers[center] = subtowers[0];
-    for (let i = 1; i < subtowers.length; i++) {
-      const offset = Math.ceil(i / 2);
-      if (i % 2 === 1) {
-        // Place to the right of center
-        symmetricTowers[center + offset] = subtowers[i];
-      } else {
-        // Place to the left of center
-        symmetricTowers[center - offset] = subtowers[i];
+  // Iteratively adjust positions to avoid overlaps
+  const maxIterations = 10;
+  let adjusted = true;
+  let iteration = 0;
+
+  while (adjusted && iteration < maxIterations) {
+    adjusted = false;
+    iteration++;
+
+    for (let i = 0; i < sortedDots.length - 1; i++) {
+      const currentDot = sortedDots[i];
+      const nextDot = sortedDots[i + 1];
+
+      // Calculate required spacing (sum of radii + small padding)
+      const currentRadius = (currentDot.diameter / 2);
+      const nextRadius = (nextDot.diameter / 2);
+      const padding = 2; // pixels of padding between dots
+
+      // Convert positions to pixel space for collision detection
+      // Assuming levelWidth represents 100% of the segment
+      const currentPosPixels = ((currentDot.x_position - levelStartX) / levelWidth) * 100;
+      const nextPosPixels = ((nextDot.x_position - levelStartX) / levelWidth) * 100;
+
+      // Calculate actual distance in pixel percentage space
+      const distance = nextPosPixels - currentPosPixels;
+      const requiredDistance = (currentRadius + nextRadius + padding) / (levelWidth / 100);
+
+      if (distance < requiredDistance) {
+        // Collision detected - push dots apart
+        const overlap = requiredDistance - distance;
+
+        // Move dots apart (push next dot to the right, current to the left)
+        const pushAmount = overlap / 2;
+
+        // Check boundaries before adjusting
+        const newCurrentPos = currentDot.x_position - pushAmount;
+        const newNextPos = nextDot.x_position + pushAmount;
+
+        if (newCurrentPos >= levelStartX) {
+          currentDot.x_position = newCurrentPos;
+          adjusted = true;
+        }
+
+        if (newNextPos <= levelStartX + levelWidth) {
+          nextDot.x_position = newNextPos;
+          adjusted = true;
+        }
       }
     }
-  } else {
-    // Even number of towers: distribute symmetrically
-    for (let i = 0; i < subtowers.length; i++) {
-      const offset = Math.floor(i / 2);
-      if (i % 2 === 0) {
-        // Place to the left of center
-        symmetricTowers[center - 1 - offset] = subtowers[i];
-      } else {
-        // Place to the right of center
-        symmetricTowers[center + offset] = subtowers[i];
-      }
-    }
   }
 
-  return { subtowers: symmetricTowers.filter((h) => h > 0) };
+  return sortedDots;
+}
+
+// HELPER FUNCTION: Group students by exact proficiency and prepare for rendering
+function groupStudentsByProficiency(
+  dotData: DotDatum[],
+  barData: BarDatum[],
+  baseDotSize: number,
+): { [key: string]: GroupedDotDatum[] } {
+  const totalStudents = barData.reduce((sum, item) => sum + item.count, 0);
+  const grouped: { [key: string]: GroupedDotDatum[] } = {};
+
+  // Group by proficiency level first
+  const byLevel: { [key: string]: { [key: number]: DotDatum[] } } = {};
+
+  dotData.forEach((dot) => {
+    if (!byLevel[dot.proficiency]) {
+      byLevel[dot.proficiency] = {};
+    }
+    if (!byLevel[dot.proficiency][dot.proficiency_value]) {
+      byLevel[dot.proficiency][dot.proficiency_value] = [];
+    }
+    byLevel[dot.proficiency][dot.proficiency_value].push(dot);
+  });
+
+  // Convert to GroupedDotDatum with calculated positions
+  PROFICIENCY_LABELS.forEach((level) => {
+    if (!byLevel[level]) return;
+
+    const levelData = barData.find((item) => item.proficiency === level);
+    if (!levelData || levelData.count === 0) return;
+
+    // Calculate level boundaries
+    let cumulativeWidth = 0;
+    for (let i = 0; i < PROFICIENCY_LABELS.indexOf(level); i++) {
+      const prevLevel = PROFICIENCY_LABELS[i];
+      const prevLevelData = barData.find((item) => item.proficiency === prevLevel);
+      const prevLevelCount = prevLevelData ? prevLevelData.count : 0;
+      cumulativeWidth += (prevLevelCount / totalStudents) * 100;
+    }
+
+    const levelWidth = (levelData.count / totalStudents) * 100;
+    const levelStartX = cumulativeWidth;
+
+    grouped[level] = [];
+
+    // Get all proficiency values in this level
+    const proficiencyValues = Object.keys(byLevel[level]).map(Number).sort();
+
+    proficiencyValues.forEach((proficiencyValue) => {
+      const studentsWithValue = byLevel[level][proficiencyValue];
+      const studentCount = studentsWithValue.length;
+
+      // Calculate initial x position based on proficiency value
+      const minValue = Math.min(...proficiencyValues);
+      const maxValue = Math.max(...proficiencyValues);
+
+      let xPositionPercent: number;
+      if (minValue === maxValue || level === 'Not enough data') {
+        // Center in the segment
+        xPositionPercent = levelStartX + levelWidth / 2;
+      } else {
+        // Position based on proficiency value
+        const valueRange = maxValue - minValue;
+        const normalizedValue = (proficiencyValue - minValue) / valueRange;
+        const margin = levelWidth * 0.1;
+        const availableWidth = levelWidth - 2 * margin;
+        xPositionPercent = levelStartX + margin + normalizedValue * availableWidth;
+      }
+
+      // Only group if there are 6 or more students, otherwise create a tower
+      const shouldGroup = studentCount >= 6;
+
+      if (shouldGroup) {
+        // Group students into a single large dot
+        grouped[level].push({
+          proficiency: level,
+          proficiency_value: proficiencyValue,
+          student_ids: studentsWithValue.map((s) => s.student_id),
+          student_count: studentCount,
+          color: studentsWithValue[0].color,
+          x_position: xPositionPercent,
+          diameter: calculateDotDiameter(studentCount, baseDotSize),
+          is_tower: false,
+        });
+      } else {
+        // Create a vertical tower of individual dots
+        const dotSpacing = baseDotSize + 2; // spacing between dots in tower
+        const towerDots = studentsWithValue.map((student, index) => ({
+          student_id: student.student_id,
+          y_position: 135 - index * dotSpacing, // Stack vertically from bottom
+        }));
+
+        grouped[level].push({
+          proficiency: level,
+          proficiency_value: proficiencyValue,
+          student_ids: studentsWithValue.map((s) => s.student_id),
+          student_count: studentCount,
+          color: studentsWithValue[0].color,
+          x_position: xPositionPercent,
+          diameter: baseDotSize, // Use base size for tower dots
+          is_tower: true,
+          tower_dots: towerDots,
+        });
+      }
+    });
+
+    // Resolve collisions for this level
+    if (grouped[level].length > 0) {
+      grouped[level] = resolveCollisions(grouped[level], levelStartX, levelWidth);
+    }
+  });
+
+  return grouped;
 }
 
 // HELPER FUNCTION: Render dots using React (not VegaLite)
@@ -512,27 +680,17 @@ function renderDots(
   setHoveredSection: (section: string | null) => void,
   setSelectedSection: (section: string | null) => void,
   darkMode: boolean,
+  setHoveredDot: (dot: { studentCount: number; x: number; y: number } | null) => void,
   unique_id?: string,
   pushEventTo?: (selectorOrTarget: string, event: string, payload: any) => void,
 ) {
-  const dotSize = 11; // Size of each dot in pixels (11px diameter)
-  const padding = 2; // Space between dots
+  const baseDotSize = 9; // Base size for a single student dot
   const totalStudents = barData.reduce((sum, item) => sum + item.count, 0);
 
   if (totalStudents === 0) return null;
 
-  // Group dots by proficiency level, then by proficiency value to create towers
-  const groupedByLevelAndValue: { [key: string]: { [key: number]: DotDatum[] } } = {};
-
-  dotData.forEach((dot) => {
-    if (!groupedByLevelAndValue[dot.proficiency]) {
-      groupedByLevelAndValue[dot.proficiency] = {};
-    }
-    if (!groupedByLevelAndValue[dot.proficiency][dot.proficiency_value]) {
-      groupedByLevelAndValue[dot.proficiency][dot.proficiency_value] = [];
-    }
-    groupedByLevelAndValue[dot.proficiency][dot.proficiency_value].push(dot);
-  });
+  // Group students by exact proficiency and calculate positions with collision resolution
+  const groupedDots = groupStudentsByProficiency(dotData, barData, baseDotSize);
 
   const chartTitle = `Student proficiency distribution with ${totalStudents} students`;
   const chartDescription = `Dot chart showing student distribution across proficiency levels: ${barData
@@ -677,128 +835,15 @@ function renderDots(
       aria-labelledby={`dotChartTitle-${unique_id}`}
       aria-describedby={`dotChartDesc-${unique_id}`}
     >
-      <title id={`dotChartTitle-${unique_id}`}>{chartTitle}</title>
-      <desc id={`dotChartDesc-${unique_id}`}>{chartDescription}</desc>
+      {/* Use pointer-events: none to prevent title from showing as tooltip */}
+      <title id={`dotChartTitle-${unique_id}`} style={{ pointerEvents: 'none' }}>
+        {chartTitle}
+      </title>
+      <desc id={`dotChartDesc-${unique_id}`} style={{ pointerEvents: 'none' }}>
+        {chartDescription}
+      </desc>
 
-      {/* Render dots first */}
-      {PROFICIENCY_LABELS.map((level) => {
-        const levelGroups = groupedByLevelAndValue[level] || {};
-        const proficiencyValues = Object.keys(levelGroups).map(Number).sort();
-
-        if (proficiencyValues.length === 0) return null;
-
-        const levelData = barData.find((item) => item.proficiency === level);
-        if (!levelData || levelData.count === 0) return null;
-
-        // Calculate the boundaries of this proficiency level segment in the bar chart
-        let cumulativeWidth = 0;
-        for (let i = 0; i < PROFICIENCY_LABELS.indexOf(level); i++) {
-          const prevLevel = PROFICIENCY_LABELS[i];
-          const prevLevelData = barData.find((item) => item.proficiency === prevLevel);
-          const prevLevelCount = prevLevelData ? prevLevelData.count : 0;
-          cumulativeWidth += (prevLevelCount / totalStudents) * 100;
-        }
-
-        const levelWidth = (levelData.count / totalStudents) * 100;
-        const levelStartX = cumulativeWidth;
-
-        // Handle "Not enough data" level differently from others
-        if (level === 'Not enough data') {
-          // For "Not enough data", create multiple symmetric subtowers in the center
-          const allStudents = proficiencyValues.reduce<DotDatum[]>(
-            (acc, value) => acc.concat(levelGroups[value]),
-            [],
-          );
-          const totalStudents = allStudents.length;
-
-          if (totalStudents === 0) return null;
-
-          // Calculate optimal distribution of subtowers
-          const { subtowers } = calculateSymmetricDistribution(totalStudents);
-          const centerX = levelStartX + levelWidth / 2;
-          const subtowerSpacing = Math.min(levelWidth / (subtowers.length + 1), dotSize + 4);
-
-          let studentIndex = 0;
-          return subtowers
-            .map((towerHeight, towerIndex) => {
-              // Calculate X position for each subtower symmetrically around center
-              const offsetFromCenter = (towerIndex - (subtowers.length - 1) / 2) * subtowerSpacing;
-              const xPositionPercent = centerX + (offsetFromCenter / levelWidth) * levelWidth;
-
-              // Create dots for this subtower
-              const towerDots = [];
-              for (let i = 0; i < towerHeight; i++) {
-                const student = allStudents[studentIndex++];
-                if (!student) break;
-
-                const yPosition = 130 - i * (dotSize + padding);
-
-                towerDots.push(
-                  <circle
-                    key={`${student.student_id}-notEnoughData-${towerIndex}-${i}`}
-                    cx={`${Math.max(1, Math.min(99, xPositionPercent))}%`}
-                    cy={yPosition}
-                    r={dotSize / 2}
-                    fill={student.color}
-                    stroke={student.color}
-                    aria-hidden="true"
-                  />,
-                );
-              }
-              return towerDots;
-            })
-            .reduce((acc, val) => acc.concat(val), []);
-        } else {
-          // For Low, Medium, High: always respect exact proficiency value position
-          return proficiencyValues
-            .map((proficiencyValue) => {
-              const studentsInTower = levelGroups[proficiencyValue];
-
-              // Calculate X position based on proficiency value within the level segment
-              const minValue = Math.min(...proficiencyValues);
-              const maxValue = Math.max(...proficiencyValues);
-
-              let xPositionPercent: number;
-              if (minValue === maxValue) {
-                // Even if all have same value, position based on the actual proficiency value
-                // Map proficiency value (0-100) to position within the level segment
-                const margin = levelWidth * 0.1;
-                const availableWidth = levelWidth - 2 * margin;
-                // For level segments, use proficiency value directly (0-100 scale)
-                const normalizedPosition = proficiencyValue / 100;
-                xPositionPercent = levelStartX + margin + normalizedPosition * availableWidth;
-              } else {
-                // Distribute towers proportionally based on proficiency value within the level segment
-                const valueRange = maxValue - minValue;
-                const normalizedValue = (proficiencyValue - minValue) / valueRange;
-                const margin = levelWidth * 0.1;
-                const availableWidth = levelWidth - 2 * margin;
-                xPositionPercent = levelStartX + margin + normalizedValue * availableWidth;
-              }
-
-              // Create dots in this tower (stacked vertically)
-              return studentsInTower.map((dot, studentIndex) => {
-                const yPosition = 130 - studentIndex * (dotSize + padding);
-
-                return (
-                  <circle
-                    key={`${level}-${dot.student_id}-${proficiencyValue}`}
-                    cx={`${Math.max(1, Math.min(99, xPositionPercent))}%`}
-                    cy={yPosition}
-                    r={dotSize / 2}
-                    fill={dot.color}
-                    stroke={dot.color}
-                    strokeWidth="0.5"
-                    aria-hidden="true"
-                  />
-                );
-              });
-            })
-            .reduce((acc, val) => acc.concat(val), []);
-        }
-      }).reduce((acc, val) => acc.concat(val || []), [] as any[])}
-
-      {/* Interactive rectangles for each section - render last for maximum precedence */}
+      {/* Interactive rectangles for each section - render first so dots are on top */}
       {PROFICIENCY_LABELS.map((level) => {
         const levelData = barData.find((item) => item.proficiency === level);
         if (!levelData || levelData.count === 0) return null;
@@ -888,6 +933,75 @@ function renderDots(
           </g>
         );
       })}
+
+      {/* Render grouped dots and towers - render last so they're on top and receive pointer events */}
+      {Object.entries(groupedDots).flatMap(([level, dots]) =>
+        dots.map((groupedDot, index) => {
+          if (groupedDot.is_tower && groupedDot.tower_dots) {
+            // Render as vertical tower of individual dots
+            return (
+              <g key={`${level}-tower-${groupedDot.proficiency_value}-${index}`}>
+                {groupedDot.tower_dots.map((towerDot) => (
+                  <circle
+                    key={`${towerDot.student_id}`}
+                    cx={`${Math.max(0.5, Math.min(99.5, groupedDot.x_position))}%`}
+                    cy={towerDot.y_position}
+                    r={groupedDot.diameter / 2}
+                    fill={groupedDot.color}
+                    stroke={groupedDot.color}
+                    strokeWidth="0.5"
+                    style={{ pointerEvents: 'all', cursor: 'default' }}
+                    onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setHoveredDot({
+                        studentCount: 1,
+                        x: rect.left + rect.width / 2,
+                        y: rect.top,
+                      });
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredDot(null);
+                    }}
+                    aria-label={`1 student at ${groupedDot.proficiency} proficiency level`}
+                  />
+                ))}
+              </g>
+            );
+          } else {
+            // Render as single grouped dot
+            const yPosition = 135;
+            const radius = groupedDot.diameter / 2;
+
+            return (
+              <g key={`${level}-group-${groupedDot.proficiency_value}-${index}`}>
+                <circle
+                  cx={`${Math.max(0.5, Math.min(99.5, groupedDot.x_position))}%`}
+                  cy={yPosition}
+                  r={radius}
+                  fill={groupedDot.color}
+                  stroke={groupedDot.color}
+                  strokeWidth="0.5"
+                  style={{ pointerEvents: 'all', cursor: 'default' }}
+                  onMouseEnter={(e) => {
+                    e.stopPropagation();
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setHoveredDot({
+                      studentCount: groupedDot.student_count,
+                      x: rect.left + rect.width / 2,
+                      y: rect.top,
+                    });
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredDot(null);
+                  }}
+                  aria-label={`${groupedDot.student_count} student${groupedDot.student_count !== 1 ? 's' : ''} at ${groupedDot.proficiency} proficiency level`}
+                />
+              </g>
+            );
+          }
+        }),
+      )}
     </svg>
   );
 }
