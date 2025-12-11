@@ -55,19 +55,18 @@ defmodule OliWeb.Components.Delivery.QuizScores do
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div
           style="min-height: 83px;"
-          class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table"
+          class="px-4 sm:px-9 py-4 instructor_dashboard_table"
         >
-          <div>
-            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Assessment Scores</h4>
+          <div class="flex justify-between items-start mb-4 mt-4">
+            <h4 class="torus-h4 !py-0">Assessment Scores</h4>
             <a
               download="gradebook.csv"
               href={~p"/sections/#{@section_slug}/grades/export"}
-              class="self-end"
             >
-              <i class="fa-solid fa-download ml-1" /> Download
+              Download CSV <i class="fa-solid fa-download ml-1" />
             </a>
           </div>
-          <div class="flex flex-col-reverse sm:flex-row gap-2 items-center">
+          <div class="flex flex-col gap-6">
             <%= if is_nil(assigns[:student_id]) do %>
               <div class="form-check">
                 <input
@@ -80,7 +79,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
                   phx-debounce="500"
                 />
                 <label for="toggle_show_all_links" class="form-check-label">
-                  Shows links for all entries
+                  Show links for all entries
                 </label>
               </div>
             <% end %>
