@@ -19,6 +19,7 @@ export interface McqModel extends JanusAbsolutePositioned, JanusCustomCss {
   showNumbering: boolean;
   multipleSelection: boolean;
   randomize: boolean;
+  ariaLabelledBy?: string;
   mcqItems: McqItem[];
 }
 
@@ -66,6 +67,13 @@ export const schema: JSONSchema7Object = {
     type: 'boolean',
     description: 'specifies whether MCQ is enabled',
     default: true,
+  },
+  ariaLabelledBy: {
+    title: 'ARIA Label (for screen readers)',
+    type: 'string',
+    description:
+      'Label for the question group that screen readers will announce. If left blank, defaults to "Multiple choice, group".',
+    default: '',
   },
 };
 
@@ -123,6 +131,13 @@ export const simpleSchema: JSONSchema7Object = {
       type: 'string',
     },
   },
+  ariaLabelledBy: {
+    title: 'ARIA Label (for screen readers)',
+    type: 'string',
+    description:
+      'Label for the question group that screen readers will announce. If left blank, defaults to "Multiple choice, group".',
+    default: '',
+  },
   allOf: [
     {
       if: {
@@ -150,6 +165,7 @@ export const simpleUiSchema = {
     'layoutType',
     'mcqItems',
     'multipleSelection',
+    'ariaLabelledBy',
     'anyCorrectAnswer',
     'correctAnswer',
     'randomize',
@@ -246,6 +262,7 @@ export const createSchema = (): Partial<McqModel> => {
     randomize: false,
     showNumbering: false,
     enabled: true,
+    ariaLabelledBy: '',
     mcqItems: [1, 2, 3].map(createSimpleOption),
     correctAnswer: [true, false, false],
     correctFeedback: '',

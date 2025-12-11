@@ -185,6 +185,7 @@ defmodule Oli.MixProject do
       {:lti_1p3_ecto_provider, "~> 0.10"},
       {:libcluster, "~> 3.3"},
       {:libcluster_ec2, "~> 0.6"},
+      {:logger_backends, "~> 1.0"},
       {:mime, "~> 2.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:monocle, "~> 0.0.1"},
