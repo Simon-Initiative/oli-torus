@@ -365,7 +365,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
       {live_render(@socket, OliWeb.Projects.VisibilityLive,
         id: "project_visibility",
-        session: %{"project_slug" => @project.slug}
+        session: %{"project_slug" => @project.slug, "current_author_id" => @current_author.id}
       )}
 
       <Overview.section
