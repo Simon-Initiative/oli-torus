@@ -50,18 +50,14 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   val,
   disabled,
   idx,
-  overrideHeight,
-  columns = 1,
-  onConfigOptionClick,
   index,
-  configureMode,
-  verticalGap = 0,
 }) => {
   const textValue = getNodeText(nodes);
-  // Label ID for aria-labelledby
-  const labelId = `${itemId}-label`;
-  // Position description id for aria-describedby (used for multiselect position announcement)
-  const positionId = `${itemId}-position`;
+
+  const position = `${(index ?? idx) + 1} of ${totalItems}`;
+  const ariaLabel = multipleSelection
+    ? `${textValue}, ${selected ? "checked" : "unchecked"}, checkbox, ${position}`
+    : `${textValue}, ${selected ? "selected" : "not selected"}, option`;
 
   const handleChanged = (e: { target: { checked: boolean } }) => {
     const selection = {
@@ -72,53 +68,26 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
     onSelected && onSelected(selection);
   };
 
-  /** Space key toggles checkbox */
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === ' ' && multipleSelection && !disabled) {
-      e.preventDefault();
-      const newChecked = !selected;
-      handleChanged({ target: { checked: newChecked } });
-    }
-  };
-
   return (
-    <React.Fragment>
-      <div style={{ position: 'relative' }} className="mcq-item">
-        {/* Input is OUTSIDE label (fixes double reading) */}
-        <input
-          id={itemId}
-          name={groupId}
-          type={multipleSelection ? 'checkbox' : 'radio'}
-          value={val}
-          disabled={disabled}
-          checked={selected}
-          onChange={handleChanged}
-          onKeyDown={handleKeyDown}
-          tabIndex={disabled ? -1 : 0}
-          aria-labelledby={labelId}
-          // For multiselect, include position using aria-describedby (supported reliably by SRs)
-          aria-describedby={multipleSelection ? positionId : undefined}
-          style={{ position: 'absolute', marginTop: 5 }}
-        />
+    <div className="mcq-item" style={{ position: "relative" }}>
 
-        {/* Position description is sr-only and referenced by aria-describedby.
-            This ensures native checkboxes announce "1 of 4", "2 of 4", etc. */}
+      <input
+        id={itemId}
+        name={groupId}
+        type={multipleSelection ? "checkbox" : "radio"}
+        value={val}
+        disabled={disabled}
+        checked={selected}
+        onChange={handleChanged}
+        aria-label={ariaLabel}
+        style={{ position: "absolute", marginTop: 5 }}
+      />
 
-        {/* Label contains only text, not input */}
-        <label id={labelId} htmlFor={itemId} style={{ marginLeft: 24 }}>
-          {multipleSelection && (
-            <span id={positionId} className="sr-only" aria-live="polite">
-              {`${(index !== undefined ? index : idx) + 1} of ${totalItems}`}
-            </span>
-          )}
-          <span aria-live="polite">
-            <MCQItemContent itemId={itemId} nodes={nodes} state={state} />
-          </span>
-        </label>
-      </div>
+      <label htmlFor={itemId} style={{ marginLeft: 24 }}>
+        <MCQItemContent itemId={itemId} nodes={nodes} state={state} />
+      </label>
 
-      {layoutType !== 'horizontalLayout' && <br />}
-    </React.Fragment>
+    </div>
   );
 };
 
