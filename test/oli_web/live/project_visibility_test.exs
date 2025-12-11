@@ -138,6 +138,75 @@ defmodule OliWeb.ProjectVisibilityTest do
       updated_project = Course.get_project!(project.id)
       assert updated_project.allow_duplication
     end
+
+    test "non-admin cannot change visibility via direct event call", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      {:ok, view, _} =
+        live_isolated(conn, OliWeb.Projects.VisibilityLive,
+          session: %{"project_slug" => project.slug, "current_author_id" => author.id}
+        )
+
+      # Try to bypass UI by sending the event directly
+      render_change(view, "option", %{"visibility" => %{"option" => "global"}})
+
+      # Visibility should NOT have changed
+      updated_project = Course.get_project!(project.id)
+      refute updated_project.visibility == :global
+    end
+
+    test "non-admin cannot add restricted visibility via direct event call", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      initial_visibilities_count =
+        Enum.count(Publishing.get_all_project_visibilities(project.id))
+
+      {:ok, view, _} =
+        live_isolated(conn, OliWeb.Projects.VisibilityLive,
+          session: %{"project_slug" => project.slug, "current_author_id" => author.id}
+        )
+
+      # Try to add an author to restricted visibility by sending event directly
+      render_change(view, "selected_email", %{"multi" => %{"emails" => ["#{author.id}"]}})
+
+      # No new visibility should have been added
+      updated_visibilities =
+        Publishing.get_all_project_visibilities(project.id)
+
+      assert Enum.count(updated_visibilities) == initial_visibilities_count
+    end
+
+    test "non-admin cannot delete visibility restrictions via direct event call", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      # Set up a visibility restriction
+      {:ok, _project} = Course.update_project(project, %{visibility: :selected})
+
+      {:ok, visibility} =
+        Publishing.insert_visibility(%{project_id: project.id, author_id: author.id})
+
+      {:ok, view, _} =
+        live_isolated(conn, OliWeb.Projects.VisibilityLive,
+          session: %{"project_slug" => project.slug, "current_author_id" => author.id}
+        )
+
+      # Try to delete the visibility restriction by sending event directly
+      render_change(view, "delete_visibility", %{"id" => "#{visibility.id}"})
+
+      # Visibility restriction should still exist
+      updated_visibilities =
+        Publishing.get_all_project_visibilities(project.id)
+
+      assert Enum.any?(updated_visibilities, fn v ->
+               v.visibility && v.visibility.id == visibility.id
+             end)
+    end
   end
 
   defp setup_session(%{conn: conn}) do

@@ -266,30 +266,40 @@ defmodule OliWeb.Projects.VisibilityLive do
         socket
       )
       when query not in [nil, ""] do
-    list =
-      Institutions.search_institutions_matching(query)
-      |> Enum.reduce([], fn institution, acc ->
-        {name, id} = {institution.name, institution.id}
+    # Only admins can search for institutions to add to visibility restrictions
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      list =
+        Institutions.search_institutions_matching(query)
+        |> Enum.reduce([], fn institution, acc ->
+          {name, id} = {institution.name, institution.id}
 
-        # Check if institution is already in project visibilities
-        already_exists =
-          Enum.any?(socket.assigns.project_visibilities, fn x ->
-            x.institution != nil && x.institution.id == id
-          end)
+          # Check if institution is already in project visibilities
+          already_exists =
+            Enum.any?(socket.assigns.project_visibilities, fn x ->
+              x.institution != nil && x.institution.id == id
+            end)
 
-        if !already_exists do
-          [{name, id} | acc]
-        else
-          acc
-        end
-      end)
-      |> Enum.sort()
+          if !already_exists do
+            [{name, id} | acc]
+          else
+            acc
+          end
+        end)
+        |> Enum.sort()
 
-    {:noreply, assign(socket, :institution_names, list)}
+      {:noreply, assign(socket, :institution_names, list)}
+    end
   end
 
-  def handle_event("institution_search", _, socket),
-    do: {:noreply, assign(socket, :institution_names, [])}
+  def handle_event("institution_search", _, socket) do
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, :institution_names, [])}
+    end
+  end
 
   def handle_event(
         "instructor_search",
@@ -297,34 +307,49 @@ defmodule OliWeb.Projects.VisibilityLive do
         socket
       )
       when query not in [nil, ""] do
-    list =
-      Accounts.search_authors_matching(query)
-      |> Enum.reduce([], fn author, acc ->
-        {email, id} = {author.email, author.id}
+    # Only admins can search for authors to add to visibility restrictions
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      list =
+        Accounts.search_authors_matching(query)
+        |> Enum.reduce([], fn author, acc ->
+          {email, id} = {author.email, author.id}
 
-        # Check if author is already in project visibilities
-        already_exists =
-          Enum.any?(socket.assigns.project_visibilities, fn x ->
-            x.author != nil && x.author.id == id
-          end)
+          # Check if author is already in project visibilities
+          already_exists =
+            Enum.any?(socket.assigns.project_visibilities, fn x ->
+              x.author != nil && x.author.id == id
+            end)
 
-        if !already_exists do
-          [{email, id} | acc]
-        else
-          acc
-        end
-      end)
-      |> Enum.sort()
+          if !already_exists do
+            [{email, id} | acc]
+          else
+            acc
+          end
+        end)
+        |> Enum.sort()
 
-    {:noreply, assign(socket, :user_emails, list)}
+      {:noreply, assign(socket, :user_emails, list)}
+    end
   end
 
-  def handle_event("instructor_search", _, socket),
-    do: {:noreply, assign(socket, :user_emails, [])}
+  def handle_event("instructor_search", _, socket) do
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, :user_emails, [])}
+    end
+  end
 
   def handle_event("option", %{"visibility" => %{"option" => option}}, socket) do
-    {:ok, project} = Course.update_project(socket.assigns.project, %{visibility: option})
-    {:noreply, assign(socket, :project, project)}
+    # Only admins can change project visibility
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {:ok, project} = Course.update_project(socket.assigns.project, %{visibility: option})
+      {:noreply, assign(socket, :project, project)}
+    end
   end
 
   def handle_event("duplication", %{"duplication" => %{"allow_duplication" => value}}, socket) do
@@ -333,22 +358,27 @@ defmodule OliWeb.Projects.VisibilityLive do
   end
 
   def handle_event("selected_email", %{"multi" => %{"emails" => emails}}, socket) do
-    emails
-    |> Enum.each(fn e ->
-      {id, _} = Integer.parse(e)
+    # Only admins can add authors to visibility restrictions
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      emails
+      |> Enum.each(fn e ->
+        {id, _} = Integer.parse(e)
 
-      f =
-        Enum.find(socket.assigns.project_visibilities, fn x ->
-          x.author != nil && x.author.id == id
-        end)
+        f =
+          Enum.find(socket.assigns.project_visibilities, fn x ->
+            x.author != nil && x.author.id == id
+          end)
 
-      if f == nil do
-        Publishing.insert_visibility(%{project_id: socket.assigns.project.id, author_id: id})
-      end
-    end)
+        if f == nil do
+          Publishing.insert_visibility(%{project_id: socket.assigns.project.id, author_id: id})
+        end
+      end)
 
-    project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
-    {:noreply, assign(socket, project_visibilities: project_visibilities, user_emails: [])}
+      project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
+      {:noreply, assign(socket, project_visibilities: project_visibilities, user_emails: [])}
+    end
   end
 
   def handle_event(
@@ -356,45 +386,70 @@ defmodule OliWeb.Projects.VisibilityLive do
         %{"multi" => %{"institutions" => institutions}},
         socket
       ) do
-    institutions
-    |> Enum.each(fn e ->
-      {id, _} = Integer.parse(e)
+    # Only admins can add institutions to visibility restrictions
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      institutions
+      |> Enum.each(fn e ->
+        {id, _} = Integer.parse(e)
 
-      f =
-        Enum.find(socket.assigns.project_visibilities, fn x ->
-          x.institution != nil && x.institution.id == id
-        end)
+        f =
+          Enum.find(socket.assigns.project_visibilities, fn x ->
+            x.institution != nil && x.institution.id == id
+          end)
 
-      if f == nil do
-        Publishing.insert_visibility(%{project_id: socket.assigns.project.id, institution_id: id})
-      end
-    end)
+        if f == nil do
+          Publishing.insert_visibility(%{
+            project_id: socket.assigns.project.id,
+            institution_id: id
+          })
+        end
+      end)
 
-    project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
-    {:noreply, assign(socket, project_visibilities: project_visibilities, institution_names: [])}
+      project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
+
+      {:noreply,
+       assign(socket, project_visibilities: project_visibilities, institution_names: [])}
+    end
   end
 
   def handle_event("users_tab", _option, socket) do
-    {:noreply, assign(socket, :tab, :users)}
+    # Only admins can switch between visibility restriction tabs
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, :tab, :users)}
+    end
   end
 
   def handle_event("institutions_tab", _option, socket) do
-    {:noreply, assign(socket, :tab, :institutions)}
+    # Only admins can switch between visibility restriction tabs
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, :tab, :institutions)}
+    end
   end
 
   def handle_event("delete_visibility", %{"id" => visibility_id}, socket) do
-    {id, _} = Integer.parse(visibility_id)
+    # Only admins can remove visibility restrictions
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {id, _} = Integer.parse(visibility_id)
 
-    v =
-      Enum.find(socket.assigns.project_visibilities, fn x ->
-        x.visibility != nil && x.visibility.id == id
-      end)
+      v =
+        Enum.find(socket.assigns.project_visibilities, fn x ->
+          x.visibility != nil && x.visibility.id == id
+        end)
 
-    if v != nil do
-      Publishing.remove_visibility(v.visibility)
+      if v != nil do
+        Publishing.remove_visibility(v.visibility)
+      end
+
+      project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
+      {:noreply, assign(socket, project_visibilities: project_visibilities)}
     end
-
-    project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
-    {:noreply, assign(socket, project_visibilities: project_visibilities)}
   end
 end
