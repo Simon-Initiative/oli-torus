@@ -251,9 +251,9 @@ defmodule OliWeb.Projects.VisibilityLive do
             </div>
           <% end %>
         <% else %>
-          <div class="text-muted">
+          <p class="mt-3">
             To make this content public in the Torus Course Builder for any instructor to use, please use the Support tool and send us a request.
-          </div>
+          </p>
         <% end %>
       </div>
     </div>
