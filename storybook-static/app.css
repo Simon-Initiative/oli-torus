@@ -1154,6 +1154,10 @@ select {
   accent-color: #FFFFFF1A;
 }
 
+.bg-Fill-fill-transparent {
+  background-color: #FFFFFF33;
+}
+
 .dark .bg-Fill-fill-transparent {
   background-color: #FFFFFF33;
 }
@@ -1190,6 +1194,10 @@ select {
   accent-color: #FFFFFF33;
 }
 
+.bg-Fill-fill-progress {
+  background-color: #0FB863;
+}
+
 .dark .bg-Fill-fill-progress {
   background-color: #0FB863;
 }
@@ -1208,6 +1216,10 @@ select {
 
 .dark .ring-Fill-fill-progress {
   --tw-ring-color: #0FB863;
+}
+
+.fill-Fill-fill-progress {
+  fill: #0FB863;
 }
 
 .dark .fill-Fill-fill-progress {
@@ -3410,8 +3422,16 @@ select {
   --tw-ring-color: #FFFFFF;
 }
 
+.fill-Icon-icon-white {
+  fill: #FFFFFF;
+}
+
 .dark .fill-Icon-icon-white {
   fill: #FFFFFF;
+}
+
+.stroke-Icon-icon-white {
+  stroke: #FFFFFF;
 }
 
 .dark .stroke-Icon-icon-white {
@@ -4476,6 +4496,10 @@ select {
 
 .dark .bg-Specially-Tokens-Text-text-tile-details {
   background-color: #EEEBF5BF;
+}
+
+.text-Specially-Tokens-Text-text-tile-details {
+  color: #BAB8BF;
 }
 
 .dark .text-Specially-Tokens-Text-text-tile-details {
@@ -9627,6 +9651,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 1.5rem;
 }
 
+.h-60 {
+  height: 15rem;
+}
+
 .h-64 {
   height: 16rem;
 }
@@ -9771,10 +9799,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 38px;
 }
 
-.h-\[39px\] {
-  height: 39px;
-}
-
 .h-\[400px\] {
   height: 400px;
 }
@@ -9829,6 +9853,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[64px\] {
   height: 64px;
+}
+
+.h-\[6px\] {
+  height: 6px;
 }
 
 .h-\[70px\] {
@@ -13005,6 +13033,10 @@ table.table-striped tbody tr:nth-child(even) {
   background-image: url('/images/assistant/footer_dot_ai.png');
 }
 
+.bg-gradient-to-b {
+  background-image: linear-gradient(to bottom, var(--tw-gradient-stops));
+}
+
 .bg-gradient-to-l {
   background-image: linear-gradient(to left, var(--tw-gradient-stops));
 }
@@ -13013,9 +13045,21 @@ table.table-striped tbody tr:nth-child(even) {
   background-image: linear-gradient(to right, var(--tw-gradient-stops));
 }
 
+.from-\[\#F3F4F8\] {
+  --tw-gradient-from: #F3F4F8;
+  --tw-gradient-to: rgb(243 244 248 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
 .from-\[\#e4e4ea\] {
   --tw-gradient-from: #e4e4ea;
   --tw-gradient-to: rgb(228 228 234 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.from-black\/10 {
+  --tw-gradient-from: rgb(0 0 0 / 0.1);
+  --tw-gradient-to: rgb(0 0 0 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
@@ -13025,16 +13069,19 @@ table.table-striped tbody tr:nth-child(even) {
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
-.from-gray-100 {
-  --tw-gradient-from: #f5f5f5;
-  --tw-gradient-to: rgb(245 245 245 / 0);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
-}
-
 .from-white {
   --tw-gradient-from: #fff;
   --tw-gradient-to: rgb(255 255 255 / 0);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.via-black\/30 {
+  --tw-gradient-to: rgb(0 0 0 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(0 0 0 / 0.3), var(--tw-gradient-to);
+}
+
+.to-\[\#003263\]\/40 {
+  --tw-gradient-to: rgb(0 50 99 / 0.4);
 }
 
 .to-cyan-500 {
@@ -13379,6 +13426,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding: 2rem;
 }
 
+.p-\[12px\] {
+  padding: 12px;
+}
+
 .p-\[2px\] {
   padding: 2px;
 }
@@ -13539,11 +13590,6 @@ table.table-striped tbody tr:nth-child(even) {
 .px-\[50px\] {
   padding-left: 50px;
   padding-right: 50px;
-}
-
-.px-\[5px\] {
-  padding-left: 5px;
-  padding-right: 5px;
 }
 
 .px-\[63px\] {
@@ -13726,6 +13772,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pb-8 {
   padding-bottom: 2rem;
+}
+
+.pb-\[20px\] {
+  padding-bottom: 20px;
 }
 
 .pb-\[3px\] {
@@ -14097,10 +14147,6 @@ table.table-striped tbody tr:nth-child(even) {
   font-size: 208px;
 }
 
-.text-\[26px\] {
-  font-size: 26px;
-}
-
 .text-\[32px\] {
   font-size: 32px;
 }
@@ -14250,10 +14296,6 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 18px;
 }
 
-.leading-\[19px\] {
-  line-height: 19px;
-}
-
 .leading-\[20px\] {
   line-height: 20px;
 }
@@ -14268,14 +14310,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .leading-\[25px\] {
   line-height: 25px;
-}
-
-.leading-\[30px\] {
-  line-height: 30px;
-}
-
-.leading-\[32px\] {
-  line-height: 32px;
 }
 
 .leading-\[44px\] {
@@ -14336,10 +14370,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .tracking-\[1\.2px\] {
   letter-spacing: 1.2px;
-}
-
-.tracking-\[1\.4px\] {
-  letter-spacing: 1.4px;
 }
 
 .tracking-\[4px\] {
@@ -15023,6 +15053,10 @@ table.table-striped tbody tr:nth-child(even) {
   --tw-text-opacity: 0.6;
 }
 
+.text-opacity-75 {
+  --tw-text-opacity: 0.75;
+}
+
 .text-opacity-90 {
   --tw-text-opacity: 0.9;
 }
@@ -15142,6 +15176,10 @@ table.table-striped tbody tr:nth-child(even) {
   opacity: 0.15;
 }
 
+.bg-blend-hard-light {
+  background-blend-mode: hard-light;
+}
+
 .mix-blend-difference {
   mix-blend-mode: difference;
 }
@@ -15195,6 +15233,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow-\[0px_2px_6\.099999904632568px_0px_rgba\(0\2c 0\2c 0\2c 0\.10\)\] {
   --tw-shadow: 0px 2px 6.099999904632568px 0px rgba(0,0,0,0.10);
   --tw-shadow-colored: 0px 2px 6.099999904632568px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_4px_12px_rgba\(0\2c 52\2c 99\2c 0\.25\)\] {
+  --tw-shadow: 0px 4px 12px rgba(0,52,99,0.25);
+  --tw-shadow-colored: 0px 4px 12px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -16385,6 +16429,10 @@ table.table-striped tbody tr:nth-child(even) {
 .\@container\/card {
   container-type: inline-size;
   container-name: card;
+}
+
+.\[text-shadow\:_0px_1px_1px_rgb\(0_0_0_\/_0\.50\)\] {
+  text-shadow: 0px 1px 1px rgb(0 0 0 / 0.50);
 }
 
 .expand-down {
@@ -21161,11 +21209,6 @@ Not supports in Firefox and IE */
   background-color: rgb(0 0 0 / 0.05);
 }
 
-.focus\:bg-blue-600:focus {
-  --tw-bg-opacity: 1;
-  background-color: rgb(39 92 175 / var(--tw-bg-opacity));
-}
-
 .focus\:bg-transparent:focus {
   background-color: transparent;
 }
@@ -22558,11 +22601,6 @@ Not supports in Firefox and IE */
   color: rgb(76 166 255 / var(--tw-text-opacity));
 }
 
-.dark .dark\:text-\[\#696974\] {
-  --tw-text-opacity: 1;
-  color: rgb(105 105 116 / var(--tw-text-opacity));
-}
-
 .dark .dark\:text-\[\#6DD1DF\] {
   --tw-text-opacity: 1;
   color: rgb(109 209 223 / var(--tw-text-opacity));
@@ -22586,11 +22624,6 @@ Not supports in Firefox and IE */
 .dark .dark\:text-\[\#BAB8BF\] {
   --tw-text-opacity: 1;
   color: rgb(186 184 191 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-\[\#DDD\] {
-  --tw-text-opacity: 1;
-  color: rgb(221 221 221 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-\[\#EEEBF5\] {
@@ -23132,10 +23165,6 @@ Not supports in Firefox and IE */
   background-color: rgb(255 255 255 / 0.2);
 }
 
-.dark .dark\:hover\:bg-opacity-60:hover {
-  --tw-bg-opacity: 0.6;
-}
-
 .dark .hover\:dark\:stroke-white:hover {
   stroke: #fff;
 }
@@ -23260,10 +23289,6 @@ Not supports in Firefox and IE */
 
 .dark .dark\:focus\:bg-\[\#FFFFFF\]\/5:focus {
   background-color: rgb(255 255 255 / 0.05);
-}
-
-.dark .dark\:focus\:bg-opacity-60:focus {
-  --tw-bg-opacity: 0.6;
 }
 
 .dark .dark\:focus\:text-white:focus {
@@ -23687,6 +23712,10 @@ Not supports in Firefox and IE */
     height: 4rem;
   }
 
+  .sm\:h-6 {
+    height: 1.5rem;
+  }
+
   .sm\:h-\[60px\] {
     height: 60px;
   }
@@ -23717,6 +23746,10 @@ Not supports in Firefox and IE */
 
   .sm\:w-3\/4 {
     width: 75%;
+  }
+
+  .sm\:w-6 {
+    width: 1.5rem;
   }
 
   .sm\:w-\[360px\] {
@@ -23794,6 +23827,10 @@ Not supports in Firefox and IE */
 
   .sm\:justify-between {
     justify-content: space-between;
+  }
+
+  .sm\:gap-0 {
+    gap: 0px;
   }
 
   .sm\:gap-9 {
@@ -23880,6 +23917,11 @@ Not supports in Firefox and IE */
     padding-right: 2.25rem;
   }
 
+  .sm\:px-\[5px\] {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
   .sm\:px-\[80px\] {
     padding-left: 80px;
     padding-right: 80px;
@@ -23932,6 +23974,11 @@ Not supports in Firefox and IE */
     vertical-align: middle;
   }
 
+  .sm\:text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
   .sm\:text-3xl {
     font-size: 1.875rem;
     line-height: 2.25rem;
@@ -23960,6 +24007,14 @@ Not supports in Firefox and IE */
     font-size: 0.8rem;
   }
 
+  .sm\:leading-4 {
+    line-height: 1rem;
+  }
+
+  .sm\:leading-8 {
+    line-height: 2rem;
+  }
+
   .sm\:leading-\[60px\] {
     line-height: 60px;
   }
@@ -23968,6 +24023,26 @@ Not supports in Firefox and IE */
     --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
     box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+
+  .sm\:\[text-shadow\:_none\] {
+    text-shadow: none;
+  }
+
+  .sm\:hover\:bg-\[\#000000\]\/5:hover {
+    background-color: rgb(0 0 0 / 0.05);
+  }
+
+  .sm\:focus\:bg-\[\#000000\]\/5:focus {
+    background-color: rgb(0 0 0 / 0.05);
+  }
+
+  .dark .sm\:dark\:hover\:bg-\[\#FFFFFF\]\/5:hover {
+    background-color: rgb(255 255 255 / 0.05);
+  }
+
+  .dark .sm\:dark\:focus\:bg-\[\#FFFFFF\]\/5:focus {
+    background-color: rgb(255 255 255 / 0.05);
   }
 }
 
