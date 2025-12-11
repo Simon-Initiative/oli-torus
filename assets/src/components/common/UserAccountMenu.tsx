@@ -142,13 +142,12 @@ export const UserAccountMenu = ({
             </DropdownItem>
 
             <DropdownItem>
-              <div className="py-1" id="select-timezone-label">
+              <div className="py-1">
                 Timezone
                 <br />
                 <SelectTimezone
                   selectedTimezone={user.selectedTimezone}
                   submitAction={routes.updateTimezone}
-                  labelId="select-timezone-label"
                 />
               </div>
             </DropdownItem>
