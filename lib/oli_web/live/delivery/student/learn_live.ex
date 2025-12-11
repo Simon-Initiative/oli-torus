@@ -1745,6 +1745,76 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
+  def outline_row(%{type: :top_level_page, is_mobile: true} = assigns) do
+    ~H"""
+    <div
+      id={@id}
+      role={"top_level_page_#{@row["resource_id"]}"}
+      data-completed={"#{@progress == 100}"}
+      class="flex flex-col"
+      phx-click="navigate_to_resource"
+      phx-value-view={:outline}
+      phx-value-slug={@row["slug"]}
+      phx-value-resource_id={@row["resource_id"]}
+    >
+      <div class="accordion my-2">
+        <div class="p-3 sm:card sm:py-4 bg-transparent sm:bg-white/20 dark:sm:bg-[#0d0c0e] shadow-none">
+          <div
+            class={"card-header border-b-[1px] #{if @progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1"}
+            id={"header-#{@row["resource_id"]}"}
+          >
+            <h6 class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase">
+              {"PAGE #{@row["numbering"]["index"]}"}
+            </h6>
+            <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
+              <div
+                role="unit title"
+                class="search-result grow shrink basis-0"
+              >
+                {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
+              </div>
+              <div class="flex flex-row gap-x-2 sm:text-lg">
+                <%= if @progress == 100 do %>
+                  Completed <Icons.check />
+                <% else %>
+                  {@progress} %
+                <% end %>
+              </div>
+            </div>
+            <div class="flex justify-between items-center mb-3 w-full">
+              <div
+                role={"unit #{@row["resource_id"]} scheduling details"}
+                class="flex flex-col sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
+              >
+                <span>
+                  Available: {get_available_date(
+                    @row["section_resource"].start_date,
+                    @ctx,
+                    "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                  )}
+                </span>
+                <span class="sm:ml-6">
+                  {if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
+                    do: "Due by:",
+                    else:
+                      Utils.container_label_for_scheduling_type(
+                        Map.get(@contained_scheduling_types, @row["resource_id"])
+                      )}
+                  {format_date(
+                    @row["section_resource"].end_date,
+                    @ctx,
+                    "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   def outline_row(%{type: :top_level_page} = assigns) do
     ~H"""
     <div
