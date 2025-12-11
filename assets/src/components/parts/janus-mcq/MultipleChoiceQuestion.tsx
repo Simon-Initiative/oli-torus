@@ -56,12 +56,8 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   index,
   configureMode,
   verticalGap = 0,
-  onNavigateToItem,
-  registerInputRef,
 }) => {
   const textValue = getNodeText(nodes);
-  const inputRef = React.useRef<HTMLInputElement | null>(null);
-
   // Label ID for aria-labelledby
   const labelId = `${itemId}-label`;
   // Position description id for aria-describedby (used for multiselect position announcement)
@@ -76,38 +72,12 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
     onSelected && onSelected(selection);
   };
 
-  /** Keyboard navigation for MSQ */
+  /** Space key toggles checkbox */
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!multipleSelection || disabled) return;
-
-    const curr = index !== undefined ? index : idx;
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      onNavigateToItem && curr < totalItems - 1 && onNavigateToItem(curr + 1);
-    }
-
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      onNavigateToItem && curr > 0 && onNavigateToItem(curr - 1);
-    }
-
-    if (e.key === ' ') {
-      // space toggles checkbox
+    if (e.key === ' ' && multipleSelection && !disabled) {
       e.preventDefault();
       const newChecked = !selected;
       handleChanged({ target: { checked: newChecked } });
-    }
-  };
-
-  /** Register input for navigation */
-  const inputRefCallback = (el: HTMLInputElement | null) => {
-    // local ref (safe to mutate)
-    inputRef.current = el;
-
-    // pass element up to parent for navigation (do not pass a RefObject)
-    if (multipleSelection && registerInputRef) {
-      registerInputRef(index !== undefined ? index : idx, el);
     }
   };
 
@@ -116,7 +86,6 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       <div style={{ position: 'relative' }} className="mcq-item">
         {/* Input is OUTSIDE label (fixes double reading) */}
         <input
-          ref={inputRefCallback}
           id={itemId}
           name={groupId}
           type={multipleSelection ? 'checkbox' : 'radio'}
@@ -880,31 +849,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     ? `${groupLabelText}, group, ${options.length} items`
     : groupLabelText;
 
-  // Create refs for all checkbox inputs to enable keyboard navigation
-  const inputRefs = React.useRef<{ [key: number]: HTMLInputElement | null }>({});
-
-  const navigateToItem = React.useCallback(
-    (targetIndex: number) => {
-      let input = inputRefs.current[targetIndex];
-      // Fallback: if ref isn't available, try to find it by ID
-      if (!input) {
-        const targetItemId = `${id}-item-${targetIndex}`;
-        input = document.getElementById(targetItemId) as HTMLInputElement;
-      }
-      if (input && !input.disabled) {
-        // Use requestAnimationFrame to ensure focus happens after DOM updates
-        requestAnimationFrame(() => {
-          input?.focus();
-        });
-      }
-    },
-    [id],
-  );
-
-  // Callback to register input refs from child components
-  const registerInputRef = React.useCallback((index: number, ref: HTMLInputElement | null) => {
-    inputRefs.current[index] = ref;
-  }, []);
 
   return ready ? (
     <div
@@ -943,8 +887,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
             multipleSelection={multipleSelection}
             columns={columns}
             verticalGap={verticalGap}
-            onNavigateToItem={multipleSelection ? navigateToItem : undefined}
-            registerInputRef={multipleSelection ? registerInputRef : undefined}
           />
         );
       })}
