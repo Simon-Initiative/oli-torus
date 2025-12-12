@@ -446,6 +446,7 @@ defmodule OliWeb.Router do
 
     live("/projects", Projects.ProjectsLive)
     get("/projects/export", ProjectsController, :export_csv)
+    get("/products/export", ProductsController, :export_csv)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
@@ -886,6 +887,7 @@ defmodule OliWeb.Router do
     post("/deep_link/:section_slug/:resource_id", LtiController, :deep_link)
   end
 
+  # LTI routes WITHOUT CSRF protection (entry points from external LMS)
   scope "/lti", OliWeb do
     pipe_through([:lti, :www_url_form, :delivery])
 
@@ -897,9 +899,15 @@ defmodule OliWeb.Router do
 
     get("/developer_key.json", Api.LtiController, :developer_key_json)
 
-    post("/register", LtiController, :request_registration)
-
     get("/authorize_redirect", LtiController, :authorize_redirect)
+  end
+
+  # LTI routes WITH CSRF protection (for rendering pages with LiveViews)
+  scope "/lti", OliWeb do
+    pipe_through([:lti, :www_url_form, :delivery, :protect_from_forgery])
+
+    post("/register", LtiController, :request_registration)
+    get("/register_form", LtiController, :show_registration_form)
   end
 
   # LTI 1.3 AGS endpoints
@@ -1208,7 +1216,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetAnnotations,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetNotificationBadges,
-          OliWeb.LiveSessionPlugs.SetPaywallSummary
+          OliWeb.LiveSessionPlugs.SetPaywallSummary,
+          OliWeb.LiveSessionPlugs.SetDeviceType
         ] do
         live("/", Delivery.Student.IndexLive)
         live("/learn", Delivery.Student.LearnLive)
@@ -1236,7 +1245,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.SetAnnotations,
-          OliWeb.LiveSessionPlugs.RequireEnrollment
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.SetDeviceType
         ] do
         live("/", Delivery.Student.IndexLive, :preview)
         live("/learn", Delivery.Student.LearnLive, :preview)
@@ -1643,6 +1653,7 @@ defmodule OliWeb.Router do
     )
 
     # Section Management (+ Open and Free)
+    get("/sections/export", SectionsController, :export_csv)
     live("/sections", Sections.SectionsView)
     live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)
 

@@ -867,6 +867,92 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       # Verify modules are shown (container_filter_by was preserved)
       assert button_has_class?(view, "filter_modules_button", "bg-Fill-Buttons-fill-primary")
     end
+
+    test "instructor progress submissions do not affect class progress calculation", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      # This test verifies the fix for MER-5130: instructors previewing and submitting
+      # activities should not contribute to course progress metrics
+      %{
+        section: section,
+        mod1_pages: mod1_pages
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, page_3] = mod1_pages
+
+      student = insert(:user, %{given_name: "Test", family_name: "Student"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      # Student completes all pages in module 1 (100% progress)
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_3.revision
+      )
+
+      # Instructor also submits progress (simulating preview as student)
+      # Before the fix, this would cause progress to exceed 100%
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        instructor.id,
+        1.0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        instructor.id,
+        1.0,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        instructor.id,
+        1.0,
+        page_3.revision
+      )
+
+      params = %{container_filter_by: :modules}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      progress =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
+
+      # Module 1 should show 100% (not 200%) because instructor progress is excluded
+      # Module 2 and 3 should show 0% (no student progress)
+      assert progress == ["100%", "0%", "0%"]
+    end
   end
 
   defp set_progress(section_id, resource_id, user_id, progress, revision) do

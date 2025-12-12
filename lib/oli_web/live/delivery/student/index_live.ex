@@ -409,6 +409,81 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
+  # Shared tooltip content component
+  defp course_progress_tooltip_content(assigns) do
+    ~H"""
+    <div class="grow shrink basis-0">
+      <span class="text-[#353740] dark:text-[#eeebf5] text-sm font-normal leading-normal">
+        Course progress is calculated based on the pages you visit and the percentage of activities you complete.
+      </span>
+      <button
+        phx-click={
+          Modal.show_modal("course_progress_calculation_modal")
+          |> JS.hide(to: "#course_progress_tooltip_desktop")
+          |> JS.add_class("invisible opacity-0", to: "#course_progress_tooltip_mobile")
+        }
+        data-dismiss-tooltip
+        class="text-[#353740] dark:text-[#eeebf5] text-sm font-bold underline leading-normal"
+      >
+        Learn more.
+      </button>
+    </div>
+    """
+  end
+
+  # Desktop tooltip with AutoHideTooltip hook (hover-based)
+  defp course_progress_tooltip_desktop(assigns) do
+    ~H"""
+    <div class="hidden xl:flex items-baseline gap-2.5 relative hover:cursor-pointer">
+      <div
+        id="course_progress_tooltip_desktop"
+        phx-hook="AutoHideTooltip"
+        class="hidden absolute z-50 -top-[108px] -right-[323px] p-4"
+      >
+        <div class="w-[320px] h-[88px] px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
+          <.course_progress_tooltip_content />
+        </div>
+      </div>
+      <button
+        type="button"
+        id="course_progress_icon_desktop"
+        aria-label="Explain course progress calculation"
+        xphx-mouseover={JS.show(to: "#course_progress_tooltip_desktop")}
+        class="size-5 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+      >
+        <Icons.info />
+      </button>
+    </div>
+    """
+  end
+
+  # Mobile/Tablet tooltip with Popover hook (click-based)
+  defp course_progress_tooltip_mobile(assigns) do
+    ~H"""
+    <div class="xl:hidden flex items-baseline gap-2.5">
+      <button
+        id="course_progress_icon_mobile"
+        type="button"
+        aria-label="Explain course progress calculation"
+        class="size-5 cursor-pointer"
+      >
+        <Icons.info />
+      </button>
+      <div
+        id="course_progress_tooltip_mobile"
+        phx-hook="Popover"
+        data-trigger-id="course_progress_icon_mobile"
+        class="invisible fixed z-50 left-1/2 -translate-x-1/2 p-4 w-[80vw] max-w-[30rem] opacity-0 transition-opacity duration-150"
+        style="top: var(--trigger-top, -9999px);"
+      >
+        <div class="w-full px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
+          <.course_progress_tooltip_content />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   attr(:has_visited_section, :boolean, required: true)
   attr(:page_completed_target_path, :string, required: true)
   attr(:completed_pages, :map, required: true)
@@ -501,34 +576,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <div class="text-2xl font-bold leading-loose">
             Course Progress
           </div>
-          <div
-            id="course_progress_tooltip"
-            phx-hook="AutoHideTooltip"
-            class="hidden absolute z-50 -top-[89px] -right-[316px] p-4"
-          >
-            <div class="w-[320px] h-[88px] px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
-              <div class="grow shrink basis-0">
-                <span class="text-[#353740] dark:text-[#eeebf5] text-sm font-normal leading-normal">
-                  Course progress is calculated based on the pages you visit and the percentage of activities you complete.
-                </span>
-                <button
-                  phx-click={
-                    Modal.show_modal("course_progress_calculation_modal")
-                    |> JS.hide(to: "#course_progress_tooltip")
-                  }
-                  class="text-[#353740] dark:text-[#eeebf5] text-sm font-bold underline leading-normal"
-                >
-                  Learn more.
-                </button>
-              </div>
-            </div>
-          </div>
-          <span
-            xphx-mouseover={JS.show(to: "#course_progress_tooltip")}
-            class="size-5 hover:cursor-pointer"
-          >
-            <Icons.info />
-          </span>
+
+          <%!-- Desktop tooltip (hidden on mobile/tablet) --%>
+          <.course_progress_tooltip_desktop />
+
+          <%!-- Mobile/Tablet tooltip (hidden on desktop) --%>
+          <.course_progress_tooltip_mobile />
         </div>
         <%= if @has_visited_section do %>
           <div class="flex-col justify-start items-start flex">

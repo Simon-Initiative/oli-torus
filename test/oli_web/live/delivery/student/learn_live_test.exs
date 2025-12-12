@@ -1542,13 +1542,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert view
              |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
              |> render() =~
-               "Read by: \n              </span><span class=\"whitespace-nowrap\">\n                Sun, Dec 31, 2023 (8:00pm)"
+               "Read by:"
+
+      assert view
+             |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
+             |> render() =~
+               "Sun, Dec 31, 2023 (8:00pm)"
 
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
       assert view
              |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
              |> render() =~
-               "Due by:\n              </span><span class=\"whitespace-nowrap\">\n                None"
+               "Due by:\n                </span><span class=\"whitespace-nowrap\">\n                  None\n"
     end
 
     test "can see the 'None' label when the instructor has not set a schedule",
@@ -1761,7 +1766,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
         id: ^unit_id,
-        offset: 25,
+        offset: 125,
         pulse: true,
         pulse_delay: 500
       })
@@ -1785,7 +1790,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # scrolling and pulse animations are triggered
-      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 25})
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 125})
 
       assert_push_event(view, "scroll-x-to-card-in-slider", %{
         card_id: ^card_id,
@@ -1822,7 +1827,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
         id: ^top_level_page_id,
-        offset: 25,
+        offset: 125,
         pulse: true,
         pulse_delay: 500
       })
@@ -1846,7 +1851,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # scrolling and pulse animations are triggered
-      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 25})
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 125})
 
       assert_push_event(view, "scroll-x-to-card-in-slider", %{
         card_id: ^card_id,
@@ -1877,7 +1882,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # scrolling and pulse animations are triggered
-      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 25})
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 125})
 
       assert_push_event(
         view,
@@ -1915,7 +1920,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         )
 
       # scrolling and pulse animations are triggered
-      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 25})
+      assert_push_event(view, "scroll-y-to-target", %{id: ^unit_id, offset: 125})
 
       assert_push_event(view, "scroll-x-to-card-in-slider", %{
         card_id: ^card_id,

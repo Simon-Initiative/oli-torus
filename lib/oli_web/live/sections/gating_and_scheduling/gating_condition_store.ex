@@ -8,8 +8,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   alias OliWeb.Common.Hierarchy.SelectResourceModal
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
-  alias Oli.Resources.Revision
   alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation, FormatDateTime}
+  alias Oli.Delivery.Sections.SectionResourceDepot
 
   def render(assigns) do
     ~H"""
@@ -167,7 +167,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   def handle_event("show-graded-picker", _, socket) do
     %{section: section} = socket.assigns
 
-    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    hierarchy = SectionResourceDepot.get_delivery_resolver_full_hierarchy(section)
     root = hierarchy
 
     filter_items_fn =
@@ -222,7 +222,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   def handle_event("show-ungraded-picker", _, socket) do
     %{section: section} = socket.assigns
 
-    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    hierarchy = SectionResourceDepot.get_delivery_resolver_full_hierarchy(section)
     root = hierarchy
 
     filter_items_fn =
@@ -277,7 +277,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   def handle_event("show-all-picker", _, socket) do
     %{section: section} = socket.assigns
 
-    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    hierarchy = SectionResourceDepot.get_delivery_resolver_full_hierarchy(section)
     root = hierarchy
 
     filter_items_fn =
@@ -322,7 +322,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   def handle_event("show-resource-picker", _, socket) do
     %{section: section} = socket.assigns
 
-    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    hierarchy = SectionResourceDepot.get_delivery_resolver_full_hierarchy(section)
+
     root = hierarchy
     filter_items_fn = fn items -> Enum.filter(items, &(&1.uuid != root.uuid)) end
 
@@ -404,7 +405,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       modal_assigns: %{hierarchy: hierarchy}
     } = socket.assigns
 
-    %HierarchyNode{resource_id: resource_id, revision: %Revision{title: title}} =
+    %HierarchyNode{resource_id: resource_id, revision: %{title: title}} =
       Hierarchy.find_in_hierarchy(hierarchy, selection)
 
     # handle the case that the resource was changed to select the same as a source
@@ -450,7 +451,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     %HierarchyNode{
       resource_id: resource_id,
-      revision: %Revision{title: title, resource_type_id: resource_type_id}
+      revision: %{title: title, resource_type_id: resource_type_id}
     } = Hierarchy.find_in_hierarchy(hierarchy, selection)
 
     container_type_id = Oli.Resources.ResourceType.id_for_container()

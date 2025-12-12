@@ -2,34 +2,10 @@ defmodule Oli.Repo.Migrations.OptimizedIngest do
   use Ecto.Migration
 
   def change do
-    get_current_db_user()
-    |> add_batch_resource_creation_function()
+    add_batch_resource_creation_function()
   end
 
-  def get_current_db_user() do
-    case System.get_env("DATABASE_URL", nil) do
-      nil -> "postgres"
-      url -> parse_user_from_db_url(url, "postgres")
-    end
-  end
-
-  def parse_user_from_db_url(url, default) do
-    case url do
-      "ecto://" <> rest ->
-        split = String.split(rest, ":")
-
-        case Enum.count(split) do
-          0 -> default
-          1 -> default
-          _ -> Enum.at(split, 0)
-        end
-
-      _ ->
-        default
-    end
-  end
-
-  def add_batch_resource_creation_function(user) do
+  def add_batch_resource_creation_function() do
     execute """
     CREATE OR REPLACE FUNCTION public.create_resource_batch(
       proj_id bigint,
@@ -67,7 +43,7 @@ defmodule Oli.Repo.Migrations.OptimizedIngest do
     """
 
     execute """
-    ALTER FUNCTION public.create_resource_batch(bigint, bigint) OWNER TO #{user};
+    ALTER FUNCTION public.create_resource_batch(bigint, bigint) OWNER TO CURRENT_USER;
     """
   end
 end

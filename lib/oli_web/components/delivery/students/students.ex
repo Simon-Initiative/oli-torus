@@ -177,6 +177,7 @@ defmodule OliWeb.Components.Delivery.Students do
        selected_proficiency_options: selected_proficiency_options,
        selected_proficiency_ids: selected_proficiency_ids,
        platform_name: Oli.Branding.brand_name(section),
+       certificate: assigns[:certificate],
        certificate_requires_instructor_approval:
          assigns[:certificate] &&
            assigns.certificate.requires_instructor_approval,
