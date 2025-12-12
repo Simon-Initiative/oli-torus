@@ -26,7 +26,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   @gallery_scroll_offset 125
   @outline_scroll_offset 125
   @mobile_gallery_scroll_offset 150
-  @mobile_outline_scroll_offset 190
+  @mobile_outline_scroll_offset 185
 
   @default_image "/images/course_default.png"
   # this is an optimization to reduce the memory footprint of the liveview process
@@ -1014,7 +1014,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="relative">
         <button
           phx-click="back_to_gallery_mobile_view"
-          class="absolute left-3 top-3 z-10 inline-flex items-center"
+          class="absolute left-4 top-4 z-10 inline-flex items-center"
           aria-label="Back to gallery"
         >
           <Icons.back_arrow class="w-5 h-5 fill-Icon-icon-white stroke-Icon-icon-white" />
@@ -1125,7 +1125,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id="mobile_outline_unit"
-      class="bg-Background-bg-primary min-h-screen p-3 flex flex-col gap-3"
+      class="bg-Background-bg-primary min-h-screen p-4 flex flex-col gap-3"
       phx-hook="ScrollToTheTop"
     >
       <.video_player />
@@ -1190,16 +1190,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             "button[aria-expanded='false'][data-bs-toggle='collapse'][data-child_matches_search_term]"
         )
       }
-      class="lg:container lg:mx-auto sm:p-3 py-3 md:p-[25px]"
+      class="lg:container lg:mx-auto sm:p-3 py-4 md:p-[25px]"
       phx-hook="Scroller"
     >
       <.video_player />
-      <div class="px-3 md:px-[25px]">
+      <div class="px-4 md:px-[25px]">
         <ComponentsUtils.timezone_info timezone={
           FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
       </div>
-      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-3 sm:py-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-4 sm:py-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           target_selector="div[data-completed='true']"
           class="text-Text-text-low text-sm font-medium hover:text-black dark:hover:text-white"
@@ -1274,16 +1274,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id="student_learn"
-      class="lg:container lg:mx-auto sm:p-3 py-3 md:p-[25px]"
+      class="lg:container lg:mx-auto sm:p-3 py-4 md:p-[25px]"
       phx-hook="Scroller"
     >
       <.video_player />
-      <div class="px-3 md:px-[25px]">
+      <div class="px-4 md:px-[25px]">
         <ComponentsUtils.timezone_info timezone={
           FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
       </div>
-      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-3 sm:py-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center sm:h-16 py-1 px-4 sm:py-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           class="text-Text-text-low text-sm font-medium hover:text-black dark:hover:text-white"
           target_selector={completed_resources_css_selector()}
@@ -1368,7 +1368,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="mt-5 md:p-[25px] md:pl-[50px]"
         role={"top_level_page_#{@unit["numbering"]["index"]}"}
       >
-        <div role="header" class="flex flex-col gap-2 sm:gap-0 px-3 sm:px-0 md:flex-row md:gap-[30px]">
+        <div role="header" class="flex flex-col gap-2 sm:gap-0 px-4 sm:px-0 md:flex-row md:gap-[30px]">
           <div class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap">
             {"PAGE #{@unit["numbering"]["index"]}"}
           </div>
@@ -1417,7 +1417,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             </div>
           </div>
         </div>
-        <div class="flex px-3">
+        <div class="flex px-4">
           <.card
             card={@unit}
             module_index={1}
@@ -1447,7 +1447,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       role="resource top level"
     >
       <div class="mt-5 md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
-        <div class="flex flex-col gap-2 sm:gap-0 px-3 sm:px-0 md:flex-row md:gap-[30px]">
+        <div class="flex flex-col gap-2 sm:gap-0 px-4 sm:px-0 md:flex-row md:gap-[30px]">
           <div class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap">
             {container_label_and_numbering(
               @unit["numbering"]["level"],
@@ -1731,7 +1731,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-update="replace"
     >
       <div class="accordion my-2">
-        <div class="p-3 sm:card sm:py-4 bg-transparent sm:bg-white/20 dark:sm:bg-[#0d0c0e] shadow-none">
+        <div class="px-4 py-3 sm:card sm:py-4 bg-transparent sm:bg-white/20 dark:sm:bg-[#0d0c0e] shadow-none">
           <div
             class={"card-header border-b-[1px] #{if @progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1"}
             id={"header-#{@row["resource_id"]}"}
@@ -1864,7 +1864,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-resource_id={@row["resource_id"]}
     >
       <div class="accordion my-2">
-        <div class="p-3 sm:card sm:py-4 bg-transparent sm:bg-white/20 dark:sm:bg-[#0d0c0e] shadow-none">
+        <div class="px-4 py-3 sm:card sm:py-4 bg-transparent sm:bg-white/20 dark:sm:bg-[#0d0c0e] shadow-none">
           <div
             class={"card-header border-b-[1px] #{if @progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1"}
             id={"header-#{@row["resource_id"]}"}
@@ -1930,7 +1930,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       class="flex flex-col"
       phx-update="replace"
     >
-      <div class="px-3 sm:px-6" role={"row_#{@row["numbering"]["index"]}"}>
+      <div class="px-4 sm:px-6" role={"row_#{@row["numbering"]["index"]}"}>
         <div class="flex flex-col">
           <.outline_row
             section={@section}
