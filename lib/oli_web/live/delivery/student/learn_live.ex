@@ -2305,7 +2305,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <button
         role={"page #{@row["numbering"]["index"]} details"}
         class={[
-          "w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-2 flex focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5 #{if @row["numbering"]["level"] == 2, do: "border-b-[1px] border-b-gray-300 dark:border-b-gray-700"}",
+          "w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-2 flex focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5 border-b border-Border-border-default sm:border-b-0",
           if(@row["graded"],
             do: "font-semibold hover:font-bold focus:font-bold",
             else: "font-normal hover:font-medium focus:font-medium"
@@ -2340,14 +2340,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             "flex flex-col gap-1 w-full",
             left_indentation(@row["numbering"]["level"], @is_mobile, :outline)
           ]}>
-            <div class="flex">
+            <div class="flex flex-col sm:flex-row">
               <span
                 role="page title"
                 class={
                   [
-                    "search-result text-left dark:text-white opacity-90 text-base",
-                    # Opacity is set if the item is visited, but not necessarily completed
-                    if(@row["visited"], do: "opacity-60")
+                    "search-result text-left text-base leading-6",
+                    # Text low alpha is set if the item is visited, but not necessarily completed
+                    if(@row["visited"],
+                      do: "text-Text-text-low-alpha font-normal",
+                      else: "text-Text-text-high font-semibold"
+                    )
                   ]
                 }
               >
@@ -2359,10 +2362,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 graded={@row["graded"]}
               />
             </div>
-            <div :if={@row["graded"]} role="due date and score" class="flex">
+            <div :if={@row["graded"]} role="due date and score" class="flex flex-col sm:flex-row">
               <span
                 role="page due date"
-                class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white"
+                class="flex flex-col items-start sm:flex-row text-Text-text-low-alpha text-xs font-semibold leading-3"
               >
                 <span>
                   Available: {get_available_date(
@@ -2371,7 +2374,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     "{WDshort} {Mshort} {D}, {YYYY}"
                   )}
                 </span>
-                <span class="ml-6">
+                <span class="sm:ml-6">
                   {Utils.label_for_scheduling_type(@row["section_resource"].scheduling_type)}{format_date(
                     @row["section_resource"].end_date,
                     @ctx,
@@ -2725,9 +2728,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div class="flex flex-col sm:flex-row">
             <span class={
               [
-                "text-left text-Text-text-low-alpha text-base font-normal leading-6 opacity-90",
-                # Opacity is set if the item is visited, but not necessarily completed
-                if(@was_visited, do: "opacity-60")
+                "text-left text-base leading-6",
+                # Text low alpha is set if the item is visited, but not necessarily completed
+                if(@was_visited,
+                  do: "text-Text-text-low-alpha font-normal",
+                  else: "text-Text-text-high font-semibold"
+                )
               ]
             }>
               {@title}
@@ -2736,7 +2742,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
           <div :if={@graded} role="due date and score" class="flex flex-col sm:flex-row">
-            <span class="flex flex-col items-start sm:flex-row opacity-60 text-[13px] font-normal dark:text-white">
+            <span class="flex flex-col items-start sm:flex-row text-Text-text-low-alpha text-xs font-semibold leading-3">
               <span>
                 Available: {get_available_date(
                   @available_date,
