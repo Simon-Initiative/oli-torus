@@ -33,6 +33,7 @@ export class StudentTask {
     await this.studentDB.waitForVisibleCourses();
     await this.studentDB.fillSearchInput(courseName);
     await this.studentDB.enterCourse(courseName);
+    await this.studentCourse.goToCourseIfPrompted();
     await this.studentCourse.presentAssignmentBlock();
   }
 

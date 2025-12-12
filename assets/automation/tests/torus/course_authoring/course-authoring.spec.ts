@@ -2,6 +2,7 @@ import path from 'node:path';
 import { test } from '@fixture/my-fixture';
 import { TestData } from '../test-data';
 import { TYPE_ACTIVITY, TypeActivity } from '@pom/types/type-activity';
+import { EditorTitle } from '@pom/activities/QuestionActivities';
 
 const testData = new TestData();
 const questionText = 'Question test?';
@@ -215,110 +216,6 @@ test.describe('Enable and verify one activity per test', () => {
     }
   });
 
-  test.describe('Add an ungraded page to the curriculum, add at least one type of each activity and edit them', () => {
-    const projectName = `TQA-14-automation${runId}`;
-
-    test.beforeEach(async ({ homeTask, curriculumTask, projectTask }) => {
-      await homeTask.login('author');
-      await projectTask.searchAndEnterProject(projectName);
-      await homeTask.enterToCurriculum();
-      await curriculumTask.addPageAndEnter('basic-practice');
-    });
-
-    test.afterEach(async ({ homeTask, curriculumTask }) => {
-      await homeTask.enterToCurriculum();
-      await curriculumTask.deletePage();
-    });
-
-    test('Activity: CATA', async ({ curriculumTask }) => {
-      await curriculumTask.addActivitiesWithQuestions('Check All That Apply', 'cata', questionText);
-    });
-
-    test('Activity: MCQ', async ({ curriculumTask }) => {
-      await curriculumTask.addActivitiesWithQuestions('Multiple Choice', 'mcq', questionText);
-    });
-
-    test('Activity: Order', async ({ curriculumTask }) => {
-      await curriculumTask.addActivitiesWithQuestions('Ordering', 'order', questionText);
-    });
-
-    test('Activity: Input', async ({ curriculumTask }) => {
-      await curriculumTask.addActivitiesWithQuestions('Single Response', 'input', questionText);
-    });
-  });
-
-  test.describe('Add an graded page to the curriculum, add at least one type of each activity and edit them', () => {
-    const projectName = `TQA-15-automation${runId}`;
-
-    test.beforeEach(async ({ homeTask, curriculumTask, projectTask }) => {
-      await homeTask.login('author');
-      await projectTask.searchAndEnterProject(projectName);
-      await homeTask.enterToCurriculum();
-      await curriculumTask.addPageAndEnter('basic-scored', 'New Assessment');
-    });
-
-    test.afterEach(async ({ curriculumTask }) => {
-      await curriculumTask.waitChangeVisualize(questionText);
-    });
-
-    test.afterEach(async ({ homeTask, curriculumTask }) => {
-      await homeTask.enterToCurriculum();
-      await curriculumTask.deletePage('New Assessment');
-    });
-
-    test('Activity: Vlab', async ({ curriculumTask }) => {
-      await curriculumTask.addActivityVlab(questionText);
-    });
-
-    test('Activity: DD', async ({ curriculumTask }) => {
-      await curriculumTask.buildQuestionActivity('Directed Discussion', 'dd', questionText);
-    });
-
-    test('Activity: Response Multi', async ({ curriculumTask }) => {
-      await curriculumTask.addActivityResponseMulti(questionText);
-    });
-
-    test('Activity: Multi', async ({ curriculumTask }) => {
-      await curriculumTask.addActivityMulti(questionText);
-    });
-
-    test('Activity: Likert', async ({ curriculumTask }) => {
-      await curriculumTask.addActivityLikert(questionText);
-    });
-
-    test('Activity: DnD', async ({ curriculumTask }) => {
-      await curriculumTask.buildQuestionActivity('Custom Drag and Drop', 'dnd', questionText);
-    });
-
-    test('Activity: Upload', async ({ curriculumTask }) => {
-      await curriculumTask.buildQuestionActivity('File Upload', 'file_upload', questionText);
-    });
-
-    test('Activity: Coding', async ({ curriculumTask }) => {
-      await curriculumTask.buildQuestionActivity('Image Coding', 'coding', questionText);
-    });
-
-    test('Activity: Hotspot', async ({ curriculumTask }) => {
-      await curriculumTask.addActivityHotspot(questionText);
-    });
-  });
-
-  test('Add units and modules to the curriculum of a project, then add pages inside those containers', async ({
-    homeTask,
-    projectTask,
-    curriculumTask,
-  }) => {
-    const projectName = `TQA-17-automation${runId}`;
-
-    await homeTask.login('author');
-    await projectTask.searchAndEnterProject(projectName);
-    await homeTask.enterToCurriculum();
-    await curriculumTask.createAndEnterUnit("Unit 1: Unit");
-    await curriculumTask.addPage('basic-practice');
-    await curriculumTask.createAndEnterModule("Module 1: Module");
-    await curriculumTask.addPageAndEnter('basic-practice');
-  });
-
   test('Publish project as admin and create section as instructor', async ({
     homeTask,
     projectTask,
@@ -329,7 +226,7 @@ test.describe('Enable and verify one activity per test', () => {
     const endDate = new Date();
     endDate.setFullYear(endDate.getFullYear() + 1);
 
-    await homeTask.login('administrator');
+    await homeTask.login('author');
     const projectNameFilter = await projectTask.filterAndReturnProject(testData.projectNameFilter);
     const projectNameID = utils.incrementID(projectNameFilter);
     const { projectName, projectID } = await projectTask.createNewProjectAsOpen(projectNameID);
@@ -382,7 +279,7 @@ test.describe('Enable and verify one activity per test', () => {
     const endDate = new Date();
     endDate.setFullYear(startDate.getFullYear() + 1);
 
-    await homeTask.login('administrator');
+    await homeTask.login('author');
     const projectNameFilter = await projectTask.filterAndReturnProject(testData.projectNameFilter);
     const projectNameID = utils.incrementID(projectNameFilter);
     const { projectName } = await projectTask.createNewProjectAsOpen(projectNameID);

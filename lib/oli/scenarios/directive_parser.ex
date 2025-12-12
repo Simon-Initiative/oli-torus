@@ -107,7 +107,16 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"section" => section_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "title", "from", "type", "registration_open", "slug"]
+    allowed_attrs = [
+      "name",
+      "title",
+      "from",
+      "type",
+      "registration_open",
+      "slug",
+      "open_and_free",
+      "requires_enrollment"
+    ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, section_data, "section") do
       :ok ->
@@ -117,7 +126,10 @@ defmodule Oli.Scenarios.DirectiveParser do
           from: section_data["from"],
           type: parse_section_type(section_data["type"]),
           registration_open: Map.get(section_data, "registration_open", true),
-          slug: section_data["slug"]
+          slug: section_data["slug"],
+          open_and_free: parse_boolean(section_data["open_and_free"], false, "open_and_free"),
+          requires_enrollment:
+            parse_boolean(section_data["requires_enrollment"], false, "requires_enrollment")
         }
 
       {:error, msg} ->

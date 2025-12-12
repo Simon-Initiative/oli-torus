@@ -47,8 +47,11 @@ defmodule Oli.Scenarios.Directives.EnrollmentHandler do
         end
 
       # Perform actual enrollment
-      case Sections.enroll([user.id], section.id, [context_role]) do
-        {:ok, _enrollments} ->
+      case normalize_enroll_response(Sections.enroll([user.id], section.id, [context_role])) do
+        {:ok, []} ->
+          raise "Enrollment returned an empty list for section '#{section_name}' and user '#{user_name}'"
+
+        {:ok, _non_empty} ->
           {:ok, state}
 
         {:error, reason} ->
@@ -59,5 +62,11 @@ defmodule Oli.Scenarios.Directives.EnrollmentHandler do
         {:error, "Failed to enroll '#{user_name}' in '#{section_name}': #{Exception.message(e)}"}
     end
   end
+
+  # Normalize the variety of shapes Sections.enroll/4 can return
+  defp normalize_enroll_response({:ok, {:ok, enrollments}}), do: {:ok, enrollments}
+  defp normalize_enroll_response({:ok, enrollments}), do: {:ok, enrollments}
+  defp normalize_enroll_response({:error, reason}), do: {:error, reason}
+  defp normalize_enroll_response(other), do: {:error, {:unexpected_response, other}}
 
 end

@@ -11,7 +11,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
 
   defmodule SectionDirective do
     @moduledoc "Creates a section from a project or standalone"
-    defstruct [:name, :title, :from, :type, :registration_open, :slug]
+    defstruct [:name, :title, :from, :type, :registration_open, :slug, :open_and_free, :requires_enrollment]
   end
 
   defmodule ProductDirective do

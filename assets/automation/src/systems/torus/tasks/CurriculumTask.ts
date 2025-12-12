@@ -533,12 +533,18 @@ export class CurriculumTask {
     editorTitle: EditorTitle,
     activityType: TypeActivity,
     questionText: string,
+    verify = true,
   ) {
-    this.buildQuestionActivity(editorTitle, activityType, questionText);
-    const preview = await this.basicPP.clickPreview();
-    await preview.verifyQuestion(questionText);
-    await preview.verifyComponent(activityType);
-    await preview.close();
+    await this.buildQuestionActivity(editorTitle, activityType, questionText);
+    await this.basicPP.waitForChangesSaved();
+    await this.page.waitForTimeout(300);
+
+    if (verify) {
+      const preview = await this.basicPP.clickPreview();
+      await preview.verifyQuestion(questionText);
+      await preview.verifyComponent(activityType);
+      await preview.close();
+    }
   }
 
   @step('Add activity vlab')

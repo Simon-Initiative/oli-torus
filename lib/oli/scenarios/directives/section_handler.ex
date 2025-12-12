@@ -16,7 +16,9 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
           from: from,
           type: type,
           registration_open: reg_open,
-          slug: slug
+          slug: slug,
+          open_and_free: open_and_free,
+          requires_enrollment: requires_enrollment
         },
         state
       ) do
@@ -24,10 +26,27 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       section =
         if from do
           # Create section from an existing project
-          create_from_project(from, title || name, type, reg_open, slug, state)
+          create_from_project(
+            from,
+            title || name,
+            type,
+            reg_open,
+            slug,
+            open_and_free,
+            requires_enrollment,
+            state
+          )
         else
           # Create standalone section (empty)
-          create_standalone(title || name, type, reg_open, slug, state)
+          create_standalone(
+            title || name,
+            type,
+            reg_open,
+            slug,
+            open_and_free,
+            requires_enrollment,
+            state
+          )
         end
 
       # Store the section in state
@@ -40,7 +59,16 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
     end
   end
 
-  defp create_from_project(source_name, title, type, reg_open, slug, state) do
+  defp create_from_project(
+         source_name,
+         title,
+         type,
+         reg_open,
+         slug,
+         open_and_free,
+         requires_enrollment,
+         state
+       ) do
     # First check if it's a product
     case Engine.get_product(state, source_name) do
       nil ->
@@ -50,16 +78,43 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
             raise "Project or product '#{source_name}' not found"
 
           built_project ->
-            create_from_built_project(built_project, title, type, reg_open, slug, state)
+            create_from_built_project(
+              built_project,
+              title,
+              type,
+              reg_open,
+              slug,
+              open_and_free,
+              requires_enrollment,
+              state
+            )
         end
 
       product ->
         # Create section from product/blueprint
-        create_from_product(product, title, type, reg_open, slug, state)
+        create_from_product(
+          product,
+          title,
+          type,
+          reg_open,
+          slug,
+          open_and_free,
+          requires_enrollment,
+          state
+        )
     end
   end
 
-  defp create_from_built_project(built_project, title, type, reg_open, slug, state) do
+  defp create_from_built_project(
+         built_project,
+         title,
+         type,
+         reg_open,
+         slug,
+         open_and_free,
+         requires_enrollment,
+         state
+       ) do
     # Get the latest published publication or create one
     publication =
       case Publishing.get_latest_published_publication_by_slug(built_project.project.slug) do
@@ -83,6 +138,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       %{
         title: title,
         registration_open: reg_open,
+        open_and_free: open_and_free,
+        requires_enrollment: requires_enrollment,
         context_id: "context_#{System.unique_integer([:positive])}",
         institution_id: state.current_institution.id,
         base_project_id: built_project.project.id,
@@ -98,12 +155,23 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
     section
   end
 
-  defp create_from_product(product, title, type, reg_open, slug, state) do
+  defp create_from_product(
+         product,
+         title,
+         type,
+         reg_open,
+         slug,
+         open_and_free,
+         requires_enrollment,
+         state
+       ) do
     # Create section from blueprint/product using the proper Delivery function
     section_params =
       %{
         title: title,
         registration_open: reg_open,
+        open_and_free: open_and_free,
+        requires_enrollment: requires_enrollment,
         context_id: "context_#{System.unique_integer([:positive])}",
         institution_id: state.current_institution.id,
         blueprint_id: product.id,
@@ -116,7 +184,15 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
     section |> Oli.Repo.preload([:blueprint])
   end
 
-  defp create_standalone(title, type, reg_open, slug, state) do
+  defp create_standalone(
+         title,
+         type,
+         reg_open,
+         slug,
+         open_and_free,
+         requires_enrollment,
+         state
+       ) do
     # Create a minimal project first
     {:ok, project} =
       Oli.Authoring.Course.create_project(%{
@@ -138,6 +214,8 @@ defmodule Oli.Scenarios.Directives.SectionHandler do
       %{
         title: title,
         registration_open: reg_open,
+        open_and_free: open_and_free,
+        requires_enrollment: requires_enrollment,
         context_id: "context_#{System.unique_integer([:positive])}",
         institution_id: state.current_institution.id,
         base_project_id: project.id,

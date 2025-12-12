@@ -63,6 +63,10 @@
     root:
       children:
         - page: "Page 1"
+        - page: "CATA"
+        - page: "MCQ"
+        - page: "Order"
+        - page: "Input"
 
 - project:
     name: "TQA-15-automation${RUN_ID}"
@@ -182,18 +186,19 @@
 
 # Section + enrollments for TQA-19
 - section:
-    name: "tqa19_section${RUN_ID}"
-    title: "TQA-19 Section ${RUN_ID}"
+    name: "TQA-19-automation${RUN_ID}"
+    title: "TQA-19-automation${RUN_ID}"
     from: "TQA-19-automation${RUN_ID}"
+    open_and_free: true
 
 - enroll:
     user: "playwright_instructor"
     email: "instructor@example.com"
-    section: "tqa19_section${RUN_ID}"
+    section: "TQA-19-automation${RUN_ID}"
     role: instructor
 
 - enroll:
     user: "playwright_student"
     email: "student@example.com"
-    section: "tqa19_section${RUN_ID}"
+    section: "TQA-19-automation${RUN_ID}"
     role: student
