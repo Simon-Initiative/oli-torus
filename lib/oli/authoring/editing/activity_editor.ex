@@ -910,15 +910,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
-  def create_contexts(project_slug, activity_ids) do
-    all_objectives_with_parents =
-      with {:ok, publication} <- Publishing.project_working_publication(project_slug) |> trap_nil(),
-           {:ok, all_objectives} <-
-             Publishing.get_published_objective_details(publication.id) |> trap_nil() do
-        PageEditor.construct_parent_references(all_objectives)
-      else
-        _ -> []
-      end
+  def create_contexts(all_objectives_with_parents, project_slug, activity_ids) do
 
     type_by_id =
       Activities.list_activity_registrations()

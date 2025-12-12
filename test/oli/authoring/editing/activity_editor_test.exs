@@ -23,7 +23,18 @@ defmodule Oli.Authoring.Editing.ActivityEditorTest do
 
     test "keeps existing ids per part without touching structure" do
       objectives = %{"p1" => [2], "p2" => []}
-      all_objectives = [%{id: 2, title: "Two", parentIds: nil}]
+      all_objectives = [%{id: 2, title: "Two", parentIds: [10]}]
+
+      assert ActivityEditor.filter_objectives_to_existing(objectives, all_objectives) == objectives
+    end
+
+    test "works with objective lists shaped like construct_parent_references/1 output" do
+      objectives = %{"p1" => [11, 12]}
+
+      all_objectives = [
+        %{id: 11, title: "Child", parentIds: [5]},
+        %{id: 12, title: "Child 2", parentIds: [5, 6]}
+      ]
 
       assert ActivityEditor.filter_objectives_to_existing(objectives, all_objectives) == objectives
     end
