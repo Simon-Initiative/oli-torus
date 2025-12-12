@@ -25,6 +25,31 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Authoring.Broadcaster
   alias Oli.Resources.ContentMigrator
 
+  # Filters out objective ids that are no longer present in the list of all objectives
+  @doc """
+  Filters an objectives map so that only objective ids present in `all_objectives`
+  remain for each part. Non-map inputs are passed through unchanged or defaulted
+  to an empty map, keeping this function safe for varied shapes seen in legacy data.
+  """
+  def filter_objectives_to_existing(objectives, all_objectives) when is_map(objectives) do
+    valid_ids =
+      all_objectives
+      |> Enum.map(& &1.id)
+      |> MapSet.new()
+
+    objectives
+    |> Enum.reduce(%{}, fn {part_id, obj_ids}, acc ->
+      filtered_ids = Enum.filter(obj_ids, fn id -> MapSet.member?(valid_ids, id) end)
+      Map.put(acc, part_id, filtered_ids)
+    end)
+  end
+
+  def filter_objectives_to_existing(objectives, _all_objectives) when is_list(objectives) do
+    objectives
+  end
+
+  def filter_objectives_to_existing(_objectives, _all_objectives), do: %{}
+
   @doc """
   Retrieves a list of activity resources.
 
@@ -847,10 +872,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
             activity_type: activity_type,
             title: title,
             objectives: objectives,
-            tags: tags
+           tags: tags
           } = revision} <-
            get_latest_revision(publication.id, activity_id) |> trap_nil(),
          {:ok, %{content: model}} <- maybe_migrate_revision_content(revision) do
+      all_objectives_with_parents = PageEditor.construct_parent_references(all_objectives)
+      filtered_objectives = filter_objectives_to_existing(objectives, all_objectives_with_parents)
+
       context = %ActivityContext{
         authoringScript: activity_type.authoring_script,
         authoringElement: activity_type.authoring_element,
@@ -865,8 +893,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         activitySlug: activity_slug,
         title: title,
         model: model,
-        objectives: objectives,
-        allObjectives: PageEditor.construct_parent_references(all_objectives),
+        objectives: filtered_objectives,
+        allObjectives: all_objectives_with_parents,
         typeSlug: activity_type.slug,
         tags: tags,
         variables:
@@ -883,6 +911,15 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   def create_contexts(project_slug, activity_ids) do
+    all_objectives_with_parents =
+      with {:ok, publication} <- Publishing.project_working_publication(project_slug) |> trap_nil(),
+           {:ok, all_objectives} <-
+             Publishing.get_published_objective_details(publication.id) |> trap_nil() do
+        PageEditor.construct_parent_references(all_objectives)
+      else
+        _ -> []
+      end
+
     type_by_id =
       Activities.list_activity_registrations()
       |> Enum.reduce(%{}, fn t, m -> Map.put(m, t.id, t) end)
@@ -893,6 +930,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       activity_type = Map.get(type_by_id, r.activity_type_id)
 
       {:ok, r} = maybe_migrate_revision_content(r)
+      filtered_objectives =
+        filter_objectives_to_existing(r.objectives, all_objectives_with_parents)
 
       %ActivityContext{
         authoringScript: activity_type.authoring_script,
@@ -903,7 +942,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         activitySlug: r.slug,
         title: r.title,
         model: r.content,
-        objectives: r.objectives,
+        objectives: filtered_objectives,
+        allObjectives: all_objectives_with_parents,
         typeSlug: activity_type.slug,
         tags: r.tags,
         variables:
