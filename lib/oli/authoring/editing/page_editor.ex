@@ -238,7 +238,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
          content: convert_to_activity_slugs(revision.content, publication.id),
          activities: activities,
          activityContexts:
-           ActivityEditor.create_contexts(objectives_with_parent_reference, project_slug, activity_ids),
+           ActivityEditor.create_contexts(
+             objectives_with_parent_reference,
+             project_slug,
+             activity_ids
+           ),
          featureFlags:
            Features.list_features_and_states()
            |> Enum.reduce(%{}, fn {%Oli.Features.Feature{label: label}, value}, acc ->

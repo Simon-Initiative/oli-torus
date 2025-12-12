@@ -25,7 +25,8 @@ defmodule Oli.Authoring.Editing.ActivityEditorTest do
       objectives = %{"p1" => [2], "p2" => []}
       all_objectives = [%{id: 2, title: "Two", parentIds: [10]}]
 
-      assert ActivityEditor.filter_objectives_to_existing(objectives, all_objectives) == objectives
+      assert ActivityEditor.filter_objectives_to_existing(objectives, all_objectives) ==
+               objectives
     end
 
     test "works with objective lists shaped like construct_parent_references/1 output" do
@@ -36,7 +37,8 @@ defmodule Oli.Authoring.Editing.ActivityEditorTest do
         %{id: 12, title: "Child 2", parentIds: [5, 6]}
       ]
 
-      assert ActivityEditor.filter_objectives_to_existing(objectives, all_objectives) == objectives
+      assert ActivityEditor.filter_objectives_to_existing(objectives, all_objectives) ==
+               objectives
     end
 
     test "returns empty map when objectives is not a map" do
