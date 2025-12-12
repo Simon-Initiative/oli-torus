@@ -495,71 +495,6 @@ function calculateDotDiameter(studentCount: number, baseDotSize = 9): number {
   return baseDotSize * Math.sqrt(studentCount) * scaleFactor;
 }
 
-// HELPER FUNCTION: Detect and resolve collisions between dots
-function resolveCollisions(
-  dots: GroupedDotDatum[],
-  levelStartX: number,
-  levelWidth: number,
-): GroupedDotDatum[] {
-  // Sort dots by x position
-  const sortedDots = [...dots].sort((a, b) => a.x_position - b.x_position);
-
-  if (sortedDots.length === 0) return sortedDots;
-
-  // Iteratively adjust positions to avoid overlaps
-  const maxIterations = 10;
-  let adjusted = true;
-  let iteration = 0;
-
-  while (adjusted && iteration < maxIterations) {
-    adjusted = false;
-    iteration++;
-
-    for (let i = 0; i < sortedDots.length - 1; i++) {
-      const currentDot = sortedDots[i];
-      const nextDot = sortedDots[i + 1];
-
-      // Calculate required spacing (sum of radii + small padding)
-      const currentRadius = (currentDot.diameter / 2);
-      const nextRadius = (nextDot.diameter / 2);
-      const padding = 2; // pixels of padding between dots
-
-      // Convert positions to pixel space for collision detection
-      // Assuming levelWidth represents 100% of the segment
-      const currentPosPixels = ((currentDot.x_position - levelStartX) / levelWidth) * 100;
-      const nextPosPixels = ((nextDot.x_position - levelStartX) / levelWidth) * 100;
-
-      // Calculate actual distance in pixel percentage space
-      const distance = nextPosPixels - currentPosPixels;
-      const requiredDistance = (currentRadius + nextRadius + padding) / (levelWidth / 100);
-
-      if (distance < requiredDistance) {
-        // Collision detected - push dots apart
-        const overlap = requiredDistance - distance;
-
-        // Move dots apart (push next dot to the right, current to the left)
-        const pushAmount = overlap / 2;
-
-        // Check boundaries before adjusting
-        const newCurrentPos = currentDot.x_position - pushAmount;
-        const newNextPos = nextDot.x_position + pushAmount;
-
-        if (newCurrentPos >= levelStartX) {
-          currentDot.x_position = newCurrentPos;
-          adjusted = true;
-        }
-
-        if (newNextPos <= levelStartX + levelWidth) {
-          nextDot.x_position = newNextPos;
-          adjusted = true;
-        }
-      }
-    }
-  }
-
-  return sortedDots;
-}
-
 // HELPER FUNCTION: Group students by exact proficiency and prepare for rendering
 function groupStudentsByProficiency(
   dotData: DotDatum[],
@@ -673,11 +608,6 @@ function groupStudentsByProficiency(
         });
       }
     });
-
-    // Resolve collisions for this level
-    if (grouped[level].length > 0) {
-      grouped[level] = resolveCollisions(grouped[level], levelStartX, levelWidth);
-    }
   });
 
   return grouped;
