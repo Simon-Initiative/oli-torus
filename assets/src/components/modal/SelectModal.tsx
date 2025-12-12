@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Maybe } from 'tsmonad';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { lockScroll, unlockScroll } from 'components/modal/utils';
@@ -20,6 +20,10 @@ interface SelectModalProps<T extends Option> {
   additionalControls?: React.ReactNode;
 }
 
+// Selector for focusable elements
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export const SelectModal = function <T extends Option>({
   title,
   description,
@@ -29,26 +33,71 @@ export const SelectModal = function <T extends Option>({
   additionalControls,
 }: SelectModalProps<T>) {
   const modal = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+  const modalId = useRef(`select-modal-${Math.random().toString(36).substr(2, 9)}`);
   const [options, setOptions] = useState<Maybe<T[]>>(Maybe.nothing());
   const [error, setError] = useState<Maybe<string>>(Maybe.nothing());
   const [selectedOption, setSelectedOption] = useState<Maybe<T>>(Maybe.nothing());
 
+  // Focus trap handler
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key !== 'Tab' || !modal.current) return;
+
+    const focusableElements = modal.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+    if (focusableElements.length === 0) return;
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === firstElement) {
+        e.preventDefault();
+        lastElement.focus();
+      }
+    } else {
+      if (document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (modal.current) {
       const currentModal = modal.current;
+
+      // Save the currently focused element to restore later
+      previousActiveElement.current = document.activeElement as HTMLElement;
+
       (window as any).$(currentModal).modal('show');
       const scrollPosition = lockScroll();
 
-      $(currentModal).on('hidden.bs.modal', () => {
-        onCancel();
+      // Focus the first focusable element when modal opens
+      $(currentModal).on('shown.bs.modal', () => {
+        const focusableElements = currentModal.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+        if (focusableElements.length > 0) {
+          focusableElements[0].focus();
+        }
       });
 
+      $(currentModal).on('hidden.bs.modal', () => {
+        onCancel();
+        // Return focus to the element that triggered the modal
+        if (previousActiveElement.current) {
+          previousActiveElement.current.focus();
+        }
+      });
+
+      // Add focus trap listener
+      document.addEventListener('keydown', handleKeyDown);
+
       return () => {
+        document.removeEventListener('keydown', handleKeyDown);
         (window as any).$(currentModal).modal('hide');
         unlockScroll(scrollPosition);
       };
     }
-  }, [modal]);
+  }, [modal, handleKeyDown]);
 
   useEffect(() => {
     onFetchOptions()
@@ -115,15 +164,19 @@ export const SelectModal = function <T extends Option>({
     );
   };
 
+  const titleId = `${modalId.current}-title`;
+
   return (
-    <div ref={modal} className="modal">
-      <div className={`modal-dialog modal-dialog-centered modal-md`} role="document">
+    <div ref={modal} className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <div className="modal-dialog modal-dialog-centered modal-md">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">{title}</h5>
+            <h5 className="modal-title" id={titleId}>
+              {title}
+            </h5>
             <button
               type="button"
-              className="btn-close"
+              className="btn-close focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               data-bs-dismiss="modal"
               aria-label="Close"
             ></button>

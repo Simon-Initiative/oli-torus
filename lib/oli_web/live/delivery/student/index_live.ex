@@ -417,12 +417,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         Course progress is calculated based on the pages you visit and the percentage of activities you complete.
       </span>
       <button
-        phx-click={
-          Modal.show_modal("course_progress_calculation_modal")
-          |> JS.hide(to: "#course_progress_tooltip_desktop")
-          |> JS.add_class("invisible opacity-0", to: "#course_progress_tooltip_mobile")
-        }
-        data-dismiss-tooltip
+        phx-click={JS.push_focus() |> Modal.show_modal("course_progress_calculation_modal")}
         class="text-[#353740] dark:text-[#eeebf5] text-sm font-bold underline leading-normal"
       >
         Learn more.
@@ -435,24 +430,26 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp course_progress_tooltip_desktop(assigns) do
     ~H"""
     <div class="hidden xl:flex items-baseline gap-2.5 relative hover:cursor-pointer">
+      <button
+        type="button"
+        id="course_progress_icon_desktop"
+        aria-label="Explain course progress calculation"
+        xphx-mouseover={JS.show(to: "#course_progress_tooltip_desktop")}
+        phx-focus={JS.show(to: "#course_progress_tooltip_desktop")}
+        class="size-5 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+      >
+        <Icons.info />
+      </button>
       <div
         id="course_progress_tooltip_desktop"
         phx-hook="AutoHideTooltip"
+        data-trigger-id="course_progress_icon_desktop"
         class="hidden absolute z-50 -top-[108px] -right-[323px] p-4"
       >
         <div class="w-[320px] h-[88px] px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
           <.course_progress_tooltip_content />
         </div>
       </div>
-      <button
-        type="button"
-        id="course_progress_icon_desktop"
-        aria-label="Explain course progress calculation"
-        xphx-mouseover={JS.show(to: "#course_progress_tooltip_desktop")}
-        class="size-5 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
-      >
-        <Icons.info />
-      </button>
     </div>
     """
   end
