@@ -140,6 +140,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
               )
 
             if activity_attempt.attempt_number != max_attempt_number do
+              page_id = resource_attempt.revision.resource_id
+              title = resource_attempt.revision.title
+              graded = resource_attempt.revision.graded
+              score_as_you_go = !effective_settings.batch_scoring
+              score = activity_attempt.score
+              out_of = activity_attempt.out_of
+              aggregate_score = activity_attempt.aggregate_score
+              aggregate_out_of = activity_attempt.aggregate_out_of
+              activity_slug = activity_attempt.revision.activity_type.slug
+
+              Logger.warning(
+                "Activity attempt #{activity_attempt_guid} has been reset. Page resource id: #{page_id} Activity id: #{activity_attempt.revision.resource_id} Max attempt number: #{max_attempt_number} Attempt number: #{activity_attempt.attempt_number} Section: #{section_slug} Title: #{title}, Graded: #{graded}, Score as you go: #{score_as_you_go}, Score: #{score}, Out of: #{out_of}, Aggregate score: #{aggregate_score}, Aggregate out of: #{aggregate_out_of}, Activity type ID: #{activity_slug}"
+              )
+
               Repo.rollback({:already_reset})
             end
 
