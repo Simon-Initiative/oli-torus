@@ -444,7 +444,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       setEnabled(false);
     }
     setReady(true);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const {
     width,
@@ -679,13 +679,17 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (sRandomize !== undefined) {
                 setRandomized(parseBoolean(sRandomize));
               }
+
+              // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
               let hasDoneMultiple = false;
               let hasDoneSelectedChoice = false;
 
+              // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
               const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
               if (multipleSelection && sSelectedChoices !== undefined) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
+                // convert stringfied number array to number array
                 const selectedArray = convertToNumberArray(sSelectedChoices);
 
                 if (Array.isArray(selectedArray)) {
@@ -719,6 +723,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               }
 
               if (!hasDoneMultiple) {
+                // this is for setting a *single* seletion by the number
                 const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
                 if (sSelectedChoice !== undefined) {
                   hasDoneSelectedChoice = true;
@@ -734,7 +739,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                   if (choiceNumber !== undefined) {
                     handleItemSelection(
                       { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
-                      true,
+                      true, // need to save pretty much every time because of related properties like count
                     );
                   }
                 }
