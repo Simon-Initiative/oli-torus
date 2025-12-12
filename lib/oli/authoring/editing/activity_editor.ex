@@ -39,7 +39,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
     objectives
     |> Enum.reduce(%{}, fn {part_id, obj_ids}, acc ->
-      filtered_ids = Enum.filter(obj_ids, fn id -> MapSet.member?(valid_ids, id) end)
+      filtered_ids =
+        obj_ids
+        |> List.wrap()
+        |> Enum.filter(fn id -> MapSet.member?(valid_ids, id) end)
+
       Map.put(acc, part_id, filtered_ids)
     end)
   end
@@ -872,7 +876,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
             activity_type: activity_type,
             title: title,
             objectives: objectives,
-           tags: tags
+            tags: tags
           } = revision} <-
            get_latest_revision(publication.id, activity_id) |> trap_nil(),
          {:ok, %{content: model}} <- maybe_migrate_revision_content(revision) do
@@ -911,7 +915,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   def create_contexts(all_objectives_with_parents, project_slug, activity_ids) do
-
     type_by_id =
       Activities.list_activity_registrations()
       |> Enum.reduce(%{}, fn t, m -> Map.put(m, t.id, t) end)
@@ -922,6 +925,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       activity_type = Map.get(type_by_id, r.activity_type_id)
 
       {:ok, r} = maybe_migrate_revision_content(r)
+
       filtered_objectives =
         filter_objectives_to_existing(r.objectives, all_objectives_with_parents)
 
