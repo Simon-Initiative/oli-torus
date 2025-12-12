@@ -56,6 +56,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   verticalGap = 0,
 }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const isMouseInteraction = React.useRef<boolean>(false);
 
   /* layout rules preserved */
   const mcqItemStyles: CSSProperties = {};
@@ -107,11 +108,39 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
 
     onSelected && onSelected(selection);
 
-    // Force SR to announce full label again
-    // Use a small delay to ensure state update is processed
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 50);
+    // Always blur-then-focus for mouse interactions to force SR re-announcement
+    // Don't refocus for keyboard interactions (Enter/Space) to allow normal navigation
+    if (multipleSelection && isMouseInteraction.current) {
+      // Always blur-then-focus to force SR re-announcement
+      // Even if input already has focus, this sequence makes SR re-read the label
+      inputRef.current?.blur();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+        });
+      });
+      // Reset flag after handling
+      setTimeout(() => {
+        isMouseInteraction.current = false;
+      }, 100);
+    }
+  };
+
+  /** Track mouse interactions */
+  const handleMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
+    if (multipleSelection) {
+      isMouseInteraction.current = true;
+    }
+  };
+
+  /** Track keyboard interactions and reset mouse flag */
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (multipleSelection) {
+      // Track that this is a keyboard interaction (Enter or Space)
+      if (e.key === 'Enter' || e.key === ' ') {
+        isMouseInteraction.current = false;
+      }
+    }
   };
 
   return (
@@ -163,6 +192,8 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
           disabled={disabled}
           checked={selected}
           onChange={handleChanged}
+          onMouseDown={handleMouseDown}
+          onKeyDown={handleKeyDown}
           aria-label={ariaLabel}
           aria-labelledby={!multipleSelection ? labelId : undefined}
           tabIndex={disabled ? -1 : 0}
