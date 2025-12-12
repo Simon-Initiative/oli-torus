@@ -489,10 +489,9 @@ function calculateDotDiameter(studentCount: number, baseDotSize = 9): number {
   if (studentCount === 1) {
     return baseDotSize;
   }
-  // Use square root scaling to slow down growth: diameter = baseDotSize * sqrt(studentCount) * scaleFactor
+  // Use square root scaling to slow down growth: diameter = baseDotSize * sqrt(studentCount)
   // This gives more reasonable sizes: 1→9px, 2→12.7px, 4→18px, 9→27px, 16→36px
-  const scaleFactor = 1.0;
-  return baseDotSize * Math.sqrt(studentCount) * scaleFactor;
+  return baseDotSize * Math.sqrt(studentCount);
 }
 
 // HELPER FUNCTION: Group students by exact proficiency and prepare for rendering
