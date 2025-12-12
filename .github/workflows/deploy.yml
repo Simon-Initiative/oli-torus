@@ -57,56 +57,42 @@ jobs:
           command: |
             DEPLOY_INSTANCE="${{ env.DEPLOY_INSTANCE }}"
             printf "DEPLOY_REF=%s\nDEPLOY_VERSION=%s\nDEPLOY_SHA=%s\n" "${{ github.ref }}" "${{ steps.info.outputs.app_version }}" "${{ steps.info.outputs.sha_short }}" > /var/lib/oli/deploy/env-${DEPLOY_INSTANCE}
-            sudo systemctl start "oli-deploy@${DEPLOY_INSTANCE}.service"
-            sudo systemctl status "oli-deploy@${DEPLOY_INSTANCE}.service" || true
-          host: ${{ github.event.inputs.deploy_target }}
-          user: simon-bot
-          key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
-          port: 22
-
-      - name: ✅ Check deploy unit status
-        uses: fifsky/ssh-action@master
-        with:
-          command: |
-            DEPLOY_INSTANCE="${{ env.DEPLOY_INSTANCE }}"
+            sudo -n systemctl start "oli-deploy@${DEPLOY_INSTANCE}.service"
+            start_ts=$(date +"%Y-%m-%d %H:%M:%S")
+            trap 'echo "SSH session lost. To resume logs: sudo journalctl -u oli-deploy@${DEPLOY_INSTANCE}.service --since '\''${start_ts}'\'' -f --no-pager"; exit 1' HUP PIPE
+            echo "Streaming deploy logs; if this step is interrupted, run:"
+            echo "  sudo journalctl -u oli-deploy@${DEPLOY_INSTANCE}.service --since \"$start_ts\" -f"
             timeout_seconds=3600
             interval_seconds=15
             elapsed=0
-            start_ts=$(date +"%Y-%m-%d %H:%M:%S")
-
-            sudo journalctl -u "oli-deploy@${DEPLOY_INSTANCE}.service" --since "$start_ts" -f --no-pager &
+            echo "Timeout set to ${timeout_seconds}s; polling every ${interval_seconds}s."
+            sudo -n journalctl -u "oli-deploy@${DEPLOY_INSTANCE}.service" --since "$start_ts" -f --no-pager &
             log_pid=$!
             trap "kill $log_pid >/dev/null 2>&1" EXIT
-
             while true; do
-              sub_state=$(sudo systemctl show -p SubState --value "oli-deploy@${DEPLOY_INSTANCE}.service")
-              result=$(sudo systemctl show -p Result --value "oli-deploy@${DEPLOY_INSTANCE}.service")
-
+              sub_state=$(sudo -n systemctl show -p SubState --value "oli-deploy@${DEPLOY_INSTANCE}.service")
+              result=$(sudo -n systemctl show -p Result --value "oli-deploy@${DEPLOY_INSTANCE}.service")
               if [ "$sub_state" = "exited" ] || [ "$sub_state" = "dead" ] || [ "$sub_state" = "failed" ]; then
                 kill $log_pid >/dev/null 2>&1
                 trap - EXIT
-                sudo systemctl status "oli-deploy@${DEPLOY_INSTANCE}.service"
-
+                sudo -n systemctl status "oli-deploy@${DEPLOY_INSTANCE}.service"
                 if [ "$result" != "success" ]; then
                   echo "Deploy unit failed with result: $result (state: $sub_state)"
                   exit 1
                 fi
-
                 break
               fi
-
               if [ $elapsed -ge $timeout_seconds ]; then
                 echo "Timed out waiting for deploy unit to finish after ${elapsed}s"
                 kill $log_pid >/dev/null 2>&1
                 trap - EXIT
-                sudo systemctl status "oli-deploy@${DEPLOY_INSTANCE}.service"
+                sudo -n systemctl status "oli-deploy@${DEPLOY_INSTANCE}.service"
                 exit 1
               fi
-
               sleep $interval_seconds
               elapsed=$((elapsed + interval_seconds))
             done
           host: ${{ github.event.inputs.deploy_target }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
-          port: 22
+          port: 44067
