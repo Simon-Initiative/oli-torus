@@ -1123,9 +1123,7 @@ describe('DotDistributionChart', () => {
         // Dots are rendered in order: largest first, smallest last
         // In SVG, elements rendered last appear on top
         if (circles.length >= 3) {
-          const radii = Array.from(circles).map((c) =>
-            parseFloat(c.getAttribute('r') || '0'),
-          );
+          const radii = Array.from(circles).map((c) => parseFloat(c.getAttribute('r') || '0'));
 
           // Find the largest and smallest radii
           const maxRadius = Math.max(...radii);
