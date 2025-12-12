@@ -11,7 +11,12 @@ update this file accordingly.
 
 ### Infrastructure Changes
 
-- [ ] Add permission for deploy user to run `sudo systemd-run` commands adn write to /var/lib/oli/deploy-queue
+- [ ] Copy `systemd/oli-deploy@.service` to deployment targets
+      `/etc/systemd/system/oli-deploy@.service` and run `sudo systemctl daemon-reload`.
+- [ ] Create writable dirs `/var/lib/oli/deploy` and `/var/lib/oli/deploy-queue`
+      (group-owned by simon-bot, mode 2775) - `chgrp simon-bot /var/lib/oli/deploy*` - `chmod 2775 /var/lib/oli/deploy*`
+- [ ] Allow deploy user to `systemctl start/status oli-deploy@*` and `journalctl -u oli-deploy@*`
+      units without password
 
 ## 0.32.0
 

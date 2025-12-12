@@ -29,7 +29,7 @@ jobs:
     if: ${{ github.event.inputs.deploy_target != '' }}
 
     env:
-      DEPLOY_UNIT: oli-deploy-${{ github.run_id }}
+      DEPLOY_INSTANCE: ${{ github.run_id }}
 
     environment:
       name: ${{ github.event.inputs.deploy_target }}
@@ -55,17 +55,10 @@ jobs:
         uses: fifsky/ssh-action@master
         with:
           command: |
-            DEPLOY_UNIT="${{ env.DEPLOY_UNIT }}"
-            sudo systemd-run \
-              --unit=${DEPLOY_UNIT} \
-              --description="oli deploy ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}" \
-              --property=After=network-online.target \
-              --property=WorkingDirectory=/torus \
-              --property=Type=oneshot \
-              --setenv=DEPLOY_ID=${DEPLOY_UNIT} \
-              --setenv=DEPLOY_LOG_DIR=/var/log/oli/deploy \
-              /bin/bash -lc "cd /torus && ./deploy.sh -r ${{ github.ref }} ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}"
-            sudo systemctl status ${DEPLOY_UNIT}
+            DEPLOY_INSTANCE="${{ env.DEPLOY_INSTANCE }}"
+            printf "DEPLOY_REF=%s\nDEPLOY_VERSION=%s\nDEPLOY_SHA=%s\n" "${{ github.ref }}" "${{ steps.info.outputs.app_version }}" "${{ steps.info.outputs.sha_short }}" | sudo tee /var/lib/oli/deploy/env-${DEPLOY_INSTANCE} >/dev/null
+            sudo systemctl start "oli-deploy@${DEPLOY_INSTANCE}.service"
+            sudo systemctl status "oli-deploy@${DEPLOY_INSTANCE}.service"
           host: ${{ github.event.inputs.deploy_target }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
@@ -75,24 +68,24 @@ jobs:
         uses: fifsky/ssh-action@master
         with:
           command: |
-            DEPLOY_UNIT="${{ env.DEPLOY_UNIT }}"
+            DEPLOY_INSTANCE="${{ env.DEPLOY_INSTANCE }}"
             timeout_seconds=3600
             interval_seconds=15
             elapsed=0
             start_ts=$(date +"%Y-%m-%d %H:%M:%S")
 
-            sudo journalctl -u ${DEPLOY_UNIT} --since "$start_ts" -f --no-pager &
+            sudo journalctl -u "oli-deploy@${DEPLOY_INSTANCE}.service" --since "$start_ts" -f --no-pager &
             log_pid=$!
             trap "kill $log_pid >/dev/null 2>&1" EXIT
 
             while true; do
-              sub_state=$(sudo systemctl show -p SubState --value ${DEPLOY_UNIT})
-              result=$(sudo systemctl show -p Result --value ${DEPLOY_UNIT})
+              sub_state=$(sudo systemctl show -p SubState --value "oli-deploy@${DEPLOY_INSTANCE}.service")
+              result=$(sudo systemctl show -p Result --value "oli-deploy@${DEPLOY_INSTANCE}.service")
 
               if [ "$sub_state" = "exited" ] || [ "$sub_state" = "dead" ] || [ "$sub_state" = "failed" ]; then
                 kill $log_pid >/dev/null 2>&1
                 trap - EXIT
-                sudo systemctl status ${DEPLOY_UNIT}
+                sudo systemctl status "oli-deploy@${DEPLOY_INSTANCE}.service"
 
                 if [ "$result" != "success" ]; then
                   echo "Deploy unit failed with result: $result (state: $sub_state)"
@@ -106,7 +99,7 @@ jobs:
                 echo "Timed out waiting for deploy unit to finish after ${elapsed}s"
                 kill $log_pid >/dev/null 2>&1
                 trap - EXIT
-                sudo systemctl status ${DEPLOY_UNIT}
+                sudo systemctl status "oli-deploy@${DEPLOY_INSTANCE}.service"
                 exit 1
               fi
 
