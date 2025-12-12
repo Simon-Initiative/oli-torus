@@ -84,16 +84,15 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   const positionText = `${itemIndex + 1} of ${totalItems}`;
 
   /** A11y label rules:
-   *  ✔ For checkbox: "Tomato, checkbox, 2 of 4"
-   *  ✔ DO NOT include "checked" or "unchecked" → SR handles that
+   *  ✔ For checkbox: "OptionText, unchecked, checkbox, group, 1 of 4"
    *  ✔ For radio: only text (browser handles group/checked state)
    */
   const labelId = `${itemId}-label`;
   const positionId = `${itemId}-position`;
 
-  // For multiple selection, create full aria-label with text and position
+  // For multiple selection, create full aria-label with text, state, and position
   const ariaLabel = multipleSelection
-    ? `${textValue} checkbox ${positionText}`
+    ? `${textValue}, ${selected ? 'checked' : 'unchecked'}, checkbox, group, ${positionText}`
     : undefined;
 
   /** When user checks/unchecks, we must refocus the input so SR
