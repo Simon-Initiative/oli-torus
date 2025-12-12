@@ -1144,7 +1144,55 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       } />
 
       <div :for={{node_id, unit} <- @streams.units} id={node_id} class="flex flex-col gap-2">
-        <span class="text-Text-text-high text-lg font-semibold leading-6">{unit["title"]}</span>
+        <% unit_progress =
+          parse_student_progress_for_resource(@student_progress_per_resource_id, unit["resource_id"]) %>
+
+        <div class={"border-b-[1px] #{if unit_progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1 py-3"}>
+          <h6 class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase">
+            {container_label_and_numbering(1, unit["numbering"]["index"], @section.customizations)}
+          </h6>
+
+          <div class="flex justify-between items-center mt-2 mb-2 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2">
+            <div role="unit title" class="grow shrink basis-0">
+              {unit["title"]}
+            </div>
+            <div class="flex flex-row gap-x-2">
+              <%= if unit_progress == 100 do %>
+                Completed <Icons.check />
+              <% else %>
+                {unit_progress} %
+              <% end %>
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center mb-1 w-full">
+            <div
+              role={"unit #{unit["resource_id"]} scheduling details"}
+              class="flex flex-col gap-2 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3"
+            >
+              <span>
+                Available: {get_available_date(
+                  unit["section_resource"].start_date,
+                  @ctx,
+                  "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                )}
+              </span>
+              <span>
+                {if unit["section_resource"].end_date in [nil, "Not yet scheduled"],
+                  do: "Due by:",
+                  else:
+                    Utils.container_label_for_scheduling_type(
+                      Map.get(@contained_scheduling_types, unit["resource_id"])
+                    )}
+                {format_date(
+                  unit["section_resource"].end_date,
+                  @ctx,
+                  "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
 
         <.outline_row
           :for={row <- unit["children"]}
