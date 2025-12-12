@@ -25,8 +25,11 @@ on:
 
 jobs:
   deployment:
-    runs-on: ubuntu-latest
-    if: -n "${{github.event.inputs.deploy_target}}"
+    runs-on: plasma
+    if: ${{ github.event.inputs.deploy_target != '' }}
+
+    env:
+      DEPLOY_UNIT: oli-deploy-${{ github.run_id }}
 
     environment:
       name: ${{ github.event.inputs.deploy_target }}
@@ -52,9 +55,65 @@ jobs:
         uses: fifsky/ssh-action@master
         with:
           command: |
-            cd /torus
-            sh deploy.sh -r ${{ github.ref }} ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
+            DEPLOY_UNIT="${{ env.DEPLOY_UNIT }}"
+            sudo systemd-run \
+              --unit=${DEPLOY_UNIT} \
+              --description="oli deploy ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}" \
+              --property=After=network-online.target \
+              --property=WorkingDirectory=/torus \
+              --property=Type=oneshot \
+              --setenv=DEPLOY_ID=${DEPLOY_UNIT} \
+              --setenv=DEPLOY_LOG_DIR=/var/log/oli/deploy \
+              /bin/bash -lc "cd /torus && ./deploy.sh -r ${{ github.ref }} ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}"
+            sudo systemctl status ${DEPLOY_UNIT}
           host: ${{ github.event.inputs.deploy_target }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
-          port: 44067
+          port: 22
+
+      - name: ✅ Check deploy unit status
+        uses: fifsky/ssh-action@master
+        with:
+          command: |
+            DEPLOY_UNIT="${{ env.DEPLOY_UNIT }}"
+            timeout_seconds=3600
+            interval_seconds=15
+            elapsed=0
+            start_ts=$(date +"%Y-%m-%d %H:%M:%S")
+
+            sudo journalctl -u ${DEPLOY_UNIT} --since "$start_ts" -f --no-pager &
+            log_pid=$!
+            trap "kill $log_pid >/dev/null 2>&1" EXIT
+
+            while true; do
+              sub_state=$(sudo systemctl show -p SubState --value ${DEPLOY_UNIT})
+              result=$(sudo systemctl show -p Result --value ${DEPLOY_UNIT})
+
+              if [ "$sub_state" = "exited" ] || [ "$sub_state" = "dead" ] || [ "$sub_state" = "failed" ]; then
+                kill $log_pid >/dev/null 2>&1
+                trap - EXIT
+                sudo systemctl status ${DEPLOY_UNIT}
+
+                if [ "$result" != "success" ]; then
+                  echo "Deploy unit failed with result: $result (state: $sub_state)"
+                  exit 1
+                fi
+
+                break
+              fi
+
+              if [ $elapsed -ge $timeout_seconds ]; then
+                echo "Timed out waiting for deploy unit to finish after ${elapsed}s"
+                kill $log_pid >/dev/null 2>&1
+                trap - EXIT
+                sudo systemctl status ${DEPLOY_UNIT}
+                exit 1
+              fi
+
+              sleep $interval_seconds
+              elapsed=$((elapsed + interval_seconds))
+            done
+          host: ${{ github.event.inputs.deploy_target }}
+          user: simon-bot
+          key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
+          port: 22

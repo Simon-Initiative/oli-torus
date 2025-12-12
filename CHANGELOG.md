@@ -7,6 +7,12 @@ For a complete list of changes and release notes, please refer to the [GitHub re
 If a PR is opened that adds a new environment config or requires infrastructure changes, please
 update this file accordingly.
 
+## 0.32.b
+
+### Infrastructure Changes
+
+- [ ] Add permission for deploy user to run `sudo systemd-run` commands adn write to /var/lib/oli/deploy-queue
+
 ## 0.32.0
 
 ### Environment Configs
