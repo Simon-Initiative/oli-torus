@@ -1146,9 +1146,32 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div :for={{node_id, unit} <- @streams.units} id={node_id} class="flex flex-col gap-2">
         <span class="text-Text-text-high text-lg font-semibold leading-6">{unit["title"]}</span>
 
-        <div :for={child <- unit["children"]} class="flex flex-col gap-2">
-          <span class="text-Text-text-low text-sm leading-6">{child["title"]}</span>
-        </div>
+        <.outline_row
+          :for={row <- unit["children"]}
+          id={"node-#{row["uuid"]}-unit"}
+          section={@section}
+          row={row}
+          type={child_type(row)}
+          student_progress_per_resource_id={@student_progress_per_resource_id}
+          student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
+          student_available_date_exceptions_per_resource_id={
+            @student_available_date_exceptions_per_resource_id
+          }
+          student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+          student_id={@current_user.id}
+          progress={
+            parse_student_progress_for_resource(
+              @student_progress_per_resource_id,
+              row["resource_id"]
+            )
+          }
+          ctx={@ctx}
+          page_metrics={@page_metrics_per_module_id}
+          contained_scheduling_types={@contained_scheduling_types}
+          search_term={@params["search_term"]}
+          has_scheduled_resources?={@has_scheduled_resources?}
+          is_mobile={@is_mobile}
+        />
       </div>
     </div>
     """
@@ -1987,7 +2010,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-update="replace"
     >
       <div class="accordion my-2">
-        <div class="card bg-white/20 dark:bg-[#0d0c0e] py-4 pr-0 shadow-none">
+        <div class="sm:card bg-white/20 dark:bg-[#0d0c0e] py-4 pr-0 shadow-none">
           <div
             class="card-header border-b-[1px] border-b-gray-300 dark:border-b-gray-700 pb-2"
             id={"header-#{@row["resource_id"]}"}
@@ -2057,12 +2080,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 </button>
               </div>
             </div>
-            <div
-              :if={@type == :module and @row["intro_content"]["children"] not in ["", nil]}
-              class="mt-12 dark:text-white text-base font-normal font-['Open Sans'] grow shrink basis-0 leading-loose"
-            >
-              {render_intro_content(@row["intro_content"]["children"])}
-            </div>
           </div>
 
           <div
@@ -2070,6 +2087,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class="collapse"
             aria-labelledby={"header-#{@row["resource_id"]}"}
           >
+            <div
+              :if={@type == :module and @row["intro_content"]["children"] not in ["", nil]}
+              class=""
+            >
+              <.intro_content
+                raw_content={@row["intro_content"]["children"]}
+                resource_id={@row["resource_id"]}
+              />
+            </div>
             <div class="card-body pl-6 md:pl-20 pt-4 md:pt-8">
               <div
                 role="completed count"
@@ -2183,7 +2209,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       id={@id}
       role={"page_#{@row["resource_id"]}"}
       data-completed={"#{@row["completed"]}"}
-      class={"flex flex-col #{if @row["numbering"]["level"] == 2, do: "pl-4"}"}
+      class={"flex flex-col #{if @row["numbering"]["level"] == 2, do: "sm:pl-4"}"}
       phx-update="replace"
     >
       <button
@@ -3125,7 +3151,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div>
       <span
         id={"intro_content_module_#{@resource_id}"}
-        class="text-Text-text-low text-sm sm:text-base font-normal leading-6 sm:leading-8 line-clamp-3 max-w-[760px] overflow-hidden"
+        class="text-Text-text-low text-sm sm:text-base font-normal leading-6 sm:leading-8 line-clamp-3 overflow-hidden"
         style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
         data-read-more-expanded="false"
         aria-expanded="false"
@@ -3859,7 +3885,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp left_indentation(numbering_level, is_mobile, view \\ :gallery)
 
-  defp left_indentation(_numbering_level, true = _is_mobile, :gallery), do: ""
+  defp left_indentation(_numbering_level, true = _is_mobile, _view), do: ""
 
   defp left_indentation(numbering_level, _is_mobile, view) do
     level_adjustment = if view == :outline, do: 1, else: 0
