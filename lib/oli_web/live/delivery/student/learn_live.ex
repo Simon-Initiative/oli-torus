@@ -1962,9 +1962,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     >
       <div class={[
         left_indentation(@row["numbering"]["level"], @is_mobile, :outline),
-        "w-full pl-16 py-2.5 justify-start items-center gap-5 flex rounded-lg"
+        "w-full px-3 sm:pl-16 py-2.5 justify-start items-center gap-2 sm:gap-5 flex rounded-lg"
       ]}>
-        <span class="search-result opacity-60 dark:text-white text-base font-semibold font-['Open Sans']">
+        <span class="search-result text-Text-text-low-alpha text-base font-semibold">
           {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
         </span>
       </div>
@@ -2002,6 +2002,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       })
 
     ~H"""
+    <% border_class =
+      if @row["completed"],
+        do: "border-b-[1px] border-Fill-fill-progress",
+        else: "border-b-[1px] border-Border-border-default" %>
+
     <div
       id={@id}
       role={"#{@type}_#{@row["resource_id"]}_outline"}
@@ -2010,26 +2015,26 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-update="replace"
     >
       <div class="accordion my-2">
-        <div class="sm:card bg-white/20 dark:bg-[#0d0c0e] py-4 pr-0 shadow-none">
+        <div class="sm:card sm:py-4 sm:pr-0 bg-transparent sm:bg-white/20 dark:sm:bg-[#0d0c0e] shadow-none">
           <div
-            class="card-header border-b-[1px] border-b-gray-300 dark:border-b-gray-700 pb-2"
+            class={"card-header #{border_class} pb-1 relative"}
             id={"header-#{@row["resource_id"]}"}
           >
-            <h6 class="dark:text-[#eeebf5]/75 text-sm font-bold font-['Open Sans'] uppercase leading-none">
+            <h6 class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase">
               {"#{String.upcase(Sections.get_container_label_and_numbering(@row["numbering"]["level"], @row["numbering"]["index"], @section.customizations))}"}
             </h6>
-            <div class="flex justify-between items-center h-8 mt-3 mb-1">
+            <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
               <div
                 role="module title"
-                class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose"
+                class="search-result grow shrink basis-0"
               >
                 {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
               </div>
             </div>
-            <div class="flex justify-between items-center h-6 mb-3 w-full">
+            <div class="flex justify-between items-center mb-3 w-full">
               <div
                 role={"module #{@row["resource_id"]} scheduling details"}
-                class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none"
+                class="flex flex-col sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
                   Available: {get_available_date(
@@ -2038,7 +2043,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
                   )}
                 </span>
-                <span class="ml-6">
+                <span class="sm:ml-6">
                   {if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
                     do: "Due by:",
                     else:
@@ -2054,13 +2059,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               </div>
               <div class="ml-auto">
                 <button
-                  class="btn btn-block px-0 transition-transform duration-300"
+                  id={"toggle-module-#{@row["resource_id"]}"}
+                  class="btn btn-block px-0 transition-transform duration-300 scale-75 sm:scale-100"
                   type="button"
                   phx-click={
                     JS.toggle_class("rotate-180",
                       to: "#icon-#{@row["resource_id"]}"
                     )
-                    |> JS.toggle_class("border-b-[1px] border-b-gray-300 dark:border-b-gray-700",
+                    |> JS.toggle_class(border_class,
                       to: "#header-#{@row["resource_id"]}"
                     )
                   }
@@ -2080,6 +2086,29 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 </button>
               </div>
             </div>
+
+            <%!-- Mobile: make entire header tappable to toggle the module --%>
+            <button
+              :if={@is_mobile}
+              type="button"
+              aria-label="Toggle module"
+              class="absolute inset-0 z-10 bg-transparent cursor-pointer sm:hidden"
+              phx-click={
+                JS.toggle_class("rotate-180",
+                  to: "#icon-#{@row["resource_id"]}"
+                )
+                |> JS.toggle_class(border_class,
+                  to: "#header-#{@row["resource_id"]}"
+                )
+              }
+              phx-value-id={@row["resource_id"]}
+              data-bs-toggle="collapse"
+              data-bs-target={"#collapse-#{@row["resource_id"]}"}
+              data-child_matches_search_term={@row["child_matches_search_term"]}
+              aria-expanded="false"
+              aria-controls={"collapse-#{@row["resource_id"]}"}
+            >
+            </button>
           </div>
 
           <div
@@ -2096,17 +2125,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 resource_id={@row["resource_id"]}
               />
             </div>
-            <div class="card-body pl-6 md:pl-20 pt-4 md:pt-8">
+            <div class="card-body sm:pl-6 md:pl-20 pt-4 md:pt-8">
               <div
                 role="completed count"
-                class="flex gap-2.5 border-b-[1px] border-b-gray-300 dark:border-b-gray-700 h-10"
+                class="flex gap-2.5 border-b-[1px] border-Border-border-default h-10"
               >
                 <div class="w-7 h-8 py-1 flex gap-2.5">
                   <Icons.check />
                 </div>
                 <div class="w-34 h-8 pl-1 flex gap-1.5">
                   <div class="flex gap-0.5 items-center">
-                    <span class="opacity-80 dark:text-white text-[13px] font-normal font-['Open Sans'] leading-loose">
+                    <span class="text-Text-text-high opacity-80 text-[13px] font-normal leading-loose">
                       {case @page_metrics do
                         %{total_pages_count: 1, completed_pages_count: 1} ->
                           "1 of 1 Page"
@@ -2146,7 +2175,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     data-completed={"#{Enum.all?(grouped_pages, fn p -> p["completed"] end)}"}
                     class="h-[19px] mb-5"
                   >
-                    <span :if={@has_scheduled_resources?} class="dark:text-white text-sm font-bold">
+                    <span
+                      :if={@has_scheduled_resources?}
+                      class="text-Text-text-high text-sm font-bold"
+                    >
                       {"#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}"}
                     </span>
                   </div>
@@ -2187,7 +2219,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   )
                 }
                 role="collapse module button"
-                class="pl-5 pr-4 rounded-[82px] border border-white/20 dark:text-[#bab8bf] opacity-80 hover:opacity-100 hoverjustify-center items-center gap-3 flex text-sm font-medium"
+                class="pl-5 pr-4 rounded-[82px] border border-Border-border-default text-Text-text-low opacity-80 hover:opacity-100 hoverjustify-center items-center gap-3 flex text-sm font-medium"
               >
                 <div class="text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
                   Collapse {String.capitalize(Atom.to_string(@type))}
