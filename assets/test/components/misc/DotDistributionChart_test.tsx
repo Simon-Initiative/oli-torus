@@ -177,9 +177,9 @@ describe('DotDistributionChart', () => {
         ]);
         expect(spec.encoding.color.scale.range).toEqual([
           '#C2C2C2',
-          '#E6D4FA',
           '#B37CEA',
-          '#7B19C1',
+          '#964BEA',
+          '#7818BB',
         ]);
       }
     });

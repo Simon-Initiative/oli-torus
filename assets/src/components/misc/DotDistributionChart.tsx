@@ -54,16 +54,16 @@ export interface BarDatum {
 // Colors that match the existing system - now with precise typing
 const PROFICIENCY_COLORS_LIGHT: Record<ProficiencyLabel, string> = {
   'Not enough data': '#C2C2C2',
-  Low: '#E6D4FA',
-  Medium: '#B37CEA',
-  High: '#7B19C1',
+  Low: '#B37CEA',
+  Medium: '#964BEA',
+  High: '#7818BB',
 };
 
 const PROFICIENCY_COLORS_DARK: Record<ProficiencyLabel, string> = {
   'Not enough data': '#C2C2C2',
-  Low: '#F6EEFF',
-  Medium: '#C6A0EB',
-  High: '#AC57E9',
+  Low: '#E6D4FA',
+  Medium: '#B17BE8',
+  High: '#7B19C1',
 };
 
 const PROFICIENCY_LABELS: ProficiencyLabel[] = ['Not enough data', 'Low', 'Medium', 'High'];
@@ -89,12 +89,13 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
   // State for section interactions
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
-  // State for dot tooltip
+  // State for dot tooltip and hover effect
   const [hoveredDot, setHoveredDot] = useState<{
     studentCount: number;
     x: number;
     y: number;
   } | null>(null);
+  const [hoveredDotId, setHoveredDotId] = useState<string | null>(null);
 
   const viewRef = useRef<View | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -263,8 +264,8 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
 
     // Use appropriate color range based on dark mode
     const colorRange = darkMode
-      ? ['#C2C2C2', '#F6EEFF', '#C6A0EB', '#AC57E9']
-      : ['#C2C2C2', '#E6D4FA', '#B37CEA', '#7B19C1'];
+      ? ['#C2C2C2', '#E6D4FA', '#B17BE8', '#7B19C1']
+      : ['#C2C2C2', '#B37CEA', '#964BEA', '#7818BB'];
 
     return {
       height: 12,
@@ -345,6 +346,8 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
                     setSelectedSection,
                     darkMode,
                     setHoveredDot,
+                    hoveredDotId,
+                    setHoveredDotId,
                     unique_id,
                     pushEventTo,
                   )}
@@ -470,7 +473,7 @@ export const DotDistributionChart: React.FC<DotDistributionChartProps> = ({
               pointerEvents: 'none',
               zIndex: 1000,
             }}
-            className="px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded shadow-lg dark:bg-gray-700"
+            className="px-2 py-1 text-xs font-medium text-Text-Chip-Gray bg-Background-bg-primary border border-Border-border-muted rounded shadow-lg"
           >
             {hoveredDot.studentCount} {hoveredDot.studentCount === 1 ? 'student' : 'students'}
           </div>
@@ -629,6 +632,7 @@ function groupStudentsByProficiency(
 
       if (shouldGroup) {
         // Group students into a single large dot
+        const diameter = calculateDotDiameter(studentCount, baseDotSize);
         grouped[level].push({
           proficiency: level,
           proficiency_value: proficiencyValue,
@@ -636,16 +640,25 @@ function groupStudentsByProficiency(
           student_count: studentCount,
           color: studentsWithValue[0].color,
           x_position: xPositionPercent,
-          diameter: calculateDotDiameter(studentCount, baseDotSize),
+          diameter: diameter,
           is_tower: false,
         });
       } else {
         // Create a vertical tower of individual dots
-        const dotSpacing = baseDotSize + 2; // spacing between dots in tower
-        const towerDots = studentsWithValue.map((student, index) => ({
-          student_id: student.student_id,
-          y_position: 135 - index * dotSpacing, // Stack vertically from bottom
-        }));
+        const radius = baseDotSize / 2;
+        const spacing = 2; // spacing between dots in tower
+        const baseY = 135; // Base line where all dots should align
+
+        const towerDots = studentsWithValue.map((student, index) => {
+          // Each dot's base is stacked on top of the previous one
+          // Dot 0 (bottom): base at baseY, center at baseY - radius
+          // Dot 1: base at baseY - (diameter + spacing), center at baseY - (diameter + spacing) - radius
+          const yCenter = baseY - radius - index * (baseDotSize + spacing);
+          return {
+            student_id: student.student_id,
+            y_position: yCenter,
+          };
+        });
 
         grouped[level].push({
           proficiency: level,
@@ -681,6 +694,8 @@ function renderDots(
   setSelectedSection: (section: string | null) => void,
   darkMode: boolean,
   setHoveredDot: (dot: { studentCount: number; x: number; y: number } | null) => void,
+  hoveredDotId: string | null,
+  setHoveredDotId: (id: string | null) => void,
   unique_id?: string,
   pushEventTo?: (selectorOrTarget: string, event: string, payload: any) => void,
 ) {
@@ -935,53 +950,68 @@ function renderDots(
       })}
 
       {/* Render grouped dots and towers - render last so they're on top and receive pointer events */}
-      {Object.entries(groupedDots).flatMap(([level, dots]) =>
-        dots.map((groupedDot, index) => {
+      {/* Sort by diameter (largest first) so smaller dots render last and appear on top */}
+      {Object.entries(groupedDots).flatMap(([level, dots]) => {
+        // Sort dots by diameter: largest first (rendered first), smallest last (rendered last = on top)
+        const sortedDots = [...dots].sort((a, b) => b.diameter - a.diameter);
+        return sortedDots.map((groupedDot, index) => {
           if (groupedDot.is_tower && groupedDot.tower_dots) {
             // Render as vertical tower of individual dots
             return (
               <g key={`${level}-tower-${groupedDot.proficiency_value}-${index}`}>
-                {groupedDot.tower_dots.map((towerDot) => (
-                  <circle
-                    key={`${towerDot.student_id}`}
-                    cx={`${Math.max(0.5, Math.min(99.5, groupedDot.x_position))}%`}
-                    cy={towerDot.y_position}
-                    r={groupedDot.diameter / 2}
-                    fill={groupedDot.color}
-                    stroke={groupedDot.color}
-                    strokeWidth="0.5"
-                    style={{ pointerEvents: 'all', cursor: 'default' }}
-                    onMouseEnter={(e) => {
-                      e.stopPropagation();
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      setHoveredDot({
-                        studentCount: 1,
-                        x: rect.left + rect.width / 2,
-                        y: rect.top,
-                      });
-                    }}
-                    onMouseLeave={() => {
-                      setHoveredDot(null);
-                    }}
-                    aria-label={`1 student at ${groupedDot.proficiency} proficiency level`}
-                  />
-                ))}
+                {groupedDot.tower_dots.map((towerDot) => {
+                  const dotId = `tower-${level}-${towerDot.student_id}`;
+                  const isHovered = hoveredDotId === dotId;
+
+                  return (
+                    <circle
+                      key={`${towerDot.student_id}`}
+                      cx={`${Math.max(0.5, Math.min(99.5, groupedDot.x_position))}%`}
+                      cy={towerDot.y_position}
+                      r={groupedDot.diameter / 2}
+                      fill={groupedDot.color}
+                      fillOpacity={isHovered ? 1.0 : 0.75}
+                      stroke={groupedDot.color}
+                      strokeWidth="1"
+                      style={{ pointerEvents: 'all', cursor: 'default' }}
+                      onMouseEnter={(e) => {
+                        e.stopPropagation();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setHoveredDot({
+                          studentCount: 1,
+                          x: rect.left + rect.width / 2,
+                          y: rect.top,
+                        });
+                        setHoveredDotId(dotId);
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredDot(null);
+                        setHoveredDotId(null);
+                      }}
+                      aria-label={`1 student at ${groupedDot.proficiency} proficiency level`}
+                    />
+                  );
+                })}
               </g>
             );
           } else {
             // Render as single grouped dot
-            const yPosition = 135;
             const radius = groupedDot.diameter / 2;
+            const baseY = 135; // All dots align at this baseline
+            const yCenter = baseY - radius; // Center position to align base at baseY
+            const dotId = `group-${level}-${groupedDot.proficiency_value}-${index}`;
+            const isHovered = hoveredDotId === dotId;
 
             return (
               <g key={`${level}-group-${groupedDot.proficiency_value}-${index}`}>
                 <circle
                   cx={`${Math.max(0.5, Math.min(99.5, groupedDot.x_position))}%`}
-                  cy={yPosition}
+                  cy={yCenter}
                   r={radius}
                   fill={groupedDot.color}
+                  fillOpacity={isHovered ? 1.0 : 0.75}
                   stroke={groupedDot.color}
-                  strokeWidth="0.5"
+                  strokeWidth="1"
                   style={{ pointerEvents: 'all', cursor: 'default' }}
                   onMouseEnter={(e) => {
                     e.stopPropagation();
@@ -991,17 +1021,21 @@ function renderDots(
                       x: rect.left + rect.width / 2,
                       y: rect.top,
                     });
+                    setHoveredDotId(dotId);
                   }}
                   onMouseLeave={() => {
                     setHoveredDot(null);
+                    setHoveredDotId(null);
                   }}
-                  aria-label={`${groupedDot.student_count} student${groupedDot.student_count !== 1 ? 's' : ''} at ${groupedDot.proficiency} proficiency level`}
+                  aria-label={`${groupedDot.student_count} student${
+                    groupedDot.student_count !== 1 ? 's' : ''
+                  } at ${groupedDot.proficiency} proficiency level`}
                 />
               </g>
             );
           }
-        }),
-      )}
+        });
+      })}
     </svg>
   );
 }
