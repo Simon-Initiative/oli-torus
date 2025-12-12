@@ -1218,6 +1218,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           contained_scheduling_types={@contained_scheduling_types}
           search_term={@params["search_term"]}
           has_scheduled_resources?={@has_scheduled_resources?}
+          show_completed?={@show_completed?}
           is_mobile={@is_mobile}
         />
       </div>
@@ -1302,7 +1303,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           student_id={@current_user.id}
           page_metrics={assigns.page_metrics_per_module_id}
           contained_scheduling_types={@contained_scheduling_types}
-          is_mobile={@is_mobile}
           progress={
             parse_student_progress_for_resource(
               @student_progress_per_resource_id,
@@ -1312,6 +1312,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ctx={@ctx}
           search_term={@params["search_term"]}
           has_scheduled_resources?={@has_scheduled_resources?}
+          show_completed?={@show_completed?}
+          is_mobile={@is_mobile}
         />
       </div>
     </div>
@@ -1765,6 +1767,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :type, :atom
   attr :id, :string
   attr :has_scheduled_resources?, :boolean, required: true
+  attr :show_completed?, :boolean, required: true
   attr :is_mobile, :boolean, required: true
 
   def outline_row(%{type: :unit} = assigns) do
@@ -1888,6 +1891,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   contained_scheduling_types={@contained_scheduling_types}
                   search_term={@search_term}
                   has_scheduled_resources?={@has_scheduled_resources?}
+                  show_completed?={@show_completed?}
                   is_mobile={@is_mobile}
                 />
               </div>
@@ -1991,6 +1995,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             search_term={@search_term}
             ctx={@ctx}
             has_scheduled_resources?={@has_scheduled_resources?}
+            show_completed?={@show_completed?}
             is_mobile={@is_mobile}
           />
         </div>
@@ -2008,10 +2013,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       class="flex flex-col"
       phx-update="replace"
     >
-      <div class={[
-        left_indentation(@row["numbering"]["level"], @is_mobile, :outline),
-        "w-full px-3 sm:pl-16 py-2.5 justify-start items-center gap-2 sm:gap-5 flex rounded-lg"
-      ]}>
+      <div
+        :if={!@is_mobile}
+        class={[
+          left_indentation(@row["numbering"]["level"], @is_mobile, :outline),
+          "w-full px-3 sm:pl-16 py-2.5 justify-start items-center gap-2 sm:gap-5 flex rounded-lg"
+        ]}
+      >
         <span class="search-result text-Text-text-low-alpha text-base font-semibold">
           {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
         </span>
@@ -2028,6 +2036,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         search_term={@search_term}
         ctx={@ctx}
         has_scheduled_resources?={@has_scheduled_resources?}
+        show_completed?={@show_completed?}
         is_mobile={@is_mobile}
       />
     </div>
@@ -2250,6 +2259,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     search_term={@search_term}
                     ctx={@ctx}
                     has_scheduled_resources?={@has_scheduled_resources?}
+                    show_completed?={@show_completed?}
                     is_mobile={@is_mobile}
                   />
                 </div>
