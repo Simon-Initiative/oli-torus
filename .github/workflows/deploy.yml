@@ -56,7 +56,7 @@ jobs:
         with:
           command: |
             DEPLOY_INSTANCE="${{ env.DEPLOY_INSTANCE }}"
-            printf "DEPLOY_REF=%s\nDEPLOY_VERSION=%s\nDEPLOY_SHA=%s\n" "${{ github.ref }}" "${{ steps.info.outputs.app_version }}" "${{ steps.info.outputs.sha_short }}" | sudo tee /var/lib/oli/deploy/env-${DEPLOY_INSTANCE} >/dev/null
+            printf "DEPLOY_REF=%s\nDEPLOY_VERSION=%s\nDEPLOY_SHA=%s\n" "${{ github.ref }}" "${{ steps.info.outputs.app_version }}" "${{ steps.info.outputs.sha_short }}" > /var/lib/oli/deploy/env-${DEPLOY_INSTANCE}
             sudo systemctl start "oli-deploy@${DEPLOY_INSTANCE}.service"
             sudo systemctl status "oli-deploy@${DEPLOY_INSTANCE}.service"
           host: ${{ github.event.inputs.deploy_target }}
