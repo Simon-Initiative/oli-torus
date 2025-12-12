@@ -209,7 +209,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
         </label>
       </div>
 
-      {layoutType !== 'horizontalLayout' && <br />}
+      {layoutType !== 'horizontalLayout' && <br style={{ padding: '0px' }} />}
     </>
   );
 };
