@@ -8,6 +8,7 @@ defmodule Oli.Application do
   def start(_type, _args) do
     # Install the logger truncator
     Oli.LoggerTruncator.init()
+    maybe_add_appsignal_logger_backend()
 
     # List all child processes to be supervised
     children =
@@ -164,6 +165,21 @@ defmodule Oli.Application do
       ]
     else
       []
+    end
+  end
+
+  defp maybe_add_appsignal_logger_backend do
+    case Application.get_env(:oli, :appsignal_logger_backend) do
+      nil ->
+        :ok
+
+      opts when is_list(opts) ->
+        _ = LoggerBackends.add({Appsignal.Logger.Backend, opts})
+        :ok
+
+      opts ->
+        _ = LoggerBackends.add({Appsignal.Logger.Backend, List.wrap(opts)})
+        :ok
     end
   end
 

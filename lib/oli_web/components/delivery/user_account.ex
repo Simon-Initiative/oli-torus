@@ -521,7 +521,12 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         </div>
       <% picture -> %>
         <div class="flex justify-center items-center">
-          <img src={picture} referrerpolicy="no-referrer" class="rounded-full h-8 w-8" />
+          <img
+            src={picture}
+            referrerpolicy="no-referrer"
+            class="rounded-full h-8 w-8"
+            alt={"#{@user.name} profile avatar"}
+          />
         </div>
     <% end %>
     """

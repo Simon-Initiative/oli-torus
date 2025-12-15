@@ -29,6 +29,27 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
 
       assert render_component(&Layouts.header/1, assigns) =~ "header_logo_button"
     end
+
+    test "renders logos with descriptive alt text" do
+      assigns = %{
+        include_logo: true,
+        preview_mode: false,
+        section: %Section{id: 1, brand: nil, lti_1p3_deployment: nil},
+        ctx: %SessionContext{
+          user: %User{id: 1},
+          browser_timezone: "America/Montevideo",
+          is_liveview: true,
+          author: nil,
+          local_tz: "America/Montevideo"
+        },
+        sidebar_expanded: true,
+        is_admin: true
+      }
+
+      html = render_component(&Layouts.header/1, assigns)
+
+      assert html =~ ~s(alt="OLI Torus logo")
+    end
   end
 
   describe "title/1" do

@@ -53,6 +53,7 @@ export const SelectTimezone: React.FC<SelectTimezoneProps> = ({
         name="timezone[timezone]"
         className="max-w-[300px] dark:text-white text-sm font-normal font-['Roboto'] rounded-md border-gray-300 w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700"
         value={selectedTimezone}
+        aria-label="Select timezone"
       >
         {timezones.map(([label, value]) => (
           <option key={value} value={value}>

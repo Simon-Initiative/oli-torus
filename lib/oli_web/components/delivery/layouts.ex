@@ -780,11 +780,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
       |> assign(:logo_src_dark, Branding.brand_logo_url_dark(assigns[:section]))
 
     ~H"""
-    <img src={@logo_src} class="inline-block dark:hidden h-9 object-cover object-left" alt="logo" />
+    <img
+      src={@logo_src}
+      class="inline-block dark:hidden h-9 object-cover object-left"
+      alt="OLI Torus logo"
+    />
     <img
       src={@logo_src_dark}
       class="hidden dark:inline-block h-9 object-cover object-left"
-      alt="logo dark"
+      alt="OLI Torus logo"
     />
     """
   end

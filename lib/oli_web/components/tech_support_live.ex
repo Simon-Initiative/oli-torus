@@ -120,7 +120,8 @@ defmodule OliWeb.TechSupportLive do
         </div>
 
         <div class="drop" phx-drop-target={@uploads.attached_screenshots.ref}>
-          <.live_file_input upload={@uploads.attached_screenshots} />
+          <.live_file_input upload={@uploads.attached_screenshots} aria-label="Choose Files" />
+
           <div>
             or drag and drop here
           </div>
