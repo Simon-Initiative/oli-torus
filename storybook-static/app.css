@@ -7906,17 +7906,29 @@ li.page-item {
 }
 
 .alert-warning {
+  color: #353740;
+}
+
+.dark .alert-warning {
+  color: #EEEBF5;
+}
+
+.alert-warning {
   --tw-bg-opacity: 1;
   background-color: rgb(253 236 207 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(178 115 7 / var(--tw-text-opacity));
+}
+
+.alert-info {
+  color: #353740;
+}
+
+.dark .alert-info {
+  color: #EEEBF5;
 }
 
 .alert-info {
   --tw-bg-opacity: 1;
   background-color: rgb(209 223 245 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(29 68 129 / var(--tw-text-opacity));
 }
 
 .alert-light {
