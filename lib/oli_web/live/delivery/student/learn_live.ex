@@ -992,7 +992,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            end
          )
      )
-     |> stream(:units, units, reset: true)
+     |> stream(:units, units)
+     |> assign(outline_view_id: UUID.uuid4())
      |> assign_gallery_data(units)}
   end
 
