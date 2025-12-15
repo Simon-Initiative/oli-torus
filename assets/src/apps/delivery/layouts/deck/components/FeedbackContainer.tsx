@@ -127,7 +127,7 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
           onClick={handleToggleFeedback}
           className={showIcon ? 'toggleFeedbackBtn' : 'toggleFeedbackBtn displayNone'}
           aria-label={minimized ? 'Show feedback' : 'Close feedback'}
-          tabIndex={2}
+          tabIndex={1}
         >
           <div className="icon" />
         </button>
