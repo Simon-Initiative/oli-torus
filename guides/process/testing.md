@@ -72,12 +72,12 @@ The page objects currently live in `assets/automation/src/systems/torus/pom/**`,
 ## 5. Data, Environments, and Authentication
 
 ### 5.1 Environments
-- **Local deterministic (default)**: start Phoenix in a dedicated `MIX_ENV=playwright`, run migrations, and seed the database specifically for browser tests (`mix torus.playwright.seed`). Point Playwright to `http://localhost:4001` (or similar) during CI/dev runs.
+- **Local deterministic (default)**: start Phoenix in a dedicated `MIX_ENV=playwright`, run migrations, and seed the database using per-spec scenario YAMLs invoked from the Playwright suite. Point Playwright to `http://localhost:4001` (or similar) during CI/dev runs.
 - **Shared staging (later phase)**: optional profile for release smoke runs; expect higher flake risk because data reset is harder.
 
 ### 5.2 Seeding Strategy
 - Reuse Oli.Scenarios and existing seeds where possible to avoid duplicating fixtures.
-- Provide a `mix torus.playwright.seed` task that: drops/truncates DB tables, runs migrations, and loads deterministic users/projects/sections (e.g., `author@playwright.test`).
+- Provide a guarded `/test/scenario-yaml` endpoint plus YAML fixtures so tests can seed deterministic users/projects/sections (e.g., `author@playwright.test`) on demand.
 - For per-test isolation, expose a limited helper (CLI task, RPC call, or test-only API) that can create/delete entities without resetting the world.
 
 ### 5.3 Authentication

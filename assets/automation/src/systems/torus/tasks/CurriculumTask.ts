@@ -611,14 +611,15 @@ export class CurriculumTask {
     projectID: string,
     startDate: Date,
     endDate: Date,
-    baseUrl: string,
+    baseUrl?: string,
   ) {
     this.createNewCourseSection(projectName, startDate, endDate);
 
+    const origin = baseUrl || new URL(this.page.url()).origin;
     await this.detailCourse.verifyTitlePage(projectName);
     await this.detailCourse.verifyCourseSectionID(projectID);
     await this.detailCourse.verifyTitle(projectName);
-    await this.detailCourse.verifyUrl(baseUrl, projectID);
+    await this.detailCourse.verifyUrl(origin, projectID);
   }
 
   @step("Create a new course section for the '{productName}' product")
@@ -626,14 +627,15 @@ export class CurriculumTask {
     productName: string,
     startDate: Date,
     endDate: Date,
-    baseUrl: string,
+    baseUrl?: string,
   ) {
     this.createNewCourseSection(productName, startDate, endDate);
 
+    const origin = baseUrl || new URL(this.page.url()).origin;
     await this.detailCourse.verifyTitlePage(productName);
     await this.detailCourse.verifyTitle(productName);
     const courseSectionID = await this.detailCourse.getCourseSectionID();
-    await this.detailCourse.verifyUrl(baseUrl, courseSectionID);
+    await this.detailCourse.verifyUrl(origin, courseSectionID);
     await this.detailCourse.verifyProductLink(productName);
   }
   //endregion Course

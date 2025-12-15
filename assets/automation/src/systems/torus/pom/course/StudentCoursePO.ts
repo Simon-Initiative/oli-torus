@@ -9,7 +9,7 @@ export class StudentCoursePO {
   constructor(private readonly page: Page) {
     this.myAssignment = page.locator('role="my assignments"');
     this.viewSelector = page.locator('#view_selector');
-
+    this.goToCourseButton = page.getByRole('button', { name: /go to course/i });
   }
 
   async presentAssignmentBlock() {
@@ -26,9 +26,10 @@ export class StudentCoursePO {
   }
 
   async goToCourseIfPrompted() {
-    const goToCourseButton = this.page.getByRole('button', { name: /go to course/i });
-    if (await goToCourseButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (await this.goToCourseButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await this.goToCourseButton.click();
+      // allow navigation after dismissing the intro modal
+      await this.page.waitForLoadState('networkidle').catch(() => undefined);
     }
   }
 }

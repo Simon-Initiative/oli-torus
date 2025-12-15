@@ -1,3 +1,1 @@
-All the .env files go in this folder
-
-* Rename example.env to login.env
+Media upload fixtures for Playwright live in this folder (`media_files/`). No .env files are required by the automation suite.

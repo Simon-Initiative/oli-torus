@@ -14,19 +14,11 @@ export async function seedScenarioFromFile(
   request: APIRequestContext,
   scenarioFilePath: string,
   params: Record<string, unknown> = {},
+  baseUrl: string,
+  token: string,
 ): Promise<SeedScenarioResponse> {
   const absolutePath = path.resolve(scenarioFilePath);
   const yaml = fs.readFileSync(absolutePath, 'utf8');
-
-  const baseUrl = process.env.BASE_URL;
-  if (!baseUrl) {
-    throw new Error('BASE_URL must be set to use Playwright seed scenarios');
-  }
-
-  const token = process.env.SCENARIO_TOKEN;
-  if (!token) {
-    throw new Error('SCENARIO_TOKEN must be set to call the scenario endpoint');
-  }
 
   const targetUrl = new URL(SCENARIO_ENDPOINT, baseUrl).toString();
 

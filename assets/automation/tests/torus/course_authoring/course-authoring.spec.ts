@@ -1,15 +1,66 @@
 import path from 'node:path';
 import { test } from '@fixture/my-fixture';
-import { TestData } from '../test-data';
-import { TYPE_ACTIVITY, TypeActivity } from '@pom/types/type-activity';
-import { EditorTitle } from '@pom/activities/QuestionActivities';
+import { TypeActivity } from '@pom/types/type-activity';
+import { setRuntimeConfig } from '@core/runtimeConfig';
+import { TYPE_USER } from '@pom/types/type-user';
 
-const testData = new TestData();
+const runId = `-${Date.now()}`;
+const baseUrl = 'http://localhost';
+const defaultPassword = 'changeme123456';
+const adminPassword = 'changeme123456';
+const projectNameFilterSeed = 'automatedtests';
+
+setRuntimeConfig({
+  baseUrl,
+  scenarioToken: 'my-token',
+  loginData: {
+    student: {
+      type: TYPE_USER.student,
+      pageTitle: 'OLI Torus',
+      role: 'Student',
+      welcomeText: 'Welcome to OLI Torus',
+      welcomeTitle: 'Hi, Jane',
+      email: `student${runId}@example.com`,
+      name: 'Jane',
+      last_name: 'Student',
+      pass: defaultPassword,
+    },
+    instructor: {
+      type: TYPE_USER.instructor,
+      pageTitle: 'OLI Torus',
+      role: 'Instructor',
+      welcomeText: 'Welcome to OLI Torus',
+      welcomeTitle: 'Instructor Dashboard',
+      email: `instructor${runId}@example.com`,
+      pass: defaultPassword,
+      header: 'Instructor Dashboard',
+    },
+    author: {
+      type: TYPE_USER.author,
+      pageTitle: 'OLI Torus',
+      role: 'Course Author',
+      welcomeText: 'Welcome to OLI Torus',
+      welcomeTitle: 'Course Author',
+      email: `author${runId}@example.com`,
+      pass: defaultPassword,
+      header: 'Course Author',
+    },
+    administrator: {
+      type: TYPE_USER.administrator,
+      pageTitle: 'OLI Torus',
+      role: 'Course Author',
+      welcomeText: 'Welcome to OLI Torus',
+      welcomeTitle: 'Course Author',
+      email: `admin${runId}@example.com`,
+      pass: adminPassword,
+      header: 'Course Author',
+    },
+  },
+});
 const questionText = 'Question test?';
 const mediaDir = path.resolve(__dirname, '../../resources/media_files');
 // __dirname = assets/automation/tests/torus/course_authoring
 const scenarioPath = path.resolve(__dirname, './playwright_course_authoring.yaml');
-const runId = `-${Date.now()}`;
 
 test.beforeAll(async ({ seedScenario }) => {
   await seedScenario(
@@ -33,7 +84,7 @@ test.describe('Course authoring', () => {
     endDate.setFullYear(endDate.getFullYear() + 1);
 
     await homeTask.login('author');
-    const projectNameFilter = await projectTask.filterAndReturnProject(testData.projectNameFilter);
+    const projectNameFilter = await projectTask.filterAndReturnProject(projectNameFilterSeed);
     const projectNameID = utils.incrementID(projectNameFilter);
     const { projectName, projectID } = await projectTask.createNewProjectAsOpen(projectNameID);
     await homeTask.enterToPublish();
@@ -45,7 +96,7 @@ test.describe('Course authoring', () => {
       projectID,
       startDate,
       endDate,
-      testData.baseUrl,
+      baseUrl,
     );
   });
 
@@ -227,8 +278,8 @@ test.describe('Enable and verify one activity per test', () => {
     endDate.setFullYear(endDate.getFullYear() + 1);
 
     await homeTask.login('author');
-    const projectNameFilter = await projectTask.filterAndReturnProject(testData.projectNameFilter);
-    const projectNameID = utils.incrementID(projectNameFilter);
+    const projectNameFilter = await projectTask.filterAndReturnProject(projectNameFilterSeed);
+    const projectNameID = `${utils.incrementID(projectNameFilter)}${runId}`;
     const { projectName, projectID } = await projectTask.createNewProjectAsOpen(projectNameID);
     await homeTask.enterToPublish();
     await projectTask.publishProject();
@@ -239,7 +290,7 @@ test.describe('Enable and verify one activity per test', () => {
       projectID,
       startDate,
       endDate,
-      testData.baseUrl,
+      baseUrl,
     );
   });
 
@@ -280,7 +331,7 @@ test.describe('Enable and verify one activity per test', () => {
     endDate.setFullYear(startDate.getFullYear() + 1);
 
     await homeTask.login('author');
-    const projectNameFilter = await projectTask.filterAndReturnProject(testData.projectNameFilter);
+    const projectNameFilter = await projectTask.filterAndReturnProject(projectNameFilterSeed);
     const projectNameID = utils.incrementID(projectNameFilter);
     const { projectName } = await projectTask.createNewProjectAsOpen(projectNameID);
     await homeTask.enterToPublish();
@@ -289,6 +340,6 @@ test.describe('Enable and verify one activity per test', () => {
     const { productName } = await projectTask.createAndOpenProduct(projectName);
     await homeTask.logout();
     await homeTask.login('instructor');
-    await curriculumTask.createCourseFromProduct(productName, startDate, endDate, testData.baseUrl);
+    await curriculumTask.createCourseFromProduct(productName, startDate, endDate, baseUrl);
   });
 });
