@@ -2870,7 +2870,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       [student_exception_1] = table_as_list_of_maps(view, :student_exceptions)
 
-      assert student_exception_1.late_policy == ""
+      # When no late policy is set, a placeholder "-" is shown to indicate it uses the assessment default
+      assert student_exception_1.late_policy == "-"
 
       # set late start and late submit allowed
       view

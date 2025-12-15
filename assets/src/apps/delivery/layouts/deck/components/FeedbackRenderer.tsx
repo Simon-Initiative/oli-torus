@@ -50,7 +50,7 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
             borderRadius: feedback.custom.palette.borderRadius,
           }}
           className="feedback-item"
-          tabIndex={index === 0 ? 1 : undefined}
+          tabIndex={index === 0 ? 2 : undefined}
           role={index === 0 ? 'text' : undefined}
         >
           <PartsLayoutRenderer
