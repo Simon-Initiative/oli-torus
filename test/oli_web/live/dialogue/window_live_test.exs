@@ -146,5 +146,22 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
       assert has_element?(view, "div[id=ai_bot_collapsed]")
       assert has_element?(view, "div[id=ai_bot_conversation].hidden")
     end
+
+    test "collapsed button includes descriptive alt text", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{"section_slug" => section.slug, "current_user_id" => user.id}
+        )
+
+      assert has_element?(view, "img[alt='Dot AI icon']")
+    end
   end
 end

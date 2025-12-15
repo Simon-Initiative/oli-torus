@@ -652,7 +652,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     correct_choice_ids =
       Enum.map(model["choices"], fn choice -> choice["id"] end)
       |> Enum.filter(fn choice_id ->
-        String.contains?(correct_response["rule"], "{" <> choice_id <> "}")
+        pattern = ~r/!\s*\([^)]*input\s+like\s+\{#{Regex.escape(choice_id)}\}/
+        negated = Regex.match?(pattern, correct_response["rule"])
+
+        present_pattern = ~r/input\s+like\s+\{#{Regex.escape(choice_id)}\}/
+        present = Regex.match?(present_pattern, correct_response["rule"])
+
+        present and not negated
       end)
       |> MapSet.new()
 
@@ -665,9 +671,20 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       model["choices"]
       |> Enum.with_index()
       |> Enum.map(fn {c, index} ->
+        count =
+          Enum.reduce(responses, 0, fn r, acc ->
+            choice_ids = String.split(r.response, " ", trim: true)
+
+            if Enum.member?(choice_ids, c["id"]) do
+              acc + r.count
+            else
+              acc
+            end
+          end)
+
         %{
           "label" => to_letter.(index),
-          "count" => Enum.find(responses, %{count: 0}, fn r -> r.response == c["id"] end).count,
+          "count" => count,
           "correct" => MapSet.member?(correct_choice_ids, c["id"]),
           "part_id" => part_id
         }
