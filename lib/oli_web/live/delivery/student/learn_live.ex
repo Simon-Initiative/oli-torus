@@ -260,7 +260,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         push_event(socket, "scroll-y-to-target", %{
           id: "unit_#{resource_id}",
-          offset: @gallery_scroll_offset,
+          offset:
+            if(socket.assigns.is_mobile,
+              do: @mobile_gallery_scroll_offset,
+              else: @gallery_scroll_offset
+            ),
           pulse: true,
           pulse_delay: 500
         })
@@ -294,7 +298,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
         |> push_event("scroll-y-to-target", %{
           id: "unit_#{unit_resource_id}",
-          offset: @gallery_scroll_offset
+          offset:
+            if(socket.assigns.is_mobile,
+              do: @mobile_gallery_scroll_offset,
+              else: @gallery_scroll_offset
+            )
         })
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "module_#{resource_id}",
@@ -310,7 +318,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         push_event(socket, "scroll-y-to-target", %{
           id: "top_level_page_#{resource_id}",
-          offset: @gallery_scroll_offset,
+          offset:
+            if(socket.assigns.is_mobile,
+              do: @mobile_gallery_scroll_offset,
+              else: @gallery_scroll_offset
+            ),
           pulse: true,
           pulse_delay: 500
         })
@@ -329,7 +341,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         socket
         |> push_event("scroll-y-to-target", %{
           id: "unit_#{unit_resource_id}",
-          offset: @gallery_scroll_offset
+          offset:
+            if(socket.assigns.is_mobile,
+              do: @mobile_gallery_scroll_offset,
+              else: @gallery_scroll_offset
+            )
         })
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "page_#{resource_id}",
@@ -375,7 +391,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
         |> push_event("scroll-y-to-target", %{
           id: "unit_#{unit_resource_id}",
-          offset: @gallery_scroll_offset
+          offset:
+            if(socket.assigns.is_mobile,
+              do: @mobile_gallery_scroll_offset,
+              else: @gallery_scroll_offset
+            )
         })
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "module_#{module_resource_id}",
