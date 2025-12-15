@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Common.Utils, as: CommonUtils
+  alias OliWeb.Components.Common
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Components.Utils, as: ComponentsUtils
   alias OliWeb.Icons
@@ -995,6 +996,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def render(%{socket_connected?: false} = assigns) do
     ~H"""
+    <Common.loading_spinner />
     """
   end
 
