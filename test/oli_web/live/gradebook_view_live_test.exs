@@ -85,11 +85,15 @@ defmodule OliWeb.GradebookViewLiveTest do
 
         {:ok, view, _html} = live(conn, live_view_gradebook_view_route(section.slug))
 
-        assert view
-               |> element(
-                 "tr[phx-value-id='#{user.id}'] a[href=\"/sections/#{section.slug}/progress/#{user.id}/#{page_revision.resource.id}\"]"
-               )
-               |> render =~ "#{@expected_score}/#{@out_of}"
+        rendered_html =
+          view
+          |> element(
+            "tr[phx-value-id='#{user.id}'] a[href=\"/sections/#{section.slug}/progress/#{user.id}/#{page_revision.resource.id}\"]"
+          )
+          |> render()
+
+        assert rendered_html =~ "#{@expected_score}"
+        assert rendered_html =~ "/#{@out_of}"
       end
     end
 
