@@ -3837,8 +3837,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   _docp = """
-  When rendering learn page in gallery view, we need to calculate the unit and module metrics
+  When rendering learn page in gallery view, we need to calculate the unit and module metrics.
+  On outline view, no additional data is needed.
   """
+
+  defp assign_gallery_data(%{assigns: %{selected_view: :outline}} = socket, _units_with_metrics),
+    do: socket
 
   defp assign_gallery_data(socket, units_with_metrics) do
     socket
