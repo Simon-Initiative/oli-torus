@@ -57,43 +57,46 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def mount(_params, _session, socket) do
     section = socket.assigns.section
 
-    # when updating to Liveview 0.20 we should replace this with assign_async/3
-    # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
-    if connected?(socket),
-      do:
-        async_calculate_student_metrics_and_enable_slider_buttons(
-          self(),
-          section,
-          socket.assigns[:current_user]
-        )
-
-    socket =
-      assign(socket,
-        active_tab: :learn,
-        selected_module_per_unit_resource_id: %{},
-        contained_scheduling_types: %{},
-        student_end_date_exceptions_per_resource_id: %{},
-        student_available_date_exceptions_per_resource_id: %{},
-        student_visited_pages: %{},
-        student_progress_per_resource_id: %{},
-        student_raw_avg_score_per_page_id: %{},
-        student_raw_avg_score_per_container_id: %{},
-        page_metrics_per_module_id: %{},
-        viewed_intro_video_resource_ids:
-          get_viewed_intro_video_resource_ids(
-            section.slug,
-            socket.assigns.current_user.id
-          ),
-        assistant_enabled: Sections.assistant_enabled?(section),
-        selected_view: @default_selected_view,
-        show_completed?: true
+    if(connected?(socket)) do
+      # when updating to Liveview 0.20 we should replace this with assign_async/3
+      # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
+      async_calculate_student_metrics_and_enable_slider_buttons(
+        self(),
+        section,
+        socket.assigns[:current_user]
       )
-      |> stream_configure(:units, dom_id: &"node-#{&1["uuid"]}")
-      |> stream_configure(:unit_resource_ids, dom_id: &"unit_resource_ids-#{&1["uuid"]}")
-      |> stream(:unit_resource_ids, [])
-      |> slim_assigns()
 
-    {:ok, socket}
+      socket =
+        assign(socket,
+          active_tab: :learn,
+          selected_module_per_unit_resource_id: %{},
+          contained_scheduling_types: %{},
+          student_end_date_exceptions_per_resource_id: %{},
+          student_available_date_exceptions_per_resource_id: %{},
+          student_visited_pages: %{},
+          student_progress_per_resource_id: %{},
+          student_raw_avg_score_per_page_id: %{},
+          student_raw_avg_score_per_container_id: %{},
+          page_metrics_per_module_id: %{},
+          viewed_intro_video_resource_ids:
+            get_viewed_intro_video_resource_ids(
+              section.slug,
+              socket.assigns.current_user.id
+            ),
+          assistant_enabled: Sections.assistant_enabled?(section),
+          selected_view: @default_selected_view,
+          show_completed?: true,
+          socket_connected?: true
+        )
+        |> stream_configure(:units, dom_id: &"node-#{&1["uuid"]}")
+        |> stream_configure(:unit_resource_ids, dom_id: &"unit_resource_ids-#{&1["uuid"]}")
+        |> stream(:unit_resource_ids, [])
+        |> slim_assigns()
+
+      {:ok, socket}
+    else
+      {:ok, assign(socket, active_tab: :learn, socket_connected?: false)}
+    end
   end
 
   defp slim_assigns(socket) do
@@ -108,6 +111,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
       )
     end)
+  end
+
+  def handle_params(_params, _uri, %{assigns: %{socket_connected?: false}} = socket) do
+    send(self(), :gc)
+    {:noreply, socket}
   end
 
   def handle_params(
@@ -984,6 +992,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   # needed to ignore results of Task invocation
   def handle_info(_, socket), do: {:noreply, socket}
+
+  def render(%{socket_connected?: false} = assigns) do
+    ~H"""
+    """
+  end
 
   def render(
         %{
