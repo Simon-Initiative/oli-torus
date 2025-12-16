@@ -16,7 +16,6 @@ export const TechSupportButton = () => (
               active:text-delivery-primary-600
               active:hover:text-delivery-primary-600
             "
-    aria-label="support"
     onClick={() => (window as any).showHelpModal()}
   >
     Tech Support
