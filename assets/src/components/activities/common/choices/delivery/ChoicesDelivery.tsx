@@ -100,11 +100,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
   const itemRole = multiSelect ? 'checkbox' : 'radio';
 
   return (
-    <div
-      className={styles.choicesContainer}
-      role={containerRole}
-      aria-label="answer choices"
-    >
+    <div className={styles.choicesContainer} role={containerRole} aria-label="answer choices">
       {choices.map((choice, index) => (
         <div
           key={choice.id}
