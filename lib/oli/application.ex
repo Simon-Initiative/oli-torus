@@ -92,8 +92,8 @@ defmodule Oli.Application do
         Oli.Delivery.Sections.SectionCache,
         Oli.ScopedFeatureFlags.CacheSubscriber,
 
-        # Starts the LTI 1.3 examples key provider
-        Lti_1p3.Examples.KeyProviderConfig.child_spec(),
+        # Starts the LTI 1.3 keyset cache for caching platform public keys
+        Oli.Lti.KeysetCache,
 
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor},
