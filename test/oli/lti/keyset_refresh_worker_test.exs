@@ -17,7 +17,7 @@ defmodule Oli.Lti.KeysetRefreshWorkerTest do
     test "schedules a job for a specific registration" do
       registration = insert(:lti_registration)
 
-      assert {:ok, job} = KeysetRefreshWorker.schedule_refresh(registration.id)
+      assert {:ok, _job} = KeysetRefreshWorker.schedule_refresh(registration.id)
 
       assert_enqueued(
         worker: KeysetRefreshWorker,
@@ -28,7 +28,7 @@ defmodule Oli.Lti.KeysetRefreshWorkerTest do
 
   describe "schedule_refresh_all/0" do
     test "schedules a job to refresh all registrations" do
-      assert {:ok, job} = KeysetRefreshWorker.schedule_refresh_all()
+      assert {:ok, _job} = KeysetRefreshWorker.schedule_refresh_all()
 
       assert_enqueued(
         worker: KeysetRefreshWorker,

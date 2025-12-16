@@ -42,8 +42,8 @@ defmodule Oli.Lti.KeysetCache do
     case :ets.lookup(@table_name, key_set_url) do
       [{^key_set_url, keyset_data}] ->
         if expired?(keyset_data) do
-          # Clean up expired entry
-          :ets.delete(@table_name, key_set_url)
+          # Clean up expired entry via GenServer (respects :protected access)
+          delete_keyset(key_set_url)
           {:error, :not_found}
         else
           {:ok, keyset_data}
@@ -69,17 +69,7 @@ defmodule Oli.Lti.KeysetCache do
       :ok
   """
   def put_keyset(key_set_url, keys, ttl_seconds \\ @default_ttl_seconds) do
-    now = DateTime.utc_now()
-    expires_at = DateTime.add(now, ttl_seconds, :second)
-
-    keyset_data = %{
-      keys: keys,
-      fetched_at: now,
-      expires_at: expires_at
-    }
-
-    :ets.insert(@table_name, {key_set_url, keyset_data})
-    :ok
+    GenServer.call(__MODULE__, {:put_keyset, key_set_url, keys, ttl_seconds})
   end
 
   @doc """
@@ -114,8 +104,7 @@ defmodule Oli.Lti.KeysetCache do
   Useful for forcing a refresh or cleaning up invalid data.
   """
   def delete_keyset(key_set_url) do
-    :ets.delete(@table_name, key_set_url)
-    :ok
+    GenServer.call(__MODULE__, {:delete_keyset, key_set_url})
   end
 
   @doc """
@@ -134,30 +123,56 @@ defmodule Oli.Lti.KeysetCache do
   Primarily for testing purposes.
   """
   def clear_cache do
-    :ets.delete_all_objects(@table_name)
-    :ok
+    GenServer.call(__MODULE__, :clear_cache)
   end
 
   # Server Callbacks
 
   @impl true
   def init(_opts) do
-    # Create ETS table with public read access
+    # Create ETS table with protected access
     # :set - each key_set_url is unique
     # :named_table - can reference by name instead of table ID
-    # :public - any process can read/write
+    # :protected - only owner process can write, all can read
     # {:read_concurrency, true} - optimize for concurrent reads
     table =
       :ets.new(@table_name, [
         :set,
         :named_table,
-        :public,
+        :protected,
         {:read_concurrency, true}
       ])
 
     Logger.info("LTI Keyset Cache initialized with ETS table #{inspect(table)}")
 
     {:ok, %{}}
+  end
+
+  @impl true
+  def handle_call({:put_keyset, key_set_url, keys, ttl_seconds}, _from, state) do
+    now = DateTime.utc_now()
+    expires_at = DateTime.add(now, ttl_seconds, :second)
+
+    keyset_data = %{
+      keys: keys,
+      fetched_at: now,
+      expires_at: expires_at
+    }
+
+    :ets.insert(@table_name, {key_set_url, keyset_data})
+    {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_call({:delete_keyset, key_set_url}, _from, state) do
+    :ets.delete(@table_name, key_set_url)
+    {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_call(:clear_cache, _from, state) do
+    :ets.delete_all_objects(@table_name)
+    {:reply, :ok, state}
   end
 
   # Private Functions

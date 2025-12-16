@@ -205,34 +205,56 @@ defmodule Oli.Lti.CachedKeyProvider do
   end
 
   defp refresh_keyset(key_set_url) do
-    case http_get(key_set_url) do
-      {:ok, %{status_code: 200, body: body, headers: headers}} ->
-        case Jason.decode(body) do
-          {:ok, %{"keys" => keys}} when is_list(keys) ->
-            ttl = parse_cache_control_max_age(headers)
-            KeysetCache.put_keyset(key_set_url, keys, ttl)
-            :ok
-
-          {:ok, _invalid_json} ->
-            {:error, :invalid_jwks_format}
-
-          {:error, _decode_error} ->
-            {:error, :json_decode_failed}
-        end
-
-      {:ok, %{status_code: status_code}} ->
-        {:error, {:http_error, status_code}}
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, {:http_request_failed, reason}}
-
-      {:error, reason} ->
-        {:error, reason}
+    with :ok <- validate_https_url(key_set_url),
+         {:ok, response} <- http_get(key_set_url) do
+      handle_http_response(response, key_set_url)
+    else
+      {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp handle_http_response(%{status_code: 200, body: body, headers: headers}, key_set_url) do
+    case Jason.decode(body) do
+      {:ok, %{"keys" => keys}} when is_list(keys) ->
+        ttl = parse_cache_control_max_age(headers)
+        KeysetCache.put_keyset(key_set_url, keys, ttl)
+        :ok
+
+      {:ok, _invalid_json} ->
+        {:error, :invalid_jwks_format}
+
+      {:error, _decode_error} ->
+        {:error, :json_decode_failed}
+    end
+  end
+
+  defp handle_http_response(%{status_code: status_code}, _key_set_url) do
+    {:error, {:http_error, status_code}}
   end
 
   defp http_get(url) do
     HTTPoison.get(url, [], timeout: @http_timeout_ms, recv_timeout: @http_timeout_ms)
+  end
+
+  defp validate_https_url(url) do
+    uri = URI.parse(url)
+
+    cond do
+      is_nil(uri.scheme) ->
+        Logger.error("Invalid URL: No scheme provided for #{url}")
+        {:error, :invalid_url_no_scheme}
+
+      uri.scheme != "https" ->
+        Logger.error("Insecure URL: Only HTTPS URLs are allowed, got #{uri.scheme}://")
+        {:error, :insecure_url_scheme}
+
+      is_nil(uri.host) or uri.host == "" ->
+        Logger.error("Invalid URL: No host provided for #{url}")
+        {:error, :invalid_url_no_host}
+
+      true ->
+        :ok
+    end
   end
 
   defp parse_cache_control_max_age(headers) do
