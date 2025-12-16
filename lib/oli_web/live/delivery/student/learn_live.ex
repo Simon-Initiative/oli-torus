@@ -132,7 +132,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       full_hierarchy = get_full_hierarchy(socket.assigns.section, selected_view, search_term)
 
       units =
-        full_hierarchy["children"]
+        get_units(full_hierarchy, socket.assigns[:selected_unit_resource_id])
         |> Enum.map(fn unit ->
           unit
           |> mark_visited_and_completed_pages(
@@ -203,9 +203,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             fn node -> node["resource_id"] == String.to_integer(resource_id) end
           )["resource_id"]
 
-        socket
-        |> push_event("expand-containers", %{ids: [unit_resource_id]})
-        |> push_scroll_event_for_outline("page_#{resource_id}")
+        # For mobile outline, navigate directly to unit layer
+        if socket.assigns.is_mobile do
+          scroll_to_page_in_unit_layer(socket, resource_id, full_hierarchy, unit_resource_id)
+        else
+          socket
+          |> push_event("expand-containers", %{ids: [unit_resource_id]})
+          |> push_scroll_event_for_outline("page_#{resource_id}")
+        end
 
       # Case: Unit > Module > << Any Nested Page >>
       {@page_resource_type_id, numbering_level} when numbering_level > 2 ->
@@ -222,9 +227,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             fn node -> node["resource_id"] == module_resource_id end
           )["resource_id"]
 
-        socket
-        |> push_event("expand-containers", %{ids: [unit_resource_id, module_resource_id]})
-        |> push_scroll_event_for_outline("page_#{resource_id}")
+        # For mobile outline, navigate directly to unit layer
+        if socket.assigns.is_mobile do
+          scroll_to_page_in_unit_layer(socket, resource_id, full_hierarchy, unit_resource_id)
+        else
+          socket
+          |> push_event("expand-containers", %{ids: [unit_resource_id, module_resource_id]})
+          |> push_scroll_event_for_outline("page_#{resource_id}")
+        end
 
       # Case: Unit
       {@container_resource_type_id, 1} ->
@@ -421,6 +431,68 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       pulse: true,
       pulse_delay: 500
     })
+  end
+
+  _docp = """
+  Helper function to get the units for the outline view depending on the current layer (all units or just the selected unit)
+  """
+
+  defp get_units(full_hierarchy, selected_unit_resource_id)
+       when is_nil(selected_unit_resource_id) do
+    full_hierarchy["children"]
+  end
+
+  defp get_units(full_hierarchy, selected_unit_resource_id) do
+    full_hierarchy["children"]
+    |> Enum.find(fn unit -> unit["resource_id"] == selected_unit_resource_id end)
+    |> List.wrap()
+  end
+
+  _docp = """
+  Helper function to navigate to unit layer and scroll to a page for mobile outline view.
+  This is used when navigating back from a page to the learn view with mobile outline.
+  """
+
+  defp scroll_to_page_in_unit_layer(socket, resource_id, full_hierarchy, unit_resource_id) do
+    selected_unit =
+      Enum.find(full_hierarchy["children"], fn unit ->
+        unit["resource_id"] == unit_resource_id
+      end)
+      |> mark_visited_and_completed_pages(
+        socket.assigns.student_visited_pages,
+        socket.assigns.student_raw_avg_score_per_page_id,
+        socket.assigns.student_progress_per_resource_id
+      )
+
+    # Check if the page is in a module (numbering_level > 2)
+    %{numbering_level: numbering_level} =
+      Sections.get_section_resource_with_resource_type(
+        socket.assigns.section.slug,
+        resource_id
+      )
+
+    socket =
+      socket
+      |> assign(selected_unit_resource_id: selected_unit["resource_id"])
+      |> stream(:units, [selected_unit])
+      |> assign(outline_view_id: UUID.uuid4())
+
+    # If page is nested in a module (numbering_level > 2), expand the module
+    if numbering_level > 2 do
+      module_resource_id =
+        Hierarchy.find_module_ancestor(
+          full_hierarchy,
+          String.to_integer(resource_id),
+          @container_resource_type_id
+        )["resource_id"]
+
+      socket
+      |> push_event("expand-containers", %{ids: [module_resource_id]})
+      |> push_scroll_event_for_outline("page_#{resource_id}")
+    else
+      # Page is direct child of unit (numbering_level == 2), just scroll
+      push_scroll_event_for_outline(socket, "page_#{resource_id}")
+    end
   end
 
   def handle_event("show_unit_layer", %{"id" => unit_resource_id}, socket) do
@@ -952,13 +1024,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     send(self(), :gc)
 
-    units =
+    full_hierarchy =
       get_full_hierarchy(
         section,
         socket.assigns.selected_view,
         socket.assigns.params["search_term"]
       )
-      |> Map.get("children")
+
+    units =
+      get_units(
+        full_hierarchy,
+        socket.assigns[:selected_unit_resource_id]
+      )
       |> Enum.map(fn unit ->
         unit
         |> mark_visited_and_completed_pages(
@@ -1162,101 +1239,106 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       id="mobile_outline_unit"
       class="bg-Background-bg-primary min-h-screen p-4 flex flex-col gap-3"
-      phx-hook="ScrollToTheTop"
+      phx-hook="Scroller"
     >
       <.video_player />
-
-      <button
-        phx-click="back_to_outline_mobile_view"
-        phx-value-unit_resource_id={@selected_unit_resource_id}
-        class="inline-flex justify-start items-center gap-2"
-        aria-label="Back to outline"
-      >
-        <Icons.back_arrow class="w-5 h-5 fill-Icon-icon-active stroke-Icon-icon-active" />
-        <span class="text-Text-text-high text-sm font-semibold leading-6">Back</span>
-      </button>
-      <ComponentsUtils.timezone_info timezone={
-        FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
-      } />
-
-      <div :for={{node_id, unit} <- @streams.units} id={node_id} class="flex flex-col gap-2">
-        <% unit_progress =
-          parse_student_progress_for_resource(@student_progress_per_resource_id, unit["resource_id"]) %>
-
-        <div class={"border-b-[1px] #{if unit_progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1 py-3"}>
-          <h6 class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase">
-            {container_label_and_numbering(1, unit["numbering"]["index"], @section.customizations)}
-          </h6>
-
-          <div class="flex justify-between items-center mt-2 mb-2 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2">
-            <div role="unit title" class="grow shrink basis-0">
-              {unit["title"]}
-            </div>
-            <div class="flex flex-row gap-x-2">
-              <%= if unit_progress == 100 do %>
-                Completed <Icons.check />
-              <% else %>
-                {unit_progress} %
-              <% end %>
-            </div>
-          </div>
-
-          <div class="flex justify-between items-center mb-1 w-full">
-            <div
-              role={"unit #{unit["resource_id"]} scheduling details"}
-              class="flex flex-col gap-2 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3"
-            >
-              <span>
-                Available: {get_available_date(
-                  unit["section_resource"].start_date,
-                  @ctx,
-                  "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                )}
-              </span>
-              <span>
-                {if unit["section_resource"].end_date in [nil, "Not yet scheduled"],
-                  do: "Due by:",
-                  else:
-                    Utils.container_label_for_scheduling_type(
-                      Map.get(@contained_scheduling_types, unit["resource_id"])
-                    )}
-                {format_date(
-                  unit["section_resource"].end_date,
-                  @ctx,
-                  "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <.outline_row
-          :for={row <- unit["children"]}
-          id={"node-#{row["uuid"]}-unit"}
-          section={@section}
-          row={row}
-          type={child_type(row)}
-          student_progress_per_resource_id={@student_progress_per_resource_id}
-          student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
-          student_available_date_exceptions_per_resource_id={
-            @student_available_date_exceptions_per_resource_id
-          }
-          student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
-          student_id={@current_user.id}
-          progress={
+      <div id="mobile_outline_unit_content" phx-hook="ScrollToTheTop">
+        <button
+          phx-click="back_to_outline_mobile_view"
+          phx-value-unit_resource_id={@selected_unit_resource_id}
+          class="inline-flex justify-start items-center gap-2"
+          aria-label="Back to outline"
+        >
+          <Icons.back_arrow class="w-5 h-5 fill-Icon-icon-active stroke-Icon-icon-active" />
+          <span class="text-Text-text-high text-sm font-semibold leading-6">Back</span>
+        </button>
+        <ComponentsUtils.timezone_info timezone={
+          FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
+        } />
+      </div>
+      <div id={"outline_rows-#{@outline_view_id}"} phx-update="stream" phx-hook="ExpandContainers">
+        <div :for={{node_id, unit} <- @streams.units} id={node_id} class="flex flex-col gap-2">
+          <% unit_progress =
             parse_student_progress_for_resource(
               @student_progress_per_resource_id,
-              row["resource_id"]
-            )
-          }
-          ctx={@ctx}
-          page_metrics={@page_metrics_per_module_id}
-          contained_scheduling_types={@contained_scheduling_types}
-          search_term={@params["search_term"]}
-          has_scheduled_resources?={@has_scheduled_resources?}
-          show_completed?={@show_completed?}
-          is_mobile={@is_mobile}
-        />
+              unit["resource_id"]
+            ) %>
+
+          <div class={"border-b-[1px] #{if unit_progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1 py-3"}>
+            <h6 class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase">
+              {container_label_and_numbering(1, unit["numbering"]["index"], @section.customizations)}
+            </h6>
+
+            <div class="flex justify-between items-center mt-2 mb-2 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2">
+              <div role="unit title" class="grow shrink basis-0">
+                {unit["title"]}
+              </div>
+              <div class="flex flex-row gap-x-2">
+                <%= if unit_progress == 100 do %>
+                  Completed <Icons.check />
+                <% else %>
+                  {unit_progress} %
+                <% end %>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-1 w-full">
+              <div
+                role={"unit #{unit["resource_id"]} scheduling details"}
+                class="flex flex-col items-start gap-2 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3"
+              >
+                <span>
+                  Available: {get_available_date(
+                    unit["section_resource"].start_date,
+                    @ctx,
+                    "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                  )}
+                </span>
+                <span>
+                  {if unit["section_resource"].end_date in [nil, "Not yet scheduled"],
+                    do: "Due by:",
+                    else:
+                      Utils.container_label_for_scheduling_type(
+                        Map.get(@contained_scheduling_types, unit["resource_id"])
+                      )}
+                  {format_date(
+                    unit["section_resource"].end_date,
+                    @ctx,
+                    "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <.outline_row
+            :for={row <- unit["children"]}
+            id={"node-#{row["uuid"]}-unit"}
+            section={@section}
+            row={row}
+            type={child_type(row)}
+            student_progress_per_resource_id={@student_progress_per_resource_id}
+            student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
+            student_available_date_exceptions_per_resource_id={
+              @student_available_date_exceptions_per_resource_id
+            }
+            student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+            student_id={@current_user.id}
+            progress={
+              parse_student_progress_for_resource(
+                @student_progress_per_resource_id,
+                row["resource_id"]
+              )
+            }
+            ctx={@ctx}
+            page_metrics={@page_metrics_per_module_id}
+            contained_scheduling_types={@contained_scheduling_types}
+            search_term={@params["search_term"]}
+            has_scheduled_resources?={@has_scheduled_resources?}
+            show_completed?={@show_completed?}
+            is_mobile={@is_mobile}
+          />
+        </div>
       </div>
     </div>
     """
