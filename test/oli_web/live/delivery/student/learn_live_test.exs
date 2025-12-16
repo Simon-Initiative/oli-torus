@@ -3310,4 +3310,155 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert result == viewed_ids
     end
   end
+
+  describe "socket connection handling" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    test "renders loading spinner when socket is not connected", %{
+      conn: conn,
+      section: section
+    } do
+      assert conn
+             |> get("/sections/#{section.slug}/learn")
+             |> html_response(200) =~
+               ~s{<svg aria-label=\"Loading\" class=\"loading\"}
+    end
+  end
+
+  describe "mobile outline view" do
+    setup [
+      :user_conn,
+      :mobile_conn,
+      :create_elixir_project,
+      :enroll_as_student,
+      :mark_section_visited
+    ]
+
+    test "shows unit layer when clicking a unit in mobile outline view", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Find the unit row - verify it has phx-click attribute for mobile
+      # This confirms is_mobile is true (phx-click is only added when is_mobile is true)
+      unit_element = "div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']"
+
+      assert has_element?(view, unit_element)
+
+      # Click on the unit to show unit layer
+      view
+      |> element(unit_element)
+      |> render_click()
+
+      # Verify selected_unit_resource_id is set and unit layer is rendered
+      assert has_element?(view, "div#mobile_outline_unit")
+      assert has_element?(view, "button[aria-label='Back to outline']")
+      assert has_element?(view, "div[role='unit title']", "Introduction")
+
+      # Verify only the selected unit is shown
+      assert has_element?(view, "h6", "UNIT 1")
+    end
+
+    test "navigates back to outline view from unit layer", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+
+      # Click back button
+      view
+      |> element("button[aria-label='Back to outline']")
+      |> render_click()
+
+      # Verify navigation back to outline view
+      assert_patch(
+        view,
+        ~p"/sections/#{section.slug}/learn?selected_view=outline&target_resource_id=#{unit_1.resource_id}"
+      )
+    end
+
+    test "shows unit layer when navigating to nested page in mobile outline view", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      # Navigate directly to a nested page (page_1 is nested in module_1 which is in unit_1)
+      # This should trigger scroll_to_page_in_unit_layer in handle_params
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug,
+            selected_view: :outline,
+            target_resource_id: page_1.resource_id
+          )
+        )
+
+      # Verify unit layer is shown with selected_unit_resource_id set
+      assert has_element?(view, "div#mobile_outline_unit")
+      assert has_element?(view, "div[role='unit title']", "Introduction")
+
+      # Verify the page is accessible in the unit layer
+      assert has_element?(view, "span[role='page title']", "Page 1")
+    end
+
+    test "complete mobile outline navigation flow", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      # Start at outline view
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Verify outline view is shown
+      assert has_element?(view, "div#student_learn")
+
+      assert has_element?(
+               view,
+               "div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']"
+             )
+
+      # Click on unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+      assert has_element?(view, "button[aria-label='Back to outline']")
+
+      # Click back button
+      view
+      |> element("button[aria-label='Back to outline']")
+      |> render_click()
+
+      # Verify we're back to outline view
+      assert_patch(
+        view,
+        ~p"/sections/#{section.slug}/learn?selected_view=outline&target_resource_id=#{unit_1.resource_id}"
+      )
+    end
+  end
 end
