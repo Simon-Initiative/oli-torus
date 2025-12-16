@@ -5,8 +5,8 @@ import { Model } from 'data/content/model/elements/factories';
 import { Citation } from 'data/content/model/elements/types';
 import * as ContentModel from 'data/content/model/elements/types';
 import * as BibPersistence from 'data/persistence/bibentry';
-import { CommandContext } from '../commands/interfaces';
 import { toCiteInput } from 'utils/bibliography';
+import { CommandContext } from '../commands/interfaces';
 
 const Cite = (window as any).cite;
 
