@@ -11,7 +11,15 @@ defmodule Oli.Scenarios.Directives.EnrollmentHandler do
   alias Oli.Repo
   alias Lti_1p3.Roles.ContextRoles
 
-  def handle(%EnrollDirective{user: user_name, section: section_name, role: role, email: email_override}, state) do
+  def handle(
+        %EnrollDirective{
+          user: user_name,
+          section: section_name,
+          role: role,
+          email: email_override
+        },
+        state
+      ) do
     try do
       # Get user from state
       email = email_override || "#{user_name}@example.com"
@@ -68,5 +76,4 @@ defmodule Oli.Scenarios.Directives.EnrollmentHandler do
   defp normalize_enroll_response({:ok, enrollments}), do: {:ok, enrollments}
   defp normalize_enroll_response({:error, reason}), do: {:error, reason}
   defp normalize_enroll_response(other), do: {:error, {:unexpected_response, other}}
-
 end

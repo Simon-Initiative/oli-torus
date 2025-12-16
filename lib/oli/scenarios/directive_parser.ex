@@ -768,10 +768,17 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_visibility(value) when is_atom(value) do
     case value do
-      :authors -> :authors
-      :selected -> :selected
-      :global -> :global
-      other -> raise "Invalid visibility #{inspect(other)}. Expected :authors, :selected, or :global"
+      :authors ->
+        :authors
+
+      :selected ->
+        :selected
+
+      :global ->
+        :global
+
+      other ->
+        raise "Invalid visibility #{inspect(other)}. Expected :authors, :selected, or :global"
     end
   end
 

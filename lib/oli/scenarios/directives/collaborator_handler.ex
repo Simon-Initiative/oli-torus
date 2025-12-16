@@ -11,7 +11,10 @@ defmodule Oli.Scenarios.Directives.CollaboratorHandler do
   alias Oli.Repo
   alias Oli.Accounts.User
 
-  def handle(%CollaboratorDirective{user: user_name, project: project_name, email: email_override}, state) do
+  def handle(
+        %CollaboratorDirective{user: user_name, project: project_name, email: email_override},
+        state
+      ) do
     try do
       email = email_override || "#{user_name}@example.com"
 
@@ -45,7 +48,8 @@ defmodule Oli.Scenarios.Directives.CollaboratorHandler do
       end
     rescue
       e ->
-        {:error, "Failed to add collaborator '#{user_name}' to '#{project_name}': #{Exception.message(e)}"}
+        {:error,
+         "Failed to add collaborator '#{user_name}' to '#{project_name}': #{Exception.message(e)}"}
     end
   end
 

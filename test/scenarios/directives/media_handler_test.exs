@@ -21,7 +21,10 @@ defmodule Oli.Scenarios.Directives.MediaHandlerTest do
 
   test "uploads media from absolute path" do
     project = insert(:project)
-    tmp = Path.join(System.tmp_dir!(), "media-handler-abs-#{System.unique_integer([:positive])}.txt")
+
+    tmp =
+      Path.join(System.tmp_dir!(), "media-handler-abs-#{System.unique_integer([:positive])}.txt")
+
     File.write!(tmp, "hello")
     on_exit(fn -> File.rm_rf(tmp) end)
 
@@ -38,7 +41,10 @@ defmodule Oli.Scenarios.Directives.MediaHandlerTest do
 
   test "resolves relative path with current_dir" do
     project = insert(:project)
-    tmpdir = Path.join(System.tmp_dir!(), "media-handler-rel-#{System.unique_integer([:positive])}")
+
+    tmpdir =
+      Path.join(System.tmp_dir!(), "media-handler-rel-#{System.unique_integer([:positive])}")
+
     File.mkdir_p!(tmpdir)
     file = Path.join(tmpdir, "x.txt")
     File.write!(file, "hi")

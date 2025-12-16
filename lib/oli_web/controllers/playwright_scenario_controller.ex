@@ -100,8 +100,8 @@ defmodule OliWeb.PlaywrightScenarioController do
     end
   rescue
     e ->
-     Logger.error("Scenario YAML execution error: #{Exception.message(e)}")
-     {:error, e}
+      Logger.error("Scenario YAML execution error: #{Exception.message(e)}")
+      {:error, e}
   end
 
   defp interpolate(yaml, params) do

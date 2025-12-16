@@ -36,8 +36,7 @@ defmodule Oli.Scenarios.Directives.BibliographyHandler do
       end
     rescue
       e ->
-        {:error,
-         "Failed to add bibliography entry to '#{project_name}': #{Exception.message(e)}"}
+        {:error, "Failed to add bibliography entry to '#{project_name}': #{Exception.message(e)}"}
     end
   end
 

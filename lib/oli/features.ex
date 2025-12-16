@@ -7,7 +7,11 @@ defmodule Oli.Features do
   @features [
     %Feature{label: "adaptivity", description: "Adaptive lesson authoring", enabled: true},
     %Feature{label: "equity", description: "Equity qa check", enabled: false},
-    %Feature{label: "live-debugging", description: "Live attempt debugging/observation support", enabled: false}
+    %Feature{
+      label: "live-debugging",
+      description: "Live attempt debugging/observation support",
+      enabled: false
+    }
   ]
 
   def features, do: @features

@@ -229,7 +229,7 @@ defmodule Oli.Scenarios.Builder do
           Map.put(acc, tag_title, revision)
 
         {:error, reason} ->
-        raise "Failed to create tag '#{tag_title}': #{inspect(reason)}"
+          raise "Failed to create tag '#{tag_title}': #{inspect(reason)}"
       end
     end)
   end
