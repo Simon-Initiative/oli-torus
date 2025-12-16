@@ -31,6 +31,7 @@ interface Props {
   selectedIcon: React.ReactNode;
   unselectedIcon: React.ReactNode;
   disabled?: boolean;
+  multiSelect?: boolean;
   children?: (xs: ReturnType<typeof useTargetedFeedback>) => React.ReactElement;
 }
 
@@ -117,6 +118,7 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
             isEvaluated={false}
             context={writerContext}
             disabled={props.disabled}
+            multiSelect={props.multiSelect}
           />
 
           {authoringContext.contentBreaksExist ? (

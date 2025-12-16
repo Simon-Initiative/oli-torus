@@ -14,6 +14,7 @@ interface Props {
   unselectedIcon: React.ReactNode;
   selectedIcon: React.ReactNode;
   disabled?: boolean;
+  multiSelect?: boolean;
 }
 export const ChoicesDelivery: React.FC<Props> = ({
   choices,
@@ -24,6 +25,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
   unselectedIcon,
   selectedIcon,
   disabled = false,
+  multiSelect = false,
 }) => {
   const choiceRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isSelected = (choiceId: ChoiceId) => !!selected.find((s) => s === choiceId);
@@ -85,19 +87,29 @@ export const ChoicesDelivery: React.FC<Props> = ({
     [choices.length, isEvaluated, disabled, onSelect],
   );
 
-  // Only one choice should be in the tab order at a time (roving tabindex)
+  // For checkbox groups, all items can be in tab order
+  // For radio groups, only one item should be in tab order (roving tabindex)
   const getTabIndex = (index: number): number => {
     if (disabled) return -1;
-    return index === focusedIndex ? 0 : -1;
+    if (multiSelect) return 0; // All checkboxes are tabbable
+    return index === focusedIndex ? 0 : -1; // Only focused radio is tabbable
   };
 
+  // ARIA roles depend on whether this is single or multi-select
+  const containerRole = multiSelect ? 'group' : 'radiogroup';
+  const itemRole = multiSelect ? 'checkbox' : 'radio';
+
   return (
-    <div className={styles.choicesContainer} role="radiogroup" aria-label="answer choices">
+    <div
+      className={styles.choicesContainer}
+      role={containerRole}
+      aria-label="answer choices"
+    >
       {choices.map((choice, index) => (
         <div
           key={choice.id}
           ref={(el) => (choiceRefs.current[index] = el)}
-          role="radio"
+          role={itemRole}
           aria-checked={isSelected(choice.id)}
           aria-label={`choice ${index + 1}`}
           tabIndex={getTabIndex(index)}
