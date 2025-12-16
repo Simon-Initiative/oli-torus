@@ -1469,7 +1469,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 </span>
               </div>
               <div class="sm:ml-auto flex items-center gap-3" role="schedule_details">
-                <div class="flex flex-col gap-2 sm:flex-row text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
+                <div class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
                       @unit["section_resource"].start_date,
@@ -1552,7 +1552,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 </span>
               </div>
               <div class="flex items-center gap-3" role="schedule_details">
-                <div class="flex flex-col gap-2 sm:gap-0 sm:flex-row text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
+                <div class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
                       @unit["section_resource"].start_date,
@@ -1844,7 +1844,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div class="flex justify-between items-center mb-3 w-full">
               <div
                 role={"unit #{@row["resource_id"]} scheduling details"}
-                class="flex flex-col sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
+                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
                   Available: {get_available_date(
@@ -1978,7 +1978,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div class="flex justify-between items-center mb-3 w-full">
               <div
                 role={"unit #{@row["resource_id"]} scheduling details"}
-                class="flex flex-col sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
+                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
                   Available: {get_available_date(
@@ -2127,7 +2127,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div class="flex justify-between items-center mb-3 w-full">
               <div
                 role={"module #{@row["resource_id"]} scheduling details"}
-                class="flex flex-col sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
+                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
                   Available: {get_available_date(
@@ -2401,7 +2401,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div :if={@row["graded"]} role="due date and score" class="flex flex-col sm:flex-row">
               <span
                 role="page due date"
-                class="flex flex-col items-start sm:flex-row text-Text-text-low-alpha text-xs font-semibold leading-3"
+                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
                   Available: {get_available_date(
@@ -2778,7 +2778,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
           <div :if={@graded} role="due date and score" class="flex flex-col sm:flex-row">
-            <span class="flex flex-col items-start sm:flex-row text-Text-text-low-alpha text-xs font-semibold leading-3">
+            <span class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
               <span>
                 Available: {get_available_date(
                   @available_date,
