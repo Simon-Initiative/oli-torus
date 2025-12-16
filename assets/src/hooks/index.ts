@@ -56,10 +56,10 @@ import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
 import { AutoHideTooltip, Popover, TooltipInit, TooltipWithTarget } from './tooltip';
+import { UnitToggleAriaLabel } from './unit_toggle_aria_label';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
-import { UnitToggleAriaLabel } from './unit_toggle_aria_label';
 
 export const Hooks = {
   DebouncedTextInputListener,

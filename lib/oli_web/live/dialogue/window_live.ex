@@ -213,15 +213,15 @@ defmodule OliWeb.Dialogue.WindowLive do
         class="w-full sm:w-auto pb-6 shadow-lg bg-white dark:bg-[#0A0A17] rounded-3xl flex flex-col justify-between"
       >
         <div class="h-7 shrink-0 py-6 px-3 rounded-t-3xl flex items-center">
-      <button
-        id="resize_handle"
-        class="hidden sm:flex items-center justify-center cursor-nw-resize rotate-90 opacity-60 dark:opacity-80 dark:hover:opacity-50 hover:opacity-100 hover:scale-105"
-        aria-label="resize window"
-      >
-        <.resize_icon />
-      </button>
-      <button
-        id="close_chat_button"
+          <button
+            id="resize_handle"
+            class="hidden sm:flex items-center justify-center cursor-nw-resize rotate-90 opacity-60 dark:opacity-80 dark:hover:opacity-50 hover:opacity-100 hover:scale-105"
+            aria-label="resize window"
+          >
+            <.resize_icon />
+          </button>
+          <button
+            id="close_chat_button"
             phx-click={
               JS.hide(
                 to: "#ai_bot_conversation",
@@ -233,15 +233,15 @@ defmodule OliWeb.Dialogue.WindowLive do
                 to: "#ai_bot_collapsed",
                 transition:
                   {"ease-out duration-700 delay-1000",
-            "translate-x-full translate-y-full opacity-100",
-            "translate-x-3/4 translate-y-0 opacity-0"}
-        )
-      }
-      class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
-      aria-label="chat"
-      >
-        <.close_icon />
-      </button>
+                   "translate-x-full translate-y-full opacity-100",
+                   "translate-x-3/4 translate-y-0 opacity-0"}
+              )
+            }
+            class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
+            aria-label="chat"
+          >
+            <.close_icon />
+          </button>
         </div>
         <.messages
           messages={@messages}
@@ -520,17 +520,17 @@ defmodule OliWeb.Dialogue.WindowLive do
             data-initial-height={40}
             onkeyup="resizeTextArea(this)"
           />
-      </div>
-      <button
-        id="bot_submit_button"
-        disabled={!@allow_submission?}
-        class="w-[38px] h-[38px] ml-2 px-6 py-2 opacity-90 bg-blue-500 rounded-lg justify-center items-center gap-3 flex cursor-pointer hover:opacity-100 active:bg-blue-600"
-        aria-label="submit"
-      >
-        <div class="w-[25px] h-[25px] pl-[3.12px] pr-[2.08px] py-[4.17px] justify-center items-center flex">
-          <.submit_icon />
         </div>
-      </button>
+        <button
+          id="bot_submit_button"
+          disabled={!@allow_submission?}
+          class="w-[38px] h-[38px] ml-2 px-6 py-2 opacity-90 bg-blue-500 rounded-lg justify-center items-center gap-3 flex cursor-pointer hover:opacity-100 active:bg-blue-600"
+          aria-label="submit"
+        >
+          <div class="w-[25px] h-[25px] pl-[3.12px] pr-[2.08px] py-[4.17px] justify-center items-center flex">
+            <.submit_icon />
+          </div>
+        </button>
       </div>
     </.form>
     """
