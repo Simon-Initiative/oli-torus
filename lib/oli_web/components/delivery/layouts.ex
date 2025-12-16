@@ -103,6 +103,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
               "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
               if(@sidebar_enabled, do: "md:hidden", else: "hidden")
             ]}
+            aria-label="menu"
             phx-click={JS.toggle(to: "#mobile-nav-menu", display: "flex")}
           >
             <i class="fa-solid fa-bars"></i>
