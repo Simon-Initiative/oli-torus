@@ -2186,20 +2186,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               type="button"
               aria-label="Toggle module"
               class="absolute inset-0 z-10 bg-transparent cursor-pointer sm:hidden"
-              phx-click={
-                JS.toggle_class("rotate-180",
-                  to: "#icon-#{@row["resource_id"]}"
-                )
-                |> JS.toggle_class(border_class,
-                  to: "#header-#{@row["resource_id"]}"
-                )
-              }
-              phx-value-id={@row["resource_id"]}
-              data-bs-toggle="collapse"
-              data-bs-target={"#collapse-#{@row["resource_id"]}"}
-              data-child_matches_search_term={@row["child_matches_search_term"]}
-              aria-expanded="false"
-              aria-controls={"collapse-#{@row["resource_id"]}"}
+              phx-click={JS.dispatch("click", to: "#toggle-module-#{@row["resource_id"]}")}
             >
             </button>
           </div>
