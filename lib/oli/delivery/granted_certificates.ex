@@ -245,7 +245,14 @@ defmodule Oli.Delivery.GrantedCertificates do
     |> Oban.insert_all()
   end
 
-  defp certificate_email_template_assigns(:earned, granted_certificate, student, section, guid, _instructor_email) do
+  defp certificate_email_template_assigns(
+         :earned,
+         granted_certificate,
+         student,
+         section,
+         guid,
+         _instructor_email
+       ) do
     %{
       student_name: OliWeb.Common.Utils.name(student),
       platform_name: Oli.Branding.brand_name(section),
@@ -255,7 +262,14 @@ defmodule Oli.Delivery.GrantedCertificates do
     }
   end
 
-  defp certificate_email_template_assigns(:denied, _granted_certificate, student, section, _guid, instructor_email) do
+  defp certificate_email_template_assigns(
+         :denied,
+         _granted_certificate,
+         student,
+         section,
+         _guid,
+         instructor_email
+       ) do
     %{
       student_name: OliWeb.Common.Utils.name(student),
       platform_name: Oli.Branding.brand_name(section),
