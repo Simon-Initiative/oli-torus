@@ -69,6 +69,11 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
     prompt = '',
   } = model;
 
+  /* ---------------- IDs ---------------- */
+
+  const inputId = `${id}-number-input`;
+  const descriptionId = `${id}-number-desc`;
+
   /**
    * Given a value, return either a number or an empty string, the value will be between
    * minValue and maxValue inclusive.
@@ -289,12 +294,23 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
     <div data-janus-type={tagName} style={inputNumberDivStyles} className={`number-input`}>
       {showLabel && (
         <React.Fragment>
-          <label htmlFor={`${id}-number-input`} className="inputNumberLabel">
+          <label htmlFor={`${inputId}`} className="inputNumberLabel">
             {label?.length > 0 ? label : ''}
           </label>
           <br />
         </React.Fragment>
       )}
+      {/* ---------- Static SR text ---------- */}
+      {/* Screen-reader-only description */}
+      <span id={descriptionId} className="sr-only">
+        {inputNumberValue !== '' &&
+          !isNaN(Number(inputNumberValue)) &&
+          `Current value: ${inputNumberValue}. `}
+        {unitsLabel && `Units: ${unitsLabel}. `}
+        {typeof minValue === 'number' && `Minimum value: ${minValue}. `}
+        {typeof maxValue === 'number' && `Maximum value: ${maxValue}.`}
+      </span>
+
       <input
         type="number"
         disabled={!enabled}
@@ -306,13 +322,18 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
         className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
         style={inputNumberCompStyles}
         value={inputNumberValue}
+        aria-describedby={descriptionId}
         onWheel={(e) => {
           if (!enableScrollIncrement) {
             (e.currentTarget as HTMLInputElement).blur();
           }
         }}
       />
-      {unitsLabel && <span className="unitsLabel">{unitsLabel}</span>}
+      {unitsLabel && (
+        <span className="unitsLabel" aria-hidden="true">
+          {unitsLabel}
+        </span>
+      )}
     </div>
   ) : null;
 };
