@@ -465,11 +465,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       )
 
     # Check if the page is in a module (numbering_level > 2)
-    %{numbering_level: numbering_level} =
-      Sections.get_section_resource_with_resource_type(
-        socket.assigns.section.slug,
-        resource_id
-      )
+    # Extract numbering_level from full_hierarchy
+    resource_id_int =
+      if is_binary(resource_id), do: String.to_integer(resource_id), else: resource_id
+
+    %{"numbering" => %{"level" => numbering_level}} =
+      Hierarchy.find_in_hierarchy(full_hierarchy, fn node ->
+        node["resource_id"] == resource_id_int
+      end)
 
     socket =
       socket
