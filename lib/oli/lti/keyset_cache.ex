@@ -147,12 +147,13 @@ defmodule Oli.Lti.KeysetCache do
     # :named_table - can reference by name instead of table ID
     # :public - any process can read/write
     # {:read_concurrency, true} - optimize for concurrent reads
-    table = :ets.new(@table_name, [
-      :set,
-      :named_table,
-      :public,
-      {:read_concurrency, true}
-    ])
+    table =
+      :ets.new(@table_name, [
+        :set,
+        :named_table,
+        :public,
+        {:read_concurrency, true}
+      ])
 
     Logger.info("LTI Keyset Cache initialized with ETS table #{inspect(table)}")
 

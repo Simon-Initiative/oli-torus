@@ -29,9 +29,7 @@ defmodule Oli.Lti.CachedKeyProvider do
   def get_public_key(key_set_url, kid) do
     case KeysetCache.get_public_key(key_set_url, kid) do
       {:ok, public_key} ->
-        Logger.debug(
-          "Cache hit: Found key #{kid} for #{key_set_url} in ETS cache"
-        )
+        Logger.debug("Cache hit: Found key #{kid} for #{key_set_url} in ETS cache")
 
         {:ok, public_key}
 
