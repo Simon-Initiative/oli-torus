@@ -75,7 +75,7 @@ defmodule OliWeb.Components.Footer do
 
     ~H"""
     <div class="w-9/12 text-left sm:text-center">
-      {@footer_text}<a href={@footer_link_1_location} target="_blank"><%= @footer_link_1_text %></a>
+      {@footer_text}<a :if={@footer_link_1_location not in [nil, ""] and @footer_link_1_text not in [nil, ""]} href={@footer_link_1_location} target="_blank">{@footer_link_1_text}</a>
     </div>
     """
   end
@@ -89,7 +89,7 @@ defmodule OliWeb.Components.Footer do
 
     ~H"""
     <div class="w-2/12 text-left sm:text-left">
-      <a href={@footer_link_2_location} target="_blank">{@footer_link_2_text}</a>
+      <a :if={@footer_link_2_location not in [nil, ""] and @footer_link_2_text not in [nil, ""]} href={@footer_link_2_location} target="_blank">{@footer_link_2_text}</a>
     </div>
     """
   end
@@ -98,7 +98,7 @@ defmodule OliWeb.Components.Footer do
     assigns = assign(assigns, version: version(), sha: sha(), timestamp: timestamp())
 
     ~H"""
-    <div class="text-center sm:text-left sm:text-right">
+    <div class="text-center sm:text-right">
       Version {@version} ({@sha}) {@timestamp}
     </div>
     """
