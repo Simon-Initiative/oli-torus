@@ -364,7 +364,18 @@ defmodule OliWeb.Components.Delivery.Students do
         )
 
       :overall_proficiency ->
-        Enum.sort_by(students, fn student -> student.overall_proficiency end, sort_order)
+        Enum.sort_by(
+          students,
+          fn student ->
+            normalized = normalize_proficiency(student.overall_proficiency)
+
+            {
+              overall_proficiency_rank(normalized),
+              normalized
+            }
+          end,
+          sort_order
+        )
 
       :engagement ->
         Enum.sort_by(students, fn student -> student.engagement end, sort_order)
@@ -1510,6 +1521,22 @@ defmodule OliWeb.Components.Delivery.Students do
           diff_days > 7 and is_learner_selected(student, filter_by)
         end)
     }
+  end
+
+  defp overall_proficiency_rank(value) do
+    case value do
+      "high" -> 0
+      "medium" -> 1
+      "low" -> 2
+      _ -> 3
+    end
+  end
+
+  defp normalize_proficiency(value) do
+    value
+    |> to_string()
+    |> String.trim()
+    |> String.downcase()
   end
 
   ## Determine if a learner is selected based on the filter_by value
