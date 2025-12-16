@@ -92,11 +92,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
   };
 
   return (
-    <div
-      className={styles.choicesContainer}
-      role="radiogroup"
-      aria-label="answer choices"
-    >
+    <div className={styles.choicesContainer} role="radiogroup" aria-label="answer choices">
       {choices.map((choice, index) => (
         <div
           key={choice.id}

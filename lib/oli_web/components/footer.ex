@@ -75,7 +75,11 @@ defmodule OliWeb.Components.Footer do
 
     ~H"""
     <div class="w-9/12 text-left sm:text-center">
-      {@footer_text}<a :if={@footer_link_1_location not in [nil, ""] and @footer_link_1_text not in [nil, ""]} href={@footer_link_1_location} target="_blank">{@footer_link_1_text}</a>
+      {@footer_text}<a
+        :if={@footer_link_1_location not in [nil, ""] and @footer_link_1_text not in [nil, ""]}
+        href={@footer_link_1_location}
+        target="_blank"
+      >{@footer_link_1_text}</a>
     </div>
     """
   end
@@ -89,7 +93,13 @@ defmodule OliWeb.Components.Footer do
 
     ~H"""
     <div class="w-2/12 text-left sm:text-left">
-      <a :if={@footer_link_2_location not in [nil, ""] and @footer_link_2_text not in [nil, ""]} href={@footer_link_2_location} target="_blank">{@footer_link_2_text}</a>
+      <a
+        :if={@footer_link_2_location not in [nil, ""] and @footer_link_2_text not in [nil, ""]}
+        href={@footer_link_2_location}
+        target="_blank"
+      >
+        {@footer_link_2_text}
+      </a>
     </div>
     """
   end
