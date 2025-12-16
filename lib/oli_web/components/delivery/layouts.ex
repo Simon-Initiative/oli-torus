@@ -515,6 +515,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:index, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :index}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Home"
       >
         <:icon><Icons.home is_active={@active_tab == :index} /></:icon>
         <:text>Home</:text>
@@ -525,6 +526,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:learn, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :learn}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Learn"
       >
         <:icon><Icons.learn is_active={@active_tab == :learn} /></:icon>
         <:text>Learn</:text>
@@ -536,6 +538,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:schedule, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :schedule}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Schedule"
       >
         <:icon><Icons.schedule is_active={@active_tab == :schedule} /></:icon>
         <:text>Schedule</:text>
@@ -548,6 +551,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         is_active={@active_tab == :discussions}
         sidebar_expanded={@sidebar_expanded}
         badge={Map.get(@notification_badges, :discussions)}
+        aria_label="Notes"
       >
         <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
         <:text>Notes</:text>
@@ -559,6 +563,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:assignments, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :assignments}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Assignments"
       >
         <:icon><Icons.assignments is_active={@active_tab == :assignments} /></:icon>
         <:text>Assignments</:text>
@@ -714,12 +719,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr :badge, :integer, default: nil
   attr :on_active_bg, :string, default: "bg-zinc-400 bg-opacity-20"
   attr :navigation_type, :string, default: "navigate"
+  attr :aria_label, :string, default: nil
 
   def nav_link(%{navigation_type: "navigate"} = assigns) do
     ~H"""
     <.link
       id={@id}
       navigate={@href}
+      aria-label={@aria_label}
       class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content {assigns} />
@@ -732,6 +739,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <.link
       id={@id}
       href={@href}
+      aria-label={@aria_label}
       class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content {assigns} />
@@ -747,7 +755,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         do: @on_active_bg
       )
     ]}>
-      <div class="w-5 h-5 flex items-center justify-center">
+      <div class="w-5 h-5 flex items-center justify-center" aria-hidden="true">
         {render_slot(@icon)}
       </div>
       <div
@@ -884,6 +892,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
+                aria-label="Back"
                 class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted py-2 text-sm font-semibold hover:text-[#FFFFFF] hover:no-underline"
               >
                 <Icons.chevron_right class="rotate-90" />
