@@ -1673,6 +1673,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <button
                   class="btn btn-block px-0 transition-transform duration-300"
                   type="button"
+                  id={"unit-toggle-#{@row["resource_id"]}"}
                   phx-hook="UnitToggleAriaLabel"
                   phx-click={
                     JS.toggle_class("rotate-180",
