@@ -2976,7 +2976,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       id={"intro_card_#{@card_resource_id}"}
       class="relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white"
-      role="youtube_intro_video_card"
+      role="resource youtube intro video"
+      data-completed={"#{@intro_video_viewed}"}
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-card_resource_id={@card_resource_id}
@@ -3044,7 +3045,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       id={"intro_card_#{@card_resource_id}"}
       class="relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white"
-      role="intro_video_card"
+      role="resource intro video"
+      data-completed={"#{@intro_video_viewed}"}
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-section_id={@section.id}

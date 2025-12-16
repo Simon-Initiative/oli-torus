@@ -874,19 +874,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has an intro card with a video url provided, so there must be a play button
       assert has_element?(
                view,
-               ~s{div[role="unit_1"] div[role="slider"] div[role="youtube_intro_video_card"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_1"] div[role="slider"] div[role="resource youtube intro video"] div[role="play_unit_intro_video"]}
              )
 
       # unit 2 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_2"] div[role="slider"] div[role="youtube_intro_video_card"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_2"] div[role="slider"] div[role="resource youtube intro video"] div[role="play_unit_intro_video"]}
              )
 
       # unit 3 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_3"] div[role="slider"] div[role="youtube_intro_video_card"]}
+               ~s{div[role="unit_3"] div[role="slider"] div[role="resource youtube intro video"]}
              )
     end
 
@@ -1709,13 +1709,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='youtube_intro_video_card']})
+             |> element(~s{div[role='unit_1'] div[role='resource youtube intro video']})
              |> render =~
                "style=\"background-image: url(&#39;https://img.youtube.com/vi/123456789ab/hqdefault.jpg&#39;)"
 
       # S3 video
       assert view
-             |> has_element?(~s{div[role='unit_4'] div[role='intro_video_card']})
+             |> has_element?(~s{div[role='unit_4'] div[role='resource intro video']})
     end
 
     test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
