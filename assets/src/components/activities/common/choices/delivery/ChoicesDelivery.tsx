@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Choice, ChoiceId } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
@@ -40,6 +40,19 @@ export const ChoicesDelivery: React.FC<Props> = ({
     return 0;
   };
   const [focusedIndex, setFocusedIndex] = useState(getInitialFocusIndex);
+
+  // Recompute focusedIndex when choices or selection changes to prevent out-of-bounds
+  useEffect(() => {
+    setFocusedIndex((prev) => {
+      // If selection changed, prefer the selected index
+      if (selected.length > 0) {
+        const selectedIndex = choices.findIndex((c) => selected.includes(c.id));
+        if (selectedIndex >= 0) return selectedIndex;
+      }
+      // Otherwise clamp to valid range
+      return Math.min(prev, Math.max(choices.length - 1, 0));
+    });
+  }, [choices, selected]);
 
   const onClicked = useCallback(
     (choiceId: ChoiceId, index: number) => (event: React.MouseEvent) => {
