@@ -115,6 +115,11 @@ defmodule Oli.Lti.KeysetRefreshWorker do
          {:ok, response} <- http_get(key_set_url) do
       handle_http_response(response, key_set_url)
     else
+      # URL validation failures are permanent configuration errors - discard immediately
+      {:error, :invalid_url_no_scheme} -> :discard
+      {:error, :insecure_url_scheme} -> :discard
+      {:error, :invalid_url_no_host} -> :discard
+      # HTTP/network errors may be transient - allow retry
       {:error, reason} -> {:error, reason}
     end
   end
@@ -136,16 +141,29 @@ defmodule Oli.Lti.KeysetRefreshWorker do
           "Invalid JWKS format from #{key_set_url}: missing 'keys' array. Body: #{inspect(invalid_json)}"
         )
 
-        {:error, :invalid_jwks_format}
+        # Platform is returning invalid JWKS - permanent config issue, discard
+        :discard
 
       {:error, decode_error} ->
         Logger.error("Failed to decode JSON from #{key_set_url}: #{inspect(decode_error)}")
-        {:error, :json_decode_failed}
+        # Platform is returning invalid JSON - permanent config issue, discard
+        :discard
     end
+  end
+
+  defp handle_http_response(%{status_code: status_code}, key_set_url)
+       when status_code in 400..499 do
+    Logger.error(
+      "HTTP #{status_code} client error fetching keyset from #{key_set_url} - permanent failure"
+    )
+
+    # 4xx errors are permanent (wrong URL, unauthorized, not found) - discard
+    :discard
   end
 
   defp handle_http_response(%{status_code: status_code}, key_set_url) do
     Logger.error("HTTP #{status_code} error fetching keyset from #{key_set_url}")
+    # 5xx errors and other codes may be transient - allow retry
     {:error, {:http_error, status_code}}
   end
 
