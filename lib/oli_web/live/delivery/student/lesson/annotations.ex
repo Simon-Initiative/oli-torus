@@ -573,7 +573,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
             role="reactions"
             aria-label="thumbs up"
-            aria-pressed={to_string(get_in(@post, [:reaction_summaries, :like, :reacted]) || false)}
+            aria-pressed={to_string(get_in(@post.reaction_summaries, [:like, :reacted]) || false)}
             phx-click={@on_toggle_reaction}
             phx-value-reaction={:like}
             phx-value-post-id={assigns.post.id}
