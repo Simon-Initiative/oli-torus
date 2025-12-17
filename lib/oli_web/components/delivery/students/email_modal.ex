@@ -238,7 +238,8 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
     student = Enum.find(students, fn s -> s.id == selected_student_id end)
 
     student_full_name =
-      student[:full_name] || Utils.name(student.name, student.given_name, student.family_name)
+      Map.get(student, :full_name, nil) ||
+        Utils.name(student.name, student.given_name, student.family_name)
 
     assigns = %{student_name: student_full_name, student_email: student.email}
 

@@ -3,7 +3,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.{Author, User}
-  alias Oli.Delivery.Metrics
+  alias Oli.Delivery.{Metrics, GrantedCertificates}
   alias OliWeb.Common.{SearchInput, Params, StripedPagedTable, Utils}
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.Content.{PercentageSelector, MultiSelect, SelectDropdown}
@@ -540,7 +540,7 @@ defmodule OliWeb.Components.Delivery.Students do
         </div>
 
         <div class="flex w-fit gap-2 mx-4 mt-4 mb-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
-          <div class="flex p-2 gap-2">
+          <div class="flex p-2 gap-2 items-center">
             <form for="search" phx-target={@myself} phx-change="search_student" class="w-56">
               <SearchInput.render
                 id="students_search_input"
@@ -631,6 +631,7 @@ defmodule OliWeb.Components.Delivery.Students do
           selected_modal={nil}
           granted_certificate_guid={nil}
           section_slug={@section_slug}
+          certificate_label={GrantedCertificates.certificate_label(false)}
         />
 
         <.live_component
