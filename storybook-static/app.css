@@ -3570,6 +3570,10 @@ select {
   accent-color: #FFFFFF;
 }
 
+.bg-Icon-icon-danger {
+  background-color: #CE2C31;
+}
+
 .dark .bg-Icon-icon-danger {
   background-color: #FF8787;
 }
@@ -15228,6 +15232,12 @@ table.table-striped tbody tr:nth-child(even) {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
+.shadow-\[0px_2px_4px_0px_rgba\(0\2c 52\2c 99\2c 0\.1\)\] {
+  --tw-shadow: 0px 2px 4px 0px rgba(0,52,99,0.1);
+  --tw-shadow-colored: 0px 2px 4px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .shadow-\[0px_2px_4px_0px_rgba\(0\2c 52\2c 99\2c 0\.10\)\] {
   --tw-shadow: 0px 2px 4px 0px rgba(0,52,99,0.10);
   --tw-shadow-colored: 0px 2px 4px 0px var(--tw-shadow-color);
@@ -17379,42 +17389,6 @@ a {
   border-left-width: 0px;
 }
 
-.instructor_dashboard_table tr:has(div[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
-.dark .instructor_dashboard_table tr:has(div[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
-.instructor_dashboard_table tr:has(div[data-score-check='true']) td a {
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
-.dark .instructor_dashboard_table tr:has(div[data-score-check='true']) td a {
-  --tw-bg-opacity: 1;
-  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
-.instructor_dashboard_table tr:has(a[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
-.dark .instructor_dashboard_table tr:has(a[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
 .publish_changes_table tr:has(div[data-is-structural='true']) td {
   --tw-bg-opacity: 1;
   background-color: rgb(212 212 212 / var(--tw-bg-opacity));
@@ -17612,42 +17586,6 @@ div:has(.remix_materials_table) {
   border-left-width: 0px;
 }
 
-.remix_materials_table tr:has(div[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
-.dark .remix_materials_table tr:has(div[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
-.remix_materials_table tr:has(div[data-score-check='true']) td a {
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
-.dark .remix_materials_table tr:has(div[data-score-check='true']) td a {
-  --tw-bg-opacity: 1;
-  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
-.remix_materials_table tr:has(a[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
-.dark .remix_materials_table tr:has(a[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
 .remix_materials_table td:has(div.highlight-exception) {
   border-radius: 0.375rem;
   --tw-shadow: inset 0px 0px 0px 8px rgba(0,0,0,0.0);
@@ -17807,42 +17745,6 @@ div:has(.remix_materials_table) #footer_paging {
 .remix_materials_publications_table td {
   border-right-width: 0px;
   border-left-width: 0px;
-}
-
-.remix_materials_publications_table tr:has(div[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
-.dark .remix_materials_publications_table tr:has(div[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
-.remix_materials_publications_table tr:has(div[data-score-check='true']) td a {
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
-.dark .remix_materials_publications_table tr:has(div[data-score-check='true']) td a {
-  --tw-bg-opacity: 1;
-  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
-.remix_materials_publications_table tr:has(a[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity));
-}
-
-.dark .remix_materials_publications_table tr:has(a[data-score-check='true']) td {
-  --tw-bg-opacity: 1;
-  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 .remix_materials_publications_table td:has(div.highlight-exception) {
@@ -20074,6 +19976,14 @@ Not supports in Firefox and IE */
   color: #99CCFF;
 }
 
+.hover\:border-Text-text-button-hover:hover {
+  border-color: #1B67B2;
+}
+
+.dark .hover\:border-Text-text-button-hover:hover {
+  border-color: #99CCFF;
+}
+
 .hover\:text-Text-text-danger-hover:hover {
   color: #B21D1D;
 }
@@ -20144,6 +20054,14 @@ Not supports in Firefox and IE */
 
 .dark .group:hover .group-hover\:stroke-Text-text-button-hover {
   stroke: #99CCFF;
+}
+
+.group:hover .group-hover\:bg-Table-table-hover {
+  background-color: #F2F9FF;
+}
+
+.dark .group:hover .group-hover\:bg-Table-table-hover {
+  background-color: #0A203A;
 }
 
 .group:hover .group-hover\:stroke-Icon-icon-hover {
@@ -23670,10 +23588,6 @@ Not supports in Firefox and IE */
 
   .sm\:mr-6 {
     margin-right: 1.5rem;
-  }
-
-  .sm\:mr-auto {
-    margin-right: auto;
   }
 
   .sm\:mt-0 {
