@@ -65,8 +65,9 @@ defmodule OliWeb.Components.Delivery.QuizScores do
               href={~p"/sections/#{@section_slug}/grades/export"}
             >
               <span class="border-b border-transparent hover:border-Text-text-button-hover transition-all duration-100 ease-out py-1">
-                 Download CSV
-              </span> <Icons.download />
+                Download CSV
+              </span>
+               <Icons.download />
             </a>
           </div>
           <div class="flex flex-col gap-6">
