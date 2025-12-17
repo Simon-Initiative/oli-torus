@@ -41,17 +41,17 @@ defmodule Oli.Lti.KeysetRefreshWorkerTest do
   end
 
   describe "perform/1 with registration_id" do
-    test "returns error when registration does not exist" do
+    test "discards job when registration does not exist" do
       job = %Oban.Job{args: %{"registration_id" => 99999}}
 
-      assert {:error, :registration_not_found} = KeysetRefreshWorker.perform(job)
+      assert :discard = KeysetRefreshWorker.perform(job)
     end
 
-    test "returns error when registration has no key_set_url" do
+    test "discards job when registration has no key_set_url" do
       registration = insert(:lti_registration, %{key_set_url: nil})
       job = %Oban.Job{args: %{"registration_id" => registration.id}}
 
-      assert {:error, :no_key_set_url} = KeysetRefreshWorker.perform(job)
+      assert :discard = KeysetRefreshWorker.perform(job)
     end
   end
 

@@ -30,58 +30,45 @@ defmodule Oli.Lti.CachedKeyProvider do
     case KeysetCache.get_public_key(key_set_url, kid) do
       {:ok, public_key} ->
         Logger.debug("Cache hit: Found key #{kid} for #{key_set_url} in ETS cache")
-
         {:ok, public_key}
 
       {:error, :keyset_not_cached} ->
-        Logger.warning(
-          "Cache miss: Keyset for #{key_set_url} not cached, falling back to HTTP fetch"
+        Logger.error(
+          "Cache miss: Keyset for #{key_set_url} not cached. " <>
+            "The background worker has not yet fetched keys for this platform. " <>
+            "Scheduling immediate refresh."
         )
 
-        # Fallback: fetch from HTTP (backwards compatibility)
-        # This also handles the case where the worker hasn't run yet
-        fetch_and_cache_then_get_key(key_set_url, kid)
+        # Schedule a refresh for next time, but fail this request fast
+        schedule_refresh_for_url(key_set_url)
+
+        {:error,
+         %{
+           reason: :keyset_not_cached,
+           msg:
+             "Public keys for #{key_set_url} are not yet cached. " <>
+               "A background job has been scheduled to fetch them. " <>
+               "Please try the launch again in a few moments, or contact your administrator."
+         }}
 
       {:error, :key_not_found} ->
         Logger.error(
           "Key #{kid} not found in cached keyset for #{key_set_url}. " <>
-            "This may indicate the platform rotated keys. Attempting refresh."
+            "This may indicate the platform rotated keys. Scheduling immediate refresh."
         )
 
-        # Key might have been rotated, try refreshing and checking again
-        case refresh_keyset(key_set_url) do
-          :ok ->
-            case KeysetCache.get_public_key(key_set_url, kid) do
-              {:ok, public_key} ->
-                Logger.info("Successfully found key #{kid} after refresh")
-                {:ok, public_key}
+        # Schedule a refresh for next time, but fail this request fast
+        schedule_refresh_for_url(key_set_url)
 
-              {:error, :key_not_found} ->
-                {:error,
-                 %{
-                   reason: :key_not_found_in_keyset,
-                   msg:
-                     "Key with kid '#{kid}' not found in public keyset from #{key_set_url}. " <>
-                       "This may indicate a configuration mismatch between the LTI platform and this tool."
-                 }}
-
-              {:error, _} ->
-                {:error,
-                 %{
-                   reason: :key_not_found_in_keyset,
-                   msg: "Key with kid '#{kid}' not found in public keyset"
-                 }}
-            end
-
-          {:error, reason} ->
-            {:error,
-             %{
-               reason: :keyset_refresh_failed,
-               msg:
-                 "Failed to refresh keyset from #{key_set_url}: #{inspect(reason)}. " <>
-                   "The platform may be experiencing connectivity issues."
-             }}
-        end
+        {:error,
+         %{
+           reason: :key_not_found_in_keyset,
+           msg:
+             "Key with kid '#{kid}' not found in the cached keyset from #{key_set_url}. " <>
+               "This may indicate the platform rotated its keys. " <>
+               "A background job has been scheduled to fetch the updated keys. " <>
+               "Please try the launch again in a few moments."
+         }}
     end
   end
 
@@ -89,7 +76,8 @@ defmodule Oli.Lti.CachedKeyProvider do
   def preload_keys(key_set_url) do
     Logger.info("Preloading keys for #{key_set_url}")
 
-    case refresh_keyset(key_set_url) do
+    # preload_keys is explicitly called (not during launches), so synchronous fetch is acceptable
+    case refresh_keyset_sync(key_set_url) do
       :ok -> :ok
       {:error, reason} -> {:error, %{reason: reason, msg: "Failed to preload keys"}}
     end
@@ -148,63 +136,39 @@ defmodule Oli.Lti.CachedKeyProvider do
 
   # Private Functions
 
-  defp fetch_and_cache_then_get_key(key_set_url, kid) do
-    case refresh_keyset(key_set_url) do
-      :ok ->
-        case KeysetCache.get_public_key(key_set_url, kid) do
-          {:ok, public_key} ->
-            {:ok, public_key}
+  defp schedule_refresh_for_url(key_set_url) do
+    # Find registration(s) with this key_set_url and schedule refresh
+    # Note: Multiple registrations might share the same key_set_url
+    case find_registration_by_key_set_url(key_set_url) do
+      nil ->
+        Logger.warning(
+          "No registration found for key_set_url #{key_set_url}, cannot schedule refresh"
+        )
 
-          {:error, :key_not_found} ->
-            {:error,
-             %{
-               reason: :key_not_found_in_keyset,
-               msg:
-                 "Key with kid '#{kid}' not found in public keyset from #{key_set_url}. " <>
-                   "The JWT may be signed with a different key than what the platform provides."
-             }}
+        :ok
 
-          {:error, reason} ->
-            {:error, %{reason: reason, msg: "Failed to retrieve key from cache after fetch"}}
+      registration ->
+        Logger.info("Scheduling immediate refresh for registration #{registration.id}")
+
+        case KeysetRefreshWorker.schedule_refresh(registration.id) do
+          {:ok, _job} -> :ok
+          {:error, reason} -> Logger.error("Failed to schedule refresh: #{inspect(reason)}")
         end
-
-      {:error, {:http_error, status_code}} ->
-        {:error,
-         %{
-           reason: :http_error,
-           msg:
-             "HTTP #{status_code} error when fetching public keyset from #{key_set_url}. " <>
-               "The platform may be temporarily unavailable or the URL may be incorrect."
-         }}
-
-      {:error, {:http_request_failed, reason}} ->
-        {:error,
-         %{
-           reason: :http_request_failed,
-           msg:
-             "HTTP request failed when fetching public keyset from #{key_set_url}: #{inspect(reason)}. " <>
-               "This may be a network connectivity issue or the platform may be down."
-         }}
-
-      {:error, :invalid_jwks_format} ->
-        {:error,
-         %{
-           reason: :invalid_jwks_format,
-           msg:
-             "Invalid JWKS format received from #{key_set_url}. " <>
-               "The platform may have a configuration issue."
-         }}
-
-      {:error, reason} ->
-        {:error,
-         %{
-           reason: :keyset_fetch_failed,
-           msg: "Failed to fetch keyset from #{key_set_url}: #{inspect(reason)}"
-         }}
     end
   end
 
-  defp refresh_keyset(key_set_url) do
+  defp find_registration_by_key_set_url(key_set_url) do
+    import Ecto.Query
+
+    Oli.Lti.Tool.Registration
+    |> where([r], r.key_set_url == ^key_set_url)
+    |> limit(1)
+    |> Oli.Repo.one()
+  end
+
+  # Synchronous refresh functions - ONLY used by preload_keys (not in launch path)
+
+  defp refresh_keyset_sync(key_set_url) do
     with :ok <- validate_https_url(key_set_url),
          {:ok, response} <- http_get(key_set_url) do
       handle_http_response(response, key_set_url)

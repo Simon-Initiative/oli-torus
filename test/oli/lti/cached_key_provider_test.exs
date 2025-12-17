@@ -2,6 +2,7 @@ defmodule Oli.Lti.CachedKeyProviderTest do
   use Oli.DataCase, async: false
 
   import Mox
+  import Oli.Factory
 
   alias Oli.Lti.CachedKeyProvider
   alias Oli.Lti.KeysetCache
@@ -49,23 +50,16 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       # Pre-populate cache with keys
       KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
 
-      # When a key is not found, the provider will attempt to refresh the keyset
-      # Mock the HTTP response to return the same keyset (key still not found)
-      Oli.Test.MockHTTP
-      |> expect(:get, fn @test_url, _headers, _opts ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body: Jason.encode!(%{"keys" => [@test_key_1]}),
-           headers: []
-         }}
-      end)
+      # Insert a registration for this URL so the refresh can be scheduled
+      insert(:lti_registration, %{key_set_url: @test_url})
 
+      # When a key is not found, the provider will schedule a refresh but fail fast
       assert {:error, error} =
                CachedKeyProvider.get_public_key(@test_url, "nonexistent-kid")
 
-      # The error should indicate key not found
+      # The error should indicate key not found and mention scheduling a refresh
       assert error.reason == :key_not_found_in_keyset
+      assert error.msg =~ "background job has been scheduled"
     end
 
     test "retrieves same key consistently from same keyset" do
@@ -83,57 +77,42 @@ defmodule Oli.Lti.CachedKeyProviderTest do
   end
 
   describe "get_public_key/2 with cache miss" do
-    test "falls back to HTTP fetch when keyset not cached" do
-      # Mock HTTP to return keys
-      Oli.Test.MockHTTP
-      |> expect(:get, fn @test_url, _headers, _opts ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body: Jason.encode!(%{"keys" => [@test_key_1]}),
-           headers: []
-         }}
-      end)
+    test "fails fast when keyset not cached and schedules refresh" do
+      # Insert a registration for this URL so the refresh can be scheduled
+      insert(:lti_registration, %{key_set_url: @test_url})
 
       result = CachedKeyProvider.get_public_key(@test_url, "test-key-1")
 
-      # Should succeed with mocked HTTP
-      assert {:ok, _key} = result
+      # Should fail fast with descriptive error
+      assert {:error, error} = result
+      assert error.reason == :keyset_not_cached
+      assert error.msg =~ "not yet cached"
+      assert error.msg =~ "background job has been scheduled"
     end
   end
 
   describe "get_public_key/2 error messages" do
     test "distinguishes between different error scenarios" do
-      # Scenario 1: Keyset not cached (will trigger HTTP which will fail)
-      KeysetCache.clear_cache()
+      # Insert a registration for this URL so the refresh can be scheduled
+      insert(:lti_registration, %{key_set_url: @test_url})
 
-      Oli.Test.MockHTTP
-      |> expect(:get, fn @test_url, _headers, _opts ->
-        {:error, %HTTPoison.Error{reason: :timeout}}
-      end)
+      # Scenario 1: Keyset not cached
+      KeysetCache.clear_cache()
 
       assert {:error, error} = CachedKeyProvider.get_public_key(@test_url, "any-key")
 
-      # Should be an HTTP-related error, not a key-not-found error
-      assert error.reason in [:http_error, :http_request_failed, :keyset_fetch_failed]
+      # Should indicate cache miss
+      assert error.reason == :keyset_not_cached
+      assert error.msg =~ "not yet cached"
 
-      # Scenario 2: Keyset cached but key not found (will trigger refresh attempt)
+      # Scenario 2: Keyset cached but key not found
       KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
-
-      Oli.Test.MockHTTP
-      |> expect(:get, fn @test_url, _headers, _opts ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body: Jason.encode!(%{"keys" => [@test_key_1]}),
-           headers: []
-         }}
-      end)
 
       assert {:error, error2} = CachedKeyProvider.get_public_key(@test_url, "missing-key")
 
-      # After refresh, key still not found
+      # Should indicate key not found in keyset
       assert error2.reason == :key_not_found_in_keyset
+      assert error2.msg =~ "not found in the cached keyset"
     end
   end
 
@@ -271,28 +250,21 @@ defmodule Oli.Lti.CachedKeyProviderTest do
   end
 
   describe "key rotation scenario" do
-    test "refreshes keyset when kid not found to handle key rotation" do
+    test "schedules refresh when kid not found to handle key rotation" do
       # Initial cache with one key
       KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
 
-      # Mock HTTP to return both keys (simulating platform added a new key)
-      Oli.Test.MockHTTP
-      |> expect(:get, fn @test_url, _headers, _opts ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body: Jason.encode!(%{"keys" => [@test_key_1]}),
-           headers: []
-         }}
-      end)
+      # Insert a registration for this URL so the refresh can be scheduled
+      insert(:lti_registration, %{key_set_url: @test_url})
 
-      # Try to get a key that doesn't exist in cache
-      # This will trigger refresh, but the key still won't be found
+      # Try to get a key that doesn't exist in cache (simulating key rotation)
       result = CachedKeyProvider.get_public_key(@test_url, "missing-rotated-key")
 
-      # Should return error that key not found after refresh
+      # Should fail fast and schedule a refresh
       assert {:error, error} = result
       assert error.reason == :key_not_found_in_keyset
+      assert error.msg =~ "platform rotated its keys"
+      assert error.msg =~ "background job has been scheduled"
     end
   end
 end

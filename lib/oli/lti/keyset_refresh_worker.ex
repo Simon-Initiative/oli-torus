@@ -95,7 +95,8 @@ defmodule Oli.Lti.KeysetRefreshWorker do
   end
 
   defp fetch_and_cache_keyset(nil) do
-    {:error, :registration_not_found}
+    # Discard job - registration doesn't exist (permanent failure)
+    :discard
   end
 
   defp fetch_and_cache_keyset(%{key_set_url: nil} = registration) do
@@ -103,7 +104,8 @@ defmodule Oli.Lti.KeysetRefreshWorker do
       "Registration #{registration.id} has no key_set_url configured, skipping keyset refresh"
     )
 
-    {:error, :no_key_set_url}
+    # Discard job - missing key_set_url is a permanent configuration issue
+    :discard
   end
 
   defp fetch_and_cache_keyset(%{key_set_url: key_set_url, id: registration_id} = _registration) do
