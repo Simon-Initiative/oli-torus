@@ -76,6 +76,10 @@ export const ChoicesDelivery: React.FC<Props> = ({
       if (choices.length === 0) return;
 
       // Handle arrow key navigation (only for radio groups, not checkboxes per WAI-ARIA)
+      // Note: WAI-ARIA recommends auto-selecting on arrow keys for radio groups, but we intentionally
+      // deviate from this pattern because in assessment contexts, selecting an answer can trigger
+      // evaluation/submission. Users should be able to browse options with arrow keys before
+      // committing with Space/Enter.
       if (!multiSelect && (key === 'ArrowDown' || key === 'ArrowRight')) {
         event.preventDefault();
         const nextIndex = (index + 1) % choices.length;
