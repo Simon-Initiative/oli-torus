@@ -87,7 +87,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           assistant_enabled: Sections.assistant_enabled?(section),
           selected_view: @default_selected_view,
           show_completed?: true,
-          socket_connected?: true
+          socket_connected?: true,
+          # this is used to track the current selected unit resource id in the mobile outline view
+          selected_unit_resource_id: nil
         )
         |> stream_configure(:units, dom_id: &"node-#{&1["uuid"]}")
         |> stream_configure(:unit_resource_ids, dom_id: &"unit_resource_ids-#{&1["uuid"]}")
@@ -571,6 +573,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       ) do
     params = %{target_resource_id: unit_resource_id, selected_view: :outline}
 
+    # Preserve search_term through layers
+    # For example, when the user searchs in the outline mobile view, and then clicks on a unit,
+    # the search term should be preserved in the unit layer.
+    params =
+      if socket.assigns.params["search_term"] not in [nil, ""] do
+        Map.put(params, "search_term", socket.assigns.params["search_term"])
+      else
+        params
+      end
+
     socket =
       socket
       |> assign(selected_unit_resource_id: nil)
@@ -580,21 +592,33 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def handle_event("search", %{"search_term" => search_term}, socket) do
+    %{
+      is_mobile: is_mobile,
+      params: params,
+      section: section,
+      selected_unit_resource_id: selected_unit_resource_id
+    } =
+      socket.assigns
+
     params =
       if search_term not in ["", nil] do
-        Map.merge(socket.assigns.params, %{"search_term" => search_term})
+        Map.merge(params, %{"search_term" => search_term})
       else
-        Map.drop(socket.assigns.params, ["search_term"])
+        Map.drop(params, ["search_term"])
       end
       |> Map.drop(["target_resource_id"])
 
     {:noreply,
      push_patch(socket,
-       to: ~p"/sections/#{socket.assigns.section.slug}/learn?#{params}"
+       to: ~p"/sections/#{section.slug}/learn?#{params}"
      )
      # This event is used to expand the containers that contain a child that matches the search term
      |> push_event("js-exec", %{
-       to: "#student_learn",
+       to:
+         if(is_mobile and not is_nil(selected_unit_resource_id),
+           do: "#mobile_outline_unit",
+           else: "#student_learn"
+         ),
        attr: "data-show-matches-with-search-term"
      })}
   end
@@ -1241,11 +1265,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id="mobile_outline_unit"
+      data-show-matches-with-search-term={reset_toggle_buttons_and_expand_containers()}
       class="bg-Background-bg-primary min-h-screen p-4 flex flex-col gap-3"
       phx-hook="Scroller"
+      phx-mounted={reset_toggle_buttons_and_expand_containers()}
     >
       <.video_player />
-      <div id="mobile_outline_unit_content" phx-hook="ScrollToTheTop">
+      <div id="mobile_outline_unit_content" phx-hook="ScrollToTheTop" class="flex flex-col gap-2">
         <button
           phx-click="back_to_outline_mobile_view"
           phx-value-unit_resource_id={@selected_unit_resource_id}
@@ -1258,8 +1284,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <ComponentsUtils.timezone_info timezone={
           FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
         } />
+        <DeliveryUtils.toggle_visibility_button
+          target_selector="div[data-completed='true']"
+          class="text-Text-text-low text-sm font-medium hover:text-black dark:hover:text-white"
+        />
+        <DeliveryUtils.search_box
+          search_term={@params["search_term"]}
+          on_search="search"
+          on_change="search"
+          on_clear_search={JS.push("clear_search") |> reset_toggle_buttons()}
+        />
+        <div class="flex">
+          <DeliveryUtils.toggle_expand_button />
+        </div>
       </div>
       <div id={"outline_rows-#{@outline_view_id}"} phx-update="stream" phx-hook="ExpandContainers">
+        <.no_results_warning streams={@streams} search_term={@params["search_term"]} />
         <div :for={{node_id, unit} <- @streams.units} id={node_id} class="flex flex-col gap-2">
           <% unit_progress =
             parse_student_progress_for_resource(
@@ -1353,13 +1393,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       id="student_learn"
-      data-show-matches-with-search-term={
-        reset_toggle_buttons()
-        |> JS.dispatch("click",
-          to:
-            "button[aria-expanded='false'][data-bs-toggle='collapse'][data-child_matches_search_term]"
-        )
-      }
+      data-show-matches-with-search-term={reset_toggle_buttons_and_expand_containers()}
       class="lg:container lg:mx-auto sm:p-3 py-4 md:p-[25px]"
       phx-hook="Scroller"
     >
@@ -1380,7 +1414,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             on_search="search"
             on_change="search"
             on_clear_search={JS.push("clear_search") |> reset_toggle_buttons()}
-            class="w-64"
+            class="sm:w-64"
           />
           <div class="hidden sm:flex">
             <DeliveryUtils.toggle_expand_button />
@@ -1400,14 +1434,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="flex flex-col"
         phx-hook={if !@is_mobile, do: "ExpandContainers", else: nil}
       >
-        <div
-          :if={@streams.units.inserts == [] and @params["search_term"] not in ["", nil]}
-          class="p-3 sm:p-6"
-          role="no search results warning"
-        >
-          There are no results for the search term
-          <span class="font-bold italic">{@params["search_term"]}</span>
-        </div>
+        <.no_results_warning streams={@streams} search_term={@params["search_term"]} />
 
         <.outline_row
           :for={{node_id, row} <- @streams.units}
@@ -1972,7 +1999,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 >
                   <div
                     id={"icon-#{@row["resource_id"]}"}
-                    class="icon-chevron transition-transform duration-300"
+                    class={
+                      [
+                        "icon-chevron transition-transform duration-300",
+                        # For mobile devices, we do not represent all children in this layer,
+                        # so we indicate to the user that the resource they are looking for (with the search input)
+                        # is located within this unit.
+                        if(@is_mobile and @row["child_matches_search_term"],
+                          do: "bg-yellow-100 dark:bg-yellow-800 rounded-full scale-110 p-2"
+                        )
+                      ]
+                    }
                   >
                     <Icons.chevron_down />
                   </div>
@@ -3464,6 +3501,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
+  attr :streams, :map, required: true
+  attr :search_term, :string, required: true
+
+  def no_results_warning(assigns) do
+    ~H"""
+    <div
+      :if={@streams.units.inserts == [] and @search_term not in ["", nil]}
+      class="p-3 sm:p-6"
+      role="no search results warning"
+    >
+      There are no results for the search term <span class="font-bold italic">{@search_term}</span>
+    </div>
+    """
+  end
+
   attr :type, :string
   attr :index, :string
 
@@ -4190,6 +4242,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     js
     |> JS.dispatch("click", to: "#collapse_all_button")
     |> JS.dispatch("click", to: "#show_completed_button")
+  end
+
+  _docp = """
+  This function resets the toggle buttons to their default state ('Hide Completed' and 'Expand All')
+  and expands the containers that contain a child that matches the search term.
+  """
+
+  defp reset_toggle_buttons_and_expand_containers(js \\ %JS{}) do
+    js
+    |> reset_toggle_buttons()
+    |> JS.dispatch("click",
+      to:
+        "button[aria-expanded='false'][data-bs-toggle='collapse'][data-child_matches_search_term]"
+    )
   end
 
   defp get_available_date(date, _ctx, _format) when date in [nil, "", "Not yet scheduled"],
