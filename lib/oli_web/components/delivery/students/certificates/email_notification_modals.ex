@@ -7,6 +7,14 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
   alias OliWeb.Components.Delivery.Students.Certificates.BulkCertificateStatusEmail
   alias OliWeb.Components.Modal
 
+  def update(assigns, socket) do
+    {:ok,
+     assign(
+       socket,
+       Map.put_new(assigns, :certificate_label, GrantedCertificates.certificate_label(false))
+     )}
+  end
+
   def render(%{selected_student: nil, selected_modal: nil} = assigns) do
     ~H"""
     <div></div>
@@ -208,6 +216,9 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
       student_name={@student_name}
       platform_name={@platform_name}
       course_name={@course_name}
+      certificate_label={
+        Map.get(assigns, :certificate_label, GrantedCertificates.certificate_label(false))
+      }
     />
     """
   end
@@ -231,6 +242,8 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
       student_name: OliWeb.Common.Utils.name(assigns.selected_student),
       platform_name: assigns.platform_name,
       course_name: assigns.course_name,
+      certificate_label:
+        Map.get(assigns, :certificate_label, GrantedCertificates.certificate_label(false)),
       certificate_link:
         url(
           OliWeb.Endpoint,
