@@ -64,7 +64,9 @@ defmodule OliWeb.Components.Delivery.QuizScores do
               class="flex items-center justify-center gap-x-2 text-Text-text-button hover:text-Text-text-button-hover font-bold leading-none hover:no-underline"
               href={~p"/sections/#{@section_slug}/grades/export"}
             >
-              <span class="border-b border-transparent hover:border-Text-text-button-hover transition-all duration-100 ease-out py-1"> Download CSV</span> <Icons.download />
+              <span class="border-b border-transparent hover:border-Text-text-button-hover transition-all duration-100 ease-out py-1">
+                 Download CSV
+              </span> <Icons.download />
             </a>
           </div>
           <div class="flex flex-col gap-6">
