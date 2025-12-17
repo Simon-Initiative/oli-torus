@@ -67,7 +67,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
               <span class="border-b border-transparent hover:border-Text-text-button-hover transition-all duration-100 ease-out py-1">
                 Download CSV
               </span>
-               <Icons.download />
+              <Icons.download />
             </a>
           </div>
           <div class="flex flex-col gap-6">
