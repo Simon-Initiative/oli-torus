@@ -10156,10 +10156,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 0.625rem;
 }
 
-.w-2\/12 {
-  width: 16.666667%;
-}
-
 .w-2\/3 {
   width: 66.666667%;
 }
@@ -10258,10 +10254,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-9 {
   width: 2.25rem;
-}
-
-.w-9\/12 {
-  width: 75%;
 }
 
 .w-96 {
@@ -24203,10 +24195,6 @@ Not supports in Firefox and IE */
 
   .md\:w-2\/5 {
     width: 40%;
-  }
-
-  .md\:w-3\/12 {
-    width: 25%;
   }
 
   .md\:w-3\/5 {
