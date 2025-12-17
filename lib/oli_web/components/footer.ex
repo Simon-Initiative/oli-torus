@@ -115,7 +115,7 @@ defmodule OliWeb.Components.Footer do
     assigns = assign(assigns, privacy_policies_url: privacy_policies_url())
 
     ~H"""
-   <div class="text-left shrink-0 relative z-10">
+    <div class="text-left shrink-0 relative z-10">
       <%= if not_blank?(@privacy_policies_url) do %>
         <a
           href="javascript:;"
