@@ -1,8 +1,12 @@
 defmodule Oli.Lti.CachedKeyProviderTest do
   use Oli.DataCase, async: false
 
+  import Mox
+
   alias Oli.Lti.CachedKeyProvider
   alias Oli.Lti.KeysetCache
+
+  setup :verify_on_exit!
 
   @test_url "https://example.com/jwks"
   # Valid test JWK from RFC 7517 Appendix A.1
@@ -46,12 +50,22 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
 
       # When a key is not found, the provider will attempt to refresh the keyset
-      # In test environment, HTTP fetch will fail, so we get a refresh failure error
+      # Mock the HTTP response to return the same keyset (key still not found)
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1]}),
+           headers: []
+         }}
+      end)
+
       assert {:error, error} =
                CachedKeyProvider.get_public_key(@test_url, "nonexistent-kid")
 
-      # The error should indicate either key not found or refresh failed
-      assert error.reason in [:key_not_found_in_keyset, :keyset_refresh_failed]
+      # The error should indicate key not found
+      assert error.reason == :key_not_found_in_keyset
     end
 
     test "retrieves same key consistently from same keyset" do
@@ -70,27 +84,33 @@ defmodule Oli.Lti.CachedKeyProviderTest do
 
   describe "get_public_key/2 with cache miss" do
     test "falls back to HTTP fetch when keyset not cached" do
-      # This test will attempt actual HTTP call which will likely fail in test environment
-      # We're testing that it attempts the fallback, not that HTTP succeeds
+      # Mock HTTP to return keys
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1]}),
+           headers: []
+         }}
+      end)
+
       result = CachedKeyProvider.get_public_key(@test_url, "test-key-1")
 
-      # Should either succeed (if test server available) or return HTTP error
-      case result do
-        {:ok, _key} ->
-          # HTTP succeeded (unlikely in test)
-          assert true
-
-        {:error, error} ->
-          # HTTP failed (expected in test)
-          assert error.reason in [:http_error, :http_request_failed, :keyset_fetch_failed]
-      end
+      # Should succeed with mocked HTTP
+      assert {:ok, _key} = result
     end
   end
 
   describe "get_public_key/2 error messages" do
     test "distinguishes between different error scenarios" do
-      # Scenario 1: Keyset not cached (will trigger HTTP which will likely fail)
+      # Scenario 1: Keyset not cached (will trigger HTTP which will fail)
       KeysetCache.clear_cache()
+
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:error, %HTTPoison.Error{reason: :timeout}}
+      end)
 
       assert {:error, error} = CachedKeyProvider.get_public_key(@test_url, "any-key")
 
@@ -100,30 +120,41 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       # Scenario 2: Keyset cached but key not found (will trigger refresh attempt)
       KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
 
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1]}),
+           headers: []
+         }}
+      end)
+
       assert {:error, error2} = CachedKeyProvider.get_public_key(@test_url, "missing-key")
 
-      # With HTTP failing, we expect refresh failure
-      assert error2.reason in [:key_not_found_in_keyset, :keyset_refresh_failed]
+      # After refresh, key still not found
+      assert error2.reason == :key_not_found_in_keyset
     end
   end
 
   describe "preload_keys/1" do
     test "can be called to preload keys for a URL" do
-      # In test environment, HTTP will likely fail
-      # We're testing the function exists and returns expected error format
+      # Mock HTTP to succeed
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1, @test_key_2]}),
+           headers: []
+         }}
+      end)
+
       result = CachedKeyProvider.preload_keys(@test_url)
 
-      case result do
-        :ok ->
-          # Succeeded (unlikely without test server)
-          assert KeysetCache.get_keyset(@test_url) |> elem(0) == :ok
-
-        {:error, error} ->
-          # Expected to fail in test environment
-          assert is_map(error)
-          assert Map.has_key?(error, :reason)
-          assert Map.has_key?(error, :msg)
-      end
+      assert result == :ok
+      # Verify keys were cached
+      assert {:ok, _} = KeysetCache.get_keyset(@test_url)
     end
   end
 
@@ -244,26 +275,24 @@ defmodule Oli.Lti.CachedKeyProviderTest do
       # Initial cache with one key
       KeysetCache.put_keyset(@test_url, [@test_key_1], 3600)
 
-      # Try to get a key that doesn't exist (simulating key rotation)
-      # This will trigger a refresh attempt via HTTP
-      result = CachedKeyProvider.get_public_key(@test_url, "new-rotated-key")
+      # Mock HTTP to return both keys (simulating platform added a new key)
+      Oli.Test.MockHTTP
+      |> expect(:get, fn @test_url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [@test_key_1]}),
+           headers: []
+         }}
+      end)
 
-      # In test environment, HTTP will fail
-      # We're verifying the refresh attempt happens
-      case result do
-        {:ok, _key} ->
-          # Would succeed if test server provided the new key
-          assert true
+      # Try to get a key that doesn't exist in cache
+      # This will trigger refresh, but the key still won't be found
+      result = CachedKeyProvider.get_public_key(@test_url, "missing-rotated-key")
 
-        {:error, error} ->
-          # Expected: either key not found after refresh, or HTTP error
-          assert error.reason in [
-                   :key_not_found_in_keyset,
-                   :keyset_refresh_failed,
-                   :http_error,
-                   :http_request_failed
-                 ]
-      end
+      # Should return error that key not found after refresh
+      assert {:error, error} = result
+      assert error.reason == :key_not_found_in_keyset
     end
   end
 end

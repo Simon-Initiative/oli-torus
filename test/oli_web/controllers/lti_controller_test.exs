@@ -158,7 +158,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      |> expect(:get, 1, mock_keyset_endpoint("https://example.com/jwks", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -215,7 +215,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      |> expect(:get, 1, mock_keyset_endpoint("https://example.com/jwks", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -247,7 +247,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      |> expect(:get, 1, mock_keyset_endpoint("https://example.com/jwks", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -309,7 +309,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      |> expect(:get, 1, mock_keyset_endpoint("https://example.com/jwks", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -341,7 +341,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      |> expect(:get, 1, mock_keyset_endpoint("https://example.com/jwks", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -1025,7 +1025,7 @@ defmodule OliWeb.LtiControllerTest do
   end
 
   defp mock_keyset_endpoint(url, platform_jwk) do
-    fn ^url ->
+    fn ^url, _headers, _opts ->
       {:ok,
        %HTTPoison.Response{
          status_code: 200,

@@ -233,7 +233,8 @@ defmodule Oli.Lti.CachedKeyProvider do
   end
 
   defp http_get(url) do
-    HTTPoison.get(url, [], timeout: @http_timeout_ms, recv_timeout: @http_timeout_ms)
+    http_client = Lti_1p3.Config.http_client!()
+    http_client.get(url, [], timeout: @http_timeout_ms, recv_timeout: @http_timeout_ms)
   end
 
   defp validate_https_url(url) do

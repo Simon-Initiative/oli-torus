@@ -2,10 +2,13 @@ defmodule Oli.Lti.KeysetRefreshWorkerTest do
   use Oli.DataCase
   use Oban.Testing, repo: Oli.Repo
 
+  import Mox
   import Oli.Factory
 
   alias Oli.Lti.KeysetRefreshWorker
   alias Oli.Lti.KeysetCache
+
+  setup :verify_on_exit!
 
   setup do
     # Clear cache before each test
@@ -59,10 +62,28 @@ defmodule Oli.Lti.KeysetRefreshWorkerTest do
       _reg_with_key2 = insert(:lti_registration, %{key_set_url: "https://platform2.com/jwks"})
       _reg_without_key = insert(:lti_registration, %{key_set_url: nil})
 
+      # Mock HTTP responses for both URLs
+      test_key = %{
+        "kty" => "RSA",
+        "kid" => "test-key",
+        "use" => "sig",
+        "n" => "test-n",
+        "e" => "AQAB"
+      }
+
+      Oli.Test.MockHTTP
+      |> expect(:get, 2, fn _url, _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [test_key]}),
+           headers: []
+         }}
+      end)
+
       job = %Oban.Job{args: %{"refresh_all" => true}}
 
-      # The worker should complete without error (even if HTTP requests fail)
-      # The actual HTTP fetching is tested separately
+      # The worker should complete without error
       assert :ok = KeysetRefreshWorker.perform(job)
     end
 
@@ -79,14 +100,29 @@ defmodule Oli.Lti.KeysetRefreshWorkerTest do
     # by checking the TTL used when caching
 
     test "uses default TTL when no cache-control header present" do
-      # This would require integration testing with actual HTTP responses
-      # For now, we verify the worker completes successfully
       registration = insert(:lti_registration, %{key_set_url: "https://platform.com/jwks"})
       job = %Oban.Job{args: %{"registration_id" => registration.id}}
 
-      # The worker will attempt HTTP fetch which may fail in test environment
-      # That's expected - we're testing the worker structure, not HTTP success
-      KeysetRefreshWorker.perform(job)
+      test_key = %{
+        "kty" => "RSA",
+        "kid" => "test-key",
+        "use" => "sig",
+        "n" => "test-n",
+        "e" => "AQAB"
+      }
+
+      # Mock HTTP response without cache-control header
+      Oli.Test.MockHTTP
+      |> expect(:get, fn "https://platform.com/jwks", _headers, _opts ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: Jason.encode!(%{"keys" => [test_key]}),
+           headers: []
+         }}
+      end)
+
+      assert :ok = KeysetRefreshWorker.perform(job)
     end
   end
 
