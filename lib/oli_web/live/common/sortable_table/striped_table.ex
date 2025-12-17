@@ -101,7 +101,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     <tr
       id={@row_id}
       data-row-id={@row_id}
-      class={@row_class <> " hover:bg-Table-table-hover" <>
+      class={@row_class <> " group hover:bg-Table-table-hover" <>
     if Map.get(@row, :selected) || id_field(@row, @model) == @model.selected,
       do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black",
       else: ""}
@@ -110,7 +110,13 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
       phx-value-id={id_field(@row, @model)}
     >
       <%= for column_spec <- @model.column_specs do %>
-        <td class={"#{column_spec.td_class} border-r p-2 pl-2.5"}>
+        <td class={
+          "#{column_spec.td_class} border-r p-2 pl-2.5" <>
+          if(String.contains?(column_spec.td_class || "", "sticky"),
+            do: " #{@additional_row_class} group-hover:bg-Table-table-hover",
+            else: ""
+          )
+        }>
           <div class={if Map.get(@model.data, :fade_data, false), do: "fade-text", else: ""}>
             <%= if is_nil(column_spec.render_fn) do %>
               {ColumnSpec.default_render_fn(column_spec, @row)}
