@@ -72,8 +72,11 @@ export const ChoicesDelivery: React.FC<Props> = ({
     (choiceId: ChoiceId, index: number) => (event: React.KeyboardEvent) => {
       const { key } = event;
 
-      // Handle arrow key navigation (move focus without selecting)
-      if (key === 'ArrowDown' || key === 'ArrowRight') {
+      // Guard against empty choices array
+      if (choices.length === 0) return;
+
+      // Handle arrow key navigation (only for radio groups, not checkboxes per WAI-ARIA)
+      if (!multiSelect && (key === 'ArrowDown' || key === 'ArrowRight')) {
         event.preventDefault();
         const nextIndex = (index + 1) % choices.length;
         setFocusedIndex(nextIndex);
@@ -81,7 +84,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
         return;
       }
 
-      if (key === 'ArrowUp' || key === 'ArrowLeft') {
+      if (!multiSelect && (key === 'ArrowUp' || key === 'ArrowLeft')) {
         event.preventDefault();
         const prevIndex = (index - 1 + choices.length) % choices.length;
         setFocusedIndex(prevIndex);
@@ -97,7 +100,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
         }
       }
     },
-    [choices.length, isEvaluated, disabled, onSelect],
+    [choices.length, multiSelect, isEvaluated, disabled, onSelect],
   );
 
   // For checkbox groups, all items can be in tab order
@@ -120,6 +123,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
           ref={(el) => (choiceRefs.current[index] = el)}
           role={itemRole}
           aria-checked={isSelected(choice.id)}
+          aria-disabled={disabled}
           aria-label={`choice ${index + 1}`}
           tabIndex={getTabIndex(index)}
           onClick={disabled ? undefined : onClicked(choice.id, index)}
