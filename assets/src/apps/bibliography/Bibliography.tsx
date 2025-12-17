@@ -10,13 +10,13 @@ import { modalActions } from 'actions/modal';
 import { BibEntry } from 'data/content/bibentry';
 import { Message, Severity, createMessage } from 'data/messages/messages';
 import * as BibPersistence from 'data/persistence/bibentry';
+import { toCslArray } from 'utils/bibliography';
 import { BibEntryEditor } from './BibEntryEditor';
 import { BibEntryView } from './BibEntryView';
 import { EditBibEntry } from './EditBibEntry';
 import { PlainEntryEditor } from './PlainEntryEditor';
 import { CitationModel, fromEntryType } from './citation_model';
 import { cslSchema, toFriendlyLabel } from './common';
-import { toCslArray } from 'utils/bibliography';
 
 const ajv = new Ajv({ removeAdditional: true, allowUnionTypes: true });
 const validate = ajv.compile(cslSchema);
