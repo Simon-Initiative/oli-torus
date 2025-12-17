@@ -3508,6 +3508,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div
       :if={@streams.units.inserts == [] and @search_term not in ["", nil]}
+      id="no-results-warning"
       class="p-3 sm:p-6"
       role="no search results warning"
     >
@@ -4249,9 +4250,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   and expands the containers that contain a child that matches the search term.
   """
 
-  defp reset_toggle_buttons_and_expand_containers(js \\ %JS{}) do
-    js
-    |> reset_toggle_buttons()
+  defp reset_toggle_buttons_and_expand_containers() do
+    reset_toggle_buttons()
     |> JS.dispatch("click",
       to:
         "button[aria-expanded='false'][data-bs-toggle='collapse'][data-child_matches_search_term]"
