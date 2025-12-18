@@ -884,7 +884,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted py-2 text-sm font-semibold hover:text-[#FFFFFF] hover:no-underline lg:hidden focus:outline focus:outline-2 focus:outline-white focus:shadow-[0_0_0_4px_#0062F2]"
+                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted py-2 text-sm font-semibold hover:text-Text-text-white hover:no-underline lg:hidden focus-ring-Fill-Buttons-fill-primary"
               >
                 <Icons.chevron_right class="rotate-90" />
                 <span>Previous</span>
@@ -901,7 +901,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary text-[#FFFFFF] py-2 text-sm font-semibold hover:text-[#FFFFFF] hover:no-underline lg:hidden focus:outline focus:outline-2 focus:outline-white focus:shadow-[0_0_0_4px_#0062F2]"
+                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary text-Text-text-white py-2 text-sm font-semibold hover:text-Text-text-white hover:no-underline lg:hidden focus-ring-Fill-Buttons-fill-primary"
               >
                 <span>Next</span>
                 <Icons.chevron_right class="-rotate-90" />
@@ -942,7 +942,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2]/50 flex items-center justify-center focus:outline focus:outline-2 focus:outline-white focus:shadow-[0_0_0_4px_#0062F2]"
+                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-Fill-Buttons-fill-primary/50 flex items-center justify-center focus-ring-Fill-Buttons-fill-primary"
               >
                 <.left_arrow />
               </.link>
@@ -976,7 +976,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2] flex items-center justify-center focus:outline focus:outline-2 focus:outline-white focus:shadow-[0_0_0_4px_#0062F2]"
+                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-Fill-Buttons-fill-primary flex items-center justify-center focus-ring-Fill-Buttons-fill-primary"
               >
                 <.right_arrow />
               </.link>

@@ -133,7 +133,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
           onClick={disabled ? undefined : onClicked(choice.id, index)}
           onKeyDown={disabled ? undefined : onKeyDown(choice.id, index)}
           className={classNames(
-            styles.choicesChoiceRow,
+            'rounded outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary',
             isSelected(choice.id) ? 'selected' : '',
             disabled ? 'disabled' : '',
           )}
