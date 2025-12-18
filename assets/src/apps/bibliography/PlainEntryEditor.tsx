@@ -7,11 +7,12 @@ const Cite = (window as any).cite;
 
 export interface PlainEntryEditorProps {
   bibEntry?: BibEntry;
-  onContentChange: (content: string) => void;
+  onContentChange: (content: string, valid: boolean) => void;
 }
 
 export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEntryEditorProps) => {
   const [value, setValue] = useState<string>('');
+  const [parseError, setParseError] = useState<string | null>(null);
 
   useEffect(() => {
     if (props.bibEntry) {
@@ -25,9 +26,17 @@ export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEn
           lang: 'en-US',
         });
         setValue(cslData);
-        props.onContentChange(cslData);
+        props.onContentChange(cslData, true);
+        setParseError(null);
       } catch (e) {
-        // ignore parse errors for legacy entries; leave textarea empty
+        // Show legacy/raw content and mark invalid until user fixes it
+        const rawContent =
+          typeof props.bibEntry?.content.data === 'string'
+            ? props.bibEntry?.content.data
+            : JSON.stringify(props.bibEntry?.content.data ?? '', null, 2);
+        setValue(rawContent);
+        setParseError('Could not parse existing entry; please fix the format before saving.');
+        props.onContentChange(rawContent, false);
       }
     }
   }, []);
@@ -35,7 +44,9 @@ export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEn
   const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const changedVal = event.target.value;
     setValue(changedVal);
-    props.onContentChange(changedVal);
+    // Once the user edits, allow save if they have entered some content
+    setParseError(null);
+    props.onContentChange(changedVal, changedVal.trim().length > 0);
   };
 
   return (
@@ -53,6 +64,7 @@ export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEn
         </>
       )}
       <textarea className="w-full bg-inherit" rows={20} onChange={handleOnChange} value={value} />
+      {parseError ? <div className="text-danger mt-2">{parseError}</div> : null}
     </div>
   );
 };

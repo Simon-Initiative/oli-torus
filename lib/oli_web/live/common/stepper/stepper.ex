@@ -73,6 +73,8 @@ defmodule OliWeb.Common.Stepper do
                 id="automation-go-to-course"
                 class="absolute w-6 h-6 opacity-0 -left-10 -top-10"
                 aria-hidden="true"
+                aria-disabled="true"
+                tabindex="-1"
                 phx-click={
                   @selected_step.on_next_step
                   |> fade_out_transition("stepper_content")
