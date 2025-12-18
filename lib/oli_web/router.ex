@@ -1133,7 +1133,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
-    pipe_through([:browser, :delivery_protected])
+    pipe_through([:browser, :require_section, :delivery_protected])
 
     get(
       "/downloads/progress/:container_id/:title",
