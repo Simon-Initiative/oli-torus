@@ -248,7 +248,9 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
           const parsed = toCslArray(bibEntry.content.data);
           const citeModel: CitationModel | undefined =
             (parsed[0] as CitationModel) ||
-            (Array.isArray(bibEntry.content.data) ? (bibEntry.content.data[0] as CitationModel) : undefined);
+            (Array.isArray(bibEntry.content.data)
+              ? (bibEntry.content.data[0] as CitationModel)
+              : undefined);
 
           if (!citeModel) return;
 
