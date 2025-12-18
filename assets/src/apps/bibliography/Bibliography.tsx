@@ -268,9 +268,6 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
       };
 
       const onManualEdit = () => {
-        const bibEntry: BibEntry | undefined = bibEntrys.get(key);
-        if (!bibEntry) return;
-
         if (!citeModel) {
           const message = createMessage({
             guid: `bib-manual-edit-error-${key}`,
