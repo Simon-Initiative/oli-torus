@@ -1097,8 +1097,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     end
   end
 
-  defp authorized_to_delete?(post, current_user, section) do
+  defp authorized_to_delete?(post, %Oli.Accounts.User{} = current_user, section) do
     post.user_id == current_user.id ||
       is_section_instructor_or_admin?(section.slug, current_user)
   end
+
+  defp authorized_to_delete?(_, _, _), do: false
 end

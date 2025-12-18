@@ -1845,10 +1845,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
-  defp authorized_to_delete?(post, current_user, section) do
+  defp authorized_to_delete?(post, %Oli.Accounts.User{} = current_user, section) do
     post.user_id == current_user.id ||
       is_section_instructor_or_admin?(section.slug, current_user)
   end
+
+  defp authorized_to_delete?(_, _, _), do: false
 
   defp slim_assigns(socket) do
     Enum.reduce(@required_keys_per_assign, socket, fn {assign_name, {required_keys, struct}},
