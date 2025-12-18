@@ -245,8 +245,13 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
       const onManualEdit = () => {
         const bibEntry: BibEntry | undefined = bibEntrys.get(key);
         if (bibEntry) {
-          const citeModel: CitationModel =
-            (toCslArray(bibEntry.content.data)[0] as CitationModel) || bibEntry.content.data[0];
+          const parsed = toCslArray(bibEntry.content.data);
+          const citeModel: CitationModel | undefined =
+            (parsed[0] as CitationModel) ||
+            (Array.isArray(bibEntry.content.data) ? (bibEntry.content.data[0] as CitationModel) : undefined);
+
+          if (!citeModel) return;
+
           onManualCreateOrEdit(citeModel, bibEntry);
         }
       };

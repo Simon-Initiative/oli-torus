@@ -10,20 +10,21 @@ export function toCiteInput(raw: any) {
   if (Array.isArray(raw)) return raw;
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
-    if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && trimmed.endsWith('}')) {
+
+    // Avoid duplicated heuristics by only parsing when delimiters match
+    const firstChar = trimmed[0];
+    const lastChar = trimmed[trimmed.length - 1];
+    const hasMatchingDelimiters =
+      (firstChar === '{' && lastChar === '}') || (firstChar === '[' && lastChar === ']');
+
+    if (hasMatchingDelimiters) {
       try {
         return JSON.parse(trimmed);
       } catch (e) {
         // fall through to raw string
       }
     }
-    if ((trimmed.startsWith('[') || trimmed.startsWith('{')) && trimmed.endsWith(']')) {
-      try {
-        return JSON.parse(trimmed);
-      } catch (e) {
-        // fall through
-      }
-    }
+
     return raw;
   }
 
