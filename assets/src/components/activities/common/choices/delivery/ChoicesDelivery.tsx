@@ -97,7 +97,9 @@ export const ChoicesDelivery: React.FC<Props> = ({
       }
 
       // Handle selection with Space or Enter
+      // Only handle if the choice row itself is focused, not a nested interactive element
       if (key === ' ' || key === 'Enter') {
+        if (event.target !== event.currentTarget) return;
         event.preventDefault();
         if (!isEvaluated && !disabled) {
           onSelect(choiceId);
