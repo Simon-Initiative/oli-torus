@@ -944,6 +944,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
               tooltip="Previous Page"
             >
               <.link
+                aria-label="previous"
                 href={
                   resource_navigation_url(
                     @previous_page,
@@ -978,6 +979,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             </div>
             <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
               <.link
+                aria-label="next"
                 href={
                   resource_navigation_url(
                     @next_page,
@@ -1065,6 +1067,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :if={@view == :adaptive_chromeless}
         href={@to}
         class="hover:no-underline hover:scale-105 cursor-pointer"
+        aria-label="Back"
       >
         <Icons.left_arrow class="hover:opacity-100 hover:scale-105 fill-[#9D9D9D]" />
       </.link>
@@ -1072,6 +1075,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :if={@view != :adaptive_chromeless}
         navigate={@to}
         class="hover:no-underline hover:scale-105 cursor-pointer"
+        aria-label="Back"
       >
         <Icons.left_arrow class="hover:opacity-100 hover:scale-105 fill-[#9D9D9D]" />
       </.link>
