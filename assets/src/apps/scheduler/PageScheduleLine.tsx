@@ -14,6 +14,7 @@ interface ScheduleLineProps {
   indent: number;
   rowColor: string;
   dayGeometry: DayGeometry;
+  minScheduleWidth: number;
 }
 
 export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
@@ -22,6 +23,7 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
   indent,
   rowColor,
   dayGeometry,
+  minScheduleWidth,
 }) => {
   const dispatch = useDispatch();
   const isSelected = useSelector(getSelectedId) === item.id;
@@ -95,7 +97,10 @@ export const PageScheduleLine: React.FC<ScheduleLineProps> = ({
           <div style={{ paddingLeft: 20 + (1 + indent) * 10 }}>{item.title}</div>
         </td>
 
-        <td className="relative p-0" style={removedBackgroundColor}>
+        <td
+          className="relative p-0"
+          style={{ ...removedBackgroundColor, minWidth: minScheduleWidth }}
+        >
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
 
           <PageDragBar

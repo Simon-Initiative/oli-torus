@@ -192,19 +192,20 @@ export const weekGeometry = (dayGeometry: DayGeometry): WeekGeometry[] => {
   if (weekCount > 70) return [];
   const groupingCount = weekCount < 30 ? 7 : weekCount < 50 ? 14 : 21;
 
-  return dayGeometry.geometry.reduce((acc, g, index) => {
-    const last = acc[acc.length - 1];
+  const totalDays = dayGeometry.geometry.length;
+  // Calculate consistent width per week based on groupingCount
+  // This ensures all weeks have the same width regardless of rounding issues
+  const consistentWeekWidth = Math.floor((groupingCount / totalDays) * dayGeometry.availableWidth);
 
+  return dayGeometry.geometry.reduce((acc, g, index) => {
     if (index % groupingCount === 0) {
       acc.push({
-        width: g.width,
+        width: consistentWeekWidth,
         label: `Wk ${Math.floor(index / 7) + 1}`,
         dateLabel: generateWeekLabel(g.date),
         month: g.date.getMonth(),
         year: g.date.getFullYear(),
       });
-    } else {
-      last.width += g.width;
     }
 
     return acc;
