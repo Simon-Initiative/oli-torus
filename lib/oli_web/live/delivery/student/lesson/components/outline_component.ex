@@ -70,6 +70,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       >
         <button
           phx-click="toggle_outline_sidebar"
+          aria-label="Close"
           class="hidden sm:inline-flex self-stretch px-2 justify-end items-center gap-2.5 hover:cursor-pointer"
         >
           <i class="fa-solid fa-xmark hover:scale-110"></i>
@@ -104,6 +105,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       <div class="flex items-center justify-center sm:hidden bg-Surface-surface-background h-16 mx-3 p-4 border-t border-Border-border-default">
         <button
           phx-click="toggle_outline_sidebar"
+          aria-label="Close"
           class="text-Specially-Tokens-Text-text-button-secondary font-semibold text-sm leading-4 px-8 py-3 border border-Border-border-bold h-10 rounded-lg w-full"
         >
           Close
