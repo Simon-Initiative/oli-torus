@@ -221,6 +221,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     <button
       role="toggle notes button"
       data-view="desktop"
+      aria-label="Toggle Notes panel"
+      aria-pressed={to_string(@is_active || false)}
       class={[
         "flex flex-col items-center rounded-lg bg-Surface-surface-background hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
         if(@is_active,
@@ -570,6 +572,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             :if={@on_toggle_reaction}
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
             role="reactions"
+            aria-label="thumbs up"
+            aria-pressed={to_string(get_in(@post.reaction_summaries, [:like, :reacted]) || false)}
             phx-click={@on_toggle_reaction}
             phx-value-reaction={:like}
             phx-value-post-id={assigns.post.id}
@@ -589,6 +593,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               if(@has_unread_replies, do: "text-primary", else: "text-gray-500")
             ]}
             role="replies"
+            aria-label="add reply"
             phx-click={@on_toggle_replies}
             phx-value-post-id={assigns.post.id}
           >
@@ -613,6 +618,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
                   else: "hover:bg-gray-100 dark:hover:bg-gray-700"
                 )
               ]}
+              aria-label="Delete note"
               phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
               phx-value-post-id={@post.id}
               phx-value-visibility={@post.visibility}
@@ -643,6 +649,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
                   else: "hover:bg-gray-100 dark:hover:bg-gray-700"
                 )
               ]}
+              aria-label="Delete note"
               phx-click={JS.push("set_delete_post_id") |> Modal.show_modal("delete_post_modal")}
               phx-value-post-id={@post.id}
               phx-value-visibility={@post.visibility}
@@ -772,6 +779,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             type="button"
             variant={:secondary}
             phx-click={Modal.hide_modal("delete_post_modal")}
+            aria-label="Close"
           >
             Cancel
           </.button>

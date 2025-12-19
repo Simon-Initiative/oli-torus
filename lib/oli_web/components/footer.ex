@@ -75,7 +75,10 @@ defmodule OliWeb.Components.Footer do
 
     ~H"""
     <div class="flex-1 text-left sm:text-center">
-      {@footer_text}<a href={@footer_link_1_location} target="_blank"><%= @footer_link_1_text %></a>
+      {@footer_text}
+      <%= if not_blank?(@footer_link_1_text) and not_blank?(@footer_link_1_location) do %>
+        <a href={@footer_link_1_location} target="_blank">{@footer_link_1_text}</a>
+      <% end %>
     </div>
     """
   end
@@ -89,7 +92,9 @@ defmodule OliWeb.Components.Footer do
 
     ~H"""
     <div class="shrink-0 text-left">
-      <a href={@footer_link_2_location} target="_blank">{@footer_link_2_text}</a>
+      <%= if not_blank?(@footer_link_2_text) and not_blank?(@footer_link_2_location) do %>
+        <a href={@footer_link_2_location} target="_blank">{@footer_link_2_text}</a>
+      <% end %>
     </div>
     """
   end
@@ -111,13 +116,15 @@ defmodule OliWeb.Components.Footer do
 
     ~H"""
     <div class="text-left shrink-0 relative z-10">
-      <a
-        href="javascript:;"
-        onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{@privacy_policies_url}'})"}
-        class={[@class, "whitespace-nowrap"]}
-      >
-        Cookie Preferences
-      </a>
+      <%= if not_blank?(@privacy_policies_url) do %>
+        <a
+          href="javascript:;"
+          onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{@privacy_policies_url}'})"}
+          class={[@class, "whitespace-nowrap"]}
+        >
+          Cookie Preferences
+        </a>
+      <% end %>
     </div>
     """
   end
@@ -126,9 +133,11 @@ defmodule OliWeb.Components.Footer do
     assigns = assign(assigns, privacy_policies_url: privacy_policies_url())
 
     ~H"""
-    <script>
-      OLI.onReady(() => OLI.retrieveCookies('<%= ~p"/consent/cookie" %>', {privacyPoliciesUrl: '<%= @privacy_policies_url %>'}));
-    </script>
+    <%= if not_blank?(@privacy_policies_url) do %>
+      <script>
+        OLI.onReady(() => OLI.retrieveCookies('<%= ~p"/consent/cookie" %>', {privacyPoliciesUrl: '<%= @privacy_policies_url %>'}));
+      </script>
+    <% end %>
     """
   end
 
@@ -147,4 +156,7 @@ defmodule OliWeb.Components.Footer do
   defp version(), do: Application.fetch_env!(:oli, :build).version
 
   defp sha(), do: Application.fetch_env!(:oli, :build).sha |> String.upcase()
+
+  defp not_blank?(value) when is_binary(value), do: String.trim(value) != ""
+  defp not_blank?(_), do: false
 end

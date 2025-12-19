@@ -5,6 +5,7 @@ import { CheckboxListener } from './checkbox_listener';
 import { ClickOutside } from './click_outside';
 import { ClickExecJS, HoverAway } from './click_variations';
 import { ConditionalToggle } from './conditional_toggle';
+import { ContainerToggleAriaLabel } from './container_toggle_aria_label';
 import { CopyListener } from './copy_listener';
 import { CopyToClipboard } from './copy_to_clipboard';
 import { Countdown } from './countdown';
@@ -128,4 +129,5 @@ export const Hooks = {
   ReadMoreToggle,
   TagsComponent,
   ScrollToTheTop,
+  ContainerToggleAriaLabel,
 };
