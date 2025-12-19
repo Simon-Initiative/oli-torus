@@ -1,10 +1,10 @@
 /**
- * UnitToggleAriaLabel Hook
+ * ContainerToggleAriaLabel Hook
  *
  * Keeps accordion toggle buttons in Learn outline view labeled with
- * "Expand Unit X" / "Collapse Unit X" based on aria-expanded.
+ * "Expand/Collapse Unit X" or "Expand/Collapse Module X" based on aria-expanded.
  */
-export const UnitToggleAriaLabel = {
+export const ContainerToggleAriaLabel = {
   mounted() {
     this.updateLabel();
     this.observer = new MutationObserver(() => this.updateLabel());
@@ -18,8 +18,9 @@ export const UnitToggleAriaLabel = {
   },
   updateLabel() {
     const expanded = this.el.getAttribute('aria-expanded') === 'true';
-    const unitNumber = this.el.getAttribute('data-unit-number') || '';
+    const labelType = this.el.getAttribute('data-label-type') || 'Unit';
+    const number = this.el.getAttribute('data-label-number') || '';
     const state = expanded ? 'Collapse' : 'Expand';
-    this.el.setAttribute('aria-label', `${state} Unit ${unitNumber}`.trim());
+    this.el.setAttribute('aria-label', `${state} ${labelType} ${number}`.trim());
   },
 };

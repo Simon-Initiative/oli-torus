@@ -56,7 +56,7 @@ import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
 import { AutoHideTooltip, Popover, TooltipInit, TooltipWithTarget } from './tooltip';
-import { UnitToggleAriaLabel } from './unit_toggle_aria_label';
+import { ContainerToggleAriaLabel } from './container_toggle_aria_label';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
@@ -129,5 +129,5 @@ export const Hooks = {
   ReadMoreToggle,
   TagsComponent,
   ScrollToTheTop,
-  UnitToggleAriaLabel,
+  ContainerToggleAriaLabel,
 };

@@ -1674,14 +1674,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   class="btn btn-block px-0 transition-transform duration-300"
                   type="button"
                   id={"unit-toggle-#{@row["resource_id"]}"}
-                  phx-hook="UnitToggleAriaLabel"
+                  phx-hook="ContainerToggleAriaLabel"
                   phx-click={
                     JS.toggle_class("rotate-180",
                       to: "#icon-#{@row["resource_id"]}"
                     )
                   }
                   phx-value-id={@row["resource_id"]}
-                  data-unit-number={@row["numbering"]["index"]}
+                  data-label-type="Unit"
+                  data-label-number={@row["numbering"]["index"]}
                   data-bs-toggle="collapse"
                   data-bs-target={"#collapse-#{@row["resource_id"]}"}
                   data-child_matches_search_term={@row["child_matches_search_term"]}
@@ -1874,6 +1875,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <button
                   class="btn btn-block px-0 transition-transform duration-300"
                   type="button"
+                  id={"module-toggle-#{@row["resource_id"]}"}
+                  phx-hook="ContainerToggleAriaLabel"
                   phx-click={
                     JS.toggle_class("rotate-180",
                       to: "#icon-#{@row["resource_id"]}"
@@ -1883,6 +1886,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     )
                   }
                   phx-value-id={@row["resource_id"]}
+                  data-label-type="Module"
+                  data-label-number={@row["numbering"]["index"]}
                   data-bs-toggle="collapse"
                   data-bs-target={"#collapse-#{@row["resource_id"]}"}
                   data-child_matches_search_term={@row["child_matches_search_term"]}
