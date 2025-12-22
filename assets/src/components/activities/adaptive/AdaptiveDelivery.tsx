@@ -192,6 +192,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
               ...readyResults.context,
               host: props.mountPoint,
               domain: domain || adaptivityDomain,
+              responsiveLayout: props?.context?.responsiveLayout || false,
             },
             env,
           });
@@ -233,7 +234,11 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           });
           const context = {
             snapshot,
-            context: { mode: 'REVIEW', host: props.mountPoint },
+            context: {
+              mode: 'REVIEW',
+              host: props.mountPoint,
+              responsiveLayout: props?.context?.responsiveLayout || false,
+            },
             env: scriptEnv,
             domain: adaptivityDomain,
             initStateFacts: {},
@@ -264,7 +269,12 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
     const { snapshot, context, env } = await partInit(payload.id.toString());
     // TODO: something with save result? check for errors?
-    return { snapshot, context, env };
+    return {
+      snapshot,
+      context,
+      env,
+      responsiveLayout: props?.context?.responsiveLayout || false,
+    };
   };
 
   const handlePartReady = async (payload: { id: string | number }) => {

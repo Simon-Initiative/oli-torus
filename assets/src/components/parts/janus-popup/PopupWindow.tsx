@@ -21,6 +21,7 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
   snapshot = {},
   env,
 }) => {
+  const responsiveLayout = context?.responsiveLayout ?? false;
   const popupModalStyles: CSSProperties = {
     width: config?.width || 300,
   };
@@ -141,7 +142,11 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
             x
           </span>
         </button>
-        <PartsLayoutRenderer onPartInit={handlePartInit} parts={parts}></PartsLayoutRenderer>
+        <PartsLayoutRenderer
+          onPartInit={handlePartInit}
+          parts={parts}
+          responsiveLayout={responsiveLayout}
+        />
       </div>
     </div>
   );
