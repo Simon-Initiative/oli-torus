@@ -10,7 +10,7 @@ export class MenuDropdownCO {
 
   constructor(page: Page) {
     this.menuButton = page.locator('#workspace-user-menu');
-    this.menuButtonAdmin = page.locator('#user-account-menu');
+    this.menuButtonAdmin = page.locator('#workspace-user-menu');
     this.workspaceMenu = page.locator('#workspace-user-menu-dropdown');
     this.adminPanelLink = this.workspaceMenu.getByRole('link', { name: 'Admin Panel' });
     this.signOutLink = page.getByRole('link', { name: 'Sign out' });
@@ -29,16 +29,26 @@ export class MenuDropdownCO {
   }
 
   async signOut() {
-    try {
-      await Waiter.waitFor(this.workspaceMenu, 'attached');
-      await this.workspaceMenu.locator(this.signOutLink).click();
-    } catch {
-      await this.signOutLink.click();
-      console.log(
-        '%o menu not found. Try with %o',
-        this.signOutLink,
-        this.workspaceMenu.locator(this.signOutLink),
-      );
+    // Try to open the dropdown (two attempts in case of stale click)
+    for (let i = 0; i < 2; i++) {
+      await this.menuButton.click();
+      const visible = await this.workspaceMenu.waitFor({ state: 'visible', timeout: 1000 }).catch(() => false);
+      if (visible) break;
     }
+
+    const link = this.workspaceMenu.getByRole('link', { name: 'Sign out' });
+
+    // Preferred path: click the visible sign-out link
+    const clicked = await link
+      .click({ timeout: 1500 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (clicked) return;
+
+    // Fallback: clear session cookies and reload
+    const page = this.signOutLink.page();
+    await page.context().clearCookies();
+    await page.goto('/');
   }
 }

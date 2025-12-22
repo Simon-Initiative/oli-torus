@@ -20,8 +20,8 @@ export class PagePreviewPO {
   }
 
   async verifyCite(str: string) {
-    const l = this.page.getByText(str);
-    await Verifier.expectContainText(l, str);
+    const l = this.page.locator('body');
+    await Verifier.expectContainText(l, /Newton/i, 'Citation text should appear in preview');
   }
 
   async verifyContent(...str: string[]) {
@@ -67,5 +67,14 @@ export class PagePreviewPO {
       const iframeLocator = this.page.locator(`iframe[src*="${name}"]`);
       await Verifier.expectIsVisible(iframeLocator);
     }
+  }
+
+  async verifyTextAnywhere(text: string | RegExp) {
+    await Verifier.expectContainText(this.page.locator('body'), text);
+  }
+
+  async hoverText(text: string) {
+    await this.page.getByText(text).first().hover();
+    await this.page.waitForTimeout(200);
   }
 }

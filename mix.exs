@@ -69,6 +69,7 @@ defmodule Oli.MixProject do
       "guides/process/claude-code.md",
       "guides/process/deployment.md",
       "guides/process/building.md",
+      "guides/process/testing.md",
       "guides/design/introduction.md",
       "guides/design/high-level.md",
       "guides/design/publication-model.md",

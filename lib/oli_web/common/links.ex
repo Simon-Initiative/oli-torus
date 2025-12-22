@@ -81,7 +81,8 @@ defmodule OliWeb.Common.Links do
             _ ->
               link(revision.title,
                 to: path,
-                class: class
+                class: class,
+                role: "link"
               )
           end
 
@@ -95,7 +96,7 @@ defmodule OliWeb.Common.Links do
               revision.title
             end
 
-          link(title, to: path, class: class)
+          link(title, to: path, class: class, role: "link")
 
         _ ->
           case path do
@@ -105,7 +106,8 @@ defmodule OliWeb.Common.Links do
             _ ->
               link(revision.title,
                 to: path,
-                class: class
+                class: class,
+                role: "link"
               )
           end
       end

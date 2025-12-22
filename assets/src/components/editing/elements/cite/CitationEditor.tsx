@@ -5,6 +5,7 @@ import { Model } from 'data/content/model/elements/factories';
 import { Citation } from 'data/content/model/elements/types';
 import * as ContentModel from 'data/content/model/elements/types';
 import * as BibPersistence from 'data/persistence/bibentry';
+import { toCiteInput } from 'utils/bibliography';
 import { CommandContext } from '../commands/interfaces';
 
 const Cite = (window as any).cite;
@@ -57,7 +58,7 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
   const createBibEntryEditors = () => {
     if (!bibEntrys.isEmpty()) {
       const bibOut = (bibEntry: BibEntry) => {
-        const data = new Cite(bibEntry.content.data);
+        const data = new Cite(toCiteInput(bibEntry.content.data));
         return data.format('bibliography', {
           format: 'html',
           template: 'apa',

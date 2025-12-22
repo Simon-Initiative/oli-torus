@@ -13,7 +13,9 @@ defmodule Oli.Scenarios.Directives.ProjectHandler do
           title: title,
           root: root,
           objectives: objectives,
-          tags: tags
+          tags: tags,
+          slug: slug,
+          visibility: visibility
         },
         state
       ) do
@@ -23,7 +25,9 @@ defmodule Oli.Scenarios.Directives.ProjectHandler do
         title: title || name,
         root: root,
         objectives: objectives,
-        tags: tags
+        tags: tags,
+        slug: slug,
+        visibility: visibility
       }
 
       built_project =
