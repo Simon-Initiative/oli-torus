@@ -519,7 +519,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <%= case @user.picture do %>
       <% nil -> %>
-        <div class="w-8 h-8 bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]">
+        <div
+          role="img"
+          class="w-8 h-8 bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]"
+          aria-label={"#{@user.name} profile avatar"}
+        >
           {to_initials(@user)}
         </div>
       <% picture -> %>
