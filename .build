@@ -34,8 +34,8 @@ dist/lato-latin-700-normal-2XVSBPG4.woff2
 dist/lato-latin-ext-400-normal-N27NCBWW.woff2
 dist/lato-latin-ext-700-normal-Q2L5DVMW.woff2
 dist/remixicon-QPNJX265.woff2
-dist/search_data-38D2DFE2.js
-dist/sidebar_items-C9CC5865.js
+dist/search_data-0E1D2D18.js
+dist/sidebar_items-AB740652.js
 end-user.html
 evaluationresponse.html
 explanation.html
@@ -87,5 +87,6 @@ stem.html
 studentresponse.html
 submissionaction.html
 success.html
+testing.html
 transform.html
 transformation.html

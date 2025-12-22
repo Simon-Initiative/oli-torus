@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.38.2">
+    <meta name="project" content="OLI Torus v0.32.0-b">
+
+
+    <title>Torus Testing Strategy — OLI Torus v0.32.0-b</title>
+
+    <link rel="stylesheet" href="dist/html-elixir-KV3YOVJ3.css" />
+
+    <script defer src="dist/sidebar_items-AB740652.js"></script>
+    <script defer src="docs_config.js"></script>
+    <script defer src="dist/html-DPJLHKSM.js"></script>
+
+  </head>
+  <body>
+    <script>(()=>{var t="ex_doc:settings",e="dark";var o="dark",s="light";var E="sidebar_state",n="closed";var r="sidebar_width";var a="sidebar-open";var i=new URLSearchParams(window.location.search),S=i.get("theme")||JSON.parse(localStorage.getItem(t)||"{}").theme;(S===o||S!==s&&window.matchMedia("(prefers-color-scheme: dark)").matches)&&document.body.classList.add(e);var d=sessionStorage.getItem(E),A=d!==n&&!window.matchMedia(`screen and (max-width: ${768}px)`).matches;document.body.classList.toggle(a,A);var c=sessionStorage.getItem(r);c&&document.body.style.setProperty("--sidebarWidth",`${c}px`);var p=/(Macintosh|iPhone|iPad|iPod)/.test(window.navigator.userAgent);document.documentElement.classList.toggle("apple-os",p);})();
+</script>
+
+<div class="body-wrapper">
+
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
+
+<nav id="sidebar" class="sidebar">
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
+
+        <a href="http://oli.cmu.edu" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="OLI Torus" />
+        </a>
+
+      <div>
+        <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+OLI Torus
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.32.0-b
+        </div>
+      </div>
+    </div>
+    <ul id="sidebar-list-nav" class="sidebar-list-nav" role="tablist" data-extras="GUIDES"></ul>
+  </div>
+</nav>
+
+<output role="status" id="toast"></output>
+
+<main class="content page-extra" id="main" data-type="extras">
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of OLI Torus</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search" tabindex="-1">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <div class="heading-with-actions top-heading">
+    <h1>Torus Testing Strategy</h1>
+
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/process/testing.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
+
+  </div>
+
+
+<p>This document aligns Phoenix/Elixir engineers, React engineers, and QA on how we layer tests inside Torus and how Playwright complements the existing Oli.Scenarios and LiveView suites.</p><h2 id="1-goals" class="section-heading"><a href="#1-goals" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">1. Goals</span></h2><ul><li>Keep the product shippable by continuously validating the most critical author, instructor, and learner workflows end to end.</li><li>Reserve expensive browser automation for the highest-value journeys; push narrower behaviors down into faster Elixir-based tests.</li><li>Provide deterministic data, authentication, and tooling so developers and QA can add or debug Playwright tests as part of their normal workflow.</li></ul><h2 id="2-layered-testing-model" class="section-heading"><a href="#2-layered-testing-model" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">2. Layered Testing Model</span></h2><table><thead><tr><th style="text-align: left;">Layer</th><th style="text-align: left;">Tooling</th><th style="text-align: left;">Primary Owners</th><th style="text-align: left;">What It Covers</th><th style="text-align: left;">Notes</th></tr></thead><tbody></tbody></table><table><tbody><tr><td style="text-align: left;"></td><td style="text-align: left;">Unit tests</td><td style="text-align: left;">Elixir ExUnit / TypeScript Jest</td><td style="text-align: left;">All engineers</td><td style="text-align: left;">Small, isolated functions and modules; pure logic and utilities</td><td style="text-align: left;">Fastest feedback</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;">Application logic</td><td style="text-align: left;"><a href="Oli.Scenarios.html"><code class="inline">Oli.Scenarios</code></a> (YAML → Elixir)</td><td style="text-align: left;">Backend devs</td><td style="text-align: left;">Workflows inside <code class="inline">lib/oli</code> (domain logic, DB, services)</td><td style="text-align: left;">Fast, deterministic; no UI.</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;">UI components</td><td style="text-align: left;">Phoenix LiveView tests</td><td style="text-align: left;">Backend + frontend devs</td><td style="text-align: left;">Individual LiveViews/components, validation rules, state edges</td><td style="text-align: left;">Keep selectors local to views.</td></tr><tr><td style="text-align: left;"></td><td style="text-align: left;">End-to-end flows</td><td style="text-align: left;">Playwright</td><td style="text-align: left;">Frontend devs + QA</td><td style="text-align: left;">Cross-page workflows, React-heavy screens, smoke coverage</td><td style="text-align: left;">Real browser + server; small but meaningful suite.</td></tr></tbody></table><p>Guiding principle: if a behavior can be reliably covered in Oli.Scenarios or LiveView, keep it there. Playwright is the thin top layer for “does the system work when stitched together?”</p><h2 id="3-playwright-charter" class="section-heading"><a href="#3-playwright-charter" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">3. Playwright Charter</span></h2><h3 id="3-1-scope-priorities" class="section-heading"><a href="#3-1-scope-priorities" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">3.1 Scope &amp; Priorities</span></h3><ul><li>Cross-page workflows that involve multiple UIs (React authoring, instructor scheduling, etc.).</li><li>Persona-based smoke flows proving that Author, Instructor, and Student dashboards load with no blocking errors.</li><li>System sanity checks (login, global nav, basic accessibility cues) to catch regressions earlier than staging.</li></ul><h3 id="3-2-candidate-workflows" class="section-heading"><a href="#3-2-candidate-workflows" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">3.2 Candidate Workflows</span></h3><ul><li><strong>Author</strong>: create project → add page → add question or author content → preview as student; upload and reuse media.</li><li><strong>Instructor</strong>: create section from project/product → configure schedule in React UI → confirm dates in section overview.</li><li><strong>Student</strong>: enroll (direct or via fixture) → land on home screen → open lesson → submit attempt → see score/feedback.</li><li><strong>System smoke</strong>: application boots, personas log in, core menus render, no fatal JS errors.</li></ul><h3 id="3-3-explicitly-out-of-scope-for-playwright" class="section-heading"><a href="#3-3-explicitly-out-of-scope-for-playwright" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">3.3 Explicitly Out of Scope for Playwright</span></h3><ul><li>Exhaustive validation/error matrix (cover in LiveView or unit tests).</li><li>Deep branching logic (cover in Oli.Scenarios where deterministic data is easier).</li><li>Every permission edge case (prefer targeted backend tests).</li></ul><h2 id="4-test-architecture-conventions" class="section-heading"><a href="#4-test-architecture-conventions" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">4. Test Architecture &amp; Conventions</span></h2><pre><code class="makeup elixir" translate="no"><span class="n">assets</span><span class="o">/</span><span class="n">automation</span><span class="o">/</span><span class="w">
+  </span><span class="n">playwright</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">ts</span><span class="w">
+  </span><span class="n">package</span><span class="o">.</span><span class="n">json</span><span class="w">
+  </span><span class="n">src</span><span class="o">/</span><span class="w">
+    </span><span class="n">core</span><span class="o">/</span><span class="w">                </span><span class="c1"># shared fixtures, waits, verification helpers</span><span class="w">
+    </span><span class="n">systems</span><span class="o">/</span><span class="w">
+      </span><span class="n">torus</span><span class="o">/</span><span class="w">
+        </span><span class="n">pom</span><span class="o">/</span><span class="w">             </span><span class="c1"># page objects grouped by domain (dashboard, project, course, etc.)</span><span class="w">
+        </span><span class="n">tasks</span><span class="o">/</span><span class="w">           </span><span class="c1"># workflow helpers that orchestrate multiple POMs</span><span class="w">
+  </span><span class="n">tests</span><span class="o">/</span><span class="w">
+    </span><span class="n">torus</span><span class="o">/</span><span class="w">               </span><span class="c1"># Playwright specs (config, user_accounts, workflow suites)</span><span class="w">
+    </span><span class="n">resources</span><span class="o">/</span><span class="w">           </span><span class="c1"># login/config .env files, media fixtures</span></code></pre><p>The page objects currently live in <code class="inline">assets/automation/src/systems/torus/pom/**</code>, mirroring Torus concepts (activities, project, scheduling, etc.), and reusable tasks that wire flows together live beside them under <code class="inline">tasks/</code>.</p><h3 id="4-1-page-objects-per-view" class="section-heading"><a href="#4-1-page-objects-per-view" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">4.1 Page Objects Per View</span></h3><ul><li>Each route-level screen (Phoenix LiveView or React root) gets one Page Object class that becomes the “API” for that view.</li><li>Compose flows by chaining Page Objects; tests never reference DOM structure directly.</li><li>Extract reusable widgets (date pickers, modals, activity editors) into helper classes when they appear in multiple views.</li></ul><h3 id="4-2-selector-strategy" class="section-heading"><a href="#4-2-selector-strategy" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">4.2 Selector Strategy</span></h3><ul><li>Prefer semantic locators (<code class="inline">getByRole</code>, <code class="inline">getByLabel</code>, <code class="inline">getByText</code>).</li><li>Introduce <code class="inline">data-testid</code> attributes only when semantic hooks are insufficient; keep naming consistent with page object methods.</li><li>Avoid brittle CSS chains or LiveView-internal IDs.</li></ul><h3 id="4-3-language-standards" class="section-heading"><a href="#4-3-language-standards" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">4.3 Language &amp; Standards</span></h3><ul><li>TypeScript for Playwright config, fixtures, and tests.</li><li>Keep page object methods high-level (e.g., <code class="inline">createNewProject</code>, <code class="inline">setScheduleDates</code>) so tests read like user stories.</li></ul><h2 id="5-data-environments-and-authentication" class="section-heading"><a href="#5-data-environments-and-authentication" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">5. Data, Environments, and Authentication</span></h2><h3 id="5-1-environments" class="section-heading"><a href="#5-1-environments" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">5.1 Environments</span></h3><ul><li><strong>Local deterministic (default)</strong>: start Phoenix in a dedicated <code class="inline">MIX_ENV=playwright</code>, run migrations, and seed the database using per-spec scenario YAMLs invoked from the Playwright suite. Point Playwright to <code class="inline">http://localhost:4001</code> (or similar) during CI/dev runs.</li><li><strong>Shared staging (later phase)</strong>: optional profile for release smoke runs; expect higher flake risk because data reset is harder.</li></ul><h3 id="5-2-seeding-strategy" class="section-heading"><a href="#5-2-seeding-strategy" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">5.2 Seeding Strategy</span></h3><ul><li>Reuse Oli.Scenarios and existing seeds where possible to avoid duplicating fixtures.</li><li>Provide a guarded <code class="inline">/test/scenario-yaml</code> endpoint plus YAML fixtures so tests can seed deterministic users/projects/sections (e.g., <code class="inline">author@playwright.test</code>) on demand.</li><li>For per-test isolation, expose a limited helper (CLI task, RPC call, or test-only API) that can create/delete entities without resetting the world.</li></ul><h3 id="5-3-authentication" class="section-heading"><a href="#5-3-authentication" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">5.3 Authentication</span></h3><ul><li>Avoid UI-driven login inside every test. Instead:<ul><li>Use a Playwright <code class="inline">global-setup.ts</code> script to log in as Author/Instructor/Student and store cookies via <code class="inline">storageState</code> files for reuse.</li><li>Alternatively, enable a guarded <code class="inline">/test-login</code> endpoint in test env that sets the same session cookie Phoenix would issue.</li></ul></li><li>Seed deterministic persona accounts with known credentials and permissions.</li></ul><h2 id="6-liveview-vs-react-considerations" class="section-heading"><a href="#6-liveview-vs-react-considerations" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i></a><span class="text">6. LiveView vs React Considerations</span></h2><ul><li>Playwright interacts with both; rely on auto-waiting plus semantic selectors to handle LiveView DOM patches.</li><li>For React-heavy pages (drag-and-drop, async grids), add stable test IDs and wait on explicit network calls (<code class="inline">page.waitForResponse</code>) when necessary.</li><li>Keep assertions user-visible (headings, toasts, summary text) rather than implementation-specific.</li></ul><p>Following these steps ensures Torus keeps fast feedback via Oli.Scenarios and LiveView tests while adding high-confidence, browser-level validation for the most important user journeys.</p>
+
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="building.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Production Deployments
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="introduction.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Introduction
+        </span>
+      </a>
+
+  </div>
+</div>
+    <footer class="footer">
+      <p>
+
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
+
+            <a href="OLI Torus.epub" title="ePub version">
+              Download ePub version
+            </a>
+
+        </span>
+      </p>
+
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.38.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
+  </div>
+</main>
+</div>
+
+  </body>
+</html>
