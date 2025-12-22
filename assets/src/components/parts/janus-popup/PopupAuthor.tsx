@@ -13,11 +13,14 @@ import { PopupModel } from './schema';
 import { ContextProps } from './types';
 
 // eslint-disable-next-line react/display-name
-const Designer: React.FC<any> = React.memo(({ screenModel, onChange, portal }) => {
   /* console.log('PopupAuthor: Designer', { screenModel, portal }); */
+const Designer: React.FC<any> = React.memo(({ screenModel, onChange, portal, responsiveLayout }) => {
   return (
     portal &&
-    ReactDOM.createPortal(<ScreenAuthor screen={screenModel} onChange={onChange} />, portal)
+    ReactDOM.createPortal(
+      <ScreenAuthor screen={screenModel} onChange={onChange} responsiveLayout={responsiveLayout} />,
+      portal,
+    )
   );
 });
 
@@ -31,6 +34,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   }, [configuremode]);
 
   const [context, setContext] = useState<ContextProps>({ currentActivity: '', mode: '' });
+  const [responsiveLayout, setResponsiveLayout] = useState<boolean>(false);
   const [showWindow, setShowWindow] = useState(false);
 
   const [windowModel, setWindowModel] = useState<any>(model.popup);
@@ -149,6 +153,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     console.log('PA INIT', { id, initResult });
 
     setContext((c) => ({ ...c, ...initResult.context }));
+    setResponsiveLayout(initResult.context?.responsiveLayout ?? false);
 
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
@@ -205,7 +210,12 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     <React.Fragment>
       <style>{authorStyleOverride}</style>
       {inConfigureMode && portalEl && (
-        <Designer screenModel={windowModel} onChange={handleScreenAuthorChange} portal={portalEl} />
+        <Designer
+          screenModel={windowModel}
+          onChange={handleScreenAuthorChange}
+          portal={portalEl}
+          responsiveLayout={responsiveLayout}
+        />
       )}
       <input
         role="button"
