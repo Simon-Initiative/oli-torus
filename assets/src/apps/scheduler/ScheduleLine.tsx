@@ -155,7 +155,10 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   return (
     <>
       <tr style={rowSelectColor}>
-        <td className="border-r-0 w-[1px] !p-[2px] sticky left-0 z-10" style={{ backgroundColor: rowColor }}></td>
+        <td
+          className="border-r-0 w-[1px] !p-[2px] sticky left-0 z-10"
+          style={{ backgroundColor: rowColor }}
+        ></td>
         <td
           className={`w-48 ${labelClasses} font-bold sticky left-[1px] z-10`}
           style={backgroundWithPadding}
