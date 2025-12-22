@@ -13,16 +13,22 @@ import { PopupModel } from './schema';
 import { ContextProps } from './types';
 
 // eslint-disable-next-line react/display-name
-  /* console.log('PopupAuthor: Designer', { screenModel, portal }); */
-const Designer: React.FC<any> = React.memo(({ screenModel, onChange, portal, responsiveLayout }) => {
-  return (
-    portal &&
-    ReactDOM.createPortal(
-      <ScreenAuthor screen={screenModel} onChange={onChange} responsiveLayout={responsiveLayout} />,
-      portal,
-    )
-  );
-});
+/* console.log('PopupAuthor: Designer', { screenModel, portal }); */
+const Designer: React.FC<any> = React.memo(
+  ({ screenModel, onChange, portal, responsiveLayout }) => {
+    return (
+      portal &&
+      ReactDOM.createPortal(
+        <ScreenAuthor
+          screen={screenModel}
+          onChange={onChange}
+          responsiveLayout={responsiveLayout}
+        />,
+        portal,
+      )
+    );
+  },
+);
 
 const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   const { id, model, configuremode, onConfigure, onSaveConfigure } = props;
