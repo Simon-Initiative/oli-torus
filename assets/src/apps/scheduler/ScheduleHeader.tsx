@@ -15,19 +15,25 @@ export const ScheduleHeaderRow: React.FC<ScheduleHeaderRowProps> = ({
 
   return (
     <>
-      <tr className="h-12 border-t-0 ">
-        <th className="w-[1px] p-[2px] border-r-0 border-l-0 bg-delivery-body dark:bg-delivery-body-dark"></th>
-        <th className="w-48 font-bold text-[12px] bg-delivery-body dark:bg-delivery-body-dark" />
+      <tr className="h-12 border-t-0 relative">
+        <th className="w-[1px] p-[2px] border-r-0 border-l-0 bg-delivery-body dark:bg-delivery-body-dark sticky left-0 z-20 isolate relative">
+          <div className="absolute -top-px left-0 right-0 h-px bg-delivery-body dark:bg-delivery-body-dark" />
+        </th>
+        <th className="w-48 font-bold text-[12px] bg-delivery-body dark:bg-delivery-body-dark sticky left-[1px] z-20 isolate relative">
+          <div className="absolute -top-px left-0 right-0 h-px bg-delivery-body dark:bg-delivery-body-dark" />
+        </th>
         <th
-          className="p-0 relative bg-white dark:bg-black border-t"
+          className="p-0 relative bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800"
           style={{ minWidth: totalWidth }}
         >
           <ScheduleMonths dayGeometry={dayGeometry} />
         </th>
       </tr>
-      <tr className="h-12 border-t-0 ">
-        <th className="w-[1px] p-[2px] border-r-0 bg-white dark:bg-black border-l"></th>
-        <th className="w-48 font-bold text-[12px] bg-white dark:bg-black sticky">CONTENT</th>
+      <tr className="h-12 border-t-0">
+        <th className="w-[1px] p-[2px] border-r-0 bg-white dark:bg-black border-l sticky left-0 z-20 isolate"></th>
+        <th className="w-48 font-bold text-[12px] bg-white dark:bg-black sticky left-[1px] z-20 isolate">
+          CONTENT
+        </th>
         <th
           className="p-0 relative bg-white dark:bg-black border-t-0"
           style={{ minWidth: totalWidth }}
