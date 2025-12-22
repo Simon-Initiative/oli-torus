@@ -10,4 +10,28 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
+
+  @media (max-width: 767px) {
+    .dropdown-input,
+    input[type='text'],
+    input[type='numeric'],
+    .input-ref {
+      width: 100% !important;
+      max-width: none;
+      min-width: 0;
+    }
+
+    .input-size-small,
+    .input-size-medium,
+    .input-size-large {
+      width: 100% !important;
+      max-width: none;
+    }
+
+    div.math-input math-field {
+      width: 100% !important;
+      max-width: none;
+      min-width: 0;
+    }
+  }
 }

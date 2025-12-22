@@ -568,7 +568,12 @@ $element-margin-bottom: 1.5em;
       width: 180px;
     }
     &.input-size-large {
-      width: 380px;
+      width: 100%;
+      max-width: 380px;
+
+      @media (min-width: 768px) {
+        width: 380px;
+      }
     }
   }
 
@@ -589,7 +594,12 @@ $element-margin-bottom: 1.5em;
     }
     &.input-size-large {
       math-field {
-        width: 400px;
+        width: 100%;
+        max-width: 400px;
+
+        @media (min-width: 768px) {
+          width: 400px;
+        }
       }
     }
   }
