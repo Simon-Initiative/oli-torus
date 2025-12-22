@@ -13,7 +13,6 @@ import { PopupModel } from './schema';
 import { ContextProps } from './types';
 
 // eslint-disable-next-line react/display-name
-/* console.log('PopupAuthor: Designer', { screenModel, portal }); */
 const Designer: React.FC<any> = React.memo(
   ({ screenModel, onChange, portal, responsiveLayout }) => {
     return (
