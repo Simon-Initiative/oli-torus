@@ -144,6 +144,13 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       // This allows users to scroll the page with arrow keys instead
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault();
+        e.currentTarget.blur();
+        // Manually scroll the page
+        const scrollAmount = 50;
+        window.scrollBy({
+          top: e.key === 'ArrowUp' ? -scrollAmount : scrollAmount,
+          behavior: 'instant',
+        });
       }
       // Handle Tab navigation between options for single-select
       if (e.key === 'Tab') {
