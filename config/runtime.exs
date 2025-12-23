@@ -474,7 +474,9 @@ if runtime_env == :prod do
       {
         Oban.Plugins.Cron,
         crontab: [
-          {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
+          {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default},
+          {"*/30 * * * *", Oli.Lti.KeysetRefreshWorker,
+           args: %{refresh_all: true}, queue: :default}
         ]
       }
     ],
