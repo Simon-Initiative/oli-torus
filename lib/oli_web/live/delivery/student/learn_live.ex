@@ -1709,6 +1709,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"slider_left_button_#{@unit["resource_id"]}"}
             class="hidden absolute items-center justify-start -top-1 -left-1 w-10 bg-gradient-to-r from-[#F3F4F8] dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
+            aria-label="slide left"
           >
             <i class="fa-solid fa-chevron-left ml-3"></i>
           </button>
@@ -1717,6 +1718,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             id={"slider_right_button_#{@unit["resource_id"]}"}
             class="hidden absolute items-center justify-end -top-1 -right-1 w-10 bg-gradient-to-l from-[#F3F4F8] dark:from-[#0D0C0F] h-[187px] z-20 text-gray-700 dark:text-gray-600 hover:text-xl hover:dark:text-gray-200 hover:w-16 cursor-pointer"
             tabindex="-1"
+            aria-label="slide right"
           >
             <i class="fa-solid fa-chevron-right mr-3"></i>
           </button>
@@ -1983,6 +1985,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <button
                   class="btn btn-block px-0 transition-transform duration-300 -rotate-90 sm:rotate-0 scale-75 sm:scale-100"
                   type="button"
+                  id={"unit-toggle-#{@row["resource_id"]}"}
+                  phx-hook="ContainerToggleAriaLabel"
                   phx-click={
                     if !@is_mobile,
                       do:
@@ -1991,6 +1995,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                         )
                   }
                   phx-value-id={@row["resource_id"]}
+                  data-label-type="Unit"
+                  data-label-number={@row["numbering"]["index"]}
                   data-bs-toggle={if !@is_mobile, do: "collapse", else: "none"}
                   data-bs-target={"#collapse-#{@row["resource_id"]}"}
                   data-child_matches_search_term={@row["child_matches_search_term"]}
@@ -2277,6 +2283,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   id={"toggle-module-#{@row["resource_id"]}"}
                   class="btn btn-block px-0 transition-transform duration-300 scale-75 sm:scale-100"
                   type="button"
+                  id={"module-toggle-#{@row["resource_id"]}"}
+                  phx-hook="ContainerToggleAriaLabel"
                   phx-click={
                     JS.toggle_class("rotate-180",
                       to: "#icon-#{@row["resource_id"]}"
@@ -2286,6 +2294,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     )
                   }
                   phx-value-id={@row["resource_id"]}
+                  data-label-type="Module"
+                  data-label-number={@row["numbering"]["index"]}
                   data-bs-toggle="collapse"
                   data-bs-target={"#collapse-#{@row["resource_id"]}"}
                   data-child_matches_search_term={@row["child_matches_search_term"]}

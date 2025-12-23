@@ -2,15 +2,14 @@ import { Page } from '@playwright/test';
 import { MenuDropdownCO } from '@pom/home/MenuDropdownCO';
 import { LoginPO } from '@pom/home/LoginPO';
 import { TypeUser } from '@pom/types/type-user';
-import { TestData } from 'tests/torus/test-data';
 import { SidebarButtonName, SidebarCO, SidebarLinkName } from '@pom/home/SidebarCO';
 import { Waiter } from '@core/wait/Waiter';
 import { Utils } from '@core/Utils';
 import { step } from '@core/decoration/step';
+import { getLoginData } from '@core/runtimeConfig';
 
 export class HomeTask {
   private readonly utils: Utils;
-  private readonly testData: TestData;
   private readonly loginpo: LoginPO;
   private readonly menu: MenuDropdownCO;
   private readonly sidebar: SidebarCO;
@@ -21,7 +20,6 @@ export class HomeTask {
   ) {
     this.utils = new Utils(page);
     this.loginpo = new LoginPO(page);
-    this.testData = new TestData();
     this.menu = new MenuDropdownCO(page);
     this.sidebar = new SidebarCO(page);
   }
@@ -38,7 +36,7 @@ export class HomeTask {
 
   @step('Login as {role}')
   async login(role: TypeUser) {
-    const dataUser = this.testData.loginData[role];
+    const dataUser = getLoginData(role);
 
     await this.loginpo.acceptCookies();
     await this.utils.modalDisappears();

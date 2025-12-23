@@ -6,7 +6,7 @@ defmodule OliWeb.Components.Footer do
     ~H"""
     <footer class="w-full py-4 md:container lg:px-10 text-xs bg-delivery-footer dark:bg-delivery-footer-dark">
       <div class="flex flex-col">
-        <div class="flex flex-row gap-2">
+        <div class="flex flex-col sm:flex-row gap-2">
           <.cookie_preferences />
           <.footer_part_1 />
           <.footer_part_2 />
@@ -74,8 +74,11 @@ defmodule OliWeb.Components.Footer do
       )
 
     ~H"""
-    <div class="w-9/12 text-left sm:text-center">
-      {@footer_text}<a href={@footer_link_1_location} target="_blank"><%= @footer_link_1_text %></a>
+    <div class="flex-1 text-left sm:text-center">
+      {@footer_text}
+      <%= if not_blank?(@footer_link_1_text) and not_blank?(@footer_link_1_location) do %>
+        <a href={@footer_link_1_location} target="_blank">{@footer_link_1_text}</a>
+      <% end %>
     </div>
     """
   end
@@ -88,8 +91,10 @@ defmodule OliWeb.Components.Footer do
       )
 
     ~H"""
-    <div class="w-2/12 text-left sm:text-left">
-      <a href={@footer_link_2_location} target="_blank">{@footer_link_2_text}</a>
+    <div class="shrink-0 text-left">
+      <%= if not_blank?(@footer_link_2_text) and not_blank?(@footer_link_2_location) do %>
+        <a href={@footer_link_2_location} target="_blank">{@footer_link_2_text}</a>
+      <% end %>
     </div>
     """
   end
@@ -98,7 +103,7 @@ defmodule OliWeb.Components.Footer do
     assigns = assign(assigns, version: version(), sha: sha(), timestamp: timestamp())
 
     ~H"""
-    <div class="text-center sm:text-left sm:text-right">
+    <div class="text-center sm:text-right">
       Version {@version} ({@sha}) {@timestamp}
     </div>
     """
@@ -110,14 +115,16 @@ defmodule OliWeb.Components.Footer do
     assigns = assign(assigns, privacy_policies_url: privacy_policies_url())
 
     ~H"""
-    <div class="text-left w-full md:w-3/12">
-      <a
-        href="javascript:;"
-        onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{@privacy_policies_url}'})"}
-        class={[@class, "whitespace-nowrap"]}
-      >
-        Cookie Preferences
-      </a>
+    <div class="text-left shrink-0 relative z-10">
+      <%= if not_blank?(@privacy_policies_url) do %>
+        <a
+          href="javascript:;"
+          onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{@privacy_policies_url}'})"}
+          class={[@class, "whitespace-nowrap"]}
+        >
+          Cookie Preferences
+        </a>
+      <% end %>
     </div>
     """
   end
@@ -126,9 +133,11 @@ defmodule OliWeb.Components.Footer do
     assigns = assign(assigns, privacy_policies_url: privacy_policies_url())
 
     ~H"""
-    <script>
-      OLI.onReady(() => OLI.retrieveCookies('<%= ~p"/consent/cookie" %>', {privacyPoliciesUrl: '<%= @privacy_policies_url %>'}));
-    </script>
+    <%= if not_blank?(@privacy_policies_url) do %>
+      <script>
+        OLI.onReady(() => OLI.retrieveCookies('<%= ~p"/consent/cookie" %>', {privacyPoliciesUrl: '<%= @privacy_policies_url %>'}));
+      </script>
+    <% end %>
     """
   end
 
@@ -147,4 +156,7 @@ defmodule OliWeb.Components.Footer do
   defp version(), do: Application.fetch_env!(:oli, :build).version
 
   defp sha(), do: Application.fetch_env!(:oli, :build).sha |> String.upcase()
+
+  defp not_blank?(value) when is_binary(value), do: String.trim(value) != ""
+  defp not_blank?(_), do: false
 end

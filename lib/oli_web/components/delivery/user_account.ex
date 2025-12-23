@@ -46,6 +46,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         id={@id}
         class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
+        aria-label={user_account_aria_label(@ctx)}
       >
         <.user_picture_icon user={@ctx.author} />
       </button>
@@ -69,6 +70,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         id={@id}
         class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
+        aria-label={user_account_aria_label(@ctx)}
       >
         <.user_picture_icon user={@ctx.author} />
       </button>
@@ -94,6 +96,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         id={@id}
         class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
+        aria-label={user_account_aria_label(@ctx)}
       >
         <.user_picture_icon :if={Accounts.is_admin?(@ctx.author)} user={@ctx.author} />
         <.user_picture_icon
@@ -516,7 +519,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <%= case @user.picture do %>
       <% nil -> %>
-        <div class="w-8 h-8 bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]">
+        <div
+          role="img"
+          class="w-8 h-8 bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]"
+          aria-label={"#{@user.name} profile avatar"}
+        >
           {to_initials(@user)}
         </div>
       <% picture -> %>
@@ -565,6 +572,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         type="button"
         data-bs-toggle="dropdown"
         aria-expanded="false"
+        aria-label={user_account_aria_label(@ctx)}
       >
         <div class="user-icon">
           <.user_picture_icon />
@@ -581,6 +589,21 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def maybe_section_param(%Section{slug: slug}), do: [section: slug]
   def maybe_section_param(_), do: []
+
+  defp user_account_aria_label(%SessionContext{} = ctx) do
+    name =
+      cond do
+        match?(%{author: %{name: name}} when is_binary(name), ctx) -> ctx.author.name
+        match?(%{user: %{name: name}} when is_binary(name), ctx) -> ctx.user.name
+        true -> nil
+      end
+
+    case name && String.trim(name) do
+      nil -> "user account menu"
+      "" -> "user account menu"
+      trimmed -> "#{trimmed} user account menu"
+    end
+  end
 
   defp to_initials(%{name: nil}), do: "G"
 

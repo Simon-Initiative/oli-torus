@@ -5,9 +5,13 @@ defmodule Oli.Features do
   alias Oli.Features.{FeatureState, Feature}
 
   @features [
-    %Feature{label: "adaptivity", description: "Adaptive lesson authoring"},
-    %Feature{label: "equity", description: "Equity qa check"},
-    %Feature{label: "live-debugging", description: "Live attempt debugging/observation support"}
+    %Feature{label: "adaptivity", description: "Adaptive lesson authoring", enabled: true},
+    %Feature{label: "equity", description: "Equity qa check", enabled: false},
+    %Feature{
+      label: "live-debugging",
+      description: "Live attempt debugging/observation support",
+      enabled: false
+    }
   ]
 
   def features, do: @features
@@ -54,9 +58,9 @@ defmodule Oli.Features do
       # create new feature states, merging with existing states
       feature_states =
         @features
-        |> Enum.map(fn %Feature{label: label} ->
+        |> Enum.map(fn %Feature{label: label, enabled: enabled?} ->
           case Map.get(states_by_label, label) do
-            nil -> %{label: label, state: :disabled}
+            nil -> %{label: label, state: if(enabled?, do: :enabled, else: :disabled)}
             state -> %{label: label, state: state}
           end
         end)

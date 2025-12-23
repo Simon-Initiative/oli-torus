@@ -1,10 +1,4 @@
 import { defineConfig } from '@playwright/test';
-import * as dotenv from 'dotenv';
-import * as path from 'node:path';
-
-const pathLoginEnv = path.resolve(__dirname, 'tests/resources/', 'login.env');
-const pathConfigEnv = path.resolve(__dirname, 'tests/resources/', 'config.env');
-dotenv.config({ path: [pathLoginEnv, pathConfigEnv] });
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -16,20 +10,20 @@ export default defineConfig({
   /* Run tests in files in parallel */
   fullyParallel: false,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
+  forbidOnly: false,
   /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  retries: 0,
   /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [['html', { open: 'always' }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     launchOptions: {
-      args: ['--start-maximized'],
+      args: ['--start-maximized', '--ignore-certificate-errors'],
     },
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.BASE_URL,
+    baseURL: 'http://localhost',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on',
@@ -78,6 +72,6 @@ export default defineConfig({
   // webServer: {
   //   command: 'npm run start',
   //   url: 'http://127.0.0.1:3000',
-  //   reuseExistingServer: !process.env.CI,
+  //   reuseExistingServer: true,
   // },
 });

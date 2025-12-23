@@ -16,6 +16,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   alias Oli.Analytics.Common.Pipeline
   alias OliWeb.Delivery.Student.Utils
   alias Oli.Analytics.XAPI.Events.Context
+  alias Floki
 
   alias Oli.Analytics.Summary.{
     AttemptGroup
@@ -2852,9 +2853,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       ]
 
       Enum.each(labels, fn label ->
-        assert view
-               |> element(~s{nav[id='desktop-nav-menu']})
-               |> render() =~ label
+        html =
+          view
+          |> element(~s{nav[id='desktop-nav-menu']})
+          |> render()
+
+        assert html =~ label
       end)
 
       {:ok, view, _html} =
@@ -2863,9 +2867,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, ~s{nav[id='desktop-nav-menu'][aria-expanded=false]})
 
       Enum.each(labels, fn label ->
-        refute view
-               |> element(~s{nav[id='desktop-nav-menu']})
-               |> render() =~ label
+        html =
+          view
+          |> element(~s{nav[id='desktop-nav-menu']})
+          |> render()
+
+        text_content =
+          html
+          |> Floki.parse_document!()
+          |> Floki.text()
+          |> String.trim()
+
+        refute String.contains?(text_content, label)
       end)
     end
 

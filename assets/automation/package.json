@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "csv-parse": "^5.6.0",
-    "dotenv": "^16.5.0",
     "eslint": "^9.27.0",
     "ww-torus-e2e": "file:"
   }
