@@ -894,7 +894,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                   )
                 }
                 aria-label="Back"
-                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted py-2 text-sm font-semibold hover:text-[#FFFFFF] hover:no-underline"
+                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted py-2 text-sm font-semibold hover:text-Text-text-white hover:no-underline focus-ring-Fill-Buttons-fill-primary"
               >
                 <Icons.chevron_right class="rotate-90" />
                 <span>Previous</span>
@@ -911,7 +911,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary text-[#FFFFFF] py-2 text-sm font-semibold hover:text-[#FFFFFF] hover:no-underline"
+                aria-label="Next"
+                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary text-Text-text-white py-2 text-sm font-semibold hover:text-Text-text-white hover:no-underline focus-ring-Fill-Buttons-fill-primary"
               >
                 <span>Next</span>
                 <Icons.chevron_right class="-rotate-90" />
@@ -936,7 +937,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
           <div
             :if={!is_nil(@previous_page)}
-            class="hidden lg:flex grow shrink basis-0 h-10 justify-start items-center z-10 overflow-hidden whitespace-nowrap"
+            class="hidden lg:flex grow shrink basis-0 h-10 justify-start items-center z-10"
             role="prev_page"
           >
             <div
@@ -953,12 +954,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2]/50 flex items-center justify-center"
+                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-Fill-Buttons-fill-primary/50 flex items-center justify-center focus-ring-Fill-Buttons-fill-primary"
               >
                 <.left_arrow />
               </.link>
             </div>
-            <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
+            <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis whitespace-nowrap">
               {maybe_add_icon(@previous_page, @pages_progress)}
               <span class="overflow-hidden text-ellipsis" title={@previous_page["title"]}>
                 {@previous_page["title"]}
@@ -968,10 +969,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
           <div
             :if={!is_nil(@next_page)}
-            class="hidden lg:flex grow shrink basis-0 h-10 justify-end items-center z-10 overflow-hidden whitespace-nowrap"
+            class="hidden lg:flex grow shrink basis-0 h-10 justify-end items-center z-10"
             role="next_page"
           >
-            <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
+            <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis whitespace-nowrap">
               {maybe_add_icon(@next_page, @pages_progress)}
               <span class="overflow-hidden text-ellipsis" title={@next_page["title"]}>
                 {@next_page["title"]}
@@ -988,7 +989,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2] flex items-center justify-center"
+                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-Fill-Buttons-fill-primary flex items-center justify-center focus-ring-Fill-Buttons-fill-primary"
               >
                 <.right_arrow />
               </.link>

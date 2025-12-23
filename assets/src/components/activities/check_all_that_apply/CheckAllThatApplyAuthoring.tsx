@@ -175,6 +175,7 @@ const CheckAllThatApply = () => {
           isEvaluated={false}
           context={writerContext}
           disabled={isInstructorPreview}
+          multiSelect
         />
         <SimpleFeedback partId={model.authoring.parts[0].id} />
         <ActivityScoring partId={model.authoring.parts[0].id} />
@@ -194,6 +195,7 @@ const CheckAllThatApply = () => {
           unselectedIcon={<Checkbox.Unchecked />}
           selectedIcon={<Checkbox.Checked />}
           disabled={isInstructorPreview}
+          multiSelect
         />
       </TabbedNavigation.Tab>
 

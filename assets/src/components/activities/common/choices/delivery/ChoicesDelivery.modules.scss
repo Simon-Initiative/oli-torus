@@ -1,13 +1,10 @@
 .choicesContainer {
   width: 100%;
 }
-.choicesChoiceRow {
-  width: 100%;
-}
 .choicesChoiceWrapper {
+  display: flex;
   align-items: center;
   padding: 0.5em 0.5em 0.5em 0;
-  width: 100%;
 }
 .choicesChoiceLabel {
   margin: 0;

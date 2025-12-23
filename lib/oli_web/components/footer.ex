@@ -77,7 +77,9 @@ defmodule OliWeb.Components.Footer do
     <div class="flex-1 text-left sm:text-center">
       {@footer_text}
       <%= if not_blank?(@footer_link_1_text) and not_blank?(@footer_link_1_location) do %>
-        <a href={@footer_link_1_location} target="_blank">{@footer_link_1_text}</a>
+        <a href={@footer_link_1_location} target="_blank" rel="noopener noreferrer">
+          {@footer_link_1_text}
+        </a>
       <% end %>
     </div>
     """
@@ -93,7 +95,9 @@ defmodule OliWeb.Components.Footer do
     ~H"""
     <div class="shrink-0 text-left">
       <%= if not_blank?(@footer_link_2_text) and not_blank?(@footer_link_2_location) do %>
-        <a href={@footer_link_2_location} target="_blank">{@footer_link_2_text}</a>
+        <a href={@footer_link_2_location} target="_blank" rel="noopener noreferrer">
+          {@footer_link_2_text}
+        </a>
       <% end %>
     </div>
     """
