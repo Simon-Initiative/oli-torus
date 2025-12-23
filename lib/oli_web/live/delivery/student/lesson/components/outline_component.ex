@@ -198,6 +198,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   def outline_item(assigns) do
     ~H"""
     <% expanded? = Integer.to_string(@item["id"]) in @expanded_items %>
+    <% children_id = "outline_children_#{@item["id"]}" %>
     <div
       id={"outline_item_#{@item["id"]}"}
       class={[
@@ -205,17 +206,20 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         left_indentation(@item["numbering"]["level"])
       ]}
     >
-      <div
+      <button
+        type="button"
         phx-click="expand_item"
         phx-value-item_id={@item["id"]}
         phx-target={@target}
+        aria-expanded={to_string(expanded?)}
+        aria-controls={children_id}
         class={[
-          "w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33] hover:cursor-pointer",
+          "w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33] hover:cursor-pointer text-left",
           if(@progress, do: "bg-Specially-Tokens-Fill-fill-nav-hover")
         ]}
       >
         <div class="text-[#353740] dark:text-[#eeebf5] self-stretch justify-start items-start gap-1 inline-flex">
-          <div>
+          <div aria-hidden="true">
             <%= if expanded? do %>
               <Icons.chevron_down width="20" height="20" />
             <% else %>
@@ -223,7 +227,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             <% end %>
           </div>
 
-          <div class="grow shrink basis-0 text-base font-bold leading-normal" role="title">
+          <div class="grow shrink basis-0 text-base font-bold leading-normal">
             {resource_label(@item)}
             {@item["title"]}
           </div>
@@ -236,9 +240,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           completed_colour="bg-[#0CAF61]"
           role="progress bar"
         />
-      </div>
+      </button>
       <div
         :if={expanded?}
+        id={children_id}
         class="grow shrink basis-0 py-1 flex-col justify-start items-start gap-1 inline-flex"
       >
         <.outline_item
