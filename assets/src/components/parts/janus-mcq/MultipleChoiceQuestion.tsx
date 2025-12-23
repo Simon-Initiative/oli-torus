@@ -139,6 +139,45 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       if (e.key === 'Enter' || e.key === ' ') {
         isMouseInteraction.current = false;
       }
+    } else {
+      // For single-select (radio buttons), prevent arrow keys from navigating options
+      // This allows users to scroll the page with arrow keys instead
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.currentTarget.blur();
+        // Manually scroll the page
+        const scrollAmount = 50;
+        window.scrollBy({
+          top: e.key === 'ArrowUp' ? -scrollAmount : scrollAmount,
+          behavior: 'auto',
+        });
+      }
+      // Handle Tab navigation between options for single-select
+      if (e.key === 'Tab') {
+        const container = e.currentTarget.closest('.mcq-input');
+        if (!container) return;
+        const allOptions = container.querySelectorAll<HTMLInputElement>(
+          `input[name="${groupId}"]:not([disabled])`,
+        );
+        const currentIndex = Array.from(allOptions).indexOf(e.currentTarget);
+        if (currentIndex === -1) return;
+
+        if (e.shiftKey) {
+          // Shift+Tab: move to previous option
+          if (currentIndex > 0) {
+            e.preventDefault();
+            allOptions[currentIndex - 1].focus();
+          }
+          // If at first option, allow normal Tab behavior to move to previous control
+        } else {
+          // Tab: move to next option
+          if (currentIndex < allOptions.length - 1) {
+            e.preventDefault();
+            allOptions[currentIndex + 1].focus();
+          }
+          // If at last option, allow normal Tab behavior to move to next control
+        }
+      }
     }
   };
 
