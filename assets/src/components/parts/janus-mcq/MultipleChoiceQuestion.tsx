@@ -149,7 +149,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
         const scrollAmount = 50;
         window.scrollBy({
           top: e.key === 'ArrowUp' ? -scrollAmount : scrollAmount,
-          behavior: 'instant',
+          behavior: 'auto',
         });
       }
       // Handle Tab navigation between options for single-select
