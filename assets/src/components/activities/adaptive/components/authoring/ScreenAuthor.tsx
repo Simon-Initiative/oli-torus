@@ -27,6 +27,7 @@ import styles from './ScreenAuthor.modules.scss';
 interface ScreenAuthorProps {
   screen: any;
   onChange?: (screen: any) => void;
+  responsiveLayout?: boolean;
 }
 
 const screenSchema: JSONSchema7 = {
@@ -117,7 +118,7 @@ const screenUiSchema = {
   },
 };
 
-const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
+const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange, responsiveLayout }) => {
   const pusherContext = useContext(NotificationContext);
   const [pusher, setPusher] = useState(pusherContext || new EventEmitter().setMaxListeners(50));
 
@@ -404,6 +405,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
               onConfigurePart={handlePartConfigure}
               onCancelConfigurePart={handlePartCancelConfigure}
               configurePortalId={configEditorId}
+              responsiveLayout={responsiveLayout}
             />
           </Col>
           <Col sm={3} className={styles.propertyEditor}>
