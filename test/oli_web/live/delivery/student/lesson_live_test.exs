@@ -2168,7 +2168,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Click on annotation point
       view
-      |> element("button[phx-click='toggle_annotation_point']", "1")
+      |> element("#annotation_bubble_158828742")
       |> render_click()
 
       # Focus on input, this open the textarea
@@ -2217,7 +2217,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Click on annotation point
       view
-      |> element("button[phx-click='toggle_annotation_point']", "1")
+      |> element("#annotation_bubble_158828742")
       |> render_click()
 
       # Focus on input, this open the textarea
@@ -2267,9 +2267,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       })
 
       view
-      |> element(
-        ~s{button[phx-click='toggle_annotation_point'][phx-value-point-marker-id='158828742']}
-      )
+      |> element("#annotation_bubble_158828742")
       |> render_click
 
       render_hook(view, "begin_create_annotation", %{})
