@@ -62,64 +62,13 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
   end
 
   @spec rewire_bank_selections(map(), any) :: map()
-  def rewire_bank_selections(content, tag_map) do
+  def rewire_bank_selections(content, id_map) do
     {mapped, _} =
       PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
         case e do
           %{"type" => "selection", "logic" => logic} = ref ->
-            case logic do
-              %{
-                "conditions" => %{
-                  "children" => [
-                    %{"fact" => "tags", "value" => originals, "operator" => operator}
-                  ]
-                }
-              } ->
-                Enum.reduce(originals, {[], {:ok, []}}, fn o, {ids, {status, invalid_ids}} ->
-                  case retrieve(tag_map, o) do
-                    nil ->
-                      {ids, {:error, [o | invalid_ids]}}
-
-                    retrieved ->
-                      {[retrieved | ids], {status, invalid_ids}}
-                  end
-                end)
-                |> case do
-                  {ids, {:ok, _}} ->
-                    children = [%{"fact" => "tags", "value" => ids, "operator" => operator}]
-                    conditions = Map.put(logic["conditions"], "children", children)
-                    logic = Map.put(logic, "conditions", conditions)
-
-                    {Map.put(ref, "logic", logic), {status, invalid_refs}}
-
-                  {_, {:error, invalid_ids}} ->
-                    {ref, {status, invalid_ids ++ invalid_refs}}
-                end
-
-              %{"conditions" => %{"fact" => "tags", "value" => originals, "operator" => operator}} ->
-                Enum.reduce(originals, {[], {:ok, []}}, fn o, {ids, {status, invalid_ids}} ->
-                  case retrieve(tag_map, o) do
-                    nil ->
-                      {ids, {:error, [o | invalid_ids]}}
-
-                    retrieved ->
-                      {[retrieved | ids], {status, invalid_ids}}
-                  end
-                end)
-                |> case do
-                  {ids, {:ok, _}} ->
-                    updated = %{"fact" => "tags", "value" => ids, "operator" => operator}
-                    logic = Map.put(logic, "conditions", updated)
-
-                    {Map.put(ref, "logic", logic), {status, invalid_refs}}
-
-                  {_, {:error, invalid_ids}} ->
-                    {ref, {status, invalid_ids ++ invalid_refs}}
-                end
-
-              _ ->
-                {ref, {status, invalid_refs}}
-            end
+            rewired_logic = rewire_bank_selection_logic(logic, id_map)
+            {Map.put(ref, "logic", rewired_logic), {status, invalid_refs}}
 
           other ->
             {other, {status, invalid_refs}}
@@ -127,6 +76,64 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
       end)
 
     mapped
+  end
+
+  # Recursively rewire bank selection logic conditions
+  defp rewire_bank_selection_logic(%{"conditions" => nil} = logic, _id_map) do
+    logic
+  end
+
+  defp rewire_bank_selection_logic(%{"conditions" => conditions} = logic, id_map) do
+    rewired_conditions = rewire_logic_conditions(conditions, id_map)
+    Map.put(logic, "conditions", rewired_conditions)
+  end
+
+  defp rewire_bank_selection_logic(logic, _id_map) when is_map(logic) do
+    # Handle case where logic might not have "conditions" key
+    logic
+  end
+
+  # Handle clause with operator and children
+  defp rewire_logic_conditions(
+         %{"operator" => _operator, "children" => children} = clause,
+         id_map
+       ) do
+    rewired_children = Enum.map(children, &rewire_logic_conditions(&1, id_map))
+    Map.put(clause, "children", rewired_children)
+  end
+
+  # Handle expression with fact, operator, and value - rewire IDs for tags and objectives
+  defp rewire_logic_conditions(
+         %{"fact" => fact, "operator" => _operator, "value" => value} = expression,
+         id_map
+       )
+       when fact in ["objectives", "tags"] do
+    # Rewire IDs from legacy IDs to new resource IDs
+    rewired_value =
+      case value do
+        list when is_list(list) ->
+          Enum.map(list, fn id ->
+            case retrieve(id_map, id) do
+              nil -> id
+              new_id -> new_id
+            end
+          end)
+
+        other ->
+          other
+      end
+
+    Map.put(expression, "value", rewired_value)
+  end
+
+  # Handle expression with other facts (text, type) - preserve as is
+  defp rewire_logic_conditions(%{"fact" => _fact} = expression, _id_map) do
+    expression
+  end
+
+  # Fallback for any other structure
+  defp rewire_logic_conditions(conditions, _id_map) do
+    conditions
   end
 
   defp rewire_bib_refs(%{"type" => "content", "children" => _children} = content, bib_map) do
