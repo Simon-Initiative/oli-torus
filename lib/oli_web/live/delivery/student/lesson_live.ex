@@ -19,6 +19,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias Oli.Resources.Collaboration.Post
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
   alias OliWeb.Delivery.Student.Lesson.Components.OutlineComponent
@@ -28,6 +29,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Icons
 
   require Logger
+  import OliWeb.ViewHelpers, only: [is_section_instructor_or_admin?: 2]
 
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
@@ -736,19 +738,32 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def handle_event(
         "set_delete_post_id",
-        %{"post-id" => post_id, "visibility" => visibility},
+        %{"post-id" => post_id, "visibility" => _visibility},
         socket
       ) do
-    {:noreply,
-     assign_annotations(socket,
-       delete_post_id: {String.to_existing_atom(visibility), String.to_integer(post_id)}
-     )}
+    %{current_user: current_user, section: section} = socket.assigns
+    post_id = String.to_integer(post_id)
+
+    case Collaboration.get_post_by(%{id: post_id}) do
+      %Post{} = post ->
+        if authorized_to_delete?(post, current_user, section) do
+          {:noreply,
+           assign_annotations(socket,
+             delete_post_id: {post.visibility, post.id}
+           )}
+        else
+          {:noreply, put_flash(socket, :error, "You are not authorized to delete this note")}
+        end
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "You are not authorized to delete this note")}
+    end
   end
 
   def handle_event("delete_post", _params, socket) do
     %{annotations: %{delete_post_id: {_visibility, post_id}}} = socket.assigns
 
-    case Collaboration.soft_delete_post(post_id) do
+    case Collaboration.soft_delete_post(post_id, socket.assigns.current_user) do
       {1, _} ->
         {:noreply, mark_post_deleted(socket, post_id)}
 
@@ -1829,6 +1844,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         end)
     )
   end
+
+  defp authorized_to_delete?(post, %Oli.Accounts.User{} = current_user, section) do
+    post.user_id == current_user.id ||
+      is_section_instructor_or_admin?(section.slug, current_user)
+  end
+
+  defp authorized_to_delete?(_, _, _), do: false
 
   defp slim_assigns(socket) do
     Enum.reduce(@required_keys_per_assign, socket, fn {assign_name, {required_keys, struct}},
