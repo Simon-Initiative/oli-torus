@@ -50,8 +50,22 @@
   @apply bg-Table-table-row-1;
 }
 
+/* Apply background to sticky columns */
+.schedule_table tbody tr:nth-child(even) td:nth-child(2) {
+  @apply bg-Table-table-row-2;
+}
+
+.schedule_table tbody tr:nth-child(odd) td:nth-child(2) {
+  @apply bg-Table-table-row-1;
+}
+
 .schedule_table tbody tr {
   @apply hover:bg-Table-table-hover;
+}
+
+/* Apply hover background to sticky columns */
+.schedule_table tbody tr:hover td:nth-child(2) {
+  @apply bg-Table-table-hover;
 }
 
 div:has(.instructor_dashboard_table) #header_paging {
