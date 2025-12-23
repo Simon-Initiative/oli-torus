@@ -923,6 +923,7 @@ defmodule OliWeb.Components.Common do
   def loading_spinner(assigns) do
     ~H"""
     <svg
+      aria-label="Loading"
       class="loading"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"

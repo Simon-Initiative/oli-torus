@@ -432,6 +432,17 @@ defmodule Oli.TestHelpers do
     {:ok, conn: conn, content_admin: content_admin}
   end
 
+  @iphone_ua "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15"
+  @doc """
+  Creates a connection with a mobile user agent
+  """
+  def mobile_conn(%{conn: conn}) do
+    conn =
+      Plug.Conn.put_req_header(conn, "user-agent", @iphone_ua)
+
+    {:ok, conn: conn}
+  end
+
   def recycle_author_session(conn, author) do
     Phoenix.ConnTest.recycle(conn)
     |> log_in_author(author)

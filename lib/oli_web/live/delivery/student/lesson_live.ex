@@ -870,7 +870,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
-    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
+    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:right-0 z-50 sm:h-full">
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
           "hidden sm:inline-flex absolute top-24",
@@ -978,7 +978,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
-    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
+    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:right-0 z-50 sm:h-full">
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
           "hidden sm:inline-flex absolute top-24",
@@ -1197,7 +1197,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         z-index: 1000 !important;
       }
     </style>
-    <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
+    <div id="sticky_panel" class="absolute right-0 z-50 h-full">
       <div class="sticky ml-auto top-20 right-0">
         <div class={[
           "absolute top-24",
