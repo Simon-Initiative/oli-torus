@@ -1206,6 +1206,10 @@ select {
   color: #0FB863;
 }
 
+.border-Fill-fill-progress {
+  border-color: #0FB863;
+}
+
 .dark .border-Fill-fill-progress {
   border-color: #0FB863;
 }
@@ -10939,6 +10943,12 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.scale-75 {
+  --tw-scale-x: .75;
+  --tw-scale-y: .75;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .scale-95 {
   --tw-scale-x: .95;
   --tw-scale-y: .95;
@@ -12284,11 +12294,6 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(63 63 70 / var(--tw-border-opacity));
 }
 
-.border-b-\[\#39E581\] {
-  --tw-border-opacity: 1;
-  border-bottom-color: rgb(57 229 129 / var(--tw-border-opacity));
-}
-
 .border-b-delivery-primary {
   --tw-border-opacity: 1;
   border-bottom-color: rgb(1 101 217 / var(--tw-border-opacity));
@@ -12297,11 +12302,6 @@ table.table-striped tbody tr:nth-child(even) {
 .border-b-gray-200 {
   --tw-border-opacity: 1;
   border-bottom-color: rgb(229 229 229 / var(--tw-border-opacity));
-}
-
-.border-b-gray-300 {
-  --tw-border-opacity: 1;
-  border-bottom-color: rgb(212 212 212 / var(--tw-border-opacity));
 }
 
 .border-l-\[\#CED1D9\] {
@@ -14209,10 +14209,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .\!font-bold {
   font-weight: 700 !important;
-}
-
-.\!font-normal {
-  font-weight: 400 !important;
 }
 
 .\!font-semibold {
@@ -22077,11 +22073,6 @@ Not supports in Firefox and IE */
   background-color: rgb(15 108 245 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:bg-\[\#0d0c0e\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(13 12 14 / var(--tw-bg-opacity));
-}
-
 .dark .dark\:bg-\[\#0d0c0f\] {
   --tw-bg-opacity: 1;
   background-color: rgb(13 12 15 / var(--tw-bg-opacity));
@@ -22383,6 +22374,11 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-yellow-700 {
   --tw-bg-opacity: 1;
   background-color: rgb(178 115 7 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-yellow-800 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(124 80 5 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-zinc-800 {
@@ -23598,6 +23594,10 @@ Not supports in Firefox and IE */
     margin-bottom: 0px;
   }
 
+  .sm\:mb-1 {
+    margin-bottom: 0.25rem;
+  }
+
   .sm\:mb-11 {
     margin-bottom: 2.75rem;
   }
@@ -23644,6 +23644,10 @@ Not supports in Firefox and IE */
 
   .sm\:mt-20 {
     margin-top: 5rem;
+  }
+
+  .sm\:mt-3 {
+    margin-top: 0.75rem;
   }
 
   .sm\:block {
@@ -23714,6 +23718,10 @@ Not supports in Firefox and IE */
     width: 1.5rem;
   }
 
+  .sm\:w-64 {
+    width: 16rem;
+  }
+
   .sm\:w-\[360px\] {
     width: 360px;
   }
@@ -23744,6 +23752,11 @@ Not supports in Firefox and IE */
 
   .sm\:translate-y-0 {
     --tw-translate-y: 0px;
+    transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+  }
+
+  .sm\:rotate-0 {
+    --tw-rotate: 0deg;
     transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
   }
 
@@ -23795,6 +23808,10 @@ Not supports in Firefox and IE */
     gap: 0px;
   }
 
+  .sm\:gap-5 {
+    gap: 1.25rem;
+  }
+
   .sm\:gap-9 {
     gap: 2.25rem;
   }
@@ -23817,6 +23834,10 @@ Not supports in Firefox and IE */
 
   .sm\:border-r {
     border-right-width: 1px;
+  }
+
+  .sm\:bg-white\/20 {
+    background-color: rgb(255 255 255 / 0.2);
   }
 
   .sm\:p-0 {
@@ -23912,6 +23933,22 @@ Not supports in Firefox and IE */
     padding-bottom: 1rem;
   }
 
+  .sm\:pl-16 {
+    padding-left: 4rem;
+  }
+
+  .sm\:pl-4 {
+    padding-left: 1rem;
+  }
+
+  .sm\:pl-6 {
+    padding-left: 1.5rem;
+  }
+
+  .sm\:pr-0 {
+    padding-right: 0px;
+  }
+
   .sm\:pt-14 {
     padding-top: 3.5rem;
   }
@@ -23953,6 +23990,11 @@ Not supports in Firefox and IE */
   .sm\:text-base {
     font-size: 1rem;
     line-height: 1.5rem;
+  }
+
+  .sm\:text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
   }
 
   .sm\:text-sm {
@@ -23997,6 +24039,11 @@ Not supports in Firefox and IE */
 
   .sm\:focus\:bg-\[\#000000\]\/5:focus {
     background-color: rgb(0 0 0 / 0.05);
+  }
+
+  .dark .dark\:sm\:bg-\[\#0d0c0e\] {
+    --tw-bg-opacity: 1;
+    background-color: rgb(13 12 14 / var(--tw-bg-opacity));
   }
 
   .dark .sm\:dark\:hover\:bg-\[\#FFFFFF\]\/5:hover {
