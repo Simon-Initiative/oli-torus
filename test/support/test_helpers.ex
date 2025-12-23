@@ -1565,7 +1565,7 @@ defmodule Oli.TestHelpers do
     }
   end
 
-  def create_project_with_units_and_modules(_conn) do
+  def create_project_with_units_and_modules(context) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -1648,6 +1648,12 @@ defmodule Oli.TestHelpers do
 
     {:ok, section} = Sections.create_section_resources(section, publication)
     Sections.rebuild_contained_pages(section)
+
+    if Map.has_key?(context, :instructor) do
+      Sections.enroll(context.instructor.id, section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+    end
 
     %{
       project: project,
