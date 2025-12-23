@@ -8533,6 +8533,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: -5px;
 }
 
+.-top-px {
+  top: -1px;
+}
+
 .bottom-0 {
   bottom: 0px;
 }
@@ -8607,6 +8611,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .left-\[1250px\] {
   left: 1250px;
+}
+
+.left-\[1px\] {
+  left: 1px;
 }
 
 .left-\[2\.27px\] {
@@ -17434,11 +17442,39 @@ a {
   background-color: #0D0C0F;
 }
 
+/* Apply background to sticky columns */
+
+.schedule_table tbody tr:nth-child(even) td:nth-child(2) {
+  background-color: #E3E7EB;
+}
+
+.dark .schedule_table tbody tr:nth-child(even) td:nth-child(2) {
+  background-color: #201D21;
+}
+
+.schedule_table tbody tr:nth-child(odd) td:nth-child(2) {
+  background-color: #F3F4F8;
+}
+
+.dark .schedule_table tbody tr:nth-child(odd) td:nth-child(2) {
+  background-color: #0D0C0F;
+}
+
 .schedule_table tbody tr:hover {
   background-color: #F2F9FF;
 }
 
 .dark .schedule_table tbody tr:hover {
+  background-color: #0A203A;
+}
+
+/* Apply hover background to sticky columns */
+
+.schedule_table tbody tr:hover td:nth-child(2) {
+  background-color: #F2F9FF;
+}
+
+.dark .schedule_table tbody tr:hover td:nth-child(2) {
   background-color: #0A203A;
 }
 
