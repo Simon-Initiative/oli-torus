@@ -827,7 +827,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       class="absolute top-0 right-[-15px] cursor-pointer group annotation-bubble"
       data-index={@index}
       tabindex={if @index == 0, do: "0", else: "-1"}
-      phx-click={JS.push("toggle_annotation_point") |> JS.focus(to: "#annotations_panel_close_button")}
+      phx-click={
+        JS.push("toggle_annotation_point") |> JS.focus(to: "#annotations_panel_close_button")
+      }
       aria-label={bubble_aria_label(:page, @count, @selected)}
       aria-pressed={to_string(@selected)}
     >
@@ -844,7 +846,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       data-index={@index}
       style={"top: #{@point_marker.top}px"}
       tabindex={if @index == 0, do: "0", else: "-1"}
-      phx-click={JS.push("toggle_annotation_point", value: %{"point-marker-id" => @point_marker.id}) |> JS.focus(to: "#annotations_panel_close_button")}
+      phx-click={
+        JS.push("toggle_annotation_point", value: %{"point-marker-id" => @point_marker.id})
+        |> JS.focus(to: "#annotations_panel_close_button")
+      }
       aria-label={bubble_aria_label(@point_marker.id, @count, @selected)}
       aria-pressed={to_string(@selected)}
     >
