@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   alias OliWeb.Components.Common
   alias OliWeb.Components.Modal
   alias OliWeb.Components.Delivery.Utils
+  alias Phoenix.LiveView.JS
 
   attr :section_slug, :string, required: true
   attr :collab_space_config, :map, required: true
@@ -21,19 +22,29 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def panel(assigns) do
     ~H"""
-    <div>
+    <div
+      id="annotations_panel_container"
+      role="complementary"
+      aria-labelledby="annotations_panel_title"
+      phx-remove={JS.pop_focus()}
+      phx-window-keydown="toggle_notes_sidebar"
+      phx-key="escape"
+    >
       <div
         id="annotations_panel"
         class="flex sm:w-[485px] h-full min-h-[400px] max-h-[400px] sm:max-h-[50vh] lg:max-h-[80vh] px-4 py-2 sm:px-2 sm:py-4 bg-Surface-surface-background text-[#353740] dark:text-[#eeebf5] mx-3 sm:mx-2 rounded-t-2xl sm:rounded-2xl"
       >
         <div class="flex flex-col flex-1 bg-Surface-surface-background pb-5 rounded-bl-lg">
           <button
+            id="annotations_panel_close_button"
             phx-click="toggle_notes_sidebar"
+            aria-label="Close notes panel"
             class="hidden sm:inline-flex self-stretch px-2 pb-2 justify-end items-center gap-2.5 hover:cursor-pointer"
           >
             <i class="fa-solid fa-xmark hover:scale-110"></i>
           </button>
           <div class="flex flex-col flex-1 overflow-hidden sm:px-5">
+            <h2 id="annotations_panel_title" class="sr-only">Notes Panel</h2>
             <.tab_group class="py-3">
               <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
                 <.user_icon class="mr-2" /> My Notes
@@ -68,6 +79,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <div class="flex items-center justify-center sm:hidden bg-Surface-surface-background h-16 mx-3 p-4 border-t border-Border-border-default">
         <button
           phx-click="toggle_notes_sidebar"
+          aria-label="Close notes panel"
           class="text-Specially-Tokens-Text-text-button-secondary font-semibold text-sm leading-4 px-8 py-3 border border-Border-border-bold h-10 rounded-lg w-full"
         >
           Close
@@ -219,6 +231,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   def toggle_notes_button(assigns) do
     ~H"""
     <button
+      id="toggle_notes_button"
       role="toggle notes button"
       data-view="desktop"
       aria-label="Toggle Notes panel"
@@ -230,7 +243,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             "!text-white bg-[#0080ff] dark:bg-[#0062f2] hover:bg-[#0080ff]/75 hover:dark:bg-[#0062f2]/75"
         )
       ]}
-      phx-click="toggle_notes_sidebar"
+      phx-click={JS.push_focus() |> JS.push("toggle_notes_sidebar")}
     >
       <div class="p-1.5 rounded justify-start items-center gap-2.5 inline-flex">
         {render_slot(@inner_block)}
@@ -805,12 +818,18 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :point_marker, :any, required: true
   attr :selected, :boolean, default: false
   attr :count, :integer, default: nil
+  attr :index, :integer, default: 0
 
   def annotation_bubble(%{point_marker: :page} = assigns) do
     ~H"""
     <button
-      class="absolute top-0 right-[-15px] cursor-pointer group"
-      phx-click="toggle_annotation_point"
+      id="annotation_bubble_page"
+      class="absolute top-0 right-[-15px] cursor-pointer group annotation-bubble"
+      data-index={@index}
+      tabindex={if @index == 0, do: "0", else: "-1"}
+      phx-click={JS.push("toggle_annotation_point") |> JS.focus(to: "#annotations_panel_close_button")}
+      aria-label={bubble_aria_label(:page, @count, @selected)}
+      aria-pressed={to_string(@selected)}
     >
       <.chat_bubble active={@selected} count={@count} />
     </button>
@@ -820,14 +839,32 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   def annotation_bubble(assigns) do
     ~H"""
     <button
-      class="absolute right-[-15px] cursor-pointer group"
+      id={"annotation_bubble_#{@point_marker.id}"}
+      class="absolute right-[-15px] cursor-pointer group annotation-bubble"
+      data-index={@index}
       style={"top: #{@point_marker.top}px"}
-      phx-click="toggle_annotation_point"
-      phx-value-point-marker-id={@point_marker.id}
+      tabindex={if @index == 0, do: "0", else: "-1"}
+      phx-click={JS.push("toggle_annotation_point", value: %{"point-marker-id" => @point_marker.id}) |> JS.focus(to: "#annotations_panel_close_button")}
+      aria-label={bubble_aria_label(@point_marker.id, @count, @selected)}
+      aria-pressed={to_string(@selected)}
     >
       <.chat_bubble active={@selected} count={@count} />
     </button>
     """
+  end
+
+  defp bubble_aria_label(:page, count, selected) do
+    base = "Page notes"
+    count_text = if count && count > 0, do: ", #{count} notes", else: ""
+    selected_text = if selected, do: ", selected", else: ""
+    base <> count_text <> selected_text
+  end
+
+  defp bubble_aria_label(_id, count, selected) do
+    base = "Paragraph notes"
+    count_text = if count && count > 0, do: ", #{count} notes", else: ""
+    selected_text = if selected, do: ", selected", else: ""
+    base <> count_text <> selected_text
   end
 
   attr :active, :boolean, default: false
