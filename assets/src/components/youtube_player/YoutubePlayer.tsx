@@ -211,8 +211,6 @@ export const YoutubePlayer: React.FC<{
       <div
         className="embed-responsive embed-responsive-16by9"
         data-video-id={videoId}
-        role="img"
-        aria-roledescription="YouTube Video"
         aria-label={video.alt?.trim() || undefined}
         {...maybePointMarkerAttr(video, pointMarkerContext)}
       >
