@@ -2,11 +2,14 @@
 // Implements roving tabindex pattern with arrow key navigation
 
 const MAX_TEXT_PREVIEW_LENGTH = 50;
+const CLOSE_BUTTON_ID = 'annotations_panel_close_button';
 
 export const AnnotationBubbles = {
   mounted() {
     this.currentIndex = 0;
     this.bubbles = [] as HTMLElement[];
+    this.focusTimeout = null as number | null;
+    this.closeButtonRef = null as HTMLElement | null;
     this.keydownHandler = this.handleKeydown.bind(this);
     this.closeButtonHandler = this.handleCloseButtonKeydown.bind(this);
 
@@ -17,10 +20,10 @@ export const AnnotationBubbles = {
 
     // Focus first bubble when panel opens
     if (this.bubbles.length > 0) {
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
+      // Use requestAnimationFrame for DOM-ready focus (more idiomatic than setTimeout)
+      this.focusTimeout = requestAnimationFrame(() => {
         this.focusBubble(0);
-      }, 50);
+      });
     }
 
     // Handle Shift+Tab from panel close button to return to bubbles
@@ -28,9 +31,20 @@ export const AnnotationBubbles = {
   },
 
   setupCloseButtonListener() {
-    const closeButton = document.getElementById('annotations_panel_close_button');
+    // Clean up any existing listener first to prevent accumulation
+    this.cleanupCloseButtonListener();
+
+    const closeButton = document.getElementById(CLOSE_BUTTON_ID);
     if (closeButton) {
+      this.closeButtonRef = closeButton;
       closeButton.addEventListener('keydown', this.closeButtonHandler);
+    }
+  },
+
+  cleanupCloseButtonListener() {
+    if (this.closeButtonRef) {
+      this.closeButtonRef.removeEventListener('keydown', this.closeButtonHandler);
+      this.closeButtonRef = null;
     }
   },
 
@@ -41,16 +55,20 @@ export const AnnotationBubbles = {
   },
 
   destroyed() {
-    this.el.removeEventListener('keydown', this.keydownHandler);
-
-    const closeButton = document.getElementById('annotations_panel_close_button');
-    if (closeButton) {
-      closeButton.removeEventListener('keydown', this.closeButtonHandler);
+    // Clear pending focus animation frame
+    if (this.focusTimeout) {
+      cancelAnimationFrame(this.focusTimeout);
+      this.focusTimeout = null;
     }
+
+    this.el.removeEventListener('keydown', this.keydownHandler);
+    this.cleanupCloseButtonListener();
   },
 
   updateBubbles() {
-    this.bubbles = Array.from(this.el.querySelectorAll('.annotation-bubble')) as HTMLElement[];
+    this.bubbles = Array.from(
+      this.el.querySelectorAll('.annotation-bubble')
+    ) as HTMLElement[];
 
     // Clamp currentIndex to valid range when bubble list shrinks
     if (this.bubbles.length > 0) {
@@ -61,7 +79,10 @@ export const AnnotationBubbles = {
 
     // Set up roving tabindex and aria-labels
     this.bubbles.forEach((bubble: HTMLElement, index: number) => {
-      bubble.setAttribute('tabindex', index === this.currentIndex ? '0' : '-1');
+      bubble.setAttribute(
+        'tabindex',
+        index === this.currentIndex ? '0' : '-1'
+      );
 
       // Set aria-label with content context
       const ariaLabel = this.buildAriaLabel(bubble, index);
@@ -83,24 +104,140 @@ export const AnnotationBubbles = {
     const markerId = bubbleId.replace('annotation_bubble_', '');
 
     // Find the corresponding content element in the DOM
-    const contentElement = document.querySelector(`[data-point-marker="${markerId}"]`);
+    // Escape markerId to prevent selector injection issues
+    const escapedMarkerId = CSS.escape(markerId);
+    const contentElement = document.querySelector(
+      `[data-point-marker="${escapedMarkerId}"]`
+    );
 
     if (!contentElement) {
-      return `Paragraph ${index} notes`;
+      return `Paragraph ${index + 1} notes`;
     }
 
-    // Get text content and truncate
-    const textContent = contentElement.textContent?.trim() || '';
-    const truncatedText = this.truncateText(textContent, MAX_TEXT_PREVIEW_LENGTH);
+    // Get descriptive text based on element type
+    const description = this.getElementDescription(contentElement);
+
+    if (!description) {
+      return `Paragraph ${index + 1} notes`;
+    }
+
+    const truncatedText = this.truncateText(description, MAX_TEXT_PREVIEW_LENGTH);
 
     return `Notes for: "${truncatedText}"`;
+  },
+
+  getElementDescription(element: Element): string {
+    const tagName = element.tagName.toLowerCase();
+
+    // Handle images - use alt text
+    if (tagName === 'img') {
+      const alt = element.getAttribute('alt')?.trim();
+      if (alt) {
+        return `Image: ${alt}`;
+      }
+      return 'Image';
+    }
+
+    // Handle videos - use aria-label or alt
+    if (tagName === 'video' || element.classList.contains('video-player')) {
+      const ariaLabel = element.getAttribute('aria-label')?.trim();
+      if (ariaLabel) {
+        return `Video: ${ariaLabel}`;
+      }
+      return 'Video';
+    }
+
+    // Handle YouTube embeds
+    if (element.hasAttribute('data-video-id')) {
+      const ariaLabel = element.getAttribute('aria-label')?.trim();
+      if (ariaLabel) {
+        return `YouTube video: ${ariaLabel}`;
+      }
+      return 'YouTube video';
+    }
+
+    // Handle tables
+    if (tagName === 'table') {
+      const caption = element.querySelector('caption')?.textContent?.trim();
+      if (caption) {
+        return `Table: ${caption}`;
+      }
+      return 'Table';
+    }
+
+    // Handle audio elements
+    if (tagName === 'audio') {
+      return 'Audio';
+    }
+
+    // Handle code blocks
+    if (tagName === 'code' && element.classList.contains('torus-code')) {
+      const language = Array.from(element.classList)
+        .find((c) => c.startsWith('language-'))
+        ?.replace('language-', '');
+      if (language) {
+        return `Code block (${language})`;
+      }
+      return 'Code block';
+    }
+
+    // Handle blockquotes - use text content
+    if (tagName === 'blockquote') {
+      const text = element.textContent?.trim();
+      if (text) {
+        return `Quote: ${text}`;
+      }
+      return 'Quote';
+    }
+
+    // Handle dialogs
+    if (element.classList.contains('dialog')) {
+      const title = element.querySelector('h1')?.textContent?.trim();
+      if (title) {
+        return `Dialog: ${title}`;
+      }
+      return 'Dialog';
+    }
+
+    // Handle conjugation tables
+    if (element.classList.contains('conjugation')) {
+      const title = element.querySelector('.title')?.textContent?.trim();
+      if (title) {
+        return `Conjugation: ${title}`;
+      }
+      return 'Conjugation table';
+    }
+
+    // Handle math formulas
+    if (element.classList.contains('formula') || element.classList.contains('formula-block')) {
+      return 'Math formula';
+    }
+
+    // Handle iframes and embedded content (marker is on wrapper div)
+    if (element.querySelector('iframe')) {
+      const iframe = element.querySelector('iframe');
+      const title = iframe?.getAttribute('title')?.trim();
+      if (title) {
+        return `Embedded content: ${title}`;
+      }
+      return 'Embedded content';
+    }
+
+    // Default: use text content for paragraphs and other text elements
+    return element.textContent?.trim() || '';
   },
 
   truncateText(text: string, maxLength: number): string {
     if (text.length <= maxLength) {
       return text;
     }
-    return text.substring(0, maxLength).trim() + '...';
+    // Truncate at word boundary to avoid breaking mid-word or mid-emoji
+    const truncated = text.substring(0, maxLength);
+    const lastSpace = truncated.lastIndexOf(' ');
+    if (lastSpace > maxLength * 0.5) {
+      return truncated.substring(0, lastSpace).trim() + '...';
+    }
+    return truncated.trim() + '...';
   },
 
   handleKeydown(event: KeyboardEvent) {
@@ -122,7 +259,7 @@ export const AnnotationBubbles = {
           handled = true;
         } else {
           // At last bubble, move to panel
-          const closeButton = document.getElementById('annotations_panel_close_button');
+          const closeButton = document.getElementById(CLOSE_BUTTON_ID);
           if (closeButton) {
             closeButton.focus();
             handled = true;
@@ -142,7 +279,7 @@ export const AnnotationBubbles = {
       case 'Tab':
         if (!event.shiftKey) {
           // Tab forward - move to panel
-          const closeButton = document.getElementById('annotations_panel_close_button');
+          const closeButton = document.getElementById(CLOSE_BUTTON_ID);
           if (closeButton) {
             event.preventDefault();
             closeButton.focus();

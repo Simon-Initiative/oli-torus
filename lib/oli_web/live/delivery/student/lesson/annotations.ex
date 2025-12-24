@@ -450,12 +450,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               <.input type="checkbox" name="anonymous" value="false" label="Stay anonymous" />
             </div>
           <% end %>
-          <div class="flex flex-row-reverse justify-start gap-2 mt-3">
-            <Common.button variant={:primary}>
-              {@save_label}
-            </Common.button>
+          <div class="flex flex-row justify-end gap-2 mt-3">
             <Common.button type="button" variant={:secondary} phx-click="cancel_create_annotation">
               Cancel
+            </Common.button>
+            <Common.button variant={:primary}>
+              {@save_label}
             </Common.button>
           </div>
         </div>
