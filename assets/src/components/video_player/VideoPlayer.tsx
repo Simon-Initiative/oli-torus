@@ -253,8 +253,6 @@ export const VideoPlayer: React.FC<{
   return (
     <div
       className="video-player"
-      role="img"
-      aria-roledescription="Video Player"
       aria-label={video.alt?.trim() || undefined}
       onClick={preventDefault}
       {...maybePointMarkerAttr(video, pointMarkerContext)}
