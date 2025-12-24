@@ -7,12 +7,13 @@ export const AnnotationBubbles = {
   mounted() {
     this.currentIndex = 0;
     this.bubbles = [] as HTMLElement[];
+    this.keydownHandler = this.handleKeydown.bind(this);
     this.closeButtonHandler = this.handleCloseButtonKeydown.bind(this);
 
     this.updateBubbles();
 
     // Handle keyboard navigation on bubbles
-    this.el.addEventListener('keydown', this.handleKeydown.bind(this));
+    this.el.addEventListener('keydown', this.keydownHandler);
 
     // Focus first bubble when panel opens
     if (this.bubbles.length > 0) {
@@ -40,7 +41,7 @@ export const AnnotationBubbles = {
   },
 
   destroyed() {
-    this.el.removeEventListener('keydown', this.handleKeydown.bind(this));
+    this.el.removeEventListener('keydown', this.keydownHandler);
 
     const closeButton = document.getElementById('annotations_panel_close_button');
     if (closeButton) {
@@ -50,6 +51,13 @@ export const AnnotationBubbles = {
 
   updateBubbles() {
     this.bubbles = Array.from(this.el.querySelectorAll('.annotation-bubble')) as HTMLElement[];
+
+    // Clamp currentIndex to valid range when bubble list shrinks
+    if (this.bubbles.length > 0) {
+      this.currentIndex = Math.min(this.currentIndex, this.bubbles.length - 1);
+    } else {
+      this.currentIndex = 0;
+    }
 
     // Set up roving tabindex and aria-labels
     this.bubbles.forEach((bubble: HTMLElement, index: number) => {
