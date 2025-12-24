@@ -326,24 +326,24 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       |> render_click
 
       ## post header
-      # student name (Me)
+      # student name (Me) - inside the note content area
       assert view
              |> element(
-               "div[id=\"post-#{course_discussion.id}\"] div[role=\"post header\"] div[role=\"user name\"]"
+               "div[id=\"post-#{course_discussion.id}\"] div[role=\"note\"] div.font-semibold"
              )
              |> render() =~ "Me"
 
       ## post content
-      # message
+      # message - inside the note content area
       assert view
-             |> element("div[id=\"post-#{course_discussion.id}\"] p[role=\"post content\"]")
+             |> element("div[id=\"post-#{course_discussion.id}\"] div[role=\"note\"] p")
              |> render() =~ "My first discussion"
 
       ## post actions
-      # replies count
+      # replies count - button with aria-label containing "replies"
       assert view
              |> element(
-               "div[id=\"post-#{course_discussion.id}\"] div[role=\"post actions\"] button[role=\"replies\"]"
+               "div[id=\"post-#{course_discussion.id}\"] div[role=\"group\"] button[aria-label*=\"replies\"]"
              )
              |> render() =~ "2"
     end

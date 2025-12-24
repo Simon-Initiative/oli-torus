@@ -2289,13 +2289,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # the post is stored in the DB
       assert post.content.message == "some new post content"
 
-      # and is shown in the UI
-      assert has_element?(view, "div[role='user name']", "Me")
+      # and is shown in the UI (inside the note content area with role="note")
+      assert has_element?(view, "div[role='note'] div.font-semibold", "Me")
 
-      assert has_element?(view, "div[role='posted at']", "now") or
-               has_element?(view, "div[role='posted at']", "1 second ago")
+      assert has_element?(view, "div[role='note'] div.text-gray-500", "now") or
+               has_element?(view, "div[role='note'] div.text-gray-500", "1 second ago")
 
-      assert has_element?(view, "p[role='post content']", "some new post content")
+      assert has_element?(view, "div[role='note'] p", "some new post content")
     end
 
     test "retrigers search when selected tab is changed and returns notes of current tab when search is cleared",
