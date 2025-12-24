@@ -665,7 +665,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
       _ ->
         ~H"""
-        <div class="flex flex-row gap-3 my-2 justify-end" role="group" aria-label={actions_group_label(@context_type)}>
+        <div
+          class="flex flex-row gap-3 my-2 justify-end"
+          role="group"
+          aria-label={actions_group_label(@context_type)}
+        >
           <div class="flex-1" />
 
           <%= case @go_to_post_href do %>

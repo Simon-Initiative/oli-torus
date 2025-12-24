@@ -89,7 +89,8 @@ export const AnnotationBubbles = {
     const noteCount = parseInt(bubble.dataset.noteCount || '0', 10) || 0;
     const totalBubbles = parseInt(bubble.dataset.totalBubbles || '0', 10) || 0;
 
-    const noteCountText = noteCount > 0 ? `, ${noteCount} ${noteCount === 1 ? 'note' : 'notes'}` : '';
+    const noteCountText =
+      noteCount > 0 ? `, ${noteCount} ${noteCount === 1 ? 'note' : 'notes'}` : '';
     const positionText = totalBubbles > 0 ? `, ${index + 1} of ${totalBubbles}` : '';
 
     // Note: We don't include "selected" state here because aria-pressed already conveys that
