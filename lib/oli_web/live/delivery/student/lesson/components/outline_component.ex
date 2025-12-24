@@ -68,7 +68,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       id="outline_panel_container"
       role="complementary"
       aria-labelledby="outline_panel_title"
-      phx-mounted={JS.focus(to: "#outline_panel_close_button")}
+      phx-mounted={JS.focus(to: "#outline_panel_title")}
       phx-remove={JS.pop_focus()}
       phx-window-keydown="toggle_outline_sidebar"
       phx-key="escape"
@@ -87,7 +87,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         </button>
         <div class="self-stretch h-12 px-2 flex-col justify-start items-start gap-4 flex">
           <div class="self-stretch py-2 justify-start items-center inline-flex">
-            <h2 id="outline_panel_title" class="text-base font-bold leading-none">
+            <h2 id="outline_panel_title" tabindex="-1" class="text-base font-bold leading-none">
               Course Content
             </h2>
           </div>
