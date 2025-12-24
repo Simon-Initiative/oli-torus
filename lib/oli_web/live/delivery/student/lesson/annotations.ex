@@ -487,6 +487,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :rest, :global, include: ~w(class)
 
   def post(assigns) do
+    assigns = assign(assigns, :relative_time, Timex.from_now(assigns.post.inserted_at))
+
     ~H"""
     <div
       id={"post-#{@post.id}"}
@@ -498,7 +500,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <div
         tabindex="0"
         role="note"
-        aria-label={post_aria_label(@post, @current_user)}
+        aria-label={post_aria_label(@post, @current_user, @relative_time)}
         class="flex flex-col focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
       >
         <div class="flex flex-row justify-between mb-1">
@@ -513,7 +515,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             </div>
           </div>
           <div class="text-sm text-gray-500" aria-hidden="true">
-            {Timex.from_now(@post.inserted_at)}
+            {@relative_time}
           </div>
         </div>
         <p class="my-2" aria-hidden="true">
@@ -566,9 +568,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     end
   end
 
-  defp post_aria_label(post, current_user, type \\ :note) do
+  defp post_aria_label(post, current_user, relative_time, type \\ :note) do
     author = post_creator(post, current_user)
-    time = Timex.from_now(post.inserted_at)
 
     message =
       case post.status do
@@ -577,7 +578,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       end
 
     type_label = if type == :reply, do: "Reply", else: "Note"
-    "#{type_label} by #{author}, #{time}: #{message}"
+    "#{type_label} by #{author}, #{relative_time}: #{message}"
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
@@ -778,12 +779,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :current_user, Oli.Accounts.User, required: true
 
   defp reply(assigns) do
+    assigns = assign(assigns, :relative_time, Timex.from_now(assigns.post.inserted_at))
+
     ~H"""
     <div class="flex flex-col my-2 pl-4 border-l-2 border-gray-200 dark:border-gray-800">
       <div
         tabindex="0"
         role="note"
-        aria-label={post_aria_label(@post, @current_user, :reply)}
+        aria-label={post_aria_label(@post, @current_user, @relative_time, :reply)}
         class="flex flex-col focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
       >
         <div class="flex flex-row justify-between mb-1">
@@ -791,7 +794,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             {post_creator(@post, @current_user)}
           </div>
           <div class="text-sm text-gray-500" aria-hidden="true">
-            {Timex.from_now(@post.inserted_at)}
+            {@relative_time}
           </div>
         </div>
         <p class="my-2" aria-hidden="true">
