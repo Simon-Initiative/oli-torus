@@ -66,9 +66,7 @@ export const AnnotationBubbles = {
   },
 
   updateBubbles() {
-    this.bubbles = Array.from(
-      this.el.querySelectorAll('.annotation-bubble')
-    ) as HTMLElement[];
+    this.bubbles = Array.from(this.el.querySelectorAll('.annotation-bubble')) as HTMLElement[];
 
     // Clamp currentIndex to valid range when bubble list shrinks
     if (this.bubbles.length > 0) {
@@ -79,10 +77,7 @@ export const AnnotationBubbles = {
 
     // Set up roving tabindex and aria-labels
     this.bubbles.forEach((bubble: HTMLElement, index: number) => {
-      bubble.setAttribute(
-        'tabindex',
-        index === this.currentIndex ? '0' : '-1'
-      );
+      bubble.setAttribute('tabindex', index === this.currentIndex ? '0' : '-1');
 
       // Set aria-label with content context
       const ariaLabel = this.buildAriaLabel(bubble, index);
@@ -106,9 +101,7 @@ export const AnnotationBubbles = {
     // Find the corresponding content element in the DOM
     // Escape markerId to prevent selector injection issues
     const escapedMarkerId = CSS.escape(markerId);
-    const contentElement = document.querySelector(
-      `[data-point-marker="${escapedMarkerId}"]`
-    );
+    const contentElement = document.querySelector(`[data-point-marker="${escapedMarkerId}"]`);
 
     if (!contentElement) {
       return `Paragraph ${index + 1} notes`;
