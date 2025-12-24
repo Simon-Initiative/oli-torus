@@ -1,7 +1,6 @@
 // Hook for managing keyboard navigation between annotation bubbles
 // Implements roving tabindex pattern with arrow key navigation
 
-const MAX_TEXT_PREVIEW_LENGTH = 50;
 const CLOSE_BUTTON_ID = 'annotations_panel_close_button';
 
 export const AnnotationBubbles = {
@@ -87,11 +86,16 @@ export const AnnotationBubbles = {
 
   buildAriaLabel(bubble: HTMLElement, index: number): string {
     const isPageBubble = bubble.id === 'annotation_bubble_page';
+    const noteCount = parseInt(bubble.dataset.noteCount || '0', 10) || 0;
+    const totalBubbles = parseInt(bubble.dataset.totalBubbles || '0', 10) || 0;
+
+    const noteCountText = noteCount > 0 ? `, ${noteCount} ${noteCount === 1 ? 'note' : 'notes'}` : '';
+    const positionText = totalBubbles > 0 ? `, ${index + 1} of ${totalBubbles}` : '';
 
     // Note: We don't include "selected" state here because aria-pressed already conveys that
 
     if (isPageBubble) {
-      return 'Page notes (general notes for entire page)';
+      return `Page notes (general notes for entire page)${noteCountText}${positionText}`;
     }
 
     // Get the point marker ID from the bubble's ID
@@ -104,29 +108,30 @@ export const AnnotationBubbles = {
     const contentElement = document.querySelector(`[data-point-marker="${escapedMarkerId}"]`);
 
     if (!contentElement) {
-      return `Paragraph ${index + 1} notes`;
+      return `Content notes${noteCountText}${positionText}`;
     }
 
     // Get descriptive text based on element type
     const description = this.getElementDescription(contentElement);
 
     if (!description) {
-      return `Paragraph ${index + 1} notes`;
+      return `Content notes${noteCountText}${positionText}`;
     }
 
-    const truncatedText = this.truncateText(description, MAX_TEXT_PREVIEW_LENGTH);
-
-    return `Notes for: "${truncatedText}"`;
+    // Description is already truncated in getElementDescription, so use it directly
+    return `Notes for: "${description}"${noteCountText}${positionText}`;
   },
 
   getElementDescription(element: Element): string {
     const tagName = element.tagName.toLowerCase();
+    // Max length for the descriptive text portion (after prefix like "Image: ")
+    const maxDescLength = 35;
 
     // Handle images - use alt text
     if (tagName === 'img') {
       const alt = element.getAttribute('alt')?.trim();
       if (alt) {
-        return `Image: ${alt}`;
+        return `Image: ${this.truncateText(alt, maxDescLength)}`;
       }
       return 'Image';
     }
@@ -135,7 +140,7 @@ export const AnnotationBubbles = {
     if (tagName === 'video' || element.classList.contains('video-player')) {
       const ariaLabel = element.getAttribute('aria-label')?.trim();
       if (ariaLabel) {
-        return `Video: ${ariaLabel}`;
+        return `Video: ${this.truncateText(ariaLabel, maxDescLength)}`;
       }
       return 'Video';
     }
@@ -144,16 +149,29 @@ export const AnnotationBubbles = {
     if (element.hasAttribute('data-video-id')) {
       const ariaLabel = element.getAttribute('aria-label')?.trim();
       if (ariaLabel) {
-        return `YouTube video: ${ariaLabel}`;
+        return `YouTube video: ${this.truncateText(ariaLabel, maxDescLength - 8)}`;
       }
       return 'YouTube video';
     }
 
     // Handle tables
     if (tagName === 'table') {
+      // Check for caption first, then aria-label, then aria-labelledby
       const caption = element.querySelector('caption')?.textContent?.trim();
       if (caption) {
-        return `Table: ${caption}`;
+        return `Table: ${this.truncateText(caption, maxDescLength)}`;
+      }
+      const ariaLabel = element.getAttribute('aria-label')?.trim();
+      if (ariaLabel) {
+        return `Table: ${this.truncateText(ariaLabel, maxDescLength)}`;
+      }
+      const labelledById = element.getAttribute('aria-labelledby');
+      if (labelledById) {
+        const labelElement = document.getElementById(labelledById);
+        const labelText = labelElement?.textContent?.trim();
+        if (labelText) {
+          return `Table: ${this.truncateText(labelText, maxDescLength)}`;
+        }
       }
       return 'Table';
     }
@@ -178,7 +196,7 @@ export const AnnotationBubbles = {
     if (tagName === 'blockquote') {
       const text = element.textContent?.trim();
       if (text) {
-        return `Quote: ${text}`;
+        return `Quote: ${this.truncateText(text, maxDescLength)}`;
       }
       return 'Quote';
     }
@@ -187,7 +205,7 @@ export const AnnotationBubbles = {
     if (element.classList.contains('dialog')) {
       const title = element.querySelector('h1')?.textContent?.trim();
       if (title) {
-        return `Dialog: ${title}`;
+        return `Dialog: ${this.truncateText(title, maxDescLength)}`;
       }
       return 'Dialog';
     }
@@ -196,7 +214,7 @@ export const AnnotationBubbles = {
     if (element.classList.contains('conjugation')) {
       const title = element.querySelector('.title')?.textContent?.trim();
       if (title) {
-        return `Conjugation: ${title}`;
+        return `Conjugation: ${this.truncateText(title, maxDescLength - 4)}`;
       }
       return 'Conjugation table';
     }
@@ -211,13 +229,14 @@ export const AnnotationBubbles = {
       const iframe = element.querySelector('iframe');
       const title = iframe?.getAttribute('title')?.trim();
       if (title) {
-        return `Embedded content: ${title}`;
+        return `Embedded content: ${this.truncateText(title, maxDescLength - 9)}`;
       }
       return 'Embedded content';
     }
 
     // Default: use text content for paragraphs and other text elements
-    return element.textContent?.trim() || '';
+    const textContent = element.textContent?.trim() || '';
+    return this.truncateText(textContent, maxDescLength);
   },
 
   truncateText(text: string, maxLength: number): string {

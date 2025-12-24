@@ -495,28 +495,36 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         @rest[:class]
       ]}
     >
-      <div class="flex flex-row justify-between mb-1" role="post header">
-        <div class="flex flex-row">
-          <div
-            :if={@enable_unread_badge && @post.unread_replies_count > 0}
-            class="w-2 h-2 my-2 mr-3 bg-primary rounded-full"
-          />
-          <div class="font-semibold" role="user name">
-            {post_creator(@post, @current_user)}
+      <div
+        tabindex="0"
+        role="note"
+        aria-label={post_aria_label(@post, @current_user)}
+        class="flex flex-col focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+      >
+        <div class="flex flex-row justify-between mb-1">
+          <div class="flex flex-row">
+            <div
+              :if={@enable_unread_badge && @post.unread_replies_count > 0}
+              class="w-2 h-2 my-2 mr-3 bg-primary rounded-full"
+              aria-hidden="true"
+            />
+            <div class="font-semibold" aria-hidden="true">
+              {post_creator(@post, @current_user)}
+            </div>
+          </div>
+          <div class="text-sm text-gray-500" aria-hidden="true">
+            {Timex.from_now(@post.inserted_at)}
           </div>
         </div>
-        <div role="posted at" class="text-sm text-gray-500">
-          {Timex.from_now(@post.inserted_at)}
-        </div>
+        <p class="my-2" aria-hidden="true">
+          <%= case @post.status do %>
+            <% :deleted -> %>
+              <span class="italic text-gray-500">(deleted)</span>
+            <% _ -> %>
+              {@post.content.message}
+          <% end %>
+        </p>
       </div>
-      <p class="my-2" role="post content">
-        <%= case @post.status do %>
-          <% :deleted -> %>
-            <span class="italic text-gray-500">(deleted)</span>
-          <% _ -> %>
-            {@post.content.message}
-        <% end %>
-      </p>
       <.post_actions
         post={@post}
         current_user={@current_user}
@@ -558,12 +566,27 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     end
   end
 
+  defp post_aria_label(post, current_user, type \\ :note) do
+    author = post_creator(post, current_user)
+    time = Timex.from_now(post.inserted_at)
+
+    message =
+      case post.status do
+        :deleted -> "(deleted)"
+        _ -> post.content.message
+      end
+
+    type_label = if type == :reply, do: "Reply", else: "Note"
+    "#{type_label} by #{author}, #{time}: #{message}"
+  end
+
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :on_toggle_reaction, :string, default: nil
   attr :on_toggle_replies, :string, default: nil
   attr :go_to_post_href, :string, default: nil
   attr :has_unread_replies, :boolean, default: false
+  attr :context_type, :atom, default: :note
 
   defp post_actions(assigns) do
     case assigns.post do
@@ -580,12 +603,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       }
       when not is_nil(reaction_summaries) ->
         ~H"""
-        <div class="flex flex-row gap-3 my-2" role="post actions">
+        <div class="flex flex-row gap-3 my-2" role="group" aria-label={actions_group_label(@context_type)}>
           <button
             :if={@on_toggle_reaction}
             class="inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-            role="reactions"
-            aria-label="thumbs up"
+            aria-label={like_button_label(@post.reaction_summaries)}
             aria-pressed={to_string(get_in(@post.reaction_summaries, [:like, :reacted]) || false)}
             phx-click={@on_toggle_reaction}
             phx-value-reaction={:like}
@@ -605,8 +627,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               "inline-flex gap-1 text-sm bold py-1 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700",
               if(@has_unread_replies, do: "text-primary", else: "text-gray-500")
             ]}
-            role="replies"
-            aria-label="add reply"
+            aria-label={replies_button_label(@post.replies, @post.replies_count)}
             phx-click={@on_toggle_replies}
             phx-value-post-id={assigns.post.id}
           >
@@ -644,7 +665,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
       _ ->
         ~H"""
-        <div class="flex flex-row gap-3 my-2 justify-end" role="post actions">
+        <div class="flex flex-row gap-3 my-2 justify-end" role="group" aria-label={actions_group_label(@context_type)}>
           <div class="flex-1" />
 
           <%= case @go_to_post_href do %>
@@ -755,25 +776,70 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   defp reply(assigns) do
     ~H"""
     <div class="flex flex-col my-2 pl-4 border-l-2 border-gray-200 dark:border-gray-800">
-      <div class="flex flex-row justify-between mb-1">
-        <div class="font-semibold">
-          {post_creator(@post, @current_user)}
+      <div
+        tabindex="0"
+        role="note"
+        aria-label={post_aria_label(@post, @current_user, :reply)}
+        class="flex flex-col focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+      >
+        <div class="flex flex-row justify-between mb-1">
+          <div class="font-semibold" aria-hidden="true">
+            {post_creator(@post, @current_user)}
+          </div>
+          <div class="text-sm text-gray-500" aria-hidden="true">
+            {Timex.from_now(@post.inserted_at)}
+          </div>
         </div>
-        <div class="text-sm text-gray-500">
-          {Timex.from_now(@post.inserted_at)}
-        </div>
+        <p class="my-2" aria-hidden="true">
+          <%= case @post.status do %>
+            <% :deleted -> %>
+              <span class="italic text-gray-500">(deleted)</span>
+            <% _ -> %>
+              {@post.content.message}
+          <% end %>
+        </p>
       </div>
-      <p class="my-2">
-        <%= case @post.status do %>
-          <% :deleted -> %>
-            <span class="italic text-gray-500">(deleted)</span>
-          <% _ -> %>
-            {@post.content.message}
-        <% end %>
-      </p>
-      <.post_actions post={@post} current_user={@current_user} on_toggle_reaction="toggle_reaction" />
+      <.post_actions
+        post={@post}
+        current_user={@current_user}
+        on_toggle_reaction="toggle_reaction"
+        context_type={:reply}
+      />
     </div>
     """
+  end
+
+  defp actions_group_label(:reply), do: "Reply actions"
+  defp actions_group_label(_), do: "Note actions"
+
+  defp like_button_label(reaction_summaries) do
+    case Map.get(reaction_summaries, :like) do
+      %{count: count, reacted: true} when count > 0 ->
+        "Unlike, #{count} #{if count == 1, do: "like", else: "likes"}"
+
+      %{count: count, reacted: false} when count > 0 ->
+        "Like, #{count} #{if count == 1, do: "like", else: "likes"}"
+
+      # Handles nil, %{count: 0}, or unexpected structures
+      _ ->
+        "Like"
+    end
+  end
+
+  defp replies_button_label(replies, replies_count) do
+    # Only consider expanded if replies is a non-empty list
+    is_expanded = is_list(replies) and replies != []
+
+    cond do
+      is_expanded ->
+        "Hide replies"
+
+      replies_count > 0 ->
+        "Show #{replies_count} #{if replies_count == 1, do: "reply", else: "replies"}"
+
+      true ->
+        "Add reply"
+    end
   end
 
   def delete_post_modal(assigns) do
@@ -819,6 +885,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :selected, :boolean, default: false
   attr :count, :integer, default: nil
   attr :index, :integer, default: 0
+  attr :total_bubbles, :integer, required: true
 
   def annotation_bubble(%{point_marker: :page} = assigns) do
     ~H"""
@@ -826,6 +893,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       id="annotation_bubble_page"
       class="absolute top-0 right-[-15px] cursor-pointer group annotation-bubble"
       data-index={@index}
+      data-note-count={@count}
+      data-total-bubbles={@total_bubbles}
       tabindex={if @index == 0, do: "0", else: "-1"}
       phx-click={
         JS.push("toggle_annotation_point") |> JS.focus(to: "#annotations_panel_close_button")
@@ -844,6 +913,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       id={"annotation_bubble_#{@point_marker.id}"}
       class="absolute right-[-15px] cursor-pointer group annotation-bubble"
       data-index={@index}
+      data-note-count={@count}
+      data-total-bubbles={@total_bubbles}
       style={"top: #{@point_marker.top}px"}
       tabindex={if @index == 0, do: "0", else: "-1"}
       phx-click={

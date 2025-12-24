@@ -942,12 +942,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </div>
 
       <:point_markers :if={@active_sidebar_panel == :notes && @annotations.point_markers}>
+        <% total_bubbles = length(@annotations.point_markers) + 1 %>
         <div id="annotation_bubbles_container" phx-hook="AnnotationBubbles">
           <Annotations.annotation_bubble
             point_marker={:page}
             selected={@annotations.selected_point == :page}
             count={@annotations.post_counts && @annotations.post_counts[nil]}
             index={0}
+            total_bubbles={total_bubbles}
           />
           <Annotations.annotation_bubble
             :for={{point_marker, idx} <- Enum.with_index(@annotations.point_markers, 1)}
@@ -955,6 +957,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             selected={@annotations.selected_point == point_marker.id}
             count={@annotations.post_counts && @annotations.post_counts[point_marker.id]}
             index={idx}
+            total_bubbles={total_bubbles}
           />
         </div>
       </:point_markers>
