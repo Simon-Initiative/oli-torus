@@ -5,13 +5,15 @@ export const PointMarkers = {
   mounted() {
     const el = this.el as HTMLElement;
 
-    const pageHeaderOffset =
-      document.getElementById('page_header')?.getBoundingClientRect().height || 0;
+    // Find the positioned ancestor (the element with position: relative)
+    // that the annotation bubbles will be positioned against.
+    // This is typically the parent container with the 'relative' class.
+    const positionedAncestor = findPositionedAncestor(el);
 
     const UPDATE_DEBOUNCE_INTERVAL = 200;
     const updatePointMarkers = debounce(() => {
       this.pushEvent('update_point_markers', {
-        ['point_markers']: queryPointMarkers(el, pageHeaderOffset),
+        ['point_markers']: queryPointMarkers(el, positionedAncestor),
       });
     }, UPDATE_DEBOUNCE_INTERVAL);
 
@@ -51,13 +53,34 @@ export const PointMarkers = {
   },
 };
 
-function queryPointMarkers(el: HTMLElement, pageHeaderOffset: number) {
+function queryPointMarkers(el: HTMLElement, positionedAncestor: HTMLElement) {
   const markerElements = el.querySelectorAll('[data-point-marker]');
+
+  // Calculate positions relative to the positioned ancestor,
+  // since that's what the bubbles will use for absolute positioning
+  const ancestorRect = positionedAncestor.getBoundingClientRect();
 
   return Array.from(markerElements).map((markerEl) => ({
     id: markerEl.getAttribute('data-point-marker'),
-    top: markerEl.getBoundingClientRect().top - el.getBoundingClientRect().top + pageHeaderOffset,
+    top: markerEl.getBoundingClientRect().top - ancestorRect.top,
   }));
+}
+
+// Find the nearest positioned ancestor (an element with position other than 'static')
+// This matches how CSS absolute positioning works
+function findPositionedAncestor(el: HTMLElement): HTMLElement {
+  let current = el.parentElement;
+
+  while (current) {
+    const position = window.getComputedStyle(current).position;
+    if (position !== 'static') {
+      return current;
+    }
+    current = current.parentElement;
+  }
+
+  // Fallback to document body if no positioned ancestor found
+  return document.body;
 }
 
 function clearAllHighlightedPointMarkers(el: HTMLElement) {
