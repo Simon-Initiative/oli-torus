@@ -870,7 +870,58 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
-    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:right-0 z-50 sm:h-full">
+    <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
+      <.page_header
+        page_context={@page_context}
+        ctx={@ctx}
+        index={@current_page["index"]}
+        objectives={@objectives}
+        container_label={Utils.get_container_label(@current_page["id"], @section)}
+      />
+
+      <div
+        id="page_content"
+        class="content"
+        phx-update="ignore"
+        role="region"
+        aria-label="Page content"
+        phx-hook="PointMarkers"
+      >
+        {raw(@html)}
+        <div class="flex w-full justify-center">
+          <.reset_attempts_button
+            activity_count={@activity_count}
+            advanced_delivery={@advanced_delivery}
+            page_context={@page_context}
+            section_slug={@section.slug}
+          />
+        </div>
+        <.references ctx={@ctx} bib_app_params={@bib_app_params} />
+      </div>
+
+      <:point_markers :if={@active_sidebar_panel == :notes && @annotations.point_markers}>
+        <% total_bubbles = length(@annotations.point_markers) + 1 %>
+        <div id="annotation_bubbles_container" phx-hook="AnnotationBubbles">
+          <Annotations.annotation_bubble
+            point_marker={:page}
+            selected={@annotations.selected_point == :page}
+            count={@annotations.post_counts && @annotations.post_counts[nil]}
+            index={0}
+            total_bubbles={total_bubbles}
+          />
+          <Annotations.annotation_bubble
+            :for={{point_marker, idx} <- Enum.with_index(@annotations.point_markers, 1)}
+            point_marker={point_marker}
+            selected={@annotations.selected_point == point_marker.id}
+            count={@annotations.post_counts && @annotations.post_counts[point_marker.id]}
+            index={idx}
+            total_bubbles={total_bubbles}
+          />
+        </div>
+      </:point_markers>
+    </.page_content_with_sidebar_layout>
+
+    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
           "hidden sm:inline-flex absolute top-24",
@@ -927,23 +978,24 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <% end %>
       </div>
     </div>
+    <Annotations.delete_post_modal />
+    """
+  end
 
+  def render(%{view: :practice_page} = assigns) do
+    # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
+    ~H"""
+    <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
     <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
       <.page_header
         page_context={@page_context}
         ctx={@ctx}
-        index={@current_page["index"]}
         objectives={@objectives}
+        index={@current_page["index"]}
         container_label={Utils.get_container_label(@current_page["id"], @section)}
       />
 
-      <div
-        id="page_content"
-        class="content"
-        phx-update="ignore"
-        role="page content"
-        phx-hook="PointMarkers"
-      >
+      <div id="page_content" class="content" phx-update="ignore" role="region" aria-label="Page content">
         {raw(@html)}
         <div class="flex w-full justify-center">
           <.reset_attempts_button
@@ -955,37 +1007,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
         <.references ctx={@ctx} bib_app_params={@bib_app_params} />
       </div>
-
-      <:point_markers :if={@active_sidebar_panel == :notes && @annotations.point_markers}>
-        <% total_bubbles = length(@annotations.point_markers) + 1 %>
-        <div id="annotation_bubbles_container" phx-hook="AnnotationBubbles">
-          <Annotations.annotation_bubble
-            point_marker={:page}
-            selected={@annotations.selected_point == :page}
-            count={@annotations.post_counts && @annotations.post_counts[nil]}
-            index={0}
-            total_bubbles={total_bubbles}
-          />
-          <Annotations.annotation_bubble
-            :for={{point_marker, idx} <- Enum.with_index(@annotations.point_markers, 1)}
-            point_marker={point_marker}
-            selected={@annotations.selected_point == point_marker.id}
-            count={@annotations.post_counts && @annotations.post_counts[point_marker.id]}
-            index={idx}
-            total_bubbles={total_bubbles}
-          />
-        </div>
-      </:point_markers>
     </.page_content_with_sidebar_layout>
-    <Annotations.delete_post_modal />
-    """
-  end
 
-  def render(%{view: :practice_page} = assigns) do
-    # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
-    ~H"""
-    <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
-    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:right-0 z-50 sm:h-full">
+    <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
           "hidden sm:inline-flex absolute top-24",
@@ -1019,28 +1043,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </div>
     </div>
-    <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
-      <.page_header
-        page_context={@page_context}
-        ctx={@ctx}
-        objectives={@objectives}
-        index={@current_page["index"]}
-        container_label={Utils.get_container_label(@current_page["id"], @section)}
-      />
-
-      <div id="page_content" class="content" phx-update="ignore" role="page content">
-        {raw(@html)}
-        <div class="flex w-full justify-center">
-          <.reset_attempts_button
-            activity_count={@activity_count}
-            advanced_delivery={@advanced_delivery}
-            page_context={@page_context}
-            section_slug={@section.slug}
-          />
-        </div>
-        <.references ctx={@ctx} bib_app_params={@bib_app_params} />
-      </div>
-    </.page_content_with_sidebar_layout>
     """
   end
 

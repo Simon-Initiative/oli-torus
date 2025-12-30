@@ -1,67 +1,46 @@
 // Hook for managing keyboard navigation between annotation bubbles
 // Implements roving tabindex pattern with arrow key navigation
-
-const CLOSE_BUTTON_ID = 'annotations_panel_close_button';
+// Tab follows natural DOM order: Bubbles → Toggle → Outline → Panel
 
 export const AnnotationBubbles = {
   mounted() {
     this.currentIndex = 0;
     this.bubbles = [] as HTMLElement[];
-    this.focusTimeout = null as number | null;
-    this.closeButtonRef = null as HTMLElement | null;
     this.keydownHandler = this.handleKeydown.bind(this);
-    this.closeButtonHandler = this.handleCloseButtonKeydown.bind(this);
+    this.focusFrameId = null as number | null;
 
     this.updateBubbles();
 
     // Handle keyboard navigation on bubbles
     this.el.addEventListener('keydown', this.keydownHandler);
 
-    // Focus first bubble when panel opens
+    // Auto-focus first bubble when panel opens.
+    // This provides immediate keyboard access to annotation bubbles after
+    // opening the panel with Enter on the toggle button.
+    // DOM order is: Main content → Bubbles → Toggle → Panel
+    // Without auto-focus, Tab from toggle goes to Outline (forward), not bubbles.
     if (this.bubbles.length > 0) {
-      // Use requestAnimationFrame for DOM-ready focus (more idiomatic than setTimeout)
-      this.focusTimeout = requestAnimationFrame(() => {
-        this.focusBubble(0);
+      this.focusFrameId = requestAnimationFrame(() => {
+        // Defensive check: ensure bubbles still exist when frame executes
+        if (this.bubbles.length > 0 && this.bubbles[0]) {
+          this.focusBubble(0);
+        }
+        this.focusFrameId = null;
       });
-    }
-
-    // Handle Shift+Tab from panel close button to return to bubbles
-    this.setupCloseButtonListener();
-  },
-
-  setupCloseButtonListener() {
-    // Clean up any existing listener first to prevent accumulation
-    this.cleanupCloseButtonListener();
-
-    const closeButton = document.getElementById(CLOSE_BUTTON_ID);
-    if (closeButton) {
-      this.closeButtonRef = closeButton;
-      closeButton.addEventListener('keydown', this.closeButtonHandler);
-    }
-  },
-
-  cleanupCloseButtonListener() {
-    if (this.closeButtonRef) {
-      this.closeButtonRef.removeEventListener('keydown', this.closeButtonHandler);
-      this.closeButtonRef = null;
     }
   },
 
   updated() {
     this.updateBubbles();
-    // Re-setup close button listener in case panel was re-rendered
-    this.setupCloseButtonListener();
   },
 
   destroyed() {
-    // Clear pending focus animation frame
-    if (this.focusTimeout) {
-      cancelAnimationFrame(this.focusTimeout);
-      this.focusTimeout = null;
+    // Cancel pending focus animation frame to prevent focus on destroyed elements
+    if (this.focusFrameId !== null) {
+      cancelAnimationFrame(this.focusFrameId);
+      this.focusFrameId = null;
     }
-
     this.el.removeEventListener('keydown', this.keydownHandler);
-    this.cleanupCloseButtonListener();
   },
 
   updateBubbles() {
@@ -266,41 +245,27 @@ export const AnnotationBubbles = {
     switch (event.key) {
       case 'ArrowDown':
       case 'ArrowRight':
-        // Move to next bubble, or to panel if at last
+        // Move to next bubble (stop at last bubble - use Tab to exit list)
         if (currentIndex < this.bubbles.length - 1) {
           newIndex = currentIndex + 1;
           handled = true;
-        } else {
-          // At last bubble, move to panel
-          const closeButton = document.getElementById(CLOSE_BUTTON_ID);
-          if (closeButton) {
-            closeButton.focus();
-            handled = true;
-          }
         }
+        // At last bubble: do nothing (arrow keys stay within the list)
+        // Users should use Tab to continue to next focusable element
         break;
 
       case 'ArrowUp':
       case 'ArrowLeft':
-        // Move to previous bubble
+        // Move to previous bubble (stop at first bubble)
         if (currentIndex > 0) {
           newIndex = currentIndex - 1;
           handled = true;
         }
+        // At first bubble: do nothing (arrow keys stay within the list)
         break;
 
-      case 'Tab':
-        if (!event.shiftKey) {
-          // Tab forward - move to panel
-          const closeButton = document.getElementById(CLOSE_BUTTON_ID);
-          if (closeButton) {
-            event.preventDefault();
-            closeButton.focus();
-            handled = true;
-          }
-        }
-        // Shift+Tab - let it naturally go back (to toggle button)
-        break;
+      // Tab is intentionally NOT handled here - let natural DOM order work
+      // This allows: Bubbles → Toggle → Outline → Panel flow
 
       case 'Home':
         // Move to first bubble
@@ -324,16 +289,6 @@ export const AnnotationBubbles = {
     }
   },
 
-  handleCloseButtonKeydown(event: KeyboardEvent) {
-    // Shift+Tab from close button should go back to last focused bubble
-    if (event.key === 'Tab' && event.shiftKey) {
-      event.preventDefault();
-      if (this.bubbles.length > 0) {
-        this.focusBubble(this.currentIndex);
-      }
-    }
-  },
-
   focusBubble(index: number) {
     // Update roving tabindex
     this.bubbles.forEach((bubble: HTMLElement, i: number) => {
@@ -341,6 +296,13 @@ export const AnnotationBubbles = {
     });
 
     this.currentIndex = index;
-    this.bubbles[index]?.focus();
+
+    // Safely attempt focus with error handling
+    try {
+      this.bubbles[index]?.focus();
+    } catch (error) {
+      // Focus can fail in edge cases (element hidden, removed, etc.)
+      console.warn('Failed to focus annotation bubble at index', index, error);
+    }
   },
 };
