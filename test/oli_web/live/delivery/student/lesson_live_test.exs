@@ -760,7 +760,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       refute has_element?(view, "div[id='blocking_gates_warning']")
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
     end
 
     test "does not show the blocking gates warning when the practice page is gated but gating condition is not yet met",
@@ -786,7 +786,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       refute has_element?(view, "div[id='blocking_gates_warning']")
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
     end
 
     test "shows the blocking gates warning when the practice page is gated and the gating condition is met",
@@ -812,7 +812,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       assert has_element?(view, "div[id='blocking_gates_warning']")
-      refute has_element?(view, "div[role='page content']")
+      refute has_element?(view, "div[role='region'][aria-label='Page content']")
     end
 
     test "does not show the blocking gates warning when the graded page is not gated", %{
@@ -831,7 +831,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       refute has_element?(view, "div[id='blocking_gates_warning']")
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
     end
 
     test "does not show the blocking gates warning when the graded page is gated but gating condition is not yet met",
@@ -860,7 +860,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       refute has_element?(view, "div[id='blocking_gates_warning']")
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
     end
 
     test "shows the blocking gates warning when the graded page is gated and the gating condition is met",
@@ -889,7 +889,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       assert has_element?(view, "div[id='blocking_gates_warning']")
-      refute has_element?(view, "div[role='page content']")
+      refute has_element?(view, "div[role='region'][aria-label='Page content']")
     end
 
     test "redirects when page is adaptive", %{
@@ -1051,7 +1051,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
-      assert has_element?(view, "div[role='page content'] p", "Here's some practice page content")
+      assert has_element?(view, "div[role='region'][aria-label='Page content'] p", "Here's some practice page content")
 
       # Support link is visible
       assert has_element?(view, "#tech_support_user_menu", "Support")
@@ -1168,7 +1168,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
       refute has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
       refute has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
     end
 
@@ -1185,7 +1185,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
       refute has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
       refute has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
 
       view
@@ -1211,7 +1211,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
       refute has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
       refute has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
 
       view
@@ -2652,7 +2652,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> render_hook("survey_scripts_loaded", %{"error" => "Script loading failed"})
 
       # Verify the page still loads correctly even with script loading error
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
     end
 
     test "loads annotations panel correctly", %{
@@ -3022,7 +3022,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       send(view.pid, :gc)
 
       # Should not crash and continue normally
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
     end
   end
 
@@ -3046,7 +3046,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       send(view.pid, {ref, {:assign_annotations, %{posts: []}}})
 
       # Should handle the result without crashing
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
     end
 
     test "handles async task error", %{
@@ -3086,7 +3086,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       send(view.pid, {ref, {:unknown_result, "data"}})
 
       # Should handle gracefully without crashing
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
     end
   end
 
@@ -3108,7 +3108,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       # Verify the page loads correctly with an active attempt
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
     end
 
@@ -3127,7 +3127,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       # Verify the page loads correctly with an active attempt
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
     end
 
@@ -3146,7 +3146,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       # Verify the page loads correctly with an active attempt
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
     end
 
@@ -3165,7 +3165,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       # Verify the page loads correctly with an active attempt
-      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "div[role='region'][aria-label='Page content']")
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
     end
   end
