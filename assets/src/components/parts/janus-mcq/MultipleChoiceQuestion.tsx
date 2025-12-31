@@ -80,23 +80,10 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   }
 
   const textValue = getNodeText(nodes);
-  const itemIndex = index !== undefined ? index : idx;
-  const positionText = `${itemIndex + 1} of ${totalItems}`;
-
-  /** A11y label rules:
-   *  ✔ For checkbox: "OptionText, unchecked, checkbox, group, 1 of 4"
-   *  ✔ For radio: only text (browser handles group/checked state)
-   */
   const labelId = `${itemId}-label`;
-  const positionId = `${itemId}-position`;
-
-  // For multiple selection, create full aria-label with text, state, and position
-  const ariaLabel = multipleSelection
-    ? `${textValue}, ${selected ? 'checked' : 'unchecked'}, checkbox, group, ${positionText}`
-    : undefined;
 
   /** When user checks/unchecks, we must refocus the input so SR
-   *  re-announces: "Tomato, checkbox, 2 of 4, checked"
+   *  re-announces the option text with updated state
    */
   const handleChanged = (e: { target: { checked: boolean } }) => {
     const selection = {
@@ -232,18 +219,12 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
           onChange={handleChanged}
           onMouseDown={handleMouseDown}
           onKeyDown={handleKeyDown}
-          aria-label={ariaLabel}
-          aria-labelledby={!multipleSelection ? labelId : undefined}
+          aria-labelledby={labelId}
           tabIndex={disabled ? -1 : 0}
         />
 
-        {/* Label holds content + optional sr-only position */}
+        {/* Label holds only the option content */}
         <label id={labelId} htmlFor={itemId}>
-          {multipleSelection && (
-            <span id={positionId} className="sr-only">
-              {positionText}
-            </span>
-          )}
           <MCQItemContent itemId={itemId} nodes={nodes} state={state} />
         </label>
       </div>
@@ -895,10 +876,8 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   }
 
   const groupLabelId = `mcq-group-label-${id}`;
-  const groupLabelText = ariaLabelledBy?.trim() || 'Multiple choice, group';
-  const groupLabel = multipleSelection
-    ? `${groupLabelText}, group, ${options.length} items`
-    : groupLabelText;
+  const groupLabelText =
+    ariaLabelledBy?.trim() || (multipleSelection ? 'Select all that apply' : 'Multiple choice');
 
   return ready ? (
     <div
@@ -911,7 +890,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       aria-atomic="false"
     >
       <span id={groupLabelId} className="sr-only">
-        {groupLabel}
+        {groupLabelText}
       </span>
       {options?.map((item, index) => {
         const { index: _itemIndex, ...itemWithoutIndex } = item;
