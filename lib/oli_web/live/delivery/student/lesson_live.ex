@@ -1129,7 +1129,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             current_out_of={@current_out_of}
           />
 
-          <div id="page_content" class="content w-full" phx-update="ignore" role="region" aria-label="Page content">
+          <div
+            id="page_content"
+            class="content w-full"
+            phx-update="ignore"
+            role="region"
+            aria-label="Page content"
+          >
             {raw(@html)}
             <.submit_button batch_scoring={@page_context.effective_settings.batch_scoring} />
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />

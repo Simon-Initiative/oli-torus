@@ -1051,7 +1051,12 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
-      assert has_element?(view, "div[role='region'][aria-label='Page content'] p", "Here's some practice page content")
+
+      assert has_element?(
+               view,
+               "div[role='region'][aria-label='Page content'] p",
+               "Here's some practice page content"
+             )
 
       # Support link is visible
       assert has_element?(view, "#tech_support_user_menu", "Support")
