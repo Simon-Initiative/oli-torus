@@ -377,7 +377,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       {:noreply,
        socket
        |> assign_annotations(selected_point: point_marker_id, posts: nil)
-       |> push_event("highlight_point_marker", %{id: point_marker_id})}
+       |> push_event("highlight_point_marker", %{id: point_marker_id})
+       |> push_event("js-exec", %{to: "#annotation_input", attr: "phx-focus-on-select"})}
     end
   end
 

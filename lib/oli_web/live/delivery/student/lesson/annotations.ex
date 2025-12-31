@@ -443,6 +443,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               rows="4"
               class="w-full border bg-Specially-Tokens-Fill-fill-input border-Specially-Tokens-Border-border-input rounded-lg p-3"
               placeholder={@placeholder}
+              phx-focus-on-select={JS.focus()}
             />
           </div>
           <%= unless @disable_anonymous_option do %>
@@ -469,10 +470,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     <div class={["flex flex-row", @rest[:class]]}>
       <div class="flex-1 relative">
         <input
+          id="annotation_input"
           type="text"
           class="w-full h-9 sm:h-auto border bg-Specially-Tokens-Fill-fill-input border-Specially-Tokens-Border-border-input rounded-xl p-3"
           placeholder={@placeholder}
           phx-focus="begin_create_annotation"
+          phx-focus-on-select={JS.focus()}
         />
       </div>
     </div>
@@ -903,9 +906,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       data-note-count={@count}
       data-total-bubbles={@total_bubbles}
       tabindex={if @index == 0, do: "0", else: "-1"}
-      phx-click={
-        JS.push("toggle_annotation_point") |> JS.focus(to: "#annotations_panel_close_button")
-      }
+      phx-click={JS.push("toggle_annotation_point")}
       aria-label={bubble_aria_label(:page, @count, @selected)}
       aria-pressed={to_string(@selected)}
     >
@@ -924,10 +925,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       data-total-bubbles={@total_bubbles}
       style={"top: #{@point_marker.top}px"}
       tabindex={if @index == 0, do: "0", else: "-1"}
-      phx-click={
-        JS.push("toggle_annotation_point", value: %{"point-marker-id" => @point_marker.id})
-        |> JS.focus(to: "#annotations_panel_close_button")
-      }
+      phx-click={JS.push("toggle_annotation_point", value: %{"point-marker-id" => @point_marker.id})}
       aria-label={bubble_aria_label(@point_marker.id, @count, @selected)}
       aria-pressed={to_string(@selected)}
     >

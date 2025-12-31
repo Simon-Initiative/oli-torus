@@ -68,7 +68,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       id="outline_panel_container"
       role="complementary"
       aria-labelledby="outline_panel_title"
-      phx-mounted={JS.focus(to: "#outline_panel_title")}
+      phx-mounted={JS.focus(to: "#outline_panel_close_button")}
       phx-remove={JS.pop_focus()}
       phx-window-keydown="toggle_outline_sidebar"
       phx-key="escape"
@@ -95,7 +95,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           </div>
         </div>
         <div class="flex flex-1 flex-col overflow-hidden pl-2 justify-start items-start gap-2">
-          <div class="flex flex-1 flex-col scrollbar overflow-y-scroll px-2 justify-start items-center gap-4 w-full">
+          <div class="flex flex-1 flex-col scrollbar overflow-y-scroll px-2 sm:py-1 justify-start items-center gap-4 w-full">
             <.outline_item
               :for={node <- @hierarchy["children"]}
               item={node}
