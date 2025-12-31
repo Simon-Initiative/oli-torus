@@ -876,8 +876,8 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   }
 
   const groupLabelId = `mcq-group-label-${id}`;
-  const groupLabelText = ariaLabelledBy?.trim() ||
-    (multipleSelection ? 'Select all that apply' : 'Multiple choice');
+  const groupLabelText =
+    ariaLabelledBy?.trim() || (multipleSelection ? 'Select all that apply' : 'Multiple choice');
 
   return ready ? (
     <div
