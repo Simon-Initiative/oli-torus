@@ -995,7 +995,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         container_label={Utils.get_container_label(@current_page["id"], @section)}
       />
 
-      <div id="page_content" class="content" phx-update="ignore" role="region" aria-label="Page content">
+      <div
+        id="page_content"
+        class="content"
+        phx-update="ignore"
+        role="region"
+        aria-label="Page content"
+      >
         {raw(@html)}
         <div class="flex w-full justify-center">
           <.reset_attempts_button
