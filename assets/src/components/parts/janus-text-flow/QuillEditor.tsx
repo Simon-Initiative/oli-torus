@@ -47,6 +47,40 @@ const FontSizeAttributor = Quill.import('attributors/style/size');
 FontSizeAttributor.whitelist = ['16px', '14px', '18px', '20px', '24px', '28px', '32px'];
 Quill.register(FontSizeAttributor, true);
 
+const BaseImage = Quill.import('formats/image');
+
+class ImageWithAlt extends BaseImage {
+  static blotName = 'image';
+  static tagName = 'IMG';
+
+  static create(value: any) {
+    const node = super.create(value);
+
+    if (typeof value === 'object') {
+      node.setAttribute('src', value.src);
+      if (value.alt) node.setAttribute('alt', value.alt);
+    } else {
+      node.setAttribute('src', value);
+    }
+    return node;
+  }
+
+  static value(node: HTMLElement) {
+    return {
+      src: node.getAttribute('src'),
+      alt: node.getAttribute('alt'),
+    };
+  }
+
+  static formats(node: HTMLElement) {
+    return {
+      alt: node.getAttribute('alt'),
+    };
+  }
+}
+
+Quill.register(ImageWithAlt, true);
+
 const getCssForFonts = (fonts: string[]) => {
   return fonts
     .map((font) => {
@@ -239,16 +273,13 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   };
   const handleImageDetailsSave = (imageURL: string, imageAltText: string) => {
     setShowImageSelectorDailog(false);
-    if (quill?.current) {
-      if (imageURL) {
-        const img = document.createElement('img');
-        img.src = imageURL;
-        img.alt = imageAltText;
-        // quill.insertEmbed does not allow inserting any additional attributes hence using dangerouslyPasteHTML function to set the Alt text
-        // This code only gets executed when user tries to add a Image in MCQ Options.
-        quill.current.editor.clipboard.dangerouslyPasteHTML(currentQuillRange, img.outerHTML);
-      }
-    }
+
+    if (!quill?.current || !imageURL) return;
+
+    const editor = quill.current.getEditor();
+    const index = currentQuillRange ?? editor.getLength();
+
+    editor.insertEmbed(index, 'image', { src: imageURL, alt: imageAltText }, 'user');
   };
 
   const handleFIBOptionsEditorSave = (Options: Array<OptionItem>) => {
