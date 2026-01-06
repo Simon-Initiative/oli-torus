@@ -1,6 +1,6 @@
-const activeClasses = ['border-delivery-primary', 'dark:border-delivery-primary-dark'];
+const activeClasses = ['border-Fill-Buttons-fill-primary', 'font-semibold'];
 
-const inactiveClasses = ['border-transparent'];
+const inactiveClasses = ['border-transparent', 'font-normal'];
 
 const getScrollOffset = (menu: HTMLElement) => {
   const header = document.getElementById('header');

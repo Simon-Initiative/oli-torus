@@ -237,11 +237,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <nav
       id="home-mobile-tabs"
       phx-hook="HomeMobileTabs"
-      class="md:hidden fixed top-14 left-0 right-0 z-40 bg-Background-bg-primary hidden"
+      class="md:hidden fixed top-14 left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden"
     >
-      <div class="overflow-x-auto scrollbar-hide border-b border-[#e6e9f2] dark:border-[#2b282e]">
+      <div class="relative h-12 overflow-x-auto scrollbar-hide">
         <div
-          class="flex items-center gap-6 px-4"
+          class="flex items-center gap-6 h-12 px-4"
           role="tablist"
           aria-label="Home sections"
           data-home-tabs-container
@@ -253,7 +253,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             role="tab"
             aria-controls="home-continue-learning"
             aria-selected="false"
-            class="py-3 text-sm font-semibold tracking-tight whitespace-nowrap border-b-2 border-transparent text-[#353740] dark:text-[#EEEBF5]"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
           >
             Continue Learning
           </button>
@@ -264,7 +264,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             role="tab"
             aria-controls="home-assignments"
             aria-selected="false"
-            class="py-3 text-sm font-semibold tracking-tight whitespace-nowrap border-b-2 border-transparent text-[#353740] dark:text-[#EEEBF5]"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
           >
             My Assignments
           </button>
@@ -276,7 +276,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             role="tab"
             aria-controls="home-course-progress"
             aria-selected="false"
-            class="py-3 text-sm font-semibold tracking-tight whitespace-nowrap border-b-2 border-transparent text-[#353740] dark:text-[#EEEBF5]"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
           >
             Course Progress
           </button>
@@ -288,7 +288,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             role="tab"
             aria-controls="home-agenda"
             aria-selected="false"
-            class="py-3 text-sm font-semibold tracking-tight whitespace-nowrap border-b-2 border-transparent text-[#353740] dark:text-[#EEEBF5]"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
           >
             Upcoming Agenda
           </button>
