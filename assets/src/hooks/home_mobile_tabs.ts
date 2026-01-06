@@ -136,10 +136,11 @@ export const HomeMobileTabs = {
     });
 
     window.addEventListener('scroll', this.onScroll, { passive: true });
-    window.addEventListener('resize', () => {
+    this.onResize = () => {
       this.updateTabOrder();
       this.onScroll();
-    });
+    };
+    window.addEventListener('resize', this.onResize);
 
     this.updateTabOrder();
     this.updateVisibility();
@@ -154,6 +155,8 @@ export const HomeMobileTabs = {
     }
 
     window.removeEventListener('scroll', this.onScroll);
-    window.removeEventListener('resize', this.onScroll);
+    if (this.onResize) {
+      window.removeEventListener('resize', this.onResize);
+    }
   },
 };
