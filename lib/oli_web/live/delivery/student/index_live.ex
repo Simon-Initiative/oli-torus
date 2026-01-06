@@ -237,6 +237,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <nav
       id="home-mobile-tabs"
       phx-hook="HomeMobileTabs"
+      aria-label="Course home sections"
       class="md:hidden fixed top-14 left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden"
     >
       <div class="relative h-12 overflow-x-auto scrollbar-hide">
