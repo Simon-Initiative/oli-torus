@@ -177,8 +177,8 @@ const NextButton: React.FC<NextButton> = ({
           isGoodFeedbackPresent
             ? correctFeedbackNextButtonClassName
             : currentFeedbacksCount > 0 && isFeedbackIconDisplayed
-              ? wrongFeedbackNextButtonClassName
-              : initialNextButtonClassName
+            ? wrongFeedbackNextButtonClassName
+            : initialNextButtonClassName
         }
       >
         {isLoading ? (
