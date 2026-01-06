@@ -3600,6 +3600,10 @@ select {
   color: #1B191F;
 }
 
+.border-Border-border-muted {
+  border-color: #F3F4F8;
+}
+
 .dark .border-Border-border-muted {
   border-color: #1B191F;
 }
