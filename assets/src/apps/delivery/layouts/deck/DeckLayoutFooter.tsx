@@ -177,8 +177,8 @@ const NextButton: React.FC<NextButton> = ({
           isGoodFeedbackPresent
             ? correctFeedbackNextButtonClassName
             : currentFeedbacksCount > 0 && isFeedbackIconDisplayed
-            ? wrongFeedbackNextButtonClassName
-            : initialNextButtonClassName
+              ? wrongFeedbackNextButtonClassName
+              : initialNextButtonClassName
         }
       >
         {isLoading ? (
@@ -236,6 +236,7 @@ const DeckLayoutFooter: React.FC = () => {
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const isPreviewMode = useSelector(selectPreviewMode);
+  const isReviewMode = useSelector(selectReviewMode);
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -351,7 +352,14 @@ const DeckLayoutFooter: React.FC = () => {
       },
       {},
     );
-    writePageAttemptState(blobStorageProvider, sectionSlug, resourceAttemptGuid, extrinsicSnapshot);
+    if (!isPreviewMode && !isReviewMode) {
+      writePageAttemptState(
+        blobStorageProvider,
+        sectionSlug,
+        resourceAttemptGuid,
+        extrinsicSnapshot,
+      );
+    }
   };
 
   useEffect(() => {
