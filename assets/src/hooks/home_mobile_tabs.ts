@@ -50,7 +50,7 @@ export const HomeMobileTabs = {
 
       this.tabs.forEach((item: HTMLButtonElement) => {
         const isActive = item === tab;
-        item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        item.setAttribute('aria-current', isActive ? 'true' : 'false');
         activeClasses.forEach((className) => item.classList.toggle(className, isActive));
         inactiveClasses.forEach((className) => item.classList.toggle(className, !isActive));
       });

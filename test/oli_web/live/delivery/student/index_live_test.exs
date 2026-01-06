@@ -1129,10 +1129,10 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       stub_current_time(~U[2024-05-01 20:00:00Z])
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      assert has_element?(view, "div[role='my assignments'] a", "View All Assignments")
+      assert has_element?(view, "div#home-assignments a", "View All Assignments")
 
       assert view
-             |> element("div[role='my assignments'] a", "View All Assignments")
+             |> element("div#home-assignments a", "View All Assignments")
              |> render_click() ==
                {:error,
                 {:live_redirect,
