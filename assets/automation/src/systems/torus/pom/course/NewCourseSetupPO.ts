@@ -1,6 +1,7 @@
 import { Locator, Page } from '@playwright/test';
 import { Utils } from '@core/Utils';
 import { Verifier } from '@core/verify/Verifier';
+import { Waiter } from '@core/wait/Waiter';
 
 export class NewCourseSetupPO {
   private readonly utils: Utils;
@@ -12,8 +13,8 @@ export class NewCourseSetupPO {
   private readonly nextStepButton: Locator;
   private readonly startDateInput: Locator;
   private readonly endDateInput: Locator;
-  private readonly preferredSchedulingTime: Locator;
   private readonly createSectionButton: Locator;
+  private readonly alertMessage: Locator;
 
   constructor(private readonly page: Page) {
     this.utils = new Utils(page);
@@ -25,8 +26,8 @@ export class NewCourseSetupPO {
     this.nextStepButton = page.getByRole('button', { name: 'Next step' });
     this.startDateInput = page.locator('#section_start_date');
     this.endDateInput = page.locator('#section_end_date');
-    this.preferredSchedulingTime = page.locator('#section_preferred_scheduling_time');
     this.createSectionButton = page.getByRole('button', { name: 'Create section' });
+    this.alertMessage = page.locator('#flash');
   }
 
   get step1() {
@@ -57,13 +58,11 @@ export class NewCourseSetupPO {
         await this.startDateInput.fill(dateTime.toISOString().slice(0, 16)),
       fillEndDate: async (dateTime: Date) =>
         await this.endDateInput.fill(dateTime.toISOString().slice(0, 16)),
-      preferredSchedulingTime: async (dateTime: Date) => {
-        const hours = String(dateTime.getHours()).padStart(2, '0');
-        const minutes = String(dateTime.getMinutes()).padStart(2, '0');
-        const timeString = `${hours}:${minutes}`;
-        await this.preferredSchedulingTime.fill(timeString);
+      submitSection: async () => {
+        await this.createSectionButton.click();
+        const l = this.alertMessage.getByText('Section successfully created.');
+        await Waiter.waitFor(l, 'visible');
       },
-      submitSection: async () => await this.createSectionButton.click(),
     };
   }
 

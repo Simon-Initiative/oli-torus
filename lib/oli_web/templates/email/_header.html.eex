@@ -1,7 +1,9 @@
-<tr>
-    <a class="navbar-brand torus-logo shrink-0" href="<%= Routes.static_page_url(OliWeb.Endpoint, :index) %>">
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: auto;">
+    <tr>
         <td style="padding: 20px 0; text-align: center">
-            <img src="<%= Oli.Branding.brand_logo_url() %>" width="277" height="100" alt="torus-logo" border="0" style="height: auto;">
+            <a class="navbar-brand torus-logo shrink-0" href="<%= Routes.static_page_url(OliWeb.Endpoint, :index) %>">
+                <img src="<%= Oli.Branding.brand_logo_url() %>" width="277" height="100" alt="torus-logo" border="0" style="height: auto;">
+            </a>
         </td>
-    </a>
-</tr>
+    </tr>
+</table>

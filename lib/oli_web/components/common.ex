@@ -923,6 +923,7 @@ defmodule OliWeb.Components.Common do
   def loading_spinner(assigns) do
     ~H"""
     <svg
+      aria-label="Loading"
       class="loading"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -1269,7 +1270,8 @@ defmodule OliWeb.Components.Common do
     ~H"""
     <button
       id={@id}
-      phx-click={JS.dispatch("click", to: "#trigger-tech-support-modal")}
+      phx-click={JS.push_focus() |> JS.dispatch("click", to: "#trigger-tech-support-modal")}
+      aria-label="support"
       class={[
         "w-auto mr-auto h-11 px-3 py-3 flex-col justify-center items-start inline-flex text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white",
         @class
@@ -1293,7 +1295,11 @@ defmodule OliWeb.Components.Common do
 
   def tech_support_link(assigns) do
     ~H"""
-    <span id={@id} phx-click={JS.dispatch("click", to: "#trigger-tech-support-modal")} class={@class}>
+    <span
+      id={@id}
+      phx-click={JS.push_focus() |> JS.dispatch("click", to: "#trigger-tech-support-modal")}
+      class={@class}
+    >
       {render_slot(@inner_block)}
     </span>
     """

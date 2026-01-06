@@ -53,6 +53,7 @@ defmodule OliWeb.Curriculum.Entry do
             <span class="ml-1 mr-1 entry-title">{@child.title}</span>
             <.link
               class="entry-title mx-3"
+              role="link"
               href={
                 Routes.resource_path(
                   OliWeb.Endpoint,

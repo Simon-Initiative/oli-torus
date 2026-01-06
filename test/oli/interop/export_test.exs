@@ -110,6 +110,467 @@ defmodule Oli.Interop.ExportTest do
 
       assert @certificate_params = imported_product.certificate
     end
+
+    test "project export and import preserves bank selection with objective criteria", %{
+      project: project,
+      author: author
+    } do
+      # Create objectives
+      objective1 =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+          title: "Objective 1",
+          objectives: %{}
+        })
+
+      objective2 =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+          title: "Objective 2",
+          objectives: %{}
+        })
+
+      # Create a tag
+      tag =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_tag(),
+          title: "Test Tag",
+          tags: []
+        })
+
+      # Create a page with bank selection containing objective and tag criteria
+      page_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Test Page with Bank Selection",
+          content: %{
+            "model" => [
+              %{
+                "type" => "selection",
+                "id" => "test-selection-1",
+                "count" => 2,
+                "logic" => %{
+                  "conditions" => %{
+                    "operator" => "all",
+                    "children" => [
+                      %{
+                        "fact" => "objectives",
+                        "operator" => "contains",
+                        "value" => [objective1.resource_id, objective2.resource_id]
+                      },
+                      %{
+                        "fact" => "tags",
+                        "operator" => "contains",
+                        "value" => [tag.resource_id]
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        })
+
+      # Add resources to project and publication
+      publication = Oli.Publishing.project_working_publication(project.slug)
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: objective1.resource.id
+      })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: objective2.resource.id
+      })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: tag.resource.id
+      })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: page_revision.resource.id
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: objective1.resource,
+        revision: objective1,
+        author: hd(project.authors)
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: objective2.resource,
+        revision: objective2,
+        author: hd(project.authors)
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: tag.resource,
+        revision: tag,
+        author: hd(project.authors)
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_revision.resource,
+        revision: page_revision,
+        author: hd(project.authors)
+      })
+
+      # Store original IDs for verification
+      original_objective1_id = objective1.resource_id
+      original_objective2_id = objective2.resource_id
+      original_tag_id = tag.resource_id
+
+      # Export the project
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      # Verify export has IDs
+      page_file = "#{page_revision.resource_id}.json"
+      {:ok, page_json} = Jason.decode(Map.get(export, String.to_charlist(page_file)))
+
+      [exported_selection] =
+        page_json["content"]["model"]
+        |> Enum.filter(&(&1["type"] == "selection"))
+
+      exported_logic = exported_selection["logic"]
+
+      [exported_objective_condition, exported_tag_condition] =
+        exported_logic["conditions"]["children"]
+
+      assert exported_objective_condition["value"] == [
+               original_objective1_id,
+               original_objective2_id
+             ]
+
+      assert exported_tag_condition["value"] == [original_tag_id]
+
+      # Import the project back
+      {:ok, imported_project} = Oli.Interop.Ingest.process(export, author)
+
+      # Find the imported page by title
+      imported_page =
+        AuthoringResolver.from_title(imported_project.slug, "Test Page with Bank Selection")
+
+      assert length(imported_page) == 1
+      imported_page_revision = hd(imported_page)
+
+      # Verify the bank selection is preserved in the imported project
+      content = imported_page_revision.content
+
+      [imported_selection] =
+        content["model"]
+        |> Enum.filter(&(&1["type"] == "selection"))
+
+      assert imported_selection["id"] == "test-selection-1"
+      assert imported_selection["count"] == 2
+
+      # Verify logic conditions are preserved
+      imported_logic = imported_selection["logic"]
+      assert imported_logic["conditions"]["operator"] == "all"
+      assert length(imported_logic["conditions"]["children"]) == 2
+
+      [imported_objective_condition, imported_tag_condition] =
+        imported_logic["conditions"]["children"]
+
+      # Verify objective condition is preserved
+      assert imported_objective_condition["fact"] == "objectives"
+      assert imported_objective_condition["operator"] == "contains"
+      assert is_list(imported_objective_condition["value"])
+      assert length(imported_objective_condition["value"]) == 2
+
+      # Verify the objective IDs are correctly mapped to new resource IDs (integers)
+      imported_objective_ids = imported_objective_condition["value"]
+      assert Enum.all?(imported_objective_ids, &is_integer/1)
+
+      # Find the imported objectives to verify IDs are correct
+      imported_objectives =
+        Oli.Publishing.get_unpublished_revisions_by_type(imported_project.slug, "objective")
+        |> Enum.filter(fn obj -> obj.title in ["Objective 1", "Objective 2"] end)
+
+      assert length(imported_objectives) == 2
+      imported_objective_resource_ids = Enum.map(imported_objectives, & &1.resource_id)
+
+      # Verify the objective IDs in the selection match the imported objectives
+      assert Enum.all?(imported_objective_ids, fn id -> id in imported_objective_resource_ids end)
+
+      # Verify tag condition is preserved
+      assert imported_tag_condition["fact"] == "tags"
+      assert imported_tag_condition["operator"] == "contains"
+      assert is_list(imported_tag_condition["value"])
+      assert length(imported_tag_condition["value"]) == 1
+
+      # Verify the tag ID is correctly mapped to new resource ID (integer)
+      [imported_tag_id] = imported_tag_condition["value"]
+      assert is_integer(imported_tag_id)
+
+      # Find the imported tag to verify ID is correct
+      imported_tags =
+        Oli.Publishing.get_unpublished_revisions_by_type(imported_project.slug, "tag")
+        |> Enum.filter(fn t -> t.title == "Test Tag" end)
+
+      assert length(imported_tags) == 1
+      [imported_tag] = imported_tags
+      assert imported_tag_id == imported_tag.resource_id
+    end
+
+    test "project export preserves bank selection with null conditions", %{project: project} do
+      # Create a page with bank selection containing null conditions
+      page_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Test Page with Null Selection",
+          content: %{
+            "model" => [
+              %{
+                "type" => "selection",
+                "id" => "test-selection-null",
+                "count" => 1,
+                "logic" => %{
+                  "conditions" => nil
+                }
+              }
+            ]
+          }
+        })
+
+      # Add page to project and publication
+      publication = Oli.Publishing.project_working_publication(project.slug)
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: page_revision.resource.id
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_revision.resource,
+        revision: page_revision,
+        author: hd(project.authors)
+      })
+
+      # Export the project
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      # Find the page in the export
+      page_file = "#{page_revision.resource_id}.json"
+      {:ok, page_json} = Jason.decode(Map.get(export, String.to_charlist(page_file)))
+
+      # Verify the bank selection with null conditions is preserved
+      [selection] =
+        page_json["content"]["model"]
+        |> Enum.filter(&(&1["type"] == "selection"))
+
+      assert selection["id"] == "test-selection-null"
+      assert selection["count"] == 1
+      assert selection["logic"]["conditions"] == nil
+    end
+
+    test "project export and import preserves bank selection with nested clauses", %{
+      project: project,
+      author: author
+    } do
+      # Create objectives
+      objective1 =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+          title: "Objective 1",
+          objectives: %{}
+        })
+
+      objective2 =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_objective(),
+          title: "Objective 2",
+          objectives: %{}
+        })
+
+      # Create a page with bank selection containing nested clauses
+      page_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Test Page with Nested Selection",
+          content: %{
+            "model" => [
+              %{
+                "type" => "selection",
+                "id" => "test-selection-nested",
+                "count" => 3,
+                "logic" => %{
+                  "conditions" => %{
+                    "operator" => "any",
+                    "children" => [
+                      %{
+                        "operator" => "all",
+                        "children" => [
+                          %{
+                            "fact" => "objectives",
+                            "operator" => "contains",
+                            "value" => [objective1.resource_id]
+                          }
+                        ]
+                      },
+                      %{
+                        "operator" => "all",
+                        "children" => [
+                          %{
+                            "fact" => "objectives",
+                            "operator" => "contains",
+                            "value" => [objective2.resource_id]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        })
+
+      # Add resources to project and publication
+      publication = Oli.Publishing.project_working_publication(project.slug)
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: objective1.resource.id
+      })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: objective2.resource.id
+      })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: page_revision.resource.id
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: objective1.resource,
+        revision: objective1,
+        author: hd(project.authors)
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: objective2.resource,
+        revision: objective2,
+        author: hd(project.authors)
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_revision.resource,
+        revision: page_revision,
+        author: hd(project.authors)
+      })
+
+      # Store original IDs for verification
+      original_objective1_id = objective1.resource_id
+      original_objective2_id = objective2.resource_id
+
+      # Export the project
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      # Verify export has IDs (ints as currently emitted)
+      page_file = "#{page_revision.resource_id}.json"
+      {:ok, page_json} = Jason.decode(Map.get(export, String.to_charlist(page_file)))
+
+      [exported_selection] =
+        page_json["content"]["model"]
+        |> Enum.filter(&(&1["type"] == "selection"))
+
+      exported_logic = exported_selection["logic"]
+      [exported_first_clause, exported_second_clause] = exported_logic["conditions"]["children"]
+
+      [exported_first_expr] = exported_first_clause["children"]
+      [exported_second_expr] = exported_second_clause["children"]
+
+      assert exported_first_expr["value"] == [original_objective1_id]
+      assert exported_second_expr["value"] == [original_objective2_id]
+
+      # Import the project back
+      {:ok, imported_project} = Oli.Interop.Ingest.process(export, author)
+
+      # Find the imported page by title
+      imported_page =
+        AuthoringResolver.from_title(imported_project.slug, "Test Page with Nested Selection")
+
+      assert length(imported_page) == 1
+      imported_page_revision = hd(imported_page)
+
+      # Verify the bank selection with nested clauses is preserved in the imported project
+      content = imported_page_revision.content
+
+      [imported_selection] =
+        content["model"]
+        |> Enum.filter(&(&1["type"] == "selection"))
+
+      assert imported_selection["id"] == "test-selection-nested"
+      assert imported_selection["count"] == 3
+
+      # Verify nested logic structure is preserved
+      imported_logic = imported_selection["logic"]
+      assert imported_logic["conditions"]["operator"] == "any"
+      assert length(imported_logic["conditions"]["children"]) == 2
+
+      [imported_first_clause, imported_second_clause] = imported_logic["conditions"]["children"]
+
+      # Verify first nested clause
+      assert imported_first_clause["operator"] == "all"
+      assert length(imported_first_clause["children"]) == 1
+      [imported_first_expr] = imported_first_clause["children"]
+      assert imported_first_expr["fact"] == "objectives"
+      assert imported_first_expr["operator"] == "contains"
+      assert is_list(imported_first_expr["value"])
+      assert length(imported_first_expr["value"]) == 1
+
+      # Verify the objective ID is correctly mapped to new resource ID (integer)
+      [imported_objective1_id] = imported_first_expr["value"]
+      assert is_integer(imported_objective1_id)
+
+      # Verify second nested clause
+      assert imported_second_clause["operator"] == "all"
+      assert length(imported_second_clause["children"]) == 1
+      [imported_second_expr] = imported_second_clause["children"]
+      assert imported_second_expr["fact"] == "objectives"
+      assert imported_second_expr["operator"] == "contains"
+      assert is_list(imported_second_expr["value"])
+      assert length(imported_second_expr["value"]) == 1
+
+      # Verify the objective ID is correctly mapped to new resource ID (integer)
+      [imported_objective2_id] = imported_second_expr["value"]
+      assert is_integer(imported_objective2_id)
+
+      # Find the imported objectives to verify IDs are correct
+      imported_objectives =
+        Oli.Publishing.get_unpublished_revisions_by_type(imported_project.slug, "objective")
+        |> Enum.filter(fn obj -> obj.title in ["Objective 1", "Objective 2"] end)
+
+      assert length(imported_objectives) == 2
+      imported_objective_resource_ids = Enum.map(imported_objectives, & &1.resource_id)
+
+      # Verify the objective IDs in the selection match the imported objectives
+      assert imported_objective1_id in imported_objective_resource_ids
+      assert imported_objective2_id in imported_objective_resource_ids
+      assert imported_objective1_id != imported_objective2_id
+    end
   end
 
   describe "export handles nil" do

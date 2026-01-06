@@ -318,6 +318,14 @@ defmodule OliWeb.Router do
     live "/users/link_account", LinkAccountLive, :link_account
   end
 
+  if Application.compile_env(:oli, :enable_playwright_scenarios, false) do
+    scope "/test", OliWeb do
+      pipe_through [:api]
+
+      post "/scenario-yaml", PlaywrightScenarioController, :run
+    end
+  end
+
   scope "/", OliWeb do
     pipe_through [:browser, :redirect_if_author_is_authenticated]
 
@@ -438,6 +446,7 @@ defmodule OliWeb.Router do
 
     live("/projects", Projects.ProjectsLive)
     get("/projects/export", ProjectsController, :export_csv)
+    get("/products/export", ProductsController, :export_csv)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
@@ -1132,7 +1141,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
-    pipe_through([:browser, :delivery_protected])
+    pipe_through([:browser, :require_section, :delivery_protected])
 
     get(
       "/downloads/progress/:container_id/:title",
@@ -1207,7 +1216,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetAnnotations,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetNotificationBadges,
-          OliWeb.LiveSessionPlugs.SetPaywallSummary
+          OliWeb.LiveSessionPlugs.SetPaywallSummary,
+          OliWeb.LiveSessionPlugs.SetDeviceType
         ] do
         live("/", Delivery.Student.IndexLive)
         live("/learn", Delivery.Student.LearnLive)
@@ -1235,7 +1245,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.SetAnnotations,
-          OliWeb.LiveSessionPlugs.RequireEnrollment
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.SetDeviceType
         ] do
         live("/", Delivery.Student.IndexLive, :preview)
         live("/learn", Delivery.Student.LearnLive, :preview)
@@ -1642,6 +1653,7 @@ defmodule OliWeb.Router do
     )
 
     # Section Management (+ Open and Free)
+    get("/sections/export", SectionsController, :export_csv)
     live("/sections", Sections.SectionsView)
     live("/sections/create", Delivery.NewCourse, :admin, as: :select_source)
 

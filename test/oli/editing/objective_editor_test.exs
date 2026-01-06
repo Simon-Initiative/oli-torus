@@ -371,5 +371,66 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       refute Enum.member?(children, subobjective12A_resource_id)
       assert Enum.member?(objective2_children, subobjective12A_resource_id)
     end
+
+    test "detach_objective/3 preserves tags when removing an objective from a banked activity", %{
+      author: author,
+      project: project
+    } do
+      # Create an objective
+      {:ok, %{revision: objective}} =
+        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+
+      # Create a banked activity with tags
+      content = %{"stem" => "one"}
+      tags = [1, 2, 3]
+
+      {:ok, {%{slug: slug, resource_id: activity_id}, _}} =
+        ActivityEditor.create(
+          project.slug,
+          "oli_multiple_choice",
+          author,
+          content,
+          [],
+          :banked,
+          nil,
+          %{},
+          tags
+        )
+
+      # Verify the activity has tags
+      initial_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
+      assert initial_activity.tags == tags
+
+      # Attach the objective to the activity
+      PageEditor.acquire_lock(project.slug, slug, author.email)
+
+      attachment = %{
+        "objectives" => %{"1" => [objective.resource_id]},
+        "content" => %{"authoring" => %{"parts" => [%{"id" => "1"}]}}
+      }
+
+      ActivityEditor.edit(
+        project.slug,
+        activity_id,
+        activity_id,
+        author.email,
+        attachment
+      )
+
+      PageEditor.release_lock(project.slug, slug, author.email)
+
+      # Verify objective was attached
+      activity_with_objective = AuthoringResolver.from_resource_id(project.slug, activity_id)
+      assert activity_with_objective.objectives == %{"1" => [objective.resource_id]}
+      assert activity_with_objective.tags == tags
+
+      # Detach the objective
+      ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+
+      # Verify objective was removed but tags were preserved
+      updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
+      assert updated_activity.objectives == %{"1" => []}
+      assert updated_activity.tags == tags
+    end
   end
 end

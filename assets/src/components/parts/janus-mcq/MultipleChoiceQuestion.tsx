@@ -16,9 +16,7 @@ import { McqItem, McqModel } from './schema';
 
 const MCQItemContentComponent: React.FC<any> = ({ itemId, nodes, state }) => {
   return (
-    // Need to set {{ left: 18, position: 'relative' }}. checked it in SS as well. This gets set for all the MCQ and external CSS override change it
-    //depending upon their needs
-    //SS applies this on every MCQ. They override it with external CSS if in case this needs to be overridden.
+    // left:18 + relative positioning preserved
     <div style={{ left: 18, position: 'relative', overflow: 'hidden' }}>
       {nodes.map((subtree: any) => {
         const style: any = {};
@@ -57,8 +55,10 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   configureMode,
   verticalGap = 0,
 }) => {
-  /* console.log('MCQItem RENDERED'); */
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const isMouseInteraction = React.useRef<boolean>(false);
 
+  /* layout rules preserved */
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
     if (columns === 1) {
@@ -70,7 +70,6 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       mcqItemStyles.left = `calc(${(100 / totalItems) * idx}% - 6px)`;
     }
     mcqItemStyles.position = `absolute`;
-
     mcqItemStyles.display = `inline-block`;
   }
   if (layoutType === 'verticalLayout' && overrideHeight) {
@@ -81,21 +80,98 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   }
 
   const textValue = getNodeText(nodes);
+  const labelId = `${itemId}-label`;
 
-  const handleChanged = (e: { target: { checked: any } }) => {
+  /** When user checks/unchecks, we must refocus the input so SR
+   *  re-announces the option text with updated state
+   */
+  const handleChanged = (e: { target: { checked: boolean } }) => {
     const selection = {
       value: val,
       textValue,
       checked: e.target.checked,
     };
-    if (onSelected) {
-      onSelected(selection);
+
+    onSelected && onSelected(selection);
+
+    // Always blur-then-focus for mouse interactions to force SR re-announcement
+    // Don't refocus for keyboard interactions (Enter/Space) to allow normal navigation
+    if (multipleSelection && isMouseInteraction.current) {
+      // Always blur-then-focus to force SR re-announcement
+      // Even if input already has focus, this sequence makes SR re-read the label
+      inputRef.current?.blur();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+        });
+      });
+      // Reset flag after handling
+      setTimeout(() => {
+        isMouseInteraction.current = false;
+      }, 100);
+    }
+  };
+
+  /** Track mouse interactions */
+  const handleMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
+    if (multipleSelection) {
+      isMouseInteraction.current = true;
+    }
+  };
+
+  /** Track keyboard interactions and reset mouse flag */
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (multipleSelection) {
+      // Track that this is a keyboard interaction (Enter or Space)
+      if (e.key === 'Enter' || e.key === ' ') {
+        isMouseInteraction.current = false;
+      }
+    } else {
+      // For single-select (radio buttons), prevent arrow keys from navigating options
+      // This allows users to scroll the page with arrow keys instead
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.currentTarget.blur();
+        // Manually scroll the page
+        const scrollAmount = 50;
+        window.scrollBy({
+          top: e.key === 'ArrowUp' ? -scrollAmount : scrollAmount,
+          behavior: 'auto',
+        });
+      }
+      // Handle Tab navigation between options for single-select
+      if (e.key === 'Tab') {
+        const container = e.currentTarget.closest('.mcq-input');
+        if (!container) return;
+        const allOptions = container.querySelectorAll<HTMLInputElement>(
+          `input[name="${groupId}"]:not([disabled])`,
+        );
+        const currentIndex = Array.from(allOptions).indexOf(e.currentTarget);
+        if (currentIndex === -1) return;
+
+        if (e.shiftKey) {
+          // Shift+Tab: move to previous option
+          if (currentIndex > 0) {
+            e.preventDefault();
+            allOptions[currentIndex - 1].focus();
+          }
+          // If at first option, allow normal Tab behavior to move to previous control
+        } else {
+          // Tab: move to next option
+          if (currentIndex < allOptions.length - 1) {
+            e.preventDefault();
+            allOptions[currentIndex + 1].focus();
+          }
+          // If at last option, allow normal Tab behavior to move to next control
+        }
+      }
     }
   };
 
   return (
-    <React.Fragment>
+    <>
       <div style={mcqItemStyles} className="mcq-item">
+        {/* authoring buttons preserved exactly */}
         {configureMode && (
           <>
             <button
@@ -103,18 +179,9 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
               type="button"
               aria-describedby="button-tooltip"
               onClick={() => onConfigOptionClick(index, 2)}
-              style={{
-                fontSize: '10px;',
-                padding: 1,
-                cursor: 'pointer',
-              }}
+              style={{ fontSize: '10px;', padding: 1, cursor: 'pointer' }}
             >
-              <i
-                className="fa fa-trash"
-                style={{ cursor: 'pointer', color: 'white' }}
-                aria-hidden="true"
-                title="Delete the option"
-              ></i>{' '}
+              <i className="fa fa-trash" style={{ color: 'white' }} />
             </button>
 
             <button
@@ -122,43 +189,26 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
               type="button"
               aria-describedby="button-tooltip"
               onClick={() => onConfigOptionClick(index, 1)}
-              style={{
-                fontSize: '10px;',
-                padding: 1,
-                marginLeft: 4,
-                cursor: 'pointer',
-              }}
+              style={{ fontSize: '10px;', padding: 1, marginLeft: 4, cursor: 'pointer' }}
             >
-              <i
-                className="fas fa-edit"
-                style={{ cursor: 'pointer', color: 'white' }}
-                aria-hidden="true"
-                title="Edit the option"
-              ></i>{' '}
+              <i className="fas fa-edit" style={{ color: 'white' }} />
             </button>
+
             <button
               className="aa-add-button btn btn-primary btn-sm"
               type="button"
               aria-describedby="button-tooltip"
               onClick={() => onConfigOptionClick(index, 3)}
-              style={{
-                fontSize: '10px;',
-                padding: 1,
-                marginLeft: 4,
-                cursor: 'pointer',
-                marginRight: 2,
-              }}
+              style={{ fontSize: '10px;', padding: 1, marginLeft: 4, cursor: 'pointer' }}
             >
-              <i
-                className="fas fa-plus"
-                style={{ cursor: 'pointer', color: 'white' }}
-                aria-hidden="true"
-                title="Add new option"
-              ></i>{' '}
+              <i className="fas fa-plus" style={{ color: 'white' }} />
             </button>
           </>
         )}
+
+        {/* Input now has ref + correct ARIA */}
         <input
+          ref={inputRef}
           style={{ position: 'absolute', marginTop: 5 }}
           name={groupId}
           id={itemId}
@@ -167,13 +217,20 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
           disabled={disabled}
           checked={selected}
           onChange={handleChanged}
+          onMouseDown={handleMouseDown}
+          onKeyDown={handleKeyDown}
+          aria-labelledby={labelId}
+          tabIndex={disabled ? -1 : 0}
         />
-        <label htmlFor={itemId}>
+
+        {/* Label holds only the option content */}
+        <label id={labelId} htmlFor={itemId}>
           <MCQItemContent itemId={itemId} nodes={nodes} state={state} />
         </label>
       </div>
+
       {layoutType !== 'horizontalLayout' && <br style={{ padding: '0px' }} />}
-    </React.Fragment>
+    </>
   );
 };
 
@@ -220,7 +277,6 @@ const getOptionNumberFromText = (
     })
     .filter((option) => option !== undefined);
 
-  // even if there are multiple choices with the same text (why??) pick the first one
   return values[0];
 };
 
@@ -260,7 +316,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     arr.map((element) => parseInt(element.toString().replace(/"/g, ''), 10));
 
   const initialize = useCallback(async (pModel) => {
-    /* console.log('MCQ INIT', { pModel }); */
     // set defaults from model
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
     setEnabled(dEnabled);
@@ -268,10 +323,18 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     const dRandomized = parseBoolean(pModel.randomize);
     setRandomized(dRandomized);
 
-    const dMultipleSelection = parseBoolean(pModel.multipleSelection);
+    // Handle multipleSelection: explicitly check for boolean false, or parse if truthy, default to false
+    let dMultipleSelection = false;
+    if (pModel.multipleSelection !== undefined && pModel.multipleSelection !== null) {
+      if (typeof pModel.multipleSelection === 'boolean') {
+        dMultipleSelection = pModel.multipleSelection;
+      } else {
+        dMultipleSelection = parseBoolean(pModel.multipleSelection);
+      }
+    }
     setMultipleSelection(dMultipleSelection);
 
-    // we need to set up a new list so that we can shuffle while maintaining correct index/values
+    // build options list
     let mcqList: McqOptionModel[] = pModel.mcqItems?.map((item: any, index: number) => ({
       ...item,
       index: index,
@@ -284,7 +347,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
     setOptions(mcqList);
 
-    // now we need to save the defaults used in adaptivity (not necessarily the same)
+    // init adaptivity variables
     const initResult = await props.onInit({
       id,
       responses: [
@@ -326,7 +389,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       ],
     });
 
-    // result of init has a state snapshot with latest (init state applied)
     const currentStateSnapshot = initResult.snapshot;
     setState(currentStateSnapshot);
 
@@ -340,29 +402,26 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       setRandomized(sRandomize);
     }
 
-    // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
+    // apply incoming state (selected choices etc.)
     let hasDoneMultiple = false;
     let hasDoneSelectedChoice = false;
 
-    // this is for setting *multiple* choices being selected by the number value
     const sSelectedChoices: string[] = currentStateSnapshot[`stage.${id}.selectedChoices`];
     if (dMultipleSelection && sSelectedChoices !== undefined) {
       hasDoneMultiple = true;
       hasDoneSelectedChoice = true;
-      // convert stringfied number array to number array
       const selectedArray = convertToNumberArray(sSelectedChoices);
 
       if (Array.isArray(selectedArray)) {
         const newSelectionArray = selectedArray.map((choice) => ({
           value: choice,
-          textValue: getOptionTextById(options, choice),
+          textValue: getOptionTextById(mcqList, choice),
           checked: true,
         }));
         handleMultipleItemSelection(newSelectionArray, true);
       }
     }
 
-    // this is for setting *multiple* choices being selected by the text value
     const sSelectedChoicesText = currentStateSnapshot[`stage.${id}.selectedChoicesText`];
     if (dMultipleSelection && sSelectedChoicesText !== undefined && !hasDoneSelectedChoice) {
       hasDoneMultiple = true;
@@ -370,7 +429,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       if (Array.isArray(selectedArray)) {
         const newSelectionArray = selectedArray
           .map((choiceText) => ({
-            value: getOptionNumberFromText(options, choiceText as string),
+            value: getOptionNumberFromText(mcqList, choiceText as string),
             textValue: choiceText,
             checked: true,
           }))
@@ -380,27 +439,22 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     }
 
     if (!hasDoneMultiple) {
-      // this is for setting a *single* seletion by the number
       const sSelectedChoice = currentStateSnapshot[`stage.${id}.selectedChoice`];
       if (sSelectedChoice !== undefined) {
         hasDoneSelectedChoice = true;
         const choice = parseInt(String(sSelectedChoice), 10);
         const checked = choice > 0;
-        const textValue = checked ? getOptionTextById(options, choice) : '';
-        handleItemSelection(
-          { value: choice, textValue, checked },
-          true, // need to save pretty much every time because of related properties like count
-        );
+        const textValue = checked ? getOptionTextById(mcqList, choice) : '';
+        handleItemSelection({ value: choice, textValue, checked }, true);
       }
 
-      // this is for a *single* choice being selected by the text value
       const sSelectedChoiceText = currentStateSnapshot[`stage.${id}.selectedChoiceText`];
       if (sSelectedChoiceText !== undefined && !hasDoneSelectedChoice) {
-        const choiceNumber = getOptionNumberFromText(options, sSelectedChoiceText);
+        const choiceNumber = getOptionNumberFromText(mcqList, sSelectedChoiceText);
         if (choiceNumber !== undefined) {
           handleItemSelection(
             { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
-            true, // need to save pretty much every time because of related properties like count
+            true,
           );
         }
       }
@@ -412,7 +466,15 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     setReady(true);
   }, []);
 
-  const { width, customCssClass, layoutType, height, overrideHeight = false, verticalGap } = model;
+  const {
+    width,
+    customCssClass,
+    layoutType,
+    height,
+    overrideHeight = false,
+    verticalGap,
+    ariaLabelledBy,
+  } = model;
 
   useEffect(() => {
     let pModel;
@@ -422,7 +484,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         pModel = JSON.parse(props.model);
         setModel(pModel);
       } catch (err) {
-        // bad json, what do?
+        // ignore
       }
     }
     if (typeof props?.state === 'string') {
@@ -430,7 +492,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         pState = JSON.parse(props.state);
         setState(pState);
       } catch (err) {
-        // bad json, what do?
+        // ignore
       }
     }
     if (!pModel) {
@@ -475,16 +537,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       selectedChoicesText: newSelectedChoicesText,
     });
 
-    /* console.log('HANDLE MULTIPLE SELECTION', {
-      newCount,
-      newSelectedChoice,
-      newSelectedChoices,
-      newSelectedChoiceText,
-      newSelectedChoicesText,
-      selections,
-      shouldSave,
-    }); */
-
     if (shouldSave) {
       saveState({
         numberOfSelectedChoices: newCount,
@@ -506,7 +558,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       let updatedChoiceText = updatedChoicesText[0];
 
       if (multipleSelection) {
-        // sets data for checkboxes, which can have multiple values
         newSelectedChoices = [...new Set([...selectionState.selectedChoices, newChoice])].filter(
           (c) => checked || (!checked && originalValue !== c && c > 0),
         );
@@ -528,18 +579,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         updatedChoicesText = [];
       }
 
-      /* console.log('HANDLE ITEM SELECTION', {
-        shouldSave,
-        value,
-        textValue,
-        checked,
-        newChoice,
-        newCount,
-        modifiedNewSelectedChoices,
-        updatedChoiceText,
-        updatedChoicesText,
-      }); */
-
       setSelectionState({
         numberOfSelectedChoices: newCount,
         selectedChoice: newChoice,
@@ -557,16 +596,8 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
           selectedChoicesText: updatedChoicesText,
         });
       }
-      /* console.log('MCQ HANDLE SELECT', {
-        shouldSave,
-        newCount,
-        newChoice,
-        newSelectedChoices,
-        updatedChoiceText,
-        updatedChoicesText,
-      }); */
     },
-    [multipleSelection, selectionState],
+    [multipleSelection, selectionState, options],
   );
 
   useEffect(() => {
@@ -581,13 +612,10 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        /* console.log(`${notificationType.toString()} notification handled [MCQ]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            // should disable input during check?
             break;
           case NotificationType.CHECK_COMPLETE:
-            // if disabled above then re-enable now
             break;
           case NotificationType.STATE_CHANGED:
             {
@@ -601,16 +629,13 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                 setRandomized(parseBoolean(sRandomized));
               }
 
-              // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
               let hasDoneMultiple = false;
               let hasDoneSelectedChoice = false;
 
-              // this is for setting *multiple* choices being selected by the number value
               const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
               if (sSelectedChoices !== undefined) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
-                // convert stringfied number array to number array
                 const selectedArray = convertToNumberArray(sSelectedChoices);
 
                 if (Array.isArray(selectedArray)) {
@@ -623,7 +648,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                 }
               }
 
-              // this is for setting *multiple* choices being selected by the text value
               const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];
               if (sSelectedChoicesText !== undefined && !hasDoneSelectedChoice) {
                 hasDoneMultiple = true;
@@ -641,60 +665,47 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               }
 
               if (!hasDoneMultiple) {
-                // this is for setting a *single* seletion by the number
                 const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
                 if (sSelectedChoice !== undefined) {
                   hasDoneSelectedChoice = true;
                   const choice = parseInt(String(sSelectedChoice), 10);
                   const checked = choice > 0;
                   const textValue = checked ? getOptionTextById(options, choice) : '';
-                  handleItemSelection(
-                    { value: choice, textValue, checked },
-                    true, // need to save pretty much every time because of related properties like count
-                  );
+                  handleItemSelection({ value: choice, textValue, checked }, true);
                 }
 
-                // this is for a *single* choice being selected by the text value
                 const sSelectedChoiceText = changes[`stage.${id}.selectedChoiceText`];
                 if (sSelectedChoiceText !== undefined && !hasDoneSelectedChoice) {
                   const choiceNumber = getOptionNumberFromText(options, sSelectedChoiceText);
                   if (choiceNumber !== undefined) {
                     handleItemSelection(
                       { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
-                      true, // need to save pretty much every time because of related properties like count
+                      true,
                     );
                   }
                 }
               }
-
-              // NOTE: it doesn't make sense (SS doesn't let you) to allow the things like
-              // numberOfSelectedChoices to be set via mutate state
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
               const { snapshot: changes } = payload;
 
-              /* console.log('MCQ CONTEXT CHANGED', { changes }); */
-
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
                 setEnabled(sEnabled);
               }
-              const sRandomized = changes[`stage.${id}.randomize`];
-              if (sRandomized !== undefined) {
-                setRandomized(parseBoolean(sRandomized));
+              const sRandomize = changes[`stage.${id}.randomize`];
+              if (sRandomize !== undefined) {
+                setRandomized(parseBoolean(sRandomize));
               }
-              // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
               let hasDoneMultiple = false;
               let hasDoneSelectedChoice = false;
 
-              // this is for setting *multiple* choices being selected by the number value
               const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
               if (multipleSelection && sSelectedChoices !== undefined) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
-                // convert stringfied number array to number array
                 const selectedArray = convertToNumberArray(sSelectedChoices);
 
                 if (Array.isArray(selectedArray)) {
@@ -707,7 +718,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                 }
               }
 
-              // this is for setting *multiple* choices being selected by the text value
               const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];
               if (
                 multipleSelection &&
@@ -729,27 +739,22 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               }
 
               if (!hasDoneMultiple) {
-                // this is for setting a *single* seletion by the number
                 const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
                 if (sSelectedChoice !== undefined) {
                   hasDoneSelectedChoice = true;
                   const choice = parseInt(String(sSelectedChoice), 10);
                   const checked = choice > 0;
                   const textValue = checked ? getOptionTextById(options, choice) : '';
-                  handleItemSelection(
-                    { value: choice, textValue, checked },
-                    true, // need to save pretty much every time because of related properties like count
-                  );
+                  handleItemSelection({ value: choice, textValue, checked }, true);
                 }
 
-                // this is for a *single* choice being selected by the text value
                 const sSelectedChoiceText = changes[`stage.${id}.selectedChoiceText`];
                 if (sSelectedChoiceText !== undefined && !hasDoneSelectedChoice) {
                   const choiceNumber = getOptionNumberFromText(options, sSelectedChoiceText);
                   if (choiceNumber !== undefined) {
                     handleItemSelection(
                       { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
-                      true, // need to save pretty much every time because of related properties like count
+                      true,
                     );
                   }
                 }
@@ -773,11 +778,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
   // Set up the styles
   const styles: CSSProperties = {
-    /* position: 'absolute',
-    top: y,
-    left: x,
-    width,
-    zIndex: z, */
     width,
   };
   if (overrideHeight) {
@@ -790,7 +790,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       if (randomized) {
         return shuffle(currentOptions);
       }
-      // TODO: return original model order??
       return currentOptions;
     });
   }, [randomized]);
@@ -854,20 +853,12 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
   const isItemSelected = useCallback(
     (item: McqOptionModel) => {
-      // checks if the item is selected to set the input's "selected" attr
       let selected = false;
       if (multipleSelection) {
         selected = selectionState.selectedChoices.includes(item.index + 1);
       } else {
         selected = selectionState.selectedChoice === item.index + 1;
       }
-      /* console.log('isItemSelected', {
-        item,
-        selected,
-        multipleSelection,
-        selectedChoice,
-        selectedChoices,
-      }); */
       return selected;
     },
     [multipleSelection, selectionState],
@@ -884,31 +875,50 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     columns = 4;
   }
 
+  const groupLabelId = `mcq-group-label-${id}`;
+  const groupLabelText =
+    ariaLabelledBy?.trim() || (multipleSelection ? 'Select all that apply' : 'Multiple choice');
+
   return ready ? (
-    <div data-janus-type={tagName} style={styles} className={`mcq-input mcq-${layoutType}`}>
-      {options?.map((item, index) => (
-        <MCQItem
-          idx={index}
-          key={`${id}-item-${index}`}
-          title={item.title}
-          totalItems={options.length}
-          layoutType={layoutType}
-          itemId={`${id}-item-${index}`}
-          groupId={`mcq-${id}`}
-          selected={isItemSelected(item)}
-          val={item.value}
-          onSelected={handleItemSelection}
-          state={state}
-          {...item}
-          x={0}
-          y={0}
-          overrideHeight={overrideHeight}
-          disabled={!enabled}
-          multipleSelection={multipleSelection}
-          columns={columns}
-          verticalGap={verticalGap}
-        />
-      ))}
+    <div
+      data-janus-type={tagName}
+      style={styles}
+      className={`mcq-input mcq-${layoutType}`}
+      role="group"
+      aria-labelledby={groupLabelId}
+      aria-live="off"
+      aria-atomic="false"
+    >
+      <span id={groupLabelId} className="sr-only">
+        {groupLabelText}
+      </span>
+      {options?.map((item, index) => {
+        const { index: _itemIndex, ...itemWithoutIndex } = item;
+        return (
+          <MCQItem
+            idx={index}
+            index={index}
+            key={`${id}-item-${index}`}
+            title={item.title}
+            totalItems={options.length}
+            layoutType={layoutType}
+            itemId={`${id}-item-${index}`}
+            groupId={`mcq-${id}`}
+            selected={isItemSelected(item)}
+            val={item.value}
+            onSelected={handleItemSelection}
+            state={state}
+            {...itemWithoutIndex}
+            x={0}
+            y={0}
+            overrideHeight={overrideHeight}
+            disabled={!enabled}
+            multipleSelection={multipleSelection}
+            columns={columns}
+            verticalGap={verticalGap}
+          />
+        );
+      })}
     </div>
   ) : null;
 };

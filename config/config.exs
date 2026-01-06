@@ -263,6 +263,7 @@ config :oli,
 
 config :lti_1p3,
   provider: Lti_1p3.DataProviders.EctoProvider,
+  key_provider: Oli.Lti.CachedKeyProvider,
   ecto_provider: [
     repo: Oli.Repo,
     schemas: [

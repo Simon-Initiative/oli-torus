@@ -370,6 +370,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             currentUserId,
             currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
             mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
+            responsiveLayout: responsiveLayout || false,
           },
         };
 

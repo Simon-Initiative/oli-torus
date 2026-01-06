@@ -52,6 +52,7 @@ export const RulesTab: React.FC<Props> = (props) => {
             onSelect={(id) => props.toggleCorrectness(id, props.input.partId, props.input.id)}
             isEvaluated={false}
             context={defaultWriterContext({ projectSlug: projectSlug })}
+            multiSelect={orRule}
           />
         )}
         <div className="choicesAuthoring__removeButtonContainer">

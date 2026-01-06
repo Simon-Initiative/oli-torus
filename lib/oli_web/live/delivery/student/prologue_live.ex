@@ -97,7 +97,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     <.password_attempt_modal />
 
     <div class="flex flex-col w-full items-center gap-15 flex-1 overflow-auto">
-      <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center inline-flex">
+      <div class="flex-1 w-full max-w-[1040px] p-4 sm:px-[80px] sm:pt-20 pb-10 flex-col justify-start items-center inline-flex">
         <.page_header
           page_context={@page_context}
           ctx={@ctx}
@@ -105,8 +105,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           index={@current_page["index"]}
           container_label={StudentUtils.get_container_label(@current_page["id"], @section)}
         />
-        <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mt-3 mb-10">
-        </div>
 
         <StudentUtils.blocking_gates_warning
           :if={@show_blocking_gates?}

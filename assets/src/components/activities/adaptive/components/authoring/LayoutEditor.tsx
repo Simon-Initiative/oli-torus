@@ -555,6 +555,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       context: {
         mode: contexts.AUTHOR,
         host: containerRef.current,
+        responsiveLayout: isResponsive,
       },
     };
   };

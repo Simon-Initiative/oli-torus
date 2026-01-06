@@ -5,6 +5,7 @@ import { CheckboxListener } from './checkbox_listener';
 import { ClickOutside } from './click_outside';
 import { ClickExecJS, HoverAway } from './click_variations';
 import { ConditionalToggle } from './conditional_toggle';
+import { ContainerToggleAriaLabel } from './container_toggle_aria_label';
 import { CopyListener } from './copy_listener';
 import { CopyToClipboard } from './copy_to_clipboard';
 import { Countdown } from './countdown';
@@ -37,9 +38,11 @@ import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
+import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
+import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
 import { ShowTeaser } from './show_teaser';
@@ -53,8 +56,7 @@ import { TagsComponent } from './tags_component';
 import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
-import { ToggleReadMore } from './toggle_read_more';
-import { AutoHideTooltip, TooltipInit, TooltipWithTarget } from './tooltip';
+import { AutoHideTooltip, Popover, TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
@@ -84,6 +86,7 @@ export const Hooks = {
   TooltipInit,
   TooltipWithTarget,
   AutoHideTooltip,
+  Popover,
   ClickExecJS,
   HoverAway,
   BeforeUnloadListener,
@@ -91,7 +94,6 @@ export const Hooks = {
   LtiConnectInstructions,
   HierarchySelector,
   TextareaListener,
-  ToggleReadMore,
   LiveReact,
   SubmitForm,
   LoadSurveyScripts,
@@ -124,5 +126,8 @@ export const Hooks = {
   SyncChevronState,
   ConditionalToggle,
   CopyToClipboard,
+  ReadMoreToggle,
   TagsComponent,
+  ScrollToTheTop,
+  ContainerToggleAriaLabel,
 };

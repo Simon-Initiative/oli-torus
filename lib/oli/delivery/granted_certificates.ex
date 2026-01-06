@@ -234,6 +234,7 @@ defmodule Oli.Delivery.GrantedCertificates do
         template_assigns:
           certificate_email_template_assigns(
             gc.state,
+            gc,
             student,
             gc.certificate.section,
             gc.guid,
@@ -244,16 +245,31 @@ defmodule Oli.Delivery.GrantedCertificates do
     |> Oban.insert_all()
   end
 
-  defp certificate_email_template_assigns(:earned, student, section, guid, _instructor_email) do
+  defp certificate_email_template_assigns(
+         :earned,
+         granted_certificate,
+         student,
+         section,
+         guid,
+         _instructor_email
+       ) do
     %{
       student_name: OliWeb.Common.Utils.name(student),
       platform_name: Oli.Branding.brand_name(section),
       course_name: section.title,
-      certificate_link: url(OliWeb.Endpoint, ~p"/sections/#{section.slug}/certificate/#{guid}")
+      certificate_link: url(OliWeb.Endpoint, ~p"/sections/#{section.slug}/certificate/#{guid}"),
+      certificate_label: certificate_label(granted_certificate.with_distinction)
     }
   end
 
-  defp certificate_email_template_assigns(:denied, student, section, _guid, instructor_email) do
+  defp certificate_email_template_assigns(
+         :denied,
+         _granted_certificate,
+         student,
+         section,
+         _guid,
+         instructor_email
+       ) do
     %{
       student_name: OliWeb.Common.Utils.name(student),
       platform_name: Oli.Branding.brand_name(section),
@@ -318,6 +334,9 @@ defmodule Oli.Delivery.GrantedCertificates do
     )
     |> Oli.Repo.exists?()
   end
+
+  def certificate_label(true), do: "Certificate with Distinction"
+  def certificate_label(_), do: "Certificate of Completion"
 
   @doc """
   Checks if a user needs an eligibility pre-check for certification in a given section.

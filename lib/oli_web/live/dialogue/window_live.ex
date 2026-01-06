@@ -179,6 +179,7 @@ defmodule OliWeb.Dialogue.WindowLive do
         }
         class="absolute right-[1px] cursor-pointer hover:scale-105"
         id="ai_bot_collapsed_button"
+        aria-label="Dot AI"
       >
         <.dot_icon size={:large} />
       </button>
@@ -215,6 +216,7 @@ defmodule OliWeb.Dialogue.WindowLive do
           <button
             id="resize_handle"
             class="hidden sm:flex items-center justify-center cursor-nw-resize rotate-90 opacity-60 dark:opacity-80 dark:hover:opacity-50 hover:opacity-100 hover:scale-105"
+            aria-label="resize window"
           >
             <.resize_icon />
           </button>
@@ -236,6 +238,7 @@ defmodule OliWeb.Dialogue.WindowLive do
               )
             }
             class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
+            aria-label="close chat"
           >
             <.close_icon />
           </button>
@@ -317,6 +320,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       <img
         class="animate-[spin_40s_cubic-bezier(0.4,0,0.6,1)_infinite]"
         src={~p"/images/assistant/footer_dot_ai.png"}
+        alt="Dot AI icon"
       />
       <div class={"#{orb_size_class(@size)} absolute bottom-0 right-0 bg-zinc-300 rounded-full blur-[30px] animate-[pulse_6s_cubic-bezier(0.4,0,0.6,1)_infinite]"}>
       </div>
@@ -521,6 +525,7 @@ defmodule OliWeb.Dialogue.WindowLive do
           id="bot_submit_button"
           disabled={!@allow_submission?}
           class="w-[38px] h-[38px] ml-2 px-6 py-2 opacity-90 bg-blue-500 rounded-lg justify-center items-center gap-3 flex cursor-pointer hover:opacity-100 active:bg-blue-600"
+          aria-label="submit message"
         >
           <div class="w-[25px] h-[25px] pl-[3.12px] pr-[2.08px] py-[4.17px] justify-center items-center flex">
             <.submit_icon />

@@ -273,13 +273,23 @@ interface UserIconProps {
 }
 
 const UserIcon = ({ user }: UserIconProps) => {
-  return user && user.picture ? (
+  if (user && user.picture) {
+    const altText = user.name ? `${user.name} profile avatar` : 'Profile avatar';
+    return (
+      <div className="user-icon">
+        <img
+          src={user.picture}
+          className="rounded-full"
+          referrerPolicy="no-referrer"
+          alt={altText}
+        />
+      </div>
+    );
+  }
+
+  return (
     <div className="user-icon">
-      <img src={user.picture} className="rounded-full" referrerPolicy="no-referrer" />
-    </div>
-  ) : (
-    <div className="user-icon">
-      <div className="user-img rounded-full">
+      <div className="user-img rounded-full" aria-hidden="true">
         <i className="fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-600"></i>
       </div>
     </div>

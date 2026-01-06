@@ -174,6 +174,43 @@ defmodule Oli.Scenarios.DSLTest do
       assert Engine.get_section(result.state, "section")
     end
 
+    test "user directives allow overriding email verification state" do
+      yaml = """
+      - user:
+          name: "verified_student"
+          type: "student"
+          email: "verified_student@test.edu"
+
+      - user:
+          name: "unverified_student"
+          type: "student"
+          email: "unverified_student@test.edu"
+          email_verified: false
+
+      - user:
+          name: "unverified_author"
+          type: "author"
+          email: "author@test.edu"
+          email_verified: false
+      """
+
+      result = TestHelpers.execute_yaml(yaml)
+
+      assert %ExecutionResult{errors: []} = result
+
+      verified_student = Engine.get_user(result.state, "verified_student")
+      refute is_nil(verified_student.email_confirmed_at)
+      assert verified_student.email_verified
+
+      unverified_student = Engine.get_user(result.state, "unverified_student")
+      refute unverified_student.email_confirmed_at
+      refute unverified_student.email_verified
+
+      unverified_author = Engine.get_user(result.state, "unverified_author")
+      refute unverified_author.email_confirmed_at
+      refute unverified_author.email_verified
+    end
+
     test "can build scenarios programmatically" do
       # Build a scenario using helper functions
       scenario =
