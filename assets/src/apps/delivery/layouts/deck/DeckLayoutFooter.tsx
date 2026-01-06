@@ -151,18 +151,18 @@ const NextButton: React.FC<NextButton> = ({
 }) => {
   const isEnd = useSelector(selectLessonEnd);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
-  const reviewMode = useSelector(selectReviewMode);
+  const isReviewMode = useSelector(selectReviewMode);
   const styles: CSSProperties = {};
-  if (historyModeNavigation || reviewMode) {
+  if (historyModeNavigation || isReviewMode) {
     styles.opacity = 0.5;
     styles.cursor = 'not-allowed';
   }
-  const showDisabled = historyModeNavigation || reviewMode ? true : isLoading;
+  const showDisabled = historyModeNavigation || isReviewMode ? true : isLoading;
   let showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
 
   showHideCheckButton =
-    showHideCheckButton === 'hideCheckBtn' && reviewMode ? '' : showHideCheckButton;
+    showHideCheckButton === 'hideCheckBtn' && isReviewMode ? '' : showHideCheckButton;
   return (
     <div
       className={`buttonContainer ${showHideCheckButton} ${
@@ -222,7 +222,6 @@ export const checkIfFirstEventHasNavigation = (event: any) => {
 
 const DeckLayoutFooter: React.FC = () => {
   const dispatch = useDispatch();
-  const reviewMode = useSelector(selectReviewMode);
   const currentPage = useSelector(selectPageContent);
   const currentActivityId = useSelector(selectCurrentActivityId);
   const currentActivity = useSelector(selectCurrentActivityContent);
@@ -236,6 +235,7 @@ const DeckLayoutFooter: React.FC = () => {
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const isPreviewMode = useSelector(selectPreviewMode);
+  const isReviewMode = useSelector(selectReviewMode);
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -351,7 +351,14 @@ const DeckLayoutFooter: React.FC = () => {
       },
       {},
     );
-    writePageAttemptState(blobStorageProvider, sectionSlug, resourceAttemptGuid, extrinsicSnapshot);
+    if (!isPreviewMode && !isReviewMode) {
+      writePageAttemptState(
+        blobStorageProvider,
+        sectionSlug,
+        resourceAttemptGuid,
+        extrinsicSnapshot,
+      );
+    }
   };
 
   useEffect(() => {
@@ -726,10 +733,10 @@ const DeckLayoutFooter: React.FC = () => {
 
   return (
     <>
-      {!reviewMode && (
+      {!isReviewMode && (
         <div
           className={`checkContainer rowRestriction columnRestriction`}
-          style={{ width: containerWidth, display: reviewMode ? 'block' : '' }}
+          style={{ width: containerWidth, display: isReviewMode ? 'block' : '' }}
         >
           <NextButton
             isLoading={isLoading || !initPhaseComplete}
@@ -758,7 +765,7 @@ const DeckLayoutFooter: React.FC = () => {
           <HistoryNavigation />
         </div>
       )}
-      {!reviewMode && isLegacyTheme && (
+      {!isReviewMode && isLegacyTheme && (
         <>
           <FeedbackContainer
             minimized={!displayFeedback}
