@@ -294,6 +294,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <div
       id="home-continue-learning"
       data-home-section="continue-learning"
+      tabindex="-1"
       class="w-full h-[20rem] md:h-72 relative flex items-center scroll-mt-28"
     >
       <div class="inset-0 absolute">
@@ -414,6 +415,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <div
       id="home-continue-learning"
       data-home-section="continue-learning"
+      tabindex="-1"
       class="w-full h-[20rem] md:h-72 relative flex items-center scroll-mt-28"
     >
       <div class="inset-0 absolute">
@@ -637,6 +639,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <div
       id="home-course-progress"
       data-home-section="course-progress"
+      tabindex="-1"
       class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start inline-flex scroll-mt-28"
     >
       <div class="flex-col justify-start items-start gap-3 md:gap-5 inline-flex grow">
@@ -857,6 +860,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       id="home-assignments"
       data-home-section="assignments"
       aria-label="My Assignments"
+      tabindex="-1"
       class="w-full p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex scroll-mt-28"
     >
       <div class="w-full flex-col justify-start items-start gap-5 flex grow">
@@ -1199,6 +1203,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <div
       id="home-agenda"
       data-home-section="agenda"
+      tabindex="-1"
       class="w-full h-fit overflow-y-auto p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex scroll-mt-28"
     >
       <div class="flex-col justify-start items-start gap-7 inline-flex grow">

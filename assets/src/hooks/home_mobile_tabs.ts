@@ -73,6 +73,12 @@ export const HomeMobileTabs = {
       const top = section.getBoundingClientRect().top + window.scrollY - offset;
 
       window.scrollTo({ top, behavior: getScrollBehavior() });
+      if (!section.hasAttribute('tabindex')) {
+        section.setAttribute('tabindex', '-1');
+      }
+      window.requestAnimationFrame(() => {
+        section.focus({ preventScroll: true });
+      });
     };
 
     this.updateVisibility = () => {
