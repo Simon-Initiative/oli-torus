@@ -2,6 +2,9 @@ const activeClasses = ['border-Fill-Buttons-fill-primary', 'font-semibold'];
 
 const inactiveClasses = ['border-transparent', 'font-normal'];
 
+const getScrollBehavior = () =>
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+
 const getScrollOffset = (menu: HTMLElement) => {
   const header = document.getElementById('header');
   const headerHeight = header?.offsetHeight || 0;
@@ -53,7 +56,7 @@ export const HomeMobileTabs = {
       });
 
       this.activeTab = tab;
-      tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+      tab.scrollIntoView({ behavior: getScrollBehavior(), block: 'nearest', inline: 'start' });
     };
 
     this.onTabClick = (event: Event) => {
@@ -69,7 +72,7 @@ export const HomeMobileTabs = {
       const offset = getScrollOffset(this.el);
       const top = section.getBoundingClientRect().top + window.scrollY - offset;
 
-      window.scrollTo({ top, behavior: 'smooth' });
+      window.scrollTo({ top, behavior: getScrollBehavior() });
     };
 
     this.updateVisibility = () => {
