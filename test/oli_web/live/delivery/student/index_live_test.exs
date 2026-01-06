@@ -507,6 +507,19 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       }
     ]
 
+  defp assert_in_order(html, parts) do
+    positions =
+      Enum.map(parts, fn part ->
+        case :binary.match(html, part) do
+          {index, _length} -> index
+          :nomatch -> nil
+        end
+      end)
+
+    assert Enum.all?(positions, &is_integer/1)
+    assert positions == Enum.sort(positions)
+  end
+
   defp set_progress(
          section_id,
          resource_id,
@@ -816,6 +829,32 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, ~p"/sections/#{product.slug}")
+    end
+
+    test "renders mobile home tabs in section order", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+
+      Sections.update_section(section, %{
+        agenda: true
+      })
+
+      set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
+
+      {:ok, _view, html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert html =~ "home-mobile-tabs"
+
+      assert_in_order(html, [
+        ~s(data-target="home-continue-learning"),
+        ~s(data-target="home-assignments"),
+        ~s(data-target="home-course-progress"),
+        ~s(data-target="home-agenda")
+      ])
     end
 
     # test this
