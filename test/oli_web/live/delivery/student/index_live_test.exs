@@ -507,6 +507,19 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       }
     ]
 
+  defp assert_in_order(html, parts) do
+    positions =
+      Enum.map(parts, fn part ->
+        case :binary.match(html, part) do
+          {index, _length} -> index
+          :nomatch -> nil
+        end
+      end)
+
+    assert Enum.all?(positions, &is_integer/1)
+    assert positions == Enum.sort(positions)
+  end
+
   defp set_progress(
          section_id,
          resource_id,
@@ -818,6 +831,32 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         live(conn, ~p"/sections/#{product.slug}")
     end
 
+    test "renders mobile home tabs in section order", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+
+      Sections.update_section(section, %{
+        agenda: true
+      })
+
+      set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
+
+      {:ok, _view, html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert html =~ "home-mobile-tabs"
+
+      assert_in_order(html, [
+        ~s(data-target="home-continue-learning"),
+        ~s(data-target="home-assignments"),
+        ~s(data-target="home-course-progress"),
+        ~s(data-target="home-agenda")
+      ])
+    end
+
     # test this
     test "can see welcome title and encouraging subtitle when is set and the student just joined the course",
          %{
@@ -1090,10 +1129,10 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       stub_current_time(~U[2024-05-01 20:00:00Z])
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      assert has_element?(view, "div[role='my assignments'] a", "View All Assignments")
+      assert has_element?(view, "div#home-assignments a", "View All Assignments")
 
       assert view
-             |> element("div[role='my assignments'] a", "View All Assignments")
+             |> element("div#home-assignments a", "View All Assignments")
              |> render_click() ==
                {:error,
                 {:live_redirect,

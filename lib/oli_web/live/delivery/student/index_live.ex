@@ -179,6 +179,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
       has_scheduled_resources?={@has_scheduled_resources?}
     />
+    <.home_mobile_tabs
+      show_course_progress={@completed_pages.total_pages > 0}
+      show_agenda={@section.agenda && not is_nil(@grouped_agenda_resources)}
+    />
     <div id="home-view" phx-hook="Countdown">
       <div class="flex flex-col md:flex-row p-3 md:p-8 justify-start items-start gap-6">
         <div class={[
@@ -225,6 +229,59 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
+  attr(:show_course_progress, :boolean, required: true)
+  attr(:show_agenda, :boolean, required: true)
+
+  defp home_mobile_tabs(assigns) do
+    ~H"""
+    <nav
+      id="home-mobile-tabs"
+      phx-hook="HomeMobileTabs"
+      aria-label="Course home sections"
+      class="md:hidden fixed top-14 left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden"
+    >
+      <div class="relative h-12 overflow-x-auto scrollbar-hide">
+        <div class="flex items-center gap-6 h-12 px-4" data-home-tabs-container>
+          <button
+            type="button"
+            data-home-tab
+            data-target="home-continue-learning"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
+          >
+            Continue Learning
+          </button>
+          <button
+            type="button"
+            data-home-tab
+            data-target="home-assignments"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
+          >
+            My Assignments
+          </button>
+          <button
+            :if={@show_course_progress}
+            type="button"
+            data-home-tab
+            data-target="home-course-progress"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
+          >
+            Course Progress
+          </button>
+          <button
+            :if={@show_agenda}
+            type="button"
+            data-home-tab
+            data-target="home-agenda"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
+          >
+            Upcoming Agenda
+          </button>
+        </div>
+      </div>
+    </nav>
+    """
+  end
+
   attr(:ctx, :map, default: nil)
   attr(:section_slug, :string, required: true)
   attr(:section, :any, required: true)
@@ -235,7 +292,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp header_banner(%{has_visited_section: true} = assigns) do
     ~H"""
-    <div class="w-full h-[20rem] md:h-72 relative flex items-center">
+    <div
+      id="home-continue-learning"
+      data-home-section="continue-learning"
+      tabindex="-1"
+      class="w-full h-[20rem] md:h-72 relative flex items-center scroll-mt-28"
+    >
       <div class="inset-0 absolute">
         <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
         <img
@@ -254,7 +316,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         :if={!is_nil(@suggested_page)}
         class="flex flex-col w-full px-3 md:px-9 absolute justify-center items-start gap-2 md:gap-6"
       >
-        <h3 class="text-white text-lg md:text-2xl font-bold leading-loose tracking-tight">
+        <h3
+          id="home-banner-title"
+          class="text-white text-lg md:text-2xl font-bold leading-loose tracking-tight"
+        >
           Continue Learning
         </h3>
         <div class="flex flex-col lg:flex-row self-stretch p-6 bg-zinc-900 bg-opacity-40 rounded-xl justify-between lg:items-end gap-3">
@@ -348,7 +413,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp header_banner(assigns) do
     ~H"""
-    <div class="w-full h-[20rem] md:h-72 relative flex items-center">
+    <div
+      id="home-continue-learning"
+      data-home-section="continue-learning"
+      tabindex="-1"
+      class="w-full h-[20rem] md:h-72 relative flex items-center scroll-mt-28"
+    >
       <div class="inset-0 absolute">
         <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
         <img
@@ -364,7 +434,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       </div>
 
       <div class="flex flex-col w-full px-9 absolute justify-center items-start gap-2 md:gap-6">
-        <h3 class="w-full text-white text-2xl font-bold tracking-wide">
+        <h3 id="home-banner-title" class="w-full text-white text-2xl font-bold tracking-wide">
           Hi, {user_given_name(@ctx)} !
         </h3>
         <div class="flex flex-col items-start gap-2.5">
@@ -567,7 +637,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       </Modal.modal>
     </div>
-    <div class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start inline-flex">
+    <div
+      id="home-course-progress"
+      data-home-section="course-progress"
+      tabindex="-1"
+      class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start inline-flex scroll-mt-28"
+    >
       <div class="flex-col justify-start items-start gap-3 md:gap-5 inline-flex grow">
         <div class="flex items-baseline gap-2.5 relative">
           <div class="text-2xl font-bold leading-loose">
@@ -783,8 +858,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
     ~H"""
     <div
-      role="my assignments"
-      class="w-full p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex"
+      id="home-assignments"
+      data-home-section="assignments"
+      aria-label="My Assignments"
+      tabindex="-1"
+      class="w-full p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex scroll-mt-28"
     >
       <div class="w-full flex-col justify-start items-start gap-5 flex grow">
         <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
@@ -1123,7 +1201,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp agenda(assigns) do
     ~H"""
-    <div class="w-full h-fit overflow-y-auto p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+    <div
+      id="home-agenda"
+      data-home-section="agenda"
+      tabindex="-1"
+      class="w-full h-fit overflow-y-auto p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex scroll-mt-28"
+    >
       <div class="flex-col justify-start items-start gap-7 inline-flex grow">
         <div class="self-stretch justify-between items-baseline inline-flex gap-2.5">
           <div class="text-2xl font-bold leading-loose tracking-tight">
