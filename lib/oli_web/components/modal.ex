@@ -221,12 +221,12 @@ defmodule OliWeb.Components.Modal do
               <div class="flex items-start justify-between px-4 sm:px-0">
                 <div :if={@title != []} class="mb-6 lg:mb-11 w-full">
                   <div class="flex items-start justify-between sticky top-0 z-10 pt-8 sm:pt-14 lg:pt-16 xl:pt-20 bg-Specially-Tokens-Background-lesson-page w-full pb-2">
-                    <h1
+                    <h2
                       id={"#{@id}-title"}
                       class="text-zinc-700 dark:text-neutral-300 text-xl sm:text-3xl lg:text-[40px] font-bold font-['Inter'] leading-normal sm:leading-[60px]"
                     >
                       {render_slot(@title)}
-                    </h1>
+                    </h2>
                     <!-- Desktop: X icon -->
                     <button
                       type="button"
