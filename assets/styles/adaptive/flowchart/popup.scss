@@ -49,6 +49,31 @@ janus-popup:has(input) {
 }
 
 /*----------------------------------
+  Popup Container - Delivery Mode (Flowchart)
+----------------------------------*/
+// Ensure popup container doesn't inherit icon styles from janus-popup element
+janus-popup .popup-container {
+  background: none !important;
+  background-image: none !important;
+  background-size: initial !important;
+  border-radius: initial !important;
+  box-shadow: none !important;
+  transition: none !important;
+  background-color: transparent !important;
+}
+
+// Prevent janus-popup element from getting icon styles when container is present
+janus-popup:has(.popup-container) {
+  background: none !important;
+  background-image: none !important;
+  background-size: initial !important;
+  border-radius: initial !important;
+  box-shadow: none !important;
+  transition: none !important;
+  background-color: transparent !important;
+}
+
+/*----------------------------------
   Popup Window - Note: !important tags to be removed once inline styles are removed
 ----------------------------------*/
 // Window
