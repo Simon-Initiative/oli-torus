@@ -247,17 +247,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           aria-label="Open sections menu"
           class="absolute left-0 top-0 h-12 w-12 flex items-center justify-center text-Text-text-high bg-Surface-surface-primary z-10"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="4"
-            height="16"
-            viewBox="0 0 4 16"
-            fill="currentColor"
-          >
-            <circle cx="2" cy="2" r="2" />
-            <circle cx="2" cy="8" r="2" />
-            <circle cx="2" cy="14" r="2" />
-          </svg>
+          <Icons.vertical_dots />
         </button>
         <div class="flex items-center gap-6 h-12 pl-12 pr-4" data-home-tabs-container>
           <button
@@ -325,20 +315,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             aria-label="Close sections menu"
             class="text-white hover:text-gray-300"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+            <Icons.close class="stroke-white" />
           </button>
         </div>
 
@@ -350,19 +327,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
           >
             <span class="text-base">Continue Learning</span>
-            <svg
-              data-checkmark
-              class="hidden w-5 h-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clip-rule="evenodd"
-              />
-            </svg>
+            <span data-checkmark class="hidden">
+              <Icons.checkmark class="w-5 h-5" />
+            </span>
           </button>
           <button
             :if={@show_course_progress}
@@ -372,19 +339,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
           >
             <span class="text-base">Course Progress</span>
-            <svg
-              data-checkmark
-              class="hidden w-5 h-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clip-rule="evenodd"
-              />
-            </svg>
+            <span data-checkmark class="hidden">
+              <Icons.checkmark class="w-5 h-5" />
+            </span>
           </button>
           <button
             type="button"
@@ -393,19 +350,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
           >
             <span class="text-base">My Assignments</span>
-            <svg
-              data-checkmark
-              class="hidden w-5 h-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clip-rule="evenodd"
-              />
-            </svg>
+            <span data-checkmark class="hidden">
+              <Icons.checkmark class="w-5 h-5" />
+            </span>
           </button>
           <button
             :if={@show_agenda}
@@ -415,19 +362,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
           >
             <span class="text-base">Upcoming Agenda</span>
-            <svg
-              data-checkmark
-              class="hidden w-5 h-5"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                clip-rule="evenodd"
-              />
-            </svg>
+            <span data-checkmark class="hidden">
+              <Icons.checkmark class="w-5 h-5" />
+            </span>
           </button>
         </div>
 
