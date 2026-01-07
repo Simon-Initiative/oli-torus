@@ -375,11 +375,11 @@ li.page-item {
 }
 
 .alert-warning {
-  @apply bg-yellow-100 text-Text-text-high;
+  @apply bg-yellow-100 text-zinc-700;
 }
 
 .alert-info {
-  @apply bg-blue-50 text-Text-text-high;
+  @apply bg-blue-50 text-zinc-700;
 }
 
 .alert-light {
