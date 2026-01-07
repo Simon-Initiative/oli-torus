@@ -294,7 +294,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
           responsiveLayout={responsiveLayout}
         />
       )}
-      <div style={containerStyle}>
+      <div className="popup-container" style={containerStyle}>
         {shouldShowIcon && (
           <input
             role="button"

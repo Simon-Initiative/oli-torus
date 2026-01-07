@@ -1124,3 +1124,30 @@ $font-family-sans-serif: var(--font-sans);
 .dnd-sortable-tree_simple_tree-item li.aa-sequence-item {
   padding-left: 0px !important;
 }
+
+/*----------------------------------
+  Popup Container - Authoring Mode
+----------------------------------*/
+.advanced-authoring {
+  // Ensure popup container doesn't inherit icon styles from janus-popup element
+  janus-popup .popup-container {
+    background: none !important;
+    background-image: none !important;
+    background-size: initial !important;
+    border-radius: initial !important;
+    box-shadow: none !important;
+    transition: none !important;
+    background-color: transparent !important;
+  }
+
+  // Prevent janus-popup element from getting icon styles when container is present
+  janus-popup:has(.popup-container) {
+    background: none !important;
+    background-image: none !important;
+    background-size: initial !important;
+    border-radius: initial !important;
+    box-shadow: none !important;
+    transition: none !important;
+    background-color: transparent !important;
+  }
+}
