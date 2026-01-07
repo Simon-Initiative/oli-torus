@@ -143,13 +143,10 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   const [contents, setContents] = React.useState<any>(tree);
   const [selectedKey, setSelectedKey] = useState<number>(0);
   const [fibElements, setFibElements] = React.useState<any>([]);
-  // Set default font size to 16px in initial delta
+  // Convert Janus tree to Quill delta without adding default font size
+  // The editor will display 16px via CSS (.ql-container) but won't add inline styles
   const initialDelta = useMemo(() => {
-    const d = convertJanusToQuill(tree);
-    if (d && d.ops && d.ops.length > 0 && !d.ops[0].attributes?.size) {
-      d.ops[0].attributes = { ...(d.ops[0].attributes || {}), size: '16px' };
-    }
-    return d;
+    return convertJanusToQuill(tree);
   }, [tree]);
   const [delta, setDelta] = React.useState<any>(initialDelta);
   const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
