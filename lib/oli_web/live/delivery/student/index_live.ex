@@ -241,7 +241,25 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       class="md:hidden fixed top-14 left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden"
     >
       <div class="relative h-12 overflow-x-auto scrollbar-hide">
-        <div class="flex items-center gap-6 h-12 px-4" data-home-tabs-container>
+        <button
+          type="button"
+          data-drawer-toggle
+          aria-label="Open sections menu"
+          class="absolute left-0 top-0 h-12 w-12 flex items-center justify-center text-Text-text-high bg-Surface-surface-primary z-10"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="4"
+            height="16"
+            viewBox="0 0 4 16"
+            fill="currentColor"
+          >
+            <circle cx="2" cy="2" r="2" />
+            <circle cx="2" cy="8" r="2" />
+            <circle cx="2" cy="14" r="2" />
+          </svg>
+        </button>
+        <div class="flex items-center gap-6 h-12 pl-12 pr-4" data-home-tabs-container>
           <button
             type="button"
             data-home-tab
@@ -279,6 +297,151 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       </div>
     </nav>
+
+    <div
+      id="home-drawer-backdrop"
+      data-drawer-backdrop
+      class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-[45] hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div
+      id="home-drawer"
+      data-drawer
+      role="dialog"
+      aria-labelledby="home-drawer-title"
+      aria-modal="true"
+      class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#1a1a1a] rounded-t-2xl shadow-[0px_-4px_20px_0px_rgba(0,0,0,0.3)] transform translate-y-full transition-transform duration-300 ease-in-out hidden"
+    >
+      <div class="flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+          <h2 id="home-drawer-title" class="text-base font-semibold text-white">
+            Homepage
+          </h2>
+          <button
+            type="button"
+            data-drawer-close
+            aria-label="Close sections menu"
+            class="text-white hover:text-gray-300"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="flex flex-col py-2">
+          <button
+            type="button"
+            data-drawer-item
+            data-target="home-continue-learning"
+            class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
+          >
+            <span class="text-base">Continue Learning</span>
+            <svg
+              data-checkmark
+              class="hidden w-5 h-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+          <button
+            :if={@show_course_progress}
+            type="button"
+            data-drawer-item
+            data-target="home-course-progress"
+            class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
+          >
+            <span class="text-base">Course Progress</span>
+            <svg
+              data-checkmark
+              class="hidden w-5 h-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            data-drawer-item
+            data-target="home-assignments"
+            class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
+          >
+            <span class="text-base">My Assignments</span>
+            <svg
+              data-checkmark
+              class="hidden w-5 h-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+          <button
+            :if={@show_agenda}
+            type="button"
+            data-drawer-item
+            data-target="home-agenda"
+            class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
+          >
+            <span class="text-base">Upcoming Agenda</span>
+            <svg
+              data-checkmark
+              class="hidden w-5 h-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div class="px-6 py-4">
+          <button
+            type="button"
+            data-drawer-close
+            class="w-full py-3 text-base font-normal text-white border border-gray-600 rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
     """
   end
 
