@@ -16032,6 +16032,10 @@ table.table-striped tbody tr:nth-child(even) {
   resize: both;
 }
 
+.scroll-mt-28 {
+  scroll-margin-top: 7rem;
+}
+
 .list-inside {
   list-style-position: inside;
 }
