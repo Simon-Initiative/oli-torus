@@ -155,13 +155,13 @@ export class HtmlParser implements WriterImpl {
     return <p {...maybePointMarkerAttr(p, pointMarkerContextFrom(context, p))}>{next()}</p>;
   }
 
-  // bump authored content header levels for semantic consistency w/page title as h1
-  // h1 => <h2 class="h1"> etc
   private renderShiftedHeading(level: number, next: Next): React.ReactElement {
-    // no h7, but h6 rare to non-existent and authoring now only allows h1-2.
-    const tag = `h${Math.min(level + 1, 6)}` as keyof JSX.IntrinsicElements;
-    const className = `h${level}`;
-    return React.createElement(tag, { className }, next());
+    // bump authored content header levels for semantic consistency w/page title as h1
+    // h1 => <h2 class="h1">, h2 => <h3 class="h2">, ...
+    // h6 can't be shifted, but h6 rare to non-existent. Authoring now only allows h1-2
+    const Tag = `h${globalThis.Math.min(level + 1, 6)}` as keyof JSX.IntrinsicElements;
+
+    return <Tag className={`h${level}`}>{next()}</Tag>;
   }
 
   h1(context: WriterContext, next: Next, _x: HeadingOne) {
