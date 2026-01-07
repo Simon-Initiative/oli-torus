@@ -12856,29 +12856,17 @@ li.page-item {
 }
 
 .alert-warning {
-  color: #353740;
-}
-
-.dark .alert-warning {
-  color: #EEEBF5;
-}
-
-.alert-warning {
   --tw-bg-opacity: 1;
   background-color: rgb(253 236 207 / var(--tw-bg-opacity));
-}
-
-.alert-info {
-  color: #353740;
-}
-
-.dark .alert-info {
-  color: #EEEBF5;
+  --tw-text-opacity: 1;
+  color: rgb(63 63 70 / var(--tw-text-opacity));
 }
 
 .alert-info {
   --tw-bg-opacity: 1;
   background-color: rgb(209 223 245 / var(--tw-bg-opacity));
+  --tw-text-opacity: 1;
+  color: rgb(63 63 70 / var(--tw-text-opacity));
 }
 
 .alert-light {
@@ -18316,6 +18304,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .stroke-white {
   stroke: #fff;
+}
+
+.stroke-zinc-700 {
+  stroke: #3f3f46;
 }
 
 .stroke-zinc-800 {
