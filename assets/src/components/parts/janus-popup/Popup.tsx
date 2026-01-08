@@ -110,7 +110,16 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     initialize(props.model);
   }, [props]);
 
-  const { width, height, useToggleBehavior, popup, description, labelText, labelPosition = 'right', hideIcon = false } = model;
+  const {
+    width,
+    height,
+    useToggleBehavior,
+    popup,
+    description,
+    labelText,
+    labelPosition = 'right',
+    hideIcon = false,
+  } = model;
 
   useEffect(() => {
     if (!props.notify) {
@@ -423,15 +432,15 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
                     alt: description,
                   }
                 : // When no label and custom icon URL, use src
-                  isCustomIcon
-                  ? {
-                      src: iconSrc,
-                      type: 'image',
-                      alt: description,
-                    }
-                  : {
-                      type: 'button',
-                    })}
+                isCustomIcon
+                ? {
+                    src: iconSrc,
+                    type: 'image',
+                    alt: description,
+                  }
+                : {
+                    type: 'button',
+                  })}
               className={`info-icon`}
               aria-controls={id}
               aria-haspopup="true"

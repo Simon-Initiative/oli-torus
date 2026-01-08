@@ -116,7 +116,18 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     };
   }, [props.notify, handleNotificationSave]);
 
-  const { z, width, height, visible = true, defaultURL, iconURL, description, labelText, labelPosition = 'right', hideIcon = false } = model;
+  const {
+    z,
+    width,
+    height,
+    visible = true,
+    defaultURL,
+    iconURL,
+    description,
+    labelText,
+    labelPosition = 'right',
+    hideIcon = false,
+  } = model;
 
   // need to offset the window position by the position of the parent element
   // since it's a child of the parent element and not the activity (screen) directly
@@ -311,15 +322,15 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
                   alt: description,
                 }
               : // When no label and custom icon URL, use src
-                isCustomIcon
-                ? {
-                    src: iconSrc,
-                    type: 'image',
-                    alt: description,
-                  }
-                : {
-                    type: 'button',
-                  })}
+              isCustomIcon
+              ? {
+                  src: iconSrc,
+                  type: 'image',
+                  alt: description,
+                }
+              : {
+                  type: 'button',
+                })}
             className={`info-icon`}
             onDoubleClick={() => {
               setShowWindow(true);
