@@ -23,6 +23,10 @@ config :oli,
     favicons: "/favicons"
   ]
 
+config :oli, :blob_storage,
+  bucket_name: "torus-blob-test",
+  use_deprecated_api: true
+
 config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,
   uploader_module: Oli.Analytics.XAPI.FileWriterUploader,

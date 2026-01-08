@@ -5,6 +5,7 @@ defmodule Oli.Rendering.Activity.Html do
   import Oli.Utils
 
   alias Oli.Delivery.Settings
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
   alias Oli.Rendering.Activity.ActivitySummary
@@ -215,9 +216,9 @@ defmodule Oli.Rendering.Activity.Html do
           end,
         pageState:
           if is_nil(resource_attempt) do
-            "{}"
+            %{}
           else
-            resource_attempt.state
+            Core.fetch_extrinsic_state(resource_attempt)
           end,
         renderPointMarkers: render_opts.render_point_markers,
         isAnnotationLevel: true,
