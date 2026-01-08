@@ -6,13 +6,8 @@ janus-popup:has(input) {
   input {
     cursor: pointer;
   }
-  // Hide input with data URL (old behavior - icon shown via background-image on janus-popup)
   input[src*='data'] {
     opacity: 0;
-  }
-  // Ensure input is visible when inside a container (no background-image on janus-popup)
-  .popup-container input[src*='data'] {
-    opacity: 1 !important;
   }
   &[model*='repo/icons'] {
     border-radius: 100px;
@@ -80,7 +75,6 @@ janus-popup:has(input) {
     box-shadow: initial;
   }
 
-  // Focus/active styles only apply when there's no container (old behavior)
   input[src*='data']:focus,
   input[src*='data']:active {
     opacity: 1;
@@ -95,54 +89,6 @@ janus-popup:has(input) {
   }
   input[src*='data']:active {
     box-shadow: inset 0 0 0 4px var(--white40_a);
-  }
-  // Override focus/active styles when inside container (input should stay visible)
-  .popup-container input[src*='data']:focus,
-  .popup-container input[src*='data']:active {
-    opacity: 1 !important;
-    border-radius: initial;
-    width: 32px !important;
-    height: 32px !important;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-  }
-}
-
-/*----------------------------------
-  Popup Container - Delivery Mode
-----------------------------------*/
-// Ensure popup container doesn't inherit icon styles from janus-popup element
-janus-popup .popup-container {
-  background: none !important;
-  background-image: none !important;
-  background-size: initial !important;
-  border-radius: initial !important;
-  box-shadow: none !important;
-  transition: none !important;
-  background-color: transparent !important;
-}
-
-// Prevent janus-popup element from getting icon styles when container is present
-janus-popup:has(.popup-container) {
-  background: none !important;
-  background-image: none !important;
-  background-size: initial !important;
-  border-radius: initial !important;
-  box-shadow: none !important;
-  transition: none !important;
-  background-color: transparent !important;
-
-  // Don't apply icon-specific background colors when container is present
-  &[model*='orange'],
-  &[model*='orange']:hover,
-  &[model*='red'],
-  &[model*='red']:hover,
-  &[model*='green'],
-  &[model*='green']:hover,
-  &[model*='blue'],
-  &[model*='blue']:hover {
-    background-color: transparent !important;
   }
 }
 
@@ -209,10 +155,5 @@ janus-popup:has(.popup-container) {
   input[src*='data']:focus,
   input[src*='data']:active {
     background-color: rgba(0, 0, 0, 0);
-  }
-  // Override for container inputs
-  .popup-container input[src*='data']:focus,
-  .popup-container input[src*='data']:active {
-    background-color: initial;
   }
 }
