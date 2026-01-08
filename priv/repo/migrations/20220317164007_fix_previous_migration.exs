@@ -7,9 +7,8 @@ defmodule Oli.Repo.Migrations.FixPreviousMigration do
     drop_trigger()
     drop_materialized_view()
 
-    user = get_current_db_user()
-    create_materialized_view(user)
-    create_trigger(user)
+    create_materialized_view()
+    create_trigger()
     refresh_materialized_view()
 
     flush()
@@ -29,7 +28,7 @@ defmodule Oli.Repo.Migrations.FixPreviousMigration do
     """
   end
 
-  def create_materialized_view(user) do
+  def create_materialized_view() do
     execute """
     CREATE MATERIALIZED VIEW IF NOT EXISTS public.part_mapping
     TABLESPACE pg_default
@@ -47,7 +46,7 @@ defmodule Oli.Repo.Migrations.FixPreviousMigration do
 
     execute """
     ALTER TABLE IF EXISTS public.part_mapping
-    OWNER TO #{user};
+    OWNER TO CURRENT_USER;
     """
 
     execute """
@@ -65,29 +64,6 @@ defmodule Oli.Repo.Migrations.FixPreviousMigration do
     """
   end
 
-  def get_current_db_user() do
-    case System.get_env("DATABASE_URL", nil) do
-      nil -> System.get_env("DB_USER", "postgres")
-      url -> parse_user_from_db_url(url, "postgres")
-    end
-  end
-
-  def parse_user_from_db_url(url, default) do
-    case url do
-      "ecto://" <> rest ->
-        split = String.split(rest, ":")
-
-        case Enum.count(split) do
-          0 -> default
-          1 -> default
-          _ -> Enum.at(split, 0)
-        end
-
-      _ ->
-        default
-    end
-  end
-
   def drop_trigger() do
     execute """
     DROP TRIGGER IF EXISTS published_resources_tr ON public.published_resources;
@@ -96,7 +72,7 @@ defmodule Oli.Repo.Migrations.FixPreviousMigration do
     execute "DROP FUNCTION IF EXISTS public.refresh_part_mapping() CASCADE;"
   end
 
-  def create_trigger(user) do
+  def create_trigger() do
     execute """
     CREATE OR REPLACE FUNCTION public.refresh_part_mapping()
         RETURNS trigger
@@ -113,7 +89,7 @@ defmodule Oli.Repo.Migrations.FixPreviousMigration do
 
     execute """
     ALTER FUNCTION public.refresh_part_mapping()
-    OWNER TO #{user};
+    OWNER TO CURRENT_USER;
     """
 
     execute """

@@ -14,7 +14,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.BulkCertificateStatus
   def render(%{show_component: true} = assigns) do
     ~H"""
     <button
-      class="ml-auto h-5 flex space-x-4"
+      class="ml-auto flex space-x-4 items-center"
       phx-click={
         JS.push("show_bulk_certificate_status_email_modal")
         |> Modal.show_modal("certificate_modal")

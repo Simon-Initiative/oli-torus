@@ -40,6 +40,11 @@ RUN npm install -g yarn
 # prepare build dir
 WORKDIR /app
 
+# When cross-building (e.g., linux/amd64 target on Apple Silicon), Erlang/OTP 28's
+# dual-mapped JIT crashes under QEMU emulation. Disable the dual-mapped scheduler
+# during the build to keep mix and other BEAM tooling stable.
+ENV ERL_FLAGS="+JMsingle true"
+
 # install hex + rebar
 RUN mix local.hex --force && \
     mix local.rebar --force

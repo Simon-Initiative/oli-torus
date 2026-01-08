@@ -104,6 +104,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
               ),
             )
           }
+          multiSelect
         />
         {submitReset}
         <HintsDeliveryConnected

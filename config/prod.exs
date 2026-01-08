@@ -17,6 +17,10 @@ config :oli, OliWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest
 # Do not print debug messages in production
 config :logger, level: :info
 
+config :oli,
+  enable_playwright_scenarios: false,
+  playwright_scenario_token: System.get_env("PLAYWRIGHT_SCENARIO_TOKEN")
+
 # Configure email for production
 config :oli, Oli.Mailer, adapter: Swoosh.Adapters.ExAwsAmazonSES
 

@@ -109,6 +109,20 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
              |> render() =~
                "Testing B"
     end
+
+    test "clear text search button resets the filter", %{conn: conn, author: author} do
+      create_project_with_owner(author, %{title: "Argentina"})
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+
+      render_hook(view, "text_search_change", %{value: "argen"})
+
+      assert has_element?(view, ~s(input[id='text-search-input'][value='argen']))
+
+      render_hook(view, "text_search_reset", %{"id" => "text-search"})
+
+      assert has_element?(view, ~s(input[id='text-search-input'][value='']))
+    end
   end
 
   describe "course author workspace as admin" do

@@ -17,7 +17,7 @@ import { Verifier } from '@core/verify/Verifier';
 export class ProjectTask {
   private readonly authorDB: AuthorDashboardPO;
   private readonly instructorDB: InstructorDashboardPO;
-  private readonly overviewP: OverviewProjectPO;
+  public readonly overviewP: OverviewProjectPO;
   private readonly publishP: PublishProjectPO;
   private readonly newCS: NewCourseSetupPO;
   private readonly products: ProductsPO;

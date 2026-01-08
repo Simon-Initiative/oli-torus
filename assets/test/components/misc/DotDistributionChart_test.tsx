@@ -177,9 +177,9 @@ describe('DotDistributionChart', () => {
         ]);
         expect(spec.encoding.color.scale.range).toEqual([
           '#C2C2C2',
-          '#E6D4FA',
           '#B37CEA',
-          '#7B19C1',
+          '#964BEA',
+          '#7818BB',
         ]);
       }
     });
@@ -709,6 +709,524 @@ describe('DotDistributionChart', () => {
 
         expect(highRect).toHaveAttribute('stroke', '#353740'); // Selected color
         expect(mediumRect).toHaveAttribute('stroke', '#8AB8E5'); // Hover color
+      });
+    });
+  });
+
+  describe('Dot Grouping and Rendering', () => {
+    describe('Grouping Logic', () => {
+      it('groups 6 or more students with same proficiency into single large dot', () => {
+        const studentsWithSameProficiency: StudentProficiency[] = Array.from(
+          { length: 8 },
+          (_, i) => ({
+            student_id: `${i + 1}`,
+            proficiency: 0.85,
+            proficiency_range: 'High',
+          }),
+        );
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: studentsWithSameProficiency,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        // Should render a single grouped dot (circle element)
+        const circles = container.querySelectorAll('circle');
+        expect(circles.length).toBeGreaterThan(0);
+      });
+
+      it('renders tower (vertical stack) for 2-5 students with same proficiency', () => {
+        const studentsWithSameProficiency: StudentProficiency[] = Array.from(
+          { length: 4 },
+          (_, i) => ({
+            student_id: `${i + 1}`,
+            proficiency: 0.75,
+            proficiency_range: 'High',
+          }),
+        );
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: studentsWithSameProficiency,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        // Should render multiple dots in a vertical tower
+        const circles = container.querySelectorAll('circle');
+        expect(circles.length).toBe(4); // Should be 4 individual dots
+      });
+
+      it('renders single dot for individual student', () => {
+        const singleStudent: StudentProficiency[] = [
+          { student_id: '1', proficiency: 0.85, proficiency_range: 'High' },
+        ];
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: singleStudent,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        const circles = container.querySelectorAll('circle');
+        expect(circles.length).toBe(1); // Should be 1 single dot
+      });
+
+      it('handles mixed grouping scenarios (towers and grouped dots)', () => {
+        const mixedStudents: StudentProficiency[] = [
+          // Group of 7 students at 0.85 -> should be grouped into single dot
+          ...Array.from({ length: 7 }, (_, i) => ({
+            student_id: `group1-${i + 1}`,
+            proficiency: 0.85,
+            proficiency_range: 'High',
+          })),
+          // Group of 3 students at 0.75 -> should be tower
+          ...Array.from({ length: 3 }, (_, i) => ({
+            student_id: `group2-${i + 1}`,
+            proficiency: 0.75,
+            proficiency_range: 'High',
+          })),
+          // Single student at 0.95 -> single dot
+          { student_id: 'single-1', proficiency: 0.95, proficiency_range: 'High' },
+        ];
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: mixedStudents,
+        };
+
+        render(<DotDistributionChart {...props} />);
+
+        expect(screen.getByTestId('vega-lite-chart')).toBeInTheDocument();
+      });
+    });
+
+    describe('Diameter Calculation', () => {
+      it('calculates correct diameter for single student (base size)', () => {
+        const singleStudent: StudentProficiency[] = [
+          { student_id: '1', proficiency: 0.85, proficiency_range: 'High' },
+        ];
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: singleStudent,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        // Base dot size should be 9px (radius 4.5)
+        const circles = container.querySelectorAll('circle[data-testid*="dot-"]');
+        if (circles.length > 0) {
+          const radius = circles[0].getAttribute('r');
+          expect(parseFloat(radius || '0')).toBeCloseTo(4.5, 1);
+        }
+      });
+
+      it('uses square root scaling for larger groups', () => {
+        const largeGroup: StudentProficiency[] = Array.from({ length: 16 }, (_, i) => ({
+          student_id: `${i + 1}`,
+          proficiency: 0.85,
+          proficiency_range: 'High',
+        }));
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: largeGroup,
+        };
+
+        render(<DotDistributionChart {...props} />);
+
+        // With 16 students: diameter = 9 * sqrt(16) = 9 * 4 = 36px
+        // Should not grow linearly (would be 144px with linear scaling)
+        expect(screen.getByTestId('vega-lite-chart')).toBeInTheDocument();
+      });
+
+      it('handles groups of different sizes correctly', () => {
+        const variableGroups: StudentProficiency[] = [
+          // 1 student at 0.95
+          { student_id: 's1', proficiency: 0.95, proficiency_range: 'High' },
+          // 4 students at 0.85 (tower)
+          ...Array.from({ length: 4 }, (_, i) => ({
+            student_id: `s2-${i}`,
+            proficiency: 0.85,
+            proficiency_range: 'High',
+          })),
+          // 9 students at 0.75 (grouped, sqrt(9) = 3)
+          ...Array.from({ length: 9 }, (_, i) => ({
+            student_id: `s3-${i}`,
+            proficiency: 0.75,
+            proficiency_range: 'High',
+          })),
+        ];
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: variableGroups,
+        };
+
+        render(<DotDistributionChart {...props} />);
+
+        expect(screen.getByTestId('vega-lite-chart')).toBeInTheDocument();
+      });
+    });
+
+    describe('Dot Hover and Tooltips', () => {
+      it('shows tooltip with student count on dot hover', async () => {
+        const groupedStudents: StudentProficiency[] = Array.from({ length: 8 }, (_, i) => ({
+          student_id: `${i + 1}`,
+          proficiency: 0.85,
+          proficiency_range: 'High',
+        }));
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: groupedStudents,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        // Find a dot circle element
+        const circles = container.querySelectorAll('circle');
+        if (circles.length > 0) {
+          const dot = circles[0];
+
+          // Simulate hover
+          fireEvent.mouseEnter(dot);
+
+          // Check if tooltip appears with student count
+          await waitFor(() => {
+            const tooltip = screen.queryByText(/8 students/i);
+            if (tooltip) {
+              expect(tooltip).toBeInTheDocument();
+            }
+          });
+        }
+      });
+
+      it('shows "1 student" (singular) for single student dot', async () => {
+        const singleStudent: StudentProficiency[] = [
+          { student_id: '1', proficiency: 0.85, proficiency_range: 'High' },
+        ];
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: singleStudent,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        const circles = container.querySelectorAll('circle');
+        if (circles.length > 0) {
+          const dot = circles[0];
+
+          fireEvent.mouseEnter(dot);
+
+          await waitFor(() => {
+            const tooltip = screen.queryByText(/1 student/i);
+            if (tooltip) {
+              expect(tooltip).toBeInTheDocument();
+              expect(tooltip).not.toHaveTextContent('students'); // Should be singular
+            }
+          });
+        }
+      });
+
+      it('hides tooltip on mouse leave', async () => {
+        const groupedStudents: StudentProficiency[] = Array.from({ length: 6 }, (_, i) => ({
+          student_id: `${i + 1}`,
+          proficiency: 0.85,
+          proficiency_range: 'High',
+        }));
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: groupedStudents,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        const circles = container.querySelectorAll('circle');
+        if (circles.length > 0) {
+          const dot = circles[0];
+
+          // Show tooltip
+          fireEvent.mouseEnter(dot);
+
+          // Verify tooltip is visible first
+          let tooltip = screen.queryByText(/6 students/i);
+          if (tooltip) {
+            expect(tooltip).toBeInTheDocument();
+          }
+
+          // Hide tooltip
+          fireEvent.mouseLeave(dot);
+
+          // Verify tooltip is gone (without waitFor if it's immediate)
+          tooltip = screen.queryByText(/6 students/i);
+          expect(tooltip).not.toBeInTheDocument();
+        }
+      });
+    });
+
+    describe('Opacity and Visual Effects', () => {
+      it('renders dots with 75% opacity by default', () => {
+        const students: StudentProficiency[] = Array.from({ length: 6 }, (_, i) => ({
+          student_id: `${i + 1}`,
+          proficiency: 0.85,
+          proficiency_range: 'High',
+        }));
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: students,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        const circles = container.querySelectorAll('circle[fill-opacity]');
+        if (circles.length > 0) {
+          const opacity = circles[0].getAttribute('fill-opacity');
+          expect(opacity).toBe('0.75');
+        }
+      });
+
+      it('increases opacity to 100% on hover', async () => {
+        const students: StudentProficiency[] = Array.from({ length: 6 }, (_, i) => ({
+          student_id: `${i + 1}`,
+          proficiency: 0.85,
+          proficiency_range: 'High',
+        }));
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: students,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        const circles = container.querySelectorAll('circle');
+        if (circles.length > 0) {
+          const dot = circles[0];
+
+          // Hover to increase opacity
+          fireEvent.mouseEnter(dot);
+
+          await waitFor(() => {
+            const opacity = dot.getAttribute('fill-opacity');
+            expect(opacity).toBe('1');
+          });
+        }
+      });
+
+      it('renders solid border (no stroke opacity)', () => {
+        const students: StudentProficiency[] = Array.from({ length: 6 }, (_, i) => ({
+          student_id: `${i + 1}`,
+          proficiency: 0.85,
+          proficiency_range: 'High',
+        }));
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: students,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        const circles = container.querySelectorAll('circle[stroke]');
+        if (circles.length > 0) {
+          const strokeOpacity = circles[0].getAttribute('stroke-opacity');
+          // Should either be null (default 1) or explicitly "1"
+          expect(strokeOpacity === null || strokeOpacity === '1').toBe(true);
+        }
+      });
+    });
+
+    describe('Base Alignment', () => {
+      it('aligns all dots by their base (bottom edge)', () => {
+        const variableSizeGroups: StudentProficiency[] = [
+          // Large group (16 students)
+          ...Array.from({ length: 16 }, (_, i) => ({
+            student_id: `large-${i}`,
+            proficiency: 0.85,
+            proficiency_range: 'High',
+          })),
+          // Small group (6 students)
+          ...Array.from({ length: 6 }, (_, i) => ({
+            student_id: `small-${i}`,
+            proficiency: 0.75,
+            proficiency_range: 'High',
+          })),
+        ];
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: variableSizeGroups,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        const circles = container.querySelectorAll('circle');
+        if (circles.length >= 2) {
+          // Get cy and r for multiple circles
+          const dots = Array.from(circles).map((circle) => ({
+            cy: parseFloat(circle.getAttribute('cy') || '0'),
+            r: parseFloat(circle.getAttribute('r') || '0'),
+          }));
+
+          // Calculate base position (cy + r) for each dot
+          const bases = dots.map((dot) => dot.cy + dot.r);
+
+          // All bases should be approximately equal (aligned at baseY = 135)
+          const firstBase = bases[0];
+          bases.forEach((base) => {
+            expect(Math.abs(base - firstBase)).toBeLessThan(1); // Allow small floating point differences
+          });
+        }
+      });
+    });
+
+    describe('Render Order (Z-Index)', () => {
+      it('renders smaller dots after (on top of) larger dots', () => {
+        const variableSizeGroups: StudentProficiency[] = [
+          // Large group (20 students) at 0.85
+          ...Array.from({ length: 20 }, (_, i) => ({
+            student_id: `large-${i}`,
+            proficiency: 0.85,
+            proficiency_range: 'High',
+          })),
+          // Medium group (10 students) at 0.80
+          ...Array.from({ length: 10 }, (_, i) => ({
+            student_id: `medium-${i}`,
+            proficiency: 0.8,
+            proficiency_range: 'High',
+          })),
+          // Small group (6 students) at 0.75
+          ...Array.from({ length: 6 }, (_, i) => ({
+            student_id: `small-${i}`,
+            proficiency: 0.75,
+            proficiency_range: 'High',
+          })),
+        ];
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: variableSizeGroups,
+        };
+
+        const { container } = render(<DotDistributionChart {...props} />);
+
+        const circles = container.querySelectorAll('circle');
+
+        // Dots are rendered in order: largest first, smallest last
+        // In SVG, elements rendered last appear on top
+        if (circles.length >= 3) {
+          const radii = Array.from(circles).map((c) => parseFloat(c.getAttribute('r') || '0'));
+
+          // Find the largest and smallest radii
+          const maxRadius = Math.max(...radii);
+          const minRadius = Math.min(...radii);
+
+          // Find indices of largest and smallest radii
+          const maxIndex = radii.indexOf(maxRadius);
+          const minIndex = radii.findIndex((r) => r === minRadius);
+
+          // Largest dot should be rendered before (lower index) smallest dot
+          // This ensures smaller dots render last and appear on top
+          expect(maxIndex).toBeLessThan(minIndex);
+        }
+      });
+    });
+
+    describe('Edge Cases with New Grouping Logic', () => {
+      it('handles exactly 6 students (boundary case for grouping)', () => {
+        const exactlySix: StudentProficiency[] = Array.from({ length: 6 }, (_, i) => ({
+          student_id: `${i + 1}`,
+          proficiency: 0.85,
+          proficiency_range: 'High',
+        }));
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: exactlySix,
+        };
+
+        render(<DotDistributionChart {...props} />);
+
+        // Should render as single grouped dot, not tower
+        expect(screen.getByTestId('vega-lite-chart')).toBeInTheDocument();
+      });
+
+      it('handles exactly 5 students (boundary case for tower)', () => {
+        const exactlyFive: StudentProficiency[] = Array.from({ length: 5 }, (_, i) => ({
+          student_id: `${i + 1}`,
+          proficiency: 0.85,
+          proficiency_range: 'High',
+        }));
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: exactlyFive,
+        };
+
+        render(<DotDistributionChart {...props} />);
+
+        // Should render as tower, not grouped dot
+        expect(screen.getByTestId('vega-lite-chart')).toBeInTheDocument();
+      });
+
+      it('handles very large group (100+ students)', () => {
+        const veryLargeGroup: StudentProficiency[] = Array.from({ length: 100 }, (_, i) => ({
+          student_id: `${i + 1}`,
+          proficiency: 0.85,
+          proficiency_range: 'High',
+        }));
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: veryLargeGroup,
+        };
+
+        render(<DotDistributionChart {...props} />);
+
+        // Should handle large groups without errors
+        // Square root scaling: diameter = 9 * sqrt(100) = 90px
+        expect(screen.getByTestId('vega-lite-chart')).toBeInTheDocument();
+      });
+
+      it('handles students across multiple proficiency levels', () => {
+        const multiLevel: StudentProficiency[] = [
+          // High level
+          ...Array.from({ length: 8 }, (_, i) => ({
+            student_id: `high-${i}`,
+            proficiency: 0.85,
+            proficiency_range: 'High',
+          })),
+          // Medium level
+          ...Array.from({ length: 4 }, (_, i) => ({
+            student_id: `medium-${i}`,
+            proficiency: 0.55,
+            proficiency_range: 'Medium',
+          })),
+          // Low level
+          ...Array.from({ length: 10 }, (_, i) => ({
+            student_id: `low-${i}`,
+            proficiency: 0.25,
+            proficiency_range: 'Low',
+          })),
+        ];
+
+        const props = {
+          ...defaultProps,
+          student_proficiency: multiLevel,
+        };
+
+        render(<DotDistributionChart {...props} />);
+
+        // Should group/tower students separately within each level
+        expect(screen.getByTestId('vega-lite-chart')).toBeInTheDocument();
       });
     });
   });

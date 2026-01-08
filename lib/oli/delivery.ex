@@ -98,14 +98,16 @@ defmodule Oli.Delivery do
       {:product, blueprint} ->
         project = Oli.Repo.get(Oli.Authoring.Course.Project, blueprint.base_project_id)
 
-        # Try to calculate the cost from the product. If that fails, use the blueprint amount
-        amount =
+        # calculate a cost, if an error, fallback to the amount in the blueprint.
+        # if the amount returned is nil, it means the paywall is bypassed
+        {amount, requires_payment} =
           case Oli.Delivery.Paywall.section_cost_from_product(
                  blueprint,
                  SectionSpecification.get_institution(section_spec)
                ) do
-            {:ok, amount} -> amount
-            _ -> blueprint.amount
+            {:ok, nil} -> {blueprint.amount, false}
+            {:ok, amount} -> {amount, blueprint.requires_payment}
+            _ -> {blueprint.amount, blueprint.requires_payment}
           end
 
         section_params =
@@ -131,7 +133,8 @@ defmodule Oli.Delivery do
             analytics_version: :v2,
             welcome_title: blueprint.welcome_title,
             encouraging_subtitle: blueprint.encouraging_subtitle,
-            amount: amount
+            amount: amount,
+            requires_payment: requires_payment
           })
           |> SectionSpecification.apply(section_spec)
 

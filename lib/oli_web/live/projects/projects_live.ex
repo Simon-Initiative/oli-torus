@@ -280,7 +280,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         </a>
       </div>
 
-      <div class="grid grid-cols-12">
+      <div class="grid grid-cols-12 overflow-x-auto">
         <div id="projects-table" class="col-span-12">
           <StripedPagedTable.render
             table_model={@table_model}
@@ -293,7 +293,6 @@ defmodule OliWeb.Projects.ProjectsLive do
             page_change="paged_table_page_change"
             limit_change="paged_table_limit_change"
             show_limit_change={true}
-            sticky_header_offset={64}
           />
         </div>
       </div>

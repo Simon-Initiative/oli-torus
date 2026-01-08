@@ -104,7 +104,7 @@ module.exports = (env, options) => ({
       amd: 'react-dom',
     },
   },
-  devtool: 'source-map',
+  devtool: options.mode === 'production' ? false : 'eval-source-map',
   optimization: {
     minimize: options.mode == 'production',
     minimizer: [new ESBuildMinifyPlugin({ css: true })],

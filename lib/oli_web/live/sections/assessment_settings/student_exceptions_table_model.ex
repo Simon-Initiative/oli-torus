@@ -270,26 +270,31 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       })
 
     ~H"""
-    <select class="torus-select pr-32" name={"late_policy-#{@id}"}>
-      <option
-        selected={@late_start == :allow && @late_submit == :allow}
-        value={:allow_late_start_and_late_submit}
-      >
-        Allow late start and late submit
-      </option>
-      <option
-        selected={@late_start == :disallow && @late_submit == :allow}
-        value={:allow_late_submit_but_not_late_start}
-      >
-        Allow late submit but not late start
-      </option>
-      <option
-        selected={@late_start == :disallow && @late_submit == :disallow}
-        value={:disallow_late_start_and_late_submit}
-      >
-        Disallow late start and late submit
-      </option>
-    </select>
+    <div class={late_policy_data_class(@selected_assessment, @late_start, @late_submit)}>
+      <select class="torus-select pr-32" name={"late_policy-#{@id}"}>
+        <option disabled selected={is_nil(@late_start) && is_nil(@late_submit)} hidden value="">
+          -
+        </option>
+        <option
+          selected={@late_start == :allow && @late_submit == :allow}
+          value={:allow_late_start_and_late_submit}
+        >
+          Allow late start and late submit
+        </option>
+        <option
+          selected={@late_start == :disallow && @late_submit == :allow}
+          value={:allow_late_submit_but_not_late_start}
+        >
+          Allow late submit but not late start
+        </option>
+        <option
+          selected={@late_start == :disallow && @late_submit == :disallow}
+          value={:disallow_late_start_and_late_submit}
+        >
+          Disallow late start and late submit
+        </option>
+      </select>
+    </div>
     """
   end
 
@@ -458,6 +463,17 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   end
 
   defp data_class(_assessment_data, _student_exception_data), do: ""
+
+  # Special handling for late policy since it involves two fields
+  defp late_policy_data_class(_assessment, nil, nil), do: ""
+
+  defp late_policy_data_class(assessment, late_start, late_submit) do
+    if assessment.late_start != late_start or assessment.late_submit != late_submit do
+      "highlight-exception"
+    else
+      ""
+    end
+  end
 
   defp value_from_datetime(nil, _ctx), do: nil
 

@@ -101,7 +101,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
    * form elements before attempting to restore focus.
    */
   useEffect(() => {
-    if (!lastFocusedInputId) return;
+    if (!isExpertMode || !lastFocusedInputId) return;
 
     // Double RAF ensures DOM is fully updated after re-render
     requestAnimationFrame(() => {
@@ -124,7 +124,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
         }
       });
     });
-  }, [formData]);
+  }, [formData, isExpertMode]);
 
   const debouncedOnChangeHandler = useMemo(
     () =>
@@ -153,6 +153,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
    * Uses pointerdown event which unifies mouse, touch, and pen interactions.
    */
   useEffect(() => {
+    if (!isExpertMode) return;
+
     const onPointerDown = (ev: PointerEvent) => {
       const target = ev.target as HTMLElement | null;
       const formRoot = formContainerRef.current?.querySelector('.rjsf');
@@ -176,7 +178,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
     };
-  }, []);
+  }, [isExpertMode]);
 
   return (
     <div
@@ -220,17 +222,19 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
            * Track the focused input ID for restoration after re-renders.
            * RJSF may pass either a string ID or an event object depending on version.
            */
-          try {
-            if (typeof id === 'string' && id.startsWith('root_')) {
-              lastFocusedInputId = id;
-            } else if (id && (id as any).target?.id) {
-              const targetId = (id as any).target.id;
-              if (targetId.startsWith('root_')) {
-                lastFocusedInputId = targetId;
+          if (isExpertMode) {
+            try {
+              if (typeof id === 'string' && id.startsWith('root_')) {
+                lastFocusedInputId = id;
+              } else if (id && (id as any).target?.id) {
+                const targetId = (id as any).target.id;
+                if (targetId.startsWith('root_')) {
+                  lastFocusedInputId = targetId;
+                }
               }
+            } catch (e) {
+              // Silently handle extraction errors
             }
-          } catch (e) {
-            // Silently handle extraction errors
           }
 
           if (onfocusHandler) {
@@ -248,24 +252,26 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
            * This prevents clearing focus tracking on temporary blurs caused by re-renders,
            * allowing focus to be restored after the form updates.
            */
-          const wasPointerDownOutside = pointerDownOutside;
+          if (isExpertMode) {
+            const wasPointerDownOutside = pointerDownOutside;
 
-          // Check if focus is moving to another input in the form
-          const activeElement = document.activeElement;
-          const formRoot = formContainerRef.current?.querySelector('.rjsf');
-          const focusMovingToFormInput =
-            formRoot &&
-            activeElement &&
-            (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') &&
-            formRoot.contains(activeElement);
+            // Check if focus is moving to another input in the form
+            const activeElement = document.activeElement;
+            const formRoot = formContainerRef.current?.querySelector('.rjsf');
+            const focusMovingToFormInput =
+              formRoot &&
+              activeElement &&
+              (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') &&
+              formRoot.contains(activeElement);
 
-          // Only clear if user clicked outside AND focus is not moving to another form input
-          if (wasPointerDownOutside && !focusMovingToFormInput) {
-            lastFocusedInputId = null;
+            // Only clear if user clicked outside AND focus is not moving to another form input
+            if (wasPointerDownOutside && !focusMovingToFormInput) {
+              lastFocusedInputId = null;
+            }
+
+            // Reset flag for next interaction
+            pointerDownOutside = false;
           }
-
-          // Reset flag for next interaction
-          pointerDownOutside = false;
           if (backspacePressed.current && isExpertMode) {
             backspacePressed.current = false;
             onChangeHandler(formData);

@@ -9,6 +9,7 @@ defmodule Oli.Application do
   def start(_type, _args) do
     # Install the logger truncator
     Oli.LoggerTruncator.init()
+    maybe_add_appsignal_logger_backend()
 
     # List all child processes to be supervised
     children =
@@ -92,8 +93,8 @@ defmodule Oli.Application do
         Oli.Delivery.Sections.SectionCache,
         Oli.ScopedFeatureFlags.CacheSubscriber,
 
-        # Starts the LTI 1.3 examples key provider
-        Lti_1p3.Examples.KeyProviderConfig.child_spec(),
+        # Starts the LTI 1.3 keyset cache for caching platform public keys
+        Oli.Lti.KeysetCache,
 
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor},
@@ -189,6 +190,21 @@ defmodule Oli.Application do
           "Inventory recovery failed: #{Exception.format(:error, exception, __STACKTRACE__)}"
         )
 
+        :ok
+    end
+  end
+
+  defp maybe_add_appsignal_logger_backend do
+    case Application.get_env(:oli, :appsignal_logger_backend) do
+      nil ->
+        :ok
+
+      opts when is_list(opts) ->
+        _ = LoggerBackends.add({Appsignal.Logger.Backend, opts})
+        :ok
+
+      opts ->
+        _ = LoggerBackends.add({Appsignal.Logger.Backend, List.wrap(opts)})
         :ok
     end
   end

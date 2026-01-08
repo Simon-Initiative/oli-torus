@@ -1,6 +1,6 @@
 defmodule Oli.Scenarios.Types do
   defmodule ProjectSpec do
-    defstruct [:title, :root, :objectives, :tags]
+    defstruct [:title, :root, :objectives, :tags, :slug, :visibility]
   end
 
   defmodule Node do

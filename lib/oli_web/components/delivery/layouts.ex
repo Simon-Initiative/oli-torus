@@ -103,6 +103,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
               "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
               if(@sidebar_enabled, do: "md:hidden", else: "hidden")
             ]}
+            aria-label="menu"
             phx-click={JS.toggle(to: "#mobile-nav-menu", display: "flex")}
           >
             <i class="fa-solid fa-bars"></i>
@@ -515,6 +516,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:index, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :index}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Home"
       >
         <:icon><Icons.home is_active={@active_tab == :index} /></:icon>
         <:text>Home</:text>
@@ -525,6 +527,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:learn, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :learn}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Learn"
       >
         <:icon><Icons.learn is_active={@active_tab == :learn} /></:icon>
         <:text>Learn</:text>
@@ -536,6 +539,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:schedule, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :schedule}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Schedule"
       >
         <:icon><Icons.schedule is_active={@active_tab == :schedule} /></:icon>
         <:text>Schedule</:text>
@@ -548,6 +552,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         is_active={@active_tab == :discussions}
         sidebar_expanded={@sidebar_expanded}
         badge={Map.get(@notification_badges, :discussions)}
+        aria_label="Notes"
       >
         <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
         <:text>Notes</:text>
@@ -559,6 +564,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:assignments, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :assignments}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Assignments"
       >
         <:icon><Icons.assignments is_active={@active_tab == :assignments} /></:icon>
         <:text>Assignments</:text>
@@ -714,12 +720,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr :badge, :integer, default: nil
   attr :on_active_bg, :string, default: "bg-zinc-400 bg-opacity-20"
   attr :navigation_type, :string, default: "navigate"
+  attr :aria_label, :string, default: nil
 
   def nav_link(%{navigation_type: "navigate"} = assigns) do
     ~H"""
     <.link
       id={@id}
       navigate={@href}
+      aria-label={@aria_label}
       class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content {assigns} />
@@ -732,6 +740,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <.link
       id={@id}
       href={@href}
+      aria-label={@aria_label}
       class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content {assigns} />
@@ -747,7 +756,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         do: @on_active_bg
       )
     ]}>
-      <div class="w-5 h-5 flex items-center justify-center">
+      <div class="w-5 h-5 flex items-center justify-center" aria-hidden="true">
         {render_slot(@icon)}
       </div>
       <div
@@ -780,11 +789,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
       |> assign(:logo_src_dark, Branding.brand_logo_url_dark(assigns[:section]))
 
     ~H"""
-    <img src={@logo_src} class="inline-block dark:hidden h-9 object-cover object-left" alt="logo" />
+    <img
+      src={@logo_src}
+      class="inline-block dark:hidden h-9 object-cover object-left"
+      alt="OLI Torus logo"
+    />
     <img
       src={@logo_src_dark}
       class="hidden dark:inline-block h-9 object-cover object-left"
-      alt="logo dark"
+      alt="OLI Torus logo"
     />
     """
   end
@@ -880,7 +893,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted py-2 text-sm font-semibold hover:text-[#FFFFFF] hover:no-underline"
+                aria-label="Back"
+                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted py-2 text-sm font-semibold hover:text-Text-text-white hover:no-underline focus-ring-Fill-Buttons-fill-primary"
               >
                 <Icons.chevron_right class="rotate-90" />
                 <span>Previous</span>
@@ -897,7 +911,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary text-[#FFFFFF] py-2 text-sm font-semibold hover:text-[#FFFFFF] hover:no-underline"
+                aria-label="Next"
+                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary text-Text-text-white py-2 text-sm font-semibold hover:text-Text-text-white hover:no-underline focus-ring-Fill-Buttons-fill-primary"
               >
                 <span>Next</span>
                 <Icons.chevron_right class="-rotate-90" />
@@ -922,7 +937,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
           <div
             :if={!is_nil(@previous_page)}
-            class="hidden lg:flex grow shrink basis-0 h-10 justify-start items-center z-10 overflow-hidden whitespace-nowrap"
+            class="hidden lg:flex grow shrink basis-0 h-10 justify-start items-center z-10"
             role="prev_page"
           >
             <div
@@ -930,6 +945,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
               tooltip="Previous Page"
             >
               <.link
+                aria-label="previous"
                 href={
                   resource_navigation_url(
                     @previous_page,
@@ -938,12 +954,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2]/50 flex items-center justify-center"
+                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-Fill-Buttons-fill-primary/50 flex items-center justify-center focus-ring-Fill-Buttons-fill-primary"
               >
                 <.left_arrow />
               </.link>
             </div>
-            <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
+            <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis whitespace-nowrap">
               {maybe_add_icon(@previous_page, @pages_progress)}
               <span class="overflow-hidden text-ellipsis" title={@previous_page["title"]}>
                 {@previous_page["title"]}
@@ -953,10 +969,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
           <div
             :if={!is_nil(@next_page)}
-            class="hidden lg:flex grow shrink basis-0 h-10 justify-end items-center z-10 overflow-hidden whitespace-nowrap"
+            class="hidden lg:flex grow shrink basis-0 h-10 justify-end items-center z-10"
             role="next_page"
           >
-            <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
+            <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis whitespace-nowrap">
               {maybe_add_icon(@next_page, @pages_progress)}
               <span class="overflow-hidden text-ellipsis" title={@next_page["title"]}>
                 {@next_page["title"]}
@@ -964,6 +980,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             </div>
             <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
               <.link
+                aria-label="next"
                 href={
                   resource_navigation_url(
                     @next_page,
@@ -972,7 +989,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                     assigns[:selected_view]
                   )
                 }
-                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2] flex items-center justify-center"
+                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-Fill-Buttons-fill-primary flex items-center justify-center focus-ring-Fill-Buttons-fill-primary"
               >
                 <.right_arrow />
               </.link>
@@ -1051,6 +1068,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :if={@view == :adaptive_chromeless}
         href={@to}
         class="hover:no-underline hover:scale-105 cursor-pointer"
+        aria-label="Back"
       >
         <Icons.left_arrow class="hover:opacity-100 hover:scale-105 fill-[#9D9D9D]" />
       </.link>
@@ -1058,6 +1076,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :if={@view != :adaptive_chromeless}
         navigate={@to}
         class="hover:no-underline hover:scale-105 cursor-pointer"
+        aria-label="Back"
       >
         <Icons.left_arrow class="hover:opacity-100 hover:scale-105 fill-[#9D9D9D]" />
       </.link>

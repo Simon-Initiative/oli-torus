@@ -220,6 +220,8 @@ export const convertQuillToJanus = (delta: Delta) => {
     line.forEach((op) => {
       if (typeof op.insert === 'object') {
         const imageDetails: any = op.insert;
+        const imageValue = imageDetails?.image;
+        const src = typeof imageValue === 'string' ? imageValue : imageValue.src;
         const child: JanusMarkupNode = {
           tag: 'img',
           style: {
@@ -227,7 +229,7 @@ export const convertQuillToJanus = (delta: Delta) => {
             width: '100%',
           },
           alt: `${op?.attributes?.alt || ''}`,
-          src: `${imageDetails.image}`,
+          src: `${src}`,
           children: [],
         };
         node.children.push(child);
@@ -406,7 +408,7 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
             lineAttrs.align = child.style.textAlign;
           }
           if (child.tag === 'img') {
-            doc.insert({ image: child.src });
+            doc.insert({ image: child.src, alt: child.alt });
           }
           line.insert('\n', lineAttrs);
         }

@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.Post
   alias Oli.Delivery.Sections
+  import OliWeb.ViewHelpers, only: [is_section_instructor_or_admin?: 2]
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Components.Modal
   alias OliWeb.Components.Delivery.Buttons
@@ -464,19 +465,32 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   def handle_event(
         "set_delete_post_id",
-        %{"post-id" => post_id, "visibility" => visibility},
+        %{"post-id" => post_id, "visibility" => _visibility},
         socket
       ) do
-    {:noreply,
-     assign(socket,
-       delete_post_id: {String.to_existing_atom(visibility), String.to_integer(post_id)}
-     )}
+    %{current_user: current_user, section: section} = socket.assigns
+    post_id = String.to_integer(post_id)
+
+    case Collaboration.get_post_by(%{id: post_id}) do
+      %Post{} = post ->
+        if authorized_to_delete?(post, current_user, section) do
+          {:noreply,
+           assign(socket,
+             delete_post_id: {post.visibility, post.id}
+           )}
+        else
+          {:noreply, put_flash(socket, :error, "You are not authorized to delete this post")}
+        end
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "You are not authorized to delete this post")}
+    end
   end
 
   def handle_event("delete_post", _params, socket) do
     %{delete_post_id: {visibility, post_id}} = socket.assigns
 
-    case Collaboration.soft_delete_post(post_id) do
+    case Collaboration.soft_delete_post(post_id, socket.assigns.current_user) do
       {1, _} ->
         {:noreply, mark_post_deleted(socket, visibility, post_id)}
 
@@ -1082,4 +1096,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         )
     end
   end
+
+  defp authorized_to_delete?(post, %Oli.Accounts.User{} = current_user, section) do
+    post.user_id == current_user.id ||
+      is_section_instructor_or_admin?(section.slug, current_user)
+  end
+
+  defp authorized_to_delete?(_, _, _), do: false
 end

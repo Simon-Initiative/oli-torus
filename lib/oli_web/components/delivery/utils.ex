@@ -112,9 +112,6 @@ defmodule OliWeb.Components.Delivery.Utils do
       :student ->
         true
 
-      :other ->
-        true
-
       _ ->
         false
     end
@@ -188,6 +185,7 @@ defmodule OliWeb.Components.Delivery.Utils do
           placeholder={@rest[:placeholder]}
           class="h-9 sm:h-auto w-full border bg-Specially-Tokens-Fill-fill-input border-Specially-Tokens-Border-border-input rounded-lg px-12 py-3"
           phx-debounce="500"
+          aria-label="search"
         />
         <button
           :if={@search_term not in ["", nil]}

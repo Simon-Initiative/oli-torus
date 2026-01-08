@@ -28,34 +28,10 @@ defmodule Oli.Analytics.Datasets.Settings do
   end
 
   def region() do
-    :ex_aws
-    |> Application.get_env(:s3, [])
-    |> Keyword.get(:region)
-    |> resolve_config_value()
+    ExAws.Config.new(:s3).region
   end
 
   def enabled?() do
     Application.get_env(:oli, :dataset_generation)[:enabled]
   end
-
-  defp resolve_config_value({:system, env_var}) do
-    System.get_env(env_var)
-  end
-
-  defp resolve_config_value({:system, env_var, default}) do
-    System.get_env(env_var) || default
-  end
-
-  defp resolve_config_value(value) when is_list(value) do
-    value
-    |> Enum.reduce_while(nil, fn entry, acc ->
-      case resolve_config_value(entry) do
-        resolved when is_binary(resolved) and resolved != "" -> {:halt, resolved}
-        resolved when resolved in [nil, ""] -> {:cont, acc}
-        resolved -> {:halt, resolved}
-      end
-    end)
-  end
-
-  defp resolve_config_value(value), do: value
 end

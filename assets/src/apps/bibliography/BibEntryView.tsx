@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { BibEntry } from 'data/content/bibentry';
+import { toCiteInput } from 'utils/bibliography';
 
 const Cite = (window as any).cite;
 
@@ -9,7 +10,7 @@ export interface BibEntryViewProps {
 
 export const BibEntryView: React.FC<BibEntryViewProps> = (props: BibEntryViewProps) => {
   const bibOut = () => {
-    const data = new Cite(props.bibEntry.content.data);
+    const data = new Cite(toCiteInput(props.bibEntry.content.data));
     return data.format('bibliography', {
       format: 'html',
       template: 'apa',
