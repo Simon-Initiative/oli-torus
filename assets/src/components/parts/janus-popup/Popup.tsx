@@ -411,15 +411,22 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
               ref={inputRef}
               data-janus-type={tagName}
               role="button"
-              {...(iconSrc
-                ? {
-                    src: iconSrc,
-                    type: 'image',
+              {...(shouldShowLabel
+                ? // When container exists, don't set src - CSS will apply background-image
+                  {
+                    type: 'button',
                     alt: description,
                   }
-                : {
-                    type: 'button',
-                  })}
+                : // When no container, use src for backward compatibility
+                  iconSrc
+                  ? {
+                      src: iconSrc,
+                      type: 'image',
+                      alt: description,
+                    }
+                  : {
+                      type: 'button',
+                    })}
               className={`info-icon`}
               aria-controls={id}
               aria-haspopup="true"
