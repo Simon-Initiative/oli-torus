@@ -131,14 +131,16 @@ defmodule Oli.Content.Activity.HtmlTest do
              end) =~ "ActivitySummary with id 1 missing from activity_map"
     end
 
-    test "includes pageState from resource_attempt when present", %{author: author} do
-      # Create a resource attempt with extrinsic state
+    test "includes pageState from extrinsic_state when present", %{author: author} do
+      # Create extrinsic state
+      extrinsic_state = %{
+        "app.explorations.bpr" => "test-value",
+        "session.currentQuestionScore" => 5
+      }
+
       resource_attempt = %ResourceAttempt{
         attempt_guid: "test-guid-123",
-        state: %{
-          "app.explorations.bpr" => "test-value",
-          "session.currentQuestionScore" => 5
-        }
+        state: %{}
       }
 
       activity_map = %{
@@ -166,6 +168,7 @@ defmodule Oli.Content.Activity.HtmlTest do
             user: author,
             activity_map: activity_map,
             resource_attempt: resource_attempt,
+            extrinsic_state: extrinsic_state,
             mode: :review
           },
           element,
@@ -174,13 +177,13 @@ defmodule Oli.Content.Activity.HtmlTest do
 
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-      # Verify that the pageState contains the resource attempt state
+      # Verify that the pageState contains the extrinsic state
       assert rendered_html_string =~ "app.explorations.bpr"
       assert rendered_html_string =~ "test-value"
       assert rendered_html_string =~ "session.currentQuestionScore"
     end
 
-    test "uses empty map for pageState when resource_attempt is nil", %{author: author} do
+    test "uses empty map for pageState when extrinsic_state is nil", %{author: author} do
       activity_map = %{
         1 => %ActivitySummary{
           id: 1,
@@ -206,6 +209,7 @@ defmodule Oli.Content.Activity.HtmlTest do
             user: author,
             activity_map: activity_map,
             resource_attempt: nil,
+            extrinsic_state: nil,
             mode: :review
           },
           element,

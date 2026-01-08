@@ -5,7 +5,6 @@ defmodule Oli.Rendering.Activity.Html do
   import Oli.Utils
 
   alias Oli.Delivery.Settings
-  alias Oli.Delivery.Attempts.Core
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
   alias Oli.Rendering.Activity.ActivitySummary
@@ -175,6 +174,7 @@ defmodule Oli.Rendering.Activity.Html do
            mode: mode,
            user: user,
            resource_attempt: resource_attempt,
+           extrinsic_state: extrinsic_state,
            group_id: group_id,
            survey_id: survey_id,
            learning_language: learning_language,
@@ -214,12 +214,7 @@ defmodule Oli.Rendering.Activity.Html do
           else
             resource_attempt.attempt_guid
           end,
-        pageState:
-          if is_nil(resource_attempt) do
-            %{}
-          else
-            Core.fetch_extrinsic_state(resource_attempt)
-          end,
+        pageState: extrinsic_state || %{},
         renderPointMarkers: render_opts.render_point_markers,
         isAnnotationLevel: true,
         variables: variables,
