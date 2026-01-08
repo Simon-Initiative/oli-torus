@@ -119,6 +119,28 @@ const confirmAction = (
   }
 };
 
+// Function to handle cookie preferences based on device type
+const handleCookiePreferences = (privacyPoliciesUrl: string) => {
+  // If we're on the root path ("/"), always open the React modal
+  if (window.location.pathname === '/') {
+    selectCookiePreferences({ privacyPoliciesUrl });
+    return;
+  }
+
+  // Use server-side device detection for consistent behavior
+  const isMobile = (window as any).isMobileOrTablet || window.innerWidth <= 768; // fallback
+
+  if (isMobile) {
+    // On mobile/tablet, navigate to LiveView with current page as return_to
+    const currentPath = window.location.pathname + window.location.search;
+    const encodedReturnTo = encodeURIComponent(currentPath);
+    window.location.href = `/cookie-preferences?return_to=${encodedReturnTo}`;
+  } else {
+    // On desktop, show React modal
+    selectCookiePreferences({ privacyPoliciesUrl });
+  }
+};
+
 // Global functions and objects:
 window.OLI = {
   initActivityBridge,
@@ -128,6 +150,7 @@ window.OLI = {
   enableSubmitWhenTitleMatches,
   selectCookieConsent,
   selectCookiePreferences,
+  handleCookiePreferences,
   retrieveCookies,
   onReady,
   finalize,
@@ -233,6 +256,7 @@ declare global {
       enableSubmitWhenTitleMatches: typeof enableSubmitWhenTitleMatches;
       selectCookieConsent: typeof selectCookieConsent;
       selectCookiePreferences: typeof selectCookiePreferences;
+      handleCookiePreferences: typeof handleCookiePreferences;
       retrieveCookies: typeof retrieveCookies;
       onReady: typeof onReady;
       finalize: typeof finalize;
