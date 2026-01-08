@@ -154,11 +154,6 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const iconSrc = getIconSrc(iconURL, defaultURL);
 
-  // Determine if iconSrc is a standard icon (data URL) or custom URL
-  // Standard icons should use CSS background-image, not src attribute
-  const isStandardIcon = iconSrc && iconSrc.startsWith('data:');
-  const isCustomIcon = iconSrc && !isStandardIcon;
-
   // Icon should always be fixed size (32x32), not resizable
   const iconTriggerStyle: CSSProperties = {
     width: 32,
@@ -315,15 +310,9 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
           <input
             role="button"
             draggable="false"
-            {...(shouldShowLabel || isStandardIcon
-              ? // When label exists or standard icon, don't set src - CSS will apply background-image
+            {...(iconSrc
+              ? // In authoring mode, always use src (CSS override makes data URLs visible)
                 {
-                  type: 'button',
-                  alt: description,
-                }
-              : // When no label and custom icon URL, use src
-              isCustomIcon
-              ? {
                   src: iconSrc,
                   type: 'image',
                   alt: description,

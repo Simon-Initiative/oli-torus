@@ -1126,28 +1126,13 @@ $font-family-sans-serif: var(--font-sans);
 }
 
 /*----------------------------------
-  Popup Container - Authoring Mode
+  Popup Icon - Authoring Mode
 ----------------------------------*/
+// In authoring mode, make popup icons visible even when src is set to data URL
 .advanced-authoring {
-  // Ensure popup container doesn't inherit icon styles from janus-popup element
-  janus-popup .popup-container {
-    background: none !important;
-    background-image: none !important;
-    background-size: initial !important;
-    border-radius: initial !important;
-    box-shadow: none !important;
-    transition: none !important;
-    background-color: transparent !important;
-  }
-
-  // Prevent janus-popup element from getting icon styles when container is present
-  janus-popup:has(.popup-container) {
-    background: none !important;
-    background-image: none !important;
-    background-size: initial !important;
-    border-radius: initial !important;
-    box-shadow: none !important;
-    transition: none !important;
-    background-color: transparent !important;
+  janus-popup:has(input) {
+    input[src*='data'] {
+      opacity: 1 !important;
+    }
   }
 }
