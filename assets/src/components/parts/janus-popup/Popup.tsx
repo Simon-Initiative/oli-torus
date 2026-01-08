@@ -402,6 +402,11 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const shouldShowIcon = !hideIcon;
   const shouldShowLabel = labelText && labelText.trim().length > 0;
 
+  // Determine if iconSrc is a standard icon (data URL) or custom URL
+  // Standard icons should use CSS background-image, not src attribute
+  const isStandardIcon = iconSrc && iconSrc.startsWith('data:');
+  const isCustomIcon = iconSrc && !isStandardIcon;
+
   return ready ? (
     <React.Fragment>
       {popupVisible ? (
@@ -411,14 +416,14 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
               ref={inputRef}
               data-janus-type={tagName}
               role="button"
-              {...(shouldShowLabel
-                ? // When container exists, don't set src - CSS will apply background-image
+              {...(shouldShowLabel || isStandardIcon
+                ? // When label exists or standard icon, don't set src - CSS will apply background-image
                   {
                     type: 'button',
                     alt: description,
                   }
-                : // When no container, use src for backward compatibility
-                  iconSrc
+                : // When no label and custom icon URL, use src
+                  isCustomIcon
                   ? {
                       src: iconSrc,
                       type: 'image',
