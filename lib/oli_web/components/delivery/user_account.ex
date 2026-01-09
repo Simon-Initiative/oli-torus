@@ -273,7 +273,10 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{privacy_policies_url()}'})"}
     />
     <.menu_item_profile_timezone id={"#{@id}-tz-selector"} ctx={@ctx} />
-    <.menu_item_linked_authoring_account :if={Accounts.can_manage_linked_account?(@ctx.user)} user={@ctx.user} />
+    <.menu_item_linked_authoring_account
+      :if={Accounts.can_manage_linked_account?(@ctx.user)}
+      user={@ctx.user}
+    />
     <.menu_item_profile_signout href={~p"/users/log_out"} />
     """
   end
@@ -663,7 +666,10 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           <%= link to: ~p"/users/link_account",
             class:
               "px-4 py-3 flex items-center gap-4 hover:no-underline hover:bg-gray-100 dark:hover:bg-gray-800/60 sm:px-2" do %>
-            <div class="flex-1 overflow-hidden text-ellipsis text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark" role="linked authoring account email">
+            <div
+              class="flex-1 overflow-hidden text-ellipsis text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark"
+              role="linked authoring account email"
+            >
               {linked_author_account_email}
             </div>
             <i class="fa-solid fa-chevron-right text-gray-500 dark:text-gray-400 text-sm"></i>
