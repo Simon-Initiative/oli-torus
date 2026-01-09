@@ -204,6 +204,48 @@ if runtime_env == :prod do
       For example: your_s3_media_bucket_url.s3.amazonaws.com
       """
 
+  normalize_csp_url = fn url ->
+    url = String.trim(url || "")
+
+    cond do
+      url == "" -> nil
+      String.starts_with?(url, ["http://", "https://"]) -> url
+      true -> "https://" <> url
+    end
+  end
+
+  csp_frame_ancestors =
+    System.get_env("CSP_FRAME_ANCESTORS", "")
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+
+  csp_media_source = normalize_csp_url.(media_url)
+
+  csp_directives =
+    Application.get_env(:oli, :csp, [])
+    |> Keyword.get(:directives, [])
+    |> Enum.map(fn
+      {"frame-ancestors", _} -> {"frame-ancestors", ["'self'" | csp_frame_ancestors]}
+      directive -> directive
+    end)
+    |> then(fn directives ->
+      if is_nil(csp_media_source) do
+        directives
+      else
+        directives
+        |> Enum.map(fn
+          {"img-src", values} when is_list(values) ->
+            {"img-src", Enum.uniq(values ++ [csp_media_source])}
+
+          {"media-src", values} when is_list(values) ->
+            {"media-src", Enum.uniq(values ++ [csp_media_source])}
+
+          other ->
+            other
+        end)
+      end
+    end)
+
   cloak_vault_key =
     System.get_env("CLOAK_VAULT_KEY") ||
       raise """
@@ -242,6 +284,8 @@ if runtime_env == :prod do
     screen_idle_timeout_in_seconds:
       String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
+
+  config :oli, :csp, directives: csp_directives
 
   config :oli, :blob_storage,
     bucket_name: System.get_env("BLOB_STORAGE_BUCKET_NAME", "torus-blob-prod"),
@@ -400,6 +444,8 @@ if runtime_env == :prod do
       https: [
         port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
         otp_app: :oli,
+        cipher_suite: :strong,
+        versions: [:"tlsv1.2", :"tlsv1.3"],
         keyfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.key"),
         certfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.crt"),
         protocol_options: [

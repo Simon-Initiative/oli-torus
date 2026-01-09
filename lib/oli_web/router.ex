@@ -153,6 +153,8 @@ defmodule OliWeb.Router do
     plug(:auto_enroll_admin)
     plug(:require_authenticated_user)
 
+    plug(Oli.Plugs.NoCache)
+
     plug(Oli.Plugs.RemoveXFrameOptions)
     plug(OliWeb.Plugs.SetToken)
     plug(:ensure_datashop_id)

@@ -4,6 +4,9 @@ defmodule Oli.Plugs.NoCache do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    put_resp_header(conn, "cache-control", "no-cache, no-store, must-revalidate")
+    conn
+    |> put_resp_header("cache-control", "no-cache, no-store, must-revalidate")
+    |> put_resp_header("pragma", "no-cache")
+    |> put_resp_header("expires", "0")
   end
 end

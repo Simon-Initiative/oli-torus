@@ -8,8 +8,8 @@ defmodule OliWeb.Plugs.AllowIframeCSP do
 
   ## Options
 
-  * `:allowed_origins` - List of additional origins to allow (default: ["*"])
-  * `:allow_all` - Boolean to allow all origins with "*" (default: true)
+  * `:allowed_origins` - List of additional origins to allow (default: [])
+  * `:allow_all` - Boolean to allow all origins with "*" (default: false)
 
   ## Examples
 
@@ -27,8 +27,8 @@ defmodule OliWeb.Plugs.AllowIframeCSP do
 
   def init(opts \\ %{}) do
     %{
-      allowed_origins: Keyword.get(opts, :allowed_origins, ["*"]),
-      allow_all: Keyword.get(opts, :allow_all, true)
+      allowed_origins: Keyword.get(opts, :allowed_origins, []),
+      allow_all: Keyword.get(opts, :allow_all, false)
     }
   end
 
@@ -39,6 +39,16 @@ defmodule OliWeb.Plugs.AllowIframeCSP do
     # Get the current CSP header if it exists
     current_csp = get_resp_header(conn, "content-security-policy")
 
+    cond do
+      opts.allow_all == false and opts.allowed_origins == [] ->
+        conn
+
+      true ->
+        update_csp(conn, current_csp, opts)
+    end
+  end
+
+  defp update_csp(conn, current_csp, opts) do
     case current_csp do
       [] ->
         # No CSP header exists, so we don't need to modify anything

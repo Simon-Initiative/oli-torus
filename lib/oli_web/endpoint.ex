@@ -5,8 +5,9 @@ defmodule OliWeb.Endpoint do
     store: :cookie,
     key: "_oli_key",
     signing_salt: "KydU49lB",
-    same_site: "None",
-    secure: true
+    same_site: Application.compile_env(:oli, :session_same_site, "Lax"),
+    secure: true,
+    http_only: true
   ]
 
   socket("/v1/api/state", OliWeb.UserSocket,
@@ -67,10 +68,16 @@ defmodule OliWeb.Endpoint do
   unless Mix.env() == :test do
     plug(Oli.Plugs.SSL,
       rewrite_on: [:x_forwarded_proto],
-      hsts: true,
+      hsts: [
+        max_age: 31_536_000,
+        include_subdomains: true,
+        preload: true
+      ],
       log: false
     )
   end
+
+  plug(OliWeb.Plugs.CSP)
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.

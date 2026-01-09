@@ -194,6 +194,8 @@ config :oli, :upgrade_experiment_provider,
   user_url: System.get_env("UPGRADE_EXPERIMENT_USER_URL"),
   api_token: System.get_env("UPGRADE_EXPERIMENT_PROVIDER_API_TOKEN")
 
+config :oli, :session_same_site, "Lax"
+
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
   url: [host: "localhost"],
@@ -205,6 +207,43 @@ config :oli, OliWeb.Endpoint,
   ],
   pubsub_server: Oli.PubSub,
   live_view: [signing_salt: "zsLMAebo"]
+
+config :oli, :csp,
+  directives: [
+    {"default-src", ["'self'"]},
+    {"base-uri", ["'self'"]},
+    {"frame-ancestors", ["'self'"]},
+    {"object-src", ["'none'"]},
+    {"form-action", ["'self'"]},
+    {"img-src", ["'self'", "data:", "blob:", "https://img.youtube.com"]},
+    {"font-src", ["'self'", "data:", "https://fonts.gstatic.com"]},
+    {"style-src", ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"]},
+    {"script-src",
+     [
+       "'self'",
+       "'unsafe-inline'",
+       "https://cdnjs.cloudflare.com",
+       "https://cdn.jsdelivr.net",
+       "https://unpkg.com",
+       "https://www.google.com",
+       "https://www.gstatic.com",
+       "https://js.stripe.com"
+     ]},
+    {"connect-src", ["'self'", "https://www.google.com", "https://www.gstatic.com", "https://api.stripe.com"]},
+    {"frame-src",
+     [
+       "'self'",
+       "https://www.google.com",
+       "https://www.gstatic.com",
+       "https://js.stripe.com",
+       "https://hooks.stripe.com",
+       "https://www.youtube.com",
+       "https://www.youtube-nocookie.com",
+       "https://player.vimeo.com"
+     ]},
+    {"media-src", ["'self'"]},
+    {"upgrade-insecure-requests", true}
+  ]
 
 config :oli, Oban,
   repo: Oli.Repo,
