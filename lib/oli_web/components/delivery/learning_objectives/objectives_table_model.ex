@@ -319,7 +319,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
           type: "nominal",
           scale: %{
             domain: ["Not enough data", "Low", "Medium", "High"],
-            range: ["#C2C2C2", "#E6D4FA", "#B37CEA", "#7B19C1"]
+            range: ["#C2C2C2", "#B37CEA", "#964BEA", "#7818BB"]
           }
         }
       },
@@ -341,8 +341,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %{
         spec: spec,
         dark_mode_colors: %{
-          light: ["#C2C2C2", "#E6D4FA", "#B37CEA", "#7B19C1"],
-          dark: ["#C2C2C2", "#F6EEFF", "#C6A0EB", "#AC57E9"]
+          light: ["#C2C2C2", "#B37CEA", "#964BEA", "#7818BB"],
+          dark: ["#C2C2C2", "#E6D4FA", "#B17BE8", "#7B19C1"]
         }
       },
       id: "proficiency-data-bar-chart-for-objective-#{objective_id}"

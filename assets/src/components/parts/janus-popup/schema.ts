@@ -16,6 +16,9 @@ export interface PopupModel extends JanusAbsolutePositioned, JanusCustomCss {
   isOpen: boolean;
   visible: boolean;
   popup: any; // TODO: layout model
+  labelText: string;
+  labelPosition: 'left' | 'right' | 'top' | 'bottom';
+  hideIcon: boolean;
 }
 
 export const schema: JSONSchema7Object = {
@@ -83,6 +86,25 @@ export const schema: JSONSchema7Object = {
     type: 'boolean',
     description: 'specifies whether popup will be visible on the screen',
     default: true,
+  },
+  labelText: {
+    title: 'Label Text',
+    type: 'string',
+    description: 'Text to display alongside the popup button',
+    default: '',
+  },
+  labelPosition: {
+    title: 'Label Position',
+    type: 'string',
+    description: 'Position of the label relative to the popup button',
+    enum: ['left', 'right', 'top', 'bottom'],
+    default: 'right',
+  },
+  hideIcon: {
+    title: 'Hide Icon',
+    type: 'boolean',
+    description: 'Hide the popup icon and use text-only as the clickable element',
+    default: false,
   },
   popup: {
     type: 'object',
@@ -161,6 +183,25 @@ export const simpleSchema: JSONSchema7Object = {
     description: 'specifies whether popup toggles open/closed on click or on mouse hover',
     default: true,
   },
+  labelText: {
+    title: 'Label Text',
+    type: 'string',
+    description: 'Text to display alongside the popup button',
+    default: '',
+  },
+  labelPosition: {
+    title: 'Label Position',
+    type: 'string',
+    description: 'Position of the label relative to the popup button',
+    enum: ['left', 'right', 'top', 'bottom'],
+    default: 'right',
+  },
+  hideIcon: {
+    title: 'Hide Icon',
+    type: 'boolean',
+    description: 'Hide the popup icon and use text-only as the clickable element',
+    default: false,
+  },
   popup: {
     type: 'object',
     properties: {
@@ -214,6 +255,15 @@ export const simpleSchema: JSONSchema7Object = {
 };
 
 export const uiSchema = {
+  labelText: {
+    'ui:title': 'Label Text',
+  },
+  labelPosition: {
+    'ui:title': 'Label Position',
+  },
+  hideIcon: {
+    'ui:title': 'Hide Icon',
+  },
   popup: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Popup Window',
@@ -270,6 +320,9 @@ export const createSchema = (): Partial<PopupModel> => ({
   useToggleBehavior: true,
   isOpen: false,
   visible: true,
+  labelText: '',
+  labelPosition: 'right',
+  hideIcon: false,
   popup: {
     custom: {
       customCssClass: '',
