@@ -160,9 +160,9 @@ defmodule OliWeb.Workspaces.Student do
         class="absolute top-0 left-0 h-full w-full"
         style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
       />
-      <h2 class="text-3xl md:text-[64px] leading-[87px] tracking-[0.02px] px-4 md:pl-[100px] z-10">
+      <h1 class="text-3xl md:text-[64px] leading-[87px] tracking-[0.02px] px-4 md:pl-[100px] z-10">
         Hi, <span class="font-bold">{user_given_name(@ctx)}</span>
-      </h2>
+      </h1>
     </div>
     <div class="flex flex-col items-start py-6 md:py-[60px] px-4 md:px-[100px]">
       <div class="flex flex-col md:flex-row mb-9 w-full">
