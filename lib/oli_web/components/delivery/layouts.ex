@@ -123,15 +123,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def title(assigns) do
     ~H"""
-    <span :if={@resource_title} class={["text-2xl text-bold", @rest[:class]]}>
+    <h1 :if={@resource_title} class={["text-2xl text-bold", @rest[:class]]}>
       {@resource_title}
-    </span>
-    <span :if={@section} class={["text-2xl text-bold", @rest[:class]]}>
+    </h1>
+    <h1 :if={@section} class={["text-2xl text-bold", @rest[:class]]}>
       {@section.title}{if @preview_mode, do: " (Preview Mode)"}
-    </span>
-    <span :if={@project} class={["text-2xl text-bold", @rest[:class]]}>
+    </h1>
+    <h1 :if={@project} class={["text-2xl text-bold", @rest[:class]]}>
       {@project.title}
-    </span>
+    </h1>
     """
   end
 
