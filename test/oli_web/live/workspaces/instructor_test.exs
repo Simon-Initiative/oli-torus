@@ -246,7 +246,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
         live(conn, ~p"/workspaces/student?sidebar_expanded=true")
 
       refute has_element?(view, "h1", "Instructor Dashboard")
-      assert has_element?(view, "h3", "Courses available")
+      assert has_element?(view, "h2", "Courses available")
 
       # we go to the course author workspace
       view
