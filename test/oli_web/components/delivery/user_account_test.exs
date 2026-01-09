@@ -11,7 +11,13 @@ defmodule OliWeb.Components.Delivery.UserAccountTest do
   describe "menu/1" do
     test "renders guest menu actions and preferences" do
       ctx = build_ctx(%User{guest: true, name: "Guest"})
-      assigns = %{id: "user-account-menu", ctx: ctx, is_admin: false, section: %Section{slug: "s1"}}
+
+      assigns = %{
+        id: "user-account-menu",
+        ctx: ctx,
+        is_admin: false,
+        section: %Section{slug: "s1"}
+      }
 
       html = render_component(&UserAccount.menu/1, assigns)
 
@@ -34,7 +40,13 @@ defmodule OliWeb.Components.Delivery.UserAccountTest do
           independent_learner: true,
           email_confirmed_at: DateTime.utc_now()
         })
-      assigns = %{id: "user-account-menu", ctx: ctx, is_admin: false, section: %Section{slug: "s1"}}
+
+      assigns = %{
+        id: "user-account-menu",
+        ctx: ctx,
+        is_admin: false,
+        section: %Section{slug: "s1"}
+      }
 
       html = render_component(&UserAccount.menu/1, assigns)
 

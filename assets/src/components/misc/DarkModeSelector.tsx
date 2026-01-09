@@ -121,9 +121,7 @@ export const DarkModeSelector = ({ showLabels = false, className }: DarkModeSele
           />
         </svg>
         {showLabels && (
-          <span className={classNames(isChecked(mode, 'auto') ? 'text-gray-900' : '')}>
-            System
-          </span>
+          <span className={classNames(isChecked(mode, 'auto') ? 'text-gray-900' : '')}>System</span>
         )}
       </ToggleOption>
       <ToggleOption
@@ -159,9 +157,7 @@ export const DarkModeSelector = ({ showLabels = false, className }: DarkModeSele
           />
         </svg>
         {showLabels && (
-          <span className={classNames(isChecked(mode, 'light') ? 'text-gray-900' : '')}>
-            Light
-          </span>
+          <span className={classNames(isChecked(mode, 'light') ? 'text-gray-900' : '')}>Light</span>
         )}
       </ToggleOption>
       <ToggleOption
@@ -191,9 +187,7 @@ export const DarkModeSelector = ({ showLabels = false, className }: DarkModeSele
           </svg>
         </div>
         {showLabels && (
-          <span className={classNames(isChecked(mode, 'dark') ? 'text-gray-900' : '')}>
-            Dark
-          </span>
+          <span className={classNames(isChecked(mode, 'dark') ? 'text-gray-900' : '')}>Dark</span>
         )}
       </ToggleOption>
     </ThreeStateToggle>

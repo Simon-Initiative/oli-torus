@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
   alias OliWeb.Components.Timezone
+  alias OliWeb.Icons
   alias OliWeb.Common.Links
 
   attr(:id, :string, required: true)
@@ -244,7 +245,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item_profile_link
       :if={!is_nil(@ctx.user) && !Accounts.user_confirmation_pending?(@ctx.user)}
       href={~p"/users/settings"}
-      icon="fa-regular fa-pen-to-square"
+      icon={:edit}
       label="Account Settings"
     />
     <.menu_item_confirm_user_account :if={
@@ -253,13 +254,13 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item_profile_link
       :if={@ctx.user && is_independent_learner?(@ctx.user)}
       href={Links.my_courses_path(@ctx.user)}
-      icon="fa-solid fa-graduation-cap"
+      icon={:books}
       label="My Courses"
     />
     <.menu_item_profile_link
       :if={Delivery.user_research_consent_required?(@ctx.user)}
       href={~p"/research_consent"}
-      icon="fa-regular fa-clipboard"
+      icon={:license}
       label="Research Consent"
     />
     <.menu_group_label>Theme</.menu_group_label>
@@ -267,7 +268,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_group_label>Preferences</.menu_group_label>
     <.menu_item_profile_button
       :if={not_blank?(privacy_policies_url())}
-      icon="fa-solid fa-cookie-bite"
+      icon={:cookie}
       label="Cookies"
       onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{privacy_policies_url()}'})"}
     />
@@ -288,7 +289,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item_profile_link
       :if={Delivery.user_research_consent_required?(@ctx.user)}
       href={~p"/research_consent"}
-      icon="fa-regular fa-clipboard"
+      icon={:license}
       label="Research Consent"
     />
     <.menu_group_label>Theme</.menu_group_label>
@@ -296,7 +297,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_group_label>Preferences</.menu_group_label>
     <.menu_item_profile_button
       :if={not_blank?(privacy_policies_url())}
-      icon="fa-solid fa-cookie-bite"
+      icon={:cookie}
       label="Cookies"
       onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{privacy_policies_url()}'})"}
     />
@@ -425,7 +426,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           "Components.DarkModeSelector",
           %{
             showLabels: true,
-            className: "text-sm w-full !gap-0 justify-between bg-delivery-hints-bg dark:bg-delivery-hints-bg-dark p-2 rounded-lg"
+            className:
+              "text-sm w-full !gap-0 justify-between bg-delivery-hints-bg dark:bg-delivery-hints-bg-dark p-2 rounded-lg"
           },
           id: @id
         )}
@@ -436,7 +438,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           "Components.DarkModeSelector",
           %{
             showLabels: false,
-            className: "text-sm w-full !gap-0 justify-between bg-delivery-hints-bg dark:bg-delivery-hints-bg-dark p-2 rounded-lg"
+            className:
+              "text-sm w-full !gap-0 justify-between bg-delivery-hints-bg dark:bg-delivery-hints-bg-dark p-2 rounded-lg"
           },
           id: "#{@id}-desktop"
         )}
@@ -553,14 +556,18 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   end
 
   attr(:href, :string, required: true)
-  attr(:icon, :string, required: true)
+  attr(:icon, :any, required: true)
   attr(:label, :string, required: true)
 
   def menu_item_profile_link(assigns) do
     ~H"""
     <li class="border-b border-gray-200 dark:border-gray-800">
       <%= link to: @href, class: "px-4 py-3 flex items-center gap-4 hover:no-underline hover:bg-gray-100 dark:hover:bg-gray-800/60 sm:px-2" do %>
-        <i class={[@icon, "text-gray-500 dark:text-gray-400 text-lg"]}></i>
+        <%= if is_atom(@icon) do %>
+          {apply(Icons, @icon, [%{class: "text-gray-500 dark:text-gray-400 w-5 h-5"}])}
+        <% else %>
+          <i class={[@icon, "text-gray-500 dark:text-gray-400 text-lg"]}></i>
+        <% end %>
         <span class="flex-1 text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark">
           {@label}
         </span>
@@ -570,7 +577,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  attr(:icon, :string, required: true)
+  attr(:icon, :any, required: true)
   attr(:label, :string, required: true)
   attr(:onclick, :string, required: true)
 
@@ -582,7 +589,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         onclick={@onclick}
         class="w-full px-4 py-3 flex items-center gap-4 hover:bg-gray-100 dark:hover:bg-gray-800/60 sm:px-2"
       >
-        <i class={[@icon, "text-gray-500 dark:text-gray-400 text-lg"]}></i>
+        <%= if is_atom(@icon) do %>
+          {apply(Icons, @icon, [%{class: "text-gray-500 dark:text-gray-400 w-5 h-5"}])}
+        <% else %>
+          <i class={[@icon, "text-gray-500 dark:text-gray-400 text-lg"]}></i>
+        <% end %>
         <span class="flex-1 text-left text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark">
           {@label}
         </span>
@@ -600,7 +611,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <li class="px-4 py-3 flex flex-col gap-2 border-b border-gray-200 dark:border-gray-800 sm:px-2">
       <div class="flex items-center gap-4">
         <i class="fa-solid fa-globe text-gray-500 dark:text-gray-400 text-lg"></i>
-        <span class="text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark">Timezone</span>
+        <span class="text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark">
+          Timezone
+        </span>
       </div>
       <div class="w-full">
         <Timezone.select
