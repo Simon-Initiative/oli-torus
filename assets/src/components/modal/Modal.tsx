@@ -16,18 +16,27 @@ export enum ModalSize {
 export interface ModalProps {
   okLabel?: string;
   okClassName?: string;
+  okTextClassName?: string;
   cancelLabel?: string;
+  cancelClassName?: string;
+  cancelTextClassName?: string;
   disableOk?: boolean;
+  reverseButtonOrder?: boolean;
   backdrop?: boolean | 'static';
   keyboard?: boolean;
   hideDialogCloseButton?: boolean;
   title: string;
+  titleClassName?: string;
   hideOkButton?: boolean;
   hideCancelButton?: boolean;
   onOk?: () => void;
   onCancel?: () => void;
   size?: ModalSize;
   footer?: any;
+  contentClassName?: string;
+  headerClassName?: string;
+  bodyClassName?: string;
+  footerClassName?: string;
 }
 
 // Selector for focusable elements
@@ -42,7 +51,11 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
 
   const okLabel = props.okLabel !== undefined ? props.okLabel : 'Ok';
   const cancelLabel = props.cancelLabel !== undefined ? props.cancelLabel : 'Cancel';
-  const okClassName = props.okClassName !== undefined ? props.okClassName : 'primary';
+  const okClassName = props.okClassName !== undefined ? props.okClassName : 'btn btn-primary ml-2';
+  const okTextClassName = props.okTextClassName || '';
+  const cancelClassName =
+    props.cancelClassName !== undefined ? props.cancelClassName : 'btn btn-link ml-2';
+  const cancelTextClassName = props.cancelTextClassName || '';
   const size = props.size || 'lg';
 
   // Focus trap handler
@@ -106,7 +119,6 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
   }, [handleKeyDown]);
 
   const onCancel = (e: any) => {
-    e.preventDefault();
     if (props.onCancel) props.onCancel();
   };
 
@@ -131,9 +143,22 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
       aria-labelledby={titleId}
     >
       <div className={`modal-dialog modal-${size} relative w-auto pointer-events-none`}>
-        <div className="modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none text-current">
-          <div className="modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md">
-            <h5 className="text-xl font-medium leading-normal" id={titleId}>
+        <div
+          className={classNames(
+            'modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none text-current',
+            props.contentClassName,
+          )}
+        >
+          <div
+            className={classNames(
+              'modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md',
+              props.headerClassName,
+            )}
+          >
+            <h5
+              className={classNames('text-xl font-medium leading-normal', props.titleClassName)}
+              id={titleId}
+            >
               {props.title}
             </h5>
             <button
@@ -145,31 +170,71 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
               <i className="fa-solid fa-xmark fa-xl"></i>
             </button>
           </div>
-          <div className="modal-body relative p-4 pt-0">{children}</div>
-          <div className="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
+          <div className={classNames('modal-body relative p-4 pt-0', props.bodyClassName)}>
+            {children}
+          </div>
+          <div
+            className={classNames(
+              'modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md',
+              props.footerClassName,
+            )}
+          >
             {props.footer ? (
               props.footer
             ) : (
               <>
-                {props.hideCancelButton === true ? null : (
-                  <button
-                    type="button"
-                    className="btn btn-link ml-2"
-                    onClick={onCancel}
-                    data-bs-dismiss="modal"
-                  >
-                    {cancelLabel}
-                  </button>
-                )}
-                {props.hideOkButton === true ? null : (
-                  <button
-                    disabled={props.disableOk}
-                    type="button"
-                    onClick={onOk}
-                    className={`btn btn-${okClassName} ml-2`}
-                  >
-                    {okLabel}
-                  </button>
+                {props.reverseButtonOrder ? (
+                  <>
+                    {props.hideOkButton ? null : (
+                      <button
+                        disabled={props.disableOk}
+                        type="button"
+                        onClick={onOk}
+                        className={okClassName}
+                      >
+                        {okTextClassName ? (
+                          <span className={okTextClassName}>{okLabel}</span>
+                        ) : (
+                          okLabel
+                        )}
+                      </button>
+                    )}
+                    {props.hideCancelButton ? null : (
+                      <button type="button" className={cancelClassName} data-bs-dismiss="modal">
+                        {cancelTextClassName ? (
+                          <span className={cancelTextClassName}>{cancelLabel}</span>
+                        ) : (
+                          cancelLabel
+                        )}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {props.hideCancelButton ? null : (
+                      <button type="button" className={cancelClassName} data-bs-dismiss="modal">
+                        {cancelTextClassName ? (
+                          <span className={cancelTextClassName}>{cancelLabel}</span>
+                        ) : (
+                          cancelLabel
+                        )}
+                      </button>
+                    )}
+                    {props.hideOkButton ? null : (
+                      <button
+                        disabled={props.disableOk}
+                        type="button"
+                        onClick={onOk}
+                        className={okClassName}
+                      >
+                        {okTextClassName ? (
+                          <span className={okTextClassName}>{okLabel}</span>
+                        ) : (
+                          okLabel
+                        )}
+                      </button>
+                    )}
+                  </>
                 )}
               </>
             )}

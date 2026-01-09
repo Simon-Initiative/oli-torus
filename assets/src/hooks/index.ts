@@ -43,6 +43,7 @@ import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
+import { SaveCookiePreferences } from './save_cookie_preferences';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
@@ -130,6 +131,7 @@ export const Hooks = {
   CopyToClipboard,
   ReadMoreToggle,
   TagsComponent,
+  SaveCookiePreferences,
   ScrollToTheTop,
   ContainerToggleAriaLabel,
 };
