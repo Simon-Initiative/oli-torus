@@ -339,24 +339,24 @@ defmodule OliWeb.Workspaces.StudentTest do
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       # Both courses should be visible initially
-      assert has_element?(view, "h5", "Course with Empty Instructor")
-      assert has_element?(view, "h5", "Course with Real Instructor")
+      assert has_element?(view, "h3", "Course with Empty Instructor")
+      assert has_element?(view, "h3", "Course with Real Instructor")
 
       # Search should work for course title even with empty instructor
       view
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "empty"})
 
-      assert has_element?(view, "h5", "Course with Empty Instructor")
-      refute has_element?(view, "h5", "Course with Real Instructor")
+      assert has_element?(view, "h3", "Course with Empty Instructor")
+      refute has_element?(view, "h3", "Course with Real Instructor")
 
       # Search by real instructor name should work
       view
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "smith"})
 
-      refute has_element?(view, "h5", "Course with Empty Instructor")
-      assert has_element?(view, "h5", "Course with Real Instructor")
+      refute has_element?(view, "h3", "Course with Empty Instructor")
+      assert has_element?(view, "h3", "Course with Real Instructor")
     end
 
     test "search handles mixed instructor name types correctly", %{conn: conn, user: user} do
