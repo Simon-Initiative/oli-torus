@@ -87,12 +87,12 @@ defmodule OliWeb.Components.Modal do
               <div class={@header_class}>
                 <div>
                   <div :if={@title != []}>
-                    <%= Phoenix.HTML.Tag.content_tag(
+                    {Phoenix.HTML.Tag.content_tag(
                       :"h#{@header_level}",
                       render_slot(@title),
                       id: "#{@id}-title",
                       class: "text-xl font-semibold text-gray-900 dark:text-white"
-                    ) %>
+                    )}
                     <p
                       :if={@subtitle != []}
                       id={"#{@id}-description"}
@@ -217,7 +217,7 @@ defmodule OliWeb.Components.Modal do
                   <span class="hover:underline">Back</span>
                 </button>
               </div>
-
+              
     <!-- Modal header -->
               <div class="flex items-start justify-between px-4 sm:px-0">
                 <div :if={@title != []} class="mb-6 lg:mb-11 w-full">
