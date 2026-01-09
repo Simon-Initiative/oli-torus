@@ -126,13 +126,13 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               </div>
               <div className="small">
                 <a
-                  href="#demo"
+                  href="#strict-cookies"
                   data-bs-toggle="collapse"
                   className="text-Text-text-button font-open-sans font-bold text-[14px] leading-[16px] tracking-normal text-center align-middle"
                 >
                   View Cookies
                 </a>
-                <div id="demo" className="collapse">
+                <div id="strict-cookies" className="collapse">
                   <div className="mt-2 overflow-x-auto max-w-full">
                     <table className="table table-striped">
                       <thead>
@@ -227,13 +227,13 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               </div>
               <div className="small">
                 <a
-                  href="#demo"
+                  href="#functional-cookies"
                   data-bs-toggle="collapse"
                   className="text-Text-text-button font-open-sans font-bold text-[14px] leading-[16px] tracking-normal text-center align-middle"
                 >
                   View Cookies
                 </a>
-                <div id="demo" className="collapse">
+                <div id="functional-cookies" className="collapse">
                   <div className="mt-2 overflow-x-auto max-w-full">
                     <table className="table table-striped">
                       <thead>
@@ -325,13 +325,13 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               </div>
               <div className="small">
                 <a
-                  href="#demo"
+                  href="#analytics-cookies"
                   data-bs-toggle="collapse"
                   className="text-Text-text-button font-open-sans font-bold text-[14px] leading-[16px] tracking-normal text-center align-middle"
                 >
                   View Cookies
                 </a>
-                <div id="demo" className="collapse">
+                <div id="analytics-cookies" className="collapse">
                   <div className="mt-2 overflow-x-auto max-w-full">
                     <table className="table table-striped">
                       <thead>
@@ -428,13 +428,13 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
               </div>
               <div className="small">
                 <a
-                  href="#demo"
+                  href="#targeting-cookies"
                   data-bs-toggle="collapse"
                   className="text-Text-text-button font-open-sans font-bold text-[14px] leading-[16px] tracking-normal text-center align-middle"
                 >
                   View Cookies
                 </a>
-                <div id="demo" className="collapse">
+                <div id="targeting-cookies" className="collapse">
                   <div className="mt-2 overflow-x-auto max-w-full">
                     <table className="table table-striped">
                       <thead>

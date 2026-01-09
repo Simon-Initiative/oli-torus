@@ -40,13 +40,20 @@ export const SaveCookiePreferences = {
     document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=None; Secure`;
   },
 
+  getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  },
+
   persistCookies(cookies: any[]) {
+    const csrfToken = this.getCsrfToken();
     // Send cookies to server for persistence
     fetch('/consent/cookie', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
       },
       body: JSON.stringify({ cookies: cookies }),
     })
