@@ -1054,7 +1054,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "div[role='page content'] p", "Here's some practice page content")
 
       # Support link is visible
-      assert has_element?(view, "#tech_support_user_menu", "Support")
+      assert has_element?(view, "#tech-support", "Support")
     end
 
     test "tech support button is rendered with sticky hook in layout", %{
@@ -1149,7 +1149,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
              )
 
       # Support link is visible
-      assert has_element?(view, "#tech_support_user_menu", "Support")
+      assert has_element?(view, "#tech-support", "Support")
     end
 
     test "does not see prologue but graded page when an attempt is in progress", %{

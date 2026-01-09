@@ -273,6 +273,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{privacy_policies_url()}'})"}
     />
     <.menu_item_profile_timezone id={"#{@id}-tz-selector"} ctx={@ctx} />
+    <.menu_item_linked_authoring_account :if={Accounts.can_manage_linked_account?(@ctx.user)} user={@ctx.user} />
     <.menu_item_profile_signout href={~p"/users/log_out"} />
     """
   end
@@ -635,6 +636,40 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         Sign Out
       <% end %>
     </li>
+    """
+  end
+
+  attr(:user, User, required: true)
+
+  defp menu_item_linked_authoring_account(assigns) do
+    ~H"""
+    <%= case Accounts.linked_author_account(@user) do %>
+      <% nil -> %>
+        <li class="border-b border-gray-200 dark:border-gray-800">
+          <%= link to: ~p"/users/link_account",
+            class:
+              "px-4 py-3 flex items-center gap-4 hover:no-underline hover:bg-gray-100 dark:hover:bg-gray-800/60 sm:px-2" do %>
+            <span class="flex-1 text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark">
+              Link authoring account
+            </span>
+            <i class="fa-solid fa-chevron-right text-gray-500 dark:text-gray-400 text-sm"></i>
+          <% end %>
+        </li>
+      <% %Author{email: linked_author_account_email} -> %>
+        <li class="px-4 pt-4 pb-2 text-sm font-bold font-['Roboto'] uppercase text-gray-600 dark:text-gray-400 sm:px-2 sm:pt-0 sm:pb-0">
+          Linked Authoring Account
+        </li>
+        <li class="border-b border-gray-200 dark:border-gray-800">
+          <%= link to: ~p"/users/link_account",
+            class:
+              "px-4 py-3 flex items-center gap-4 hover:no-underline hover:bg-gray-100 dark:hover:bg-gray-800/60 sm:px-2" do %>
+            <div class="flex-1 overflow-hidden text-ellipsis text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark" role="linked authoring account email">
+              {linked_author_account_email}
+            </div>
+            <i class="fa-solid fa-chevron-right text-gray-500 dark:text-gray-400 text-sm"></i>
+          <% end %>
+        </li>
+    <% end %>
     """
   end
 
