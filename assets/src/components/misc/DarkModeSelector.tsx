@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ThreeStateToggle, ToggleOption } from 'components/common/ThreeStateToggle';
 import { isDarkMode } from 'utils/browser';
-import { classNames } from 'utils/classNames';
+import { ClassName, classNames } from 'utils/classNames';
 
 type Mode = 'auto' | 'light' | 'dark';
 
@@ -23,10 +23,19 @@ export const modeIsDark = () => {
   return isDarkMode();
 };
 
-export interface DarkModeSelectorProps {}
+export interface DarkModeSelectorProps {
+  showLabels?: boolean;
+  className?: ClassName;
+}
 
-export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
+export const DarkModeSelector = ({ showLabels = false, className }: DarkModeSelectorProps) => {
   const [mode, setMode] = useState<Mode>(getModeFromLocalStorage());
+  const optionClassName = showLabels
+    ? 'flex-1 !w-auto !h-auto px-4 py-3 rounded-lg !border-0 bg-transparent justify-center gap-2 text-gray-600 dark:text-gray-400'
+    : undefined;
+  const checkedClassName = showLabels
+    ? '!bg-gray-100 text-gray-900 shadow-md dark:!bg-white'
+    : undefined;
 
   const onSelect = (mode: Mode) => () => {
     if (mode === 'auto') {
@@ -48,12 +57,23 @@ export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
   };
 
   return (
-    <ThreeStateToggle>
-      <ToggleOption id="auto" checked={isChecked(mode, 'auto')} onChange={onSelect('auto')}>
+    <ThreeStateToggle
+      className={classNames(
+        showLabels ? 'w-full gap-3 text-sm font-semibold' : undefined,
+        className,
+      )}
+    >
+      <ToggleOption
+        id="auto"
+        checked={isChecked(mode, 'auto')}
+        onChange={onSelect('auto')}
+        className={optionClassName}
+        checkedClassName={checkedClassName}
+      >
         <svg
           className={classNames(
             isChecked(mode, 'auto') && 'hidden',
-            'dark:stroke-[#B8B4BF] stroke-black/70 hover:stroke-black hover:dark:stroke-white',
+            'dark:stroke-gray-400 stroke-black/70 hover:stroke-black hover:dark:stroke-white',
           )}
           width="20"
           height="20"
@@ -100,8 +120,19 @@ export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
             d="M14 3.07191C15.2162 3.77405 16.2261 4.78396 16.9282 6.00011C17.6304 7.21626 18 8.59582 18 10.0001C18 11.4044 17.6303 12.7839 16.9282 14.0001C16.226 15.2162 15.2161 16.2261 13.9999 16.9283C12.7837 17.6304 11.4042 18 9.99987 18C8.59557 18 7.21602 17.6303 5.99987 16.9281C4.78372 16.226 3.77383 15.216 3.07171 13.9999C2.36958 12.7837 1.99996 11.4041 2 9.99986L2.004 9.74066C2.0488 8.35906 2.45084 7.01265 3.17091 5.83268C3.89099 4.65271 4.90452 3.67946 6.11271 3.00781C7.3209 2.33616 8.68252 1.98903 10.0648 2.00026C11.4471 2.0115 12.8029 2.38071 14 3.07191ZM6.8 4.4575C5.57991 5.16199 4.62639 6.24939 4.08731 7.55104C3.54823 8.8527 3.45373 10.2959 3.81847 11.6567C4.1832 13.0175 4.98678 14.22 6.10458 15.0776C7.22238 15.9351 8.59192 16.3999 10.0008 16.3998L10 3.5999C8.87655 3.59995 7.77291 3.89573 6.8 4.4575Z"
           />
         </svg>
+        {showLabels && (
+          <span className={classNames(isChecked(mode, 'auto') ? 'text-gray-900' : '')}>
+            System
+          </span>
+        )}
       </ToggleOption>
-      <ToggleOption id="light" checked={isChecked(mode, 'light')} onChange={onSelect('light')}>
+      <ToggleOption
+        id="light"
+        checked={isChecked(mode, 'light')}
+        onChange={onSelect('light')}
+        className={optionClassName}
+        checkedClassName={checkedClassName}
+      >
         <svg
           width="20"
           height="20"
@@ -110,7 +141,7 @@ export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
           xmlns="http://www.w3.org/2000/svg"
           className={classNames(
             isChecked(mode, 'light') && 'stroke-black/90',
-            'dark:stroke-[#B8B4BF] stroke-black/70 hover:stroke-black hover:dark:stroke-white',
+            'dark:stroke-gray-400 stroke-black/70 hover:stroke-black hover:dark:stroke-white',
           )}
         >
           <path
@@ -127,9 +158,20 @@ export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
             strokeLinejoin="round"
           />
         </svg>
+        {showLabels && (
+          <span className={classNames(isChecked(mode, 'light') ? 'text-gray-900' : '')}>
+            Light
+          </span>
+        )}
       </ToggleOption>
-      <ToggleOption id="dark" checked={isChecked(mode, 'dark')} onChange={onSelect('dark')}>
-        <div className="dark:stroke-[#B8B4BF] stroke-black/70 hover:stroke-black hover:dark:stroke-white">
+      <ToggleOption
+        id="dark"
+        checked={isChecked(mode, 'dark')}
+        onChange={onSelect('dark')}
+        className={optionClassName}
+        checkedClassName={checkedClassName}
+      >
+        <div className="dark:stroke-gray-400 stroke-black/70 hover:stroke-black hover:dark:stroke-white">
           <svg
             width="20"
             height="20"
@@ -148,6 +190,11 @@ export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
             />
           </svg>
         </div>
+        {showLabels && (
+          <span className={classNames(isChecked(mode, 'dark') ? 'text-gray-900' : '')}>
+            Dark
+          </span>
+        )}
       </ToggleOption>
     </ThreeStateToggle>
   );
