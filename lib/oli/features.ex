@@ -6,6 +6,11 @@ defmodule Oli.Features do
 
   @features [
     %Feature{label: "adaptivity", description: "Adaptive lesson authoring", enabled: true},
+    %Feature{
+      label: "clickhouse-olap",
+      description: "ClickHouse OLAP backfill and analytics tooling",
+      enabled: false
+    },
     %Feature{label: "equity", description: "Equity qa check", enabled: false},
     %Feature{
       label: "live-debugging",
@@ -17,6 +22,7 @@ defmodule Oli.Features do
   def features, do: @features
 
   def enabled?("adaptivity"), do: get_state("adaptivity") == :enabled
+  def enabled?("clickhouse-olap"), do: get_state("clickhouse-olap") == :enabled
   def enabled?("equity"), do: get_state("equity") == :enabled
   def enabled?("live-debugging"), do: get_state("live-debugging") == :enabled
 

@@ -24,6 +24,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
     view
   end
 
+  defp enable_clickhouse_feature(_) do
+    Oli.Features.bootstrap_feature_states()
+    Oli.Features.change_state("clickhouse-olap", :enabled)
+    :ok
+  end
+
   describe "access control" do
     test "redirects unauthenticated visitor to author login", %{conn: conn} do
       assert {:error, {:redirect, %{to: "/authors/log_in"}}} = live(conn, @route)
@@ -37,7 +43,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
   end
 
   describe "system admin" do
-    setup [:admin_conn]
+    setup [:admin_conn, :enable_clickhouse_feature]
 
     test "shows batch orchestration tab by default", %{conn: conn} do
       {:ok, _view, html} = live(conn, @route)

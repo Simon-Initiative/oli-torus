@@ -14,6 +14,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   alias Oli.Analytics.Backfill.InventoryBatch
   alias Oli.Analytics.Backfill.InventoryRun
   alias Oli.Analytics.Backfill.Notifier
+  alias Oli.Features
   alias OliWeb.Common.Breadcrumb
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
@@ -24,53 +25,60 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
   @impl true
   def mount(params, _session, socket) do
-    default_inputs = default_form_inputs()
+    if Features.enabled?("clickhouse-olap") do
+      default_inputs = default_form_inputs()
 
-    changeset =
-      %BackfillRun{}
-      |> BackfillRun.changeset(%{
-        target_table: Backfill.default_target_table(),
-        format: "JSONAsString"
-      })
+      changeset =
+        %BackfillRun{}
+        |> BackfillRun.changeset(%{
+          target_table: Backfill.default_target_table(),
+          format: "JSONAsString"
+        })
 
-    inventory_defaults = inventory_default_inputs()
-    inventory_changeset = inventory_form_changeset(inventory_defaults)
-    inventory_form = to_form(inventory_changeset, as: :inventory)
-    inventory_form_inputs = inventory_form_values(inventory_defaults)
-    inventory_config = Application.get_env(:oli, :clickhouse_inventory, []) |> Enum.into(%{})
+      inventory_defaults = inventory_default_inputs()
+      inventory_changeset = inventory_form_changeset(inventory_defaults)
+      inventory_form = to_form(inventory_changeset, as: :inventory)
+      inventory_form_inputs = inventory_form_values(inventory_defaults)
+      inventory_config = Application.get_env(:oli, :clickhouse_inventory, []) |> Enum.into(%{})
 
-    active_tab = resolve_active_tab(params)
+      active_tab = resolve_active_tab(params)
 
-    user_token =
-      case Map.get(socket.assigns, :current_author) do
-        %{id: author_id} ->
-          Phoenix.Token.sign(OliWeb.Endpoint, "user socket", author_id)
+      user_token =
+        case Map.get(socket.assigns, :current_author) do
+          %{id: author_id} ->
+            Phoenix.Token.sign(OliWeb.Endpoint, "user socket", author_id)
 
-        _ ->
-          nil
+          _ ->
+            nil
+        end
+
+      socket =
+        assign(socket,
+          title: "ClickHouse Bulk Backfill",
+          breadcrumb: breadcrumb(),
+          runs: Backfill.list_runs(limit: @runs_limit),
+          inventory_runs: Inventory.list_runs(limit: @inventory_runs_limit),
+          changeset: changeset,
+          form_inputs: default_inputs,
+          form: to_form(changeset, as: :backfill),
+          inventory_form: inventory_form,
+          inventory_form_inputs: inventory_form_inputs,
+          inventory_config: inventory_config,
+          active_tab: active_tab,
+          user_token: user_token
+        )
+
+      if connected?(socket) do
+        Notifier.subscribe()
       end
 
-    socket =
-      assign(socket,
-        title: "ClickHouse Bulk Backfill",
-        breadcrumb: breadcrumb(),
-        runs: Backfill.list_runs(limit: @runs_limit),
-        inventory_runs: Inventory.list_runs(limit: @inventory_runs_limit),
-        changeset: changeset,
-        form_inputs: default_inputs,
-        form: to_form(changeset, as: :backfill),
-        inventory_form: inventory_form,
-        inventory_form_inputs: inventory_form_inputs,
-        inventory_config: inventory_config,
-        active_tab: active_tab,
-        user_token: user_token
-      )
-
-    if connected?(socket) do
-      Notifier.subscribe()
+      {:ok, socket}
+    else
+      {:ok,
+       socket
+       |> put_flash(:error, "ClickHouse analytics is not enabled.")
+       |> redirect(to: ~p"/admin")}
     end
-
-    {:ok, socket}
   end
 
   @impl true

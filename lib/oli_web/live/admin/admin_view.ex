@@ -2,6 +2,7 @@ defmodule OliWeb.Admin.AdminView do
   use OliWeb, :live_view
 
   alias Oli.Accounts
+  alias Oli.Features
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Common.Breadcrumb
 
@@ -14,7 +15,8 @@ defmodule OliWeb.Admin.AdminView do
     {:ok,
      assign(socket,
        author: author,
-       breadcrumbs: breadcrumb()
+       breadcrumbs: breadcrumb(),
+       clickhouse_olap_enabled?: Features.enabled?("clickhouse-olap")
      )}
   end
 
@@ -158,16 +160,18 @@ defmodule OliWeb.Admin.AdminView do
                 XAPI Upload Pipeline Stats
               </a>
             </li>
-            <li>
-              <a href={~p"/admin/clickhouse"}>
-                Clickhouse Analytics
-              </a>
-            </li>
-            <li>
-              <a href={~p"/admin/clickhouse/backfill"}>
-                ClickHouse Bulk Backfill
-              </a>
-            </li>
+            <%= if @clickhouse_olap_enabled? do %>
+              <li>
+                <a href={~p"/admin/clickhouse"}>
+                  Clickhouse Analytics
+                </a>
+              </li>
+              <li>
+                <a href={~p"/admin/clickhouse/backfill"}>
+                  ClickHouse Bulk Backfill
+                </a>
+              </li>
+            <% end %>
             <li>
               <a href={~p"/admin/dashboard/home"} target="_blank">
                 <span>View System Performance Dashboard</span>

@@ -35,6 +35,12 @@ defmodule Oli.ScopedFeatureFlags.DefinedFeatures do
     "Enable Model Context Protocol (MCP) authoring capabilities for intelligent content creation and editing"
   )
 
+  deffeature(
+    :instructor_dashboard_analytics,
+    [:delivery],
+    "Enable the instructor dashboard insights analytics tab for this section"
+  )
+
   # Test-only features for comprehensive testing
   if Mix.env() in [:test] do
     deffeature(:feature1, [:both], "Test feature for both scopes")

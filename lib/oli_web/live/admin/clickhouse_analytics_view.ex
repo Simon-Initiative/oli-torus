@@ -2,6 +2,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   use OliWeb, :live_view
 
   alias Oli.Analytics.ClickhouseAnalytics
+  alias Oli.Features
   alias OliWeb.Common.Breadcrumb
   require Logger
 
@@ -9,19 +10,27 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def mount(_, _, socket) do
-    sample_queries = ClickhouseAnalytics.sample_analytics_queries()
+    if Features.enabled?("clickhouse-olap") do
+      sample_queries = ClickhouseAnalytics.sample_analytics_queries()
 
-    {:ok, assign(socket,
-      title: "ClickHouse Analytics",
-      breadcrumb: breadcrumb(),
-      health_status: nil,
-      query_result: nil,
-      selected_query: "",
-      custom_query: "",
-      executing: false,
-      sample_queries: sample_queries,
-      dropdown_options: build_dropdown_options(sample_queries)
-    )}
+      {:ok,
+       assign(socket,
+         title: "ClickHouse Analytics",
+         breadcrumb: breadcrumb(),
+         health_status: nil,
+         query_result: nil,
+         selected_query: "",
+         custom_query: "",
+         executing: false,
+         sample_queries: sample_queries,
+         dropdown_options: build_dropdown_options(sample_queries)
+       )}
+    else
+      {:ok,
+       socket
+       |> put_flash(:error, "ClickHouse analytics is not enabled.")
+       |> redirect(to: ~p"/admin")}
+    end
   end
 
   def render(assigns) do
