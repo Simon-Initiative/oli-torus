@@ -610,7 +610,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <li class="px-4 py-3 flex flex-col gap-2 border-b border-gray-200 dark:border-gray-800 sm:px-2">
       <div class="flex items-center gap-4">
-        <i class="fa-solid fa-globe text-gray-500 dark:text-gray-400 text-lg"></i>
+        <Icons.timezone_world class="text-gray-500 dark:text-gray-400" />
         <span class="text-base font-medium text-delivery-body-color dark:text-delivery-body-color-dark">
           Timezone
         </span>
