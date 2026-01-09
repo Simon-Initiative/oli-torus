@@ -977,7 +977,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               "#proficiency_explanation_modal h1",
+               "#proficiency_explanation_modal h2",
                "Measuring Learning Proficiency"
              )
 
