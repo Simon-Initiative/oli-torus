@@ -683,7 +683,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
     ensure_content_is_visible(view)
 
-    assert has_element?(view, "span", "The best course ever!")
+    assert has_element?(view, "h1", "The best course ever!")
   end
 
   describe "authors" do
@@ -983,7 +983,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       ensure_content_is_visible(view)
 
-      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "h1", "The best course ever!")
 
       assert has_element?(
                view,
@@ -1828,7 +1828,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       ## assert that redirect is not happening and the submit button and title are present
-      assert has_element?(view, "div[role='page title']", page_3.title)
+      assert has_element?(view, "h1[role='page title']", page_3.title)
       assert has_element?(view, "button[id='submit_answers']", "Submit Answers")
     end
 
@@ -2487,7 +2487,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "div[role='page title']",
+             "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
 
@@ -2516,7 +2516,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "div[role='page title']",
+             "h1[role='page title']",
                "This is a page configured to show one question at a time with no questions"
              )
 
@@ -3251,7 +3251,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page loads correctly
       assert has_element?(
                view,
-               "div[role='page title']",
+             "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
 
@@ -3301,7 +3301,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page still loads correctly
       assert has_element?(
                view,
-               "div[role='page title']",
+             "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
     end
@@ -3341,7 +3341,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page still loads correctly
       assert has_element?(
                view,
-               "div[role='page title']",
+             "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
     end
@@ -3378,7 +3378,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page loads correctly
       assert has_element?(
                view,
-               "div[role='page title']",
+             "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
     end

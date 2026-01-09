@@ -824,7 +824,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "can access when enrolled to course", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
-      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "h1", "The best course ever!")
       assert has_element?(view, "h3", "Introduction")
       assert has_element?(view, "h3", "Building a Phoenix app")
       assert has_element?(view, "h3", "Implementing LiveView")
@@ -2186,7 +2186,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
-      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "h1", "The best course ever!")
       assert has_element?(view, "div", "Introduction")
       assert has_element?(view, "div", "Building a Phoenix app")
       assert has_element?(view, "div", "Implementing LiveView")
@@ -2969,7 +2969,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, redirect_path)
 
-      assert view |> element(~s{#header span}, "(Preview Mode)") |> render() =~ "(Preview Mode)"
+      assert view |> element(~s{#header h1}, "(Preview Mode)") |> render() =~ "(Preview Mode)"
       assert view |> has_element?(~s{h1}, "Notes")
     end
 
@@ -2994,8 +2994,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, redirect_path)
 
-      assert view |> element(~s{#header span}, "(Preview Mode)") |> render() =~ "(Preview Mode)"
-      assert view |> element(~s{h1}) |> render() =~ "Your Practice Pages"
+      assert view |> element(~s{#header h1}, "(Preview Mode)") |> render() =~ "(Preview Mode)"
+      assert view |> element(~s{h1.text-4xl}) |> render() =~ "Your Practice Pages"
     end
   end
 
@@ -3009,7 +3009,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: "invalid"))
 
-      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "h1", "The best course ever!")
       assert has_element?(view, "h3", "Introduction")
       assert has_element?(view, "h3", "Building a Phoenix app")
       assert has_element?(view, "h3", "Implementing LiveView")
@@ -3018,7 +3018,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     test "shows default view if selected_view is an empty string", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug, selected_view: ""))
 
-      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "h1", "The best course ever!")
       assert has_element?(view, "h3", "Introduction")
       assert has_element?(view, "h3", "Building a Phoenix app")
       assert has_element?(view, "h3", "Implementing LiveView")
