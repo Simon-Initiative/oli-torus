@@ -119,8 +119,8 @@ defmodule OliWeb.Workspaces.StudentTest do
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "best"})
 
-      assert has_element?(view, "h5", "The best course ever!")
-      refute has_element?(view, "h5", "Maths")
+      assert has_element?(view, "h3", "The best course ever!")
+      refute has_element?(view, "h3", "Maths")
 
       view
       |> form("form[phx-change=search_section]")
@@ -133,8 +133,8 @@ defmodule OliWeb.Workspaces.StudentTest do
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "a not existing course"})
 
-      refute has_element?(view, "h5", "The best course ever!")
-      refute has_element?(view, "h5", "Maths")
+      refute has_element?(view, "h3", "The best course ever!")
+      refute has_element?(view, "h3", "Maths")
     end
 
     test "can search by instructor name in student workspace", %{conn: conn, user: user} do
@@ -167,13 +167,13 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       assert has_element?(view, "h3", "The best course ever!")
       assert has_element?(view, "h3", "Maths")
-      refute has_element?(view, "h5", "Elixir")
+      refute has_element?(view, "h3", "Elixir")
 
       view
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "maria"})
 
-      refute has_element?(view, "h5", "The best course ever!")
+      refute has_element?(view, "h3", "The best course ever!")
       assert has_element?(view, "h3", "Maths")
       assert has_element?(view, "h3", "Elixir")
 
@@ -181,9 +181,9 @@ defmodule OliWeb.Workspaces.StudentTest do
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "a not existing instructor"})
 
-      refute has_element?(view, "h5", "The best course ever!")
-      refute has_element?(view, "h5", "Maths")
-      refute has_element?(view, "h5", "Elixir")
+      refute has_element?(view, "h3", "The best course ever!")
+      refute has_element?(view, "h3", "Maths")
+      refute has_element?(view, "h3", "Elixir")
     end
 
     test "only sees sections enrolled as student on student workspace", %{conn: conn, user: user} do
@@ -196,7 +196,7 @@ defmodule OliWeb.Workspaces.StudentTest do
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert has_element?(view, "h3", "The best course ever!")
-      refute has_element?(view, "h5", "Maths")
+      refute has_element?(view, "h3", "Maths")
     end
 
     test "shows sidebar if user is not only enrolled as student", %{conn: conn, user: user} do
@@ -210,8 +210,8 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       assert render(view) =~ "desktop-workspace-nav-menu"
 
-      assert has_element?(view, "h5", "The best course ever!")
-      refute has_element?(view, "h5", "Maths")
+      assert has_element?(view, "h3", "The best course ever!")
+      refute has_element?(view, "h3", "Maths")
     end
 
     test "does not show sidebar if user is only enrolled as student", %{conn: conn, user: user} do
@@ -225,8 +225,8 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       refute render(view) =~ "desktop-workspace-nav-menu"
 
-      assert has_element?(view, "h5", "The best course ever!")
-      assert has_element?(view, "h5", "Maths")
+      assert has_element?(view, "h3", "The best course ever!")
+      assert has_element?(view, "h3", "Maths")
     end
 
     test "does show sidebar if user can create_sections", ctx do
@@ -297,24 +297,24 @@ defmodule OliWeb.Workspaces.StudentTest do
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       # Both courses should be visible initially
-      assert has_element?(view, "h5", "Course with Nil Instructor")
-      assert has_element?(view, "h5", "Course with Real Instructor")
+      assert has_element?(view, "h3", "Course with Nil Instructor")
+      assert has_element?(view, "h3", "Course with Real Instructor")
 
       # Search should still work for course title even with nil instructor
       view
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "nil"})
 
-      assert has_element?(view, "h5", "Course with Nil Instructor")
-      refute has_element?(view, "h5", "Course with Real Instructor")
+      assert has_element?(view, "h3", "Course with Nil Instructor")
+      refute has_element?(view, "h3", "Course with Real Instructor")
 
       # Search by real instructor name should work
       view
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "doe"})
 
-      refute has_element?(view, "h5", "Course with Nil Instructor")
-      assert has_element?(view, "h5", "Course with Real Instructor")
+      refute has_element?(view, "h3", "Course with Nil Instructor")
+      assert has_element?(view, "h3", "Course with Real Instructor")
     end
 
     test "can search sections with empty instructor names", %{conn: conn, user: user} do
@@ -380,28 +380,28 @@ defmodule OliWeb.Workspaces.StudentTest do
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       # Course should be visible initially
-      assert has_element?(view, "h5", "Mixed Instructor Course")
+      assert has_element?(view, "h3", "Mixed Instructor Course")
 
       # Search by course title should work
       view
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "mixed"})
 
-      assert has_element?(view, "h5", "Mixed Instructor Course")
+      assert has_element?(view, "h3", "Mixed Instructor Course")
 
       # Search by real instructor name should work
       view
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "alice"})
 
-      assert has_element?(view, "h5", "Mixed Instructor Course")
+      assert has_element?(view, "h3", "Mixed Instructor Course")
 
       # Search by non-existent term should hide course
       view
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "nonexistent"})
 
-      refute has_element?(view, "h5", "Mixed Instructor Course")
+      refute has_element?(view, "h3", "Mixed Instructor Course")
     end
   end
 
