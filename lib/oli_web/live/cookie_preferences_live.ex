@@ -132,6 +132,8 @@ defmodule OliWeb.CookiePreferencesLive do
                 type="button"
                 phx-click="toggle_section"
                 phx-value-section="strict_cookies"
+                aria-expanded={@expanded_sections.strict_cookies}
+                aria-controls="strict-cookies-panel"
               >
                 Strictly Necessary Cookies
                 <i
@@ -153,7 +155,7 @@ defmodule OliWeb.CookiePreferencesLive do
             </div>
           </div>
           <%= if @expanded_sections.strict_cookies do %>
-            <div class="accordion-collapse">
+            <div id="strict-cookies-panel" class="accordion-collapse">
               <div class="accordion-body py-4 px-0">
                 <div class="mb-2 text-Text-text-low-alpha">
                   <p>
@@ -241,6 +243,8 @@ defmodule OliWeb.CookiePreferencesLive do
                 type="button"
                 phx-click="toggle_section"
                 phx-value-section="functional_cookies"
+                aria-expanded={@expanded_sections.functional_cookies}
+                aria-controls="functional-cookies-panel"
               >
                 Functionality Cookies
                 <i
@@ -264,7 +268,7 @@ defmodule OliWeb.CookiePreferencesLive do
             </div>
           </div>
           <%= if @expanded_sections.functional_cookies do %>
-            <div class="accordion-collapse">
+            <div id="functional-cookies-panel" class="accordion-collapse">
               <div class="accordion-body py-4 px-0">
                 <div class="mb-2 text-Text-text-low-alpha">
                   <p>
@@ -341,6 +345,8 @@ defmodule OliWeb.CookiePreferencesLive do
                 type="button"
                 phx-click="toggle_section"
                 phx-value-section="analytics_cookies"
+                aria-expanded={@expanded_sections.analytics_cookies}
+                aria-controls="analytics-cookies-panel"
               >
                 Analytics Cookies
                 <i
@@ -364,7 +370,7 @@ defmodule OliWeb.CookiePreferencesLive do
             </div>
           </div>
           <%= if @expanded_sections.analytics_cookies do %>
-            <div class="accordion-collapse">
+            <div id="analytics-cookies-panel" class="accordion-collapse">
               <div class="accordion-body py-4 px-0">
                 <div class="mb-2 text-Text-text-low-alpha">
                   <p>
@@ -454,6 +460,8 @@ defmodule OliWeb.CookiePreferencesLive do
                 type="button"
                 phx-click="toggle_section"
                 phx-value-section="targeting_cookies"
+                aria-expanded={@expanded_sections.targeting_cookies}
+                aria-controls="targeting-cookies-panel"
               >
                 Targeting Cookies
                 <i
@@ -477,7 +485,7 @@ defmodule OliWeb.CookiePreferencesLive do
             </div>
           </div>
           <%= if @expanded_sections.targeting_cookies do %>
-            <div class="accordion-collapse">
+            <div id="targeting-cookies-panel" class="accordion-collapse">
               <div class="accordion-body py-4 px-0">
                 <div class="mb-2 text-Text-text-low-alpha">
                   <p>
@@ -555,26 +563,38 @@ defmodule OliWeb.CookiePreferencesLive do
     """
   end
 
-  def handle_event("toggle_section", %{"section" => section}, socket) do
-    updated_sections =
-      Map.put(
-        socket.assigns.expanded_sections,
-        String.to_atom(section),
-        !Map.get(socket.assigns.expanded_sections, String.to_atom(section))
-      )
+  defp section_key(section) when is_binary(section) do
+    String.to_existing_atom(section)
+  rescue
+    ArgumentError -> nil
+  end
 
-    {:noreply, assign(socket, expanded_sections: updated_sections)}
+  defp section_key(_), do: nil
+
+  def handle_event("toggle_section", %{"section" => section}, socket) do
+    case section_key(section) do
+      nil ->
+        {:noreply, socket}
+
+      key ->
+        updated_sections =
+          Map.update!(socket.assigns.expanded_sections, key, fn current -> not current end)
+
+        {:noreply, assign(socket, expanded_sections: updated_sections)}
+    end
   end
 
   def handle_event("toggle_cookie_table", %{"section" => section}, socket) do
-    updated_tables =
-      Map.put(
-        socket.assigns.expanded_cookie_tables,
-        String.to_atom(section),
-        !Map.get(socket.assigns.expanded_cookie_tables, String.to_atom(section))
-      )
+    case section_key(section) do
+      nil ->
+        {:noreply, socket}
 
-    {:noreply, assign(socket, expanded_cookie_tables: updated_tables)}
+      key ->
+        updated_tables =
+          Map.update!(socket.assigns.expanded_cookie_tables, key, fn current -> not current end)
+
+        {:noreply, assign(socket, expanded_cookie_tables: updated_tables)}
+    end
   end
 
   def handle_event(
@@ -671,15 +691,15 @@ defmodule OliWeb.CookiePreferencesLive do
 
           choices_cookie ->
             case Jason.decode(choices_cookie.value) do
-              {:ok, preferences} ->
+              {:ok, preferences} when is_map(preferences) ->
                 {
                   Map.get(preferences, "functionality", true),
                   Map.get(preferences, "analytics", true),
                   Map.get(preferences, "targeting", false)
                 }
 
-              {:error, _} ->
-                # If JSON decode fails, use defaults
+              _ ->
+                # If JSON decode fails or result is not a map, use defaults
                 {true, true, false}
             end
         end
