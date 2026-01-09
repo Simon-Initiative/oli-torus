@@ -332,16 +332,20 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     case assigns[:method] do
       nil ->
         ~H"""
-        <%= link to: @href, class: "w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-100 cursor-pointer", target: @target do %>
-          {render_slot(@inner_block)}
-        <% end %>
+        <li class="block p-1 whitespace-normal">
+          <%= link to: @href, class: "w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-100 cursor-pointer", target: @target do %>
+            {render_slot(@inner_block)}
+          <% end %>
+        </li>
         """
 
       _method ->
         ~H"""
-        <%= link to: @href, method: @method, class: "w-full text-gray-800 hover:text-white dark:text-white text-sm font-normal font-['Roboto'] h-8 px-1.5 py-2 mt-[10px] m-[5px] rounded-md border border-rose-400 justify-center items-center gap-2.5 inline-flex cursor-pointer hover:no-underline hover:bg-red-300 hover:border-red-500 dark:hover:bg-[#33181A]", target: @target do %>
-          {render_slot(@inner_block)}
-        <% end %>
+        <li class="block p-1 whitespace-normal">
+          <%= link to: @href, method: @method, class: "w-full text-gray-800 hover:text-white dark:text-white text-sm font-normal font-['Roboto'] h-8 px-1.5 py-2 mt-[10px] m-[5px] rounded-md border border-rose-400 justify-center items-center gap-2.5 inline-flex cursor-pointer hover:no-underline hover:bg-red-300 hover:border-red-500 dark:hover:bg-[#33181A]", target: @target do %>
+            {render_slot(@inner_block)}
+          <% end %>
+        </li>
         """
     end
   end
@@ -351,12 +355,14 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_button(assigns) do
     ~H"""
-    <button
-      {@rest}
-      class="w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-100 cursor-pointer"
-    >
-      {render_slot(@inner_block)}
-    </button>
+    <li class="block p-1 whitespace-normal">
+      <button
+        {@rest}
+        class="w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-100 cursor-pointer"
+      >
+        {render_slot(@inner_block)}
+      </button>
+    </li>
     """
   end
 
@@ -389,11 +395,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_edit_account(assigns) do
     ~H"""
-    <.menu_item>
-      <.menu_item_link href={@href}>
-        Edit Account
-      </.menu_item_link>
-    </.menu_item>
+    <.menu_item_link href={@href}>
+      Edit Account
+    </.menu_item_link>
 
     <.menu_divider />
     """
@@ -401,11 +405,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_confirm_user_account(assigns) do
     ~H"""
-    <.menu_item>
-      <.menu_item_link href={~p"/users/confirm"}>
-        Confirm Account
-      </.menu_item_link>
-    </.menu_item>
+    <.menu_item_link href={~p"/users/confirm"}>
+      Confirm Account
+    </.menu_item_link>
 
     <.menu_divider />
     """
@@ -418,11 +420,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
     ~H"""
     <%= if is_independent_learner?(@user) do %>
-      <.menu_item>
-        <.menu_item_link href={@my_courses_path}>
-          My Courses
-        </.menu_item_link>
-      </.menu_item>
+      <.menu_item_link href={@my_courses_path}>
+        My Courses
+      </.menu_item_link>
 
       <.menu_divider />
     <% end %>
