@@ -2487,7 +2487,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-             "h1[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
 
@@ -2516,7 +2516,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-             "h1[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time with no questions"
              )
 
@@ -3251,7 +3251,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page loads correctly
       assert has_element?(
                view,
-             "h1[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
 
@@ -3301,7 +3301,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page still loads correctly
       assert has_element?(
                view,
-             "h1[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
     end
@@ -3341,7 +3341,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page still loads correctly
       assert has_element?(
                view,
-             "h1[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
     end
@@ -3378,7 +3378,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page loads correctly
       assert has_element?(
                view,
-             "h1[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
     end
