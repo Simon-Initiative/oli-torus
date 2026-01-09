@@ -2711,6 +2711,47 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # right arrow is present
       assert has_element?(view, ~s{button[id=slider_right_button_#{unit_1.resource_id}]})
     end
+
+    test "can switch views in preview mode", %{conn: conn, section: section} do
+      # Start in gallery view in preview mode
+      {:ok, view, _html} =
+        live(conn, "/sections/#{section.slug}/preview/learn?selected_view=gallery")
+
+      # Verify we're in gallery view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
+
+      # Switch to outline view
+      view
+      |> element(~s{div[id=view_selector] button[phx-click="expand_select"]})
+      |> render_click()
+
+      view
+      |> element(~s{button[phx-value-selected_view=outline]})
+      |> render_click()
+
+      # Verify the path stays in preview mode (includes /preview)
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/preview/learn?sidebar_expanded=true&selected_view=outline"
+      )
+
+      # Verify we're in outline view now
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
+
+      # Switch back to gallery view
+      view
+      |> element(~s{button[phx-value-selected_view=gallery]})
+      |> render_click()
+
+      # Verify the path still stays in preview mode
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/preview/learn?sidebar_expanded=true&selected_view=gallery"
+      )
+
+      # Verify we're in gallery view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
+    end
   end
 
   describe "sidebar menu" do
