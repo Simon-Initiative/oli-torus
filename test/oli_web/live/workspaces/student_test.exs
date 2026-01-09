@@ -15,7 +15,7 @@ defmodule OliWeb.Workspaces.StudentTest do
     test "can access student workspace when logged in", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
-      assert has_element?(view, "h3", "Courses available")
+      assert has_element?(view, "h2", "Courses available")
       assert has_element?(view, "p", "You are not enrolled in any courses.")
     end
 
@@ -44,7 +44,7 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
-      assert has_element?(view, "h3", "Courses available")
+      assert has_element?(view, "h2", "Courses available")
       assert has_element?(view, "p", "You are not enrolled in any courses.")
     end
 
@@ -77,7 +77,7 @@ defmodule OliWeb.Workspaces.StudentTest do
       assert render(view) =~
                ~s|style=\"background-image: url(&#39;https://example.com/some-image-url.png&#39;);\"|
 
-      assert has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, "h3", "The best course ever!")
       assert has_element?(view, ~s{a[href="/sections/#{section.slug}?sidebar_expanded=true"]})
       assert has_element?(view, "div[role='start_end_date']", "Jan 2025 - Jan 2026")
 
@@ -112,8 +112,8 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
-      assert has_element?(view, "h5", "The best course ever!")
-      assert has_element?(view, "h5", "Maths")
+      assert has_element?(view, "h3", "The best course ever!")
+      assert has_element?(view, "h3", "Maths")
 
       view
       |> form("form[phx-change=search_section]")
@@ -126,8 +126,8 @@ defmodule OliWeb.Workspaces.StudentTest do
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: ""})
 
-      assert has_element?(view, "h5", "The best course ever!")
-      assert has_element?(view, "h5", "Maths")
+      assert has_element?(view, "h3", "The best course ever!")
+      assert has_element?(view, "h3", "Maths")
 
       view
       |> form("form[phx-change=search_section]")
@@ -157,16 +157,16 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
-      assert has_element?(view, "h5", "The best course ever!")
-      assert has_element?(view, "h5", "Maths")
-      assert has_element?(view, "h5", "Elixir")
+      assert has_element?(view, "h3", "The best course ever!")
+      assert has_element?(view, "h3", "Maths")
+      assert has_element?(view, "h3", "Elixir")
 
       view
       |> form("form[phx-change=search_section]")
       |> render_change(%{text_search: "messi"})
 
-      assert has_element?(view, "h5", "The best course ever!")
-      assert has_element?(view, "h5", "Maths")
+      assert has_element?(view, "h3", "The best course ever!")
+      assert has_element?(view, "h3", "Maths")
       refute has_element?(view, "h5", "Elixir")
 
       view
@@ -174,8 +174,8 @@ defmodule OliWeb.Workspaces.StudentTest do
       |> render_change(%{text_search: "maria"})
 
       refute has_element?(view, "h5", "The best course ever!")
-      assert has_element?(view, "h5", "Maths")
-      assert has_element?(view, "h5", "Elixir")
+      assert has_element?(view, "h3", "Maths")
+      assert has_element?(view, "h3", "Elixir")
 
       view
       |> form("form[phx-change=search_section]")
@@ -195,7 +195,7 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
-      assert has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, "h3", "The best course ever!")
       refute has_element?(view, "h5", "Maths")
     end
 
@@ -259,7 +259,7 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
-      assert has_element?(view, "h3", "Courses available")
+      assert has_element?(view, "h2", "Courses available")
     end
 
     test "search form has hidden disabled button to prevent submission", %{conn: conn, user: user} do
