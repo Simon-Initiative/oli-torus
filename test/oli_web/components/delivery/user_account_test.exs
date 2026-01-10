@@ -61,6 +61,13 @@ defmodule OliWeb.Components.Delivery.UserAccountTest do
   end
 
   defp build_ctx(user) do
+    user =
+      case Map.get(user, :platform_roles) do
+        %Ecto.Association.NotLoaded{} -> %{user | platform_roles: []}
+        nil -> %{user | platform_roles: []}
+        _ -> user
+      end
+
     %SessionContext{
       user: user,
       author: nil,
