@@ -18,7 +18,11 @@ describe('parser', () => {
 
     expect(
       screen.getByText((content, element) => {
-        return element?.tagName.toLowerCase() === 'h3' && content === 'Introduction';
+        return (
+          element?.tagName.toLowerCase() === 'h4' &&
+          element?.classList.contains('h3') &&
+          content === 'Introduction'
+        );
       }),
     ).toBeTruthy();
 
@@ -66,7 +70,11 @@ describe('parser', () => {
 
     expect(
       screen.getByText((content, element) => {
-        return element?.tagName.toLowerCase() === 'h3' && content === '1651–1748: Early seeds';
+        return (
+          element?.tagName.toLowerCase() === 'h4' &&
+          element?.classList.contains('h3') &&
+          content === '1651–1748: Early seeds'
+        );
       }),
     ).toBeTruthy();
 
@@ -127,7 +135,11 @@ describe('parser', () => {
 
     expect(
       screen.getByText((content, element) => {
-        return element?.tagName.toLowerCase() === 'h3' && content === 'Introduction';
+        return (
+          element?.tagName.toLowerCase() === 'h4' &&
+          element?.classList.contains('h3') &&
+          content === 'Introduction'
+        );
       }),
     ).toBeTruthy();
 
@@ -147,7 +159,11 @@ describe('parser', () => {
 
     expect(
       screen.getByText((content, element) => {
-        return element?.tagName.toLowerCase() === 'h3' && content === 'Introduction';
+        return (
+          element?.tagName.toLowerCase() === 'h4' &&
+          element?.classList.contains('h3') &&
+          content === 'Introduction'
+        );
       }),
     ).toBeTruthy();
 

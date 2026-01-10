@@ -891,7 +891,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Hi, #{user.given_name} !")
 
       # Shows welcome title respecting the strong tag
-      assert has_element?(view, "h4", "Welcome to")
+      assert has_element?(view, "h2", "Welcome to")
       assert has_element?(view, "strong", "the best course ever!")
 
       # Shows encouraging subtitle
@@ -940,7 +940,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Hi, #{user.given_name} !")
 
       # Shows welcome title respecting the strong tag
-      assert has_element?(view, "h4", "Welcome to the Course")
+      assert has_element?(view, "h2", "Welcome to the Course")
 
       # Shows encouraging subtitle
       assert has_element?(view, "div", "Dive Into Discovery. Begin Your Learning Adventure Now!")

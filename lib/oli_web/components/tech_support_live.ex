@@ -47,7 +47,12 @@ defmodule OliWeb.TechSupportLive do
       phx-click={Modal.show_modal(@modal_id)}
       data-hide_modal={Modal.hide_modal(@modal_id)}
     />
-    <Modal.modal id={@modal_id} class="md:w-8/12" on_cancel={JS.push("clear_result_request_message")}>
+    <Modal.modal
+      id={@modal_id}
+      class="md:w-8/12"
+      on_cancel={JS.push("clear_result_request_message")}
+      header_level={2}
+    >
       <:title>Tech Support</:title>
 
       <.process_result_message

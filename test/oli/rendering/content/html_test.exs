@@ -20,7 +20,7 @@ defmodule Oli.Content.Content.HtmlTest do
       rendered_html = Content.render(context, content, Content.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-      assert rendered_html_string =~ "<h3>Introduction</h3>"
+      assert rendered_html_string =~ "<h4 class=\"h3\">Introduction</h4>"
 
       assert rendered_html_string =~
                ~r/<img.*src="https:\/\/upload.wikimedia.org\/wikipedia\/commons\/thumb\/f\/f9\/Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg\/480px-Declaration_of_Independence_%281819%29%2C_by_John_Trumbull.jpg" data-point-marker="1856577103" \/>/
@@ -37,7 +37,7 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~
                "<a class=\"external-link\" href=\"https://en.wikipedia.org/wiki/Stamp_Act_Congress\" target=\"_blank\" rel=\"noreferrer\">Stamp Act Congress</a>"
 
-      assert rendered_html_string =~ "<h3>1651–1748: Early seeds</h3>"
+      assert rendered_html_string =~ "<h4 class=\"h3\">1651–1748: Early seeds</h4>"
 
       assert rendered_html_string =~
                "<ol class=\"list-inside pl-2\"><li data-point-marker=\"1896247178\">one</li>\n<li data-point-marker=\"1896247178\"><em>two</em></li>\n<li data-point-marker=\"1896247178\"><em><strong>three</strong></em></li>\n</ol>"
@@ -102,7 +102,7 @@ defmodule Oli.Content.Content.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                # ensure malformed content doesnt prevent rendering over other valid content
-               assert rendered_html_string =~ "<h3>Introduction</h3>"
+               assert rendered_html_string =~ "<h4 class=\"h3\">Introduction</h4>"
 
                # render an error message for the malformed content element
                assert rendered_html_string =~
@@ -123,7 +123,7 @@ defmodule Oli.Content.Content.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                # ensure unsupported content doesnt prevent rendering over other supported content
-               assert rendered_html_string =~ "<h3>Introduction</h3>"
+               assert rendered_html_string =~ "<h4 class=\"h3\">Introduction</h4>"
 
                # render an error message for the unsupported content element
                assert rendered_html_string =~

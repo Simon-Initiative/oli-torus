@@ -32,6 +32,7 @@ defmodule OliWeb.Components.Modal do
   attr :header_class, :string, default: "flex items-start justify-between p-4"
   attr :body_class, :string, default: "p-6 space-y-6"
   attr :confirm_class, :string, default: "py-2 px-3"
+  attr :header_level, :integer, default: 1
 
   attr :cancel_class, :string,
     default: "bg-transparent text-blue-500 hover:underline hover:bg-transparent"
@@ -86,12 +87,12 @@ defmodule OliWeb.Components.Modal do
               <div class={@header_class}>
                 <div>
                   <div :if={@title != []}>
-                    <h1
-                      id={"#{@id}-title"}
-                      class="text-xl font-semibold text-gray-900 dark:text-white"
-                    >
-                      {render_slot(@title)}
-                    </h1>
+                    {Phoenix.HTML.Tag.content_tag(
+                      :"h#{@header_level}",
+                      render_slot(@title),
+                      id: "#{@id}-title",
+                      class: "text-xl font-semibold text-gray-900 dark:text-white"
+                    )}
                     <p
                       :if={@subtitle != []}
                       id={"#{@id}-description"}
@@ -221,12 +222,12 @@ defmodule OliWeb.Components.Modal do
               <div class="flex items-start justify-between px-4 sm:px-0">
                 <div :if={@title != []} class="mb-6 lg:mb-11 w-full">
                   <div class="flex items-start justify-between sticky top-0 z-10 pt-8 sm:pt-14 lg:pt-16 xl:pt-20 bg-Specially-Tokens-Background-lesson-page w-full pb-2">
-                    <h1
+                    <h2
                       id={"#{@id}-title"}
                       class="text-zinc-700 dark:text-neutral-300 text-xl sm:text-3xl lg:text-[40px] font-bold font-['Inter'] leading-normal sm:leading-[60px]"
                     >
                       {render_slot(@title)}
-                    </h1>
+                    </h2>
                     <!-- Desktop: X icon -->
                     <button
                       type="button"

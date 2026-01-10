@@ -170,6 +170,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   def render(assigns) do
     ~H"""
+    <h1 class="sr-only">{@section.title}</h1>
     <.header_banner
       ctx={@ctx}
       section_slug={@section_slug}
@@ -316,12 +317,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         :if={!is_nil(@suggested_page)}
         class="flex flex-col w-full px-3 md:px-9 absolute justify-center items-start gap-2 md:gap-6"
       >
-        <h3
+        <h2
           id="home-banner-title"
           class="text-white text-lg md:text-2xl font-bold leading-loose tracking-tight"
         >
           Continue Learning
-        </h3>
+        </h2>
         <div class="flex flex-col lg:flex-row self-stretch p-6 bg-zinc-900 bg-opacity-40 rounded-xl justify-between lg:items-end gap-3">
           <div class="flex-col justify-center items-start gap-3.5 inline-flex">
             <div class="self-stretch h-3 justify-start items-center gap-3.5 inline-flex">
@@ -434,13 +435,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       </div>
 
       <div class="flex flex-col w-full px-9 absolute justify-center items-start gap-2 md:gap-6">
-        <h3 id="home-banner-title" class="w-full text-white text-2xl font-bold tracking-wide">
+        <div id="home-banner-title" class="w-full text-white text-2xl font-bold tracking-wide">
           Hi, {user_given_name(@ctx)} !
-        </h3>
+        </div>
         <div class="flex flex-col items-start gap-2.5">
-          <h4 class="text-3xl text-white font-medium">
+          <h2 class="text-3xl text-white font-medium">
             {build_welcome_title(@section.welcome_title)}
-          </h4>
+          </h2>
           <div class="text-white/60 text-lg font-semibold">
             {@section.encouraging_subtitle ||
               "Dive Into Discovery. Begin Your Learning Adventure Now!"}
@@ -645,9 +646,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     >
       <div class="flex-col justify-start items-start gap-3 md:gap-5 inline-flex grow">
         <div class="flex items-baseline gap-2.5 relative">
-          <div class="text-2xl font-bold leading-loose">
+          <h2 class="text-2xl font-bold leading-loose">
             Course Progress
-          </div>
+          </h2>
 
           <%!-- Desktop tooltip (hidden on mobile/tablet) --%>
           <.course_progress_tooltip_desktop />
@@ -866,9 +867,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     >
       <div class="w-full flex-col justify-start items-start gap-5 flex grow">
         <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
-          <div class="text-2xl font-bold leading-loose tracking-tight">
+          <h2 class="text-2xl font-bold leading-loose tracking-tight">
             My Assignments
-          </div>
+          </h2>
         </div>
         <div class="w-full h-fit overflow-hidden dark:text-white justify-start items-start gap-3.5 flex xl:flex-row flex-col">
           <button
@@ -1209,9 +1210,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     >
       <div class="flex-col justify-start items-start gap-7 inline-flex grow">
         <div class="self-stretch justify-between items-baseline inline-flex gap-2.5">
-          <div class="text-2xl font-bold leading-loose tracking-tight">
+          <h2 class="text-2xl font-bold leading-loose tracking-tight">
             Upcoming Agenda
-          </div>
+          </h2>
           <.link
             :if={@has_scheduled_resources?}
             href={

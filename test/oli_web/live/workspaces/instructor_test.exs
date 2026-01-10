@@ -214,7 +214,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       # we are currently on the student workspace
       refute has_element?(view, "h1", "Instructor Dashboard")
-      assert has_element?(view, "h3", "Courses available")
+      assert has_element?(view, "h2", "Courses available")
 
       # we go to the instructor workspace
       view
@@ -230,7 +230,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
         live(conn, ~p"/workspaces/instructor?sidebar_expanded=true")
 
       assert has_element?(view, "h1", "Instructor Dashboard")
-      refute has_element?(view, "h3", "Courses available")
+      refute has_element?(view, "h2", "Courses available")
 
       # we go back to the student workspace
       view
@@ -246,7 +246,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
         live(conn, ~p"/workspaces/student?sidebar_expanded=true")
 
       refute has_element?(view, "h1", "Instructor Dashboard")
-      assert has_element?(view, "h3", "Courses available")
+      assert has_element?(view, "h2", "Courses available")
 
       # we go to the course author workspace
       view

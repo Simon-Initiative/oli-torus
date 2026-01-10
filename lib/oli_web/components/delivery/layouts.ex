@@ -367,12 +367,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
           />
           <div class="h-[var(--main-links-height)]">
             <div class="h-[24px]">
-              <h2
+              <span
                 :if={@sidebar_expanded}
                 class="text-[14px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6"
               >
                 WORKSPACE
-              </h2>
+              </span>
             </div>
             <.workspace_sidebar_links
               preview_mode={@preview_mode}

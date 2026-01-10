@@ -19,9 +19,9 @@ defmodule OliWeb.Components.Auth do
   def login_form(assigns) do
     ~H"""
     <div class={["w-96 bg-Surface-surface-primary rounded-md sm:shadow-lg dark:text-white", @class]}>
-      <div class="text-center text-xl font-normal leading-7 py-8">
+      <h2 class="text-center text-xl font-normal leading-7 py-8">
         {@title}
-      </div>
+      </h2>
 
       <div
         :if={not Enum.empty?(@authentication_providers)}
