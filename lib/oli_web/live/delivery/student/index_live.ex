@@ -435,13 +435,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       </div>
 
       <div class="flex flex-col w-full px-9 absolute justify-center items-start gap-2 md:gap-6">
-        <h3 id="home-banner-title" class="w-full text-white text-2xl font-bold tracking-wide">
+        <h2 id="home-banner-title" class="w-full text-white text-2xl font-bold tracking-wide">
           Hi, {user_given_name(@ctx)} !
-        </h3>
+        </h2>
         <div class="flex flex-col items-start gap-2.5">
-          <h4 class="text-3xl text-white font-medium">
-            {build_welcome_title(@section.welcome_title)}
-          </h4>
+        <div class="text-3xl text-white font-medium">
+          {build_welcome_title(@section.welcome_title)}
+        </div>
           <div class="text-white/60 text-lg font-semibold">
             {@section.encouraging_subtitle ||
               "Dive Into Discovery. Begin Your Learning Adventure Now!"}
