@@ -683,7 +683,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
     ensure_content_is_visible(view)
 
-    assert has_element?(view, "h1", "The best course ever!")
+    assert has_element?(view, "span", "The best course ever!")
   end
 
   describe "authors" do
@@ -983,7 +983,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       ensure_content_is_visible(view)
 
-      assert has_element?(view, "h1", "The best course ever!")
+      assert has_element?(view, "span", "The best course ever!")
 
       assert has_element?(
                view,

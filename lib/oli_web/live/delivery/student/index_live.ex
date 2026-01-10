@@ -170,6 +170,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   def render(assigns) do
     ~H"""
+    <h1 class="sr-only">{@section.title}</h1>
     <.header_banner
       ctx={@ctx}
       section_slug={@section_slug}

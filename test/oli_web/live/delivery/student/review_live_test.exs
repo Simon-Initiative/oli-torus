@@ -366,7 +366,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
       ensure_content_is_visible(view)
-      assert has_element?(view, "h1", "The best course ever!")
+      assert has_element?(view, "span", "The best course ever!")
 
       assert has_element?(
                view,
@@ -689,7 +689,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
       ensure_content_is_visible(view)
-      assert has_element?(view, "h1", "The best course ever!")
+      assert has_element?(view, "span", "The best course ever!")
       assert has_element?(view, ~s{h1[role="page title"]}, "Page 1")
     end
 

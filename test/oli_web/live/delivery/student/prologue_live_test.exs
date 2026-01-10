@@ -475,7 +475,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 
-      assert has_element?(view, "h1", "The best course ever!")
+      assert has_element?(view, "span", "The best course ever!")
 
       assert has_element?(
                view,

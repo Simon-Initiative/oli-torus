@@ -791,7 +791,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      assert has_element?(view, "h1", "The best course ever!")
+      assert has_element?(view, "span", "The best course ever!")
       assert has_element?(view, "div", "Upcoming Agenda")
     end
 
@@ -970,7 +970,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      assert has_element?(view, "h1", "The best course ever!")
+      assert has_element?(view, "span", "The best course ever!")
       assert has_element?(view, "div", "Continue Learning")
 
       # the last open and unfinished page is page 4
@@ -1012,7 +1012,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      assert has_element?(view, "h1", "The best course ever!")
+      assert has_element?(view, "span", "The best course ever!")
       assert has_element?(view, "div", "Continue Learning")
 
       # the last open and unfinished page is page 1
@@ -1054,7 +1054,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      assert has_element?(view, "h1", "The best course ever!")
+      assert has_element?(view, "span", "The best course ever!")
       assert has_element?(view, "div", "Continue Learning")
 
       # the last open and unfinished page is page 3
@@ -1093,7 +1093,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      assert has_element?(view, "h1", "The best course ever!")
+      assert has_element?(view, "span", "The best course ever!")
       assert has_element?(view, "div", "Continue Learning")
 
       # the next page from agenda is page 2
