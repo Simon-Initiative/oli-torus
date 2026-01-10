@@ -888,10 +888,10 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      assert has_element?(view, "h2", "Hi, #{user.given_name} !")
+      assert has_element?(view, "div", "Hi, #{user.given_name} !")
 
       # Shows welcome title respecting the strong tag
-      assert has_element?(view, "div", "Welcome to")
+      assert has_element?(view, "h2", "Welcome to")
       assert has_element?(view, "strong", "the best course ever!")
 
       # Shows encouraging subtitle
@@ -937,10 +937,10 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       # Section with default welcome title and encouraging subtitle
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      assert has_element?(view, "h2", "Hi, #{user.given_name} !")
+      assert has_element?(view, "div", "Hi, #{user.given_name} !")
 
       # Shows welcome title respecting the strong tag
-      assert has_element?(view, "div", "Welcome to the Course")
+      assert has_element?(view, "h2", "Welcome to the Course")
 
       # Shows encouraging subtitle
       assert has_element?(view, "div", "Dive Into Discovery. Begin Your Learning Adventure Now!")
