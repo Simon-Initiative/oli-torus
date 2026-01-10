@@ -439,9 +439,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           Hi, {user_given_name(@ctx)} !
         </h2>
         <div class="flex flex-col items-start gap-2.5">
-        <div class="text-3xl text-white font-medium">
-          {build_welcome_title(@section.welcome_title)}
-        </div>
+          <div class="text-3xl text-white font-medium">
+            {build_welcome_title(@section.welcome_title)}
+          </div>
           <div class="text-white/60 text-lg font-semibold">
             {@section.encouraging_subtitle ||
               "Dive Into Discovery. Begin Your Learning Adventure Now!"}
