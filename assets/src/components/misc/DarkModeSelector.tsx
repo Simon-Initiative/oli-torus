@@ -48,8 +48,15 @@ export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
   };
 
   return (
-    <ThreeStateToggle>
-      <ToggleOption id="auto" checked={isChecked(mode, 'auto')} onChange={onSelect('auto')}>
+    <fieldset className="border-0 p-0 m-0">
+      <legend className="sr-only">theme options</legend>
+      <ThreeStateToggle>
+      <ToggleOption
+        id="auto"
+        label="auto"
+        checked={isChecked(mode, 'auto')}
+        onChange={onSelect('auto')}
+      >
         <svg
           className={classNames(
             isChecked(mode, 'auto') && 'hidden',
@@ -101,7 +108,12 @@ export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
           />
         </svg>
       </ToggleOption>
-      <ToggleOption id="light" checked={isChecked(mode, 'light')} onChange={onSelect('light')}>
+      <ToggleOption
+        id="light"
+        label="light mode"
+        checked={isChecked(mode, 'light')}
+        onChange={onSelect('light')}
+      >
         <svg
           width="20"
           height="20"
@@ -128,7 +140,12 @@ export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
           />
         </svg>
       </ToggleOption>
-      <ToggleOption id="dark" checked={isChecked(mode, 'dark')} onChange={onSelect('dark')}>
+      <ToggleOption
+        id="dark"
+        label="dark mode"
+        checked={isChecked(mode, 'dark')}
+        onChange={onSelect('dark')}
+      >
         <div className="dark:stroke-[#B8B4BF] stroke-black/70 hover:stroke-black hover:dark:stroke-white">
           <svg
             width="20"
@@ -149,6 +166,7 @@ export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
           </svg>
         </div>
       </ToggleOption>
-    </ThreeStateToggle>
+      </ThreeStateToggle>
+    </fieldset>
   );
 };

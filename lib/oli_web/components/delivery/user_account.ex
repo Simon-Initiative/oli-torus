@@ -440,9 +440,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         {React.component(
           @ctx,
           "Components.DarkModeSelector",
-          %{
-            showLabels: false
-          },
+          %{},
           id: @id
         )}
       </div>
