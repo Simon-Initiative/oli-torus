@@ -3294,6 +3294,33 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         refute view |> has_element?("span[role='page title']", title)
       end)
     end
+
+    test "search works in preview mode without causing routing errors", %{
+      conn: conn,
+      section: section
+    } do
+      # Start in outline view in preview mode
+      {:ok, view, _html} =
+        live(conn, "/sections/#{section.slug}/preview/learn?selected_view=outline")
+
+      # Perform a search - this should not cause a routing error
+      view
+      |> element("form[phx-change='search']")
+      |> render_change(%{"search_term" => "Page 1"})
+
+      # Verify search results are shown (no error occurred)
+      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[role='page title']", "Page 10")
+
+      # Clear the search by searching for empty string
+      view
+      |> element("form[phx-change='search']")
+      |> render_change(%{"search_term" => ""})
+
+      # Verify all content is shown again after clearing search
+      assert has_element?(view, "div[role='unit title']", "Introduction")
+      assert has_element?(view, "span[role='page title']", "Page 2")
+    end
   end
 
   describe "get_viewed_intro_video_resource_ids/2" do
