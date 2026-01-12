@@ -385,10 +385,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       end
       |> Map.drop(["target_resource_id"])
 
+    path =
+      if socket.assigns[:preview_mode] do
+        ~p"/sections/#{socket.assigns.section.slug}/preview/learn?#{params}"
+      else
+        ~p"/sections/#{socket.assigns.section.slug}/learn?#{params}"
+      end
+
     {:noreply,
-     push_patch(socket,
-       to: ~p"/sections/#{socket.assigns.section.slug}/learn?#{params}"
-     )
+     push_patch(socket, to: path)
      # This event is used to expand the containers that contain a child that matches the search term
      |> push_event("js-exec", %{
        to: "#student_learn",
@@ -397,11 +402,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def handle_event("clear_search", _params, socket) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         ~p"/sections/#{socket.assigns.section.slug}/learn?#{Map.drop(socket.assigns.params, ["search_term", "target_resource_id"])}"
-     )}
+    params = Map.drop(socket.assigns.params, ["search_term", "target_resource_id"])
+
+    path =
+      if socket.assigns[:preview_mode] do
+        ~p"/sections/#{socket.assigns.section.slug}/preview/learn?#{params}"
+      else
+        ~p"/sections/#{socket.assigns.section.slug}/learn?#{params}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   def handle_event(
