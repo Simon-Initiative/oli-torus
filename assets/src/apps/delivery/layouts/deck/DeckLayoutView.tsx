@@ -634,7 +634,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
     // Only focus if activity ID actually changed (not same screen navigation)
     if (currentActivityId && currentActivityId !== previousActivityIdRef.current) {
-      // Use requestAnimationFrame to ensure DOM has updated
       requestAnimationFrame(() => {
         // Double-check with setTimeout to ensure content is rendered
         setTimeout(() => {
