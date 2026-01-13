@@ -28927,6 +28927,11 @@ Not supports in Firefox and IE */
     padding-right: 80px;
   }
 
+  .sm\:py-1 {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+
   .sm\:py-3 {
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
