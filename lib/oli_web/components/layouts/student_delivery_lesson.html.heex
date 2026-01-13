@@ -13,7 +13,24 @@
             is_admin={@is_admin}
             section={@section}
             preview_mode={@preview_mode}
+            sidebar_enabled={true}
+            sidebar_expanded={true}
             include_logo
+          />
+        </div>
+        <div class="absolute top-0 z-[999]">
+          <Components.Delivery.Layouts.sidebar_nav
+            :if={@section}
+            ctx={@ctx}
+            is_admin={@is_admin}
+            section={@section}
+            active_tab={assigns[:active_tab]}
+            preview_mode={@preview_mode}
+            notification_badges={assigns[:notification_badges] || %{}}
+            sidebar_expanded={true}
+            notes_enabled={assigns[:notes_enabled] || false}
+            discussions_enabled={assigns[:discussions_enabled] || false}
+            has_scheduled_resources?={assigns[:has_scheduled_resources?] || false}
           />
         </div>
         <div id="live_flash_container" class="sticky top-14 w-full mx-auto z-[99]">
