@@ -160,7 +160,7 @@ export const PaginationControls = (props: PaginationControlsProps) => {
             if (item.type === 'ellipsis') {
               return (
                 <li key={item.key} className={classNames('page-item', 'disabled')}>
-                  <span className="page-link" aria-hidden="true">
+                  <span className="page-link" aria-label="More pages">
                     ...
                   </span>
                 </li>
@@ -173,7 +173,11 @@ export const PaginationControls = (props: PaginationControlsProps) => {
                 key={item.key}
                 className={classNames('page-item', pageIndex == active ? 'active' : '')}
               >
-                <button className="page-link" onClick={() => onSelectPage(pageIndex)}>
+                <button
+                  className="page-link"
+                  onClick={() => onSelectPage(pageIndex)}
+                  aria-current={pageIndex === active ? 'page' : undefined}
+                >
                   {pageIndex + 1}
                 </button>
               </li>
