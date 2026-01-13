@@ -49,7 +49,7 @@ export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
 
   return (
     <fieldset className="border-0 p-0 m-0">
-      <legend className="sr-only">theme options</legend>
+      <legend className="sr-only">Theme</legend>
       <ThreeStateToggle>
         <ToggleOption
           id="auto"
