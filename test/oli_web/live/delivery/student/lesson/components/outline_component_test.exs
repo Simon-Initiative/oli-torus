@@ -91,20 +91,20 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
     } do
       {:ok, lcd, _html} = live_component_isolated(conn, OutlineComponent, component_params)
 
-      # Unit 1
-      assert lcd |> element("#outline_item_1 div[role='title']") |> render() =~ "Unit 1"
-      assert lcd |> element("#outline_item_1 div[role='title']") |> render() =~ "Introduction"
+      # Unit 1 (container - rendered as button)
+      assert lcd |> element("#outline_item_1 button") |> render() =~ "Unit 1"
+      assert lcd |> element("#outline_item_1 button") |> render() =~ "Introduction"
 
       # Renders top level ancestor progress bar
       assert lcd
              |> element("#outline_item_1 div[role='progress bar']")
              |> render() =~ "0%"
 
-      # Unit 2
-      assert lcd |> element("#outline_item_2 div[role='title']") |> render() =~ "Unit 2"
-      assert lcd |> element("#outline_item_2 div[role='title']") |> render() =~ "Main Concepts"
+      # Unit 2 (container - rendered as button)
+      assert lcd |> element("#outline_item_2 button") |> render() =~ "Unit 2"
+      assert lcd |> element("#outline_item_2 button") |> render() =~ "Main Concepts"
 
-      # Top Level Lesson
+      # Top Level Lesson (page - rendered as link)
       assert lcd |> element("#outline_item_3 div[role='title']") |> render() =~ "Top Level Lesson"
 
       assert lcd |> element("#outline_item_3 div[role='page icon']") |> render() =~
@@ -123,12 +123,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
       refute lcd |> has_element?("#outline_item_11")
       refute lcd |> has_element?("#outline_item_12")
 
-      # Expand item "1" to show children
+      # Expand item "1" to show children (now a button with aria-expanded)
       lcd
-      |> element("[phx-click='expand_item'][phx-value-item_id='1']")
+      |> element("#outline_item_1 button[aria-expanded='false']")
       |> render_click()
 
-      # Ensure children are visible after expanding
+      # Ensure children are visible after expanding (pages are rendered as links)
       assert lcd |> element("#outline_item_11 div[role='title']") |> render() =~ "Lesson 1"
 
       assert lcd |> element("#outline_item_11 div[role='page icon']") |> render() =~
@@ -139,9 +139,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
       # It is a practice page so it has no icon
       assert lcd |> has_element?("#outline_item_12 div[role='no icon']")
 
-      # Collapse item "1" to hide children again
+      # Collapse item "1" to hide children again (now aria-expanded is true)
       lcd
-      |> element("[phx-click='expand_item'][phx-value-item_id='1']")
+      |> element("#outline_item_1 button[aria-expanded='true']")
       |> render_click()
 
       # Ensure children are hidden after collapsing
