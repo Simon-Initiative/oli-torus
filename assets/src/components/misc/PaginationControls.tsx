@@ -3,6 +3,7 @@ import { List } from 'immutable';
 import { PaginationMode } from 'data/content/resource';
 import * as Events from 'data/events';
 import { updatePaginationState } from 'data/persistence/pagination';
+import { MediaSize, useMediaQuery } from 'hooks/media_query';
 import { classNames } from 'utils/classNames';
 import styles from './PaginationControls.modules.scss';
 
@@ -20,6 +21,8 @@ export const PaginationControls = (props: PaginationControlsProps) => {
   const controls = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState(List<Page>());
   const [active, setActive] = useState(0);
+  const isAtLeastSmall = useMediaQuery(MediaSize.sm);
+  const isMobile = !isAtLeastSmall;
 
   const hideAll = () => {
     pages.forEach((page) => page.forEach((el) => el.classList.remove(styles.show)));
@@ -85,6 +88,41 @@ export const PaginationControls = (props: PaginationControlsProps) => {
 
   const previousDisabled = active === 0;
   const nextDisabled = active === pages.count() - 1;
+  const totalPages = pages.count();
+  const shouldCondense = isMobile && totalPages > 4;
+  const displayItems = (() => {
+    if (!shouldCondense) {
+      return Array.from({ length: totalPages }, (_, index) => ({
+        type: 'page' as const,
+        index,
+        key: `page-${index}`,
+      }));
+    }
+
+    const items: Array<{ type: 'page' | 'ellipsis'; index?: number; key: string }> = [];
+    const inFirstTwo = active <= 1;
+    const inLastTwo = active >= totalPages - 2;
+    const pageSet = new Set<number>([0, totalPages - 1]);
+
+    if (inFirstTwo || inLastTwo) {
+      pageSet.add(1);
+      pageSet.add(totalPages - 2);
+    } else {
+      pageSet.add(active);
+    }
+    const orderedPages = Array.from(pageSet).sort((a, b) => a - b);
+    for (let i = 0; i < orderedPages.length; i++) {
+      const index = orderedPages[i];
+      items.push({ type: 'page', index, key: `page-${index}` });
+
+      const nextIndex = orderedPages[i + 1];
+      if (nextIndex !== undefined && nextIndex > index + 1) {
+        items.push({ type: 'ellipsis', key: `ellipsis-${index}-${nextIndex}` });
+      }
+    }
+
+    return items;
+  })();
 
   return (
     <>
@@ -118,13 +156,29 @@ export const PaginationControls = (props: PaginationControlsProps) => {
               Previous
             </button>
           </li>
-          {pages.map((p, i) => (
-            <li key={i} className={classNames('page-item', i == active ? 'active' : '')}>
-              <button className="page-link" onClick={() => onSelectPage(i)}>
-                {i + 1}
-              </button>
-            </li>
-          ))}
+          {displayItems.map((item) => {
+            if (item.type === 'ellipsis') {
+              return (
+                <li key={item.key} className={classNames('page-item', 'disabled')}>
+                  <span className="page-link" aria-hidden="true">
+                    ...
+                  </span>
+                </li>
+              );
+            }
+
+            const pageIndex = item.index ?? 0;
+            return (
+              <li
+                key={item.key}
+                className={classNames('page-item', pageIndex == active ? 'active' : '')}
+              >
+                <button className="page-link" onClick={() => onSelectPage(pageIndex)}>
+                  {pageIndex + 1}
+                </button>
+              </li>
+            );
+          })}
           <li className={classNames('page-item', nextDisabled ? 'disabled' : '')}>
             <button
               className="page-link"
