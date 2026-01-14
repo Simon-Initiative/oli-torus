@@ -503,9 +503,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
                 // Ensure custom icon URLs are visible
                 ...(isCustomIcon && iconSrc ? { opacity: 1 } : {}),
               }}
-              {...(shouldShowLabel
-                ? {} // No event handlers when label exists (icon is decorative)
-                : useToggleBehavior
+              {...(useToggleBehavior
                 ? {
                     onClick: handleClick,
                   }
