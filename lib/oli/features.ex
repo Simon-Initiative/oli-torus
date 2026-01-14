@@ -3,6 +3,7 @@ defmodule Oli.Features do
 
   alias Oli.Repo
   alias Oli.Features.{FeatureState, Feature}
+  require Logger
 
   @features [
     %Feature{label: "adaptivity", description: "Adaptive lesson authoring", enabled: true},
@@ -27,7 +28,14 @@ defmodule Oli.Features do
   def enabled?("live-debugging"), do: get_state("live-debugging") == :enabled
 
   defp get_state(label) do
-    Repo.get!(FeatureState, label).state
+    case Repo.get(FeatureState, label) do
+      %FeatureState{state: state} ->
+        state
+
+      nil ->
+        Logger.warning("Feature state missing for #{label}; defaulting to disabled")
+        :disabled
+    end
   end
 
   @doc """
@@ -37,15 +45,28 @@ defmodule Oli.Features do
       [{%Feature{}, state}, ...]
   """
   def list_features_and_states do
-    query = from(s in FeatureState, select: s.state, order_by: :label)
+    states_by_label =
+      FeatureState
+      |> Repo.all()
+      |> Map.new(fn %FeatureState{label: label, state: state} -> {label, state} end)
 
-    Enum.zip(@features, Repo.all(query))
+    Enum.map(@features, fn %Feature{label: label} = feature ->
+      {feature, Map.get(states_by_label, label, :disabled)}
+    end)
   end
 
   def change_state(label, state) do
-    Repo.get!(FeatureState, label)
-    |> FeatureState.changeset(%{state: state})
-    |> Repo.update()
+    case Repo.get(FeatureState, label) do
+      %FeatureState{} = feature_state ->
+        feature_state
+        |> FeatureState.changeset(%{state: state})
+        |> Repo.update()
+
+      nil ->
+        %FeatureState{}
+        |> FeatureState.changeset(%{label: label, state: state})
+        |> Repo.insert()
+    end
   end
 
   def bootstrap_feature_states() do

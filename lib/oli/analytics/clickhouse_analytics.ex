@@ -36,232 +36,118 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     "#{config.database}.raw_events"
   end
 
-  @doc """
-  Provides comprehensive analytics queries for all event types.
-  Returns a map with query atoms as keys and maps containing description and query as values.
-  """
-  def sample_analytics_queries() do
-    raw_events_table = raw_events_table()
+  defp fetch_health_metadata(database) do
+    query = """
+    SELECT
+      version() AS version,
+      uptime() AS uptime_seconds,
+      timezone() AS timezone,
+      hostName() AS hostname,
+      now() AS server_time,
+      currentDatabase() AS current_database,
+      '#{escape_single_quotes(database)}' AS configured_database
+    """
 
-    %{
-      # Video Analytics
-      video_engagement_by_section: %{
-        description:
-          "Analyzes video engagement metrics across different sections, including play/pause events, completion rates, and user participation.",
-        query: """
-          SELECT
-            section_id,
-            count(*) as total_events,
-            countIf(video_time IS NOT NULL AND video_seek_from IS NULL) as play_pause_events,
-            countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completion_events,
-            countIf(video_seek_from IS NOT NULL AND video_seek_to IS NOT NULL) as seek_events,
-            avg(video_progress) as avg_progress,
-            uniq(user_id) as unique_users,
-            uniq(content_element_id) as unique_videos
-          FROM #{raw_events_table}
-          WHERE section_id IS NOT NULL AND event_type = 'video'
-          GROUP BY section_id
-          ORDER BY total_events DESC
-        """
-      },
-      video_completion_rates: %{
-        description:
-          "Shows completion rates for individual videos, highlighting which content is most engaging to learners.",
-        query: """
-          SELECT
-            content_element_id,
-            video_url,
-            countIf(video_time IS NOT NULL) as plays,
-            countIf(video_progress IS NOT NULL AND video_played_segments IS NOT NULL) as completions,
-            if(plays > 0, completions / plays * 100, 0) as completion_rate_percent
-          FROM #{raw_events_table}
-          WHERE content_element_id IS NOT NULL AND event_type = 'video'
-          GROUP BY content_element_id, video_url
-          HAVING plays > 5
-          ORDER BY completion_rate_percent DESC
-        """
-      },
-      user_video_engagement: %{
-        description:
-          "Provides insights into individual user video watching patterns and engagement levels.",
-        query: """
-          SELECT
-            user_id,
-            count(*) as total_interactions,
-            countIf(video_time IS NOT NULL) as videos_played,
-            sum(video_play_time) as total_watch_time,
-            avg(video_progress) as avg_completion_rate,
-            max(timestamp) as last_interaction
-          FROM #{raw_events_table}
-          WHERE user_id IS NOT NULL AND event_type = 'video'
-          GROUP BY user_id
-          ORDER BY total_watch_time DESC
-        """
-      },
-
-      # Activity Attempt Analytics
-      activity_attempt_performance: %{
-        description:
-          "Analyzes performance metrics for activity attempts, showing success rates and average scores by section and activity.",
-        query: """
-          SELECT
-            section_id,
-            activity_id,
-            count(*) as total_attempts,
-            avg(score) as avg_score,
-            avg(out_of) as avg_possible_score,
-            avg(scaled_score) as avg_scaled_score,
-            countIf(success = true) as successful_attempts,
-            uniq(user_id) as unique_users
-          FROM #{raw_events_table}
-          WHERE section_id IS NOT NULL AND event_type = 'activity_attempt'
-          GROUP BY section_id, activity_id
-          ORDER BY avg_scaled_score DESC
-        """
-      },
-      activity_attempt_trends: %{
-        description:
-          "Shows monthly trends in activity attempt performance and user engagement over time.",
-        query: """
-          SELECT
-            toYYYYMM(timestamp) as month,
-            section_id,
-            count(*) as attempts,
-            avg(scaled_score) as avg_performance,
-            uniq(user_id) as active_users
-          FROM #{raw_events_table}
-          WHERE section_id IS NOT NULL AND event_type = 'activity_attempt'
-          GROUP BY month, section_id
-          ORDER BY month DESC, section_id
-        """
-      },
-
-      # Page Attempt Analytics
-      page_attempt_performance: %{
-        description:
-          "Evaluates page-level assessment performance, showing which pages students find most challenging.",
-        query: """
-          SELECT
-            section_id,
-            page_id,
-            count(*) as total_attempts,
-            avg(score) as avg_score,
-            avg(out_of) as avg_possible_score,
-            avg(scaled_score) as avg_scaled_score,
-            countIf(success = true) as successful_attempts,
-            uniq(user_id) as unique_users
-          FROM #{raw_events_table}
-          WHERE section_id IS NOT NULL AND event_type = 'page_attempt'
-          GROUP BY section_id, page_id
-          ORDER BY avg_scaled_score DESC
-        """
-      },
-
-      # Page Viewed Analytics
-      page_engagement: %{
-        description:
-          "Tracks page viewing patterns by time of day and completion rates to understand content engagement.",
-        query: """
-          SELECT
-            section_id,
-            page_id,
-            page_sub_type,
-            count(*) as total_views,
-            uniq(user_id) as unique_viewers,
-            countIf(completion = true) as completed_views,
-            toHour(timestamp) as hour_of_day,
-            count(*) as views_by_hour
-          FROM #{raw_events_table}
-          WHERE section_id IS NOT NULL AND event_type = 'page_viewed'
-          GROUP BY section_id, page_id, page_sub_type, hour_of_day
-          ORDER BY total_views DESC
-        """
-      },
-      popular_pages: %{
-        description:
-          "Identifies the most popular pages based on view counts and completion rates across all sections.",
-        query: """
-          SELECT
-            page_id,
-            page_sub_type,
-            count(*) as total_views,
-            uniq(user_id) as unique_viewers,
-            avg(if(completion = true, 1, 0)) as completion_rate
-          FROM #{raw_events_table}
-          WHERE page_id IS NOT NULL AND event_type = 'page_viewed'
-          GROUP BY page_id, page_sub_type
-          ORDER BY total_views DESC
-        """
-      },
-
-      # Part Attempt Analytics
-      part_attempt_analysis: %{
-        description:
-          "Provides detailed analysis of individual question parts within activities, including hint usage patterns.",
-        query: """
-          SELECT
-            section_id,
-            activity_id,
-            part_id,
-            count(*) as total_attempts,
-            avg(score) as avg_score,
-            avg(out_of) as avg_possible_score,
-            avg(scaled_score) as avg_scaled_score,
-            countIf(success = true) as successful_attempts,
-            avg(hints_requested) as avg_hints_used,
-            uniq(user_id) as unique_users
-          FROM #{raw_events_table}
-          WHERE section_id IS NOT NULL AND event_type = 'part_attempt'
-          GROUP BY section_id, activity_id, part_id
-          ORDER BY avg_scaled_score DESC
-        """
-      },
-
-      # Cross-Event Analytics
-      comprehensive_section_summary: %{
-        description:
-          "Provides a comprehensive overview of all event types by section, showing overall learning activity patterns.",
-        query: """
-          SELECT
-            event_type,
-            section_id,
-            count(*) as total_events,
-            uniq(user_id) as unique_users,
-            min(timestamp) as earliest_event,
-            max(timestamp) as latest_event
-          FROM #{raw_events_table}
-          WHERE section_id IS NOT NULL
-          GROUP BY event_type, section_id
-          ORDER BY section_id, event_type
-        """
-      },
-
-      # Event Type Distribution
-      event_type_distribution: %{
-        description:
-          "Shows the distribution of different event types across the entire platform to understand overall usage patterns.",
-        query: """
-          SELECT
-            event_type,
-            count(*) as total_events,
-            uniq(user_id) as unique_users,
-            min(timestamp) as earliest_event,
-            max(timestamp) as latest_event
-          FROM #{raw_events_table}
-          GROUP BY event_type
-          ORDER BY total_events DESC
-        """
-      }
-    }
+    query
+    |> execute_query("clickhouse health metadata")
+    |> extract_single_row()
   end
 
-  def humanize_query_name(atom) do
-    atom
-    |> Atom.to_string()
-    |> String.replace("_", " ")
-    |> String.split()
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
+  defp fetch_table_metrics(database, table) do
+    query = """
+    SELECT
+      name,
+      engine,
+      total_rows,
+      total_bytes,
+      metadata_modification_time
+    FROM system.tables
+    WHERE database = '#{escape_single_quotes(database)}'
+      AND name = '#{escape_single_quotes(table)}'
+    """
+
+    query
+    |> execute_query("clickhouse table metrics")
+    |> case do
+      {:ok, %{parsed_body: %{"data" => []}}} -> {:ok, %{"name" => table}}
+      other -> extract_single_row(other)
+    end
+    |> ensure_table_metrics_defaults(table)
+  end
+
+  defp fetch_table_parts_metrics(database, table) do
+    query = """
+    SELECT
+      countIf(active = 1) AS active_parts,
+      max(modification_time) AS last_part_modification,
+      sum(bytes_on_disk) AS bytes_on_disk,
+      sum(rows) AS rows_on_disk
+    FROM system.parts
+    WHERE database = '#{escape_single_quotes(database)}'
+      AND table = '#{escape_single_quotes(table)}'
+    """
+
+    query
+    |> execute_query("clickhouse parts metrics")
+    |> case do
+      {:ok, %{parsed_body: %{"data" => []}}} -> {:ok, %{}}
+      other -> extract_single_row(other)
+    end
+    |> ensure_parts_metrics_defaults()
+  end
+
+  defp extract_single_row({:ok, %{parsed_body: %{"data" => [row | _]}}}) when is_map(row),
+    do: {:ok, row}
+
+  defp extract_single_row({:ok, %{parsed_body: rows}}) when is_list(rows) and rows != [] do
+    case List.first(rows) do
+      row when is_map(row) -> {:ok, row}
+      _ -> {:error, "Unexpected query response shape"}
+    end
+  end
+
+  defp extract_single_row({:ok, _}),
+    do: {:error, "ClickHouse returned no data for health query"}
+
+  defp extract_single_row({:error, reason}), do: {:error, reason}
+
+  defp ensure_table_metrics_defaults({:ok, row}, table) do
+    {:ok,
+     row
+     |> Map.put_new("name", table)
+     |> Map.put_new("engine", nil)
+     |> Map.put_new("total_rows", nil)
+     |> Map.put_new("total_bytes", nil)
+     |> Map.put_new("metadata_modification_time", nil)}
+  end
+
+  defp ensure_table_metrics_defaults({:error, reason}, _table), do: {:error, reason}
+
+  defp ensure_parts_metrics_defaults({:ok, row}) do
+    {:ok,
+     row
+     |> Map.put_new("active_parts", 0)
+     |> Map.put_new("last_part_modification", nil)
+     |> Map.put_new("bytes_on_disk", 0)
+     |> Map.put_new("rows_on_disk", 0)}
+  end
+
+  defp ensure_parts_metrics_defaults({:error, reason}), do: {:error, reason}
+
+  @doc """
+  Collects ClickHouse health metadata and table-level metrics for observability.
+  """
+  def health_summary do
+    database = clickhouse_config().database
+
+    with {:ok, base} <- fetch_health_metadata(database),
+         {:ok, table} <- fetch_table_metrics(database, "raw_events"),
+         {:ok, parts} <- fetch_table_parts_metrics(database, "raw_events") do
+      {:ok,
+       base
+       |> Map.put(:raw_events, table)
+       |> Map.put(:raw_events_parts, parts)}
+    end
   end
 
   @doc """

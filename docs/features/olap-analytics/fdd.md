@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-The OLAP Analytics feature introduces a ClickHouse-backed analytics pipeline that stores unified xAPI events in a `raw_events` table and powers instructor analytics dashboards, including project-level analytics. Ingestion supports two paths: (1) S3 -> SQS -> Lambda ETL that converts JSONL to Parquet and inserts into ClickHouse, and (2) a dev-mode direct ClickHouse uploader for rapid iteration. Administrators gain an operational console to validate ClickHouse health, review sample query definitions, and orchestrate bulk backfills. Two backfill modes are supported: direct S3 pattern ingestion (manual runs) and S3 Inventory manifest ingestion (batch-based runs with pause/resume/cancel). Inventory runs capture per-batch and per-chunk metrics that stream live to the UI. Instructors receive a new analytics tab with curated categories and custom SQL + Vega visualizations, all scoped to a single section. Project analytics reuse the same ClickHouse store but pivot queries on `project_id` and provide a dedicated LiveView dashboard. The design favors idempotent ingestion, clear run tracking, and low operational overhead using Oban workers and ClickHouse HTTP interfaces. Performance targets assume section-level query workloads and moderate backfill concurrency, with heavier project-level queries addressed via indexing and limits. Risks include data quality issues from inconsistent xAPI payloads and heavy custom queries; mitigations include dry-run mode, batch chunking, and UI guardrails.
+The OLAP Analytics feature introduces a ClickHouse-backed analytics pipeline that stores unified xAPI events in a `raw_events` table and powers instructor analytics dashboards, including project-level analytics. Ingestion supports two paths: (1) S3 -> SQS -> Lambda ETL that converts JSONL to Parquet and inserts into ClickHouse, and (2) a dev-mode direct ClickHouse uploader for rapid iteration. Administrators gain an operational console to validate ClickHouse health, review operational metrics, and orchestrate bulk backfills. Two backfill modes are supported: direct S3 pattern ingestion (manual runs) and S3 Inventory manifest ingestion (batch-based runs with pause/resume/cancel). Inventory runs capture per-batch and per-chunk metrics that stream live to the UI. Instructors receive a new analytics tab with curated categories and custom SQL + Vega visualizations, all scoped to a single section. Project analytics reuse the same ClickHouse store but pivot queries on `project_id` and provide a dedicated LiveView dashboard. The design favors idempotent ingestion, clear run tracking, and low operational overhead using Oban workers and ClickHouse HTTP interfaces. Performance targets assume section-level query workloads and moderate backfill concurrency, with heavier project-level queries addressed via indexing and limits. Risks include data quality issues from inconsistent xAPI payloads and heavy custom queries; mitigations include dry-run mode, batch chunking, and UI guardrails.
 
 ## 2. Requirements & Assumptions
 
@@ -43,7 +43,7 @@ The OLAP Analytics feature introduces a ClickHouse-backed analytics pipeline tha
   - **S3 Uploader** (`Oli.Analytics.XAPI.S3Uploader`): writes JSONL bundles to S3.
   - **Lambda ETL** (`cloud/xapi-etl-processor/lambda_function.py`): converts JSONL to Parquet and inserts into ClickHouse.
   - **Direct ClickHouse Uploader** (`Oli.Analytics.XAPI.ClickHouseUploader`): dev-mode parser and inserter using HTTP.
-- **ClickHouse Analytics API** (`Oli.Analytics.ClickhouseAnalytics`): executes read-only analytics queries, health checks, query status/progress, and provides a sample query catalog.
+- **ClickHouse Analytics API** (`Oli.Analytics.ClickhouseAnalytics`): executes read-only analytics queries, health checks, query status/progress, and exposes health metadata and table metrics.
 - **Manual Backfill**:
   - **Backfill Runs** (`Oli.Analytics.Backfill.BackfillRun`) stored in Postgres.
   - **Backfill Worker** (`Oli.Analytics.Backfill.Worker`) executes insert or dry-run queries using the ClickHouse `s3` table function.
@@ -100,7 +100,7 @@ The OLAP Analytics feature introduces a ClickHouse-backed analytics pipeline tha
 ### 5.2 LiveView
 
 - Admin:
-  - `/admin/clickhouse` -> `OliWeb.Admin.ClickHouseAnalyticsView` (health check + sample query library only)
+  - `/admin/clickhouse` -> `OliWeb.Admin.ClickHouseAnalyticsView` (health status + operational metrics)
   - `/admin/clickhouse/backfill` -> `OliWeb.Admin.ClickhouseBackfillLive`
 - Instructor:
   - `/sections/:slug/instructor_dashboard/insights/analytics` -> instructor dashboard analytics tab

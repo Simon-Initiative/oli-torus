@@ -17,7 +17,7 @@ This feature introduces a ClickHouse-based OLAP layer to ingest, store, and quer
 - Goals:
   - Store unified xAPI events in a ClickHouse `raw_events` table for fast OLAP queries.
   - Provide automated ingestion via S3 -> SQS -> Lambda ETL into ClickHouse, with a dev-mode direct uploader.
-  - Allow administrators to run ClickHouse health checks, view sample query definitions, and schedule bulk backfills.
+  - Allow administrators to run ClickHouse health checks, view operational health metrics, and schedule bulk backfills.
   - Support both direct S3-pattern backfills and S3 Inventory manifest driven backfills with pause/resume/cancel controls.
   - Provide an instructor analytics dashboard with curated categories (video, assessment, engagement, performance, cross-event) and custom SQL + Vega visualizations.
   - Add a project-level analytics dashboard scoped to `project_id`, with dedicated visualizations and query paths.
@@ -37,7 +37,7 @@ This feature introduces a ClickHouse-based OLAP layer to ingest, store, and quer
   - Instructors viewing section analytics in the instructor dashboard.
   - Internal data/ops staff validating analytics coverage.
 - Use Cases:
-  - Admin verifies ClickHouse connectivity and inspects sample query definitions.
+  - Admin verifies ClickHouse connectivity and reviews operational health metrics.
   - Admin schedules a backfill from a specific S3 pattern (dry run or insert) and monitors status, metrics, and errors.
   - Admin schedules an inventory-based backfill, pauses or resumes processing, and reviews per-chunk logs.
   - Instructor opens the analytics tab for a section and explores video engagement, assessment performance, and page engagement.
@@ -47,7 +47,7 @@ This feature introduces a ClickHouse-based OLAP layer to ingest, store, and quer
 ## 5. UX / UI Requirements
 
 - Key Screens/States:
-  - Admin ClickHouse Analytics dashboard (health check and sample query library).
+  - Admin ClickHouse Analytics dashboard (health status and operational metrics).
   - Admin ClickHouse Backfill console (create run, list runs, view run metrics, pause/resume/cancel).
   - Inventory batch view with chunk logs (live streaming updates).
   - Instructor Dashboard -> Insights -> Analytics tab (category cards, charts, empty/error states).
@@ -72,7 +72,7 @@ This feature introduces a ClickHouse-based OLAP layer to ingest, store, and quer
 | FR-001 | Create and maintain a ClickHouse `raw_events` table that stores unified xAPI event data.                             | P0       | Analytics Platform |
 | FR-002 | Provide ClickHouse migration tooling and environment configuration (dev + runtime).                                  | P0       | Platform           |
 | FR-003 | Ingest xAPI JSONL objects to ClickHouse via S3 -> SQS -> Lambda ETL, with a direct ClickHouse uploader for dev mode. | P0       | Analytics Platform |
-| FR-004 | Provide an admin UI for ClickHouse health checks and sample query definitions.                                       | P0       | Admin UX           |
+| FR-004 | Provide an admin UI for ClickHouse health checks and operational metrics.                                             | P0       | Admin UX           |
 | FR-005 | Provide manual backfill runs from S3 patterns with dry-run and insert modes, including run status and metrics.       | P0       | Analytics Platform |
 | FR-006 | Provide inventory-based backfills driven by S3 Inventory manifests, with batch scheduling and concurrency controls.  | P0       | Analytics Platform |
 | FR-007 | Record per-run and per-batch metrics, and expose per-chunk log streaming for inventory backfills.                    | P1       | Analytics Platform |

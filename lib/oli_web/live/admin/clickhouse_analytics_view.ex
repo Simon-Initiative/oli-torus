@@ -4,27 +4,23 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   alias Oli.Analytics.ClickhouseAnalytics
   alias Oli.Features
   alias OliWeb.Common.Breadcrumb
-  require Logger
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def mount(_, _, socket) do
     if Features.enabled?("clickhouse-olap") do
-      sample_queries = ClickhouseAnalytics.sample_analytics_queries()
-
       {:ok,
        assign(socket,
          title: "ClickHouse Analytics",
-         breadcrumb: breadcrumb(),
-         health_status: nil,
-         query_result: nil,
-         selected_query: "",
-         custom_query: "",
-         executing: false,
-         sample_queries: sample_queries,
-         dropdown_options: build_dropdown_options(sample_queries)
-       )}
+         breadcrumb: breadcrumb()
+       )
+       |> assign_async(:health_summary, fn ->
+         case ClickhouseAnalytics.health_summary() do
+           {:ok, summary} -> {:ok, %{health_summary: summary}}
+           {:error, reason} -> {:error, reason}
+         end
+       end)}
     else
       {:ok,
        socket
@@ -38,209 +34,158 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     <div class="w-full bg-white dark:bg-gray-900 dark:text-white p-6">
       <div class="max-w-6xl mx-auto">
         <h1 class="text-3xl font-bold mb-6">ClickHouse Analytics Dashboard</h1>
-        <!-- Health Check Section -->
         <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
-          <div class="flex items-center justify-between">
-            <h2 class="text-xl font-semibold">ClickHouse Status</h2>
-            <.button phx-click="health_check" class="btn-primary">
-              Check Health
-            </.button>
-          </div>
+          <h2 class="text-xl font-semibold mb-2">ClickHouse Health</h2>
+          <p class="text-gray-600 dark:text-gray-400 mb-4">
+            Live health and metadata metrics for the ClickHouse connection and raw events storage.
+          </p>
 
-          <%= if @health_status do %>
-            <div class="mt-3">
-              <%= case @health_status do %>
-                <% {:ok, :healthy} -> %>
-                  <div class="text-green-600 dark:text-green-400">
-                    ✅ ClickHouse is healthy and responsive
-                  </div>
-                <% {:error, reason} -> %>
-                  <div class="text-red-600 dark:text-red-400">
-                    ❌ ClickHouse health check failed: <%= inspect(reason) %>
-                  </div>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-        <!-- Query Selection and Execution Section -->
-        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
-          <h2 class="text-xl font-semibold mb-4">Analytics Query</h2>
-
-          <.form for={%{}} as={:query_form} phx-change="query_selected" phx-submit="execute_query">
-            <div class="mb-4">
-              <label class="block text-sm font-medium mb-2">Select Query:</label>
-              <select
-                name="selected_query"
-                class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-                value={@selected_query}
-              >
-                <option value="">-- Select a query --</option>
-                <%= for {value, label} <- @dropdown_options do %>
-                  <option value={value} selected={@selected_query == value}>
-                    <%= label %>
-                  </option>
-                <% end %>
-              </select>
-            </div>
-
-            <%= if @selected_query != "" do %>
-            <%= if @selected_query == "custom" do %>
-              <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Custom Query:</label>
-                <div phx-update="ignore" id="custom-query-container">
-                  <textarea
-                    id="custom_query_textarea"
-                    name="custom_query"
-                    rows="6"
-                    class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 font-mono text-sm"
-                    placeholder="Enter your ClickHouse SQL query here..."
-                  ><%= @custom_query %></textarea>
+          <.async_result :let={summary} assign={@health_summary}>
+            <:loading>
+              <div class="text-gray-500 dark:text-gray-400">Loading health metrics...</div>
+            </:loading>
+            <:failed :let={reason}>
+              <div class="text-red-600 dark:text-red-400">
+                ClickHouse health check failed: <%= inspect(reason) %>
+              </div>
+            </:failed>
+            <% raw_events = Map.get(summary, :raw_events, %{}) %>
+            <% raw_events_parts = Map.get(summary, :raw_events_parts, %{}) %>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
+                <h3 class="text-lg font-semibold">Connection</h3>
+                <div class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                  <div>Status: <span class="text-green-600 dark:text-green-400">Healthy</span></div>
+                  <div>Host: <%= summary["hostname"] || "unknown" %></div>
+                  <div>Version: <%= summary["version"] || "unknown" %></div>
+                  <div>Timezone: <%= summary["timezone"] || "unknown" %></div>
+                  <div>Server time: <%= summary["server_time"] || "unknown" %></div>
+                  <div>Uptime: <%= format_uptime(summary["uptime_seconds"]) %></div>
                 </div>
               </div>
-
-            <% else %>
-                <p class="text-gray-600 dark:text-gray-400"><%= get_query_description(@selected_query, @sample_queries) %></p>
-
-              <div class="my-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                <pre class="text-xs overflow-x-auto"><%= get_query_text(@selected_query, @sample_queries) %></pre>
-              </div>
-            <% end %>
-
-              <div class="flex items-center gap-4">
-                <.button type="submit" class="btn-primary" disabled={@executing}>
-                  <%= if @executing, do: "Executing...", else: "Execute Query" %>
-                </.button>
-              </div>
-            <% end %>
-
-          </.form>
-        </div>
-        <!-- Results Section -->
-        <%= if @query_result do %>
-          <div class="bg-white dark:bg-gray-800 border dark:border-gray-600 rounded-lg p-4">
-            <h2 class="text-xl font-semibold mb-4">Query Results</h2>
-
-            <%= case @query_result do %>
-              <% {:ok, result} -> %>
-                <div class="text-green-600 dark:text-green-400 mb-2 flex items-center">
-                  ✅ Query executed successfully
-                  <%= if Map.has_key?(result, :execution_time_ms) and is_number(result.execution_time_ms) do %>
-                    <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                      (executed in <%= :erlang.float_to_binary(result.execution_time_ms / 1, decimals: 2) %>ms)
-                    </span>
-                  <% end %>
+              <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
+                <h3 class="text-lg font-semibold">Database</h3>
+                <div class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                  <div>Configured DB: <%= summary["configured_database"] || "unknown" %></div>
+                  <div>Current DB: <%= summary["current_database"] || "unknown" %></div>
                 </div>
-                <%= if result.body != "" do %>
-                  <pre class="bg-gray-100 dark:bg-gray-700 p-3 rounded overflow-x-auto text-sm"><%= result.body %></pre>
-                <% else %>
-                  <div class="text-gray-500 dark:text-gray-400 italic">
-                    Query executed successfully (no output)
+              </div>
+              <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4 md:col-span-2">
+                <h3 class="text-lg font-semibold">raw_events</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                  <div>
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Table
+                    </h4>
+                    <div class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                      <div>Engine: <%= raw_events["engine"] || "unknown" %></div>
+                      <div>Total rows: <%= format_int(raw_events["total_rows"]) %></div>
+                      <div>Total bytes: <%= format_bytes(raw_events["total_bytes"]) %></div>
+                      <div>Metadata updated: <%= raw_events["metadata_modification_time"] || "unknown" %></div>
+                    </div>
                   </div>
-                <% end %>
-              <% {:error, reason} -> %>
-                <div class="text-red-600 dark:text-red-400 mb-2">❌ Query failed</div>
-                <pre class="bg-red-100 dark:bg-red-900 p-3 rounded text-sm"><%= reason %></pre>
-            <% end %>
-          </div>
-        <% end %>
+                  <div>
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      Parts
+                    </h4>
+                    <div class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                      <div>Active parts: <%= format_int(raw_events_parts["active_parts"]) %></div>
+                      <div>Rows on disk: <%= format_int(raw_events_parts["rows_on_disk"]) %></div>
+                      <div>Bytes on disk: <%= format_bytes(raw_events_parts["bytes_on_disk"]) %></div>
+                      <div>Last part modification: <%= raw_events_parts["last_part_modification"] || "unknown" %></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </.async_result>
+        </div>
       </div>
     </div>
     """
-  end
-
-  def handle_event("health_check", _params, socket) do
-    health_status = ClickhouseAnalytics.health_check()
-    {:noreply, assign(socket, health_status: health_status)}
-  end
-
-  def handle_event("query_selected", params, socket) do
-    selected_query = Map.get(params, "selected_query", "")
-    custom_query = Map.get(params, "custom_query", socket.assigns.custom_query)
-
-    {:noreply, assign(socket, selected_query: selected_query, custom_query: custom_query)}
-  end
-
-  def handle_event("execute_query", params, socket) do
-    selected_query = Map.get(params, "selected_query", socket.assigns.selected_query)
-    custom_query = Map.get(params, "custom_query", socket.assigns.custom_query)
-
-    # Preserve the custom_query value regardless of execution
-    socket = assign(socket, executing: true, custom_query: custom_query)
-
-    result = case selected_query do
-      "custom" ->
-        ClickhouseAnalytics.execute_query(custom_query, "Custom Query")
-      query_name when query_name != "" ->
-        query_name_atom = String.to_existing_atom(query_name)
-        query_data = socket.assigns.sample_queries[query_name_atom]
-        query_text = if is_map(query_data), do: query_data.query, else: query_data
-        ClickhouseAnalytics.execute_query(query_text, query_name_atom)
-      _ ->
-        {:error, "No query selected"}
-    end
-
-    # Ensure custom_query is preserved after execution
-    {:noreply, assign(socket, query_result: result, executing: false, custom_query: custom_query)}
-  end
-
-  # Legacy event handlers for backward compatibility
-  def handle_event("run_sample_query", %{"query" => query_name}, socket) do
-    query_name_atom = String.to_existing_atom(query_name)
-    query_data = socket.assigns.sample_queries[query_name_atom]
-    query_text = if is_map(query_data), do: query_data.query, else: query_data
-
-    socket = assign(socket, executing: true)
-    result = ClickhouseAnalytics.execute_query(query_text, query_name_atom)
-
-    {:noreply, assign(socket, query_result: result, executing: false)}
-  end
-
-  def handle_event("run_custom_query", %{"custom_query" => query}, socket) do
-    socket = assign(socket, executing: true, custom_query: query)
-    result = ClickhouseAnalytics.execute_query(query, "Custom Query")
-
-    # Preserve the custom query text after execution
-    {:noreply, assign(socket, query_result: result, executing: false, custom_query: query)}
-  end
-
-  defp build_dropdown_options(sample_queries) do
-    sample_options =
-      sample_queries
-      |> Enum.map(fn {key, _query_data} ->
-        {Atom.to_string(key), ClickhouseAnalytics.humanize_query_name(key)}
-      end)
-      |> Enum.sort_by(fn {_key, label} -> label end)
-
-    sample_options ++ [{"custom", "Custom Query"}]
-  end
-
-  defp get_query_text(selected_query, sample_queries) do
-    case String.to_existing_atom(selected_query) do
-      query_name when is_map_key(sample_queries, query_name) ->
-        query_data = sample_queries[query_name]
-        query_text = if is_map(query_data), do: query_data.query, else: query_data
-        query_text |> String.trim()
-      _ ->
-        ""
-    end
-  rescue
-    ArgumentError -> ""
-  end
-
-  defp get_query_description(selected_query, sample_queries) do
-    case String.to_existing_atom(selected_query) do
-      query_name when is_map_key(sample_queries, query_name) ->
-        query_data = sample_queries[query_name]
-        if is_map(query_data), do: query_data.description, else: "No description available"
-      _ ->
-        ""
-    end
-  rescue
-    ArgumentError -> ""
   end
 
   defp breadcrumb(),
     do:
       OliWeb.Admin.AdminView.breadcrumb() ++
         [Breadcrumb.new(%{full_title: "ClickHouse Analytics", link: ~p"/admin/clickhouse"})]
+
+  defp format_int(nil), do: "n/a"
+  defp format_int(value) when is_integer(value), do: format_number(value)
+  defp format_int(value) when is_float(value), do: :erlang.float_to_binary(value, [:compact])
+  defp format_int(value) when is_binary(value), do: value
+  defp format_int(_), do: "n/a"
+
+  defp format_uptime(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {seconds, _} -> format_uptime(seconds)
+      _ -> value
+    end
+  end
+
+  defp format_uptime(value) when is_integer(value) and value >= 0 do
+    {days, rem} = div_rem(value, 86_400)
+    {hours, rem} = div_rem(rem, 3600)
+    {minutes, seconds} = div_rem(rem, 60)
+
+    [
+      format_uptime_unit(days, "d"),
+      format_uptime_unit(hours, "h"),
+      format_uptime_unit(minutes, "m"),
+      format_uptime_unit(seconds, "s")
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] -> "0s"
+      parts -> Enum.join(parts, " ")
+    end
+  end
+
+  defp format_uptime(value), do: format_int(value)
+
+  defp format_bytes(nil), do: "n/a"
+
+  defp format_bytes(value) when is_integer(value) and value >= 0 do
+    units = ["B", "KB", "MB", "GB", "TB"]
+    {scaled, unit} = scale_bytes(value, units)
+    "#{scaled} #{unit}"
+  end
+
+  defp format_bytes(value) when is_binary(value), do: value
+  defp format_bytes(_), do: "n/a"
+
+  defp scale_bytes(bytes, [unit]) do
+    {Integer.to_string(bytes), unit}
+  end
+
+  defp scale_bytes(bytes, [_unit | rest]) when bytes >= 1024 do
+    scale_bytes(div(bytes, 1024), rest)
+  end
+
+  defp scale_bytes(bytes, [unit | _rest]) do
+    {Integer.to_string(bytes), unit}
+  end
+
+  defp format_number(value) when is_integer(value) do
+    value
+    |> Integer.to_string()
+    |> format_number_string()
+  end
+
+  defp format_number_string("-" <> digits), do: "-" <> format_number_string(digits)
+
+  defp format_number_string(digits) do
+    digits
+    |> String.reverse()
+    |> String.replace(~r/.{1,3}/, "\\0,")
+    |> String.trim_trailing(",")
+    |> String.reverse()
+  end
+
+  defp div_rem(value, divisor) do
+    {div(value, divisor), rem(value, divisor)}
+  end
+
+  defp format_uptime_unit(0, _unit), do: nil
+  defp format_uptime_unit(value, unit), do: "#{format_number(value)}#{unit}"
 end
