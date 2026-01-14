@@ -12,7 +12,9 @@ $element-margin-bottom: 1.5em;
       font-weight: normal;
     }
   }
-
+  // [MER-5142] To allow for semantic consistency under page title as h1, authored content heading
+  // levels h1..h5 are now incremented on rendering in delivery/preview. These remain the
+  // *authored* level styles. So authored h1 content element renders as <h2 class="h1">, etc
   h1,
   .h1 {
     font-size: 1.5em;
@@ -88,8 +90,8 @@ $element-margin-bottom: 1.5em;
 
   pre {
     text-align: left;
-    color: var(--color-body-color);
-    background: var(--color-gray-100);
+    color: inherit;
+    background: inherit;
     font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
     font-size: 0.9em;
     letter-spacing: -0.003em;

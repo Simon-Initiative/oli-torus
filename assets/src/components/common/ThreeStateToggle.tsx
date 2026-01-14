@@ -18,6 +18,7 @@ export const ThreeStateToggle = ({
 
 interface ToggleOptionProps {
   id: string;
+  srLabel?: string;
   checked?: boolean;
   onChange?: () => void;
   className?: ClassName;
@@ -25,6 +26,7 @@ interface ToggleOptionProps {
 }
 export const ToggleOption = ({
   id,
+  srLabel,
   checked,
   children,
   onChange,
@@ -32,11 +34,11 @@ export const ToggleOption = ({
   checkedClassName,
 }: PropsWithChildren<ToggleOptionProps>) => {
   return (
-    <>
+    <span className="inline-flex">
       <input
         type="radio"
         id={id}
-        className="hidden"
+        className="sr-only peer"
         name="state"
         onChange={onChange}
         checked={checked}
@@ -48,11 +50,13 @@ export const ToggleOption = ({
             (checkedClassName ||
               'dark:!bg-slate-800 dark:!border-zinc-400 !border-black/90 bg-gray-400'),
           'w-7 h-7 p-1 rounded-md border dark:border-zinc-600 border-black/70 justify-center items-center gap-2.5 inline-flex cursor-pointer',
+          'peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-black/80 dark:peer-focus-visible:outline-white',
           className,
         )}
       >
+        {srLabel && <span className="sr-only">{srLabel}</span>}
         {children}
       </label>
-    </>
+    </span>
   );
 };

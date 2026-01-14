@@ -72,12 +72,12 @@ defmodule OliWeb.Delivery.Student.Utils do
             >
               {@index}.
             </div>
-            <div
+            <h1
               role="page title"
               class="grow shrink basis-0 text-Text-text-high text-[32px] sm:text-[40px] leading-[44px] font-bold"
             >
               {@page_context.page.title}
-            </div>
+            </h1>
           </div>
         </div>
         <div class="justify-start items-center gap-3 flex">
