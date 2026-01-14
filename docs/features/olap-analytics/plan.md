@@ -71,7 +71,7 @@ Scope and guardrails reference the approved PRD (`docs/features/olap-analytics/p
   - [x] Implement SectionAnalytics component with category queries and VegaLite chart specs.
   - [x] Add engagement filters (date range, max pages) and title enrichment.
   - [x] Add custom analytics editors (SQL + Vega) with Monaco integration.
-  - [ ] Configure a dedicated ClickHouse read-only user for custom analytics queries.
+  - [x] Configure a dedicated ClickHouse read-only user for custom analytics queries.
   - [ ] Enforce server-side SQL validation: allow only SELECT and require section_id/project_id predicate or CTE filter.
   - [x] Gate access with `instructor_dashboard_analytics` scoped feature flag.
 - Definition of Done: Instructors can view analytics for enabled sections and run custom queries.
