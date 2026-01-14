@@ -259,7 +259,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <.link
             :if={@section}
             id="mobile_header_logo_button"
-            navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_admin)}
+            navigate={
+              logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_admin)
+            }
             class="shrink-0"
           >
             <.logo_img section={@section} />
@@ -311,7 +313,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             </div>
           </div>
           <.link href={~p"/users/settings"} class="p-2" aria-label="Settings">
-            <Icons.settings />
+            <Icons.adjustments />
           </.link>
         </div>
       </nav>
@@ -547,7 +549,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             </div>
           </div>
           <.link href={~p"/users/settings"} class="p-2" aria-label="Settings">
-            <Icons.settings />
+            <Icons.adjustments />
           </.link>
         </div>
       </nav>
