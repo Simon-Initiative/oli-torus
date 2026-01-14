@@ -13191,10 +13191,6 @@ li.page-item {
   color: rgb(39 92 175 / var(--tw-text-opacity));
 }
 
-.sr-only {
-  display: none;
-}
-
 table {
   min-width: 100%;
   border-width: 1px;
@@ -26776,6 +26772,22 @@ Not supports in Firefox and IE */
   --tw-ring-color: rgb(126 165 226 / var(--tw-ring-opacity));
 }
 
+.peer:focus-visible ~ .peer-focus-visible\:outline {
+  outline-style: solid;
+}
+
+.peer:focus-visible ~ .peer-focus-visible\:outline-2 {
+  outline-width: 2px;
+}
+
+.peer:focus-visible ~ .peer-focus-visible\:outline-offset-2 {
+  outline-offset: 2px;
+}
+
+.peer:focus-visible ~ .peer-focus-visible\:outline-black\/80 {
+  outline-color: rgb(0 0 0 / 0.8);
+}
+
 .aria-expanded\:font-bold[aria-expanded="true"] {
   font-weight: 700;
 }
@@ -28520,6 +28532,10 @@ Not supports in Firefox and IE */
 .dark .peer:focus ~ .dark\:peer-focus\:ring-primary-800 {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(19 44 83 / var(--tw-ring-opacity));
+}
+
+.dark .peer:focus-visible ~ .dark\:peer-focus-visible\:outline-white {
+  outline-color: #fff;
 }
 
 .dark .dark\:aria-expanded\:font-bold[aria-expanded="true"] {
