@@ -915,7 +915,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  attr :id, :string, default: "exit_course_button"
+  attr :id, :string, default: "exit_workspace_button"
   attr :sidebar_expanded, :boolean, default: true
   attr :target_workspace, :atom, default: :student_workspace
 
@@ -931,6 +931,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
           Exit Course
         </div>
+        <span :if={!@sidebar_expanded} class="sr-only">Exit Course</span>
       </div>
     </.link>
     """
@@ -963,6 +964,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
           {@title}
         </div>
+        <span :if={!@sidebar_expanded} class="sr-only">{@title}</span>
       </div>
     </.link>
     """
