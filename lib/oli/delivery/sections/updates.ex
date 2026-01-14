@@ -536,8 +536,10 @@ defmodule Oli.Delivery.Sections.Updates do
               false
           end
 
-        if is_container? or is_nil(current_children) do
-          new_published_resource = new_published_resources_map[resource_id]
+        # Guard: skip resources not in this publication (e.g., remixed from another project)
+        new_published_resource = new_published_resources_map[resource_id]
+
+        if (is_container? or is_nil(current_children)) and not is_nil(new_published_resource) do
           new_children = new_published_resource.children
 
           updated_section_resource =
