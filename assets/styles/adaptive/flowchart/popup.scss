@@ -14,6 +14,10 @@ janus-popup:has(input) {
   input[src*='data'] {
     opacity: 0;
   }
+  // Ensure custom icon URLs (non-data URLs) are visible
+  input[src]:not([src*='data']) {
+    opacity: 1 !important;
+  }
 
   // Target input elements directly instead of janus-popup element
   &[model*='repo/icons'] input {
