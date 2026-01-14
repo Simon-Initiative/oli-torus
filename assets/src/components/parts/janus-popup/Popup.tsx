@@ -505,13 +505,25 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
               }}
               {...(useToggleBehavior
                 ? {
-                    onClick: handleClick,
+                    onClick: (e) => {
+                      handleClick();
+                      // Blur icon after click to prevent focus-related flicker when label exists
+                      if (shouldShowLabel && e.currentTarget) {
+                        e.currentTarget.blur();
+                      }
+                    },
                   }
                 : {
                     onMouseEnter: handleMouseEnter,
                     onMouseLeave: handleMouseLeave,
                     onFocus: handleFocus,
                     onBlur: handleBlur,
+                    onClick: (e) => {
+                      // Blur icon after click to prevent focus-related flicker when label exists
+                      if (shouldShowLabel && e.currentTarget) {
+                        e.currentTarget.blur();
+                      }
+                    },
                   })}
             />
           )}

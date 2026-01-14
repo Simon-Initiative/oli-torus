@@ -11,12 +11,19 @@ janus-popup:has(input) {
     opacity: 1;
   }
   // Legacy: hide input with src data URL (old behavior - icon shown via background-image on janus-popup)
-  input[src*='data'] {
+  // Only match data URLs that start with "data:" to avoid matching URLs containing "data" in the path
+  input[src^='data:'] {
     opacity: 0;
   }
   // Ensure custom icon URLs (non-data URLs) are visible
-  input[src]:not([src*='data']) {
+  input[src]:not([src^='data:']) {
     opacity: 1 !important;
+  }
+  // Prevent focus/active styles from causing layout shifts on custom icon URLs
+  input[src]:not([src^='data:']):focus,
+  input[src]:not([src^='data:']):active {
+    outline: none;
+    box-shadow: none;
   }
 
   // Target input elements directly instead of janus-popup element
