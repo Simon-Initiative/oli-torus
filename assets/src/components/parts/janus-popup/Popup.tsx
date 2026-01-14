@@ -257,8 +257,8 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const iconTriggerStyle: CSSProperties = shouldFixIconSize
     ? { width: 32, height: 32, flexShrink: 0 } // Always fixed when label exists
     : {
-        width: width && width > 0 ? width : undefined,
-        height: height && height > 0 ? height : undefined,
+        width: width && typeof width === 'number' && width > 0 ? width : undefined,
+        height: height && typeof height === 'number' && height > 0 ? height : undefined,
         minWidth: 32,
         minHeight: 32
       }; // When no label, use container size if set, otherwise allow resizing with min 32x32
