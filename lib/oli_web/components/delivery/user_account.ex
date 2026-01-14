@@ -218,7 +218,10 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def author_menu_items(assigns) do
     ~H"""
     <.menu_item_open_admin_panel :if={@is_admin} />
-    <.menu_item_edit_account href={~p"/authors/settings"} />
+    <.menu_item_link href={~p"/authors/settings"}>
+      Edit Account
+    </.menu_item_link>
+    <.menu_divider />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
     <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
@@ -364,26 +367,13 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
       _method ->
         ~H"""
-        <%= link to: @href, method: @method, class: "w-full text-gray-800 hover:text-white dark:text-white text-sm font-normal font-['Roboto'] h-8 px-1.5 py-2 mt-[10px] m-[5px] rounded-md border border-rose-400 justify-center items-center gap-2.5 inline-flex cursor-pointer hover:no-underline hover:bg-red-300 hover:border-red-500 dark:hover:bg-red-950/40", target: @target do %>
-          {render_slot(@inner_block)}
-        <% end %>
+        <li class="block p-1 whitespace-normal">
+          <%= link to: @href, method: @method, class: "w-full text-gray-800 hover:text-white dark:text-white text-sm font-normal font-['Roboto'] h-8 px-1.5 py-2 mt-[10px] m-[5px] rounded-md border border-rose-400 justify-center items-center gap-2.5 inline-flex cursor-pointer hover:no-underline hover:bg-red-300 hover:border-red-500 dark:hover:bg-red-950/40", target: @target do %>
+            {render_slot(@inner_block)}
+          <% end %>
+        </li>
         """
     end
-  end
-
-  attr(:href, :string, required: true)
-  attr(:label, :string, default: "Edit Account")
-
-  def menu_item_edit_account(assigns) do
-    ~H"""
-    <.menu_item>
-      <.menu_item_link href={@href}>
-        {@label}
-      </.menu_item_link>
-    </.menu_item>
-
-    <.menu_divider />
-    """
   end
 
   def menu_item_confirm_user_account(assigns) do
