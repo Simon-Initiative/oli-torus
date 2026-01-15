@@ -10,6 +10,7 @@ defmodule Oli.Resources.CollaborationTest do
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
+  alias Lti_1p3.Roles.ContextRoles
 
   defp build_project_with_one_collab_space(published \\ nil) do
     page_revision_1 =
@@ -437,6 +438,46 @@ defmodule Oli.Resources.CollaborationTest do
 
       assert {3, 3} ==
                Collaboration.count_collab_spaces_enabled_in_pages_for_section(section.slug)
+    end
+  end
+
+  describe "soft_delete_post/2 authorization" do
+    setup do
+      section = insert(:section)
+      owner = insert(:user)
+      other_user = insert(:user)
+      instructor = insert(:user)
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      post =
+        insert(:post,
+          user: owner,
+          section: section
+        )
+
+      %{
+        section: section,
+        owner: owner,
+        other_user: other_user,
+        instructor: instructor,
+        post: post
+      }
+    end
+
+    test "allows owner to delete", %{owner: owner, post: post} do
+      assert {1, _} = Collaboration.soft_delete_post(post.id, owner)
+      assert %{status: :deleted} = Collaboration.get_post_by(%{id: post.id})
+    end
+
+    test "prevents other student from deleting", %{other_user: other_user, post: post} do
+      assert {:error, :unauthorized} = Collaboration.soft_delete_post(post.id, other_user)
+      assert %{status: :approved} = Collaboration.get_post_by(%{id: post.id})
+    end
+
+    test "allows instructor for the section to delete", %{instructor: instructor, post: post} do
+      assert {1, _} = Collaboration.soft_delete_post(post.id, instructor)
+      assert %{status: :deleted} = Collaboration.get_post_by(%{id: post.id})
     end
   end
 

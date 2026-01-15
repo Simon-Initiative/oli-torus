@@ -1,14 +1,14 @@
+import path from 'node:path';
 import { test as base } from '@playwright/test';
 import { Utils } from '@core/Utils';
 import { Verifier } from '@core/verify/Verifier';
-import { FileManager } from '@core/FileManager';
+import { seedScenarioFromFile, SeedScenarioResponse } from '@core/seedScenario';
 import { AdministrationTask } from '@tasks/AdministrationTask';
 import { CurriculumTask } from '@tasks/CurriculumTask';
 import { HomeTask } from '@tasks/HomeTask';
 import { ProjectTask } from '@tasks/ProjectTask';
 import { StudentTask } from '@tasks/StudentTask';
-
-const closeBrowser = FileManager.getValueEnv('AUTO_CLOSE_BROWSER') === 'true';
+import { getBaseUrl, getScenarioToken, shouldAutoCloseBrowser } from '@core/runtimeConfig';
 
 type MyFixtures = {
   forEachTest: void;
@@ -19,6 +19,7 @@ type MyFixtures = {
   homeTask: HomeTask;
   projectTask: ProjectTask;
   studentTask: StudentTask;
+  seedScenario: (relativePath: string, params?: Record<string, unknown>) => Promise<SeedScenarioResponse>;
 };
 
 export const test = base.extend<MyFixtures>({
@@ -27,7 +28,7 @@ export const test = base.extend<MyFixtures>({
       await homeTask.goToSite();
       await use();
 
-      if (closeBrowser) {
+      if (shouldAutoCloseBrowser()) {
         await homeTask.closeSite();
       }
     },
@@ -69,5 +70,23 @@ export const test = base.extend<MyFixtures>({
       await use(new StudentTask(page));
     },
     { title: '🎓 Student Task' },
+  ],
+  seedScenario: [
+    async ({ request }, use, testInfo) => {
+      const scenarioRunner = async (relativePath: string, params: Record<string, unknown> = {}) => {
+        const scenarioPath = path.resolve(path.dirname(testInfo.file), relativePath);
+        const projectBaseUrl = (testInfo.project.use.baseURL as string) || getBaseUrl();
+        return seedScenarioFromFile(
+          request,
+          scenarioPath,
+          params,
+          projectBaseUrl,
+          getScenarioToken(),
+        );
+      };
+
+      await use(scenarioRunner);
+    },
+    { title: '🧪 Scenario Seeder' },
   ],
 });

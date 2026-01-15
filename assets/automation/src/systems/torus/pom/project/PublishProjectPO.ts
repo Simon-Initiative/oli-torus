@@ -27,6 +27,14 @@ export class PublishProjectPO {
     await this.autoPushCheckbox.click();
   }
 
+  async autoPushIsChecked() {
+    if (await this.autoPushCheckbox.isVisible()) {
+      return await this.autoPushCheckbox.isChecked();
+    }
+
+    return null;
+  }
+
   async fillDescription(description: string) {
     await this.descriptionTextarea.fill(description);
   }

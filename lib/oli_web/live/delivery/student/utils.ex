@@ -72,12 +72,12 @@ defmodule OliWeb.Delivery.Student.Utils do
             >
               {@index}.
             </div>
-            <div
+            <h1
               role="page title"
               class="grow shrink basis-0 text-Text-text-high text-[32px] sm:text-[40px] leading-[44px] font-bold"
             >
               {@page_context.page.title}
-            </div>
+            </h1>
           </div>
         </div>
         <div class="justify-start items-center gap-3 flex">
@@ -140,13 +140,20 @@ defmodule OliWeb.Delivery.Student.Utils do
       >
         <div class="self-stretch justify-start items-center gap-2.5 inline-flex mb-2">
           <span class="text-Text-text-high text-sm sm:text-base font-bold font-['Inter'] leading-normal">
-            LEARNING OBJECTIVES & PROFICIENCY
+            LEARNING OBJECTIVES &
+            <button
+              phx-click={Modal.show_modal("proficiency_explanation_modal")}
+              class="text-Text-text-high hover:underline cursor-pointer"
+            >
+              PROFICIENCY
+            </button>
           </span>
           <button
             phx-click={Modal.show_modal("proficiency_explanation_modal")}
             aria-label="Explain proficiency"
+            class="w-6 h-6 flex items-center justify-center group"
           >
-            <Icons.help />
+            <Icons.help class="stroke-Icon-icon-default group-hover:stroke-Icon-icon-hover" />
           </button>
         </div>
         <div

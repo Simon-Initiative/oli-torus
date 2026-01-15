@@ -29,6 +29,7 @@ defmodule OliWeb.UserAuth do
     conn
     |> renew_session()
     |> put_token_in_session(token)
+    |> maybe_put_settings_return_to(params)
     # A lot of existing liveviews depends on the current_user_id being in the session.
     # We eventually want to remove this, but for now, we will add it to appease the existing code.
     |> put_user_id_in_session(user.id)
@@ -43,6 +44,13 @@ defmodule OliWeb.UserAuth do
   defp maybe_write_remember_me_cookie(conn, _token, _params) do
     conn
   end
+
+  defp maybe_put_settings_return_to(conn, %{"settings_return_to" => return_to})
+       when is_binary(return_to) and return_to != "" do
+    put_session(conn, "settings_return_to", return_to)
+  end
+
+  defp maybe_put_settings_return_to(conn, _params), do: conn
 
   @doc """
   Creates a new session for the user.
@@ -97,6 +105,7 @@ defmodule OliWeb.UserAuth do
         "author_token",
         "author_live_socket_id",
         "current_author_id",
+        "settings_return_to",
         # Preserve enrollment invitation data for SSO flows
         "pending_section_enrollment",
         "invitation_email",

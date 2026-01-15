@@ -170,6 +170,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   def render(assigns) do
     ~H"""
+    <h1 class="sr-only">{@section.title}</h1>
     <.header_banner
       ctx={@ctx}
       section_slug={@section_slug}
@@ -178,6 +179,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       suggested_page={@last_open_and_unfinished_page || @nearest_upcoming_lesson}
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
       has_scheduled_resources?={@has_scheduled_resources?}
+    />
+    <.home_mobile_tabs
+      show_course_progress={@completed_pages.total_pages > 0}
+      show_agenda={@section.agenda && not is_nil(@grouped_agenda_resources)}
     />
     <div id="home-view" phx-hook="Countdown">
       <div class="flex flex-col md:flex-row p-3 md:p-8 justify-start items-start gap-6">
@@ -225,6 +230,59 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
+  attr(:show_course_progress, :boolean, required: true)
+  attr(:show_agenda, :boolean, required: true)
+
+  defp home_mobile_tabs(assigns) do
+    ~H"""
+    <nav
+      id="home-mobile-tabs"
+      phx-hook="HomeMobileTabs"
+      aria-label="Course home sections"
+      class="md:hidden fixed top-14 left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden"
+    >
+      <div class="relative h-12 overflow-x-auto scrollbar-hide">
+        <div class="flex items-center gap-6 h-12 px-4" data-home-tabs-container>
+          <button
+            type="button"
+            data-home-tab
+            data-target="home-continue-learning"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
+          >
+            Continue Learning
+          </button>
+          <button
+            type="button"
+            data-home-tab
+            data-target="home-assignments"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
+          >
+            My Assignments
+          </button>
+          <button
+            :if={@show_course_progress}
+            type="button"
+            data-home-tab
+            data-target="home-course-progress"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
+          >
+            Course Progress
+          </button>
+          <button
+            :if={@show_agenda}
+            type="button"
+            data-home-tab
+            data-target="home-agenda"
+            class="h-12 px-3 text-sm leading-4 font-normal font-['Open_Sans'] whitespace-nowrap border-b-2 border-transparent text-Text-text-high"
+          >
+            Upcoming Agenda
+          </button>
+        </div>
+      </div>
+    </nav>
+    """
+  end
+
   attr(:ctx, :map, default: nil)
   attr(:section_slug, :string, required: true)
   attr(:section, :any, required: true)
@@ -235,7 +293,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp header_banner(%{has_visited_section: true} = assigns) do
     ~H"""
-    <div class="w-full h-[20rem] md:h-72 relative flex items-center">
+    <div
+      id="home-continue-learning"
+      data-home-section="continue-learning"
+      tabindex="-1"
+      class="w-full h-[20rem] md:h-72 relative flex items-center scroll-mt-28"
+    >
       <div class="inset-0 absolute">
         <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
         <img
@@ -254,9 +317,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         :if={!is_nil(@suggested_page)}
         class="flex flex-col w-full px-3 md:px-9 absolute justify-center items-start gap-2 md:gap-6"
       >
-        <h3 class="text-white text-lg md:text-2xl font-bold leading-loose tracking-tight">
+        <h2
+          id="home-banner-title"
+          class="text-white text-lg md:text-2xl font-bold leading-loose tracking-tight"
+        >
           Continue Learning
-        </h3>
+        </h2>
         <div class="flex flex-col lg:flex-row self-stretch p-6 bg-zinc-900 bg-opacity-40 rounded-xl justify-between lg:items-end gap-3">
           <div class="flex-col justify-center items-start gap-3.5 inline-flex">
             <div class="self-stretch h-3 justify-start items-center gap-3.5 inline-flex">
@@ -348,7 +414,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp header_banner(assigns) do
     ~H"""
-    <div class="w-full h-[20rem] md:h-72 relative flex items-center">
+    <div
+      id="home-continue-learning"
+      data-home-section="continue-learning"
+      tabindex="-1"
+      class="w-full h-[20rem] md:h-72 relative flex items-center scroll-mt-28"
+    >
       <div class="inset-0 absolute">
         <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
         <img
@@ -364,13 +435,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       </div>
 
       <div class="flex flex-col w-full px-9 absolute justify-center items-start gap-2 md:gap-6">
-        <h3 class="w-full text-white text-2xl font-bold tracking-wide">
+        <div id="home-banner-title" class="w-full text-white text-2xl font-bold tracking-wide">
           Hi, {user_given_name(@ctx)} !
-        </h3>
+        </div>
         <div class="flex flex-col items-start gap-2.5">
-          <h4 class="text-3xl text-white font-medium">
+          <h2 class="text-3xl text-white font-medium">
             {build_welcome_title(@section.welcome_title)}
-          </h4>
+          </h2>
           <div class="text-white/60 text-lg font-semibold">
             {@section.encouraging_subtitle ||
               "Dive Into Discovery. Begin Your Learning Adventure Now!"}
@@ -403,6 +474,78 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               </div>
             </div>
           </.link>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  # Shared tooltip content component
+  defp course_progress_tooltip_content(assigns) do
+    ~H"""
+    <div class="grow shrink basis-0">
+      <span class="text-[#353740] dark:text-[#eeebf5] text-sm font-normal leading-normal">
+        Course progress is calculated based on the pages you visit and the percentage of activities you complete.
+      </span>
+      <button
+        phx-click={JS.push_focus() |> Modal.show_modal("course_progress_calculation_modal")}
+        class="text-[#353740] dark:text-[#eeebf5] text-sm font-bold underline leading-normal"
+      >
+        Learn more.
+      </button>
+    </div>
+    """
+  end
+
+  # Desktop tooltip with AutoHideTooltip hook (hover-based)
+  defp course_progress_tooltip_desktop(assigns) do
+    ~H"""
+    <div class="hidden xl:flex items-baseline gap-2.5 relative hover:cursor-pointer">
+      <button
+        type="button"
+        id="course_progress_icon_desktop"
+        aria-label="Explain course progress calculation"
+        xphx-mouseover={JS.show(to: "#course_progress_tooltip_desktop")}
+        phx-focus={JS.show(to: "#course_progress_tooltip_desktop")}
+        class="size-5 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+      >
+        <Icons.info />
+      </button>
+      <div
+        id="course_progress_tooltip_desktop"
+        phx-hook="AutoHideTooltip"
+        data-trigger-id="course_progress_icon_desktop"
+        class="hidden absolute z-50 -top-[108px] -right-[323px] p-4"
+      >
+        <div class="w-[320px] h-[88px] px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
+          <.course_progress_tooltip_content />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  # Mobile/Tablet tooltip with Popover hook (click-based)
+  defp course_progress_tooltip_mobile(assigns) do
+    ~H"""
+    <div class="xl:hidden flex items-baseline gap-2.5">
+      <button
+        id="course_progress_icon_mobile"
+        type="button"
+        aria-label="Explain course progress calculation"
+        class="size-5 cursor-pointer"
+      >
+        <Icons.info />
+      </button>
+      <div
+        id="course_progress_tooltip_mobile"
+        phx-hook="Popover"
+        data-trigger-id="course_progress_icon_mobile"
+        class="invisible fixed z-50 left-1/2 -translate-x-1/2 p-4 w-[80vw] max-w-[30rem] opacity-0 transition-opacity duration-150"
+        style="top: var(--trigger-top, -9999px);"
+      >
+        <div class="w-full px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
+          <.course_progress_tooltip_content />
         </div>
       </div>
     </div>
@@ -495,40 +638,23 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       </Modal.modal>
     </div>
-    <div class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start inline-flex">
+    <div
+      id="home-course-progress"
+      data-home-section="course-progress"
+      tabindex="-1"
+      class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start inline-flex scroll-mt-28"
+    >
       <div class="flex-col justify-start items-start gap-3 md:gap-5 inline-flex grow">
         <div class="flex items-baseline gap-2.5 relative">
-          <div class="text-2xl font-bold leading-loose">
+          <h2 class="text-2xl font-bold leading-loose">
             Course Progress
-          </div>
-          <div
-            id="course_progress_tooltip"
-            phx-hook="AutoHideTooltip"
-            class="hidden absolute z-50 -top-[89px] -right-[316px] p-4"
-          >
-            <div class="w-[320px] h-[88px] px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
-              <div class="grow shrink basis-0">
-                <span class="text-[#353740] dark:text-[#eeebf5] text-sm font-normal leading-normal">
-                  Course progress is calculated based on the pages you visit and the percentage of activities you complete.
-                </span>
-                <button
-                  phx-click={
-                    Modal.show_modal("course_progress_calculation_modal")
-                    |> JS.hide(to: "#course_progress_tooltip")
-                  }
-                  class="text-[#353740] dark:text-[#eeebf5] text-sm font-bold underline leading-normal"
-                >
-                  Learn more.
-                </button>
-              </div>
-            </div>
-          </div>
-          <span
-            xphx-mouseover={JS.show(to: "#course_progress_tooltip")}
-            class="size-5 hover:cursor-pointer"
-          >
-            <Icons.info />
-          </span>
+          </h2>
+
+          <%!-- Desktop tooltip (hidden on mobile/tablet) --%>
+          <.course_progress_tooltip_desktop />
+
+          <%!-- Mobile/Tablet tooltip (hidden on desktop) --%>
+          <.course_progress_tooltip_mobile />
         </div>
         <%= if @has_visited_section do %>
           <div class="flex-col justify-start items-start flex">
@@ -733,14 +859,17 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
     ~H"""
     <div
-      role="my assignments"
-      class="w-full p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex"
+      id="home-assignments"
+      data-home-section="assignments"
+      aria-label="My Assignments"
+      tabindex="-1"
+      class="w-full p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex scroll-mt-28"
     >
       <div class="w-full flex-col justify-start items-start gap-5 flex grow">
         <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
-          <div class="text-2xl font-bold leading-loose tracking-tight">
+          <h2 class="text-2xl font-bold leading-loose tracking-tight">
             My Assignments
-          </div>
+          </h2>
         </div>
         <div class="w-full h-fit overflow-hidden dark:text-white justify-start items-start gap-3.5 flex xl:flex-row flex-col">
           <button
@@ -1073,12 +1202,17 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp agenda(assigns) do
     ~H"""
-    <div class="w-full h-fit overflow-y-auto p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+    <div
+      id="home-agenda"
+      data-home-section="agenda"
+      tabindex="-1"
+      class="w-full h-fit overflow-y-auto p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex scroll-mt-28"
+    >
       <div class="flex-col justify-start items-start gap-7 inline-flex grow">
         <div class="self-stretch justify-between items-baseline inline-flex gap-2.5">
-          <div class="text-2xl font-bold leading-loose tracking-tight">
+          <h2 class="text-2xl font-bold leading-loose tracking-tight">
             Upcoming Agenda
-          </div>
+          </h2>
           <.link
             :if={@has_scheduled_resources?}
             href={

@@ -25,6 +25,9 @@ defmodule Oli.Scenarios.DirectiveParser do
     AnswerQuestionDirective,
     CloneDirective,
     UseDirective,
+    CollaboratorDirective,
+    MediaDirective,
+    BibliographyDirective,
     HookDirective
   }
 
@@ -66,7 +69,7 @@ defmodule Oli.Scenarios.DirectiveParser do
   # Parse individual directive based on its type
   defp parse_directive(%{"project" => project_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "title", "root", "objectives", "tags"]
+    allowed_attrs = ["name", "title", "root", "objectives", "tags", "slug", "visibility"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, project_data, "project") do
       :ok ->
@@ -75,7 +78,9 @@ defmodule Oli.Scenarios.DirectiveParser do
           title: project_data["title"],
           root: parse_node(project_data["root"]),
           objectives: parse_objectives(project_data["objectives"]),
-          tags: parse_tags(project_data["tags"])
+          tags: parse_tags(project_data["tags"]),
+          slug: project_data["slug"],
+          visibility: parse_visibility(project_data["visibility"])
         }
 
       {:error, msg} ->
@@ -102,7 +107,16 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"section" => section_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "title", "from", "type", "registration_open"]
+    allowed_attrs = [
+      "name",
+      "title",
+      "from",
+      "type",
+      "registration_open",
+      "slug",
+      "open_and_free",
+      "requires_enrollment"
+    ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, section_data, "section") do
       :ok ->
@@ -111,7 +125,11 @@ defmodule Oli.Scenarios.DirectiveParser do
           title: section_data["title"],
           from: section_data["from"],
           type: parse_section_type(section_data["type"]),
-          registration_open: Map.get(section_data, "registration_open", true)
+          registration_open: Map.get(section_data, "registration_open", true),
+          slug: section_data["slug"],
+          open_and_free: parse_boolean(section_data["open_and_free"], false, "open_and_free"),
+          requires_enrollment:
+            parse_boolean(section_data["requires_enrollment"], false, "requires_enrollment")
         }
 
       {:error, msg} ->
@@ -268,7 +286,17 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"user" => user_data}) do
     # Validate attributes
-    allowed_attrs = ["name", "type", "email", "given_name", "family_name"]
+    allowed_attrs = [
+      "name",
+      "type",
+      "email",
+      "given_name",
+      "family_name",
+      "password",
+      "system_role",
+      "can_create_sections",
+      "email_verified"
+    ]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, user_data, "user") do
       :ok ->
@@ -277,7 +305,11 @@ defmodule Oli.Scenarios.DirectiveParser do
           type: parse_user_type(user_data["type"]),
           email: user_data["email"] || "#{user_data["name"]}@test.edu",
           given_name: user_data["given_name"] || user_data["name"],
-          family_name: user_data["family_name"] || "Test"
+          family_name: user_data["family_name"] || "Test",
+          password: user_data["password"],
+          system_role: parse_system_role(user_data["system_role"]),
+          can_create_sections: parse_can_create_sections(user_data["can_create_sections"]),
+          email_verified: parse_email_verified(user_data["email_verified"])
         }
 
       {:error, msg} ->
@@ -287,14 +319,15 @@ defmodule Oli.Scenarios.DirectiveParser do
 
   defp parse_directive(%{"enroll" => enroll_data}) do
     # Validate attributes
-    allowed_attrs = ["user", "section", "role"]
+    allowed_attrs = ["user", "section", "role", "email"]
 
     case DirectiveValidator.validate_attributes(allowed_attrs, enroll_data, "enroll") do
       :ok ->
         %EnrollDirective{
           user: enroll_data["user"],
           section: enroll_data["section"],
-          role: parse_enrollment_role(enroll_data["role"])
+          role: parse_enrollment_role(enroll_data["role"]),
+          email: enroll_data["email"]
         }
 
       {:error, msg} ->
@@ -404,6 +437,53 @@ defmodule Oli.Scenarios.DirectiveParser do
     end
   end
 
+  defp parse_directive(%{"collaborator" => collab_data}) do
+    allowed_attrs = ["user", "project", "email"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, collab_data, "collaborator") do
+      :ok ->
+        %CollaboratorDirective{
+          user: collab_data["user"],
+          project: collab_data["project"],
+          email: collab_data["email"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"media" => media_data}) do
+    allowed_attrs = ["project", "path", "mime"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, media_data, "media") do
+      :ok ->
+        %MediaDirective{
+          project: media_data["project"],
+          path: media_data["path"],
+          mime: media_data["mime"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"bibliography" => biblio_data}) do
+    allowed_attrs = ["project", "entry"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, biblio_data, "bibliography") do
+      :ok ->
+        %BibliographyDirective{
+          project: biblio_data["project"],
+          entry: biblio_data["entry"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
   defp parse_directive(%{"use" => use_data}) do
     # Validate attributes
     allowed_attrs = ["file"]
@@ -458,9 +538,12 @@ defmodule Oli.Scenarios.DirectiveParser do
          "view_practice_page",
          "answer_question",
          "use",
+         "collaborator",
+         "media",
+         "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, use, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -491,12 +574,15 @@ defmodule Oli.Scenarios.DirectiveParser do
              "update",
              "customize",
              "use",
+             "collaborator",
+             "media",
+             "bibliography",
              "hook"
            ] ->
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, use, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, use, collaborator, media, bibliography, hook"
     end)
   end
 
@@ -669,6 +755,36 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_tags(tags) when is_list(tags), do: tags
 
   # Helper functions for parsing enum values
+  defp parse_visibility(nil), do: nil
+
+  defp parse_visibility(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "authors" -> :authors
+      "selected" -> :selected
+      "global" -> :global
+      other -> raise "Invalid visibility '#{other}'. Expected one of: authors, selected, global"
+    end
+  end
+
+  defp parse_visibility(value) when is_atom(value) do
+    case value do
+      :authors ->
+        :authors
+
+      :selected ->
+        :selected
+
+      :global ->
+        :global
+
+      other ->
+        raise "Invalid visibility #{inspect(other)}. Expected :authors, :selected, or :global"
+    end
+  end
+
+  defp parse_visibility(value),
+    do: raise("Invalid visibility value #{inspect(value)}. Expected string or atom")
+
   defp parse_section_type(nil), do: :enrollable
   defp parse_section_type("enrollable"), do: :enrollable
   defp parse_section_type("open_and_free"), do: :open_and_free
@@ -679,6 +795,52 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_user_type("instructor"), do: :instructor
   defp parse_user_type("student"), do: :student
   defp parse_user_type(type) when is_atom(type), do: type
+
+  defp parse_system_role(nil), do: :author
+  defp parse_system_role(role) when is_atom(role), do: role
+
+  defp parse_system_role(role) when is_binary(role) do
+    normalized = String.trim(role)
+
+    case normalized do
+      "author" ->
+        :author
+
+      "system_admin" ->
+        :system_admin
+
+      "account_admin" ->
+        :account_admin
+
+      "content_admin" ->
+        :content_admin
+
+      other ->
+        raise "Invalid system_role '#{other}' (allowed: author, system_admin, account_admin, content_admin)"
+    end
+  end
+
+  defp parse_can_create_sections(value),
+    do: parse_boolean(value, false, "can_create_sections")
+
+  defp parse_email_verified(value),
+    do: parse_boolean(value, true, "email_verified")
+
+  defp parse_boolean(nil, default, _field), do: default
+  defp parse_boolean(value, _default, _field) when is_boolean(value), do: value
+
+  defp parse_boolean(value, _default, field) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "true" -> true
+      "false" -> false
+      other -> raise "Invalid boolean for #{field}: #{other}"
+    end
+  end
+
+  defp parse_boolean(value, _default, _field) when is_integer(value), do: value != 0
+
+  defp parse_boolean(value, _default, field),
+    do: raise("Invalid boolean for #{field}: #{inspect(value)}")
 
   defp parse_enrollment_role(nil), do: :student
   defp parse_enrollment_role("instructor"), do: :instructor

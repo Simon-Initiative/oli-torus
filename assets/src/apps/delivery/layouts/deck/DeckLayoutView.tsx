@@ -55,6 +55,7 @@ let sharedActivityPromise: any;
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const currentLesson = useSelector(selectPageSlug);
@@ -532,6 +533,8 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const [localActivityTree, setLocalActivityTree] = useState<any>(currentActivityTree);
   const [triggerWindowsScrollPosition, setTriggerWindowsScrollPosition] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const previousActivityIdRef = React.useRef<string | null>(null);
+  const isInitialMountRef = React.useRef<boolean>(true);
 
   useEffect(() => {
     if (currentActivityTree && currentActivityTree?.length > 1) {
@@ -606,6 +609,43 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }));
     });
   }, [currentActivityTree, historyModeNavigation, reviewMode]);
+
+  // Focus management: Move focus to content container when screen changes
+  useEffect(() => {
+    if (!localActivityTree || localActivityTree.length === 0) {
+      return;
+    }
+
+    const currentActivity = localActivityTree[localActivityTree.length - 1];
+    const currentActivityId = currentActivity?.id;
+
+    // Skip focus on initial mount
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      previousActivityIdRef.current = currentActivityId;
+      return;
+    }
+
+    // Skip focus in review mode or history navigation
+    if (reviewMode || historyModeNavigation) {
+      previousActivityIdRef.current = currentActivityId;
+      return;
+    }
+
+    // Only focus if activity ID actually changed (not same screen navigation)
+    if (currentActivityId && currentActivityId !== previousActivityIdRef.current) {
+      requestAnimationFrame(() => {
+        // Double-check with setTimeout to ensure content is rendered
+        setTimeout(() => {
+          // Verify ref exists and content is rendered before focusing
+          if (contentRef.current) {
+            contentRef.current.focus();
+          }
+        }, 0);
+      });
+      previousActivityIdRef.current = currentActivityId;
+    }
+  }, [localActivityTree, reviewMode, historyModeNavigation]);
 
   const renderActivities = useCallback(() => {
     if (!localActivityTree || !localActivityTree.length) {
@@ -698,7 +738,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     });
 
     return (
-      <div className="content" style={styles}>
+      <div ref={contentRef} className="content" tabIndex={-1} style={styles}>
         {activities}
       </div>
     );

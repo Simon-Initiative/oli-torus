@@ -32,6 +32,7 @@ defmodule OliWeb.Components.Modal do
   attr :header_class, :string, default: "flex items-start justify-between p-4"
   attr :body_class, :string, default: "p-6 space-y-6"
   attr :confirm_class, :string, default: "py-2 px-3"
+  attr :header_level, :integer, default: 1
 
   attr :cancel_class, :string,
     default: "bg-transparent text-blue-500 hover:underline hover:bg-transparent"
@@ -53,7 +54,7 @@ defmodule OliWeb.Components.Modal do
       id={@id}
       phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
-      class="relative z-[2000] hidden"
+      class={["relative z-[2000]", @show && "block", !@show && "hidden"]}
     >
       <div
         id={"#{@id}-bg"}
@@ -76,18 +77,22 @@ defmodule OliWeb.Components.Modal do
               phx-window-keydown={hide_modal(@on_cancel, @id)}
               phx-key="escape"
               phx-click-away={hide_modal(@on_cancel, @id)}
-              class="hidden relative bg-white dark:bg-body-dark shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
+              class={[
+                "relative bg-white dark:bg-body-dark shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition",
+                @show && "block",
+                !@show && "hidden"
+              ]}
             >
               <!-- Modal header -->
               <div class={@header_class}>
                 <div>
                   <div :if={@title != []}>
-                    <h1
-                      id={"#{@id}-title"}
-                      class="text-xl font-semibold text-gray-900 dark:text-white"
-                    >
-                      {render_slot(@title)}
-                    </h1>
+                    {Phoenix.HTML.Tag.content_tag(
+                      :"h#{@header_level}",
+                      render_slot(@title),
+                      id: "#{@id}-title",
+                      class: "text-xl font-semibold text-gray-900 dark:text-white"
+                    )}
                     <p
                       :if={@subtitle != []}
                       id={"#{@id}-description"}
@@ -179,41 +184,54 @@ defmodule OliWeb.Components.Modal do
     >
       <div
         id={"#{@id}-bg"}
-        class="fixed inset-0 bg-black/20 transition-opacity backdrop-blur-sm"
+        class="fixed inset-x-0 top-[56px] bottom-0 sm:inset-0 bg-black/20 transition-opacity backdrop-blur-sm"
         aria-hidden="true"
       />
       <div
-        class="fixed inset-0 overflow-y-auto"
+        class="fixed inset-x-0 top-[56px] bottom-0 sm:inset-0 overflow-y-auto"
         aria-labelledby={"#{@id}-title"}
         aria-describedby={"#{@id}-description"}
         role="dialog"
         aria-modal="true"
         tabindex="0"
       >
-        <div class="flex min-h-full items-center justify-center">
-          <div class={["w-full p-4 sm:p-6 lg:py-8", @class]}>
+        <div class="flex min-h-full items-start sm:items-center justify-center">
+          <div class={["w-full h-full sm:h-auto p-0 sm:p-4 sm:p-6 lg:py-8", @class]}>
             <.focus_wrap
               id={"#{@id}-container"}
               phx-mounted={@show && show_modal(@id)}
               phx-window-keydown={hide_modal(@on_cancel, @id)}
               phx-key="escape"
               phx-click-away={hide_modal(@on_cancel, @id)}
-              class="max-h-[85vh] overflow-y-scroll hidden pt-0 p-8 sm:p-14 lg:p-16 xl:p-20 relative bg-white dark:bg-black shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
+              class="h-full sm:max-h-[85vh] overflow-y-scroll hidden p-0 sm:p-14 lg:p-16 xl:p-20 relative bg-Specially-Tokens-Background-lesson-page shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
             >
+              <!-- Mobile: Back button in dark header bar -->
+              <div class="sm:hidden sticky top-0 z-20 px-4 py-3 bg-Surface-surface-secondary">
+                <button
+                  type="button"
+                  class="text-Text-text-high hover:text-Text-text-low text-sm flex items-center gap-1.5"
+                  phx-click={hide_modal(@on_cancel, @id)}
+                  aria-label={gettext("close")}
+                >
+                  <OliWeb.Icons.back_arrow class="w-4 h-4 [&>path]:stroke-current" />
+                  <span class="hover:underline">Back</span>
+                </button>
+              </div>
               
     <!-- Modal header -->
-              <div class="flex items-start justify-between">
-                <div :if={@title != []} class="mb-6 lg:mb-11">
-                  <div class="flex items-start justify-between sticky top-0 z-10 pt-8 sm:pt-14 lg:pt-16 xl:pt-20 bg-white dark:bg-black w-full pb-2">
-                    <h1
+              <div class="flex items-start justify-between px-4 sm:px-0">
+                <div :if={@title != []} class="mb-6 lg:mb-11 w-full">
+                  <div class="flex items-start justify-between sticky top-0 z-10 pt-8 sm:pt-14 lg:pt-16 xl:pt-20 bg-Specially-Tokens-Background-lesson-page w-full pb-2">
+                    <h2
                       id={"#{@id}-title"}
-                      class="text-zinc-700 dark:text-neutral-300 text-2xl sm:text-3xl lg:text-[40px] font-bold font-['Inter'] leading-normal sm:leading-[60px]"
+                      class="text-zinc-700 dark:text-neutral-300 text-xl sm:text-3xl lg:text-[40px] font-bold font-['Inter'] leading-normal sm:leading-[60px]"
                     >
                       {render_slot(@title)}
-                    </h1>
+                    </h2>
+                    <!-- Desktop: X icon -->
                     <button
                       type="button"
-                      class="dark:text-gray-400 dark:hover:text-white text-gray-900 hover:text-gray-400 text-sm w-8 h-8  flex items-center justify-center"
+                      class="hidden sm:flex dark:text-gray-400 dark:hover:text-white text-gray-900 hover:text-gray-400 text-sm w-8 h-8 items-center justify-center"
                       phx-click={hide_modal(@on_cancel, @id)}
                       aria-label={gettext("close")}
                     >
@@ -246,7 +264,7 @@ defmodule OliWeb.Components.Modal do
                 </div>
               </div>
               <!-- Modal body -->
-              <div class={@body_class}>
+              <div class={["px-4 sm:px-0 pb-8", @body_class]}>
                 {render_slot(@inner_block)}
               </div>
               <!-- Modal footer -->
@@ -291,7 +309,7 @@ defmodule OliWeb.Components.Modal do
     )
     |> show("##{id}-container")
     |> JS.add_class("overflow-hidden", to: "body")
-    |> JS.focus_first(to: "##{id}-content")
+    |> JS.focus_first(to: "##{id}-container")
   end
 
   def hide_modal(js \\ %JS{}, id) do

@@ -1,0 +1,37 @@
+# Scenario for user account login/permission tests.
+# Parameters:
+#   RUN_ID - optional suffix to make user emails unique.
+
+- user:
+    name: "playwright_author"
+    type: "author"
+    email: "author${RUN_ID}@example.com"
+    given_name: "Playwright"
+    family_name: "Author"
+    password: "changeme123456"
+
+- user:
+    name: "playwright_instructor"
+    type: "instructor"
+    email: "instructor${RUN_ID}@example.com"
+    given_name: "Playwright"
+    family_name: "Instructor"
+    password: "changeme123456"
+    can_create_sections: true
+
+- user:
+    name: "playwright_student"
+    type: "student"
+    email: "student${RUN_ID}@example.com"
+    given_name: "Jane"
+    family_name: "Student"
+    password: "changeme123456"
+
+- user:
+    name: "playwright_admin"
+    type: "author"
+    system_role: "system_admin"
+    email: "admin${RUN_ID}@example.com"
+    given_name: "Playwright"
+    family_name: "Admin"
+    password: "changeme123456"

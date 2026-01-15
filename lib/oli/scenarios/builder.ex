@@ -11,7 +11,14 @@ defmodule Oli.Scenarios.Builder do
   alias Oli.Resources.ResourceType
 
   def build!(
-        %ProjectSpec{title: title, root: root_node, objectives: objectives, tags: tags},
+        %ProjectSpec{
+          title: title,
+          root: root_node,
+          objectives: objectives,
+          tags: tags,
+          slug: slug,
+          visibility: visibility
+        },
         author,
         _institution
       ) do
@@ -25,6 +32,21 @@ defmodule Oli.Scenarios.Builder do
       resource_revision: root_revision,
       publication: publication
     } = project_setup
+
+    update_attrs =
+      []
+      |> maybe_put(:slug, slug)
+      |> maybe_put(:visibility, visibility)
+
+    project =
+      case update_attrs do
+        [] ->
+          project
+
+        attrs ->
+          {:ok, updated_project} = Course.update_project(project, Map.new(attrs))
+          updated_project
+      end
 
     # Update the root revision title to match the spec
     # The standard infrastructure creates "Curriculum" but we want the title from the spec
@@ -211,4 +233,7 @@ defmodule Oli.Scenarios.Builder do
       end
     end)
   end
+
+  defp maybe_put(list, _key, nil), do: list
+  defp maybe_put(list, key, value), do: [{key, value} | list]
 end

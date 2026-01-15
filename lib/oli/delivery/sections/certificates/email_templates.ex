@@ -10,12 +10,13 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
   attr :platform_name, :string, default: "[Platform Name]"
   attr :course_name, :string, default: "[Course Name]"
   attr :certificate_link, :string, default: "#"
+  attr :certificate_label, :string, default: "Certificate of Completion"
 
   def student_approval(assigns) do
     ~H"""
     <p class="text-[#373a44] dark:text-white" style="text-align: left;">
       Dear {@student_name}, <br />
-      <br /> Congratulations! You have earned a Certificate of Completion for {@course_name}.
+      <br /> Congratulations! You have earned a {@certificate_label} for {@course_name}.
       <.link href={@certificate_link} class="text-[#0062f2]">
         Access your certificate here
       </.link>

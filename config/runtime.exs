@@ -53,7 +53,7 @@ case System.get_env("LOG_LEVEL", nil) do
 end
 
 if get_env_as_boolean.("APPSIGNAL_ENABLE_LOGGING", "false") do
-  config :logger, backends: [:console, {Appsignal.Logger.Backend, [group: "phoenix"]}]
+  config :oli, :appsignal_logger_backend, group: "phoenix"
 end
 
 config :oli, :author_auth_providers,
@@ -474,7 +474,9 @@ if runtime_env == :prod do
       {
         Oban.Plugins.Cron,
         crontab: [
-          {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
+          {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default},
+          {"*/30 * * * *", Oli.Lti.KeysetRefreshWorker,
+           args: %{refresh_all: true}, queue: :default}
         ]
       }
     ],

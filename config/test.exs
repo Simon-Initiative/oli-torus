@@ -113,6 +113,10 @@ config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenTest
 # Print only warnings and errors during test
 config :logger, level: :warning
 
+config :oli,
+  enable_playwright_scenarios: true,
+  playwright_scenario_token: System.get_env("PLAYWRIGHT_SCENARIO_TOKEN")
+
 truncate =
   System.get_env("LOGGER_TRUNCATE", "8192")
   |> String.downcase()

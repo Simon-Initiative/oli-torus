@@ -242,4 +242,19 @@ defmodule Oli.Delivery.Sections.Browse do
     browse_sections_query(paging, sorting, options)
     |> Repo.all()
   end
+
+  @doc """
+  Browse sections for CSV export without paging.
+
+  Applies the same filters and sorting as `browse_sections/3` but removes the
+  pagination limits. An optional `limit` can be provided as a safety cap.
+  """
+  def browse_sections_for_export(
+        %Sorting{} = sorting,
+        %BrowseOptions{} = options,
+        limit \\ 10_000
+      ) do
+    browse_sections_query(%Paging{offset: 0, limit: limit}, sorting, options)
+    |> Repo.all()
+  end
 end

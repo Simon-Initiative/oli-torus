@@ -110,7 +110,16 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     initialize(props.model);
   }, [props]);
 
-  const { width, height, useToggleBehavior, popup, description } = model;
+  const {
+    width,
+    height,
+    useToggleBehavior,
+    popup,
+    description,
+    labelText,
+    labelPosition = 'right',
+    hideIcon = false,
+  } = model;
 
   useEffect(() => {
     if (!props.notify) {
@@ -229,9 +238,11 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
       });
     }
   }, [showPopup]);
+  // Icon should always be fixed size (32x32), not resizable
   const iconTriggerStyle: CSSProperties = {
-    width,
-    height,
+    width: 32,
+    height: 32,
+    flexShrink: 0,
   };
 
   // Toggle popup open/close
@@ -289,39 +300,188 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   };
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const labelRef = useRef<HTMLSpanElement>(null);
+
+  // Determine flex direction based on label position
+  const getFlexDirection = () => {
+    switch (labelPosition) {
+      case 'left':
+        return 'row-reverse';
+      case 'right':
+        return 'row';
+      case 'top':
+        return 'column-reverse';
+      case 'bottom':
+        return 'column';
+      default:
+        return 'row';
+    }
+  };
+
+  // Determine alignment based on label position
+  const getAlignItems = () => {
+    switch (labelPosition) {
+      case 'left':
+      case 'right':
+        return 'center';
+      case 'top':
+      case 'bottom':
+        return 'center';
+      default:
+        return 'center';
+    }
+  };
+
+  // Determine justify content for vertical positions (top/bottom)
+  const getJustifyContent = () => {
+    switch (labelPosition) {
+      case 'top':
+      case 'bottom':
+        return 'center';
+      case 'left':
+      case 'right':
+        return 'flex-start';
+      default:
+        return 'flex-start';
+    }
+  };
+
+  // Common click handlers for both icon and label
+  const handleClick = () => {
+    if (useToggleBehavior) {
+      handleToggleIcon(!showPopup);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    if (!useToggleBehavior) {
+      handleToggleIcon(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!useToggleBehavior) {
+      handleToggleIcon(false);
+    }
+  };
+
+  const handleFocus = () => {
+    if (!useToggleBehavior) {
+      handleToggleIcon(true);
+    }
+  };
+
+  const handleBlur = () => {
+    if (!useToggleBehavior) {
+      handleOnBlurToggleIcon(false);
+    }
+  };
+
+  // Container should respect width/height from model
+  // Override any CSS that might be applied to janus-popup element
+  const containerStyle: CSSProperties = {
+    display: 'flex',
+    flexDirection: getFlexDirection(),
+    alignItems: getAlignItems(),
+    justifyContent: getJustifyContent(),
+    gap: '10px',
+    width: width || 'auto',
+    height: height || 'auto',
+    // Override CSS that might be applied to janus-popup element
+    background: 'none',
+    backgroundImage: 'none',
+    backgroundSize: 'initial',
+    borderRadius: 'initial',
+    boxShadow: 'none',
+    transition: 'none',
+  };
+
+  const labelStyle: CSSProperties = {
+    fontSize: '1rem',
+    cursor: 'pointer',
+    userSelect: 'none',
+    flex: 1,
+    minWidth: 0,
+    minHeight: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    wordWrap: 'break-word',
+  };
+
+  const shouldShowIcon = !hideIcon;
+  const shouldShowLabel = labelText && labelText.trim().length > 0;
+
+  // Determine if iconSrc is a standard icon (data URL) or custom URL
+  // Standard icons should use CSS background-image, not src attribute
+  const isStandardIcon = iconSrc && iconSrc.startsWith('data:');
+  const isCustomIcon = iconSrc && !isStandardIcon;
 
   return ready ? (
     <React.Fragment>
       {popupVisible ? (
-        <input
-          ref={inputRef}
-          data-janus-type={tagName}
-          role="button"
-          {...(iconSrc
-            ? {
-                src: iconSrc,
-                type: 'image',
-                alt: description,
-              }
-            : {
-                type: 'button',
-              })}
-          className={`info-icon`}
-          aria-controls={id}
-          aria-haspopup="true"
-          aria-label={description}
-          style={iconTriggerStyle}
-          {...(useToggleBehavior
-            ? {
-                onClick: () => handleToggleIcon(!showPopup),
-              }
-            : {
-                onMouseEnter: () => handleToggleIcon(true),
-                onMouseLeave: () => handleToggleIcon(false),
-                onFocus: () => handleToggleIcon(true),
-                onBlur: () => handleOnBlurToggleIcon(false),
-              })}
-        />
+        <div className="popup-container" style={containerStyle}>
+          {shouldShowIcon && (
+            <input
+              ref={inputRef}
+              data-janus-type={tagName}
+              role="button"
+              {...(shouldShowLabel || isStandardIcon
+                ? // When label exists or standard icon, don't set src - CSS will apply background-image
+                  {
+                    type: 'button',
+                    alt: description,
+                  }
+                : // When no label and custom icon URL, use src
+                isCustomIcon
+                ? {
+                    src: iconSrc,
+                    type: 'image',
+                    alt: description,
+                  }
+                : {
+                    type: 'button',
+                  })}
+              className={`info-icon`}
+              aria-controls={id}
+              aria-haspopup="true"
+              aria-label={description}
+              style={iconTriggerStyle}
+              {...(useToggleBehavior
+                ? {
+                    onClick: handleClick,
+                  }
+                : {
+                    onMouseEnter: handleMouseEnter,
+                    onMouseLeave: handleMouseLeave,
+                    onFocus: handleFocus,
+                    onBlur: handleBlur,
+                  })}
+            />
+          )}
+          {shouldShowLabel && (
+            <span
+              ref={labelRef}
+              role="button"
+              tabIndex={0}
+              aria-controls={id}
+              aria-haspopup="true"
+              aria-label={description}
+              style={labelStyle}
+              {...(useToggleBehavior
+                ? {
+                    onClick: handleClick,
+                  }
+                : {
+                    onMouseEnter: handleMouseEnter,
+                    onMouseLeave: handleMouseLeave,
+                    onFocus: handleFocus,
+                    onBlur: handleBlur,
+                  })}
+            >
+              {labelText}
+            </span>
+          )}
+        </div>
       ) : null}
       {showPopup ? <PortalWindow /> : null}
     </React.Fragment>

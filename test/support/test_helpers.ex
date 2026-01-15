@@ -149,7 +149,7 @@ defmodule Oli.TestHelpers do
         auth_token_url: "some auth_token_url",
         client_id: "some client_id",
         issuer: "some issuer",
-        key_set_url: "some key_set_url",
+        key_set_url: "https://example.com/jwks",
         line_items_service_domain: "some line_items_service_domain"
       })
 
@@ -430,6 +430,17 @@ defmodule Oli.TestHelpers do
       )
 
     {:ok, conn: conn, content_admin: content_admin}
+  end
+
+  @iphone_ua "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15"
+  @doc """
+  Creates a connection with a mobile user agent
+  """
+  def mobile_conn(%{conn: conn}) do
+    conn =
+      Plug.Conn.put_req_header(conn, "user-agent", @iphone_ua)
+
+    {:ok, conn: conn}
   end
 
   def recycle_author_session(conn, author) do
@@ -1565,7 +1576,7 @@ defmodule Oli.TestHelpers do
     }
   end
 
-  def create_project_with_units_and_modules(_conn) do
+  def create_project_with_units_and_modules(context) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -1648,6 +1659,12 @@ defmodule Oli.TestHelpers do
 
     {:ok, section} = Sections.create_section_resources(section, publication)
     Sections.rebuild_contained_pages(section)
+
+    if Map.has_key?(context, :instructor) do
+      Sections.enroll(context.instructor.id, section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+    end
 
     %{
       project: project,

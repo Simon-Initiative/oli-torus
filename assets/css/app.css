@@ -284,3 +284,34 @@ Not supports in Firefox and IE */
 #tech-support-modal form .error {
   @apply block text-rose-600 my-2 text-sm leading-6;
 }
+
+#current_password_for_password:-webkit-autofill,
+#current_password_for_password:-webkit-autofill:hover,
+#current_password_for_password:-webkit-autofill:focus,
+#current_password_for_password:autofill,
+#current_password_for_password:autofill:hover,
+#current_password_for_password:autofill:focus {
+  -webkit-text-fill-color: currentColor !important;
+  box-shadow: 0 0 0 1000px #f3f4f8 inset !important;
+  caret-color: currentColor !important;
+  transition: background-color 9999s ease-out;
+}
+
+#current_password_for_password {
+  color: #353740;
+}
+
+.dark #current_password_for_password {
+  color: #eeebf5 !important;
+  -webkit-text-fill-color: #eeebf5 !important;
+}
+
+.dark #current_password_for_password:-webkit-autofill,
+.dark #current_password_for_password:-webkit-autofill:hover,
+.dark #current_password_for_password:-webkit-autofill:focus,
+.dark #current_password_for_password:autofill,
+.dark #current_password_for_password:autofill:hover,
+.dark #current_password_for_password:autofill:focus {
+  -webkit-text-fill-color: #eeebf5 !important;
+  box-shadow: 0 0 0 1000px #0d0c0f inset !important;
+}

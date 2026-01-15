@@ -1124,3 +1124,15 @@ $font-family-sans-serif: var(--font-sans);
 .dnd-sortable-tree_simple_tree-item li.aa-sequence-item {
   padding-left: 0px !important;
 }
+
+/*----------------------------------
+  Popup Icon - Authoring Mode
+----------------------------------*/
+// In authoring mode, make popup icons visible even when src is set to data URL
+.advanced-authoring {
+  janus-popup:has(input) {
+    input[src*='data'] {
+      opacity: 1 !important;
+    }
+  }
+}

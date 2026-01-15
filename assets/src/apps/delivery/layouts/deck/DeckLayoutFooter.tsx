@@ -1,4 +1,4 @@
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { applyState, templatizeText } from 'adaptivity/scripting';
 import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
@@ -134,6 +134,7 @@ export interface NextButton {
   currentFeedbacksCount: number;
   isFeedbackIconDisplayed: boolean;
   showCheckBtn: boolean;
+  buttonRef?: React.RefObject<HTMLButtonElement>;
 }
 
 const initialNextButtonClassName = 'checkBtn';
@@ -148,6 +149,7 @@ const NextButton: React.FC<NextButton> = ({
   currentFeedbacksCount,
   isFeedbackIconDisplayed,
   showCheckBtn,
+  buttonRef,
 }) => {
   const isEnd = useSelector(selectLessonEnd);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
@@ -170,6 +172,7 @@ const NextButton: React.FC<NextButton> = ({
       }`}
     >
       <button
+        ref={buttonRef}
         onClick={handler}
         disabled={showDisabled}
         style={styles}
@@ -247,6 +250,44 @@ const DeckLayoutFooter: React.FC = () => {
   const [displaySolutionButton, setDisplaySolutionButton] = useState(false);
   const sectionSlug = useSelector(selectSectionSlug);
   const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
+  const checkButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleFocusReturn = () => {
+    // Return focus to Check button
+    // Try multiple approaches to ensure focus is set
+    const tryFocus = () => {
+      if (checkButtonRef.current) {
+        try {
+          checkButtonRef.current.focus();
+          return true;
+        } catch (e) {
+          // Button might not be focusable yet
+        }
+      }
+
+      // Fallback: find the button by class name
+      const checkButton = document.querySelector(
+        '.checkBtn:not([disabled]), .closeFeedbackBtn:not([disabled])',
+      ) as HTMLButtonElement;
+      if (checkButton) {
+        try {
+          checkButton.focus();
+          return true;
+        } catch (e) {
+          // Button might not be focusable
+        }
+      }
+      return false;
+    };
+
+    // Try immediately
+    if (!tryFocus()) {
+      // If that fails, try again after a short delay
+      setTimeout(() => {
+        tryFocus();
+      }, 50);
+    }
+  };
 
   useEffect(() => {
     if (!lastCheckTimestamp) {
@@ -746,6 +787,7 @@ const DeckLayoutFooter: React.FC = () => {
             currentFeedbacksCount={currentFeedbacks.length}
             isFeedbackIconDisplayed={displayFeedbackIcon}
             showCheckBtn={currentActivity?.custom?.showCheckBtn}
+            buttonRef={checkButtonRef}
           />
           {displaySolutionButton && (
             <button className="showSolnBtn showSolution">
@@ -760,6 +802,7 @@ const DeckLayoutFooter: React.FC = () => {
               onMinimize={() => setDisplayFeedback(false)}
               onMaximize={() => setDisplayFeedback(true)}
               feedbacks={currentFeedbacks}
+              onFocusReturn={handleFocusReturn}
             />
           )}
           <HistoryNavigation />
@@ -775,6 +818,7 @@ const DeckLayoutFooter: React.FC = () => {
             onMaximize={() => setDisplayFeedback(true)}
             feedbacks={currentFeedbacks}
             style={{ width: containerWidth }}
+            onFocusReturn={handleFocusReturn}
           />
         </>
       )}

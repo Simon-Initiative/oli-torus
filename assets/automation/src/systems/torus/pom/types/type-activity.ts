@@ -13,7 +13,7 @@ export const TYPE_ACTIVITY = {
   dnd: { label: 'Custom Drag and Drop', 'data-to': 'oli_custom_dnd', type: 'DnD++' },
   dd: { label: 'Directed Discussion', 'data-to': 'oli_directed_discussion', type: 'DD' },
   embed: { label: 'OLI Embedded', 'data-to': 'oli_embedded', type: 'Embed' },
-  file_aupload: { label: 'File Upload', 'data-to': 'oli_file_upload', type: 'Upload' },
+  file_upload: { label: 'File Upload', 'data-to': 'oli_file_upload', type: 'Upload' },
   coding: { label: 'Image Coding', 'data-to': 'oli_image_coding', type: 'Coding' },
   hotspot: { label: 'Image Hotspot', 'data-to': 'oli_image_hotspot', type: 'Hotspot' },
   likert: { label: 'Likert', 'data-to': 'oli_likert', type: 'Likert' },
