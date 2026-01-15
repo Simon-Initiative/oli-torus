@@ -382,6 +382,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:resource_slug, :string)
   attr(:active_tab, :atom)
   attr(:uri, :string, default: "")
+
   def workspace_sidebar_nav(assigns) do
     ~H"""
     <div class="sticky top-0">
