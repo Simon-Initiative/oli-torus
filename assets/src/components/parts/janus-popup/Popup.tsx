@@ -434,12 +434,13 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   }
 
   // Screen reader announcements
+  // aria-haspopup="dialog" will announce "opens dialog", so we don't include it in aria-label
   const labelAriaLabel = shouldShowLabel
-    ? `${labelText}, opens dialog`
+    ? labelText
     : undefined;
 
   const iconAriaLabel = !shouldShowLabel && description
-    ? `${description || 'Additional Information'}, opens dialog`
+    ? description || 'Additional Information'
     : description; // When label exists, icon is decorative so aria-label used for alt text
 
   return ready ? (
@@ -453,7 +454,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
               role="button"
               tabIndex={0}
               aria-controls={id}
-              aria-haspopup="true"
+              aria-haspopup="dialog"
               aria-label={labelAriaLabel}
               style={labelStyle}
               {...(useToggleBehavior
@@ -495,7 +496,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
                   })}
               className={`info-icon`}
               aria-controls={shouldShowLabel ? undefined : id}
-              aria-haspopup={shouldShowLabel ? undefined : 'true'}
+              aria-haspopup={shouldShowLabel ? undefined : 'dialog'}
               aria-label={iconAriaLabel}
               tabIndex={shouldShowLabel ? -1 : 0}
               style={{
