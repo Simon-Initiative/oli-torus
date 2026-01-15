@@ -54,36 +54,54 @@ describe('PaginationControls', () => {
     delete window.matchMedia;
   });
 
-  it('condenses page numbers on mobile to first, active, and last pages with ellipses', async () => {
+  it('condenses page numbers on mobile to first, current, and last pages with ellipses', async () => {
     setupMatchMedia(false);
-    renderPaginationControls(6, [3]);
+    renderPaginationControls(10, [5]);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: '1' })).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: '4' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '6' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '10' })).toBeInTheDocument();
     expect(screen.getAllByText('...')).toHaveLength(2);
 
     expect(screen.queryByRole('button', { name: '3' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '5' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '7' })).not.toBeInTheDocument();
   });
 
-  it('shows first two and last two pages on mobile when current is near the ends', async () => {
+  it('includes the next page on mobile when it fits within the condensed limit', async () => {
     setupMatchMedia(false);
-    renderPaginationControls(6, [0]);
+    renderPaginationControls(7, [1]);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: '1' })).toBeInTheDocument();
     });
 
     expect(screen.getByRole('button', { name: '2' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '5' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '6' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '3' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '7' })).toBeInTheDocument();
     expect(screen.getAllByText('...')).toHaveLength(1);
 
-    expect(screen.queryByRole('button', { name: '3' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '4' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '6' })).not.toBeInTheDocument();
+  });
+
+  it('includes the previous page on mobile when it fits within the condensed limit', async () => {
+    setupMatchMedia(false);
+    renderPaginationControls(7, [5]);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1' })).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: '5' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '6' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '7' })).toBeInTheDocument();
+    expect(screen.getAllByText('...')).toHaveLength(1);
+
+    expect(screen.queryByRole('button', { name: '2' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '4' })).not.toBeInTheDocument();
   });
 

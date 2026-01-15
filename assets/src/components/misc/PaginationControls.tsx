@@ -89,7 +89,7 @@ export const PaginationControls = (props: PaginationControlsProps) => {
   const previousDisabled = active === 0;
   const nextDisabled = active === pages.count() - 1;
   const totalPages = pages.count();
-  const shouldCondense = isMobile && totalPages > 4;
+  const shouldCondense = isMobile && totalPages > 5;
   const displayItems = (() => {
     if (!shouldCondense) {
       return Array.from({ length: totalPages }, (_, index) => ({
@@ -100,17 +100,33 @@ export const PaginationControls = (props: PaginationControlsProps) => {
     }
 
     const items: Array<{ type: 'page' | 'ellipsis'; index?: number; key: string }> = [];
-    const inFirstTwo = active <= 1;
-    const inLastTwo = active >= totalPages - 2;
-    const pageSet = new Set<number>([0, totalPages - 1]);
+    const baseSet = new Set<number>([0, totalPages - 1, active]);
+    const countItems = (set: Set<number>) => {
+      const ordered = Array.from(set).sort((a, b) => a - b);
+      let gaps = 0;
+      for (let i = 0; i < ordered.length - 1; i++) {
+        if (ordered[i + 1] > ordered[i] + 1) {
+          gaps += 1;
+        }
+      }
+      return ordered.length + gaps;
+    };
 
-    if (inFirstTwo || inLastTwo) {
-      pageSet.add(1);
-      pageSet.add(totalPages - 2);
-    } else {
-      pageSet.add(active);
-    }
-    const orderedPages = Array.from(pageSet).sort((a, b) => a - b);
+    const addNeighborIfFits = (index: number) => {
+      if (index < 0 || index > totalPages - 1 || baseSet.has(index)) {
+        return;
+      }
+      const nextSet = new Set(baseSet);
+      nextSet.add(index);
+      if (countItems(nextSet) <= 5) {
+        baseSet.add(index);
+      }
+    };
+
+    addNeighborIfFits(active - 1);
+    addNeighborIfFits(active + 1);
+
+    const orderedPages = Array.from(baseSet).sort((a, b) => a - b);
     for (let i = 0; i < orderedPages.length; i++) {
       const index = orderedPages[i];
       items.push({ type: 'page', index, key: `page-${index}` });

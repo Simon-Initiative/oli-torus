@@ -3,6 +3,28 @@
   flex-direction: row;
 }
 
+.paginationControls :global(.pagination) {
+  margin-bottom: 0;
+}
+
+@media (max-width: 639px) {
+  .paginationControls :global(.pagination) {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    justify-content: center;
+  }
+
+  .paginationControls :global(.page-link) {
+    padding: 0.2rem 0.4rem;
+    min-width: 0;
+  }
+
+  .paginationControls :global(.page-item) {
+    flex: 0 1 auto;
+  }
+}
+
 .show {
   display: block !important;
 }
