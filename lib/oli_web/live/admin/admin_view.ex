@@ -16,7 +16,8 @@ defmodule OliWeb.Admin.AdminView do
      assign(socket,
        author: author,
        breadcrumbs: breadcrumb(),
-       clickhouse_olap_enabled?: Features.enabled?("clickhouse-olap")
+       clickhouse_olap_enabled?: Features.enabled?("clickhouse-olap"),
+       clickhouse_olap_bulk_ingest_enabled?: Features.enabled?("clickhouse-olap-bulk-ingest")
      )}
   end
 
@@ -163,14 +164,16 @@ defmodule OliWeb.Admin.AdminView do
             <%= if @clickhouse_olap_enabled? do %>
               <li>
                 <a href={~p"/admin/clickhouse"}>
-                  Clickhouse Analytics
+                  Clickhouse Analytics Dashboard
                 </a>
               </li>
-              <li>
-                <a href={~p"/admin/clickhouse/backfill"}>
-                  ClickHouse Bulk Backfill
-                </a>
-              </li>
+              <%= if @clickhouse_olap_bulk_ingest_enabled? do %>
+                <li>
+                  <a href={~p"/admin/clickhouse/backfill"}>
+                    ClickHouse Bulk Backfill
+                  </a>
+                </li>
+              <% end %>
             <% end %>
             <li>
               <a href={~p"/admin/dashboard/home"} target="_blank">

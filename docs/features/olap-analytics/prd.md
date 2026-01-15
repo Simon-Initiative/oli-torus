@@ -140,7 +140,8 @@ This feature introduces a ClickHouse-based OLAP layer to ingest, store, and quer
 ## 11. Feature Flagging, Rollout & Migration
 
 - Flagging:
-  - Global: `clickhouse-olap` (system feature flag) gates admin ClickHouse tooling.
+  - Global: `clickhouse-olap` (system feature flag) gates ClickHouse analytics across the system, including admin dashboards and section analytics access.
+  - Global: `clickhouse-olap-bulk-ingest` gates admin ClickHouse bulk ingest/backfill tooling.
   - Scoped: `instructor_dashboard_analytics` gates instructor analytics per section.
   - Scoped: `project_dashboard_analytics` gates project analytics per project.
 - Rollout Plan (scoped flag stages):
@@ -148,7 +149,7 @@ This feature introduces a ClickHouse-based OLAP layer to ingest, store, and quer
   - `five_percent`: enable for a randomized 5% of sections; watch query latency and error rates.
   - `fifty_percent`: expand to 50% of sections; monitor ClickHouse load and backfill backlog.
   - `full`: enable for all sections once KPIs are stable.
-  - Rollback: disable scoped rollout and/or global `clickhouse-olap` to hide tooling and dashboards.
+  - Rollback: disable scoped rollout and/or global `clickhouse-olap`/`clickhouse-olap-bulk-ingest` to hide analytics or bulk ingest tooling.
 - Data Migrations:
   - Postgres migrations create backfill tracking tables.
   - ClickHouse migrations create `raw_events`.

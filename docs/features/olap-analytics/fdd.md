@@ -186,7 +186,8 @@ The OLAP Analytics feature introduces a ClickHouse-backed analytics pipeline tha
 
 ## 12. Security & Privacy
 
-- Admin tooling requires authenticated admin access and is gated by `clickhouse-olap`.
+- ClickHouse analytics access (including admin analytics dashboard and section analytics) is gated by `clickhouse-olap`.
+- ClickHouse bulk ingest/backfill tooling is gated by `clickhouse-olap-bulk-ingest`.
 - Instructor analytics requires section-scoped feature enablement.
 - Project analytics will require project-scoped feature enablement.
 - Queries are scoped by section_id or project_id to prevent data leakage.

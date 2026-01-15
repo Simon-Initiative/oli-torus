@@ -13,7 +13,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
       {:ok,
        assign(socket,
          title: "ClickHouse Analytics",
-         breadcrumb: breadcrumb()
+         breadcrumbs: breadcrumbs()
        )
        |> assign_async(:health_summary, fn ->
          case ClickhouseAnalytics.health_summary() do
@@ -105,10 +105,15 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     """
   end
 
-  defp breadcrumb(),
-    do:
-      OliWeb.Admin.AdminView.breadcrumb() ++
-        [Breadcrumb.new(%{full_title: "ClickHouse Analytics", link: ~p"/admin/clickhouse"})]
+  defp breadcrumbs do
+    OliWeb.Admin.AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "ClickHouse Analytics Dashboard",
+          link: ~p"/admin/clickhouse"
+        })
+      ]
+  end
 
   defp format_int(nil), do: "n/a"
   defp format_int(value) when is_integer(value), do: format_number(value)

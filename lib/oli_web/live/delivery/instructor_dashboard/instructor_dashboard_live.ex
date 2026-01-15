@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
+  alias Oli.Features
   alias Oli.ScopedFeatureFlags
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Oli.Delivery.RecommendedActions
@@ -558,7 +559,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp analytics_enabled?(section) do
-    ScopedFeatureFlags.enabled?(:instructor_dashboard_analytics, section)
+    Features.enabled?("clickhouse-olap") and
+      ScopedFeatureFlags.enabled?(:instructor_dashboard_analytics, section)
   end
 
   @impl Phoenix.LiveView

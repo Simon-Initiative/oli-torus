@@ -25,7 +25,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
   @impl true
   def mount(params, _session, socket) do
-    if Features.enabled?("clickhouse-olap") do
+    if Features.enabled?("clickhouse-olap") and Features.enabled?("clickhouse-olap-bulk-ingest") do
       default_inputs = default_form_inputs()
 
       changeset =
@@ -55,7 +55,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       socket =
         assign(socket,
           title: "ClickHouse Bulk Backfill",
-          breadcrumb: breadcrumb(),
+          breadcrumbs: breadcrumbs(),
           runs: Backfill.list_runs(limit: @runs_limit),
           inventory_runs: Inventory.list_runs(limit: @inventory_runs_limit),
           changeset: changeset,
@@ -74,9 +74,21 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
       {:ok, socket}
     else
+      message =
+        cond do
+          not Features.enabled?("clickhouse-olap") ->
+            "ClickHouse analytics are not enabled."
+
+          not Features.enabled?("clickhouse-olap-bulk-ingest") ->
+            "ClickHouse bulk ingest is not enabled."
+
+          true ->
+            "ClickHouse bulk ingest is not enabled."
+        end
+
       {:ok,
        socket
-       |> put_flash(:error, "ClickHouse analytics is not enabled.")
+       |> put_flash(:error, message)
        |> redirect(to: ~p"/admin")}
     end
   end
@@ -462,14 +474,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
           <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
             Launch and monitor long running ingest jobs that pull historical xAPI events directly from S3 into ClickHouse.
           </p>
-        </div>
-        <div>
-          <.link
-            navigate={~p"/admin/clickhouse"}
-            class="text-sm text-delivery-primary hover:underline"
-          >
-            View ClickHouse Analytics →
-          </.link>
         </div>
       </div>
 
@@ -1095,11 +1099,14 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     """
   end
 
-  defp breadcrumb do
-    [
-      Breadcrumb.new(%{full_title: "Admin", link: ~p"/admin"}),
-      Breadcrumb.new(%{full_title: "ClickHouse Bulk Backfill"})
-    ]
+  defp breadcrumbs do
+    OliWeb.Admin.AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "ClickHouse Bulk Backfill",
+          link: ~p"/admin/clickhouse/backfill"
+        })
+      ]
   end
 
   defp normalize_form_params(params) do

@@ -38,7 +38,8 @@ Scope and guardrails reference the approved PRD (`docs/features/olap-analytics/p
   - [x] Implement `Oli.Analytics.ClickhouseAnalytics` (health check, sample queries, query execution, status/progress).
   - [x] Implement health checks and operational metrics.
   - [x] Add admin dashboard LiveView `/admin/clickhouse` with health check and operational metrics.
-  - [x] Gate admin access behind global `clickhouse-olap` feature flag.
+  - [x] Gate admin analytics access behind global `clickhouse-olap` feature flag.
+  - [x] Gate admin bulk ingest access behind `clickhouse-olap-bulk-ingest` feature flag.
 - Definition of Done: Admins can validate ClickHouse health and review operational metrics from the UI without executing arbitrary queries.
 
 ## Phase 4: Manual Backfill Runs (S3 Pattern)
