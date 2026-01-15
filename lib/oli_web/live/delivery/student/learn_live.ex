@@ -597,8 +597,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       params: params,
       section: section,
       selected_unit_resource_id: selected_unit_resource_id
-    } =
-      socket.assigns
+    } = socket.assigns
 
     params =
       if search_term not in ["", nil] do
@@ -610,9 +609,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     path =
       if socket.assigns[:preview_mode] do
-        ~p"/sections/#{socket.assigns.section.slug}/preview/learn?#{params}"
+        ~p"/sections/#{section.slug}/preview/learn?#{params}"
       else
-        ~p"/sections/#{socket.assigns.section.slug}/learn?#{params}"
+        ~p"/sections/#{section.slug}/learn?#{params}"
       end
 
     {:noreply,
