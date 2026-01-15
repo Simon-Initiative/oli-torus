@@ -11,17 +11,32 @@
   .paginationControls :global(.pagination) {
     display: flex;
     flex-wrap: nowrap;
-    gap: 2px;
-    justify-content: center;
+    gap: 0;
+    justify-content: space-between;
+    width: 100%;
   }
 
   .paginationControls :global(.page-link) {
-    padding: 0.2rem 0.4rem;
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    min-height: 2.5rem;
     min-width: 0;
+    padding: 0;
+    width: 100%;
+    white-space: nowrap;
   }
 
   .paginationControls :global(.page-item) {
-    flex: 0 1 auto;
+    flex: 1 1 0%;
+  }
+
+  .paginationControls :global(.pagination .page-item:nth-child(2)) {
+    margin-left: 4px;
+  }
+
+  .paginationControls :global(.pagination .page-item:nth-last-child(2)) {
+    margin-right: 4px;
   }
 }
 
