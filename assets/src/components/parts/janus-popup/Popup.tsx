@@ -260,7 +260,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
         width: width && typeof width === 'number' && width > 0 ? width : undefined,
         height: height && typeof height === 'number' && height > 0 ? height : undefined,
         minWidth: 32,
-        minHeight: 32
+        minHeight: 32,
       }; // When no label, use container size if set, otherwise allow resizing with min 32x32
 
   // Toggle popup open/close
@@ -435,13 +435,10 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
 
   // Screen reader announcements
   // aria-haspopup="dialog" will announce "opens dialog", so we don't include it in aria-label
-  const labelAriaLabel = shouldShowLabel
-    ? labelText
-    : undefined;
+  const labelAriaLabel = shouldShowLabel ? labelText : undefined;
 
-  const iconAriaLabel = !shouldShowLabel && description
-    ? description || 'Additional Information'
-    : description; // When label exists, icon is decorative so aria-label used for alt text
+  const iconAriaLabel =
+    !shouldShowLabel && description ? description || 'Additional Information' : description; // When label exists, icon is decorative so aria-label used for alt text
 
   return ready ? (
     <React.Fragment>

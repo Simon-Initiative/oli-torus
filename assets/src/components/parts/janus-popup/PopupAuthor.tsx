@@ -171,7 +171,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
         width: width && typeof width === 'number' && width > 0 ? width : undefined,
         height: height && typeof height === 'number' && height > 0 ? height : undefined,
         minWidth: 32,
-        minHeight: 32
+        minHeight: 32,
       }; // When no label, use container size if set, otherwise allow resizing with min 32x32
 
   // for authoring we don't actually want to hide it
