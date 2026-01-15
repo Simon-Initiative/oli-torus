@@ -382,13 +382,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:resource_slug, :string)
   attr(:active_tab, :atom)
   attr(:uri, :string, default: "")
-  attr(:show_desktop, :boolean, default: true)
-
   def workspace_sidebar_nav(assigns) do
     ~H"""
     <div class="sticky top-0">
       <nav
-        :if={@show_desktop}
         id="desktop-workspace-nav-menu"
         style="--header-height: 56px; --toggler-button-height: 24px; --main-links-height: 190px; --footer-buttons-height: 110px; "
         class={["

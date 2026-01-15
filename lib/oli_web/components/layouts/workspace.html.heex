@@ -13,7 +13,6 @@
     <div class={"top-0 #{if @disable_sidebar?, do: "w-full", else: "absolute"}"}>
       <Components.Delivery.Layouts.workspace_sidebar_nav
         :if={!@disable_sidebar?}
-        show_desktop={!@disable_sidebar?}
         ctx={@ctx}
         is_admin={@is_admin}
         active_workspace={assigns[:active_workspace] || :student}
