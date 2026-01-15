@@ -154,12 +154,21 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const iconSrc = getIconSrc(iconURL, defaultURL);
 
-  // Icon should always be fixed size (32x32), not resizable
-  const iconTriggerStyle: CSSProperties = {
-    width: 32,
-    height: 32,
-    flexShrink: 0,
-  };
+  const shouldShowIcon = !hideIcon;
+  const shouldShowLabel = labelText && labelText.trim().length > 0;
+
+  // Icon sizing:
+  // - Fixed 32x32px when label exists (regardless of icon type)
+  // - Resizable when no label (uses container size or min 32x32)
+  const shouldFixIconSize = shouldShowLabel;
+  const iconTriggerStyle: CSSProperties = shouldFixIconSize
+    ? { width: 32, height: 32, flexShrink: 0 } // Always fixed when label exists
+    : {
+        width: width && typeof width === 'number' && width > 0 ? width : undefined,
+        height: height && typeof height === 'number' && height > 0 ? height : undefined,
+        minWidth: 32,
+        minHeight: 32,
+      }; // When no label, use container size if set, otherwise allow resizing with min 32x32
 
   // for authoring we don't actually want to hide it
   if (!visible) {
@@ -167,16 +176,17 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   }
 
   // Determine flex direction based on label position
+  // Label always appears first in DOM, so we use flexDirection and order to maintain visual positioning
   const getFlexDirection = () => {
     switch (labelPosition) {
       case 'left':
-        return 'row-reverse';
+        return 'row'; // Label first in DOM, visually on left (no order needed)
       case 'right':
-        return 'row';
+        return 'row'; // Label first in DOM, visually on right (use order)
       case 'top':
-        return 'column-reverse';
+        return 'column'; // Label first in DOM, visually on top (no order needed)
       case 'bottom':
-        return 'column';
+        return 'column'; // Label first in DOM, visually on bottom (use order)
       default:
         return 'row';
     }
@@ -231,10 +241,14 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     wordWrap: 'break-word',
+    // Use CSS order to maintain visual positioning when label is first in DOM
+    order: labelPosition === 'right' || labelPosition === 'bottom' ? 2 : undefined,
   };
 
-  const shouldShowIcon = !hideIcon;
-  const shouldShowLabel = labelText && labelText.trim().length > 0;
+  // Apply CSS order to icon for visual positioning
+  if (labelPosition === 'right' || labelPosition === 'bottom') {
+    iconTriggerStyle.order = 1;
+  }
 
   const init = useCallback(async () => {
     const initResult = await props.onInit({ id, responses: [] });
@@ -307,9 +321,26 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
         />
       )}
       <div className="popup-container" style={containerStyle}>
+        {/* Label appears first in DOM for screen reader context */}
+        {shouldShowLabel && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-controls={id}
+            aria-haspopup="true"
+            aria-label={shouldShowLabel ? `${labelText}, opens dialog` : undefined}
+            style={labelStyle}
+            onDoubleClick={() => {
+              setShowWindow(true);
+            }}
+          >
+            {labelText}
+          </span>
+        )}
+        {/* Icon is decorative when label exists, focusable when no label */}
         {shouldShowIcon && (
           <input
-            role="button"
+            role={shouldShowLabel ? 'img' : 'button'}
             draggable="false"
             {...(iconSrc
               ? // In authoring mode, always use src (CSS override makes data URLs visible)
@@ -322,29 +353,25 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
                   type: 'button',
                 })}
             className={`info-icon`}
-            onDoubleClick={() => {
-              setShowWindow(true);
-            }}
-            aria-controls={id}
-            aria-haspopup="true"
-            aria-label={description}
+            {...(shouldShowLabel
+              ? {} // No event handlers when label exists (icon is decorative)
+              : {
+                  onDoubleClick: () => {
+                    setShowWindow(true);
+                  },
+                })}
+            aria-controls={shouldShowLabel ? undefined : id}
+            aria-haspopup={shouldShowLabel ? undefined : 'true'}
+            aria-label={
+              shouldShowLabel
+                ? description // Icon is decorative, aria-label used for alt text
+                : description
+                ? `${description}, opens dialog`
+                : 'Additional Information, opens dialog'
+            }
+            tabIndex={shouldShowLabel ? -1 : 0}
             style={iconTriggerStyle}
           />
-        )}
-        {shouldShowLabel && (
-          <span
-            role="button"
-            tabIndex={0}
-            aria-controls={id}
-            aria-haspopup="true"
-            aria-label={description}
-            style={labelStyle}
-            onDoubleClick={() => {
-              setShowWindow(true);
-            }}
-          >
-            {labelText}
-          </span>
         )}
       </div>
       {showWindow && <PortalWindow />}
