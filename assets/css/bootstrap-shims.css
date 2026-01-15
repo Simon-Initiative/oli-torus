@@ -515,10 +515,6 @@ li.page-item {
   @apply animate-spin inline-block w-8 h-8 border-4 rounded-full text-blue-600;
 }
 
-.sr-only {
-  @apply hidden;
-}
-
 table {
   @apply min-w-full border dark:border-gray-600 dark:text-gray-300;
 }

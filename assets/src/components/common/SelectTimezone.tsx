@@ -1,13 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { classNames } from 'utils/classNames';
 
 interface SelectTimezoneProps {
   selectedTimezone?: string;
   submitAction: string;
+  selectClassName?: string;
 }
 
 export const SelectTimezone: React.FC<SelectTimezoneProps> = ({
   selectedTimezone,
   submitAction,
+  selectClassName,
 }) => {
   const ref = useRef<HTMLFormElement>(null);
   const onSelect = ({ target: { value }, isTrusted, nativeEvent }: any) => {
@@ -51,7 +54,10 @@ export const SelectTimezone: React.FC<SelectTimezoneProps> = ({
       <select
         onChange={onSelect}
         name="timezone[timezone]"
-        className="max-w-[300px] dark:text-white text-sm font-normal font-['Roboto'] rounded-md border-gray-300 w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700"
+        className={classNames(
+          "max-w-[300px] dark:text-white text-sm font-normal font-['Roboto'] rounded-md border-gray-300 w-full disabled:bg-gray-100 disabled:text-gray-600 dark:bg-delivery-body-dark dark:border-gray-700",
+          selectClassName,
+        )}
         value={selectedTimezone}
         aria-label="Select timezone"
       >

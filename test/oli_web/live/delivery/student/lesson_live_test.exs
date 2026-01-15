@@ -1059,7 +1059,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
              )
 
       # Support link is visible
-      assert has_element?(view, "#tech_support_user_menu", "Support")
+      assert has_element?(view, "#tech-support", "Support")
     end
 
     test "tech support button is rendered with sticky hook in layout", %{
@@ -1154,7 +1154,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
              )
 
       # Support link is visible
-      assert has_element?(view, "#tech_support_user_menu", "Support")
+      assert has_element?(view, "#tech-support", "Support")
     end
 
     test "does not see prologue but graded page when an attempt is in progress", %{
@@ -1384,7 +1384,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
       assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
       assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{div[role="page title"]}, "Page 2")
+      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Read by:")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
@@ -1428,7 +1428,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "#proficiency_explanation_modal h1",
+               "#proficiency_explanation_modal h2",
                "Measuring Learning Proficiency"
              )
 
@@ -1833,7 +1833,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       ## assert that redirect is not happening and the submit button and title are present
-      assert has_element?(view, "div[role='page title']", page_3.title)
+      assert has_element?(view, "h1[role='page title']", page_3.title)
       assert has_element?(view, "button[id='submit_answers']", "Submit Answers")
     end
 
@@ -2490,7 +2490,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "div[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
 
@@ -2519,7 +2519,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "div[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time with no questions"
              )
 
@@ -3254,7 +3254,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page loads correctly
       assert has_element?(
                view,
-               "div[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
 
@@ -3304,7 +3304,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page still loads correctly
       assert has_element?(
                view,
-               "div[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
     end
@@ -3344,7 +3344,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page still loads correctly
       assert has_element?(
                view,
-               "div[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
     end
@@ -3381,7 +3381,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # Since this page has no questions, we just verify the page loads correctly
       assert has_element?(
                view,
-               "div[role='page title']",
+               "h1[role='page title']",
                "This is a page configured to show one question at a time"
              )
     end

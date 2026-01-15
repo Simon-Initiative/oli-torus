@@ -41,7 +41,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   const [context, setContext] = useState<ContextProps>({ currentActivity: '', mode: '' });
   const [responsiveLayout, setResponsiveLayout] = useState<boolean>(false);
   const [showWindow, setShowWindow] = useState(false);
-
+  const [responsiveLayout, setResponsiveLayout] = useState<boolean>(false);
   const [windowModel, setWindowModel] = useState<any>(model.popup);
   useEffect(() => {
     // console.log('PopupAuthor windowModel changed!!', { windowModel, gnu: model.popup });
@@ -241,8 +241,9 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     console.log('PA INIT', { id, initResult });
 
     setContext((c) => ({ ...c, ...initResult.context }));
-    setResponsiveLayout(initResult.context?.responsiveLayout ?? false);
-
+    //setting it to false for now until we fix the pop-up responsive layout issues
+    setResponsiveLayout(false);
+    //setResponsiveLayout(initResult.context?.responsiveLayout ?? false);
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
   }, [props]);

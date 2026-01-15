@@ -48,7 +48,7 @@ defmodule Oli.Content.Page.HtmlTest do
       rendered_html = Page.render(context, page_content, Page.Html)
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-      assert rendered_html_string =~ "<h3>Introduction</h3>"
+      assert rendered_html_string =~ "<h4 class=\"h3\">Introduction</h4>"
       assert rendered_html_string =~ "<oli-multiple-choice-delivery"
       assert rendered_html_string =~ "<oli-check-all-that-apply-delivery"
 
@@ -120,7 +120,7 @@ defmodule Oli.Content.Page.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                # ensure unsupported page item doesnt prevent rendering over other valid items
-               assert rendered_html_string =~ "<h3>Introduction</h3>"
+               assert rendered_html_string =~ "<h4 class=\"h3\">Introduction</h4>"
                assert rendered_html_string =~ "<oli-multiple-choice-delivery"
 
                # render an error message for the unsupported page item

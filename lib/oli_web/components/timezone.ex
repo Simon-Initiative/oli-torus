@@ -6,6 +6,7 @@ defmodule OliWeb.Components.Timezone do
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext, required: true)
+  attr(:select_class, :string, default: nil)
 
   def select(assigns) do
     ~H"""
@@ -14,7 +15,8 @@ defmodule OliWeb.Components.Timezone do
       "Components.SelectTimezone",
       %{
         selectedTimezone: @ctx.local_tz,
-        submitAction: Routes.static_page_path(OliWeb.Endpoint, :update_timezone)
+        submitAction: Routes.static_page_path(OliWeb.Endpoint, :update_timezone),
+        selectClassName: @select_class
       },
       id: @id
     )}
