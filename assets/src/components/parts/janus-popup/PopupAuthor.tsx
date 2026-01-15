@@ -157,10 +157,6 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   const shouldShowIcon = !hideIcon;
   const shouldShowLabel = labelText && labelText.trim().length > 0;
 
-  // Determine if iconSrc is a standard icon (data URL) or custom URL
-  const isStandardIcon = iconSrc && iconSrc.startsWith('data:');
-  const isCustomIcon = iconSrc && !isStandardIcon;
-
   // Icon sizing:
   // - Fixed 32x32px when label exists (regardless of icon type)
   // - Resizable when no label (uses container size or min 32x32)
