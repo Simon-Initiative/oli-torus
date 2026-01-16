@@ -54,28 +54,41 @@ defmodule Oli.Rendering.Content.Html do
     ["<span>", next.(), "</span>\n"]
   end
 
+  # increment content header levels for semantic consistency w/page title as h1
+  # h1 => <h2 class="h1"> etc
+  defp shifted_heading(level, next) do
+    tag = min(level + 1, 6)
+
+    [
+      "<h#{tag} class=\"h#{level}\">",
+      next.(),
+      "</h#{tag}>\n"
+    ]
+  end
+
   def h1(%Context{} = _context, next, _) do
-    ["<h1>", next.(), "</h1>\n"]
+    shifted_heading(1, next)
   end
 
   def h2(%Context{} = _context, next, _) do
-    ["<h2>", next.(), "</h2>\n"]
+    shifted_heading(2, next)
   end
 
   def h3(%Context{} = _context, next, _) do
-    ["<h3>", next.(), "</h3>\n"]
+    shifted_heading(3, next)
   end
 
   def h4(%Context{} = _context, next, _) do
-    ["<h4>", next.(), "</h4>\n"]
+    shifted_heading(4, next)
   end
 
   def h5(%Context{} = _context, next, _) do
-    ["<h5>", next.(), "</h5>\n"]
+    shifted_heading(5, next)
   end
 
+  # no h7 to use but h6 should be rare to non-existent
   def h6(%Context{} = _context, next, _) do
-    ["<h6>", next.(), "</h6>\n"]
+    shifted_heading(6, next)
   end
 
   def img(%Context{} = context, _, %{"src" => src} = attrs) do

@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Gating do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Delivery.Hierarchy
   alias Oli.Accounts.User
   alias Oli.Delivery.Gating.ConditionTypes.ConditionContext
@@ -279,8 +280,8 @@ defmodule Oli.Delivery.Gating do
   The resource_ids in the list represent all hierarchy parent resources which
   have gating conditions associated with them
   """
-  def generate_resource_gating_index(%Section{id: section_id, slug: section_slug}) do
-    hierarchy = DeliveryResolver.full_hierarchy(section_slug)
+  def generate_resource_gating_index(%Section{id: section_id} = section) do
+    hierarchy = SectionResourceDepot.get_delivery_resolver_full_hierarchy(section)
 
     gated_resource_id_map =
       list_gating_conditions(section_id)
