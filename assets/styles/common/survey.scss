@@ -6,7 +6,7 @@
     text-transform: uppercase;
     background: var(--color-delivery-purpose-label-bg);
     padding: 4px 0;
-    color: var(--color-white);
+    color: var(--color-gray-900);
 
     /** icon */
     &::before {
@@ -29,6 +29,7 @@ html.dark {
 
     & > .survey-label {
       background: var(--color-delivery-purpose-label-bg-dark);
+      color: var(--color-white);
     }
   }
 }

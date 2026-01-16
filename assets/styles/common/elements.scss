@@ -275,17 +275,25 @@ $element-margin-bottom: 1.5em;
 
   // MER-3066: Highlight terms outside of definitions, but leave normal size
   .term {
-    color: var(--color-green-400);
+    color: var(--color-green-700);
     font-weight: bold;
+  }
+
+  html.dark & .term {
+    color: var(--color-green-400);
   }
 
   .definition {
     margin-bottom: $element-margin-bottom;
 
     .term {
-      color: var(--color-green-400);
+      color: var(--color-green-700);
       font-size: 1.3em;
       font-weight: bold;
+    }
+
+    html.dark & .term {
+      color: var(--color-green-400);
     }
 
     .meanings-empty {

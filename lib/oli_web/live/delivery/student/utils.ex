@@ -34,7 +34,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             <div class="grow shrink basis-0 self-stretch justify-start items-center gap-3 flex">
               <div
                 role="container label"
-                class="text-Text-text-low text-sm font-bold uppercase tracking-wider"
+                class="text-Text-text-low text-sm font-bold uppercase tracking-wider opacity-75"
               >
                 {@container_label}
               </div>
@@ -50,7 +50,7 @@ defmodule OliWeb.Delivery.Student.Utils do
                 role="scored page marker"
               >
                 <Icons.flag />
-                <div class="text-Text-text-high text-sm font-bold uppercase tracking-wider">
+                <div class="text-Text-text-high text-sm font-bold uppercase tracking-wider opacity-75">
                   Scored Page
                 </div>
               </div>
@@ -68,7 +68,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           <div role="page label" class="self-stretch justify-start items-start gap-2.5 inline-flex">
             <div
               role="page numbering index"
-              class="text-Text-text-low text-[32px] sm:text-[40px] font-bold"
+              class="text-Text-text-low text-[32px] sm:text-[40px] font-bold opacity-75"
             >
               {@index}.
             </div>
@@ -118,7 +118,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           <div
             :if={@page_context.effective_settings.end_date}
             role="page schedule"
-            class="justify-start items-start gap-1 flex"
+            class="justify-start items-start gap-1 flex opacity-75"
           >
             <div class="text-Text-text-low text-xs font-semibold">
               {label_for_scheduling_type(@page_context.effective_settings.scheduling_type)}
@@ -512,7 +512,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     <button
       :if={@page_context.review_mode == false && not @advanced_delivery && @activity_count > 0}
       id="reset_answers"
-      class="btn btn-link btn-sm text-center mb-10"
+      class="btn btn-sm text-center mb-10 text-Text-text-link"
       onClick={"window.OLI.finalize('#{@section_slug}', '#{@page_context.page.slug}', '#{hd(@page_context.resource_attempts).attempt_guid}', false, 'reset_answers')"}
     >
       <i class="fa-solid fa-rotate-right mr-2"></i> Reset Answers

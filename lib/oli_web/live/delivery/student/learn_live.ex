@@ -1817,7 +1817,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
           >
             <div class="justify-start items-start gap-1 inline-flex">
-              <div class="opacity-60 dark:text-white text-sm font-bold uppercase tracking-tight">
+              <div class="opacity-75 dark:text-white text-sm font-bold uppercase tracking-tight">
                 {container_label_and_numbering(
                   selected_module["numbering"][
                     "level"
@@ -2493,7 +2493,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             progress={@row["progress"]}
           />
           <div class="w-[26px] justify-start items-center">
-            <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold capitalize">
+            <div class="grow shrink basis-0 opacity-75 dark:text-white text-[13px] font-semibold capitalize">
               <.numbering_index type={Atom.to_string(@type)} index={@row["numbering"]["index"]} />
             </div>
           </div>
@@ -2773,7 +2773,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="justify-start items-start gap-5 flex">
         <Icons.no_icon />
         <div class="w-[26px] justify-start items-center">
-          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold capitalize">
+          <div class="grow shrink basis-0 opacity-75 text-white text-[13px] font-semibold capitalize">
             <.numbering_index type={@type} index={@numbering_index} />
           </div>
         </div>
@@ -2881,7 +2881,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           progress={@progress}
         />
         <div class="w-[26px] justify-start items-center">
-          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold capitalize">
+          <div class="grow shrink basis-0 opacity-75 text-white text-[13px] font-semibold capitalize">
             <.numbering_index type={@type} index={@numbering_index} />
           </div>
         </div>
@@ -3544,7 +3544,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp numbering_index(assigns) do
     ~H"""
-    <span class="opacity-60 text-black dark:text-white text-[13px] font-semibold capitalize">
+    <span class="opacity-75 text-black dark:text-white text-[13px] font-semibold capitalize">
       {if @type == "page", do: "#{@index}", else: " "}
     </span>
     """

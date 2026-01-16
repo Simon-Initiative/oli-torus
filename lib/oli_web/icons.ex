@@ -204,7 +204,7 @@ defmodule OliWeb.Icons do
         cx="4"
         cy="4"
         r="4"
-        class="fill-gray-700 dark:fill-white group-[.past-start]:fill-gray-300 dark:group-[.past-start]:fill-gray-700"
+        class="fill-gray-700 dark:fill-white group-[.past-start]:fill-gray-300 dark:group-[.past-start]:fill-gray-400"
       />
     </svg>
     """
