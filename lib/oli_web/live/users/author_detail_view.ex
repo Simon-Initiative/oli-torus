@@ -8,6 +8,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, SystemRole}
+  alias Oli.AssentAuth.AuthorAssentAuth
   alias Oli.Auditing
 
   alias OliWeb.Accounts.Modals.{
@@ -19,6 +20,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
+  alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
 
@@ -63,6 +65,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author: author,
            disabled_edit: true,
            author_roles: SystemRole.role_id(),
+           credentials_has_google: credentials_has_google?(author),
+           credentials_label: credentials_label(author),
            password_reset_link: "",
            author_name: author.name,
            form: author_form(author)
@@ -81,6 +85,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
   attr(:password_reset_link, :string)
   attr(:author_name, :string)
   attr(:form, :map)
+  attr(:credentials_has_google, :boolean)
+  attr(:credentials_label, :string)
 
   def render(assigns) do
     ~H"""
@@ -126,6 +132,23 @@ defmodule OliWeb.Users.AuthorsDetailView do
                 disabled={@disabled_edit}
                 error_position={:bottom}
               />
+            </div>
+            <div class="form-group">
+              <label>Credentials Managed By</label>
+              <div class="text-secondary d-flex align-items-center gap-4 mt-2">
+                <%= if @credentials_has_google do %>
+                  <div class="d-flex flex-column align-items-center">
+                    <Icons.google />
+                    <span class="small">Google</span>
+                  </div>
+                <% end %>
+                <%= if @credentials_has_google && @credentials_label do %>
+                  <span class="text-muted">|</span>
+                <% end %>
+                <%= if @credentials_label do %>
+                  <span>{@credentials_label}</span>
+                <% end %>
+              </div>
             </div>
             <div class="form-group">
               <label for="role">Role</label>
@@ -497,6 +520,23 @@ defmodule OliWeb.Users.AuthorsDetailView do
     |> case do
       "" -> fallback_author.name || ""
       name -> name
+    end
+  end
+
+  defp credentials_has_google?(%Author{} = author) do
+    AuthorAssentAuth.list_user_identities(author)
+    |> Enum.any?(&(&1.provider == "google"))
+  end
+
+  defp credentials_label(%Author{} = author) do
+    has_password = AuthorAssentAuth.has_password?(author)
+    has_google = credentials_has_google?(author)
+
+    cond do
+      has_google and has_password -> "Email & Password"
+      has_google -> nil
+      has_password -> "Email & Password"
+      true -> "Email & Password"
     end
   end
 
