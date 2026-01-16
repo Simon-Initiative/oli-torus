@@ -61,6 +61,8 @@ defmodule OliWeb.Users.UsersDetailView do
           Sections.list_user_enrolled_sections(user)
           |> add_necessary_information(user)
 
+        has_google = credentials_has_google?(user)
+
         {:ok,
          assign(socket,
            current_author: socket.assigns.current_author,
@@ -69,8 +71,8 @@ defmodule OliWeb.Users.UsersDetailView do
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
-           credentials_has_google: credentials_has_google?(user),
-           credentials_label: credentials_label(user),
+           credentials_has_google: has_google,
+           credentials_label: credentials_label(user, has_google),
            disabled_edit: true,
            user_name: user.name,
            password_reset_link: ""
@@ -551,15 +553,14 @@ defmodule OliWeb.Users.UsersDetailView do
     |> Enum.any?(&(&1.provider == "google"))
   end
 
-  defp credentials_label(%User{} = user) do
+  defp credentials_label(%User{} = user, has_google) do
     has_password = UserAssentAuth.has_password?(user)
-    has_google = credentials_has_google?(user)
 
     cond do
       has_google and has_password -> "Email & Password"
       has_google -> nil
       has_password -> "Email & Password"
-      true -> "Email & Password"
+      true -> "None"
     end
   end
 

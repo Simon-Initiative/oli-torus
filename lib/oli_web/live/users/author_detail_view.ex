@@ -58,6 +58,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
          |> redirect(to: ~p"/admin/authors")}
 
       author ->
+        has_google = credentials_has_google?(author)
+
         {:ok,
          assign(socket,
            current_author: socket.assigns.current_author,
@@ -65,8 +67,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author: author,
            disabled_edit: true,
            author_roles: SystemRole.role_id(),
-           credentials_has_google: credentials_has_google?(author),
-           credentials_label: credentials_label(author),
+           credentials_has_google: has_google,
+           credentials_label: credentials_label(author, has_google),
            password_reset_link: "",
            author_name: author.name,
            form: author_form(author)
@@ -528,15 +530,14 @@ defmodule OliWeb.Users.AuthorsDetailView do
     |> Enum.any?(&(&1.provider == "google"))
   end
 
-  defp credentials_label(%Author{} = author) do
+  defp credentials_label(%Author{} = author, has_google) do
     has_password = AuthorAssentAuth.has_password?(author)
-    has_google = credentials_has_google?(author)
 
     cond do
       has_google and has_password -> "Email & Password"
       has_google -> nil
       has_password -> "Email & Password"
-      true -> "Email & Password"
+      true -> "None"
     end
   end
 
