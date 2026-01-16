@@ -5,7 +5,7 @@ defmodule OliWeb.CookiePreferencesLive do
 
   def mount(params, _session, socket) do
     # Get return_to from params or use referer as fallback
-    return_to = Map.get(params, "return_to") || get_referer(socket) || "/"
+    return_to = Map.get(params, "return_to") || "/"
 
     # Get current cookie preferences from database if user is logged in
     {functional_active, analytics_active, targeting_active} = get_cookie_preferences(socket)
@@ -102,6 +102,73 @@ defmodule OliWeb.CookiePreferencesLive do
   end
 
   defp cookie_preferences_content(assigns) do
+    assigns =
+      assign(assigns, :cookie_sections, [
+        %{
+          key: :strict_cookies,
+          title: "Strictly Necessary Cookies",
+          description: [
+            "These cookies are necessary for our website to function properly and cannot be switched off in our systems.",
+            "You can set your browser to block or alert you about these cookies, but some parts of the site will not then work. These cookies do not store any personally identifiable information."
+          ],
+          cookies: [
+            %{
+              domain: "canvas.oli.cmu.edu, proton.oli.cmu.edu, oli.cmu.edu, cmu.edu",
+              cookies:
+                "_oli_key, _cky_opt_in, _cky_opt_in_dismiss, _cky_opt_choices, _legacy_normandy_session, log_session_id, _csrf_token",
+              type: "1st Party",
+              description:
+                "This cookies are usually only set in response to actions made by you which amount to a request for services, such as setting your privacy preferences, logging in or where they're essential to provide you with a service you have requested."
+            }
+          ],
+          disabled: true,
+          checked: true
+        },
+        %{
+          key: :functional_cookies,
+          title: "Functionality Cookies",
+          description: [
+            "These cookies are used to provide you with a more personalized experience on our website and to remember choices you make when you use our website.",
+            "For example, we may use functionality cookies to remember your language preferences or remember your login details."
+          ],
+          cookies: [%{domain: "None", cookies: "", type: "", description: ""}],
+          disabled: false,
+          checked: assigns.functional_active
+        },
+        %{
+          key: :analytics_cookies,
+          title: "Analytics Cookies",
+          description: [
+            "These cookies are used to collect information to analyze the traffic to our website and how visitors are using our website.",
+            "For example, these cookies may track things such as how long you spend on the website or the pages you visit which helps us to understand how we can improve our website site for you.",
+            "The information collected through these tracking and performance cookies do not identify any individual visitor."
+          ],
+          cookies: [
+            %{
+              domain: "canvas.oli.cmu.edu, proton.oli.cmu.edu, oli.cmu.edu, cmu.edu",
+              cookies: "_gid, _ga, _ga_xxxxxxx, _utma, _utmb, _utmc, _utmz, nmstat",
+              type: "1st Party",
+              description:
+                "This cookies record basic website information such as: repeat visits; page usage; country of origin for use in Google analytics and other site improvements"
+            }
+          ],
+          disabled: false,
+          checked: assigns.analytics_active
+        },
+        %{
+          key: :targeting_cookies,
+          title: "Targeting Cookies",
+          description: [
+            "These cookies are used to show advertising that is likely to be of interest to you based on your browsing habits.",
+            "These cookies, as served by our content and/or advertising providers, may combine information they collected from our website with other information they have independently collected relating to your web browser's activities across their network of websites.",
+            "If you choose to remove or disable these targeting or advertising cookies, you will still see adverts but they may not be relevant to you."
+          ],
+          cookies: [%{domain: "None", cookies: "", type: "", description: ""}],
+          disabled: false,
+          checked: assigns.targeting_active
+        }
+      ])
+
     ~H"""
     <div>
       <div class="mb-4">
@@ -123,442 +190,126 @@ defmodule OliWeb.CookiePreferencesLive do
       </div>
 
       <div class="accordion flex flex-col gap-y-8">
-        <!-- Strictly Necessary Cookies -->
-        <div class="accordion-item border-0">
-          <div class="accordion-header mb-0 flex justify-content-between">
-            <div class="flex flex-row">
-              <button
-                class="flex flex-row items-center font-open-sans text-[16px] leading-[16px] tracking-normal font-bold align-middle text-Text-text-low-alpha"
-                type="button"
-                phx-click="toggle_section"
-                phx-value-section="strict_cookies"
-                aria-expanded={@expanded_sections.strict_cookies}
-                aria-controls="strict-cookies-panel"
-              >
-                Strictly Necessary Cookies
-                <i
-                  class={"fa fa-chevron-down #{chevron_class(@expanded_sections.strict_cookies)}"}
-                  style="width: 20px; height: 20px;"
-                >
-                </i>
-              </button>
-            </div>
-            <div class="form-check form-switch">
-              <input
-                type="checkbox"
-                role="switch"
-                aria-label="Strictly Necessary Cookies"
-                class="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top focus:outline-none cursor-pointer shadow-sm"
-                checked
-                disabled
-              />
-            </div>
-          </div>
-          <%= if @expanded_sections.strict_cookies do %>
-            <div id="strict-cookies-panel" class="accordion-collapse">
-              <div class="accordion-body py-4 px-0">
-                <div class="mb-2 text-Text-text-low-alpha">
-                  <p>
-                    These cookies are necessary for our website to function properly and cannot be
-                    switched off in our systems.
-                  </p>
-                  <p>
-                    You can set your browser to block or alert you about these cookies, but some parts
-                    of the site will not then work. These cookies do not store any personally
-                    identifiable information.
-                  </p>
-                </div>
-                <div class="small">
-                  <button
-                    class="text-Text-text-button font-open-sans font-bold text-[14px] leading-[16px] tracking-normal text-center align-middle bg-transparent border-0 p-0"
-                    phx-click="toggle_cookie_table"
-                    phx-value-section="strict_cookies"
-                  >
-                    View Cookies
-                  </button>
-                  <%= if @expanded_cookie_tables.strict_cookies do %>
-                    <div class="mt-2 overflow-x-auto max-w-full">
-                      <table class="table table-striped min-w-full">
-                        <thead>
-                          <tr>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Domain
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Cookies
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Type
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Description
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td class="whitespace-nowrap">
-                              canvas.oli.cmu.edu, proton.oli.cmu.edu, oli.cmu.edu, cmu.edu
-                            </td>
-                            <td class="whitespace-nowrap">
-                              _oli_key, _cky_opt_in, _cky_opt_in_dismiss, _cky_opt_choices,
-                              _legacy_normandy_session, log_session_id, _csrf_token
-                            </td>
-                            <td class="whitespace-nowrap">1st Party</td>
-                            <td class="max-w-xs">
-                              This cookies are usually only set in response to actions made by you which
-                              amount to a request for services, such as setting your privacy
-                              preferences, logging in or where they're essential to provide you with a
-                              service you have requested.
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  <% end %>
-                </div>
-              </div>
-            </div>
-          <% end %>
+        <%= for section <- @cookie_sections do %>
+          <.cookie_section
+            section={section}
+            expanded_sections={@expanded_sections}
+            expanded_cookie_tables={@expanded_cookie_tables}
+          />
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  attr :section, :map, required: true
+  attr :expanded_sections, :map, required: true
+  attr :expanded_cookie_tables, :map, required: true
+
+  defp cookie_section(assigns) do
+    ~H"""
+    <div class="accordion-item border-0">
+      <div class="accordion-header mb-0 flex justify-content-between">
+        <div class="flex flex-row">
+          <button
+            class={[
+              "flex flex-row items-center font-open-sans text-[16px] leading-[16px] tracking-normal font-bold align-middle text-Text-text-low-alpha",
+              unless(@section.disabled, do: "collapsed")
+            ]}
+            type="button"
+            phx-click="toggle_section"
+            phx-value-section={@section.key}
+            aria-expanded={@expanded_sections[@section.key]}
+            aria-controls={"#{@section.key}-panel"}
+          >
+            {@section.title}
+            <i
+              class={"fa fa-chevron-down #{chevron_class(@expanded_sections[@section.key])}"}
+              style="width: 20px; height: 20px;"
+            >
+            </i>
+          </button>
         </div>
-        
-    <!-- Functionality Cookies -->
-        <div class="accordion-item border-0">
-          <div class="accordion-header mb-0 flex justify-content-between">
-            <div class="flex flex-row">
-              <button
-                class="collapsed flex flex-row items-center font-open-sans text-[16px] leading-[16px] tracking-normal font-bold align-middle text-Text-text-low-alpha"
-                type="button"
-                phx-click="toggle_section"
-                phx-value-section="functional_cookies"
-                aria-expanded={@expanded_sections.functional_cookies}
-                aria-controls="functional-cookies-panel"
-              >
-                Functionality Cookies
-                <i
-                  class={"fa fa-chevron-down #{chevron_class(@expanded_sections.functional_cookies)}"}
-                  style="width: 20px; height: 20px;"
-                >
-                </i>
-              </button>
-            </div>
-            <div class="form-check form-switch">
-              <input
-                type="checkbox"
-                role="switch"
-                aria-label="Functionality Cookies"
-                class="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm"
-                checked={@functional_active}
-                phx-click="toggle_preference"
-                phx-value-preference="functional_cookies"
-                phx-value-checked={to_string(!@functional_active)}
-              />
-            </div>
-          </div>
-          <%= if @expanded_sections.functional_cookies do %>
-            <div id="functional-cookies-panel" class="accordion-collapse">
-              <div class="accordion-body py-4 px-0">
-                <div class="mb-2 text-Text-text-low-alpha">
-                  <p>
-                    These cookies are used to provide you with a more personalized experience on our
-                    website and to remember choices you make when you use our website.
-                  </p>
-                  <p>
-                    For example, we may use functionality cookies to remember your language
-                    preferences or remember your login details.
-                  </p>
-                </div>
-                <div class="small">
-                  <button
-                    class="text-Text-text-button font-open-sans font-bold text-[14px] leading-[16px] tracking-normal text-center align-middle bg-transparent border-0 p-0"
-                    phx-click="toggle_cookie_table"
-                    phx-value-section="functional_cookies"
-                  >
-                    View Cookies
-                  </button>
-                  <%= if @expanded_cookie_tables.functional_cookies do %>
-                    <div class="mt-2 overflow-x-auto max-w-full">
-                      <table class="table table-striped min-w-full">
-                        <thead>
-                          <tr>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Domain
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Cookies
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Type
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Description
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td class="whitespace-nowrap">None</td>
-                            <td class="whitespace-nowrap"></td>
-                            <td class="whitespace-nowrap"></td>
-                            <td class="whitespace-nowrap"></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  <% end %>
-                </div>
-              </div>
-            </div>
-          <% end %>
-        </div>
-        
-    <!-- Analytics Cookies -->
-        <div class="accordion-item border-0">
-          <div class="accordion-header mb-0 flex justify-content-between">
-            <div class="flex flex-row">
-              <button
-                class="collapsed flex flex-row items-center font-open-sans text-[16px] leading-[16px] tracking-normal font-bold align-middle text-Text-text-low-alpha"
-                type="button"
-                phx-click="toggle_section"
-                phx-value-section="analytics_cookies"
-                aria-expanded={@expanded_sections.analytics_cookies}
-                aria-controls="analytics-cookies-panel"
-              >
-                Analytics Cookies
-                <i
-                  class={"fa fa-chevron-down #{chevron_class(@expanded_sections.analytics_cookies)}"}
-                  style="width: 20px; height: 20px;"
-                >
-                </i>
-              </button>
-            </div>
-            <div class="form-check form-switch">
-              <input
-                type="checkbox"
-                role="switch"
-                aria-label="Analytics Cookies"
-                class="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm"
-                checked={@analytics_active}
-                phx-click="toggle_preference"
-                phx-value-preference="analytics_cookies"
-                phx-value-checked={to_string(!@analytics_active)}
-              />
-            </div>
-          </div>
-          <%= if @expanded_sections.analytics_cookies do %>
-            <div id="analytics-cookies-panel" class="accordion-collapse">
-              <div class="accordion-body py-4 px-0">
-                <div class="mb-2 text-Text-text-low-alpha">
-                  <p>
-                    These cookies are used to collect information to analyze the traffic to our
-                    website and how visitors are using our website.
-                  </p>
-                  <p>
-                    For example, these cookies may track things such as how long you spend on the
-                    website or the pages you visit which helps us to understand how we can improve our
-                    website site for you.
-                  </p>
-                  <p>
-                    The information collected through these tracking and performance cookies do not
-                    identify any individual visitor.
-                  </p>
-                </div>
-                <div class="small">
-                  <button
-                    class="text-Text-text-button font-open-sans font-bold text-[14px] leading-[16px] tracking-normal text-center align-middle bg-transparent border-0 p-0"
-                    phx-click="toggle_cookie_table"
-                    phx-value-section="analytics_cookies"
-                  >
-                    View Cookies
-                  </button>
-                  <%= if @expanded_cookie_tables.analytics_cookies do %>
-                    <div class="mt-2 overflow-x-auto max-w-full">
-                      <table class="table table-striped min-w-full">
-                        <thead>
-                          <tr>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Domain
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Cookies
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Type
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Description
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td class="whitespace-nowrap">
-                              canvas.oli.cmu.edu, proton.oli.cmu.edu, oli.cmu.edu, cmu.edu
-                            </td>
-                            <td class="whitespace-nowrap">
-                              _gid, _ga, _ga_xxxxxxx, _utma, _utmb, _utmc, _utmz, nmstat
-                            </td>
-                            <td class="whitespace-nowrap">1st Party</td>
-                            <td class="max-w-xs">
-                              This cookies record basic website information such as: repeat visits; page
-                              usage; country of origin for use in Google analytics and other site
-                              improvements
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  <% end %>
-                </div>
-              </div>
-            </div>
-          <% end %>
-        </div>
-        
-    <!-- Targeting Cookies -->
-        <div class="accordion-item border-0">
-          <div class="accordion-header mb-0 flex justify-content-between">
-            <div class="flex flex-row">
-              <button
-                class="collapsed flex flex-row items-center font-open-sans text-[16px] leading-[16px] tracking-normal font-bold align-middle text-Text-text-low-alpha"
-                type="button"
-                phx-click="toggle_section"
-                phx-value-section="targeting_cookies"
-                aria-expanded={@expanded_sections.targeting_cookies}
-                aria-controls="targeting-cookies-panel"
-              >
-                Targeting Cookies
-                <i
-                  class={"fa fa-chevron-down #{chevron_class(@expanded_sections.targeting_cookies)}"}
-                  style="width: 20px; height: 20px;"
-                >
-                </i>
-              </button>
-            </div>
-            <div class="form-check form-switch">
-              <input
-                type="checkbox"
-                role="switch"
-                aria-label="Targeting Cookies"
-                class="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm"
-                checked={@targeting_active}
-                phx-click="toggle_preference"
-                phx-value-preference="targeting_cookies"
-                phx-value-checked={to_string(!@targeting_active)}
-              />
-            </div>
-          </div>
-          <%= if @expanded_sections.targeting_cookies do %>
-            <div id="targeting-cookies-panel" class="accordion-collapse">
-              <div class="accordion-body py-4 px-0">
-                <div class="mb-2 text-Text-text-low-alpha">
-                  <p>
-                    These cookies are used to show advertising that is likely to be of interest to you
-                    based on your browsing habits.
-                  </p>
-                  <p>
-                    These cookies, as served by our content and/or advertising providers, may combine
-                    information they collected from our website with other information they have
-                    independently collected relating to your web browser's activities across
-                    their network of websites.
-                  </p>
-                  <p>
-                    If you choose to remove or disable these targeting or advertising cookies, you
-                    will still see adverts but they may not be relevant to you.
-                  </p>
-                </div>
-                <div class="small">
-                  <button
-                    class="text-Text-text-button font-open-sans font-bold text-[14px] leading-[16px] tracking-normal text-center align-middle bg-transparent border-0 p-0"
-                    phx-click="toggle_cookie_table"
-                    phx-value-section="targeting_cookies"
-                  >
-                    View Cookies
-                  </button>
-                  <%= if @expanded_cookie_tables.targeting_cookies do %>
-                    <div class="mt-2 overflow-x-auto max-w-full">
-                      <table class="table table-striped min-w-full">
-                        <thead>
-                          <tr>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Domain
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Cookies
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Type
-                            </th>
-                            <th
-                              scope="col"
-                              class="text-Text-text-high bg-Background-bg-primary whitespace-nowrap"
-                            >
-                              Description
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td class="whitespace-nowrap">None</td>
-                            <td class="whitespace-nowrap"></td>
-                            <td class="whitespace-nowrap"></td>
-                            <td class="whitespace-nowrap"></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  <% end %>
-                </div>
-              </div>
-            </div>
-          <% end %>
+        <div class="form-check form-switch">
+          <input
+            type="checkbox"
+            role="switch"
+            aria-label={@section.title}
+            class="form-check-input appearance-none w-9 -ml-10 rounded-full float-left h-5 align-top bg-no-repeat bg-contain focus:outline-none cursor-pointer shadow-sm"
+            checked={@section.checked}
+            disabled={@section.disabled}
+            phx-click={unless @section.disabled, do: "toggle_preference"}
+            phx-value-preference={unless @section.disabled, do: @section.key}
+            phx-value-checked={unless @section.disabled, do: to_string(!@section.checked)}
+          />
         </div>
       </div>
+      <%= if @expanded_sections[@section.key] do %>
+        <div id={"#{@section.key}-panel"} class="accordion-collapse">
+          <div class="accordion-body py-4 px-0">
+            <div class="mb-2 text-Text-text-low-alpha">
+              <%= for description <- @section.description do %>
+                <p>{description}</p>
+              <% end %>
+            </div>
+            <div class="small">
+              <button
+                class="text-Text-text-button font-open-sans font-bold text-[14px] leading-[16px] tracking-normal text-center align-middle bg-transparent border-0 p-0"
+                phx-click="toggle_cookie_table"
+                phx-value-section={@section.key}
+              >
+                View Cookies
+              </button>
+              <%= if @expanded_cookie_tables[@section.key] do %>
+                <div class="mt-2 overflow-x-auto max-w-full">
+                  <table class="table table-striped w-full">
+                    <thead>
+                      <tr>
+                        <th
+                          scope="col"
+                          class="text-Text-text-high bg-Background-bg-primary px-2 py-1 text-xs sm:text-sm w-1/4"
+                        >
+                          Domain
+                        </th>
+                        <th
+                          scope="col"
+                          class="text-Text-text-high bg-Background-bg-primary px-2 py-1 text-xs sm:text-sm w-1/4"
+                        >
+                          Cookies
+                        </th>
+                        <th
+                          scope="col"
+                          class="text-Text-text-high bg-Background-bg-primary px-2 py-1 text-xs sm:text-sm w-1/6"
+                        >
+                          Type
+                        </th>
+                        <th
+                          scope="col"
+                          class="text-Text-text-high bg-Background-bg-primary px-2 py-1 text-xs sm:text-sm w-1/3"
+                        >
+                          Description
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <%= for cookie <- @section.cookies do %>
+                        <tr>
+                          <td class="px-2 py-1 text-xs sm:text-sm break-words">{cookie.domain}</td>
+                          <td class="px-2 py-1 text-xs sm:text-sm break-words">{cookie.cookies}</td>
+                          <td class="px-2 py-1 text-xs sm:text-sm">{cookie.type}</td>
+                          <td class="px-2 py-1 text-xs sm:text-sm break-words leading-tight">
+                            {cookie.description}
+                          </td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
     </div>
     """
   end
@@ -647,25 +398,6 @@ defmodule OliWeb.CookiePreferencesLive do
 
   defp not_blank?(value) when is_binary(value), do: String.trim(value) != ""
   defp not_blank?(_), do: false
-
-  defp get_referer(socket) do
-    case get_connect_info(socket, :peer_data) do
-      %{address: _address, port: _port} ->
-        # Try to get referer from request headers if available
-        case get_connect_info(socket, :user_agent) do
-          nil ->
-            nil
-
-          _ ->
-            # In LiveView, we can't directly access HTTP headers
-            # So we'll rely on the return_to parameter instead
-            nil
-        end
-
-      _ ->
-        nil
-    end
-  end
 
   defp chevron_class(expanded) do
     base_class = "ml-2 transition-transform duration-200"
