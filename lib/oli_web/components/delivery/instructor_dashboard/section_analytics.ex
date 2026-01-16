@@ -765,7 +765,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       end
 
     if query && String.trim(query) != "" do
-      case validate_query_section_filter(query, socket.assigns.section.id) do
+      case Oli.Analytics.ClickhouseQueryValidator.validate_custom_query(
+             query,
+             :section_id,
+             socket.assigns.section.id
+           ) do
         :ok ->
           # Add JSONEachRow format for easier parsing in custom analytics
           formatted_query =
@@ -921,57 +925,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics do
       {:noreply, socket}
     else
       {:noreply, socket}
-    end
-  end
-
-  # Helper functions for custom analytics
-  defp validate_query_section_filter(query, current_section_id) do
-    # Normalize the query for easier parsing
-    normalized_query =
-      query
-      |> String.downcase()
-      |> String.replace(~r/\s+/, " ")
-      |> String.trim()
-
-    # Check if there's a WHERE clause
-    unless String.contains?(normalized_query, "where") do
-      {:error, "Query must include a WHERE clause to filter results to the current section"}
-    else
-      # Extract the WHERE clause and everything after it
-      case String.split(normalized_query, "where", parts: 2) do
-        [_before_where] ->
-          {:error, "Query must include a WHERE clause to filter results to the current section"}
-
-        [_before_where, where_clause] ->
-          validate_section_id_in_where_clause(where_clause, current_section_id)
-      end
-    end
-  end
-
-  defp validate_section_id_in_where_clause(where_clause, current_section_id) do
-    # Check for section_id filter patterns (with and without quotes)
-    section_id_patterns = [
-      ~r/section_id\s*=\s*#{current_section_id}(\s|$|and|or|group|order|limit|having)/,
-      ~r/section_id\s*=\s*'#{current_section_id}'(\s|$|and|or|group|order|limit|having)/,
-      ~r/section_id\s*=\s*"#{current_section_id}"(\s|$|and|or|group|order|limit|having)/
-    ]
-
-    section_filter_found =
-      Enum.any?(section_id_patterns, fn pattern ->
-        Regex.match?(pattern, where_clause)
-      end)
-
-    if section_filter_found do
-      :ok
-    else
-      # Check if section_id is mentioned but with wrong value
-      if String.contains?(where_clause, "section_id") do
-        {:error,
-         "Query contains section_id filter but with incorrect value. Must be: WHERE section_id = #{current_section_id}"}
-      else
-        {:error,
-         "Query must filter results to the current section (WHERE section_id = #{current_section_id})"}
-      end
     end
   end
 
