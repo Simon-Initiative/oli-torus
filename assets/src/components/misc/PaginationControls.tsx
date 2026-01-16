@@ -16,9 +16,7 @@ export interface PaginationControlsProps {
 }
 
 type Page = List<Element>;
-type DisplayItem =
-  | { type: 'page'; index: number; key: string }
-  | { type: 'ellipsis'; key: string };
+type DisplayItem = { type: 'page'; index: number; key: string } | { type: 'ellipsis'; key: string };
 
 export const PaginationControls = (props: PaginationControlsProps) => {
   const controls = useRef<HTMLDivElement>(null);
