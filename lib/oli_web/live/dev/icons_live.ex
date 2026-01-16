@@ -26,9 +26,7 @@ defmodule OliWeb.Dev.IconsLive do
       <div class="flex flex-col mb-4">
         <div class="flex justify-between items-center h-20">
           <h1 class="text-3xl">Icons</h1>
-          {React.component(@ctx, "Components.DarkModeSelector", %{showLabels: false},
-            id: "dark_mode_selector"
-          )}
+          {React.component(@ctx, "Components.DarkModeSelector", %{}, id: "dark_mode_selector")}
         </div>
         <p class="text-lg">
           This page renders all icons defined at <code>OliWeb.Icons</code>.

@@ -597,8 +597,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       params: params,
       section: section,
       selected_unit_resource_id: selected_unit_resource_id
-    } =
-      socket.assigns
+    } = socket.assigns
 
     params =
       if search_term not in ["", nil] do
@@ -608,10 +607,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       end
       |> Map.drop(["target_resource_id"])
 
+    path =
+      if socket.assigns[:preview_mode] do
+        ~p"/sections/#{section.slug}/preview/learn?#{params}"
+      else
+        ~p"/sections/#{section.slug}/learn?#{params}"
+      end
+
     {:noreply,
-     push_patch(socket,
-       to: ~p"/sections/#{section.slug}/learn?#{params}"
-     )
+     push_patch(socket, to: path)
      # This event is used to expand the containers that contain a child that matches the search term
      |> push_event("js-exec", %{
        to:
@@ -624,11 +628,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def handle_event("clear_search", _params, socket) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         ~p"/sections/#{socket.assigns.section.slug}/learn?#{Map.drop(socket.assigns.params, ["search_term", "target_resource_id"])}"
-     )}
+    params = Map.drop(socket.assigns.params, ["search_term", "target_resource_id"])
+
+    path =
+      if socket.assigns[:preview_mode] do
+        ~p"/sections/#{socket.assigns.section.slug}/preview/learn?#{params}"
+      else
+        ~p"/sections/#{socket.assigns.section.slug}/learn?#{params}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   def handle_event(
@@ -692,11 +701,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def handle_event("change_selected_view", %{"selected_view" => selected_view}, socket) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         ~p"/sections/#{socket.assigns.section.slug}/learn?#{%{selected_view: selected_view, sidebar_expanded: socket.assigns.sidebar_expanded}}"
-     )}
+    path =
+      if socket.assigns[:preview_mode] do
+        ~p"/sections/#{socket.assigns.section.slug}/preview/learn?#{%{selected_view: selected_view, sidebar_expanded: socket.assigns.sidebar_expanded}}"
+      else
+        ~p"/sections/#{socket.assigns.section.slug}/learn?#{%{selected_view: selected_view, sidebar_expanded: socket.assigns.sidebar_expanded}}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   @doc """

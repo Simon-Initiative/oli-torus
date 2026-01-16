@@ -2717,6 +2717,47 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # right arrow is present
       assert has_element?(view, ~s{button[id=slider_right_button_#{unit_1.resource_id}]})
     end
+
+    test "can switch views in preview mode", %{conn: conn, section: section} do
+      # Start in gallery view in preview mode
+      {:ok, view, _html} =
+        live(conn, "/sections/#{section.slug}/preview/learn?selected_view=gallery")
+
+      # Verify we're in gallery view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
+
+      # Switch to outline view
+      view
+      |> element(~s{div[id=view_selector] button[phx-click="expand_select"]})
+      |> render_click()
+
+      view
+      |> element(~s{button[phx-value-selected_view=outline]})
+      |> render_click()
+
+      # Verify the path stays in preview mode (includes /preview)
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/preview/learn?sidebar_expanded=true&selected_view=outline"
+      )
+
+      # Verify we're in outline view now
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
+
+      # Switch back to gallery view
+      view
+      |> element(~s{button[phx-value-selected_view=gallery]})
+      |> render_click()
+
+      # Verify the path still stays in preview mode
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/preview/learn?sidebar_expanded=true&selected_view=gallery"
+      )
+
+      # Verify we're in gallery view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
+    end
   end
 
   describe "sidebar menu" do
@@ -2995,7 +3036,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, redirect_path)
 
       assert view |> element(~s{#header span}, "(Preview Mode)") |> render() =~ "(Preview Mode)"
-      assert view |> element(~s{h1}) |> render() =~ "Your Practice Pages"
+      assert view |> element(~s{h1.text-4xl}) |> render() =~ "Your Practice Pages"
     end
   end
 
@@ -3270,6 +3311,33 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> Enum.each(fn title ->
         refute view |> has_element?("span[role='page title']", title)
       end)
+    end
+
+    test "search works in preview mode without causing routing errors", %{
+      conn: conn,
+      section: section
+    } do
+      # Start in outline view in preview mode
+      {:ok, view, _html} =
+        live(conn, "/sections/#{section.slug}/preview/learn?selected_view=outline")
+
+      # Perform a search - this should not cause a routing error
+      view
+      |> element("form[phx-change='search']")
+      |> render_change(%{"search_term" => "Page 1"})
+
+      # Verify search results are shown (no error occurred)
+      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[role='page title']", "Page 10")
+
+      # Clear the search by searching for empty string
+      view
+      |> element("form[phx-change='search']")
+      |> render_change(%{"search_term" => ""})
+
+      # Verify all content is shown again after clearing search
+      assert has_element?(view, "div[role='unit title']", "Introduction")
+      assert has_element?(view, "span[role='page title']", "Page 2")
     end
   end
 

@@ -873,7 +873,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
       assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
-      assert has_element?(view, ~s{div[role="page title"]}, "Page 2")
+      assert has_element?(view, ~s{h1[role="page title"]}, "Page 2")
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
     end
@@ -977,7 +977,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               "#proficiency_explanation_modal h1",
+               "#proficiency_explanation_modal h2",
                "Measuring Learning Proficiency"
              )
 

@@ -29,7 +29,12 @@ import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
 } from '../../groups/selectors/deck';
-import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
+import {
+  selectPreviewMode,
+  selectResourceAttemptGuid,
+  selectReviewMode,
+  selectSectionSlug,
+} from '../../page/slice';
 import AdaptivitySlice from '../name';
 import { setLastCheckResults, setLastCheckTriggered } from '../slice';
 
@@ -38,6 +43,7 @@ export const triggerCheck = createAsyncThunk(
   async (options: { activityId: string; customRules?: any[] }, { dispatch, getState }) => {
     const rootState = getState() as DeliveryRootState;
     const isPreviewMode = selectPreviewMode(rootState);
+    const isReviewMode = selectReviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const blobStorageProvider = rootState.page.blobStorageProvider;
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
@@ -99,7 +105,7 @@ export const triggerCheck = createAsyncThunk(
     await dispatch(updateExtrinsicState({ state: extrinsicSnapshot }));
 
     const extrnisicState = selectExtrinsicState(getState() as DeliveryRootState);
-    if (!isPreviewMode) {
+    if (!isPreviewMode && !isReviewMode) {
       // update the server with the latest changes to extrinsic state
 
       /* console.log('trigger check last min extrinsic state', {
@@ -430,7 +436,7 @@ export const triggerCheck = createAsyncThunk(
     }, {});
     await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
 
-    if (!isPreviewMode) {
+    if (!isPreviewMode && !isReviewMode) {
       if (doesCheckResultContainsNavigationToDifferentScreen) {
         const [firstNavAction] = actionsByType.navigation;
         const navTarget = firstNavAction.params.target;

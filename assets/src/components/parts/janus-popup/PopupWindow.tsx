@@ -21,7 +21,8 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
   snapshot = {},
   env,
 }) => {
-  const responsiveLayout = context?.responsiveLayout ?? false;
+  //setting it to false for now until we fix the pop-up responsive layout issues
+  const responsiveLayout = false; //context?.responsiveLayout ?? false;
   const popupModalStyles: CSSProperties = {
     width: config?.width || 300,
   };
@@ -146,7 +147,7 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
           onPartInit={handlePartInit}
           parts={parts}
           responsiveLayout={responsiveLayout}
-        />
+        ></PartsLayoutRenderer>
       </div>
     </div>
   );

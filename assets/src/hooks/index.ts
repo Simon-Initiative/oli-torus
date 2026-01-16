@@ -1,4 +1,5 @@
 import LiveReact from 'phoenix_live_react';
+import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
@@ -64,6 +65,7 @@ import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
+  AnnotationBubbles,
   DebouncedTextInputListener,
   GlobalTooltip,
   WakeUpDot,
