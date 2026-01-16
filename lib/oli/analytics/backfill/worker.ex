@@ -13,6 +13,7 @@ defmodule Oli.Analytics.Backfill.Worker do
   alias Oli.Analytics.Backfill
   alias Oli.Analytics.Backfill.BackfillRun
   alias Oli.Analytics.Backfill.QueryBuilder
+
   defp analytics_module do
     Application.get_env(:oli, :clickhouse_analytics_module, Oli.Analytics.ClickhouseAnalytics)
   end
@@ -117,7 +118,9 @@ defmodule Oli.Analytics.Backfill.Worker do
         end
 
       {:error, reason} ->
-        Logger.warning("Unable to fetch ClickHouse query status for #{run.query_id}: #{inspect(reason)}")
+        Logger.warning(
+          "Unable to fetch ClickHouse query status for #{run.query_id}: #{inspect(reason)}"
+        )
 
         metadata =
           run.metadata
@@ -159,14 +162,18 @@ defmodule Oli.Analytics.Backfill.Worker do
 
   defp poll_query_status(query_id, attempt) do
     case analytics_module().query_status(query_id) do
-      {:ok, %{status: status} = info} when status in [:completed, :failed] -> {:ok, info}
+      {:ok, %{status: status} = info} when status in [:completed, :failed] ->
+        {:ok, info}
+
       {:ok, %{status: :running}} ->
         Process.sleep(@status_poll_interval_ms)
         poll_query_status(query_id, attempt + 1)
 
-      {:error, reason} -> {:error, reason}
+      {:error, reason} ->
+        {:error, reason}
 
-      other -> other
+      other ->
+        other
     end
   end
 
@@ -179,7 +186,8 @@ defmodule Oli.Analytics.Backfill.Worker do
     }
   end
 
-  defp extract_dry_run_metrics(_), do: %{rows_read: nil, bytes_read: nil, rows_written: 0, bytes_written: 0}
+  defp extract_dry_run_metrics(_),
+    do: %{rows_read: nil, bytes_read: nil, rows_written: 0, bytes_written: 0}
 
   defp extract_metrics_from_status(info, response) do
     %{
@@ -238,7 +246,10 @@ defmodule Oli.Analytics.Backfill.Worker do
   defp normalize_param_value(value) when is_binary(value), do: value
   defp normalize_param_value(value) when is_boolean(value), do: if(value, do: "1", else: "0")
   defp normalize_param_value(value) when is_integer(value), do: Integer.to_string(value)
-  defp normalize_param_value(value) when is_float(value), do: :erlang.float_to_binary(value, [:compact])
+
+  defp normalize_param_value(value) when is_float(value),
+    do: :erlang.float_to_binary(value, [:compact])
+
   defp normalize_param_value(value), do: to_string(value)
 
   defp format_error({:error, reason}), do: format_error(reason)

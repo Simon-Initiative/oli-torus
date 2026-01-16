@@ -120,9 +120,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
       result = parse_tsv_data_test(tsv_data)
 
       assert result == [
-        ["1", "https://example.com/video-1", "25", "20", "80.0", "0.85", "15"],
-        ["2", "https://example.com/video-2", "18", "12", "66.7", "0.72", "12"]
-      ]
+               ["1", "https://example.com/video-1", "25", "20", "80.0", "0.85", "15"],
+               ["2", "https://example.com/video-2", "18", "12", "66.7", "0.72", "12"]
+             ]
     end
 
     test "handles empty input" do
@@ -156,9 +156,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
       result = parse_tsv_data_test(tsv_data)
 
       assert result == [
-        ["data1", "data2", "data3"],
-        ["data4", "data5", "data6"]
-      ]
+               ["data1", "data2", "data3"],
+               ["data4", "data5", "data6"]
+             ]
     end
 
     test "preserves data that contains dashes but is not a separator" do
@@ -171,14 +171,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
       result = parse_tsv_data_test(tsv_data)
 
       assert result == [
-        ["test-item", "A test-case with dashes", "123"],
-        ["another-test", "More-data-here", "456"]
-      ]
+               ["test-item", "A test-case with dashes", "123"],
+               ["another-test", "More-data-here", "456"]
+             ]
     end
 
     test "handles the exact separator pattern from the error" do
       # This is the exact separator line that was causing the error
-      separator_line = "-------------------|--------------------------------------------------------------------------------------------------|-------|-------------|--------------------|----------------------|---------------"
+      separator_line =
+        "-------------------|--------------------------------------------------------------------------------------------------|-------|-------------|--------------------|----------------------|---------------"
 
       tsv_data = """
       header1\theader2\theader3
@@ -200,10 +201,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
     defp safe_video_data_extraction(row) do
       case row do
         list when is_list(list) and length(list) >= 7 ->
-          [_id, title, plays, _completions, completion_rate, _avg_progress, _viewers] = Enum.take(list, 7)
+          [_id, title, plays, _completions, completion_rate, _avg_progress, _viewers] =
+            Enum.take(list, 7)
+
           {:ok, {title, plays, completion_rate}}
+
         list when is_list(list) ->
           {:error, :insufficient_data}
+
         _ ->
           {:error, :invalid_format}
       end
@@ -220,7 +225,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.SectionAnalyticsTest do
     end
 
     test "handles separator line data gracefully" do
-      separator_as_list = ["-------------------|--------------------------------------------------------------------------------------------------|-------|-------------|--------------------|----------------------|---------------"]
+      separator_as_list = [
+        "-------------------|--------------------------------------------------------------------------------------------------|-------|-------------|--------------------|----------------------|---------------"
+      ]
+
       assert {:error, :insufficient_data} = safe_video_data_extraction(separator_as_list)
     end
 

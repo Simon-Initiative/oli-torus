@@ -265,7 +265,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {load_state, comprehensive_section_analytics} =
         case Oli.Analytics.ClickhouseAnalytics.section_analytics_loaded?(section_id) do
           {:ok, true} ->
-            {:loaded, Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id)}
+            {:loaded,
+             Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id)}
 
           {:ok, false} ->
             {:not_loaded, nil}

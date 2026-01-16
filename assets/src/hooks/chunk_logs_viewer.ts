@@ -375,7 +375,9 @@ export const ChunkLogsViewer = {
     if (!this.bodyEl || !this.scrollEl) return;
 
     const newOffset =
-      typeof payload.offset === 'number' ? payload.offset : Math.max(this.state.offset - this.limit, 0);
+      typeof payload.offset === 'number'
+        ? payload.offset
+        : Math.max(this.state.offset - this.limit, 0);
 
     if (newOffset >= this.state.offset) {
       return;
@@ -602,8 +604,7 @@ export const ChunkLogsViewer = {
     if (!this.batchId) return;
 
     const existing = persistedState[this.batchId] ?? {};
-    const initialLive =
-      typeof existing.live === 'boolean' ? existing.live : this.defaultLive;
+    const initialLive = typeof existing.live === 'boolean' ? existing.live : this.defaultLive;
 
     this.state.autoLiveAllowed = initialLive;
 
@@ -629,10 +630,7 @@ export const ChunkLogsViewer = {
     }
   },
 
-  setLiveUpdate(
-    enabled: boolean,
-    opts: { persist?: boolean; force?: boolean } = {},
-  ) {
+  setLiveUpdate(enabled: boolean, opts: { persist?: boolean; force?: boolean } = {}) {
     const { persist = true, force = false } = opts;
 
     if (!force && this.state.liveEnabled === enabled) {

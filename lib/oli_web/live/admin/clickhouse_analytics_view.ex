@@ -46,7 +46,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
             </:loading>
             <:failed :let={reason}>
               <div class="text-red-600 dark:text-red-400">
-                ClickHouse health check failed: <%= inspect(reason) %>
+                ClickHouse health check failed: {inspect(reason)}
               </div>
             </:failed>
             <% raw_events = Map.get(summary, :raw_events, %{}) %>
@@ -56,18 +56,18 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                 <h3 class="text-lg font-semibold">Connection</h3>
                 <div class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-1">
                   <div>Status: <span class="text-green-600 dark:text-green-400">Healthy</span></div>
-                  <div>Host: <%= summary["hostname"] || "unknown" %></div>
-                  <div>Version: <%= summary["version"] || "unknown" %></div>
-                  <div>Timezone: <%= summary["timezone"] || "unknown" %></div>
-                  <div>Server time: <%= summary["server_time"] || "unknown" %></div>
-                  <div>Uptime: <%= format_uptime(summary["uptime_seconds"]) %></div>
+                  <div>Host: {summary["hostname"] || "unknown"}</div>
+                  <div>Version: {summary["version"] || "unknown"}</div>
+                  <div>Timezone: {summary["timezone"] || "unknown"}</div>
+                  <div>Server time: {summary["server_time"] || "unknown"}</div>
+                  <div>Uptime: {format_uptime(summary["uptime_seconds"])}</div>
                 </div>
               </div>
               <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
                 <h3 class="text-lg font-semibold">Database</h3>
                 <div class="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                  <div>Configured DB: <%= summary["configured_database"] || "unknown" %></div>
-                  <div>Current DB: <%= summary["current_database"] || "unknown" %></div>
+                  <div>Configured DB: {summary["configured_database"] || "unknown"}</div>
+                  <div>Current DB: {summary["current_database"] || "unknown"}</div>
                 </div>
               </div>
               <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4 md:col-span-2">
@@ -78,10 +78,12 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                       Table
                     </h4>
                     <div class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                      <div>Engine: <%= raw_events["engine"] || "unknown" %></div>
-                      <div>Total rows: <%= format_int(raw_events["total_rows"]) %></div>
-                      <div>Total bytes: <%= format_bytes(raw_events["total_bytes"]) %></div>
-                      <div>Metadata updated: <%= raw_events["metadata_modification_time"] || "unknown" %></div>
+                      <div>Engine: {raw_events["engine"] || "unknown"}</div>
+                      <div>Total rows: {format_int(raw_events["total_rows"])}</div>
+                      <div>Total bytes: {format_bytes(raw_events["total_bytes"])}</div>
+                      <div>
+                        Metadata updated: {raw_events["metadata_modification_time"] || "unknown"}
+                      </div>
                     </div>
                   </div>
                   <div>
@@ -89,10 +91,13 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                       Parts
                     </h4>
                     <div class="mt-2 text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                      <div>Active parts: <%= format_int(raw_events_parts["active_parts"]) %></div>
-                      <div>Rows on disk: <%= format_int(raw_events_parts["rows_on_disk"]) %></div>
-                      <div>Bytes on disk: <%= format_bytes(raw_events_parts["bytes_on_disk"]) %></div>
-                      <div>Last part modification: <%= raw_events_parts["last_part_modification"] || "unknown" %></div>
+                      <div>Active parts: {format_int(raw_events_parts["active_parts"])}</div>
+                      <div>Rows on disk: {format_int(raw_events_parts["rows_on_disk"])}</div>
+                      <div>Bytes on disk: {format_bytes(raw_events_parts["bytes_on_disk"])}</div>
+                      <div>
+                        Last part modification: {raw_events_parts["last_part_modification"] ||
+                          "unknown"}
+                      </div>
                     </div>
                   </div>
                 </div>

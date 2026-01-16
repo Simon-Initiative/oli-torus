@@ -117,11 +117,9 @@ defmodule Oli.Analytics.ClickhouseQueryValidator do
       :ok
     else
       if scope_field_mentioned?(normalized_query, field) do
-        {:error,
-         "Query must filter results to the current #{field} (#{field} = #{value})"}
+        {:error, "Query must filter results to the current #{field} (#{field} = #{value})"}
       else
-        {:error,
-         "Query must include a WHERE clause filtering by #{field} = #{value}"}
+        {:error, "Query must include a WHERE clause filtering by #{field} = #{value}"}
       end
     end
   end
@@ -145,15 +143,20 @@ defmodule Oli.Analytics.ClickhouseQueryValidator do
       "\\b(where|prewhere)\\b[^;]*?" <> field_pattern <> "\\s*(=|==)\\s*" <> value_pattern,
       "\\b(where|prewhere)\\b[^;]*?" <> field_pattern <> "\\s*(=|==)\\s*'" <> value <> "'",
       "\\b(where|prewhere)\\b[^;]*?" <> field_pattern <> "\\s*(=|==)\\s*\"" <> value <> "\"",
-      "\\b(where|prewhere)\\b[^;]*?" <> field_pattern <>
+      "\\b(where|prewhere)\\b[^;]*?" <>
+        field_pattern <>
         "\\s*(=|==)\\s*(?:toint(?:8|16|32|64)?|touint(?:8|16|32|64)?)\\s*\\(\\s*" <>
         value <> "\\s*\\)"
     ]
 
     in_patterns = [
-      "\\b(where|prewhere)\\b[^;]*?" <> field_pattern <> "\\s+in\\s*\\([^)]*" <>
+      "\\b(where|prewhere)\\b[^;]*?" <>
+        field_pattern <>
+        "\\s+in\\s*\\([^)]*" <>
         value_pattern <> "[^)]*\\)",
-      "\\b(where|prewhere)\\b[^;]*?" <> field_pattern <> "\\s+in\\s*\\[[^\]]*" <>
+      "\\b(where|prewhere)\\b[^;]*?" <>
+        field_pattern <>
+        "\\s+in\\s*\\[[^\]]*" <>
         value_pattern <> "[^\]]*\\]"
     ]
 

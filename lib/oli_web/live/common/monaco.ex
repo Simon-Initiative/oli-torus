@@ -27,7 +27,11 @@ defmodule OliWeb.Common.Monaco do
       id={@id}
       phx-hook="MonacoEditor"
       phx-update="ignore"
-      class={if @resizable, do: "resize overflow-auto border border-gray-300 min-h-[400px] h-96 w-full #{@class}", else: @class}
+      class={
+        if @resizable,
+          do: "resize overflow-auto border border-gray-300 min-h-[400px] h-96 w-full #{@class}",
+          else: @class
+      }
       data-language={encode_attr(@language)}
       data-schema-uri={encode_attr(@validate_schema_uri)}
       data-schemas={if @validate_schema_uri, do: encode_attr(SchemaResolver.all())}
@@ -56,6 +60,9 @@ defmodule OliWeb.Common.Monaco do
 
   defp encode_attr(nil), do: nil
   defp encode_attr(data) when is_binary(data), do: Jason.encode!(%{type: "string", data: data})
-  defp encode_attr(%Phoenix.LiveComponent.CID{} = cid), do: Jason.encode!(%{type: "string", data: to_string(cid)})
+
+  defp encode_attr(%Phoenix.LiveComponent.CID{} = cid),
+    do: Jason.encode!(%{type: "string", data: to_string(cid)})
+
   defp encode_attr(data), do: Jason.encode!(%{type: "object", data: Jason.encode!(data)})
 end
