@@ -61,7 +61,8 @@ defmodule OliWeb.Users.UsersDetailView do
           Sections.list_user_enrolled_sections(user)
           |> add_necessary_information(user)
 
-        has_google = credentials_has_google?(user)
+        identities = UserAssentAuth.list_user_identities(user)
+        has_google = credentials_has_google?(identities)
 
         {:ok,
          assign(socket,
@@ -71,6 +72,7 @@ defmodule OliWeb.Users.UsersDetailView do
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
+           credentials_identities: identities,
            credentials_has_google: has_google,
            credentials_label: credentials_label(user, has_google),
            disabled_edit: true,
@@ -90,6 +92,7 @@ defmodule OliWeb.Users.UsersDetailView do
   attr(:disabled_submit, :boolean, default: false)
   attr(:user_name, :string)
   attr(:password_reset_link, :string)
+  attr(:credentials_identities, :list)
   attr(:credentials_has_google, :boolean)
   attr(:credentials_label, :string)
 
@@ -137,7 +140,7 @@ defmodule OliWeb.Users.UsersDetailView do
               />
             <% end %>
             <div class="form-group">
-              <label>Credentials Managed By</label>
+              <span class="form-label">Credentials Managed By</span>
               <div class="text-secondary d-flex align-items-center gap-4 mt-2">
                 <%= if @credentials_has_google do %>
                   <div class="d-flex flex-column align-items-center">
@@ -548,9 +551,8 @@ defmodule OliWeb.Users.UsersDetailView do
     |> to_form()
   end
 
-  defp credentials_has_google?(%User{} = user) do
-    UserAssentAuth.list_user_identities(user)
-    |> Enum.any?(&(&1.provider == "google"))
+  defp credentials_has_google?(identities) when is_list(identities) do
+    Enum.any?(identities, &(&1.provider == "google"))
   end
 
   defp credentials_label(%User{} = user, has_google) do

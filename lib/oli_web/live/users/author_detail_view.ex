@@ -58,7 +58,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
          |> redirect(to: ~p"/admin/authors")}
 
       author ->
-        has_google = credentials_has_google?(author)
+        identities = AuthorAssentAuth.list_user_identities(author)
+        has_google = credentials_has_google?(identities)
 
         {:ok,
          assign(socket,
@@ -67,6 +68,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author: author,
            disabled_edit: true,
            author_roles: SystemRole.role_id(),
+           credentials_identities: identities,
            credentials_has_google: has_google,
            credentials_label: credentials_label(author, has_google),
            password_reset_link: "",
@@ -87,6 +89,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   attr(:password_reset_link, :string)
   attr(:author_name, :string)
   attr(:form, :map)
+  attr(:credentials_identities, :list)
   attr(:credentials_has_google, :boolean)
   attr(:credentials_label, :string)
 
@@ -136,7 +139,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
               />
             </div>
             <div class="form-group">
-              <label>Credentials Managed By</label>
+              <span class="form-label">Credentials Managed By</span>
               <div class="text-secondary d-flex align-items-center gap-4 mt-2">
                 <%= if @credentials_has_google do %>
                   <div class="d-flex flex-column align-items-center">
@@ -525,9 +528,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
     end
   end
 
-  defp credentials_has_google?(%Author{} = author) do
-    AuthorAssentAuth.list_user_identities(author)
-    |> Enum.any?(&(&1.provider == "google"))
+  defp credentials_has_google?(identities) when is_list(identities) do
+    Enum.any?(identities, &(&1.provider == "google"))
   end
 
   defp credentials_label(%Author{} = author, has_google) do
