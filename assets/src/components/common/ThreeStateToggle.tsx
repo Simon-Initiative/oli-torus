@@ -18,6 +18,7 @@ export const ThreeStateToggle = ({
 
 interface ToggleOptionProps {
   id: string;
+  name: string;
   srLabel?: string;
   checked?: boolean;
   onChange?: () => void;
@@ -26,6 +27,7 @@ interface ToggleOptionProps {
 }
 export const ToggleOption = ({
   id,
+  name,
   srLabel,
   checked,
   children,
@@ -39,7 +41,7 @@ export const ToggleOption = ({
         type="radio"
         id={id}
         className="sr-only peer"
-        name="state"
+        name={name}
         onChange={onChange}
         checked={checked}
       />
