@@ -399,7 +399,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           @ctx,
           "Components.DarkModeSelector",
           %{
-            showLabels: @show_labels
+            showLabels: @show_labels,
+            idPrefix: @id
           },
           id: @id
         )}
@@ -420,6 +421,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           "Components.DarkModeSelector",
           %{
             showLabels: true,
+            idPrefix: @id,
             className:
               "text-sm w-full !gap-0 justify-between bg-delivery-hints-bg dark:bg-delivery-hints-bg-dark p-2 rounded-lg"
           },
@@ -432,6 +434,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           "Components.DarkModeSelector",
           %{
             showLabels: false,
+            idPrefix: "#{@id}-desktop",
             className:
               "text-sm w-full !gap-0 justify-between bg-delivery-hints-bg dark:bg-delivery-hints-bg-dark p-2 rounded-lg"
           },

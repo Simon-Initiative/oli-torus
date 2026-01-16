@@ -6,7 +6,6 @@ import { ClassName, classNames } from 'utils/classNames';
 type Mode = 'auto' | 'light' | 'dark';
 
 const isChecked = (checked: string, state: string) => checked === state;
-let nextGroupId = 0;
 
 export const getModeFromLocalStorage = () => {
   if (!('theme' in localStorage)) {
@@ -27,14 +26,16 @@ export const modeIsDark = () => {
 export interface DarkModeSelectorProps {
   showLabels?: boolean;
   className?: ClassName;
+  idPrefix?: string;
 }
 
-export const DarkModeSelector = ({ showLabels = false, className }: DarkModeSelectorProps) => {
+export const DarkModeSelector = ({
+  showLabels = false,
+  className,
+  idPrefix = 'theme',
+}: DarkModeSelectorProps) => {
   const [mode, setMode] = useState<Mode>(getModeFromLocalStorage());
-  const [baseId] = useState(() => {
-    nextGroupId += 1;
-    return `theme-${nextGroupId}`;
-  });
+  const baseId = idPrefix;
   const groupName = `${baseId}-group`;
   const baseStrokeClass = showLabels
     ? 'stroke-gray-600 dark:stroke-gray-400'
