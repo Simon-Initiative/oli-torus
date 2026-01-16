@@ -40,7 +40,7 @@ defmodule OliWeb.CookiePreferencesLiveTest do
       {:ok, lv, _html} = live(conn, ~p"/cookie-preferences?#{%{return_to: return_url}}")
 
       lv
-      |> element("button", "Back")
+      |> element("button[phx-click='go_back']", "Back")
       |> render_click()
 
       assert_redirected(lv, return_url)
@@ -59,7 +59,7 @@ defmodule OliWeb.CookiePreferencesLiveTest do
       {:ok, lv3, _html} = live(conn, ~p"/cookie-preferences")
 
       lv3
-      |> element("button", "Back")
+      |> element("button[phx-click='go_back']", "Back")
       |> render_click()
 
       assert_redirected(lv3, "/")
@@ -320,7 +320,7 @@ defmodule OliWeb.CookiePreferencesLiveTest do
       # The LiveView should handle the long URL properly
       # We can navigate successfully to such URLs (they're not malformed, just long)
       lv
-      |> element("button", "Back")
+      |> element("button[phx-click='go_back']", "Back")
       |> render_click()
 
       # Should handle the navigation successfully - let's see what message we get
