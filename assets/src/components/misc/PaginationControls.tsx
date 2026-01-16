@@ -175,9 +175,14 @@ export const PaginationControls = (props: PaginationControlsProps) => {
           {displayItems.map((item) => {
             if (item.type === 'ellipsis') {
               return (
-                <li key={item.key} className={classNames('page-item', 'disabled')}>
-                  <span className="page-link" aria-label="More pages">
-                    ...
+                <li
+                  key={item.key}
+                  className={classNames('page-item', 'disabled')}
+                  aria-disabled="true"
+                >
+                  <span className="page-link">
+                    <span aria-hidden="true">...</span>
+                    <span className="sr-only">More pages</span>
                   </span>
                 </li>
               );
