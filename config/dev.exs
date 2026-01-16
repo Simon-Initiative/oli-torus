@@ -38,6 +38,15 @@ config :oli,
   ],
   log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
+# ClickHouse OLAP configuration for local development
+config :oli, :clickhouse,
+  host: System.get_env("CLICKHOUSE_HOST", "localhost"),
+  http_port: System.get_env("CLICKHOUSE_HTTP_PORT", "8123") |> String.to_integer(),
+  native_port: System.get_env("CLICKHOUSE_NATIVE_PORT", "9090") |> String.to_integer(),
+  user: System.get_env("CLICKHOUSE_USER", "default"),
+  password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
+  database: System.get_env("CLICKHOUSE_DATABASE", "oli_analytics_dev")
+
 config :oli, :vendor_property,
   workspace_logo:
     System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/branding/dev/oli_torus_icon.png"),
@@ -241,3 +250,27 @@ config :oli, Oli.Vault,
       {Cloak.Ciphers.AES.GCM,
        tag: "AES.GCM.V1", key: Base.decode64!("HXCdm5z61eNgUpnXObJRv94k3JnKSrnfwppyb60nz6w=")}
   ]
+
+# Configure xAPI upload pipeline for development
+# Default: Use ClickHouse uploader for local development
+# Set XAPI_ETL_MODE=lambda to test production ETL pipeline with AWS Lambda
+xapi_etl_mode = System.get_env("XAPI_ETL_MODE", "direct")
+
+uploader_module =
+  case xapi_etl_mode do
+    "s3" -> Oli.Analytics.XAPI.S3Uploader
+    _ -> Oli.Analytics.XAPI.ClickHouseUploader
+  end
+
+config :oli, :xapi_upload_pipeline,
+  producer_module: Oli.Analytics.XAPI.QueueProducer,
+  uploader_module: uploader_module,
+  batcher_concurrency: 1,
+  batch_size: 10,
+  batch_timeout: 2000,
+  processor_concurrency: 1
+
+# Configure Lambda ETL when XAPI_ETL_MODE=lambda
+config :oli, :xapi_lambda_etl,
+  function_name: System.get_env("XAPI_LAMBDA_FUNCTION_NAME", "xapi-etl-processor-dev"),
+  aws_region: System.get_env("AWS_REGION", "us-east-1")

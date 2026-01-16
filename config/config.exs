@@ -112,7 +112,7 @@ config :oli, :dataset_generation,
 
 config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,
-  uploader_module: Oli.Analytics.XAPI.Uploader,
+  uploader_module: Oli.Analytics.XAPI.S3Uploader,
   xapi_local_output_dir: System.get_env("XAPI_LOCAL_OUTPUT_DIR", "./xapi_output")
 
 rule_evaluator_provider =
@@ -227,6 +227,9 @@ config :oli, Oban,
     auto_submit: 3,
     project_export: 3,
     analytics_export: 3,
+    clickhouse_backfill: 1,
+    clickhouse_inventory: 1,
+    clickhouse_inventory_batches: 2,
     datashop_export: 3,
     objectives: 3,
     mailer: 10,

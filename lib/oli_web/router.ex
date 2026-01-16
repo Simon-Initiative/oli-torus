@@ -1752,6 +1752,8 @@ defmodule OliWeb.Router do
       live("/restore_progress", Admin.RestoreUserProgress)
 
       live("/xapi", Admin.UploadPipelineView)
+      live("/clickhouse/backfill", Admin.ClickhouseBackfillLive)
+      live("/clickhouse", Admin.ClickHouseAnalyticsView)
       get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
 
       # Authoring Activity Management

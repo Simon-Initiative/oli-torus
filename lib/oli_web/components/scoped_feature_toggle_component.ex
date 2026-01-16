@@ -6,6 +6,7 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
   use OliWeb, :live_component
 
   alias MapSet
+  alias Oli.Features
   alias Oli.ScopedFeatureFlags
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
@@ -139,30 +140,40 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
         resource = socket.assigns.source
         actor = Map.get(socket.assigns, :current_author)
         enable? = enabled_str == "true"
+        feature_allowed? = scoped_feature_allowed?(feature_atom, socket.assigns.source_type)
 
-        result =
-          if enable? do
-            ScopedFeatureFlags.enable_feature(feature_atom, resource, actor)
-          else
-            ScopedFeatureFlags.disable_feature(feature_atom, resource, actor)
+        if feature_allowed? do
+          result =
+            if enable? do
+              ScopedFeatureFlags.enable_feature(feature_atom, resource, actor)
+            else
+              ScopedFeatureFlags.disable_feature(feature_atom, resource, actor)
+            end
+
+          case result do
+            {:ok, _} ->
+              socket =
+                socket
+                |> load_features()
+
+              send(
+                self(),
+                {:scoped_feature_updated, Atom.to_string(feature_atom), enable?, resource}
+              )
+
+              {:noreply, socket}
+
+            {:error, reason} ->
+              send(self(), {:scoped_feature_error, feature_name, error_message(reason)})
+              {:noreply, socket}
           end
+        else
+          send(
+            self(),
+            {:scoped_feature_error, feature_name, "ClickHouse analytics is not enabled"}
+          )
 
-        case result do
-          {:ok, _} ->
-            socket =
-              socket
-              |> load_features()
-
-            send(
-              self(),
-              {:scoped_feature_updated, Atom.to_string(feature_atom), enable?, resource}
-            )
-
-            {:noreply, socket}
-
-          {:error, reason} ->
-            send(self(), {:scoped_feature_error, feature_name, error_message(reason)})
-            {:noreply, socket}
+          {:noreply, socket}
         end
       end
     end
@@ -176,6 +187,7 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
     features =
       ScopedFeatureFlags.all_defined_features()
       |> filter_features_by_scopes(scopes, socket.assigns.source_type)
+      |> filter_olap_features(socket.assigns.source_type)
       |> Enum.map(&decorate_feature(&1, enabled_names))
 
     assign(socket, :features, features)
@@ -233,6 +245,22 @@ defmodule OliWeb.Components.ScopedFeatureToggleComponent do
   end
 
   defp feature_matches_source_type?(_feature, _source_type), do: true
+
+  defp filter_olap_features(features, :section) do
+    if Features.enabled?("clickhouse-olap") do
+      features
+    else
+      Enum.reject(features, &(&1.name == :instructor_dashboard_analytics))
+    end
+  end
+
+  defp filter_olap_features(features, _source_type), do: features
+
+  defp scoped_feature_allowed?(:instructor_dashboard_analytics, :section) do
+    Features.enabled?("clickhouse-olap")
+  end
+
+  defp scoped_feature_allowed?(_feature, _source_type), do: true
 
   defp feature_display_name(name) when is_atom(name) do
     name

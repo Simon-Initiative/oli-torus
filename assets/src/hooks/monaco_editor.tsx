@@ -22,11 +22,13 @@ export const MonacoEditor = {
     const dataSchemas = this.maybeGetAttribute('data-schemas');
     const onMountEvent = this.maybeGetAttribute('data-on-mount');
     const onChangeEvent = this.maybeGetAttribute('data-on-change');
+    const target = this.maybeGetAttribute('data-target');
     const setOptionsEvent = this.maybeGetAttribute('data-set-options');
     const setWidthHeightEvent = this.maybeGetAttribute('data-set-width-height');
     const setValueEvent = this.maybeGetAttribute('data-set-value');
     const getValueEvent = this.maybeGetAttribute('data-get-value');
     const useCodeLenses = this.maybeGetAttribute('data-use-code-lenses');
+    const resizable = this.maybeGetAttribute('data-resizable');
 
     const schemas = Maybe.all({ dataSchemaUri, dataSchemas }).map(
       ({ dataSchemaUri, dataSchemas }) =>
@@ -49,6 +51,8 @@ export const MonacoEditor = {
         }),
       );
 
+      const isResizable = resizable.valueOr(true);
+
       // LiveView event handlers
       useEffect(() => {
         this.maybeHandleEvent(setOptionsEvent, (options: any) => setOptions(options));
@@ -70,6 +74,34 @@ export const MonacoEditor = {
         );
       }, []);
 
+      // Handle container resizing for Monaco editor
+      useEffect(() => {
+        if (!isResizable || !this.editor) return;
+
+        const container = this.el;
+        const resizeObserver = new ResizeObserver(() => {
+          // Debounce resize to avoid excessive calls
+          setTimeout(() => {
+            if (this.editor) {
+              this.editor.layout();
+            }
+          }, 100);
+        });
+
+        resizeObserver.observe(container);
+
+        // Initial layout update to ensure proper sizing on mount
+        setTimeout(() => {
+          if (this.editor) {
+            this.editor.layout();
+          }
+        }, 100);
+
+        return () => {
+          resizeObserver.disconnect();
+        };
+      }, [isResizable]);
+
       const editorDidMount = (
         editor: monaco.editor.IStandaloneCodeEditor,
         monaco: IMonacoEditor,
@@ -89,17 +121,31 @@ export const MonacoEditor = {
           useCodeLenses.forEach(({ name, context }) => registry(name)(editor, monaco, context));
         });
 
+        // Force layout update after a short delay to ensure proper sizing
+        if (isResizable) {
+          setTimeout(() => {
+            editor.layout();
+          }, 50);
+        }
+
         this.maybePushEvent(onMountEvent);
       };
 
       const onChange = (value: string) => {
-        this.maybePushEvent(onChangeEvent, value);
+        // If both onChangeEvent and target are provided, create an event object with target
+        // Otherwise, use the simple string event name
+        const eventToSend = Maybe.all({ onChangeEvent, target }).caseOf({
+          just: ({ onChangeEvent, target }) => Maybe.just({ name: onChangeEvent, target }),
+          nothing: () => onChangeEvent,
+        });
+
+        this.maybePushEvent(eventToSend, value);
       };
 
       return (
         <ReactMonacoEditor
-          width={width}
-          height={height}
+          width={isResizable ? '100%' : width}
+          height={isResizable ? '100%' : height}
           value={defaultValue}
           language={language}
           options={options}

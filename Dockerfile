@@ -18,7 +18,7 @@ ARG DEBIAN_VERSION=bullseye-20251103-slim
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} AS builder
 
 ARG SHA_SHORT
 
@@ -106,12 +106,15 @@ RUN apt-get update -y \
 RUN apt-get update -y \
   && apt-get install nodejs -y
 
+# Install goose for database migrations
+RUN curl -fsSL https://raw.githubusercontent.com/pressly/goose/master/install.sh | sh
+
 # Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 WORKDIR "/app"
 RUN chown nobody /app
