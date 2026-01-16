@@ -16,6 +16,9 @@ export interface PaginationControlsProps {
 }
 
 type Page = List<Element>;
+type DisplayItem =
+  | { type: 'page'; index: number; key: string }
+  | { type: 'ellipsis'; key: string };
 
 export const PaginationControls = (props: PaginationControlsProps) => {
   const controls = useRef<HTMLDivElement>(null);
@@ -83,14 +86,17 @@ export const PaginationControls = (props: PaginationControlsProps) => {
   }, [pages, active]);
 
   const onSelectPage = (pageIndex: number) => {
-    setActive(Math.max(0, pageIndex));
+    const maxIndex = Math.max(0, pages.count() - 1);
+    setActive(Math.min(Math.max(0, pageIndex), maxIndex));
   };
 
-  const previousDisabled = active === 0;
-  const nextDisabled = active === pages.count() - 1;
   const totalPages = pages.count();
+  const maxIndex = Math.max(0, totalPages - 1);
+  const safeActive = Math.min(Math.max(0, active), maxIndex);
+  const previousDisabled = totalPages === 0 || safeActive === 0;
+  const nextDisabled = totalPages === 0 || safeActive === totalPages - 1;
   const shouldCondense = isMobile && totalPages > 5;
-  const displayItems = (() => {
+  const displayItems: DisplayItem[] = (() => {
     if (!shouldCondense) {
       return Array.from({ length: totalPages }, (_, index) => ({
         type: 'page' as const,
@@ -99,8 +105,8 @@ export const PaginationControls = (props: PaginationControlsProps) => {
       }));
     }
 
-    const items: Array<{ type: 'page' | 'ellipsis'; index?: number; key: string }> = [];
-    const baseSet = new Set<number>([0, totalPages - 1, active]);
+    const items: DisplayItem[] = [];
+    const baseSet = new Set<number>([0, totalPages - 1, safeActive]);
     const countItems = (set: Set<number>) => {
       const ordered = Array.from(set).sort((a, b) => a - b);
       let gaps = 0;
@@ -123,8 +129,8 @@ export const PaginationControls = (props: PaginationControlsProps) => {
       }
     };
 
-    addNeighborIfFits(active - 1);
-    addNeighborIfFits(active + 1);
+    addNeighborIfFits(safeActive - 1);
+    addNeighborIfFits(safeActive + 1);
 
     const orderedPages = Array.from(baseSet).sort((a, b) => a - b);
     for (let i = 0; i < orderedPages.length; i++) {
@@ -188,16 +194,16 @@ export const PaginationControls = (props: PaginationControlsProps) => {
               );
             }
 
-            const pageIndex = item.index ?? 0;
+            const pageIndex = item.index;
             return (
               <li
                 key={item.key}
-                className={classNames('page-item', pageIndex == active ? 'active' : '')}
+                className={classNames('page-item', pageIndex == safeActive ? 'active' : '')}
               >
                 <button
                   className="page-link"
                   onClick={() => onSelectPage(pageIndex)}
-                  aria-current={pageIndex === active ? 'page' : undefined}
+                  aria-current={pageIndex === safeActive ? 'page' : undefined}
                 >
                   {pageIndex + 1}
                 </button>
