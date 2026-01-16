@@ -72,7 +72,7 @@ export const DarkModeSelector = ({
 
   return (
     <fieldset className="border-0 p-0 m-0">
-      <legend className="sr-only">theme</legend>
+      <legend className="sr-only">Theme options</legend>
       <ThreeStateToggle
         className={classNames(
           showLabels ? 'w-full gap-3 text-sm font-semibold' : undefined,
