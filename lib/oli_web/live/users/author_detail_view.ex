@@ -10,6 +10,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   alias Oli.Accounts.{Author, SystemRole}
   alias Oli.AssentAuth.AuthorAssentAuth
   alias Oli.Auditing
+  alias Oli.Repo
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -58,8 +59,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
          |> redirect(to: ~p"/admin/authors")}
 
       author ->
-        identities = AuthorAssentAuth.list_user_identities(author)
-        has_google = credentials_has_google?(identities)
+        author = Repo.preload(author, :user_identities)
+        has_google = credentials_has_google?(author.user_identities)
 
         {:ok,
          assign(socket,
@@ -68,7 +69,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author: author,
            disabled_edit: true,
            author_roles: SystemRole.role_id(),
-           credentials_identities: identities,
            credentials_has_google: has_google,
            credentials_label: credentials_label(author, has_google),
            password_reset_link: "",
@@ -89,7 +89,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
   attr(:password_reset_link, :string)
   attr(:author_name, :string)
   attr(:form, :map)
-  attr(:credentials_identities, :list)
   attr(:credentials_has_google, :boolean)
   attr(:credentials_label, :string)
 

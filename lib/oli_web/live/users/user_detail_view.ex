@@ -61,8 +61,7 @@ defmodule OliWeb.Users.UsersDetailView do
           Sections.list_user_enrolled_sections(user)
           |> add_necessary_information(user)
 
-        identities = UserAssentAuth.list_user_identities(user)
-        has_google = credentials_has_google?(identities)
+        has_google = credentials_has_google?(user.user_identities)
 
         {:ok,
          assign(socket,
@@ -72,7 +71,6 @@ defmodule OliWeb.Users.UsersDetailView do
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
-           credentials_identities: identities,
            credentials_has_google: has_google,
            credentials_label: credentials_label(user, has_google),
            disabled_edit: true,
@@ -92,7 +90,6 @@ defmodule OliWeb.Users.UsersDetailView do
   attr(:disabled_submit, :boolean, default: false)
   attr(:user_name, :string)
   attr(:password_reset_link, :string)
-  attr(:credentials_identities, :list)
   attr(:credentials_has_google, :boolean)
   attr(:credentials_label, :string)
 
@@ -541,7 +538,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   defp user_with_platform_roles(id) do
-    Accounts.get_user(id, preload: [:platform_roles])
+    Accounts.get_user(id, preload: [:platform_roles, :user_identities])
   end
 
   defp user_form(user, attrs \\ %{}) do
