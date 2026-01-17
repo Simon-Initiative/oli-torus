@@ -7,6 +7,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.AssentAuth.UserAssentAuth
   alias Oli.Auditing
   alias Oli.Delivery.{Metrics, Paywall, Sections}
   alias Oli.Lti.LtiParams
@@ -20,6 +21,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
+  alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
 
@@ -59,6 +61,8 @@ defmodule OliWeb.Users.UsersDetailView do
           Sections.list_user_enrolled_sections(user)
           |> add_necessary_information(user)
 
+        has_google = credentials_has_google?(user.user_identities)
+
         {:ok,
          assign(socket,
            current_author: socket.assigns.current_author,
@@ -67,6 +71,8 @@ defmodule OliWeb.Users.UsersDetailView do
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
+           credentials_has_google: has_google,
+           credentials_label: credentials_label(user, has_google),
            disabled_edit: true,
            user_name: user.name,
            password_reset_link: ""
@@ -84,6 +90,8 @@ defmodule OliWeb.Users.UsersDetailView do
   attr(:disabled_submit, :boolean, default: false)
   attr(:user_name, :string)
   attr(:password_reset_link, :string)
+  attr(:credentials_has_google, :boolean)
+  attr(:credentials_label, :string)
 
   def render(assigns) do
     ~H"""
@@ -128,6 +136,23 @@ defmodule OliWeb.Users.UsersDetailView do
                 value={boolean(@user.age_verified)}
               />
             <% end %>
+            <div class="form-group">
+              <span class="form-label">Credentials Managed By</span>
+              <div class="text-secondary d-flex align-items-center gap-4 mt-2">
+                <%= if @credentials_has_google do %>
+                  <div class="d-flex flex-column align-items-center">
+                    <Icons.google />
+                    <span class="small">Google</span>
+                  </div>
+                <% end %>
+                <%= if @credentials_has_google && @credentials_label do %>
+                  <span class="text-muted">|</span>
+                <% end %>
+                <%= if @credentials_label do %>
+                  <span>{@credentials_label}</span>
+                <% end %>
+              </div>
+            </div>
             <div class="form-control mb-3">
               <.input
                 field={@form[:independent_learner]}
@@ -513,7 +538,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   defp user_with_platform_roles(id) do
-    Accounts.get_user(id, preload: [:platform_roles])
+    Accounts.get_user(id, preload: [:platform_roles, :user_identities])
   end
 
   defp user_form(user, attrs \\ %{}) do
@@ -521,6 +546,21 @@ defmodule OliWeb.Users.UsersDetailView do
     |> User.noauth_changeset(attrs)
     |> Map.put(:action, :update)
     |> to_form()
+  end
+
+  defp credentials_has_google?(identities) when is_list(identities) do
+    Enum.any?(identities, &(&1.provider == "google"))
+  end
+
+  defp credentials_label(%User{} = user, has_google) do
+    has_password = UserAssentAuth.has_password?(user)
+
+    cond do
+      has_google and has_password -> "Email & Password"
+      has_google -> nil
+      has_password -> "Email & Password"
+      true -> "None"
+    end
   end
 
   defp add_necessary_information(sections, user) do
