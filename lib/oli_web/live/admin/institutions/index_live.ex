@@ -24,6 +24,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         institutions: institutions,
         institutions_list: [{"New institution", nil} | Enum.map(institutions, &{&1.name, &1.id})],
         pending_registrations: Institutions.list_pending_registrations(),
+        # pending_registrations: institutions |> Enum.take(3),
         breadcrumbs: root_breadcrumbs(),
         country_codes: Predefined.country_codes(),
         registration_changeset: nil,
@@ -38,40 +39,47 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
   def render(assigns) do
     ~H"""
     <div class="flex flex-col gap-2">
-      <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item">
-          <b
-            phx-click="change_active_tab"
-            phx-value-tab="institutions_tab"
-            class={["nav-link", "#{if @active_tab == :institutions_tab, do: "active"}"]}
-            id="institutions_tab"
-            role="tab"
-            aria-controls="institutions"
-            aria-selected={"#{@active_tab == :institutions_tab}"}
+      <div class="flex justify-start items-center gap-2.5" role="tablist">
+        <div
+          phx-click="change_active_tab"
+          phx-value-tab="institutions_tab"
+          class={[
+            "cursor-pointer pr-2.5 border-r border-Border-border-input",
+            "#{if @active_tab == :institutions_tab, do: "text-Text-text-button text-2xl font-bold leading-8", else: "text-Text-text-high text-lg font-semibold leading-6"}"
+          ]}
+          id="institutions_tab"
+          role="tab"
+          aria-controls="institutions"
+          aria-selected={"#{@active_tab == :institutions_tab}"}
+        >
+          Institutions
+        </div>
+
+        <div
+          phx-click="change_active_tab"
+          phx-value-tab="pending_registrations_tab"
+          class={[
+            "cursor-pointer",
+            "#{if @active_tab == :pending_registrations_tab, do: "text-Text-text-button text-2xl font-bold leading-8", else: "text-Text-text-high text-lg font-semibold leading-6"}"
+          ]}
+          id="pending_registrations_tab"
+          role="tab"
+          aria-controls="pending_registrations"
+          aria-selected={"#{@active_tab == :pending_registrations_tab}"}
+        >
+          <span>Pending Registrations</span>
+          <div
+            :if={Enum.count(@pending_registrations) > 0}
+            class="ml-2.5 px-2 py-1 bg-Fill-Buttons-fill-primary rounded-[999px] shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] inline-flex justify-center items-center gap-2 overflow-hidden"
           >
-            Institutions
-          </b>
-        </li>
-        <li class="nav-item">
-          <b
-            phx-click="change_active_tab"
-            phx-value-tab="pending_registrations_tab"
-            class={["nav-link", "#{if @active_tab == :pending_registrations_tab, do: "active"}"]}
-            id="pending_registrations_tab"
-            role="tab"
-            aria-controls="pending_registrations"
-            aria-selected={"#{@active_tab == :pending_registrations_tab}"}
-          >
-            Pending Registrations
-            <%= case Enum.count(@pending_registrations) do %>
-              <% 0 -> %>
-                <span class="badge badge-pill badge-secondary">0</span>
-              <% count -> %>
-                <span class="badge badge-pill badge-primary">{count}</span>
-            <% end %>
-          </b>
-        </li>
-      </ul>
+            <div class="flex justify-center items-center">
+              <div class="text-center justify-center text-Text-text-white text-xs font-semibold leading-3">
+                {Enum.count(@pending_registrations)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div>
         <div
           :if={@active_tab == :institutions_tab}
