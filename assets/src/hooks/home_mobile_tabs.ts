@@ -15,21 +15,73 @@ const getScrollOffset = (menu: HTMLElement) => {
 
 export const HomeMobileTabs = {
   mounted() {
-    this.tabsContainer = this.el.querySelector('[data-home-tabs-container]');
-    this.tabs = Array.from(this.el.querySelectorAll('[data-home-tab]'));
-    this.bannerTitle = document.getElementById('home-banner-title');
-    this.banner = document.getElementById('home-continue-learning');
-    this.sections = [];
-
-    this.drawer = document.getElementById('home-drawer');
-    this.drawerBackdrop = document.getElementById('home-drawer-backdrop');
-    this.drawerToggle = this.el.querySelector('[data-drawer-toggle]');
-    this.drawerCloseButtons = document.querySelectorAll('[data-drawer-close]');
-    this.drawerItems = Array.from(document.querySelectorAll('[data-drawer-item]'));
-
     this.activeTab = null;
     this.ticking = false;
     this.isDrawerOpen = false;
+
+    this.assignElements = () => {
+      this.tabsContainer = this.el.querySelector('[data-home-tabs-container]');
+      this.tabs = Array.from(this.el.querySelectorAll('[data-home-tab]'));
+      this.bannerTitle = document.getElementById('home-banner-title');
+      this.banner = document.getElementById('home-continue-learning');
+      this.sections = [];
+
+      this.drawer = document.getElementById('home-drawer');
+      this.drawerBackdrop = document.getElementById('home-drawer-backdrop');
+      this.drawerToggle = this.el.querySelector('[data-drawer-toggle]');
+      this.drawerCloseButtons = Array.from(document.querySelectorAll('[data-drawer-close]'));
+      this.drawerItems = Array.from(document.querySelectorAll('[data-drawer-item]'));
+    };
+
+    this.removeEventListeners = () => {
+      if (this.tabs) {
+        this.tabs.forEach((tab: HTMLButtonElement) => {
+          tab.removeEventListener('click', this.onTabClick);
+        });
+      }
+
+      if (this.drawerToggle) {
+        this.drawerToggle.removeEventListener('click', this.onDrawerToggle);
+      }
+
+      if (this.drawerCloseButtons) {
+        this.drawerCloseButtons.forEach((button: Element) => {
+          button.removeEventListener('click', this.closeDrawer);
+        });
+      }
+
+      if (this.drawerItems) {
+        this.drawerItems.forEach((item: HTMLButtonElement) => {
+          item.removeEventListener('click', this.onDrawerItemClick);
+        });
+      }
+
+      if (this.drawerBackdrop) {
+        this.drawerBackdrop.removeEventListener('click', this.closeDrawer);
+      }
+    };
+
+    this.addEventListeners = () => {
+      this.tabs.forEach((tab: HTMLButtonElement) => {
+        tab.addEventListener('click', this.onTabClick);
+      });
+
+      if (this.drawerToggle) {
+        this.drawerToggle.addEventListener('click', this.onDrawerToggle);
+      }
+
+      this.drawerCloseButtons.forEach((button: Element) => {
+        button.addEventListener('click', this.closeDrawer);
+      });
+
+      this.drawerItems.forEach((item: HTMLButtonElement) => {
+        item.addEventListener('click', this.onDrawerItemClick);
+      });
+
+      if (this.drawerBackdrop) {
+        this.drawerBackdrop.addEventListener('click', this.closeDrawer);
+      }
+    };
 
     this.updateTabOrder = () => {
       if (!this.tabsContainer) {
@@ -240,26 +292,8 @@ export const HomeMobileTabs = {
       this.el.classList.toggle('is-visible', visible);
     };
 
-    this.tabs.forEach((tab: HTMLButtonElement) => {
-      tab.addEventListener('click', this.onTabClick);
-    });
-
-    if (this.drawerToggle) {
-      this.drawerToggle.addEventListener('click', this.onDrawerToggle);
-    }
-
-    this.drawerCloseButtons.forEach((button: Element) => {
-      button.addEventListener('click', this.closeDrawer);
-    });
-
-    this.drawerItems.forEach((item: HTMLButtonElement) => {
-      item.addEventListener('click', this.onDrawerItemClick);
-    });
-
-    if (this.drawerBackdrop) {
-      this.drawerBackdrop.addEventListener('click', this.closeDrawer);
-    }
-
+    this.assignElements();
+    this.addEventListeners();
     window.addEventListener('scroll', this.onScroll, { passive: true });
     this.onResize = () => {
       this.updateTabOrder();
@@ -272,33 +306,17 @@ export const HomeMobileTabs = {
     this.onScroll();
   },
 
+  updated() {
+    this.removeEventListeners();
+    this.assignElements();
+    this.addEventListeners();
+    this.updateTabOrder();
+    this.updateVisibility();
+    this.onScroll();
+  },
+
   destroyed() {
-    if (this.tabs) {
-      this.tabs.forEach((tab: HTMLButtonElement) => {
-        tab.removeEventListener('click', this.onTabClick);
-      });
-    }
-
-    if (this.drawerToggle) {
-      this.drawerToggle.removeEventListener('click', this.onDrawerToggle);
-    }
-
-    if (this.drawerCloseButtons) {
-      this.drawerCloseButtons.forEach((button: Element) => {
-        button.removeEventListener('click', this.closeDrawer);
-      });
-    }
-
-    if (this.drawerItems) {
-      this.drawerItems.forEach((item: HTMLButtonElement) => {
-        item.removeEventListener('click', this.onDrawerItemClick);
-      });
-    }
-
-    if (this.drawerBackdrop) {
-      this.drawerBackdrop.removeEventListener('click', this.closeDrawer);
-    }
-
+    this.removeEventListeners();
     window.removeEventListener('scroll', this.onScroll);
     if (this.onResize) {
       window.removeEventListener('resize', this.onResize);
