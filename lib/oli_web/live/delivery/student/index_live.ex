@@ -302,18 +302,18 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       role="dialog"
       aria-labelledby="home-drawer-title"
       aria-modal="true"
-      class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#1a1a1a] rounded-t-2xl shadow-[0px_-4px_20px_0px_rgba(0,0,0,0.3)] transform translate-y-full transition-transform duration-300 ease-in-out hidden"
+      class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-[#1a1a1a] rounded-t-2xl shadow-[0px_-4px_20px_0px_rgba(0,0,0,0.3)] transform translate-y-full transition-transform duration-300 ease-in-out hidden"
     >
       <div class="flex flex-col">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-          <h2 id="home-drawer-title" class="text-base font-semibold text-white">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 id="home-drawer-title" class="text-base font-semibold text-[#1f2937] dark:text-white">
             Homepage
           </h2>
           <button
             type="button"
             data-drawer-close
             aria-label="Close sections menu"
-            class="text-white hover:text-gray-300"
+            class="text-[#1f2937] hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
           >
             <Icons.close class="stroke-white" />
           </button>
@@ -324,7 +324,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             type="button"
             data-drawer-item
             data-target="home-continue-learning"
-            class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
+            class="flex items-center justify-between px-6 py-4 text-[#1f2937] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <span class="text-base">Continue Learning</span>
             <span data-checkmark class="hidden">
@@ -336,7 +336,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             type="button"
             data-drawer-item
             data-target="home-course-progress"
-            class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
+            class="flex items-center justify-between px-6 py-4 text-[#1f2937] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <span class="text-base">Course Progress</span>
             <span data-checkmark class="hidden">
@@ -347,7 +347,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             type="button"
             data-drawer-item
             data-target="home-assignments"
-            class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
+            class="flex items-center justify-between px-6 py-4 text-[#1f2937] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <span class="text-base">My Assignments</span>
             <span data-checkmark class="hidden">
@@ -359,7 +359,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             type="button"
             data-drawer-item
             data-target="home-agenda"
-            class="flex items-center justify-between px-6 py-4 text-white hover:bg-gray-800 transition-colors"
+            class="flex items-center justify-between px-6 py-4 text-[#1f2937] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <span class="text-base">Upcoming Agenda</span>
             <span data-checkmark class="hidden">
@@ -372,7 +372,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <button
             type="button"
             data-drawer-close
-            class="w-full py-3 text-base font-normal text-white border border-gray-600 rounded-lg hover:bg-gray-800 transition-colors"
+            class="w-full py-3 text-base font-normal text-[#1f2937] dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             Close
           </button>
