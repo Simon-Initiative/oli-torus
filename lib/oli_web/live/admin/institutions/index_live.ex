@@ -101,6 +101,12 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
           aria-labelledby="institutions_tab"
           class="flex flex-col gap-2"
         >
+          <OliWeb.Common.SearchInput.render
+            id="institutions_search_input"
+            name="text_search"
+            text=""
+            class="w-[400px] mt-6"
+          />
           <%= if Enum.count(@institutions) == 0 do %>
             <div class="my-5 text-center">
               There are no registered institutions
