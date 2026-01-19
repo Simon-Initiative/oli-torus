@@ -7,6 +7,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
   alias Oli.Slack
 
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Modal
 
@@ -79,6 +80,18 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
             </div>
           </div>
         </div>
+        <.link
+          :if={@active_tab == :institutions_tab}
+          navigate={Routes.institution_path(OliWeb.Endpoint, :new)}
+          class="ml-auto px-4 py-2 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover hover:no-underline rounded-md shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] inline-flex justify-center items-center gap-2 overflow-hidden"
+        >
+          <div class="pr-2 flex justify-center items-center gap-2">
+            <Icons.plus class="w-4 h-4" path_class="stroke-Text-text-white" />
+            <div class="text-center justify-center text-Text-text-white text-base font-semibold leading-6">
+              New Institution
+            </div>
+          </div>
+        </.link>
       </div>
       <div>
         <div
@@ -88,11 +101,6 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
           aria-labelledby="institutions_tab"
           class="flex flex-col gap-2"
         >
-          {link("New Institution",
-            to: Routes.institution_path(OliWeb.Endpoint, :new),
-            class: "btn btn-md btn-outline-primary self-end"
-          )}
-
           <%= if Enum.count(@institutions) == 0 do %>
             <div class="my-5 text-center">
               There are no registered institutions
