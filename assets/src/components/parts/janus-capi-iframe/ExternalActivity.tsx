@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Environment } from 'janus-script';
 import debounce from 'lodash/debounce';
 import { evaluateJsonObject, looksLikeJson, templatizeText } from 'adaptivity/scripting';
@@ -1149,15 +1149,20 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const scrolling = allowScrolling ? 'yes' : 'no';
 
+  const formattedDescription = useMemo(() => {
+    return description?.length
+      ? templatizeText(description, simLife?.snapshot, scriptEnv)
+      : description;
+  }, [description, simLife.snapshot, scriptEnv]);
   return initStateReceived ? (
     <iframe
       data-janus-type={tagName}
       ref={frameRef}
       style={externalActivityStyles}
-      title={description}
+      title={formattedDescription || description}
       src={frameSrc}
       scrolling={scrolling}
-      aria-label={description}
+      aria-label={formattedDescription || description}
       aria-describedby={id}
       allow="accelerometer *; magnetometer; gyroscope; fullscreen; autoplay; clipboard-write; encrypted-media; xr-spatial-tracking; gamepad *;"
     />
