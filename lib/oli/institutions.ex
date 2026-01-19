@@ -30,6 +30,27 @@ defmodule Oli.Institutions do
   end
 
   @doc """
+  Returns a paginated list of institutions with total count.
+  ## Examples
+      iex> list_institutions_paged(%Paging{offset: 0, limit: 20})
+      {[%Institution{}, ...], 42}
+  """
+  def list_institutions_paged(%Paging{offset: offset, limit: limit}) do
+    base_query = from(i in Institution, where: i.status != :deleted)
+
+    total_count = Repo.aggregate(base_query, :count)
+
+    institutions =
+      base_query
+      |> offset(^offset)
+      |> limit(^limit)
+      |> preload(:deployments)
+      |> Repo.all()
+
+    {institutions, total_count}
+  end
+
+  @doc """
   Gets a single institution.
   Raises `Ecto.NoResultsError` if the Institution does not exist.
   ## Examples
@@ -476,6 +497,26 @@ defmodule Oli.Institutions do
   """
   def list_pending_registrations do
     Repo.all(PendingRegistration)
+  end
+
+  @doc """
+  Returns a paginated list of pending registrations with total count.
+  ## Examples
+      iex> list_pending_registrations_paged(%Paging{offset: 0, limit: 20})
+      {[%PendingRegistration{}, ...], 15}
+  """
+  def list_pending_registrations_paged(%Paging{offset: offset, limit: limit}) do
+    base_query = from(pr in PendingRegistration)
+
+    total_count = Repo.aggregate(base_query, :count)
+
+    registrations =
+      base_query
+      |> offset(^offset)
+      |> limit(^limit)
+      |> Repo.all()
+
+    {registrations, total_count}
   end
 
   @doc """

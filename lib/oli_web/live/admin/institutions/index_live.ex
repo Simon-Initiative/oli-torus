@@ -2,30 +2,59 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
   use OliWeb, :live_view
   require Logger
 
+  import OliWeb.DelegatedEvents
+
   alias Oli.Institutions
   alias Oli.Predefined
+  alias Oli.Repo.Paging
   alias Oli.Slack
 
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.{Params, PagingParams, StripedPagedTable}
   alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Modal
+  alias OliWeb.Admin.Institutions.{InstitutionsTableModel, PendingRegistrationsTableModel}
+  alias OliWeb.Common.Table.SortableTableModel
 
-  alias Phoenix.LiveView.JS
+  @limit 20
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def mount(_params, _session, socket) do
-    institutions = Institutions.list_institutions()
+    # Initialize with default pagination
+    {institutions, institutions_total_count} =
+      Institutions.list_institutions_paged(%Paging{offset: 0, limit: @limit})
+
+    {pending_registrations, pending_registrations_total_count} =
+      Institutions.list_pending_registrations_paged(%Paging{offset: 0, limit: @limit})
+
+    {:ok, institutions_table_model} =
+      InstitutionsTableModel.new(institutions, socket.assigns.ctx)
+
+    {:ok, pending_registrations_table_model} =
+      PendingRegistrationsTableModel.new(pending_registrations, socket.assigns.ctx)
+
+    # Get all institutions for the dropdown (not paginated)
+    all_institutions = Institutions.list_institutions()
 
     socket =
       assign(
         socket,
         institutions: institutions,
-        institutions_list: [{"New institution", nil} | Enum.map(institutions, &{&1.name, &1.id})],
-        pending_registrations: Institutions.list_pending_registrations(),
-        # pending_registrations: institutions |> Enum.take(3),
+        institutions_list: [
+          {"New institution", nil} | Enum.map(all_institutions, &{&1.name, &1.id})
+        ],
+        pending_registrations: pending_registrations,
+        institutions_table_model: institutions_table_model,
+        pending_registrations_table_model: pending_registrations_table_model,
+        institutions_offset: 0,
+        institutions_limit: @limit,
+        institutions_total_count: institutions_total_count,
+        pending_registrations_offset: 0,
+        pending_registrations_limit: @limit,
+        pending_registrations_total_count: pending_registrations_total_count,
         breadcrumbs: root_breadcrumbs(),
         country_codes: Predefined.country_codes(),
         registration_changeset: nil,
@@ -35,6 +64,102 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
       )
 
     {:ok, socket}
+  end
+
+  def handle_params(params, _uri, socket) do
+    # Parse pagination params for institutions table
+    institutions_offset =
+      Params.get_int_param(
+        params,
+        "institutions_offset",
+        socket.assigns[:institutions_offset] || 0
+      )
+
+    institutions_limit =
+      Params.get_int_param(
+        params,
+        "institutions_limit",
+        socket.assigns[:institutions_limit] || @limit
+      )
+
+    # Parse pagination params for pending registrations table
+    pending_registrations_offset =
+      Params.get_int_param(
+        params,
+        "pending_registrations_offset",
+        socket.assigns[:pending_registrations_offset] || 0
+      )
+
+    pending_registrations_limit =
+      Params.get_int_param(
+        params,
+        "pending_registrations_limit",
+        socket.assigns[:pending_registrations_limit] || @limit
+      )
+
+    # Parse active tab
+    active_tab =
+      case params["active_tab"] do
+        "pending_registrations_tab" -> :pending_registrations_tab
+        _ -> :institutions_tab
+      end
+
+    # Load data for both tables (we need both for dropdown and badge count)
+    socket =
+      socket
+      |> load_institutions_data(institutions_offset, institutions_limit, params)
+      |> load_pending_registrations_data(
+        pending_registrations_offset,
+        pending_registrations_limit,
+        params
+      )
+      |> assign(active_tab: active_tab)
+
+    {:noreply, socket}
+  end
+
+  defp load_institutions_data(socket, offset, limit, params) do
+    {institutions, total_count} =
+      Institutions.list_institutions_paged(%Paging{offset: offset, limit: limit})
+
+    {:ok, table_model} =
+      InstitutionsTableModel.new(institutions, socket.assigns.ctx)
+
+    # Update table model with sort params from URL
+    table_model = SortableTableModel.update_from_params(table_model, params)
+
+    # Get all institutions for dropdown
+    all_institutions = Institutions.list_institutions()
+
+    assign(socket,
+      institutions: institutions,
+      institutions_list: [
+        {"New institution", nil} | Enum.map(all_institutions, &{&1.name, &1.id})
+      ],
+      institutions_table_model: table_model,
+      institutions_offset: offset,
+      institutions_limit: limit,
+      institutions_total_count: total_count
+    )
+  end
+
+  defp load_pending_registrations_data(socket, offset, limit, params) do
+    {pending_registrations, total_count} =
+      Institutions.list_pending_registrations_paged(%Paging{offset: offset, limit: limit})
+
+    {:ok, table_model} =
+      PendingRegistrationsTableModel.new(pending_registrations, socket.assigns.ctx)
+
+    # Update table model with sort params from URL
+    table_model = SortableTableModel.update_from_params(table_model, params)
+
+    assign(socket,
+      pending_registrations: pending_registrations,
+      pending_registrations_table_model: table_model,
+      pending_registrations_offset: offset,
+      pending_registrations_limit: limit,
+      pending_registrations_total_count: total_count
+    )
   end
 
   def render(assigns) do
@@ -70,12 +195,12 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         >
           <span>Pending Registrations</span>
           <div
-            :if={Enum.count(@pending_registrations) > 0}
+            :if={@pending_registrations_total_count > 0}
             class="ml-2.5 px-2 py-1 bg-Fill-Buttons-fill-primary rounded-[999px] shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] inline-flex justify-center items-center gap-2 overflow-hidden"
           >
             <div class="flex justify-center items-center">
               <div class="text-center justify-center text-Text-text-white text-xs font-semibold leading-3">
-                {Enum.count(@pending_registrations)}
+                {@pending_registrations_total_count}
               </div>
             </div>
           </div>
@@ -107,48 +232,17 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
             text=""
             class="w-[400px] mt-6"
           />
-          <%= if Enum.count(@institutions) == 0 do %>
-            <div class="my-5 text-center">
-              There are no registered institutions
-            </div>
-          <% else %>
-            <table class="table table-striped table-bordered">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Country Code</th>
-                  <th>Email</th>
-                  <th>URL</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr :for={institution <- @institutions}>
-                  <td>
-                    {link(institution.name,
-                      to:
-                        Routes.live_path(
-                          OliWeb.Endpoint,
-                          OliWeb.Admin.Institutions.SectionsAndStudentsView,
-                          institution.id,
-                          :sections
-                        )
-                    )}
-                  </td>
-                  <td>{institution.country_code}</td>
-                  <td>{institution.institution_email}</td>
-                  <td>{institution.institution_url}</td>
-
-                  <td class="text-nowrap">
-                    {link("Details",
-                      to: Routes.institution_path(OliWeb.Endpoint, :show, institution),
-                      class: "btn btn-sm btn-outline-primary"
-                    )}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          <% end %>
+          <StripedPagedTable.render
+            table_model={@institutions_table_model}
+            total_count={@institutions_total_count}
+            offset={@institutions_offset}
+            limit={@institutions_limit}
+            sort="institutions_paged_table_sort"
+            page_change="institutions_paged_table_page_change"
+            limit_change="institutions_paged_table_limit_change"
+            additional_table_class=""
+            no_records_message="There are no registered institutions"
+          />
         </div>
         <div
           :if={@active_tab == :pending_registrations_tab}
@@ -156,58 +250,17 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
           role="tabpanel"
           aria-labelledby="pending_registrations_tab"
         >
-          <%= if Enum.count(@pending_registrations) == 0 do %>
-            <div class="my-5 text-center">
-              There are no pending registrations
-            </div>
-          <% else %>
-            <table class="table table-striped table-bordered">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>URL</th>
-                  <th>Contact Email</th>
-                  <th>When</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr :for={pending_registration <- @pending_registrations}>
-                  <td>{pending_registration.name}</td>
-                  <td>{pending_registration.institution_url}</td>
-                  <td>{pending_registration.institution_email}</td>
-                  <td>
-                    {OliWeb.Common.Utils.render_date(pending_registration, :inserted_at, @ctx)}
-                  </td>
-
-                  <td class="text-nowrap">
-                    <button
-                      class="btn btn-sm btn-outline-primary ml-2"
-                      phx-click={
-                        JS.push("select_pending_registration",
-                          value: %{registration_id: pending_registration.id, action: "review"}
-                        )
-                        |> Modal.show_modal("review-registration-modal")
-                      }
-                    >
-                      Review
-                    </button>
-                    <button
-                      class="btn btn-sm btn-outline-danger ml-2"
-                      phx-click={
-                        JS.push("select_pending_registration",
-                          value: %{registration_id: pending_registration.id, action: "decline"}
-                        )
-                        |> Modal.show_modal("decline-registration-modal")
-                      }
-                    >
-                      Decline
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          <% end %>
+          <StripedPagedTable.render
+            table_model={@pending_registrations_table_model}
+            total_count={@pending_registrations_total_count}
+            offset={@pending_registrations_offset}
+            limit={@pending_registrations_limit}
+            sort="pending_registrations_paged_table_sort"
+            page_change="pending_registrations_paged_table_page_change"
+            limit_change="pending_registrations_paged_table_limit_change"
+            additional_table_class=""
+            no_records_message="There are no pending registrations"
+          />
         </div>
       </div>
     </div>
@@ -398,7 +451,91 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
   end
 
   def handle_event("change_active_tab", %{"tab" => tab}, socket) do
-    {:noreply, assign(socket, :active_tab, String.to_existing_atom(tab))}
+    active_tab = String.to_existing_atom(tab)
+    patch_with(socket, %{active_tab: Atom.to_string(active_tab)})
+  end
+
+  def handle_event("institutions_paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
+    current_sort_by = socket.assigns.institutions_table_model.sort_by_spec.name
+    current_sort_order = socket.assigns.institutions_table_model.sort_order
+    new_sort_by = String.to_existing_atom(sort_by_str)
+
+    sort_order =
+      if new_sort_by == current_sort_by, do: toggle_sort_order(current_sort_order), else: :asc
+
+    # Use the event_suffix pattern for param names
+    patch_with(socket, %{
+      "sort_by_institutions" => Atom.to_string(new_sort_by),
+      "sort_order_institutions" => Atom.to_string(sort_order)
+    })
+  end
+
+  def handle_event("pending_registrations_paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
+    current_sort_by = socket.assigns.pending_registrations_table_model.sort_by_spec.name
+    current_sort_order = socket.assigns.pending_registrations_table_model.sort_order
+    new_sort_by = String.to_existing_atom(sort_by_str)
+
+    sort_order =
+      if new_sort_by == current_sort_by, do: toggle_sort_order(current_sort_order), else: :asc
+
+    # Use the event_suffix pattern for param names
+    patch_with(socket, %{
+      "sort_by_pending_registrations" => Atom.to_string(new_sort_by),
+      "sort_order_pending_registrations" => Atom.to_string(sort_order)
+    })
+  end
+
+  def handle_event(
+        "institutions_paged_table_page_change",
+        %{"limit" => limit, "offset" => offset},
+        socket
+      ) do
+    patch_with(socket, %{"institutions_limit" => limit, "institutions_offset" => offset})
+  end
+
+  def handle_event("institutions_paged_table_limit_change", params, socket) do
+    new_limit = Params.get_int_param(params, "limit", @limit)
+
+    new_offset =
+      PagingParams.calculate_new_offset(
+        socket.assigns.institutions_offset,
+        new_limit,
+        socket.assigns.institutions_total_count
+      )
+
+    patch_with(socket, %{"institutions_limit" => new_limit, "institutions_offset" => new_offset})
+  end
+
+  def handle_event(
+        "pending_registrations_paged_table_page_change",
+        %{"limit" => limit, "offset" => offset},
+        socket
+      ) do
+    patch_with(socket, %{
+      "pending_registrations_limit" => limit,
+      "pending_registrations_offset" => offset
+    })
+  end
+
+  def handle_event("pending_registrations_paged_table_limit_change", params, socket) do
+    new_limit = Params.get_int_param(params, "limit", @limit)
+
+    new_offset =
+      PagingParams.calculate_new_offset(
+        socket.assigns.pending_registrations_offset,
+        new_limit,
+        socket.assigns.pending_registrations_total_count
+      )
+
+    patch_with(socket, %{
+      "pending_registrations_limit" => new_limit,
+      "pending_registrations_offset" => new_offset
+    })
+  end
+
+  def handle_event(event, params, socket) do
+    {event, params, socket, &__MODULE__.patch_with/2}
+    |> delegate_to([&StripedPagedTable.handle_delegated/4])
   end
 
   def handle_event(
@@ -424,7 +561,9 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         socket
       ) do
     institution_id = String.to_integer(institution_id)
-    institution = Enum.find(socket.assigns.institutions, &(&1.id == institution_id))
+    # Get all institutions to find the matching one (not just paginated list)
+    all_institutions = Institutions.list_institutions()
+    institution = Enum.find(all_institutions, &(&1.id == institution_id))
 
     registration_changeset =
       Enum.find(
@@ -471,9 +610,12 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         &(&1.id == registration_id)
       )
 
+    # Get all institutions to find matching one (not just paginated list)
+    all_institutions = Institutions.list_institutions()
+
     matching_institution =
       Enum.find(
-        socket.assigns.institutions,
+        all_institutions,
         &(&1.institution_url == selected_registration.institution_url)
       )
 
@@ -567,14 +709,43 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
               ]
             })
 
+            # Reload institutions with current pagination
+            {updated_institutions, institutions_total_count} =
+              Institutions.list_institutions_paged(%Paging{
+                offset: socket.assigns.institutions_offset,
+                limit: socket.assigns.institutions_limit
+              })
+
+            # Reload pending registrations with current pagination
+            {updated_pending_registrations, pending_registrations_total_count} =
+              Institutions.list_pending_registrations_paged(%Paging{
+                offset: socket.assigns.pending_registrations_offset,
+                limit: socket.assigns.pending_registrations_limit
+              })
+
+            {:ok, updated_institutions_table_model} =
+              InstitutionsTableModel.new(updated_institutions, socket.assigns.ctx)
+
+            {:ok, updated_pending_registrations_table_model} =
+              PendingRegistrationsTableModel.new(
+                updated_pending_registrations,
+                socket.assigns.ctx
+              )
+
+            # Get all institutions for dropdown
+            all_institutions = Institutions.list_institutions()
+
             socket
             |> assign(
-              pending_registrations:
-                Enum.filter(
-                  socket.assigns.pending_registrations,
-                  &(&1.id != pending_registration.id)
-                ),
-              institutions: Institutions.list_institutions()
+              pending_registrations: updated_pending_registrations,
+              institutions: updated_institutions,
+              institutions_list: [
+                {"New institution", nil} | Enum.map(all_institutions, &{&1.name, &1.id})
+              ],
+              institutions_table_model: updated_institutions_table_model,
+              pending_registrations_table_model: updated_pending_registrations_table_model,
+              institutions_total_count: institutions_total_count,
+              pending_registrations_total_count: pending_registrations_total_count
             )
             |> put_flash(:info, [
               "Registration for ",
@@ -628,11 +799,22 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
       ]
     })
 
+    # Reload pending registrations with current pagination
+    {updated_pending_registrations, pending_registrations_total_count} =
+      Institutions.list_pending_registrations_paged(%Paging{
+        offset: socket.assigns.pending_registrations_offset,
+        limit: socket.assigns.pending_registrations_limit
+      })
+
+    {:ok, updated_pending_registrations_table_model} =
+      PendingRegistrationsTableModel.new(updated_pending_registrations, socket.assigns.ctx)
+
     socket =
       socket
       |> assign(
-        pending_registrations:
-          Enum.filter(socket.assigns.pending_registrations, &(&1.id != pending_registration.id))
+        pending_registrations: updated_pending_registrations,
+        pending_registrations_table_model: updated_pending_registrations_table_model,
+        pending_registrations_total_count: pending_registrations_total_count
       )
       |> put_flash(:info, [
         "Registration for ",
@@ -646,6 +828,48 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
        attr: "data-hide_modal"
      })}
   end
+
+  def patch_with(socket, changes) do
+    {:noreply,
+     push_patch(socket,
+       to: Routes.live_path(socket, __MODULE__, Map.merge(current_params(socket), changes)),
+       replace: true
+     )}
+  end
+
+  defp current_params(%Phoenix.LiveView.Socket{} = socket), do: current_params(socket.assigns)
+
+  defp current_params(assigns) do
+    base = %{
+      "institutions_offset" => assigns[:institutions_offset] || 0,
+      "institutions_limit" => assigns[:institutions_limit] || @limit,
+      "pending_registrations_offset" => assigns[:pending_registrations_offset] || 0,
+      "pending_registrations_limit" => assigns[:pending_registrations_limit] || @limit,
+      "active_tab" => (assigns[:active_tab] || :institutions_tab) |> Atom.to_string()
+    }
+
+    # Add sort params using event_suffix pattern
+    institutions_params =
+      if assigns[:institutions_table_model] do
+        SortableTableModel.to_params(assigns.institutions_table_model)
+      else
+        %{}
+      end
+
+    pending_params =
+      if assigns[:pending_registrations_table_model] do
+        SortableTableModel.to_params(assigns.pending_registrations_table_model)
+      else
+        %{}
+      end
+
+    base
+    |> Map.merge(institutions_params)
+    |> Map.merge(pending_params)
+  end
+
+  defp toggle_sort_order(:asc), do: :desc
+  defp toggle_sort_order(_), do: :asc
 
   # handle the case where the creation of a new institution was required (when institution_id == "")
   defp approve_pending_registration("", pending_registration),
