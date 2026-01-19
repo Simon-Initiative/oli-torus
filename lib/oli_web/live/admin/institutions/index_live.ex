@@ -644,7 +644,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
     OliWeb.Admin.AdminView.breadcrumb() ++
       [
         Breadcrumb.new(%{
-          full_title: "Institutions",
+          full_title: "Manage Institutions",
           link: ~p"/admin/institutions"
         })
       ]
