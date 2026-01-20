@@ -385,6 +385,7 @@ defmodule OliWeb.CookiePreferencesLive do
     # Send preferences to the JavaScript hook, then navigate back
     socket =
       socket
+      |> put_flash(:info, "Cookie preferences have been updated.")
       |> push_event("save-cookie-preferences", %{preferences: preferences})
 
     {:noreply, socket}

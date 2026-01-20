@@ -419,5 +419,32 @@ defmodule OliWeb.CookiePreferencesLiveTest do
         }
       })
     end
+
+    test "displays flash message when preferences are saved", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/cookie-preferences")
+
+      # Toggle some preferences and save
+      lv
+      |> element("input[aria-label='Functionality Cookies']")
+      |> render_click()
+
+      html =
+        lv
+        |> element("#save-cookie-preferences")
+        |> render_click()
+
+      # Verify that the flash message is displayed
+      assert html =~ "Cookie preferences have been updated."
+
+      # Verify the push event still works
+      assert_push_event(lv, "save-cookie-preferences", %{
+        preferences: %{
+          necessary: true,
+          functionality: false,
+          analytics: true,
+          targeting: false
+        }
+      })
+    end
   end
 end
