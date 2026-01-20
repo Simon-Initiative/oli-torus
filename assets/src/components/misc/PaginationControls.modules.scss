@@ -5,6 +5,7 @@
 
 .paginationControls :global(.pagination) {
   margin-bottom: 0;
+  padding-left: 0;
 }
 
 @media (max-width: 639px) {
@@ -18,11 +19,12 @@
 
   .paginationControls :global(.page-link) {
     align-items: center;
+    box-sizing: border-box;
     display: inline-flex;
     justify-content: center;
     min-height: 2.75rem;
     min-width: 0;
-    padding: 0;
+    padding: 0 0.25rem;
     width: 100%;
     white-space: nowrap;
   }
