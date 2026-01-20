@@ -535,6 +535,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const [scrollPosition, setScrollPosition] = useState(0);
   const previousActivityIdRef = React.useRef<string | null>(null);
   const isInitialMountRef = React.useRef<boolean>(true);
+  const previousTreeLengthRef = React.useRef<number>(0);
 
   useEffect(() => {
     if (currentActivityTree && currentActivityTree?.length > 1) {
@@ -623,26 +624,42 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
       previousActivityIdRef.current = currentActivityId;
+      previousTreeLengthRef.current = localActivityTree.length;
       return;
     }
 
     // Skip focus in review mode or history navigation
     if (reviewMode || historyModeNavigation) {
       previousActivityIdRef.current = currentActivityId;
+      previousTreeLengthRef.current = localActivityTree.length;
       return;
     }
 
     // Only focus if activity ID actually changed (not same screen navigation)
     if (currentActivityId && currentActivityId !== previousActivityIdRef.current) {
+      const isSubscreenNavigation = localActivityTree.length > previousTreeLengthRef.current;
+
       requestAnimationFrame(() => {
         // Double-check with setTimeout to ensure content is rendered
         setTimeout(() => {
           // Verify ref exists and content is rendered before focusing
           if (contentRef.current) {
+            // If navigating to a subscreen, focus the subscreen element instead
+            if (isSubscreenNavigation) {
+              const adaptiveElements = contentRef.current.querySelectorAll('oli-adaptive-delivery');
+              const lastElement = adaptiveElements[adaptiveElements.length - 1] as HTMLElement;
+              if (lastElement) {
+                lastElement.focus();
+                lastElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+              }
+            }
+            // Fallback to existing behavior for non-subscreen navigation
             contentRef.current.focus();
           }
         }, 0);
       });
+      previousTreeLengthRef.current = localActivityTree.length;
       previousActivityIdRef.current = currentActivityId;
     }
   }, [localActivityTree, reviewMode, historyModeNavigation]);
