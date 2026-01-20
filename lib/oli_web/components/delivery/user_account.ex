@@ -273,7 +273,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       :if={not_blank?(privacy_policies_url())}
       icon={:cookie}
       label="Cookies"
-      onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: #{Jason.encode!(privacy_policies_url())}})"}
+      onclick={"OLI.handleCookiePreferences(#{Jason.encode!(privacy_policies_url())})"}
     />
     <.menu_item_profile_timezone id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_item_linked_authoring_account
@@ -306,7 +306,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       :if={not_blank?(privacy_policies_url())}
       icon={:cookie}
       label="Cookies"
-      onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: #{Jason.encode!(privacy_policies_url())}})"}
+      onclick={"OLI.handleCookiePreferences(#{Jason.encode!(privacy_policies_url())})"}
     />
     <.menu_item_profile_timezone id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_item_guest_actions section={@section} />
