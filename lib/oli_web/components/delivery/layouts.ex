@@ -295,7 +295,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           </div>
           <div class="flex flex-col gap-2 pt-4">
             <.tech_support_button id="mobile-tech-support" class="w-full" />
-            <.exit_course_button id="mobile_exit_course_button" sidebar_expanded={true} />
+            <.exit_course_button id="mobile_exit_course_button" />
           </div>
         </div>
         <div class="border-t border-Border-border-subtle px-3 py-4 flex items-center justify-between">
