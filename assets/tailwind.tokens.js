@@ -66,12 +66,12 @@ module.exports = {
   },
   // Fill/Buttons
   'Fill-Buttons-fill-primary': {
-    light: '#0080FF',
+    light: '#0062F2',
     dark: '#0062F2',
   },
   'Fill-Buttons-fill-primary-hover': {
-    light: '#0075EB',
-    dark: '#0D70FF',
+    light: '#003179',
+    dark: '#4CA6FF',
   },
   'Fill-Buttons-fill-primary-muted': {
     light: '#DEECFF',
@@ -81,7 +81,15 @@ module.exports = {
     light: '#CADFFC',
     dark: '#063A85',
   },
+  'Fill-Buttons-fill-secondary': {
+    light: '#FFFFFF1A',
+    dark: '#FFFFFF1A',
+  },
   'Fill-Buttons-fill-secondary-hover': {
+    light: '#1B67B2',
+    dark: '#FFFFFF1A',
+  },
+  'Fill-Buttons-fill-tertiary-hover': {
     light: '#DEECFF',
     dark: '#FFFFFF1A',
   },
@@ -170,6 +178,14 @@ module.exports = {
   'Border-border-bold-hover': {
     light: '#0080FF',
     dark: '#FFFFFF',
+  },
+  'Border-border-high': {
+    light: '#353740',
+    dark: '#EEEBF5',
+  },
+  'Border-border-low': {
+    light: '#45464C',
+    dark: '#BAB8BF',
   },
   'Border-border-danger': {
     light: '#FF4040',
@@ -425,6 +441,22 @@ module.exports = {
   'Specially-Tokens-Text-text-button-secondary': {
     light: '#006CD9',
     dark: '#FFFFFF',
+  },
+  'Specially-Tokens-Text-text-button-secondary-hover': {
+    light: '#1B67B2',
+    dark: '#FFFFFF',
+  },
+  'Specially-Tokens-Text-text-button-primary-hover': {
+    light: '#FFFFFF',
+    dark: '#0D0C0F',
+  },
+  'Specially-Tokens-Text-text-button-tertiary': {
+    light: '#006CD9',
+    dark: '#4CA6FF',
+  },
+  'Specially-Tokens-Text-text-button-tertiary-hover': {
+    light: '#1B67B2',
+    dark: '#99CCFF',
   },
   'Specially-Tokens-Text-text-inverse': {
     light: '#FFFFFF',

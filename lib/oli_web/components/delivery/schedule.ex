@@ -27,8 +27,8 @@ defmodule OliWeb.Components.Delivery.Schedule do
         "uppercase font-bold whitespace-nowrap mr-4 md:w-32",
         if(@show_border, do: "md:border-l"),
         if(@is_active,
-          do: "text-gray-700 dark:text-gray-300 md:border-gray-700 md:dark:border-gray-300",
-          else: "text-gray-400 dark:text-gray-400 md:border-gray-500 dark:border-gray-700"
+          do: "text-Text-text-low md:border-gray-700 md:dark:border-gray-300",
+          else: "text-Text-text-low md:border-gray-500 dark:border-gray-700"
         )
       ]}>
         <div class="flex flex-row">
@@ -42,11 +42,11 @@ defmodule OliWeb.Components.Delivery.Schedule do
           <div class={[
             "flex-1 flex flex-col mb-4 group",
             if(start_or_end_date_past?(date_range),
-              do: "past-start text-gray-400 dark:text-gray-400",
+              do: "past-start text-gray-400 dark:text-gray-700 opacity-80",
               else: ""
             )
           ]}>
-            <div class="font-bold text-gray-700 dark:text-gray-400 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-400">
+            <div class="font-bold text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700 group-[.past-start]:opacity-80">
               {render_date_range(date_range, @ctx)}
             </div>
 
@@ -58,7 +58,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                     <.progress_icon progress={container_progress} />
                     <div>
                       {page_or_assessment_label(graded)}
-                      <div class="uppercase font-bold text-sm text-gray-700 dark:text-gray-400 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-400">
+                      <div class="uppercase font-bold text-sm text-Text-text-button hover:text-Text-text-button-hover group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700 group-[.past-start]:opacity-80">
                         {container_label}
                       </div>
                     </div>
@@ -88,7 +88,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                             {resource.title}
                           </.link>
 
-                          <div class="text-sm text-gray-700 dark:text-gray-400 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-400">
+                          <div class="text-sm text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700 group-[.past-start]:opacity-80">
                             <span>
                               Available:
                               <%= if effective_settings.start_date do %>
@@ -233,7 +233,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
 
   def container_label(%{module_id: module_id} = assigns) when not is_nil(module_id) do
     ~H"""
-    <h3 class="ml-12 dark:text-white text-base font-bold font-['Open Sans']">
+    <h3 class="ml-12 text-Text-text-button hover:text-Text-text-button-hover text-base font-bold font-['Open Sans']">
       {@title}
     </h3>
     """
@@ -241,7 +241,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
 
   def container_label(%{unit_id: unit_id} = assigns) when not is_nil(unit_id) do
     ~H"""
-    <h3 class="dark:text-white text-xl font-bold font-['Open Sans']">
+    <h3 class="text-Text-text-button hover:text-Text-text-button-hover text-xl font-bold font-['Open Sans']">
       {"#{@unit_label}: #{@title}"}
     </h3>
     """

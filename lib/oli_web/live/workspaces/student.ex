@@ -85,8 +85,12 @@ defmodule OliWeb.Workspaces.Student do
     ~H"""
     <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div
-        class="absolute top-0 left-0 h-full w-full"
+        class="absolute top-0 left-0 h-full w-full dark:hidden"
         style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
+      />
+      <div
+        class="absolute top-0 left-0 h-full w-full hidden dark:block"
+        style="background: linear-gradient(90deg, rgba(217, 217, 217, 0.250) 0%, rgba(217, 217, 217, 0.00) 100%);"
       />
       <h2 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px] z-10">
         Hi, <span class="font-bold">{@ctx.author.given_name}</span>
@@ -157,8 +161,12 @@ defmodule OliWeb.Workspaces.Student do
     ~H"""
     <div class="relative flex items-center min-h-[100px] md:min-h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div
-        class="absolute top-0 left-0 h-full w-full"
+        class="absolute top-0 left-0 h-full w-full dark:hidden"
         style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
+      />
+      <div
+        class="absolute top-0 left-0 h-full w-full hidden dark:block"
+        style="background: linear-gradient(90deg, rgba(217, 217, 217, 0.250) 0%, rgba(217, 217, 217, 0.00) 100%);"
       />
       <h1 class="text-3xl md:text-[64px] leading-[87px] tracking-[0.02px] px-4 md:pl-[100px] z-10">
         Hi, <span class="font-bold">{user_given_name(@ctx)}</span>
@@ -226,7 +234,7 @@ defmodule OliWeb.Workspaces.Student do
       style={"background-image: url('#{SourceImage.cover_image(@section)}');"}
     >
       <div class="top-0 left-0 rounded-xl absolute w-full h-full mix-blend-difference bg-[linear-gradient(180deg,rgba(0,0,0,0.00)_0%,rgba(0,0,0,0.80)_100%),linear-gradient(90deg,rgba(0,0,0,0.80)_0%,rgba(0,0,0,0.40)_100%)]" />
-      <div class="top-0 left-0 rounded-xl absolute w-full h-full dark:bg-black/40" />
+      <div class="top-0 left-0 rounded-xl absolute w-full h-full bg-black/40" />
       <div class="top-0 left-0 rounded-xl absolute w-full h-full backdrop-blur-[30px] bg-[rgba(0,0,0,0.01)]" />
       <span
         :if={@section.progress == 100}

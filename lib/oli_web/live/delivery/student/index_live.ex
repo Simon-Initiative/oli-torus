@@ -384,8 +384,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               }
               class="w-full hover:no-underline"
             >
-              <div class="px-5 py-2.5 bg-blue-600 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-blue-500">
-                <div class="text-white text-sm font-bold leading-tight whitespace-nowrap">
+              <div class="px-5 py-2.5 rounded-lg shadow justify-center items-center gap-2.5 flex bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white hover:text-Specially-Tokens-Text-text-button-primary-hover">
+                <div class="text-sm font-bold leading-tight whitespace-nowrap">
                   {lesson_button_label(@unfinished_lesson, @suggested_page)}
                 </div>
               </div>
@@ -399,8 +399,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               }
               class="w-full hover:no-underline"
             >
-              <div class="px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-opacity-40">
-                <div class="text-white text-sm font-semibold leading-tight whitespace-nowrap">
+              <div class="px-5 py-2.5 rounded-lg shadow justify-center items-center gap-2.5 flex bg-Fill-Buttons-fill-secondary border border-Border-border-bold text-[#FFFFFF] hover:Specially-Tokens-Text-text-button-secondary-hover hover:border-Border-border-bold-hover hover:text-Specially-Tokens-Text-text-button-primary-hover">
+                <div class="text-sm font-semibold leading-tight whitespace-nowrap">
                   Show in course
                 </div>
               </div>
@@ -676,7 +676,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           />
           <.link
             navigate={@page_completed_target_path}
-            class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+            class="text-Text-text-button text-base font-bold ml-auto hover:text-Text-text-button-hover hover:no-underline"
           >
             {@completed_pages.completed_pages}/{@completed_pages.total_pages} Pages Completed
           </.link>
@@ -811,7 +811,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             navigate={
               ~p"/sections/#{@section_slug}/certificate/#{certificate_progress.granted_certificate_guid}"
             }
-            class=" text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+            class="text-Text-text-button text-base font-bold ml-auto hover:text-Text-text-button-hover hover:no-underline"
           >
             Access my certificate
           </.link>
@@ -914,7 +914,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               request_path: ~p"/sections/#{@section_slug}"
             )
           }
-          class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+          class="text-Text-text-button text-base font-bold ml-auto hover:text-Text-text-button-hover hover:no-underline"
         >
           View All Assignments
         </.link>
@@ -1000,11 +1000,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp item_bg_color(true = _completed),
     do:
-      "bg-black/[.07] hover:bg-black/[.1] border border-white/[.1] dark:bg-white/[.02] dark:hover:bg-white/[.06] dark:border-white/[0.06] dark:hover:border-white/[0.02]"
+      "bg-Surface-surface-secondary border border-Border-border-subtle hover:bg-Surface-surface-secondary-muted hover:shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
 
   defp item_bg_color(false = _completed),
     do:
-      "bg-black/[.1] hover:bg-black/[.2] border border-white/[.6] hover:border-transparent dark:bg-white/[.08] dark:hover:bg-white/[.12] dark:border-black hover:!border-transparent"
+      "bg-Surface-surface-secondary border border-Border-border-subtle hover:bg-Surface-surface-secondary-muted hover:shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
 
   attr :lesson, :map, required: true
   attr :upcoming, :boolean, required: true
@@ -1223,7 +1223,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             }
             class="hover:no-underline"
           >
-            <div class="text-[#3399FF] hover:text-opacity-80 text-base font-bold tracking-tight">
+            <div class="text-Text-text-button hover:text-Text-text-button-hover text-base font-bold tracking-tight">
               View full schedule
             </div>
           </.link>
