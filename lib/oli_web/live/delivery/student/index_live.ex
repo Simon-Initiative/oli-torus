@@ -315,7 +315,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             aria-label="Close sections menu"
             class="text-[#1f2937] hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
           >
-            <Icons.close class="stroke-white" />
+            <Icons.close class="stroke-current" />
           </button>
         </div>
 
