@@ -1,9 +1,179 @@
 defmodule OliWeb.CookieConsentControllerTest do
   use OliWeb.ConnCase
 
+  alias Oli.Consent
+  alias Oli.Consent.CookiesConsent
   alias Oli.Delivery.Sections
+  alias Oli.Repo
   alias Oli.Seeder
   alias Lti_1p3.Roles.ContextRoles
+
+  describe "persist_cookies when NOT logged in" do
+    test "does not persist to database and returns user not found", %{conn: conn} do
+      conn =
+        post(
+          conn,
+          Routes.cookie_consent_path(conn, :persist_cookies),
+          cookies: [
+            %{
+              expiresIso: "2027-04-26T18:17:21.264Z",
+              name: "_cky_opt_choices",
+              value:
+                ~s({"necessary":true,"functionality":true,"analytics":false,"targeting":false})
+            }
+          ]
+        )
+
+      # Should return success but with "user not found" info
+      response = json_response(conn, 200)
+      assert response["result"] == "success"
+      assert response["info"] == "user not found"
+
+      # Verify NO records were created in the database
+      count = Repo.aggregate(CookiesConsent, :count, :id)
+      assert count == 0
+    end
+  end
+
+  describe "sync cookies on login" do
+    test "syncs browser cookies to database when user has no existing preferences", %{conn: conn} do
+      # Create a user with password
+      user = user_fixture(%{password: "valid_password123!"})
+
+      # Verify user has no cookie preferences in DB
+      assert Consent.retrieve_cookies(user.id) == []
+
+      # Set browser cookie on conn (simulating cookie set while not logged in)
+      cookie_value =
+        ~s({"necessary":true,"functionality":false,"analytics":true,"targeting":false})
+
+      conn =
+        conn
+        |> Plug.Test.init_test_session([])
+        |> put_req_cookie("_cky_opt_choices", cookie_value)
+        |> post(Routes.user_session_path(conn, :create), %{
+          "user" => %{
+            "email" => user.email,
+            "password" => "valid_password123!"
+          }
+        })
+
+      # Should redirect (successful login)
+      assert redirected_to(conn)
+
+      # Verify cookie was synced to database
+      cookies = Consent.retrieve_cookies(user.id)
+      assert length(cookies) == 1
+
+      cookie = hd(cookies)
+      assert cookie.name == "_cky_opt_choices"
+      assert cookie.value == cookie_value
+    end
+
+    test "does NOT sync browser cookies if user already has preferences in database", %{
+      conn: conn
+    } do
+      # Create a user with password
+      user = user_fixture(%{password: "valid_password123!"})
+
+      # Pre-populate DB with existing preferences
+      existing_value =
+        ~s({"necessary":true,"functionality":true,"analytics":true,"targeting":true})
+
+      Consent.insert_cookie(
+        "_cky_opt_choices",
+        existing_value,
+        DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second),
+        user.id
+      )
+
+      # Set DIFFERENT browser cookie
+      browser_value =
+        ~s({"necessary":true,"functionality":false,"analytics":false,"targeting":false})
+
+      conn =
+        conn
+        |> Plug.Test.init_test_session([])
+        |> put_req_cookie("_cky_opt_choices", browser_value)
+        |> post(Routes.user_session_path(conn, :create), %{
+          "user" => %{
+            "email" => user.email,
+            "password" => "valid_password123!"
+          }
+        })
+
+      # Should redirect (successful login)
+      assert redirected_to(conn)
+
+      # Verify DB preferences were NOT overwritten
+      cookies = Consent.retrieve_cookies(user.id)
+      assert length(cookies) == 1
+
+      cookie = hd(cookies)
+      assert cookie.value == existing_value
+      refute cookie.value == browser_value
+    end
+
+    test "handles login without browser cookies gracefully", %{conn: conn} do
+      # Create a user with password
+      user = user_fixture(%{password: "valid_password123!"})
+
+      # No browser cookie set
+      conn =
+        conn
+        |> Plug.Test.init_test_session([])
+        |> post(Routes.user_session_path(conn, :create), %{
+          "user" => %{
+            "email" => user.email,
+            "password" => "valid_password123!"
+          }
+        })
+
+      # Should redirect (successful login)
+      assert redirected_to(conn)
+
+      # Verify no cookies were created (nothing to sync)
+      cookies = Consent.retrieve_cookies(user.id)
+      assert cookies == []
+    end
+
+    test "does not create duplicate records on subsequent logins", %{conn: conn} do
+      # Create a user with password
+      user = user_fixture(%{password: "valid_password123!"})
+
+      cookie_value =
+        ~s({"necessary":true,"functionality":true,"analytics":false,"targeting":false})
+
+      # First login with browser cookie
+      conn
+      |> Plug.Test.init_test_session([])
+      |> put_req_cookie("_cky_opt_choices", cookie_value)
+      |> post(Routes.user_session_path(conn, :create), %{
+        "user" => %{
+          "email" => user.email,
+          "password" => "valid_password123!"
+        }
+      })
+
+      # Verify one record exists
+      assert length(Consent.retrieve_cookies(user.id)) == 1
+
+      # Second login with same browser cookie
+      build_conn()
+      |> Plug.Test.init_test_session([])
+      |> put_req_cookie("_cky_opt_choices", cookie_value)
+      |> post(Routes.user_session_path(conn, :create), %{
+        "user" => %{
+          "email" => user.email,
+          "password" => "valid_password123!"
+        }
+      })
+
+      # Should still have only one record (no duplicates)
+      cookies = Consent.retrieve_cookies(user.id)
+      assert length(cookies) == 1
+    end
+  end
 
   describe "cookie_consent controller " do
     setup [:setup_session]
