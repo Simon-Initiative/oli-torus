@@ -9,6 +9,7 @@ defmodule OliWeb.Users.UsersDetailView do
   alias Oli.Accounts.User
   alias Oli.Auditing
   alias Oli.Delivery.{Metrics, Paywall, Sections}
+  alias Oli.Institutions
   alias Oli.Lti.LtiParams
 
   alias OliWeb.Accounts.Modals.{
@@ -59,6 +60,8 @@ defmodule OliWeb.Users.UsersDetailView do
           Sections.list_user_enrolled_sections(user)
           |> add_necessary_information(user)
 
+        institution = Institutions.get_institution_by_lti_user(user)
+
         {:ok,
          assign(socket,
            current_author: socket.assigns.current_author,
@@ -67,6 +70,7 @@ defmodule OliWeb.Users.UsersDetailView do
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
+           institution: institution,
            disabled_edit: true,
            user_name: user.name,
            password_reset_link: ""
@@ -80,6 +84,7 @@ defmodule OliWeb.Users.UsersDetailView do
   attr(:modal, :any, default: nil)
   attr(:title, :string, default: "User Details")
   attr(:user, User, required: true)
+  attr(:institution, :any, default: nil)
   attr(:disabled_edit, :boolean, default: true)
   attr(:disabled_submit, :boolean, default: false)
   attr(:user_name, :string)
@@ -122,6 +127,7 @@ defmodule OliWeb.Users.UsersDetailView do
               />
             </div>
             <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
+            <.institution_field institution={@institution} />
             <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
               <ReadOnly.render
                 label="Confirmed is 13 or older on creation"
@@ -537,5 +543,27 @@ defmodule OliWeb.Users.UsersDetailView do
         }
       )
     end)
+  end
+
+  attr :institution, :any, required: true
+
+  defp institution_field(assigns) do
+    ~H"""
+    <div class="form-group">
+      <label>Institution</label>
+      <div>
+        <%= if @institution do %>
+          <.link
+            href={Routes.institution_path(OliWeb.Endpoint, :show, @institution.id)}
+            class="justify-start text-Text-text-button text-base font-medium"
+          >
+            {@institution.name}
+          </.link>
+        <% else %>
+          <span>Direct Delivery</span>
+        <% end %>
+      </div>
+    </div>
+    """
   end
 end
