@@ -1991,7 +1991,7 @@ select {
 }
 
 .bg-Fill-Buttons-fill-primary {
-  background-color: #0080FF;
+  background-color: #0062F2;
 }
 
 .dark .bg-Fill-Buttons-fill-primary {
@@ -2015,7 +2015,7 @@ select {
 }
 
 .bg-Fill-Buttons-fill-primary\/50 {
-  background-color: #0080FF80;
+  background-color: #0062F280;
 }
 
 .dark .bg-Fill-Buttons-fill-primary\/50 {
@@ -2039,7 +2039,7 @@ select {
 }
 
 .text-Fill-Buttons-fill-primary {
-  color: #0080FF;
+  color: #0062F2;
 }
 
 .dark .text-Fill-Buttons-fill-primary {
@@ -2047,7 +2047,7 @@ select {
 }
 
 .border-Fill-Buttons-fill-primary {
-  border-color: #0080FF;
+  border-color: #0062F2;
 }
 
 .dark .border-Fill-Buttons-fill-primary {
@@ -2067,7 +2067,7 @@ select {
 }
 
 .stroke-Fill-Buttons-fill-primary {
-  stroke: #0080FF;
+  stroke: #0062F2;
 }
 
 .dark .stroke-Fill-Buttons-fill-primary {
@@ -2085,7 +2085,7 @@ select {
 .focus-ring-Fill-Buttons-fill-primary:focus {
   outline: 2px solid white;
   outline-offset: 0px;
-  box-shadow: 0 0 0 4px #0080FF;
+  box-shadow: 0 0 0 4px #0062F2;
 }
 
 .dark .focus-ring-Fill-Buttons-fill-primary:focus {
@@ -2097,83 +2097,83 @@ select {
 }
 
 .dark .bg-Fill-Buttons-fill-primary-hover {
-  background-color: #0D70FF;
+  background-color: #4CA6FF;
 }
 
 .dark .bg-Fill-Buttons-fill-primary-hover\/10 {
-  background-color: #0D70FF1a;
+  background-color: #4CA6FF1a;
 }
 
 .dark .bg-Fill-Buttons-fill-primary-hover\/20 {
-  background-color: #0D70FF33;
+  background-color: #4CA6FF33;
 }
 
 .dark .bg-Fill-Buttons-fill-primary-hover\/30 {
-  background-color: #0D70FF4d;
+  background-color: #4CA6FF4d;
 }
 
 .dark .bg-Fill-Buttons-fill-primary-hover\/40 {
-  background-color: #0D70FF66;
+  background-color: #4CA6FF66;
 }
 
 .dark .bg-Fill-Buttons-fill-primary-hover\/50 {
-  background-color: #0D70FF80;
+  background-color: #4CA6FF80;
 }
 
 .dark .bg-Fill-Buttons-fill-primary-hover\/60 {
-  background-color: #0D70FF99;
+  background-color: #4CA6FF99;
 }
 
 .dark .bg-Fill-Buttons-fill-primary-hover\/70 {
-  background-color: #0D70FFb3;
+  background-color: #4CA6FFb3;
 }
 
 .dark .bg-Fill-Buttons-fill-primary-hover\/80 {
-  background-color: #0D70FFcc;
+  background-color: #4CA6FFcc;
 }
 
 .dark .bg-Fill-Buttons-fill-primary-hover\/90 {
-  background-color: #0D70FFe6;
+  background-color: #4CA6FFe6;
 }
 
 .dark .text-Fill-Buttons-fill-primary-hover {
-  color: #0D70FF;
+  color: #4CA6FF;
 }
 
 .dark .border-Fill-Buttons-fill-primary-hover {
-  border-color: #0D70FF;
+  border-color: #4CA6FF;
 }
 
 .dark .outline-Fill-Buttons-fill-primary-hover {
-  outline-color: #0D70FF;
+  outline-color: #4CA6FF;
 }
 
 .dark .ring-Fill-Buttons-fill-primary-hover {
-  --tw-ring-color: #0D70FF;
+  --tw-ring-color: #4CA6FF;
 }
 
 .dark .fill-Fill-Buttons-fill-primary-hover {
-  fill: #0D70FF;
+  fill: #4CA6FF;
 }
 
 .dark .stroke-Fill-Buttons-fill-primary-hover {
-  stroke: #0D70FF;
+  stroke: #4CA6FF;
 }
 
 .dark .caret-Fill-Buttons-fill-primary-hover {
-  caret-color: #0D70FF;
+  caret-color: #4CA6FF;
 }
 
 .dark .accent-Fill-Buttons-fill-primary-hover {
-  accent-color: #0D70FF;
+  accent-color: #4CA6FF;
 }
 
 .dark .focus-ring-Fill-Buttons-fill-primary-hover:focus {
-  box-shadow: 0 0 0 4px #0D70FF;
+  box-shadow: 0 0 0 4px #4CA6FF;
 }
 
 .dark .focus-visible-ring-Fill-Buttons-fill-primary-hover:focus-visible {
-  box-shadow: 0 0 0 4px #0D70FF;
+  box-shadow: 0 0 0 4px #4CA6FF;
 }
 
 .bg-Fill-Buttons-fill-primary-muted {
@@ -2340,6 +2340,90 @@ select {
   box-shadow: 0 0 0 4px #063A85;
 }
 
+.bg-Fill-Buttons-fill-secondary {
+  background-color: #FFFFFF1A;
+}
+
+.dark .bg-Fill-Buttons-fill-secondary {
+  background-color: #FFFFFF1A;
+}
+
+.dark .bg-Fill-Buttons-fill-secondary\/10 {
+  background-color: #FFFFFF1A1a;
+}
+
+.dark .bg-Fill-Buttons-fill-secondary\/20 {
+  background-color: #FFFFFF1A33;
+}
+
+.dark .bg-Fill-Buttons-fill-secondary\/30 {
+  background-color: #FFFFFF1A4d;
+}
+
+.dark .bg-Fill-Buttons-fill-secondary\/40 {
+  background-color: #FFFFFF1A66;
+}
+
+.dark .bg-Fill-Buttons-fill-secondary\/50 {
+  background-color: #FFFFFF1A80;
+}
+
+.dark .bg-Fill-Buttons-fill-secondary\/60 {
+  background-color: #FFFFFF1A99;
+}
+
+.dark .bg-Fill-Buttons-fill-secondary\/70 {
+  background-color: #FFFFFF1Ab3;
+}
+
+.dark .bg-Fill-Buttons-fill-secondary\/80 {
+  background-color: #FFFFFF1Acc;
+}
+
+.dark .bg-Fill-Buttons-fill-secondary\/90 {
+  background-color: #FFFFFF1Ae6;
+}
+
+.dark .text-Fill-Buttons-fill-secondary {
+  color: #FFFFFF1A;
+}
+
+.dark .border-Fill-Buttons-fill-secondary {
+  border-color: #FFFFFF1A;
+}
+
+.dark .outline-Fill-Buttons-fill-secondary {
+  outline-color: #FFFFFF1A;
+}
+
+.dark .ring-Fill-Buttons-fill-secondary {
+  --tw-ring-color: #FFFFFF1A;
+}
+
+.dark .fill-Fill-Buttons-fill-secondary {
+  fill: #FFFFFF1A;
+}
+
+.dark .stroke-Fill-Buttons-fill-secondary {
+  stroke: #FFFFFF1A;
+}
+
+.dark .caret-Fill-Buttons-fill-secondary {
+  caret-color: #FFFFFF1A;
+}
+
+.dark .accent-Fill-Buttons-fill-secondary {
+  accent-color: #FFFFFF1A;
+}
+
+.dark .focus-ring-Fill-Buttons-fill-secondary:focus {
+  box-shadow: 0 0 0 4px #FFFFFF1A;
+}
+
+.dark .focus-visible-ring-Fill-Buttons-fill-secondary:focus-visible {
+  box-shadow: 0 0 0 4px #FFFFFF1A;
+}
+
 .dark .bg-Fill-Buttons-fill-secondary-hover {
   background-color: #FFFFFF1A;
 }
@@ -2417,6 +2501,86 @@ select {
 }
 
 .dark .focus-visible-ring-Fill-Buttons-fill-secondary-hover:focus-visible {
+  box-shadow: 0 0 0 4px #FFFFFF1A;
+}
+
+.dark .bg-Fill-Buttons-fill-tertiary-hover {
+  background-color: #FFFFFF1A;
+}
+
+.dark .bg-Fill-Buttons-fill-tertiary-hover\/10 {
+  background-color: #FFFFFF1A1a;
+}
+
+.dark .bg-Fill-Buttons-fill-tertiary-hover\/20 {
+  background-color: #FFFFFF1A33;
+}
+
+.dark .bg-Fill-Buttons-fill-tertiary-hover\/30 {
+  background-color: #FFFFFF1A4d;
+}
+
+.dark .bg-Fill-Buttons-fill-tertiary-hover\/40 {
+  background-color: #FFFFFF1A66;
+}
+
+.dark .bg-Fill-Buttons-fill-tertiary-hover\/50 {
+  background-color: #FFFFFF1A80;
+}
+
+.dark .bg-Fill-Buttons-fill-tertiary-hover\/60 {
+  background-color: #FFFFFF1A99;
+}
+
+.dark .bg-Fill-Buttons-fill-tertiary-hover\/70 {
+  background-color: #FFFFFF1Ab3;
+}
+
+.dark .bg-Fill-Buttons-fill-tertiary-hover\/80 {
+  background-color: #FFFFFF1Acc;
+}
+
+.dark .bg-Fill-Buttons-fill-tertiary-hover\/90 {
+  background-color: #FFFFFF1Ae6;
+}
+
+.dark .text-Fill-Buttons-fill-tertiary-hover {
+  color: #FFFFFF1A;
+}
+
+.dark .border-Fill-Buttons-fill-tertiary-hover {
+  border-color: #FFFFFF1A;
+}
+
+.dark .outline-Fill-Buttons-fill-tertiary-hover {
+  outline-color: #FFFFFF1A;
+}
+
+.dark .ring-Fill-Buttons-fill-tertiary-hover {
+  --tw-ring-color: #FFFFFF1A;
+}
+
+.dark .fill-Fill-Buttons-fill-tertiary-hover {
+  fill: #FFFFFF1A;
+}
+
+.dark .stroke-Fill-Buttons-fill-tertiary-hover {
+  stroke: #FFFFFF1A;
+}
+
+.dark .caret-Fill-Buttons-fill-tertiary-hover {
+  caret-color: #FFFFFF1A;
+}
+
+.dark .accent-Fill-Buttons-fill-tertiary-hover {
+  accent-color: #FFFFFF1A;
+}
+
+.dark .focus-ring-Fill-Buttons-fill-tertiary-hover:focus {
+  box-shadow: 0 0 0 4px #FFFFFF1A;
+}
+
+.dark .focus-visible-ring-Fill-Buttons-fill-tertiary-hover:focus-visible {
   box-shadow: 0 0 0 4px #FFFFFF1A;
 }
 
@@ -4146,6 +4310,170 @@ select {
 
 .dark .focus-visible-ring-Border-border-bold-hover:focus-visible {
   box-shadow: 0 0 0 4px #FFFFFF;
+}
+
+.dark .bg-Border-border-high {
+  background-color: #EEEBF5;
+}
+
+.dark .bg-Border-border-high\/10 {
+  background-color: #EEEBF51a;
+}
+
+.dark .bg-Border-border-high\/20 {
+  background-color: #EEEBF533;
+}
+
+.dark .bg-Border-border-high\/30 {
+  background-color: #EEEBF54d;
+}
+
+.dark .bg-Border-border-high\/40 {
+  background-color: #EEEBF566;
+}
+
+.dark .bg-Border-border-high\/50 {
+  background-color: #EEEBF580;
+}
+
+.dark .bg-Border-border-high\/60 {
+  background-color: #EEEBF599;
+}
+
+.dark .bg-Border-border-high\/70 {
+  background-color: #EEEBF5b3;
+}
+
+.dark .bg-Border-border-high\/80 {
+  background-color: #EEEBF5cc;
+}
+
+.dark .bg-Border-border-high\/90 {
+  background-color: #EEEBF5e6;
+}
+
+.dark .text-Border-border-high {
+  color: #EEEBF5;
+}
+
+.border-Border-border-high {
+  border-color: #353740;
+}
+
+.dark .border-Border-border-high {
+  border-color: #EEEBF5;
+}
+
+.dark .outline-Border-border-high {
+  outline-color: #EEEBF5;
+}
+
+.dark .ring-Border-border-high {
+  --tw-ring-color: #EEEBF5;
+}
+
+.dark .fill-Border-border-high {
+  fill: #EEEBF5;
+}
+
+.dark .stroke-Border-border-high {
+  stroke: #EEEBF5;
+}
+
+.dark .caret-Border-border-high {
+  caret-color: #EEEBF5;
+}
+
+.dark .accent-Border-border-high {
+  accent-color: #EEEBF5;
+}
+
+.dark .focus-ring-Border-border-high:focus {
+  box-shadow: 0 0 0 4px #EEEBF5;
+}
+
+.dark .focus-visible-ring-Border-border-high:focus-visible {
+  box-shadow: 0 0 0 4px #EEEBF5;
+}
+
+.dark .bg-Border-border-low {
+  background-color: #BAB8BF;
+}
+
+.dark .bg-Border-border-low\/10 {
+  background-color: #BAB8BF1a;
+}
+
+.dark .bg-Border-border-low\/20 {
+  background-color: #BAB8BF33;
+}
+
+.dark .bg-Border-border-low\/30 {
+  background-color: #BAB8BF4d;
+}
+
+.dark .bg-Border-border-low\/40 {
+  background-color: #BAB8BF66;
+}
+
+.dark .bg-Border-border-low\/50 {
+  background-color: #BAB8BF80;
+}
+
+.dark .bg-Border-border-low\/60 {
+  background-color: #BAB8BF99;
+}
+
+.dark .bg-Border-border-low\/70 {
+  background-color: #BAB8BFb3;
+}
+
+.dark .bg-Border-border-low\/80 {
+  background-color: #BAB8BFcc;
+}
+
+.dark .bg-Border-border-low\/90 {
+  background-color: #BAB8BFe6;
+}
+
+.dark .text-Border-border-low {
+  color: #BAB8BF;
+}
+
+.dark .border-Border-border-low {
+  border-color: #BAB8BF;
+}
+
+.dark .outline-Border-border-low {
+  outline-color: #BAB8BF;
+}
+
+.dark .ring-Border-border-low {
+  --tw-ring-color: #BAB8BF;
+}
+
+.dark .fill-Border-border-low {
+  fill: #BAB8BF;
+}
+
+.dark .stroke-Border-border-low {
+  stroke: #BAB8BF;
+}
+
+.dark .caret-Border-border-low {
+  caret-color: #BAB8BF;
+}
+
+.dark .accent-Border-border-low {
+  accent-color: #BAB8BF;
+}
+
+.dark .focus-ring-Border-border-low:focus {
+  box-shadow: 0 0 0 4px #BAB8BF;
+}
+
+.dark .focus-visible-ring-Border-border-low:focus-visible {
+  box-shadow: 0 0 0 4px #BAB8BF;
 }
 
 .dark .bg-Border-border-danger {
@@ -6618,6 +6946,10 @@ select {
 
 .dark .bg-Icon-icon-white\/90 {
   background-color: #FFFFFFe6;
+}
+
+.text-Icon-icon-white {
+  color: #FFFFFF;
 }
 
 .dark .text-Icon-icon-white {
@@ -9282,6 +9614,326 @@ select {
 
 .dark .focus-visible-ring-Specially-Tokens-Text-text-button-secondary:focus-visible {
   box-shadow: 0 0 0 4px #FFFFFF;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-secondary-hover {
+  background-color: #FFFFFF;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-secondary-hover\/10 {
+  background-color: #FFFFFF1a;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-secondary-hover\/20 {
+  background-color: #FFFFFF33;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-secondary-hover\/30 {
+  background-color: #FFFFFF4d;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-secondary-hover\/40 {
+  background-color: #FFFFFF66;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-secondary-hover\/50 {
+  background-color: #FFFFFF80;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-secondary-hover\/60 {
+  background-color: #FFFFFF99;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-secondary-hover\/70 {
+  background-color: #FFFFFFb3;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-secondary-hover\/80 {
+  background-color: #FFFFFFcc;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-secondary-hover\/90 {
+  background-color: #FFFFFFe6;
+}
+
+.dark .text-Specially-Tokens-Text-text-button-secondary-hover {
+  color: #FFFFFF;
+}
+
+.dark .border-Specially-Tokens-Text-text-button-secondary-hover {
+  border-color: #FFFFFF;
+}
+
+.dark .outline-Specially-Tokens-Text-text-button-secondary-hover {
+  outline-color: #FFFFFF;
+}
+
+.dark .ring-Specially-Tokens-Text-text-button-secondary-hover {
+  --tw-ring-color: #FFFFFF;
+}
+
+.dark .fill-Specially-Tokens-Text-text-button-secondary-hover {
+  fill: #FFFFFF;
+}
+
+.dark .stroke-Specially-Tokens-Text-text-button-secondary-hover {
+  stroke: #FFFFFF;
+}
+
+.dark .caret-Specially-Tokens-Text-text-button-secondary-hover {
+  caret-color: #FFFFFF;
+}
+
+.dark .accent-Specially-Tokens-Text-text-button-secondary-hover {
+  accent-color: #FFFFFF;
+}
+
+.dark .focus-ring-Specially-Tokens-Text-text-button-secondary-hover:focus {
+  box-shadow: 0 0 0 4px #FFFFFF;
+}
+
+.dark .focus-visible-ring-Specially-Tokens-Text-text-button-secondary-hover:focus-visible {
+  box-shadow: 0 0 0 4px #FFFFFF;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-primary-hover {
+  background-color: #0D0C0F;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-primary-hover\/10 {
+  background-color: #0D0C0F1a;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-primary-hover\/20 {
+  background-color: #0D0C0F33;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-primary-hover\/30 {
+  background-color: #0D0C0F4d;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-primary-hover\/40 {
+  background-color: #0D0C0F66;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-primary-hover\/50 {
+  background-color: #0D0C0F80;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-primary-hover\/60 {
+  background-color: #0D0C0F99;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-primary-hover\/70 {
+  background-color: #0D0C0Fb3;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-primary-hover\/80 {
+  background-color: #0D0C0Fcc;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-primary-hover\/90 {
+  background-color: #0D0C0Fe6;
+}
+
+.dark .text-Specially-Tokens-Text-text-button-primary-hover {
+  color: #0D0C0F;
+}
+
+.dark .border-Specially-Tokens-Text-text-button-primary-hover {
+  border-color: #0D0C0F;
+}
+
+.dark .outline-Specially-Tokens-Text-text-button-primary-hover {
+  outline-color: #0D0C0F;
+}
+
+.dark .ring-Specially-Tokens-Text-text-button-primary-hover {
+  --tw-ring-color: #0D0C0F;
+}
+
+.dark .fill-Specially-Tokens-Text-text-button-primary-hover {
+  fill: #0D0C0F;
+}
+
+.dark .stroke-Specially-Tokens-Text-text-button-primary-hover {
+  stroke: #0D0C0F;
+}
+
+.dark .caret-Specially-Tokens-Text-text-button-primary-hover {
+  caret-color: #0D0C0F;
+}
+
+.dark .accent-Specially-Tokens-Text-text-button-primary-hover {
+  accent-color: #0D0C0F;
+}
+
+.dark .focus-ring-Specially-Tokens-Text-text-button-primary-hover:focus {
+  box-shadow: 0 0 0 4px #0D0C0F;
+}
+
+.dark .focus-visible-ring-Specially-Tokens-Text-text-button-primary-hover:focus-visible {
+  box-shadow: 0 0 0 4px #0D0C0F;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary {
+  background-color: #4CA6FF;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary\/10 {
+  background-color: #4CA6FF1a;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary\/20 {
+  background-color: #4CA6FF33;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary\/30 {
+  background-color: #4CA6FF4d;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary\/40 {
+  background-color: #4CA6FF66;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary\/50 {
+  background-color: #4CA6FF80;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary\/60 {
+  background-color: #4CA6FF99;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary\/70 {
+  background-color: #4CA6FFb3;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary\/80 {
+  background-color: #4CA6FFcc;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary\/90 {
+  background-color: #4CA6FFe6;
+}
+
+.dark .text-Specially-Tokens-Text-text-button-tertiary {
+  color: #4CA6FF;
+}
+
+.dark .border-Specially-Tokens-Text-text-button-tertiary {
+  border-color: #4CA6FF;
+}
+
+.dark .outline-Specially-Tokens-Text-text-button-tertiary {
+  outline-color: #4CA6FF;
+}
+
+.dark .ring-Specially-Tokens-Text-text-button-tertiary {
+  --tw-ring-color: #4CA6FF;
+}
+
+.dark .fill-Specially-Tokens-Text-text-button-tertiary {
+  fill: #4CA6FF;
+}
+
+.dark .stroke-Specially-Tokens-Text-text-button-tertiary {
+  stroke: #4CA6FF;
+}
+
+.dark .caret-Specially-Tokens-Text-text-button-tertiary {
+  caret-color: #4CA6FF;
+}
+
+.dark .accent-Specially-Tokens-Text-text-button-tertiary {
+  accent-color: #4CA6FF;
+}
+
+.dark .focus-ring-Specially-Tokens-Text-text-button-tertiary:focus {
+  box-shadow: 0 0 0 4px #4CA6FF;
+}
+
+.dark .focus-visible-ring-Specially-Tokens-Text-text-button-tertiary:focus-visible {
+  box-shadow: 0 0 0 4px #4CA6FF;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary-hover {
+  background-color: #99CCFF;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary-hover\/10 {
+  background-color: #99CCFF1a;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary-hover\/20 {
+  background-color: #99CCFF33;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary-hover\/30 {
+  background-color: #99CCFF4d;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary-hover\/40 {
+  background-color: #99CCFF66;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary-hover\/50 {
+  background-color: #99CCFF80;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary-hover\/60 {
+  background-color: #99CCFF99;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary-hover\/70 {
+  background-color: #99CCFFb3;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary-hover\/80 {
+  background-color: #99CCFFcc;
+}
+
+.dark .bg-Specially-Tokens-Text-text-button-tertiary-hover\/90 {
+  background-color: #99CCFFe6;
+}
+
+.dark .text-Specially-Tokens-Text-text-button-tertiary-hover {
+  color: #99CCFF;
+}
+
+.dark .border-Specially-Tokens-Text-text-button-tertiary-hover {
+  border-color: #99CCFF;
+}
+
+.dark .outline-Specially-Tokens-Text-text-button-tertiary-hover {
+  outline-color: #99CCFF;
+}
+
+.dark .ring-Specially-Tokens-Text-text-button-tertiary-hover {
+  --tw-ring-color: #99CCFF;
+}
+
+.dark .fill-Specially-Tokens-Text-text-button-tertiary-hover {
+  fill: #99CCFF;
+}
+
+.dark .stroke-Specially-Tokens-Text-text-button-tertiary-hover {
+  stroke: #99CCFF;
+}
+
+.dark .caret-Specially-Tokens-Text-text-button-tertiary-hover {
+  caret-color: #99CCFF;
+}
+
+.dark .accent-Specially-Tokens-Text-text-button-tertiary-hover {
+  accent-color: #99CCFF;
+}
+
+.dark .focus-ring-Specially-Tokens-Text-text-button-tertiary-hover:focus {
+  box-shadow: 0 0 0 4px #99CCFF;
+}
+
+.dark .focus-visible-ring-Specially-Tokens-Text-text-button-tertiary-hover:focus-visible {
+  box-shadow: 0 0 0 4px #99CCFF;
 }
 
 .dark .bg-Specially-Tokens-Text-text-inverse {
@@ -17341,11 +17993,6 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(38 38 38 / var(--tw-border-opacity));
 }
 
-.border-gray-900 {
-  --tw-border-opacity: 1;
-  border-color: rgb(23 23 23 / var(--tw-border-opacity));
-}
-
 .border-green-200 {
   --tw-border-opacity: 1;
   border-color: rgb(187 247 208 / var(--tw-border-opacity));
@@ -17432,14 +18079,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .border-white\/20 {
   border-color: rgb(255 255 255 / 0.2);
-}
-
-.border-white\/\[\.1\] {
-  border-color: rgb(255 255 255 / .1);
-}
-
-.border-white\/\[\.6\] {
-  border-color: rgb(255 255 255 / .6);
 }
 
 .border-yellow-200 {
@@ -17593,10 +18232,6 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(56 85 129 / var(--tw-bg-opacity));
 }
 
-.bg-\[\#3959B8\]\/\[\.25\] {
-  background-color: rgb(57 89 184 / .25);
-}
-
 .bg-\[\#39e581\]\/25 {
   background-color: rgb(57 229 129 / 0.25);
 }
@@ -17605,22 +18240,9 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(57 229 129 / 0.4);
 }
 
-.bg-\[\#3E7981\]\/\[\.25\] {
-  background-color: rgb(62 121 129 / .25);
-}
-
 .bg-\[\#4CA6FF\] {
   --tw-bg-opacity: 1;
   background-color: rgb(76 166 255 / var(--tw-bg-opacity));
-}
-
-.bg-\[\#5798f8\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(87 152 248 / var(--tw-bg-opacity));
-}
-
-.bg-\[\#815499\]\/\[\.25\] {
-  background-color: rgb(129 84 153 / .25);
 }
 
 .bg-\[\#9d9d9d\] {
@@ -17640,10 +18262,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-\[\#AAC3F0\]\/75 {
   background-color: rgb(170 195 240 / 0.75);
-}
-
-.bg-\[\#B87439\]\/\[\.25\] {
-  background-color: rgb(184 116 57 / .25);
 }
 
 .bg-\[\#E6E9F2\] {
@@ -17742,20 +18360,12 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(0 0 0 / 0.2);
 }
 
+.bg-black\/40 {
+  background-color: rgb(0 0 0 / 0.4);
+}
+
 .bg-black\/5 {
   background-color: rgb(0 0 0 / 0.05);
-}
-
-.bg-black\/\[\.07\] {
-  background-color: rgb(0 0 0 / .07);
-}
-
-.bg-black\/\[\.1\] {
-  background-color: rgb(0 0 0 / .1);
-}
-
-.bg-black\/\[0\.1\] {
-  background-color: rgb(0 0 0 / 0.1);
 }
 
 .bg-blue-100 {
@@ -19743,11 +20353,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(45 183 103 / var(--tw-text-opacity));
 }
 
-.text-\[\#3399FF\] {
-  --tw-text-opacity: 1;
-  color: rgb(51 153 255 / var(--tw-text-opacity));
-}
-
 .text-\[\#353740\] {
   --tw-text-opacity: 1;
   color: rgb(53 55 64 / var(--tw-text-opacity));
@@ -20212,11 +20817,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(28 25 23 / var(--tw-text-opacity));
 }
 
-.text-teal-700 {
-  --tw-text-opacity: 1;
-  color: rgb(15 118 110 / var(--tw-text-opacity));
-}
-
 .text-warning {
   --tw-text-opacity: 1;
   color: rgb(243 156 18 / var(--tw-text-opacity));
@@ -20283,10 +20883,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .text-opacity-60 {
   --tw-text-opacity: 0.6;
-}
-
-.text-opacity-75 {
-  --tw-text-opacity: 0.75;
 }
 
 .text-opacity-90 {
@@ -20893,11 +21489,11 @@ table.table-striped tbody tr:nth-child(even) {
 }
 
 .dark .placeholder-Fill-Buttons-fill-primary-hover::-moz-placeholder {
-  color: #0D70FF;
+  color: #4CA6FF;
 }
 
 .dark .placeholder-Fill-Buttons-fill-primary-hover::placeholder {
-  color: #0D70FF;
+  color: #4CA6FF;
 }
 
 .dark .placeholder-Fill-Buttons-fill-primary-muted::-moz-placeholder {
@@ -20916,11 +21512,27 @@ table.table-striped tbody tr:nth-child(even) {
   color: #063A85;
 }
 
+.dark .placeholder-Fill-Buttons-fill-secondary::-moz-placeholder {
+  color: #FFFFFF1A;
+}
+
+.dark .placeholder-Fill-Buttons-fill-secondary::placeholder {
+  color: #FFFFFF1A;
+}
+
 .dark .placeholder-Fill-Buttons-fill-secondary-hover::-moz-placeholder {
   color: #FFFFFF1A;
 }
 
 .dark .placeholder-Fill-Buttons-fill-secondary-hover::placeholder {
+  color: #FFFFFF1A;
+}
+
+.dark .placeholder-Fill-Buttons-fill-tertiary-hover::-moz-placeholder {
+  color: #FFFFFF1A;
+}
+
+.dark .placeholder-Fill-Buttons-fill-tertiary-hover::placeholder {
   color: #FFFFFF1A;
 }
 
@@ -21090,6 +21702,22 @@ table.table-striped tbody tr:nth-child(even) {
 
 .dark .placeholder-Border-border-bold-hover::placeholder {
   color: #FFFFFF;
+}
+
+.dark .placeholder-Border-border-high::-moz-placeholder {
+  color: #EEEBF5;
+}
+
+.dark .placeholder-Border-border-high::placeholder {
+  color: #EEEBF5;
+}
+
+.dark .placeholder-Border-border-low::-moz-placeholder {
+  color: #BAB8BF;
+}
+
+.dark .placeholder-Border-border-low::placeholder {
+  color: #BAB8BF;
 }
 
 .dark .placeholder-Border-border-danger::-moz-placeholder {
@@ -21594,6 +22222,38 @@ table.table-striped tbody tr:nth-child(even) {
 
 .dark .placeholder-Specially-Tokens-Text-text-button-secondary::placeholder {
   color: #FFFFFF;
+}
+
+.dark .placeholder-Specially-Tokens-Text-text-button-secondary-hover::-moz-placeholder {
+  color: #FFFFFF;
+}
+
+.dark .placeholder-Specially-Tokens-Text-text-button-secondary-hover::placeholder {
+  color: #FFFFFF;
+}
+
+.dark .placeholder-Specially-Tokens-Text-text-button-primary-hover::-moz-placeholder {
+  color: #0D0C0F;
+}
+
+.dark .placeholder-Specially-Tokens-Text-text-button-primary-hover::placeholder {
+  color: #0D0C0F;
+}
+
+.dark .placeholder-Specially-Tokens-Text-text-button-tertiary::-moz-placeholder {
+  color: #4CA6FF;
+}
+
+.dark .placeholder-Specially-Tokens-Text-text-button-tertiary::placeholder {
+  color: #4CA6FF;
+}
+
+.dark .placeholder-Specially-Tokens-Text-text-button-tertiary-hover::-moz-placeholder {
+  color: #99CCFF;
+}
+
+.dark .placeholder-Specially-Tokens-Text-text-button-tertiary-hover::placeholder {
+  color: #99CCFF;
 }
 
 .dark .placeholder-Specially-Tokens-Text-text-inverse::-moz-placeholder {
@@ -25228,6 +25888,14 @@ Not supports in Firefox and IE */
   background-color: #0D0C0F;
 }
 
+.hover\:bg-Surface-surface-secondary-muted:hover {
+  background-color: #F3F4F8;
+}
+
+.dark .hover\:bg-Surface-surface-secondary-muted:hover {
+  background-color: #1B191F;
+}
+
 .hover\:bg-Surface-surface-secondary-hover:hover {
   background-color: #F2F9FF;
 }
@@ -25245,11 +25913,19 @@ Not supports in Firefox and IE */
 }
 
 .hover\:bg-Fill-Buttons-fill-primary-hover:hover {
-  background-color: #0075EB;
+  background-color: #003179;
 }
 
 .dark .hover\:bg-Fill-Buttons-fill-primary-hover:hover {
-  background-color: #0D70FF;
+  background-color: #4CA6FF;
+}
+
+.hover\:border-Fill-Buttons-fill-primary-hover:hover {
+  border-color: #003179;
+}
+
+.dark .hover\:border-Fill-Buttons-fill-primary-hover:hover {
+  border-color: #4CA6FF;
 }
 
 .hover\:border-Border-border-active:hover {
@@ -25258,6 +25934,22 @@ Not supports in Firefox and IE */
 
 .dark .hover\:border-Border-border-active:hover {
   border-color: #EEEBF5;
+}
+
+.hover\:border-Border-border-bold-hover:hover {
+  border-color: #0080FF;
+}
+
+.dark .hover\:border-Border-border-bold-hover:hover {
+  border-color: #FFFFFF;
+}
+
+.hover\:border-Border-border-low:hover {
+  border-color: #45464C;
+}
+
+.dark .hover\:border-Border-border-low:hover {
+  border-color: #BAB8BF;
 }
 
 .hover\:text-Text-text-white:hover {
@@ -25332,8 +26024,24 @@ Not supports in Firefox and IE */
   background-color: #2C2D40;
 }
 
+.hover\:bg-Specially-Tokens-Text-text-button-secondary-hover:hover {
+  background-color: #1B67B2;
+}
+
+.dark .hover\:bg-Specially-Tokens-Text-text-button-secondary-hover:hover {
+  background-color: #FFFFFF;
+}
+
+.hover\:text-Specially-Tokens-Text-text-button-primary-hover:hover {
+  color: #FFFFFF;
+}
+
+.dark .hover\:text-Specially-Tokens-Text-text-button-primary-hover:hover {
+  color: #0D0C0F;
+}
+
 .focus\:ring-Fill-Buttons-fill-primary:focus {
-  --tw-ring-color: #0080FF;
+  --tw-ring-color: #0062F2;
 }
 
 .dark .focus\:ring-Fill-Buttons-fill-primary:focus {
@@ -25365,11 +26073,19 @@ Not supports in Firefox and IE */
 }
 
 .focus-visible\:outline-Fill-Buttons-fill-primary:focus-visible {
-  outline-color: #0080FF;
+  outline-color: #0062F2;
 }
 
 .dark .focus-visible\:outline-Fill-Buttons-fill-primary:focus-visible {
   outline-color: #0062F2;
+}
+
+.active\:text-Text-text-button-hover:active {
+  color: #1B67B2;
+}
+
+.dark .active\:text-Text-text-button-hover:active {
+  color: #99CCFF;
 }
 
 .group:hover .group-hover\:stroke-Text-text-button-hover {
@@ -25805,10 +26521,6 @@ Not supports in Firefox and IE */
   border-bottom-width: 4px;
 }
 
-.hover\:\!border-transparent:hover {
-  border-color: transparent !important;
-}
-
 .hover\:border-delivery-primary-200:hover {
   --tw-border-opacity: 1;
   border-color: rgb(206 231 255 / var(--tw-border-opacity));
@@ -25824,18 +26536,9 @@ Not supports in Firefox and IE */
   border-color: rgb(212 212 212 / var(--tw-border-opacity));
 }
 
-.hover\:border-gray-500:hover {
-  --tw-border-opacity: 1;
-  border-color: rgb(115 115 115 / var(--tw-border-opacity));
-}
-
 .hover\:border-red-500:hover {
   --tw-border-opacity: 1;
   border-color: rgb(239 68 68 / var(--tw-border-opacity));
-}
-
-.hover\:border-transparent:hover {
-  border-color: transparent;
 }
 
 .hover\:border-white\/50:hover {
@@ -25930,14 +26633,6 @@ Not supports in Firefox and IE */
 
 .hover\:bg-black\/20:hover {
   background-color: rgb(0 0 0 / 0.2);
-}
-
-.hover\:bg-black\/\[\.1\]:hover {
-  background-color: rgb(0 0 0 / .1);
-}
-
-.hover\:bg-black\/\[\.2\]:hover {
-  background-color: rgb(0 0 0 / .2);
 }
 
 .hover\:bg-blue-400:hover {
@@ -26287,10 +26982,6 @@ Not supports in Firefox and IE */
   color: rgb(29 68 129 / var(--tw-text-opacity));
 }
 
-.hover\:text-primary\/70:hover {
-  color: rgb(59 118 211 / 0.7);
-}
-
 .hover\:text-red-500:hover {
   --tw-text-opacity: 1;
   color: rgb(239 68 68 / var(--tw-text-opacity));
@@ -26319,10 +27010,6 @@ Not supports in Firefox and IE */
 .hover\:text-zinc-300:hover {
   --tw-text-opacity: 1;
   color: rgb(212 212 216 / var(--tw-text-opacity));
-}
-
-.hover\:text-opacity-80:hover {
-  --tw-text-opacity: 0.8;
 }
 
 .hover\:underline:hover {
@@ -26363,6 +27050,12 @@ Not supports in Firefox and IE */
 
 .hover\:opacity-90:hover {
   opacity: 0.9;
+}
+
+.hover\:shadow-\[0px_2px_10px_0px_rgba\(0\2c 50\2c 99\2c 0\.05\)\]:hover {
+  --tw-shadow: 0px 2px 10px 0px rgba(0,50,99,0.05);
+  --tw-shadow-colored: 0px 2px 10px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
 .hover\:shadow-md:hover {
@@ -26756,11 +27449,6 @@ Not supports in Firefox and IE */
   color: rgb(0 98 242 / var(--tw-text-opacity));
 }
 
-.active\:text-blue-700:active {
-  --tw-text-opacity: 1;
-  color: rgb(29 68 129 / var(--tw-text-opacity));
-}
-
 .active\:text-delivery-primary-600:active {
   --tw-text-opacity: 1;
   color: rgb(1 101 217 / var(--tw-text-opacity));
@@ -26970,6 +27658,10 @@ Not supports in Firefox and IE */
   color: rgb(163 163 163 / var(--tw-text-opacity));
 }
 
+.group.past-start .group-\[\.past-start\]\:opacity-80 {
+  opacity: 0.8;
+}
+
 .peer:checked ~ .peer-checked\:bg-primary {
   --tw-bg-opacity: 1;
   background-color: rgb(59 118 211 / var(--tw-bg-opacity));
@@ -27129,6 +27821,10 @@ Not supports in Firefox and IE */
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.dark .dark\:block {
+  display: block;
+}
+
 .dark .dark\:inline-block {
   display: inline-block;
 }
@@ -27264,10 +27960,6 @@ Not supports in Firefox and IE */
   border-color: rgb(255 255 255 / 0.2);
 }
 
-.dark .dark\:border-white\/\[0\.06\] {
-  border-color: rgb(255 255 255 / 0.06);
-}
-
 .dark .dark\:border-zinc-300 {
   --tw-border-opacity: 1;
   border-color: rgb(212 212 216 / var(--tw-border-opacity));
@@ -27370,11 +28062,6 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-\[\#0F0D0F\] {
   --tw-bg-opacity: 1;
   background-color: rgb(15 13 15 / var(--tw-bg-opacity));
-}
-
-.dark .dark\:bg-\[\#0F6CF5\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(15 108 245 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-\[\#0d0c0f\] {
@@ -27484,10 +28171,6 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-black {
   --tw-bg-opacity: 1;
   background-color: rgb(0 0 0 / var(--tw-bg-opacity));
-}
-
-.dark .dark\:bg-black\/40 {
-  background-color: rgb(0 0 0 / 0.4);
 }
 
 .dark .dark\:bg-blue-500 {
@@ -27661,18 +28344,6 @@ Not supports in Firefox and IE */
 
 .dark .dark\:bg-white\/5 {
   background-color: rgb(255 255 255 / 0.05);
-}
-
-.dark .dark\:bg-white\/\[\.02\] {
-  background-color: rgb(255 255 255 / .02);
-}
-
-.dark .dark\:bg-white\/\[\.08\] {
-  background-color: rgb(255 255 255 / .08);
-}
-
-.dark .dark\:bg-white\/\[0\.1\] {
-  background-color: rgb(255 255 255 / 0.1);
 }
 
 .dark .dark\:bg-yellow-600 {
@@ -27855,11 +28526,6 @@ Not supports in Firefox and IE */
   color: rgb(25 122 220 / var(--tw-text-opacity));
 }
 
-.dark .dark\:text-\[\#3399FF\] {
-  --tw-text-opacity: 1;
-  color: rgb(51 153 255 / var(--tw-text-opacity));
-}
-
 .dark .dark\:text-\[\#39e581\] {
   --tw-text-opacity: 1;
   color: rgb(57 229 129 / var(--tw-text-opacity));
@@ -27878,11 +28544,6 @@ Not supports in Firefox and IE */
 .dark .dark\:text-\[\#4ca6ff\] {
   --tw-text-opacity: 1;
   color: rgb(76 166 255 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-\[\#6DD1DF\] {
-  --tw-text-opacity: 1;
-  color: rgb(109 209 223 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-\[\#87d7e0\] {
@@ -27917,11 +28578,6 @@ Not supports in Firefox and IE */
 .dark .dark\:text-\[\#FF8787\] {
   --tw-text-opacity: 1;
   color: rgb(255 135 135 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-\[\#bab8bf\] {
-  --tw-text-opacity: 1;
-  color: rgb(186 184 191 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-\[\#dc2626\] {
@@ -27971,11 +28627,6 @@ Not supports in Firefox and IE */
 .dark .dark\:text-blue-500 {
   --tw-text-opacity: 1;
   color: rgb(59 118 211 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-blue-600 {
-  --tw-text-opacity: 1;
-  color: rgb(39 92 175 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-blue-800 {
@@ -28296,10 +28947,6 @@ Not supports in Firefox and IE */
   border-color: rgb(185 28 28 / var(--tw-border-opacity));
 }
 
-.dark .dark\:hover\:border-white\/\[0\.02\]:hover {
-  border-color: rgb(255 255 255 / 0.02);
-}
-
 .dark .dark\:hover\:\!bg-\[\#086F4E\]:hover {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(8 111 78 / var(--tw-bg-opacity)) !important;
@@ -28416,14 +29063,6 @@ Not supports in Firefox and IE */
   background-color: rgb(255 255 255 / 0.05);
 }
 
-.dark .dark\:hover\:bg-white\/\[\.06\]:hover {
-  background-color: rgb(255 255 255 / .06);
-}
-
-.dark .dark\:hover\:bg-white\/\[\.12\]:hover {
-  background-color: rgb(255 255 255 / .12);
-}
-
 .dark .dark\:hover\:bg-yellow-500:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(247 174 50 / var(--tw-bg-opacity));
@@ -28483,11 +29122,6 @@ Not supports in Firefox and IE */
 .dark .dark\:hover\:text-blue-300:hover {
   --tw-text-opacity: 1;
   color: rgb(126 165 226 / var(--tw-text-opacity));
-}
-
-.dark .dark\:hover\:text-blue-500:hover {
-  --tw-text-opacity: 1;
-  color: rgb(59 118 211 / var(--tw-text-opacity));
 }
 
 .dark .dark\:hover\:text-delivery-primary-dark-hover:hover {
@@ -28696,11 +29330,6 @@ Not supports in Firefox and IE */
   color: rgb(76 166 255 / var(--tw-text-opacity));
 }
 
-.dark .dark\:active\:text-blue-400:active {
-  --tw-text-opacity: 1;
-  color: rgb(93 141 219 / var(--tw-text-opacity));
-}
-
 .dark .dark\:active\:text-gray-400:active {
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
@@ -28764,9 +29393,9 @@ Not supports in Firefox and IE */
   fill: #a3a3a3;
 }
 
-.dark .group.past-start .dark\:group-\[\.past-start\]\:text-gray-400 {
+.dark .group.past-start .dark\:group-\[\.past-start\]\:text-gray-700 {
   --tw-text-opacity: 1;
-  color: rgb(163 163 163 / var(--tw-text-opacity));
+  color: rgb(64 64 64 / var(--tw-text-opacity));
 }
 
 .dark .peer:focus ~ .dark\:peer-focus\:ring-primary-800 {
