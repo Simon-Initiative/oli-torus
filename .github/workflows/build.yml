@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15
+        image: ankane/pgvector
         env:
           POSTGRES_DB: oli_test
           POSTGRES_USER: postgres
