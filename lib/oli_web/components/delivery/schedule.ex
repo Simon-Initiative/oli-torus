@@ -28,7 +28,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
         if(@show_border, do: "md:border-l"),
         if(@is_active,
           do: "text-gray-700 dark:text-gray-300 md:border-gray-700 md:dark:border-gray-300",
-          else: "text-gray-400 dark:text-gray-700 md:border-gray-500 dark:border-gray-700"
+          else: "text-gray-400 dark:text-gray-400 md:border-gray-500 dark:border-gray-700"
         )
       ]}>
         <div class="flex flex-row">
@@ -42,11 +42,11 @@ defmodule OliWeb.Components.Delivery.Schedule do
           <div class={[
             "flex-1 flex flex-col mb-4 group",
             if(start_or_end_date_past?(date_range),
-              do: "past-start text-gray-400 dark:text-gray-700",
+              do: "past-start text-gray-400 dark:text-gray-400",
               else: ""
             )
           ]}>
-            <div class="font-bold text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700">
+            <div class="font-bold text-gray-700 dark:text-gray-400 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-400">
               {render_date_range(date_range, @ctx)}
             </div>
 
@@ -58,7 +58,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                     <.progress_icon progress={container_progress} />
                     <div>
                       {page_or_assessment_label(graded)}
-                      <div class="uppercase font-bold text-sm text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700">
+                      <div class="uppercase font-bold text-sm text-gray-700 dark:text-gray-400 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-400">
                         {container_label}
                       </div>
                     </div>
@@ -88,7 +88,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                             {resource.title}
                           </.link>
 
-                          <div class="text-sm text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700">
+                          <div class="text-sm text-gray-700 dark:text-gray-400 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-400">
                             <span>
                               Available:
                               <%= if effective_settings.start_date do %>

@@ -597,8 +597,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       params: params,
       section: section,
       selected_unit_resource_id: selected_unit_resource_id
-    } =
-      socket.assigns
+    } = socket.assigns
 
     params =
       if search_term not in ["", nil] do
@@ -608,10 +607,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       end
       |> Map.drop(["target_resource_id"])
 
+    path =
+      if socket.assigns[:preview_mode] do
+        ~p"/sections/#{section.slug}/preview/learn?#{params}"
+      else
+        ~p"/sections/#{section.slug}/learn?#{params}"
+      end
+
     {:noreply,
-     push_patch(socket,
-       to: ~p"/sections/#{section.slug}/learn?#{params}"
-     )
+     push_patch(socket, to: path)
      # This event is used to expand the containers that contain a child that matches the search term
      |> push_event("js-exec", %{
        to:
@@ -624,11 +628,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def handle_event("clear_search", _params, socket) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         ~p"/sections/#{socket.assigns.section.slug}/learn?#{Map.drop(socket.assigns.params, ["search_term", "target_resource_id"])}"
-     )}
+    params = Map.drop(socket.assigns.params, ["search_term", "target_resource_id"])
+
+    path =
+      if socket.assigns[:preview_mode] do
+        ~p"/sections/#{socket.assigns.section.slug}/preview/learn?#{params}"
+      else
+        ~p"/sections/#{socket.assigns.section.slug}/learn?#{params}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   def handle_event(
@@ -692,11 +701,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def handle_event("change_selected_view", %{"selected_view" => selected_view}, socket) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         ~p"/sections/#{socket.assigns.section.slug}/learn?#{%{selected_view: selected_view, sidebar_expanded: socket.assigns.sidebar_expanded}}"
-     )}
+    path =
+      if socket.assigns[:preview_mode] do
+        ~p"/sections/#{socket.assigns.section.slug}/preview/learn?#{%{selected_view: selected_view, sidebar_expanded: socket.assigns.sidebar_expanded}}"
+      else
+        ~p"/sections/#{socket.assigns.section.slug}/learn?#{%{selected_view: selected_view, sidebar_expanded: socket.assigns.sidebar_expanded}}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   @doc """
@@ -1805,7 +1817,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
           >
             <div class="justify-start items-start gap-1 inline-flex">
-              <div class="opacity-60 dark:text-white text-sm font-bold uppercase tracking-tight">
+              <div class="opacity-75 dark:text-white text-sm font-bold uppercase tracking-tight">
                 {container_label_and_numbering(
                   selected_module["numbering"][
                     "level"
@@ -2481,7 +2493,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             progress={@row["progress"]}
           />
           <div class="w-[26px] justify-start items-center">
-            <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold capitalize">
+            <div class="grow shrink basis-0 opacity-75 dark:text-white text-[13px] font-semibold capitalize">
               <.numbering_index type={Atom.to_string(@type)} index={@row["numbering"]["index"]} />
             </div>
           </div>
@@ -2761,7 +2773,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="justify-start items-start gap-5 flex">
         <Icons.no_icon />
         <div class="w-[26px] justify-start items-center">
-          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold capitalize">
+          <div class="grow shrink basis-0 opacity-75 text-white text-[13px] font-semibold capitalize">
             <.numbering_index type={@type} index={@numbering_index} />
           </div>
         </div>
@@ -2869,7 +2881,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           progress={@progress}
         />
         <div class="w-[26px] justify-start items-center">
-          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold capitalize">
+          <div class="grow shrink basis-0 opacity-75 text-white text-[13px] font-semibold capitalize">
             <.numbering_index type={@type} index={@numbering_index} />
           </div>
         </div>
@@ -3532,7 +3544,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp numbering_index(assigns) do
     ~H"""
-    <span class="opacity-60 text-black dark:text-white text-[13px] font-semibold capitalize">
+    <span class="opacity-75 text-black dark:text-white text-[13px] font-semibold capitalize">
       {if @type == "page", do: "#{@index}", else: " "}
     </span>
     """

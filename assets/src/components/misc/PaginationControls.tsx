@@ -3,6 +3,7 @@ import { List } from 'immutable';
 import { PaginationMode } from 'data/content/resource';
 import * as Events from 'data/events';
 import { updatePaginationState } from 'data/persistence/pagination';
+import { MediaSize, useMediaQuery } from 'hooks/media_query';
 import { classNames } from 'utils/classNames';
 import styles from './PaginationControls.modules.scss';
 
@@ -15,11 +16,14 @@ export interface PaginationControlsProps {
 }
 
 type Page = List<Element>;
+type DisplayItem = { type: 'page'; index: number; key: string } | { type: 'ellipsis'; key: string };
 
 export const PaginationControls = (props: PaginationControlsProps) => {
   const controls = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState(List<Page>());
   const [active, setActive] = useState(0);
+  const isAtLeastSmall = useMediaQuery(MediaSize.sm);
+  const isMobile = !isAtLeastSmall;
 
   const hideAll = () => {
     pages.forEach((page) => page.forEach((el) => el.classList.remove(styles.show)));
@@ -80,11 +84,65 @@ export const PaginationControls = (props: PaginationControlsProps) => {
   }, [pages, active]);
 
   const onSelectPage = (pageIndex: number) => {
-    setActive(Math.max(0, pageIndex));
+    const maxIndex = Math.max(0, pages.count() - 1);
+    setActive(Math.min(Math.max(0, pageIndex), maxIndex));
   };
 
-  const previousDisabled = active === 0;
-  const nextDisabled = active === pages.count() - 1;
+  const totalPages = pages.count();
+  const maxIndex = Math.max(0, totalPages - 1);
+  const safeActive = Math.min(Math.max(0, active), maxIndex);
+  const previousDisabled = totalPages === 0 || safeActive === 0;
+  const nextDisabled = totalPages === 0 || safeActive === totalPages - 1;
+  const shouldCondense = isMobile && totalPages > 5;
+  const displayItems: DisplayItem[] = (() => {
+    if (!shouldCondense) {
+      return Array.from({ length: totalPages }, (_, index) => ({
+        type: 'page' as const,
+        index,
+        key: `page-${index}`,
+      }));
+    }
+
+    const items: DisplayItem[] = [];
+    const baseSet = new Set<number>([0, totalPages - 1, safeActive]);
+    const countItems = (set: Set<number>) => {
+      const ordered = Array.from(set).sort((a, b) => a - b);
+      let gaps = 0;
+      for (let i = 0; i < ordered.length - 1; i++) {
+        if (ordered[i + 1] > ordered[i] + 1) {
+          gaps += 1;
+        }
+      }
+      return ordered.length + gaps;
+    };
+
+    const addNeighborIfFits = (index: number) => {
+      if (index < 0 || index > totalPages - 1 || baseSet.has(index)) {
+        return;
+      }
+      const nextSet = new Set(baseSet);
+      nextSet.add(index);
+      if (countItems(nextSet) <= 5) {
+        baseSet.add(index);
+      }
+    };
+
+    addNeighborIfFits(safeActive - 1);
+    addNeighborIfFits(safeActive + 1);
+
+    const orderedPages = Array.from(baseSet).sort((a, b) => a - b);
+    for (let i = 0; i < orderedPages.length; i++) {
+      const index = orderedPages[i];
+      items.push({ type: 'page', index, key: `page-${index}` });
+
+      const nextIndex = orderedPages[i + 1];
+      if (nextIndex !== undefined && nextIndex > index + 1) {
+        items.push({ type: 'ellipsis', key: `ellipsis-${index}-${nextIndex}` });
+      }
+    }
+
+    return items;
+  })();
 
   return (
     <>
@@ -118,13 +176,38 @@ export const PaginationControls = (props: PaginationControlsProps) => {
               Previous
             </button>
           </li>
-          {pages.map((p, i) => (
-            <li key={i} className={classNames('page-item', i == active ? 'active' : '')}>
-              <button className="page-link" onClick={() => onSelectPage(i)}>
-                {i + 1}
-              </button>
-            </li>
-          ))}
+          {displayItems.map((item) => {
+            if (item.type === 'ellipsis') {
+              return (
+                <li
+                  key={item.key}
+                  className={classNames('page-item', 'disabled')}
+                  aria-disabled="true"
+                >
+                  <span className="page-link">
+                    <span aria-hidden="true">...</span>
+                    <span className="sr-only">More pages</span>
+                  </span>
+                </li>
+              );
+            }
+
+            const pageIndex = item.index;
+            return (
+              <li
+                key={item.key}
+                className={classNames('page-item', pageIndex == safeActive ? 'active' : '')}
+              >
+                <button
+                  className="page-link"
+                  onClick={() => onSelectPage(pageIndex)}
+                  aria-current={pageIndex === safeActive ? 'page' : undefined}
+                >
+                  {pageIndex + 1}
+                </button>
+              </li>
+            );
+          })}
           <li className={classNames('page-item', nextDisabled ? 'disabled' : '')}>
             <button
               className="page-link"

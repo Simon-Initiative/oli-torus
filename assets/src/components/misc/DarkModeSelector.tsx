@@ -26,10 +26,17 @@ export const modeIsDark = () => {
 export interface DarkModeSelectorProps {
   showLabels?: boolean;
   className?: ClassName;
+  idPrefix?: string;
 }
 
-export const DarkModeSelector = ({ showLabels = false, className }: DarkModeSelectorProps) => {
+export const DarkModeSelector = ({
+  showLabels = false,
+  className,
+  idPrefix = 'theme',
+}: DarkModeSelectorProps) => {
   const [mode, setMode] = useState<Mode>(getModeFromLocalStorage());
+  const baseId = idPrefix;
+  const groupName = `${baseId}-group`;
   const baseStrokeClass = showLabels
     ? 'stroke-gray-600 dark:stroke-gray-400'
     : 'stroke-gray-700 dark:stroke-gray-300';
@@ -65,7 +72,7 @@ export const DarkModeSelector = ({ showLabels = false, className }: DarkModeSele
 
   return (
     <fieldset className="border-0 p-0 m-0">
-      <legend className="sr-only">theme</legend>
+      <legend className="sr-only">Theme options</legend>
       <ThreeStateToggle
         className={classNames(
           showLabels ? 'w-full gap-3 text-sm font-semibold' : undefined,
@@ -73,7 +80,8 @@ export const DarkModeSelector = ({ showLabels = false, className }: DarkModeSele
         )}
       >
         <ToggleOption
-          id="auto"
+          id={`${baseId}-auto`}
+          name={groupName}
           checked={isChecked(mode, 'auto')}
           onChange={onSelect('auto')}
           className={optionClassName}
@@ -141,7 +149,8 @@ export const DarkModeSelector = ({ showLabels = false, className }: DarkModeSele
           )}
         </ToggleOption>
         <ToggleOption
-          id="light"
+          id={`${baseId}-light`}
+          name={groupName}
           checked={isChecked(mode, 'light')}
           onChange={onSelect('light')}
           className={optionClassName}
@@ -181,7 +190,8 @@ export const DarkModeSelector = ({ showLabels = false, className }: DarkModeSele
           )}
         </ToggleOption>
         <ToggleOption
-          id="dark"
+          id={`${baseId}-dark`}
+          name={groupName}
           checked={isChecked(mode, 'dark')}
           onChange={onSelect('dark')}
           className={optionClassName}

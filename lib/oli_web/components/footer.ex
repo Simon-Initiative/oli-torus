@@ -123,7 +123,7 @@ defmodule OliWeb.Components.Footer do
       <%= if not_blank?(@privacy_policies_url) do %>
         <a
           href="javascript:;"
-          onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{@privacy_policies_url}'})"}
+          onclick={"OLI.handleCookiePreferences('#{@privacy_policies_url}')"}
           class={[@class, "whitespace-nowrap"]}
         >
           Cookie Preferences
@@ -139,6 +139,12 @@ defmodule OliWeb.Components.Footer do
     ~H"""
     <%= if not_blank?(@privacy_policies_url) do %>
       <script>
+        // Set device information for consistent mobile/tablet vs desktop detection
+        window.isMobileOrTablet = <%= case assigns do
+          %{conn: conn} -> OliWeb.Common.DeviceDetection.is_mobile_or_tablet?(conn)
+          %{socket: socket} -> OliWeb.Common.DeviceDetection.is_mobile_or_tablet?(socket)
+          _ -> "false"
+        end %>;
         OLI.onReady(() => OLI.retrieveCookies('<%= ~p"/consent/cookie" %>', {privacyPoliciesUrl: '<%= @privacy_policies_url %>'}));
       </script>
     <% end %>

@@ -117,7 +117,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <% nil -> %>
           <Common.loading_spinner />
         <% [] -> %>
-          <div class="text-center p-4 text-gray-500">{empty_label(@active_tab)}</div>
+          <div class="text-center text-sm p-4 text-gray-400">{empty_label(@active_tab)}</div>
         <% annotations -> %>
           <%= for annotation <- annotations do %>
             <.post
@@ -517,7 +517,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               {post_creator(@post, @current_user)}
             </div>
           </div>
-          <div class="text-sm text-gray-500" aria-hidden="true">
+          <div class="text-sm text-gray-400" aria-hidden="true">
             {@relative_time}
           </div>
         </div>
@@ -796,7 +796,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <div class="font-semibold" aria-hidden="true">
             {post_creator(@post, @current_user)}
           </div>
-          <div class="text-sm text-gray-500" aria-hidden="true">
+          <div class="text-sm text-gray-400" aria-hidden="true">
             {@relative_time}
           </div>
         </div>
