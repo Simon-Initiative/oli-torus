@@ -93,6 +93,7 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
 
   defp user_is_only_a_student?(%SessionContext{author: author}) when not is_nil(author), do: false
   defp user_is_only_a_student?(%SessionContext{user: %{can_create_sections: true}}), do: false
+  defp user_is_only_a_student?(%SessionContext{user: nil}), do: false
 
   defp user_is_only_a_student?(%SessionContext{user: %{id: user_id}}) do
     user_roles =

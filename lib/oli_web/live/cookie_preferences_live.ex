@@ -10,27 +10,37 @@ defmodule OliWeb.CookiePreferencesLive do
     # Get current cookie preferences from database if user is logged in
     {functional_active, analytics_active, targeting_active} = get_cookie_preferences(socket)
 
-    {:ok,
-     assign(socket,
-       is_admin: false,
-       return_to: return_to,
-       functional_active: functional_active,
-       analytics_active: analytics_active,
-       targeting_active: targeting_active,
-       expanded_sections: %{
-         strict_cookies: false,
-         functional_cookies: false,
-         analytics_cookies: false,
-         targeting_cookies: false
-       },
-       expanded_cookie_tables: %{
-         strict_cookies: false,
-         functional_cookies: false,
-         analytics_cookies: false,
-         targeting_cookies: false
-       },
-       privacy_policies_url: privacy_policies_url()
-     )}
+    # Prefer explicit param over UA-based detection for the initial mount.
+    mobile_request = Map.get(params, "device") in ["mobile", "tablet"]
+    # Use a no-layout flow for unauthenticated mobile/tablet visits.
+    unauthenticated? = is_nil(socket.assigns[:current_user])
+    mobile_or_tablet? = mobile_request || socket.assigns[:is_mobile] || socket.assigns[:is_tablet]
+    no_layout? = unauthenticated? && mobile_or_tablet?
+
+    assigns =
+      assign(socket,
+        is_admin: false,
+        return_to: return_to,
+        functional_active: functional_active,
+        analytics_active: analytics_active,
+        targeting_active: targeting_active,
+        expanded_sections: %{
+          strict_cookies: false,
+          functional_cookies: false,
+          analytics_cookies: false,
+          targeting_cookies: false
+        },
+        expanded_cookie_tables: %{
+          strict_cookies: false,
+          functional_cookies: false,
+          analytics_cookies: false,
+          targeting_cookies: false
+        },
+        privacy_policies_url: privacy_policies_url(),
+        no_layout: no_layout?
+      )
+
+    if no_layout?, do: {:ok, assigns, layout: false}, else: {:ok, assigns}
   end
 
   def render(assigns) do
@@ -39,6 +49,7 @@ defmodule OliWeb.CookiePreferencesLive do
     <div class="bg-Background-bg-primary">
       <div class="max-w-2xl mx-auto">
         <div class="bg-Background-bg-primary rounded-md outline-none text-current">
+          <.info_flash :if={@no_layout && Phoenix.Flash.get(@flash, :info)} flash={@flash} />
           <!-- Header -->
           <div class="p-4">
             <!-- Back button -->
@@ -96,6 +107,29 @@ defmodule OliWeb.CookiePreferencesLive do
             </button>
           </div>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr(:flash, :map, required: true)
+
+  defp info_flash(assigns) do
+    ~H"""
+    <div class="p-4">
+      <div class="alert alert-info flex flex-row" role="alert">
+        <div class="flex-1">
+          {Phoenix.Flash.get(@flash, :info)}
+        </div>
+        <button
+          type="button"
+          class="close"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-value-key="info"
+        >
+          <i class="fa-solid fa-xmark fa-lg"></i>
+        </button>
       </div>
     </div>
     """

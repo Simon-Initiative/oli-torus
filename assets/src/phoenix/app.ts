@@ -121,20 +121,17 @@ const confirmAction = (
 
 // Function to handle cookie preferences based on device type
 const handleCookiePreferences = (privacyPoliciesUrl: string) => {
-  // If we're on the root path ("/"), always open the React modal
-  if (window.location.pathname === '/') {
-    selectCookiePreferences({ privacyPoliciesUrl });
-    return;
-  }
-
   // Use server-side device detection for consistent behavior
   const isMobile = (window as any).isMobileOrTablet || window.innerWidth <= 768; // fallback
 
   if (isMobile) {
     // On mobile/tablet, navigate to LiveView with current page as return_to
     const currentPath = window.location.pathname + window.location.search;
-    const encodedReturnTo = encodeURIComponent(currentPath);
-    window.location.href = `/cookie-preferences?return_to=${encodedReturnTo}`;
+    const params = new URLSearchParams({
+      return_to: currentPath,
+      device: 'mobile',
+    });
+    window.location.href = `/cookie-preferences?${params.toString()}`;
   } else {
     // On desktop, show React modal
     selectCookiePreferences({ privacyPoliciesUrl });
