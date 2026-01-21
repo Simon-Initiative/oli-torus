@@ -34,6 +34,46 @@ defmodule OliWeb.CookiePreferencesLiveTest do
       assert html =~ ~s(checked)
     end
 
+    test "unauthenticated mobile uses no-layout render and shows flash on save", %{conn: conn} do
+      conn = log_out_user(conn)
+
+      {:ok, lv, _html} = live(conn, ~p"/cookie-preferences?#{%{device: "mobile"}}")
+
+      html =
+        lv
+        |> element("#save-cookie-preferences")
+        |> render_click()
+
+      assert html =~ "Cookie preferences have been updated."
+      refute html =~ ~s(id="header")
+    end
+
+    test "authenticated users keep the workspace layout on mobile", %{conn: conn} do
+      user = user_fixture()
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/cookie-preferences?#{%{device: "mobile"}}")
+
+      assert html =~ ~s(id="header")
+    end
+
+    test "mobile return_to navigation works when unauthenticated", %{conn: conn} do
+      conn = log_out_user(conn)
+
+      return_url = "/some/mobile/page"
+
+      {:ok, lv, _html} =
+        live(conn, ~p"/cookie-preferences?#{%{device: "mobile", return_to: return_url}}")
+
+      lv
+      |> element("button[phx-click='go_back']", "Back")
+      |> render_click()
+
+      assert_redirected(lv, return_url)
+    end
+
     test "handles navigation correctly for all scenarios", %{conn: conn} do
       # Test case 1: Uses return_to parameter from URL
       return_url = "/some/page"
