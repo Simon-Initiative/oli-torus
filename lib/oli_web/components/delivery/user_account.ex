@@ -101,22 +101,24 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       >
         <.user_picture_icon :if={Accounts.is_admin?(@ctx.author)} user={@ctx.author} />
         <.user_picture_icon
-          :if={@ctx.author == nil or !Accounts.is_admin?(@ctx.author)}
+          :if={@ctx.user != nil and (@ctx.author == nil or !Accounts.is_admin?(@ctx.author))}
           user={@ctx.user}
         />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <.account_label
-          :if={@active_workspace == :instructor and @ctx.user.can_create_sections}
+          :if={@ctx.user != nil and @active_workspace == :instructor and @ctx.user.can_create_sections}
           label="Instructor"
           class="text-emerald-400"
         />
         <.user_menu_items
+          :if={@ctx.user != nil}
           ctx={@ctx}
           id={@id}
           dropdown_id={"#{@id}-dropdown"}
           target_signout_path={target_signout_path(@active_workspace)}
         />
+        <.guest_menu_items :if={@ctx.user == nil} ctx={@ctx} id={@id} />
       </.dropdown_menu>
     </div>
     """
