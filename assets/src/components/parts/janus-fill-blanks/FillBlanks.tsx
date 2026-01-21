@@ -29,6 +29,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const [mutateState, setMutateState] = useState<any>({});
   const { width, height, content, elements, alternateCorrectDelimiter } = model;
   const fibContainer = useRef(null);
+  // Map to store refs for each text input by element key
+  const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
   const [attempted, setAttempted] = useState<boolean>(false);
   const [contentList, setContentList] = useState<any[]>([]);
@@ -299,12 +301,86 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     };
   }, [props.notify, model]);
 
+  // Find the next focusable element in reading order (next dropdown or text input)
+  const findNextFocusableElement = useCallback(
+    (currentKey: string): HTMLElement | null => {
+      if (!content || !elements) return null;
+
+      // Find current element index in content array
+      let currentIndex = -1;
+      for (let i = 0; i < content.length; i++) {
+        const item = content[i];
+        if (item.dropdown === currentKey || item['text-input'] === currentKey) {
+          currentIndex = i;
+          break;
+        }
+      }
+
+      if (currentIndex === -1) return null;
+
+      // Find next focusable element after current
+      if (!fibContainer.current) return null;
+      const container = fibContainer.current as HTMLElement;
+
+      for (let i = currentIndex + 1; i < content.length; i++) {
+        const item = content[i];
+        if (item.dropdown) {
+          const selectElement = container.querySelector(`select[name="${item.dropdown}"]`) as HTMLSelectElement;
+          if (selectElement) {
+            const select2Container = selectElement.closest('.select2-container');
+            if (select2Container && !select2Container.classList.contains('select2-container--disabled')) {
+              const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
+              if (selection) {
+                return selection;
+              }
+            }
+          }
+        } else if (item['text-input']) {
+          const inputRef = inputRefs.current.get(item['text-input']);
+          if (inputRef && !inputRef.disabled) {
+            return inputRef;
+          }
+        }
+      }
+
+      return null;
+    },
+    [content, elements],
+  );
+
   const handleInput = (e: any) => {
     if (!e || typeof e === 'undefined') return;
     setAttempted(true);
     const inputOption: SelectOption = { key: e.name, value: e.value };
     console.log('input trigger!', { id, inputOption });
     maybeUpdateElementValues([inputOption]);
+
+    // Restore focus to the current element after selection
+    // Focus should stay on the element that was just interacted with, not move to next
+    requestAnimationFrame(() => {
+      if (!fibContainer.current) return;
+
+      const container = fibContainer.current as HTMLElement;
+
+      // Check if this is a dropdown (has select element) or text input
+      const selectElement = container.querySelector(`select[name="${e.name}"]`) as HTMLSelectElement;
+      if (selectElement) {
+        // This is a dropdown - restore focus to the dropdown trigger
+        const select2Container = selectElement.closest('.select2-container');
+        if (select2Container) {
+          const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
+          if (selection) {
+            selection.focus();
+          }
+        }
+      } else {
+        // This is a text input - focus should already be on it, but ensure it stays
+        const inputRef = inputRefs.current.get(e.name);
+        if (inputRef && document.activeElement !== inputRef) {
+          inputRef.focus();
+        }
+      }
+    });
   };
 
   // returns boolean
@@ -427,6 +503,69 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     }
   }, [elementValues, saveElements]);
 
+  // Set up Select2 event listeners for focus management
+  useEffect(() => {
+    if (!ready || !elements?.length || !fibContainer.current) return;
+
+    const cleanupFunctions: (() => void)[] = [];
+
+    // Find all Select2 dropdowns within the component
+    const container = fibContainer.current as HTMLElement;
+    const select2Containers = container.querySelectorAll('.select2-container');
+
+    select2Containers.forEach((select2Container) => {
+      const $select2 = (window as any).$(select2Container);
+      if (!$select2 || !$select2.data('select2')) return;
+
+      // Find the associated select element to get the name/key
+      const selectElement = select2Container.querySelector('select[name]') as HTMLSelectElement;
+      if (!selectElement) return;
+
+      const elementKey = selectElement.name;
+
+      const handleOpen = () => {
+        // Update aria-expanded when dropdown opens
+        const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
+        if (selection) {
+          selection.setAttribute('aria-expanded', 'true');
+        }
+      };
+
+      const handleClose = () => {
+        // Update aria-expanded when dropdown closes
+        const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
+        if (selection) {
+          selection.setAttribute('aria-expanded', 'false');
+        }
+
+        // When dropdown closes, restore focus to the trigger if needed
+        requestAnimationFrame(() => {
+          const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
+          if (selection) {
+            const activeElement = document.activeElement;
+            const isWithinComponent = container.contains(activeElement);
+            // Only restore focus if focus is still within the component
+            // This prevents focus jumping when user clicks outside
+            if (isWithinComponent && activeElement !== selection) {
+              selection.focus();
+            }
+          }
+        });
+      };
+
+      $select2.on('select2:open', handleOpen);
+      $select2.on('select2:close', handleClose);
+      cleanupFunctions.push(() => {
+        $select2.off('select2:open', handleOpen);
+        $select2.off('select2:close', handleClose);
+      });
+    });
+
+    return () => {
+      cleanupFunctions.forEach((cleanup) => cleanup());
+    };
+  }, [ready, elements, contentList]);
+
   const getStateSelections = (snapshot: any) => {
     if (!Object.keys(snapshot)?.length || !elements?.length) return;
 
@@ -492,14 +631,14 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                   : 'incorrect';
 
               insertList.push(
-                <span className="dropdown-blot" tabIndex={-1}>
+                <span className="dropdown-blot" tabIndex={-1} key={`dropdown-${insertEl.key}`}>
                   <span className="dropdown-container" tabIndex={-1}>
                     <Select2
                       className={`dropdown ${showCorrect || showHints ? answerStatus : ''}`}
                       name={insertEl.key}
                       data={optionsList}
                       value={elVal}
-                      aria-label="Make a selection"
+                      aria-label={`Dropdown ${index + 1}: Make a selection`}
                       options={{
                         dropdownParent: fibContainer.current,
                         minimumResultsForSearch: 10,
@@ -528,7 +667,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                   : 'incorrect';
 
               insertList.push(
-                <span className="text-input-blot">
+                <span className="text-input-blot" key={`text-input-${insertEl.key}`}>
                   <span
                     className={`text-input-container ${
                       showCorrect || showHints ? answerStatus : ''
@@ -536,6 +675,13 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                     tabIndex={-1}
                   >
                     <input
+                      ref={(ref: HTMLInputElement | null) => {
+                        if (ref) {
+                          inputRefs.current.set(insertEl.key, ref);
+                        } else {
+                          inputRefs.current.delete(insertEl.key);
+                        }
+                      }}
                       name={insertEl.key}
                       className={`text-input ${!enabled ? 'disabled' : ''} ${
                         showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)
@@ -546,6 +692,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                       value={elVal}
                       onChange={(e) => handleInput(e.currentTarget)}
                       disabled={!enabled}
+                      aria-label={`Text input ${index + 1}`}
                     />
                   </span>
                 </span>,
@@ -564,6 +711,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
       style={wrapperStyles}
       className={`fib-container`}
       ref={fibContainer}
+      role="group"
+      aria-label="Fill in the blanks"
     >
       <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>
       <style type="text/css">{`${customCss}`};</style>
