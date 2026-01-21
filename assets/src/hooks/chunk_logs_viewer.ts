@@ -44,7 +44,7 @@ const persistedState =
   globalStateContainer[globalStateKey] ??
   (globalStateContainer[globalStateKey] = Object.create(null));
 
-let sharedSocket: Socket | null = null;
+let sharedSocket: any = null;
 let sharedSocketToken: string | null | undefined;
 
 function getSocket(token?: string | null) {
@@ -96,12 +96,12 @@ export const ChunkLogsViewer = {
       channelReady: false,
     };
 
-    this.scrollEl = this.el.querySelector<HTMLElement>('.chunk-logs-scroll');
-    this.bodyEl = this.el.querySelector<HTMLElement>('.chunk-logs-body');
-    this.bottomSentinel = this.el.querySelector<HTMLElement>('.chunk-logs-bottom-sentinel');
-    this.topSentinel = this.el.querySelector<HTMLElement>('.chunk-logs-top-sentinel');
-    this.statusEl = this.el.querySelector<HTMLElement>('.chunk-logs-status');
-    this.liveToggleEl = this.el.querySelector<HTMLInputElement>('.chunk-logs-live-toggle');
+    this.scrollEl = this.el.querySelector('.chunk-logs-scroll') as HTMLElement | null;
+    this.bodyEl = this.el.querySelector('.chunk-logs-body') as HTMLElement | null;
+    this.bottomSentinel = this.el.querySelector('.chunk-logs-bottom-sentinel') as HTMLElement | null;
+    this.topSentinel = this.el.querySelector('.chunk-logs-top-sentinel') as HTMLElement | null;
+    this.statusEl = this.el.querySelector('.chunk-logs-status') as HTMLElement | null;
+    this.liveToggleEl = this.el.querySelector('.chunk-logs-live-toggle') as HTMLInputElement | null;
 
     this.handleServerUpdate = this.handleServerUpdate.bind(this);
     this.handleNewLogs = this.handleNewLogs.bind(this);
@@ -498,7 +498,9 @@ export const ChunkLogsViewer = {
 
   findEntry(ordinal: number) {
     if (!this.bodyEl) return null;
-    return this.bodyEl.querySelector<HTMLElement>(`.chunk-log-entry[data-ordinal="${ordinal}"]`);
+    return this.bodyEl.querySelector(
+      `.chunk-log-entry[data-ordinal="${ordinal}"]`,
+    ) as HTMLElement | null;
   },
 
   trimFromTopIfNeeded() {
