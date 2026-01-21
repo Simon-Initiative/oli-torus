@@ -155,9 +155,9 @@ struct.
 
 ### Phase 2: Performance fixes (hot path)
 
-- [ ] Remove N+1 job lookups during recovery by bulk fetching Oban job states or joining in the initial query.
-- [ ] Throttle interruption checks to avoid per-entry DB polling (e.g., once per page or every N chunks).
-- [ ] Eliminate extra batch reload per chunk by using in-memory batch data or update_all with counters/metadata.
+- [x] Remove N+1 job lookups during recovery by bulk fetching Oban job states or joining in the initial query.
+- [x] Throttle interruption checks to avoid per-entry DB polling (e.g., once per page or every N chunks).
+- [x] Eliminate extra batch reload per chunk by using in-memory batch data or update_all with counters/metadata.
 
 ### Phase 3: Correctness/stability fixes (Elixir runtime)
 

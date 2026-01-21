@@ -25,6 +25,8 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
 
   @status_poll_attempts 12
   @status_poll_interval_ms 1_000
+  @interruption_check_every_chunks 5
+  @interruption_check_every_entries 10
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"batch_id" => batch_id}}) when is_integer(batch_id) do
@@ -449,7 +451,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     |> Enum.with_index(1)
     |> Enum.reduce_while({:ok, summary, batch}, fn {chunk, index},
                                                    {:ok, acc_summary, acc_batch} ->
-      case check_for_interruption(acc_batch) do
+      case maybe_check_for_interruption(acc_batch, index, @interruption_check_every_chunks) do
         {:ok, refreshed_batch} ->
           case process_chunk(
                  run,
@@ -486,33 +488,21 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   end
 
   defp process_chunk(run, batch, bucket, chunk, chunk_index, creds, summary) do
-    case check_for_interruption(batch) do
-      {:ok, refreshed_batch} ->
-        case ingest_chunk(run, refreshed_batch, bucket, chunk, chunk_index, creds) do
-          {:ok, metrics} ->
-            metrics_with_index = Map.put(metrics, :chunk_index, chunk_index)
-            apply_chunk_success(refreshed_batch, chunk, metrics_with_index, summary)
+    case ingest_chunk(run, batch, bucket, chunk, chunk_index, creds) do
+      {:ok, metrics} ->
+        metrics_with_index = Map.put(metrics, :chunk_index, chunk_index)
+        apply_chunk_success(batch, chunk, metrics_with_index, summary)
 
-          {:error, :no_common_prefix} ->
-            process_chunk_as_single_entries(
-              run,
-              refreshed_batch,
-              bucket,
-              chunk,
-              chunk_index,
-              creds,
-              summary
-            )
-
-          {:error, reason} ->
-            {:error, reason}
-        end
-
-      {:paused, refreshed_batch} ->
-        {:paused, summary, refreshed_batch}
-
-      {:cancelled, refreshed_batch} ->
-        {:cancelled, summary, refreshed_batch}
+      {:error, :no_common_prefix} ->
+        process_chunk_as_single_entries(
+          run,
+          batch,
+          bucket,
+          chunk,
+          chunk_index,
+          creds,
+          summary
+        )
 
       {:error, reason} ->
         {:error, reason}
@@ -524,7 +514,11 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     |> Enum.with_index(1)
     |> Enum.reduce_while({:ok, summary, batch}, fn {entry, offset},
                                                    {:ok, acc_summary, acc_batch} ->
-      case check_for_interruption(acc_batch) do
+      case maybe_check_for_interruption(
+             acc_batch,
+             offset,
+             @interruption_check_every_entries
+           ) do
         {:ok, refreshed_batch} ->
           case ingest_chunk(
                  run,
@@ -583,12 +577,8 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         |> accumulate_summary(chunk_entries, metrics_with_sequence)
         |> update_summary_metadata(sequence + 1)
 
-      reloaded_batch =
-        InventoryBatch
-        |> Repo.get!(batch.id)
-
       existing_metadata =
-        reloaded_batch.metadata
+        batch.metadata
         |> ensure_map()
 
       merged_metadata =
@@ -602,7 +592,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         metadata: merged_metadata
       }
 
-      case Inventory.update_batch(reloaded_batch, update_attrs) do
+      case Inventory.update_batch(batch, update_attrs) do
         {:ok, updated_batch} ->
           _ = Inventory.broadcast_chunk_log_update(entry, sequence + 1, merged_metadata)
 
@@ -667,6 +657,15 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   end
 
   defp extract_source_url(_), do: nil
+
+  defp maybe_check_for_interruption(batch, counter, frequency)
+       when is_integer(counter) and is_integer(frequency) and frequency > 0 do
+    if counter == 1 or rem(counter, frequency) == 0 do
+      check_for_interruption(batch)
+    else
+      {:ok, batch}
+    end
+  end
 
   defp ingest_chunk(
          %InventoryRun{dry_run: true} = run,

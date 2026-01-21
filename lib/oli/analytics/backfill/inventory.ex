@@ -346,12 +346,16 @@ defmodule Oli.Analytics.Backfill.Inventory do
   def recover_inflight_batches(opts \\ []) do
     boot? = Keyword.get(opts, :boot?, false)
 
-    from(b in InventoryBatch,
-      where: b.status in [:running, :queued],
-      preload: [:run]
-    )
-    |> Repo.all()
-    |> Enum.each(&maybe_recover_batch_job(&1, boot?))
+    batches =
+      from(b in InventoryBatch,
+        where: b.status in [:running, :queued],
+        preload: [:run]
+      )
+      |> Repo.all()
+
+    job_states = load_job_states(batches)
+
+    Enum.each(batches, &maybe_recover_batch_job(&1, boot?, job_states))
 
     :ok
   end
@@ -1012,7 +1016,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
     end)
   end
 
-  defp maybe_recover_batch_job(%InventoryBatch{} = batch, boot?) do
+  defp maybe_recover_batch_job(%InventoryBatch{} = batch, boot?, job_states) do
     batch = ensure_batch_run_preloaded(batch)
     run = batch.run
     metadata = ensure_map(batch.metadata)
@@ -1031,7 +1035,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
       truthy?(Map.get(metadata, "pause_requested")) ->
         :ok
 
-      active_job?(metadata, boot?) ->
+      active_job?(metadata, boot?, job_states) ->
         :ok
 
       true ->
@@ -1059,26 +1063,23 @@ defmodule Oli.Analytics.Backfill.Inventory do
     Repo.preload(batch, :run)
   end
 
-  defp active_job?(metadata, boot?) do
+  defp active_job?(metadata, boot?, job_states) do
     metadata
     |> fetch_first(["last_job_id", :last_job_id])
     |> parse_job_id()
     |> case do
       nil -> false
-      job_id -> job_active?(job_id, boot?)
+      job_id -> job_active?(job_id, boot?, job_states)
     end
   end
 
-  defp job_active?(job_id, boot?) do
-    case Repo.get(ObanJob, job_id) do
-      %ObanJob{state: state} when state in [:available, :scheduled, :retryable] ->
+  defp job_active?(job_id, boot?, job_states) do
+    case Map.get(job_states, job_id) do
+      state when state in [:available, :scheduled, :retryable] ->
         true
 
-      %ObanJob{state: :executing} ->
+      :executing ->
         not boot?
-
-      %ObanJob{} ->
-        false
 
       _ ->
         false
@@ -1096,6 +1097,30 @@ defmodule Oli.Analytics.Backfill.Inventory do
   end
 
   defp parse_job_id(_), do: nil
+
+  defp load_job_states(batches) do
+    job_ids =
+      batches
+      |> Enum.map(fn batch ->
+        batch.metadata
+        |> ensure_map()
+        |> fetch_first(["last_job_id", :last_job_id])
+        |> parse_job_id()
+      end)
+      |> Enum.filter(&is_integer/1)
+      |> Enum.uniq()
+
+    if job_ids == [] do
+      %{}
+    else
+      from(j in ObanJob,
+        where: j.id in ^job_ids,
+        select: {j.id, j.state}
+      )
+      |> Repo.all()
+      |> Map.new()
+    end
+  end
 
   defp cancel_orchestrator_job(%InventoryRun{} = run) do
     run.metadata
