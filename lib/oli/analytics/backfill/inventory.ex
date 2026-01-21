@@ -1314,18 +1314,6 @@ defmodule Oli.Analytics.Backfill.Inventory do
             "port",
             fetch_value(attrs, :manifest_port, config[:manifest_port])
           )
-          |> maybe_put_manifest_credential(
-            "access_key_id",
-            fetch_value(attrs, :manifest_access_key_id, config[:manifest_access_key_id])
-          )
-          |> maybe_put_manifest_credential(
-            "secret_access_key",
-            fetch_value(attrs, :manifest_secret_access_key, config[:manifest_secret_access_key])
-          )
-          |> maybe_put_manifest_credential(
-            "session_token",
-            fetch_value(attrs, :manifest_session_token, config[:manifest_session_token])
-          )
         )
         |> Map.put("dry_run", dry_run)
         |> maybe_put_date_range_metadata(date_range_start, date_range_end)
@@ -1436,9 +1424,6 @@ defmodule Oli.Analytics.Backfill.Inventory do
               :manifest_host,
               :manifest_scheme,
               :manifest_port,
-              :manifest_access_key_id,
-              :manifest_secret_access_key,
-              :manifest_session_token,
               :manifest_base_url,
               :target_table,
               :format,
@@ -1542,29 +1527,6 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
   defp maybe_put_manifest_detail(manifest_map, _key, _value), do: manifest_map
 
-  defp maybe_put_manifest_credential(manifest_map, _key, nil), do: manifest_map
-
-  defp maybe_put_manifest_credential(manifest_map, key, value) when is_binary(value) do
-    trimmed =
-      value
-      |> String.trim()
-      |> case do
-        "" -> nil
-        normalized -> normalized
-      end
-
-    case cleaned_credential(trimmed) do
-      nil -> manifest_map
-      normalized -> Map.put(manifest_map, key, normalized)
-    end
-  end
-
-  defp maybe_put_manifest_credential(manifest_map, key, value) when is_atom(value) do
-    maybe_put_manifest_credential(manifest_map, key, Atom.to_string(value))
-  end
-
-  defp maybe_put_manifest_credential(manifest_map, _key, _value), do: manifest_map
-
   defp maybe_put_date_range_metadata(metadata, nil, nil), do: metadata
 
   defp maybe_put_date_range_metadata(metadata, start_datetime, end_datetime) do
@@ -1583,17 +1545,6 @@ defmodule Oli.Analytics.Backfill.Inventory do
     %{}
     |> maybe_put_metadata("start", datetime_to_iso8601(start_datetime))
     |> maybe_put_metadata("end", datetime_to_iso8601(end_datetime))
-  end
-
-  defp cleaned_credential(nil), do: nil
-
-  defp cleaned_credential(value) do
-    lowered = String.downcase(value)
-
-    cond do
-      lowered in ["nil", "null", "none"] -> nil
-      true -> value
-    end
   end
 
   defp normalize_attrs(attrs) when is_list(attrs), do: Enum.into(attrs, %{})

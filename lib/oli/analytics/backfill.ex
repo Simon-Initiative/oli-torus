@@ -67,18 +67,23 @@ defmodule Oli.Analytics.Backfill do
   job in an atomic transaction. When `initiated_by` is provided, the originating
   author is recorded for auditing.
   """
-  @spec schedule_backfill(map() | keyword(), Author.t() | nil) ::
+  @spec schedule_backfill(map() | keyword(), Author.t()) ::
           {:ok, BackfillRun.t()} | {:error, term()}
-  def schedule_backfill(attrs, initiated_by \\ nil) do
+  def schedule_backfill(attrs, %Author{} = initiated_by) do
     attrs =
       attrs
       |> normalize_attrs()
       |> maybe_apply_default_target_table()
-      |> maybe_put_initiator(initiated_by)
+      |> drop_server_fields()
+
+    changeset =
+      %BackfillRun{}
+      |> BackfillRun.creation_changeset(attrs)
+      |> Ecto.Changeset.put_change(:initiated_by_id, initiated_by.id)
 
     multi =
       Multi.new()
-      |> Multi.insert(:run, BackfillRun.creation_changeset(%BackfillRun{}, attrs))
+      |> Multi.insert(:run, changeset)
       |> Multi.run(:job, fn _repo, %{run: run} ->
         args = %{"run_id" => run.id}
 
@@ -111,7 +116,7 @@ defmodule Oli.Analytics.Backfill do
           {:ok, BackfillRun.t()} | {:error, Ecto.Changeset.t()}
   def update_run(%BackfillRun{} = run, attrs) do
     run
-    |> BackfillRun.changeset(attrs)
+    |> BackfillRun.system_changeset(attrs)
     |> Repo.update()
     |> tap(fn
       {:ok, _run} -> Notifier.broadcast(:manual_backfill)
@@ -279,10 +284,10 @@ defmodule Oli.Analytics.Backfill do
     end
   end
 
-  defp maybe_put_initiator(attrs, %Author{id: author_id}),
-    do: Map.put(attrs, :initiated_by_id, author_id)
+  defp drop_server_fields(attrs) when is_map(attrs),
+    do: Map.drop(attrs, [:initiated_by_id, :status])
 
-  defp maybe_put_initiator(attrs, _), do: attrs
+  defp drop_server_fields(attrs), do: attrs
 
   defp normalize_attrs(attrs) when is_list(attrs), do: Enum.into(attrs, %{})
   defp normalize_attrs(%{} = attrs), do: attrs

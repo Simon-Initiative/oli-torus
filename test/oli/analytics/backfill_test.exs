@@ -91,7 +91,12 @@ defmodule Oli.Analytics.BackfillTest do
     end
 
     test "returns changeset errors when attributes are invalid" do
-      assert {:error, %Ecto.Changeset{} = changeset} = Backfill.schedule_backfill(%{}, nil)
+      admin =
+        author_fixture(%{
+          system_role_id: SystemRole.role_id().system_admin
+        })
+
+      assert {:error, %Ecto.Changeset{} = changeset} = Backfill.schedule_backfill(%{}, admin)
       assert %{s3_pattern: ["can't be blank"]} = errors_on(changeset)
     end
   end

@@ -28,13 +28,18 @@ defmodule Oli.Features do
   def features, do: @features
 
   def enabled?("adaptivity"), do: get_state("adaptivity") == :enabled
-  def enabled?("clickhouse-olap"), do: get_state("clickhouse-olap") == :enabled
+  def enabled?("clickhouse-olap"),
+    do: clickhouse_olap_enabled?() and get_state("clickhouse-olap") == :enabled
 
   def enabled?("clickhouse-olap-bulk-ingest"),
-    do: get_state("clickhouse-olap-bulk-ingest") == :enabled
+    do: clickhouse_olap_enabled?() and get_state("clickhouse-olap-bulk-ingest") == :enabled
 
   def enabled?("equity"), do: get_state("equity") == :enabled
   def enabled?("live-debugging"), do: get_state("live-debugging") == :enabled
+
+  defp clickhouse_olap_enabled? do
+    Application.get_env(:oli, :clickhouse_olap_enabled?, false)
+  end
 
   defp get_state(label) do
     case Repo.get(FeatureState, label) do

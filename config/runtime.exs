@@ -260,18 +260,24 @@ inventory_overrides =
 
 existing_inventory_config = Application.get_env(:oli, :clickhouse_inventory, [])
 
-config :oli,
-       :clickhouse_inventory,
-       Keyword.merge(existing_inventory_config, inventory_overrides)
+clickhouse_olap_enabled = get_env_as_boolean.("CLICKHOUSE_OLAP_ENABLED", "false")
 
-# ClickHouse configuration for XAPI analytics
-config :oli, :clickhouse,
-  host: System.get_env("CLICKHOUSE_HOST", "localhost"),
-  http_port: String.to_integer(System.get_env("CLICKHOUSE_HTTP_PORT", "8123")),
-  native_port: String.to_integer(System.get_env("CLICKHOUSE_NATIVE_PORT", "9000")),
-  user: System.get_env("CLICKHOUSE_USER", "default"),
-  password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
-  database: System.get_env("CLICKHOUSE_DATABASE", "default")
+config :oli, :clickhouse_olap_enabled?, clickhouse_olap_enabled
+
+if clickhouse_olap_enabled do
+  config :oli,
+         :clickhouse_inventory,
+         Keyword.merge(existing_inventory_config, inventory_overrides)
+
+  # ClickHouse configuration for XAPI analytics
+  config :oli, :clickhouse,
+    host: System.get_env("CLICKHOUSE_HOST", "localhost"),
+    http_port: String.to_integer(System.get_env("CLICKHOUSE_HTTP_PORT", "8123")),
+    native_port: String.to_integer(System.get_env("CLICKHOUSE_NATIVE_PORT", "9000")),
+    user: System.get_env("CLICKHOUSE_USER", "default"),
+    password: System.fetch_env!("CLICKHOUSE_PASSWORD"),
+    database: System.get_env("CLICKHOUSE_DATABASE", "default")
+end
 
 if runtime_env != :test do
   config :ex_aws, :s3,

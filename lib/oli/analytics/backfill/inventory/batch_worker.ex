@@ -1006,22 +1006,19 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
 
     scheme =
       manifest_meta
-      |> Map.get("scheme") ||
-        Map.get(manifest_meta, :scheme)
-        |> normalize_scheme()
-        |> Kernel.||("https")
+      |> fetch_manifest_value(["scheme", :scheme])
+      |> safe_manifest_scheme()
+      |> Kernel.||("https")
 
     host =
       manifest_meta
-      |> Map.get("host") ||
-        Map.get(manifest_meta, :host)
-        |> normalize_host()
+      |> fetch_manifest_value(["host", :host])
+      |> safe_manifest_host()
 
     port =
       manifest_meta
-      |> Map.get("port") ||
-        Map.get(manifest_meta, :port)
-        |> normalize_port()
+      |> fetch_manifest_value(["port", :port])
+      |> normalize_port()
 
     default_host = "#{run.manifest_bucket}.s3.amazonaws.com"
     port_part = format_port(port)
@@ -1174,15 +1171,12 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   defp ensure_map(map) when is_map(map), do: map
   defp ensure_map(_), do: %{}
 
-  defp inventory_credentials(%InventoryRun{} = run) do
-    manifest_meta =
-      run.metadata
-      |> ensure_map()
-      |> Map.get("manifest", %{})
+  defp inventory_credentials(%InventoryRun{} = _run) do
+    config = Application.get_env(:oli, :clickhouse_inventory, []) |> Enum.into(%{})
 
-    access = fetch_manifest_value(manifest_meta, ["access_key_id", :access_key_id])
-    secret = fetch_manifest_value(manifest_meta, ["secret_access_key", :secret_access_key])
-    session = fetch_manifest_value(manifest_meta, ["session_token", :session_token])
+    access = Map.get(config, :manifest_access_key_id)
+    secret = Map.get(config, :manifest_secret_access_key)
+    session = Map.get(config, :manifest_session_token)
 
     access = normalize_credential(access)
     secret = normalize_credential(secret)
@@ -1263,6 +1257,35 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   end
 
   defp normalize_port(_), do: nil
+
+  defp safe_manifest_scheme(nil), do: nil
+
+  defp safe_manifest_scheme(value) when is_binary(value) do
+    case normalize_scheme(value) do
+      "https" -> "https"
+      _ -> nil
+    end
+  end
+
+  defp safe_manifest_scheme(value) when is_atom(value) do
+    safe_manifest_scheme(Atom.to_string(value))
+  end
+
+  defp safe_manifest_scheme(_), do: nil
+
+  defp safe_manifest_host(nil), do: nil
+
+  defp safe_manifest_host(value) do
+    host = normalize_host(value)
+
+    cond do
+      is_nil(host) -> nil
+      host == "s3.amazonaws.com" -> host
+      String.ends_with?(host, ".s3.amazonaws.com") -> host
+      Regex.match?(~r/^s3[.-][a-z0-9-]+\.amazonaws\.com$/, host) -> host
+      true -> nil
+    end
+  end
 
   defp normalize_credential(value) when is_binary(value) do
     value

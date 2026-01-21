@@ -55,12 +55,10 @@ defmodule Oli.Analytics.Backfill.BackfillRun do
       :target_table,
       :s3_pattern,
       :format,
-      :status,
       :options,
       :clickhouse_settings,
       :dry_run,
       :query_id,
-      :initiated_by_id,
       :started_at,
       :finished_at,
       :rows_read,
@@ -71,12 +69,22 @@ defmodule Oli.Analytics.Backfill.BackfillRun do
       :error,
       :metadata
     ])
-    |> validate_required([:target_table, :s3_pattern, :format, :status])
+    |> validate_required([:target_table, :s3_pattern, :format])
     |> validate_length(:target_table, max: 255)
     |> validate_length(:format, max: 255)
     |> validate_format(:target_table, ~r/^[a-zA-Z0-9_\.]+$/)
     |> validate_change(:s3_pattern, &validate_s3_pattern/2)
     |> maybe_normalize_options()
+  end
+
+  @doc """
+  Changeset for system-managed updates that should not accept client input.
+  """
+  @spec system_changeset(t(), map()) :: Ecto.Changeset.t()
+  def system_changeset(run, attrs) do
+    run
+    |> changeset(attrs)
+    |> cast(attrs, [:status, :initiated_by_id])
   end
 
   @doc """
