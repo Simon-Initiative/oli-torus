@@ -415,7 +415,7 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
         ref={(node) => {
           anchorRef.current = node;
         }}
-        className="inline-flex items-center gap-1 italic font-semibold cursor-pointer text-delivery-primary dark:text-delivery-primary-dark hover:text-delivery-primary-hover dark:hover:text-delivery-primary-dark-hover underline decoration-dotted underline-offset-2"
+        className="inline-flex items-center gap-1 italic font-semibold cursor-pointer text-Text-text-link hover:text-delivery-primary-hover dark:hover:text-delivery-primary-dark-hover underline decoration-dotted underline-offset-2"
         onMouseEnter={handleHoverStart}
         onMouseLeave={handleHoverEnd}
         onClick={handleAnchorClick}

@@ -924,7 +924,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   end
 
   defp assignments_tab_class(tab, tab), do: "pointer-events-none cursor-not-allowed"
-  defp assignments_tab_class(_, _), do: "opacity-40 hover:opacity-70"
+  defp assignments_tab_class(_, _), do: "opacity-70 dark:opacity-50 hover:underline"
 
   defp empty_assignments_message(:upcoming),
     do: "Great job, you completed all the assignments! There are no upcoming assignments."

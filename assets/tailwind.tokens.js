@@ -248,6 +248,14 @@ module.exports = {
     light: '#000000',
     dark: '#FFFFFF',
   },
+  'Text-text-mathjax-blue': {
+    light: '#1B67B2',
+    dark: '#4CA6FF',
+  },
+  'Text-text-mathjax-red': {
+    light: '#B60202',
+    dark: '#FF4040',
+  },
   // Table
   'Table-table-row-1': {
     light: '#F3F4F8',
