@@ -5752,6 +5752,166 @@ select {
   box-shadow: 0 0 0 4px #FFFFFF;
 }
 
+.dark .bg-Text-text-mathjax-blue {
+  background-color: #4CA6FF;
+}
+
+.dark .bg-Text-text-mathjax-blue\/10 {
+  background-color: #4CA6FF1a;
+}
+
+.dark .bg-Text-text-mathjax-blue\/20 {
+  background-color: #4CA6FF33;
+}
+
+.dark .bg-Text-text-mathjax-blue\/30 {
+  background-color: #4CA6FF4d;
+}
+
+.dark .bg-Text-text-mathjax-blue\/40 {
+  background-color: #4CA6FF66;
+}
+
+.dark .bg-Text-text-mathjax-blue\/50 {
+  background-color: #4CA6FF80;
+}
+
+.dark .bg-Text-text-mathjax-blue\/60 {
+  background-color: #4CA6FF99;
+}
+
+.dark .bg-Text-text-mathjax-blue\/70 {
+  background-color: #4CA6FFb3;
+}
+
+.dark .bg-Text-text-mathjax-blue\/80 {
+  background-color: #4CA6FFcc;
+}
+
+.dark .bg-Text-text-mathjax-blue\/90 {
+  background-color: #4CA6FFe6;
+}
+
+.dark .text-Text-text-mathjax-blue {
+  color: #4CA6FF;
+}
+
+.dark .border-Text-text-mathjax-blue {
+  border-color: #4CA6FF;
+}
+
+.dark .outline-Text-text-mathjax-blue {
+  outline-color: #4CA6FF;
+}
+
+.dark .ring-Text-text-mathjax-blue {
+  --tw-ring-color: #4CA6FF;
+}
+
+.dark .fill-Text-text-mathjax-blue {
+  fill: #4CA6FF;
+}
+
+.dark .stroke-Text-text-mathjax-blue {
+  stroke: #4CA6FF;
+}
+
+.dark .caret-Text-text-mathjax-blue {
+  caret-color: #4CA6FF;
+}
+
+.dark .accent-Text-text-mathjax-blue {
+  accent-color: #4CA6FF;
+}
+
+.dark .focus-ring-Text-text-mathjax-blue:focus {
+  box-shadow: 0 0 0 4px #4CA6FF;
+}
+
+.dark .focus-visible-ring-Text-text-mathjax-blue:focus-visible {
+  box-shadow: 0 0 0 4px #4CA6FF;
+}
+
+.dark .bg-Text-text-mathjax-red {
+  background-color: #FF4040;
+}
+
+.dark .bg-Text-text-mathjax-red\/10 {
+  background-color: #FF40401a;
+}
+
+.dark .bg-Text-text-mathjax-red\/20 {
+  background-color: #FF404033;
+}
+
+.dark .bg-Text-text-mathjax-red\/30 {
+  background-color: #FF40404d;
+}
+
+.dark .bg-Text-text-mathjax-red\/40 {
+  background-color: #FF404066;
+}
+
+.dark .bg-Text-text-mathjax-red\/50 {
+  background-color: #FF404080;
+}
+
+.dark .bg-Text-text-mathjax-red\/60 {
+  background-color: #FF404099;
+}
+
+.dark .bg-Text-text-mathjax-red\/70 {
+  background-color: #FF4040b3;
+}
+
+.dark .bg-Text-text-mathjax-red\/80 {
+  background-color: #FF4040cc;
+}
+
+.dark .bg-Text-text-mathjax-red\/90 {
+  background-color: #FF4040e6;
+}
+
+.dark .text-Text-text-mathjax-red {
+  color: #FF4040;
+}
+
+.dark .border-Text-text-mathjax-red {
+  border-color: #FF4040;
+}
+
+.dark .outline-Text-text-mathjax-red {
+  outline-color: #FF4040;
+}
+
+.dark .ring-Text-text-mathjax-red {
+  --tw-ring-color: #FF4040;
+}
+
+.dark .fill-Text-text-mathjax-red {
+  fill: #FF4040;
+}
+
+.dark .stroke-Text-text-mathjax-red {
+  stroke: #FF4040;
+}
+
+.dark .caret-Text-text-mathjax-red {
+  caret-color: #FF4040;
+}
+
+.dark .accent-Text-text-mathjax-red {
+  accent-color: #FF4040;
+}
+
+.dark .focus-ring-Text-text-mathjax-red:focus {
+  box-shadow: 0 0 0 4px #FF4040;
+}
+
+.dark .focus-visible-ring-Text-text-mathjax-red:focus-visible {
+  box-shadow: 0 0 0 4px #FF4040;
+}
+
 .bg-Table-table-row-1 {
   background-color: #F3F4F8;
 }
@@ -21092,6 +21252,22 @@ table.table-striped tbody tr:nth-child(even) {
   color: #FFFFFF;
 }
 
+.dark .placeholder-Text-text-mathjax-blue::-moz-placeholder {
+  color: #4CA6FF;
+}
+
+.dark .placeholder-Text-text-mathjax-blue::placeholder {
+  color: #4CA6FF;
+}
+
+.dark .placeholder-Text-text-mathjax-red::-moz-placeholder {
+  color: #FF4040;
+}
+
+.dark .placeholder-Text-text-mathjax-red::placeholder {
+  color: #FF4040;
+}
+
 .dark .placeholder-Table-table-row-1::-moz-placeholder {
   color: #0D0C0F;
 }
@@ -28030,6 +28206,10 @@ Not supports in Firefox and IE */
   opacity: 0.2;
 }
 
+.dark .dark\:opacity-50 {
+  opacity: 0.5;
+}
+
 .dark .dark\:opacity-80 {
   opacity: 0.8;
 }
@@ -28580,13 +28760,13 @@ Not supports in Firefox and IE */
   fill: #66488c;
 }
 
-.dark .group.past-start .dark\:group-\[\.past-start\]\:fill-gray-700 {
-  fill: #404040;
+.dark .group.past-start .dark\:group-\[\.past-start\]\:fill-gray-400 {
+  fill: #a3a3a3;
 }
 
-.dark .group.past-start .dark\:group-\[\.past-start\]\:text-gray-700 {
+.dark .group.past-start .dark\:group-\[\.past-start\]\:text-gray-400 {
   --tw-text-opacity: 1;
-  color: rgb(64 64 64 / var(--tw-text-opacity));
+  color: rgb(163 163 163 / var(--tw-text-opacity));
 }
 
 .dark .peer:focus ~ .dark\:peer-focus\:ring-primary-800 {
