@@ -41,7 +41,7 @@ export function selectCookieConsent(cookiePreferences: CookiePreferencesProps): 
         className="btn btn-outline-primary"
         onClick={() => {
           dismiss();
-          selectCookiePreferences(cookiePreferences);
+          (window as any).OLI.handleCookiePreferences(cookiePreferences.privacyPoliciesUrl);
         }}
       >
         Cookie Preferences

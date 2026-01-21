@@ -121,12 +121,6 @@ const confirmAction = (
 
 // Function to handle cookie preferences based on device type
 const handleCookiePreferences = (privacyPoliciesUrl: string) => {
-  // If we're on the root path ("/"), always open the React modal
-  if (window.location.pathname === '/') {
-    selectCookiePreferences({ privacyPoliciesUrl });
-    return;
-  }
-
   // Use server-side device detection for consistent behavior
   const isMobile = (window as any).isMobileOrTablet || window.innerWidth <= 768; // fallback
 
