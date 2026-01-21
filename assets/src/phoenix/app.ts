@@ -127,11 +127,8 @@ const handleCookiePreferences = (privacyPoliciesUrl: string) => {
   if (isMobile) {
     // On mobile/tablet, navigate to LiveView with current page as return_to
     const currentPath = window.location.pathname + window.location.search;
-    const params = new URLSearchParams({
-      return_to: currentPath,
-      device: 'mobile',
-    });
-    window.location.href = `/cookie-preferences?${params.toString()}`;
+    const encodedReturnTo = encodeURIComponent(currentPath);
+    window.location.href = `/cookie-preferences?return_to=${encodedReturnTo}`;
   } else {
     // On desktop, show React modal
     selectCookiePreferences({ privacyPoliciesUrl });

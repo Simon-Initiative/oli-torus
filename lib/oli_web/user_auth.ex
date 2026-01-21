@@ -6,6 +6,7 @@ defmodule OliWeb.UserAuth do
 
   alias Oli.Accounts
   alias Oli.Accounts.{User}
+  alias Oli.Consent
   alias Oli.Delivery.Sections.Section
   alias OliWeb.AuthorAuth
 
@@ -26,6 +27,9 @@ defmodule OliWeb.UserAuth do
       maybe_return_to_section(params["section"]) || params["request_path"] ||
         get_session(conn, :user_return_to) || signed_in_path(conn)
 
+    # Sync cookie preferences from browser to DB if user has none saved
+    maybe_sync_cookie_preferences(conn, user)
+
     conn
     |> renew_session()
     |> put_token_in_session(token)
@@ -35,6 +39,29 @@ defmodule OliWeb.UserAuth do
     |> put_user_id_in_session(user.id)
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: user_return_to)
+  end
+
+  # Syncs cookie preferences from browser to database on login.
+  # Only syncs if user has no existing preferences in DB (Pattern 4: sync only if DB empty).
+  defp maybe_sync_cookie_preferences(conn, user) do
+    # Check if cookies were fetched (real HTTP request vs unit test)
+    browser_cookie =
+      case conn.cookies do
+        %Plug.Conn.Unfetched{} -> nil
+        cookies -> cookies["_cky_opt_choices"]
+      end
+
+    if browser_cookie && browser_cookie != "" do
+      existing_cookies = Consent.retrieve_cookies(user.id)
+
+      if Enum.empty?(existing_cookies) do
+        # User has no DB preferences, sync from browser
+        expiration = DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
+        Consent.insert_cookie("_cky_opt_choices", browser_cookie, expiration, user.id)
+      end
+    end
+
+    :ok
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do

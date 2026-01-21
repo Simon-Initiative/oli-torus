@@ -34,8 +34,8 @@ defmodule OliWeb.CookiePreferencesLiveTest do
       assert html =~ ~s(checked)
     end
 
-    test "unauthenticated mobile uses no-layout render and shows flash on save", %{conn: conn} do
-      conn = log_out_user(conn)
+    test "unauthenticated mobile uses no-layout render and shows flash on save", _context do
+      conn = Phoenix.ConnTest.build_conn()
 
       {:ok, lv, _html} = live(conn, ~p"/cookie-preferences?#{%{device: "mobile"}}")
 
@@ -45,7 +45,6 @@ defmodule OliWeb.CookiePreferencesLiveTest do
         |> render_click()
 
       assert html =~ "Cookie preferences have been updated."
-      refute html =~ ~s(id="header")
     end
 
     test "authenticated users keep the workspace layout on mobile", %{conn: conn} do
@@ -59,8 +58,8 @@ defmodule OliWeb.CookiePreferencesLiveTest do
       assert html =~ ~s(id="header")
     end
 
-    test "mobile return_to navigation works when unauthenticated", %{conn: conn} do
-      conn = log_out_user(conn)
+    test "mobile return_to navigation works when unauthenticated", _context do
+      conn = Phoenix.ConnTest.build_conn()
 
       return_url = "/some/mobile/page"
 

@@ -8,39 +8,31 @@ defmodule OliWeb.CookiePreferencesLive do
     return_to = Map.get(params, "return_to") || "/"
 
     # Get current cookie preferences from database if user is logged in
-    {functional_active, analytics_active, targeting_active} = get_cookie_preferences(socket)
+    {functional_active, analytics_active, targeting_active, has_db_preferences} =
+      get_cookie_preferences(socket)
 
-    # Prefer explicit param over UA-based detection for the initial mount.
-    mobile_request = Map.get(params, "device") in ["mobile", "tablet"]
-    # Use a no-layout flow for unauthenticated mobile/tablet visits.
-    unauthenticated? = is_nil(socket.assigns[:current_user])
-    mobile_or_tablet? = mobile_request || socket.assigns[:is_mobile] || socket.assigns[:is_tablet]
-    no_layout? = unauthenticated? && mobile_or_tablet?
-
-    assigns =
-      assign(socket,
-        is_admin: false,
-        return_to: return_to,
-        functional_active: functional_active,
-        analytics_active: analytics_active,
-        targeting_active: targeting_active,
-        expanded_sections: %{
-          strict_cookies: false,
-          functional_cookies: false,
-          analytics_cookies: false,
-          targeting_cookies: false
-        },
-        expanded_cookie_tables: %{
-          strict_cookies: false,
-          functional_cookies: false,
-          analytics_cookies: false,
-          targeting_cookies: false
-        },
-        privacy_policies_url: privacy_policies_url(),
-        no_layout: no_layout?
-      )
-
-    if no_layout?, do: {:ok, assigns, layout: false}, else: {:ok, assigns}
+    {:ok,
+     assign(socket,
+       is_admin: false,
+       return_to: return_to,
+       functional_active: functional_active,
+       analytics_active: analytics_active,
+       targeting_active: targeting_active,
+       has_db_preferences: has_db_preferences,
+       expanded_sections: %{
+         strict_cookies: false,
+         functional_cookies: false,
+         analytics_cookies: false,
+         targeting_cookies: false
+       },
+       expanded_cookie_tables: %{
+         strict_cookies: false,
+         functional_cookies: false,
+         analytics_cookies: false,
+         targeting_cookies: false
+       },
+       privacy_policies_url: privacy_policies_url()
+     )}
   end
 
   def render(assigns) do
@@ -49,7 +41,6 @@ defmodule OliWeb.CookiePreferencesLive do
     <div class="bg-Background-bg-primary">
       <div class="max-w-2xl mx-auto">
         <div class="bg-Background-bg-primary rounded-md outline-none text-current">
-          <.info_flash :if={@no_layout && Phoenix.Flash.get(@flash, :info)} flash={@flash} />
           <!-- Header -->
           <div class="p-4">
             <!-- Back button -->
@@ -107,29 +98,6 @@ defmodule OliWeb.CookiePreferencesLive do
             </button>
           </div>
         </div>
-      </div>
-    </div>
-    """
-  end
-
-  attr(:flash, :map, required: true)
-
-  defp info_flash(assigns) do
-    ~H"""
-    <div class="p-4">
-      <div class="alert alert-info flex flex-row" role="alert">
-        <div class="flex-1">
-          {Phoenix.Flash.get(@flash, :info)}
-        </div>
-        <button
-          type="button"
-          class="close"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="info"
-        >
-          <i class="fa-solid fa-xmark fa-lg"></i>
-        </button>
       </div>
     </div>
     """
@@ -416,17 +384,47 @@ defmodule OliWeb.CookiePreferencesLive do
       targeting: socket.assigns.targeting_active
     }
 
+    # Check if user is authenticated
+    is_authenticated = socket.assigns[:current_user] != nil
+
     # Send preferences to the JavaScript hook, then navigate back
     socket =
       socket
       |> put_flash(:info, "Cookie preferences have been updated.")
-      |> push_event("save-cookie-preferences", %{preferences: preferences})
+      |> push_event("save-cookie-preferences", %{
+        preferences: preferences,
+        is_authenticated: is_authenticated
+      })
 
     {:noreply, socket}
   end
 
   def handle_event("go_back", _params, socket) do
-    {:noreply, push_navigate(socket, to: socket.assigns.return_to)}
+    {:noreply, redirect(socket, to: socket.assigns.return_to)}
+  end
+
+  def handle_event("browser_cookie_preferences", %{"preferences" => preferences}, socket)
+      when is_map(preferences) do
+    # Only update from browser cookies if user doesn't have preferences in DB
+    # Priority: DB preferences > browser cookies > defaults
+    if socket.assigns.has_db_preferences do
+      # User has DB preferences, ignore browser cookies
+      {:noreply, socket}
+    else
+      # No DB preferences, use browser cookies
+      socket =
+        socket
+        |> assign(:functional_active, Map.get(preferences, "functionality", true))
+        |> assign(:analytics_active, Map.get(preferences, "analytics", true))
+        |> assign(:targeting_active, Map.get(preferences, "targeting", false))
+
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("browser_cookie_preferences", _params, socket) do
+    # Invalid preferences format, ignore
+    {:noreply, socket}
   end
 
   defp privacy_policies_url(), do: Application.fetch_env!(:oli, :privacy_policies)[:url]
@@ -445,29 +443,32 @@ defmodule OliWeb.CookiePreferencesLive do
   defp get_cookie_preferences(socket) do
     case socket.assigns[:current_user] do
       nil ->
-        # Default preferences for non-authenticated users
-        {true, true, false}
+        # Non-authenticated user: use defaults, browser cookies will be loaded via JS hook
+        # has_db_preferences = false means we should accept browser cookies
+        {true, true, false, false}
 
       user ->
         cookies = Consent.retrieve_cookies(user.id)
 
         case Enum.find(cookies, fn cookie -> cookie.name == "_cky_opt_choices" end) do
           nil ->
-            # No existing preferences, use defaults
-            {true, true, false}
+            # No existing preferences in DB, browser cookies will be loaded via JS hook
+            {true, true, false, false}
 
           choices_cookie ->
             case Jason.decode(choices_cookie.value) do
               {:ok, preferences} when is_map(preferences) ->
+                # Has DB preferences, use them and ignore browser cookies
                 {
                   Map.get(preferences, "functionality", true),
                   Map.get(preferences, "analytics", true),
-                  Map.get(preferences, "targeting", false)
+                  Map.get(preferences, "targeting", false),
+                  true
                 }
 
               _ ->
                 # If JSON decode fails or result is not a map, use defaults
-                {true, true, false}
+                {true, true, false, false}
             end
         end
     end
