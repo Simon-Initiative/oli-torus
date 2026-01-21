@@ -54,6 +54,18 @@ config :oli, :vendor_property,
   knowledgebase_url: System.get_env("KNOWLEDGEBASE_URL", "#")
 
 # Configure your database
+database_url = System.get_env("DATABASE_URL")
+
+if database_url && database_url != "" do
+  config :oli, Oli.Repo, url: database_url
+else
+  config :oli, Oli.Repo,
+    username: System.get_env("DB_USER", "postgres"),
+    password: System.get_env("DB_PASSWORD", "postgres"),
+    database: System.get_env("DB_NAME", "oli_dev"),
+    hostname: System.get_env("DB_HOST", "localhost")
+end
+
 config :oli, Oli.Repo,
   username: System.get_env("DB_USER", "postgres"),
   password: System.get_env("DB_PASSWORD", "postgres"),

@@ -37,19 +37,20 @@ config :oli, :xapi_upload_pipeline,
   suppress_event_emitting: true,
   xapi_local_output_dir: System.get_env("XAPI_LOCAL_TEST_OUTPUT_DIR", "./xapi_test_output")
 
-# Configure your database
-test_db_password =
-  case System.get_env("DB_PASSWORD") do
-    nil -> nil
-    "" -> nil
-    value -> value
-  end
+# Configure database
+database_url = System.get_env("DATABASE_URL")
+
+if database_url && database_url != "" do
+  config :oli, Oli.Repo, url: database_url
+else
+  config :oli, Oli.Repo,
+    username: System.get_env("DB_USER", "postgres"),
+    password: System.get_env("DB_PASSWORD", "postgres"),
+    hostname: System.get_env("DB_HOST", "localhost"),
+    database: "oli_test"
+end
 
 config :oli, Oli.Repo,
-  username: System.get_env("DB_USER", "postgres"),
-  password: test_db_password,
-  hostname: System.get_env("DB_HOST", "localhost"),
-  database: "oli_test",
   pool: Ecto.Adapters.SQL.Sandbox,
   timeout: 600_000,
   pool_size: 30,
