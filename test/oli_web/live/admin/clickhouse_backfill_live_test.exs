@@ -25,8 +25,10 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
   end
 
   defp enable_clickhouse_feature(_) do
+    Application.put_env(:oli, :clickhouse_olap_enabled?, true)
     Oli.Features.bootstrap_feature_states()
     Oli.Features.change_state("clickhouse-olap", :enabled)
+    Oli.Features.change_state("clickhouse-olap-bulk-ingest", :enabled)
     :ok
   end
 

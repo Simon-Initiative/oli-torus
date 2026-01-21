@@ -91,6 +91,7 @@ config :oli, :clickhouse,
   database: "default"
 
 config :oli, :clickhouse_analytics_module, Oli.Test.ClickhouseStub
+config :oli, :clickhouse_olap_enabled?, true
 
 # speed up tests by lowering the hash iterations
 config :bcrypt_elixir, log_rounds: 4
