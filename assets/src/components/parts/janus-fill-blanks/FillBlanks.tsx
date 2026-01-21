@@ -358,7 +358,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         if (liveRegionRef.current) {
           liveRegionRef.current.textContent = '';
         }
-      }, 1000);
+      }, 500);
     }
   };
 
