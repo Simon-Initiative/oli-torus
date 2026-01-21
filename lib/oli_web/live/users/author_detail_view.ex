@@ -9,6 +9,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   alias Oli.Accounts
   alias Oli.Accounts.{Author, SystemRole}
   alias Oli.Auditing
+  alias Oli.Repo
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -48,7 +49,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
         _session,
         socket
       ) do
-    case Accounts.get_author(author_id) do
+    case Accounts.get_author_with_communities(author_id) do
       nil ->
         {:ok,
          socket
@@ -162,6 +163,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
                 value={if(@author.is_internal, do: "Yes", else: "No")}
               />
             <% end %>
+            <.communities_field communities={@author.communities} />
             <%= unless @disabled_edit do %>
               <.button
                 variant={:primary}
@@ -525,5 +527,31 @@ defmodule OliWeb.Users.AuthorsDetailView do
       _ ->
         "Author"
     end
+  end
+
+  attr :communities, :list, required: true
+
+  defp communities_field(assigns) do
+    ~H"""
+    <% communities_count = length(@communities) %>
+
+    <div class="form-group">
+      <label>Communities</label>
+      <div class="form-control bg-[var(--color-gray-100)]">
+        <%= if Enum.empty?(@communities) do %>
+          <span class="text-muted">None</span>
+        <% else %>
+          <%= for {community, index} <- Enum.with_index(@communities) do %>
+            <.link
+              href={Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.ShowView, community.id)}
+              class="text-primary hover:underline"
+            >
+              {community.name}
+            </.link><%= if index < communities_count - 1 do %><span>, </span><% end %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    """
   end
 end

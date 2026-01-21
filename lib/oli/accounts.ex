@@ -669,6 +669,18 @@ defmodule Oli.Accounts do
   def get_author(id), do: Repo.get(Author, id)
 
   @doc """
+    Gets a single author with the associated communities.
+    Returns nil if the Author does not exist.
+    ## Examples
+      iex> get_author_with_communities(123)
+      %Author{communities: []}
+      iex> get_author_with_communities(456)
+      nil
+
+  """
+  def get_author_with_communities(id), do: Repo.get(Author, id) |> Repo.preload(:communities)
+
+  @doc """
   Gets a single author with the count of communities for which the author is an admin.
 
   ## Examples
