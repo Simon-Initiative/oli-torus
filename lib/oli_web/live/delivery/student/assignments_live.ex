@@ -187,7 +187,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     <div class="w-full px-2 bg-white dark:bg-[#1b191f]/50 rounded-xl border border-[#ced1d9] dark:border-[#2a282d] flex-col justify-start items-start inline-flex">
       <div
         role="assignments header"
-        class="w-full flex-col pt-2 border-b border-[#ced1d9] dark:border-[#3a3740] justify-between items-center text-[#757682] dark:text-[#bab8bf] text-sm font-medium leading-none"
+        class="w-full flex-col pt-2 border-b border-[#ced1d9] dark:border-[#3a3740] justify-between items-center text-Text-text-low text-sm font-medium leading-none"
       >
         <ComponentsUtils.timezone_info timezone={
           FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
@@ -275,7 +275,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           required={@required}
         />
       </div>
-      <div class="ml-6 mt-0.5 h-6 w-10 flex items-center text-left text-[#757682] dark:text-[#eeebf5]/75 text-sm font-semibold leading-none">
+      <div class="ml-6 mt-0.5 h-6 w-10 flex items-center text-left text-Text-text-low dark:text-[#eeebf5]/75 text-sm font-semibold leading-none">
         {@assignment.numbering_index}
       </div>
       <div class="h-12 flex flex-col justify-between mr-6 flex-1 min-w-0">
@@ -287,7 +287,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         </.link>
         <span
           role="assignment schedule details"
-          class="text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate"
+          class="text-Text-text-low dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate"
         >
           <span>
             Available:
@@ -309,11 +309,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       </div>
       <div :if={@assignment.raw_avg_score} class="ml-auto h-12 flex flex-col justify-between">
         <%= if @assignment.score_as_you_go do %>
-          <span class="h-6 ml-auto text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
+          <span class="h-6 ml-auto text-Text-text-low dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
             Score as you go
           </span>
         <% else %>
-          <span class="h-6 ml-auto text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
+          <span class="h-6 ml-auto text-Text-text-low dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
             Attempt {@assignment.attempts} of {max_attempts(@assignment.max_attempts)}
           </span>
         <% end %>

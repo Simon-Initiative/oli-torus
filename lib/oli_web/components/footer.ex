@@ -124,7 +124,7 @@ defmodule OliWeb.Components.Footer do
         <a
           href="javascript:;"
           onclick={"OLI.handleCookiePreferences('#{@privacy_policies_url}')"}
-          class={[@class, "whitespace-nowrap"]}
+          class={[@class, "whitespace-nowrap text-Text-text-button"]}
         >
           Cookie Preferences
         </a>

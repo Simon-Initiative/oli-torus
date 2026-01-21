@@ -762,7 +762,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <div
         :if={@sidebar_expanded}
         class={[
-          "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
+          "text-[#353740] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
           if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
         ]}
       >
