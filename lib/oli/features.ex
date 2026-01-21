@@ -28,6 +28,7 @@ defmodule Oli.Features do
   def features, do: @features
 
   def enabled?("adaptivity"), do: get_state("adaptivity") == :enabled
+
   def enabled?("clickhouse-olap"),
     do: clickhouse_olap_enabled?() and get_state("clickhouse-olap") == :enabled
 
