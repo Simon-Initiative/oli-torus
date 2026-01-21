@@ -382,17 +382,23 @@ defmodule OliWeb.CookiePreferencesLive do
       targeting: socket.assigns.targeting_active
     }
 
+    # Check if user is authenticated
+    is_authenticated = socket.assigns[:current_user] != nil
+
     # Send preferences to the JavaScript hook, then navigate back
     socket =
       socket
       |> put_flash(:info, "Cookie preferences have been updated.")
-      |> push_event("save-cookie-preferences", %{preferences: preferences})
+      |> push_event("save-cookie-preferences", %{
+        preferences: preferences,
+        is_authenticated: is_authenticated
+      })
 
     {:noreply, socket}
   end
 
   def handle_event("go_back", _params, socket) do
-    {:noreply, push_navigate(socket, to: socket.assigns.return_to)}
+    {:noreply, redirect(socket, to: socket.assigns.return_to)}
   end
 
   defp privacy_policies_url(), do: Application.fetch_env!(:oli, :privacy_policies)[:url]

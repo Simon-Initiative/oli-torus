@@ -1,13 +1,16 @@
 export const SaveCookiePreferences = {
   mounted() {
     // Listen for the save-cookie-preferences event from the LiveView
-    this.handleEvent('save-cookie-preferences', ({ preferences }: { preferences: any }) => {
-      // Save the preferences using direct cookie implementation
-      this.savePreferences(preferences);
-    });
+    this.handleEvent(
+      'save-cookie-preferences',
+      ({ preferences, is_authenticated }: { preferences: any; is_authenticated: boolean }) => {
+        // Save the preferences using direct cookie implementation
+        this.savePreferences(preferences, is_authenticated);
+      },
+    );
   },
 
-  savePreferences(userOptions: any) {
+  savePreferences(userOptions: any, isAuthenticated: boolean) {
     const days = 365 * 24 * 60 * 60 * 1000;
 
     try {
@@ -22,15 +25,19 @@ export const SaveCookiePreferences = {
       // Set the opt-in cookie
       this.setCookie('_cky_opt_in', 'true', expiresString);
 
-      // Persist cookies to the server (optional)
-      this.persistCookies([
-        {
-          name: '_cky_opt_choices',
-          value: JSON.stringify(userOptions),
-          expiresIso: expiration.toISOString(),
-        },
-        { name: '_cky_opt_in', value: 'true', expiresIso: expiration.toISOString() },
-      ]);
+      // Only persist to server if user is authenticated
+      // When not authenticated, cookies are saved in browser only
+      // and will be synced to DB on next login
+      if (isAuthenticated) {
+        this.persistCookies([
+          {
+            name: '_cky_opt_choices',
+            value: JSON.stringify(userOptions),
+            expiresIso: expiration.toISOString(),
+          },
+          { name: '_cky_opt_in', value: 'true', expiresIso: expiration.toISOString() },
+        ]);
+      }
     } catch (error) {
       console.error('Error saving cookie preferences:', error);
     }
