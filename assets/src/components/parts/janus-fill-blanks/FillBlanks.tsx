@@ -355,29 +355,23 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     console.log('input trigger!', { id, inputOption });
     maybeUpdateElementValues([inputOption]);
 
-    // Restore focus to the current element after selection
-    // Focus should stay on the element that was just interacted with, not move to next
+    // Move focus to the next element in reading order after selection
     requestAnimationFrame(() => {
-      if (!fibContainer.current) return;
-
-      const container = fibContainer.current as HTMLElement;
-
-      // Check if this is a dropdown (has select element) or text input
-      const selectElement = container.querySelector(`select[name="${e.name}"]`) as HTMLSelectElement;
-      if (selectElement) {
-        // This is a dropdown - restore focus to the dropdown trigger
-        const select2Container = selectElement.closest('.select2-container');
-        if (select2Container) {
-          const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
-          if (selection) {
-            selection.focus();
+      const nextElement = findNextFocusableElement(e.name);
+      if (nextElement) {
+        nextElement.focus();
+      } else if (fibContainer.current) {
+        // If no next element, return focus to current dropdown trigger
+        const container = fibContainer.current as HTMLElement;
+        const selectElement = container.querySelector(`select[name="${e.name}"]`) as HTMLSelectElement;
+        if (selectElement) {
+          const select2Container = selectElement.closest('.select2-container');
+          if (select2Container) {
+            const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
+            if (selection) {
+              selection.focus();
+            }
           }
-        }
-      } else {
-        // This is a text input - focus should already be on it, but ensure it stays
-        const inputRef = inputRefs.current.get(e.name);
-        if (inputRef && document.activeElement !== inputRef) {
-          inputRef.focus();
         }
       }
     });

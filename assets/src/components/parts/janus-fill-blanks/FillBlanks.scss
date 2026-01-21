@@ -856,13 +856,12 @@ blockquote .select2-container--default .select2-selection--single .select2-selec
   background-color: #d9d9de;
 }
 
-/* Focus indicators for the rendered selection element */
+/* Remove focus styles from rendered element - focus is handled by parent .select2-selection--single */
+/* This prevents double border when parent is focused */
 .select2-selection__rendered:focus-visible,
 .select2-selection__rendered:focus {
-  background-color: #d9d9de;
-  outline: 2px solid #2196f3;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+  outline: none;
+  box-shadow: none;
 }
 
 .select2-selection__rendered:focus .dropdown-menu {
