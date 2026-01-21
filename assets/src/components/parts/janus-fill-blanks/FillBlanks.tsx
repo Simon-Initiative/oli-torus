@@ -35,6 +35,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const [attempted, setAttempted] = useState<boolean>(false);
   const [contentList, setContentList] = useState<any[]>([]);
   const [elementValues, setElementValues] = useState<SelectOption[]>([]);
+  // Live region for screen reader announcements
+  const liveRegionRef = useRef<HTMLDivElement>(null);
 
   const getElementValueByKey = useCallback(
     (key: string) => {
@@ -348,6 +350,18 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     [content, elements],
   );
 
+  const announceToScreenReader = (message: string) => {
+    if (liveRegionRef.current) {
+      liveRegionRef.current.textContent = message;
+      // Clear the message after a short delay to allow re-announcement if needed
+      setTimeout(() => {
+        if (liveRegionRef.current) {
+          liveRegionRef.current.textContent = '';
+        }
+      }, 1000);
+    }
+  };
+
   const handleInput = (e: any) => {
     if (!e || typeof e === 'undefined') return;
     setAttempted(true);
@@ -355,26 +369,41 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     console.log('input trigger!', { id, inputOption });
     maybeUpdateElementValues([inputOption]);
 
+    // Check if this is a dropdown selection
+    if (fibContainer.current) {
+      const container = fibContainer.current as HTMLElement;
+      const selectElement = container.querySelector(`select[name="${e.name}"]`) as HTMLSelectElement;
+      if (selectElement) {
+        // This is a dropdown - get the selected option text for announcement
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const selectedText = selectedOption ? selectedOption.text : e.value || 'No selection';
+        announceToScreenReader(`Selected: ${selectedText}`);
+      }
+    }
+
     // Move focus to the next element in reading order after selection
-    requestAnimationFrame(() => {
-      const nextElement = findNextFocusableElement(e.name);
-      if (nextElement) {
-        nextElement.focus();
-      } else if (fibContainer.current) {
-        // If no next element, return focus to current dropdown trigger
-        const container = fibContainer.current as HTMLElement;
-        const selectElement = container.querySelector(`select[name="${e.name}"]`) as HTMLSelectElement;
-        if (selectElement) {
-          const select2Container = selectElement.closest('.select2-container');
-          if (select2Container) {
-            const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
-            if (selection) {
-              selection.focus();
+    // Add a delay to allow screen reader to announce the selection first
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        const nextElement = findNextFocusableElement(e.name);
+        if (nextElement) {
+          nextElement.focus();
+        } else if (fibContainer.current) {
+          // If no next element, return focus to current dropdown trigger
+          const container = fibContainer.current as HTMLElement;
+          const selectElement = container.querySelector(`select[name="${e.name}"]`) as HTMLSelectElement;
+          if (selectElement) {
+            const select2Container = selectElement.closest('.select2-container');
+            if (select2Container) {
+              const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
+              if (selection) {
+                selection.focus();
+              }
             }
           }
         }
-      }
-    });
+      });
+    }, 500); // 500ms delay to allow screen reader to fully announce the selection
   };
 
   // returns boolean
@@ -497,7 +526,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     }
   }, [elementValues, saveElements]);
 
-  // Set up Select2 event listeners for focus management
+  // Set up Select2 event listeners for focus management and ARIA updates
   useEffect(() => {
     if (!ready || !elements?.length || !fibContainer.current) return;
 
@@ -517,6 +546,30 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
 
       const elementKey = selectElement.name;
 
+      // Update initial aria-label to avoid redundant reading
+      const selectedValue = selectElement.value;
+      const selectedOption = selectElement.options[selectElement.selectedIndex];
+      const selectedText = selectedOption ? selectedOption.text : '';
+
+      // Find the index of this dropdown in content array
+      let dropdownIndex = -1;
+      if (content) {
+        for (let i = 0; i < content.length; i++) {
+          if (content[i].dropdown === elementKey) {
+            dropdownIndex = i;
+            break;
+          }
+        }
+      }
+
+      const indexLabel = dropdownIndex >= 0 ? `Dropdown ${dropdownIndex + 1}` : 'Dropdown';
+      if (selectedText) {
+        // Set aria-label to just the value, Select2 will add "combobox" automatically
+        selectElement.setAttribute('aria-label', `${selectedText}, ${indexLabel}`);
+      } else {
+        selectElement.setAttribute('aria-label', `${indexLabel}, Make a selection`);
+      }
+
       const handleOpen = () => {
         // Update aria-expanded when dropdown opens
         const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
@@ -530,6 +583,30 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         const selection = select2Container.querySelector('.select2-selection--single') as HTMLElement;
         if (selection) {
           selection.setAttribute('aria-expanded', 'false');
+
+          // Update aria-label to include selected value and avoid redundant reading
+          const selectedValue = selectElement.value;
+          const selectedOption = selectElement.options[selectElement.selectedIndex];
+          const selectedText = selectedOption ? selectedOption.text : '';
+
+          // Find the index of this dropdown in content array
+          let dropdownIndex = -1;
+          if (content) {
+            for (let i = 0; i < content.length; i++) {
+              if (content[i].dropdown === elementKey) {
+                dropdownIndex = i;
+                break;
+              }
+            }
+          }
+
+          const indexLabel = dropdownIndex >= 0 ? `Dropdown ${dropdownIndex + 1}` : 'Dropdown';
+          if (selectedText) {
+            // Set aria-label to just the value, Select2 will add "combobox" automatically
+            selectElement.setAttribute('aria-label', `${selectedText}, ${indexLabel}`);
+          } else {
+            selectElement.setAttribute('aria-label', `${indexLabel}, Make a selection`);
+          }
         }
 
         // When dropdown closes, restore focus to the trigger if needed
@@ -632,7 +709,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                       name={insertEl.key}
                       data={optionsList}
                       value={elVal}
-                      aria-label={`Dropdown ${index + 1}: Make a selection`}
+                      aria-label={elVal ? `${elVal}, Dropdown ${index + 1}` : `Dropdown ${index + 1}, Make a selection`}
                       options={{
                         dropdownParent: fibContainer.current,
                         minimumResultsForSearch: 10,
@@ -710,6 +787,25 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     >
       <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>
       <style type="text/css">{`${customCss}`};</style>
+      {/* Live region for screen reader announcements */}
+      <div
+        ref={liveRegionRef}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        style={{
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: 0,
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          borderWidth: 0,
+        }}
+      />
       <div className="scene">
         <div className="app">
           <div className="editor ql-container ql-snow ql-disabled">
