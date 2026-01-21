@@ -98,7 +98,9 @@ export const ChunkLogsViewer = {
 
     this.scrollEl = this.el.querySelector('.chunk-logs-scroll') as HTMLElement | null;
     this.bodyEl = this.el.querySelector('.chunk-logs-body') as HTMLElement | null;
-    this.bottomSentinel = this.el.querySelector('.chunk-logs-bottom-sentinel') as HTMLElement | null;
+    this.bottomSentinel = this.el.querySelector(
+      '.chunk-logs-bottom-sentinel',
+    ) as HTMLElement | null;
     this.topSentinel = this.el.querySelector('.chunk-logs-top-sentinel') as HTMLElement | null;
     this.statusEl = this.el.querySelector('.chunk-logs-status') as HTMLElement | null;
     this.liveToggleEl = this.el.querySelector('.chunk-logs-live-toggle') as HTMLInputElement | null;
