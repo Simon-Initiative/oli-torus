@@ -47,71 +47,73 @@ defmodule OliWeb.Api.DirectedDiscussionController do
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
     # Parse resource_id to integer if it's a string
-    resource_id_int =
-      case resource_id do
-        id when is_binary(id) -> String.to_integer(id)
-        id when is_integer(id) -> id
-      end
-
-    if Sections.is_enrolled?(current_user.id, section_slug) do
-      Collaboration.create_post(%{
-        status: :approved,
-        user_id: current_user.id,
-        section_id: section.id,
-        resource_id: resource_id_int,
-        parent_post_id: parent_post_id,
-        thread_root_id: parent_post_id,
-        replies_count: 0,
-        anonymous: false,
-        content: %{"message" => content}
-      })
-      |> preload_post_user
-      |> case do
-        {:ok, post} ->
-          PubSub.broadcast(
-            Oli.PubSub,
-            topic_name(section_slug, resource_id_int),
-            {:post_created, Repo.preload(post, :user), current_user.id}
-          )
-
-          # Check if participation requirements are met and evaluate if so
-          # This runs asynchronously to avoid blocking the response
-          Task.start(fn ->
-            case DirectedDiscussion.evaluate_if_requirements_met(
-                   section_slug,
-                   section.id,
-                   resource_id_int,
-                   current_user.id,
-                   datashop_session_id
-                 ) do
-              {:ok, _} ->
-                :ok
-
-              {:error, reason} ->
-                require Logger
-
-                Logger.warning(
-                  "Failed to evaluate Directed Discussion activity: #{inspect(reason)}"
-                )
-            end
-          end)
-
-          json(conn, %{
-            "result" => "success",
-            "post" => Post.post_response(post)
+    case parse_integer(resource_id) do
+      {:ok, resource_id_int} ->
+        if Sections.is_enrolled?(current_user.id, section_slug) do
+          Collaboration.create_post(%{
+            status: :approved,
+            user_id: current_user.id,
+            section_id: section.id,
+            resource_id: resource_id_int,
+            parent_post_id: parent_post_id,
+            thread_root_id: parent_post_id,
+            replies_count: 0,
+            anonymous: false,
+            content: %{"message" => content}
           })
+          |> preload_post_user
+          |> case do
+            {:ok, post} ->
+              PubSub.broadcast(
+                Oli.PubSub,
+                topic_name(section_slug, resource_id_int),
+                {:post_created, Repo.preload(post, :user), current_user.id}
+              )
 
-        error ->
+              # Check if participation requirements are met and evaluate if so
+              # This runs asynchronously to avoid blocking the response
+              Task.start(fn ->
+                case DirectedDiscussion.evaluate_if_requirements_met(
+                       section_slug,
+                       section.id,
+                       resource_id_int,
+                       current_user.id,
+                       datashop_session_id
+                     ) do
+                  {:ok, _} ->
+                    :ok
+
+                  {:error, reason} ->
+                    require Logger
+
+                    Logger.warning(
+                      "Failed to evaluate Directed Discussion activity: #{inspect(reason)}"
+                    )
+                end
+              end)
+
+              json(conn, %{
+                "result" => "success",
+                "post" => Post.post_response(post)
+              })
+
+            error ->
+              json(conn, %{
+                "result" => "failure",
+                "error" => error
+              })
+          end
+        else
           json(conn, %{
             "result" => "failure",
-            "error" => error
+            "error" => "User does not have permission to create a post."
           })
-      end
-    else
-      json(conn, %{
-        "result" => "failure",
-        "error" => "User does not have permission to create a post."
-      })
+        end
+
+      :error ->
+        conn
+        |> put_status(400)
+        |> json(%{"result" => "failure", "error" => "invalid resource_id"})
     end
   end
 
@@ -142,55 +144,63 @@ defmodule OliWeb.Api.DirectedDiscussionController do
       }) do
     current_user = Map.get(conn.assigns, :current_user)
 
-    # Parse resource_id to integer if it's a string
-    resource_id_int =
-      case resource_id do
-        id when is_binary(id) -> String.to_integer(id)
-        id when is_integer(id) -> id
-      end
+    # Parse resource_id and post_id to integers safely
+    case parse_integer(resource_id) do
+      {:ok, resource_id_int} ->
+        case Integer.parse(post_id) do
+          {post_id_int, ""} ->
+            post = Collaboration.get_post_by(%{id: post_id_int})
+            section = Sections.get_section_by_slug(section_slug)
 
-    {post_id, ""} = Integer.parse(post_id)
+            if post.user_id == current_user.id and Sections.is_enrolled?(current_user.id, section_slug) do
+              Collaboration.delete_posts(post)
 
-    post = Collaboration.get_post_by(%{id: post_id})
-    section = Sections.get_section_by_slug(section_slug)
+              PubSub.broadcast(
+                Oli.PubSub,
+                topic_name(section_slug, resource_id_int),
+                {:post_deleted, post_id_int, current_user.id}
+              )
 
-    if post.user_id == current_user.id and Sections.is_enrolled?(current_user.id, section_slug) do
-      Collaboration.delete_posts(post)
+              # Check if participation requirements are still met after deletion
+              # If not, reset the activity attempt back to :active
+              Task.start(fn ->
+                case DirectedDiscussion.reset_if_requirements_not_met(
+                       section.id,
+                       resource_id_int,
+                       current_user.id
+                     ) do
+                  {:ok, _} ->
+                    :ok
 
-      PubSub.broadcast(
-        Oli.PubSub,
-        topic_name(section_slug, resource_id_int),
-        {:post_deleted, post_id, current_user.id}
-      )
+                  {:error, reason} ->
+                    require Logger
 
-      # Check if participation requirements are still met after deletion
-      # If not, reset the activity attempt back to :active
-      Task.start(fn ->
-        case DirectedDiscussion.reset_if_requirements_not_met(
-               section.id,
-               resource_id_int,
-               current_user.id
-             ) do
-          {:ok, _} ->
-            :ok
+                    Logger.warning(
+                      "Failed to check/reset Directed Discussion activity after post deletion: #{inspect(reason)}"
+                    )
+                end
+              end)
 
-          {:error, reason} ->
-            require Logger
+              json(conn, %{
+                "result" => "success"
+              })
+            else
+              json(conn, %{
+                "result" => "failure",
+                "error" => "User does not have permission to delete this post."
+              })
+            end
 
-            Logger.warning(
-              "Failed to check/reset Directed Discussion activity after post deletion: #{inspect(reason)}"
-            )
+          _ ->
+            conn
+            |> put_status(400)
+            |> json(%{"result" => "failure", "error" => "invalid post_id"})
         end
-      end)
 
-      json(conn, %{
-        "result" => "success"
-      })
-    else
-      json(conn, %{
-        "result" => "failure",
-        "error" => "User does not have permission to delete this post."
-      })
+      :error ->
+        conn
+        |> put_status(400)
+        |> json(%{"result" => "failure", "error" => "invalid resource_id"})
     end
   end
 
@@ -218,96 +228,110 @@ defmodule OliWeb.Api.DirectedDiscussionController do
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
     # Parse resource_id to integer if it's a string
-    resource_id_int =
-      case resource_id do
-        id when is_binary(id) -> String.to_integer(id)
-        id when is_integer(id) -> id
-      end
+    case parse_integer(resource_id) do
+      {:ok, resource_id_int} ->
+        if Sections.is_enrolled?(current_user.id, section_slug) do
+          section = Sections.get_section_by_slug(section_slug)
 
-    if Sections.is_enrolled?(current_user.id, section_slug) do
-      section = Sections.get_section_by_slug(section_slug)
-
-      posts =
-        Collaboration.list_posts_for_user_in_page_section(
-          section.id,
-          resource_id_int,
-          current_user.id
-        )
-        |> Enum.map(&Post.post_response/1)
-
-      # Check if participation requirements are met and evaluate/reset if needed
-      # This runs asynchronously to avoid blocking the response
-      Task.start(fn ->
-        # First check if we need to reset (if requirements are no longer met)
-        case DirectedDiscussion.reset_if_requirements_not_met(
-               section.id,
-               resource_id_int,
-               current_user.id
-             ) do
-          {:ok, :reset} ->
-            :ok
-
-          {:ok, :requirements_met} ->
-            # Requirements are still met, check if we need to evaluate
-            case DirectedDiscussion.evaluate_if_requirements_met(
-                   section_slug,
-                   section.id,
-                   resource_id_int,
-                   current_user.id,
-                   datashop_session_id
-                 ) do
-              {:ok, _} ->
-                :ok
-
-              {:error, reason} ->
-                require Logger
-
-                Logger.warning(
-                  "Failed to evaluate Directed Discussion activity: #{inspect(reason)}"
-                )
-            end
-
-          {:ok, :not_evaluated} ->
-            # Activity not evaluated yet, check if we need to evaluate
-            case DirectedDiscussion.evaluate_if_requirements_met(
-                   section_slug,
-                   section.id,
-                   resource_id_int,
-                   current_user.id,
-                   datashop_session_id
-                 ) do
-              {:ok, _} ->
-                :ok
-
-              {:error, reason} ->
-                require Logger
-
-                Logger.warning(
-                  "Failed to evaluate Directed Discussion activity: #{inspect(reason)}"
-                )
-            end
-
-          {:error, reason} ->
-            require Logger
-
-            Logger.warning(
-              "Failed to check/reset Directed Discussion activity: #{inspect(reason)}"
+          posts =
+            Collaboration.list_posts_for_user_in_page_section(
+              section.id,
+              resource_id_int,
+              current_user.id
             )
-        end
-      end)
+            |> Enum.map(&Post.post_response/1)
 
-      json(conn, %{
-        "result" => "success",
-        "resource" => resource_id_int,
-        "section" => section_slug,
-        "posts" => posts,
-        "current_user" => current_user.id
-      })
-    else
-      json(conn, %{
-        "result" => "failure",
-        "error" => "User does not have permission to view these posts."
-      })
+          # Check if participation requirements are met and evaluate/reset if needed
+          # This runs asynchronously to avoid blocking the response
+          Task.start(fn ->
+            # First check if we need to reset (if requirements are no longer met)
+            case DirectedDiscussion.reset_if_requirements_not_met(
+                   section.id,
+                   resource_id_int,
+                   current_user.id
+                 ) do
+              {:ok, :reset} ->
+                :ok
+
+              {:ok, :requirements_met} ->
+                # Requirements are still met, check if we need to evaluate
+                case DirectedDiscussion.evaluate_if_requirements_met(
+                       section_slug,
+                       section.id,
+                       resource_id_int,
+                       current_user.id,
+                       datashop_session_id
+                     ) do
+                  {:ok, _} ->
+                    :ok
+
+                  {:error, reason} ->
+                    require Logger
+
+                    Logger.warning(
+                      "Failed to evaluate Directed Discussion activity: #{inspect(reason)}"
+                    )
+                end
+
+              {:ok, :not_evaluated} ->
+                # Activity not evaluated yet, check if we need to evaluate
+                case DirectedDiscussion.evaluate_if_requirements_met(
+                       section_slug,
+                       section.id,
+                       resource_id_int,
+                       current_user.id,
+                       datashop_session_id
+                     ) do
+                  {:ok, _} ->
+                    :ok
+
+                  {:error, reason} ->
+                    require Logger
+
+                    Logger.warning(
+                      "Failed to evaluate Directed Discussion activity: #{inspect(reason)}"
+                    )
+                end
+
+              {:error, reason} ->
+                require Logger
+
+                Logger.warning(
+                  "Failed to check/reset Directed Discussion activity: #{inspect(reason)}"
+                )
+            end
+          end)
+
+          json(conn, %{
+            "result" => "success",
+            "resource" => resource_id_int,
+            "section" => section_slug,
+            "posts" => posts,
+            "current_user" => current_user.id
+          })
+        else
+          json(conn, %{
+            "result" => "failure",
+            "error" => "User does not have permission to view these posts."
+          })
+        end
+
+      :error ->
+        conn
+        |> put_status(400)
+        |> json(%{"result" => "failure", "error" => "invalid resource_id"})
     end
   end
+
+  @spec parse_integer(integer() | binary()) :: {:ok, integer()} | :error
+  defp parse_integer(id) when is_integer(id), do: {:ok, id}
+
+  defp parse_integer(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {int, ""} -> {:ok, int}
+      _ -> :error
+    end
+  end
+
+  defp parse_integer(_), do: :error
 end
