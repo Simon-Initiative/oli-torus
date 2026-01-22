@@ -14227,6 +14227,14 @@ table.table-striped tbody tr:nth-child(even) {
   bottom: 0px;
 }
 
+.\!bottom-14 {
+  bottom: 3.5rem !important;
+}
+
+.\!top-auto {
+  top: auto !important;
+}
+
 .-bottom-20 {
   bottom: -5rem;
 }
@@ -15499,6 +15507,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[0px\] {
   height: 0px;
+}
+
+.h-\[100dvh\] {
+  height: 100dvh;
 }
 
 .h-\[100px\] {
@@ -25928,6 +25940,14 @@ Not supports in Firefox and IE */
   border-color: #4CA6FF;
 }
 
+.hover\:border-Border-border-subtle:hover {
+  border-color: #E6E9F2;
+}
+
+.dark .hover\:border-Border-border-subtle:hover {
+  border-color: #2B282E;
+}
+
 .hover\:border-Border-border-active:hover {
   border-color: #353740;
 }
@@ -25958,6 +25978,14 @@ Not supports in Firefox and IE */
 
 .dark .hover\:text-Text-text-white:hover {
   color: #FFFFFF;
+}
+
+.hover\:text-Text-text-high:hover {
+  color: #353740;
+}
+
+.dark .hover\:text-Text-text-high:hover {
+  color: #EEEBF5;
 }
 
 .hover\:text-Text-text-low:hover {
@@ -26078,6 +26106,14 @@ Not supports in Firefox and IE */
 
 .dark .focus-visible\:outline-Fill-Buttons-fill-primary:focus-visible {
   outline-color: #0062F2;
+}
+
+.active\:bg-Surface-surface-secondary:active {
+  background-color: #FFFFFF;
+}
+
+.dark .active\:bg-Surface-surface-secondary:active {
+  background-color: #2B282E;
 }
 
 .active\:text-Text-text-button-hover:active {
@@ -26529,11 +26565,6 @@ Not supports in Firefox and IE */
 .hover\:border-gray-200:hover {
   --tw-border-opacity: 1;
   border-color: rgb(229 229 229 / var(--tw-border-opacity));
-}
-
-.hover\:border-gray-300:hover {
-  --tw-border-opacity: 1;
-  border-color: rgb(212 212 212 / var(--tw-border-opacity));
 }
 
 .hover\:border-red-500:hover {
@@ -27378,11 +27409,6 @@ Not supports in Firefox and IE */
 .active\:bg-delivery-primary-700:active {
   --tw-bg-opacity: 1;
   background-color: rgb(0 74 159 / var(--tw-bg-opacity));
-}
-
-.active\:bg-gray-100:active {
-  --tw-bg-opacity: 1;
-  background-color: rgb(245 245 245 / var(--tw-bg-opacity));
 }
 
 .active\:bg-gray-200:active {
