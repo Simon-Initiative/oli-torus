@@ -119,14 +119,14 @@ Suggestion: Restrict host/scheme to a safe allowlist (e.g., \*.s3.amazonaws.com 
 
 ## Elixir Review
 
-- [ ] Chunk size override not parsed due to pipe precedence
+- [x] Chunk size override not parsed due to pipe precedence
 
 file: lib/oli/analytics/backfill/inventory/batch_worker.ex
 line: 824
 Description: parse_positive_integer/2 is only applied to the literal 25, so any configured batch_chunk_size (string or float) bypasses parsing. This can propagate non-integer values into Enum.chunk_every/4 and crash at runtime.
 Suggestion: Wrap the full expression before piping or compute configured first, then call parse_positive_integer(configured, 25).
 
-- [ ] Invalid run_id crashes orchestrator job instead of discarding
+- [x] Invalid run_id crashes orchestrator job instead of discarding
 
 file: lib/oli/analytics/backfill/inventory/orchestrator_worker.ex
 line: 31
@@ -161,8 +161,8 @@ struct.
 
 ### Phase 3: Correctness/stability fixes (Elixir runtime)
 
-- [ ] Fix chunk size parsing precedence so configured batch_chunk_size is parsed before use.
-- [ ] Handle invalid run_id safely in orchestrator worker and discard malformed jobs instead of retrying indefinitely.
+- [x] Fix chunk size parsing precedence so configured batch_chunk_size is parsed before use.
+- [x] Handle invalid run_id safely in orchestrator worker and discard malformed jobs instead of retrying indefinitely.
 
 ### Phase 4: UI accessibility and security polish
 

@@ -28,7 +28,13 @@ defmodule Oli.Analytics.Backfill.Inventory.OrchestratorWorker do
   end
 
   def perform(%Oban.Job{args: %{"run_id" => run_id}}) do
-    perform(%Oban.Job{args: %{"run_id" => to_integer(run_id)}})
+    case parse_run_id(run_id) do
+      {:ok, parsed_id} ->
+        perform(%Oban.Job{args: %{"run_id" => parsed_id}})
+
+      :error ->
+        {:discard, "invalid run id"}
+    end
   end
 
   defp execute(%InventoryRun{} = run) do
@@ -269,17 +275,21 @@ defmodule Oli.Analytics.Backfill.Inventory.OrchestratorWorker do
     |> Enum.join("/")
   end
 
-  defp to_integer(value) when is_integer(value), do: value
+  defp parse_run_id(value) when is_integer(value) and value > 0, do: {:ok, value}
 
-  defp to_integer(value) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, _} -> int
-      :error -> raise ArgumentError, "invalid run id"
+  defp parse_run_id(value) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {int, _} when int > 0 -> {:ok, int}
+      _ -> :error
     end
   end
 
-  defp to_integer(value) when is_float(value), do: trunc(value)
-  defp to_integer(_), do: raise(ArgumentError, "invalid run id")
+  defp parse_run_id(value) when is_float(value) do
+    int_value = trunc(value)
+    if int_value > 0, do: {:ok, int_value}, else: :error
+  end
+
+  defp parse_run_id(_), do: :error
 
   defp handle_failure(run, reason) do
     Inventory.transition_run(run, :failed, %{error: format_error(reason)})

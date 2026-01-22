@@ -820,11 +820,12 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   defp determine_chunk_size(%InventoryRun{} = run) do
     metadata = ensure_map(run.metadata)
 
-    metadata["batch_chunk_size"] ||
-      metadata[:batch_chunk_size] ||
-      Application.get_env(:oli, :clickhouse_inventory, %{})[:batch_chunk_size] ||
-      25
-      |> parse_positive_integer(25)
+    configured =
+      metadata["batch_chunk_size"] ||
+        metadata[:batch_chunk_size] ||
+        Application.get_env(:oli, :clickhouse_inventory, %{})[:batch_chunk_size]
+
+    parse_positive_integer(configured, 25)
   end
 
   defp determine_manifest_page_size(%InventoryRun{} = run, chunk_size) do
