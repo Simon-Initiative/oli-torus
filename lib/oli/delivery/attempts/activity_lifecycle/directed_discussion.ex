@@ -52,15 +52,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
                 user_id
               )
 
-            # Count posts (top-level posts with no parent_post_id)
-            user_posts =
-              Enum.filter(posts, fn post -> is_nil(post.parent_post_id) end)
-              |> Enum.count()
-
-            # Count replies (posts with a parent_post_id)
-            user_replies =
-              Enum.filter(posts, fn post -> not is_nil(post.parent_post_id) end)
-              |> Enum.count()
+            # Count posts and replies in a single pass
+            {user_posts, user_replies} =
+              Enum.reduce(posts, {0, 0}, fn post, {posts_count, replies_count} ->
+                if is_nil(post.parent_post_id) do
+                  {posts_count + 1, replies_count}
+                else
+                  {posts_count, replies_count + 1}
+                end
+              end)
 
             # Check if requirements are met
             posts_met = min_posts == 0 or user_posts >= min_posts

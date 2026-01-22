@@ -72,7 +72,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
 
               # Check if participation requirements are met and evaluate if so
               # This runs asynchronously to avoid blocking the response
-              Task.start(fn ->
+              Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
                 case DirectedDiscussion.evaluate_if_requirements_met(
                        section_slug,
                        section.id,
@@ -152,7 +152,8 @@ defmodule OliWeb.Api.DirectedDiscussionController do
             post = Collaboration.get_post_by(%{id: post_id_int})
             section = Sections.get_section_by_slug(section_slug)
 
-            if post.user_id == current_user.id and Sections.is_enrolled?(current_user.id, section_slug) do
+            if post.user_id == current_user.id and
+                 Sections.is_enrolled?(current_user.id, section_slug) do
               Collaboration.delete_posts(post)
 
               PubSub.broadcast(
@@ -163,7 +164,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
 
               # Check if participation requirements are still met after deletion
               # If not, reset the activity attempt back to :active
-              Task.start(fn ->
+              Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
                 case DirectedDiscussion.reset_if_requirements_not_met(
                        section.id,
                        resource_id_int,
@@ -243,7 +244,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
 
           # Check if participation requirements are met and evaluate/reset if needed
           # This runs asynchronously to avoid blocking the response
-          Task.start(fn ->
+          Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
             # First check if we need to reset (if requirements are no longer met)
             case DirectedDiscussion.reset_if_requirements_not_met(
                    section.id,
