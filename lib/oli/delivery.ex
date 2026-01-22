@@ -134,7 +134,9 @@ defmodule Oli.Delivery do
             welcome_title: blueprint.welcome_title,
             encouraging_subtitle: blueprint.encouraging_subtitle,
             amount: amount,
-            requires_payment: requires_payment
+            requires_payment: requires_payment,
+            registration_open: true,
+            requires_enrollment: true
           })
           |> SectionSpecification.apply(section_spec)
 
