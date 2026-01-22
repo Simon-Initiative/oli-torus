@@ -253,6 +253,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     endTime = 0,
     enableReplay = true,
     subtitles,
+    alt,
   } = model;
 
   const _videoStyles: CSSProperties = {
@@ -435,14 +436,21 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   };
 
   const iframeTag = (
-    <YouTube
-      videoId={videoId}
-      containerClassName="react-youtube-container"
-      opts={youtubeOpts}
-      onPlay={handleVideoPlay}
-      onEnd={handleVideoEnd}
-      onPause={handleVideoPause}
-    />
+    <div
+      tabIndex={0}
+      role="group"
+      aria-label={alt && alt.trim() ? `Video. Description: ${alt}` : 'Video'}
+      aria-describedby={alt && alt.trim() ? `video-desc-${id}` : undefined}
+    >
+      <YouTube
+        videoId={videoId}
+        containerClassName="react-youtube-container"
+        opts={youtubeOpts}
+        onPlay={handleVideoPlay}
+        onEnd={handleVideoEnd}
+        onPause={handleVideoPause}
+      />
+    </div>
   );
 
   const srcAsWebm =
@@ -459,6 +467,8 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       onEnded={handleVideoEnd}
       onPlay={handleVideoPlay}
       onPause={handleVideoPause}
+      aria-label={alt && alt.trim() ? `Video. Description: ${alt}` : 'Video'}
+      aria-describedby={alt && alt.trim() ? `video-desc-${id}` : undefined}
     >
       <source src={finalSrc} />
       <source src={srcAsWebm} />
@@ -481,8 +491,15 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   );
 
   const elementTag = youtubeRegex.test(src) ? iframeTag : videoTag;
+  const descriptionId = `video-desc-${id}`;
+  const hasDescription = alt && alt.trim();
+
   return ready ? (
-    <div data-janus-type={tagName} style={{ width: '100%', height: '100%' }}>
+    <div
+      data-janus-type={tagName}
+      style={{ width: '100%', height: '100%' }}
+      aria-describedby={hasDescription ? descriptionId : undefined}
+    >
       <style>
         {`
           .react-youtube-container {
@@ -491,6 +508,11 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
           }
         `}
       </style>
+      {hasDescription && (
+        <span id={descriptionId} className="sr-only">
+          Description: {alt}
+        </span>
+      )}
       {elementTag}
     </div>
   ) : null;
