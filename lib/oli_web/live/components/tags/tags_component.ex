@@ -1,9 +1,41 @@
 defmodule OliWeb.Live.Components.Tags.TagsComponent do
   @moduledoc """
-  LiveComponent for managing tags in admin tables.
+  LiveComponent for managing tags in admin tables and forms.
 
   This component provides tag editing functionality for projects, sections, and products
-  in the admin browse tables.
+  in the admin browse tables and overview forms.
+
+  ## Variants
+
+  The component supports two variants with different styling:
+
+  - `:table` (default) - For use in table cells. No background, no border radius, larger padding.
+  - `:form` - For use in forms/overview pages. Has background, 4px border radius, smaller padding.
+
+  ## Figma Specs
+
+  ### Table variant
+  - Min Height: 35px
+  - Border: 1px `Table/table-border`
+  - Border radius: 0
+  - Padding: 12px top/bottom, 13px left/right
+  - Background: none
+
+  ### Form variant (Node 208:11361)
+  - Min Height: 40px (hug content)
+  - Border: 1px `Border/border-default`
+  - Border radius: 4px
+  - Padding: 8px top/bottom, 12px left/right
+  - Background: `Background/bg-secondary`
+
+  ### Tag Pill (Node 208:11351)
+  - Padding: 8px horizontal, 4px vertical
+  - Border radius: 999px (fully rounded)
+  - Font: Open Sans SemiBold 14px, line-height 16px
+  - Shadow: 0px 2px 4px rgba(0, 52, 99, 0.10)
+  - Gap between text and X icon: 8px
+  - Inner wrapper left padding: 8px
+  - X icon: 16x16px (OliWeb.Icons.close_sm)
   """
 
   use OliWeb, :live_component
@@ -19,7 +51,8 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
      |> assign(:selected_tag_ids, [])
      |> assign(:loading, false)
      |> assign(:error, nil)
-     |> assign(:input_value, "")}
+     |> assign(:input_value, "")
+     |> assign_new(:variant, fn -> :table end)}
   end
 
   @impl true
@@ -44,11 +77,14 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
           current_tags
       end
 
+    # Sort tags alphabetically by name
+    sorted_tags = Enum.sort_by(current_tags, & &1.name, :asc)
+
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:current_tags, current_tags)
-     |> assign(:selected_tag_ids, Enum.map(current_tags, & &1.id))}
+     |> assign(:current_tags, sorted_tags)
+     |> assign(:selected_tag_ids, Enum.map(sorted_tags, & &1.id))}
   end
 
   @impl true
@@ -211,25 +247,46 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
           <!-- Edit mode container - full cell -->
           <div class="relative w-full h-full">
             <!-- Edit mode input with selected tags - full cell -->
-            <div class="bg-Specially-Tokens-Fill-fill-input border border-Table-table-border rounded-[3px] text-sm w-full h-full min-h-[100px] flex flex-col items-center gap-1 p-2">
+            <div class={get_edit_container_classes(@variant)}>
               <!-- Show currently selected tags with X buttons -->
               <%= for tag <- @current_tags do %>
-                <span
-                  role="selected tag"
-                  class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_tag_pill_classes(tag.name)}"}
-                  style="font-family: 'Open Sans', sans-serif;"
-                >
-                  <span>{tag.name}</span>
-                  <button
-                    phx-click="remove_tag"
-                    phx-value-tag_id={tag.id}
-                    phx-target={@myself}
-                    class="ml-auto text-sm hover:opacity-70 transition-opacity duration-200"
-                    type="button"
+                <%= if @variant == :table do %>
+                  <!-- TABLE VARIANT: Original edit mode styling -->
+                  <span
+                    role="selected tag"
+                    class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_tag_pill_classes(tag.name)}"}
+                    style="font-family: 'Open Sans', sans-serif;"
                   >
-                    X
-                  </button>
-                </span>
+                    <span>{tag.name}</span>
+                    <button
+                      phx-click="remove_tag"
+                      phx-value-tag_id={tag.id}
+                      phx-target={@myself}
+                      class="hover:opacity-70 transition-opacity duration-200 flex items-center justify-center"
+                      type="button"
+                    >
+                      <OliWeb.Icons.close_sm class="w-4 h-4 stroke-current" />
+                    </button>
+                  </span>
+                <% else %>
+                  <!-- FORM VARIANT: New styling with SVG icon -->
+                  <span
+                    role="selected tag"
+                    class={"px-2 py-1 rounded-full text-sm leading-4 font-semibold flex items-center gap-2 #{get_tag_pill_classes(tag.name)}"}
+                    style="font-family: 'Open Sans', sans-serif;"
+                  >
+                    <span class="pl-2">{tag.name}</span>
+                    <button
+                      phx-click="remove_tag"
+                      phx-value-tag_id={tag.id}
+                      phx-target={@myself}
+                      class="hover:opacity-70 transition-opacity duration-200 flex items-center justify-center"
+                      type="button"
+                    >
+                      <OliWeb.Icons.close_sm class="w-4 h-4 stroke-current" />
+                    </button>
+                  </span>
+                <% end %>
               <% end %>
               
     <!-- Input field for searching/adding new tags -->
@@ -258,14 +315,22 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                   >
                     Create or select an option
                   </div>
-                  <div class="flex flex-col gap-2">
+                  <div class={
+                    if @variant == :table, do: "flex flex-col gap-2", else: "flex flex-wrap gap-2"
+                  }>
                     <%= for tag <- @available_tags do %>
                       <%= if tag.id not in @selected_tag_ids do %>
                         <button
                           phx-click="add_tag"
                           phx-value-tag_id={tag.id}
                           phx-target={@myself}
-                          class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}"}
+                          class={
+                            if @variant == :table,
+                              do:
+                                "px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}",
+                              else:
+                                "px-2 py-1 rounded-full text-sm leading-4 font-semibold transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}"
+                          }
                           style="font-family: 'Open Sans', sans-serif;"
                         >
                           {tag.name}
@@ -279,25 +344,50 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
           </div>
         </div>
       <% else %>
-        <!-- Display mode - clean pills without X buttons -->
+        <!-- Display mode -->
         <div
-          class="cursor-pointer w-full min-h-[100px] flex items-start p-2 border border-transparent hover:border-Border-border-active hover:bg-Table-table-hover focus:border focus:border-Border-border-active focus:bg-Table-table-hover focus:outline-none"
+          class={get_display_container_classes(@variant)}
           phx-click="toggle_edit"
           phx-target={@myself}
           tabindex="0"
         >
           <%= if length(@current_tags || []) > 0 do %>
-            <div class="flex flex-col gap-1">
-              <%= for tag <- @current_tags do %>
-                <span
-                  role="selected tag"
-                  class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm #{get_tag_pill_classes(tag.name)}"}
-                  style="font-family: 'Open Sans', sans-serif;"
-                >
-                  {tag.name}
-                </span>
-              <% end %>
-            </div>
+            <%= if @variant == :table do %>
+              <!-- TABLE VARIANT: Original vertical layout, no X buttons -->
+              <div class="flex flex-col gap-1">
+                <%= for tag <- @current_tags do %>
+                  <span
+                    role="selected tag"
+                    class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm #{get_tag_pill_classes(tag.name)}"}
+                    style="font-family: 'Open Sans', sans-serif;"
+                  >
+                    {tag.name}
+                  </span>
+                <% end %>
+              </div>
+            <% else %>
+              <!-- FORM VARIANT: Horizontal layout with X buttons for quick removal -->
+              <div class="flex flex-wrap gap-1">
+                <%= for tag <- @current_tags do %>
+                  <span
+                    role="selected tag"
+                    class={"px-2 py-1 rounded-full text-sm leading-4 font-semibold flex items-center gap-2 #{get_tag_pill_classes(tag.name)}"}
+                    style="font-family: 'Open Sans', sans-serif;"
+                  >
+                    <span class="pl-2">{tag.name}</span>
+                    <button
+                      phx-click="remove_tag"
+                      phx-value-tag_id={tag.id}
+                      phx-target={@myself}
+                      class="hover:opacity-70 transition-opacity duration-200 flex items-center justify-center"
+                      type="button"
+                    >
+                      <OliWeb.Icons.close_sm class="w-4 h-4 stroke-current" />
+                    </button>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
           <% end %>
         </div>
       <% end %>
@@ -311,6 +401,10 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     """
   end
 
+  @doc """
+  Returns the CSS classes for tag pills.
+  Uses consistent color based on tag name hash.
+  """
   def get_tag_pill_classes(tag_name) do
     color_combinations = [
       "bg-Fill-Accent-fill-accent-purple text-Text-text-accent-purple",
@@ -322,6 +416,36 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     # Convert tag name to a consistent number between 0 and 3
     hash = :erlang.phash2(tag_name, 4)
     "#{Enum.at(color_combinations, hash)} shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+  end
+
+  @doc """
+  Returns the CSS classes for the display mode container based on variant.
+
+  ## Variants
+  - `:table` - Original table styling (no changes)
+  - `:form` - Form/overview page styling (customize as needed)
+  """
+  def get_display_container_classes(:table) do
+    # TABLE VARIANT - Original from git HEAD
+    "cursor-pointer w-full min-h-[100px] flex items-start p-2 border border-transparent hover:border-Border-border-active hover:bg-Table-table-hover focus:border focus:border-Border-border-active focus:bg-Table-table-hover focus:outline-none"
+  end
+
+  def get_display_container_classes(:form) do
+    # FORM VARIANT - Figma node 208:11361 (no background change on hover, per Figma)
+    "cursor-pointer w-full min-h-[40px] flex items-center py-2 px-3 bg-Background-bg-secondary border border-Border-border-default rounded hover:border-Border-border-active focus:border-Border-border-active focus:outline-none"
+  end
+
+  @doc """
+  Returns the CSS classes for the edit mode container based on variant.
+  """
+  def get_edit_container_classes(:table) do
+    # TABLE VARIANT - Original from git HEAD
+    "bg-Specially-Tokens-Fill-fill-input border border-Table-table-border rounded-[3px] text-sm w-full h-full min-h-[100px] flex flex-col items-center gap-1 p-2"
+  end
+
+  def get_edit_container_classes(:form) do
+    # FORM VARIANT - Figma node 208:11361
+    "bg-Background-bg-secondary border border-Border-border-default rounded text-sm w-full h-full min-h-[40px] flex flex-wrap items-center gap-1 py-2 px-3"
   end
 
   # Private functions

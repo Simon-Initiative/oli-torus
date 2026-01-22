@@ -46,7 +46,8 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
 
       assert has_element?(component, "span[role='selected tag']", "Biology")
       refute has_element?(component, "input")
-      refute has_element?(component, "button", "X")
+      # Table variant: NO X button in display mode (original behavior)
+      refute has_element?(component, "button[phx-click='remove_tag']")
     end
 
     test "renders empty display when no tags", %{conn: conn} do
@@ -98,7 +99,8 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
 
       # Should show input and remove buttons in edit mode
       assert has_element?(component, "input")
-      assert has_element?(component, "button", "X")
+      # Table variant: SVG close icon button
+      assert has_element?(component, "button[phx-click='remove_tag'] svg")
       assert has_element?(component, "span[role='selected tag']", "Biology")
     end
 
@@ -140,9 +142,9 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       # Enter edit mode
       component |> element("div[phx-click='toggle_edit']") |> render_click()
 
-      # Should show tag with X button for removal
+      # Should show tag with X button for removal (SVG close icon)
       assert has_element?(component, "span[role='selected tag']", "Biology")
-      assert has_element?(component, "button[phx-click='remove_tag']", "X")
+      assert has_element?(component, "button[phx-click='remove_tag'] svg")
     end
 
     test "available tags are shown in edit mode", %{
@@ -342,8 +344,8 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       # Enter edit mode
       component |> element("div[phx-click='toggle_edit']") |> render_click()
 
-      # Should show the tag with remove button
-      assert has_element?(component, "button[phx-click='remove_tag']", "X")
+      # Should show the tag with remove button (SVG close icon)
+      assert has_element?(component, "button[phx-click='remove_tag'] svg")
 
       # Tag should still exist in database (removal happens when button is clicked)
       assert Tags.get_tag_by_name("UniqueTag") != nil

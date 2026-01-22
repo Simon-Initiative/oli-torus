@@ -363,6 +363,28 @@ defmodule OliWeb.Icons do
     """
   end
 
+  @doc """
+  Close icon optimized for 16px render size.
+  - viewBox: 16x16 (1:1 scale at w-4 h-4)
+  - X drawing: 8x8 centered (from 4 to 12)
+  - stroke-width: 1.5 (renders as 1.5px)
+  """
+  attr :class, :string, default: "w-4 h-4 stroke-black dark:stroke-white"
+
+  def close_sm(assigns) do
+    ~H"""
+    <svg class={@class} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+      <path
+        d="M12 4L4 12M4 4L12 12"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   attr :class, :string, default: "fill-black dark:fill-white"
 
   def learning_objectives(assigns) do

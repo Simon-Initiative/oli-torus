@@ -4,7 +4,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   import Phoenix.Component
   import OliWeb.Components.Common
 
-  alias Oli.{Accounts, Activities, Inventories, Publishing}
+  alias Oli.{Accounts, Activities, Inventories, Publishing, Repo}
   alias Oli.Authoring.{Broadcaster, Course, ProjectExportWorker}
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Course.{CreativeCommons, Project}
@@ -16,11 +16,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias OliWeb.Common.Utils
   alias OliWeb.Components.{Common, Modal, Overview}
   alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
+  alias OliWeb.Live.Components.Tags.TagsComponent
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns
+    project = Repo.preload(project, :tags)
 
     is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
@@ -52,6 +54,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     {:ok,
      assign(socket,
        ctx: ctx,
+       project: project,
        collaborators:
          Accounts.authors_projects(project)
          |> Enum.group_by(& &1.author_project_status),
@@ -110,6 +113,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               placeholder="A brief description of your project..."
               error_position={:top}
               errors={f.errors}
+            />
+          </div>
+          <div class="form-label-group mb-3">
+            <label class="control-label">Tags</label>
+            <.live_component
+              module={TagsComponent}
+              id={"project-tags-#{@project.id}"}
+              entity_type={:project}
+              entity_id={@project.id}
+              current_tags={@project.tags}
+              variant={:form}
             />
           </div>
           <% welcome_title =

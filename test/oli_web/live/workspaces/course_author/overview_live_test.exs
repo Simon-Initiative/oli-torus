@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
   alias Oli.Authoring.Course
   alias Oli.Lti.PlatformExternalTools
+  alias Oli.Tags
 
   defp live_view_route(project_slug, params \\ %{}),
     do: ~p"/workspaces/course_author/#{project_slug}/overview?#{params}"
@@ -479,6 +480,83 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       # and show the just added advanced activity
       assert has_element?(view, "div", activity1.title)
       assert has_element?(view, "div", activity2.title)
+    end
+
+    defp create_project_with_author(author) do
+      %{project: project} = base_project_with_curriculum(nil)
+      insert(:author_project, project_id: project.id, author_id: author.id)
+      project
+    end
+  end
+
+  describe "project overview tags" do
+    setup [:author_conn]
+
+    test "displays tags in Details section when project has tags", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      {:ok, _} = Tags.associate_tag_with_project(project, tag)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show the Tags label in Details section
+      assert has_element?(view, "label", "Tags")
+      # Should show the tag
+      assert has_element?(view, "span[role='selected tag']", "Biology")
+    end
+
+    test "displays empty tags component when project has no tags", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show the Tags label
+      assert has_element?(view, "label", "Tags")
+      # Should not show any tags
+      refute has_element?(view, "span[role='selected tag']")
+    end
+
+    test "displays multiple tags in alphabetical order", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      {:ok, zebra_tag} = Tags.create_tag(%{name: "Zebra"})
+      {:ok, apple_tag} = Tags.create_tag(%{name: "Apple"})
+      {:ok, _} = Tags.associate_tag_with_project(project, zebra_tag)
+      {:ok, _} = Tags.associate_tag_with_project(project, apple_tag)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show both tags
+      assert has_element?(view, "span[role='selected tag']", "Apple")
+      assert has_element?(view, "span[role='selected tag']", "Zebra")
+
+      # Check alphabetical order
+      html = render(view)
+      apple_index = :binary.match(html, "Apple") |> elem(0)
+      zebra_index = :binary.match(html, "Zebra") |> elem(0)
+      assert apple_index < zebra_index
+    end
+
+    test "can enter edit mode and see available tags", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      {:ok, existing_tag} = Tags.create_tag(%{name: "Chemistry"})
+      {:ok, _available_tag} = Tags.create_tag(%{name: "Physics"})
+      {:ok, _} = Tags.associate_tag_with_project(project, existing_tag)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Enter edit mode by clicking on the tags component
+      view |> element("div[phx-click='toggle_edit']") |> render_click()
+
+      # Should show input field in edit mode
+      assert has_element?(view, "input[type='text']")
+      # Should show existing tag with remove button (X icon)
+      assert has_element?(view, "span[role='selected tag']", "Chemistry")
+      assert has_element?(view, "button[phx-click='remove_tag'] svg")
+      # Should show available tag to add
+      assert has_element?(view, "button[phx-click='add_tag']", "Physics")
+
+      # The available tag that's not yet associated should be selectable
+      refute has_element?(view, "button[phx-click='add_tag']", "Chemistry")
     end
 
     defp create_project_with_author(author) do
