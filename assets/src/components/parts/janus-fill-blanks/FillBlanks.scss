@@ -802,6 +802,14 @@ blockquote .select2-container--default .select2-selection--single .select2-selec
   align-items: center;
 }
 
+/* Ensure focus styles are applied when element is programmatically focused */
+.select2-container--default .select2-selection--single:focus,
+.select2-container--default.select2-container--focus .select2-selection--single {
+  outline: 2px solid #2196f3 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3) !important;
+}
+
 /* Focus indicators for keyboard navigation - Dropdown triggers */
 .select2-container--default .select2-selection--single:focus-visible,
 .select2-container--default .select2-selection--single:focus {
