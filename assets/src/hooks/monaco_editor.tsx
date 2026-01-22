@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { render } from 'react-dom';
 import ReactMonacoEditor, { IMonacoEditor } from '@uiw/react-monacoeditor';
 import * as monaco from 'monaco-editor';
@@ -44,6 +44,8 @@ export const MonacoEditor = {
     const LiveMonacoEditor = () => {
       const [width, setWidth] = useState(defaultWidth.valueOr(undefined));
       const [height, setHeight] = useState(defaultHeight.valueOr(undefined));
+      const [editor, setEditor] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
+      const layoutTimeout = useRef<number | null>(null);
       const [options, setOptions] = useState(
         defaultOptions.caseOf({
           just: (o: any) => o,
@@ -76,37 +78,41 @@ export const MonacoEditor = {
 
       // Handle container resizing for Monaco editor
       useEffect(() => {
-        if (!isResizable || !this.editor) return;
+        if (!isResizable || !editor) return;
 
         const container = this.el;
         const resizeObserver = new ResizeObserver(() => {
           // Debounce resize to avoid excessive calls
-          setTimeout(() => {
-            if (this.editor) {
-              this.editor.layout();
-            }
+          if (layoutTimeout.current) {
+            window.clearTimeout(layoutTimeout.current);
+          }
+          layoutTimeout.current = window.setTimeout(() => {
+            editor.layout();
           }, 100);
         });
 
         resizeObserver.observe(container);
 
         // Initial layout update to ensure proper sizing on mount
-        setTimeout(() => {
-          if (this.editor) {
-            this.editor.layout();
-          }
+        layoutTimeout.current = window.setTimeout(() => {
+          editor.layout();
         }, 100);
 
         return () => {
           resizeObserver.disconnect();
+          if (layoutTimeout.current) {
+            window.clearTimeout(layoutTimeout.current);
+            layoutTimeout.current = null;
+          }
         };
-      }, [isResizable]);
+      }, [isResizable, editor]);
 
       const editorDidMount = (
         editor: monaco.editor.IStandaloneCodeEditor,
         monaco: IMonacoEditor,
       ) => {
         this.editor = editor;
+        setEditor(editor);
 
         // configure the JSON language support with schemas and schema associations if
         // a schema uri is provided and schemas exist

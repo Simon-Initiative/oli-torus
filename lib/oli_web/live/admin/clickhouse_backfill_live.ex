@@ -481,24 +481,39 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         <nav class="flex space-x-1" role="tablist">
           <button
             type="button"
+            id="clickhouse-backfill-tab-manual"
             class={tab_button_classes(@active_tab == :manual)}
             phx-click="switch_tab"
             phx-value-tab="manual"
+            role="tab"
+            aria-selected={@active_tab == :manual}
+            aria-controls="clickhouse-backfill-panel-manual"
           >
             Manual Backfill
           </button>
           <button
             type="button"
+            id="clickhouse-backfill-tab-inventory"
             class={tab_button_classes(@active_tab == :inventory)}
             phx-click="switch_tab"
             phx-value-tab="batch"
+            role="tab"
+            aria-selected={@active_tab == :inventory}
+            aria-controls="clickhouse-backfill-panel-inventory"
           >
             Batch Orchestration
           </button>
         </nav>
       </div>
 
-      <div :if={@active_tab == :manual} class="space-y-6">
+      <div
+        :if={@active_tab == :manual}
+        id="clickhouse-backfill-panel-manual"
+        role="tabpanel"
+        aria-labelledby="clickhouse-backfill-tab-manual"
+        tabindex="0"
+        class="space-y-6"
+      >
         <div class="bg-white dark:bg-gray-900 shadow rounded-lg p-5 space-y-4">
           <div>
             <h2 class="text-xl font-semibold">Schedule Backfill</h2>
@@ -598,25 +613,46 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
               <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                  >
                     Run
                   </th>
-                  <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                  >
                     Status
                   </th>
-                  <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                  >
                     S3 Pattern
                   </th>
-                  <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                  >
                     Metrics
                   </th>
-                  <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                  >
                     Timeline
                   </th>
-                  <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                  >
                     Details
                   </th>
-                  <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                  >
                     Actions
                   </th>
                 </tr>
@@ -649,7 +685,13 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                       <% progress_value = progress_percent(run) %>
                       <% progress_text = progress_label(run) %>
                       <div :if={progress_value} class="mt-2">
-                        <div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+                          role="progressbar"
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                          aria-valuenow={Float.round(progress_value, 1)}
+                        >
                           <div
                             class="h-2 bg-blue-500 transition-all"
                             style={"width: #{Float.round(progress_value, 1)}%"}
@@ -717,7 +759,14 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         </div>
       </div>
 
-      <div :if={@active_tab == :inventory} class="space-y-6">
+      <div
+        :if={@active_tab == :inventory}
+        id="clickhouse-backfill-panel-inventory"
+        role="tabpanel"
+        aria-labelledby="clickhouse-backfill-tab-inventory"
+        tabindex="0"
+        class="space-y-6"
+      >
         <div class="bg-white dark:bg-gray-900 shadow rounded-lg p-5 space-y-4">
           <div class="space-y-1">
             <h2 class="text-xl font-semibold">Schedule Batch Orchestration</h2>
@@ -921,6 +970,10 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 <div
                   :if={percent > 0}
                   class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow={Float.round(percent, 1)}
                 >
                   <div
                     class="h-2 bg-blue-500 transition-all"
@@ -958,7 +1011,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     class="underline"
                     href={run.manifest_url}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                   >
                     {run.manifest_url}
                   </a>
@@ -971,19 +1024,34 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
               <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
                 <thead class="bg-gray-50 dark:bg-gray-800">
                   <tr>
-                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                    <th
+                      scope="col"
+                      class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                    >
                       Batch
                     </th>
-                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                    <th
+                      scope="col"
+                      class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                    >
                       Status
                     </th>
-                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                    <th
+                      scope="col"
+                      class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                    >
                       Objects
                     </th>
-                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                    <th
+                      scope="col"
+                      class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                    >
                       Attempts
                     </th>
-                    <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300">
+                    <th
+                      scope="col"
+                      class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300"
+                    >
                       Timeline
                     </th>
                   </tr>
@@ -1020,7 +1088,13 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                         <div>Processed: {format_int(progress.processed)}</div>
                         <div>Total: {format_int(progress.total)}</div>
                         <div :if={progress.total > 0} class="space-y-1">
-                          <div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+                            role="progressbar"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow={Float.round(progress.percent, 1)}
+                          >
                             <div
                               class="h-1.5 bg-delivery-primary transition-all"
                               style={"width: #{Float.round(progress.percent, 1)}%"}
@@ -1081,7 +1155,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                                 <div class="chunk-logs-body space-y-2 px-2 py-2"></div>
                                 <div class="chunk-logs-bottom-sentinel h-4"></div>
                               </div>
-                              <div class="chunk-logs-status text-xs text-gray-500 dark:text-gray-400 px-2 py-1 hidden">
+                              <div
+                                class="chunk-logs-status text-xs text-gray-500 dark:text-gray-400 px-2 py-1 hidden"
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
+                              >
                               </div>
                             </div>
                           </div>

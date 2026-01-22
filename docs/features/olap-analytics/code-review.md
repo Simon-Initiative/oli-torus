@@ -1,34 +1,34 @@
 ## UI Review
 
-- [ ] Tabs Missing ARIA Roles/State
+- [x] Tabs Missing ARIA Roles/State
 
 file: lib/oli_web/live/admin/clickhouse_backfill_live.ex
 line: 482
 Description: The tab buttons inside a role="tablist" lack role="tab", aria-selected, and aria-controls, so screen readers won’t announce active state or relationships to the tab panels.
 Suggestion: Add role="tab" and aria-selected={@active_tab == :manual}/aria-selected={@active_tab == :inventory} plus aria-controls pointing to corresponding role="tabpanel" containers with matching id and aria-labelledby.
 
-- [ ] Table Headers Missing Scope
+- [x] Table Headers Missing Scope
 
 file: lib/oli_web/live/admin/clickhouse_backfill_live.ex
 line: 601
 Description: Column headers are missing scope="col", which makes header associations unreliable for screen readers in both tables.
 Suggestion: Add scope="col" to each <th> in the tables.
 
-- [ ] Progress Bars Not Accessible
+- [x] Progress Bars Not Accessible
 
 file: lib/oli_web/live/admin/clickhouse_backfill_live.ex
 line: 652
 Description: The visual progress bars have no semantic role or values, so assistive tech cannot interpret progress.
 Suggestion: Add role="progressbar", aria-valuemin="0", aria-valuemax="100", and aria-valuenow={Float.round(progress_value, 1)} (or a hidden text alternative) on the progress element.
 
-- [ ] Live Status Updates Not Announced
+- [x] Live Status Updates Not Announced
 
 file: lib/oli_web/live/admin/clickhouse_backfill_live.ex
 line: 1084
 Description: Status text updates for chunk logs are not in an aria-live region, so screen reader users won’t hear updates.
 Suggestion: Add role="status" aria-live="polite" aria-atomic="true" to the status container.
 
-- [ ] External Link Missing Noopener
+- [x] External Link Missing Noopener
 
 file: lib/oli_web/live/admin/clickhouse_backfill_live.ex
 line: 961
@@ -37,14 +37,14 @@ Suggestion: Change to rel="noopener noreferrer".
 
 ## TypeScript Review
 
-- [ ] Resize observer never attaches when editor mounts later
+- [x] Resize observer never attaches when editor mounts later
 
 file: assets/src/hooks/monaco_editor.tsx
 line: 78
 Description: The useEffect bails out if this.editor is not set; since the effect only depends on isResizable, it won’t rerun after editorDidMount sets this.editor, so the ResizeObserver may never attach and resizing won’t work.
 Suggestion: Track the editor in React state/ref and include it in the effect deps, or move the observer setup into editorDidMount and tear it down in a cleanup stored on this.
 
-- [ ] Resize observer “debounce” queues unbounded timeouts
+- [x] Resize observer “debounce” queues unbounded timeouts
 
 file: assets/src/hooks/monaco_editor.tsx
 line: 82
@@ -166,11 +166,11 @@ struct.
 
 ### Phase 4: UI accessibility and security polish
 
-- [ ] Add ARIA roles/state for tabs and link tabs to tabpanels with aria-controls/aria-labelledby.
-- [ ] Add scope="col" to all table headers.
-- [ ] Add semantic progressbar roles/values for progress bars.
-- [ ] Wrap live status updates in a polite aria-live region.
-- [ ] Add rel="noopener noreferrer" to external links with target="\_blank".
+- [x] Add ARIA roles/state for tabs and link tabs to tabpanels with aria-controls/aria-labelledby.
+- [x] Add scope="col" to all table headers.
+- [x] Add semantic progressbar roles/values for progress bars.
+- [x] Wrap live status updates in a polite aria-live region.
+- [x] Add rel="noopener noreferrer" to external links with target="\_blank".
 
 ### Phase 5: Verification and regression checks
 
