@@ -171,9 +171,3 @@ struct.
 - [x] Add semantic progressbar roles/values for progress bars.
 - [x] Wrap live status updates in a polite aria-live region.
 - [x] Add rel="noopener noreferrer" to external links with target="\_blank".
-
-### Phase 5: Verification and regression checks
-
-- [ ] Run relevant tests (mix test for added coverage; targeted frontend tests if updated).
-- [ ] Manually validate LiveView UI with keyboard navigation and a screen reader pass.
-- [ ] Add brief release note entries if these changes affect ops/deployments (e.g., required env vars).
