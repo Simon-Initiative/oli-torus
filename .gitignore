@@ -66,6 +66,7 @@ npm-debug.log
 /assets/styles/themes/delivery/custom/*
 !/assets/styles/themes/delivery/custom/README.md
 
+.env
 oli.env
 postgres.env
 /assets/test-results/
