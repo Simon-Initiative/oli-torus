@@ -152,44 +152,60 @@ defmodule OliWeb.Api.DirectedDiscussionController do
             post = Collaboration.get_post_by(%{id: post_id_int})
             section = Sections.get_section_by_slug(section_slug)
 
-            if post.user_id == current_user.id and
-                 Sections.is_enrolled?(current_user.id, section_slug) do
-              Collaboration.delete_posts(post)
+            case {post, section} do
+              {nil, _} ->
+                conn
+                |> put_status(404)
+                |> json(%{"result" => "failure", "error" => "Post not found."})
 
-              PubSub.broadcast(
-                Oli.PubSub,
-                topic_name(section_slug, resource_id_int),
-                {:post_deleted, post_id_int, current_user.id}
-              )
+              {_, nil} ->
+                conn
+                |> put_status(404)
+                |> json(%{"result" => "failure", "error" => "Section not found."})
 
-              # Check if participation requirements are still met after deletion
-              # If not, reset the activity attempt back to :active
-              Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
-                case DirectedDiscussion.reset_if_requirements_not_met(
-                       section.id,
-                       resource_id_int,
-                       current_user.id
-                     ) do
-                  {:ok, _} ->
-                    :ok
+              {%Post{} = post, %_{} = section} ->
+                # Verify post ownership and that post belongs to the requested section/resource
+                if post.user_id == current_user.id and
+                     post.section_id == section.id and
+                     post.resource_id == resource_id_int and
+                     Sections.is_enrolled?(current_user.id, section_slug) do
+                  Collaboration.delete_posts(post)
 
-                  {:error, reason} ->
-                    require Logger
+                  PubSub.broadcast(
+                    Oli.PubSub,
+                    topic_name(section_slug, resource_id_int),
+                    {:post_deleted, post_id_int, current_user.id}
+                  )
 
-                    Logger.warning(
-                      "Failed to check/reset Directed Discussion activity after post deletion: #{inspect(reason)}"
-                    )
+                  # Check if participation requirements are still met after deletion
+                  # If not, reset the activity attempt back to :active
+                  Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
+                    case DirectedDiscussion.reset_if_requirements_not_met(
+                           section.id,
+                           resource_id_int,
+                           current_user.id
+                         ) do
+                      {:ok, _} ->
+                        :ok
+
+                      {:error, reason} ->
+                        require Logger
+
+                        Logger.warning(
+                          "Failed to check/reset Directed Discussion activity after post deletion: #{inspect(reason)}"
+                        )
+                    end
+                  end)
+
+                  json(conn, %{
+                    "result" => "success"
+                  })
+                else
+                  json(conn, %{
+                    "result" => "failure",
+                    "error" => "User does not have permission to delete this post."
+                  })
                 end
-              end)
-
-              json(conn, %{
-                "result" => "success"
-              })
-            else
-              json(conn, %{
-                "result" => "failure",
-                "error" => "User does not have permission to delete this post."
-              })
             end
 
           _ ->

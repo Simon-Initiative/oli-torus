@@ -44,23 +44,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
             min_posts = Map.get(participation, "minPosts", 0)
             min_replies = Map.get(participation, "minReplies", 0)
 
-            # Get all posts for this user in this resource
-            posts =
-              Collaboration.list_posts_for_user_in_page_section(
-                section_id,
-                resource_id,
-                user_id
-              )
-
-            # Count posts and replies in a single pass
+            # Count posts and replies using DB-side aggregation for efficiency
             {user_posts, user_replies} =
-              Enum.reduce(posts, {0, 0}, fn post, {posts_count, replies_count} ->
-                if is_nil(post.parent_post_id) do
-                  {posts_count + 1, replies_count}
-                else
-                  {posts_count, replies_count + 1}
-                end
-              end)
+              Collaboration.count_posts_and_replies_for_user(section_id, resource_id, user_id)
 
             # Check if requirements are met
             posts_met = min_posts == 0 or user_posts >= min_posts
