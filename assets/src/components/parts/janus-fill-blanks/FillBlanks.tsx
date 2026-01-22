@@ -503,8 +503,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
           pendingFocusRestore.delete(focusKey);
           return;
         }
-
-        const $ = (window as any).$;
         let select2Container: HTMLElement | null = null;
 
         // Sibling container (most common structure)
