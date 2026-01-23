@@ -22,29 +22,20 @@ export const ExpandablePromptHelp: React.FC<ExpandablePromptHelpProps> = ({
 
   return (
     <div className={classNames('mt-2', className, expanded ? expandedClassName : '')}>
-      <button
-        type="button"
-        className={buttonClassName}
-        onClick={() => setExpanded(!expanded)}
-      >
+      <button type="button" className={buttonClassName} onClick={() => setExpanded(!expanded)}>
         {buttonLabel}
         <i
           className={classNames(
             'fa-solid fa-chevron-down ml-2 text-Icon-icon-active',
-            expanded ? '-rotate-180' : ''
+            expanded ? '-rotate-180' : '',
           )}
         ></i>
       </button>
       {expanded && (
-        <ul
-          className={classNames(
-            'list-disc list-inside py-2 ml-10 mb-0 !my-0',
-            listClassName
-          )}
-        >
-          {samples.map((sample) => (
-            <li key={sample} className="!my-0 !mb-0 leading-normal">
-              "{sample}"
+        <ul className={classNames('list-disc list-inside py-2 ml-10 mb-0 !my-0', listClassName)}>
+          {samples.map((sample, index) => (
+            <li key={`sample-${index + 1}`} className="!my-0 !mb-0 leading-normal">
+              {'"' + sample + '"'}
             </li>
           ))}
         </ul>
