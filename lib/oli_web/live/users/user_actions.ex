@@ -52,15 +52,15 @@ defmodule OliWeb.Users.Actions do
         <div class="dropdown-divider my-2"></div>
       <% else %>
         <div class="mt-1">
-          <a
-            href="#"
-            class="inline-flex items-center gap-1 text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold text-sm leading-4"
+          <button
+            type="button"
+            class="group inline-flex items-center gap-1 p-0 text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold text-sm leading-4"
             phx-click="send_reset_password_link"
             phx-value-id={@user_id}
           >
             Send password reset link
             <Icons.send class="stroke-Text-text-button group-hover:stroke-Text-text-button-hover" />
-          </a>
+          </button>
         </div>
 
         <div class="dropdown-divider my-2"></div>
