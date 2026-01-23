@@ -27,11 +27,13 @@ export const TriggerEditorCore = ({
   instructions,
   onDelete,
   showDelete,
+  promptSamples,
 }: {
   showDelete: boolean;
   onDelete: any;
   children: any;
   instructions: any;
+  promptSamples: string[];
 }) => {
   return (
     <div className="bg-gray-100 dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
@@ -42,13 +44,6 @@ export const TriggerEditorCore = ({
         </h4>
         {showDelete ? <DeleteButton onClick={() => onDelete()} editMode={true} /> : null}
       </div>
-      <p className="mt-2">
-        Customize a prompt for our AI assistant, DOT, to follow the student clicks this button.
-      </p>
-
-      <h6 className="mt-2">
-        <strong>Activation Point</strong>
-      </h6>
 
       {instructions}
 
@@ -56,22 +51,11 @@ export const TriggerEditorCore = ({
         <strong>Prompt</strong>
         <InfoTip
           title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
-          className="ml-1"
+          className="ml-2"
         />
       </h6>
 
-      <p>
-        An AI prompt is a question or instruction given to our AI assistant, DOT, to guide its
-        response, helping it generate useful feedback, explanations, or support for learners.
-      </p>
-
-      <ExpandablePromptHelp
-        samples={[
-          'Highlight the most important concepts present on this page',
-          'Ask the student to summarize the previous paragraphs',
-          'Introduce the following video',
-        ]}
-      />
+      <ExpandablePromptHelp samples={promptSamples} />
 
       {children}
     </div>
@@ -85,6 +69,11 @@ export const TriggerEditor: React.FC<Props> = ({ model }) => {
     <TriggerEditorCore
       showDelete={false}
       onDelete={() => onEdit(undefined as any)}
+      promptSamples={[
+        'Highlight the most important concepts present on this page',
+        'Ask the student to summarize the previous paragraphs',
+        'Introduce the following video',
+      ]}
       instructions={
         <p>
           When a student clicks the <AIIcon size="sm" className="inline mr-1" /> icon within this

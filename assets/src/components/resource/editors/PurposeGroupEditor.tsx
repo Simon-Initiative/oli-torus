@@ -237,6 +237,11 @@ const GroupTriggerEditor = ({
       <TriggerEditorCore
         showDelete={true}
         onDelete={() => onEdit(undefined as any)}
+        promptSamples={[
+          'Highlight the most important concepts present on this page',
+          'Ask the student to summarize the previous paragraphs',
+          'Introduce the following video',
+        ]}
         instructions={
           <p>
             When a student clicks the <AIIcon size="sm" className="inline mr-1" /> icon within this

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from 'react-bootstrap';
-import { ExpandablePromptHelp } from 'components/common/ExpandablePromptHelp';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HasParts } from 'components/activities/types';
+import { ExpandablePromptHelp } from 'components/common/ExpandablePromptHelp';
 import { AIIcon } from 'components/misc/AIIcon';
 import { Card } from 'components/misc/Card';
 import { InfoTip } from 'components/misc/InfoTip';
@@ -53,7 +53,6 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
       <p>
         <b>Action</b>
       </p>
-
       <select value={currentTriggerIndex} onChange={onTriggerChange} disabled={!editMode}>
         <option key="instructions" value="" disabled>
           Choose student action...
@@ -78,7 +77,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
         <b>Prompt</b>
         <InfoTip
           title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
-          className="ml-1"
+          className="ml-2"
         />
       </p>
 
@@ -94,14 +93,18 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
       />
 
       <textarea
-        className="w-full bg-inherit"
+        className="mt-2 w-full bg-inherit"
         onChange={(ev) => setCurrentPrompt(ev.target.value)}
         value={currentPrompt}
         disabled={!editMode}
       />
 
       <div className="mt-2">
-        <Button className="btn-primary" onClick={addTrigger} disabled={!canAddTrigger() || !editMode}>
+        <Button
+          className="btn-primary"
+          onClick={addTrigger}
+          disabled={!canAddTrigger() || !editMode}
+        >
           Save
         </Button>
         <Button className="ml-3 btn-secondary" onClick={resetForm} disabled={!editMode}>

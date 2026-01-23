@@ -13,39 +13,24 @@ export const PageTriggerEditor: React.FC<{
       <div className="flex justify-between">
         <h4>
           <AIIcon size="sm" className="inline mr-1" />
-          DOT AI Page Activation Point
+          DOT AI Activation Point
         </h4>
         <button onClick={() => onEdit(undefined)} className="btn btn-primary">
           Disable
         </button>
       </div>
-      <p className="mt-2">
-        Customize a prompt for our AI assistant, DOT, to follow based on learner actions within this
-        page.
-      </p>
-
-      <h6 className="mt-2">
-        <strong>Trigger</strong>
-      </h6>
-
       <p>
-        When a student visits this page, DOT will engage with the student guided by the prompt you
-        provide below.
+        When a student visits this page, our AI Assistant <b>DOT</b> will appear and follow your
+        customized prompt.
       </p>
 
       <h6 className="mt-2">
         <strong>Prompt</strong>
         <InfoTip
           title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
-          className="ml-1"
+          className="ml-2"
         />
       </h6>
-
-      <p>
-        An AI prompt is a question or instruction given to our AI assistant, DOT, to guide its
-        response, helping it generate useful feedback, explanations, or support for learners.
-      </p>
-
       <ExpandablePromptHelp
         samples={[
           'Highlight the most important concepts present on this page',
@@ -65,7 +50,7 @@ export const PageTriggerEditor: React.FC<{
       <div className="flex justify-between">
         <h4>
           <AIIcon size="sm" className="inline mr-1" />
-          DOT AI Page Activation Point
+          DOT AI Activation Point
         </h4>
         <button
           onClick={() => onEdit({ id: 'page', type: 'trigger', trigger_type: 'page', prompt: '' })}

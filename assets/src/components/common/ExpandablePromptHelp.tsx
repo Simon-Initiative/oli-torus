@@ -36,9 +36,16 @@ export const ExpandablePromptHelp: React.FC<ExpandablePromptHelpProps> = ({
         ></i>
       </button>
       {expanded && (
-        <ul className={classNames('list-disc list-inside py-2 ml-10', listClassName)}>
+        <ul
+          className={classNames(
+            'list-disc list-inside py-2 ml-10 mb-0 !my-0',
+            listClassName
+          )}
+        >
           {samples.map((sample) => (
-            <li key={sample}>"{sample}"</li>
+            <li key={sample} className="!my-0 !mb-0 leading-normal">
+              "{sample}"
+            </li>
           ))}
         </ul>
       )}
