@@ -559,6 +559,51 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       refute has_element?(view, "button[phx-click='add_tag']", "Chemistry")
     end
 
+    test "displays communities in Details section when project has communities", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+      community = insert(:community, name: "Biology Community")
+      insert(:community_project_visibility, community: community, project: project)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show the Communities label
+      assert has_element?(view, "label", "Communities")
+      # Should show the community as a link
+      assert has_element?(view, "a", "Biology Community")
+    end
+
+    test "displays 'None' when project has no communities", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show the Communities label
+      assert has_element?(view, "label", "Communities")
+      # Should show "None"
+      assert render(view) =~ "None"
+    end
+
+    test "displays multiple communities as comma-separated links", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      community1 = insert(:community, name: "Biology")
+      community2 = insert(:community, name: "Chemistry")
+      insert(:community_project_visibility, community: community1, project: project)
+      insert(:community_project_visibility, community: community2, project: project)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show both communities as links
+      assert has_element?(view, "a", "Biology")
+      assert has_element?(view, "a", "Chemistry")
+      # Should have comma separator
+      html = render(view)
+      assert html =~ "Biology"
+      assert html =~ "Chemistry"
+    end
+
     defp create_project_with_author(author) do
       %{project: project} = base_project_with_curriculum(nil)
       insert(:author_project, project_id: project.id, author_id: author.id)

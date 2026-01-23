@@ -22,7 +22,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns
-    project = Repo.preload(project, :tags)
+    project = Repo.preload(project, [:tags, :communities])
 
     is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
@@ -149,6 +149,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               error_position={:top}
               errors={f.errors}
             />
+          </div>
+          <div class="form-label-group mb-3">
+            <Common.label class="control-label">Communities</Common.label>
+            <p class="text-secondary">
+              <span :if={Enum.empty?(@project.communities)}>None</span>
+              <span :for={{community, index} <- Enum.with_index(@project.communities)}>
+                <.link
+                  href={~p"/authoring/communities/#{community.id}"}
+                  class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
+                >
+                  {community.name}
+                </.link><span :if={index < length(@project.communities) - 1}>, </span>
+              </span>
+            </p>
           </div>
           <div class="form-label-group mb-3">
             <Common.label class="control-label">Latest Publication</Common.label>
