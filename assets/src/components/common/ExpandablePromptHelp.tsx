@@ -4,7 +4,7 @@ import { classNames } from 'utils/classNames';
 let expandablePromptHelpId = 0;
 
 interface ExpandablePromptHelpProps {
-  samples: string[];
+  samples: readonly string[];
   buttonLabel?: string;
   className?: string;
   buttonClassName?: string;
