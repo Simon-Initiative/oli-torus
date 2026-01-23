@@ -1,7 +1,8 @@
 defmodule OliWeb.Users.UserEnrolledSections do
   use OliWeb, :live_component
 
-  alias OliWeb.Common.{PagedTable, SearchInput, Params}
+  alias OliWeb.Common.{SearchInput, Params}
+  alias OliWeb.Common.SortableTable.StripedTable
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.UserEnrolledTableModel
   alias Phoenix.LiveView.JS
@@ -49,14 +50,14 @@ defmodule OliWeb.Users.UserEnrolledSections do
 
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col gap-y-4">
+    <div class="flex w-full flex-col gap-y-4">
       <%= if length(@enrolled_sections) > 0 do %>
-        <div class="d-flex justify-end">
+        <div class="flex w-full items-center">
           <form
             for="search"
             phx-target={@myself}
             phx-change="search_section"
-            class="pb-6 ml-9 sm:pb-0 w-44"
+            class="w-56"
           >
             <SearchInput.render
               id="section_search_input"
@@ -67,17 +68,18 @@ defmodule OliWeb.Users.UserEnrolledSections do
         </div>
 
         <%= if @total_count > 0 do %>
-          <div id="sections-enrolled-table">
-            <PagedTable.render
-              table_model={@table_model}
-              total_count={@total_count}
-              offset={@params.offset}
-              limit={@params.limit}
-              additional_table_class="instructor_dashboard_table"
+          <div
+            id="sections-enrolled-table"
+            class={[
+              "w-full overflow-x-auto",
+              if(@total_count > 10, do: "max-h-[570px] overflow-y-auto", else: "")
+            ]}
+          >
+            <StripedTable.render
+              model={@table_model}
               sort={JS.push("paged_table_sort", target: @myself)}
-              page_change={JS.push("paged_table_page_change", target: @myself)}
-              show_bottom_paging={false}
-              render_top_info={false}
+              additional_table_class="instructor_dashboard_table user_enrolled_sections_table w-full"
+              sticky_header_offset={0}
             />
           </div>
         <% else %>
@@ -179,7 +181,7 @@ defmodule OliWeb.Users.UserEnrolledSections do
       |> maybe_filter_by_text(params.text_search)
       |> sort_by(params.sort_by, params.sort_order)
 
-    {length(sections), sections |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+    {length(sections), sections}
   end
 
   defp sort_by(sections, sort_by, sort_order) do
