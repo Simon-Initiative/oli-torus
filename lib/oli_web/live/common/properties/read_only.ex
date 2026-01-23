@@ -30,6 +30,7 @@ defmodule OliWeb.Common.Properties.ReadOnly do
       <input id={@copy_id} class="form-control flex-1" type={@type} disabled value={@value} />
       <button
         id={"#{@copy_id}-button"}
+        type="button"
         class="inline-flex items-center gap-1 rounded-md border border-Border-border-default px-3 py-2 text-Text-text-low hover:text-Text-text-high focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm"
         data-clipboard-target={"##{@copy_id}"}
         phx-hook="CopyListener"
