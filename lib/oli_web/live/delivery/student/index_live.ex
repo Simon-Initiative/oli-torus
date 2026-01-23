@@ -170,6 +170,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   def render(assigns) do
     ~H"""
+    <h1 class="sr-only">{@section.title}</h1>
     <.header_banner
       ctx={@ctx}
       section_slug={@section_slug}
@@ -416,12 +417,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         :if={!is_nil(@suggested_page)}
         class="flex flex-col w-full px-3 md:px-9 absolute justify-center items-start gap-2 md:gap-6"
       >
-        <h3
+        <h2
           id="home-banner-title"
           class="text-white text-lg md:text-2xl font-bold leading-loose tracking-tight"
         >
           Continue Learning
-        </h3>
+        </h2>
         <div class="flex flex-col lg:flex-row self-stretch p-6 bg-zinc-900 bg-opacity-40 rounded-xl justify-between lg:items-end gap-3">
           <div class="flex-col justify-center items-start gap-3.5 inline-flex">
             <div class="self-stretch h-3 justify-start items-center gap-3.5 inline-flex">
@@ -483,8 +484,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               }
               class="w-full hover:no-underline"
             >
-              <div class="px-5 py-2.5 bg-blue-600 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-blue-500">
-                <div class="text-white text-sm font-bold leading-tight whitespace-nowrap">
+              <div class="px-5 py-2.5 rounded-lg shadow justify-center items-center gap-2.5 flex bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white hover:text-Specially-Tokens-Text-text-button-primary-hover">
+                <div class="text-sm font-bold leading-tight whitespace-nowrap">
                   {lesson_button_label(@unfinished_lesson, @suggested_page)}
                 </div>
               </div>
@@ -498,8 +499,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               }
               class="w-full hover:no-underline"
             >
-              <div class="px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-opacity-40">
-                <div class="text-white text-sm font-semibold leading-tight whitespace-nowrap">
+              <div class="px-5 py-2.5 rounded-lg shadow justify-center items-center gap-2.5 flex bg-Fill-Buttons-fill-secondary border border-Border-border-bold text-Specially-Tokens-Text-text-button-secondary hover:bg-Specially-Tokens-Text-text-button-secondary-hover hover:border-Border-border-bold-hover hover:text-Specially-Tokens-Text-text-button-primary-hover">
+                <div class="text-sm font-semibold leading-tight whitespace-nowrap">
                   Show in course
                 </div>
               </div>
@@ -534,13 +535,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       </div>
 
       <div class="flex flex-col w-full px-9 absolute justify-center items-start gap-2 md:gap-6">
-        <h3 id="home-banner-title" class="w-full text-white text-2xl font-bold tracking-wide">
+        <div id="home-banner-title" class="w-full text-white text-2xl font-bold tracking-wide">
           Hi, {user_given_name(@ctx)} !
-        </h3>
+        </div>
         <div class="flex flex-col items-start gap-2.5">
-          <h4 class="text-3xl text-white font-medium">
+          <h2 class="text-3xl text-white font-medium">
             {build_welcome_title(@section.welcome_title)}
-          </h4>
+          </h2>
           <div class="text-white/60 text-lg font-semibold">
             {@section.encouraging_subtitle ||
               "Dive Into Discovery. Begin Your Learning Adventure Now!"}
@@ -745,9 +746,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     >
       <div class="flex-col justify-start items-start gap-3 md:gap-5 inline-flex grow">
         <div class="flex items-baseline gap-2.5 relative">
-          <div class="text-2xl font-bold leading-loose">
+          <h2 class="text-2xl font-bold leading-loose">
             Course Progress
-          </div>
+          </h2>
 
           <%!-- Desktop tooltip (hidden on mobile/tablet) --%>
           <.course_progress_tooltip_desktop />
@@ -775,7 +776,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           />
           <.link
             navigate={@page_completed_target_path}
-            class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+            class="text-Text-text-button text-base font-bold ml-auto hover:text-Text-text-button-hover hover:no-underline"
           >
             {@completed_pages.completed_pages}/{@completed_pages.total_pages} Pages Completed
           </.link>
@@ -910,7 +911,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             navigate={
               ~p"/sections/#{@section_slug}/certificate/#{certificate_progress.granted_certificate_guid}"
             }
-            class=" text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+            class="text-Text-text-button text-base font-bold ml-auto hover:text-Text-text-button-hover hover:no-underline"
           >
             Access my certificate
           </.link>
@@ -966,9 +967,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     >
       <div class="w-full flex-col justify-start items-start gap-5 flex grow">
         <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
-          <div class="text-2xl font-bold leading-loose tracking-tight">
+          <h2 class="text-2xl font-bold leading-loose tracking-tight">
             My Assignments
-          </div>
+          </h2>
         </div>
         <div class="w-full h-fit overflow-hidden dark:text-white justify-start items-start gap-3.5 flex xl:flex-row flex-col">
           <button
@@ -1013,7 +1014,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               request_path: ~p"/sections/#{@section_slug}"
             )
           }
-          class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+          class="text-Text-text-button text-base font-bold ml-auto hover:text-Text-text-button-hover hover:no-underline"
         >
           View All Assignments
         </.link>
@@ -1023,7 +1024,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   end
 
   defp assignments_tab_class(tab, tab), do: "pointer-events-none cursor-not-allowed"
-  defp assignments_tab_class(_, _), do: "opacity-40 hover:opacity-70"
+  defp assignments_tab_class(_, _), do: "opacity-70 dark:opacity-50 hover:underline"
 
   defp empty_assignments_message(:upcoming),
     do: "Great job, you completed all the assignments! There are no upcoming assignments."
@@ -1099,11 +1100,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp item_bg_color(true = _completed),
     do:
-      "bg-black/[.07] hover:bg-black/[.1] border border-white/[.1] dark:bg-white/[.02] dark:hover:bg-white/[.06] dark:border-white/[0.06] dark:hover:border-white/[0.02]"
+      "bg-Surface-surface-secondary border border-Border-border-subtle hover:bg-Surface-surface-secondary-muted hover:shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
 
   defp item_bg_color(false = _completed),
     do:
-      "bg-black/[.1] hover:bg-black/[.2] border border-white/[.6] hover:border-transparent dark:bg-white/[.08] dark:hover:bg-white/[.12] dark:border-black hover:!border-transparent"
+      "bg-Surface-surface-secondary border border-Border-border-subtle hover:bg-Surface-surface-secondary-muted hover:shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
 
   attr :lesson, :map, required: true
   attr :upcoming, :boolean, required: true
@@ -1309,9 +1310,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     >
       <div class="flex-col justify-start items-start gap-7 inline-flex grow">
         <div class="self-stretch justify-between items-baseline inline-flex gap-2.5">
-          <div class="text-2xl font-bold leading-loose tracking-tight">
+          <h2 class="text-2xl font-bold leading-loose tracking-tight">
             Upcoming Agenda
-          </div>
+          </h2>
           <.link
             :if={@has_scheduled_resources?}
             href={
@@ -1322,7 +1323,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             }
             class="hover:no-underline"
           >
-            <div class="text-[#3399FF] hover:text-opacity-80 text-base font-bold tracking-tight">
+            <div class="text-Text-text-button hover:text-Text-text-button-hover text-base font-bold tracking-tight">
               View full schedule
             </div>
           </.link>

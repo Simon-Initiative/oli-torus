@@ -1,4 +1,5 @@
 defmodule OliWeb.ManualGrading.Rendering do
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Sections.Section
   alias Oli.Rendering.Context
   alias Oli.Rendering.Activity.Html
@@ -13,7 +14,7 @@ defmodule OliWeb.ManualGrading.Rendering do
     attempt_parts = Map.put(%{}, attempt.resource_id, {attempt, part_attempts_map})
 
     resource_attempt =
-      Oli.Delivery.Attempts.Core.get_resource_attempt(attempt_guid: attempt.resource_attempt_guid)
+      Core.get_resource_attempt(attempt_guid: attempt.resource_attempt_guid)
 
     effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt)
 
@@ -22,6 +23,8 @@ defmodule OliWeb.ManualGrading.Rendering do
         nil -> resource_attempt.revision.content
         content -> content
       end
+
+    extrinsic_state = Core.fetch_extrinsic_state(resource_attempt)
 
     %Context{
       user: attempt.user,
@@ -40,7 +43,8 @@ defmodule OliWeb.ManualGrading.Rendering do
           assign_ordinals_from: content_for_ordinal_assignment
         ),
       activity_types_map: activity_types_map,
-      resource_attempt: resource_attempt
+      resource_attempt: resource_attempt,
+      extrinsic_state: extrinsic_state
     }
   end
 

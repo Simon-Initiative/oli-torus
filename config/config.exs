@@ -84,6 +84,7 @@ config :oli,
   ],
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
+  genai_hackney_pool_size: String.to_integer(System.get_env("GENAI_HACKNEY_POOL_SIZE", "100")),
   screen_idle_timeout_in_seconds:
     String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
   log_incomplete_requests: true

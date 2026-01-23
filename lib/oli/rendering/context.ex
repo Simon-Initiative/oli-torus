@@ -18,6 +18,7 @@ defmodule Oli.Rendering.Context do
             project_slug: nil,
             activity_types_map: %{},
             resource_attempt: nil,
+            extrinsic_state: nil,
             group_id: nil,
             survey_id: nil,
             report_id: nil,

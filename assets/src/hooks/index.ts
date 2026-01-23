@@ -1,4 +1,5 @@
 import LiveReact from 'phoenix_live_react';
+import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
@@ -43,6 +44,7 @@ import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
+import { SaveCookiePreferences } from './save_cookie_preferences';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
@@ -63,6 +65,7 @@ import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
+  AnnotationBubbles,
   DebouncedTextInputListener,
   GlobalTooltip,
   WakeUpDot,
@@ -130,6 +133,7 @@ export const Hooks = {
   CopyToClipboard,
   ReadMoreToggle,
   TagsComponent,
+  SaveCookiePreferences,
   ScrollToTheTop,
   ContainerToggleAriaLabel,
 };
