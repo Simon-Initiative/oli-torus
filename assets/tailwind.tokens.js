@@ -48,6 +48,14 @@ module.exports = {
     light: '#0000001A',
     dark: '#FFFFFF1A',
   },
+  'Fill-fill-info-dropdown': {
+    light: '#CADFFC',
+    dark: '#2B282E',
+  },
+  'Fill-fill-info-dropdown-expanded': {
+    light: '#F2F9FF',
+    dark: '#1B191F',
+  },
   'Fill-fill-transparent': {
     light: '#FFFFFF33',
     dark: '#FFFFFF33',

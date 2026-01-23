@@ -14,8 +14,8 @@ export const ExpandablePromptHelp: React.FC<ExpandablePromptHelpProps> = ({
   samples,
   buttonLabel = 'View examples of helpful prompts',
   className,
-  buttonClassName = 'bg-Fill-Accent-fill-accent-blue-soft rounded-3xl shadow px-3 py-1',
-  expandedClassName = 'bg-Fill-Accent-fill-accent-blue-soft/30 rounded-xl shadow px-3 py-1.5',
+  buttonClassName = 'bg-Fill-fill-info-dropdown text-Text-text-high rounded-3xl shadow px-3 py-1',
+  expandedClassName = 'bg-Fill-fill-info-dropdown-expanded rounded-xl shadow px-3 py-1.5',
   listClassName,
 }) => {
   const [expanded, setExpanded] = useState<boolean>(false);
@@ -27,7 +27,13 @@ export const ExpandablePromptHelp: React.FC<ExpandablePromptHelpProps> = ({
         className={buttonClassName}
         onClick={() => setExpanded(!expanded)}
       >
-        {buttonLabel}&nbsp;&nbsp; {expanded ? '^' : '\u22C1'}
+        {buttonLabel}
+        <i
+          className={classNames(
+            'fa-solid fa-chevron-down ml-2 text-Icon-icon-active',
+            expanded ? '-rotate-180' : ''
+          )}
+        ></i>
       </button>
       {expanded && (
         <ul className={classNames('list-disc list-inside py-2 ml-10', listClassName)}>
