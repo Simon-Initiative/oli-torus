@@ -20,6 +20,7 @@ defmodule OliWeb.Users.UsersDetailView do
   }
 
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Live.Components.Communities.CommunitiesComponent
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
@@ -128,7 +129,17 @@ defmodule OliWeb.Users.UsersDetailView do
             </div>
             <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
             <.institution_field institution={@institution} />
-            <.communities_field communities={@user.communities} />
+            <div class="form-group">
+              <label>Communities</label>
+              <.live_component
+                module={CommunitiesComponent}
+                id={"communities-user-#{@user.id}"}
+                entity_type={:user}
+                entity_id={@user.id}
+                current_communities={@user.communities}
+                disabled_edit={@disabled_edit}
+              />
+            </div>
             <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
               <ReadOnly.render
                 label="Confirmed is 13 or older on creation"
@@ -562,32 +573,6 @@ defmodule OliWeb.Users.UsersDetailView do
           </.link>
         <% else %>
           <span>Direct Delivery</span>
-        <% end %>
-      </div>
-    </div>
-    """
-  end
-
-  attr :communities, :list, required: true
-
-  defp communities_field(assigns) do
-    ~H"""
-    <% communities_count = length(@communities) %>
-
-    <div class="form-group">
-      <label>Communities</label>
-      <div class="form-control bg-[var(--color-gray-100)]">
-        <%= if Enum.empty?(@communities) do %>
-          <span class="text-muted">None</span>
-        <% else %>
-          <%= for {community, index} <- Enum.with_index(@communities) do %>
-            <.link
-              href={Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.ShowView, community.id)}
-              class="text-primary hover:underline"
-            >
-              {community.name}
-            </.link><%= if index < communities_count - 1 do %><span>, </span><% end %>
-          <% end %>
         <% end %>
       </div>
     </div>
