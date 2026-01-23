@@ -160,7 +160,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                   class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
                 >
                   {community.name}
-                </.link><span :if={index < length(@project.communities) - 1}>, </span>
+                </.link>
+                <span :if={index < length(@project.communities) - 1}>, </span>
               </span>
             </p>
           </div>
