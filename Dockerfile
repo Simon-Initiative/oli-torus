@@ -20,7 +20,8 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 FROM ${BUILDER_IMAGE} AS builder
 
-ARG SHA_SHORT
+ARG SHA
+ENV SHA=${SHA}
 
 # install build dependencies including Node.js for asset compilation
 RUN apt-get update -y && apt-get install -y build-essential git \
@@ -79,7 +80,7 @@ RUN NODE_ENV=production npm run deploy-node --prefix ./assets
 RUN mix assets.deploy
 
 # Compile the release
-RUN SHA=$RELEASE_SHA mix compile
+RUN mix compile
 
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
@@ -87,7 +88,7 @@ COPY config/runtime.exs config/
 COPY rel rel
 
 # Build the release
-RUN SHA=${RELEASE_SHA} mix release
+RUN mix release
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
