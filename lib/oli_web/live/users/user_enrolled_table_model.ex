@@ -1,7 +1,7 @@
 defmodule OliWeb.Users.UserEnrolledTableModel do
   use Phoenix.Component
 
-  alias OliWeb.Common.{Chip, Utils}
+  alias OliWeb.Common.Utils
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
