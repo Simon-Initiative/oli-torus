@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { classNames } from 'utils/classNames';
+
+let expandablePromptHelpId = 0;
 
 interface ExpandablePromptHelpProps {
   samples: string[];
@@ -19,10 +21,21 @@ export const ExpandablePromptHelp: React.FC<ExpandablePromptHelpProps> = ({
   listClassName,
 }) => {
   const [expanded, setExpanded] = useState<boolean>(false);
+  const listIdRef = useRef<string>();
+  if (!listIdRef.current) {
+    expandablePromptHelpId += 1;
+    listIdRef.current = `expandable-prompt-help-${expandablePromptHelpId}`;
+  }
 
   return (
     <div className={classNames('mt-2', className, expanded ? expandedClassName : '')}>
-      <button type="button" className={buttonClassName} onClick={() => setExpanded(!expanded)}>
+      <button
+        type="button"
+        className={buttonClassName}
+        onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-controls={listIdRef.current}
+      >
         {buttonLabel}
         <i
           className={classNames(
@@ -32,7 +45,10 @@ export const ExpandablePromptHelp: React.FC<ExpandablePromptHelpProps> = ({
         ></i>
       </button>
       {expanded && (
-        <ul className={classNames('list-disc list-inside py-2 ml-10 mb-0 !my-0', listClassName)}>
+        <ul
+          id={listIdRef.current}
+          className={classNames('list-disc list-inside py-2 ml-10 mb-0 !my-0', listClassName)}
+        >
           {samples.map((sample, index) => (
             <li key={`sample-${index + 1}`} className="!my-0 !mb-0 leading-normal">
               {'"' + sample + '"'}
