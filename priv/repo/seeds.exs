@@ -71,9 +71,7 @@ if should_seed_admin? do
       |> Repo.insert()
   end
 else
-  IO.puts(
-    "Skipping admin seed: ADMIN_EMAIL and ADMIN_PASSWORD must be explicitly set in non-dev environments."
-  )
+  IO.puts("Skipping admin seed: ADMIN_EMAIL and ADMIN_PASSWORD must be explicitly set.")
 end
 
 # create project roles
