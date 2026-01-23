@@ -54,7 +54,7 @@ defmodule OliWeb.Users.Actions do
         <div class="mt-1">
           <button
             type="button"
-            class="group inline-flex items-center gap-1 p-0 text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold text-sm leading-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button focus-visible:ring-offset-2"
+            class="group inline-flex items-center gap-1 px-2 py-2 text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold text-sm leading-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button focus-visible:ring-offset-2"
             phx-click="send_reset_password_link"
             phx-value-id={@user_id}
           >
