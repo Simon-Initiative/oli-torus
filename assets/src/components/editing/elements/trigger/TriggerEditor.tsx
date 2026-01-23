@@ -30,14 +30,16 @@ export const TriggerPromptEditor: React.FC<TriggerPromptEditorProps> = ({
   headingClassName = 'mt-2',
 }) => {
   const promptHelpIdRef = React.useRef<string>();
+  const promptHeadingIdRef = React.useRef<string>();
   if (!promptHelpIdRef.current) {
     triggerPromptEditorId += 1;
     promptHelpIdRef.current = `trigger-prompt-help-${triggerPromptEditorId}`;
+    promptHeadingIdRef.current = `trigger-prompt-heading-${triggerPromptEditorId}`;
   }
 
   return (
     <>
-      <h6 className={headingClassName}>
+      <h6 id={promptHeadingIdRef.current} className={headingClassName}>
         <strong>Prompt</strong>
         <InfoTip
           title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
@@ -57,6 +59,7 @@ export const TriggerPromptEditor: React.FC<TriggerPromptEditorProps> = ({
         onChange={(e) => onPromptChange(e.target.value)}
         disabled={disabled}
         aria-describedby={promptHelpIdRef.current}
+        aria-labelledby={promptHeadingIdRef.current}
       />
     </>
   );
