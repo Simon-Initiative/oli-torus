@@ -1,7 +1,6 @@
 import React from 'react';
-import { ExpandablePromptHelp } from 'components/common/ExpandablePromptHelp';
+import { TriggerPromptEditor } from 'components/editing/elements/trigger/TriggerEditor';
 import { AIIcon } from 'components/misc/AIIcon';
-import { InfoTip } from 'components/misc/InfoTip';
 import { PageTrigger } from 'data/triggers';
 
 export const PageTriggerEditor: React.FC<{
@@ -24,25 +23,15 @@ export const PageTriggerEditor: React.FC<{
         customized prompt.
       </p>
 
-      <h6 className="mt-2">
-        <strong>Prompt</strong>
-        <InfoTip
-          title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
-          className="ml-2"
-        />
-      </h6>
-      <ExpandablePromptHelp
-        samples={[
+      <TriggerPromptEditor
+        value={trigger.prompt}
+        onPromptChange={(value) => onEdit(Object.assign(trigger, { prompt: value }))}
+        promptSamples={[
           'Highlight the most important concepts present on this page',
           'Welcome the student to this page and let them know that you are here to help',
           "Point students towards more practice regarding the concepts on this page's learning objectives",
         ]}
-      />
-
-      <textarea
-        className="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        value={trigger.prompt}
-        onChange={(e) => onEdit(Object.assign(trigger, { prompt: e.target.value }))}
+        textareaClassName="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
   ) : (

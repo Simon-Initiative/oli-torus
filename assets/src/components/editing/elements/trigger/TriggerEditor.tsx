@@ -10,6 +10,58 @@ import { InfoTip } from 'components/misc/InfoTip';
 import { Model } from 'data/content/model/elements/factories';
 import * as ContentModel from 'data/content/model/elements/types';
 
+let triggerPromptEditorId = 0;
+
+interface TriggerPromptEditorProps {
+  value: string;
+  onPromptChange: (value: string) => void;
+  promptSamples: readonly string[];
+  textareaClassName?: string;
+  disabled?: boolean;
+  headingClassName?: string;
+}
+
+export const TriggerPromptEditor: React.FC<TriggerPromptEditorProps> = ({
+  value,
+  onPromptChange,
+  promptSamples,
+  textareaClassName,
+  disabled,
+  headingClassName = 'mt-2',
+}) => {
+  const promptHelpIdRef = React.useRef<string>();
+  if (!promptHelpIdRef.current) {
+    triggerPromptEditorId += 1;
+    promptHelpIdRef.current = `trigger-prompt-help-${triggerPromptEditorId}`;
+  }
+
+  return (
+    <>
+      <h6 className={headingClassName}>
+        <strong>Prompt</strong>
+        <InfoTip
+          title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
+          className="ml-2"
+        />
+      </h6>
+
+      <ExpandablePromptHelp samples={promptSamples} />
+
+      <span id={promptHelpIdRef.current} className="sr-only">
+        Examples of helpful prompts are available above. Use the button to expand or collapse them.
+      </span>
+
+      <textarea
+        className={textareaClassName}
+        value={value}
+        onChange={(e) => onPromptChange(e.target.value)}
+        disabled={disabled}
+        aria-describedby={promptHelpIdRef.current}
+      />
+    </>
+  );
+};
+
 export const insertTrigger = createButtonCommandDesc({
   icon: <AIIcon size="sm" className="inline mr-1" />,
   category: 'General',
@@ -23,17 +75,23 @@ export const insertTrigger = createButtonCommandDesc({
 });
 
 export const TriggerEditorCore = ({
-  children,
   instructions,
   onDelete,
   showDelete,
   promptSamples,
+  promptValue,
+  onPromptChange,
+  promptTextareaClassName,
+  promptDisabled,
 }: {
   showDelete: boolean;
   onDelete: any;
-  children: any;
   instructions: any;
   promptSamples: string[];
+  promptValue: string;
+  onPromptChange: (value: string) => void;
+  promptTextareaClassName: string;
+  promptDisabled?: boolean;
 }) => {
   return (
     <div className="bg-gray-100 dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
@@ -47,17 +105,13 @@ export const TriggerEditorCore = ({
 
       {instructions}
 
-      <h6 className="mt-2">
-        <strong>Prompt</strong>
-        <InfoTip
-          title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
-          className="ml-2"
-        />
-      </h6>
-
-      <ExpandablePromptHelp samples={promptSamples} />
-
-      {children}
+      <TriggerPromptEditor
+        value={promptValue}
+        onPromptChange={onPromptChange}
+        promptSamples={promptSamples}
+        textareaClassName={promptTextareaClassName}
+        disabled={promptDisabled}
+      />
     </div>
   );
 };
@@ -69,6 +123,9 @@ export const TriggerEditor: React.FC<Props> = ({ model }) => {
     <TriggerEditorCore
       showDelete={false}
       onDelete={() => onEdit(undefined as any)}
+      promptValue={model.prompt}
+      onPromptChange={(value) => onEdit({ prompt: value })}
+      promptTextareaClassName="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
       promptSamples={[
         'Highlight the most important concepts present on this page',
         'Ask the student to summarize the previous paragraphs',
@@ -80,12 +137,6 @@ export const TriggerEditor: React.FC<Props> = ({ model }) => {
           text block, our AI assistant, DOT will appear and follow your custom prompt.
         </p>
       }
-    >
-      <textarea
-        className="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        value={model.prompt}
-        onChange={(e) => onEdit({ prompt: e.target.value })}
-      />
-    </TriggerEditorCore>
+    />
   );
 };

@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { Button } from 'react-bootstrap';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HasParts } from 'components/activities/types';
-import { ExpandablePromptHelp } from 'components/common/ExpandablePromptHelp';
+import { TriggerPromptEditor } from 'components/editing/elements/trigger/TriggerEditor';
 import { AIIcon } from 'components/misc/AIIcon';
 import { Card } from 'components/misc/Card';
-import { InfoTip } from 'components/misc/InfoTip';
 import { getPartById } from 'data/activities/model/utils';
 import { ActivityTrigger } from 'data/triggers';
 import { RemoveButtonConnected } from '../authoring/RemoveButton';
@@ -73,16 +72,10 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
         })}
       </select>
 
-      <p className="mt-4">
-        <b>Prompt</b>
-        <InfoTip
-          title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
-          className="ml-2"
-        />
-      </p>
-
-      <ExpandablePromptHelp
-        samples={[
+      <TriggerPromptEditor
+        value={currentPrompt}
+        onPromptChange={setCurrentPrompt}
+        promptSamples={[
           'Give the students another worked example of this question type',
           'Ask the student if they need further assistance answering this question',
           "Point students towards more practice regarding this question's learning objectives",
@@ -90,13 +83,9 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
           'Give students an expert response to this question',
           "Evaluate the student's answer to this question",
         ]}
-      />
-
-      <textarea
-        className="mt-2 w-full bg-inherit"
-        onChange={(ev) => setCurrentPrompt(ev.target.value)}
-        value={currentPrompt}
+        textareaClassName="mt-2 w-full bg-inherit"
         disabled={!editMode}
+        headingClassName="mt-4"
       />
 
       <div className="mt-2">
