@@ -42,6 +42,7 @@ export const ExpandablePromptHelp: React.FC<ExpandablePromptHelpProps> = ({
             'fa-solid fa-chevron-down ml-2 text-Icon-icon-active',
             expanded ? '-rotate-180' : '',
           )}
+          aria-hidden="true"
         ></i>
       </button>
       {expanded && (
