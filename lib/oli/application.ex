@@ -98,6 +98,9 @@ defmodule Oli.Application do
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor},
 
+        # GenAI hackney connection pool
+        Oli.GenAI.HackneyPool,
+
         # MCP (Model Context Protocol) server for AI agents
         Anubis.Server.Registry,
 
