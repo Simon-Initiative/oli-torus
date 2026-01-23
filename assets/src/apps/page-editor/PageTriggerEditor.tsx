@@ -1,36 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { ExpandablePromptHelp } from 'components/common/ExpandablePromptHelp';
 import { AIIcon } from 'components/misc/AIIcon';
+import { InfoTip } from 'components/misc/InfoTip';
 import { PageTrigger } from 'data/triggers';
 
 export const PageTriggerEditor: React.FC<{
   trigger: PageTrigger | undefined;
   onEdit: (trigger: PageTrigger | undefined) => void;
 }> = React.memo(({ trigger, onEdit }) => {
-  const [promptsExpanded, setPromptsExpanded] = useState<boolean>(false);
-
-  const ExpandablePromptHelp = () => (
-    <div className={`mt-2 ${promptsExpanded ? 'bg-gray-100 dark:bg-gray-800 rounded-lg' : ''}`}>
-      <button
-        className="bg-slate-300 dark:bg-gray-800 rounded-lg p-1"
-        onClick={(e) => setPromptsExpanded(!promptsExpanded)}
-      >
-        View examples of helpful prompts&nbsp;&nbsp; {promptsExpanded ? '^' : '\u22C1'}
-      </button>
-      {promptsExpanded && (
-        <ul className="list-disc list-inside py-2 ml-10">
-          <li>&quot;Highlight the most important concepts present on this page&quot;</li>
-          <li>
-            &quot;Welcome the student to this page and let them know that you are here to help&quot;
-          </li>
-          <li>
-            &quot;Point students towards more practice regarding the concepts on this page&apos;s
-            learning objectives&quot;
-          </li>
-        </ul>
-      )}
-    </div>
-  );
-
   return trigger != undefined ? (
     <div className="mt-3 bg-white dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
       <div className="flex justify-between">
@@ -58,6 +35,10 @@ export const PageTriggerEditor: React.FC<{
 
       <h6 className="mt-2">
         <strong>Prompt</strong>
+        <InfoTip
+          title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
+          className="ml-1"
+        />
       </h6>
 
       <p>
@@ -65,7 +46,13 @@ export const PageTriggerEditor: React.FC<{
         response, helping it generate useful feedback, explanations, or support for learners.
       </p>
 
-      <ExpandablePromptHelp />
+      <ExpandablePromptHelp
+        samples={[
+          'Highlight the most important concepts present on this page',
+          'Welcome the student to this page and let them know that you are here to help',
+          "Point students towards more practice regarding the concepts on this page's learning objectives",
+        ]}
+      />
 
       <textarea
         className="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"

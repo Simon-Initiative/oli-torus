@@ -118,6 +118,10 @@ module.exports = {
     light: '#DEECFF',
     dark: '#363B59',
   },
+  'Fill-Accent-fill-accent-blue-soft': {
+    light: '#CED9F2',
+    dark: '#CED9F2',
+  },
   'Fill-Accent-fill-accent-teal': {
     light: '#DCF3F5',
     dark: '#364147',

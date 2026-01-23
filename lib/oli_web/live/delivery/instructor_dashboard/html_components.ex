@@ -248,7 +248,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       <div
         id={"view_example_outter_button_#{@id}"}
         phx-click={JS.show(to: "#view_example_container_#{@id}") |> JS.hide()}
-        class="cursor-pointer translate-x-[12px] translate-y-[5px] max-w-fit px-3 py-1 bg-[#ced9f2] rounded-3xl shadow flex-col justify-start items-start inline-flex"
+        class="cursor-pointer translate-x-[12px] translate-y-[5px] max-w-fit px-3 py-1 bg-Fill-Accent-fill-accent-blue-soft rounded-3xl shadow flex-col justify-start items-start inline-flex"
       >
         <div class="justify-center items-center gap-1.5 inline-flex">
           <div class="text-black text-sm font-normal">View Example</div>
@@ -257,7 +257,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       </div>
       <div
         id={"view_example_container_#{@id}"}
-        class="hidden px-3 py-1.5 bg-[#ced9f2]/30 rounded-xl shadow flex-col justify-start items-start inline-flex"
+        class="hidden px-3 py-1.5 bg-Fill-Accent-fill-accent-blue-soft/30 rounded-xl shadow flex-col justify-start items-start inline-flex"
       >
         <div
           id={"view_example_inner_button_#{@id}"}
@@ -265,7 +265,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
             JS.show(to: "#view_example_outter_button_#{@id}")
             |> JS.hide(to: "#view_example_container_#{@id}")
           }
-          class="max-w-fit px-3 py-1 bg-[#ced9f2] rounded-3xl shadow flex-col justify-start items-start inline-flex"
+          class="max-w-fit px-3 py-1 bg-Fill-Accent-fill-accent-blue-soft rounded-3xl shadow flex-col justify-start items-start inline-flex"
         >
           <div class="justify-center items-center gap-1.5 inline-flex">
             <div class="text-black text-sm font-normal">View Example</div>

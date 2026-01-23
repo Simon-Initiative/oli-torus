@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from 'react-bootstrap';
+import { ExpandablePromptHelp } from 'components/common/ExpandablePromptHelp';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HasParts } from 'components/activities/types';
 import { AIIcon } from 'components/misc/AIIcon';
 import { Card } from 'components/misc/Card';
+import { InfoTip } from 'components/misc/InfoTip';
 import { getPartById } from 'data/activities/model/utils';
 import { ActivityTrigger } from 'data/triggers';
 import { RemoveButtonConnected } from '../authoring/RemoveButton';
@@ -22,13 +24,12 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
   const possible_triggers = getPossibleTriggers(model, partId);
   const existing_triggers = part.triggers || [];
 
-  // Add trigger is a mode of the UI
-  const [addMode, setAddMode] = useState<boolean>(false);
-  const [promptsExpanded, setPromptsExpanded] = useState<boolean>(false);
+  const [currentTriggerIndex, setCurrentTriggerIndex] = useState<string>('');
   const [currentTrigger, setCurrentTrigger] = useState<ActivityTrigger | null>(null);
   const [currentPrompt, setCurrentPrompt] = useState<string>('');
 
   const onTriggerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCurrentTriggerIndex(e.target.value);
     setCurrentTrigger(possible_triggers[+e.target.value]);
   };
 
@@ -38,52 +39,22 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
     if (!currentTrigger) return;
     currentTrigger.prompt = currentPrompt;
     dispatch(TriggerActions.addTrigger(currentTrigger, partId));
-    endAddMode();
+    resetForm();
   };
 
-  const endAddMode = () => {
-    setAddMode(false);
+  const resetForm = () => {
+    setCurrentTriggerIndex('');
     setCurrentTrigger(null);
-    setPromptsExpanded(false);
+    setCurrentPrompt('');
   };
-
-  const ExpandablePromptHelp = () => (
-    <div className={`mt-2 ${promptsExpanded ? 'bg-gray-100 dark:bg-gray-600 rounded-lg' : ''}`}>
-      <Button
-        className="bg-gray-500 hover:bg-gray-700 rounded-lg m-1"
-        onClick={(e) => setPromptsExpanded(!promptsExpanded)}
-      >
-        View examples of helpful prompts&nbsp;&nbsp; {promptsExpanded ? '^' : '\u22C1'}
-      </Button>
-      {promptsExpanded && (
-        <ul className="list-disc list-inside py-2 ml-10">
-          <li>&quot;Give the students another worked example of this question type&quot;</li>
-          <li>
-            &quot;Ask the student if they need further assistance answering this question&quot;
-          </li>
-          <li>
-            &quot;Point students towards more practice regarding this question&apos;s learning
-            objectives&quot;
-          </li>
-          <li>&quot;Give students another question of this type&quot;</li>
-          <li>&quot;Give students an expert response to this question&quot;</li>
-          <li>&quot;Evaluate the student&apos;s answer to this question&quot;</li>
-        </ul>
-      )}
-    </div>
-  );
 
   const NewTriggerForm = () => (
     <div className="mt-2">
       <p>
-        <b>Activation Point</b>
-      </p>
-      <p>
-        An AI activation point is when our AI assistant, DOT, responds to something a learner does,
-        like giving feedback or extra help based on their actions.
+        <b>Action</b>
       </p>
 
-      <select defaultValue="" onChange={onTriggerChange}>
+      <select value={currentTriggerIndex} onChange={onTriggerChange} disabled={!editMode}>
         <option key="instructions" value="" disabled>
           Choose student action...
         </option>
@@ -105,25 +76,35 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
 
       <p className="mt-4">
         <b>Prompt</b>
-      </p>
-      <p>
-        An AI prompt is a question or instruction given to our AI assistant, DOT, to guide its
-        response, helping it generate useful feedback, explanations, or support for learners.
+        <InfoTip
+          title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
+          className="ml-1"
+        />
       </p>
 
-      {ExpandablePromptHelp()}
+      <ExpandablePromptHelp
+        samples={[
+          'Give the students another worked example of this question type',
+          'Ask the student if they need further assistance answering this question',
+          "Point students towards more practice regarding this question's learning objectives",
+          'Give students another question of this type',
+          'Give students an expert response to this question',
+          "Evaluate the student's answer to this question",
+        ]}
+      />
 
-      <p className="mt-4">The course author would like DOT to:</p>
       <textarea
         className="w-full bg-inherit"
         onChange={(ev) => setCurrentPrompt(ev.target.value)}
+        value={currentPrompt}
+        disabled={!editMode}
       />
 
       <div className="mt-2">
-        <Button className="btn-primary" onClick={addTrigger} disabled={!canAddTrigger()}>
+        <Button className="btn-primary" onClick={addTrigger} disabled={!canAddTrigger() || !editMode}>
           Save
         </Button>
-        <Button className="ml-3 btn-secondary" onClick={endAddMode}>
+        <Button className="ml-3 btn-secondary" onClick={resetForm} disabled={!editMode}>
           Cancel
         </Button>
       </div>
@@ -158,8 +139,8 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
         DOT AI Activation Point
       </h4>
       <p className="mt-2">
-        Customize a prompt for our AI assistant, DOT, to follow based on learner actions within this
-        activity.
+        When a student completes the chosen action(s), our AI assistant <b>DOT</b> will appear and
+        follow your customized prompt.
       </p>
       {model.authoring.parts.length > 1 && (
         <p className="mt-2">
@@ -167,19 +148,8 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
         </p>
       )}
 
-      {!addMode ? (
-        <>
-          <div className="mt-2 flex justify-center py-4">
-            <Button onClick={(_e) => setAddMode(true)} disabled={!editMode}>
-              + Create New Activation Point
-            </Button>
-          </div>
-
-          {existing_triggers.map((t, i) => TriggerCard(t, i))}
-        </>
-      ) : (
-        NewTriggerForm()
-      )}
+      {NewTriggerForm()}
+      {existing_triggers.map((t, i) => TriggerCard(t, i))}
     </>
   );
 };

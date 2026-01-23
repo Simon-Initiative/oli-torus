@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Transforms } from 'slate';
+import { ExpandablePromptHelp } from 'components/common/ExpandablePromptHelp';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import { AIIcon } from 'components/misc/AIIcon';
 import { DeleteButton } from 'components/misc/DeleteButton';
+import { InfoTip } from 'components/misc/InfoTip';
 import { Model } from 'data/content/model/elements/factories';
 import * as ContentModel from 'data/content/model/elements/types';
 
@@ -31,26 +33,6 @@ export const TriggerEditorCore = ({
   children: any;
   instructions: any;
 }) => {
-  const [promptsExpanded, setPromptsExpanded] = useState<boolean>(false);
-
-  const ExpandablePromptHelp = () => (
-    <div className={`mt-2 ${promptsExpanded ? 'bg-gray-100 dark:bg-gray-800 rounded-lg' : ''}`}>
-      <button
-        className="bg-slate-300 dark:bg-gray-800 rounded-lg p-1"
-        onClick={(e) => setPromptsExpanded(!promptsExpanded)}
-      >
-        View examples of helpful prompts&nbsp;&nbsp; {promptsExpanded ? '^' : '\u22C1'}
-      </button>
-      {promptsExpanded && (
-        <ul className="list-disc list-inside py-2 ml-10">
-          <li>&quot;Highlight the most important concepts present on this page&quot;</li>
-          <li>&quot;Ask the student to summarize the previous paragraphs&quot;</li>
-          <li>&quot;Introduce the following video&quot;</li>
-        </ul>
-      )}
-    </div>
-  );
-
   return (
     <div className="bg-gray-100 dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
       <div className="flex justify-between">
@@ -72,6 +54,10 @@ export const TriggerEditorCore = ({
 
       <h6 className="mt-2">
         <strong>Prompt</strong>
+        <InfoTip
+          title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
+          className="ml-1"
+        />
       </h6>
 
       <p>
@@ -79,7 +65,13 @@ export const TriggerEditorCore = ({
         response, helping it generate useful feedback, explanations, or support for learners.
       </p>
 
-      <ExpandablePromptHelp />
+      <ExpandablePromptHelp
+        samples={[
+          'Highlight the most important concepts present on this page',
+          'Ask the student to summarize the previous paragraphs',
+          'Introduce the following video',
+        ]}
+      />
 
       {children}
     </div>
