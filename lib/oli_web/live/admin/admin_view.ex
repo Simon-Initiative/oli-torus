@@ -170,7 +170,7 @@ defmodule OliWeb.Admin.AdminView do
               <%= if @clickhouse_olap_bulk_ingest_enabled? do %>
                 <li>
                   <a href={~p"/admin/clickhouse/backfill"}>
-                    ClickHouse Bulk Backfill
+                    ClickHouse Backfills
                   </a>
                 </li>
               <% end %>

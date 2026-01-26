@@ -54,7 +54,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
       socket =
         assign(socket,
-          title: "ClickHouse Bulk Backfill",
+          title: "ClickHouse Backfills",
           breadcrumbs: breadcrumbs(),
           runs: Backfill.list_runs(limit: @runs_limit),
           inventory_runs: Inventory.list_runs(limit: @inventory_runs_limit),
@@ -477,7 +477,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     <div class="w-full p-6 space-y-8">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-3xl font-semibold">ClickHouse Bulk Backfill</h1>
+          <h1 class="text-3xl font-semibold">ClickHouse Backfills</h1>
           <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
             Launch and monitor long running ingest jobs that pull historical xAPI events directly from S3 into ClickHouse.
           </p>
@@ -508,7 +508,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             aria-selected={@active_tab == :inventory}
             aria-controls="clickhouse-backfill-panel-inventory"
           >
-            Batch Orchestration
+            Inventory Backfill
           </button>
         </nav>
       </div>
@@ -776,7 +776,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       >
         <div class="bg-white dark:bg-gray-900 shadow rounded-lg p-5 space-y-4">
           <div class="space-y-1">
-            <h2 class="text-xl font-semibold">Schedule Batch Orchestration</h2>
+            <h2 class="text-xl font-semibold">Schedule Backfill</h2>
             <p class="text-sm text-gray-600 dark:text-gray-300">
               Select an inventory date to orchestrate ingest of all JSONL exports recorded in the S3 inventory manifest for that day.
             </p>
@@ -917,7 +917,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
             <div class="flex items-center justify-end gap-3">
               <.button type="submit" class="btn-primary">
-                Schedule Batch Run
+                Run Backfill
               </.button>
             </div>
           </.form>
@@ -926,7 +926,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         <div class="bg-white dark:bg-gray-900 shadow rounded-lg p-5 space-y-4">
           <div class="flex items-center justify-between">
             <div>
-              <h2 class="text-xl font-semibold">Inventory Runs</h2>
+              <h2 class="text-xl font-semibold">Inventory Backfill Runs</h2>
               <p class="text-sm text-gray-600 dark:text-gray-300">
                 Tracks orchestrated ClickHouse ingestions driven by S3 inventory manifests.
               </p>
@@ -943,7 +943,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
           >
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div class="space-y-1">
-                <div class="text-lg font-semibold">Run #{run.id}</div>
+                <div class="text-lg font-semibold">Inventory Backfill Run #{run.id}</div>
                 <div class="text-sm text-gray-600 dark:text-gray-300">
                   Inventory Date: {format_inventory_date(run.inventory_date)} · Target Table: {run.target_table}
                 </div>
@@ -1219,7 +1219,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     OliWeb.Admin.AdminView.breadcrumb() ++
       [
         Breadcrumb.new(%{
-          full_title: "ClickHouse Bulk Backfill",
+          full_title: "ClickHouse Backfills",
           link: ~p"/admin/clickhouse/backfill"
         })
       ]
