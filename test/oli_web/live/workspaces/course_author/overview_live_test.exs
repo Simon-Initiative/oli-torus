@@ -604,10 +604,68 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert html =~ "Chemistry"
     end
 
-    defp create_project_with_author(author) do
-      %{project: project} = base_project_with_curriculum(nil)
-      insert(:author_project, project_id: project.id, author_id: author.id)
-      project
+    test "displays institutions in Details section when project has visibility institutions", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+      institution = insert(:institution, name: "Test University")
+
+      insert(:project_visibility,
+        project_id: project.id,
+        institution_id: institution.id,
+        author_id: nil
+      )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show the Institutions label
+      assert has_element?(view, "label", "Institutions")
+      # Should show the institution as a link
+      assert has_element?(view, "a", "Test University")
+    end
+
+    test "displays 'None' when project has no visibility institutions", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show the Institutions label
+      assert has_element?(view, "label", "Institutions")
+      # Should show "None"
+      html = render(view)
+      # Find the Institutions section and verify it shows "None"
+      assert html =~ "Institutions"
+    end
+
+    test "displays multiple institutions as comma-separated links", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+      institution1 = insert(:institution, name: "University A")
+      institution2 = insert(:institution, name: "University B")
+
+      insert(:project_visibility,
+        project_id: project.id,
+        institution_id: institution1.id,
+        author_id: nil
+      )
+
+      insert(:project_visibility,
+        project_id: project.id,
+        institution_id: institution2.id,
+        author_id: nil
+      )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show both institutions as links
+      assert has_element?(view, "a", "University A")
+      assert has_element?(view, "a", "University B")
     end
   end
 

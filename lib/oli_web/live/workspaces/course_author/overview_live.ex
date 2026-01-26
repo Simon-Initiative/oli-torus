@@ -24,6 +24,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns
     project = Repo.preload(project, [:tags, :communities])
 
+    # Get institutions with visibility access to this project
+    visibility_institutions =
+      Publishing.get_all_project_visibilities(project.id)
+      |> Enum.map(& &1.institution)
+      |> Enum.reject(&is_nil/1)
+
     is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
     latest_published_publication =
@@ -77,7 +83,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
        notes_config: %{},
        project_export_status: project_export_status,
        project_export_url: project_export_url,
-       project_export_timestamp: project_export_timestamp
+       project_export_timestamp: project_export_timestamp,
+       visibility_institutions: visibility_institutions
      )}
   end
 
@@ -162,6 +169,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                   {community.name}
                 </.link>
                 <span :if={index < length(@project.communities) - 1}>, </span>
+              </span>
+            </p>
+          </div>
+          <div class="form-label-group mb-3">
+            <Common.label class="control-label">Institutions</Common.label>
+            <p class="text-secondary">
+              <span :if={Enum.empty?(@visibility_institutions)}>None</span>
+              <span :for={{institution, index} <- Enum.with_index(@visibility_institutions)}>
+                <.link
+                  href={~p"/admin/institutions/#{institution.id}"}
+                  class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
+                >
+                  {institution.name}
+                </.link>
+                <span :if={index < length(@visibility_institutions) - 1}>, </span>
               </span>
             </p>
           </div>
