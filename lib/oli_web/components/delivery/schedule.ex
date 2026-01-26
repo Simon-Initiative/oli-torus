@@ -35,7 +35,10 @@ defmodule OliWeb.Components.Delivery.Schedule do
           <.maybe_current_week_indicator is_current_week={@is_current_week} />
           <div class={[
             "text-sm",
-            if(@is_active, do: "text-gray-400 dark:text-gray-300", else: "text-gray-400 dark:text-gray-400 opacity-80")
+            if(@is_active,
+              do: "text-gray-400 dark:text-gray-300",
+              else: "text-gray-400 dark:text-gray-400 opacity-80"
+            )
           ]}>
             Week {@week_number}:
           </div>
