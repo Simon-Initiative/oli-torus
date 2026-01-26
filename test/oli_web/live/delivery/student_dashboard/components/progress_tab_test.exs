@@ -130,7 +130,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
              )
 
       # Progress tab content gets rendered
-      assert has_element?(view, "h6", "There are no progress to show")
+      assert has_element?(view, "h6", "There are no progress records to show")
     end
   end
 
@@ -269,13 +269,14 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
           graded_page_6.title
         ]
 
+      # Default sort is by index (ascending), so row order is: 1, 2, 3, 4, 5, 6
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "A Graded page 5") end)
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "E Graded page 1") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "B Graded page 4") end)
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "D Graded page 2") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(3)")
@@ -283,17 +284,17 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(4)")
-             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "D Graded page 2") end)
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "B Graded page 4") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(5)")
-             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "E Graded page 1") end)
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "A Graded page 5") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:last-child")
              |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "Z Graded page 6") end)
 
-      ## sorting by student
+      ## sorting by index descending
       params = %{
         sort_order: :desc
       }
@@ -301,12 +302,17 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
       {:ok, view, _html} =
         live(conn, live_view_students_progress_route(section.slug, student.id, :progress, params))
 
+      # Descending by index: row order is 6, 5, 4, 3, 2, 1
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:last-child")
+             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "Z Graded page 6") end)
+
+      assert view
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
              |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "A Graded page 5") end)
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(5)")
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(3)")
              |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "B Graded page 4") end)
 
       assert view
@@ -314,16 +320,12 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
              |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "C Graded page 3") end)
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(3)")
+             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(5)")
              |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "D Graded page 2") end)
 
       assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
+             |> element("table.instructor_dashboard_table > tbody > tr:last-child")
              |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "E Graded page 1") end)
-
-      assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "Z Graded page 6") end)
     end
 
     test "applies pagination", %{
@@ -352,7 +354,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
       assert has_element?(view, "div", "#{graded_page_2.title}")
       assert has_element?(view, "div", "#{graded_page_3.title}")
 
-      ## aplies limit
+      ## aplies limit - default sort is by index ascending
       params = %{limit: 2, sort_order: "asc"}
 
       {:ok, view, _html} =
@@ -373,15 +375,16 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
              |> Floki.find("table.instructor_dashboard_table > tbody > tr")
              |> Enum.count() == 2
 
+      # Sort by index ascending: page 1 (E), page 2 (D)
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "A Graded page 5") end)
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "E Graded page 1") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "B Graded page 4") end)
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "D Graded page 2") end)
 
-      ## aplies pagination
+      ## aplies pagination - offset 2 shows pages 3, 4
       params = %{limit: 2, offset: 2, sort_order: "asc"}
 
       {:ok, view, _html} =
@@ -393,13 +396,14 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
              |> Floki.find("table.instructor_dashboard_table > tbody > tr")
              |> Enum.count() == 2
 
+      # Sort by index ascending with offset 2: page 3 (C), page 4 (B)
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
              |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "C Graded page 3") end)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "D Graded page 2") end)
+             |> render() =~ Enum.find(titles, fn t -> String.contains?(t, "B Graded page 4") end)
     end
   end
 
@@ -445,7 +449,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
 
       # Change page size from default (20) to 2
       view
-      |> element("#header_paging_page_size_form")
+      |> element("#footer_paging_page_size_form")
       |> render_change(%{limit: "2"})
 
       # Page 1
@@ -479,7 +483,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ProgressTabTest do
 
       # Change page size from 2 to 1
       view
-      |> element("#header_paging_page_size_form")
+      |> element("#footer_paging_page_size_form")
       |> render_change(%{limit: "1"})
 
       # Page 1
