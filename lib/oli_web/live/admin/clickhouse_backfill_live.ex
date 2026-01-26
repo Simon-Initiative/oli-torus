@@ -35,11 +35,11 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
           format: "JSONAsString"
         })
 
-      inventory_defaults = inventory_default_inputs()
-      inventory_changeset = inventory_form_changeset(inventory_defaults)
-      inventory_form = to_form(inventory_changeset, as: :inventory)
-      inventory_form_inputs = inventory_form_values(inventory_defaults)
       inventory_config = Application.get_env(:oli, :clickhouse_inventory, []) |> Enum.into(%{})
+      inventory_defaults = inventory_default_inputs(inventory_config)
+      inventory_changeset = inventory_form_changeset(inventory_defaults, inventory_config)
+      inventory_form = to_form(inventory_changeset, as: :inventory)
+      inventory_form_inputs = inventory_form_values(inventory_defaults, inventory_config)
 
       active_tab = resolve_active_tab(params)
 
@@ -272,16 +272,16 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   def handle_event("inventory_validate", %{"inventory" => params}, socket) do
     changeset =
       params
-      |> inventory_form_changeset()
+      |> inventory_form_changeset(socket.assigns.inventory_config)
       |> Map.put(:action, :validate)
 
     form_inputs =
       if changeset.valid? do
         changeset
         |> Ecto.Changeset.apply_changes()
-        |> inventory_form_values()
+        |> inventory_form_values(socket.assigns.inventory_config)
       else
-        inventory_inputs_from_params(params)
+        inventory_inputs_from_params(params, socket.assigns.inventory_config)
       end
 
     {:noreply,
@@ -294,7 +294,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   def handle_event("inventory_validate", _params, socket), do: {:noreply, socket}
 
   def handle_event("inventory_schedule", %{"inventory" => params}, socket) do
-    changeset = inventory_form_changeset(params)
+    changeset = inventory_form_changeset(params, socket.assigns.inventory_config)
 
     if changeset.valid? do
       attrs =
@@ -305,14 +305,18 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
       case Inventory.schedule_run(attrs, socket.assigns[:current_author]) do
         {:ok, _run} ->
-          defaults = inventory_default_inputs()
+          defaults = inventory_default_inputs(socket.assigns.inventory_config)
 
           socket =
             socket
             |> refresh_runs()
             |> assign(
-              inventory_form: to_form(inventory_form_changeset(defaults), as: :inventory),
-              inventory_form_inputs: inventory_form_values(defaults),
+              inventory_form:
+                to_form(inventory_form_changeset(defaults, socket.assigns.inventory_config),
+                  as: :inventory
+                ),
+              inventory_form_inputs:
+                inventory_form_values(defaults, socket.assigns.inventory_config),
               active_tab: :inventory
             )
             |> put_flash(:info, "Inventory batch run has been enqueued.")
@@ -325,7 +329,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
           {:noreply,
            assign(socket,
              inventory_form: to_form(error_changeset, as: :inventory),
-             inventory_form_inputs: inventory_inputs_from_params(params)
+             inventory_form_inputs:
+               inventory_inputs_from_params(params, socket.assigns.inventory_config)
            )}
 
         {:error, reason} ->
@@ -334,7 +339,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
            |> put_flash(:error, format_error(reason))
            |> assign(
              inventory_form: to_form(Map.put(changeset, :action, :insert), as: :inventory),
-             inventory_form_inputs: inventory_inputs_from_params(params)
+             inventory_form_inputs:
+               inventory_inputs_from_params(params, socket.assigns.inventory_config)
            )}
       end
     else
@@ -343,7 +349,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       {:noreply,
        assign(socket,
          inventory_form: to_form(changeset, as: :inventory),
-         inventory_form_inputs: inventory_inputs_from_params(params)
+         inventory_form_inputs:
+           inventory_inputs_from_params(params, socket.assigns.inventory_config)
        )}
     end
   end
@@ -773,40 +780,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             <p class="text-sm text-gray-600 dark:text-gray-300">
               Select an inventory date to orchestrate ingest of all JSONL exports recorded in the S3 inventory manifest for that day.
             </p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-gray-600 dark:text-gray-300">
-              <div class="rounded bg-gray-100 dark:bg-gray-800 px-3 py-2">
-                <div class="uppercase tracking-wide text-[10px] text-gray-500 dark:text-gray-400">
-                  Chunk Size
-                </div>
-                <div class="font-medium text-sm text-gray-700 dark:text-gray-100">
-                  {inventory_chunk_size(@inventory_config)} files / insert
-                </div>
-              </div>
-              <div class="rounded bg-gray-100 dark:bg-gray-800 px-3 py-2">
-                <div class="uppercase tracking-wide text-[10px] text-gray-500 dark:text-gray-400">
-                  Manifest Page Size
-                </div>
-                <div class="font-medium text-sm text-gray-700 dark:text-gray-100">
-                  {inventory_manifest_page_size(@inventory_config)} records
-                </div>
-              </div>
-              <div class="rounded bg-gray-100 dark:bg-gray-800 px-3 py-2">
-                <div class="uppercase tracking-wide text-[10px] text-gray-500 dark:text-gray-400">
-                  Max Simultaneous Batches
-                </div>
-                <div class="font-medium text-sm text-gray-700 dark:text-gray-100">
-                  {inventory_max_simultaneous_batches(@inventory_config)}
-                </div>
-              </div>
-              <div class="rounded bg-gray-100 dark:bg-gray-800 px-3 py-2">
-                <div class="uppercase tracking-wide text-[10px] text-gray-500 dark:text-gray-400">
-                  Max Batch Retries
-                </div>
-                <div class="font-medium text-sm text-gray-700 dark:text-gray-100">
-                  {inventory_max_batch_retries(@inventory_config)}
-                </div>
-              </div>
-            </div>
           </div>
 
           <.form
@@ -860,6 +833,70 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                       label="End"
                       value={@inventory_form_inputs.date_range_end}
                     />
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <details
+              open={batch_settings_open?(@inventory_form_inputs, @inventory_form, @inventory_config)}
+              class="rounded border border-gray-200 dark:border-gray-700 px-4 py-3"
+            >
+              <summary class="text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer">
+                Batch orchestration settings
+              </summary>
+              <div class="mt-4 space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Overrides apply only to this inventory run. Leave blank to use defaults.
+                </p>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <div class="space-y-1">
+                    <.input
+                      field={@inventory_form[:batch_chunk_size]}
+                      type="number"
+                      min="1"
+                      label="Chunk Size (files per insert)"
+                      value={@inventory_form_inputs.batch_chunk_size}
+                    />
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      Number of inventory files grouped into each ClickHouse insert batch.
+                    </p>
+                  </div>
+                  <div class="space-y-1">
+                    <.input
+                      field={@inventory_form[:manifest_page_size]}
+                      type="number"
+                      min="1"
+                      label="Manifest Page Size (records)"
+                      value={@inventory_form_inputs.manifest_page_size}
+                    />
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      Records fetched from the manifest per request when paging the inventory list.
+                    </p>
+                  </div>
+                  <div class="space-y-1">
+                    <.input
+                      field={@inventory_form[:max_simultaneous_batches]}
+                      type="number"
+                      min="1"
+                      label="Max Simultaneous Batches"
+                      value={@inventory_form_inputs.max_simultaneous_batches}
+                    />
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      Maximum number of batches to process concurrently for this run.
+                    </p>
+                  </div>
+                  <div class="space-y-1">
+                    <.input
+                      field={@inventory_form[:max_batch_retries]}
+                      type="number"
+                      min="1"
+                      label="Max Batch Retries"
+                      value={@inventory_form_inputs.max_batch_retries}
+                    />
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      Retry attempts per batch before marking it failed.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1435,7 +1472,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     }
   end
 
-  defp inventory_default_inputs do
+  defp inventory_default_inputs(config) do
     default_date =
       Date.utc_today()
       |> Date.add(-1)
@@ -1445,19 +1482,27 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       target_table: Backfill.default_target_table(),
       dry_run: false,
       date_range_start: nil,
-      date_range_end: nil
+      date_range_end: nil,
+      batch_chunk_size: inventory_chunk_size(config),
+      manifest_page_size: inventory_manifest_page_size(config),
+      max_simultaneous_batches: inventory_max_simultaneous_batches(config),
+      max_batch_retries: inventory_max_batch_retries(config)
     }
   end
 
-  defp inventory_form_changeset(attrs) do
-    data = inventory_default_inputs()
+  defp inventory_form_changeset(attrs, config) do
+    data = inventory_default_inputs(config)
 
     types = %{
       inventory_date: :date,
       target_table: :string,
       dry_run: :boolean,
       date_range_start: :string,
-      date_range_end: :string
+      date_range_end: :string,
+      batch_chunk_size: :integer,
+      manifest_page_size: :integer,
+      max_simultaneous_batches: :integer,
+      max_batch_retries: :integer
     }
 
     {data, types}
@@ -1471,6 +1516,10 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     |> parse_datetime_change(:date_range_start)
     |> parse_datetime_change(:date_range_end)
     |> validate_inventory_date_range()
+    |> Ecto.Changeset.validate_number(:batch_chunk_size, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:manifest_page_size, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:max_simultaneous_batches, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:max_batch_retries, greater_than: 0)
   end
 
   defp inventory_chunk_size(config) do
@@ -1538,7 +1587,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
   defp parse_positive_integer(_value, default), do: default
 
-  defp inventory_form_values(inputs) do
+  defp inventory_form_values(inputs, config) do
+    defaults = inventory_default_inputs(config)
+
     %{
       inventory_date:
         inputs
@@ -1564,25 +1615,59 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         inputs
         |> Map.get(:date_range_end)
         |> Kernel.||(Map.get(inputs, "date_range_end"))
-        |> format_datetime_input()
+        |> format_datetime_input(),
+      batch_chunk_size:
+        inputs
+        |> Map.get(:batch_chunk_size)
+        |> Kernel.||(Map.get(inputs, "batch_chunk_size"))
+        |> Kernel.||(Map.get(defaults, :batch_chunk_size))
+        |> format_integer_input(),
+      manifest_page_size:
+        inputs
+        |> Map.get(:manifest_page_size)
+        |> Kernel.||(Map.get(inputs, "manifest_page_size"))
+        |> Kernel.||(Map.get(defaults, :manifest_page_size))
+        |> format_integer_input(),
+      max_simultaneous_batches:
+        inputs
+        |> Map.get(:max_simultaneous_batches)
+        |> Kernel.||(Map.get(inputs, "max_simultaneous_batches"))
+        |> Kernel.||(Map.get(defaults, :max_simultaneous_batches))
+        |> format_integer_input(),
+      max_batch_retries:
+        inputs
+        |> Map.get(:max_batch_retries)
+        |> Kernel.||(Map.get(inputs, "max_batch_retries"))
+        |> Kernel.||(Map.get(defaults, :max_batch_retries))
+        |> format_integer_input()
     }
   end
 
-  defp inventory_inputs_from_params(params) do
+  defp inventory_inputs_from_params(params, config) do
     params = Map.new(params || %{})
+    defaults = inventory_default_inputs(config)
 
     date = params |> Map.get("inventory_date", "") |> String.trim()
     target = params |> Map.get("target_table", "") |> String.trim()
     dry_run = truthy?(Map.get(params, "dry_run"))
     range_start = params |> Map.get("date_range_start", "") |> String.trim()
     range_end = params |> Map.get("date_range_end", "") |> String.trim()
+    chunk_size = params |> Map.get("batch_chunk_size", "") |> String.trim()
+    page_size = params |> Map.get("manifest_page_size", "") |> String.trim()
+    max_simultaneous = params |> Map.get("max_simultaneous_batches", "") |> String.trim()
+    max_retries = params |> Map.get("max_batch_retries", "") |> String.trim()
 
     %{
       inventory_date: date,
       target_table: if(target == "", do: Backfill.default_target_table(), else: target),
       dry_run: dry_run,
       date_range_start: range_start,
-      date_range_end: range_end
+      date_range_end: range_end,
+      batch_chunk_size: if(chunk_size == "", do: defaults.batch_chunk_size, else: chunk_size),
+      manifest_page_size: if(page_size == "", do: defaults.manifest_page_size, else: page_size),
+      max_simultaneous_batches:
+        if(max_simultaneous == "", do: defaults.max_simultaneous_batches, else: max_simultaneous),
+      max_batch_retries: if(max_retries == "", do: defaults.max_batch_retries, else: max_retries)
     }
   end
 
@@ -1724,6 +1809,10 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   defp format_datetime_input(value) when is_binary(value), do: value
   defp format_datetime_input(_), do: ""
 
+  defp format_integer_input(value) when is_integer(value), do: Integer.to_string(value)
+  defp format_integer_input(value) when is_binary(value), do: value
+  defp format_integer_input(_), do: ""
+
   defp parse_datetime_change(changeset, field) do
     case Ecto.Changeset.fetch_change(changeset, field) do
       {:ok, value} ->
@@ -1828,6 +1917,77 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       )
 
     has_value? or has_error?
+  end
+
+  defp batch_settings_open?(inputs, form, config) do
+    defaults = inventory_default_inputs(config)
+
+    chunk_size =
+      inputs
+      |> Map.get(:batch_chunk_size)
+      |> Kernel.||(Map.get(inputs, "batch_chunk_size"))
+
+    page_size =
+      inputs
+      |> Map.get(:manifest_page_size)
+      |> Kernel.||(Map.get(inputs, "manifest_page_size"))
+
+    max_simultaneous =
+      inputs
+      |> Map.get(:max_simultaneous_batches)
+      |> Kernel.||(Map.get(inputs, "max_simultaneous_batches"))
+
+    max_retries =
+      inputs
+      |> Map.get(:max_batch_retries)
+      |> Kernel.||(Map.get(inputs, "max_batch_retries"))
+
+    raw_params = Map.new(form.params || %{})
+
+    has_raw_input? =
+      Enum.any?(
+        [
+          "batch_chunk_size",
+          "manifest_page_size",
+          "max_simultaneous_batches",
+          "max_batch_retries"
+        ],
+        &Map.has_key?(raw_params, &1)
+      )
+
+    has_value? =
+      Enum.any?(
+        [
+          {chunk_size, defaults.batch_chunk_size},
+          {page_size, defaults.manifest_page_size},
+          {max_simultaneous, defaults.max_simultaneous_batches},
+          {max_retries, defaults.max_batch_retries}
+        ],
+        fn {value, default} ->
+          cond do
+            present?(value) ->
+              parsed = parse_positive_integer(value, default)
+              parsed != default
+            true ->
+              false
+          end
+        end
+      )
+
+    has_error? =
+      Enum.any?(
+        [
+          form[:batch_chunk_size].errors,
+          form[:manifest_page_size].errors,
+          form[:max_simultaneous_batches].errors,
+          form[:max_batch_retries].errors
+        ],
+        fn errors ->
+          match?([{_, _} | _], errors)
+        end
+      )
+
+    has_raw_input? or has_value? or has_error?
   end
 
   defp present?(value) when value in [nil, ""], do: false
