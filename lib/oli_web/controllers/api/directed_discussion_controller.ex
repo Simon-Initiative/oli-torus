@@ -43,7 +43,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
     content = conn.body_params["content"]
     parent_post_id = Map.get(conn.body_params, "parent_post_id", nil)
     current_user = Map.get(conn.assigns, :current_user)
-    section = Sections.get_section_by_slug(section_slug)
+    section = conn.assigns.section
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
     # Parse resource_id to integer if it's a string
@@ -150,7 +150,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
         case Integer.parse(post_id) do
           {post_id_int, ""} ->
             post = Collaboration.get_post_by(%{id: post_id_int})
-            section = Sections.get_section_by_slug(section_slug)
+            section = conn.assigns.section
 
             case {post, section} do
               {nil, _} ->
@@ -248,7 +248,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
     case parse_integer(resource_id) do
       {:ok, resource_id_int} ->
         if Sections.is_enrolled?(current_user.id, section_slug) do
-          section = Sections.get_section_by_slug(section_slug)
+          section = conn.assigns.section
 
           posts =
             Collaboration.list_posts_for_user_in_page_section(
