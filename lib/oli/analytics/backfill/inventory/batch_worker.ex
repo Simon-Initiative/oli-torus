@@ -14,7 +14,6 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
 
   require Logger
 
-  alias Oli.Analytics.Backfill
   alias Oli.Analytics.Backfill.BackfillRun
   alias Oli.Analytics.Backfill.Inventory
   alias Oli.Analytics.Backfill.InventoryBatch
