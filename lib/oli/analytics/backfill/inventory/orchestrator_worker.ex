@@ -183,12 +183,10 @@ defmodule Oli.Analytics.Backfill.Inventory.OrchestratorWorker do
     host = manifest_meta["host"] || manifest_meta[:host]
     scheme = manifest_meta["scheme"] || manifest_meta[:scheme]
     port = manifest_meta["port"] || manifest_meta[:port]
-    access_key_id = manifest_meta["access_key_id"] || manifest_meta[:access_key_id]
-
-    secret_access_key =
-      manifest_meta["secret_access_key"] || manifest_meta[:secret_access_key]
-
-    session_token = manifest_meta["session_token"] || manifest_meta[:session_token]
+    manifest_credentials = configured_manifest_credentials()
+    access_key_id = manifest_credentials.access_key_id
+    secret_access_key = manifest_credentials.secret_access_key
+    session_token = manifest_credentials.session_token
 
     []
     |> maybe_put_request_override(:host, normalize_host(host))
@@ -200,6 +198,16 @@ defmodule Oli.Analytics.Backfill.Inventory.OrchestratorWorker do
       normalize_credential(secret_access_key)
     )
     |> maybe_put_request_override(:security_token, normalize_credential(session_token))
+  end
+
+  defp configured_manifest_credentials do
+    config = Application.get_env(:oli, :clickhouse_inventory, %{}) |> Enum.into(%{})
+
+    %{
+      access_key_id: config[:manifest_access_key_id],
+      secret_access_key: config[:manifest_secret_access_key],
+      session_token: config[:manifest_session_token]
+    }
   end
 
   defp maybe_put_request_override(overrides, _key, nil), do: overrides

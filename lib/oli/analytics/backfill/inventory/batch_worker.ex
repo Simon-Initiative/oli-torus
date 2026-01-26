@@ -1184,10 +1184,10 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
 
     case {access, secret} do
       {nil, _} ->
-        fallback_inventory_credentials()
+        {:error, "manifest access key id not configured"}
 
       {_, nil} ->
-        fallback_inventory_credentials()
+        {:error, "manifest secret access key not configured"}
 
       {access_key, secret_key} ->
         creds =
@@ -1195,19 +1195,6 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
           |> maybe_put_session_token(session)
 
         {:ok, creds}
-    end
-  end
-
-  defp fallback_inventory_credentials do
-    case Backfill.aws_credentials() do
-      {:ok, creds} ->
-        session =
-          normalize_credential(Map.get(creds, :session_token) || Map.get(creds, "session_token"))
-
-        {:ok, maybe_put_session_token(creds, session)}
-
-      {:error, reason} ->
-        {:error, reason}
     end
   end
 
