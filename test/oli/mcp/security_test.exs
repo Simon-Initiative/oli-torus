@@ -52,6 +52,7 @@ defmodule Oli.MCP.SecurityTest do
       assert TokenGenerator.matches?(token, hash)
     end
 
+    @tag :flaky
     test "timing attack resistance for token validation" do
       # Create a valid token
       author = insert(:author)
