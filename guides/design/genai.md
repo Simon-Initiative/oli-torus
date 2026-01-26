@@ -9,8 +9,10 @@ The GenAI infrastructure is designed with several core capabilities:
 - **Dynamic Model Integration**: Runtime support for registering and utilizing models from multiple providers, including OpenAI, Claude, or any provider with an OpenAI-compliant API.
 - **Feature-Specific Model Usage**: Different GenAI features within Torus can independently use different registered models.
 - **Course-Section-Level Customization**: The ability to override default models at the individual course section level.
+- **Backpressure-Aware Routing**: Admission control and circuit breakers select primary or backup models proactively and shed load when needed.
 - **Fallback Mechanism**: Robust handling of provider errors through a backup model configuration, ensuring system reliability.
 - **Reusable Dialogue Implementation**: A clean, modular GenServer-based dialogue component suitable for use across multiple features.
+- **Operational Telemetry**: Routing decisions and provider outcomes are observable via telemetry and AppSignal metrics.
 
 ## Architectural Components
 
@@ -42,6 +44,13 @@ The infrastructure supports integration of official foundation models and self-h
 ### Service Configuration (`ServiceConfig`)
 Each GenAI-driven feature in Torus is configured through a `ServiceConfig`. A service configuration defines a primary registered model to use for a feature and can optionally specify a backup model as a fallback. This ensures graceful degradation of service if the primary provider becomes unavailable or returns an error.
 
+ServiceConfig also includes routing policy parameters that govern admission control and circuit breaking. These parameters are per-ServiceConfig (no shared policy object) and are edited via the existing ServiceConfig admin view. Suggested parameters include:
+
+- soft and hard concurrency limits for requests and streams
+- breaker thresholds (error rate, 429 rate, latency p95)
+- breaker cooldown and probe settings
+- request/connect timeouts
+
 ### Feature-Level Configuration (`GenAIFeatureConfig`)
 The GenAIFeatureConfig schema associates GenAI-powered features (like student dialogue or instructor dashboards) with specific ServiceConfig instances. It allows setting a global default for each feature, with the option for individual course sections to override this default.
 
@@ -63,6 +72,28 @@ When a feature initializes (such as the DOT component), it retrieves both the gl
 
 ### Dialogue Management via GenServer (`Oli.GenAI.Dialogue.Server`)
 The multi-turn dialogue implementation previously embedded within UI components has been extracted into a standalone GenServer (Oli.GenAI.Dialogue.Server). This GenServer manages the lifecycle of GenAI dialogues—processing messages, handling streaming responses from GenAI providers, and dispatching tokens back to UI processes (typically Phoenix LiveView components). This modular design allows easy reuse and maintains a clear separation of concerns.
+
+Dialogue streaming calls are routed through the execution layer described below, ensuring counters and breakers are applied consistently.
+
+### Backpressure-Aware Routing and Execution
+GenAI requests are routed dynamically at runtime based on ServiceConfig policy, local backpressure signals, and breaker state. The main components are:
+
+- `Oli.GenAI.Router`: Computes a `RoutingPlan` (selected model, fallback order, reason, timeouts) from request context, ServiceConfig policy, and live signals.
+- `Oli.GenAI.AdmissionControl`: ETS-backed counters for active requests and streams (per ServiceConfig). Used for O(1) admission checks.
+- `Oli.GenAI.Breaker`: Per-RegisteredModel GenServer tracking rolling error/429/latency signals and breaker state (closed/open/half_open).
+- `Oli.GenAI.Execution`: Wraps provider calls, applies routing plans, updates counters, emits telemetry, and performs a single fallback attempt if needed.
+
+Breaker state and counters are per-node in the initial implementation; there is no cross-node coordination. Rollout is controlled via ServiceConfig routing parameter updates (no new feature flag).
+
+### Telemetry and Observability
+Routing and provider outcomes emit telemetry events used to populate AppSignal metrics. The primary events are:
+
+- `[:oli, :genai, :router, :decision]` (decision reason and duration)
+- `[:oli, :genai, :router, :admission]` (admitted vs rejected)
+- `[:oli, :genai, :provider, :stop]` (provider latency and outcome)
+- `[:oli, :genai, :breaker, :state_change]` (breaker transitions)
+
+These events are mapped to AppSignal counters and distributions for operational dashboards.
 
 ### Database Initialization and Environment Variables
 When setting up or resetting the database (mix ecto.reset), migrations automatically detect environment variables for API keys (OpenAI and Anthropic). If these keys are present, appropriate RegisteredModel and ServiceConfig records are created. If absent, the system defaults to using the NullProvider, which provides basic responses for development purposes.

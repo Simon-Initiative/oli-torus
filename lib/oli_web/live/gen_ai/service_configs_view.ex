@@ -5,6 +5,8 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
   alias Oli.GenAI
   alias Oli.GenAI.Completions.{ServiceConfig}
+  alias Oli.GenAI.AdmissionControl
+  alias Oli.Repo
   alias OliWeb.Common.Breadcrumb
 
   @form_control_classes "block w-full p-2.5
@@ -13,6 +15,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   focus:ring-blue-500 focus:border-blue-500
   dark:bg-gray-700 dark:border-gray-600
   dark:placeholder-gray-400 dark:text-white"
+  @health_refresh_ms 5_000
 
   def mount(_, _session, socket) do
     all = all()
@@ -21,23 +24,25 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
     registered_models = all_registered_models()
 
-    {:ok,
-     assign(socket,
-       editing: false,
-       form: to_form(changeset),
-       changeset: changeset,
-       selected: selected,
-       service_configs: all,
-       registered_models: registered_models,
-       breadcrumbs: breadcrumb()
-     )}
+    socket =
+      socket
+      |> assign(editing: false)
+      |> assign(selected: selected)
+      |> assign(service_configs: all)
+      |> assign(registered_models: registered_models)
+      |> assign(breadcrumbs: breadcrumb())
+      |> assign_form(changeset)
+      |> assign_health(selected)
+      |> schedule_health_refresh()
+
+    {:ok, socket}
   end
 
   attr :service_configs, :list, required: true
   attr :registered_models, :list, required: true
   attr(:selected, ServiceConfig)
   attr :breadcrumbs, :any
-  attr :changeset, :any
+  attr :form, :any
   attr :title, :string, default: "Completions Service Configurations"
   attr :editing, :boolean, default: false
 
@@ -73,7 +78,8 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         <.selected_item
           registered_models={@registered_models}
           selected={@selected}
-          changeset={@changeset}
+          form={@form}
+          health={@health}
           editing={@editing}
         />
       </div>
@@ -142,7 +148,8 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   end
 
   attr(:selected, ServiceConfig)
-  attr :changeset, :any
+  attr :form, :any
+  attr :health, :map, default: nil
   attr :editing, :boolean, default: false
   attr :registered_models, :list, required: true
 
@@ -153,15 +160,15 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
     ~H"""
     <div class="basis-1/2 p-4">
-      <.form :let={f} for={@changeset} id="service-config-form" phx-submit="save">
+      <.form for={@form} id="service-config-form" phx-submit="save">
         <.input
-          field={f[:name]}
+          field={@form[:name]}
           label="Friendly Name"
           disabled={!@editing}
           class={@form_control_classes}
         />
         <.input
-          field={f[:primary_model_id]}
+          field={@form[:primary_model_id]}
           type="select"
           disabled={!@editing}
           class={@form_control_classes}
@@ -169,13 +176,138 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           label="Primary Registered Model"
         />
         <.input
-          field={f[:backup_model_id]}
+          field={@form[:backup_model_id]}
           type="select"
           disabled={!@editing}
           class={@form_control_classes}
           options={[{"No backup", nil} | @registered_models]}
           label="Backup Registered Model"
         />
+
+        <div class="mt-6 border-t border-gray-200 pt-4">
+          <h3 class="text-sm font-semibold text-gray-900">Routing Policy</h3>
+          <div class="grid grid-cols-2 gap-4 mt-3">
+            <.input
+              field={@form[:routing_soft_limit]}
+              type="number"
+              label="Soft Limit"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@form[:routing_hard_limit]}
+              type="number"
+              label="Hard Limit"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@form[:routing_stream_soft_limit]}
+              type="number"
+              label="Stream Soft Limit"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@form[:routing_stream_hard_limit]}
+              type="number"
+              label="Stream Hard Limit"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@form[:routing_breaker_error_rate_threshold]}
+              type="number"
+              step="0.01"
+              label="Breaker Error Rate Threshold"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@form[:routing_breaker_429_threshold]}
+              type="number"
+              step="0.01"
+              label="Breaker 429 Threshold"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@form[:routing_breaker_latency_p95_ms]}
+              type="number"
+              label="Breaker Latency p95 (ms)"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@form[:routing_open_cooldown_ms]}
+              type="number"
+              label="Breaker Open Cooldown (ms)"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@form[:routing_half_open_probe_count]}
+              type="number"
+              label="Breaker Half-Open Probe Count"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@form[:routing_timeout_ms]}
+              type="number"
+              label="Request Timeout (ms)"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@form[:routing_connect_timeout_ms]}
+              type="number"
+              label="Connect Timeout (ms)"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+          </div>
+        </div>
+
+        <%= if @health do %>
+          <div class="mt-6 border-t border-gray-200 pt-4">
+            <h3 class="text-sm font-semibold text-gray-900">Routing Health</h3>
+            <div class="grid grid-cols-2 gap-4 mt-3 text-sm text-gray-700">
+              <div>
+                <div class="text-xs uppercase text-gray-500">Active Requests</div>
+                <div>{@health.counts.requests}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Active Streams</div>
+                <div>{@health.counts.streams}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Primary Breaker</div>
+                <div>{@health.primary.state}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Backup Breaker</div>
+                <div>{@health.backup.state}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Error Rate</div>
+                <div>{format_rate(@health.primary.error_rate)}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">429 Rate</div>
+                <div>{format_rate(@health.primary.rate_limit_rate)}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Latency p95 (ms)</div>
+                <div>{@health.primary.latency_p95_ms}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Last Reason</div>
+                <div>{@health.primary.last_reason}</div>
+              </div>
+            </div>
+          </div>
+        <% end %>
 
         <div class="flex justify-between">
           <.button disabled={!@editing} class="mt-3 btn btn-primary" phx-disable-with="Saving…">
@@ -202,7 +334,10 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
     selected = Enum.find(socket.assigns.service_configs, &(&1.id == id))
 
     {:noreply,
-     assign(socket, selected: selected, changeset: ServiceConfig.changeset(selected, %{}))}
+     socket
+     |> assign(selected: selected)
+     |> assign_form(ServiceConfig.changeset(selected, %{}))
+     |> assign_health(selected)}
   end
 
   def handle_event("toggle_editing", _, socket) do
@@ -217,7 +352,9 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         socket = put_flash(socket, :error, "Service Config not found")
 
         {:noreply,
-         assign(socket, changeset: ServiceConfig.changeset(socket.assigns.selected, %{}))}
+         socket
+         |> assign_form(ServiceConfig.changeset(socket.assigns.selected, %{}))
+         |> assign_health(socket.assigns.selected)}
 
       item ->
         socket = clear_flash(socket)
@@ -228,19 +365,19 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
             selected = Enum.at(all, 0)
 
             {:noreply,
-             assign(socket,
-               editing: false,
-               service_configs: all,
-               selected: selected,
-               changeset: ServiceConfig.changeset(selected, %{})
-             )}
+             socket
+             |> assign(editing: false, service_configs: all, selected: selected)
+             |> assign_form(ServiceConfig.changeset(selected, %{}))
+             |> assign_health(selected)}
 
           {:error, reason} ->
             socket =
               put_flash(socket, :error, "Couldn't delete service config: #{inspect(reason)}")
 
             {:noreply,
-             assign(socket, changeset: ServiceConfig.changeset(socket.assigns.selected, %{}))}
+             socket
+             |> assign_form(ServiceConfig.changeset(socket.assigns.selected, %{}))
+             |> assign_health(socket.assigns.selected)}
         end
     end
   end
@@ -254,7 +391,9 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         socket = put_flash(socket, :error, "Service config not found")
 
         {:noreply,
-         assign(socket, changeset: ServiceConfig.changeset(socket.assigns.selected, %{}))}
+         socket
+         |> assign_form(ServiceConfig.changeset(socket.assigns.selected, %{}))
+         |> assign_health(socket.assigns.selected)}
 
       selected ->
         case GenAI.update_service_config(selected, params) do
@@ -262,16 +401,14 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
             all = all()
 
             {:noreply,
-             assign(socket,
-               service_configs: all,
-               selected: service_config,
-               editing: false,
-               changeset: ServiceConfig.changeset(service_config, %{})
-             )}
+             socket
+             |> assign(service_configs: all, selected: service_config, editing: false)
+             |> assign_form(ServiceConfig.changeset(service_config, %{}))
+             |> assign_health(service_config)}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             socket = put_flash(socket, :error, "Couldn't update service config")
-            {:noreply, assign(socket, changeset: changeset)}
+            {:noreply, assign_form(socket, changeset)}
         end
     end
   end
@@ -287,7 +424,11 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         selected = Enum.find(all, &(&1.id == service_config.id))
         changeset = ServiceConfig.changeset(selected, %{})
 
-        {:noreply, assign(socket, selected: selected, service_configs: all, changeset: changeset)}
+        {:noreply,
+         socket
+         |> assign(selected: selected, service_configs: all)
+         |> assign_form(changeset)
+         |> assign_health(selected)}
 
       {:error, changeset} ->
         # Handle error (e.g., show a flash message)
@@ -321,4 +462,76 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
       {model.name, model.id}
     end)
   end
+
+  defp assign_form(socket, changeset) do
+    assign(socket, form: to_form(changeset, as: :service_config))
+  end
+
+  defp assign_health(socket, %ServiceConfig{} = selected) do
+    assign(socket, health: health_for(ensure_models_loaded(selected)))
+  end
+
+  defp assign_health(socket, _), do: assign(socket, health: nil)
+
+  defp health_for(%ServiceConfig{} = service_config) do
+    counts = AdmissionControl.counts(service_config.id)
+    default_snapshot = %{
+      state: :closed,
+      error_rate: 0.0,
+      rate_limit_rate: 0.0,
+      latency_p95_ms: 0,
+      last_reason: :none
+    }
+
+    primary =
+      if service_config.primary_model do
+        default_snapshot
+        |> Map.merge(AdmissionControl.get_breaker_snapshot(service_config.primary_model.id))
+      else
+        %{default_snapshot | state: :unknown}
+      end
+
+    backup =
+      if service_config.backup_model do
+        default_snapshot
+        |> Map.merge(AdmissionControl.get_breaker_snapshot(service_config.backup_model.id))
+      else
+        %{state: :none}
+      end
+
+    %{
+      counts: counts,
+      primary: primary,
+      backup: backup
+    }
+  end
+
+  defp ensure_models_loaded(%ServiceConfig{} = service_config) do
+    if Ecto.assoc_loaded?(service_config.primary_model) and
+         Ecto.assoc_loaded?(service_config.backup_model) do
+      service_config
+    else
+      Repo.preload(service_config, [:primary_model, :backup_model])
+    end
+  end
+
+  defp schedule_health_refresh(socket) do
+    if connected?(socket) do
+      Process.send_after(self(), :refresh_health, @health_refresh_ms)
+    end
+
+    socket
+  end
+
+  def handle_info(:refresh_health, socket) do
+    socket =
+      socket
+      |> assign_health(socket.assigns.selected)
+      |> schedule_health_refresh()
+
+    {:noreply, socket}
+  end
+
+  defp format_rate(rate) when is_float(rate), do: "#{Float.round(rate * 100, 1)}%"
+  defp format_rate(_), do: "0%"
 end
