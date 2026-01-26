@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
   alias Oli.Resources.Collaboration
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ClientEvaluation}
+  alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
 
   @doc """
@@ -53,6 +54,104 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
             replies_met = min_replies == 0 or user_replies >= min_replies
 
             {:ok, posts_met and replies_met}
+        end
+    end
+  end
+
+  @doc """
+  Creates a new activity attempt if the latest attempt is evaluated/submitted and
+  participation requirements are no longer met (e.g., after a post is deleted).
+
+  This function only creates a new attempt if the current attempt is in `:evaluated` or
+  `:submitted` state. If the attempt is still `:active` (not yet evaluated), it returns
+  `{:ok, :not_evaluated}` without creating a new attempt, allowing the student to continue
+  working on the existing attempt.
+
+  Behavior:
+  - If the attempt is `:evaluated` or `:submitted` and requirements are NOT met:
+    Creates a new activity attempt with incremented attempt_number, leaving the old
+    evaluated attempt unchanged (to maintain system invariants).
+  - If the attempt is `:evaluated` or `:submitted` and requirements ARE still met:
+    Returns `{:ok, :requirements_met}` - no action needed.
+  - If the attempt is `:active` (not yet evaluated):
+    Returns `{:ok, :not_evaluated}` - no new attempt needed, student can continue.
+
+  Returns:
+  - `{:ok, :new_attempt_created}` - A new attempt was created (old evaluated attempt remains unchanged)
+  - `{:ok, :requirements_met}` - Requirements are still met, no action needed
+  - `{:ok, :not_evaluated}` - Attempt is still active, no new attempt needed
+  - `{:error, reason}` - An error occurred
+
+  Note: The old evaluated attempt is left unchanged to maintain system invariants
+  (evaluated attempts should never be modified). This ensures xAPI statements and
+  OLAP ingestion remain consistent.
+  """
+  @spec create_new_attempt_if_evaluated_and_requirements_not_met(
+          section_slug :: String.t(),
+          section_id :: integer(),
+          resource_id :: integer(),
+          user_id :: integer(),
+          datashop_session_id :: String.t() | nil
+        ) ::
+          {:ok, :new_attempt_created | :requirements_met | :not_evaluated}
+          | {:error, any()}
+  def create_new_attempt_if_evaluated_and_requirements_not_met(
+        section_slug,
+        section_id,
+        resource_id,
+        user_id,
+        datashop_session_id \\ nil
+      ) do
+    # Get the latest activity attempt
+    activity_attempt = get_latest_activity_attempt(section_id, user_id, resource_id)
+
+    case activity_attempt do
+      nil ->
+        {:error, "Activity attempt not found"}
+
+      %ActivityAttempt{
+        lifecycle_state: lifecycle_state
+      } ->
+        # Only create new attempt if the current one was already evaluated/submitted
+        if lifecycle_state == :evaluated or lifecycle_state == :submitted do
+          # Check if requirements are still met
+          case check_participation_requirements(section_id, resource_id, user_id) do
+            {:ok, true} ->
+              {:ok, :requirements_met}
+
+            {:ok, false} ->
+              # Requirements are not met, create a new attempt using the centralized reset_activity function
+              # This reuses the existing infrastructure for creating new attempts
+              case ActivityLifecycle.reset_activity(
+                     section_slug,
+                     activity_attempt.attempt_guid,
+                     datashop_session_id,
+                     false,
+                     nil
+                   ) do
+                {:ok, _} ->
+                  {:ok, :new_attempt_created}
+
+                {:error, {:not_found}} ->
+                  {:error, "Activity attempt not found"}
+
+                {:error, {:already_reset}} ->
+                  # This shouldn't happen since we just got the latest attempt,
+                  # but handle it gracefully
+                  {:ok, :new_attempt_created}
+
+                {:error, {:no_more_attempts}} ->
+                  {:error, "Maximum attempts reached"}
+
+                {:error, reason} ->
+                  {:error, reason}
+              end
+
+            {:error, reason} ->
+              {:error, reason}
+          end
+        else
+          {:ok, :not_evaluated}
         end
     end
   end
