@@ -35,10 +35,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
           <.maybe_current_week_indicator is_current_week={@is_current_week} />
           <div class={[
             "text-sm",
-            if(@is_active,
-              do: "text-gray-400 dark:text-gray-300",
-              else: "text-gray-400 dark:text-gray-400 opacity-80"
-            )
+            if(@is_active, do: "text-Text-text-high", else: "text-Text-text-low")
           ]}>
             Week {@week_number}:
           </div>
@@ -50,11 +47,11 @@ defmodule OliWeb.Components.Delivery.Schedule do
           <div class={[
             "flex-1 flex flex-col mb-4 group",
             if(start_or_end_date_past?(date_range),
-              do: "past-start text-gray-400 dark:text-gray-700 opacity-80",
+              do: "past-start",
               else: ""
             )
           ]}>
-            <div class="font-bold text-gray-400 dark:text-gray-300 group-[.past-start]:text-gray-400 group-[.past-start]:opacity-80">
+            <div class="font-bold text-Text-text-high group-[.past-start]:text-Text-text-low">
               {render_date_range(date_range, @ctx)}
             </div>
 
@@ -65,10 +62,10 @@ defmodule OliWeb.Components.Delivery.Schedule do
                   <div class="flex flex-row">
                     <.progress_icon progress={container_progress} />
                     <div>
-                      <span class="text-sm text-gray-400 dark:text-gray-300 group-[.past-start]:text-gray-400 group-[.past-start]:opacity-80">
+                      <span class="text-sm text-Text-text-high group-[.past-start]:text-Text-text-low">
                         {page_or_assessment_label(graded)}
                       </span>
-                      <div class="uppercase font-bold text-sm text-Text-text-button hover:text-Text-text-button-hover group-[.past-start]:text-gray-400 group-[.past-start]:opacity-80">
+                      <div class="uppercase font-bold text-sm text-Text-text-button hover:text-Text-text-button-hover group-[.past-start]:text-Text-text-low">
                         {container_label}
                       </div>
                     </div>
@@ -98,7 +95,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                             {resource.title}
                           </.link>
 
-                          <div class="text-sm text-gray-400 dark:text-gray-300 group-[.past-start]:text-gray-400 group-[.past-start]:opacity-80">
+                          <div class="text-sm text-Text-text-high group-[.past-start]:text-Text-text-low">
                             <span>
                               Available:
                               <%= if effective_settings.start_date do %>
