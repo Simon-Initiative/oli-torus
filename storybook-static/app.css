@@ -14663,6 +14663,10 @@ table.table-striped tbody tr:nth-child(even) {
   z-index: 40;
 }
 
+.z-\[45\] {
+  z-index: 45;
+}
+
 .z-\[5\] {
   z-index: 5;
 }
@@ -19665,6 +19669,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-left: 2.75rem;
 }
 
+.pl-12 {
+  padding-left: 3rem;
+}
+
 .pl-16 {
   padding-left: 4rem;
 }
@@ -20353,6 +20361,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#1b67b2\] {
   --tw-text-opacity: 1;
   color: rgb(27 103 178 / var(--tw-text-opacity));
+}
+
+.text-\[\#1f2937\] {
+  --tw-text-opacity: 1;
+  color: rgb(31 41 55 / var(--tw-text-opacity));
 }
 
 .text-\[\#218358\] {
@@ -21045,6 +21058,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow {
   --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_-4px_20px_0px_rgba\(0\2c 0\2c 0\2c 0\.3\)\] {
+  --tw-shadow: 0px -4px 20px 0px rgba(0,0,0,0.3);
+  --tw-shadow-colored: 0px -4px 20px 0px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -26988,6 +27007,11 @@ Not supports in Firefox and IE */
   color: rgb(82 82 82 / var(--tw-text-opacity));
 }
 
+.hover\:text-gray-700:hover {
+  --tw-text-opacity: 1;
+  color: rgb(64 64 64 / var(--tw-text-opacity));
+}
+
 .hover\:text-gray-800:hover {
   --tw-text-opacity: 1;
   color: rgb(38 38 38 / var(--tw-text-opacity));
@@ -28110,6 +28134,11 @@ Not supports in Firefox and IE */
   background-color: rgb(31 29 35 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:bg-\[\#1a1a1a\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(26 26 26 / var(--tw-bg-opacity));
+}
+
 .dark .dark\:bg-\[\#1b191f\]\/50 {
   background-color: rgb(27 25 31 / 0.5);
 }
@@ -29158,6 +29187,11 @@ Not supports in Firefox and IE */
 .dark .dark\:hover\:text-gray-100:hover {
   --tw-text-opacity: 1;
   color: rgb(245 245 245 / var(--tw-text-opacity));
+}
+
+.dark .dark\:hover\:text-gray-300:hover {
+  --tw-text-opacity: 1;
+  color: rgb(212 212 212 / var(--tw-text-opacity));
 }
 
 .dark .dark\:hover\:text-gray-500:hover {
