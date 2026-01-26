@@ -6,10 +6,11 @@ defmodule OliWeb.Api.DirectedDiscussionController do
 
   This controller handles creating, deleting, and retrieving discussion posts for
   Directed Discussion activities. It automatically evaluates activity attempts when
-  participation requirements (minPosts, minReplies) are met, and resets attempts
-  when requirements are no longer met (e.g., after post deletion).
+  participation requirements (minPosts, minReplies) are met, and creates new attempts
+  when requirements are no longer met (e.g., after post deletion), leaving the
+  old evaluated attempts unchanged to maintain system invariants.
 
-  All evaluation and reset operations run asynchronously to avoid blocking the
+  All evaluation and attempt creation operations run asynchronously to avoid blocking the
   HTTP response.
   """
   use OliWeb, :controller
@@ -125,8 +126,8 @@ defmodule OliWeb.Api.DirectedDiscussionController do
   Deletes a discussion post.
 
   After successfully deleting the post, this endpoint asynchronously checks if
-  participation requirements are still met. If not, it resets the activity attempt
-  back to `:active` state.
+  participation requirements are still met. If not, it creates a new activity attempt
+  (leaving the old evaluated attempt unchanged to maintain system invariants).
 
   ## Parameters
   - `resource_id`: The activity resource ID
@@ -143,6 +144,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
         "post_id" => post_id
       }) do
     current_user = Map.get(conn.assigns, :current_user)
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
     # Parse resource_id and post_id to integers safely
     case parse_integer(resource_id) do
@@ -178,12 +180,14 @@ defmodule OliWeb.Api.DirectedDiscussionController do
                   )
 
                   # Check if participation requirements are still met after deletion
-                  # If not, reset the activity attempt back to :active
+                  # If not, create a new activity attempt (old evaluated attempt remains unchanged)
                   Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
-                    case DirectedDiscussion.reset_if_requirements_not_met(
+                    case DirectedDiscussion.create_new_attempt_if_evaluated_and_requirements_not_met(
+                           section_slug,
                            section.id,
                            resource_id_int,
-                           current_user.id
+                           current_user.id,
+                           datashop_session_id
                          ) do
                       {:ok, _} ->
                         :ok
@@ -192,7 +196,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
                         require Logger
 
                         Logger.warning(
-                          "Failed to check/reset Directed Discussion activity after post deletion: #{inspect(reason)}"
+                          "Failed to check/create new attempt for Directed Discussion activity after post deletion: #{inspect(reason)}"
                         )
                     end
                   end)
@@ -228,7 +232,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
   Retrieves all discussion posts for a user in a Directed Discussion activity.
 
   This endpoint asynchronously checks and updates the activity state:
-  - If requirements are no longer met, resets the activity to `:active`
+  - If requirements are no longer met, creates a new activity attempt (old evaluated attempt remains unchanged)
   - If requirements are met but not yet evaluated, evaluates the activity
   - If already evaluated and requirements still met, no action needed
 
@@ -258,16 +262,18 @@ defmodule OliWeb.Api.DirectedDiscussionController do
             )
             |> Enum.map(&Post.post_response/1)
 
-          # Check if participation requirements are met and evaluate/reset if needed
+          # Check if participation requirements are met and evaluate/create new attempt if needed
           # This runs asynchronously to avoid blocking the response
           Task.Supervisor.async_nolink(Oli.TaskSupervisor, fn ->
-            # First check if we need to reset (if requirements are no longer met)
-            case DirectedDiscussion.reset_if_requirements_not_met(
+            # First check if we need to create a new attempt (if requirements are no longer met)
+            case DirectedDiscussion.create_new_attempt_if_evaluated_and_requirements_not_met(
+                   section_slug,
                    section.id,
                    resource_id_int,
-                   current_user.id
+                   current_user.id,
+                   datashop_session_id
                  ) do
-              {:ok, :reset} ->
+              {:ok, :new_attempt_created} ->
                 :ok
 
               {:ok, :requirements_met} ->
@@ -314,7 +320,7 @@ defmodule OliWeb.Api.DirectedDiscussionController do
                 require Logger
 
                 Logger.warning(
-                  "Failed to check/reset Directed Discussion activity: #{inspect(reason)}"
+                  "Failed to check/create new attempt for Directed Discussion activity: #{inspect(reason)}"
                 )
             end
           end)
