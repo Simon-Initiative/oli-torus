@@ -12,12 +12,16 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   - Support both **server-side standard evaluation** and **client-side rule-based evaluation** workflows.
   - Handle evaluation contexts such as preview/testing modes, adaptive rules engines, and manual scoring.
   - Persist evaluation results, update progress metrics, and create snapshots/logs for analytics and experiments.
+  - Support **activity type specialization** for activities that require custom evaluation logic.
 
   ### Evaluation Modes:
   - **Standard Evaluation**: Traditional server-side evaluation using parts' input and scoring logic.
   - **Rules-based Evaluation**: For adaptive pages, leverages a rules engine to compute scores and feedback dynamically.
   - **Client-side Evaluation**: Accepts externally evaluated part scores (e.g., from the front-end) and persists them server-side.
   - **Preview/Test Evaluation**: Allows local preview/testing of activity evaluations without persisting results.
+  - **Activity Type Specialization**: For certain activity types (e.g., Directed Discussion), delegates to specialized
+    evaluation modules that handle activity-specific evaluation requirements. This allows activities with unique evaluation
+    logic to be handled in dedicated modules while maintaining the same public API.
 
   ### Public API Functions:
 
@@ -94,21 +98,39 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   evaluate the activity using the rules engine, and then apply the results as "client side"
   evaluated results.  For non-adaptive pages, this function will evaluate the activity using
   the standard server-side evaluation strategy.
+
+  This function also supports activity type specialization, where certain activity types
+  (e.g., Directed Discussion) can delegate to specialized evaluation modules that handle
+  activity-specific evaluation logic.
   """
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs, datashop_session_id) do
     activity_attempt =
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
-      |> Repo.preload([:resource_attempt])
+      |> Repo.preload([:resource_attempt, revision: [:activity_type]])
 
-    %ActivityAttempt{
-      resource_attempt: resource_attempt,
-      attempt_number: attempt_number
-    } = activity_attempt
+    # Check for activity type specialization
+    activity_type_slug = activity_attempt.revision.activity_type.slug
 
-    activity_model = select_model(activity_attempt)
-    part_attempts = get_latest_part_attempts(activity_attempt_guid)
+    case activity_type_slug do
+      "oli_directed_discussion" ->
+        Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion.evaluate_activity(
+          section_slug,
+          activity_attempt_guid,
+          part_inputs,
+          datashop_session_id
+        )
 
-    case Model.parse(activity_model) do
+      _ ->
+        # Continue with standard evaluation logic
+        %ActivityAttempt{
+          resource_attempt: resource_attempt,
+          attempt_number: attempt_number
+        } = activity_attempt
+
+        activity_model = select_model(activity_attempt)
+        part_attempts = get_latest_part_attempts(activity_attempt_guid)
+
+        case Model.parse(activity_model) do
       {:ok, %Model{rules: []}} ->
         evaluate_from_input(
           section_slug,
@@ -171,8 +193,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           part_attempts_submitted
         )
 
-      e ->
-        e
+          e ->
+            e
+        end
     end
   end
 

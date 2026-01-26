@@ -1,6 +1,18 @@
 defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
   @moduledoc """
-  Helper functions for evaluating Directed Discussion activities based on participation requirements.
+  Specialized evaluation logic for Directed Discussion activities.
+
+  This module implements activity type specialization for Directed Discussion activities,
+  which have unique evaluation requirements based on participation (posts and replies).
+  When a Directed Discussion activity is evaluated through the main `evaluate_activity/5`
+  function in `Oli.Delivery.Attempts.ActivityLifecycle.Evaluate`, it delegates to this
+  module's `evaluate_activity/5` function.
+
+  The evaluation process:
+  1. Checks if participation requirements (min posts/replies) are met
+  2. If met, evaluates the activity with a score of 1.0/1.0
+  3. Routes through the standard evaluation infrastructure (RollUp, Metrics, Snapshots)
+  4. Generates xAPI statements for OLAP ingestion
   """
 
   import Ecto.Query, warn: false
@@ -8,7 +20,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
   alias Oli.Repo
   alias Oli.Resources.Collaboration
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ClientEvaluation}
+  alias Oli.Delivery.Attempts.Core.{
+    ActivityAttempt,
+    ClientEvaluation,
+    ResourceAttempt,
+    ResourceAccess
+  }
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
 
@@ -157,12 +174,125 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
   end
 
   @doc """
+  Evaluates a Directed Discussion activity attempt.
+
+  This is the specialized evaluation function for Directed Discussion activities, called
+  by the main `evaluate_activity/5` function when the activity type is `oli_directed_discussion`.
+
+  The function:
+  1. Extracts section_id, user_id, and resource_id from the activity attempt structure
+  2. Checks if the attempt is still `:active` (if already evaluated, returns empty results)
+  3. Checks if participation requirements (min posts/replies) are met
+  4. If requirements are met, evaluates the activity using client evaluation with score 1.0/1.0
+  5. Routes through the proper evaluation infrastructure (RollUp, Metrics, Snapshots)
+  6. Generates and emits xAPI statements for OLAP ingestion
+
+  Note: The `part_inputs` parameter may be empty `[]` for Directed Discussion activities,
+  as evaluation is based on participation requirements rather than traditional part inputs.
+
+  ## Parameters
+  - `section_slug`: The section slug
+  - `activity_attempt_guid`: The GUID of the activity attempt to evaluate
+  - `part_inputs`: List of part inputs (may be empty for Directed Discussion)
+  - `datashop_session_id`: Optional datashop session ID
+
+  ## Returns
+  - `{:ok, [map()]}` - Evaluation results (list of evaluation result maps)
+  - `{:ok, []}` - If requirements not met yet or already evaluated (empty results)
+  - `{:error, reason}` - If an error occurred
+
+  The evaluation results follow the same format as standard evaluation:
+  `%{score: score, out_of: out_of, feedback: feedback, attempt_guid: attempt_guid}`
+  """
+  @spec evaluate_activity(
+          section_slug :: String.t(),
+          activity_attempt_guid :: String.t(),
+          part_inputs :: [map()],
+          datashop_session_id :: String.t() | nil
+        ) :: {:ok, [map()]} | {:error, any()}
+  def evaluate_activity(section_slug, activity_attempt_guid, _part_inputs, datashop_session_id) do
+    # Get activity attempt with proper preloading
+    activity_attempt =
+      Core.get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+      |> Repo.preload([resource_attempt: [:resource_access], revision: [:activity_type]])
+
+    case activity_attempt do
+      nil ->
+        {:error, "Activity attempt not found"}
+
+      %ActivityAttempt{
+        resource_attempt: %ResourceAttempt{
+          resource_access: %ResourceAccess{
+            section_id: section_id,
+            user_id: user_id
+          }
+        } = _resource_attempt,
+        resource_id: resource_id,
+        lifecycle_state: lifecycle_state
+      } ->
+        # Only evaluate if still active
+        case lifecycle_state do
+          :active ->
+            # Check if participation requirements are met
+            case check_participation_requirements(section_id, resource_id, user_id) do
+              {:ok, true} ->
+                # Requirements met - proceed with evaluation
+                # Get part attempts for this activity
+                part_attempts = Core.get_latest_part_attempts(activity_attempt_guid)
+
+                case part_attempts do
+                  [] ->
+                    {:error, "No part attempts found for activity"}
+
+                  _ ->
+                    # Create client evaluations for each part attempt
+                    # For Directed Discussion, we mark it as complete with score 1.0/1.0
+                    client_evaluations =
+                      Enum.map(part_attempts, fn part_attempt ->
+                        %{
+                          attempt_guid: part_attempt.attempt_guid,
+                          client_evaluation: %ClientEvaluation{
+                            score: 1.0,
+                            out_of: 1.0,
+                            feedback: nil,
+                            input: nil,
+                            timestamp: DateTime.utc_now()
+                          }
+                        }
+                      end)
+
+                    # Apply client evaluation using the centralized evaluation infrastructure.
+                    # This ensures proper rollup, metrics updates, and xAPI statement generation.
+                    Evaluate.apply_client_evaluation(
+                      section_slug,
+                      activity_attempt_guid,
+                      client_evaluations,
+                      datashop_session_id,
+                      enforce_client_side_eval: false
+                    )
+                end
+
+              {:ok, false} ->
+                # Requirements not met yet, return empty results
+                {:ok, []}
+
+              {:error, reason} ->
+                {:error, reason}
+            end
+
+          _ ->
+            # Already evaluated/submitted, return empty results
+            {:ok, []}
+        end
+    end
+  end
+
+  @doc """
   Evaluates a Directed Discussion activity when participation requirements are met.
 
-  This function:
-  1. Gets the activity attempt
-  2. Checks if participation requirements are met
-  3. If met, evaluates the activity using client evaluation with score 1.0/1.0
+  This is a convenience function that looks up the latest activity attempt using
+  `section_id`, `resource_id`, and `user_id`, then calls the main `evaluate_activity/5`
+  function. Use this when you have these IDs but not the `activity_attempt_guid`.
 
   The evaluation process:
   - Routes through the proper evaluation infrastructure (RollUp, Metrics, Snapshots)
@@ -197,19 +327,21 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
         {:error, "Activity attempt not found"}
 
       %ActivityAttempt{
+        attempt_guid: activity_attempt_guid,
         lifecycle_state: lifecycle_state
       } ->
         # Evaluate if still active (regardless of attempt number, since each page attempt
         # creates new activity attempts with attempt_number=1 for that resource_attempt)
         if lifecycle_state == :active do
-          # Check if requirements are met
-          case check_participation_requirements(section_id, resource_id, user_id) do
-            {:ok, true} ->
-              # Requirements are met, evaluate the activity
-              evaluate_activity(activity_attempt, section_slug, datashop_session_id)
-
-            {:ok, false} ->
+          # Call the main evaluate_activity/5 function
+          case evaluate_activity(section_slug, activity_attempt_guid, [], datashop_session_id) do
+            {:ok, []} ->
+              # Empty results means requirements not met yet
               {:ok, :requirements_not_met}
+
+            {:ok, _results} ->
+              # Non-empty results means evaluation succeeded
+              {:ok, :evaluated}
 
             {:error, reason} ->
               {:error, reason}
@@ -257,64 +389,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
 
       _ ->
         nil
-    end
-  end
-
-  defp evaluate_activity(activity_attempt, section_slug, datashop_session_id) do
-    # Get part attempts for this activity
-    part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
-
-    case part_attempts do
-      [] ->
-        {:error, "No part attempts found for activity"}
-
-      _ ->
-        # Create client evaluations for each part attempt
-        # For Directed Discussion, we mark it as complete with score 1.0/1.0
-        client_evaluations =
-          Enum.map(part_attempts, fn part_attempt ->
-            %{
-              attempt_guid: part_attempt.attempt_guid,
-              client_evaluation: %ClientEvaluation{
-                score: 1.0,
-                out_of: 1.0,
-                feedback: nil,
-                input: nil,
-                timestamp: DateTime.utc_now()
-              }
-            }
-          end)
-
-        # Apply client evaluation using the centralized evaluation infrastructure.
-        # This function:
-        # 1. Routes through RollUp.determine_activity_rollup_fn for proper score aggregation
-        # 2. Updates page progress metrics
-        # 3. Triggers xAPI statement generation via Snapshots.maybe_create_snapshot
-        #
-        # The xAPI statements are:
-        # - Generated by Oli.Analytics.XAPI.StatementFactory.to_statements
-        # - Emitted via Oli.Analytics.XAPI.emit()
-        # - Uploaded to S3 for OLAP ingestion
-        # - Used for analytics, progress calculations, and proficiency tracking
-        #
-        # Use enforce_client_side_eval: false since this is server-side evaluation
-        # triggered by server-side logic (post creation), not client-side evaluation.
-        # The client_evaluations format (maps with attempt_guid keys) is automatically
-        # converted to part_inputs format by apply_client_evaluation, which is the
-        # correct format for the snapshot pipeline.
-        case Evaluate.apply_client_evaluation(
-               section_slug,
-               activity_attempt.attempt_guid,
-               client_evaluations,
-               datashop_session_id,
-               enforce_client_side_eval: false
-             ) do
-          {:ok, _} ->
-            {:ok, :evaluated}
-
-          {:error, reason} ->
-            {:error, reason}
-        end
     end
   end
 end
