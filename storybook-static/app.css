@@ -29453,11 +29453,6 @@ Not supports in Firefox and IE */
   fill: #a3a3a3;
 }
 
-.dark .group.past-start .dark\:group-\[\.past-start\]\:text-gray-700 {
-  --tw-text-opacity: 1;
-  color: rgb(64 64 64 / var(--tw-text-opacity));
-}
-
 .dark .peer:focus ~ .dark\:peer-focus\:ring-primary-800 {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(19 44 83 / var(--tw-ring-opacity));
