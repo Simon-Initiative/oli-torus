@@ -11,8 +11,6 @@ defmodule Oli.GenAI.ServiceConfigChangesetTest do
       assert changeset.valid?
       assert get_field(changeset, :routing_soft_limit) == 40
       assert get_field(changeset, :routing_hard_limit) == 80
-      assert get_field(changeset, :routing_stream_soft_limit) == 8
-      assert get_field(changeset, :routing_stream_hard_limit) == 16
       assert get_field(changeset, :routing_breaker_error_rate_threshold) == 0.2
       assert get_field(changeset, :routing_breaker_429_threshold) == 0.1
       assert get_field(changeset, :routing_breaker_latency_p95_ms) == 6000
@@ -33,21 +31,6 @@ defmodule Oli.GenAI.ServiceConfigChangesetTest do
 
       refute changeset.valid?
       assert "must be less than or equal to hard limit" in errors_on(changeset).routing_soft_limit
-    end
-
-    test "rejects stream soft limit greater than stream hard limit" do
-      changeset =
-        ServiceConfig.changeset(%ServiceConfig{}, %{
-          name: "Invalid Stream Config",
-          primary_model_id: 1,
-          routing_stream_soft_limit: 10,
-          routing_stream_hard_limit: 5
-        })
-
-      refute changeset.valid?
-
-      assert "must be less than or equal to stream hard limit" in
-               errors_on(changeset).routing_stream_soft_limit
     end
 
     test "rejects breaker thresholds outside 0..1 range" do

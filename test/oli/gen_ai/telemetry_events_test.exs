@@ -137,8 +137,6 @@ defmodule Oli.GenAI.TelemetryEventsTest do
       backup_model: backup,
       routing_soft_limit: 2,
       routing_hard_limit: 3,
-      routing_stream_soft_limit: 1,
-      routing_stream_hard_limit: 2,
       routing_breaker_error_rate_threshold: 0.2,
       routing_breaker_429_threshold: 0.1,
       routing_breaker_latency_p95_ms: 6000,

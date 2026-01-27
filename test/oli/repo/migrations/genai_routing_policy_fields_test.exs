@@ -28,8 +28,6 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
 
       assert service_config.routing_soft_limit == 40
       assert service_config.routing_hard_limit == 80
-      assert service_config.routing_stream_soft_limit == 8
-      assert service_config.routing_stream_hard_limit == 16
       assert service_config.routing_breaker_error_rate_threshold == 0.2
       assert service_config.routing_breaker_429_threshold == 0.1
       assert service_config.routing_breaker_latency_p95_ms == 6000
@@ -37,6 +35,7 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
       assert service_config.routing_half_open_probe_count == 3
       assert service_config.routing_timeout_ms == 30_000
       assert service_config.routing_connect_timeout_ms == 5_000
+      assert is_nil(service_config.secondary_model_id)
     end
 
     test "routing soft limit must be less than or equal to hard limit" do
@@ -48,19 +47,6 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
           primary_model_id: registered_model.id,
           routing_soft_limit: 10,
           routing_hard_limit: 5
-        })
-      end
-    end
-
-    test "routing stream soft limit must be less than or equal to stream hard limit" do
-      registered_model = insert_registered_model()
-
-      assert_raise Ecto.ConstraintError, ~r/routing_stream_soft_limit_lte_hard_limit/, fn ->
-        Repo.insert!(%ServiceConfig{
-          name: "Invalid Stream Soft Limit",
-          primary_model_id: registered_model.id,
-          routing_stream_soft_limit: 10,
-          routing_stream_hard_limit: 5
         })
       end
     end
@@ -85,6 +71,30 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
           name: "Invalid Timeout",
           primary_model_id: registered_model.id,
           routing_timeout_ms: -1
+        })
+      end
+    end
+  end
+
+  describe "registered_models routing policy fields" do
+    test "defaults pool_class to slow and allows null max_concurrent" do
+      registered_model = insert_registered_model()
+
+      assert registered_model.pool_class == :slow
+      assert is_nil(registered_model.max_concurrent)
+    end
+
+    test "max_concurrent must be non-negative when present" do
+      assert_raise Ecto.ConstraintError, ~r/max_concurrent_non_negative/, fn ->
+        Repo.insert!(%RegisteredModel{
+          name: "Invalid Model",
+          provider: :open_ai,
+          model: "gpt-4",
+          url_template: "https://api.example.com",
+          api_key: "secret",
+          timeout: 8000,
+          recv_timeout: 60_000,
+          max_concurrent: -1
         })
       end
     end

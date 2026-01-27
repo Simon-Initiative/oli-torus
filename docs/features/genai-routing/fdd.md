@@ -94,8 +94,6 @@ Add/update routing policy fields on `completions_service_configs`:
 - `secondary_model_id` (nullable FK)
 - `routing_soft_limit` (integer, >= 0)
 - `routing_hard_limit` (integer, >= 0)
-- `routing_stream_soft_limit` (integer, >= 0)
-- `routing_stream_hard_limit` (integer, >= 0)
 - `routing_breaker_error_rate_threshold` (numeric or float, 0.0..1.0)
 - `routing_breaker_429_threshold` (numeric or float, 0.0..1.0)
 - `routing_breaker_latency_p95_ms` (integer, >= 0)
@@ -115,7 +113,6 @@ Migration plan (online-safe):
 
 Constraints:
 - `routing_soft_limit <= routing_hard_limit`
-- `routing_stream_soft_limit <= routing_stream_hard_limit`
 - Thresholds within range 0.0..1.0.
 
 Note: admission control is enforced via per-model and per-pool caps; routing does not distinguish stream vs generate in this phase.

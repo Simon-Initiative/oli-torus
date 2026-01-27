@@ -220,20 +220,6 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
               class={@form_control_classes}
             />
             <.input
-              field={@form[:routing_stream_soft_limit]}
-              type="number"
-              label="Stream Soft Limit"
-              disabled={!@editing}
-              class={@form_control_classes}
-            />
-            <.input
-              field={@form[:routing_stream_hard_limit]}
-              type="number"
-              label="Stream Hard Limit"
-              disabled={!@editing}
-              class={@form_control_classes}
-            />
-            <.input
               field={@form[:routing_breaker_error_rate_threshold]}
               type="number"
               step="0.01"
@@ -294,10 +280,6 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
               <div>
                 <div class="text-xs uppercase text-gray-500">Active Requests</div>
                 <div>{@health.counts.requests}</div>
-              </div>
-              <div>
-                <div class="text-xs uppercase text-gray-500">Active Streams</div>
-                <div>{@health.counts.streams}</div>
               </div>
               <div>
                 <div class="text-xs uppercase text-gray-500">Primary Breaker</div>

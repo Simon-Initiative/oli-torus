@@ -11,7 +11,6 @@ defmodule Oli.GenAI.HackneyPool do
   Pool sizes can be configured via:
   - `GENAI_FAST_POOL_SIZE`
   - `GENAI_SLOW_POOL_SIZE`
-  - `GENAI_HACKNEY_POOL_SIZE` (fallback for both)
 
   ## Usage
 
@@ -61,11 +60,11 @@ defmodule Oli.GenAI.HackneyPool do
   """
   @spec pool_size(:fast | :slow) :: pos_integer()
   def pool_size(:fast) do
-    Application.get_env(:oli, :genai_hackney_fast_pool_size, fallback_pool_size())
+    Application.get_env(:oli, :genai_hackney_fast_pool_size, @default_pool_size)
   end
 
   def pool_size(:slow) do
-    Application.get_env(:oli, :genai_hackney_slow_pool_size, fallback_pool_size())
+    Application.get_env(:oli, :genai_hackney_slow_pool_size, @default_pool_size)
   end
 
   @doc """
@@ -124,10 +123,6 @@ defmodule Oli.GenAI.HackneyPool do
     Logger.info("Stopping GenAI hackney pool '#{@slow_pool_name}'")
     :hackney_pool.stop_pool(@slow_pool_name)
     :ok
-  end
-
-  defp fallback_pool_size do
-    Application.get_env(:oli, :genai_hackney_pool_size, @default_pool_size)
   end
 
   defp start_pool(pool_name, size) do

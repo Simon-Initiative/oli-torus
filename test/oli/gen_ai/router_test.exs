@@ -98,8 +98,6 @@ defmodule Oli.GenAI.RouterTest do
       backup_model: backup,
       routing_soft_limit: 2,
       routing_hard_limit: 3,
-      routing_stream_soft_limit: 1,
-      routing_stream_hard_limit: 2,
       routing_timeout_ms: 30_000,
       routing_connect_timeout_ms: 5_000
     }
