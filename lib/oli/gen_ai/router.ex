@@ -24,7 +24,10 @@ defmodule Oli.GenAI.Router do
     counts = AdmissionControl.counts(service_config.id)
 
     primary = service_config.primary_model
-    secondary = normalize_secondary(service_config.secondary_model, primary, service_config.backup_model)
+
+    secondary =
+      normalize_secondary(service_config.secondary_model, primary, service_config.backup_model)
+
     backup = service_config.backup_model
 
     primary_snapshot = breaker_snapshot(primary)
@@ -73,7 +76,17 @@ defmodule Oli.GenAI.Router do
     duration_ms = System.monotonic_time(:millisecond) - start_ms
 
     {soft_limit, hard_limit} = limits(service_config)
-    emit_telemetry(result, duration_ms, request_type, service_config, counts, soft_limit, hard_limit)
+
+    emit_telemetry(
+      result,
+      duration_ms,
+      request_type,
+      service_config,
+      counts,
+      soft_limit,
+      hard_limit
+    )
+
     log_decision(result, request_type, service_config, counts, soft_limit, hard_limit)
 
     result
@@ -148,7 +161,8 @@ defmodule Oli.GenAI.Router do
       :ok ->
         case admit_model(model) do
           :ok ->
-            {:ok, build_plan(service_config, request_type, counts, model, tier, pool_name, reason)}
+            {:ok,
+             build_plan(service_config, request_type, counts, model, tier, pool_name, reason)}
 
           {:error, :over_capacity} ->
             AdmissionControl.release_pool(pool_name)
@@ -191,7 +205,15 @@ defmodule Oli.GenAI.Router do
     end
   end
 
-  defp emit_telemetry(result, duration_ms, request_type, service_config, counts, soft_limit, hard_limit) do
+  defp emit_telemetry(
+         result,
+         duration_ms,
+         request_type,
+         service_config,
+         counts,
+         soft_limit,
+         hard_limit
+       ) do
     {reason, selected_model_id, tier, pool_name, pool_class, admitted} =
       case result do
         {:ok, plan} ->

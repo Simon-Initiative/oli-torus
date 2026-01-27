@@ -42,7 +42,10 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
       view
       |> form("#service-config-form", service_config: params)
       |> render_submit()
-      |> then(fn html -> refute html =~ "Couldn't update service config"; html end)
+      |> then(fn html ->
+        refute html =~ "Couldn't update service config"
+        html
+      end)
 
       updated = Repo.get!(ServiceConfig, service_config.id)
       assert updated.routing_soft_limit == 10

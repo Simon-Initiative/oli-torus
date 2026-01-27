@@ -164,7 +164,11 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
             />
           </div>
           <div class="mt-2">
-            <.button disabled={!@editing} class="btn btn-primary btn-sm" phx-disable-with="Updating…">
+            <.button
+              disabled={!@editing}
+              class="btn btn-primary btn-sm"
+              phx-disable-with="Updating…"
+            >
               Update Pool Sizes
             </.button>
           </div>
@@ -372,8 +376,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
       nil ->
         socket = put_flash(socket, :error, "Registered model not found")
 
-        {:noreply,
-         assign_form(socket, RegisteredModel.changeset(socket.assigns.selected, %{}))}
+        {:noreply, assign_form(socket, RegisteredModel.changeset(socket.assigns.selected, %{}))}
 
       item ->
         socket = clear_flash(socket)
@@ -410,8 +413,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
       nil ->
         socket = put_flash(socket, :error, "Registered model not found")
 
-        {:noreply,
-         assign_form(socket, RegisteredModel.changeset(socket.assigns.selected, %{}))}
+        {:noreply, assign_form(socket, RegisteredModel.changeset(socket.assigns.selected, %{}))}
 
       selected ->
         case GenAI.update_registered_model(selected, params) do

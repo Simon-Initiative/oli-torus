@@ -37,7 +37,12 @@ defmodule Oli.GenAI.RouterTest do
   test "routes to secondary when primary over capacity" do
     service_config =
       build_service_config(3,
-        primary_model: %RegisteredModel{id: 31, name: "Primary", provider: :null, max_concurrent: 0}
+        primary_model: %RegisteredModel{
+          id: 31,
+          name: "Primary",
+          provider: :null,
+          max_concurrent: 0
+        }
       )
 
     request_ctx = %{request_type: :generate}
@@ -51,7 +56,12 @@ defmodule Oli.GenAI.RouterTest do
   test "rejects when secondary breaker is open and primary over capacity" do
     service_config =
       build_service_config(4,
-        primary_model: %RegisteredModel{id: 41, name: "Primary", provider: :null, max_concurrent: 0}
+        primary_model: %RegisteredModel{
+          id: 41,
+          name: "Primary",
+          provider: :null,
+          max_concurrent: 0
+        }
       )
 
     request_ctx = %{request_type: :generate}

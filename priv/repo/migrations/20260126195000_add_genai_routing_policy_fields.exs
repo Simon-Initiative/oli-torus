@@ -25,6 +25,7 @@ defmodule Oli.Repo.Migrations.AddGenAIRoutingPolicyFields do
     alter table(:registered_models) do
       add :pool_class, :string, null: false, default: "slow"
       add :max_concurrent, :integer
+
       add :routing_breaker_error_rate_threshold, :float,
         default: @breaker_error_rate_threshold,
         null: false
@@ -32,6 +33,7 @@ defmodule Oli.Repo.Migrations.AddGenAIRoutingPolicyFields do
       add :routing_breaker_429_threshold, :float, default: @breaker_429_threshold, null: false
       add :routing_breaker_latency_p95_ms, :integer, default: @breaker_latency_p95_ms, null: false
       add :routing_open_cooldown_ms, :integer, default: @breaker_open_cooldown_ms, null: false
+
       add :routing_half_open_probe_count, :integer,
         default: @breaker_half_open_probe_count,
         null: false
