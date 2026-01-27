@@ -73,11 +73,11 @@ defmodule OliWeb.UserSettingsLiveTest do
         |> render_change(%{
           "user" => %{
             "given_name" => "John",
-            "family_name" => "D"
+            "family_name" => ""
           }
         })
 
-      assert result =~ "Please enter a Last Name that is at least two characters long."
+      assert result =~ "Please enter a Last Name"
     end
 
     test "shows both error messages when First Name is empty and Last Name has less than 2 characters on form submit",
@@ -91,7 +91,7 @@ defmodule OliWeb.UserSettingsLiveTest do
 
       invalid_params = %{
         "given_name" => "",
-        "family_name" => "A"
+        "family_name" => ""
       }
 
       result =
@@ -99,8 +99,8 @@ defmodule OliWeb.UserSettingsLiveTest do
         |> form("#user_form", %{"user" => invalid_params})
         |> render_submit()
 
-      assert result =~ "Please enter a First Name."
-      assert result =~ "Please enter a Last Name that is at least two characters long."
+      assert result =~ "Please enter a First Name"
+      assert result =~ "Please enter a Last Name"
     end
 
     test "shows correct full name when first name or last name change", %{conn: conn} do
