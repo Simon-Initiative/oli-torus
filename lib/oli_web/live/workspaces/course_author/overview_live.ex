@@ -509,6 +509,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             id="course-sections-search"
             name="search"
             text={@course_sections_search}
+            aria_label="Search course sections"
           />
         </.form>
         <StripedPagedTable.render
