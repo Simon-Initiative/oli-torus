@@ -1,12 +1,15 @@
 defmodule OliWeb.Api.DirectedDiscussionControllerTest do
   use OliWeb.ConnCase
 
+  import Ecto.Query
   import Oli.Factory
 
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion
   alias Oli.Resources.Collaboration
   alias Oli.Activities
+  alias Oli.Delivery.Sections
+  alias Oli.Resources.ResourceType
   alias Lti_1p3.Roles.ContextRoles
 
   defp create_directed_discussion_activity(participation) do
@@ -117,6 +120,87 @@ defmodule OliWeb.Api.DirectedDiscussionControllerTest do
       activity_attempt: activity_attempt,
       part_attempt: part_attempt
     }
+  end
+
+  defp setup_published_resources(section, page_revision, activity_revision) do
+    project = section.base_project
+
+    from(sr in Oli.Delivery.Sections.SectionResource,
+      where: sr.section_id == ^section.id and sr.resource_id == ^page_revision.resource_id
+    )
+    |> Oli.Repo.delete_all()
+
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision,
+        resource: container_resource,
+        resource_type_id: ResourceType.id_for_container(),
+        content: %{},
+        children: [page_revision.resource_id]
+      )
+
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource_id})
+    insert(:project_resource, %{project_id: project.id, resource_id: activity_revision.resource_id})
+
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id
+      })
+
+    author = hd(project.authors)
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: activity_revision.resource,
+      revision: activity_revision,
+      author: author
+    })
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+
+    section
+  end
+
+  defp get_latest_activity_attempt_any_state(section_id, user_id, resource_id) do
+    Oli.Repo.one(
+      from(aa in Core.ActivityAttempt,
+        join: ra in Core.ResourceAttempt,
+        on: ra.id == aa.resource_attempt_id,
+        join: rac in Core.ResourceAccess,
+        on: rac.id == ra.resource_access_id,
+        left_join: aa2 in Core.ActivityAttempt,
+        on:
+          aa2.resource_id == ^resource_id and
+            aa2.resource_attempt_id == ra.id and
+            aa.attempt_number < aa2.attempt_number,
+        where:
+          aa.resource_id == ^resource_id and
+            rac.user_id == ^user_id and
+            rac.section_id == ^section_id and
+            is_nil(aa2.id),
+        order_by: [desc: ra.attempt_number, desc: aa.attempt_number],
+        limit: 1,
+        select: aa
+      )
+    )
   end
 
   defp setup_session(%{conn: conn}) do
@@ -254,6 +338,9 @@ defmodule OliWeb.Api.DirectedDiscussionControllerTest do
 
       setup = setup_activity_attempt(user, section, activity_revision)
 
+      # Publish resources so reset_activity can run (DeliveryResolver.from_resource_id)
+      section = setup_published_resources(section, setup.page_revision, activity_revision)
+
       # Create a post first
       {:ok, post} =
         Collaboration.create_post(%{
@@ -293,25 +380,34 @@ defmodule OliWeb.Api.DirectedDiscussionControllerTest do
 
       assert %{"result" => "success"} = json_response(conn, 200)
 
-      # Wait for async task to complete by polling for the expected outcome
+      # Wait for async task: a new attempt is created (original stays evaluated)
       Oli.TestHelpers.wait_until(
         fn ->
-          reset_attempt =
-            Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+          latest =
+            get_latest_activity_attempt_any_state(section.id, user.id, activity_revision.resource_id)
 
-          reset_attempt != nil && reset_attempt.lifecycle_state == :active
+          latest != nil &&
+            latest.attempt_guid != setup.activity_attempt.attempt_guid &&
+            latest.lifecycle_state == :active
         end,
         timeout: 2000
       )
 
-      # Verify the outcome: activity was reset because requirements are no longer met
-      reset_attempt =
+      # Original attempt stays evaluated
+      original_attempt =
         Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
 
-      assert reset_attempt.lifecycle_state == :active
-      assert reset_attempt.score == nil
-      assert reset_attempt.out_of == nil
-      assert reset_attempt.date_evaluated == nil
+      assert original_attempt.lifecycle_state == :evaluated
+      assert original_attempt.score == 1.0
+
+      # New attempt is active
+      new_attempt =
+        get_latest_activity_attempt_any_state(section.id, user.id, activity_revision.resource_id)
+
+      assert new_attempt.attempt_guid != setup.activity_attempt.attempt_guid
+      assert new_attempt.lifecycle_state == :active
+      assert new_attempt.score == nil
+      assert new_attempt.date_evaluated == nil
     end
 
     test "deletes post but does not reset when requirements are still met", %{
@@ -490,6 +586,9 @@ defmodule OliWeb.Api.DirectedDiscussionControllerTest do
 
       setup = setup_activity_attempt(user, section, activity_revision)
 
+      # Publish resources so reset_activity can run (DeliveryResolver.from_resource_id)
+      section = setup_published_resources(section, setup.page_revision, activity_revision)
+
       # Create and evaluate activity first
       {:ok, post} =
         Collaboration.create_post(%{
@@ -516,7 +615,7 @@ defmodule OliWeb.Api.DirectedDiscussionControllerTest do
       # Delete the post (requirements no longer met)
       Collaboration.delete_posts(post)
 
-      # Get discussion (should trigger reset check)
+      # Get discussion (should trigger create-new-attempt check)
       conn =
         get(
           conn,
@@ -526,23 +625,33 @@ defmodule OliWeb.Api.DirectedDiscussionControllerTest do
       assert %{"result" => "success", "posts" => posts} = json_response(conn, 200)
       assert length(posts) == 0
 
-      # Wait for async task to complete by polling for the expected outcome
+      # Wait for async task: a new attempt is created (original stays evaluated)
       Oli.TestHelpers.wait_until(
         fn ->
-          reset_attempt =
-            Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+          latest =
+            get_latest_activity_attempt_any_state(section.id, user.id, activity_revision.resource_id)
 
-          reset_attempt != nil && reset_attempt.lifecycle_state == :active
+          latest != nil &&
+            latest.attempt_guid != setup.activity_attempt.attempt_guid &&
+            latest.lifecycle_state == :active
         end,
         timeout: 2000
       )
 
-      # Verify the outcome: activity was reset
-      reset_attempt =
+      # Original attempt stays evaluated
+      original_attempt =
         Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
 
-      assert reset_attempt.lifecycle_state == :active
-      assert reset_attempt.score == nil
+      assert original_attempt.lifecycle_state == :evaluated
+      assert original_attempt.score == 1.0
+
+      # New attempt is active
+      new_attempt =
+        get_latest_activity_attempt_any_state(section.id, user.id, activity_revision.resource_id)
+
+      assert new_attempt.attempt_guid != setup.activity_attempt.attempt_guid
+      assert new_attempt.lifecycle_state == :active
+      assert new_attempt.score == nil
     end
 
     test "returns error when user is not enrolled", %{

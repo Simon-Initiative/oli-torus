@@ -108,94 +108,98 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
       |> Repo.preload([:resource_attempt, revision: [:activity_type]])
 
-    # Check for activity type specialization
-    activity_type_slug = activity_attempt.revision.activity_type.slug
+    if is_nil(activity_attempt) do
+      {:error, "Activity attempt not found"}
+    else
+      # Check for activity type specialization
+      activity_type_slug = activity_attempt.revision.activity_type.slug
 
-    case activity_type_slug do
-      "oli_directed_discussion" ->
-        Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion.evaluate_activity(
-          section_slug,
-          activity_attempt_guid,
-          part_inputs,
-          datashop_session_id
-        )
+      case activity_type_slug do
+        "oli_directed_discussion" ->
+          Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion.evaluate_activity(
+            section_slug,
+            activity_attempt_guid,
+            part_inputs,
+            datashop_session_id
+          )
 
-      _ ->
-        # Continue with standard evaluation logic
-        %ActivityAttempt{
-          resource_attempt: resource_attempt,
-          attempt_number: attempt_number
-        } = activity_attempt
+        _ ->
+          # Continue with standard evaluation logic
+          %ActivityAttempt{
+            resource_attempt: resource_attempt,
+            attempt_number: attempt_number
+          } = activity_attempt
 
-        activity_model = select_model(activity_attempt)
-        part_attempts = get_latest_part_attempts(activity_attempt_guid)
+          activity_model = select_model(activity_attempt)
+          part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
-        case Model.parse(activity_model) do
-      {:ok, %Model{rules: []}} ->
-        evaluate_from_input(
-          section_slug,
-          activity_attempt_guid,
-          part_inputs,
-          datashop_session_id,
-          part_attempts
-        )
+          case Model.parse(activity_model) do
+            {:ok, %Model{rules: []}} ->
+              evaluate_from_input(
+                section_slug,
+                activity_attempt_guid,
+                part_inputs,
+                datashop_session_id,
+                part_attempts
+              )
 
-      {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
-        part_attempts_submitted = submit_active_part_attempts(part_attempts)
+            {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
+              part_attempts_submitted = submit_active_part_attempts(part_attempts)
 
-        custom = Map.get(delivery, "custom", %{})
+              custom = Map.get(delivery, "custom", %{})
 
-        is_manually_graded =
-          Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
+              is_manually_graded =
+                Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
 
-        # count the manual max score, and use that as the default instead of zero if there is no maxScore set by the author
-        max_score =
-          case is_manually_graded do
-            true ->
-              manual_max = Enum.reduce(part_attempts, fn sum, pa -> sum + pa.out_of end)
-              Map.get(custom, "maxScore", manual_max)
+              # count the manual max score, and use that as the default instead of zero if there is no maxScore set by the author
+              max_score =
+                case is_manually_graded do
+                  true ->
+                    manual_max = Enum.reduce(part_attempts, fn sum, pa -> sum + pa.out_of end)
+                    Map.get(custom, "maxScore", manual_max)
 
-            false ->
-              Map.get(custom, "maxScore", 0)
+                  false ->
+                    Map.get(custom, "maxScore", 0)
+                end
+
+              scoringContext = %{
+                maxScore: max_score,
+                maxAttempt: Map.get(custom, "maxAttempt", 1),
+                trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
+                negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
+                currentAttemptNumber: attempt_number,
+                isManuallyGraded: is_manually_graded
+              }
+
+              activitiesRequiredForEvaluation =
+                Map.get(authoring, "activitiesRequiredForEvaluation", [])
+
+              # Logger.debug("ACTIVITIES REQUIRED: #{activitiesRequiredForEvaluation}")
+
+              variablesRequiredForEvaluation =
+                Map.get(authoring, "variablesRequiredForEvaluation", nil)
+
+              # Logger.debug("VARIABLES REQUIRED: #{Jason.encode!(variablesRequiredForEvaluation)}")
+
+              Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
+
+              evaluate_from_rules(
+                section_slug,
+                resource_attempt,
+                activity_attempt_guid,
+                part_inputs,
+                scoringContext,
+                rules,
+                activitiesRequiredForEvaluation,
+                variablesRequiredForEvaluation,
+                datashop_session_id,
+                part_attempts_submitted
+              )
+
+            e ->
+              e
           end
-
-        scoringContext = %{
-          maxScore: max_score,
-          maxAttempt: Map.get(custom, "maxAttempt", 1),
-          trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
-          negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
-          currentAttemptNumber: attempt_number,
-          isManuallyGraded: is_manually_graded
-        }
-
-        activitiesRequiredForEvaluation =
-          Map.get(authoring, "activitiesRequiredForEvaluation", [])
-
-        # Logger.debug("ACTIVITIES REQUIRED: #{activitiesRequiredForEvaluation}")
-
-        variablesRequiredForEvaluation =
-          Map.get(authoring, "variablesRequiredForEvaluation", nil)
-
-        # Logger.debug("VARIABLES REQUIRED: #{Jason.encode!(variablesRequiredForEvaluation)}")
-
-        Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
-
-        evaluate_from_rules(
-          section_slug,
-          resource_attempt,
-          activity_attempt_guid,
-          part_inputs,
-          scoringContext,
-          rules,
-          activitiesRequiredForEvaluation,
-          variablesRequiredForEvaluation,
-          datashop_session_id,
-          part_attempts_submitted
-        )
-
-          e ->
-            e
-        end
+      end
     end
   end
 

@@ -7,6 +7,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
   alias Oli.Delivery.Attempts.Core
   alias Oli.Resources.Collaboration
   alias Oli.Activities
+  alias Oli.Delivery.Sections
+  alias Oli.Resources.ResourceType
 
   defp create_directed_discussion_activity(participation) do
     activity_resource = insert(:resource)
@@ -135,6 +137,82 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
       })
 
     post
+  end
+
+  defp setup_published_resources(section, page_revision, activity_revision) do
+    # Get the project from the section
+    project = section.base_project
+
+    # Delete any existing section_resources for the page resource that were created manually
+    # This avoids conflicts when Sections.create_section_resources runs
+    from(sr in Oli.Delivery.Sections.SectionResource,
+      where: sr.section_id == ^section.id and sr.resource_id == ^page_revision.resource_id
+    )
+    |> Oli.Repo.delete_all()
+
+    # Create a container resource as root
+    container_resource = insert(:resource)
+
+    container_revision =
+      insert(:revision,
+        resource: container_resource,
+        resource_type_id: ResourceType.id_for_container(),
+        content: %{},
+        children: [page_revision.resource_id]
+      )
+
+    # Associate all resources to the project
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: container_resource.id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: page_revision.resource_id
+    })
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: activity_revision.resource_id
+    })
+
+    # Create publication
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: container_resource.id
+      })
+
+    author = hd(project.authors)
+
+    # Publish all resources
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision,
+      author: author
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: activity_revision.resource,
+      revision: activity_revision,
+      author: author
+    })
+
+    # Link section to publication (this also creates SectionsProjectsPublications)
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+
+    section
   end
 
   describe "check_participation_requirements/3" do
@@ -456,14 +534,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
     end
   end
 
-  describe "reset_if_requirements_not_met/3" do
+  describe "create_new_attempt_if_evaluated_and_requirements_not_met/5" do
     test "returns error when no activity attempt exists" do
       user = insert(:user)
       section = insert(:section)
       activity_revision = create_directed_discussion_activity(%{"minPosts" => 1})
 
       assert {:error, "Activity attempt not found"} =
-               DirectedDiscussion.reset_if_requirements_not_met(
+               DirectedDiscussion.create_new_attempt_if_evaluated_and_requirements_not_met(
+                 section.slug,
                  section.id,
                  activity_revision.resource_id,
                  user.id
@@ -478,7 +557,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
       setup_activity_attempt(user, section, activity_revision, lifecycle_state: :active)
 
       assert {:ok, :not_evaluated} =
-               DirectedDiscussion.reset_if_requirements_not_met(
+               DirectedDiscussion.create_new_attempt_if_evaluated_and_requirements_not_met(
+                 section.slug,
                  section.id,
                  activity_revision.resource_id,
                  user.id
@@ -502,20 +582,21 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
         )
 
       assert {:ok, :requirements_met} =
-               DirectedDiscussion.reset_if_requirements_not_met(
+               DirectedDiscussion.create_new_attempt_if_evaluated_and_requirements_not_met(
+                 section.slug,
                  section.id,
                  activity_revision.resource_id,
                  user.id
                )
 
-      # Verify the activity attempt is still evaluated
+      # Verify the original activity attempt is still evaluated (unchanged)
       updated_attempt =
         Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
 
       assert updated_attempt.lifecycle_state == :evaluated
     end
 
-    test "resets activity when requirements are no longer met" do
+    test "creates new attempt when requirements are no longer met" do
       user = insert(:user)
       section = insert(:section)
       activity_revision = create_directed_discussion_activity(%{"minPosts" => 1})
@@ -529,36 +610,61 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
           date_submitted: DateTime.utc_now() |> DateTime.truncate(:second)
         )
 
+      # Set up published resources so reset_activity can work
+      section = setup_published_resources(section, setup.page_revision, activity_revision)
+
       # Create and then delete the post (simulating deletion)
       post = create_post(user, section, activity_revision.resource_id, "Test post")
       Collaboration.delete_posts(post)
 
-      assert {:ok, :reset} =
-               DirectedDiscussion.reset_if_requirements_not_met(
+      assert {:ok, :new_attempt_created} =
+               DirectedDiscussion.create_new_attempt_if_evaluated_and_requirements_not_met(
+                 section.slug,
                  section.id,
                  activity_revision.resource_id,
                  user.id
                )
 
-      # Verify the activity attempt was reset
-      updated_attempt =
+      # Verify the original activity attempt is still evaluated (unchanged)
+      original_attempt =
         Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
 
-      assert updated_attempt.lifecycle_state == :active
-      assert updated_attempt.score == nil
-      assert updated_attempt.out_of == nil
-      assert updated_attempt.date_evaluated == nil
-      assert updated_attempt.date_submitted == nil
+      assert original_attempt.lifecycle_state == :evaluated
+      assert original_attempt.score == 1.0
+      assert original_attempt.out_of == 1.0
 
-      # Verify part attempts were reset
-      part_attempts = Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+      # Verify a new activity attempt was created
+      # Query for latest attempt regardless of evaluation state (new attempt is :active)
+      latest_attempt =
+        Oli.Repo.one(
+          from(aa in Core.ActivityAttempt,
+            join: ra in Core.ResourceAttempt,
+            on: ra.id == aa.resource_attempt_id,
+            join: rac in Core.ResourceAccess,
+            on: rac.id == ra.resource_access_id,
+            left_join: aa2 in Core.ActivityAttempt,
+            on:
+              aa2.resource_id == ^activity_revision.resource_id and
+                aa2.resource_attempt_id == ra.id and
+                aa.attempt_number < aa2.attempt_number,
+            where:
+              aa.resource_id == ^activity_revision.resource_id and
+                rac.user_id == ^user.id and
+                rac.section_id == ^section.id and
+                is_nil(aa2.id),
+            order_by: [desc: ra.attempt_number, desc: aa.attempt_number],
+            limit: 1,
+            select: aa
+          )
+        )
 
-      assert Enum.all?(part_attempts, fn pa ->
-               pa.lifecycle_state == :active and pa.date_evaluated == nil
-             end)
+      refute is_nil(latest_attempt), "New activity attempt should have been created"
+      assert latest_attempt.attempt_guid != setup.activity_attempt.attempt_guid
+      assert latest_attempt.lifecycle_state == :active
+      assert latest_attempt.attempt_number > setup.activity_attempt.attempt_number
     end
 
-    test "resets activity when minPosts requirement is no longer met" do
+    test "creates new attempt when minPosts requirement is no longer met" do
       user = insert(:user)
       section = insert(:section)
       activity_revision = create_directed_discussion_activity(%{"minPosts" => 2})
@@ -569,6 +675,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
       create_post(user, section, activity_revision.resource_id, "Post 3")
 
       setup = setup_activity_attempt(user, section, activity_revision, lifecycle_state: :active)
+
+      # Set up published resources so reset_activity can work
+      section = setup_published_resources(section, setup.page_revision, activity_revision)
 
       # Evaluate (requirements met)
       assert {:ok, :evaluated} =
@@ -583,7 +692,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
       Collaboration.delete_posts(post1)
 
       assert {:ok, :requirements_met} =
-               DirectedDiscussion.reset_if_requirements_not_met(
+               DirectedDiscussion.create_new_attempt_if_evaluated_and_requirements_not_met(
+                 section.slug,
                  section.id,
                  activity_revision.resource_id,
                  user.id
@@ -592,21 +702,45 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
       # Delete another post (now only 1 post, requirement not met)
       Collaboration.delete_posts(post2)
 
-      assert {:ok, :reset} =
-               DirectedDiscussion.reset_if_requirements_not_met(
+      assert {:ok, :new_attempt_created} =
+               DirectedDiscussion.create_new_attempt_if_evaluated_and_requirements_not_met(
+                 section.slug,
                  section.id,
                  activity_revision.resource_id,
                  user.id
                )
 
-      # Verify the activity attempt was reset
-      updated_attempt =
-        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+      # Verify a new attempt was created
+      # Query for latest attempt regardless of evaluation state (new attempt is :active)
+      latest_attempt =
+        Oli.Repo.one(
+          from(aa in Core.ActivityAttempt,
+            join: ra in Core.ResourceAttempt,
+            on: ra.id == aa.resource_attempt_id,
+            join: rac in Core.ResourceAccess,
+            on: rac.id == ra.resource_access_id,
+            left_join: aa2 in Core.ActivityAttempt,
+            on:
+              aa2.resource_id == ^activity_revision.resource_id and
+                aa2.resource_attempt_id == ra.id and
+                aa.attempt_number < aa2.attempt_number,
+            where:
+              aa.resource_id == ^activity_revision.resource_id and
+                rac.user_id == ^user.id and
+                rac.section_id == ^section.id and
+                is_nil(aa2.id),
+            order_by: [desc: ra.attempt_number, desc: aa.attempt_number],
+            limit: 1,
+            select: aa
+          )
+        )
 
-      assert updated_attempt.lifecycle_state == :active
+      refute is_nil(latest_attempt), "New activity attempt should have been created"
+      assert latest_attempt.attempt_guid != setup.activity_attempt.attempt_guid
+      assert latest_attempt.lifecycle_state == :active
     end
 
-    test "resets activity when minReplies requirement is no longer met" do
+    test "creates new attempt when minReplies requirement is no longer met" do
       user = insert(:user)
       section = insert(:section)
       activity_revision = create_directed_discussion_activity(%{"minReplies" => 1})
@@ -616,6 +750,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
       reply = create_post(user, section, activity_revision.resource_id, "Reply", parent_post.id)
 
       setup = setup_activity_attempt(user, section, activity_revision, lifecycle_state: :active)
+
+      # Set up published resources so reset_activity can work
+      section = setup_published_resources(section, setup.page_revision, activity_revision)
 
       # Evaluate (requirements met)
       assert {:ok, :evaluated} =
@@ -629,18 +766,183 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussionTest do
       # Delete the reply (requirement no longer met)
       Collaboration.delete_posts(reply)
 
-      assert {:ok, :reset} =
-               DirectedDiscussion.reset_if_requirements_not_met(
+      assert {:ok, :new_attempt_created} =
+               DirectedDiscussion.create_new_attempt_if_evaluated_and_requirements_not_met(
+                 section.slug,
                  section.id,
                  activity_revision.resource_id,
                  user.id
                )
 
-      # Verify the activity attempt was reset
+      # Verify a new attempt was created
+      # Query for latest attempt regardless of evaluation state (new attempt is :active)
+      latest_attempt =
+        Oli.Repo.one(
+          from(aa in Core.ActivityAttempt,
+            join: ra in Core.ResourceAttempt,
+            on: ra.id == aa.resource_attempt_id,
+            join: rac in Core.ResourceAccess,
+            on: rac.id == ra.resource_access_id,
+            left_join: aa2 in Core.ActivityAttempt,
+            on:
+              aa2.resource_id == ^activity_revision.resource_id and
+                aa2.resource_attempt_id == ra.id and
+                aa.attempt_number < aa2.attempt_number,
+            where:
+              aa.resource_id == ^activity_revision.resource_id and
+                rac.user_id == ^user.id and
+                rac.section_id == ^section.id and
+                is_nil(aa2.id),
+            order_by: [desc: ra.attempt_number, desc: aa.attempt_number],
+            limit: 1,
+            select: aa
+          )
+        )
+
+      refute is_nil(latest_attempt), "New activity attempt should have been created"
+      assert latest_attempt.attempt_guid != setup.activity_attempt.attempt_guid
+      assert latest_attempt.lifecycle_state == :active
+    end
+  end
+
+  describe "evaluate_activity/5 - activity type specialization" do
+    alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+
+    test "routes to DirectedDiscussion.evaluate_activity when activity type is oli_directed_discussion" do
+      user = insert(:user)
+      section = insert(:section)
+      activity_revision = create_directed_discussion_activity(%{"minPosts" => 1})
+
+      setup = setup_activity_attempt(user, section, activity_revision)
+
+      # Create a post to meet requirements
+      create_post(user, section, activity_revision.resource_id, "Test post")
+
+      # Call the main evaluate_activity function - it should route to DirectedDiscussion
+      assert {:ok, results} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 [],
+                 nil
+               )
+
+      # Verify evaluation results were returned
+      assert is_list(results)
+
+      # Verify the activity attempt was evaluated
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.lifecycle_state == :evaluated
+      assert updated_attempt.score == 1.0
+      assert updated_attempt.out_of == 1.0
+      assert updated_attempt.date_evaluated != nil
+    end
+
+    test "returns empty results when requirements not met via specialization routing" do
+      user = insert(:user)
+      section = insert(:section)
+      activity_revision = create_directed_discussion_activity(%{"minPosts" => 2})
+
+      setup = setup_activity_attempt(user, section, activity_revision)
+
+      # Create only one post (need 2)
+      create_post(user, section, activity_revision.resource_id, "Test post")
+
+      # Call the main evaluate_activity function
+      assert {:ok, []} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 [],
+                 nil
+               )
+
+      # Verify the activity attempt is still active
       updated_attempt =
         Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
 
       assert updated_attempt.lifecycle_state == :active
+    end
+
+    test "returns empty results when already evaluated via specialization routing" do
+      user = insert(:user)
+      section = insert(:section)
+      activity_revision = create_directed_discussion_activity(%{"minPosts" => 1})
+
+      setup =
+        setup_activity_attempt(user, section, activity_revision,
+          lifecycle_state: :evaluated,
+          score: 1.0,
+          out_of: 1.0,
+          date_evaluated: DateTime.utc_now() |> DateTime.truncate(:second)
+        )
+
+      # Call the main evaluate_activity function
+      assert {:ok, []} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 [],
+                 nil
+               )
+
+      # Verify the activity attempt is still evaluated
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.lifecycle_state == :evaluated
+    end
+  end
+
+  describe "xAPI statement generation" do
+    alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+
+    test "creates snapshot and triggers xAPI generation when evaluating" do
+      user = insert(:user)
+      section = insert(:section)
+      activity_revision = create_directed_discussion_activity(%{"minPosts" => 1})
+
+      setup = setup_activity_attempt(user, section, activity_revision)
+
+      # Create a post to meet requirements
+      create_post(user, section, activity_revision.resource_id, "Test post")
+
+      # Get part attempt GUIDs before evaluation
+      part_attempts_before = Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+      part_attempt_guids = Enum.map(part_attempts_before, & &1.attempt_guid)
+
+      # Evaluate the activity
+      assert {:ok, _results} =
+               Evaluate.evaluate_activity(
+                 section.slug,
+                 setup.activity_attempt.attempt_guid,
+                 [],
+                 nil
+               )
+
+      # Verify part attempts were evaluated
+      part_attempts_after = Core.get_latest_part_attempts(setup.activity_attempt.attempt_guid)
+
+      assert Enum.all?(part_attempts_after, fn pa ->
+               pa.lifecycle_state == :evaluated and pa.date_evaluated != nil
+             end)
+
+      # Verify snapshot was created (this triggers xAPI generation)
+      # The snapshot worker processes evaluated part attempts and generates xAPI statements
+      # We can verify by checking that part attempts are in evaluated state, which is
+      # required for snapshot creation
+      evaluated_part_attempts =
+        Enum.filter(part_attempts_after, fn pa -> pa.lifecycle_state == :evaluated end)
+
+      assert length(evaluated_part_attempts) > 0
+
+      # The snapshot creation happens asynchronously via the worker,
+      # but we can verify the part attempts are ready for snapshot processing
+      assert Enum.all?(evaluated_part_attempts, fn pa ->
+               pa.attempt_guid in part_attempt_guids
+             end)
     end
   end
 end

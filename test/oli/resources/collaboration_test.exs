@@ -684,6 +684,7 @@ defmodule Oli.Resources.CollaborationTest do
 
       # Create posts for other users (should not be counted)
       insert(:post, user: other_user, section: section, resource: resource)
+
       insert(:post,
         user: other_user,
         section: section,
@@ -694,6 +695,7 @@ defmodule Oli.Resources.CollaborationTest do
 
       # Create posts in other sections (should not be counted)
       insert(:post, user: user, section: other_section, resource: resource)
+
       insert(:post,
         user: user,
         section: other_section,
@@ -704,6 +706,7 @@ defmodule Oli.Resources.CollaborationTest do
 
       # Create posts in other resources (should not be counted)
       insert(:post, user: user, section: section, resource: other_resource)
+
       insert(:post,
         user: user,
         section: section,

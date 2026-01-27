@@ -20,12 +20,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
   alias Oli.Repo
   alias Oli.Resources.Collaboration
   alias Oli.Delivery.Attempts.Core
+
   alias Oli.Delivery.Attempts.Core.{
     ActivityAttempt,
     ClientEvaluation,
     ResourceAttempt,
     ResourceAccess
   }
+
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
 
@@ -214,19 +216,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
     # Get activity attempt with proper preloading
     activity_attempt =
       Core.get_activity_attempt_by(attempt_guid: activity_attempt_guid)
-      |> Repo.preload([resource_attempt: [:resource_access], revision: [:activity_type]])
+      |> Repo.preload(resource_attempt: [:resource_access], revision: [:activity_type])
 
     case activity_attempt do
       nil ->
         {:error, "Activity attempt not found"}
 
       %ActivityAttempt{
-        resource_attempt: %ResourceAttempt{
-          resource_access: %ResourceAccess{
-            section_id: section_id,
-            user_id: user_id
-          }
-        } = _resource_attempt,
+        resource_attempt:
+          %ResourceAttempt{
+            resource_access: %ResourceAccess{
+              section_id: section_id,
+              user_id: user_id
+            }
+          } = _resource_attempt,
         resource_id: resource_id,
         lifecycle_state: lifecycle_state
       } ->
@@ -263,6 +266,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
 
                     # Apply client evaluation using the centralized evaluation infrastructure.
                     # This ensures proper rollup, metrics updates, and xAPI statement generation.
+
                     Evaluate.apply_client_evaluation(
                       section_slug,
                       activity_attempt_guid,
