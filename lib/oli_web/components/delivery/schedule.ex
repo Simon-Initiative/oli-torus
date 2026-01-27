@@ -93,7 +93,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                                 request_path: @request_path
                               )
                             }
-                            class="hover:no-underline"
+                            class="hover:no-underline text-Text-text-button hover:text-Text-text-button-hover"
                           >
                             {resource.title}
                           </.link>
