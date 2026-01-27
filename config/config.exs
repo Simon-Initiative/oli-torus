@@ -30,6 +30,28 @@ world_universities_and_domains_json =
 
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
+git_sha = fn ->
+  case System.cmd("git", ["rev-parse", "--short", "HEAD"]) do
+    {sha, 0} ->
+      String.trim(sha)
+
+    _ ->
+      nil
+  end
+end
+
+build_sha =
+  case System.get_env("SHA") do
+    nil ->
+      if Mix.env() == :dev, do: default_sha, else: git_sha.() || default_sha
+
+    "" ->
+      if Mix.env() == :dev, do: default_sha, else: git_sha.() || default_sha
+
+    sha ->
+      sha
+  end
+
 get_env_as_boolean = fn key, default ->
   System.get_env(key, default)
   |> String.downcase()
@@ -58,7 +80,7 @@ config :oli,
   ecto_repos: [Oli.Repo],
   build: %{
     version: Mix.Project.config()[:version],
-    sha: System.get_env("SHA", default_sha),
+    sha: build_sha,
     date: DateTime.now!("Etc/UTC"),
     env: Mix.env()
   },
@@ -303,7 +325,7 @@ if Mix.env() == :dev do
     clear: true
 end
 
-config :appsignal, :config, revision: System.get_env("SHA", default_sha)
+config :appsignal, :config, revision: build_sha
 
 # Configure Privacy Policies link
 config :oli, :privacy_policies,
