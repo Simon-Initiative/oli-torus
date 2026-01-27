@@ -669,6 +669,272 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
     end
   end
 
+  describe "project overview course sections" do
+    setup [:author_conn]
+
+    test "displays Course Sections section with 'None exist' when project has no active sections",
+         %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, view, html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "h4", "Course Sections")
+      assert html =~ "None exist"
+    end
+
+    test "only displays sections with future end dates", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      publication = insert(:publication, project: project, published: DateTime.utc_now())
+
+      future_date = DateTime.add(DateTime.utc_now(), 30, :day)
+      past_date = DateTime.add(DateTime.utc_now(), -30, :day)
+
+      # Section with future end date - should be shown
+      future_section =
+        insert(:section,
+          title: "Future Section",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          end_date: future_date
+        )
+
+      insert(:section_project_publication,
+        section: future_section,
+        project: project,
+        publication: publication
+      )
+
+      # Section with past end date - should NOT be shown
+      past_section =
+        insert(:section,
+          title: "Past Section",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          end_date: past_date
+        )
+
+      insert(:section_project_publication,
+        section: past_section,
+        project: project,
+        publication: publication
+      )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "a", "Future Section")
+      refute has_element?(view, "a", "Past Section")
+    end
+
+    test "shows the correct payment status", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      publication = insert(:publication, project: project, published: DateTime.utc_now())
+
+      future_date = DateTime.add(DateTime.utc_now(), 30, :day)
+
+      # Create a paid section
+      paid_section =
+        insert(:section,
+          title: "Paid Section",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          end_date: future_date,
+          requires_payment: true,
+          amount: Money.new(:USD, 100)
+        )
+
+      insert(:section_project_publication,
+        section: paid_section,
+        project: project,
+        publication: publication
+      )
+
+      # Create a free section
+      free_section =
+        insert(:section,
+          title: "Free Section",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          end_date: future_date,
+          requires_payment: false
+        )
+
+      insert(:section_project_publication,
+        section: free_section,
+        project: project,
+        publication: publication
+      )
+
+      {:ok, view, html} = live(conn, live_view_route(project.slug))
+
+      # Both sections should be displayed
+      assert has_element?(view, "a", "Paid Section")
+      assert has_element?(view, "a", "Free Section")
+
+      # Paid section shows the cost
+      assert html =~ "$100.00"
+
+      # Free section shows "None" for cost
+      assert html =~ "None"
+    end
+
+    test "search filters sections by title (case-insensitive)", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      publication = insert(:publication, project: project, published: DateTime.utc_now())
+
+      future_date = DateTime.add(DateTime.utc_now(), 30, :day)
+
+      section1 =
+        insert(:section,
+          title: "Introduction to Biology",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          end_date: future_date
+        )
+
+      section2 =
+        insert(:section,
+          title: "Advanced Chemistry",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          end_date: future_date
+        )
+
+      insert(:section_project_publication,
+        section: section1,
+        project: project,
+        publication: publication
+      )
+
+      insert(:section_project_publication,
+        section: section2,
+        project: project,
+        publication: publication
+      )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Both sections visible initially
+      assert has_element?(view, "a", "Introduction to Biology")
+      assert has_element?(view, "a", "Advanced Chemistry")
+
+      # Search with lowercase "biology" - verifies both filtering and case-insensitivity
+      view
+      |> element("form[phx-change='course_sections_search_change']")
+      |> render_change(%{"search" => "biology"})
+
+      # Only Biology section visible (case-insensitive match)
+      assert has_element?(view, "a", "Introduction to Biology")
+      refute has_element?(view, "a", "Advanced Chemistry")
+    end
+
+    test "sort toggles between ascending and descending order", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      publication = insert(:publication, project: project, published: DateTime.utc_now())
+
+      future_date = DateTime.add(DateTime.utc_now(), 30, :day)
+
+      # Create sections with titles that would change order when sorted desc
+      for title <- ["Alpha", "Beta", "Gamma", "Delta", "Epsilon"] do
+        section =
+          insert(:section,
+            title: title,
+            base_project: project,
+            type: :enrollable,
+            status: :active,
+            end_date: future_date
+          )
+
+        insert(:section_project_publication,
+          section: section,
+          project: project,
+          publication: publication
+        )
+      end
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Default sort is by title ascending - Alpha should be first
+      assert has_element?(view, "a", "Alpha")
+      assert has_element?(view, "a", "Gamma")
+
+      # Click to trigger sort (toggles to descending)
+      view
+      |> render_click("course_sections_sort", %{"sort_by" => "title"})
+
+      # Get updated HTML after the event
+      html = render(view)
+
+      # Extract section titles in order from table
+      after_sort_titles =
+        Regex.scan(~r/href="\/sections\/[^"]+\/manage"[^>]*>\s*([^<]+)\s*<\/a>/, html)
+        |> Enum.map(fn [_, title] -> String.trim(title) end)
+
+      # After descending sort, Gamma should appear first
+      # Descending: Gamma > Epsilon > Delta > Beta > Alpha
+      assert List.first(after_sort_titles) == "Gamma",
+             "After descending sort, first section should be Gamma but got #{inspect(after_sort_titles)}"
+    end
+
+    test "displays correct creator information", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      publication = insert(:publication, project: project, published: DateTime.utc_now())
+
+      future_date = DateTime.add(DateTime.utc_now(), 30, :day)
+
+      # Section with enrolled user
+      section_with_user =
+        insert(:section,
+          title: "Section With User",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          end_date: future_date
+        )
+
+      insert(:section_project_publication,
+        section: section_with_user,
+        project: project,
+        publication: publication
+      )
+
+      user = insert(:user, given_name: "Jane", family_name: "Doe", email: "jane@example.com")
+      insert(:enrollment, user: user, section: section_with_user)
+
+      # Section without enrollments
+      section_empty =
+        insert(:section,
+          title: "Empty Section",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          end_date: future_date
+        )
+
+      insert(:section_project_publication,
+        section: section_empty,
+        project: project,
+        publication: publication
+      )
+
+      {:ok, _view, html} = live(conn, live_view_route(project.slug))
+
+      # Section with enrolled user shows creator name, email, and link
+      assert html =~ "Jane Doe"
+      assert html =~ "jane@example.com"
+      assert html =~ ~r/href="\/admin\/users\/#{user.id}".*Jane Doe/s
+
+      # Section without enrollments shows N/A
+      assert html =~ "Empty Section"
+      assert html =~ "N/A"
+    end
+  end
+
   describe "project overview as admin" do
     setup [:admin_conn]
 

@@ -1,11 +1,14 @@
 defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   use OliWeb, :live_view
 
+  import Ecto.Query
   import Phoenix.Component
   import OliWeb.Components.Common
 
   alias Oli.{Accounts, Activities, Inventories, Publishing, Repo}
+  alias Oli.Accounts.User
   alias Oli.Authoring.{Broadcaster, Course, ProjectExportWorker}
+  alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Course.{CreativeCommons, Project}
   alias Oli.Delivery.Experiments
@@ -17,7 +20,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias OliWeb.Components.{Common, Modal, Overview}
   alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
   alias OliWeb.Live.Components.Tags.TagsComponent
+  alias OliWeb.Common.SearchInput
+  alias OliWeb.Common.StripedPagedTable
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
+  alias OliWeb.Workspaces.CourseAuthor.OverviewSectionsTableModel
+
+  @course_sections_limit 10
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -29,6 +37,53 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       Publishing.get_all_project_visibilities(project.id)
       |> Enum.map(& &1.institution)
       |> Enum.reject(&is_nil/1)
+
+    # Get course sections for this project (enrollable sections only, not blueprints/products)
+    # Only show sections that haven't ended yet (author view pattern)
+    today = DateTime.utc_now()
+
+    # Returns "id|given_name|family_name|email" format for parsing in table model
+    first_enrollment_subquery =
+      from(u in User,
+        join: e in assoc(u, :enrollments),
+        where: e.section_id == parent_as(:section).id,
+        order_by: [asc: e.inserted_at],
+        limit: 1,
+        select:
+          fragment(
+            "concat(?, '|', ?, '|', ?, '|', ?)",
+            u.id,
+            u.given_name,
+            u.family_name,
+            u.email
+          )
+      )
+
+    course_sections =
+      from(s in Section,
+        as: :section,
+        where: s.base_project_id == ^project.id,
+        where: is_nil(s.blueprint_id),
+        where: s.type == :enrollable,
+        where: s.status == :active,
+        where: not is_nil(s.end_date),
+        where: s.end_date >= ^today,
+        preload: [section_project_publications: [:publication]],
+        select: %{s | creator: subquery(first_enrollment_subquery)}
+      )
+      |> Repo.all()
+
+    # Build initial course sections table with sorting and pagination
+    {course_sections_table_model, course_sections_total} =
+      build_course_sections_table(
+        ctx,
+        course_sections,
+        "",
+        :title,
+        :asc,
+        0,
+        @course_sections_limit
+      )
 
     is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
@@ -84,7 +139,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
        project_export_status: project_export_status,
        project_export_url: project_export_url,
        project_export_timestamp: project_export_timestamp,
-       visibility_institutions: visibility_institutions
+       visibility_institutions: visibility_institutions,
+       course_sections: course_sections,
+       course_sections_table_model: course_sections_table_model,
+       course_sections_search: "",
+       course_sections_offset: 0,
+       course_sections_limit: @course_sections_limit,
+       course_sections_total: course_sections_total,
+       course_sections_sort_by: :title,
+       course_sections_sort_order: :asc
      )}
   end
 
@@ -461,6 +524,33 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         />
       </Overview.section>
 
+      <Overview.section
+        title="Course Sections"
+        description="Course sections created from this base project"
+        layout={:stacked}
+      >
+        <.form for={%{}} phx-change="course_sections_search_change" class="mb-4">
+          <SearchInput.render
+            id="course-sections-search"
+            name="search"
+            text={@course_sections_search}
+          />
+        </.form>
+        <StripedPagedTable.render
+          table_model={@course_sections_table_model}
+          total_count={@course_sections_total}
+          offset={@course_sections_offset}
+          limit={@course_sections_limit}
+          table_container_class="relative"
+          header_bg_class="!bg-white dark:!bg-black"
+          sort="course_sections_sort"
+          page_change="course_sections_page_change"
+          show_limit_change={false}
+          render_top_info={false}
+          no_records_message="None exist"
+        />
+      </Overview.section>
+
       <%= if @is_admin do %>
         <Overview.section
           title="Feature Flags"
@@ -643,6 +733,82 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event("course_sections_sort", %{"sort_by" => sort_by}, socket) do
+    sort_by = String.to_existing_atom(sort_by)
+
+    # Toggle sort order if same column, otherwise default to :asc
+    sort_order =
+      if sort_by == socket.assigns.course_sections_sort_by do
+        if socket.assigns.course_sections_sort_order == :asc, do: :desc, else: :asc
+      else
+        :asc
+      end
+
+    # Filter, sort, and paginate - reset to first page on sort change
+    {table_model, total} =
+      build_course_sections_table(
+        socket.assigns.ctx,
+        socket.assigns.course_sections,
+        socket.assigns.course_sections_search,
+        sort_by,
+        sort_order,
+        0,
+        socket.assigns.course_sections_limit
+      )
+
+    {:noreply,
+     assign(socket,
+       course_sections_table_model: table_model,
+       course_sections_sort_by: sort_by,
+       course_sections_sort_order: sort_order,
+       course_sections_offset: 0,
+       course_sections_total: total
+     )}
+  end
+
+  def handle_event("course_sections_page_change", %{"offset" => offset}, socket) do
+    offset = String.to_integer(offset)
+
+    {table_model, _total} =
+      build_course_sections_table(
+        socket.assigns.ctx,
+        socket.assigns.course_sections,
+        socket.assigns.course_sections_search,
+        socket.assigns.course_sections_sort_by,
+        socket.assigns.course_sections_sort_order,
+        offset,
+        socket.assigns.course_sections_limit
+      )
+
+    {:noreply,
+     assign(socket,
+       course_sections_offset: offset,
+       course_sections_table_model: table_model
+     )}
+  end
+
+  def handle_event("course_sections_search_change", %{"search" => search}, socket) do
+    # Reset to first page on search change
+    {table_model, total} =
+      build_course_sections_table(
+        socket.assigns.ctx,
+        socket.assigns.course_sections,
+        search,
+        socket.assigns.course_sections_sort_by,
+        socket.assigns.course_sections_sort_order,
+        0,
+        socket.assigns.course_sections_limit
+      )
+
+    {:noreply,
+     assign(socket,
+       course_sections_search: search,
+       course_sections_table_model: table_model,
+       course_sections_offset: 0,
+       course_sections_total: total
+     )}
+  end
+
   def handle_event(
         "on_select_license_type",
         %{"project" => %{"attributes" => %{"license" => %{"license_type" => license_type}}}},
@@ -895,4 +1061,91 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   defp decode_welcome_title(project_params),
     do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
+
+  defp build_course_sections_table(ctx, sections, search, sort_by, sort_order, offset, limit) do
+    # 1. Filter
+    filtered = filter_course_sections(sections, search)
+    total = length(filtered)
+
+    # 2. Sort
+    sorted = sort_course_sections(filtered, sort_by, sort_order)
+
+    # 3. Paginate
+    paginated =
+      sorted
+      |> Enum.drop(offset)
+      |> Enum.take(limit)
+
+    # 4. Create table model
+    {:ok, table_model} = OverviewSectionsTableModel.new(ctx, paginated)
+
+    # Update table model with current sort state for UI indicators
+    # Also reset rows because SortableTableModel.new internally re-sorts them
+    table_model =
+      table_model
+      |> Map.put(:sort_by_spec, Enum.find(table_model.column_specs, &(&1.name == sort_by)))
+      |> Map.put(:sort_order, sort_order)
+      |> Map.put(:rows, paginated)
+
+    {table_model, total}
+  end
+
+  defp sort_course_sections(sections, sort_by, sort_order) do
+    sorted =
+      case sort_by do
+        :title ->
+          Enum.sort_by(sections, & &1.title, &safe_compare/2)
+
+        :start_date ->
+          Enum.sort_by(sections, & &1.start_date, &safe_date_compare/2)
+
+        :end_date ->
+          Enum.sort_by(sections, & &1.end_date, &safe_date_compare/2)
+
+        :requires_payment ->
+          Enum.sort_by(sections, & &1.requires_payment)
+
+        :creator ->
+          Enum.sort_by(sections, & &1.creator, &safe_compare/2)
+
+        :section_project_publications ->
+          Enum.sort_by(
+            sections,
+            fn s ->
+              case s.section_project_publications do
+                [first | _] ->
+                  "#{first.publication.edition}.#{first.publication.major}.#{first.publication.minor}"
+
+                _ ->
+                  ""
+              end
+            end,
+            &safe_compare/2
+          )
+
+        _ ->
+          sections
+      end
+
+    if sort_order == :desc, do: Enum.reverse(sorted), else: sorted
+  end
+
+  defp safe_compare(a, _b) when is_nil(a), do: true
+  defp safe_compare(_a, b) when is_nil(b), do: false
+  defp safe_compare(a, b), do: String.downcase(to_string(a)) <= String.downcase(to_string(b))
+
+  defp safe_date_compare(a, _b) when is_nil(a), do: true
+  defp safe_date_compare(_a, b) when is_nil(b), do: false
+  defp safe_date_compare(a, b), do: DateTime.compare(a, b) != :gt
+
+  defp filter_course_sections(sections, ""), do: sections
+  defp filter_course_sections(sections, nil), do: sections
+
+  defp filter_course_sections(sections, search) do
+    search_lower = String.downcase(search)
+
+    Enum.filter(sections, fn section ->
+      String.contains?(String.downcase(section.title || ""), search_lower)
+    end)
+  end
 end
