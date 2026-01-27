@@ -393,4 +393,148 @@ defmodule Oli.Delivery.Sections.BrowseTest do
 
     sections
   end
+
+  describe "browse_project_sections" do
+    test "returns publication with most recent published date when section has multiple project associations" do
+      # Create two projects - section will be associated with both
+      main_project = insert(:project)
+      secondary_project = insert(:project)
+
+      # Create publications with different published dates
+      # older_publication belongs to main_project
+      older_publication =
+        insert(:publication,
+          project: main_project,
+          published: ~U[2024-01-01 12:00:00Z],
+          edition: 1,
+          major: 0,
+          minor: 0
+        )
+
+      # newer_publication belongs to secondary_project
+      newer_publication =
+        insert(:publication,
+          project: secondary_project,
+          published: ~U[2024-06-01 12:00:00Z],
+          edition: 2,
+          major: 0,
+          minor: 0
+        )
+
+      # Create an enrollable section linked to the main project
+      section =
+        insert(:section,
+          base_project: main_project,
+          type: :enrollable,
+          status: :active,
+          blueprint_id: nil,
+          start_date: DateTime.utc_now(),
+          end_date: DateTime.add(DateTime.utc_now(), 30, :day)
+        )
+
+      # Associate section with BOTH projects (each with their own publication)
+      # This simulates a section that uses resources from multiple projects
+      insert(:section_project_publication,
+        section: section,
+        project: main_project,
+        publication: older_publication
+      )
+
+      insert(:section_project_publication,
+        section: section,
+        project: secondary_project,
+        publication: newer_publication
+      )
+
+      # Query the sections for main_project
+      results =
+        Browse.browse_project_sections(
+          main_project.id,
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :title, direction: :asc}
+        )
+
+      # Should return exactly one result
+      assert length(results) == 1
+      result = hd(results)
+
+      # The publication should be the NEWER one (most recently published)
+      # even though it belongs to secondary_project
+      assert result.publication.id == newer_publication.id
+      assert result.publication.edition == 2
+    end
+
+    test "returns publication deterministically based on id when published dates are identical" do
+      # Create two projects
+      main_project = insert(:project)
+      secondary_project = insert(:project)
+
+      # Create publications with SAME published date but different IDs
+      same_date = ~U[2024-06-01 12:00:00Z]
+
+      first_publication =
+        insert(:publication,
+          project: main_project,
+          published: same_date,
+          edition: 1,
+          major: 0,
+          minor: 0
+        )
+
+      second_publication =
+        insert(:publication,
+          project: secondary_project,
+          published: same_date,
+          edition: 2,
+          major: 0,
+          minor: 0
+        )
+
+      # Create an enrollable section linked to main_project
+      section =
+        insert(:section,
+          base_project: main_project,
+          type: :enrollable,
+          status: :active,
+          blueprint_id: nil,
+          start_date: DateTime.utc_now(),
+          end_date: DateTime.add(DateTime.utc_now(), 30, :day)
+        )
+
+      # Associate section with BOTH projects
+      insert(:section_project_publication,
+        section: section,
+        project: main_project,
+        publication: first_publication
+      )
+
+      insert(:section_project_publication,
+        section: section,
+        project: secondary_project,
+        publication: second_publication
+      )
+
+      # Query multiple times to ensure deterministic results
+      results1 =
+        Browse.browse_project_sections(
+          main_project.id,
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :title, direction: :asc}
+        )
+
+      results2 =
+        Browse.browse_project_sections(
+          main_project.id,
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :title, direction: :asc}
+        )
+
+      # Results should be identical (deterministic)
+      assert hd(results1).publication.id == hd(results2).publication.id
+
+      # Should return the publication with higher ID (second_publication)
+      # since published dates are the same
+      assert hd(results1).publication.id == second_publication.id
+    end
+  end
 end

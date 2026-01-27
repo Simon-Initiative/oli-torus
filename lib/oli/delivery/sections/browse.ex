@@ -323,12 +323,14 @@ defmodule Oli.Delivery.Sections.Browse do
 
     # Subquery to get the publication for each section
     # Uses DISTINCT ON to get first publication per section
+    # Orders by published DESC, id DESC to get the most recently published publication
+    # (matches pattern in Oli.Publishing.get_latest_published_publication_by_slug)
     publication_subquery =
       from(spp in SectionsProjectsPublications,
         join: pub in Publication,
         on: pub.id == spp.publication_id,
         distinct: spp.section_id,
-        order_by: [asc: spp.section_id],
+        order_by: [asc: spp.section_id, desc: pub.published, desc: pub.id],
         select: %{
           section_id: spp.section_id,
           pub_id: pub.id,
