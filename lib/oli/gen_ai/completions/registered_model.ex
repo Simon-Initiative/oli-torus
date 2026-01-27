@@ -12,6 +12,8 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
     field :secondary_api_key, Oli.Encrypted.Binary
     field :timeout, :integer, default: 8000
     field :recv_timeout, :integer, default: 60000
+    field :pool_class, Ecto.Enum, values: [:fast, :slow], default: :slow
+    field :max_concurrent, :integer
 
     # virtual field for count of service configs appearing in
     field :service_config_count, :integer, virtual: true
@@ -30,7 +32,9 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
       :api_key,
       :secondary_api_key,
       :timeout,
-      :recv_timeout
+      :recv_timeout,
+      :pool_class,
+      :max_concurrent
     ])
     |> validate_required([
       :name,
@@ -39,7 +43,9 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
       :url_template,
       :api_key,
       :timeout,
-      :recv_timeout
+      :recv_timeout,
+      :pool_class
     ])
+    |> validate_number(:max_concurrent, greater_than_or_equal_to: 0)
   end
 end

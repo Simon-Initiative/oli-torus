@@ -52,6 +52,41 @@ defmodule Oli.GenAI.AdmissionControl do
     }
   end
 
+  @doc "Returns the current inflight count for a RegisteredModel."
+  def model_count(model_id) do
+    get_counter({:inflight, :model, model_id})
+  end
+
+  @doc "Increments the inflight counter for a RegisteredModel without enforcing a cap."
+  def increment_model(model_id) do
+    update_counter({:inflight, :model, model_id}, 1)
+  end
+
+  @doc "Returns the current inflight count for a pool."
+  def pool_count(pool_name) do
+    get_counter({:inflight, :pool, pool_name})
+  end
+
+  @doc "Atomically admits a request for a RegisteredModel, enforcing a hard cap."
+  def try_admit_model(model_id, hard_limit) do
+    try_admit({:inflight, :model, model_id}, hard_limit)
+  end
+
+  @doc "Releases an inflight slot for a RegisteredModel."
+  def release_model(model_id) do
+    update_counter({:inflight, :model, model_id}, -1)
+  end
+
+  @doc "Atomically admits a request for a pool, enforcing a hard cap."
+  def try_admit_pool(pool_name, hard_limit) do
+    try_admit({:inflight, :pool, pool_name}, hard_limit)
+  end
+
+  @doc "Releases an inflight slot for a pool."
+  def release_pool(pool_name) do
+    update_counter({:inflight, :pool, pool_name}, -1)
+  end
+
   @doc "Stores the latest breaker snapshot for a RegisteredModel."
   def put_breaker_snapshot(registered_model_id, snapshot) do
     ensure_tables()
@@ -102,6 +137,20 @@ defmodule Oli.GenAI.AdmissionControl do
       new_value
     end
   end
+
+  defp try_admit(key, hard_limit) when is_integer(hard_limit) and hard_limit >= 0 do
+    ensure_tables()
+    new_value = :ets.update_counter(@counters_table, key, {2, 1}, {key, 0})
+
+    if new_value > hard_limit do
+      update_counter(key, -1)
+      {:error, :over_capacity}
+    else
+      :ok
+    end
+  end
+
+  defp try_admit(_key, _hard_limit), do: {:error, :invalid_limit}
 
   defp get_counter(key) do
     ensure_tables()

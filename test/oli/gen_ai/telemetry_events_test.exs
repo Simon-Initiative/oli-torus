@@ -31,11 +31,17 @@ defmodule Oli.GenAI.TelemetryEventsTest do
     assert metadata.reason == :primary_normal
     assert metadata.service_config_id == service_config.id
     assert metadata.request_type == :generate
+    assert metadata.tier == :primary
+    assert metadata.pool_class == :slow
+    assert metadata.pool_name == :genai_slow_pool
 
     assert_receive {:telemetry_event, @router_admission, measurements, metadata}
     assert measurements.admitted == 1
     assert metadata.soft_limit == service_config.routing_soft_limit
     assert metadata.hard_limit == service_config.routing_hard_limit
+    assert metadata.tier == :primary
+    assert metadata.pool_class == :slow
+    assert metadata.pool_name == :genai_slow_pool
 
     detach(handler_id)
   end
@@ -44,17 +50,26 @@ defmodule Oli.GenAI.TelemetryEventsTest do
     handler_id = unique_handler_id()
     attach(handler_id, [@router_decision, @router_admission])
 
-    service_config = build_service_config(2, routing_soft_limit: 0, routing_hard_limit: 0)
+    service_config =
+      build_service_config(2,
+        primary_model: %RegisteredModel{id: 21, name: "Primary", provider: :null, max_concurrent: 0},
+        secondary_model: %RegisteredModel{id: 22, name: "Secondary", provider: :null, max_concurrent: 0}
+      )
+
     request_ctx = %{request_type: :generate}
 
-    assert {:error, :over_capacity} = Router.route(request_ctx, service_config)
+    assert {:error, :secondary_over_capacity} = Router.route(request_ctx, service_config)
 
     assert_receive {:telemetry_event, @router_decision, _measurements, metadata}
-    assert metadata.reason == :over_capacity
+    assert metadata.reason == :secondary_over_capacity
+    assert is_nil(metadata.tier)
+    assert is_nil(metadata.pool_class)
 
     assert_receive {:telemetry_event, @router_admission, measurements, metadata}
     assert measurements.admitted == 0
     assert metadata.request_type == :generate
+    assert is_nil(metadata.tier)
+    assert is_nil(metadata.pool_class)
 
     detach(handler_id)
   end
@@ -111,12 +126,14 @@ defmodule Oli.GenAI.TelemetryEventsTest do
 
   defp build_service_config(id, overrides \\ %{}) do
     primary = %RegisteredModel{id: id * 10 + 1, name: "Primary", provider: :null}
-    backup = %RegisteredModel{id: id * 10 + 2, name: "Backup", provider: :null}
+    secondary = %RegisteredModel{id: id * 10 + 2, name: "Secondary", provider: :null}
+    backup = %RegisteredModel{id: id * 10 + 3, name: "Backup", provider: :null}
 
     base = %ServiceConfig{
       id: id,
       name: "ServiceConfig #{id}",
       primary_model: primary,
+      secondary_model: secondary,
       backup_model: backup,
       routing_soft_limit: 2,
       routing_hard_limit: 3,

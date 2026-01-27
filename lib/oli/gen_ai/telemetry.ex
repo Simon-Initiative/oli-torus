@@ -45,8 +45,10 @@ defmodule Oli.GenAI.Telemetry do
     duration_ms = Map.get(measurements, :duration_ms, 0)
     reason = normalize(metadata[:reason])
     request_type = normalize(metadata[:request_type])
+    tier = normalize(metadata[:tier])
+    pool_class = normalize(metadata[:pool_class])
 
-    tags = %{reason: reason, request_type: request_type}
+    tags = %{reason: reason, request_type: request_type, tier: tier, pool_class: pool_class}
 
     Appsignal.add_distribution_value("oli.genai.router.duration_ms", duration_ms, tags)
     Appsignal.increment_counter("oli.genai.router.decision", 1, tags)
@@ -59,8 +61,15 @@ defmodule Oli.GenAI.Telemetry do
   def handle_event(@router_admission_event, measurements, metadata, _config) do
     admitted = Map.get(measurements, :admitted, 0)
     request_type = normalize(metadata[:request_type])
+    tier = normalize(metadata[:tier])
+    pool_class = normalize(metadata[:pool_class])
 
-    tags = %{admitted: if(admitted == 1, do: "true", else: "false"), request_type: request_type}
+    tags = %{
+      admitted: if(admitted == 1, do: "true", else: "false"),
+      request_type: request_type,
+      tier: tier,
+      pool_class: pool_class
+    }
 
     Appsignal.increment_counter("oli.genai.router.admission", 1, tags)
   end
@@ -122,6 +131,15 @@ defmodule Oli.GenAI.Telemetry do
   defp normalize(value), do: to_string(value)
 
   defp rejection_reason?(reason) do
-    reason in [:over_capacity, :all_breakers_open]
+    reason in [
+      :over_capacity,
+      :primary_over_capacity,
+      :secondary_over_capacity,
+      :secondary_unavailable,
+      :secondary_breaker_open,
+      :backup_breaker_open,
+      :all_breakers_open,
+      :invalid_limit
+    ]
   end
 end

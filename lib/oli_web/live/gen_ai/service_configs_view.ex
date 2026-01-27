@@ -120,6 +120,16 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
               {@service_config.primary_model.name}
             </span>
           </div>
+          <div class="mr-5">
+            <span class="text-gray-800 text-xs py-0.5">Secondary: </span>
+            <span class="text-gray-800 text-xs font-mono py-0.5">
+              {if is_nil(@service_config.secondary_model) do
+                "None"
+              else
+                @service_config.secondary_model.name
+              end}
+            </span>
+          </div>
           <div>
             <span class="text-gray-800 text-xs py-0.5">Backup: </span>
             <span class="text-gray-800 text-xs font-mono py-0.5">
@@ -174,6 +184,14 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           class={@form_control_classes}
           options={@registered_models}
           label="Primary Registered Model"
+        />
+        <.input
+          field={@form[:secondary_model_id]}
+          type="select"
+          disabled={!@editing}
+          class={@form_control_classes}
+          options={[{"No secondary", nil} | @registered_models]}
+          label="Secondary Registered Model"
         />
         <.input
           field={@form[:backup_model_id]}
@@ -284,6 +302,10 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
               <div>
                 <div class="text-xs uppercase text-gray-500">Primary Breaker</div>
                 <div>{@health.primary.state}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Secondary Breaker</div>
+                <div>{@health.secondary.state}</div>
               </div>
               <div>
                 <div class="text-xs uppercase text-gray-500">Backup Breaker</div>
@@ -491,6 +513,14 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         %{default_snapshot | state: :unknown}
       end
 
+    secondary =
+      if service_config.secondary_model do
+        default_snapshot
+        |> Map.merge(AdmissionControl.get_breaker_snapshot(service_config.secondary_model.id))
+      else
+        %{state: :none}
+      end
+
     backup =
       if service_config.backup_model do
         default_snapshot
@@ -502,16 +532,18 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
     %{
       counts: counts,
       primary: primary,
+      secondary: secondary,
       backup: backup
     }
   end
 
   defp ensure_models_loaded(%ServiceConfig{} = service_config) do
     if Ecto.assoc_loaded?(service_config.primary_model) and
+         Ecto.assoc_loaded?(service_config.secondary_model) and
          Ecto.assoc_loaded?(service_config.backup_model) do
       service_config
     else
-      Repo.preload(service_config, [:primary_model, :backup_model])
+      Repo.preload(service_config, [:primary_model, :secondary_model, :backup_model])
     end
   end
 

@@ -2,10 +2,8 @@ defmodule Oli.GenAI.Execution do
   @moduledoc """
   Executes GenAI requests using routing plans, counters, and breakers.
 
-  This module wraps provider calls, applies fallback rules, and emits telemetry.
+  This module wraps provider calls, applies routing decisions, and emits telemetry.
   """
-
-  require Logger
 
   alias Oli.GenAI.AdmissionControl
   alias Oli.GenAI.Breaker
@@ -15,14 +13,14 @@ defmodule Oli.GenAI.Execution do
   alias Oli.GenAI.Completions.ServiceConfig
 
   @doc """
-  Executes a synchronous completion request with routing and fallback.
+  Executes a synchronous completion request with routing.
   """
   def generate(request_ctx, messages, functions, %ServiceConfig{} = service_config, opts \\ []) do
     with {:ok, plan} <- Router.route(request_ctx, service_config) do
       completer = Keyword.get(opts, :completions_mod, Completions)
       request_type = Map.get(request_ctx, :request_type, :generate)
 
-      admit!(service_config.id, request_type)
+      admit!(service_config.id)
 
       try do
         execute_with_fallback(
@@ -36,13 +34,14 @@ defmodule Oli.GenAI.Execution do
           request_type
         )
       after
-        release!(service_config.id, request_type)
+        release!(service_config.id)
+        release_admission!(plan)
       end
     end
   end
 
   @doc """
-  Executes a streaming completion request with routing and fallback.
+  Executes a streaming completion request with routing.
   """
   def stream(
         request_ctx,
@@ -56,7 +55,7 @@ defmodule Oli.GenAI.Execution do
       completer = Keyword.get(opts, :completions_mod, Completions)
       request_type = Map.get(request_ctx, :request_type, :stream)
 
-      admit!(service_config.id, request_type)
+      admit!(service_config.id)
 
       try do
         execute_with_fallback(
@@ -71,25 +70,18 @@ defmodule Oli.GenAI.Execution do
           response_handler_fn
         )
       after
-        release!(service_config.id, request_type)
+        release!(service_config.id)
+        release_admission!(plan)
       end
     end
   end
 
-  defp admit!(service_config_id, request_type) do
+  defp admit!(service_config_id) do
     AdmissionControl.increment_requests(service_config_id)
-
-    if request_type == :stream do
-      AdmissionControl.increment_streams(service_config_id)
-    end
   end
 
-  defp release!(service_config_id, request_type) do
+  defp release!(service_config_id) do
     AdmissionControl.decrement_requests(service_config_id)
-
-    if request_type == :stream do
-      AdmissionControl.decrement_streams(service_config_id)
-    end
   end
 
   defp execute_with_fallback(
@@ -99,35 +91,17 @@ defmodule Oli.GenAI.Execution do
          functions,
          plan,
          service_config,
-         request_ctx,
+         _request_ctx,
          request_type
        ) do
-    result =
-      execute_generate(
-        completer,
-        messages,
-        functions,
-        plan.selected_model,
-        service_config,
-        request_type
-      )
-
-    case result do
-      {:ok, _} ->
-        result
-
-      {:error, _} = error ->
-        attempt_fallback_generate(
-          completer,
-          messages,
-          functions,
-          plan,
-          service_config,
-          request_ctx,
-          request_type,
-          error
-        )
-    end
+    execute_generate(
+      completer,
+      messages,
+      functions,
+      plan.selected_model,
+      service_config,
+      request_type
+    )
   end
 
   defp execute_with_fallback(
@@ -137,120 +111,19 @@ defmodule Oli.GenAI.Execution do
          functions,
          plan,
          service_config,
-         request_ctx,
+         _request_ctx,
          request_type,
          response_handler_fn
        ) do
-    result =
-      execute_stream(
-        completer,
-        messages,
-        functions,
-        plan.selected_model,
-        service_config,
-        response_handler_fn,
-        request_type
-      )
-
-    case result do
-      :ok ->
-        :ok
-
-      {:error, _} = error ->
-        attempt_fallback_stream(
-          completer,
-          messages,
-          functions,
-          plan,
-          service_config,
-          request_ctx,
-          request_type,
-          error,
-          response_handler_fn
-        )
-    end
-  end
-
-  defp attempt_fallback_generate(
-         _completer,
-         _messages,
-         _functions,
-         %{fallback_models: []},
-         _service_config,
-         _request_ctx,
-         _request_type,
-         error
-       ),
-       do: error
-
-  defp attempt_fallback_generate(
-         completer,
-         messages,
-         functions,
-         plan,
-         service_config,
-         _request_ctx,
-         request_type,
-         _error
-       ) do
-    case List.first(plan.fallback_models) do
-      nil ->
-        {:error, :fallback_unavailable}
-
-      fallback_model ->
-        Logger.info("Falling back to backup model #{fallback_model.id} for GenAI generate")
-        execute_generate(
-          completer,
-          messages,
-          functions,
-          fallback_model,
-          service_config,
-          request_type
-        )
-    end
-  end
-
-  defp attempt_fallback_stream(
-         _completer,
-         _messages,
-         _functions,
-         %{fallback_models: []},
-         _service_config,
-         _request_ctx,
-         _request_type,
-         error,
-         _response_handler_fn
-       ),
-       do: error
-
-  defp attempt_fallback_stream(
-         completer,
-         messages,
-         functions,
-         plan,
-         service_config,
-         _request_ctx,
-         request_type,
-         _error,
-         response_handler_fn
-       ) do
-    case List.first(plan.fallback_models) do
-      nil ->
-        {:error, :fallback_unavailable}
-
-      fallback_model ->
-        Logger.info("Falling back to backup model #{fallback_model.id} for GenAI stream")
-
-        execute_stream(
-          completer,
-          messages,
-          functions,
-          fallback_model,
-          service_config,
-          response_handler_fn,
-          request_type
-        )
-    end
+    execute_stream(
+      completer,
+      messages,
+      functions,
+      plan.selected_model,
+      service_config,
+      response_handler_fn,
+      request_type
+    )
   end
 
   defp execute_generate(
@@ -342,6 +215,13 @@ defmodule Oli.GenAI.Execution do
 
   defp outcome_details(:ok), do: {:ok, nil}
   defp outcome_details(_), do: {:error, nil}
+
+  defp release_admission!(%{pool_name: pool_name, selected_model: %{id: model_id}}) do
+    AdmissionControl.release_pool(pool_name)
+    AdmissionControl.release_model(model_id)
+  end
+
+  defp release_admission!(_), do: :ok
 
   defp emit_provider_telemetry(result, latency_ms, registered_model, request_type, service_config) do
     {outcome, http_status} = outcome_details(result)

@@ -6,6 +6,7 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
   schema "completions_service_configs" do
     field :name, :string
     belongs_to :primary_model, Oli.GenAI.Completions.RegisteredModel
+    belongs_to :secondary_model, Oli.GenAI.Completions.RegisteredModel
     belongs_to :backup_model, Oli.GenAI.Completions.RegisteredModel
 
     field :routing_soft_limit, :integer, default: 40
@@ -30,6 +31,7 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
     |> cast(attrs, [
       :name,
       :primary_model_id,
+      :secondary_model_id,
       :backup_model_id,
       :routing_soft_limit,
       :routing_hard_limit,
@@ -77,6 +79,7 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
     |> validate_number(:routing_connect_timeout_ms, greater_than_or_equal_to: 0)
     |> validate_soft_limit()
     |> validate_stream_soft_limit()
+    |> validate_secondary_model()
   end
 
   defp validate_soft_limit(changeset) do
@@ -98,6 +101,26 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
       changeset
     else
       add_error(changeset, :routing_stream_soft_limit, "must be less than or equal to stream hard limit")
+    end
+  end
+
+  defp validate_secondary_model(changeset) do
+    primary_id = get_field(changeset, :primary_model_id)
+    secondary_id = get_field(changeset, :secondary_model_id)
+    backup_id = get_field(changeset, :backup_model_id)
+
+    cond do
+      is_nil(secondary_id) ->
+        changeset
+
+      secondary_id == primary_id ->
+        add_error(changeset, :secondary_model_id, "must be different from primary model")
+
+      not is_nil(backup_id) and secondary_id == backup_id ->
+        add_error(changeset, :secondary_model_id, "must be different from backup model")
+
+      true ->
+        changeset
     end
   end
 end

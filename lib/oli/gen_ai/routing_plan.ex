@@ -5,11 +5,13 @@ defmodule Oli.GenAI.RoutingPlan do
 
   defstruct [
     :selected_model,
+    :tier,
     :fallback_models,
     :reason,
     :admission,
     :timeouts,
     :counts,
-    :request_type
+    :request_type,
+    :pool_name
   ]
 end

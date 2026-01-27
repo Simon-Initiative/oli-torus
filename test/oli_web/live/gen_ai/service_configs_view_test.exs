@@ -31,6 +31,7 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
       params = %{
         "name" => service_config.name,
         "primary_model_id" => to_string(service_config.primary_model_id),
+        "secondary_model_id" => to_string(service_config.secondary_model_id),
         "backup_model_id" => "",
         "routing_soft_limit" => "10",
         "routing_hard_limit" => "20",
@@ -55,6 +56,7 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
       assert updated.routing_hard_limit == 20
       assert updated.routing_stream_soft_limit == 4
       assert updated.routing_stream_hard_limit == 8
+      assert updated.secondary_model_id == service_config.secondary_model_id
     end
   end
 
@@ -70,10 +72,22 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
         recv_timeout: 60_000
       })
 
+    secondary_model =
+      Repo.insert!(%RegisteredModel{
+        name: "Secondary Model",
+        provider: :null,
+        model: "null-secondary",
+        url_template: "http://localhost",
+        api_key: "secret",
+        timeout: 8000,
+        recv_timeout: 60_000
+      })
+
     {:ok, service_config} =
       GenAI.create_service_config(%{
         name: "Test Service Config",
         primary_model_id: model.id,
+        secondary_model_id: secondary_model.id,
         backup_model_id: nil
       })
 

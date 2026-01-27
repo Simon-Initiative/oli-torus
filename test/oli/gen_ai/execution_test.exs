@@ -12,7 +12,7 @@ defmodule Oli.GenAI.ExecutionTest do
     :ok
   end
 
-  test "falls back to backup model when primary fails" do
+  test "returns error when primary fails and no fallback is attempted" do
     Process.put(:execution_test_pid, self())
 
     service_config = build_service_config(1)
@@ -20,7 +20,7 @@ defmodule Oli.GenAI.ExecutionTest do
     backup_id = service_config.backup_model.id
     request_ctx = %{request_type: :generate}
 
-    assert {:ok, _} =
+    assert {:error, {:http_error, 500}} =
              Execution.generate(
                request_ctx,
                [],
@@ -30,16 +30,19 @@ defmodule Oli.GenAI.ExecutionTest do
              )
 
     assert_received {:generate_called, ^primary_id}
-    assert_received {:generate_called, ^backup_id}
+    refute_received {:generate_called, ^backup_id}
   end
 
-  test "rejects when router returns over_capacity" do
-    service_config = build_service_config(2, routing_hard_limit: 1, routing_soft_limit: 1)
+  test "rejects when secondary is over capacity" do
+    service_config =
+      build_service_config(2,
+        primary_model: %RegisteredModel{id: 21, name: "Primary", provider: :null, max_concurrent: 0},
+        secondary_model: %RegisteredModel{id: 22, name: "Secondary", provider: :null, max_concurrent: 0}
+      )
+
     request_ctx = %{request_type: :generate}
 
-    AdmissionControl.increment_requests(service_config.id)
-
-    assert {:error, :over_capacity} =
+    assert {:error, :secondary_over_capacity} =
              Execution.generate(
                request_ctx,
                [],
@@ -51,12 +54,14 @@ defmodule Oli.GenAI.ExecutionTest do
 
   defp build_service_config(id, overrides \\ %{}) do
     primary = %RegisteredModel{id: id * 10 + 1, name: "Primary", provider: :null}
-    backup = %RegisteredModel{id: id * 10 + 2, name: "Backup", provider: :null}
+    secondary = %RegisteredModel{id: id * 10 + 2, name: "Secondary", provider: :null}
+    backup = %RegisteredModel{id: id * 10 + 3, name: "Backup", provider: :null}
 
     base = %ServiceConfig{
       id: id,
       name: "ServiceConfig #{id}",
       primary_model: primary,
+      secondary_model: secondary,
       backup_model: backup,
       routing_soft_limit: 2,
       routing_hard_limit: 3,
