@@ -8,7 +8,7 @@ on:
       ref:
         description: "Git ref (branch or tag) to deploy"
         required: true
-        default: main
+        default: master
       preview_id:
         description: "Preview identifier (namespace/hostname prefix)"
         required: true
