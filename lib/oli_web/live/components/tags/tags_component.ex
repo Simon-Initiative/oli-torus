@@ -233,15 +233,17 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
             <!-- Edit mode input with selected tags - full cell -->
             <div class={get_edit_container_classes(@variant)}>
               <!-- Show currently selected tags with X buttons -->
-              <%= for tag <- @current_tags do %>
-                <.tag_pill
-                  tag={tag}
-                  variant={@variant}
-                  with_button={true}
-                  myself={@myself}
-                  font_style={@font_style}
-                />
-              <% end %>
+              <div role="list" aria-label="Selected tags" class="contents">
+                <%= for tag <- @current_tags do %>
+                  <.tag_pill
+                    tag={tag}
+                    variant={@variant}
+                    with_button={true}
+                    myself={@myself}
+                    font_style={@font_style}
+                  />
+                <% end %>
+              </div>
               <!-- Input field for searching/adding new tags -->
               <div class="flex-1 min-w-[180px]">
                 <input
@@ -304,9 +306,11 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
           tabindex="0"
         >
           <%= if length(@current_tags || []) > 0 do %>
-            <div class={
-              if @variant == :table, do: "flex flex-col gap-1", else: "flex flex-wrap gap-1"
-            }>
+            <div
+              role="list"
+              aria-label="Selected tags"
+              class={if @variant == :table, do: "flex flex-col gap-1", else: "flex flex-wrap gap-1"}
+            >
               <%= for tag <- @current_tags do %>
                 <.tag_pill
                   tag={tag}
@@ -387,7 +391,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
   defp tag_pill(assigns) do
     ~H"""
     <span
-      role="selected tag"
+      role="listitem"
       class={get_tag_pill_span_classes(@variant, @with_button, @tag.name)}
       style={@font_style}
     >

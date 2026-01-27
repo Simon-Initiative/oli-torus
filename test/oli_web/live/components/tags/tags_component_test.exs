@@ -44,7 +44,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
           current_tags: [biology]
         })
 
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      assert has_element?(component, "span[role='listitem']", "Biology")
       refute has_element?(component, "input")
       # Table variant: NO X button in display mode (original behavior)
       refute has_element?(component, "button[phx-click='remove_tag']")
@@ -62,7 +62,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
           current_tags: []
         })
 
-      refute has_element?(component, "span[role='selected tag']")
+      refute has_element?(component, "span[role='listitem']")
     end
 
     test "handles unloaded association in current_tags", %{conn: conn, project: project} do
@@ -78,7 +78,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
           }
         })
 
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      assert has_element?(component, "span[role='listitem']", "Biology")
     end
 
     test "edit mode shows input and remove buttons", %{
@@ -101,7 +101,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       assert has_element?(component, "input")
       # Table variant: SVG close icon button
       assert has_element?(component, "button[phx-click='remove_tag'] svg")
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      assert has_element?(component, "span[role='listitem']", "Biology")
     end
 
     test "add_tag button is rendered in edit mode", %{
@@ -143,7 +143,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       component |> element("div[phx-click='toggle_edit']") |> render_click()
 
       # Should show tag with X button for removal (SVG close icon)
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      assert has_element?(component, "span[role='listitem']", "Biology")
       assert has_element?(component, "button[phx-click='remove_tag'] svg")
     end
 
@@ -194,7 +194,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       assert has_element?(component, "input[phx-keydown='handle_keydown']")
 
       # Current tags should still be displayed
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      assert has_element?(component, "span[role='listitem']", "Biology")
     end
 
     test "input field supports search functionality", %{
@@ -218,7 +218,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       assert has_element?(component, "input[phx-keyup='search_tags']")
 
       # Current tags should be displayed
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      assert has_element?(component, "span[role='listitem']", "Biology")
     end
 
     test "handle_keydown with Escape exits edit mode", %{
@@ -256,7 +256,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
           current_tags: [chemistry]
         })
 
-      assert has_element?(component, "span[role='selected tag']", "Chemistry")
+      assert has_element?(component, "span[role='listitem']", "Chemistry")
     end
 
     test "works with blueprint sections (products)", %{conn: conn, chemistry: chemistry} do
@@ -271,7 +271,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
           current_tags: [chemistry]
         })
 
-      assert has_element?(component, "span[role='selected tag']", "Chemistry")
+      assert has_element?(component, "span[role='listitem']", "Chemistry")
     end
 
     test "displays error state styling when needed", %{conn: conn, project: project} do

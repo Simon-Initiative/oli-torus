@@ -502,7 +502,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       # Should show the Tags label in Details section
       assert has_element?(view, "label", "Tags")
       # Should show the tag
-      assert has_element?(view, "span[role='selected tag']", "Biology")
+      assert has_element?(view, "span[role='listitem']", "Biology")
     end
 
     test "displays empty tags component when project has no tags", %{conn: conn, author: author} do
@@ -513,7 +513,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       # Should show the Tags label
       assert has_element?(view, "label", "Tags")
       # Should not show any tags
-      refute has_element?(view, "span[role='selected tag']")
+      refute has_element?(view, "span[role='listitem']")
     end
 
     test "displays multiple tags in alphabetical order", %{conn: conn, author: author} do
@@ -526,8 +526,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       # Should show both tags
-      assert has_element?(view, "span[role='selected tag']", "Apple")
-      assert has_element?(view, "span[role='selected tag']", "Zebra")
+      assert has_element?(view, "span[role='listitem']", "Apple")
+      assert has_element?(view, "span[role='listitem']", "Zebra")
 
       # Check alphabetical order
       html = render(view)
@@ -550,7 +550,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       # Should show input field in edit mode
       assert has_element?(view, "input[type='text']")
       # Should show existing tag with remove button (X icon)
-      assert has_element?(view, "span[role='selected tag']", "Chemistry")
+      assert has_element?(view, "span[role='listitem']", "Chemistry")
       assert has_element?(view, "button[phx-click='remove_tag'] svg")
       # Should show available tag to add
       assert has_element?(view, "button[phx-click='add_tag']", "Physics")
