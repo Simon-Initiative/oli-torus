@@ -76,6 +76,7 @@ defmodule OliWeb.Delivery.NewCourse do
       Sections.change_section(%Section{
         title: suggested_title,
         registration_open: true,
+        requires_enrollment: true,
         timezone: "US/Eastern"
       })
 
