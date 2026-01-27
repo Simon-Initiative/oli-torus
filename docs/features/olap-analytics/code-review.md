@@ -54,7 +54,7 @@ cleanup; alternatively use requestAnimationFrame throttling.
 
 ## Requirements Review
 
-- [ ] No Tests For ClickHouse Query Error/Edge Paths
+- [x] No Tests For ClickHouse Query Error/Edge Paths
 
 file: lib/oli/analytics/advanced_analytics.ex
 line: 106
@@ -64,21 +64,21 @@ assert UI behavior when ClickHouse is unavailable or returns errors.
 
 ## Performance Review
 
-- [ ] N+1 job lookups during recovery
+- [x] N+1 job lookups during recovery
 
 file: lib/oli/analytics/backfill/inventory.ex
 line: 1073
 Description: job_active?/2 performs Repo.get/2 per batch while recover_inflight_batches/1 iterates all running/queued batches, resulting in N+1 database reads and extra latency when many batches are in flight.
 Suggestion: Fetch job states in bulk (e.g., collect last_job_ids, Repo.all(from j in ObanJob, where: j.id in ^ids), build a map) or join on ObanJob in the initial query so each batch is checked without per-row queries.
 
-- [ ] Per-entry DB polling for interruption
+- [x] Per-entry DB polling for interruption
 
 file: lib/oli/analytics/backfill/inventory/batch_worker.ex
 line: 1146
 Description: check_for_interruption/1 calls Repo.get/2 and is invoked inside chunk and entry loops; for large inventories this results in many DB round trips and can dominate processing time.
 Suggestion: Throttle interruption checks (e.g., once per page or every N chunks), or pass a refreshed batch once per page and only Repo.reload on a timer/backoff instead of per entry.
 
-- [ ] Extra batch reload per chunk
+- [x] Extra batch reload per chunk
 
 file: lib/oli/analytics/backfill/inventory/batch_worker.ex
 line: 586
@@ -133,7 +133,7 @@ line: 31
 Description: to_integer/1 raises on invalid input, causing the Oban job to error and retry indefinitely for malformed run_id values.
 Suggestion: Replace to_integer/1 with a safe parse (e.g., Integer.parse/1) and return {:discard, "invalid run id"} when parsing fails.
 
-- [ ] Extra DB read inside per-chunk loop
+- [x] Extra DB read inside per-chunk loop
 
 file: lib/oli/analytics/backfill/inventory/batch_worker.ex
 line: 586
