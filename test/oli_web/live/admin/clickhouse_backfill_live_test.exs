@@ -50,15 +50,15 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
     test "shows batch orchestration tab by default", %{conn: conn} do
       {:ok, _view, html} = live(conn, @route)
 
-      assert html =~ "ClickHouse Bulk Backfill"
-      assert html =~ "Schedule Batch Orchestration"
-      assert html =~ "Inventory Runs"
+      assert html =~ "ClickHouse Backfills"
+      assert html =~ "Schedule Backfill"
+      assert html =~ "Inventory Backfill Runs"
     end
 
     test "can switch to manual backfill tab", %{conn: conn} do
       {:ok, view, html} = live(conn, @route)
 
-      assert html =~ "Batch Orchestration"
+      assert html =~ "Inventory Backfill"
 
       view
       |> element("button[phx-value-tab=\"manual\"]")
@@ -81,8 +81,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
     test "treats batch param as inventory tab", %{conn: conn} do
       {:ok, _view, html} = live(conn, @route <> "?active_tab=batch")
 
-      assert html =~ "Schedule Batch Orchestration"
-      assert html =~ "Inventory Runs"
+      assert html =~ "Schedule Backfill"
+      assert html =~ "Inventory Backfill Runs"
     end
 
     test "inventory form defaults to previous day", %{conn: conn} do
