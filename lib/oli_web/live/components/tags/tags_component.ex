@@ -264,6 +264,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                       phx-target={@myself}
                       class="hover:opacity-70 transition-opacity duration-200 flex items-center justify-center"
                       type="button"
+                      aria-label={"Remove tag #{tag.name}"}
                     >
                       <OliWeb.Icons.close_sm class="w-4 h-4 stroke-current" />
                     </button>
@@ -282,6 +283,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                       phx-target={@myself}
                       class="hover:opacity-70 transition-opacity duration-200 flex items-center justify-center"
                       type="button"
+                      aria-label={"Remove tag #{tag.name}"}
                     >
                       <OliWeb.Icons.close_sm class="w-4 h-4 stroke-current" />
                     </button>
@@ -381,6 +383,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                       phx-target={@myself}
                       class="hover:opacity-70 transition-opacity duration-200 flex items-center justify-center"
                       type="button"
+                      aria-label={"Remove tag #{tag.name}"}
                     >
                       <OliWeb.Icons.close_sm class="w-4 h-4 stroke-current" />
                     </button>
