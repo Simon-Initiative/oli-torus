@@ -1727,6 +1727,29 @@ defmodule OliWeb.Icons do
 
   attr :class, :string, default: "stroke-Icon-icon-default dark:stroke-Icon-icon-default"
 
+  def adjustments(assigns) do
+    ~H"""
+    <svg
+      width="18"
+      height="14"
+      viewBox="0 0 18 14"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M8.75001 2.75C8.75001 3.28043 8.96072 3.78914 9.33579 4.16422C9.71087 4.53929 10.2196 4.75 10.75 4.75C11.2804 4.75 11.7891 4.53929 12.1642 4.16422C12.5393 3.78914 12.75 3.28043 12.75 2.75M8.75001 2.75C8.75001 2.21957 8.96072 1.71086 9.33579 1.33579C9.71087 0.960714 10.2196 0.75 10.75 0.75C11.2804 0.75 11.7891 0.960714 12.1642 1.33579C12.5393 1.71086 12.75 2.21957 12.75 2.75M8.75001 2.75H0.75M12.75 2.75H16.75M2.75 10.75C2.75 11.2804 2.96072 11.7891 3.33579 12.1642C3.71086 12.5393 4.21957 12.75 4.75 12.75C5.28044 12.75 5.78914 12.5393 6.16422 12.1642C6.53929 11.7891 6.75 11.2804 6.75 10.75M2.75 10.75C2.75 10.2196 2.96072 9.71087 3.33579 9.33579C3.71086 8.96072 4.21957 8.75001 4.75 8.75001C5.28044 8.75001 5.78914 8.96072 6.16422 9.33579C6.53929 9.71087 6.75 10.2196 6.75 10.75M2.75 10.75H0.75M6.75 10.75H16.75"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "stroke-Icon-icon-default dark:stroke-Icon-icon-default"
+
   def help(assigns) do
     ~H"""
     <svg
@@ -1742,6 +1765,44 @@ defmodule OliWeb.Icons do
         stroke-width="1.5"
         stroke-linecap="round"
         stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "text-Text-text-high"
+
+  def vertical_dots(assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="4"
+      height="16"
+      viewBox="0 0 4 16"
+      fill="currentColor"
+      class={@class}
+    >
+      <circle cx="2" cy="2" r="2" />
+      <circle cx="2" cy="8" r="2" />
+      <circle cx="2" cy="14" r="2" />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "w-5 h-5"
+
+  def checkmark(assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      class={@class}
+    >
+      <path
+        fill-rule="evenodd"
+        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+        clip-rule="evenodd"
       />
     </svg>
     """

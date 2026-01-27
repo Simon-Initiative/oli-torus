@@ -117,7 +117,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <% nil -> %>
           <Common.loading_spinner />
         <% [] -> %>
-          <div class="text-center text-sm p-4 text-gray-400">{empty_label(@active_tab)}</div>
+          <div class="text-center text-sm p-4 text-Text-text-low">{empty_label(@active_tab)}</div>
         <% annotations -> %>
           <%= for annotation <- annotations do %>
             <.post
