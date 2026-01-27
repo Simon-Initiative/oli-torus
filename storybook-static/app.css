@@ -26167,6 +26167,14 @@ Not supports in Firefox and IE */
   stroke: #FFFFFF;
 }
 
+.group.past-start .group-\[\.past-start\]\:text-Text-text-low {
+  color: #45464C;
+}
+
+.dark .group.past-start .group-\[\.past-start\]\:text-Text-text-low {
+  color: #BAB8BF;
+}
+
 .dark .dark\:stroke-Icon-icon-default {
   stroke: #757682;
 }
@@ -27701,15 +27709,6 @@ Not supports in Firefox and IE */
 
 .group.past-start .group-\[\.past-start\]\:fill-gray-300 {
   fill: #d4d4d4;
-}
-
-.group.past-start .group-\[\.past-start\]\:text-gray-400 {
-  --tw-text-opacity: 1;
-  color: rgb(163 163 163 / var(--tw-text-opacity));
-}
-
-.group.past-start .group-\[\.past-start\]\:opacity-80 {
-  opacity: 0.8;
 }
 
 .peer:checked ~ .peer-checked\:bg-primary {
