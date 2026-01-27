@@ -142,7 +142,11 @@ defmodule OliWeb.Api.DirectedDiscussionControllerTest do
 
     insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
     insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource_id})
-    insert(:project_resource, %{project_id: project.id, resource_id: activity_revision.resource_id})
+
+    insert(:project_resource, %{
+      project_id: project.id,
+      resource_id: activity_revision.resource_id
+    })
 
     publication =
       insert(:publication, %{
@@ -384,7 +388,11 @@ defmodule OliWeb.Api.DirectedDiscussionControllerTest do
       Oli.TestHelpers.wait_until(
         fn ->
           latest =
-            get_latest_activity_attempt_any_state(section.id, user.id, activity_revision.resource_id)
+            get_latest_activity_attempt_any_state(
+              section.id,
+              user.id,
+              activity_revision.resource_id
+            )
 
           latest != nil &&
             latest.attempt_guid != setup.activity_attempt.attempt_guid &&
@@ -629,7 +637,11 @@ defmodule OliWeb.Api.DirectedDiscussionControllerTest do
       Oli.TestHelpers.wait_until(
         fn ->
           latest =
-            get_latest_activity_attempt_any_state(section.id, user.id, activity_revision.resource_id)
+            get_latest_activity_attempt_any_state(
+              section.id,
+              user.id,
+              activity_revision.resource_id
+            )
 
           latest != nil &&
             latest.attempt_guid != setup.activity_attempt.attempt_guid &&
