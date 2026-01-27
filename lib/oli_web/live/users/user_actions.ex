@@ -31,7 +31,6 @@ defmodule OliWeb.Users.Actions do
             class="!mb-0"
           />
         </div>
-
       </div>
 
       <%= if @email_confirmation_pending do %>
