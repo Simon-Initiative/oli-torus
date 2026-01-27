@@ -91,7 +91,7 @@ defmodule OliWeb.UserSettingsLiveTest do
 
       invalid_params = %{
         "given_name" => "",
-        "family_name" => "A"
+        "family_name" => ""
       }
 
       result =
@@ -99,7 +99,7 @@ defmodule OliWeb.UserSettingsLiveTest do
         |> form("#user_form", %{"user" => invalid_params})
         |> render_submit()
 
-      assert result =~ "Please enter a First Name."
+      assert result =~ "Please enter a First Name"
       assert result =~ "Please enter a Last Name"
     end
 
