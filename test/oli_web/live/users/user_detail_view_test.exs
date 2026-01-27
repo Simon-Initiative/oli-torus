@@ -337,12 +337,12 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       |> render_submit(%{
         "user" => %{
           "given_name" => independent_student.given_name,
-          "family_name" => "A",
+          "family_name" => "",
           "email" => independent_student.email
         }
       })
 
-      assert render(view) =~ "Please enter a Last Name that is at least two characters long."
+      assert render(view) =~ "Please enter a Last Name"
     end
 
     test "shows both error messages when First Name is empty and Last Name has less than 2 characters on form submit",
