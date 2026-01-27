@@ -52,7 +52,7 @@
 
 .user_enrolled_sections_table thead th:not(:last-child)::after {
   content: "";
-  @apply absolute right-0 top-2 bottom-2 w-px bg-Border-border-default;
+  @apply absolute right-0 top-0 bottom-0 w-px bg-Border-border-default;
 }
 
 .publish_changes_table tr:has(div[data-is-structural='true']) td {
