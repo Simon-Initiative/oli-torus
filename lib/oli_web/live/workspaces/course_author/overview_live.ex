@@ -1,14 +1,13 @@
 defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   use OliWeb, :live_view
 
-  import Ecto.Query
   import Phoenix.Component
   import OliWeb.Components.Common
 
   alias Oli.{Accounts, Activities, Inventories, Publishing, Repo}
-  alias Oli.Accounts.User
   alias Oli.Authoring.{Broadcaster, Course, ProjectExportWorker}
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.Browse
+  alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Course.{CreativeCommons, Project}
   alias Oli.Delivery.Experiments
@@ -38,52 +37,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       |> Enum.map(& &1.institution)
       |> Enum.reject(&is_nil/1)
 
-    # Get course sections for this project (enrollable sections only, not blueprints/products)
-    # Only show sections that haven't ended yet (author view pattern)
-    today = DateTime.utc_now()
-
-    # Returns "id|given_name|family_name|email" format for parsing in table model
-    first_enrollment_subquery =
-      from(u in User,
-        join: e in assoc(u, :enrollments),
-        where: e.section_id == parent_as(:section).id,
-        order_by: [asc: e.inserted_at],
-        limit: 1,
-        select:
-          fragment(
-            "concat(?, '|', ?, '|', ?, '|', ?)",
-            u.id,
-            u.given_name,
-            u.family_name,
-            u.email
-          )
-      )
-
+    # Get course sections for this project using DB-level pagination
     course_sections =
-      from(s in Section,
-        as: :section,
-        where: s.base_project_id == ^project.id,
-        where: is_nil(s.blueprint_id),
-        where: s.type == :enrollable,
-        where: s.status == :active,
-        where: not is_nil(s.end_date),
-        where: s.end_date >= ^today,
-        preload: [section_project_publications: [:publication]],
-        select: %{s | creator: subquery(first_enrollment_subquery)}
+      Browse.browse_project_sections(
+        project.id,
+        %Paging{offset: 0, limit: @course_sections_limit},
+        %Sorting{direction: :asc, field: :title},
+        text_search: ""
       )
-      |> Repo.all()
 
-    # Build initial course sections table with sorting and pagination
-    {course_sections_table_model, course_sections_total} =
-      build_course_sections_table(
-        ctx,
-        course_sections,
-        "",
-        :title,
-        :asc,
-        0,
-        @course_sections_limit
-      )
+    course_sections_total = Browse.determine_total(course_sections)
+
+    # Build initial course sections table
+    {:ok, course_sections_table_model} = OverviewSectionsTableModel.new(ctx, course_sections)
+
+    course_sections_table_model =
+      course_sections_table_model
+      |> Map.put(:sort_by_spec, Enum.find(course_sections_table_model.column_specs, &(&1.name == :title)))
+      |> Map.put(:sort_order, :asc)
+      |> Map.put(:rows, course_sections)
 
     is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
@@ -140,14 +112,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
        project_export_url: project_export_url,
        project_export_timestamp: project_export_timestamp,
        visibility_institutions: visibility_institutions,
-       course_sections: course_sections,
        course_sections_table_model: course_sections_table_model,
        course_sections_search: "",
        course_sections_offset: 0,
        course_sections_limit: @course_sections_limit,
        course_sections_total: course_sections_total,
        course_sections_sort_by: :title,
-       course_sections_sort_order: :asc
+       course_sections_sort_order: :asc,
+       course_sections_project_id: project.id
      )}
   end
 
@@ -733,6 +705,42 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event("paged_table_limit_change", %{"limit" => limit}, socket) do
+    limit = String.to_integer(limit)
+
+    # Query DB with new limit - reset to first page
+    course_sections =
+      Browse.browse_project_sections(
+        socket.assigns.course_sections_project_id,
+        %Paging{offset: 0, limit: limit},
+        %Sorting{
+          direction: socket.assigns.course_sections_sort_order,
+          field: socket.assigns.course_sections_sort_by
+        },
+        text_search: socket.assigns.course_sections_search
+      )
+
+    total = Browse.determine_total(course_sections)
+    {:ok, table_model} = OverviewSectionsTableModel.new(socket.assigns.ctx, course_sections)
+
+    table_model =
+      table_model
+      |> Map.put(
+        :sort_by_spec,
+        Enum.find(table_model.column_specs, &(&1.name == socket.assigns.course_sections_sort_by))
+      )
+      |> Map.put(:sort_order, socket.assigns.course_sections_sort_order)
+      |> Map.put(:rows, course_sections)
+
+    {:noreply,
+     assign(socket,
+       course_sections_table_model: table_model,
+       course_sections_limit: limit,
+       course_sections_offset: 0,
+       course_sections_total: total
+     )}
+  end
+
   def handle_event("course_sections_sort", %{"sort_by" => sort_by}, socket) do
     sort_by = String.to_existing_atom(sort_by)
 
@@ -744,17 +752,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         :asc
       end
 
-    # Filter, sort, and paginate - reset to first page on sort change
-    {table_model, total} =
-      build_course_sections_table(
-        socket.assigns.ctx,
-        socket.assigns.course_sections,
-        socket.assigns.course_sections_search,
-        sort_by,
-        sort_order,
-        0,
-        socket.assigns.course_sections_limit
+    # Query DB with new sort - reset to first page
+    course_sections =
+      Browse.browse_project_sections(
+        socket.assigns.course_sections_project_id,
+        %Paging{offset: 0, limit: socket.assigns.course_sections_limit},
+        %Sorting{direction: sort_order, field: sort_by},
+        text_search: socket.assigns.course_sections_search
       )
+
+    total = Browse.determine_total(course_sections)
+    {:ok, table_model} = OverviewSectionsTableModel.new(socket.assigns.ctx, course_sections)
+
+    table_model =
+      table_model
+      |> Map.put(:sort_by_spec, Enum.find(table_model.column_specs, &(&1.name == sort_by)))
+      |> Map.put(:sort_order, sort_order)
+      |> Map.put(:rows, course_sections)
 
     {:noreply,
      assign(socket,
@@ -769,16 +783,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   def handle_event("course_sections_page_change", %{"offset" => offset}, socket) do
     offset = String.to_integer(offset)
 
-    {table_model, _total} =
-      build_course_sections_table(
-        socket.assigns.ctx,
-        socket.assigns.course_sections,
-        socket.assigns.course_sections_search,
-        socket.assigns.course_sections_sort_by,
-        socket.assigns.course_sections_sort_order,
-        offset,
-        socket.assigns.course_sections_limit
+    # Query DB with new offset
+    course_sections =
+      Browse.browse_project_sections(
+        socket.assigns.course_sections_project_id,
+        %Paging{offset: offset, limit: socket.assigns.course_sections_limit},
+        %Sorting{
+          direction: socket.assigns.course_sections_sort_order,
+          field: socket.assigns.course_sections_sort_by
+        },
+        text_search: socket.assigns.course_sections_search
       )
+
+    {:ok, table_model} = OverviewSectionsTableModel.new(socket.assigns.ctx, course_sections)
+
+    table_model =
+      table_model
+      |> Map.put(
+        :sort_by_spec,
+        Enum.find(table_model.column_specs, &(&1.name == socket.assigns.course_sections_sort_by))
+      )
+      |> Map.put(:sort_order, socket.assigns.course_sections_sort_order)
+      |> Map.put(:rows, course_sections)
 
     {:noreply,
      assign(socket,
@@ -788,17 +814,29 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   end
 
   def handle_event("course_sections_search_change", %{"search" => search}, socket) do
-    # Reset to first page on search change
-    {table_model, total} =
-      build_course_sections_table(
-        socket.assigns.ctx,
-        socket.assigns.course_sections,
-        search,
-        socket.assigns.course_sections_sort_by,
-        socket.assigns.course_sections_sort_order,
-        0,
-        socket.assigns.course_sections_limit
+    # Query DB with new search - reset to first page
+    course_sections =
+      Browse.browse_project_sections(
+        socket.assigns.course_sections_project_id,
+        %Paging{offset: 0, limit: socket.assigns.course_sections_limit},
+        %Sorting{
+          direction: socket.assigns.course_sections_sort_order,
+          field: socket.assigns.course_sections_sort_by
+        },
+        text_search: search
       )
+
+    total = Browse.determine_total(course_sections)
+    {:ok, table_model} = OverviewSectionsTableModel.new(socket.assigns.ctx, course_sections)
+
+    table_model =
+      table_model
+      |> Map.put(
+        :sort_by_spec,
+        Enum.find(table_model.column_specs, &(&1.name == socket.assigns.course_sections_sort_by))
+      )
+      |> Map.put(:sort_order, socket.assigns.course_sections_sort_order)
+      |> Map.put(:rows, course_sections)
 
     {:noreply,
      assign(socket,
@@ -1061,91 +1099,4 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   defp decode_welcome_title(project_params),
     do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
-
-  defp build_course_sections_table(ctx, sections, search, sort_by, sort_order, offset, limit) do
-    # 1. Filter
-    filtered = filter_course_sections(sections, search)
-    total = length(filtered)
-
-    # 2. Sort
-    sorted = sort_course_sections(filtered, sort_by, sort_order)
-
-    # 3. Paginate
-    paginated =
-      sorted
-      |> Enum.drop(offset)
-      |> Enum.take(limit)
-
-    # 4. Create table model
-    {:ok, table_model} = OverviewSectionsTableModel.new(ctx, paginated)
-
-    # Update table model with current sort state for UI indicators
-    # Also reset rows because SortableTableModel.new internally re-sorts them
-    table_model =
-      table_model
-      |> Map.put(:sort_by_spec, Enum.find(table_model.column_specs, &(&1.name == sort_by)))
-      |> Map.put(:sort_order, sort_order)
-      |> Map.put(:rows, paginated)
-
-    {table_model, total}
-  end
-
-  defp sort_course_sections(sections, sort_by, sort_order) do
-    sorted =
-      case sort_by do
-        :title ->
-          Enum.sort_by(sections, & &1.title, &safe_compare/2)
-
-        :start_date ->
-          Enum.sort_by(sections, & &1.start_date, &safe_date_compare/2)
-
-        :end_date ->
-          Enum.sort_by(sections, & &1.end_date, &safe_date_compare/2)
-
-        :requires_payment ->
-          Enum.sort_by(sections, & &1.requires_payment)
-
-        :creator ->
-          Enum.sort_by(sections, & &1.creator, &safe_compare/2)
-
-        :section_project_publications ->
-          Enum.sort_by(
-            sections,
-            fn s ->
-              case s.section_project_publications do
-                [first | _] ->
-                  "#{first.publication.edition}.#{first.publication.major}.#{first.publication.minor}"
-
-                _ ->
-                  ""
-              end
-            end,
-            &safe_compare/2
-          )
-
-        _ ->
-          sections
-      end
-
-    if sort_order == :desc, do: Enum.reverse(sorted), else: sorted
-  end
-
-  defp safe_compare(a, _b) when is_nil(a), do: true
-  defp safe_compare(_a, b) when is_nil(b), do: false
-  defp safe_compare(a, b), do: String.downcase(to_string(a)) <= String.downcase(to_string(b))
-
-  defp safe_date_compare(a, _b) when is_nil(a), do: true
-  defp safe_date_compare(_a, b) when is_nil(b), do: false
-  defp safe_date_compare(a, b), do: DateTime.compare(a, b) != :gt
-
-  defp filter_course_sections(sections, ""), do: sections
-  defp filter_course_sections(sections, nil), do: sections
-
-  defp filter_course_sections(sections, search) do
-    search_lower = String.downcase(search)
-
-    Enum.filter(sections, fn section ->
-      String.contains?(String.downcase(section.title || ""), search_lower)
-    end)
-  end
 end

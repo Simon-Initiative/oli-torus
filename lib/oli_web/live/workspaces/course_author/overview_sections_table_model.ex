@@ -13,7 +13,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewSectionsTableModel do
         render_fn: &custom_render/3
       },
       %ColumnSpec{
-        name: :section_project_publications,
+        name: :publication,
         label: "Current Publication",
         render_fn: &custom_render/3
       },
@@ -63,10 +63,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewSectionsTableModel do
     """
   end
 
-  def custom_render(assigns, section, %ColumnSpec{name: :section_project_publications}) do
-    case section.section_project_publications do
-      [first | _] ->
-        %{edition: edition, major: major, minor: minor} = first.publication
+  def custom_render(assigns, section, %ColumnSpec{name: :publication}) do
+    case section.publication do
+      %{edition: edition, major: major, minor: minor} ->
         assigns = Map.merge(assigns, %{edition: edition, major: major, minor: minor})
 
         ~H"""
@@ -74,8 +73,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewSectionsTableModel do
         """
 
       _ ->
-        assigns = assigns
-
         ~H"""
         <span class="text-Text-text-low">N/A</span>
         """
@@ -84,36 +81,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewSectionsTableModel do
 
   def custom_render(assigns, section, %ColumnSpec{name: :creator}) do
     case section.creator do
-      nil ->
+      %{id: id, name: name, email: email} when not is_nil(id) ->
+        # Handle edge case where name is empty (only whitespace)
+        display_name = if is_nil(name) or String.trim(name) == "", do: email, else: name
+        assigns = Map.merge(assigns, %{id: id, name: display_name, email: email})
+
+        ~H"""
+        <span>
+          <a
+            href={~p"/admin/users/#{@id}"}
+            class="text-Text-text-link hover:text-Text-text-link hover:underline"
+          >
+            {@name}
+          </a>
+          <span class="text-Text-text-low">{@email}</span>
+        </span>
+        """
+
+      _ ->
         "N/A"
-
-      "" ->
-        "N/A"
-
-      creator ->
-        case String.split(creator, "|") do
-          [id, given_name, family_name, email] ->
-            name = "#{given_name} #{family_name}" |> String.trim()
-            # Handle edge case where name is empty (only whitespace)
-            display_name = if name == "", do: email, else: name
-            assigns = Map.merge(assigns, %{id: id, name: display_name, email: email})
-
-            ~H"""
-            <span>
-              <a
-                href={~p"/admin/users/#{@id}"}
-                class="text-Text-text-link hover:text-Text-text-link hover:underline"
-              >
-                {@name}
-              </a>
-              <span class="text-Text-text-low">{@email}</span>
-            </span>
-            """
-
-          _ ->
-            # Fallback for unexpected format
-            creator
-        end
     end
   end
 

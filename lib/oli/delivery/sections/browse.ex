@@ -4,8 +4,9 @@ defmodule Oli.Delivery.Sections.Browse do
   alias Oli.Delivery.Sections.EnrollmentContextRole
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.User
-  alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions}
+  alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions, SectionsProjectsPublications}
   alias Oli.Delivery.Sections
+  alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
@@ -257,4 +258,159 @@ defmodule Oli.Delivery.Sections.Browse do
     browse_sections_query(%Paging{offset: 0, limit: limit}, sorting, options)
     |> Repo.all()
   end
+
+  @doc """
+  Browse course sections for a specific project (used in Project Overview page).
+
+  Returns active, enrollable sections (not blueprints) that haven't ended yet,
+  with DB-level filtering, sorting, and pagination.
+
+  ## Options
+    * `:text_search` - Filter by section title (optional)
+
+  ## Returns
+  A list of maps with section data including:
+    * Section fields (id, title, slug, start_date, end_date, requires_payment, amount)
+    * Creator info (creator_id, creator_name, creator_email)
+    * Publication info (publication_id, edition, major, minor)
+    * total_count for pagination
+  """
+  def browse_project_sections(
+        project_id,
+        %Paging{limit: limit, offset: offset},
+        %Sorting{direction: direction, field: field},
+        opts \\ []
+      ) do
+    text_search = Keyword.get(opts, :text_search, "")
+    today = DateTime.utc_now()
+
+    # Text search filter
+    filter_by_text =
+      if text_search == "" or is_nil(text_search) do
+        true
+      else
+        search_pattern = "%#{String.downcase(text_search)}%"
+        dynamic([s], ilike(s.title, ^search_pattern))
+      end
+
+    # Subquery to get the first enrolled user (creator) for each section
+    # Uses DISTINCT ON to get only the first enrollment per section
+    creator_subquery =
+      from(u in User,
+        join: e in Enrollment,
+        on: e.user_id == u.id,
+        select: %{
+          section_id: e.section_id,
+          creator_id: u.id,
+          creator_name: fragment("concat_ws(' ', ?, ?)", u.given_name, u.family_name),
+          creator_email: u.email,
+          enrolled_at: e.inserted_at
+        }
+      )
+
+    # Wrap with DISTINCT ON to get first enrollment per section
+    first_creator_subquery =
+      from(c in subquery(creator_subquery),
+        distinct: c.section_id,
+        order_by: [asc: c.section_id, asc: c.enrolled_at],
+        select: %{
+          section_id: c.section_id,
+          creator_id: c.creator_id,
+          creator_name: c.creator_name,
+          creator_email: c.creator_email
+        }
+      )
+
+    # Subquery to get the publication for each section
+    # Uses DISTINCT ON to get first publication per section
+    publication_subquery =
+      from(spp in SectionsProjectsPublications,
+        join: pub in Publication,
+        on: pub.id == spp.publication_id,
+        distinct: spp.section_id,
+        order_by: [asc: spp.section_id],
+        select: %{
+          section_id: spp.section_id,
+          pub_id: pub.id,
+          edition: pub.edition,
+          major: pub.major,
+          minor: pub.minor
+        }
+      )
+
+    query =
+      from(s in Section,
+        left_join: c in subquery(first_creator_subquery),
+        on: c.section_id == s.id,
+        left_join: p in subquery(publication_subquery),
+        on: p.section_id == s.id,
+        where: s.base_project_id == ^project_id,
+        where: is_nil(s.blueprint_id),
+        where: s.type == :enrollable,
+        where: s.status == :active,
+        where: not is_nil(s.end_date),
+        where: s.end_date >= ^today,
+        where: ^filter_by_text,
+        limit: ^limit,
+        offset: ^offset,
+        select: %{
+          id: s.id,
+          title: s.title,
+          slug: s.slug,
+          start_date: s.start_date,
+          end_date: s.end_date,
+          requires_payment: s.requires_payment,
+          amount: s.amount,
+          creator: %{
+            id: c.creator_id,
+            name: c.creator_name,
+            email: c.creator_email
+          },
+          publication: %{
+            id: p.pub_id,
+            edition: p.edition,
+            major: p.major,
+            minor: p.minor
+          },
+          total_count: fragment("count(*) OVER()")
+        }
+      )
+
+    # Apply sorting
+    query =
+      case field do
+        :title ->
+          order_by(query, [s], {^direction, fragment("lower(?)", s.title)})
+
+        :start_date ->
+          order_by(query, [s], {^direction, s.start_date})
+
+        :end_date ->
+          order_by(query, [s], {^direction, s.end_date})
+
+        :requires_payment ->
+          order_by(query, [s], {^direction, s.requires_payment})
+
+        :creator ->
+          order_by(query, [s, c], {^direction, fragment("coalesce(?, '')", c.creator_name)})
+
+        :publication ->
+          order_by(query, [s], {^direction, s.title})
+
+        _ ->
+          order_by(query, [s], {^direction, s.title})
+      end
+
+    # Add stable sort by id
+    query = order_by(query, [s], s.id)
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Extracts the total count from browse results.
+  Returns 0 if the list is empty.
+  """
+  def determine_total([]), do: 0
+  def determine_total([first | _]), do: first.total_count
 end
