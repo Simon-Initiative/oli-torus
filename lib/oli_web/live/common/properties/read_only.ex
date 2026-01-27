@@ -6,10 +6,11 @@ defmodule OliWeb.Common.Properties.ReadOnly do
   attr :type, :string, default: "text"
   attr :show_copy_btn, :boolean, default: false
   attr :link_label, :string
+  attr :class, :string, default: nil
 
   def render(assigns) do
     ~H"""
-    <div class="form-group">
+    <div class={["form-group", @class]}>
       <label>{@label}</label>
       {render_property(assigns)}
     </div>

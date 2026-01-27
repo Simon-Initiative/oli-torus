@@ -196,19 +196,36 @@ defmodule OliWeb.Users.UserEnrolledSections do
         Enum.sort_by(sections, fn section -> section.enrollment_role end, sort_order)
 
       :start_date ->
-        Enum.sort_by(sections, fn section -> section.start_date end, sort_order)
+        sort_by_datetime(sections, :start_date, sort_order)
 
       :end_date ->
-        Enum.sort_by(sections, fn section -> section.end_date end, sort_order)
+        sort_by_datetime(sections, :end_date, sort_order)
 
       :payment_status ->
         Enum.sort_by(sections, fn section -> section.payment_status end, sort_order)
 
       :last_accessed ->
-        Enum.sort_by(sections, fn section -> section.last_accessed end, sort_order)
+        sort_by_datetime(sections, :last_accessed, sort_order)
 
       _ ->
         Enum.sort_by(sections, fn section -> section.title end, sort_order)
+    end
+  end
+
+  defp sort_by_datetime(sections, field, sort_order) do
+    {nulls, with_values} =
+      Enum.split_with(sections, fn section -> is_nil(Map.get(section, field)) end)
+
+    sorted =
+      Enum.sort_by(
+        with_values,
+        fn section -> Map.get(section, field) end,
+        {sort_order, DateTime}
+      )
+
+    case sort_order do
+      :desc -> nulls ++ sorted
+      _ -> sorted ++ nulls
     end
   end
 

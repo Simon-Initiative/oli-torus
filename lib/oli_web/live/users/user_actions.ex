@@ -12,9 +12,10 @@ defmodule OliWeb.Users.Actions do
   def render(assigns) do
     ~H"""
     <div>
-      <div class="form-group">
+      <div class="form-group !mb-2">
         <.button
           variant={:primary}
+          size={:sm}
           class="inline-flex items-center justify-center"
           phx-click="generate_reset_password_link"
           phx-value-id={@user_id}
@@ -22,13 +23,15 @@ defmodule OliWeb.Users.Actions do
           Generate Reset Password Link
         </.button>
 
-        <div class="mt-1">
-          <ReadOnly.render label="" show_copy_btn={true} value={@password_reset_link} />
+        <div class="mt-2">
+          <ReadOnly.render
+            label=""
+            show_copy_btn={true}
+            value={@password_reset_link}
+            class="!mb-0"
+          />
         </div>
 
-        <p :if={@password_reset_link not in [nil, ""]} class="mb-1">
-          This link will expire in 24 hours.
-        </p>
       </div>
 
       <%= if @email_confirmation_pending do %>
@@ -49,53 +52,60 @@ defmodule OliWeb.Users.Actions do
           Confirm email
         </.button>
 
-        <div class="dropdown-divider my-2"></div>
+        <div class="h-12"></div>
       <% else %>
-        <div class="mt-1">
-          <button
-            type="button"
-            class="group inline-flex items-center gap-1 px-2 py-2 text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold text-sm leading-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button focus-visible:ring-offset-2"
+        <div class="mt-0.5">
+          <.button
+            variant={:link}
+            size={nil}
+            class="group inline-flex items-center gap-1 p-0 text-sm font-semibold leading-4"
             phx-click="send_reset_password_link"
             phx-value-id={@user_id}
           >
             Send password reset link
             <Icons.send class="stroke-Text-text-button group-hover:stroke-Text-text-button-hover" />
-          </button>
+          </.button>
         </div>
+        <p :if={@password_reset_link not in [nil, ""]} class="mt-1 mb-1">
+          This link will expire in 24 hours.
+        </p>
 
-        <div class="dropdown-divider my-2"></div>
+        <div class="h-12"></div>
       <% end %>
 
-      <%= if @account_locked do %>
+      <div class="flex flex-col items-start gap-3">
+        <%= if @account_locked do %>
+          <.button
+            variant={:outline}
+            size={:sm}
+            class="w-[160px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+            phx-click="show_unlock_account_modal"
+            phx-value-id={@user_id}
+          >
+            Unlock Account
+          </.button>
+        <% else %>
+          <.button
+            variant={:outline}
+            size={:sm}
+            class="w-[160px] !border-Specially-Tokens-Icon-icon-tile-tag-orange !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+            phx-click="show_lock_account_modal"
+            phx-value-id={@user_id}
+          >
+            Lock Account
+          </.button>
+        <% end %>
+
         <.button
-          variant={:warning}
-          class="mt-1"
-          phx-click="show_unlock_account_modal"
+          variant={:outline}
+          size={:sm}
+          class="w-[160px] !border-Border-border-danger !text-Specially-Tokens-Text-text-button-pill-muted shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]"
+          phx-click="show_delete_account_modal"
           phx-value-id={@user_id}
         >
-          Unlock Account
+          Delete Account
         </.button>
-      <% else %>
-        <.button
-          variant={:warning}
-          class="mt-1"
-          phx-click="show_lock_account_modal"
-          phx-value-id={@user_id}
-        >
-          Lock Account
-        </.button>
-      <% end %>
-
-      <div class="dropdown-divider my-2"></div>
-
-      <.button
-        variant={:danger}
-        class="mt-4"
-        phx-click="show_delete_account_modal"
-        phx-value-id={@user_id}
-      >
-        Delete Account
-      </.button>
+      </div>
     </div>
     """
   end
