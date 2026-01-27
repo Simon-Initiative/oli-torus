@@ -64,6 +64,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
           inventory_form: inventory_form,
           inventory_form_inputs: inventory_form_inputs,
           inventory_config: inventory_config,
+          inventory_advanced_touched?: false,
           active_tab: active_tab,
           user_token: user_token
         )
@@ -287,7 +288,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     {:noreply,
      assign(socket,
        inventory_form: to_form(changeset, as: :inventory),
-       inventory_form_inputs: form_inputs
+       inventory_form_inputs: form_inputs,
+       inventory_advanced_touched?: true
      )}
   end
 
@@ -317,6 +319,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 ),
               inventory_form_inputs:
                 inventory_form_values(defaults, socket.assigns.inventory_config),
+              inventory_advanced_touched?: false,
               active_tab: :inventory
             )
             |> put_flash(:info, "Inventory batch run has been enqueued.")
@@ -330,7 +333,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
            assign(socket,
              inventory_form: to_form(error_changeset, as: :inventory),
              inventory_form_inputs:
-               inventory_inputs_from_params(params, socket.assigns.inventory_config)
+               inventory_inputs_from_params(params, socket.assigns.inventory_config),
+             inventory_advanced_touched?: true
            )}
 
         {:error, reason} ->
@@ -340,7 +344,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
            |> assign(
              inventory_form: to_form(Map.put(changeset, :action, :insert), as: :inventory),
              inventory_form_inputs:
-               inventory_inputs_from_params(params, socket.assigns.inventory_config)
+               inventory_inputs_from_params(params, socket.assigns.inventory_config),
+             inventory_advanced_touched?: true
            )}
       end
     else
@@ -350,7 +355,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
        assign(socket,
          inventory_form: to_form(changeset, as: :inventory),
          inventory_form_inputs:
-           inventory_inputs_from_params(params, socket.assigns.inventory_config)
+           inventory_inputs_from_params(params, socket.assigns.inventory_config),
+         inventory_advanced_touched?: true
        )}
     end
   end
@@ -839,11 +845,18 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             </details>
 
             <details
-              open={batch_settings_open?(@inventory_form_inputs, @inventory_form, @inventory_config)}
+              open={
+                batch_settings_open?(
+                  @inventory_form_inputs,
+                  @inventory_form,
+                  @inventory_config,
+                  @inventory_advanced_touched?
+                )
+              }
               class="rounded border border-gray-200 dark:border-gray-700 px-4 py-3"
             >
               <summary class="text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer">
-                Batch orchestration settings
+                Advanced
               </summary>
               <div class="mt-4 space-y-3 text-sm text-gray-600 dark:text-gray-400">
                 <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -1919,76 +1932,80 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     has_value? or has_error?
   end
 
-  defp batch_settings_open?(inputs, form, config) do
-    defaults = inventory_default_inputs(config)
+  defp batch_settings_open?(inputs, form, config, touched?) do
+    if not touched? do
+      false
+    else
+      defaults = inventory_default_inputs(config)
 
-    chunk_size =
-      inputs
-      |> Map.get(:batch_chunk_size)
-      |> Kernel.||(Map.get(inputs, "batch_chunk_size"))
+      chunk_size =
+        inputs
+        |> Map.get(:batch_chunk_size)
+        |> Kernel.||(Map.get(inputs, "batch_chunk_size"))
 
-    page_size =
-      inputs
-      |> Map.get(:manifest_page_size)
-      |> Kernel.||(Map.get(inputs, "manifest_page_size"))
+      page_size =
+        inputs
+        |> Map.get(:manifest_page_size)
+        |> Kernel.||(Map.get(inputs, "manifest_page_size"))
 
-    max_simultaneous =
-      inputs
-      |> Map.get(:max_simultaneous_batches)
-      |> Kernel.||(Map.get(inputs, "max_simultaneous_batches"))
+      max_simultaneous =
+        inputs
+        |> Map.get(:max_simultaneous_batches)
+        |> Kernel.||(Map.get(inputs, "max_simultaneous_batches"))
 
-    max_retries =
-      inputs
-      |> Map.get(:max_batch_retries)
-      |> Kernel.||(Map.get(inputs, "max_batch_retries"))
+      max_retries =
+        inputs
+        |> Map.get(:max_batch_retries)
+        |> Kernel.||(Map.get(inputs, "max_batch_retries"))
 
-    raw_params = Map.new(form.params || %{})
+      raw_params = Map.new(form.params || %{})
 
-    has_raw_input? =
-      Enum.any?(
-        [
-          "batch_chunk_size",
-          "manifest_page_size",
-          "max_simultaneous_batches",
-          "max_batch_retries"
-        ],
-        &Map.has_key?(raw_params, &1)
-      )
+      has_raw_input? =
+        Enum.any?(
+          [
+            "batch_chunk_size",
+            "manifest_page_size",
+            "max_simultaneous_batches",
+            "max_batch_retries"
+          ],
+          &Map.has_key?(raw_params, &1)
+        )
 
-    has_value? =
-      Enum.any?(
-        [
-          {chunk_size, defaults.batch_chunk_size},
-          {page_size, defaults.manifest_page_size},
-          {max_simultaneous, defaults.max_simultaneous_batches},
-          {max_retries, defaults.max_batch_retries}
-        ],
-        fn {value, default} ->
-          cond do
-            present?(value) ->
-              parsed = parse_positive_integer(value, default)
-              parsed != default
+      has_value? =
+        Enum.any?(
+          [
+            {chunk_size, defaults.batch_chunk_size},
+            {page_size, defaults.manifest_page_size},
+            {max_simultaneous, defaults.max_simultaneous_batches},
+            {max_retries, defaults.max_batch_retries}
+          ],
+          fn {value, default} ->
+            cond do
+              present?(value) ->
+                parsed = parse_positive_integer(value, default)
+                parsed != default
 
-            true ->
-              false
+              true ->
+                false
+            end
           end
-        end
-      )
+        )
 
-    has_error? =
-      Enum.any?(
-        [
-          form[:batch_chunk_size].errors,
-          form[:manifest_page_size].errors,
-          form[:max_simultaneous_batches].errors,
-          form[:max_batch_retries].errors
-        ],
-        fn errors ->
-          match?([{_, _} | _], errors)
-        end
-      )
+      has_error? =
+        Enum.any?(
+          [
+            form[:batch_chunk_size].errors,
+            form[:manifest_page_size].errors,
+            form[:max_simultaneous_batches].errors,
+            form[:max_batch_retries].errors
+          ],
+          fn errors ->
+            match?([{_, _} | _], errors)
+          end
+        )
 
-    has_raw_input? or has_value? or has_error?
+      has_raw_input? or has_value? or has_error?
+    end
   end
 
   defp present?(value) when value in [nil, ""], do: false
