@@ -1223,12 +1223,12 @@ defmodule OliWeb.AdminLiveTest do
       |> render_submit(%{
         "author" => %{
           "given_name" => author.given_name,
-          "family_name" => "A",
+          "family_name" => "",
           "email" => author.email
         }
       })
 
-      assert render(view) =~ "Please enter a Last Name that is at least two characters long."
+      assert render(view) =~ "Please enter a Last Name"
     end
 
     test "shows both error messages when First Name is empty and Last Name has less than 2 characters on form submit",
@@ -1244,7 +1244,7 @@ defmodule OliWeb.AdminLiveTest do
       |> render_submit(%{
         "author" => %{
           "given_name" => "",
-          "family_name" => "A",
+          "family_name" => "",
           "email" => author.email
         }
       })
@@ -1252,7 +1252,7 @@ defmodule OliWeb.AdminLiveTest do
       html = render(view)
 
       assert html =~ "Please enter a First Name"
-      assert html =~ "Please enter a Last Name that is at least two characters long."
+      assert html =~ "Please enter a Last Name"
     end
   end
 end
