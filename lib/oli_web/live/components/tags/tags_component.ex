@@ -49,9 +49,9 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
      |> assign(:edit_mode, false)
      |> assign(:available_tags, [])
      |> assign(:selected_tag_ids, [])
-     |> assign(:loading, false)
      |> assign(:error, nil)
      |> assign(:input_value, "")
+     |> assign(:font_style, "font-family: 'Open Sans', sans-serif;")
      |> assign_new(:variant, fn -> :table end)}
   end
 
@@ -189,22 +189,6 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
   end
 
   @impl true
-  def handle_event("create_tag", %{"name" => name}, socket) do
-    case Tags.create_tag(%{name: name}) do
-      {:ok, tag} ->
-        # Add new tag to available tags
-        available_tags = [tag | socket.assigns.available_tags]
-
-        {:noreply,
-         assign(socket, :available_tags, available_tags)
-         |> push_event("focus_input", %{input_id: "tag-input-#{socket.assigns.id}"})}
-
-      {:error, _} ->
-        {:noreply, assign(socket, :error, "Failed to create tag")}
-    end
-  end
-
-  @impl true
   def handle_event("search_tags", params, socket) do
     search = Map.get(params, "value") || Map.get(params, "search") || ""
 
@@ -250,48 +234,15 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
             <div class={get_edit_container_classes(@variant)}>
               <!-- Show currently selected tags with X buttons -->
               <%= for tag <- @current_tags do %>
-                <%= if @variant == :table do %>
-                  <!-- TABLE VARIANT: Original edit mode styling -->
-                  <span
-                    role="selected tag"
-                    class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_tag_pill_classes(tag.name)}"}
-                    style="font-family: 'Open Sans', sans-serif;"
-                  >
-                    <span>{tag.name}</span>
-                    <button
-                      phx-click="remove_tag"
-                      phx-value-tag_id={tag.id}
-                      phx-target={@myself}
-                      class="hover:opacity-70 transition-opacity duration-200 flex items-center justify-center"
-                      type="button"
-                      aria-label={"Remove tag #{tag.name}"}
-                    >
-                      <OliWeb.Icons.close_sm class="w-4 h-4 stroke-current" />
-                    </button>
-                  </span>
-                <% else %>
-                  <!-- FORM VARIANT: New styling with SVG icon -->
-                  <span
-                    role="selected tag"
-                    class={"px-2 py-1 rounded-full text-sm leading-4 font-semibold flex items-center gap-2 #{get_tag_pill_classes(tag.name)}"}
-                    style="font-family: 'Open Sans', sans-serif;"
-                  >
-                    <span class="pl-2">{tag.name}</span>
-                    <button
-                      phx-click="remove_tag"
-                      phx-value-tag_id={tag.id}
-                      phx-target={@myself}
-                      class="hover:opacity-70 transition-opacity duration-200 flex items-center justify-center"
-                      type="button"
-                      aria-label={"Remove tag #{tag.name}"}
-                    >
-                      <OliWeb.Icons.close_sm class="w-4 h-4 stroke-current" />
-                    </button>
-                  </span>
-                <% end %>
+                <.tag_pill
+                  tag={tag}
+                  variant={@variant}
+                  with_button={true}
+                  myself={@myself}
+                  font_style={@font_style}
+                />
               <% end %>
-              
-    <!-- Input field for searching/adding new tags -->
+              <!-- Input field for searching/adding new tags -->
               <div class="flex-1 min-w-[180px]">
                 <input
                   type="text"
@@ -301,19 +252,18 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                   value={@input_value}
                   class="w-full px-3 border-0 outline-none text-[#757682] font-semibold focus:bg-transparent focus:ring-0 focus:border-transparent"
                   id={"tag-input-#{@id}"}
-                  style="font-family: 'Open Sans', sans-serif;"
+                  style={@font_style}
                 />
               </div>
             </div>
-            
-    <!-- Available tags dropdown - positioned below input with full width -->
+            <!-- Available tags dropdown - positioned below input with full width -->
             <div class="absolute top-[calc(100%+1px)] left-0 w-full z-[5] bg-Table-table-row-1 border border-Table-table-border rounded-[3px] max-h-60 overflow-y-auto shadow-xl">
               <!-- Available tags list -->
               <%= if Enum.any?(@available_tags, fn tag -> tag.id not in @selected_tag_ids end) do %>
                 <div class="p-3 space-y-2">
                   <div
                     class="text-Text-text-low text-xs font-semibold mb-2"
-                    style="font-family: 'Open Sans', sans-serif;"
+                    style={@font_style}
                   >
                     Create or select an option
                   </div>
@@ -333,7 +283,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                               else:
                                 "px-2 py-1 rounded-full text-sm leading-4 font-semibold transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}"
                           }
-                          style="font-family: 'Open Sans', sans-serif;"
+                          style={@font_style}
                         >
                           {tag.name}
                         </button>
@@ -354,43 +304,19 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
           tabindex="0"
         >
           <%= if length(@current_tags || []) > 0 do %>
-            <%= if @variant == :table do %>
-              <!-- TABLE VARIANT: Original vertical layout, no X buttons -->
-              <div class="flex flex-col gap-1">
-                <%= for tag <- @current_tags do %>
-                  <span
-                    role="selected tag"
-                    class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm #{get_tag_pill_classes(tag.name)}"}
-                    style="font-family: 'Open Sans', sans-serif;"
-                  >
-                    {tag.name}
-                  </span>
-                <% end %>
-              </div>
-            <% else %>
-              <!-- FORM VARIANT: Horizontal layout with X buttons for quick removal -->
-              <div class="flex flex-wrap gap-1">
-                <%= for tag <- @current_tags do %>
-                  <span
-                    role="selected tag"
-                    class={"px-2 py-1 rounded-full text-sm leading-4 font-semibold flex items-center gap-2 #{get_tag_pill_classes(tag.name)}"}
-                    style="font-family: 'Open Sans', sans-serif;"
-                  >
-                    <span class="pl-2">{tag.name}</span>
-                    <button
-                      phx-click="remove_tag"
-                      phx-value-tag_id={tag.id}
-                      phx-target={@myself}
-                      class="hover:opacity-70 transition-opacity duration-200 flex items-center justify-center"
-                      type="button"
-                      aria-label={"Remove tag #{tag.name}"}
-                    >
-                      <OliWeb.Icons.close_sm class="w-4 h-4 stroke-current" />
-                    </button>
-                  </span>
-                <% end %>
-              </div>
-            <% end %>
+            <div class={
+              if @variant == :table, do: "flex flex-col gap-1", else: "flex flex-wrap gap-1"
+            }>
+              <%= for tag <- @current_tags do %>
+                <.tag_pill
+                  tag={tag}
+                  variant={@variant}
+                  with_button={@variant == :form}
+                  myself={@myself}
+                  font_style={@font_style}
+                />
+              <% end %>
+            </div>
           <% end %>
         </div>
       <% end %>
@@ -451,16 +377,56 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     "bg-Background-bg-secondary border border-Border-border-default rounded text-sm w-full h-full min-h-[40px] flex flex-wrap items-center gap-1 py-2 px-3"
   end
 
+  # Renders a tag pill with optional remove button.
+  attr :tag, :map, required: true
+  attr :variant, :atom, required: true
+  attr :with_button, :boolean, default: true
+  attr :myself, :any, required: true
+  attr :font_style, :string, required: true
+
+  defp tag_pill(assigns) do
+    ~H"""
+    <span
+      role="selected tag"
+      class={get_tag_pill_span_classes(@variant, @with_button, @tag.name)}
+      style={@font_style}
+    >
+      <%= if @with_button do %>
+        <span class={if @variant == :form, do: "pl-2"}>{@tag.name}</span>
+        <button
+          phx-click="remove_tag"
+          phx-value-tag_id={@tag.id}
+          phx-target={@myself}
+          class="hover:opacity-70 transition-opacity duration-200 flex items-center justify-center"
+          type="button"
+          aria-label={"Remove tag #{@tag.name}"}
+        >
+          <OliWeb.Icons.close_sm class="w-4 h-4 stroke-current" />
+        </button>
+      <% else %>
+        {@tag.name}
+      <% end %>
+    </span>
+    """
+  end
+
+  defp get_tag_pill_span_classes(:table, true, tag_name) do
+    "px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_tag_pill_classes(tag_name)}"
+  end
+
+  defp get_tag_pill_span_classes(:table, false, tag_name) do
+    "px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm #{get_tag_pill_classes(tag_name)}"
+  end
+
+  defp get_tag_pill_span_classes(:form, _with_button, tag_name) do
+    "px-2 py-1 rounded-full text-sm leading-4 font-semibold flex items-center gap-2 #{get_tag_pill_classes(tag_name)}"
+  end
+
   # Private functions
 
   defp load_available_tags(socket, search \\ "") do
-    try do
-      tags = Tags.list_tags(%{search: search, limit: 50})
-      assign(socket, :available_tags, tags)
-    rescue
-      _ ->
-        assign(socket, :error, "Failed to load tags")
-    end
+    tags = Tags.list_tags(%{search: search, limit: 50})
+    assign(socket, :available_tags, tags)
   end
 
   defp get_entity_tags(:project, project_id) do

@@ -53,7 +53,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
     course_sections_table_model =
       course_sections_table_model
-      |> Map.put(:sort_by_spec, Enum.find(course_sections_table_model.column_specs, &(&1.name == :title)))
+      |> Map.put(
+        :sort_by_spec,
+        Enum.find(course_sections_table_model.column_specs, &(&1.name == :title))
+      )
       |> Map.put(:sort_order, :asc)
       |> Map.put(:rows, course_sections)
 
