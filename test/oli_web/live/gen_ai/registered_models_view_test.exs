@@ -51,6 +51,11 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
         "model" => registered_model.model,
         "pool_class" => "fast",
         "max_concurrent" => "25",
+        "routing_breaker_error_rate_threshold" => "0.25",
+        "routing_breaker_429_threshold" => "0.15",
+        "routing_breaker_latency_p95_ms" => "6500",
+        "routing_open_cooldown_ms" => "40000",
+        "routing_half_open_probe_count" => "4",
         "url_template" => registered_model.url_template,
         "api_key" => "secret",
         "secondary_api_key" => "secret",
@@ -66,6 +71,11 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
       updated = Repo.get!(RegisteredModel, registered_model.id)
       assert updated.pool_class == :fast
       assert updated.max_concurrent == 25
+      assert updated.routing_breaker_error_rate_threshold == 0.25
+      assert updated.routing_breaker_429_threshold == 0.15
+      assert updated.routing_breaker_latency_p95_ms == 6500
+      assert updated.routing_open_cooldown_ms == 40_000
+      assert updated.routing_half_open_probe_count == 4
     end
   end
 

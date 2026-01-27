@@ -12,10 +12,10 @@ This design adds a centralized routing and health layer for GenAI calls so Torus
 - Fast rejection if capacity exceeded or eligible models unhealthy (FR-005).
 - Telemetry for routing decisions, reasons, queue/wait, and outcomes (FR-006).
 - Preserve FeatureConfig and section override resolution (FR-007).
-- Each ServiceConfig owns editable breaker thresholds and timeout overrides (no shared policies) (FR-008).
+- Breaker thresholds are configured per RegisteredModel; ServiceConfig owns timeout overrides (FR-008).
 - Read-only health indicators in ServiceConfig UI (FR-011).
 - ServiceConfig editor extended for routing parameters and Secondary selection (FR-012).
-- RegisteredModel editor extended for pool_class and max_concurrent; admin pool size controls (FR-013).
+- RegisteredModel editor extended for pool_class, max_concurrent, and breaker thresholds; admin pool size controls (FR-013).
 - Operational introspection for breaker/counter state (FR-009).
 
 ### Non-Functional Requirements
@@ -94,17 +94,17 @@ Add/update routing policy fields on `completions_service_configs`:
 - `secondary_model_id` (nullable FK)
 - `routing_soft_limit` (integer, >= 0)
 - `routing_hard_limit` (integer, >= 0)
-- `routing_breaker_error_rate_threshold` (numeric or float, 0.0..1.0)
-- `routing_breaker_429_threshold` (numeric or float, 0.0..1.0)
-- `routing_breaker_latency_p95_ms` (integer, >= 0)
-- `routing_open_cooldown_ms` (integer, >= 0)
-- `routing_half_open_probe_count` (integer, >= 0)
 - `routing_timeout_ms` (integer, >= 0)
 - `routing_connect_timeout_ms` (integer, >= 0)
 
 Add/update fields on `registered_models`:
 - `pool_class` (`:fast | :slow`, default `:slow`)
 - `max_concurrent` (integer, nullable; per-model cap)
+- `routing_breaker_error_rate_threshold` (numeric or float, 0.0..1.0)
+- `routing_breaker_429_threshold` (numeric or float, 0.0..1.0)
+- `routing_breaker_latency_p95_ms` (integer, >= 0)
+- `routing_open_cooldown_ms` (integer, >= 0)
+- `routing_half_open_probe_count` (integer, >= 0)
 
 Migration plan (online-safe):
 1. Add nullable columns with defaults in a first migration.

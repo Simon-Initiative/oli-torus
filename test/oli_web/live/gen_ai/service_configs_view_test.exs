@@ -35,11 +35,6 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
         "backup_model_id" => "",
         "routing_soft_limit" => "10",
         "routing_hard_limit" => "20",
-        "routing_breaker_error_rate_threshold" => "0.2",
-        "routing_breaker_429_threshold" => "0.1",
-        "routing_breaker_latency_p95_ms" => "6000",
-        "routing_open_cooldown_ms" => "30000",
-        "routing_half_open_probe_count" => "3",
         "routing_timeout_ms" => "30000",
         "routing_connect_timeout_ms" => "5000"
       }

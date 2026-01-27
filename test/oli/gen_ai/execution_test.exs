@@ -65,11 +65,6 @@ defmodule Oli.GenAI.ExecutionTest do
       backup_model: backup,
       routing_soft_limit: 2,
       routing_hard_limit: 3,
-      routing_breaker_error_rate_threshold: 0.2,
-      routing_breaker_429_threshold: 0.1,
-      routing_breaker_latency_p95_ms: 6000,
-      routing_open_cooldown_ms: 10,
-      routing_half_open_probe_count: 1,
       routing_timeout_ms: 30_000,
       routing_connect_timeout_ms: 5_000
     }

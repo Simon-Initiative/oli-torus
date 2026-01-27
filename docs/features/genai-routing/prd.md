@@ -67,9 +67,9 @@ Screenshots/Mocks:
 | FR-005 | RegisteredModel defines pool class (`fast`/`slow`) and optional max_concurrent cap; pool sizes are configurable via env and adjustable via admin UI. | P0 | Backend |
 | FR-006 | Emit telemetry for routing decisions/outcomes with tier, pool_class/pool_name, reason, selected model, and outcome. | P0 | Backend |
 | FR-007 | Preserve existing FeatureServiceConfig resolution and section overrides; routing uses the resolved ServiceConfig. | P0 | Backend |
-| FR-008 | Each ServiceConfig owns editable breaker thresholds and request timeout overrides (no shared policies). | P0 | Backend |
+| FR-008 | Each RegisteredModel owns editable breaker thresholds; ServiceConfig owns request timeout overrides (no shared policies). | P0 | Backend |
 | FR-009 | Expose read-only routing health (breaker state, recent error/429/latency signals, and backpressure counters) within existing ServiceConfig UI without adding a new dashboard. | P1 | Backend |
-| FR-010 | Extend ServiceConfig editor to allow Primary/Secondary/Backup selection and routing policy parameter edits; extend RegisteredModel editor to allow pool_class and max_concurrent edits. | P1 | Backend |
+| FR-010 | Extend ServiceConfig editor to allow Primary/Secondary/Backup selection and timeout edits; extend RegisteredModel editor to allow pool_class, max_concurrent, and breaker thresholds. | P1 | Backend |
 | FR-011 | Add admin-only pool size controls (fast/slow) in the RegisteredModel view and log/telemetry for breaker/counter inspection. | P1 | Backend |
 
 ## 7. Acceptance Criteria
@@ -110,7 +110,7 @@ Observability:
 
 ## 9. Data Model & APIs
 Ecto Schemas & Migrations:
-- ServiceConfig persists its own routing policy parameters (no shared policies) including breaker thresholds and timeout overrides. Exact schema/migration details are defined in `fdd.md`.
+- ServiceConfig persists its own routing policy parameters (no shared policies) for timeouts; breaker thresholds live on RegisteredModel. Exact schema/migration details are defined in `fdd.md`.
 - ServiceConfig includes `secondary_model_id` (nullable) between Primary and Backup.
 - RegisteredModel includes `pool_class` (`fast`/`slow`) and optional `max_concurrent` cap.
 
@@ -141,6 +141,7 @@ GenAI:
 - Use existing provider abstraction; no adapter changes required.
 - Pool assignment is based on RegisteredModel.pool_class (`fast`/`slow`).
 - Admission control is per model and per pool (no stream/generate distinction).
+- Breaker thresholds are configured per RegisteredModel to avoid cross-config mismatch.
 
 Caching/Perf:
 - Store counters in ETS; use atomic updates.

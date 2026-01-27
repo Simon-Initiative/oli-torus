@@ -224,6 +224,43 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
           class={@form_control_classes}
         />
         <.input
+          field={@form[:routing_breaker_error_rate_threshold]}
+          type="number"
+          step="0.01"
+          label="Breaker Error Rate Threshold"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:routing_breaker_429_threshold]}
+          type="number"
+          step="0.01"
+          label="Breaker 429 Threshold"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:routing_breaker_latency_p95_ms]}
+          type="number"
+          label="Breaker Latency p95 (ms)"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:routing_open_cooldown_ms]}
+          type="number"
+          label="Breaker Open Cooldown (ms)"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:routing_half_open_probe_count]}
+          type="number"
+          label="Breaker Half-Open Probe Count"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
           field={@form[:url_template]}
           label="URL Template"
           disabled={!@editing}

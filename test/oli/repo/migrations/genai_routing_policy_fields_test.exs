@@ -28,11 +28,6 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
 
       assert service_config.routing_soft_limit == 40
       assert service_config.routing_hard_limit == 80
-      assert service_config.routing_breaker_error_rate_threshold == 0.2
-      assert service_config.routing_breaker_429_threshold == 0.1
-      assert service_config.routing_breaker_latency_p95_ms == 6000
-      assert service_config.routing_open_cooldown_ms == 30_000
-      assert service_config.routing_half_open_probe_count == 3
       assert service_config.routing_timeout_ms == 30_000
       assert service_config.routing_connect_timeout_ms == 5_000
       assert is_nil(service_config.secondary_model_id)
@@ -47,18 +42,6 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
           primary_model_id: registered_model.id,
           routing_soft_limit: 10,
           routing_hard_limit: 5
-        })
-      end
-    end
-
-    test "breaker error rate threshold must be between 0 and 1" do
-      registered_model = insert_registered_model()
-
-      assert_raise Ecto.ConstraintError, ~r/routing_breaker_error_rate_threshold_range/, fn ->
-        Repo.insert!(%ServiceConfig{
-          name: "Invalid Error Threshold",
-          primary_model_id: registered_model.id,
-          routing_breaker_error_rate_threshold: 1.5
         })
       end
     end
@@ -82,6 +65,11 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
 
       assert registered_model.pool_class == :slow
       assert is_nil(registered_model.max_concurrent)
+      assert registered_model.routing_breaker_error_rate_threshold == 0.2
+      assert registered_model.routing_breaker_429_threshold == 0.1
+      assert registered_model.routing_breaker_latency_p95_ms == 6000
+      assert registered_model.routing_open_cooldown_ms == 30_000
+      assert registered_model.routing_half_open_probe_count == 3
     end
 
     test "max_concurrent must be non-negative when present" do
@@ -95,6 +83,51 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
           timeout: 8000,
           recv_timeout: 60_000,
           max_concurrent: -1
+        })
+      end
+    end
+
+    test "breaker error rate threshold must be between 0 and 1" do
+      assert_raise Ecto.ConstraintError, ~r/routing_breaker_error_rate_threshold_range/, fn ->
+        Repo.insert!(%RegisteredModel{
+          name: "Invalid Error Threshold",
+          provider: :open_ai,
+          model: "gpt-4",
+          url_template: "https://api.example.com",
+          api_key: "secret",
+          timeout: 8000,
+          recv_timeout: 60_000,
+          routing_breaker_error_rate_threshold: 1.5
+        })
+      end
+    end
+
+    test "breaker 429 threshold must be between 0 and 1" do
+      assert_raise Ecto.ConstraintError, ~r/routing_breaker_429_threshold_range/, fn ->
+        Repo.insert!(%RegisteredModel{
+          name: "Invalid 429 Threshold",
+          provider: :open_ai,
+          model: "gpt-4",
+          url_template: "https://api.example.com",
+          api_key: "secret",
+          timeout: 8000,
+          recv_timeout: 60_000,
+          routing_breaker_429_threshold: -0.1
+        })
+      end
+    end
+
+    test "breaker latency threshold must be non-negative" do
+      assert_raise Ecto.ConstraintError, ~r/routing_breaker_latency_p95_ms_non_negative/, fn ->
+        Repo.insert!(%RegisteredModel{
+          name: "Invalid Latency Threshold",
+          provider: :open_ai,
+          model: "gpt-4",
+          url_template: "https://api.example.com",
+          api_key: "secret",
+          timeout: 8000,
+          recv_timeout: 60_000,
+          routing_breaker_latency_p95_ms: -1
         })
       end
     end

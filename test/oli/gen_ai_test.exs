@@ -38,6 +38,11 @@ defmodule Oli.GenAITest do
       assert model.recv_timeout == 60000
       assert model.pool_class == :slow
       assert model.max_concurrent == nil
+      assert model.routing_breaker_error_rate_threshold == 0.2
+      assert model.routing_breaker_429_threshold == 0.1
+      assert model.routing_breaker_latency_p95_ms == 6000
+      assert model.routing_open_cooldown_ms == 30_000
+      assert model.routing_half_open_probe_count == 3
 
       m = GenAI.registered_models() |> Enum.reverse() |> hd
       assert m.id == model.id
@@ -50,6 +55,11 @@ defmodule Oli.GenAITest do
       assert m.recv_timeout == 60000
       assert m.pool_class == :slow
       assert m.max_concurrent == nil
+      assert m.routing_breaker_error_rate_threshold == 0.2
+      assert m.routing_breaker_429_threshold == 0.1
+      assert m.routing_breaker_latency_p95_ms == 6000
+      assert m.routing_open_cooldown_ms == 30_000
+      assert m.routing_half_open_probe_count == 3
       assert m.service_config_count == 0
 
       {:ok, service_config} =

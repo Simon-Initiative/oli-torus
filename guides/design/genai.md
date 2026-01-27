@@ -9,8 +9,8 @@ The GenAI infrastructure is designed with several core capabilities:
 - **Dynamic Model Integration**: Runtime support for registering and utilizing models from multiple providers, including OpenAI, Claude, or any provider with an OpenAI-compliant API.
 - **Feature-Specific Model Usage**: Different GenAI features within Torus can independently use different registered models.
 - **Course-Section-Level Customization**: The ability to override default models at the individual course section level.
-- **Backpressure-Aware Routing**: Admission control and circuit breakers select primary or backup models proactively and shed load when needed.
-- **Fallback Mechanism**: Robust handling of provider errors through a backup model configuration, ensuring system reliability.
+- **Backpressure-Aware Routing**: Admission control and circuit breakers select primary/secondary/backup models proactively and shed load when needed.
+- **Fallback Mechanism**: Backup model is reserved for provider-level outages (primary + secondary breaker open).
 - **Reusable Dialogue Implementation**: A clean, modular GenServer-based dialogue component suitable for use across multiple features.
 - **Operational Telemetry**: Routing decisions and provider outcomes are observable via telemetry and AppSignal metrics.
 
@@ -42,14 +42,14 @@ Example registrations:
 The infrastructure supports integration of official foundation models and self-hosted or fine-tuned solutions seamlessly.
 
 ### Service Configuration (`ServiceConfig`)
-Each GenAI-driven feature in Torus is configured through a `ServiceConfig`. A service configuration defines a primary registered model to use for a feature and can optionally specify a backup model as a fallback. This ensures graceful degradation of service if the primary provider becomes unavailable or returns an error.
+Each GenAI-driven feature in Torus is configured through a `ServiceConfig`. A service configuration defines a primary registered model to use for a feature and can optionally specify a secondary model (capacity/health overflow) and a backup model (outage-only). This ensures graceful degradation of service if the primary provider becomes unavailable or is at capacity.
 
-ServiceConfig also includes routing policy parameters that govern admission control and circuit breaking. These parameters are per-ServiceConfig (no shared policy object) and are edited via the existing ServiceConfig admin view. Suggested parameters include:
+ServiceConfig includes routing policy parameters that govern per-feature admission control and request timeouts. These parameters are per-ServiceConfig (no shared policy object) and are edited via the existing ServiceConfig admin view. Parameters include:
 
-- soft and hard concurrency limits for requests and streams
-- breaker thresholds (error rate, 429 rate, latency p95)
-- breaker cooldown and probe settings
+- soft and hard concurrency limits (per ServiceConfig)
 - request/connect timeouts
+
+Breaker thresholds are configured per RegisteredModel (see below) so that a single model has consistent breaker behavior across all ServiceConfigs that reference it.
 
 ### Feature-Level Configuration (`GenAIFeatureConfig`)
 The GenAIFeatureConfig schema associates GenAI-powered features (like student dialogue or instructor dashboards) with specific ServiceConfig instances. It allows setting a global default for each feature, with the option for individual course sections to override this default.
@@ -78,12 +78,25 @@ Dialogue streaming calls are routed through the execution layer described below,
 ### Backpressure-Aware Routing and Execution
 GenAI requests are routed dynamically at runtime based on ServiceConfig policy, local backpressure signals, and breaker state. The main components are:
 
-- `Oli.GenAI.Router`: Computes a `RoutingPlan` (selected model, fallback order, reason, timeouts) from request context, ServiceConfig policy, and live signals.
-- `Oli.GenAI.AdmissionControl`: ETS-backed counters for active requests and streams (per ServiceConfig). Used for O(1) admission checks.
+- `Oli.GenAI.Router`: Computes a `RoutingPlan` (selected model, tier, pool, reason, timeouts) from request context, ServiceConfig policy, and live signals.
+- `Oli.GenAI.AdmissionControl`: ETS-backed counters for per-ServiceConfig active requests (for policy/UI) and per-model/pool inflight counts (for capacity).
 - `Oli.GenAI.Breaker`: Per-RegisteredModel GenServer tracking rolling error/429/latency signals and breaker state (closed/open/half_open).
-- `Oli.GenAI.Execution`: Wraps provider calls, applies routing plans, updates counters, emits telemetry, and performs a single fallback attempt if needed.
+- `Oli.GenAI.Execution`: Wraps provider calls, applies routing plans, releases admissions, emits telemetry, and reports outcomes to breakers.
 
 Breaker state and counters are per-node in the initial implementation; there is no cross-node coordination. Rollout is controlled via ServiceConfig routing parameter updates (no new feature flag).
+
+#### Two-Layer Admission Control
+Admission control is intentionally layered:
+
+1. **RegisteredModel / Pool capacity (global protection)**  
+   - Enforced via per-model and per-pool inflight caps.  
+   - Prevents slow models (e.g., GPT‑5) from monopolizing capacity and protects hackney pools.
+
+2. **ServiceConfig soft/hard limits (feature fairness)**  
+   - Enforced per ServiceConfig, typically below the model’s absolute max.  
+   - Lets features reserve capacity and prevents a single feature from starving others that share the same model.
+
+This separation keeps infrastructure safe while allowing product‑level policy control per feature.
 
 ### Telemetry and Observability
 Routing and provider outcomes emit telemetry events used to populate AppSignal metrics. The primary events are:

@@ -138,7 +138,7 @@ defmodule Oli.GenAI.Execution do
     result = completer.generate(messages, functions, registered_model)
     latency_ms = System.monotonic_time(:millisecond) - start_ms
 
-    report_breaker(result, registered_model.id, latency_ms, service_config)
+    report_breaker(result, registered_model, latency_ms)
     emit_provider_telemetry(result, latency_ms, registered_model, request_type, service_config)
     result
   end
@@ -177,24 +177,24 @@ defmodule Oli.GenAI.Execution do
         result
       end
 
-    report_breaker(result, registered_model.id, latency_ms, service_config)
+    report_breaker(result, registered_model, latency_ms)
     emit_provider_telemetry(result, latency_ms, registered_model, request_type, service_config)
     result
   end
 
-  defp report_breaker(result, registered_model_id, latency_ms, service_config) do
+  defp report_breaker(result, registered_model, latency_ms) do
     {outcome, http_status} = outcome_details(result)
 
-    Breaker.report(registered_model_id, %{
+    Breaker.report(registered_model.id, %{
       outcome: outcome,
       http_status: http_status,
       latency_ms: latency_ms,
       thresholds: %{
-        error_rate_threshold: service_config.routing_breaker_error_rate_threshold,
-        rate_limit_threshold: service_config.routing_breaker_429_threshold,
-        latency_p95_ms: service_config.routing_breaker_latency_p95_ms,
-        open_cooldown_ms: service_config.routing_open_cooldown_ms,
-        half_open_probe_count: service_config.routing_half_open_probe_count
+        error_rate_threshold: registered_model.routing_breaker_error_rate_threshold,
+        rate_limit_threshold: registered_model.routing_breaker_429_threshold,
+        latency_p95_ms: registered_model.routing_breaker_latency_p95_ms,
+        open_cooldown_ms: registered_model.routing_open_cooldown_ms,
+        half_open_probe_count: registered_model.routing_half_open_probe_count
       }
     })
   end
