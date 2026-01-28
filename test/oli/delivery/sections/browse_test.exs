@@ -536,5 +536,109 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       # since published dates are the same
       assert hd(results1).publication.id == second_publication.id
     end
+
+    test "filters sections by text_search using prefix matching" do
+      project = insert(:project)
+
+      publication =
+        insert(:publication,
+          project: project,
+          published: DateTime.utc_now()
+        )
+
+      future_date = DateTime.add(DateTime.utc_now(), 30, :day)
+
+      # Create sections with different titles
+      section1 =
+        insert(:section,
+          title: "Introduction to Biology",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          blueprint_id: nil,
+          start_date: DateTime.utc_now(),
+          end_date: future_date
+        )
+
+      section2 =
+        insert(:section,
+          title: "Advanced Chemistry",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          blueprint_id: nil,
+          start_date: DateTime.utc_now(),
+          end_date: future_date
+        )
+
+      section3 =
+        insert(:section,
+          title: "Biology Lab",
+          base_project: project,
+          type: :enrollable,
+          status: :active,
+          blueprint_id: nil,
+          start_date: DateTime.utc_now(),
+          end_date: future_date
+        )
+
+      # Associate all sections with publication
+      for section <- [section1, section2, section3] do
+        insert(:section_project_publication,
+          section: section,
+          project: project,
+          publication: publication
+        )
+      end
+
+      # Search for "Biology" - should match section1 and section3
+      results =
+        Browse.browse_project_sections(
+          project.id,
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :title, direction: :asc},
+          text_search: "Biology"
+        )
+
+      assert length(results) == 2
+      titles = Enum.map(results, & &1.title)
+      assert "Biology Lab" in titles
+      assert "Introduction to Biology" in titles
+      refute "Advanced Chemistry" in titles
+
+      # Search with prefix "Bio" - should still match
+      results =
+        Browse.browse_project_sections(
+          project.id,
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :title, direction: :asc},
+          text_search: "Bio"
+        )
+
+      assert length(results) == 2
+
+      # Search for "Chemistry" - should only match section2
+      results =
+        Browse.browse_project_sections(
+          project.id,
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :title, direction: :asc},
+          text_search: "Chemistry"
+        )
+
+      assert length(results) == 1
+      assert hd(results).title == "Advanced Chemistry"
+
+      # Case-insensitive search
+      results =
+        Browse.browse_project_sections(
+          project.id,
+          %Paging{offset: 0, limit: 10},
+          %Sorting{field: :title, direction: :asc},
+          text_search: "biology"
+        )
+
+      assert length(results) == 2
+    end
   end
 end

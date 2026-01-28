@@ -284,13 +284,23 @@ defmodule Oli.Delivery.Sections.Browse do
     text_search = Keyword.get(opts, :text_search, "")
     today = DateTime.utc_now()
 
-    # Text search filter
+    # Text search filter using to_tsvector/to_tsquery for GIN index utilization
+    # (matches pattern in browse_sections_query)
     filter_by_text =
       if text_search == "" or is_nil(text_search) do
         true
       else
-        search_pattern = "%#{String.downcase(text_search)}%"
-        dynamic([s], ilike(s.title, ^search_pattern))
+        # allow to search by prefix
+        search_term =
+          text_search
+          |> String.split(@chars_to_replace_on_search, trim: true)
+          |> Enum.map(fn x -> x <> ":*" end)
+          |> Enum.join(" & ")
+
+        dynamic(
+          [s],
+          fragment("to_tsvector('simple', ?) @@ to_tsquery('simple', ?)", s.title, ^search_term)
+        )
       end
 
     # LATERAL subquery to get the first enrolled user (creator) for each section
