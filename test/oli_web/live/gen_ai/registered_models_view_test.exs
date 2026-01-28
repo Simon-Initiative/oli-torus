@@ -33,6 +33,27 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
       |> then(fn html -> assert html =~ "Updated GenAI pool sizes"; html end)
     end
 
+    test "rejects pool sizes above configured max", %{conn: conn} do
+      previous = Application.get_env(:oli, :genai_hackney_pool_max_size, 1000)
+
+      Application.put_env(:oli, :genai_hackney_pool_max_size, 10)
+
+      on_exit(fn ->
+        Application.put_env(:oli, :genai_hackney_pool_max_size, previous)
+      end)
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("form#toggle_editing")
+      |> render_change(%{"toggle_editing" => "on"})
+
+      view
+      |> form("#pool-sizes-form", pool_sizes: %{"fast_pool_size" => "11", "slow_pool_size" => "10"})
+      |> render_submit()
+      |> then(fn html -> assert html =~ "Pool size for fast must be &lt;= 10"; html end)
+    end
+
     test "updates pool class and max concurrent values", %{
       conn: conn,
       registered_model: registered_model

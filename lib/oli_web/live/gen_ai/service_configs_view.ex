@@ -204,7 +204,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
         <div class="mt-6 border-t border-gray-200 pt-4">
           <h3 class="text-sm font-semibold text-gray-900">Routing Policy</h3>
-          <div class="grid grid-cols-2 gap-4 mt-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
             <.input
               field={@form[:routing_soft_limit]}
               type="number"
@@ -239,7 +239,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         <%= if @health do %>
           <div class="mt-6 border-t border-gray-200 pt-4">
             <h3 class="text-sm font-semibold text-gray-900">Routing Health</h3>
-            <div class="grid grid-cols-2 gap-4 mt-3 text-sm text-gray-700">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 text-sm text-gray-700">
               <div>
                 <div class="text-xs uppercase text-gray-500">Active Requests</div>
                 <div>{@health.counts.requests}</div>

@@ -73,6 +73,7 @@ Screenshots/Mocks:
 | FR-011 | Add admin-only pool size controls (fast/slow) in the RegisteredModel view and log/telemetry for breaker/counter inspection. | P1 | Backend |
 
 ## 7. Acceptance Criteria
+- Note: Routing does not distinguish stream vs generate requests in this phase; there are no stream-specific admission criteria.
 - AC-001 (FR-001) — Given a resolved ServiceConfig with Primary/Secondary/Backup models, When a GenAI request is initiated, Then the router produces a RoutingPlan that includes selected model, tier, pool, and reason codes within 5ms p95.
 - AC-002 (FR-002, FR-004) — Given the Primary model is healthy but at its max_concurrent cap, When a new request arrives, Then the router selects Secondary (if healthy and under cap) and records reason `primary_over_capacity`.
 - AC-003 (FR-004) — Given Primary and Secondary breakers are open, When a new request arrives, Then the router selects Backup (if healthy and under cap) and records reason `backup_outage`.
@@ -107,6 +108,7 @@ Compliance:
 Observability:
 - AppSignal counters for routing decisions (tagged by tier and pool_class), breaker state changes, rejection count, and latency distribution.
 - Structured logs for routing plan summary with reason codes.
+- Router telemetry is scoped by service_config_id and registered_model_id (no section/institution identifiers).
 
 ## 9. Data Model & APIs
 Ecto Schemas & Migrations:
@@ -148,8 +150,8 @@ Caching/Perf:
 - Avoid N+1 queries by preloading ServiceConfig and RegisteredModel in request context.
 
 Multi-Tenancy:
-- Policies apply per ServiceConfig, which is scoped to institution/project/section via existing mappings.
-- Per-model caps are global across ServiceConfigs by design; breaker/counter state is per-node.
+- Policies apply per ServiceConfig; section overrides resolve to a ServiceConfig as usual.
+- Admission counters and breaker state are per-node and scoped by ServiceConfig/model (not section/institution).
 
 ## 11. Feature Flagging, Rollout & Migration
 Flagging:

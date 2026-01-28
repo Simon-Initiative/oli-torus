@@ -157,7 +157,7 @@ defmodule Oli.GenAI.Execution do
     Process.put(error_key, false)
 
     wrapped_handler = fn chunk ->
-      if chunk == {:error} do
+      if chunk == :error or match?({:error, _}, chunk) or chunk == {:error} do
         Process.put(error_key, true)
       end
 
@@ -183,7 +183,7 @@ defmodule Oli.GenAI.Execution do
   end
 
   defp report_breaker(result, registered_model, latency_ms) do
-    {outcome, http_status} = outcome_details(result)
+    {outcome, http_status, _error_category} = outcome_details(result)
 
     Breaker.report(registered_model.id, %{
       outcome: outcome,
@@ -199,22 +199,39 @@ defmodule Oli.GenAI.Execution do
     })
   end
 
-  defp outcome_details({:ok, _}), do: {:ok, nil}
+  defp outcome_details({:ok, _}), do: {:ok, nil, nil}
 
   defp outcome_details({:error, reason}) do
-    http_status =
-      case reason do
-        %{status: status} when is_integer(status) -> status
-        %{http_status: status} when is_integer(status) -> status
-        {:http_error, status} when is_integer(status) -> status
-        _ -> nil
-      end
+    {http_status, error_category} = error_details(reason)
 
-    {:error, http_status}
+    {:error, http_status, error_category}
   end
 
-  defp outcome_details(:ok), do: {:ok, nil}
-  defp outcome_details(_), do: {:error, nil}
+  defp outcome_details(:ok), do: {:ok, nil, nil}
+  defp outcome_details(_), do: {:error, nil, :unknown}
+
+  defp error_details(:timeout), do: {nil, :timeout}
+  defp error_details(:stream_error), do: {nil, :stream_error}
+  defp error_details(:connect_timeout), do: {nil, :timeout}
+  defp error_details(:recv_timeout), do: {nil, :timeout}
+  defp error_details({:timeout, _}), do: {nil, :timeout}
+
+  defp error_details(%{status: status}) when is_integer(status) do
+    {status, http_status_category(status)}
+  end
+
+  defp error_details(%{http_status: status}) when is_integer(status) do
+    {status, http_status_category(status)}
+  end
+
+  defp error_details({:http_error, status}) when is_integer(status) do
+    {status, http_status_category(status)}
+  end
+
+  defp error_details(_), do: {nil, :unknown}
+
+  defp http_status_category(429), do: :rate_limited
+  defp http_status_category(_status), do: :http_error
 
   defp release_admission!(%{pool_name: pool_name, selected_model: %{id: model_id}}) do
     AdmissionControl.release_pool(pool_name)
@@ -224,7 +241,7 @@ defmodule Oli.GenAI.Execution do
   defp release_admission!(_), do: :ok
 
   defp emit_provider_telemetry(result, latency_ms, registered_model, request_type, service_config) do
-    {outcome, http_status} = outcome_details(result)
+    {outcome, http_status, error_category} = outcome_details(result)
 
     Telemetry.provider_stop(
       %{duration_ms: latency_ms},
@@ -235,6 +252,7 @@ defmodule Oli.GenAI.Execution do
         model: registered_model.model,
         outcome: outcome,
         http_status: http_status,
+        error_category: error_category,
         request_type: request_type
       }
     )

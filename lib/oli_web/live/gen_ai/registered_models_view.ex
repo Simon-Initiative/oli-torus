@@ -147,10 +147,12 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
       <div class="mb-4 border border-gray-200 rounded-md p-3">
         <h3 class="text-sm font-semibold text-gray-900">GenAI Pool Sizes</h3>
         <.form for={@pool_form} id="pool-sizes-form" phx-submit="update_pool_sizes">
-          <div class="grid grid-cols-2 gap-4 mt-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
             <.input
               field={@pool_form[:fast_pool_size]}
               type="number"
+              min="1"
+              step="1"
               label="Fast Pool Max Connections"
               disabled={!@editing}
               class={@form_control_classes}
@@ -158,6 +160,8 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
             <.input
               field={@pool_form[:slow_pool_size]}
               type="number"
+              min="1"
+              step="1"
               label="Slow Pool Max Connections"
               disabled={!@editing}
               class={@form_control_classes}
@@ -227,6 +231,8 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
           field={@form[:routing_breaker_error_rate_threshold]}
           type="number"
           step="0.01"
+          min="0"
+          max="1"
           label="Breaker Error Rate Threshold"
           disabled={!@editing}
           class={@form_control_classes}
@@ -235,6 +241,8 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
           field={@form[:routing_breaker_429_threshold]}
           type="number"
           step="0.01"
+          min="0"
+          max="1"
           label="Breaker 429 Threshold"
           disabled={!@editing}
           class={@form_control_classes}
@@ -498,18 +506,27 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
 
   defp pool_form_params(params) do
     %{
-      fast_pool_size: params["fast_pool_size"],
-      slow_pool_size: params["slow_pool_size"]
+      "fast_pool_size" => params["fast_pool_size"],
+      "slow_pool_size" => params["slow_pool_size"]
     }
   end
 
   defp parse_pool_size(value, label) do
+    max_allowed = max_pool_size()
+
     case Integer.parse(to_string(value)) do
-      {size, ""} when size > 0 ->
+      {size, ""} when size > 0 and size <= max_allowed ->
         {:ok, size}
+
+      {size, ""} when size > max_allowed ->
+        {:error, "Pool size for #{label} must be <= #{max_allowed}"}
 
       _ ->
         {:error, "Pool size for #{label} must be a positive integer"}
     end
+  end
+
+  defp max_pool_size do
+    Application.get_env(:oli, :genai_hackney_pool_max_size, 1000)
   end
 end

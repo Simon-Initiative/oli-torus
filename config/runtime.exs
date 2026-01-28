@@ -239,6 +239,8 @@ if runtime_env == :prod do
       favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
     ],
     node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
+    genai_hackney_pool_max_size:
+      String.to_integer(System.get_env("GENAI_HACKNEY_POOL_MAX_SIZE", "1000")),
     genai_hackney_fast_pool_size:
       String.to_integer(System.get_env("GENAI_FAST_POOL_SIZE", "100")),
     genai_hackney_slow_pool_size:

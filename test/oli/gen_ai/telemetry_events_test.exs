@@ -96,6 +96,7 @@ defmodule Oli.GenAI.TelemetryEventsTest do
     assert metadata.request_type == :generate
     assert metadata.service_config_id == service_config.id
     assert metadata.registered_model_id == service_config.primary_model.id
+    assert metadata.error_category == nil
 
     detach(handler_id)
   end

@@ -142,7 +142,7 @@ defmodule Oli.GenAI.Router do
 
   defp attempt_candidate(service_config, model, counts, request_type, tier, reason) do
     pool_name = HackneyPool.pool_name(model)
-    pool_limit = HackneyPool.pool_size(model.pool_class || :slow)
+    pool_limit = HackneyPool.max_connections(model.pool_class || :slow)
 
     case AdmissionControl.try_admit_pool(pool_name, pool_limit) do
       :ok ->
