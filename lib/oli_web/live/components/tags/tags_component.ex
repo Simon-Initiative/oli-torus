@@ -332,6 +332,11 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
         </div>
       <% else %>
         <!-- Display mode -->
+        <%!--
+          Keyboard activation works for both variants (WCAG 2.1.1)
+          role="button" only for :table variant to avoid nested interactive controls (WCAG)
+          :form variant has remove buttons inside, so no role="button" on container
+        --%>
         <div
           id={"tags-display-#{@id}"}
           class={get_display_container_classes(@variant)}
@@ -339,8 +344,10 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
           phx-keydown="toggle_edit_keydown"
           phx-target={@myself}
           tabindex="0"
-          role="button"
-          aria-label="Edit tags"
+          role={if @variant == :table, do: "button"}
+          aria-label={
+            if @variant == :table, do: "Edit tags", else: "Tags, click or press Enter to edit"
+          }
         >
           <%= if length(@current_tags || []) > 0 do %>
             <div
