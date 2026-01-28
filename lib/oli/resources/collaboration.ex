@@ -445,6 +445,47 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
+  Counts posts and replies for a user in a specific section and resource using DB-side aggregation.
+
+  Returns `{posts_count, replies_count}` where:
+  - `posts_count` is the number of top-level posts (where parent_post_id is nil)
+  - `replies_count` is the number of reply posts (where parent_post_id is not nil)
+
+  ## Examples
+
+      iex> count_posts_and_replies_for_user(1, 1, 1)
+      {5, 3}
+  """
+  @spec count_posts_and_replies_for_user(
+          section_id :: integer(),
+          resource_id :: integer(),
+          user_id :: integer()
+        ) :: {integer(), integer()}
+  def count_posts_and_replies_for_user(section_id, resource_id, user_id) do
+    base_query =
+      from(
+        post in Post,
+        where:
+          post.section_id == ^section_id and post.resource_id == ^resource_id and
+            post.user_id == ^user_id and
+            (post.status in [:approved, :archived] or
+               post.status == :submitted)
+      )
+
+    posts_count =
+      base_query
+      |> where([p], is_nil(p.parent_post_id))
+      |> Repo.aggregate(:count, :id)
+
+    replies_count =
+      base_query
+      |> where([p], not is_nil(p.parent_post_id))
+      |> Repo.aggregate(:count, :id)
+
+    {posts_count, replies_count}
+  end
+
+  @doc """
   Returns the list of posts that a instructor can see.
 
   ## Examples
