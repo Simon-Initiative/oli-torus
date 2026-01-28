@@ -201,41 +201,10 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           label="Backup Registered Model"
         />
 
-        <div class="mt-6 border-t border-gray-200 pt-4">
-          <h3 class="text-sm font-semibold text-gray-900">Routing Policy</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
-            <.input
-              field={@form[:routing_hard_limit]}
-              type="number"
-              label="Hard Limit"
-              disabled={!@editing}
-              class={@form_control_classes}
-            />
-            <.input
-              field={@form[:routing_timeout_ms]}
-              type="number"
-              label="Request Timeout (ms)"
-              disabled={!@editing}
-              class={@form_control_classes}
-            />
-            <.input
-              field={@form[:routing_connect_timeout_ms]}
-              type="number"
-              label="Connect Timeout (ms)"
-              disabled={!@editing}
-              class={@form_control_classes}
-            />
-          </div>
-        </div>
-
         <%= if @health do %>
           <div class="mt-6 border-t border-gray-200 pt-4">
             <h3 class="text-sm font-semibold text-gray-900">Routing Health</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 text-sm text-gray-700">
-              <div>
-                <div class="text-xs uppercase text-gray-500">Active Requests</div>
-                <div>{@health.counts.requests}</div>
-              </div>
               <div>
                 <div class="text-xs uppercase text-gray-500">Primary Breaker</div>
                 <div>{@health.primary.state}</div>
@@ -466,8 +435,6 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   defp assign_health(socket, _), do: assign(socket, health: nil)
 
   defp health_for(%ServiceConfig{} = service_config) do
-    counts = AdmissionControl.counts(service_config.id)
-
     default_snapshot = %{
       state: :closed,
       error_rate: 0.0,
@@ -501,7 +468,6 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
       end
 
     %{
-      counts: counts,
       primary: primary,
       secondary: secondary,
       backup: backup

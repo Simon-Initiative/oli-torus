@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Summary: Introduce a centralized, backpressure-aware routing layer with three-tier model selection (Primary → Secondary → Backup), per-RegisteredModel admission caps, and dual hackney pools (fast/slow). This enables proactive load shedding, preserves capacity for fast models during GPT‑5 spikes, and routes to Backup only during provider-level outages. Admins manage routing parameters in existing ServiceConfig screens and adjust pool sizes within the RegisteredModel admin view.
+Summary: Introduce a centralized, backpressure-aware routing layer with three-tier model selection (Primary → Secondary → Backup), per-RegisteredModel admission caps, and dual hackney pools (fast/slow). This enables proactive load shedding, preserves capacity for fast models during GPT‑5 spikes, and routes to Backup only during provider-level outages. Admins manage model selection in existing ServiceConfig screens and adjust pool sizes within the RegisteredModel admin view.
 
 Links: Informal PRD in this feature folder; no external links provided.
 
@@ -23,7 +23,7 @@ Goals:
 
 Non-Goals:
 - No new dashboards for breaker health beyond targeted indicators in existing GenAI admin UIs.
-- No new standalone routing policy screen; routing parameters remain edited within Service Configs.
+- No new standalone routing policy screen; routing remains configured via Service Configs.
 - No major UI redesigns; changes must mirror existing GenAI admin views (Registered Models, Service Configs) with minimal additions.
 - No redesign of provider adapters.
 - No token-level cost optimization.
@@ -43,13 +43,13 @@ Use Cases / Scenarios:
 
 ## 5. UX / UI Requirements
 Key Screens/States:
-- Extend the existing ServiceConfig editor to include Primary/Secondary/Backup model selection and routing policy parameters (editable).
+- Extend the existing ServiceConfig editor to include Primary/Secondary/Backup model selection.
 - Extend the RegisteredModel editor to include pool class (fast/slow) and max concurrent cap (editable).
 - Add a small, admin-only section at the top of the RegisteredModel view to display and update fast/slow pool sizes.
 - Minimal, targeted additions within existing ServiceConfig screens to surface read-only health signals for all three models.
 
 Navigation & Entry Points:
-- GenAI Admin area: Service Configs editor is the entry point for routing policy parameters.
+- GenAI Admin area: Service Configs editor is the entry point for model selection.
 
 Accessibility:
 - Any UI additions must meet WCAG 2.1 AA. Health indicators and error messages must be accessible when displayed in existing UI.
@@ -60,16 +60,16 @@ Screenshots/Mocks:
 ## 6. Functional Requirements
 | ID | Description | Priority | Owner |
 |---|---|---|---|
-| FR-001 | Introduce a centralized GenAI router that consumes resolved ServiceConfig and produces a RoutingPlan per request (selected model, tier, pool, reason codes, timeouts). | P0 | Backend |
+| FR-001 | Introduce a centralized GenAI router that consumes resolved ServiceConfig and produces a RoutingPlan per request (selected model, tier, pool, reason codes). | P0 | Backend |
 | FR-002 | Implement admission control using ETS-backed counters for per-RegisteredModel inflight counts and per-pool inflight counts with atomic try-admit. | P0 | Backend |
 | FR-003 | Implement per-RegisteredModel circuit breakers with closed/open/half_open states, tracking error rate, 429 rate, and latency spikes. | P0 | Backend |
 | FR-004 | Enforce three-tier routing: Primary preferred; if Primary breaker open or at cap → Secondary; Backup is used only when both Primary and Secondary breakers are open; Secondary over-cap rejects fast. | P0 | Backend |
 | FR-005 | RegisteredModel defines pool class (`fast`/`slow`) and optional max_concurrent cap; pool sizes are configurable via env and adjustable via admin UI. | P0 | Backend |
 | FR-006 | Emit telemetry for routing decisions/outcomes with tier, pool_class/pool_name, selected model, and outcome; routing decisions include reason codes. | P0 | Backend |
 | FR-007 | Preserve existing FeatureServiceConfig resolution and section overrides; routing uses the resolved ServiceConfig. | P0 | Backend |
-| FR-008 | Each RegisteredModel owns editable breaker thresholds; ServiceConfig owns request timeout overrides (no shared policies). | P0 | Backend |
-| FR-009 | Expose read-only routing health (breaker state, recent error/429/latency signals, and backpressure counters) within existing ServiceConfig UI without adding a new dashboard. | P1 | Backend |
-| FR-010 | Extend ServiceConfig editor to allow Primary/Secondary/Backup selection and timeout edits; extend RegisteredModel editor to allow pool_class, max_concurrent, and breaker thresholds. | P1 | Backend |
+| FR-008 | Each RegisteredModel owns editable breaker thresholds and provider timeouts; ServiceConfig only selects Primary/Secondary/Backup models. | P0 | Backend |
+| FR-009 | Expose read-only routing health (breaker state, recent error/429/latency signals) within existing ServiceConfig UI without adding a new dashboard. | P1 | Backend |
+| FR-010 | Extend ServiceConfig editor to allow Primary/Secondary/Backup selection; extend RegisteredModel editor to allow pool_class, max_concurrent, breaker thresholds, and provider timeouts. | P1 | Backend |
 | FR-011 | Add admin-only pool size controls (fast/slow) in the RegisteredModel view and log/telemetry for breaker/counter inspection. | P1 | Backend |
 
 ## 7. Acceptance Criteria
@@ -82,7 +82,7 @@ Screenshots/Mocks:
 - AC-006 (FR-006) — Given any GenAI request, When it completes (success/failure), Then a telemetry event is emitted with selected model, tier, pool_class/pool_name, duration, and outcome.
 - AC-007 (FR-007) — Given a section with a FeatureServiceConfig override, When a request is issued from that section, Then the router uses the resolved ServiceConfig for that section.
 - AC-008 (FR-009) — Given an Admin views an existing ServiceConfig screen, When routing health data is available, Then read-only health indicators for Primary/Secondary/Backup are shown inline and no new top-level navigation item is introduced.
-- AC-009 (FR-010) — Given an Admin edits a ServiceConfig, When they update model selection or routing policy parameters, Then the changes are saved and used by the router on subsequent requests.
+- AC-009 (FR-010) — Given an Admin edits a ServiceConfig, When they update model selection, Then the changes are saved and used by the router on subsequent requests.
 - AC-010 (FR-011) — Given an Admin updates fast/slow pool sizes in RegisteredModels view, When they submit the form, Then the pool max connections change at runtime and the new values are displayed.
 
 ## 8. Non-Functional Requirements
@@ -112,7 +112,7 @@ Observability:
 
 ## 9. Data Model & APIs
 Ecto Schemas & Migrations:
-- ServiceConfig persists its own routing policy parameters (no shared policies) for timeouts; breaker thresholds live on RegisteredModel. Exact schema/migration details are defined in `fdd.md`.
+- ServiceConfig persists only Primary/Secondary/Backup selection; breaker thresholds and provider timeouts live on RegisteredModel. Exact schema/migration details are defined in `fdd.md`.
 - ServiceConfig includes `secondary_model_id` (nullable) between Primary and Backup.
 - RegisteredModel includes `pool_class` (`fast`/`slow`) and optional `max_concurrent` cap.
 
@@ -123,7 +123,7 @@ Context Boundaries:
 
 APIs / Contracts:
 - `Oli.GenAI.Router.route(request_ctx, resolved_service_config) :: {:ok, routing_plan} | {:error, reason}`
-- `routing_plan` includes `selected_registered_model_id`, `tier`, `pool_name`, `reason`, `timeouts`, `admission_decision`.
+ - `routing_plan` includes `selected_registered_model_id`, `tier`, `pool_name`, `reason`, `admission_decision`.
 - LiveView event handlers call router before issuing provider requests.
 
 Permissions Matrix:
@@ -151,22 +151,22 @@ Caching/Perf:
 
 Multi-Tenancy:
 - Policies apply per ServiceConfig; section overrides resolve to a ServiceConfig as usual.
-- Admission counters and breaker state are per-node and scoped by ServiceConfig/model (not section/institution).
+ - Admission counters and breaker state are per-node and scoped by model/pool (not section/institution).
 
 ## 11. Feature Flagging, Rollout & Migration
 Flagging:
-- No new feature flag integration in this phase. Rollout is controlled via ServiceConfig routing parameters and deployment sequencing.
+- No new feature flag integration in this phase. Rollout is controlled via ServiceConfig model selection and deployment sequencing.
 
 Environments:
 - Dev/stage enabled by default through ServiceConfig updates; prod rollout via staged ServiceConfig edits.
 
 Data Migrations:
-- Forward: add routing policy fields to `completions_service_configs`, backfill existing rows with conservative defaults.
+- Forward: add `secondary_model_id` to `completions_service_configs`; add routing fields to `registered_models`.
 - Rollback: remove added fields, fall back to static routing.
 
 Rollout Plan:
 - Phase 1: enable via ServiceConfig updates for internal testing sections; monitor errors and latency.
-- Phase 2: enable for a small cohort of sections with high-traffic GenAI features by updating their ServiceConfig routing parameters.
+- Phase 2: enable for a small cohort of sections with high-traffic GenAI features by updating their ServiceConfig model selection.
 - Phase 3: broader enablement after 1 week of stable metrics; rollback by restoring prior ServiceConfig values.
 
 Telemetry for Rollout:
@@ -185,18 +185,16 @@ Event Spec:
 ## 13. Risks & Mitigations
 - Risk: False positives open breakers too often → Mitigation: conservative defaults, half_open probing, telemetry tuning.
 - Risk: Over-aggressive shedding causes user-visible failures → Mitigation: conservative hard caps with backup routing; fast failures with clear messaging.
-- Risk: Per-tenant counters cause memory growth → Mitigation: TTL/cleanup on inactive sections.
 - Risk: Complexity makes debugging harder → Mitigation: structured logs, explicit reason codes, introspection endpoints.
 
 ## 14. Open Questions & Assumptions
 Assumptions:
-- ServiceConfig persists routing policy parameters directly; a default policy is created by migration and visible/editable in the ServiceConfig editor.
+- ServiceConfig persists Primary/Secondary/Backup selection directly; defaults are created by migration and visible/editable in the ServiceConfig editor.
 - In-memory breaker state reset on node restart is acceptable for initial release.
 - Per-node counters and breaker state are acceptable for v1 (no cluster-wide coordination).
 - Features can surface standardized “try again” responses using existing UX patterns.
 
 Open Questions:
-- Which routing policy fields are exposed in the ServiceConfig editor vs. kept fixed as system defaults?
 - What default max_concurrent values should be set for slow vs fast models?
 - What default pool sizes (fast/slow) should be used per environment?
 - Should breaker windows be per node or coordinated across the cluster?
@@ -213,7 +211,7 @@ Automated:
 - Unit tests for router policy decisions (boundary thresholds, fallback logic).
 - Property tests for breaker state transitions.
 - LiveView tests to ensure no blocking waits on admission control.
-- Migration tests for policy backfill.
+  - Migration tests for secondary model defaults and registered model fields.
 
 Manual:
 - Simulate provider 429s and timeouts; verify routing to backup.
@@ -228,5 +226,5 @@ Load/Perf:
 - [ ] Telemetry & alerts live
 - [ ] Migrations & rollback tested
 - [ ] Accessibility checks passed
-- [ ] Routing policy defaults documented
+- [ ] Default model selection documented
 - [ ] Staging load test results captured

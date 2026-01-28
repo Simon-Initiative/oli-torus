@@ -9,17 +9,16 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
 
   @route Routes.live_path(OliWeb.Endpoint, OliWeb.GenAI.ServiceConfigsView)
 
-  describe "admins can edit routing policy parameters" do
+  describe "admins can edit service config parameters" do
     setup [:admin_conn, :create_service_config]
 
-    test "renders routing policy and health sections", %{conn: conn} do
+    test "renders routing health section", %{conn: conn} do
       {:ok, _view, html} = live(conn, @route)
 
-      assert html =~ "Routing Policy"
       assert html =~ "Routing Health"
     end
 
-    test "updates routing policy fields", %{conn: conn, service_config: service_config} do
+    test "updates service config fields", %{conn: conn, service_config: service_config} do
       {:ok, view, _html} = live(conn, @route)
 
       render_click(view, "select", %{"id" => to_string(service_config.id)})
@@ -32,10 +31,7 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
         "name" => service_config.name,
         "primary_model_id" => to_string(service_config.primary_model_id),
         "secondary_model_id" => to_string(service_config.secondary_model_id),
-        "backup_model_id" => "",
-        "routing_hard_limit" => "80",
-        "routing_timeout_ms" => "30000",
-        "routing_connect_timeout_ms" => "5000"
+        "backup_model_id" => ""
       }
 
       view
@@ -47,7 +43,6 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
       end)
 
       updated = Repo.get!(ServiceConfig, service_config.id)
-      assert updated.routing_hard_limit == 80
       assert updated.secondary_model_id == service_config.secondary_model_id
     end
   end

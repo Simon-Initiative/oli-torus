@@ -1,9 +1,6 @@
 defmodule Oli.Repo.Migrations.AddGenAIRoutingPolicyFields do
   use Ecto.Migration
 
-  @routing_hard_limit 80
-  @routing_timeout_ms 30_000
-  @routing_connect_timeout_ms 5_000
   @breaker_error_rate_threshold 0.2
   @breaker_429_threshold 0.1
   @breaker_latency_p95_ms 6000
@@ -13,9 +10,6 @@ defmodule Oli.Repo.Migrations.AddGenAIRoutingPolicyFields do
   def up do
     alter table(:completions_service_configs) do
       add :secondary_model_id, references(:registered_models, on_delete: :nothing), null: true
-      add :routing_hard_limit, :integer, default: @routing_hard_limit
-      add :routing_timeout_ms, :integer, default: @routing_timeout_ms
-      add :routing_connect_timeout_ms, :integer, default: @routing_connect_timeout_ms
     end
 
     create index(:completions_service_configs, [:secondary_model_id])
@@ -61,32 +55,6 @@ defmodule Oli.Repo.Migrations.AddGenAIRoutingPolicyFields do
     create constraint(:registered_models, :routing_half_open_probe_count_non_negative,
              check: "routing_half_open_probe_count >= 0"
            )
-
-    execute("""
-    UPDATE completions_service_configs
-    SET
-      routing_hard_limit = COALESCE(routing_hard_limit, #{@routing_hard_limit}),
-      routing_timeout_ms = COALESCE(routing_timeout_ms, #{@routing_timeout_ms}),
-      routing_connect_timeout_ms = COALESCE(routing_connect_timeout_ms, #{@routing_connect_timeout_ms})
-    """)
-
-    alter table(:completions_service_configs) do
-      modify :routing_hard_limit, :integer, null: false
-      modify :routing_timeout_ms, :integer, null: false
-      modify :routing_connect_timeout_ms, :integer, null: false
-    end
-
-    create constraint(:completions_service_configs, :routing_hard_limit_non_negative,
-             check: "routing_hard_limit >= 0"
-           )
-
-    create constraint(:completions_service_configs, :routing_timeout_ms_non_negative,
-             check: "routing_timeout_ms >= 0"
-           )
-
-    create constraint(:completions_service_configs, :routing_connect_timeout_ms_non_negative,
-             check: "routing_connect_timeout_ms >= 0"
-           )
   end
 
   def down do
@@ -109,15 +77,8 @@ defmodule Oli.Repo.Migrations.AddGenAIRoutingPolicyFields do
 
     drop index(:completions_service_configs, [:secondary_model_id])
 
-    drop constraint(:completions_service_configs, :routing_hard_limit_non_negative)
-    drop constraint(:completions_service_configs, :routing_connect_timeout_ms_non_negative)
-    drop constraint(:completions_service_configs, :routing_timeout_ms_non_negative)
-
     alter table(:completions_service_configs) do
       remove :secondary_model_id
-      remove :routing_connect_timeout_ms
-      remove :routing_timeout_ms
-      remove :routing_hard_limit
     end
   end
 end

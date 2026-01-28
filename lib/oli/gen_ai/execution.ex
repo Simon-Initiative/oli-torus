@@ -20,7 +20,7 @@ defmodule Oli.GenAI.Execution do
       completer = Keyword.get(opts, :completions_mod, Completions)
       request_type = Map.get(request_ctx, :request_type, :generate)
 
-      with_service_config_admission(service_config, plan, fn ->
+      try do
         execute_with_fallback(
           :generate,
           completer,
@@ -31,7 +31,9 @@ defmodule Oli.GenAI.Execution do
           request_ctx,
           request_type
         )
-      end)
+      after
+        release_admission!(plan)
+      end
     end
   end
 
@@ -50,7 +52,7 @@ defmodule Oli.GenAI.Execution do
       completer = Keyword.get(opts, :completions_mod, Completions)
       request_type = Map.get(request_ctx, :request_type, :stream)
 
-      with_service_config_admission(service_config, plan, fn ->
+      try do
         execute_with_fallback(
           :stream,
           completer,
@@ -62,26 +64,9 @@ defmodule Oli.GenAI.Execution do
           request_type,
           response_handler_fn
         )
-      end)
-    end
-  end
-
-  defp with_service_config_admission(service_config, plan, fun) do
-    case AdmissionControl.try_admit_service_config(
-           service_config.id,
-           service_config.routing_hard_limit
-         ) do
-      :ok ->
-        try do
-          fun.()
-        after
-          AdmissionControl.release_service_config(service_config.id)
-          release_admission!(plan)
-        end
-
-      {:error, reason} ->
+      after
         release_admission!(plan)
-        {:error, reason}
+      end
     end
   end
 

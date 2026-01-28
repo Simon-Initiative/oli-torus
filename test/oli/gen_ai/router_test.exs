@@ -73,17 +73,6 @@ defmodule Oli.GenAI.RouterTest do
     assert plan.reason == :primary_over_capacity
   end
 
-  test "rejects when service config hard limit reached" do
-    service_config = build_service_config(8)
-    request_ctx = %{request_type: :generate}
-
-    AdmissionControl.increment_requests(service_config.id)
-    AdmissionControl.increment_requests(service_config.id)
-    AdmissionControl.increment_requests(service_config.id)
-
-    assert {:error, :over_capacity} = Router.route(request_ctx, service_config)
-  end
-
   test "rejects when secondary breaker is open and primary over capacity" do
     service_config =
       build_service_config(4,
@@ -136,10 +125,7 @@ defmodule Oli.GenAI.RouterTest do
       name: "ServiceConfig #{id}",
       primary_model: primary,
       secondary_model: secondary,
-      backup_model: backup,
-      routing_hard_limit: 3,
-      routing_timeout_ms: 30_000,
-      routing_connect_timeout_ms: 5_000
+      backup_model: backup
     }
 
     struct(base, overrides)

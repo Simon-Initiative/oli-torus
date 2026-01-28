@@ -72,10 +72,7 @@ defmodule Oli.GenAI.ExecutionTest do
       name: "ServiceConfig #{id}",
       primary_model: primary,
       secondary_model: secondary,
-      backup_model: backup,
-      routing_hard_limit: 3,
-      routing_timeout_ms: 30_000,
-      routing_connect_timeout_ms: 5_000
+      backup_model: backup
     }
 
     struct(base, overrides)

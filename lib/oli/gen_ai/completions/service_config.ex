@@ -9,10 +9,6 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
     belongs_to :secondary_model, Oli.GenAI.Completions.RegisteredModel
     belongs_to :backup_model, Oli.GenAI.Completions.RegisteredModel
 
-    field :routing_hard_limit, :integer, default: 80
-    field :routing_timeout_ms, :integer, default: 30_000
-    field :routing_connect_timeout_ms, :integer, default: 5_000
-
     field :usage_count, :integer, virtual: true
 
     timestamps(type: :utc_datetime)
@@ -24,21 +20,12 @@ defmodule Oli.GenAI.Completions.ServiceConfig do
       :name,
       :primary_model_id,
       :secondary_model_id,
-      :backup_model_id,
-      :routing_hard_limit,
-      :routing_timeout_ms,
-      :routing_connect_timeout_ms
+      :backup_model_id
     ])
     |> validate_required([
       :name,
-      :primary_model_id,
-      :routing_hard_limit,
-      :routing_timeout_ms,
-      :routing_connect_timeout_ms
+      :primary_model_id
     ])
-    |> validate_number(:routing_hard_limit, greater_than_or_equal_to: 0)
-    |> validate_number(:routing_timeout_ms, greater_than_or_equal_to: 0)
-    |> validate_number(:routing_connect_timeout_ms, greater_than_or_equal_to: 0)
     |> validate_secondary_model()
   end
 

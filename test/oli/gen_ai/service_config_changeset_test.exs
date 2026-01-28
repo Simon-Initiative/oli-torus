@@ -9,21 +9,13 @@ defmodule Oli.GenAI.ServiceConfigChangesetTest do
         ServiceConfig.changeset(%ServiceConfig{}, %{name: "Default Config", primary_model_id: 1})
 
       assert changeset.valid?
-      assert get_field(changeset, :routing_hard_limit) == 80
-      assert get_field(changeset, :routing_timeout_ms) == 30_000
-      assert get_field(changeset, :routing_connect_timeout_ms) == 5_000
     end
 
-    test "rejects negative routing limits" do
-      changeset =
-        ServiceConfig.changeset(%ServiceConfig{}, %{
-          name: "Negative Config",
-          primary_model_id: 1,
-          routing_timeout_ms: -10
-        })
+    test "requires primary model id" do
+      changeset = ServiceConfig.changeset(%ServiceConfig{}, %{name: "Missing Primary"})
 
       refute changeset.valid?
-      assert "must be greater than or equal to 0" in errors_on(changeset).routing_timeout_ms
+      assert "can't be blank" in errors_on(changeset).primary_model_id
     end
   end
 

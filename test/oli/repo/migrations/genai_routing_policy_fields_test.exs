@@ -26,22 +26,20 @@ defmodule Oli.Repo.Migrations.GenAIRoutingPolicyFieldsTest do
 
       service_config = Repo.get!(ServiceConfig, id)
 
-      assert service_config.routing_hard_limit == 80
-      assert service_config.routing_timeout_ms == 30_000
-      assert service_config.routing_connect_timeout_ms == 5_000
       assert is_nil(service_config.secondary_model_id)
     end
 
-    test "routing timeout must be non-negative" do
+    test "allows secondary model to remain nil" do
       registered_model = insert_registered_model()
 
-      assert_raise Ecto.ConstraintError, ~r/routing_timeout_ms_non_negative/, fn ->
+      service_config =
         Repo.insert!(%ServiceConfig{
-          name: "Invalid Timeout",
+          name: "Nil Secondary",
           primary_model_id: registered_model.id,
-          routing_timeout_ms: -1
+          secondary_model_id: nil
         })
-      end
+
+      assert is_nil(service_config.secondary_model_id)
     end
   end
 

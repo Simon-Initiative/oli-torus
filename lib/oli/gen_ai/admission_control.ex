@@ -24,41 +24,6 @@ defmodule Oli.GenAI.AdmissionControl do
     {:ok, %{counters_table: @counters_table, breaker_table: @breaker_table}}
   end
 
-  @doc "Increments the active request counter for a ServiceConfig."
-  def increment_requests(service_config_id) do
-    update_counter({:requests, service_config_id}, 1)
-  end
-
-  @doc "Decrements the active request counter for a ServiceConfig."
-  def decrement_requests(service_config_id) do
-    update_counter({:requests, service_config_id}, -1)
-  end
-
-  @doc "Atomically admits a request for a ServiceConfig, enforcing a hard cap."
-  def try_admit_service_config(service_config_id, nil) do
-    increment_requests(service_config_id)
-    :ok
-  end
-
-  def try_admit_service_config(service_config_id, hard_limit)
-      when is_integer(hard_limit) and hard_limit >= 0 do
-    try_admit({:requests, service_config_id}, hard_limit)
-  end
-
-  def try_admit_service_config(_service_config_id, _hard_limit), do: {:error, :invalid_limit}
-
-  @doc "Releases an inflight slot for a ServiceConfig."
-  def release_service_config(service_config_id) do
-    decrement_requests(service_config_id)
-  end
-
-  @doc "Returns active request counters for a ServiceConfig."
-  def counts(service_config_id) do
-    %{
-      requests: get_counter({:requests, service_config_id})
-    }
-  end
-
   @doc "Returns the current inflight count for a RegisteredModel."
   def model_count(model_id) do
     get_counter({:inflight, :model, model_id})
