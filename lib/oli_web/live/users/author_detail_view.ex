@@ -19,7 +19,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias OliWeb.Live.Components.Communities.CommunitiesComponent
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
 
@@ -49,7 +48,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
         _session,
         socket
       ) do
-    case Accounts.get_author_with_communities(author_id) do
+    case Accounts.get_author(author_id) do
       nil ->
         {:ok,
          socket
@@ -163,17 +162,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
                 value={if(@author.is_internal, do: "Yes", else: "No")}
               />
             <% end %>
-            <div class="form-group mt-3">
-              <label>Communities</label>
-              <.live_component
-                module={CommunitiesComponent}
-                id={"communities-author-#{@author.id}"}
-                entity_type={:author}
-                entity_id={@author.id}
-                current_communities={@author.communities}
-                disabled_edit={@disabled_edit}
-              />
-            </div>
             <%= unless @disabled_edit do %>
               <.button
                 variant={:primary}

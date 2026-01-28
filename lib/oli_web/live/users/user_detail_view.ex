@@ -20,7 +20,7 @@ defmodule OliWeb.Users.UsersDetailView do
   }
 
   alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Live.Components.Communities.CommunitiesComponent
+  alias OliWeb.Live.Components.Communities.CommunitiesSelectComponent
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
@@ -132,11 +132,11 @@ defmodule OliWeb.Users.UsersDetailView do
             <div class="form-group">
               <label>Communities</label>
               <.live_component
-                module={CommunitiesComponent}
+                module={CommunitiesSelectComponent}
                 id={"communities-user-#{@user.id}"}
-                entity_type={:user}
-                entity_id={@user.id}
+                user_id={@user.id}
                 current_communities={@user.communities}
+                institution={@institution}
                 disabled_edit={@disabled_edit}
               />
             </div>

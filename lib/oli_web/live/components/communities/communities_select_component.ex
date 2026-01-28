@@ -1,10 +1,14 @@
-defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
+defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
   @moduledoc """
-  LiveComponent for managing community associations in admin user/author detail views.
+  LiveComponent for managing community associations in admin user detail view.
 
-  This component provides community selection functionality for users and authors.
+  This component provides community selection functionality for users.
   Unlike TagsComponent, this component does NOT allow creating new communities -
   it only allows selecting from existing ones.
+
+  Communities can be associated with a user in two ways:
+  - Directly: the user is a member of the community
+  - Via Institution: the user's LTI institution belongs to the community
 
   The component has three states:
   - `disabled_edit == true`: Readonly mode with gray background and comma-separated links
@@ -32,14 +36,24 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
   @impl true
   def update(assigns, socket) do
     disabled_edit = Map.get(assigns, :disabled_edit, true)
+    institution = Map.get(assigns, :institution)
+    user_id = assigns.user_id
 
     # Only initialize current_communities from assigns on first mount
     # After that, ALWAYS keep the component's local state to preserve add/remove changes
-    current_communities =
+    direct_communities =
       if not socket.assigns[:initialized] do
         assigns.current_communities || []
       else
-        socket.assigns.current_communities
+        socket.assigns.direct_communities
+      end
+
+    # Get communities associated via institution (excluding direct ones)
+    institution_communities =
+      if not socket.assigns[:initialized] do
+        compute_institution_communities(user_id, institution, direct_communities)
+      else
+        socket.assigns.institution_communities
       end
 
     # Reset community_edit_mode when disabled_edit becomes true
@@ -50,14 +64,29 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
         socket.assigns[:community_edit_mode] || false
       end
 
+    all_community_ids =
+      Enum.map(direct_communities, & &1.id) ++ Enum.map(institution_communities, & &1.id)
+
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:current_communities, current_communities)
+     |> assign(:direct_communities, direct_communities)
+     |> assign(:institution_communities, institution_communities)
      |> assign(:disabled_edit, disabled_edit)
      |> assign(:community_edit_mode, community_edit_mode)
-     |> assign(:selected_community_ids, Enum.map(current_communities, & &1.id))
+     |> assign(:selected_community_ids, all_community_ids)
      |> assign(:initialized, true)}
+  end
+
+  defp compute_institution_communities(user_id, institution, direct_communities) do
+    if institution do
+      direct_ids = MapSet.new(Enum.map(direct_communities, & &1.id))
+
+      Groups.list_associated_communities(user_id, institution)
+      |> Enum.reject(fn community -> MapSet.member?(direct_ids, community.id) end)
+    else
+      []
+    end
   end
 
   @impl true
@@ -69,7 +98,6 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
         socket
         |> assign(:community_edit_mode, true)
         |> load_available_communities()
-        |> push_event("focus_input", %{input_id: "community-input-#{socket.assigns.id}"})
       else
         socket
         |> assign(:community_edit_mode, false)
@@ -90,28 +118,36 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
   @impl true
   def handle_event("add_community", %{"community_id" => community_id}, socket) do
     community_id = String.to_integer(community_id)
-    entity_type = socket.assigns.entity_type
-    entity_id = socket.assigns.entity_id
+    user_id = socket.assigns.user_id
 
-    case associate_community(entity_type, entity_id, community_id) do
+    case Groups.create_community_account(%{user_id: user_id, community_id: community_id}) do
       {:ok, _} ->
         case Enum.find(socket.assigns.available_communities, &(&1.id == community_id)) do
           nil ->
             {:noreply, assign(socket, :error, "Community not found")}
 
           community_to_add ->
-            updated_current_communities =
-              [community_to_add | socket.assigns.current_communities]
+            updated_direct_communities =
+              [community_to_add | socket.assigns.direct_communities]
               |> Enum.sort_by(& &1.name, :asc)
 
             updated_available_communities =
               Enum.reject(socket.assigns.available_communities, &(&1.id == community_id))
 
+            # Remove from institution_communities if it was there (now it's direct)
+            updated_institution_communities =
+              Enum.reject(socket.assigns.institution_communities, &(&1.id == community_id))
+
+            updated_selected_ids =
+              Enum.map(updated_direct_communities, & &1.id) ++
+                Enum.map(updated_institution_communities, & &1.id)
+
             {:noreply,
              socket
-             |> assign(:current_communities, updated_current_communities)
+             |> assign(:direct_communities, updated_direct_communities)
+             |> assign(:institution_communities, updated_institution_communities)
              |> assign(:available_communities, updated_available_communities)
-             |> assign(:selected_community_ids, Enum.map(updated_current_communities, & &1.id))
+             |> assign(:selected_community_ids, updated_selected_ids)
              |> assign(:error, nil)
              |> assign(:input_value, "")
              |> push_event("focus_input", %{input_id: "community-input-#{socket.assigns.id}"})}
@@ -125,16 +161,15 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
   @impl true
   def handle_event("remove_community", %{"community_id" => community_id}, socket) do
     community_id = String.to_integer(community_id)
-    entity_type = socket.assigns.entity_type
-    entity_id = socket.assigns.entity_id
+    user_id = socket.assigns.user_id
 
-    case remove_community(entity_type, entity_id, community_id) do
+    case Groups.delete_community_account(%{user_id: user_id, community_id: community_id}) do
       {:ok, _} ->
         removed_community =
-          Enum.find(socket.assigns.current_communities, &(&1.id == community_id))
+          Enum.find(socket.assigns.direct_communities, &(&1.id == community_id))
 
-        updated_current_communities =
-          Enum.reject(socket.assigns.current_communities, &(&1.id == community_id))
+        updated_direct_communities =
+          Enum.reject(socket.assigns.direct_communities, &(&1.id == community_id))
 
         updated_available_communities =
           if removed_community && removed_community not in socket.assigns.available_communities do
@@ -144,11 +179,15 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
             socket.assigns.available_communities
           end
 
+        updated_selected_ids =
+          Enum.map(updated_direct_communities, & &1.id) ++
+            Enum.map(socket.assigns.institution_communities, & &1.id)
+
         {:noreply,
          socket
-         |> assign(:current_communities, updated_current_communities)
+         |> assign(:direct_communities, updated_direct_communities)
          |> assign(:available_communities, updated_available_communities)
-         |> assign(:selected_community_ids, Enum.map(updated_current_communities, & &1.id))
+         |> assign(:selected_community_ids, updated_selected_ids)
          |> assign(:error, nil)
          |> push_event("focus_input", %{input_id: "community-input-#{socket.assigns.id}"})}
 
@@ -182,7 +221,11 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
 
   @impl true
   def render(assigns) do
-    assigns = assign(assigns, :communities_count, length(assigns.current_communities || []))
+    all_communities =
+      (assigns.direct_communities || []) ++ (assigns.institution_communities || [])
+
+    assigns = assign(assigns, :all_communities, Enum.sort_by(all_communities, & &1.name, :asc))
+    assigns = assign(assigns, :communities_count, length(all_communities))
 
     ~H"""
     <div
@@ -193,10 +236,10 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
         <% @disabled_edit -> %>
           <!-- Disabled/Readonly mode - gray background with comma-separated links -->
           <div class="form-control bg-[var(--color-gray-100)]">
-            <%= if Enum.empty?(@current_communities) do %>
+            <%= if Enum.empty?(@all_communities) do %>
               <span class="text-muted">None</span>
             <% else %>
-              <%= for {community, index} <- Enum.with_index(@current_communities) do %>
+              <%= for {community, index} <- Enum.with_index(@all_communities) do %>
                 <.link
                   href={Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.ShowView, community.id)}
                   class="text-primary hover:underline"
@@ -208,11 +251,12 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
           </div>
 
         <% @community_edit_mode -> %>
-          <!-- Edit mode open - tags with X buttons, search input, dropdown -->
+          <!-- Edit mode open - tags with X buttons (direct only), search input, dropdown -->
           <div class="z-20" phx-click-away="exit_community_edit_mode" phx-target={@myself}>
             <div class="relative w-full h-full">
               <div class="bg-Specially-Tokens-Fill-fill-input border border-Table-table-border rounded-[3px] text-sm w-full h-full min-h-[100px] flex flex-col items-center gap-1 p-2">
-                <%= for community <- @current_communities do %>
+                <!-- Direct communities (removable) -->
+                <%= for community <- @direct_communities do %>
                   <span
                     role="selected community"
                     class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_community_pill_classes(community.name)}"}
@@ -227,6 +271,17 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
                     >
                       X
                     </button>
+                  </span>
+                <% end %>
+                <!-- Institution communities (not removable) -->
+                <%= for community <- @institution_communities do %>
+                  <span
+                    role="institution community"
+                    class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_community_pill_classes(community.name)}"}
+                    title="Via institution"
+                  >
+                    <span>{community.name}</span>
+                    <span class="text-xs opacity-70">(via institution)</span>
                   </span>
                 <% end %>
 
@@ -248,7 +303,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
                 <%= if Enum.any?(@available_communities, fn community -> community.id not in @selected_community_ids end) do %>
                   <div class="p-3 space-y-2">
                     <div class="text-Text-text-low text-xs font-semibold mb-2">
-                      Select a community
+                      Select an option
                     </div>
                     <div class="flex flex-col gap-2">
                       <%= for community <- @available_communities do %>
@@ -280,14 +335,14 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
         <% true -> %>
           <!-- Display mode (edit enabled but not open) - clickable colored tags -->
           <div
-            class="cursor-pointer w-full min-h-[38px] flex items-start p-2 border border-Table-table-border rounded-[3px] hover:border-Border-border-active hover:bg-Table-table-hover focus:border focus:border-Border-border-active focus:bg-Table-table-hover focus:outline-none"
+            class="cursor-pointer w-full min-h-[38px] flex items-start p-2 border border-Table-table-border rounded-[3px] hover:border-Border-border-hover hover:bg-Table-table-hover focus:border focus:border-Border-border-active focus:bg-Table-table-hover focus:outline-none"
             phx-click="toggle_edit"
             phx-target={@myself}
             tabindex="0"
           >
-            <%= if length(@current_communities) > 0 do %>
+            <%= if @communities_count > 0 do %>
               <div class="flex flex-wrap gap-1">
-                <%= for community <- @current_communities do %>
+                <%= for community <- @all_communities do %>
                   <span
                     role="selected community"
                     class={"px-3 py-1 rounded-full text-sm font-semibold shadow-sm #{get_community_pill_classes(community.name)}"}
@@ -344,21 +399,5 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesComponent do
       _ ->
         assign(socket, :error, "Failed to load communities")
     end
-  end
-
-  defp associate_community(:user, user_id, community_id) do
-    Groups.create_community_account(%{user_id: user_id, community_id: community_id})
-  end
-
-  defp associate_community(:author, author_id, community_id) do
-    Groups.create_community_account(%{author_id: author_id, community_id: community_id})
-  end
-
-  defp remove_community(:user, user_id, community_id) do
-    Groups.delete_community_account(%{user_id: user_id, community_id: community_id})
-  end
-
-  defp remove_community(:author, author_id, community_id) do
-    Groups.delete_community_account(%{author_id: author_id, community_id: community_id})
   end
 end
