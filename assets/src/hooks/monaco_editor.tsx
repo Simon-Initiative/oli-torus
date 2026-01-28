@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { render } from 'react-dom';
 import ReactMonacoEditor, { IMonacoEditor } from '@uiw/react-monacoeditor';
 import * as monaco from 'monaco-editor';
@@ -22,11 +22,13 @@ export const MonacoEditor = {
     const dataSchemas = this.maybeGetAttribute('data-schemas');
     const onMountEvent = this.maybeGetAttribute('data-on-mount');
     const onChangeEvent = this.maybeGetAttribute('data-on-change');
+    const target = this.maybeGetAttribute('data-target');
     const setOptionsEvent = this.maybeGetAttribute('data-set-options');
     const setWidthHeightEvent = this.maybeGetAttribute('data-set-width-height');
     const setValueEvent = this.maybeGetAttribute('data-set-value');
     const getValueEvent = this.maybeGetAttribute('data-get-value');
     const useCodeLenses = this.maybeGetAttribute('data-use-code-lenses');
+    const resizable = this.maybeGetAttribute('data-resizable');
 
     const schemas = Maybe.all({ dataSchemaUri, dataSchemas }).map(
       ({ dataSchemaUri, dataSchemas }) =>
@@ -42,12 +44,16 @@ export const MonacoEditor = {
     const LiveMonacoEditor = () => {
       const [width, setWidth] = useState(defaultWidth.valueOr(undefined));
       const [height, setHeight] = useState(defaultHeight.valueOr(undefined));
+      const [editor, setEditor] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
+      const layoutTimeout = useRef<number | null>(null);
       const [options, setOptions] = useState(
         defaultOptions.caseOf({
           just: (o: any) => o,
           nothing: () => ({}),
         }),
       );
+
+      const isResizable = resizable.valueOr(true);
 
       // LiveView event handlers
       useEffect(() => {
@@ -70,11 +76,43 @@ export const MonacoEditor = {
         );
       }, []);
 
+      // Handle container resizing for Monaco editor
+      useEffect(() => {
+        if (!isResizable || !editor) return;
+
+        const container = this.el;
+        const resizeObserver = new ResizeObserver(() => {
+          // Debounce resize to avoid excessive calls
+          if (layoutTimeout.current) {
+            window.clearTimeout(layoutTimeout.current);
+          }
+          layoutTimeout.current = window.setTimeout(() => {
+            editor.layout();
+          }, 100);
+        });
+
+        resizeObserver.observe(container);
+
+        // Initial layout update to ensure proper sizing on mount
+        layoutTimeout.current = window.setTimeout(() => {
+          editor.layout();
+        }, 100);
+
+        return () => {
+          resizeObserver.disconnect();
+          if (layoutTimeout.current) {
+            window.clearTimeout(layoutTimeout.current);
+            layoutTimeout.current = null;
+          }
+        };
+      }, [isResizable, editor]);
+
       const editorDidMount = (
         editor: monaco.editor.IStandaloneCodeEditor,
         monaco: IMonacoEditor,
       ) => {
         this.editor = editor;
+        setEditor(editor);
 
         // configure the JSON language support with schemas and schema associations if
         // a schema uri is provided and schemas exist
@@ -89,17 +127,31 @@ export const MonacoEditor = {
           useCodeLenses.forEach(({ name, context }) => registry(name)(editor, monaco, context));
         });
 
+        // Force layout update after a short delay to ensure proper sizing
+        if (isResizable) {
+          setTimeout(() => {
+            editor.layout();
+          }, 50);
+        }
+
         this.maybePushEvent(onMountEvent);
       };
 
       const onChange = (value: string) => {
-        this.maybePushEvent(onChangeEvent, value);
+        // If both onChangeEvent and target are provided, create an event object with target
+        // Otherwise, use the simple string event name
+        const eventToSend = Maybe.all({ onChangeEvent, target }).caseOf({
+          just: ({ onChangeEvent, target }) => Maybe.just({ name: onChangeEvent, target }),
+          nothing: () => onChangeEvent,
+        });
+
+        this.maybePushEvent(eventToSend, value);
       };
 
       return (
         <ReactMonacoEditor
-          width={width}
-          height={height}
+          width={isResizable ? '100%' : width}
+          height={isResizable ? '100%' : height}
           value={defaultValue}
           language={language}
           options={options}

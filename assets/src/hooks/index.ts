@@ -3,6 +3,7 @@ import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
+import { ChunkLogsDetails, ChunkLogsViewer } from './chunk_logs_viewer';
 import { ClickOutside } from './click_outside';
 import { ClickExecJS, HoverAway } from './click_variations';
 import { ConditionalToggle } from './conditional_toggle';
@@ -105,6 +106,8 @@ export const Hooks = {
   LiveModal,
   EmailList,
   ClickOutside,
+  ChunkLogsDetails,
+  ChunkLogsViewer,
   Scroller,
   ResizeListener,
   KeepScrollAtBottom,

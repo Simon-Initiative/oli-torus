@@ -240,7 +240,7 @@ defmodule Oli.ScopedFeatureFlags.ScopedFeatureFlagStateTest do
 
     test "scoped_feature_flag_state_for_section factory creates valid record" do
       flag_state = insert(:scoped_feature_flag_state_for_section)
-      assert flag_state.feature_name == "mcp_authoring"
+      assert flag_state.feature_name == "instructor_dashboard_analytics"
       assert flag_state.section_id
       refute flag_state.project_id
     end

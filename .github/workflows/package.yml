@@ -115,7 +115,8 @@ jobs:
         with:
           context: .
           push: true
-          build-args: APP_VERSION=${{ steps.info.outputs.app_version }}
-            SHA_SHORT=${{ steps.info.outputs.sha_short }}
+          build-args: |
+            APP_VERSION=${{ steps.info.outputs.app_version }}
+            SHA=${{ steps.info.outputs.sha_short }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

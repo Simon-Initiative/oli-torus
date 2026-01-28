@@ -2,21 +2,36 @@ defmodule Oli.Repo.Migrations.PopulateRelatedActivitiesForExistingSectionResourc
   use Ecto.Migration
   import Ecto.Query
 
+  def get_env_as_boolean(key, default \\ nil) do
+    System.get_env(key, default)
+    |> String.downcase()
+    |> String.trim()
+    |> case do
+      "true" -> true
+      _ -> false
+    end
+  end
+
   def up do
-    objective_type_id = 4
-    activity_type_id = 3
+    if get_env_as_boolean("SKIP_POPULATE_RELATED_ACTIVITIES_MIGRATION", "false") do
+      IO.puts("Skipping PopulateRelatedActivitiesForExistingSectionResources migration")
+      :ok
+    else
+      objective_type_id = 4
+      activity_type_id = 3
 
-    # Process sections in batches to avoid memory issues
-    batch_size = 100
+      # Process sections in batches to avoid memory issues
+      batch_size = 100
 
-    # Get total count for progress tracking
-    total_sections = repo().aggregate(from(s in "sections"), :count, :id)
-    IO.puts("Populating related_activities for #{total_sections} sections...")
+      # Get total count for progress tracking
+      total_sections = repo().aggregate(from(s in "sections"), :count, :id)
+      IO.puts("Populating related_activities for #{total_sections} sections...")
 
-    # Process sections in batches
-    process_sections_in_batches(0, batch_size, objective_type_id, activity_type_id)
+      # Process sections in batches
+      process_sections_in_batches(0, batch_size, objective_type_id, activity_type_id)
 
-    IO.puts("Completed populating related_activities field")
+      IO.puts("Completed populating related_activities field")
+    end
   end
 
   def down do
@@ -53,6 +68,8 @@ defmodule Oli.Repo.Migrations.PopulateRelatedActivitiesForExistingSectionResourc
   end
 
   defp populate_related_activities_for_section(section, objective_type_id, activity_type_id) do
+    IO.puts("Processing section #{section.slug} (ID: #{section.id})...")
+
     # Get all objectives in this section
     objectives =
       from(rev in section_resource_revisions(section.slug),

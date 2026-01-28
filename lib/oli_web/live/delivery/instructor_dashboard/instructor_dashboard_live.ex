@@ -6,6 +6,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
+  alias Oli.Features
+  alias Oli.ScopedFeatureFlags
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Oli.Delivery.RecommendedActions
   alias OliWeb.Components.Delivery.InstructorDashboard
@@ -252,6 +254,60 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(
+        %{"view" => "insights", "active_tab" => "analytics"} = params,
+        _,
+        socket
+      ) do
+    if analytics_enabled?(socket.assigns.section) do
+      section_id = socket.assigns.section.id
+
+      {load_state, comprehensive_section_analytics} =
+        case Oli.Analytics.ClickhouseAnalytics.section_analytics_loaded?(section_id) do
+          {:ok, true} ->
+            {:loaded,
+             Oli.Analytics.ClickhouseAnalytics.comprehensive_section_analytics(section_id)}
+
+          {:ok, false} ->
+            {:not_loaded, nil}
+
+          {:error, reason} ->
+            error_message = if is_binary(reason), do: reason, else: inspect(reason)
+            {{:error, error_message}, nil}
+        end
+
+      socket =
+        socket
+        |> assign(
+          params: params,
+          view: :insights,
+          active_tab: :analytics,
+          selected_analytics_category: params["analytics_category"],
+          analytics_data: nil,
+          analytics_spec: nil,
+          section_analytics_load_state: load_state,
+          comprehensive_section_analytics: comprehensive_section_analytics
+        )
+        |> maybe_load_analytics_data()
+
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> put_flash(:info, "Analytics is not enabled for this section.")
+       |> redirect(
+         to:
+           path_for(
+             :insights,
+             :content,
+             socket.assigns.section.slug,
+             socket.assigns.preview_mode
+           )
+       )}
+    end
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(%{"view" => "insights"} = params, _, socket) do
     active_tab =
       case params["active_tab"] do
@@ -369,6 +425,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {"insights", "scored_pages"},
       {"insights", "practice_pages"},
       {"insights", "surveys"},
+      {"insights", "analytics"},
       {"insights", "course_discussion"},
       {"discussions", nil}
     ]
@@ -451,8 +508,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     ]
   end
 
-  defp insights_tabs(section_slug, preview_mode, active_tab) do
-    [
+  defp insights_tabs(section, preview_mode, active_tab) do
+    section_slug = section.slug
+
+    base_tabs = [
       %TabLink{
         label: "Content",
         path: path_for(:insights, :content, section_slug, preview_mode),
@@ -484,6 +543,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         active: is_active_tab?(:surveys, active_tab)
       }
     ]
+
+    if analytics_enabled?(section) do
+      base_tabs ++
+        [
+          %TabLink{
+            label: "Analytics",
+            path: path_for(:insights, :analytics, section_slug, preview_mode),
+            badge: nil,
+            active: is_active_tab?(:analytics, active_tab)
+          }
+        ]
+    else
+      base_tabs
+    end
+  end
+
+  defp analytics_enabled?(section) do
+    Features.enabled?("clickhouse-olap") and
+      ScopedFeatureFlags.enabled?(:instructor_dashboard_analytics, section)
   end
 
   @impl Phoenix.LiveView
@@ -569,7 +647,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{view: :insights, active_tab: :content, params: %{container_id: _container_id}} = assigns
       ) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -593,7 +671,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :content} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -613,7 +691,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :learning_objectives} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -635,7 +713,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :scored_pages} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto mb-10">
       <.live_component
@@ -658,7 +736,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :practice_pages} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto mb-10">
       <.live_component
@@ -681,7 +759,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :surveys} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto mb-10">
       <.live_component
@@ -697,6 +775,23 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         ctx={@ctx}
       />
     </div>
+    """
+  end
+
+  def render(%{view: :insights, active_tab: :analytics} = assigns) do
+    ~H"""
+    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+
+    <.live_component
+      id="section_analytics"
+      module={OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics}
+      section={@section}
+      selected_analytics_category={@selected_analytics_category}
+      comprehensive_section_analytics={@comprehensive_section_analytics}
+      section_analytics_load_state={@section_analytics_load_state}
+      analytics_data={@analytics_data}
+      analytics_spec={@analytics_spec}
+    />
     """
   end
 
@@ -759,6 +854,78 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end)
   end
 
+  defp maybe_load_analytics_data(socket) do
+    case {socket.assigns[:selected_analytics_category],
+          socket.assigns[:section_analytics_load_state]} do
+      {nil, _} ->
+        socket
+
+      {_, state} when state != :loaded ->
+        socket
+
+      {category, :loaded} ->
+        pid = self()
+
+        Task.async(fn ->
+          {data, spec} = get_analytics_data_and_spec(category, socket.assigns.section.id)
+          send(pid, {:analytics_data_loaded, category, data, spec})
+        end)
+
+        socket
+    end
+  end
+
+  defp get_analytics_data_and_spec(category, section_id) do
+    # For engagement analytics, use default filters for initial load
+    case category do
+      "engagement" ->
+        # Get resource title map for engagement analytics
+        resource_title_map =
+          OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.load_resource_title_map(
+            section_id
+          )
+
+        # Get section to determine default date range
+        section = Oli.Delivery.Sections.get_section!(section_id)
+        # Use section dates as default filters, fallback to relative dates if not set
+        start_date =
+          case section.start_date do
+            nil -> Date.add(Date.utc_today(), -30) |> Date.to_string()
+            start_date -> DateTime.to_date(start_date) |> Date.to_string()
+          end
+
+        end_date =
+          case section.end_date do
+            nil -> Date.utc_today() |> Date.to_string()
+            end_date -> DateTime.to_date(end_date) |> Date.to_string()
+          end
+
+        Logger.info("=== PARENT LIVEVIEW FILTER DEFAULTS ===")
+        Logger.info("Section ID: #{section_id}")
+        Logger.info("Section start_date: #{inspect(section.start_date)}")
+        Logger.info("Section end_date: #{inspect(section.end_date)}")
+        Logger.info("Calculated start_date: #{start_date}")
+        Logger.info("Calculated end_date: #{end_date}")
+        Logger.info("=== END PARENT LIVEVIEW FILTER DEFAULTS ===")
+        max_pages = 25
+
+        OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_engagement_analytics_with_filters(
+          section_id,
+          start_date,
+          end_date,
+          max_pages,
+          resource_title_map
+        )
+
+      _ ->
+        # Delegate to the component's analytics functions for other categories
+        OliWeb.Components.Delivery.InstructorDashboard.SectionAnalytics.get_analytics_data_and_spec(
+          category,
+          section_id
+        )
+    end
+  end
+
   defp maybe_get_tab_from_params(tab, default) do
     # if the user manually changed the url and entered an invalid tab
     # we prevent the app from crashing by returning the default tab
@@ -770,14 +937,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_event(event, params, socket) do
-    # Catch-all for UI-only events from functional components
-    # that don't need handling (like dropdown toggles)
-    Logger.warning(
-      "Unhandled event in InstructorDashboardLive: #{inspect(event)}, #{inspect(params)}"
-    )
-
-    {:noreply, socket}
+  def handle_info({:practice_activities, results}, socket) do
+    {:noreply, assign(socket, practice_activities: results)}
   end
 
   @impl Phoenix.LiveView
@@ -961,6 +1122,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
+  def handle_info({:analytics_data_loaded, category, data, spec}, socket) do
+    if socket.assigns.selected_analytics_category == category do
+      {:noreply,
+       assign(socket,
+         analytics_data: data,
+         analytics_spec: spec
+       )}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:select_analytics_category, category}, socket) do
+    # Navigate to the section analytics page with the selected category
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/analytics?analytics_category=#{category}"
+     )}
+  end
+
   @impl Phoenix.LiveView
   def handle_info(
         {OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView, component_id,
@@ -978,6 +1161,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   def handle_info(_any, socket) do
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event(event, params, socket) do
+    # Catch-all for UI-only events from functional components that don't require handling
+    Logger.warning(
+      "Unhandled event in InstructorDashboardLive: #{inspect(event)}, #{inspect(params)}"
+    )
+
     {:noreply, socket}
   end
 end
