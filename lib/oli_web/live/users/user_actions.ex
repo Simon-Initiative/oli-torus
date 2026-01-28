@@ -29,6 +29,9 @@ defmodule OliWeb.Users.Actions do
             show_copy_btn={true}
             value={@password_reset_link}
             class="!mb-0"
+            copy_style={:abutted}
+            input_class="!bg-Surface-surface-primary !border-Border-border-default"
+            button_class="!border-Border-border-default"
           />
         </div>
       </div>
