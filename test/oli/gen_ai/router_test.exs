@@ -53,6 +53,26 @@ defmodule Oli.GenAI.RouterTest do
     assert plan.reason == :primary_over_capacity
   end
 
+  test "routes to backup when primary over capacity and no secondary configured" do
+    service_config =
+      build_service_config(9,
+        primary_model: %RegisteredModel{
+          id: 91,
+          name: "Primary",
+          provider: :null,
+          max_concurrent: 0
+        },
+        secondary_model: nil
+      )
+
+    request_ctx = %{request_type: :generate}
+
+    assert {:ok, plan} = Router.route(request_ctx, service_config)
+    assert plan.selected_model.id == service_config.backup_model.id
+    assert plan.tier == :backup
+    assert plan.reason == :primary_over_capacity
+  end
+
   test "routes to secondary when service config soft limit reached" do
     service_config = build_service_config(7)
     request_ctx = %{request_type: :generate}

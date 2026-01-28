@@ -57,7 +57,7 @@ defmodule Oli.GenAI.Router do
           )
 
         primary_open and (is_nil(secondary) or secondary_open) ->
-          attempt_backup(service_config, backup, backup_open, counts, request_type)
+          attempt_backup(service_config, backup, backup_open, counts, request_type, :backup_outage)
 
         primary_open ->
           attempt_secondary(
@@ -75,14 +75,27 @@ defmodule Oli.GenAI.Router do
               ok
 
             {:error, :over_capacity} ->
-              attempt_secondary(
-                service_config,
-                secondary,
-                secondary_open,
-                counts,
-                request_type,
-                :primary_over_capacity
-              )
+              case secondary do
+                nil ->
+                  attempt_backup(
+                    service_config,
+                    backup,
+                    backup_open,
+                    counts,
+                    request_type,
+                    :primary_over_capacity
+                  )
+
+                _ ->
+                  attempt_secondary(
+                    service_config,
+                    secondary,
+                    secondary_open,
+                    counts,
+                    request_type,
+                    :primary_over_capacity
+                  )
+              end
 
             {:error, reason} ->
               {:error, reason}
@@ -155,16 +168,16 @@ defmodule Oli.GenAI.Router do
     end
   end
 
-  defp attempt_backup(_service_config, nil, _backup_open, _counts, _request_type) do
+  defp attempt_backup(_service_config, nil, _backup_open, _counts, _request_type, _reason) do
     {:error, :all_breakers_open}
   end
 
-  defp attempt_backup(_service_config, _backup, true, _counts, _request_type) do
+  defp attempt_backup(_service_config, _backup, true, _counts, _request_type, _reason) do
     {:error, :backup_breaker_open}
   end
 
-  defp attempt_backup(service_config, backup, false, counts, request_type) do
-    attempt_candidate(service_config, backup, counts, request_type, :backup, :backup_outage)
+  defp attempt_backup(service_config, backup, false, counts, request_type, reason) do
+    attempt_candidate(service_config, backup, counts, request_type, :backup, reason)
   end
 
   defp attempt_candidate(service_config, model, counts, request_type, tier, reason) do
