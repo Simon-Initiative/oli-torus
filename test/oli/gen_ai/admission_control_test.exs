@@ -25,18 +25,30 @@ defmodule Oli.GenAI.AdmissionControlTest do
     assert AdmissionControl.counts(service_config_id).requests == 0
   end
 
-  test "stream counters are tracked separately" do
+  test "atomically admits service config slots up to hard limit" do
     service_config_id = 102
+    hard_limit = 5
 
-    AdmissionControl.increment_requests(service_config_id)
-    AdmissionControl.increment_streams(service_config_id)
+    results =
+      1..20
+      |> Task.async_stream(
+        fn _ -> AdmissionControl.try_admit_service_config(service_config_id, hard_limit) end,
+        timeout: 5_000
+      )
+      |> Enum.map(fn {:ok, result} -> result end)
 
-    assert AdmissionControl.counts(service_config_id) == %{requests: 1, streams: 1}
+    admitted = Enum.count(results, &(&1 == :ok))
+    rejected = Enum.count(results, &(&1 == {:error, :over_capacity}))
 
-    AdmissionControl.decrement_streams(service_config_id)
-    AdmissionControl.decrement_requests(service_config_id)
+    assert admitted == hard_limit
+    assert rejected == 15
+    assert AdmissionControl.counts(service_config_id).requests == hard_limit
 
-    assert AdmissionControl.counts(service_config_id) == %{requests: 0, streams: 0}
+    Enum.each(1..hard_limit, fn _ ->
+      AdmissionControl.release_service_config(service_config_id)
+    end)
+
+    assert AdmissionControl.counts(service_config_id).requests == 0
   end
 
   test "atomically admits model slots up to hard limit" do

@@ -20,9 +20,7 @@ defmodule Oli.GenAI.Execution do
       completer = Keyword.get(opts, :completions_mod, Completions)
       request_type = Map.get(request_ctx, :request_type, :generate)
 
-      admit!(service_config.id)
-
-      try do
+      with_service_config_admission(service_config, plan, fn ->
         execute_with_fallback(
           :generate,
           completer,
@@ -33,10 +31,7 @@ defmodule Oli.GenAI.Execution do
           request_ctx,
           request_type
         )
-      after
-        release!(service_config.id)
-        release_admission!(plan)
-      end
+      end)
     end
   end
 
@@ -55,9 +50,7 @@ defmodule Oli.GenAI.Execution do
       completer = Keyword.get(opts, :completions_mod, Completions)
       request_type = Map.get(request_ctx, :request_type, :stream)
 
-      admit_stream!(service_config.id)
-
-      try do
+      with_service_config_admission(service_config, plan, fn ->
         execute_with_fallback(
           :stream,
           completer,
@@ -69,29 +62,27 @@ defmodule Oli.GenAI.Execution do
           request_type,
           response_handler_fn
         )
-      after
-        release_stream!(service_config.id)
-        release_admission!(plan)
-      end
+      end)
     end
   end
 
-  defp admit!(service_config_id) do
-    AdmissionControl.increment_requests(service_config_id)
-  end
+  defp with_service_config_admission(service_config, plan, fun) do
+    case AdmissionControl.try_admit_service_config(
+           service_config.id,
+           service_config.routing_hard_limit
+         ) do
+      :ok ->
+        try do
+          fun.()
+        after
+          AdmissionControl.release_service_config(service_config.id)
+          release_admission!(plan)
+        end
 
-  defp release!(service_config_id) do
-    AdmissionControl.decrement_requests(service_config_id)
-  end
-
-  defp admit_stream!(service_config_id) do
-    AdmissionControl.increment_requests(service_config_id)
-    AdmissionControl.increment_streams(service_config_id)
-  end
-
-  defp release_stream!(service_config_id) do
-    AdmissionControl.decrement_streams(service_config_id)
-    AdmissionControl.decrement_requests(service_config_id)
+      {:error, reason} ->
+        release_admission!(plan)
+        {:error, reason}
+    end
   end
 
   defp execute_with_fallback(

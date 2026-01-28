@@ -34,21 +34,28 @@ defmodule Oli.GenAI.AdmissionControl do
     update_counter({:requests, service_config_id}, -1)
   end
 
-  @doc "Increments the active stream counter for a ServiceConfig."
-  def increment_streams(service_config_id) do
-    update_counter({:streams, service_config_id}, 1)
+  @doc "Atomically admits a request for a ServiceConfig, enforcing a hard cap."
+  def try_admit_service_config(service_config_id, nil) do
+    increment_requests(service_config_id)
+    :ok
   end
 
-  @doc "Decrements the active stream counter for a ServiceConfig."
-  def decrement_streams(service_config_id) do
-    update_counter({:streams, service_config_id}, -1)
+  def try_admit_service_config(service_config_id, hard_limit)
+      when is_integer(hard_limit) and hard_limit >= 0 do
+    try_admit({:requests, service_config_id}, hard_limit)
   end
 
-  @doc "Returns active request/stream counters for a ServiceConfig."
+  def try_admit_service_config(_service_config_id, _hard_limit), do: {:error, :invalid_limit}
+
+  @doc "Releases an inflight slot for a ServiceConfig."
+  def release_service_config(service_config_id) do
+    decrement_requests(service_config_id)
+  end
+
+  @doc "Returns active request counters for a ServiceConfig."
   def counts(service_config_id) do
     %{
-      requests: get_counter({:requests, service_config_id}),
-      streams: get_counter({:streams, service_config_id})
+      requests: get_counter({:requests, service_config_id})
     }
   end
 
@@ -89,15 +96,12 @@ defmodule Oli.GenAI.AdmissionControl do
 
   @doc "Stores the latest breaker snapshot for a RegisteredModel."
   def put_breaker_snapshot(registered_model_id, snapshot) do
-    ensure_tables()
     :ets.insert(@breaker_table, {registered_model_id, snapshot})
     :ok
   end
 
   @doc "Fetches the latest breaker snapshot for a RegisteredModel."
   def get_breaker_snapshot(registered_model_id) do
-    ensure_tables()
-
     case :ets.lookup(@breaker_table, registered_model_id) do
       [{^registered_model_id, snapshot}] -> snapshot
       _ -> %{state: :closed, half_open_remaining: 0}
@@ -112,13 +116,20 @@ defmodule Oli.GenAI.AdmissionControl do
   defp create_table(name) do
     case :ets.whereis(name) do
       :undefined ->
-        :ets.new(name, [
-          :named_table,
-          :public,
-          :set,
-          {:read_concurrency, true},
-          {:write_concurrency, true}
-        ])
+        try do
+          :ets.new(name, [
+            :named_table,
+            :public,
+            :set,
+            {:read_concurrency, true},
+            {:write_concurrency, true}
+          ])
+
+          :ok
+        rescue
+          ArgumentError ->
+            :ok
+        end
 
       _ ->
         :ok
@@ -126,7 +137,6 @@ defmodule Oli.GenAI.AdmissionControl do
   end
 
   defp update_counter(key, delta) do
-    ensure_tables()
     new_value = :ets.update_counter(@counters_table, key, {2, delta}, {key, 0})
 
     if new_value < 0 do
@@ -139,7 +149,6 @@ defmodule Oli.GenAI.AdmissionControl do
   end
 
   defp try_admit(key, hard_limit) when is_integer(hard_limit) and hard_limit >= 0 do
-    ensure_tables()
     new_value = :ets.update_counter(@counters_table, key, {2, 1}, {key, 0})
 
     if new_value > hard_limit do
@@ -153,8 +162,6 @@ defmodule Oli.GenAI.AdmissionControl do
   defp try_admit(_key, _hard_limit), do: {:error, :invalid_limit}
 
   defp get_counter(key) do
-    ensure_tables()
-
     case :ets.lookup(@counters_table, key) do
       [{^key, value}] -> value
       _ -> 0

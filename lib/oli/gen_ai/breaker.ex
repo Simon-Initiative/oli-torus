@@ -54,6 +54,9 @@ defmodule Oli.GenAI.Breaker do
       open_until_ms: nil,
       half_open_remaining: 0,
       window: [],
+      error_count: 0,
+      rate_limit_count: 0,
+      latencies_sorted: [],
       last_reason: :ok
     }
 
@@ -66,7 +69,7 @@ defmodule Oli.GenAI.Breaker do
   def handle_call(:status, _from, state) do
     now_ms = System.monotonic_time(:millisecond)
     state = maybe_transition_from_open(state, now_ms)
-    metrics = window_metrics(state.window)
+    metrics = metrics_from_state(state)
     publish_snapshot(state, metrics.error_rate, metrics.rate_limit_rate, metrics.latency_p95_ms)
     {:reply, state, state}
   end
@@ -80,7 +83,7 @@ defmodule Oli.GenAI.Breaker do
     {state, metrics} =
       case state.breaker_state do
         :open ->
-          {state, window_metrics(state.window)}
+          {state, metrics_from_state(state)}
 
         :half_open ->
           handle_half_open(report, state, now_ms)
@@ -94,14 +97,14 @@ defmodule Oli.GenAI.Breaker do
   end
 
   defp handle_closed(report, state, now_ms) do
-    window = append_window(state.window, report_entry(report))
-    metrics = window_metrics(window)
+    {state, metrics} = add_entry(state, report_entry(report))
     thresholds = report_thresholds(report)
 
     if should_open?(metrics, thresholds) do
-      {open_state(state, thresholds, now_ms, :threshold_exceeded), metrics}
+      {open_state(state, thresholds, now_ms, :threshold_exceeded),
+       metrics_from_state(reset_window(state))}
     else
-      {%{state | window: window, last_reason: :ok}, metrics}
+      {%{state | last_reason: :ok}, metrics}
     end
   end
 
@@ -110,7 +113,8 @@ defmodule Oli.GenAI.Breaker do
     entry = report_entry(report)
 
     if entry.error? or entry.rate_limited? or latency_spike?(entry.latency_ms, thresholds) do
-      {open_state(state, thresholds, now_ms, :probe_failed), window_metrics([])}
+      {open_state(state, thresholds, now_ms, :probe_failed),
+       metrics_from_state(reset_window(state))}
     else
       remaining = max(state.half_open_remaining - 1, 0)
 
@@ -129,11 +133,14 @@ defmodule Oli.GenAI.Breaker do
            | breaker_state: :closed,
              half_open_remaining: 0,
              window: [],
+             error_count: 0,
+             rate_limit_count: 0,
+             latencies_sorted: [],
              last_reason: :probe_succeeded
-         }, window_metrics([])}
+         }, metrics_from_state(reset_window(state))}
       else
         {%{state | half_open_remaining: remaining, last_reason: :probe_succeeded},
-         window_metrics([])}
+         metrics_from_state(reset_window(state))}
       end
     end
   end
@@ -156,6 +163,9 @@ defmodule Oli.GenAI.Breaker do
         open_until_ms: open_until_ms,
         half_open_remaining: thresholds.half_open_probe_count,
         window: [],
+        error_count: 0,
+        rate_limit_count: 0,
+        latencies_sorted: [],
         last_reason: reason
     }
   end
@@ -178,7 +188,10 @@ defmodule Oli.GenAI.Breaker do
         state
         | breaker_state: :half_open,
           open_until_ms: nil,
-          window: []
+          window: [],
+          error_count: 0,
+          rate_limit_count: 0,
+          latencies_sorted: []
       }
     else
       state
@@ -205,42 +218,80 @@ defmodule Oli.GenAI.Breaker do
     }
   end
 
-  defp append_window(window, entry) do
-    window
-    |> List.insert_at(-1, entry)
-    |> trim_window()
+  defp add_entry(state, entry) do
+    state = append_entry(state, entry)
+    {state, metrics_from_state(state)}
   end
 
-  defp trim_window(window) do
+  defp append_entry(state, entry) do
+    window = List.insert_at(state.window, -1, entry)
+    error_count = state.error_count + if(entry.error?, do: 1, else: 0)
+    rate_limit_count = state.rate_limit_count + if(entry.rate_limited?, do: 1, else: 0)
+    latencies_sorted = insert_sorted(state.latencies_sorted, entry.latency_ms)
+
     if length(window) > @window_size do
-      tl(window)
+      [oldest | rest] = window
+      error_count = error_count - if(oldest.error?, do: 1, else: 0)
+      rate_limit_count = rate_limit_count - if(oldest.rate_limited?, do: 1, else: 0)
+      latencies_sorted = remove_sorted(latencies_sorted, oldest.latency_ms)
+
+      %{
+        state
+        | window: rest,
+          error_count: error_count,
+          rate_limit_count: rate_limit_count,
+          latencies_sorted: latencies_sorted
+      }
     else
-      window
+      %{
+        state
+        | window: window,
+          error_count: error_count,
+          rate_limit_count: rate_limit_count,
+          latencies_sorted: latencies_sorted
+      }
     end
   end
 
-  defp window_metrics([]) do
+  defp metrics_from_state(%{window: []}) do
     %{error_rate: 0.0, rate_limit_rate: 0.0, latency_p95_ms: 0}
   end
 
-  defp window_metrics(window) do
-    total = length(window)
-    errors = Enum.count(window, & &1.error?)
-    rate_limits = Enum.count(window, & &1.rate_limited?)
-    latencies = Enum.map(window, & &1.latency_ms) |> Enum.sort()
+  defp metrics_from_state(state) do
+    total = length(state.window)
 
     %{
-      error_rate: errors / total,
-      rate_limit_rate: rate_limits / total,
-      latency_p95_ms: percentile(latencies, 95)
+      error_rate: state.error_count / total,
+      rate_limit_rate: state.rate_limit_count / total,
+      latency_p95_ms: percentile_from_sorted(state.latencies_sorted, 95)
     }
   end
 
-  defp percentile([], _), do: 0
+  defp percentile_from_sorted([], _), do: 0
 
-  defp percentile(values, p) do
+  defp percentile_from_sorted(values, p) do
     idx = Float.ceil(length(values) * p / 100) |> trunc()
     Enum.at(values, max(idx - 1, 0)) || 0
+  end
+
+  defp insert_sorted([], value), do: [value]
+
+  defp insert_sorted([head | tail] = list, value) do
+    if value <= head do
+      [value | list]
+    else
+      [head | insert_sorted(tail, value)]
+    end
+  end
+
+  defp remove_sorted([], _value), do: []
+
+  defp remove_sorted([head | tail], value) when head == value, do: tail
+
+  defp remove_sorted([head | tail], value), do: [head | remove_sorted(tail, value)]
+
+  defp reset_window(state) do
+    %{state | window: [], error_count: 0, rate_limit_count: 0, latencies_sorted: []}
   end
 
   defp latency_spike?(latency_ms, thresholds) do
