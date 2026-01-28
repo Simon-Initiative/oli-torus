@@ -19,7 +19,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias OliWeb.Components.{Common, Modal, Overview}
   alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
   alias OliWeb.Live.Components.Tags.TagsComponent
-  alias OliWeb.Common.SearchInput
+  alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Common.StripedPagedTable
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
   alias OliWeb.Workspaces.CourseAuthor.OverviewSectionsTableModel
@@ -709,8 +709,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("paged_table_limit_change", %{"limit" => limit}, socket) do
-    limit = String.to_integer(limit)
+  def handle_event("paged_table_limit_change", params, socket) do
+    limit = Params.get_int_param(params, "limit", @course_sections_limit)
 
     # Query DB with new limit - reset to first page
     course_sections =
@@ -784,8 +784,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
      )}
   end
 
-  def handle_event("course_sections_page_change", %{"offset" => offset}, socket) do
-    offset = String.to_integer(offset)
+  def handle_event("course_sections_page_change", params, socket) do
+    offset = Params.get_int_param(params, "offset", 0)
 
     # Query DB with new offset
     course_sections =
