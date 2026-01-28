@@ -277,7 +277,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
                 <%= for community <- @institution_communities do %>
                   <span
                     role="institution community"
-                    class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_community_pill_classes(community.name)}"}
+                    class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_community_pill_classes(community.name, true)}"}
                     title="Via institution"
                   >
                     <span>{community.name}</span>
@@ -368,7 +368,11 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
     """
   end
 
-  def get_community_pill_classes(community_name) do
+  def get_community_pill_classes(_, _via_institution = true \\ false) do
+    "bg-Fill-Chip-Gray text-Text-Chip-Gray"
+  end
+
+  def get_community_pill_classes(community_name, _) do
     color_combinations = [
       "bg-Fill-Accent-fill-accent-purple text-Text-text-accent-purple",
       "bg-Fill-Accent-fill-accent-blue text-Text-text-accent-blue",
