@@ -1770,6 +1770,29 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "stroke-Icon-icon-default dark:stroke-Icon-icon-default"
+
+  def send(assigns) do
+    ~H"""
+    <svg
+      width="14"
+      height="13"
+      viewBox="0 0 14 13"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M12.8834 6.45943L1.2483 0.773897C1.18189 0.748372 1.10939 0.743157 1.04001 0.758915C0.970621 0.774672 0.907485 0.810691 0.85861 0.862399C0.808303 0.91548 0.773672 0.981452 0.758555 1.05301C0.743438 1.12456 0.748425 1.1989 0.772963 1.26779L2.53444 6.45943M12.8834 6.45943L1.2483 12.145C1.18189 12.1705 1.10939 12.1757 1.04001 12.1599C0.970621 12.1442 0.907485 12.1082 0.85861 12.0565C0.808303 12.0034 0.773672 11.9374 0.758555 11.8659C0.743438 11.7943 0.748425 11.72 0.772963 11.6511L2.53444 6.45943M12.8834 6.45943H2.53444"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   attr :class, :string, default: "text-Text-text-high"
 
   def vertical_dots(assigns) do

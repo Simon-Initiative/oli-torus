@@ -34,6 +34,27 @@
   @apply border-r-0 border-l-0;
 }
 
+.user_enrolled_sections_table tr {
+  @apply font-normal;
+}
+
+.user_enrolled_sections_table td {
+  @apply font-normal;
+}
+
+.user_enrolled_sections_table th {
+  @apply font-semibold;
+}
+
+.user_enrolled_sections_table thead th:not(:last-child) {
+  @apply relative;
+}
+
+.user_enrolled_sections_table thead th:not(:last-child)::after {
+  content: "";
+  @apply absolute right-0 top-0 bottom-0 w-px bg-Border-border-default;
+}
+
 .publish_changes_table tr:has(div[data-is-structural='true']) td {
   @apply bg-gray-300 dark:bg-neutral-800 dark:text-white;
 }

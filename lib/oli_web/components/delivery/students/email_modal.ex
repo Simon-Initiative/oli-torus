@@ -8,16 +8,13 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
   def render(assigns) do
     ~H"""
     <div id="email_modal_wrapper">
-      <div
-        id="email_modal_container"
-        phx-hook="OnMountAndUpdate"
-        data-event={if @show_modal, do: Modal.show_modal("email_modal"), else: ""}
-      >
+      <div id="email_modal_container">
         <Modal.modal
           id="email_modal"
           class="w-[800px]"
           header_class="flex items-start justify-between px-[35px] pt-[27px] pb-4"
           body_class="border-t border-Border-border-subtle px-[35px] pb-[50px] pt-[30px]"
+          show={@show_modal}
           on_cancel={JS.push("close_email_modal", target: @myself)}
         >
           <:title>Email Students</:title>
@@ -37,7 +34,9 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                 placeholder="Type here..."
                 class="w-full h-32 p-3 border border-Border-border-default rounded-md resize-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary focus:border-transparent bg-Specially-Tokens-Fill-fill-input text-Text-text-high"
                 phx-target={@myself}
+                phx-keyup="update_message"
                 phx-blur="update_message"
+                phx-debounce="200"
               ><%= @email_message %></textarea>
             </div>
 

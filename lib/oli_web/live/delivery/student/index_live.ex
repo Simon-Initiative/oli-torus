@@ -499,7 +499,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               }
               class="w-full hover:no-underline"
             >
-              <div class="px-5 py-2.5 rounded-lg shadow justify-center items-center gap-2.5 flex bg-Fill-Buttons-fill-secondary border border-Border-border-bold text-Specially-Tokens-Text-text-button-secondary hover:bg-Specially-Tokens-Text-text-button-secondary-hover hover:border-Border-border-bold-hover hover:text-Specially-Tokens-Text-text-button-primary-hover">
+              <div class="px-5 py-2.5 rounded-lg shadow justify-center items-center gap-2.5 flex text-white bg-Fill-Buttons-fill-secondary border border-Border-border-bold text-Specially-Tokens-Text-text-button-secondary hover:bg-Specially-Tokens-Text-text-button-secondary-hover hover:border-Border-border-bold-hover hover:text-Specially-Tokens-Text-text-button-primary-hover">
                 <div class="text-sm font-semibold leading-tight whitespace-nowrap">
                   Show in course
                 </div>
