@@ -9,23 +9,9 @@ defmodule Oli.GenAI.ServiceConfigChangesetTest do
         ServiceConfig.changeset(%ServiceConfig{}, %{name: "Default Config", primary_model_id: 1})
 
       assert changeset.valid?
-      assert get_field(changeset, :routing_soft_limit) == 40
       assert get_field(changeset, :routing_hard_limit) == 80
       assert get_field(changeset, :routing_timeout_ms) == 30_000
       assert get_field(changeset, :routing_connect_timeout_ms) == 5_000
-    end
-
-    test "rejects soft limit greater than hard limit" do
-      changeset =
-        ServiceConfig.changeset(%ServiceConfig{}, %{
-          name: "Invalid Config",
-          primary_model_id: 1,
-          routing_soft_limit: 10,
-          routing_hard_limit: 5
-        })
-
-      refute changeset.valid?
-      assert "must be less than or equal to hard limit" in errors_on(changeset).routing_soft_limit
     end
 
     test "rejects negative routing limits" do

@@ -33,8 +33,7 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
         "primary_model_id" => to_string(service_config.primary_model_id),
         "secondary_model_id" => to_string(service_config.secondary_model_id),
         "backup_model_id" => "",
-        "routing_soft_limit" => "10",
-        "routing_hard_limit" => "20",
+        "routing_hard_limit" => "80",
         "routing_timeout_ms" => "30000",
         "routing_connect_timeout_ms" => "5000"
       }
@@ -48,8 +47,7 @@ defmodule OliWeb.GenAI.ServiceConfigsViewTest do
       end)
 
       updated = Repo.get!(ServiceConfig, service_config.id)
-      assert updated.routing_soft_limit == 10
-      assert updated.routing_hard_limit == 20
+      assert updated.routing_hard_limit == 80
       assert updated.secondary_model_id == service_config.secondary_model_id
     end
   end

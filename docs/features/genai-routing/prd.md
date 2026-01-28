@@ -184,7 +184,7 @@ Event Spec:
 
 ## 13. Risks & Mitigations
 - Risk: False positives open breakers too often → Mitigation: conservative defaults, half_open probing, telemetry tuning.
-- Risk: Over-aggressive shedding causes user-visible failures → Mitigation: soft limits with backup routing; fast failures with clear messaging.
+- Risk: Over-aggressive shedding causes user-visible failures → Mitigation: conservative hard caps with backup routing; fast failures with clear messaging.
 - Risk: Per-tenant counters cause memory growth → Mitigation: TTL/cleanup on inactive sections.
 - Risk: Complexity makes debugging harder → Mitigation: structured logs, explicit reason codes, introspection endpoints.
 

@@ -205,13 +205,6 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
           <h3 class="text-sm font-semibold text-gray-900">Routing Policy</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
             <.input
-              field={@form[:routing_soft_limit]}
-              type="number"
-              label="Soft Limit"
-              disabled={!@editing}
-              class={@form_control_classes}
-            />
-            <.input
               field={@form[:routing_hard_limit]}
               type="number"
               label="Hard Limit"

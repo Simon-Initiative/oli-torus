@@ -22,9 +22,9 @@ defmodule Oli.GenAI.Router do
     start_ms = System.monotonic_time(:millisecond)
     request_type = Map.get(request_ctx, :request_type, :generate)
     counts = AdmissionControl.counts(service_config.id)
-    {soft_limit, hard_limit} = limits(service_config)
-    soft_limit_reached? = is_integer(soft_limit) and counts.requests >= soft_limit
-    hard_limit_reached? = is_integer(hard_limit) and counts.requests >= hard_limit
+    hard_limit_reached? =
+      is_integer(service_config.routing_hard_limit) and
+        counts.requests >= service_config.routing_hard_limit
 
     primary = service_config.primary_model
 
@@ -45,16 +45,6 @@ defmodule Oli.GenAI.Router do
       cond do
         hard_limit_reached? ->
           {:error, :over_capacity}
-
-        (soft_limit_reached? and not primary_open and secondary) && not secondary_open ->
-          attempt_secondary(
-            service_config,
-            secondary,
-            secondary_open,
-            counts,
-            request_type,
-            :service_config_soft_limit
-          )
 
         primary_open and (is_nil(secondary) or secondary_open) ->
           attempt_backup(service_config, backup, backup_open, counts, request_type, :backup_outage)
@@ -110,11 +100,10 @@ defmodule Oli.GenAI.Router do
       request_type,
       service_config,
       counts,
-      soft_limit,
-      hard_limit
+      service_config.routing_hard_limit
     )
 
-    log_decision(result, request_type, service_config, counts, soft_limit, hard_limit)
+    log_decision(result, request_type, service_config, counts, service_config.routing_hard_limit)
 
     result
   end
@@ -125,10 +114,6 @@ defmodule Oli.GenAI.Router do
 
   defp breaker_open?(snapshot) do
     snapshot.state == :open
-  end
-
-  defp limits(service_config) do
-    {service_config.routing_soft_limit, service_config.routing_hard_limit}
   end
 
   defp build_plan(service_config, request_type, counts, selected, tier, pool_name, reason) do
@@ -238,7 +223,6 @@ defmodule Oli.GenAI.Router do
          request_type,
          service_config,
          counts,
-         soft_limit,
          hard_limit
        ) do
     {reason, selected_model_id, tier, pool_name, pool_class, admitted} =
@@ -269,7 +253,6 @@ defmodule Oli.GenAI.Router do
       %{
         service_config_id: service_config.id,
         request_type: request_type,
-        soft_limit: soft_limit,
         hard_limit: hard_limit,
         counts: counts,
         tier: tier,
@@ -279,7 +262,7 @@ defmodule Oli.GenAI.Router do
     )
   end
 
-  defp log_decision(result, request_type, service_config, counts, soft_limit, hard_limit) do
+  defp log_decision(result, request_type, service_config, counts, hard_limit) do
     case result do
       {:ok, plan} ->
         Logger.debug("GenAI routing plan",
@@ -298,7 +281,6 @@ defmodule Oli.GenAI.Router do
           reason: reason,
           request_type: request_type,
           counts: counts,
-          soft_limit: soft_limit,
           hard_limit: hard_limit
         )
     end

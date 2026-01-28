@@ -92,7 +92,6 @@ From `guides/design/genai.md`, GenAI routing currently flows through `Oli.GenAI.
 ### 6.1 Ecto Schemas
 Add/update routing policy fields on `completions_service_configs`:
 - `secondary_model_id` (nullable FK)
-- `routing_soft_limit` (integer, >= 0)
 - `routing_hard_limit` (integer, >= 0)
 - `routing_timeout_ms` (integer, >= 0)
 - `routing_connect_timeout_ms` (integer, >= 0)
@@ -112,7 +111,6 @@ Migration plan (online-safe):
 3. Add NOT NULL + CHECK constraints in a second migration.
 
 Constraints:
-- `routing_soft_limit <= routing_hard_limit`
 - Thresholds within range 0.0..1.0.
 
 Note: admission control is enforced via per-model and per-pool caps; routing does not distinguish stream vs generate in this phase.
@@ -156,7 +154,7 @@ Note: admission control is enforced via per-model and per-pool caps; routing doe
 ## 11. Observability
 Telemetry events (examples):
 - `[:oli, :genai, :router, :decision]` measurements: `%{duration_ms}` metadata: `%{service_config_id, registered_model_id, reason, tier, pool_class, pool_name, request_type}`
-- `[:oli, :genai, :router, :admission]` measurements: `%{admitted: 0|1}` metadata: `%{hard_limit, soft_limit, counts, tier, pool_class, pool_name}`
+- `[:oli, :genai, :router, :admission]` measurements: `%{admitted: 0|1}` metadata: `%{hard_limit, counts, tier, pool_class, pool_name}`
 - `[:oli, :genai, :provider, :stop]` measurements: `%{duration_ms}` metadata: `%{provider, model, outcome, http_status}`
 - `[:oli, :genai, :breaker, :state_change]` measurements: `%{state}` metadata: `%{registered_model_id, reason}`
 
