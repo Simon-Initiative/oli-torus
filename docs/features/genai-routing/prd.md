@@ -77,9 +77,9 @@ Screenshots/Mocks:
 - AC-001 (FR-001) — Given a resolved ServiceConfig with Primary/Secondary/Backup models, When a GenAI request is initiated, Then the router produces a RoutingPlan that includes selected model, tier, pool, and reason codes within 5ms p95.
 - AC-002 (FR-002, FR-004) — Given the Primary model is healthy but at its max_concurrent cap, When a new request arrives, Then the router selects Secondary (if healthy and under cap) and records reason `primary_over_capacity`.
 - AC-003 (FR-004) — Given Primary and Secondary breakers are open, When a new request arrives, Then the router selects Backup (if healthy and under cap) and records reason `backup_outage`.
-- AC-004 (FR-004) — Given Secondary is healthy but at cap, When a new request arrives, Then the request is rejected within 200ms with a standard error and no pool wait.
+- AC-004 (FR-004) — Given Secondary is healthy but at cap, When a new request arrives, Then the request is rejected with a standard error and no pool wait.
 - AC-005 (FR-003) — Given a RegisteredModel returns 429s above the breaker threshold within the rolling window, When subsequent requests arrive, Then the breaker transitions to open and the router avoids that model.
-- AC-006 (FR-006) — Given any GenAI request, When it completes (success/failure), Then a telemetry event is emitted with selected model, tier, pool_class/pool_name, reason, duration, outcome, and error category.
+- AC-006 (FR-006) — Given any GenAI request, When it completes (success/failure), Then a telemetry event is emitted with selected model, tier, pool_class/pool_name, reason, duration, and outcome.
 - AC-007 (FR-007) — Given a section with a FeatureServiceConfig override, When a request is issued from that section, Then the router uses the resolved ServiceConfig for that section.
 - AC-008 (FR-009) — Given an Admin views an existing ServiceConfig screen, When routing health data is available, Then read-only health indicators for Primary/Secondary/Backup are shown inline and no new top-level navigation item is introduced.
 - AC-009 (FR-010) — Given an Admin edits a ServiceConfig, When they update model selection or routing policy parameters, Then the changes are saved and used by the router on subsequent requests.
@@ -89,7 +89,7 @@ Screenshots/Mocks:
 Performance & Scale:
 - Routing decision p95 < 5ms and p50 < 2ms under 2,000 concurrent requests.
 - Admission control and counter checks must be O(1), ETS-based.
-- For rejected requests, end-to-end response within 200ms.
+- For rejected requests, end-to-end response remains fast with no pool wait.
 - LiveView responsiveness unaffected: any GenAI-triggering LV events must respond within 150ms for routing decision.
 - Fast/slow pool caps must prevent slow models from starving fast models.
 
@@ -180,7 +180,7 @@ North Star / KPIs:
 
 Event Spec:
 - `genai_router_decision` with properties: `service_config_id`, `registered_model_id`, `tier`, `pool_class`, `pool_name`, `reason`, `request_type`, `admission_decision` (internal IDs only).
-- `genai_provider_stop` with properties: `outcome`, `error_category`, `latency_ms`, `provider`, `model`.
+- `genai_provider_stop` with properties: `outcome`, `latency_ms`, `provider`, `model`.
 
 ## 13. Risks & Mitigations
 - Risk: False positives open breakers too often → Mitigation: conservative defaults, half_open probing, telemetry tuning.

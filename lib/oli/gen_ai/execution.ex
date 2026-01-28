@@ -190,13 +190,7 @@ defmodule Oli.GenAI.Execution do
       outcome: outcome,
       http_status: http_status,
       latency_ms: latency_ms,
-      thresholds: %{
-        error_rate_threshold: registered_model.routing_breaker_error_rate_threshold,
-        rate_limit_threshold: registered_model.routing_breaker_429_threshold,
-        latency_p95_ms: registered_model.routing_breaker_latency_p95_ms,
-        open_cooldown_ms: registered_model.routing_open_cooldown_ms,
-        half_open_probe_count: registered_model.routing_half_open_probe_count
-      }
+      thresholds: breaker_thresholds(registered_model)
     })
   end
 
@@ -233,6 +227,16 @@ defmodule Oli.GenAI.Execution do
 
   defp http_status_category(429), do: :rate_limited
   defp http_status_category(_status), do: :http_error
+
+  defp breaker_thresholds(registered_model) do
+    %{
+      error_rate_threshold: registered_model.routing_breaker_error_rate_threshold || 0.2,
+      rate_limit_threshold: registered_model.routing_breaker_429_threshold || 0.1,
+      latency_p95_ms: registered_model.routing_breaker_latency_p95_ms || 6000,
+      open_cooldown_ms: registered_model.routing_open_cooldown_ms || 30_000,
+      half_open_probe_count: registered_model.routing_half_open_probe_count || 3
+    }
+  end
 
   defp release_admission!(%{pool_name: pool_name, selected_model: %{id: model_id}}) do
     AdmissionControl.release_pool(pool_name)
