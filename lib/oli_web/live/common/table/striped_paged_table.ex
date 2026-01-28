@@ -23,6 +23,7 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :no_records_message, :string, default: "None exist"
   attr :overflow_class, :string, default: "inline"
   attr :sticky_header_offset, :integer, default: 0
+  attr :table_container_class, :string, default: "relative mx-4"
 
   attr :details_render_fn, :any,
     default: nil,
@@ -40,7 +41,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
           Showing all results ({@total_count} total)
         </div>
-        <div class="relative mx-4">
+        <div class={@table_container_class}>
           {render_table(%{
             allow_selection: @allow_selection,
             table_model: @table_model,
