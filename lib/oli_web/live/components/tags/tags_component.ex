@@ -256,7 +256,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                   phx-keydown="handle_keydown"
                   phx-target={@myself}
                   value={@input_value}
-                  class="w-full px-3 border-0 outline-none text-[#757682] font-semibold focus:bg-transparent focus:ring-0 focus:border-transparent"
+                  class="w-full px-3 border-0 outline-none text-[#757682] font-semibold focus:bg-transparent focus:ring-0 focus:border focus:border-Border-border-active"
                   id={"tag-input-#{@id}"}
                   style={@font_style}
                 />
