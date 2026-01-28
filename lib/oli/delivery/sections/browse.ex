@@ -293,63 +293,35 @@ defmodule Oli.Delivery.Sections.Browse do
         dynamic([s], ilike(s.title, ^search_pattern))
       end
 
-    # Subquery to get section IDs matching our filter criteria
-    # Used to scope the creator and publication subqueries for better performance
-    section_ids_subquery =
-      from(s in Section,
-        where: s.base_project_id == ^project_id,
-        where: is_nil(s.blueprint_id),
-        where: s.type == :enrollable,
-        where: s.status == :active,
-        where: not is_nil(s.end_date),
-        where: s.end_date >= ^today,
-        select: s.id
-      )
-
-    # Subquery to get the first enrolled user (creator) for each section
-    # Uses DISTINCT ON to get only the first enrollment per section
-    # Scoped to only relevant sections for performance
-    creator_subquery =
+    # LATERAL subquery to get the first enrolled user (creator) for each section
+    # Uses LIMIT 1 with parent_as reference for efficient "first row per group" query
+    # (matches pattern in Oli.Delivery.Sections.get_active_sections_by_project)
+    first_creator_subquery =
       from(u in User,
         join: e in Enrollment,
         on: e.user_id == u.id,
-        where: e.section_id in subquery(section_ids_subquery),
+        where: e.section_id == parent_as(:section).id,
+        order_by: [asc: e.inserted_at],
+        limit: 1,
         select: %{
-          section_id: e.section_id,
           creator_id: u.id,
           creator_name: fragment("concat_ws(' ', ?, ?)", u.given_name, u.family_name),
-          creator_email: u.email,
-          enrolled_at: e.inserted_at
+          creator_email: u.email
         }
       )
 
-    # Wrap with DISTINCT ON to get first enrollment per section
-    first_creator_subquery =
-      from(c in subquery(creator_subquery),
-        distinct: c.section_id,
-        order_by: [asc: c.section_id, asc: c.enrolled_at],
-        select: %{
-          section_id: c.section_id,
-          creator_id: c.creator_id,
-          creator_name: c.creator_name,
-          creator_email: c.creator_email
-        }
-      )
-
-    # Subquery to get the publication for each section
-    # Uses DISTINCT ON to get first publication per section
+    # LATERAL subquery to get the most recent publication for each section
+    # Uses LIMIT 1 with parent_as reference for efficient "first row per group" query
     # Orders by published DESC, id DESC to get the most recently published publication
-    # (matches pattern in Oli.Publishing.get_latest_published_publication_by_slug)
-    # Scoped to only relevant sections for performance
+    # (matches pattern in Oli.Delivery.Sections.check_for_available_publication_updates)
     publication_subquery =
       from(spp in SectionsProjectsPublications,
         join: pub in Publication,
         on: pub.id == spp.publication_id,
-        where: spp.section_id in subquery(section_ids_subquery),
-        distinct: spp.section_id,
-        order_by: [asc: spp.section_id, desc: pub.published, desc: pub.id],
+        where: spp.section_id == parent_as(:section).id,
+        order_by: [desc: pub.published, desc: pub.id],
+        limit: 1,
         select: %{
-          section_id: spp.section_id,
           pub_id: pub.id,
           edition: pub.edition,
           major: pub.major,
@@ -359,10 +331,11 @@ defmodule Oli.Delivery.Sections.Browse do
 
     query =
       from(s in Section,
-        left_join: c in subquery(first_creator_subquery),
-        on: c.section_id == s.id,
-        left_join: p in subquery(publication_subquery),
-        on: p.section_id == s.id,
+        as: :section,
+        left_lateral_join: c in subquery(first_creator_subquery),
+        on: true,
+        left_lateral_join: p in subquery(publication_subquery),
+        on: true,
         where: s.base_project_id == ^project_id,
         where: is_nil(s.blueprint_id),
         where: s.type == :enrollable,
