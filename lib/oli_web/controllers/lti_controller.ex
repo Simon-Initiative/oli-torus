@@ -325,6 +325,8 @@ defmodule OliWeb.LtiController do
              ) do
           {:ok, redirect_uri, state, id_token} ->
             conn
+            |> put_view(OliWeb.LtiHTML)
+            |> put_root_layout({OliWeb.LayoutView, :lti_redirect})
             |> render("post_redirect.html",
               redirect_uri: redirect_uri,
               state: state,
