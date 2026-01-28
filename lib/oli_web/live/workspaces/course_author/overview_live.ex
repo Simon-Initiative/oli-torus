@@ -37,29 +37,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       |> Enum.map(& &1.institution)
       |> Enum.reject(&is_nil/1)
 
-    # Get course sections for this project using DB-level pagination
-    course_sections =
-      Browse.browse_project_sections(
-        project.id,
-        %Paging{offset: 0, limit: @course_sections_limit},
-        %Sorting{direction: :asc, field: :title},
-        text_search: ""
-      )
-
-    course_sections_total = Browse.determine_total(course_sections)
-
-    # Build initial course sections table
-    {:ok, course_sections_table_model} = OverviewSectionsTableModel.new(ctx, course_sections)
-
-    course_sections_table_model =
-      course_sections_table_model
-      |> Map.put(
-        :sort_by_spec,
-        Enum.find(course_sections_table_model.column_specs, &(&1.name == :title))
-      )
-      |> Map.put(:sort_order, :asc)
-      |> Map.put(:rows, course_sections)
-
     is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
     latest_published_publication =
@@ -87,43 +64,70 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     # Subscribe to any project export progress updates for this project
     Subscriber.subscribe_to_project_export_status(project.slug)
 
-    {:ok,
-     assign(socket,
-       ctx: ctx,
-       project: project,
-       collaborators:
-         Accounts.authors_projects(project)
-         |> Enum.group_by(& &1.author_project_status),
-       project_selected_activities:
-         Activities.selected_activities_for_project(project.id, is_admin?),
-       can_enable_experiments: is_admin? and Experiments.experiments_enabled?(),
-       is_admin: is_admin?,
-       changeset: Project.changeset(project),
-       latest_published_publication: latest_published_publication,
-       publishers: Inventories.list_publishers(),
-       resource_title: project.title,
-       resource_slug: project.slug,
-       attributes: project.attributes,
-       language_codes: LanguageCodesIso639.codes(),
-       license_opts: cc_options,
-       custom_license: custom_license?,
-       collab_space_config: collab_space_config,
-       revision_slug: revision_slug,
-       latest_publication: latest_publication,
-       notes_config: %{},
-       project_export_status: project_export_status,
-       project_export_url: project_export_url,
-       project_export_timestamp: project_export_timestamp,
-       visibility_institutions: visibility_institutions,
-       course_sections_table_model: course_sections_table_model,
-       course_sections_search: "",
-       course_sections_offset: 0,
-       course_sections_limit: @course_sections_limit,
-       course_sections_total: course_sections_total,
-       course_sections_sort_by: :title,
-       course_sections_sort_order: :asc,
-       course_sections_project_id: project.id
-     )}
+    socket =
+      socket
+      |> assign(
+        ctx: ctx,
+        project: project,
+        collaborators:
+          Accounts.authors_projects(project)
+          |> Enum.group_by(& &1.author_project_status),
+        project_selected_activities:
+          Activities.selected_activities_for_project(project.id, is_admin?),
+        can_enable_experiments: is_admin? and Experiments.experiments_enabled?(),
+        is_admin: is_admin?,
+        changeset: Project.changeset(project),
+        latest_published_publication: latest_published_publication,
+        publishers: Inventories.list_publishers(),
+        resource_title: project.title,
+        resource_slug: project.slug,
+        attributes: project.attributes,
+        language_codes: LanguageCodesIso639.codes(),
+        license_opts: cc_options,
+        custom_license: custom_license?,
+        collab_space_config: collab_space_config,
+        revision_slug: revision_slug,
+        latest_publication: latest_publication,
+        notes_config: %{},
+        project_export_status: project_export_status,
+        project_export_url: project_export_url,
+        project_export_timestamp: project_export_timestamp,
+        visibility_institutions: visibility_institutions,
+        course_sections_search: "",
+        course_sections_offset: 0,
+        course_sections_limit: @course_sections_limit,
+        course_sections_sort_by: :title,
+        course_sections_sort_order: :asc,
+        course_sections_project_id: project.id
+      )
+      |> assign_async(:course_sections_data, fn ->
+        load_course_sections_data(project.id, ctx, 0, @course_sections_limit, :asc, :title, "")
+      end)
+
+    {:ok, socket}
+  end
+
+  # Load course sections data - used by assign_async and event handlers
+  defp load_course_sections_data(project_id, ctx, offset, limit, sort_order, sort_by, search) do
+    course_sections =
+      Browse.browse_project_sections(
+        project_id,
+        %Paging{offset: offset, limit: limit},
+        %Sorting{direction: sort_order, field: sort_by},
+        text_search: search
+      )
+
+    total = Browse.determine_total(course_sections)
+    {:ok, table_model} = OverviewSectionsTableModel.new(ctx, course_sections)
+
+    table_model =
+      table_model
+      |> Map.put(:sort_by_spec, Enum.find(table_model.column_specs, &(&1.name == sort_by)))
+      |> Map.put(:sort_order, sort_order)
+      |> Map.put(:rows, course_sections)
+
+    # Return with the assign key name to match assign_async requirements
+    {:ok, %{course_sections_data: %{table_model: table_model, total: total}}}
   end
 
   @impl Phoenix.LiveView
@@ -512,19 +516,32 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             aria_label="Search course sections"
           />
         </.form>
-        <StripedPagedTable.render
-          table_model={@course_sections_table_model}
-          total_count={@course_sections_total}
-          offset={@course_sections_offset}
-          limit={@course_sections_limit}
-          table_container_class="relative"
-          header_bg_class="!bg-white dark:!bg-black"
-          sort="course_sections_sort"
-          page_change="course_sections_page_change"
-          show_limit_change={false}
-          render_top_info={false}
-          no_records_message="None exist"
-        />
+        <.async_result :let={data} assign={@course_sections_data}>
+          <:loading>
+            <div class="flex items-center justify-center py-8">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span class="ml-3 text-gray-600">Loading sections...</span>
+            </div>
+          </:loading>
+          <:failed :let={_reason}>
+            <div class="text-red-600 py-4">
+              Failed to load course sections. Please refresh the page.
+            </div>
+          </:failed>
+          <StripedPagedTable.render
+            table_model={data.table_model}
+            total_count={data.total}
+            offset={@course_sections_offset}
+            limit={@course_sections_limit}
+            table_container_class="relative"
+            header_bg_class="!bg-white dark:!bg-black"
+            sort="course_sections_sort"
+            page_change="course_sections_page_change"
+            show_limit_change={false}
+            render_top_info={false}
+            no_records_message="None exist"
+          />
+        </.async_result>
       </Overview.section>
 
       <%= if @is_admin do %>
@@ -712,37 +729,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   def handle_event("paged_table_limit_change", params, socket) do
     limit = Params.get_int_param(params, "limit", @course_sections_limit)
 
-    # Query DB with new limit - reset to first page
-    course_sections =
-      Browse.browse_project_sections(
-        socket.assigns.course_sections_project_id,
-        %Paging{offset: 0, limit: limit},
-        %Sorting{
-          direction: socket.assigns.course_sections_sort_order,
-          field: socket.assigns.course_sections_sort_by
-        },
-        text_search: socket.assigns.course_sections_search
-      )
+    # Extract values before async to avoid copying entire socket
+    project_id = socket.assigns.course_sections_project_id
+    ctx = socket.assigns.ctx
+    sort_order = socket.assigns.course_sections_sort_order
+    sort_by = socket.assigns.course_sections_sort_by
+    search = socket.assigns.course_sections_search
 
-    total = Browse.determine_total(course_sections)
-    {:ok, table_model} = OverviewSectionsTableModel.new(socket.assigns.ctx, course_sections)
+    socket =
+      socket
+      |> assign(course_sections_limit: limit, course_sections_offset: 0)
+      |> assign_async(:course_sections_data, fn ->
+        load_course_sections_data(project_id, ctx, 0, limit, sort_order, sort_by, search)
+      end)
 
-    table_model =
-      table_model
-      |> Map.put(
-        :sort_by_spec,
-        Enum.find(table_model.column_specs, &(&1.name == socket.assigns.course_sections_sort_by))
-      )
-      |> Map.put(:sort_order, socket.assigns.course_sections_sort_order)
-      |> Map.put(:rows, course_sections)
-
-    {:noreply,
-     assign(socket,
-       course_sections_table_model: table_model,
-       course_sections_limit: limit,
-       course_sections_offset: 0,
-       course_sections_total: total
-     )}
+    {:noreply, socket}
   end
 
   def handle_event("course_sections_sort", %{"sort_by" => sort_by}, socket) do
@@ -756,99 +757,63 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         :asc
       end
 
-    # Query DB with new sort - reset to first page
-    course_sections =
-      Browse.browse_project_sections(
-        socket.assigns.course_sections_project_id,
-        %Paging{offset: 0, limit: socket.assigns.course_sections_limit},
-        %Sorting{direction: sort_order, field: sort_by},
-        text_search: socket.assigns.course_sections_search
+    # Extract values before async to avoid copying entire socket
+    project_id = socket.assigns.course_sections_project_id
+    ctx = socket.assigns.ctx
+    limit = socket.assigns.course_sections_limit
+    search = socket.assigns.course_sections_search
+
+    socket =
+      socket
+      |> assign(
+        course_sections_sort_by: sort_by,
+        course_sections_sort_order: sort_order,
+        course_sections_offset: 0
       )
+      |> assign_async(:course_sections_data, fn ->
+        load_course_sections_data(project_id, ctx, 0, limit, sort_order, sort_by, search)
+      end)
 
-    total = Browse.determine_total(course_sections)
-    {:ok, table_model} = OverviewSectionsTableModel.new(socket.assigns.ctx, course_sections)
-
-    table_model =
-      table_model
-      |> Map.put(:sort_by_spec, Enum.find(table_model.column_specs, &(&1.name == sort_by)))
-      |> Map.put(:sort_order, sort_order)
-      |> Map.put(:rows, course_sections)
-
-    {:noreply,
-     assign(socket,
-       course_sections_table_model: table_model,
-       course_sections_sort_by: sort_by,
-       course_sections_sort_order: sort_order,
-       course_sections_offset: 0,
-       course_sections_total: total
-     )}
+    {:noreply, socket}
   end
 
   def handle_event("course_sections_page_change", params, socket) do
     offset = Params.get_int_param(params, "offset", 0)
 
-    # Query DB with new offset
-    course_sections =
-      Browse.browse_project_sections(
-        socket.assigns.course_sections_project_id,
-        %Paging{offset: offset, limit: socket.assigns.course_sections_limit},
-        %Sorting{
-          direction: socket.assigns.course_sections_sort_order,
-          field: socket.assigns.course_sections_sort_by
-        },
-        text_search: socket.assigns.course_sections_search
-      )
+    # Extract values before async to avoid copying entire socket
+    project_id = socket.assigns.course_sections_project_id
+    ctx = socket.assigns.ctx
+    limit = socket.assigns.course_sections_limit
+    sort_order = socket.assigns.course_sections_sort_order
+    sort_by = socket.assigns.course_sections_sort_by
+    search = socket.assigns.course_sections_search
 
-    {:ok, table_model} = OverviewSectionsTableModel.new(socket.assigns.ctx, course_sections)
+    socket =
+      socket
+      |> assign(course_sections_offset: offset)
+      |> assign_async(:course_sections_data, fn ->
+        load_course_sections_data(project_id, ctx, offset, limit, sort_order, sort_by, search)
+      end)
 
-    table_model =
-      table_model
-      |> Map.put(
-        :sort_by_spec,
-        Enum.find(table_model.column_specs, &(&1.name == socket.assigns.course_sections_sort_by))
-      )
-      |> Map.put(:sort_order, socket.assigns.course_sections_sort_order)
-      |> Map.put(:rows, course_sections)
-
-    {:noreply,
-     assign(socket,
-       course_sections_offset: offset,
-       course_sections_table_model: table_model
-     )}
+    {:noreply, socket}
   end
 
   def handle_event("course_sections_search_change", %{"search" => search}, socket) do
-    # Query DB with new search - reset to first page
-    course_sections =
-      Browse.browse_project_sections(
-        socket.assigns.course_sections_project_id,
-        %Paging{offset: 0, limit: socket.assigns.course_sections_limit},
-        %Sorting{
-          direction: socket.assigns.course_sections_sort_order,
-          field: socket.assigns.course_sections_sort_by
-        },
-        text_search: search
-      )
+    # Extract values before async to avoid copying entire socket
+    project_id = socket.assigns.course_sections_project_id
+    ctx = socket.assigns.ctx
+    limit = socket.assigns.course_sections_limit
+    sort_order = socket.assigns.course_sections_sort_order
+    sort_by = socket.assigns.course_sections_sort_by
 
-    total = Browse.determine_total(course_sections)
-    {:ok, table_model} = OverviewSectionsTableModel.new(socket.assigns.ctx, course_sections)
+    socket =
+      socket
+      |> assign(course_sections_search: search, course_sections_offset: 0)
+      |> assign_async(:course_sections_data, fn ->
+        load_course_sections_data(project_id, ctx, 0, limit, sort_order, sort_by, search)
+      end)
 
-    table_model =
-      table_model
-      |> Map.put(
-        :sort_by_spec,
-        Enum.find(table_model.column_specs, &(&1.name == socket.assigns.course_sections_sort_by))
-      )
-      |> Map.put(:sort_order, socket.assigns.course_sections_sort_order)
-      |> Map.put(:rows, course_sections)
-
-    {:noreply,
-     assign(socket,
-       course_sections_search: search,
-       course_sections_table_model: table_model,
-       course_sections_offset: 0,
-       course_sections_total: total
-     )}
+    {:noreply, socket}
   end
 
   def handle_event(

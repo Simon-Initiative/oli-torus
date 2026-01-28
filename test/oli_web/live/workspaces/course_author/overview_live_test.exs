@@ -676,9 +676,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
          %{conn: conn, author: author} do
       project = create_project_with_author(author)
 
-      {:ok, view, html} = live(conn, live_view_route(project.slug))
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert has_element?(view, "h4", "Course Sections")
+
+      # Wait for async data to load
+      html = render_async(view)
       assert html =~ "None exist"
     end
 
@@ -722,6 +725,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       )
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Wait for async data to load
+      render_async(view)
 
       assert has_element?(view, "a", "Future Section")
       refute has_element?(view, "a", "Past Section")
@@ -768,7 +774,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
         publication: publication
       )
 
-      {:ok, view, html} = live(conn, live_view_route(project.slug))
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Wait for async data to load
+      html = render_async(view)
 
       # Both sections should be displayed
       assert has_element?(view, "a", "Paid Section")
@@ -819,6 +828,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
+      # Wait for async data to load
+      render_async(view)
+
       # Both sections visible initially
       assert has_element?(view, "a", "Introduction to Biology")
       assert has_element?(view, "a", "Advanced Chemistry")
@@ -827,6 +839,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       view
       |> element("form[phx-change='course_sections_search_change']")
       |> render_change(%{"search" => "biology"})
+
+      # Wait for async search results
+      render_async(view)
 
       # Only Biology section visible (case-insensitive match)
       assert has_element?(view, "a", "Introduction to Biology")
@@ -859,6 +874,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
+      # Wait for async data to load
+      render_async(view)
+
       # Default sort is by title ascending - Alpha should be first
       assert has_element?(view, "a", "Alpha")
       assert has_element?(view, "a", "Gamma")
@@ -866,6 +884,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       # Click to trigger sort (toggles to descending)
       view
       |> render_click("course_sections_sort", %{"sort_by" => "title"})
+
+      # Wait for async sort results
+      render_async(view)
 
       # Get updated HTML after the event
       html = render(view)
@@ -922,7 +943,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
         publication: publication
       )
 
-      {:ok, _view, html} = live(conn, live_view_route(project.slug))
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Wait for async data to load
+      html = render_async(view)
 
       # Section with enrolled user shows creator name, email, and link
       assert html =~ "Jane Doe"
