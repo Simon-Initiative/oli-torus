@@ -54,9 +54,14 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
       |> render_change(%{"toggle_editing" => "on"})
 
       view
-      |> form("#pool-sizes-form", pool_sizes: %{"fast_pool_size" => "11", "slow_pool_size" => "10"})
+      |> form("#pool-sizes-form",
+        pool_sizes: %{"fast_pool_size" => "11", "slow_pool_size" => "10"}
+      )
       |> render_submit()
-      |> then(fn html -> assert html =~ "Pool size for fast must be &lt;= 10"; html end)
+      |> then(fn html ->
+        assert html =~ "Pool size for fast must be &lt;= 10"
+        html
+      end)
     end
 
     test "updates pool class and max concurrent values", %{
