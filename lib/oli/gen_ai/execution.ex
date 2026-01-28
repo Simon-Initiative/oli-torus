@@ -204,6 +204,10 @@ defmodule Oli.GenAI.Execution do
     {status, http_status_category(status)}
   end
 
+  defp error_details(%{status_code: status}) when is_integer(status) do
+    {status, http_status_category(status)}
+  end
+
   defp error_details({:http_error, status}) when is_integer(status) do
     {status, http_status_category(status)}
   end

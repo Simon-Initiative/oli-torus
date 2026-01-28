@@ -22,24 +22,24 @@ defmodule Oli.GenAI.Router do
     start_ms = System.monotonic_time(:millisecond)
     request_type = Map.get(request_ctx, :request_type, :generate)
 
-    primary = service_config.primary_model
+    primary = normalize_model(service_config.primary_model)
 
     secondary =
       normalize_secondary(service_config.secondary_model, primary, service_config.backup_model)
 
-    backup = service_config.backup_model
+    backup = normalize_model(service_config.backup_model)
 
     primary_snapshot = breaker_snapshot(primary)
     secondary_snapshot = if secondary, do: breaker_snapshot(secondary), else: %{state: :closed}
     backup_snapshot = if backup, do: breaker_snapshot(backup), else: %{state: :closed}
 
-    primary_open = breaker_open?(primary_snapshot)
+    primary_open = primary && breaker_open?(primary_snapshot)
     secondary_open = secondary && breaker_open?(secondary_snapshot)
     backup_open = backup && breaker_open?(backup_snapshot)
 
     result =
       cond do
-        primary_open and (is_nil(secondary) or secondary_open) ->
+        (primary && primary_open) and (is_nil(secondary) or secondary_open) ->
           attempt_backup(
             backup,
             backup_open,
@@ -47,7 +47,7 @@ defmodule Oli.GenAI.Router do
             :backup_outage
           )
 
-        primary_open ->
+        primary && primary_open ->
           attempt_secondary(
             secondary,
             secondary_open,
@@ -98,9 +98,8 @@ defmodule Oli.GenAI.Router do
     result
   end
 
-  defp breaker_snapshot(%{id: id}) do
-    Breaker.snapshot(id)
-  end
+  defp breaker_snapshot(%{id: id}), do: Breaker.snapshot(id)
+  defp breaker_snapshot(nil), do: %{state: :closed}
 
   defp breaker_open?(snapshot) do
     snapshot.state == :open
@@ -119,7 +118,11 @@ defmodule Oli.GenAI.Router do
   end
 
   defp attempt_primary(primary, request_type) do
-    attempt_candidate(primary, request_type, :primary, :primary_normal)
+    if primary do
+      attempt_candidate(primary, request_type, :primary, :primary_normal)
+    else
+      {:error, :primary_unavailable}
+    end
   end
 
   defp attempt_secondary(nil, _secondary_open, _request_type, _reason) do
@@ -200,6 +203,9 @@ defmodule Oli.GenAI.Router do
       true -> secondary
     end
   end
+
+  defp normalize_model(%Ecto.Association.NotLoaded{}), do: nil
+  defp normalize_model(model), do: model
 
   defp emit_telemetry(
          result,
