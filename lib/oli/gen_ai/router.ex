@@ -57,7 +57,14 @@ defmodule Oli.GenAI.Router do
           )
 
         primary_open and (is_nil(secondary) or secondary_open) ->
-          attempt_backup(service_config, backup, backup_open, counts, request_type, :backup_outage)
+          attempt_backup(
+            service_config,
+            backup,
+            backup_open,
+            counts,
+            request_type,
+            :backup_outage
+          )
 
         primary_open ->
           attempt_secondary(
