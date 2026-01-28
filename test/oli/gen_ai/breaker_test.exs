@@ -58,6 +58,32 @@ defmodule Oli.GenAI.BreakerTest do
     assert eventually(fn -> Breaker.status(model_id).breaker_state == :open end)
   end
 
+  test "opens breaker when 429 rate exceeds threshold" do
+    model_id = 4
+    thresholds = thresholds(rate_limit_threshold: 0.2, error_rate_threshold: 1.0)
+
+    Enum.each(1..4, fn _ ->
+      Breaker.report(model_id, report(:ok, thresholds))
+    end)
+
+    Breaker.report(model_id, report(:ok, thresholds, %{http_status: 429}))
+
+    assert eventually(fn -> Breaker.status(model_id).breaker_state == :open end)
+  end
+
+  test "opens breaker when latency p95 exceeds threshold" do
+    model_id = 5
+
+    thresholds =
+      thresholds(latency_p95_ms: 50, error_rate_threshold: 1.0, rate_limit_threshold: 1.0)
+
+    Enum.each(1..5, fn _ ->
+      Breaker.report(model_id, report(:ok, thresholds, %{latency_ms: 200}))
+    end)
+
+    assert eventually(fn -> Breaker.status(model_id).breaker_state == :open end)
+  end
+
   defp thresholds(overrides \\ %{}) do
     base = %{
       error_rate_threshold: 0.2,
@@ -70,13 +96,15 @@ defmodule Oli.GenAI.BreakerTest do
     Map.merge(base, Map.new(overrides))
   end
 
-  defp report(outcome, thresholds) do
-    %{
+  defp report(outcome, thresholds, overrides \\ %{}) do
+    base = %{
       outcome: outcome,
       http_status: if(outcome == :error, do: 500, else: 200),
       latency_ms: 10,
       thresholds: thresholds
     }
+
+    Map.merge(base, overrides)
   end
 
   defp eventually(fun, attempts \\ 20)

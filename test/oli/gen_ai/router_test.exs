@@ -95,6 +95,17 @@ defmodule Oli.GenAI.RouterTest do
     assert plan.reason == :primary_over_capacity
   end
 
+  test "rejects when pool is at max connections" do
+    ensure_hackney_started()
+    Oli.GenAI.HackneyPool.set_max_connections(:slow, 1)
+
+    service_config = build_service_config(10, secondary_model: nil)
+    request_ctx = %{request_type: :generate}
+
+    assert {:ok, _plan} = Router.route(request_ctx, service_config)
+    assert {:error, :over_capacity} = Router.route(request_ctx, service_config)
+  end
+
   test "rejects when secondary breaker is open and primary over capacity" do
     service_config =
       build_service_config(4,
@@ -156,6 +167,13 @@ defmodule Oli.GenAI.RouterTest do
   defp ensure_started(mod) do
     case Process.whereis(mod) do
       nil -> start_supervised!(mod)
+      _pid -> :ok
+    end
+  end
+
+  defp ensure_hackney_started do
+    case Process.whereis(Oli.GenAI.HackneyPool) do
+      nil -> start_supervised!(Oli.GenAI.HackneyPool)
       _pid -> :ok
     end
   end
