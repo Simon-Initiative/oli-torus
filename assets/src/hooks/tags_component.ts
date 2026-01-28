@@ -1,7 +1,9 @@
 export const TagsComponent = {
   mounted() {
-    // Track pending close timeout so we can cancel it
+    // Track pending timeouts so we can cancel them on destroy
     let closeTimeout: number | null = null;
+    let focusInputTimeout: number | null = null;
+    let focusContainerTimeout: number | null = null;
 
     // Store handler references for cleanup in destroyed()
     const handleFocusInput = ({ input_id, clear }: { input_id: string; clear?: boolean }) => {
@@ -12,7 +14,8 @@ export const TagsComponent = {
       }
 
       // Use setTimeout to ensure the DOM has been updated
-      setTimeout(() => {
+      focusInputTimeout = window.setTimeout(() => {
+        focusInputTimeout = null;
         const input = document.getElementById(input_id) as HTMLInputElement;
         if (input) {
           if (clear === true) {
@@ -25,7 +28,8 @@ export const TagsComponent = {
 
     const handleFocusContainer = ({ container_id }: { container_id: string }) => {
       // Return focus to container after exiting edit mode (WCAG 2.4.3)
-      setTimeout(() => {
+      focusContainerTimeout = window.setTimeout(() => {
+        focusContainerTimeout = null;
         const container = document.getElementById(container_id);
         if (container) {
           container.focus();
@@ -79,23 +83,30 @@ export const TagsComponent = {
     (this as any).__tagsHandlers = {
       handleFocusin,
       handleFocusout,
-      closeTimeout: () => closeTimeout,
-      clearCloseTimeout: () => {
+      clearTimeouts: () => {
         if (closeTimeout !== null) {
           clearTimeout(closeTimeout);
           closeTimeout = null;
+        }
+        if (focusInputTimeout !== null) {
+          clearTimeout(focusInputTimeout);
+          focusInputTimeout = null;
+        }
+        if (focusContainerTimeout !== null) {
+          clearTimeout(focusContainerTimeout);
+          focusContainerTimeout = null;
         }
       },
     };
   },
 
   destroyed() {
-    // Clean up event listeners to prevent memory leaks
+    // Clean up event listeners and timeouts to prevent memory leaks
     const handlers = (this as any).__tagsHandlers;
     if (handlers) {
       this.el.removeEventListener('focusin', handlers.handleFocusin);
       this.el.removeEventListener('focusout', handlers.handleFocusout);
-      handlers.clearCloseTimeout();
+      handlers.clearTimeouts();
       delete (this as any).__tagsHandlers;
     }
   },
