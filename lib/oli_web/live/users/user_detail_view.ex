@@ -135,7 +135,6 @@ defmodule OliWeb.Users.UsersDetailView do
                 module={CommunitiesSelectComponent}
                 id={"communities-user-#{@user.id}"}
                 user_id={@user.id}
-                current_communities={@user.communities}
                 institution={@institution}
                 disabled_edit={@disabled_edit}
               />

@@ -39,11 +39,12 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
     institution = Map.get(assigns, :institution)
     user_id = assigns.user_id
 
-    # Only initialize current_communities from assigns on first mount
+    # Only initialize communities on first mount
     # After that, ALWAYS keep the component's local state to preserve add/remove changes
+    # Communities are fetched ordered by most recently added first
     direct_communities =
       if not socket.assigns[:initialized] do
-        assigns.current_communities || []
+        Groups.list_user_direct_communities_ordered(user_id)
       else
         socket.assigns.direct_communities
       end
@@ -78,15 +79,12 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
      |> assign(:initialized, true)}
   end
 
-  defp compute_institution_communities(user_id, institution, direct_communities) do
-    if institution do
-      direct_ids = MapSet.new(Enum.map(direct_communities, & &1.id))
+  defp compute_institution_communities(_user_id, institution, direct_communities) do
+    direct_ids = MapSet.new(Enum.map(direct_communities, & &1.id))
 
-      Groups.list_associated_communities(user_id, institution)
-      |> Enum.reject(fn community -> MapSet.member?(direct_ids, community.id) end)
-    else
-      []
-    end
+    # Get institution communities ordered by most recently added, excluding direct ones
+    Groups.list_institution_communities_ordered(institution)
+    |> Enum.reject(fn community -> MapSet.member?(direct_ids, community.id) end)
   end
 
   @impl true
@@ -127,9 +125,9 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
             {:noreply, assign(socket, :error, "Community not found")}
 
           community_to_add ->
+            # Prepend to beginning (most recently added first)
             updated_direct_communities =
               [community_to_add | socket.assigns.direct_communities]
-              |> Enum.sort_by(& &1.name, :asc)
 
             updated_available_communities =
               Enum.reject(socket.assigns.available_communities, &(&1.id == community_id))
@@ -221,10 +219,12 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
 
   @impl true
   def render(assigns) do
+    # Communities are already ordered by most recently added first
+    # Direct communities come first, then institution communities
     all_communities =
       (assigns.direct_communities || []) ++ (assigns.institution_communities || [])
 
-    assigns = assign(assigns, :all_communities, Enum.sort_by(all_communities, & &1.name, :asc))
+    assigns = assign(assigns, :all_communities, all_communities)
     assigns = assign(assigns, :communities_count, length(all_communities))
 
     ~H"""

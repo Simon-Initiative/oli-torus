@@ -474,6 +474,47 @@ defmodule Oli.Groups do
     do: Repo.all(associated_communities_query(user_id, institution))
 
   @doc """
+  Get all direct communities for a user ordered by when they were added (most recent first).
+
+  ## Examples
+
+      iex> list_user_direct_communities_ordered(1)
+      [%Community{}, ...]
+
+      iex> list_user_direct_communities_ordered(123)
+      []
+  """
+  def list_user_direct_communities_ordered(user_id) do
+    from(community in Community,
+      join: ca in CommunityAccount,
+      on: community.id == ca.community_id and ca.user_id == ^user_id,
+      order_by: [desc: ca.inserted_at],
+      select: community
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Get all communities associated with an institution ordered by when the association was created (most recent first).
+
+  ## Examples
+
+      iex> list_institution_communities_ordered(%Institution{id: 1})
+      [%Community{}, ...]
+  """
+  def list_institution_communities_ordered(nil), do: []
+
+  def list_institution_communities_ordered(%Institution{id: institution_id}) do
+    from(community in Community,
+      join: ci in CommunityInstitution,
+      on: community.id == ci.community_id and ci.institution_id == ^institution_id,
+      order_by: [desc: ci.inserted_at],
+      select: community
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Get all the publications associated with:
     - The communities the user belongs
     - The communities the user's institution belongs
