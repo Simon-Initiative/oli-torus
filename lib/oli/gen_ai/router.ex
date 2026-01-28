@@ -56,6 +56,7 @@ defmodule Oli.GenAI.Router do
             request_type,
             :backup_outage
           )
+
         primary_open ->
           attempt_secondary(
             service_config,
