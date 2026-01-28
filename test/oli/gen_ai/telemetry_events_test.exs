@@ -106,6 +106,10 @@ defmodule Oli.GenAI.TelemetryEventsTest do
     assert metadata.request_type == :generate
     assert metadata.service_config_id == service_config.id
     assert metadata.registered_model_id == service_config.primary_model.id
+    assert metadata.tier == :primary
+    assert metadata.pool_name == :genai_slow_pool
+    assert metadata.pool_class == :slow
+    assert metadata.reason == :primary_normal
     assert metadata.error_category == nil
 
     detach(handler_id)

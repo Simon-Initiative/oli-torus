@@ -53,6 +53,30 @@ defmodule Oli.GenAI.RouterTest do
     assert plan.reason == :primary_over_capacity
   end
 
+  test "routes to secondary when service config soft limit reached" do
+    service_config = build_service_config(7)
+    request_ctx = %{request_type: :generate}
+
+    AdmissionControl.increment_requests(service_config.id)
+    AdmissionControl.increment_requests(service_config.id)
+
+    assert {:ok, plan} = Router.route(request_ctx, service_config)
+    assert plan.selected_model.id == service_config.secondary_model.id
+    assert plan.tier == :secondary
+    assert plan.reason == :service_config_soft_limit
+  end
+
+  test "rejects when service config hard limit reached" do
+    service_config = build_service_config(8)
+    request_ctx = %{request_type: :generate}
+
+    AdmissionControl.increment_requests(service_config.id)
+    AdmissionControl.increment_requests(service_config.id)
+    AdmissionControl.increment_requests(service_config.id)
+
+    assert {:error, :over_capacity} = Router.route(request_ctx, service_config)
+  end
+
   test "rejects when secondary breaker is open and primary over capacity" do
     service_config =
       build_service_config(4,

@@ -55,7 +55,7 @@ defmodule Oli.GenAI.Execution do
       completer = Keyword.get(opts, :completions_mod, Completions)
       request_type = Map.get(request_ctx, :request_type, :stream)
 
-      admit!(service_config.id)
+      admit_stream!(service_config.id)
 
       try do
         execute_with_fallback(
@@ -70,7 +70,7 @@ defmodule Oli.GenAI.Execution do
           response_handler_fn
         )
       after
-        release!(service_config.id)
+        release_stream!(service_config.id)
         release_admission!(plan)
       end
     end
@@ -81,6 +81,16 @@ defmodule Oli.GenAI.Execution do
   end
 
   defp release!(service_config_id) do
+    AdmissionControl.decrement_requests(service_config_id)
+  end
+
+  defp admit_stream!(service_config_id) do
+    AdmissionControl.increment_requests(service_config_id)
+    AdmissionControl.increment_streams(service_config_id)
+  end
+
+  defp release_stream!(service_config_id) do
+    AdmissionControl.decrement_streams(service_config_id)
     AdmissionControl.decrement_requests(service_config_id)
   end
 
@@ -98,7 +108,7 @@ defmodule Oli.GenAI.Execution do
       completer,
       messages,
       functions,
-      plan.selected_model,
+      plan,
       service_config,
       request_type
     )
@@ -119,7 +129,7 @@ defmodule Oli.GenAI.Execution do
       completer,
       messages,
       functions,
-      plan.selected_model,
+      plan,
       service_config,
       response_handler_fn,
       request_type
@@ -130,16 +140,16 @@ defmodule Oli.GenAI.Execution do
          completer,
          messages,
          functions,
-         registered_model,
+         plan,
          service_config,
          request_type
        ) do
     start_ms = System.monotonic_time(:millisecond)
-    result = completer.generate(messages, functions, registered_model)
+    result = completer.generate(messages, functions, plan.selected_model)
     latency_ms = System.monotonic_time(:millisecond) - start_ms
 
-    report_breaker(result, registered_model, latency_ms)
-    emit_provider_telemetry(result, latency_ms, registered_model, request_type, service_config)
+    report_breaker(result, plan.selected_model, latency_ms)
+    emit_provider_telemetry(result, latency_ms, plan, request_type, service_config)
     result
   end
 
@@ -147,7 +157,7 @@ defmodule Oli.GenAI.Execution do
          completer,
          messages,
          functions,
-         registered_model,
+         plan,
          service_config,
          response_handler_fn,
          request_type
@@ -164,7 +174,7 @@ defmodule Oli.GenAI.Execution do
       response_handler_fn.(chunk)
     end
 
-    result = completer.stream(messages, functions, registered_model, wrapped_handler)
+    result = completer.stream(messages, functions, plan.selected_model, wrapped_handler)
     latency_ms = System.monotonic_time(:millisecond) - start_ms
 
     error_seen? = Process.get(error_key, false)
@@ -177,8 +187,8 @@ defmodule Oli.GenAI.Execution do
         result
       end
 
-    report_breaker(result, registered_model, latency_ms)
-    emit_provider_telemetry(result, latency_ms, registered_model, request_type, service_config)
+    report_breaker(result, plan.selected_model, latency_ms)
+    emit_provider_telemetry(result, latency_ms, plan, request_type, service_config)
     result
   end
 
@@ -240,16 +250,20 @@ defmodule Oli.GenAI.Execution do
 
   defp release_admission!(_), do: :ok
 
-  defp emit_provider_telemetry(result, latency_ms, registered_model, request_type, service_config) do
+  defp emit_provider_telemetry(result, latency_ms, plan, request_type, service_config) do
     {outcome, http_status, error_category} = outcome_details(result)
 
     Telemetry.provider_stop(
       %{duration_ms: latency_ms},
       %{
         service_config_id: service_config.id,
-        registered_model_id: registered_model.id,
-        provider: registered_model.provider,
-        model: registered_model.model,
+        registered_model_id: plan.selected_model.id,
+        provider: plan.selected_model.provider,
+        model: plan.selected_model.model,
+        tier: plan.tier,
+        pool_name: plan.pool_name,
+        pool_class: plan.selected_model.pool_class || :slow,
+        reason: plan.reason,
         outcome: outcome,
         http_status: http_status,
         error_category: error_category,

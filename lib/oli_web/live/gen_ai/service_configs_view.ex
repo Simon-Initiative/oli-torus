@@ -6,7 +6,6 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   alias Oli.GenAI
   alias Oli.GenAI.Completions.{ServiceConfig}
   alias Oli.GenAI.AdmissionControl
-  alias Oli.Repo
   alias OliWeb.Common.Breadcrumb
 
   @form_control_classes "block w-full p-2.5
@@ -261,16 +260,48 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
                 <div>{format_rate(@health.primary.error_rate)}</div>
               </div>
               <div>
+                <div class="text-xs uppercase text-gray-500">Secondary Error Rate</div>
+                <div>{format_rate(@health.secondary.error_rate)}</div>
+              </div>
+              <div>
                 <div class="text-xs uppercase text-gray-500">429 Rate</div>
                 <div>{format_rate(@health.primary.rate_limit_rate)}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Secondary 429 Rate</div>
+                <div>{format_rate(@health.secondary.rate_limit_rate)}</div>
               </div>
               <div>
                 <div class="text-xs uppercase text-gray-500">Latency p95 (ms)</div>
                 <div>{@health.primary.latency_p95_ms}</div>
               </div>
               <div>
+                <div class="text-xs uppercase text-gray-500">Secondary Latency p95 (ms)</div>
+                <div>{@health.secondary.latency_p95_ms}</div>
+              </div>
+              <div>
                 <div class="text-xs uppercase text-gray-500">Last Reason</div>
                 <div>{@health.primary.last_reason}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Secondary Last Reason</div>
+                <div>{@health.secondary.last_reason}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Backup Error Rate</div>
+                <div>{format_rate(@health.backup.error_rate)}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Backup 429 Rate</div>
+                <div>{format_rate(@health.backup.rate_limit_rate)}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Backup Latency p95 (ms)</div>
+                <div>{@health.backup.latency_p95_ms}</div>
+              </div>
+              <div>
+                <div class="text-xs uppercase text-gray-500">Backup Last Reason</div>
+                <div>{@health.backup.last_reason}</div>
               </div>
             </div>
           </div>
@@ -366,12 +397,13 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         case GenAI.update_service_config(selected, params) do
           {:ok, service_config} ->
             all = all()
+            selected = Enum.find(all, &(&1.id == service_config.id)) || service_config
 
             {:noreply,
              socket
-             |> assign(service_configs: all, selected: service_config, editing: false)
-             |> assign_form(ServiceConfig.changeset(service_config, %{}))
-             |> assign_health(service_config)}
+             |> assign(service_configs: all, selected: selected, editing: false)
+             |> assign_form(ServiceConfig.changeset(selected, %{}))
+             |> assign_health(selected)}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             socket = put_flash(socket, :error, "Couldn't update service config")
@@ -435,7 +467,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
   end
 
   defp assign_health(socket, %ServiceConfig{} = selected) do
-    assign(socket, health: health_for(ensure_models_loaded(selected)))
+    assign(socket, health: health_for(selected))
   end
 
   defp assign_health(socket, _), do: assign(socket, health: nil)
@@ -464,7 +496,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         default_snapshot
         |> Map.merge(AdmissionControl.get_breaker_snapshot(service_config.secondary_model.id))
       else
-        %{state: :none}
+        %{default_snapshot | state: :none}
       end
 
     backup =
@@ -472,7 +504,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
         default_snapshot
         |> Map.merge(AdmissionControl.get_breaker_snapshot(service_config.backup_model.id))
       else
-        %{state: :none}
+        %{default_snapshot | state: :none}
       end
 
     %{
@@ -481,16 +513,6 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
       secondary: secondary,
       backup: backup
     }
-  end
-
-  defp ensure_models_loaded(%ServiceConfig{} = service_config) do
-    if Ecto.assoc_loaded?(service_config.primary_model) and
-         Ecto.assoc_loaded?(service_config.secondary_model) and
-         Ecto.assoc_loaded?(service_config.backup_model) do
-      service_config
-    else
-      Repo.preload(service_config, [:primary_model, :secondary_model, :backup_model])
-    end
   end
 
   defp schedule_health_refresh(socket) do

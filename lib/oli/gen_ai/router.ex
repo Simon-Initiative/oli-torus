@@ -22,6 +22,9 @@ defmodule Oli.GenAI.Router do
     start_ms = System.monotonic_time(:millisecond)
     request_type = Map.get(request_ctx, :request_type, :generate)
     counts = AdmissionControl.counts(service_config.id)
+    {soft_limit, hard_limit} = limits(service_config)
+    soft_limit_reached? = is_integer(soft_limit) and counts.requests >= soft_limit
+    hard_limit_reached? = is_integer(hard_limit) and counts.requests >= hard_limit
 
     primary = service_config.primary_model
 
@@ -40,6 +43,19 @@ defmodule Oli.GenAI.Router do
 
     result =
       cond do
+        hard_limit_reached? ->
+          {:error, :over_capacity}
+
+        (soft_limit_reached? and not primary_open and secondary) && not secondary_open ->
+          attempt_secondary(
+            service_config,
+            secondary,
+            secondary_open,
+            counts,
+            request_type,
+            :service_config_soft_limit
+          )
+
         primary_open and (is_nil(secondary) or secondary_open) ->
           attempt_backup(service_config, backup, backup_open, counts, request_type)
 
@@ -74,8 +90,6 @@ defmodule Oli.GenAI.Router do
       end
 
     duration_ms = System.monotonic_time(:millisecond) - start_ms
-
-    {soft_limit, hard_limit} = limits(service_config)
 
     emit_telemetry(
       result,
