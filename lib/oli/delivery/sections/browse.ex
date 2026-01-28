@@ -382,7 +382,7 @@ defmodule Oli.Delivery.Sections.Browse do
     query =
       case field do
         :title ->
-          order_by(query, [s], {^direction, fragment("lower(?)", s.title)})
+          order_by(query, [s], {^direction, s.title})
 
         :start_date ->
           order_by(query, [s], {^direction, s.start_date})
