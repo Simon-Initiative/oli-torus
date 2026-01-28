@@ -50,6 +50,32 @@ export const parseVideoPlayCommand = (command: string) => {
 const isValidSize = (video: ContentModel.Video) =>
   video.width && video.height && video.width > 0 && video.height > 0;
 
+const VIDEO_CONTENT_TYPES_BY_EXTENSION: Record<string, string> = {
+  m4v: 'video/mp4',
+  mp4: 'video/mp4',
+  mpeg: 'video/mpeg',
+  mpg: 'video/mpeg',
+  ogg: 'video/ogg',
+  ogv: 'video/ogg',
+  qt: 'video/quicktime',
+  mov: 'video/quicktime',
+  webm: 'video/webm',
+};
+
+const inferVideoContentType = (url: string, contenttype?: string) => {
+  if (!url) return contenttype;
+  const path = url.split('?')[0].split('#')[0];
+  const ext = path.split('.').pop()?.toLowerCase();
+  const inferred = ext ? VIDEO_CONTENT_TYPES_BY_EXTENSION[ext] : undefined;
+  if (!inferred) return contenttype;
+
+  const normalized = contenttype?.split(';')[0].trim();
+  if (!normalized) return inferred;
+  if (normalized !== inferred) return inferred;
+
+  return contenttype;
+};
+
 interface VideoInterface {
   play: () => void;
   seek: (time: number) => void;
@@ -266,7 +292,11 @@ export const VideoPlayer: React.FC<{
         <InitialPlayButton />
 
         {video.src.map((src) => (
-          <source key={src.url} src={src.url} type={src.contenttype} />
+          <source
+            key={src.url}
+            src={src.url}
+            type={inferVideoContentType(src.url, src.contenttype)}
+          />
         ))}
         {video.captions?.map((caption, idx) => (
           <track
