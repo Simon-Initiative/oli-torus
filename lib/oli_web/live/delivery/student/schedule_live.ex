@@ -134,8 +134,8 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
             <div class={[
               "w-full md:w-32 uppercase font-bold border-b md:border-b-0 mb-3",
               if(month_active?(month, @current_month),
-                do: "text-gray-500 border-gray-500",
-                else: "text-gray-300 dark:text-gray-700 border-gray-300 dark:border-gray-700"
+                do: "text-Text-text-low border-gray-500",
+                else: "text-Text-text-low border-gray-300 dark:border-gray-700"
               )
             ]}>
               <div>

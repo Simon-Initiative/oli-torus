@@ -650,6 +650,9 @@
   display: inline-block;
   position: relative;
   vertical-align: top;
+  /* Ensure touch target area is adequate */
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .dropdown-option-wrapper {
@@ -792,6 +795,49 @@ blockquote .select2-container--default .select2-selection--single .select2-selec
   width: auto;
   outline: 0;
   height: 35px !important;
+  /* Ensure minimum touch target size (44x44px) for mobile devices */
+  min-height: 44px;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Ensure focus styles are applied when element is programmatically focused */
+.select2-container--default .select2-selection--single:focus,
+.select2-container--default.select2-container--focus .select2-selection--single {
+  outline: 2px solid #2196f3 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3) !important;
+}
+
+/* Focus indicators for keyboard navigation - Dropdown triggers */
+.select2-container--default .select2-selection--single:focus-visible,
+.select2-container--default .select2-selection--single:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single:focus-visible,
+.select2-container--default.select2-container--focus .select2-selection--single:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+}
+
+/* Ensure focus indicators work with correct/incorrect states */
+.dropdown.correct + .select2-container .select2-selection--single:focus-visible,
+.dropdown.correct + .select2-container .select2-selection--single:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+}
+
+.dropdown.incorrect + .select2-container .select2-selection--single:focus-visible,
+.dropdown.incorrect + .select2-container .select2-selection--single:focus {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
 }
 
 .select2-container--default .select2-selection--single .select2-selection__rendered {
@@ -799,7 +845,7 @@ blockquote .select2-container--default .select2-selection--single .select2-selec
 }
 
 .select2-selection__rendered {
-  min-height: 26px;
+  min-height: 44px;
   min-width: 120px;
   width: auto;
   border: 0;
@@ -807,15 +853,23 @@ blockquote .select2-container--default .select2-selection--single .select2-selec
   border-radius: 3px 3px 0 0;
   background-color: #f8f9fa;
   transition: background-color 0.3s ease-in-out;
-  display: inline-block;
-  padding: 0;
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
   font-size: 1em;
   margin-top: -1px;
 }
 
-.select2-selection__rendered:focus,
 .select2-selection__rendered:hover {
   background-color: #d9d9de;
+}
+
+/* Remove focus styles from rendered element - focus is handled by parent .select2-selection--single */
+/* This prevents double border when parent is focused */
+.select2-selection__rendered:focus-visible,
+.select2-selection__rendered:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .select2-selection__rendered:focus .dropdown-menu {
@@ -843,6 +897,13 @@ blockquote .select2-container--default .select2-selection--single .select2-selec
 
 .select2-container--default.select2-container--disabled .select2-selection--single {
   background-color: transparent;
+}
+
+/* Disable focus indicators for disabled elements */
+.select2-container--default.select2-container--disabled .select2-selection--single:focus-visible,
+.select2-container--default.select2-container--disabled .select2-selection--single:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .select2-results {
@@ -885,6 +946,11 @@ blockquote .select2-container--default .select2-selection--single .select2-selec
   outline: 0;
   padding: 5px 10px;
   word-wrap: break-word;
+  /* Ensure minimum touch target size for dropdown options */
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 12px 10px;
 }
 
 .select2-results__option::before {
@@ -1366,6 +1432,9 @@ blockquote
   display: inline-block;
   vertical-align: top;
   border-radius: 3px;
+  /* Ensure touch target area is adequate */
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .text-input {
@@ -1381,11 +1450,38 @@ blockquote
   padding: 5px 5px;
   position: relative;
   min-width: 120px;
+  /* Ensure minimum touch target size for mobile devices */
+  min-height: 44px;
+  padding: 12px 5px;
+  box-sizing: border-box;
 }
 
 .text-input:focus {
   outline: 0;
   border-bottom: 1px solid #2196f3;
+}
+
+/* Focus indicators for keyboard navigation - Text inputs */
+.text-input:focus-visible {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+  border-bottom: 1px solid #2196f3;
+}
+
+/* Ensure focus indicators work with correct/incorrect states */
+.text-input.correct:focus-visible,
+.text-input-container.correct .text-input:focus-visible {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+}
+
+.text-input.incorrect:focus-visible,
+.text-input-container.incorrect .text-input:focus-visible {
+  outline: 2px solid #2196f3;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
 }
 .text-input:disabled {
   cursor: not-allowed;
@@ -1411,6 +1507,13 @@ blockquote
   background-color: rgba(0, 0, 0, 0.07);
   cursor: not-allowed;
   color: rgba(0, 0, 0, 0.8);
+}
+
+/* Disable focus indicators for disabled text inputs */
+.text-input.disabled:focus-visible,
+.text-input:disabled:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .text-input[contenteditable][placeholder]:after {

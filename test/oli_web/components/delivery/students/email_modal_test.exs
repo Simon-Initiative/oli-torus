@@ -272,6 +272,28 @@ defmodule OliWeb.Components.Delivery.Students.EmailModalTest do
       assert html =~ "This is a test message"
     end
 
+    test "textarea updates on keyup events", %{conn: conn} do
+      students = [%{id: 1, full_name: "Smith, John", email: "john@test.com"}]
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, EmailModal, %{
+          id: "test-email-modal",
+          selected_students: [1],
+          students: students,
+          section_title: "Test Course",
+          instructor_email: "instructor@test.com",
+          show_modal: true,
+          email_handler_id: "test-handler"
+        })
+
+      view
+      |> element("#email_message")
+      |> render_keyup(%{"value" => "Typing updates state"})
+
+      html = render(view)
+      assert html =~ "Typing updates state"
+    end
+
     test "send button is disabled when email message is empty", %{conn: conn} do
       students = [%{id: 1, full_name: "Smith, John", email: "john@test.com"}]
 
@@ -314,6 +336,34 @@ defmodule OliWeb.Components.Delivery.Students.EmailModalTest do
       view
       |> element("#email_message")
       |> render_blur(%{"value" => "Test message"})
+
+      send_button_html =
+        view
+        |> element("button[role='send email']")
+        |> render()
+
+      refute send_button_html =~ "disabled"
+      assert send_button_html =~ "bg-Fill-Buttons-fill-primary"
+      refute send_button_html =~ "cursor-not-allowed"
+    end
+
+    test "send button enables on keyup when message has content", %{conn: conn} do
+      students = [%{id: 1, full_name: "Smith, John", email: "john@test.com"}]
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, EmailModal, %{
+          id: "test-email-modal",
+          selected_students: [1],
+          students: students,
+          section_title: "Test Course",
+          instructor_email: "instructor@test.com",
+          show_modal: true,
+          email_handler_id: "test-handler"
+        })
+
+      view
+      |> element("#email_message")
+      |> render_keyup(%{"value" => "Test message"})
 
       send_button_html =
         view

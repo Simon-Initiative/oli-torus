@@ -117,7 +117,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <% nil -> %>
           <Common.loading_spinner />
         <% [] -> %>
-          <div class="text-center p-4 text-gray-500">{empty_label(@active_tab)}</div>
+          <div class="text-center text-sm p-4 text-Text-text-low">{empty_label(@active_tab)}</div>
         <% annotations -> %>
           <%= for annotation <- annotations do %>
             <.post
@@ -187,7 +187,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <div class="font-semibold">
           {post_creator(@post, @current_user)}
         </div>
-        <div class="text-sm text-gray-500">
+        <div class="text-sm text-Text-text-low">
           {Timex.from_now(@post.inserted_at)}
         </div>
       </div>
@@ -332,7 +332,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         "flex-1 inline-flex items-center justify-center border-l border-t border-b first:rounded-l-lg last:rounded-r-lg last:border-r px-4 py-3 whitespace-nowrap",
         if(@selected,
           do:
-            "bg-Fill-Buttons-fill-primary border-Fill-Buttons-fill-primary text-Text-text-white stroke-Text-text-white font-semibold",
+            "bg-Fill-Buttons-fill-primary border-Fill-Buttons-fill-primary text-Text-text-white stroke-Text-text-white font-semibold hover:text-Specially-Tokens-Text-text-button-primary-hover hover:bg-Fill-Buttons-fill-primary-hover hover:border-Fill-Buttons-fill-primary-hover",
           else:
             "bg-Specially-Tokens-Border-border-input border-Specially-Tokens-Border-border-input text-Text-text-low stroke-Text-text-low font-semibold"
         )
@@ -517,7 +517,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               {post_creator(@post, @current_user)}
             </div>
           </div>
-          <div class="text-sm text-gray-500" aria-hidden="true">
+          <div class="text-sm text-Text-text-low" aria-hidden="true">
             {@relative_time}
           </div>
         </div>
@@ -650,7 +650,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <button
               disabled={@post.status == :deleted}
               class={[
-                "inline-flex gap-1 text-sm text-gray-500 bold py-1 px-2 rounded-lg",
+                "inline-flex gap-1 text-sm text-Icon-icon-default bold py-1 px-2 rounded-lg",
                 if(@post.status == :deleted,
                   do: "opacity-50",
                   else: "hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -685,7 +685,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <button
               disabled={@post.status == :deleted}
               class={[
-                "inline-flex gap-1 text-sm text-gray-500 bold py-2 px-2 rounded-lg",
+                "inline-flex gap-1 text-sm text-Icon-icon-default bold py-2 px-2 rounded-lg",
                 if(@post.status == :deleted,
                   do: "opacity-50",
                   else: "hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -796,7 +796,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <div class="font-semibold" aria-hidden="true">
             {post_creator(@post, @current_user)}
           </div>
-          <div class="text-sm text-gray-500" aria-hidden="true">
+          <div class="text-sm text-gray-400" aria-hidden="true">
             {@relative_time}
           </div>
         </div>

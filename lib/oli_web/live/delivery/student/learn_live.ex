@@ -1320,7 +1320,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             ) %>
 
           <div class={"border-b-[1px] #{if unit_progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1 py-3"}>
-            <h6 class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase">
+            <h6 class="text-Text-text-low text-sm font-bold leading-4 uppercase">
               {container_label_and_numbering(1, unit["numbering"]["index"], @section.customizations)}
             </h6>
 
@@ -1340,7 +1340,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div class="flex justify-between items-center mb-1 w-full">
               <div
                 role={"unit #{unit["resource_id"]} scheduling details"}
-                class="flex flex-col items-start gap-2 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3"
+                class="flex flex-col items-start gap-2 text-Text-text-low text-xs font-semibold leading-3"
               >
                 <span>
                   Available: {get_available_date(
@@ -1579,7 +1579,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         role={"top_level_page_#{@unit["numbering"]["index"]}"}
       >
         <div role="header" class="flex flex-col gap-2 sm:gap-0 px-4 sm:px-0 md:flex-row md:gap-[30px]">
-          <div class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap">
+          <div class="text-Text-text-low text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap">
             {"PAGE #{@unit["numbering"]["index"]}"}
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
@@ -1593,7 +1593,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 </span>
               </div>
               <div class="sm:ml-auto flex items-center gap-3" role="schedule_details">
-                <div class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
+                <div class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
                       @unit["section_resource"].start_date,
@@ -1658,7 +1658,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     >
       <div class="mt-5 md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
         <div class="flex flex-col gap-2 sm:gap-0 px-4 sm:px-0 md:flex-row md:gap-[30px]">
-          <div class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap">
+          <div class="text-Text-text-low text-sm font-bold leading-4 uppercase mt-[7px] whitespace-nowrap">
             {container_label_and_numbering(
               @unit["numbering"]["level"],
               @unit["numbering"]["index"],
@@ -1676,7 +1676,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 </span>
               </div>
               <div class="flex items-center gap-3" role="schedule_details">
-                <div class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
+                <div class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
                   <span>
                     Available: {get_available_date(
                       @unit["section_resource"].start_date,
@@ -1817,7 +1817,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
           >
             <div class="justify-start items-start gap-1 inline-flex">
-              <div class="opacity-60 dark:text-white text-sm font-bold uppercase tracking-tight">
+              <div class="opacity-75 dark:text-white text-sm font-bold uppercase tracking-tight">
                 {container_label_and_numbering(
                   selected_module["numbering"][
                     "level"
@@ -1949,7 +1949,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class={"card-header border-b-[1px] #{if @progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1"}
             id={"header-#{@row["resource_id"]}"}
           >
-            <h6 class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase">
+            <h6 class="text-Text-text-low text-sm font-bold leading-4 uppercase">
               {"#{String.upcase(Sections.get_container_label_and_numbering(1, @row["numbering"]["index"], @section.customizations))}"}
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
@@ -1970,7 +1970,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div class="flex justify-between items-center mb-3 w-full">
               <div
                 role={"unit #{@row["resource_id"]} scheduling details"}
-                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
+                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
                   Available: {get_available_date(
@@ -2097,7 +2097,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class={"card-header border-b-[1px] #{if @progress == 100, do: "border-Fill-fill-progress", else: "border-Border-border-default"} pb-1"}
             id={"header-#{@row["resource_id"]}"}
           >
-            <h6 class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase">
+            <h6 class="text-Text-text-low text-sm font-bold leading-4 uppercase">
               {"PAGE #{@row["numbering"]["index"]}"}
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
@@ -2118,7 +2118,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div class="flex justify-between items-center mb-3 w-full">
               <div
                 role={"unit #{@row["resource_id"]} scheduling details"}
-                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
+                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
                   Available: {get_available_date(
@@ -2196,7 +2196,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           "w-full px-3 sm:pl-16 py-2.5 justify-start items-center gap-2 sm:gap-5 flex rounded-lg"
         ]}
       >
-        <span class="search-result text-Text-text-low-alpha text-base font-semibold">
+        <span class="search-result text-Text-text-low text-base font-semibold">
           {Phoenix.HTML.raw(CommonUtils.highlight_search_term(@row["title"], @search_term))}
         </span>
       </div>
@@ -2253,7 +2253,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class={"card-header #{border_class} pb-1 relative"}
             id={"header-#{@row["resource_id"]}"}
           >
-            <h6 class="text-Text-text-low-alpha text-sm font-bold leading-4 uppercase">
+            <h6 class="text-Text-text-low text-sm font-bold leading-4 uppercase">
               {"#{String.upcase(Sections.get_container_label_and_numbering(@row["numbering"]["level"], @row["numbering"]["index"], @section.customizations))}"}
             </h6>
             <div class="flex justify-between items-center mt-2 mb-2 sm:mt-3 sm:mb-1 text-Text-text-high text-lg font-semibold leading-6 line-clamp-2 sm:text-2xl sm:leading-8 sm:line-clamp-1 md:leading-loose">
@@ -2267,7 +2267,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div class="flex justify-between items-center mb-3 w-full">
               <div
                 role={"module #{@row["resource_id"]} scheduling details"}
-                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
+                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
                   Available: {get_available_date(
@@ -2493,7 +2493,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             progress={@row["progress"]}
           />
           <div class="w-[26px] justify-start items-center">
-            <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold capitalize">
+            <div class="grow shrink basis-0 opacity-75 dark:text-white text-[13px] font-semibold capitalize">
               <.numbering_index type={Atom.to_string(@type)} index={@row["numbering"]["index"]} />
             </div>
           </div>
@@ -2515,7 +2515,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     "search-result text-left text-base leading-6",
                     # Text low alpha is set if the item is visited, but not necessarily completed
                     if(@row["visited"],
-                      do: "text-Text-text-low-alpha font-normal",
+                      do: "text-Text-text-low font-normal",
                       else: "text-Text-text-high font-semibold"
                     )
                   ]
@@ -2532,7 +2532,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div :if={@row["graded"]} role="due date and score" class="flex flex-col sm:flex-row">
               <span
                 role="page due date"
-                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
+                class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4"
               >
                 <span>
                   Available: {get_available_date(
@@ -2773,7 +2773,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="justify-start items-start gap-5 flex">
         <Icons.no_icon />
         <div class="w-[26px] justify-start items-center">
-          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold capitalize">
+          <div class="grow shrink basis-0 opacity-75 text-white text-[13px] font-semibold capitalize">
             <.numbering_index type={@type} index={@numbering_index} />
           </div>
         </div>
@@ -2881,7 +2881,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           progress={@progress}
         />
         <div class="w-[26px] justify-start items-center">
-          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold capitalize">
+          <div class="grow shrink basis-0 opacity-75 text-white text-[13px] font-semibold capitalize">
             <.numbering_index type={@type} index={@numbering_index} />
           </div>
         </div>
@@ -2898,7 +2898,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 "text-left text-base leading-6",
                 # Text low alpha is set if the item is visited, but not necessarily completed
                 if(@was_visited,
-                  do: "text-Text-text-low-alpha font-normal",
+                  do: "text-Text-text-low font-normal",
                   else: "text-Text-text-high font-semibold"
                 )
               ]
@@ -2909,7 +2909,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
           <div :if={@graded} role="due date and score" class="flex flex-col sm:flex-row">
-            <span class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low-alpha text-opacity-75 text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
+            <span class="flex flex-col items-start sm:flex-row gap-2 sm:gap-0 text-Text-text-low text-xs font-semibold leading-3 sm:text-sm sm:leading-4">
               <span>
                 Available: {get_available_date(
                   @available_date,
@@ -3401,7 +3401,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <button
       phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
-      class="text-Text-text-white text-sm font-semibold font-['Open_Sans'] leading-4 px-8 py-3 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover rounded-lg shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] inline-flex justify-center items-center"
+      class="text-Text-text-white hover:text-Specially-Tokens-Text-text-button-primary-hover text-sm font-semibold font-['Open_Sans'] leading-4 px-8 py-3 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover rounded-lg shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] inline-flex justify-center items-center"
     >
       Let's discuss?
     </button>
@@ -3544,7 +3544,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp numbering_index(assigns) do
     ~H"""
-    <span class="opacity-60 text-black dark:text-white text-[13px] font-semibold capitalize">
+    <span class="opacity-75 text-black dark:text-white text-[13px] font-semibold capitalize">
       {if @type == "page", do: "#{@index}", else: " "}
     </span>
     """

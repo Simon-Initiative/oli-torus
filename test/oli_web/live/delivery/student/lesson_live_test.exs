@@ -2297,8 +2297,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # and is shown in the UI (inside the note content area with role="note")
       assert has_element?(view, "div[role='note'] div.font-semibold", "Me")
 
-      assert has_element?(view, "div[role='note'] div.text-gray-500", "now") or
-               has_element?(view, "div[role='note'] div.text-gray-500", "1 second ago")
+      assert has_element?(view, "div[role='note'] div.text-Text-text-low", "now") or
+               has_element?(view, "div[role='note'] div.text-Text-text-low", "1 second ago")
 
       assert has_element?(view, "div[role='note'] p", "some new post content")
     end

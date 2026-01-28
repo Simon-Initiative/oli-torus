@@ -98,130 +98,164 @@ defmodule OliWeb.Users.UsersDetailView do
     <div>
       {render_modal(assigns)}
       <Groups.render>
-        <Group.render label="Details" description="User details">
-          <.form for={@form} phx-change="change" phx-submit="submit" autocomplete="off">
-            <ReadOnly.render label="Sub" value={@user.sub} />
-            <ReadOnly.render label="Name" value={@user_name} />
-            <div class="form-group">
-              <.input
-                field={@form[:given_name]}
-                label="Given Name"
-                class="form-control"
-                disabled={@disabled_edit}
-                error_position={:top}
-              />
-            </div>
-            <div class="form-group">
-              <.input
-                field={@form[:family_name]}
-                label="Last Name"
-                class="form-control"
-                disabled={@disabled_edit}
-                error_position={:top}
-              />
-            </div>
-            <div class="form-group">
-              <.input
-                field={@form[:email]}
-                label="Email"
-                class="form-control"
-                disabled={@disabled_edit}
-                error_position={:top}
-              />
-            </div>
-            <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
-            <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
-              <ReadOnly.render
-                label="Confirmed is 13 or older on creation"
-                value={boolean(@user.age_verified)}
-              />
-            <% end %>
-            <div class="form-group">
-              <span class="form-label">Credentials Managed By</span>
-              <div class="text-secondary d-flex align-items-center gap-4 mt-2">
-                <%= if @credentials_has_google do %>
-                  <div class="d-flex flex-column align-items-center">
-                    <Icons.google />
-                    <span class="small">Google</span>
-                  </div>
-                <% end %>
-                <%= if @credentials_has_google && @credentials_label do %>
-                  <span class="text-muted">|</span>
-                <% end %>
-                <%= if @credentials_label do %>
-                  <span>{@credentials_label}</span>
-                <% end %>
-              </div>
-            </div>
-            <div class="form-control mb-3">
-              <.input
-                field={@form[:independent_learner]}
-                type="checkbox"
-                label="Independent Learner"
-                class="form-check-input"
-                disabled={@disabled_edit}
-              />
-            </div>
-            <section class="mb-2">
-              <heading>
-                <p>Enable Independent Section Creation</p>
-                <small>
-                  Allow this user to create "Independent" sections and enroll students via invitation link without an LMS
-                </small>
-              </heading>
-              <div class="form-control">
-                <.input
-                  field={@form[:can_create_sections]}
-                  type="checkbox"
-                  label="Can Create Sections"
-                  class="form-check-input"
-                  disabled={@disabled_edit}
-                />
-              </div>
-            </section>
-            <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
-              <div class="form-control mb-3">
-                <.input
-                  field={@form[:is_internal]}
-                  type="checkbox"
-                  label="Internal staff"
-                  class="form-check-input"
-                  disabled={@disabled_edit}
-                />
-                <p class="mt-1 text-xs text-gray-500">
-                  Internal users gain early access to internal-only and canary features.
-                </p>
-              </div>
-            <% else %>
-              <ReadOnly.render
-                label="Internal actor"
-                value={if(@user.is_internal, do: "Yes", else: "No")}
-              />
-            <% end %>
-            <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)} />
-            <ReadOnly.render
-              label="Email Confirmed"
-              value={render_date(@user, :email_confirmed_at, @ctx)}
+        <div class="flex flex-col py-5 border-b border-Border-border-subtle">
+          <h4>Enrolled Sections</h4>
+          <div class="text-Text-text-low-alpha">Course sections to which the user is enrolled.</div>
+          <div class="mt-4">
+            <.live_component
+              module={OliWeb.Users.UserEnrolledSections}
+              id="user_enrolled_sections"
+              user={@user}
+              params={@params}
+              ctx={@ctx}
+              enrolled_sections={@enrolled_sections}
             />
-            <ReadOnly.render label="Created" value={render_date(@user, :inserted_at, @ctx)} />
-            <ReadOnly.render label="Last Updated" value={render_date(@user, :updated_at, @ctx)} />
-            <%= unless @disabled_edit do %>
+          </div>
+        </div>
+        <div class="flex flex-col py-5 border-b border-Border-border-subtle">
+          <h4>Details</h4>
+          <div class="text-Text-text-low-alpha">User details</div>
+          <div class="mt-4">
+            <.form for={@form} phx-change="change" phx-submit="submit" autocomplete="off">
+              <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-x-10">
+                <div class="flex flex-col gap-4">
+                  <ReadOnly.render label="Sub" value={@user.sub} />
+                  <ReadOnly.render label="Name" value={@user_name} />
+                  <div class="form-group">
+                    <.input
+                      field={@form[:given_name]}
+                      label="Given Name"
+                      class="form-control"
+                      disabled={@disabled_edit}
+                      error_position={:top}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <.input
+                      field={@form[:family_name]}
+                      label="Last Name"
+                      class="form-control"
+                      disabled={@disabled_edit}
+                      error_position={:top}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <.input
+                      field={@form[:email]}
+                      label="Email"
+                      class="form-control"
+                      disabled={@disabled_edit}
+                      error_position={:top}
+                    />
+                  </div>
+                  <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
+                  <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
+                    <ReadOnly.render
+                      label="Confirmed is 13 or older on creation"
+                      value={boolean(@user.age_verified)}
+                    />
+                  <% end %>
+                </div>
+                <div class="flex flex-col gap-4">
+                  <div class="form-group">
+                    <span class="form-label">Credentials Managed By</span>
+                    <div class="mt-2 flex flex-col gap-2 text-Text-text-low-alpha">
+                      <%= if @credentials_has_google do %>
+                        <div class="flex flex-col items-start gap-1">
+                          <Icons.google />
+                          <span class="text-[11px] uppercase tracking-wide text-Text-text-low-alpha">
+                            Google
+                          </span>
+                        </div>
+                      <% end %>
+                      <%= if @credentials_label do %>
+                        <span class="text-sm font-semibold text-Text-text-high">
+                          {@credentials_label}
+                        </span>
+                      <% end %>
+                      <%= if !@credentials_has_google && is_nil(@credentials_label) do %>
+                        <span class="text-sm text-Text-text-low-alpha">None</span>
+                      <% end %>
+                    </div>
+                  </div>
+                  <div class="form-control">
+                    <.input
+                      field={@form[:independent_learner]}
+                      type="checkbox"
+                      label="Independent Learner"
+                      class="form-check-input"
+                      disabled={@disabled_edit}
+                    />
+                  </div>
+                  <section class="mb-2">
+                    <heading>
+                      <p>Enable Independent Section Creation</p>
+                      <small>
+                        Allow this user to create "Independent" sections and enroll students via invitation link without an LMS
+                      </small>
+                    </heading>
+                    <div class="form-control">
+                      <.input
+                        field={@form[:can_create_sections]}
+                        type="checkbox"
+                        label="Can Create Sections"
+                        class="form-check-input"
+                        disabled={@disabled_edit}
+                      />
+                    </div>
+                  </section>
+                  <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
+                    <div class="form-control mb-3">
+                      <.input
+                        field={@form[:is_internal]}
+                        type="checkbox"
+                        label="Internal staff"
+                        class="form-check-input"
+                        disabled={@disabled_edit}
+                      />
+                      <p class="mt-1 text-xs text-Text-text-low-alpha">
+                        Internal users gain early access to internal-only and canary features.
+                      </p>
+                    </div>
+                  <% else %>
+                    <ReadOnly.render
+                      label="Internal actor"
+                      value={if(@user.is_internal, do: "Yes", else: "No")}
+                    />
+                  <% end %>
+                  <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)} />
+                  <ReadOnly.render
+                    label="Email Confirmed"
+                    value={render_date(@user, :email_confirmed_at, @ctx)}
+                  />
+                  <ReadOnly.render label="Created" value={render_date(@user, :inserted_at, @ctx)} />
+                  <ReadOnly.render label="Last Updated" value={render_date(@user, :updated_at, @ctx)} />
+                </div>
+              </div>
+              <%= unless @disabled_edit do %>
+                <.button
+                  variant={:primary}
+                  type="submit"
+                  size={:sm}
+                  class="float-right mt-4 !bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
+                  disabled={@disabled_submit}
+                >
+                  Save
+                </.button>
+              <% end %>
+            </.form>
+            <%= if @disabled_edit do %>
               <.button
                 variant={:primary}
-                type="submit"
-                class="float-right mt-2"
-                disabled={@disabled_submit}
+                size={:sm}
+                class="float-right mt-4 !bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
+                phx-click="start_edit"
               >
-                Save
+                Edit
               </.button>
             <% end %>
-          </.form>
-          <%= if @disabled_edit do %>
-            <.button variant={:primary} class="float-right mt-2" phx-click="start_edit">
-              Edit
-            </.button>
-          <% end %>
-        </Group.render>
+          </div>
+        </div>
         <%= if !Enum.empty?(@user_lti_params) do %>
           <Group.render label="LTI Details" description="LTI 1.3 details provided by an LMS">
             <ul class="list-group">
@@ -239,32 +273,23 @@ defmodule OliWeb.Users.UsersDetailView do
             </ul>
           </Group.render>
         <% end %>
-        <Group.render
-          label="Enrolled Sections"
-          description="Course sections to which the student is enrolled"
-        >
-          <.live_component
-            module={OliWeb.Users.UserEnrolledSections}
-            id="user_enrolled_sections"
-            user={@user}
-            params={@params}
-            ctx={@ctx}
-            enrolled_sections={@enrolled_sections}
-          />
-        </Group.render>
-        <Group.render label="Actions" description="Actions that can be taken for this user">
-          <%= if @user.independent_learner do %>
-            <Actions.render
-              user_id={@user.id}
-              account_locked={!is_nil(@user.locked_at)}
-              email_confirmation_pending={Accounts.user_confirmation_pending?(@user)}
-              password_reset_link={@password_reset_link}
-            />
-          <% else %>
-            <div>No actions available</div>
-            <div class="text-secondary">LTI users are managed by their LMS</div>
-          <% end %>
-        </Group.render>
+        <div class="flex flex-col py-5 border-b border-Border-border-subtle">
+          <h4>Actions</h4>
+          <div class="text-Text-text-low-alpha">Actions that can be taken for this user</div>
+          <div class="mt-4 w-full max-w-[535px]">
+            <%= if @user.independent_learner do %>
+              <Actions.render
+                user_id={@user.id}
+                account_locked={!is_nil(@user.locked_at)}
+                email_confirmation_pending={Accounts.user_confirmation_pending?(@user)}
+                password_reset_link={@password_reset_link}
+              />
+            <% else %>
+              <div>No actions available</div>
+              <div class="text-Text-text-low-alpha">LTI users are managed by their LMS</div>
+            <% end %>
+          </div>
+        </div>
       </Groups.render>
     </div>
     """

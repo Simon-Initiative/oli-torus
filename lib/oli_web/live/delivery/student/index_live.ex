@@ -242,7 +242,15 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       class="md:hidden fixed top-14 left-0 right-0 z-40 h-12 bg-Surface-surface-primary shadow-[0px_2px_10px_0px_rgba(0,50,99,0.10)] hidden"
     >
       <div class="relative h-12 overflow-x-auto scrollbar-hide">
-        <div class="flex items-center gap-6 h-12 px-4" data-home-tabs-container>
+        <button
+          type="button"
+          data-drawer-toggle
+          aria-label="Open sections menu"
+          class="absolute left-0 top-0 h-12 w-12 flex items-center justify-center text-Text-text-high bg-Surface-surface-primary z-10"
+        >
+          <Icons.vertical_dots />
+        </button>
+        <div class="flex items-center gap-6 h-12 pl-12 pr-4" data-home-tabs-container>
           <button
             type="button"
             data-home-tab
@@ -280,6 +288,98 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       </div>
     </nav>
+
+    <div
+      id="home-drawer-backdrop"
+      data-drawer-backdrop
+      class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-[45] hidden"
+      aria-hidden="true"
+    >
+    </div>
+
+    <div
+      id="home-drawer"
+      data-drawer
+      role="dialog"
+      aria-labelledby="home-drawer-title"
+      aria-modal="true"
+      class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-[#1a1a1a] rounded-t-2xl shadow-[0px_-4px_20px_0px_rgba(0,0,0,0.3)] transform translate-y-full transition-transform duration-300 ease-in-out hidden"
+    >
+      <div class="flex flex-col">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 id="home-drawer-title" class="text-base font-semibold text-[#1f2937] dark:text-white">
+            Homepage
+          </h2>
+          <button
+            type="button"
+            data-drawer-close
+            aria-label="Close sections menu"
+            class="text-[#1f2937] hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
+          >
+            <Icons.close class="stroke-current" />
+          </button>
+        </div>
+
+        <div class="flex flex-col py-2">
+          <button
+            type="button"
+            data-drawer-item
+            data-target="home-continue-learning"
+            class="flex items-center justify-between px-6 py-4 text-[#1f2937] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <span class="text-base">Continue Learning</span>
+            <span data-checkmark class="hidden">
+              <Icons.checkmark class="w-5 h-5" />
+            </span>
+          </button>
+          <button
+            :if={@show_course_progress}
+            type="button"
+            data-drawer-item
+            data-target="home-course-progress"
+            class="flex items-center justify-between px-6 py-4 text-[#1f2937] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <span class="text-base">Course Progress</span>
+            <span data-checkmark class="hidden">
+              <Icons.checkmark class="w-5 h-5" />
+            </span>
+          </button>
+          <button
+            type="button"
+            data-drawer-item
+            data-target="home-assignments"
+            class="flex items-center justify-between px-6 py-4 text-[#1f2937] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <span class="text-base">My Assignments</span>
+            <span data-checkmark class="hidden">
+              <Icons.checkmark class="w-5 h-5" />
+            </span>
+          </button>
+          <button
+            :if={@show_agenda}
+            type="button"
+            data-drawer-item
+            data-target="home-agenda"
+            class="flex items-center justify-between px-6 py-4 text-[#1f2937] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <span class="text-base">Upcoming Agenda</span>
+            <span data-checkmark class="hidden">
+              <Icons.checkmark class="w-5 h-5" />
+            </span>
+          </button>
+        </div>
+
+        <div class="px-6 py-4">
+          <button
+            type="button"
+            data-drawer-close
+            class="w-full py-3 text-base font-normal text-[#1f2937] dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
     """
   end
 
@@ -384,8 +484,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               }
               class="w-full hover:no-underline"
             >
-              <div class="px-5 py-2.5 bg-blue-600 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-blue-500">
-                <div class="text-white text-sm font-bold leading-tight whitespace-nowrap">
+              <div class="px-5 py-2.5 rounded-lg shadow justify-center items-center gap-2.5 flex bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white hover:text-Specially-Tokens-Text-text-button-primary-hover">
+                <div class="text-sm font-bold leading-tight whitespace-nowrap">
                   {lesson_button_label(@unfinished_lesson, @suggested_page)}
                 </div>
               </div>
@@ -399,8 +499,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               }
               class="w-full hover:no-underline"
             >
-              <div class="px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-opacity-40">
-                <div class="text-white text-sm font-semibold leading-tight whitespace-nowrap">
+              <div class="px-5 py-2.5 rounded-lg shadow justify-center items-center gap-2.5 flex text-white bg-Fill-Buttons-fill-secondary border border-Border-border-bold text-Specially-Tokens-Text-text-button-secondary hover:bg-Specially-Tokens-Text-text-button-secondary-hover hover:border-Border-border-bold-hover hover:text-Specially-Tokens-Text-text-button-primary-hover">
+                <div class="text-sm font-semibold leading-tight whitespace-nowrap">
                   Show in course
                 </div>
               </div>
@@ -676,7 +776,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           />
           <.link
             navigate={@page_completed_target_path}
-            class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+            class="text-Text-text-button text-base font-bold ml-auto hover:text-Text-text-button-hover hover:no-underline"
           >
             {@completed_pages.completed_pages}/{@completed_pages.total_pages} Pages Completed
           </.link>
@@ -811,7 +911,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             navigate={
               ~p"/sections/#{@section_slug}/certificate/#{certificate_progress.granted_certificate_guid}"
             }
-            class=" text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+            class="text-Text-text-button text-base font-bold ml-auto hover:text-Text-text-button-hover hover:no-underline"
           >
             Access my certificate
           </.link>
@@ -914,7 +1014,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               request_path: ~p"/sections/#{@section_slug}"
             )
           }
-          class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+          class="text-Text-text-button text-base font-bold ml-auto hover:text-Text-text-button-hover hover:no-underline"
         >
           View All Assignments
         </.link>
@@ -924,7 +1024,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   end
 
   defp assignments_tab_class(tab, tab), do: "pointer-events-none cursor-not-allowed"
-  defp assignments_tab_class(_, _), do: "opacity-40 hover:opacity-70"
+  defp assignments_tab_class(_, _), do: "opacity-70 dark:opacity-50 hover:underline"
 
   defp empty_assignments_message(:upcoming),
     do: "Great job, you completed all the assignments! There are no upcoming assignments."
@@ -1000,11 +1100,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp item_bg_color(true = _completed),
     do:
-      "bg-black/[.07] hover:bg-black/[.1] border border-white/[.1] dark:bg-white/[.02] dark:hover:bg-white/[.06] dark:border-white/[0.06] dark:hover:border-white/[0.02]"
+      "bg-Surface-surface-secondary border border-Border-border-subtle hover:bg-Surface-surface-secondary-muted hover:shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
 
   defp item_bg_color(false = _completed),
     do:
-      "bg-black/[.1] hover:bg-black/[.2] border border-white/[.6] hover:border-transparent dark:bg-white/[.08] dark:hover:bg-white/[.12] dark:border-black hover:!border-transparent"
+      "bg-Surface-surface-secondary border border-Border-border-subtle hover:bg-Surface-surface-secondary-muted hover:shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
 
   attr :lesson, :map, required: true
   attr :upcoming, :boolean, required: true
@@ -1223,7 +1323,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             }
             class="hover:no-underline"
           >
-            <div class="text-[#3399FF] hover:text-opacity-80 text-base font-bold tracking-tight">
+            <div class="text-Text-text-button hover:text-Text-text-button-hover text-base font-bold tracking-tight">
               View full schedule
             </div>
           </.link>
