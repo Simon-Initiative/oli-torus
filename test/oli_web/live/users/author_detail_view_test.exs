@@ -34,6 +34,21 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       assert render(view) =~ author.name
     end
+
+    test "author details layout order and copy", %{conn: conn} do
+      author = insert(:author)
+
+      {:ok, view, _html} = live(conn, authors_detail_view(author.id))
+
+      html = render(view)
+
+      assert String.index(html, "Projects") < String.index(html, "Details")
+      assert String.index(html, "Details") < String.index(html, "Actions")
+
+      assert html =~ "Projects that the Author has either created or is a collaborator within"
+      assert html =~ "User details"
+      assert html =~ "Actions that can be taken for this user"
+    end
   end
 
   describe "author details - projects group" do
