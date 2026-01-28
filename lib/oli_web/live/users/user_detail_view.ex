@@ -237,7 +237,7 @@ defmodule OliWeb.Users.UsersDetailView do
                   variant={:primary}
                   type="submit"
                   size={:sm}
-                  class="float-right mt-4 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover"
+                  class="float-right mt-4 !bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
                   disabled={@disabled_submit}
                 >
                   Save
@@ -248,7 +248,7 @@ defmodule OliWeb.Users.UsersDetailView do
               <.button
                 variant={:primary}
                 size={:sm}
-                class="float-right mt-4 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover"
+                class="float-right mt-4 !bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
                 phx-click="start_edit"
               >
                 Edit

@@ -16,7 +16,7 @@ defmodule OliWeb.Users.Actions do
         <.button
           variant={:primary}
           size={:sm}
-          class="inline-flex items-center justify-center bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover"
+          class="inline-flex items-center justify-center !bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
           phx-click="generate_reset_password_link"
           phx-value-id={@user_id}
         >
