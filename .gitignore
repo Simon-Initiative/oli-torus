@@ -116,6 +116,7 @@ MnesiaCore.nonode@nohost_1698_943806_800396
 .codex/history.jsonl
 .codex/version.json
 .codex/internal_storage.json
+.codex/skills/.system/
 
 # Python cache files
 ./**/*.pyc

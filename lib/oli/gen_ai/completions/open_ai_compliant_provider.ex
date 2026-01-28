@@ -255,7 +255,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       http_options: [
         timeout: registered_model.timeout,
         recv_timeout: registered_model.recv_timeout,
-        hackney: [pool: Oli.GenAI.HackneyPool.pool_name()]
+        hackney: [pool: Oli.GenAI.HackneyPool.pool_name(registered_model)]
       ],
       api_key: registered_model.api_key,
       organization_key: registered_model.secondary_api_key,
@@ -277,7 +277,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
         recv_timeout: registered_model.recv_timeout,
         stream_to: self(),
         async: :once,
-        hackney: [pool: Oli.GenAI.HackneyPool.pool_name()]
+        hackney: [pool: Oli.GenAI.HackneyPool.pool_name(registered_model)]
       ],
       api_key: registered_model.api_key,
       organization_key: registered_model.secondary_api_key,

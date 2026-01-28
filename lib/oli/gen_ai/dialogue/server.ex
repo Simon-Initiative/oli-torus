@@ -59,8 +59,8 @@ defmodule Oli.GenAI.Dialogue.Server do
 
   """
 
-  alias Oli.GenAI.Completions
   alias Oli.GenAI.Completions.{Message, Function}
+  alias Oli.GenAI.Execution
   alias Oli.GenAI.Dialogue.{State, Configuration}
 
   @doc """
@@ -116,7 +116,7 @@ defmodule Oli.GenAI.Dialogue.Server do
 
   def do_engage(
         {notify_server_fn, notify_client_fn},
-        %State{configuration: configuration, registered_model: registered_model} = state,
+        %State{configuration: configuration} = state,
         %Message{} = message
       ) do
     Logger.debug("do_engage for client #{inspect(configuration.reply_to_pid)}")
@@ -125,10 +125,6 @@ defmodule Oli.GenAI.Dialogue.Server do
       case chunk do
         {:error} ->
           notify_server_fn.({:stream_chunk, {:error}})
-
-          notify_client_fn.(
-            {:dialogue_server, {:error, "An error occurred while processing the request"}}
-          )
 
         {:function_call, function_call} ->
           notify_server_fn.({:stream_chunk, {:function_call, function_call}})
@@ -156,10 +152,16 @@ defmodule Oli.GenAI.Dialogue.Server do
       end
     end
 
-    case Completions.stream(
+    request_ctx = %{
+      request_type: :stream,
+      service_config_id: configuration.service_config.id
+    }
+
+    case Execution.stream(
+           request_ctx,
            state.messages ++ [message],
            configuration.functions,
-           registered_model,
+           configuration.service_config,
            response_handler_fn
          ) do
       :ok ->
@@ -170,32 +172,15 @@ defmodule Oli.GenAI.Dialogue.Server do
           "Encountered completions http error for client #{inspect(configuration.reply_to_pid)}: #{inspect(error)}"
         )
 
-        if should_retry?(state) do
-          Logger.info("Falling back to backup for client #{inspect(configuration.reply_to_pid)}")
+        Logger.warning("Failed without backup for client #{inspect(configuration.reply_to_pid)}")
 
-          state = fallback(state)
-          do_engage({notify_server_fn, notify_client_fn}, state, message)
-        else
-          Logger.warning(
-            "Failed without backup for client #{inspect(configuration.reply_to_pid)}"
-          )
+        notify_client_fn.(
+          {:dialogue_server, {:error, "An error occurred while processing the request"}}
+        )
 
-          notify_client_fn.(
-            {:dialogue_server, {:error, "An error occurred while processing the request"}}
-          )
-
-          {:noreply, state}
-        end
+        {:noreply, state}
     end
   end
-
-  defp should_retry?(state) do
-    state.configuration.service_config.backup_model &&
-      state.configuration.service_config.backup_model != state.registered_model
-  end
-
-  defp fallback(state),
-    do: Map.put(state, :registered_model, state.configuration.service_config.backup_model)
 
   defp send_to_listener(%State{configuration: %Configuration{reply_to_pid: pid}}, message) do
     send(pid, message)
@@ -204,15 +189,9 @@ defmodule Oli.GenAI.Dialogue.Server do
   # All stream chunks come back here
 
   def handle_info({:stream_chunk, {:error}}, state) do
-    if should_retry?(state) do
-      Logger.info(
-        "Falling back to backup for client #{inspect(state.configuration.reply_to_pid)}"
-      )
+    Logger.warning("Streaming error for client #{inspect(state.configuration.reply_to_pid)}")
 
-      {:noreply, fallback(state)}
-    else
-      {:noreply, state}
-    end
+    {:noreply, %{state | messages: discard_last_assistant_message(state.messages)}}
   end
 
   def handle_info({:stream_chunk, {:tokens_received, content}}, state) do
@@ -311,6 +290,13 @@ defmodule Oli.GenAI.Dialogue.Server do
         # If the last message is not from the assistant, we need to create a new one
         new_message = Message.new(:assistant, token)
         Enum.reverse([new_message | list])
+    end
+  end
+
+  defp discard_last_assistant_message(messages) do
+    case Enum.reverse(messages) do
+      [%{role: :assistant} | rest] -> Enum.reverse(rest)
+      _ -> messages
     end
   end
 end
