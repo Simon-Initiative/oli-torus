@@ -45,12 +45,7 @@ export const SelectTimezone: React.FC<SelectTimezoneProps> = ({
   return timezones ? (
     <form ref={ref} action={submitAction} method="post">
       <input type="hidden" name="_csrf_token" value={csrfToken} />
-      <input
-        id="hidden-redirect-to"
-        name="timezone[redirect_to]"
-        type="hidden"
-        value={relativePath}
-      />
+      <input name="timezone[redirect_to]" type="hidden" value={relativePath} />
       <select
         onChange={onSelect}
         name="timezone[timezone]"

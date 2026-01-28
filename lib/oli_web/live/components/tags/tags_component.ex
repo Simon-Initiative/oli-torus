@@ -106,6 +106,15 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
   end
 
   @impl true
+  def handle_event("toggle_edit_keydown", %{"key" => key}, socket)
+      when key in ["Enter", " "] do
+    # Delegate to toggle_edit for keyboard activation (WCAG 2.1.1)
+    handle_event("toggle_edit", %{}, socket)
+  end
+
+  def handle_event("toggle_edit_keydown", _params, socket), do: {:noreply, socket}
+
+  @impl true
   def handle_event("add_tag", %{"tag_id" => tag_id}, socket) do
     tag_id = String.to_integer(tag_id)
     entity_type = socket.assigns.entity_type
@@ -206,7 +215,10 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
 
   @impl true
   def handle_event("handle_keydown", %{"key" => "Escape"}, socket) do
-    {:noreply, assign(socket, :edit_mode, false)}
+    {:noreply,
+     socket
+     |> assign(:edit_mode, false)
+     |> push_event("focus_container", %{container_id: "tags-display-#{socket.assigns.id}"})}
   end
 
   @impl true
@@ -215,17 +227,34 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
   end
 
   @impl true
-  def handle_event("exit_edit_mode", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(:edit_mode, false)
-     |> assign(:input_value, "")}
+  def handle_event("exit_edit_mode", params, socket) do
+    # Only return focus to container if not exiting via Tab (focusout)
+    return_focus = Map.get(params, "return_focus", true)
+
+    socket =
+      socket
+      |> assign(:edit_mode, false)
+      |> assign(:input_value, "")
+
+    socket =
+      if return_focus do
+        push_event(socket, "focus_container", %{container_id: "tags-display-#{socket.assigns.id}"})
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="relative w-full h-full" id={"tags-container-#{@id}"} phx-hook="TagsComponent">
+    <div
+      class="relative w-full h-full"
+      id={"tags-container-#{@id}"}
+      phx-hook="TagsComponent"
+      data-myself={@myself}
+    >
       <%= if @edit_mode do %>
         <div class="z-20" phx-click-away="exit_edit_mode" phx-target={@myself}>
           <!-- Edit mode container - full cell -->
@@ -304,10 +333,14 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
       <% else %>
         <!-- Display mode -->
         <div
+          id={"tags-display-#{@id}"}
           class={get_display_container_classes(@variant)}
           phx-click="toggle_edit"
+          phx-keydown="toggle_edit_keydown"
           phx-target={@myself}
           tabindex="0"
+          role="button"
+          aria-label="Edit tags"
         >
           <%= if length(@current_tags || []) > 0 do %>
             <div
