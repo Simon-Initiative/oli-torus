@@ -16,7 +16,7 @@ defmodule Oli.Repo.Migrations.AddGenAIRoutingPolicyFields do
 
     alter table(:registered_models) do
       add :pool_class, :string, null: false, default: "slow"
-      add :max_concurrent, :integer
+      add :max_concurrent, :integer, default: 95
 
       add :routing_breaker_error_rate_threshold, :float,
         default: @breaker_error_rate_threshold,

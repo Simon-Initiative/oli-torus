@@ -37,7 +37,7 @@ defmodule Oli.GenAITest do
       assert model.timeout == 8000
       assert model.recv_timeout == 60000
       assert model.pool_class == :slow
-      assert model.max_concurrent == nil
+      assert model.max_concurrent == 95
       assert model.routing_breaker_error_rate_threshold == 0.2
       assert model.routing_breaker_429_threshold == 0.1
       assert model.routing_breaker_latency_p95_ms == 6000
@@ -54,7 +54,7 @@ defmodule Oli.GenAITest do
       assert m.timeout == 8000
       assert m.recv_timeout == 60000
       assert m.pool_class == :slow
-      assert m.max_concurrent == nil
+      assert m.max_concurrent == 95
       assert m.routing_breaker_error_rate_threshold == 0.2
       assert m.routing_breaker_429_threshold == 0.1
       assert m.routing_breaker_latency_p95_ms == 6000

@@ -13,7 +13,7 @@ defmodule Oli.GenAI.Completions.RegisteredModel do
     field :timeout, :integer, default: 8000
     field :recv_timeout, :integer, default: 60000
     field :pool_class, Ecto.Enum, values: [:fast, :slow], default: :slow
-    field :max_concurrent, :integer
+    field :max_concurrent, :integer, default: 95
     field :routing_breaker_error_rate_threshold, :float, default: 0.2
     field :routing_breaker_429_threshold, :float, default: 0.1
     field :routing_breaker_latency_p95_ms, :integer, default: 6000
