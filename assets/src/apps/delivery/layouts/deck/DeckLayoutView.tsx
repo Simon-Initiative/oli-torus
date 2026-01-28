@@ -624,14 +624,14 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
       previousActivityIdRef.current = currentActivityId;
-      previousTreeLengthRef.current = localActivityTree.length;
+      // Don't update previousTreeLengthRef here - will be updated at end of effect
       return;
     }
 
     // Skip focus in review mode or history navigation
     if (reviewMode || historyModeNavigation) {
       previousActivityIdRef.current = currentActivityId;
-      previousTreeLengthRef.current = localActivityTree.length;
+      // Don't update previousTreeLengthRef here - will be updated at end of effect
       return;
     }
 
@@ -639,29 +639,62 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (currentActivityId && currentActivityId !== previousActivityIdRef.current) {
       const isSubscreenNavigation = localActivityTree.length > previousTreeLengthRef.current;
 
-      requestAnimationFrame(() => {
-        // Double-check with setTimeout to ensure content is rendered
+      // If navigating to a subscreen, focus the subscreen element instead
+      if (isSubscreenNavigation) {
         setTimeout(() => {
-          // Verify ref exists and content is rendered before focusing
-          if (contentRef.current) {
-            // If navigating to a subscreen, focus the subscreen element instead
-            if (isSubscreenNavigation) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              // Verify ref exists and content is rendered before focusing
+              if (contentRef.current) {
+                const adaptiveElements =
+                  contentRef.current.querySelectorAll('oli-adaptive-delivery');
+                const lastElement = adaptiveElements[adaptiveElements.length - 1] as HTMLElement;
+                if (lastElement) {
+                  // Make the element focusable if it isn't already
+                  if (lastElement.getAttribute('tabindex') === null) {
+                    lastElement.setAttribute('tabindex', '-1');
+                  }
+                  lastElement.focus();
+                }
+              }
+            });
+          });
+        }, 100);
+        // Refs will be updated at end of effect
+        return;
+      }
+
+      // For full screen navigation, focus the topmost element
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            // Verify ref exists and content is rendered before focusing
+            if (contentRef.current) {
+              // Focus the first adaptive element (topmost screen)
               const adaptiveElements = contentRef.current.querySelectorAll('oli-adaptive-delivery');
-              const lastElement = adaptiveElements[adaptiveElements.length - 1] as HTMLElement;
-              if (lastElement) {
-                lastElement.focus();
-                lastElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                return;
+              const firstAdaptiveElement = adaptiveElements[0] as HTMLElement;
+
+              if (firstAdaptiveElement) {
+                // Make the element focusable if it isn't already
+                if (firstAdaptiveElement.getAttribute('tabindex') === null) {
+                  firstAdaptiveElement.setAttribute('tabindex', '-1');
+                }
+                firstAdaptiveElement.focus();
+              } else {
+                // Fallback: focus the content container itself
+                contentRef.current.focus();
               }
             }
-            // Fallback to existing behavior for non-subscreen navigation
-            contentRef.current.focus();
-          }
-        }, 0);
-      });
-      previousTreeLengthRef.current = localActivityTree.length;
-      previousActivityIdRef.current = currentActivityId;
+          });
+        });
+      }, 100);
+      // Refs will be updated at end of effect
     }
+
+    // Always update refs at the end to ensure they're in sync with current state
+    // This ensures refs are correct even if focus was skipped or navigation didn't occur
+    previousTreeLengthRef.current = localActivityTree.length;
+    previousActivityIdRef.current = currentActivityId;
   }, [localActivityTree, reviewMode, historyModeNavigation]);
 
   const renderActivities = useCallback(() => {
