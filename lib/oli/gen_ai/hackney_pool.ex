@@ -102,8 +102,13 @@ defmodule Oli.GenAI.HackneyPool do
     fast_size = pool_size(:fast)
     slow_size = pool_size(:slow)
 
-    Logger.info("Starting GenAI hackney pool '#{@fast_pool_name}' with max_connections: #{fast_size}")
-    Logger.info("Starting GenAI hackney pool '#{@slow_pool_name}' with max_connections: #{slow_size}")
+    Logger.info(
+      "Starting GenAI hackney pool '#{@fast_pool_name}' with max_connections: #{fast_size}"
+    )
+
+    Logger.info(
+      "Starting GenAI hackney pool '#{@slow_pool_name}' with max_connections: #{slow_size}"
+    )
 
     with :ok <- start_pool(@fast_pool_name, fast_size),
          :ok <- start_pool(@slow_pool_name, slow_size) do

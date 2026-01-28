@@ -28,9 +28,14 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
       |> render_change(%{"toggle_editing" => "on"})
 
       view
-      |> form("#pool-sizes-form", pool_sizes: %{"fast_pool_size" => "12", "slow_pool_size" => "34"})
+      |> form("#pool-sizes-form",
+        pool_sizes: %{"fast_pool_size" => "12", "slow_pool_size" => "34"}
+      )
       |> render_submit()
-      |> then(fn html -> assert html =~ "Updated GenAI pool sizes"; html end)
+      |> then(fn html ->
+        assert html =~ "Updated GenAI pool sizes"
+        html
+      end)
     end
 
     test "rejects pool sizes above configured max", %{conn: conn} do
@@ -87,7 +92,10 @@ defmodule OliWeb.GenAI.RegisteredModelsViewTest do
       view
       |> form("#registered-model-form", registered_model: params)
       |> render_submit()
-      |> then(fn html -> refute html =~ "Couldn't update registered model"; html end)
+      |> then(fn html ->
+        refute html =~ "Couldn't update registered model"
+        html
+      end)
 
       updated = Repo.get!(RegisteredModel, registered_model.id)
       assert updated.pool_class == :fast

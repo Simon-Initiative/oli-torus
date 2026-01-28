@@ -442,6 +442,7 @@ defmodule OliWeb.GenAI.ServiceConfigsView do
 
   defp health_for(%ServiceConfig{} = service_config) do
     counts = AdmissionControl.counts(service_config.id)
+
     default_snapshot = %{
       state: :closed,
       error_rate: 0.0,

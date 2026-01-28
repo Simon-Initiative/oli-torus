@@ -132,7 +132,8 @@ defmodule Oli.GenAI.Breaker do
              last_reason: :probe_succeeded
          }, window_metrics([])}
       else
-        {%{state | half_open_remaining: remaining, last_reason: :probe_succeeded}, window_metrics([])}
+        {%{state | half_open_remaining: remaining, last_reason: :probe_succeeded},
+         window_metrics([])}
       end
     end
   end
@@ -162,9 +163,7 @@ defmodule Oli.GenAI.Breaker do
   defp maybe_transition_from_open(state, now_ms) do
     if state.breaker_state == :open and not is_nil(state.open_until_ms) and
          now_ms >= state.open_until_ms do
-      Logger.info(
-        "Transitioning GenAI breaker #{state.registered_model_id} to half_open"
-      )
+      Logger.info("Transitioning GenAI breaker #{state.registered_model_id} to half_open")
 
       Telemetry.breaker_state_change(
         %{count: 1},

@@ -172,9 +172,7 @@ defmodule Oli.GenAI.Dialogue.Server do
           "Encountered completions http error for client #{inspect(configuration.reply_to_pid)}: #{inspect(error)}"
         )
 
-        Logger.warning(
-          "Failed without backup for client #{inspect(configuration.reply_to_pid)}"
-        )
+        Logger.warning("Failed without backup for client #{inspect(configuration.reply_to_pid)}")
 
         notify_client_fn.(
           {:dialogue_server, {:error, "An error occurred while processing the request"}}
@@ -191,9 +189,7 @@ defmodule Oli.GenAI.Dialogue.Server do
   # All stream chunks come back here
 
   def handle_info({:stream_chunk, {:error}}, state) do
-    Logger.warning(
-      "Streaming error for client #{inspect(state.configuration.reply_to_pid)}"
-    )
+    Logger.warning("Streaming error for client #{inspect(state.configuration.reply_to_pid)}")
 
     {:noreply, %{state | messages: discard_last_assistant_message(state.messages)}}
   end

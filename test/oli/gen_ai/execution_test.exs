@@ -36,8 +36,18 @@ defmodule Oli.GenAI.ExecutionTest do
   test "rejects when secondary is over capacity" do
     service_config =
       build_service_config(2,
-        primary_model: %RegisteredModel{id: 21, name: "Primary", provider: :null, max_concurrent: 0},
-        secondary_model: %RegisteredModel{id: 22, name: "Secondary", provider: :null, max_concurrent: 0}
+        primary_model: %RegisteredModel{
+          id: 21,
+          name: "Primary",
+          provider: :null,
+          max_concurrent: 0
+        },
+        secondary_model: %RegisteredModel{
+          id: 22,
+          name: "Secondary",
+          provider: :null,
+          max_concurrent: 0
+        }
       )
 
     request_ctx = %{request_type: :generate}

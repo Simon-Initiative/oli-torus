@@ -44,8 +44,12 @@ defmodule Oli.GenAI.BreakerTest do
 
   test "half_open failure reopens breaker" do
     model_id = 3
-    thresholds = thresholds(error_rate_threshold: 0.1, open_cooldown_ms: 0, half_open_probe_count: 1)
-    reopen_thresholds = thresholds(error_rate_threshold: 0.1, open_cooldown_ms: 50, half_open_probe_count: 1)
+
+    thresholds =
+      thresholds(error_rate_threshold: 0.1, open_cooldown_ms: 0, half_open_probe_count: 1)
+
+    reopen_thresholds =
+      thresholds(error_rate_threshold: 0.1, open_cooldown_ms: 50, half_open_probe_count: 1)
 
     Breaker.report(model_id, report(:error, thresholds))
     assert eventually(fn -> Breaker.status(model_id).breaker_state == :half_open end)

@@ -52,8 +52,18 @@ defmodule Oli.GenAI.TelemetryEventsTest do
 
     service_config =
       build_service_config(2,
-        primary_model: %RegisteredModel{id: 21, name: "Primary", provider: :null, max_concurrent: 0},
-        secondary_model: %RegisteredModel{id: 22, name: "Secondary", provider: :null, max_concurrent: 0}
+        primary_model: %RegisteredModel{
+          id: 21,
+          name: "Primary",
+          provider: :null,
+          max_concurrent: 0
+        },
+        secondary_model: %RegisteredModel{
+          id: 22,
+          name: "Secondary",
+          provider: :null,
+          max_concurrent: 0
+        }
       )
 
     request_ctx = %{request_type: :generate}
@@ -106,7 +116,9 @@ defmodule Oli.GenAI.TelemetryEventsTest do
     attach(handler_id, [@breaker_state_change])
 
     model_id = 10
-    thresholds = thresholds(error_rate_threshold: 0.0, open_cooldown_ms: 10, half_open_probe_count: 1)
+
+    thresholds =
+      thresholds(error_rate_threshold: 0.0, open_cooldown_ms: 10, half_open_probe_count: 1)
 
     Breaker.report(model_id, report(:error, thresholds))
 

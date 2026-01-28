@@ -39,11 +39,10 @@ defmodule Oli.GenAI.RegisteredModelChangesetTest do
         })
 
       refute changeset.valid?
-      assert "must be less than or equal to 1.0" in
-               errors_on(changeset).routing_breaker_error_rate_threshold
 
-      assert "must be greater than or equal to 0.0" in
-               errors_on(changeset).routing_breaker_429_threshold
+      assert "must be less than or equal to 1.0" in errors_on(changeset).routing_breaker_error_rate_threshold
+
+      assert "must be greater than or equal to 0.0" in errors_on(changeset).routing_breaker_429_threshold
     end
   end
 end
