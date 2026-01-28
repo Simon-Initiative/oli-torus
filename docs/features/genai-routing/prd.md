@@ -63,7 +63,7 @@ Screenshots/Mocks:
 | FR-001 | Introduce a centralized GenAI router that consumes resolved ServiceConfig and produces a RoutingPlan per request (selected model, tier, pool, reason codes). | P0 | Backend |
 | FR-002 | Implement admission control using ETS-backed counters for per-RegisteredModel inflight counts and per-pool inflight counts with atomic try-admit. | P0 | Backend |
 | FR-003 | Implement per-RegisteredModel circuit breakers with closed/open/half_open states, tracking error rate, 429 rate, and latency spikes. | P0 | Backend |
-| FR-004 | Enforce three-tier routing: Primary preferred; if Primary breaker open or at cap → Secondary; Backup is used only when both Primary and Secondary breakers are open; Secondary over-cap rejects fast. | P0 | Backend |
+| FR-004 | Enforce three-tier routing: Primary preferred; if Primary breaker open or at cap → Secondary when configured; Backup is used when both Primary and Secondary breakers are open, or when Secondary is not configured and Primary is over capacity; Secondary over-cap rejects fast. | P0 | Backend |
 | FR-005 | RegisteredModel defines pool class (`fast`/`slow`) and optional max_concurrent cap; pool sizes are configurable via env and adjustable via admin UI. | P0 | Backend |
 | FR-006 | Emit telemetry for routing decisions/outcomes with tier, pool_class/pool_name, selected model, and outcome; routing decisions include reason codes. | P0 | Backend |
 | FR-007 | Preserve existing FeatureServiceConfig resolution and section overrides; routing uses the resolved ServiceConfig. | P0 | Backend |
@@ -78,6 +78,7 @@ Screenshots/Mocks:
 - AC-002 (FR-002, FR-004) — Given the Primary model is healthy but at its max_concurrent cap, When a new request arrives, Then the router selects Secondary (if healthy and under cap) and records reason `primary_over_capacity`.
 - AC-003 (FR-004) — Given Primary and Secondary breakers are open, When a new request arrives, Then the router selects Backup (if healthy and under cap) and records reason `backup_outage`.
 - AC-004 (FR-004) — Given Secondary is healthy but at cap, When a new request arrives, Then the request is rejected with no pool wait.
+- AC-004b (FR-004) — Given Secondary is not configured and Primary is at cap, When a new request arrives, Then the router selects Backup (if healthy and under cap) and records reason `primary_over_capacity`.
 - AC-005 (FR-003) — Given a RegisteredModel returns 429s above the breaker threshold within the rolling window, When subsequent requests arrive, Then the breaker transitions to open and the router avoids that model.
 - AC-006 (FR-006) — Given any GenAI request, When it completes (success/failure), Then a telemetry event is emitted with selected model, tier, pool_class/pool_name, duration, and outcome.
 - AC-007 (FR-007) — Given a section with a FeatureServiceConfig override, When a request is issued from that section, Then the router uses the resolved ServiceConfig for that section.
