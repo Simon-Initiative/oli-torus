@@ -293,12 +293,27 @@ defmodule Oli.Delivery.Sections.Browse do
         dynamic([s], ilike(s.title, ^search_pattern))
       end
 
+    # Subquery to get section IDs matching our filter criteria
+    # Used to scope the creator and publication subqueries for better performance
+    section_ids_subquery =
+      from(s in Section,
+        where: s.base_project_id == ^project_id,
+        where: is_nil(s.blueprint_id),
+        where: s.type == :enrollable,
+        where: s.status == :active,
+        where: not is_nil(s.end_date),
+        where: s.end_date >= ^today,
+        select: s.id
+      )
+
     # Subquery to get the first enrolled user (creator) for each section
     # Uses DISTINCT ON to get only the first enrollment per section
+    # Scoped to only relevant sections for performance
     creator_subquery =
       from(u in User,
         join: e in Enrollment,
         on: e.user_id == u.id,
+        where: e.section_id in subquery(section_ids_subquery),
         select: %{
           section_id: e.section_id,
           creator_id: u.id,
@@ -325,10 +340,12 @@ defmodule Oli.Delivery.Sections.Browse do
     # Uses DISTINCT ON to get first publication per section
     # Orders by published DESC, id DESC to get the most recently published publication
     # (matches pattern in Oli.Publishing.get_latest_published_publication_by_slug)
+    # Scoped to only relevant sections for performance
     publication_subquery =
       from(spp in SectionsProjectsPublications,
         join: pub in Publication,
         on: pub.id == spp.publication_id,
+        where: spp.section_id in subquery(section_ids_subquery),
         distinct: spp.section_id,
         order_by: [asc: spp.section_id, desc: pub.published, desc: pub.id],
         select: %{
