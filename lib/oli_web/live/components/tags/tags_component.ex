@@ -233,7 +233,11 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
             <!-- Edit mode input with selected tags - full cell -->
             <div class={get_edit_container_classes(@variant)}>
               <!-- Show currently selected tags with X buttons -->
-              <div role="list" aria-label="Selected tags" class="contents">
+              <div
+                role="list"
+                aria-label="Selected tags"
+                class={if @variant == :table, do: "flex flex-col gap-1", else: "flex flex-wrap gap-1"}
+              >
                 <%= for tag <- @current_tags do %>
                   <.tag_pill
                     tag={tag}
