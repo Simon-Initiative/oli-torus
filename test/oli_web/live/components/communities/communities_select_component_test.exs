@@ -133,7 +133,12 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
       component |> element("div[phx-click='toggle_edit']") |> render_click()
 
       # Should show institution community with "(via institution)" label
-      assert has_element?(component, "span[role='institution community']", institution_community.name)
+      assert has_element?(
+               component,
+               "span[role='institution community']",
+               institution_community.name
+             )
+
       assert render(component) =~ "(via institution)"
     end
 
@@ -155,7 +160,11 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
       component |> element("div[phx-click='toggle_edit']") |> render_click()
 
       # Should show available communities in dropdown
-      assert has_element?(component, "button[phx-click='add_community']", available_community.name)
+      assert has_element?(
+               component,
+               "button[phx-click='add_community']",
+               available_community.name
+             )
     end
 
     test "handle_keydown with Escape exits edit mode", %{
@@ -203,7 +212,8 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
       )
 
       # Add new community
-      {:ok, _} = Groups.create_community_account(%{user_id: user.id, community_id: community_new.id})
+      {:ok, _} =
+        Groups.create_community_account(%{user_id: user.id, community_id: community_new.id})
 
       {:ok, _component, html} =
         live_component_isolated(conn, CommunitiesSelectComponent, %{

@@ -241,15 +241,19 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
             <% else %>
               <%= for {community, index} <- Enum.with_index(@all_communities) do %>
                 <.link
-                  href={Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.ShowView, community.id)}
+                  href={
+                    Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.ShowView, community.id)
+                  }
                   class="text-primary hover:underline"
                 >
                   {community.name}
-                </.link><%= if index < @communities_count - 1 do %><span>, </span><% end %>
+                </.link>
+                <%= if index < @communities_count - 1 do %>
+                  <span>, </span>
+                <% end %>
               <% end %>
             <% end %>
           </div>
-
         <% @community_edit_mode -> %>
           <!-- Edit mode open - tags with X buttons (direct only), search input, dropdown -->
           <div class="z-20" phx-click-away="exit_community_edit_mode" phx-target={@myself}>
@@ -331,7 +335,6 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
               </div>
             </div>
           </div>
-
         <% true -> %>
           <!-- Display mode (edit enabled but not open) - clickable colored tags -->
           <div
