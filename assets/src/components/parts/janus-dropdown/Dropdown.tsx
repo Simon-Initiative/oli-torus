@@ -405,11 +405,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
       <span className="sr-only" style={srOnlyStyle} role="status" aria-live="polite">
         {liveAnnouncement}
       </span>
-      {showLabel && label ? (
-        <label htmlFor={`${id}-select`}>
-          {label}
-        </label>
-      ) : null}
+      {showLabel && label ? <label htmlFor={`${id}-select`}>{label}</label> : null}
       <select
         id={`${id}-select`}
         className="dropdown"
