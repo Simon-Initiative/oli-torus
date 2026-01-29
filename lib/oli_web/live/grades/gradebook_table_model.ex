@@ -62,12 +62,6 @@ defmodule OliWeb.Grades.GradebookTableModel do
   def new(graded_pages, section_slug, student_id) do
     column_specs = [
       %ColumnSpec{
-        name: :index,
-        label: "Order",
-        render_fn: &__MODULE__.render_grade_order/3,
-        th_class: "pl-10"
-      },
-      %ColumnSpec{
         name: :name,
         label: "Assessment",
         render_fn: &__MODULE__.render_grade/3,
