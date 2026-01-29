@@ -111,9 +111,12 @@ defmodule OliWeb.Components.Delivery.QuizScores do
             limit_change={JS.push("paged_table_limit_change", target: @myself)}
             show_limit_change={true}
             overflow_class="block scrollbar"
+            sticky_header_offset={0}
           />
         <% else %>
-          <h6 class="text-center py-4">There are no assessment scores to show</h6>
+          <h6 class="text-center py-4 bg-white dark:bg-gray-800">
+            There are no assessment scores to show
+          </h6>
         <% end %>
       </div>
     </div>
