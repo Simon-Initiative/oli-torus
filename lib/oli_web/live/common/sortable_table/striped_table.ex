@@ -232,8 +232,9 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   defp render_details_row(assigns, row) do
     col_span = length(assigns.model.column_specs)
     unique_id = "row_#{row.resource_id}"
-    expanded_objectives = Map.get(assigns.model.data, :expanded_objectives, MapSet.new())
-    row_class = if MapSet.member?(expanded_objectives, unique_id), do: "", else: "hidden"
+    # expanded_rows controls which details rows should start expanded.
+    expanded_rows = Map.get(assigns.model.data, :expanded_rows, MapSet.new())
+    row_class = if MapSet.member?(expanded_rows, unique_id), do: "", else: "hidden"
 
     assigns =
       Map.merge(assigns, %{

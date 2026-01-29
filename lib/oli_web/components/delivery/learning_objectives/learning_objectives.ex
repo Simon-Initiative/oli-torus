@@ -76,7 +76,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             current_user: assigns[:current_user],
             current_params: params,
             component_target: socket.assigns.myself,
-            expanded_objectives: expanded_objectives
+            expanded_rows: expanded_objectives
           })
       })
 
@@ -406,10 +406,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         MapSet.put(expanded_objectives, objective_id)
       end
 
-    # Update the table model with the new expanded_objectives
+    # Update the table model with the new expanded_rows
     updated_table_model =
       Map.update!(socket.assigns.table_model, :data, fn data ->
-        Map.put(data, :expanded_objectives, expanded_objectives)
+        Map.put(data, :expanded_rows, expanded_objectives)
       end)
 
     {:noreply,
@@ -549,25 +549,25 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp maybe_expand_for_matching_subobjectives(
-         expanded_objectives,
+         expanded_rows,
          objectives,
          params,
          :instructor_dashboard
        ) do
     objectives
     |> filtered_subobjectives(params)
-    |> Enum.reduce(expanded_objectives, fn obj, acc ->
+    |> Enum.reduce(expanded_rows, fn obj, acc ->
       MapSet.put(acc, "row_#{obj.objective_resource_id}")
     end)
   end
 
   defp maybe_expand_for_matching_subobjectives(
-         expanded_objectives,
+         expanded_rows,
          _objectives,
          _params,
          _patch_url_type
        ),
-       do: expanded_objectives
+       do: expanded_rows
 
   defp filtered_subobjectives(objectives, params) do
     if subobjective_filters_active?(params) do
