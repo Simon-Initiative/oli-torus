@@ -102,6 +102,12 @@ defmodule Oli.Application do
         # GenAI hackney connection pool
         Oli.GenAI.HackneyPool,
 
+        # GenAI routing and breaker infrastructure
+        Oli.GenAI.AdmissionControl,
+        Oli.GenAI.Telemetry,
+        {Registry, keys: :unique, name: Oli.GenAI.BreakerRegistry},
+        Oli.GenAI.BreakerSupervisor,
+
         # MCP (Model Context Protocol) server for AI agents
         Anubis.Server.Registry,
 

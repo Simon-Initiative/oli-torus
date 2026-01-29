@@ -126,6 +126,7 @@ devops/.env
 .codex/history.jsonl
 .codex/version.json
 .codex/internal_storage.json
+.codex/skills/.system/
 
 # Python cache files
 ./**/*.pyc
