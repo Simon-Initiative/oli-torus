@@ -183,4 +183,12 @@ defmodule Oli.Activities.ParseUtilsTest do
     |> Enum.any?()
     |> refute
   end
+
+  test "has_content?/1 returns false for nil" do
+    refute ParseUtils.has_content?(nil)
+  end
+
+  test "remove_empty/1 returns empty list for nil" do
+    assert [] == ParseUtils.remove_empty(nil)
+  end
 end
