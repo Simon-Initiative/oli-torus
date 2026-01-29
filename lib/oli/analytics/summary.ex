@@ -23,8 +23,7 @@ defmodule Oli.Analytics.Summary do
   @doc """
   Executes the analytics pipeline for a given snapshot attempt summary. This will produce
   the base AttemptGroup struct to upsert resource and response summary tables.
-  After upserts are done, a new job is scheduled with S3 uploader worker (Oli.Delivery.Snapshots.S3UploaderWorker)
-  that will contain the required data to emit an xAPI statement bundle.
+  After upserts are done, the event will be emitted as an xAPI statement bundle.
 
   Eventually, once snapshots are excised from the system, we will need a different entry
   point for this pipeline. In fact, we will likely relocate the xAPI bundle generation

@@ -45,3 +45,5 @@ spec:
           port: 6379
         - protocol: TCP
           port: 9000
+        - protocol: TCP
+          port: 8123
