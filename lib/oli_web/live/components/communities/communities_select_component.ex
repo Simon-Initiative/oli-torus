@@ -52,7 +52,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
     # Get communities associated via institution (excluding direct ones)
     institution_communities =
       if not socket.assigns[:initialized] do
-        compute_institution_communities(user_id, institution, direct_communities)
+        compute_institution_communities(institution, direct_communities)
       else
         socket.assigns.institution_communities
       end
@@ -79,7 +79,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
      |> assign(:initialized, true)}
   end
 
-  defp compute_institution_communities(_user_id, institution, direct_communities) do
+  defp compute_institution_communities(institution, direct_communities) do
     direct_ids = MapSet.new(Enum.map(direct_communities, & &1.id))
 
     # Get institution communities ordered by most recently added, excluding direct ones
@@ -390,21 +390,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
   # Private functions
 
   defp load_available_communities(socket, search \\ "") do
-    try do
-      communities =
-        if search == "" do
-          Groups.list_communities()
-        else
-          Groups.list_communities()
-          |> Enum.filter(fn community ->
-            String.contains?(String.downcase(community.name), String.downcase(search))
-          end)
-        end
-
-      assign(socket, :available_communities, communities)
-    rescue
-      _ ->
-        assign(socket, :error, "Failed to load communities")
-    end
+    communities = Groups.list_communities_filtered(search, 50)
+    assign(socket, :available_communities, communities)
   end
 end

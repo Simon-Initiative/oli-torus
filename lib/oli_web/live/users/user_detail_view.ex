@@ -579,7 +579,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   defp user_with_preloaded_fields(id) do
-    Accounts.get_user(id, preload: [:platform_roles, :communities, :user_identities])
+    Accounts.get_user(id, preload: [:platform_roles, :user_identities])
   end
 
   defp user_form(user, attrs \\ %{}) do

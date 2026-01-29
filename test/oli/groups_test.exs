@@ -577,6 +577,61 @@ defmodule Oli.GroupsTest do
     end
   end
 
+  describe "list_communities_filtered/2" do
+    test "returns communities matching search term (case insensitive)" do
+      insert(:community, name: "Alpha Community")
+      insert(:community, name: "Beta Community")
+      insert(:community, name: "Gamma Community")
+
+      results = Groups.list_communities_filtered("alpha")
+      assert length(results) == 1
+      assert Enum.at(results, 0).name == "Alpha Community"
+
+      # Case insensitive
+      results = Groups.list_communities_filtered("BETA")
+      assert length(results) == 1
+      assert Enum.at(results, 0).name == "Beta Community"
+    end
+
+    test "returns all active communities when search is empty" do
+      insert(:community, name: "Community A")
+      insert(:community, name: "Community B")
+      insert(:community, name: "Community C", status: :deleted)
+
+      results = Groups.list_communities_filtered("")
+      assert length(results) == 2
+    end
+
+    test "respects limit parameter" do
+      for i <- 1..10, do: insert(:community, name: "Community #{i}")
+
+      results = Groups.list_communities_filtered("", 5)
+      assert length(results) == 5
+    end
+
+    test "only returns id and name fields" do
+      insert(:community, name: "Test Community", description: "Full description")
+
+      [community] = Groups.list_communities_filtered("Test")
+
+      assert community.id != nil
+      assert community.name == "Test Community"
+      # Other fields should be nil since we only select id and name
+      assert community.description == nil
+    end
+
+    test "returns communities ordered by name" do
+      insert(:community, name: "Zebra Community")
+      insert(:community, name: "Alpha Community")
+      insert(:community, name: "Beta Community")
+
+      results = Groups.list_communities_filtered("")
+      names = Enum.map(results, & &1.name)
+
+      assert names == ["Alpha Community", "Beta Community", "Zebra Community"]
+    end
+  end
+
   describe "community institutions" do
     alias Oli.Groups.CommunityInstitution
 
