@@ -36,20 +36,42 @@ if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
   })
 end
 
-# create admin author
-if !Oli.Repo.get_by(Oli.Accounts.Author,
-     email: System.get_env("ADMIN_EMAIL", "admin@example.edu")
-   ) do
-  {:ok, _admin} =
-    %Author{}
-    |> Author.bootstrap_admin_changeset(%{
-      email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
-      name: "Administrator",
-      password: System.get_env("ADMIN_PASSWORD", "changeme"),
-      system_role_id: Oli.Accounts.SystemRole.role_id().system_admin,
-      email_confirmed_at: DateTime.utc_now()
-    })
-    |> Repo.insert()
+# bootstrap admin if author with ADMIN_EMAIL does not exist already
+admin_email = System.get_env("ADMIN_EMAIL")
+admin_password = System.get_env("ADMIN_PASSWORD")
+is_dev = Application.fetch_env!(:oli, :env) == :dev
+
+should_seed_admin? =
+  cond do
+    is_dev ->
+      true
+
+    admin_email && admin_password ->
+      true
+
+    true ->
+      false
+  end
+
+if should_seed_admin? do
+  # these fallbacks will only be used in dev environment when env vars are not set
+  email = admin_email || "admin@example.edu"
+  password = admin_password || "changeme"
+
+  if !Oli.Repo.get_by(Oli.Accounts.Author, email: email) do
+    {:ok, _admin} =
+      %Author{}
+      |> Author.bootstrap_admin_changeset(%{
+        email: email,
+        name: "Administrator",
+        password: password,
+        system_role_id: Oli.Accounts.SystemRole.role_id().system_admin,
+        email_confirmed_at: DateTime.utc_now()
+      })
+      |> Repo.insert()
+  end
+else
+  IO.puts("Skipping admin seed: ADMIN_EMAIL and ADMIN_PASSWORD must be explicitly set.")
 end
 
 # create project roles

@@ -568,7 +568,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
         live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
 
       assert view |> element("h4", "Enrolled Sections")
-      assert view |> element("div", "Course sections to which the student is enrolled")
+      assert view |> element("div", "Course sections to which the user is enrolled.")
     end
 
     test "shows message when student is not enrolled to any course section", %{
@@ -587,7 +587,8 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       student: student,
       section_1: section_1,
       section_2: section_2,
-      section_3: section_3
+      section_3: section_3,
+      suspended_section: suspended_section
     } do
       {:ok, view, _html} =
         live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
@@ -608,6 +609,18 @@ defmodule OliWeb.Users.UsersDetailViewTest do
                view,
                "a",
                "#{section_3.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{suspended_section.title}"
+             )
+
+      assert has_element?(
+               view,
+               "td",
+               "Suspended"
              )
     end
 
@@ -691,22 +704,22 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       student: student,
       section_1: section_1,
       section_2: section_2,
-      section_3: section_3
+      section_3: section_3,
+      suspended_section: suspended_section
     } do
+      sections = [section_1, section_2, section_3, suspended_section]
+      sorted_titles = sections |> Enum.map(& &1.title) |> Enum.sort()
+
       {:ok, view, _html} =
         live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ section_1.title
-
-      assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ section_2.title
+             |> render() =~ hd(sorted_titles)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:last-child")
-             |> render() =~ section_3.title
+             |> render() =~ List.last(sorted_titles)
 
       ## sorting by section
       params = %{
@@ -721,23 +734,20 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:last-child")
-             |> render() =~ section_1.title
-
-      assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ section_2.title
+             |> render() =~ hd(sorted_titles)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ section_3.title
+             |> render() =~ List.last(sorted_titles)
     end
 
-    test "applies pagination", %{
+    test "ignores pagination params", %{
       conn: conn,
       student: student,
       section_1: section_1,
       section_2: section_2,
-      section_3: section_3
+      section_3: section_3,
+      suspended_section: suspended_section
     } do
       {:ok, view, _html} =
         live(
@@ -763,7 +773,13 @@ defmodule OliWeb.Users.UsersDetailViewTest do
                "#{section_3.title}"
              )
 
-      ## aplies limit
+      assert has_element?(
+               view,
+               "a",
+               "#{suspended_section.title}"
+             )
+
+      ## pagination params are ignored for this table
       params = %{
         limit: 2,
         sort_order: "asc"
@@ -787,13 +803,19 @@ defmodule OliWeb.Users.UsersDetailViewTest do
                "#{section_2.title}"
              )
 
-      refute has_element?(
+      assert has_element?(
                view,
                "a",
                "#{section_3.title}"
              )
 
-      ## aplies pagination
+      assert has_element?(
+               view,
+               "a",
+               "#{suspended_section.title}"
+             )
+
+      ## pagination params are ignored for this table
       params = %{
         limit: 2,
         offset: 2,
@@ -806,13 +828,13 @@ defmodule OliWeb.Users.UsersDetailViewTest do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id, params)
         )
 
-      refute has_element?(
+      assert has_element?(
                view,
                "a",
                "#{section_1.title}"
              )
 
-      refute has_element?(
+      assert has_element?(
                view,
                "a",
                "#{section_2.title}"
@@ -822,6 +844,12 @@ defmodule OliWeb.Users.UsersDetailViewTest do
                view,
                "a",
                "#{section_3.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{suspended_section.title}"
              )
     end
   end
@@ -852,11 +880,27 @@ defmodule OliWeb.Users.UsersDetailViewTest do
         requires_payment: true
       )
 
+    suspended_section =
+      insert(:section,
+        type: :enrollable,
+        start_date: yesterday(),
+        end_date: tomorrow()
+      )
+
     student = insert(:user)
     Sections.enroll(student.id, section_1.id, [ContextRoles.get_role(:context_learner)])
     Sections.enroll(student.id, section_2.id, [ContextRoles.get_role(:context_learner)])
     Sections.enroll(student.id, section_3.id, [ContextRoles.get_role(:context_learner)])
-    %{student: student, section_1: section_1, section_2: section_2, section_3: section_3}
+    Sections.enroll(student.id, suspended_section.id, [ContextRoles.get_role(:context_learner)])
+    {:ok, _} = Sections.unenroll_learner(student.id, suspended_section.id)
+
+    %{
+      student: student,
+      section_1: section_1,
+      section_2: section_2,
+      section_3: section_3,
+      suspended_section: suspended_section
+    }
   end
 
   defp setup_session(%{conn: conn}) do

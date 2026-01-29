@@ -829,7 +829,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns a listing of all enrolled sections for a given user.
+  Returns a listing of all enrolled or suspended sections for a given user.
   """
   def list_user_enrolled_sections(%{id: user_id} = _user) do
     query =
@@ -837,7 +837,9 @@ defmodule Oli.Delivery.Sections do
         s in Section,
         join: e in Enrollment,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.status == :active and e.status == :enrolled,
+        where:
+          e.user_id == ^user_id and s.status == :active and
+            e.status in [:enrolled, :suspended],
         select: s
       )
 
@@ -3991,8 +3993,10 @@ defmodule Oli.Delivery.Sections do
                   false
               end
 
-            if is_container? or is_nil(current_children) do
-              new_published_resource = new_published_resources_map[resource_id]
+            # Guard: skip resources not in this publication (e.g., remixed from another project)
+            new_published_resource = new_published_resources_map[resource_id]
+
+            if (is_container? or is_nil(current_children)) and not is_nil(new_published_resource) do
               new_children = new_published_resource.children
 
               updated_section_resource =

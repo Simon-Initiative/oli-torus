@@ -204,7 +204,7 @@ defmodule OliWeb.Icons do
         cx="4"
         cy="4"
         r="4"
-        class="fill-gray-700 dark:fill-white group-[.past-start]:fill-gray-300 dark:group-[.past-start]:fill-gray-700"
+        class="fill-gray-700 dark:fill-white group-[.past-start]:fill-gray-300 dark:group-[.past-start]:fill-gray-400"
       />
     </svg>
     """
@@ -1641,19 +1641,28 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: ""
+
   def expand(assigns) do
     ~H"""
-    <svg width="9" height="19" viewBox="0 0 9 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width="9"
+      height="19"
+      viewBox="0 0 9 19"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
       <path
         d="M1 4.49996L4.49996 1L7.99992 4.49996"
-        stroke="#0062F2"
+        stroke="currentColor"
         stroke-width="1.5"
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <path
         d="M8 14L4.50004 17.5L1.00008 14"
-        stroke="#0062F2"
+        stroke="currentColor"
         stroke-width="1.5"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -1662,19 +1671,28 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: ""
+
   def collapse(assigns) do
     ~H"""
-    <svg width="9" height="19" viewBox="0 0 9 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width="9"
+      height="19"
+      viewBox="0 0 9 19"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
       <path
         d="M8 1.00004L4.50004 4.5L1.00008 1.00004"
-        stroke="#0062F2"
+        stroke="currentColor"
         stroke-width="1.5"
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <path
         d="M1 17.6411L4.49996 14.1411L7.99991 17.6411"
-        stroke="#0062F2"
+        stroke="currentColor"
         stroke-width="1.5"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -1709,6 +1727,29 @@ defmodule OliWeb.Icons do
 
   attr :class, :string, default: "stroke-Icon-icon-default dark:stroke-Icon-icon-default"
 
+  def adjustments(assigns) do
+    ~H"""
+    <svg
+      width="18"
+      height="14"
+      viewBox="0 0 18 14"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M8.75001 2.75C8.75001 3.28043 8.96072 3.78914 9.33579 4.16422C9.71087 4.53929 10.2196 4.75 10.75 4.75C11.2804 4.75 11.7891 4.53929 12.1642 4.16422C12.5393 3.78914 12.75 3.28043 12.75 2.75M8.75001 2.75C8.75001 2.21957 8.96072 1.71086 9.33579 1.33579C9.71087 0.960714 10.2196 0.75 10.75 0.75C11.2804 0.75 11.7891 0.960714 12.1642 1.33579C12.5393 1.71086 12.75 2.21957 12.75 2.75M8.75001 2.75H0.75M12.75 2.75H16.75M2.75 10.75C2.75 11.2804 2.96072 11.7891 3.33579 12.1642C3.71086 12.5393 4.21957 12.75 4.75 12.75C5.28044 12.75 5.78914 12.5393 6.16422 12.1642C6.53929 11.7891 6.75 11.2804 6.75 10.75M2.75 10.75C2.75 10.2196 2.96072 9.71087 3.33579 9.33579C3.71086 8.96072 4.21957 8.75001 4.75 8.75001C5.28044 8.75001 5.78914 8.96072 6.16422 9.33579C6.53929 9.71087 6.75 10.2196 6.75 10.75M2.75 10.75H0.75M6.75 10.75H16.75"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "stroke-Icon-icon-default dark:stroke-Icon-icon-default"
+
   def help(assigns) do
     ~H"""
     <svg
@@ -1725,6 +1766,102 @@ defmodule OliWeb.Icons do
         stroke-linecap="round"
         stroke-linejoin="round"
       />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "stroke-Icon-icon-default dark:stroke-Icon-icon-default"
+
+  def send(assigns) do
+    ~H"""
+    <svg
+      width="14"
+      height="13"
+      viewBox="0 0 14 13"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <path
+        d="M12.8834 6.45943L1.2483 0.773897C1.18189 0.748372 1.10939 0.743157 1.04001 0.758915C0.970621 0.774672 0.907485 0.810691 0.85861 0.862399C0.808303 0.91548 0.773672 0.981452 0.758555 1.05301C0.743438 1.12456 0.748425 1.1989 0.772963 1.26779L2.53444 6.45943M12.8834 6.45943L1.2483 12.145C1.18189 12.1705 1.10939 12.1757 1.04001 12.1599C0.970621 12.1442 0.907485 12.1082 0.85861 12.0565C0.808303 12.0034 0.773672 11.9374 0.758555 11.8659C0.743438 11.7943 0.748425 11.72 0.772963 11.6511L2.53444 6.45943M12.8834 6.45943H2.53444"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "text-Text-text-high"
+
+  def vertical_dots(assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="4"
+      height="16"
+      viewBox="0 0 4 16"
+      fill="currentColor"
+      class={@class}
+    >
+      <circle cx="2" cy="2" r="2" />
+      <circle cx="2" cy="8" r="2" />
+      <circle cx="2" cy="14" r="2" />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "w-5 h-5"
+
+  def checkmark(assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      class={@class}
+    >
+      <path
+        fill-rule="evenodd"
+        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+        clip-rule="evenodd"
+      />
+    </svg>
+    """
+  end
+
+  def google(assigns) do
+    ~H"""
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      class="d-inline-block align-middle"
+      style="width: 20px; height: 20px;"
+      aria-label="Google authentication"
+    >
+      <title>Google authentication</title>
+      <desc>Google G Logo</desc>
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        class="fill-google-logo-blue"
+      >
+      </path>
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        class="fill-google-logo-green"
+      >
+      </path>
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+        class="fill-google-logo-yellow"
+      >
+      </path>
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        class="fill-google-logo-red"
+      >
+      </path>
     </svg>
     """
   end

@@ -8,6 +8,7 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
+import './MultiLineTextInput.scss';
 import { MultiLineTextModel } from './schema';
 
 const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (props) => {
@@ -17,9 +18,34 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
   const id: string = props.id;
 
   const characterCounterRef = useRef<HTMLSpanElement>(null);
+  const characterCounterSrRef = useRef<HTMLSpanElement>(null);
   const [text, setText] = useState<string>('');
   const [enabled, setEnabled] = useState(true);
   const [_cssClass, setCssClass] = useState('');
+  const lastAnnouncedCountRef = useRef<number>(-1);
+
+  // Generate IDs for ARIA attributes
+  const labelId = `${id}-label`;
+  const characterCounterId = `${id}-character-count`;
+
+  // Helper function to safely get character count, defaulting to 0 if invalid
+  const getCharacterCount = (textValue: string | undefined | null): number => {
+    if (textValue == null) return 0;
+    const length = typeof textValue === 'string' ? textValue.length : 0;
+    return isNaN(length) ? 0 : length;
+  };
+
+  // Helper function to update screen reader character counter (only if count changed)
+  const updateCharacterCounterSr = (textValue: string | undefined | null) => {
+    if (characterCounterSrRef.current) {
+      const count = getCharacterCount(textValue);
+      // Only update if the count has actually changed to prevent duplicate announcements
+      if (count !== lastAnnouncedCountRef.current) {
+        characterCounterSrRef.current.textContent = `Character count: ${count}`;
+        lastAnnouncedCountRef.current = count;
+      }
+    }
+  };
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -70,6 +96,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
         const newText = sText.toString();
         if (prevText !== newText) {
           saveInputText(newText);
+          updateCharacterCounterSr(newText);
         }
         // strings wont trigger a re-render if they haven't changed
         return newText;
@@ -154,6 +181,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
                   const newText = sText.toString();
                   if (prevText !== newText) {
                     saveInputText(newText);
+                    updateCharacterCounterSr(newText);
                   }
                   // strings wont trigger a re-render if they haven't changed
                   return newText;
@@ -180,6 +208,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
                   const newText = sText.toString();
                   if (prevText !== newText) {
                     saveInputText(newText);
+                    updateCharacterCounterSr(newText);
                   }
                   // strings wont trigger a re-render if they haven't changed
                   return newText;
@@ -248,15 +277,35 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     });
   };
 
+  const debounceWaitTime = 250;
+
+  // Debounced screen reader announcement - only announces after user stops typing
+  const debounceCharacterCounterSr = useCallback(
+    debounce((val: string) => {
+      updateCharacterCounterSr(val);
+    }, debounceWaitTime),
+    [],
+  );
+
+  // Update screen reader character counter when text changes (debounced)
+  useEffect(() => {
+    if (ready && showCharacterCount) {
+      // Use debounced update to prevent announcements while typing
+      debounceCharacterCounterSr(text);
+    }
+  }, [ready, showCharacterCount, text, debounceCharacterCounterSr]);
+
   const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const val = event.target.value;
-    if (characterCounterRef.current) characterCounterRef.current.innerText = val.length.toString();
+    const length = getCharacterCount(val);
+    if (characterCounterRef.current) {
+      characterCounterRef.current.innerText = length.toString();
+    }
     setText(val);
     // Wait until user has stopped typing to save the new value
     debounceInputText(val);
   };
 
-  const debounceWaitTime = 250;
   const debounceInputText = useCallback(
     debounce((val) => saveInputText(val), debounceWaitTime),
     [],
@@ -274,18 +323,24 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     props.onResize({ id: `${id}`, settings: styleChanges });
   }, [width, height]);
 
-  const initialCharacterCount = text.length || 0;
+  const initialCharacterCount = getCharacterCount(text);
 
   return ready ? (
     <div data-janus-type={tagName} className={`long-text-input`} style={wrapperStyles}>
-      <label
-        htmlFor={id}
-        style={{
-          display: showLabel ? 'inline-block' : 'none',
-        }}
-      >
-        {label}
+      {/* Label - always rendered for accessibility, visually hidden when showLabel is false */}
+      <label id={labelId} htmlFor={id} className={showLabel ? '' : 'sr-only'}>
+        {label || ''}
       </label>
+      {/* Screen reader-only character counter announcement */}
+      {showCharacterCount && (
+        <span
+          id={characterCounterId}
+          ref={characterCounterSrRef}
+          className="sr-only"
+          role="status"
+          aria-live="polite"
+        />
+      )}
       <textarea
         name="test"
         id={id}
@@ -294,6 +349,8 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
         placeholder={prompt}
         value={text}
         disabled={!enabled}
+        aria-labelledby={label ? labelId : undefined}
+        aria-multiline="true"
       />
       <div
         title="Number of characters"
@@ -306,6 +363,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
           fontFamily: 'Arial',
           textAlign: 'right',
         }}
+        aria-hidden="true"
       >
         <span
           className={`span_${id}`}

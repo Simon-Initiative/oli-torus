@@ -627,8 +627,9 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       class={[
         "text-lg font-semibold py-2 border-b-2 cursor-pointer transition-colors duration-200",
         if(@active == @value,
-          do: "text-gray-900 py-2 border-gray-900",
-          else: "text-gray-500 border-transparent hover:border-gray-500"
+          do: "text-Text-text-high border-Border-border-high",
+          else:
+            "text-Text-text-low border-transparent hover:text-Text-text-low hover:border-Border-border-low"
         )
       ]}
       phx-click="select_tab"
@@ -759,7 +760,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               <button
                 :if={@more_posts_exist?}
                 phx-click="load_more_posts"
-                class="text-primary text-sm px-6 py-2 hover:text-primary/70"
+                class="text-Text-text-button text-sm px-6 py-2 hover:text-Text-text-button-hover underline"
               >
                 Load more posts
               </button>
@@ -812,7 +813,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
               <button
                 :if={@more_notes_exist?}
                 phx-click="load_more_notes"
-                class="text-primary text-sm px-6 py-2 hover:text-primary/70"
+                class="text-Text-text-button text-sm px-6 py-2 hover:text-Text-text-button-hover underline"
               >
                 Load more notes
               </button>
@@ -891,7 +892,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           ]}
         >
           <span class="text-[14px] leading-[20px] mr-2">Sort</span>
-          <Icons.chevron_down />
+          <Icons.chevron_down class="text-Icon-icon-white" />
         </.dropdown>
 
         <button
@@ -941,7 +942,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           ]}
         >
           <span class="text-[14px] leading-[20px] mr-2">Sort</span>
-          <Icons.chevron_down />
+          <Icons.chevron_down class="text-Icon-icon-white" />
         </.dropdown>
       </div>
     </div>

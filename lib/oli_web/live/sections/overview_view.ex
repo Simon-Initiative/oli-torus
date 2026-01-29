@@ -13,7 +13,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
-  alias OliWeb.Common.MonacoEditor
+  alias OliWeb.Common.Monaco
   alias Oli.Utils.S3Storage
   alias Oli.Repo
 
@@ -470,7 +470,7 @@ defmodule OliWeb.Sections.OverviewView do
             <section class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200">
               <h5>Prompt Templates</h5>
 
-              <MonacoEditor.render
+              <Monaco.editor
                 id="attribute-monaco-editor"
                 height="200px"
                 language="text"

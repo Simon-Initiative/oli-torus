@@ -225,7 +225,8 @@ defmodule Oli.Search.Embeddings do
     %OpenAI.Config{
       http_options: [
         timeout: System.get_env("OPENAI_TIMEOUT", "8000") |> String.to_integer(),
-        recv_timeout: System.get_env("OPENAI_RECV_TIMEOUT", "60000") |> String.to_integer()
+        recv_timeout: System.get_env("OPENAI_RECV_TIMEOUT", "60000") |> String.to_integer(),
+        hackney: [pool: Oli.GenAI.HackneyPool.pool_name()]
       ],
       api_key: System.get_env("OPENAI_API_KEY"),
       organization_key: System.get_env("OPENAI_ORG_KEY")

@@ -99,14 +99,34 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
         <div class="flex items-center p-2">
           <button
+            id="mobile-nav-open"
             class={[
-              "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
+              "py-1.5 px-3 rounded border border-transparent text-Text-text-low hover:text-Text-text-high hover:border-Border-border-subtle active:bg-Surface-surface-secondary focus:outline-none",
               if(@sidebar_enabled, do: "md:hidden", else: "hidden")
             ]}
             aria-label="menu"
-            phx-click={JS.toggle(to: "#mobile-nav-menu", display: "flex")}
+            phx-click={
+              JS.show(to: "#mobile-nav-menu", display: "flex")
+              |> JS.hide(to: "#mobile-nav-open")
+              |> JS.show(to: "#mobile-nav-close")
+            }
           >
             <i class="fa-solid fa-bars"></i>
+          </button>
+          <button
+            id="mobile-nav-close"
+            class={[
+              "hidden py-1.5 px-3 rounded border border-Border-border-subtle bg-Surface-surface-secondary text-Text-text-high focus:outline-none",
+              if(@sidebar_enabled, do: "md:hidden", else: "hidden")
+            ]}
+            aria-label="close menu"
+            phx-click={
+              JS.hide(to: "#mobile-nav-menu")
+              |> JS.show(to: "#mobile-nav-open")
+              |> JS.hide(to: "#mobile-nav-close")
+            }
+          >
+            <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
       </div>
@@ -219,39 +239,83 @@ defmodule OliWeb.Components.Delivery.Layouts do
         id="mobile-nav-menu"
         class="
         fixed
+        inset-0
         z-50
-        w-full
-        mt-14
         hidden
         md:hidden
         flex-col
+        h-[100dvh]
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
       "
-        phx-click-away={JS.hide()}
+        phx-click-away={
+          JS.hide(to: "#mobile-nav-menu")
+          |> JS.show(to: "#mobile-nav-open")
+          |> JS.hide(to: "#mobile-nav-close")
+        }
       >
-        <div class="px-4 py-2 flex flex-row items-center align-center justify-between border-b border-gray-300 dark:border-gray-800">
-          <div class="flex items-center">
-            <.tech_support_button id="mobile-tech-support" />
+        <div class="border-b border-Border-border-subtle h-14 px-3 flex items-center gap-3">
+          <.link
+            :if={@section}
+            id="mobile_header_logo_button"
+            navigate={
+              logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_admin)
+            }
+            class="shrink-0"
+          >
+            <.logo_img section={@section} />
+          </.link>
+          <div class="flex-1 min-w-0 text-sm text-Text-text-low truncate">
+            {if @section, do: @section.title, else: ""}
           </div>
-          <UserAccount.menu
-            id="mobile-user-account-menu-sidebar"
-            ctx={@ctx}
-            is_admin={@is_admin}
-            section={@section}
-            dropdown_class="absolute right-0 border"
-          />
+          <button
+            class="p-2"
+            aria-label="Close menu"
+            phx-click={
+              JS.hide(to: "#mobile-nav-menu")
+              |> JS.show(to: "#mobile-nav-open")
+              |> JS.hide(to: "#mobile-nav-close")
+            }
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <.sidebar_links
-          active_tab={@active_tab}
-          section={@section}
-          preview_mode={@preview_mode}
-          notes_enabled={@notes_enabled}
-          discussions_enabled={@discussions_enabled}
-          has_scheduled_resources?={@has_scheduled_resources?}
-          platform="mobile"
-        />
+        <div class="flex-1 flex flex-col justify-between px-3 py-2 overflow-y-auto">
+          <div class="flex flex-col gap-2">
+            <.sidebar_links
+              active_tab={@active_tab}
+              section={@section}
+              preview_mode={@preview_mode}
+              notes_enabled={@notes_enabled}
+              discussions_enabled={@discussions_enabled}
+              has_scheduled_resources?={@has_scheduled_resources?}
+              platform="mobile"
+            />
+          </div>
+          <div class="flex flex-col gap-2 pt-4">
+            <.tech_support_button id="mobile-tech-support" class="w-full" />
+            <.exit_course_button id="mobile_exit_course_button" />
+          </div>
+        </div>
+        <div class="border-t border-Border-border-subtle px-3 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <UserAccount.menu
+              id="mobile-user-account-menu-sidebar"
+              ctx={@ctx}
+              is_admin={@is_admin}
+              section={@section}
+              class="h-10 w-10"
+              dropdown_class="!top-auto !bottom-14 right-0 border"
+            />
+            <div class="text-sm text-Text-text-low truncate">
+              {user_name(@ctx)}
+            </div>
+          </div>
+          <.link href={~p"/users/settings"} class="p-2" aria-label="Settings">
+            <Icons.adjustments />
+          </.link>
+        </div>
       </nav>
     </div>
     """
@@ -313,6 +377,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_view, :atom, default: nil)
   attr(:sidebar_expanded, :boolean)
   attr(:preview_mode, :boolean)
+  attr(:section, Section, default: nil)
   attr(:resource_title, :string)
   attr(:resource_slug, :string)
   attr(:active_tab, :atom)
@@ -411,35 +476,81 @@ defmodule OliWeb.Components.Delivery.Layouts do
         id="mobile-nav-menu"
         class="
         fixed
+        inset-0
         z-50
-        w-full
-        mt-14
         hidden
         md:hidden
         flex-col
+        h-[100dvh]
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
       "
-        phx-click-away={JS.hide()}
+        phx-click-away={
+          JS.hide(to: "#mobile-nav-menu")
+          |> JS.show(to: "#mobile-nav-open")
+          |> JS.hide(to: "#mobile-nav-close")
+        }
       >
-        <div class="px-4 py-2 flex flex-row items-center align-center justify-between border-b border-gray-300 dark:border-gray-800">
-          <div class="flex items-center">
-            <.tech_support_button id="mobile-tech-support" />
+        <div class="border-b border-Border-border-subtle h-14 px-3 flex items-center gap-3">
+          <.link
+            id="mobile_workspace_logo_button"
+            navigate={logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded, @is_admin)}
+            class="shrink-0"
+          >
+            <.logo_img />
+          </.link>
+          <div class="flex-1 min-w-0 text-sm text-Text-text-low truncate">
+            {if @resource_title, do: @resource_title, else: "Workspace"}
           </div>
-          <UserAccount.menu
-            id="mobile-user-account-menu-workspace-sidebar"
-            ctx={@ctx}
-            is_admin={@is_admin}
-            dropdown_class="absolute right-0 border"
-          />
+          <button
+            class="p-2"
+            aria-label="Close menu"
+            phx-click={
+              JS.hide(to: "#mobile-nav-menu")
+              |> JS.show(to: "#mobile-nav-open")
+              |> JS.hide(to: "#mobile-nav-close")
+            }
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <.workspace_sidebar_links
-          preview_mode={@preview_mode}
-          sidebar_expanded={@sidebar_expanded}
-          active_workspace={@active_workspace}
-          platform="mobile"
-        />
+        <div class="flex-1 flex flex-col justify-between px-3 py-2 overflow-y-auto">
+          <div class="flex flex-col gap-2">
+            <.workspace_sidebar_links
+              preview_mode={@preview_mode}
+              sidebar_expanded={@sidebar_expanded}
+              active_workspace={@active_workspace}
+              platform="mobile"
+            />
+          </div>
+          <div class="flex flex-col gap-2 pt-4">
+            <.tech_support_button id="mobile-tech-support-workspace" class="w-full" />
+            <.exit_workspace_button
+              :if={@section}
+              id="mobile_exit_workspace_button"
+              sidebar_expanded={true}
+              target_workspace={@active_workspace || :student}
+            />
+          </div>
+        </div>
+        <div class="border-t border-Border-border-subtle px-3 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <UserAccount.menu
+              id="mobile-user-account-menu-workspace-sidebar"
+              ctx={@ctx}
+              is_admin={@is_admin}
+              class="h-10 w-10"
+              dropdown_class="!top-auto !bottom-14 right-0 border"
+            />
+            <div class="text-sm text-Text-text-low truncate">
+              {user_name(@ctx)}
+            </div>
+          </div>
+          <.link href={~p"/users/settings"} class="p-2" aria-label="Settings">
+            <Icons.adjustments />
+          </.link>
+        </div>
       </nav>
     </div>
     """
@@ -762,7 +873,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <div
         :if={@sidebar_expanded}
         class={[
-          "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
+          "text-[#353740] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
           if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
         ]}
       >
@@ -802,13 +913,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
+  attr :id, :string, default: "exit_workspace_button"
   attr :sidebar_expanded, :boolean, default: true
   attr :target_workspace, :atom, default: :student_workspace
 
   def exit_course_button(assigns) do
     ~H"""
     <.link
-      id="exit_course_button"
+      id={@id}
       navigate={~p"/workspaces/student?#{%{sidebar_expanded: @sidebar_expanded}}"}
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white"
     >
@@ -817,11 +929,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
           Exit Course
         </div>
+        <span :if={!@sidebar_expanded} class="sr-only">Exit Course</span>
       </div>
     </.link>
     """
   end
 
+  attr :id, :string, default: "exit_course_button"
   attr :sidebar_expanded, :boolean, default: true
   attr :target_workspace, :atom, default: :student
   attr :title, :string, default: "Exit Course"
@@ -839,7 +953,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
     ~H"""
     <.link
-      id="exit_course_button"
+      id={@id}
       navigate={Routes.live_path(OliWeb.Endpoint, @base_module, sidebar_expanded: @sidebar_expanded)}
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
@@ -848,6 +962,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
           {@title}
         </div>
+        <span :if={!@sidebar_expanded} class="sr-only">{@title}</span>
       </div>
     </.link>
     """

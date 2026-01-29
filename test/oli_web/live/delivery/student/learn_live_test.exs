@@ -2916,6 +2916,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         text_content =
           html
           |> Floki.parse_document!()
+          |> Floki.filter_out("span.sr-only")
           |> Floki.text()
           |> String.trim()
 
@@ -2958,7 +2959,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{nav[id='desktop-nav-menu'] a[id="exit_course_button"]}, "Exit Course")
+      |> element(~s{nav[id='desktop-nav-menu'] a[id="exit_workspace_button"]}, "Exit Course")
       |> render_click()
 
       assert_redirect(view, "/workspaces/student?sidebar_expanded=true")

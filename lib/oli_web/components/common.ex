@@ -133,7 +133,7 @@ defmodule OliWeb.Components.Common do
         "rounded text-white hover:text-white bg-red-500 hover:bg-red-600 active:bg-red-700 focus:ring-2 focus:ring-red-400 dark:bg-red-600 dark:hover:bg-red-500 dark:active:bg-red-400 focus:outline-none dark:focus:ring-red-700 hover:no-underline"
 
       :link ->
-        "rounded text-blue-500 hover:text-blue-600 hover:text-blue-600 active:text-blue-700 focus:ring-2 focus:ring-blue-400 dark:text-blue-600 dark:hover:text-blue-500 dark:active:text-blue-400 focus:outline-none dark:focus:ring-blue-700 hover:underline cursor-pointer"
+        "rounded text-Text-text-button hover:text-Text-text-button-hover active:text-Text-text-button-hover focus:ring-2 focus:ring-blue-400 focus:outline-none dark:focus:ring-blue-700 hover:underline cursor-pointer"
 
       :link_info ->
         "rounded text-gray-500 hover:text-gray-600 active:text-gray-700 focus:ring-2 focus:ring-gray-400 dark:text-gray-600 dark:hover:text-gray-500 dark:active:text-gray-400 focus:outline-none dark:focus:ring-gray-700 hover:underline cursor-pointer"

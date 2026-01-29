@@ -84,7 +84,7 @@ defmodule OliWeb.Components.Utils do
 
   def timezone_info(assigns) do
     ~H"""
-    <div id="timezone_info" class="flex items-center gap-2 text-[#757682] dark:text-[#bab8bf] mb-1">
+    <div id="timezone_info" class="flex items-center gap-2 text-Text-text-low mb-1">
       <div class="w-5 h-5 flex items-center justify-center">
         <OliWeb.Icons.timezone_world />
       </div>

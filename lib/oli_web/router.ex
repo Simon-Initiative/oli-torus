@@ -317,6 +317,22 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
+    pipe_through [:browser]
+
+    live_session :cookie_preferences,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        {OliWeb.UserAuth, :mount_current_user},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode
+      ] do
+      live "/cookie-preferences", CookiePreferencesLive, :index
+    end
+  end
+
+  scope "/", OliWeb do
     pipe_through [
       :browser,
       :delivery,
@@ -1752,6 +1768,8 @@ defmodule OliWeb.Router do
       live("/restore_progress", Admin.RestoreUserProgress)
 
       live("/xapi", Admin.UploadPipelineView)
+      live("/clickhouse/backfill", Admin.ClickhouseBackfillLive)
+      live("/clickhouse", Admin.ClickHouseAnalyticsView)
       get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
 
       # Authoring Activity Management

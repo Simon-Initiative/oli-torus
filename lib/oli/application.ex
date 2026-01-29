@@ -4,6 +4,7 @@ defmodule Oli.Application do
   @moduledoc false
 
   use Application
+  require Logger
 
   def start(_type, _args) do
     # Install the logger truncator
@@ -98,6 +99,9 @@ defmodule Oli.Application do
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor},
 
+        # GenAI hackney connection pool
+        Oli.GenAI.HackneyPool,
+
         # MCP (Model Context Protocol) server for AI agents
         Anubis.Server.Registry,
 
@@ -121,7 +125,19 @@ defmodule Oli.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Oli.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    case Supervisor.start_link(children, opts) do
+      {:ok, pid} ->
+        Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+          Process.sleep(1_000)
+          safe_inventory_recovery()
+        end)
+
+        {:ok, pid}
+
+      other ->
+        other
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -165,6 +181,19 @@ defmodule Oli.Application do
       ]
     else
       []
+    end
+  end
+
+  defp safe_inventory_recovery do
+    try do
+      Oli.Analytics.Backfill.Inventory.recover_inflight_batches(boot?: true)
+    rescue
+      exception ->
+        Logger.error(
+          "Inventory recovery failed: #{Exception.format(:error, exception, __STACKTRACE__)}"
+        )
+
+        :ok
     end
   end
 

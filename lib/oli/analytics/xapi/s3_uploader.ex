@@ -1,4 +1,4 @@
-defmodule Oli.Analytics.XAPI.Uploader do
+defmodule Oli.Analytics.XAPI.S3Uploader do
   alias ExAws.S3
   alias Oli.HTTP
   alias Oli.Analytics.XAPI.StatementBundle

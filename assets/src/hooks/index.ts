@@ -3,6 +3,7 @@ import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
+import { ChunkLogsDetails, ChunkLogsViewer } from './chunk_logs_viewer';
 import { ClickOutside } from './click_outside';
 import { ClickExecJS, HoverAway } from './click_variations';
 import { ConditionalToggle } from './conditional_toggle';
@@ -44,6 +45,7 @@ import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
+import { SaveCookiePreferences } from './save_cookie_preferences';
 import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
@@ -104,6 +106,8 @@ export const Hooks = {
   LiveModal,
   EmailList,
   ClickOutside,
+  ChunkLogsDetails,
+  ChunkLogsViewer,
   Scroller,
   ResizeListener,
   KeepScrollAtBottom,
@@ -132,6 +136,7 @@ export const Hooks = {
   CopyToClipboard,
   ReadMoreToggle,
   TagsComponent,
+  SaveCookiePreferences,
   ScrollToTheTop,
   ContainerToggleAriaLabel,
 };

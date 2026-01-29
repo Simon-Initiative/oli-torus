@@ -3,6 +3,45 @@
   flex-direction: row;
 }
 
+.paginationControls :global(.pagination) {
+  margin-bottom: 0;
+  padding-left: 0;
+}
+
+@media (max-width: 639px) {
+  .paginationControls :global(.pagination) {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .paginationControls :global(.page-link) {
+    align-items: center;
+    box-sizing: border-box;
+    display: inline-flex;
+    justify-content: center;
+    min-height: 2.75rem;
+    min-width: 0;
+    padding: 0 0.25rem;
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .paginationControls :global(.page-item) {
+    flex: 1 1 0%;
+  }
+
+  .paginationControls :global(.pagination .page-item:nth-child(2)) {
+    margin-left: 4px;
+  }
+
+  .paginationControls :global(.pagination .page-item:nth-last-child(2)) {
+    margin-right: 4px;
+  }
+}
+
 .show {
   display: block !important;
 }
