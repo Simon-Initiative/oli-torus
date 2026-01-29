@@ -547,7 +547,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     |> maybe_filter_by_card(params.selected_card_value)
     |> sort_by(params.sort_by, params.sort_order)
   end
-  
+
   defp maybe_expand_for_matching_subobjectives(
          expanded_objectives,
          objectives,
@@ -637,7 +637,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp parent_objectives_from(filtered_objectives, parent_lookup) do
     filtered_objectives
     |> Enum.reduce(%{}, fn obj, acc ->
-      parent_id = if is_nil(obj.subobjective), do: obj.resource_id, else: obj.objective_resource_id
+      parent_id =
+        if is_nil(obj.subobjective), do: obj.resource_id, else: obj.objective_resource_id
 
       case Map.get(parent_lookup, parent_id) do
         nil -> acc
