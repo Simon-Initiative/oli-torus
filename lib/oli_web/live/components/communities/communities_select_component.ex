@@ -114,8 +114,62 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
   end
 
   @impl true
-  def handle_event("add_community", %{"community_id" => community_id}, socket) do
-    community_id = String.to_integer(community_id)
+  def handle_event("add_community", %{"community_id" => community_id_str}, socket) do
+    case Integer.parse(community_id_str) do
+      {community_id, ""} ->
+        handle_add_community(community_id, socket)
+
+      _ ->
+        {:noreply, assign(socket, :error, "Invalid community ID")}
+    end
+  end
+
+  @impl true
+  def handle_event("remove_community", %{"community_id" => community_id_str}, socket) do
+    case Integer.parse(community_id_str) do
+      {community_id, ""} ->
+        handle_remove_community(community_id, socket)
+
+      _ ->
+        {:noreply, assign(socket, :error, "Invalid community ID")}
+    end
+  end
+
+  @impl true
+  def handle_event("search_communities", params, socket) do
+    search = Map.get(params, "value") || Map.get(params, "search") || ""
+
+    {:noreply,
+     socket
+     |> assign(:input_value, search)
+     |> load_available_communities(search)}
+  end
+
+  @impl true
+  def handle_event("handle_keydown", %{"key" => "Escape"}, socket) do
+    {:noreply,
+     socket
+     |> assign(:community_edit_mode, false)
+     |> assign(:input_value, "")}
+  end
+
+  @impl true
+  def handle_event("handle_keydown", _params, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("handle_container_keydown", %{"key" => key}, socket)
+      when key in ["Enter", " "] do
+    handle_event("toggle_edit", %{}, socket)
+  end
+
+  @impl true
+  def handle_event("handle_container_keydown", _params, socket) do
+    {:noreply, socket}
+  end
+
+  defp handle_add_community(community_id, socket) do
     user_id = socket.assigns.user_id
 
     case Groups.create_community_account(%{user_id: user_id, community_id: community_id}) do
@@ -156,9 +210,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
     end
   end
 
-  @impl true
-  def handle_event("remove_community", %{"community_id" => community_id}, socket) do
-    community_id = String.to_integer(community_id)
+  defp handle_remove_community(community_id, socket) do
     user_id = socket.assigns.user_id
 
     case Groups.delete_community_account(%{user_id: user_id, community_id: community_id}) do
@@ -168,6 +220,10 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
 
         updated_direct_communities =
           Enum.reject(socket.assigns.direct_communities, &(&1.id == community_id))
+
+        # Recompute institution communities - the removed community might need to show as institution-based
+        updated_institution_communities =
+          compute_institution_communities(socket.assigns.institution, updated_direct_communities)
 
         updated_available_communities =
           if removed_community && removed_community not in socket.assigns.available_communities do
@@ -179,11 +235,12 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
 
         updated_selected_ids =
           Enum.map(updated_direct_communities, & &1.id) ++
-            Enum.map(socket.assigns.institution_communities, & &1.id)
+            Enum.map(updated_institution_communities, & &1.id)
 
         {:noreply,
          socket
          |> assign(:direct_communities, updated_direct_communities)
+         |> assign(:institution_communities, updated_institution_communities)
          |> assign(:available_communities, updated_available_communities)
          |> assign(:selected_community_ids, updated_selected_ids)
          |> assign(:error, nil)
@@ -192,29 +249,6 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
       {:error, _} ->
         {:noreply, assign(socket, :error, "Failed to remove community")}
     end
-  end
-
-  @impl true
-  def handle_event("search_communities", params, socket) do
-    search = Map.get(params, "value") || Map.get(params, "search") || ""
-
-    {:noreply,
-     socket
-     |> assign(:input_value, search)
-     |> load_available_communities(search)}
-  end
-
-  @impl true
-  def handle_event("handle_keydown", %{"key" => "Escape"}, socket) do
-    {:noreply,
-     socket
-     |> assign(:community_edit_mode, false)
-     |> assign(:input_value, "")}
-  end
-
-  @impl true
-  def handle_event("handle_keydown", _params, socket) do
-    {:noreply, socket}
   end
 
   @impl true
@@ -260,34 +294,38 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
             <div class="relative w-full h-full">
               <div class="bg-Specially-Tokens-Fill-fill-input border border-Table-table-border rounded-[3px] text-sm w-full h-full min-h-[100px] flex flex-col items-center gap-1 p-2">
                 <!-- Direct communities (removable) -->
-                <%= for community <- @direct_communities do %>
-                  <span
-                    role="selected community"
-                    class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_community_pill_classes(community.name)}"}
-                  >
-                    <span>{community.name}</span>
-                    <button
-                      type="button"
-                      phx-click="remove_community"
-                      phx-value-community_id={community.id}
-                      phx-target={@myself}
-                      class="ml-auto text-sm hover:opacity-70 transition-opacity duration-200"
+                <ul class="contents" aria-label="Selected communities">
+                  <%= for community <- @direct_communities do %>
+                    <li
+                      class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_community_pill_classes(community.name)}"}
                     >
-                      X
-                    </button>
-                  </span>
-                <% end %>
+                      <span>{community.name}</span>
+                      <button
+                        type="button"
+                        phx-click="remove_community"
+                        phx-value-community_id={community.id}
+                        phx-target={@myself}
+                        class="ml-auto text-sm hover:opacity-70 transition-opacity duration-200"
+                        aria-label={"Remove #{community.name}"}
+                        title={"Remove #{community.name}"}
+                      >
+                        X
+                      </button>
+                    </li>
+                  <% end %>
+                </ul>
                 <!-- Institution communities (not removable) -->
-                <%= for community <- @institution_communities do %>
-                  <span
-                    role="institution community"
-                    class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_community_pill_classes(community.name, true)}"}
-                    title="Via institution"
-                  >
-                    <span>{community.name}</span>
-                    <span class="text-xs opacity-70">(via institution)</span>
-                  </span>
-                <% end %>
+                <ul class="contents" aria-label="Communities via institution">
+                  <%= for community <- @institution_communities do %>
+                    <li
+                      class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_community_pill_classes(community.name, true)}"}
+                      title="Via institution"
+                    >
+                      <span>{community.name}</span>
+                      <span class="text-xs opacity-70">(via institution)</span>
+                    </li>
+                  <% end %>
+                </ul>
 
                 <div class="flex-1 min-w-[180px]">
                   <input
@@ -297,6 +335,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
                     phx-target={@myself}
                     value={@input_value}
                     placeholder="Search communities..."
+                    aria-label="Search communities"
                     class="w-full px-3 border-0 outline-none text-[#757682] font-semibold focus:bg-transparent focus:ring-0 focus:border-transparent"
                     id={"community-input-#{@id}"}
                   />
@@ -340,20 +379,22 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
           <div
             class="cursor-pointer w-full min-h-[38px] flex items-start p-2 border border-Table-table-border rounded-[3px] hover:border-Border-border-hover hover:bg-Table-table-hover focus:border focus:border-Border-border-active focus:bg-Table-table-hover focus:outline-none"
             phx-click="toggle_edit"
+            phx-keydown="handle_container_keydown"
             phx-target={@myself}
             tabindex="0"
+            role="button"
+            aria-label="Edit communities"
           >
             <%= if @communities_count > 0 do %>
-              <div class="flex flex-wrap gap-1">
+              <ul class="flex flex-wrap gap-1" aria-label="Communities">
                 <%= for community <- @all_communities do %>
-                  <span
-                    role="selected community"
+                  <li
                     class={"px-3 py-1 rounded-full text-sm font-semibold shadow-sm #{get_community_pill_classes(community.name)}"}
                   >
                     {community.name}
-                  </span>
+                  </li>
                 <% end %>
-              </div>
+              </ul>
             <% else %>
               <div class="text-Text-text-low text-sm">
                 Click to add communities...
@@ -363,7 +404,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
       <% end %>
 
       <%= if @error do %>
-        <div class="text-red-500 text-xs mt-1">
+        <div class="text-red-500 text-xs mt-1" role="alert" aria-live="assertive">
           {@error}
         </div>
       <% end %>
@@ -371,7 +412,9 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
     """
   end
 
-  def get_community_pill_classes(_, _via_institution = true \\ false) do
+  def get_community_pill_classes(community_name, via_institution \\ false)
+
+  def get_community_pill_classes(_, _via_institution = true) do
     "bg-Fill-Chip-Gray text-Text-Chip-Gray"
   end
 

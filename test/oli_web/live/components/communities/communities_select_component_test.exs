@@ -52,7 +52,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
           disabled_edit: false
         })
 
-      assert has_element?(component, "span[role='selected community']", direct_community.name)
+      assert has_element?(component, "ul[aria-label='Communities'] li", direct_community.name)
       refute has_element?(component, "input")
       refute has_element?(component, "button", "X")
     end
@@ -68,7 +68,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
           disabled_edit: false
         })
 
-      refute has_element?(component, "span[role='selected community']")
+      refute has_element?(component, "ul[aria-label='Communities'] li")
       assert has_element?(component, "div", "Click to add communities...")
     end
 
@@ -112,7 +112,12 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
       # Should show input and remove buttons in edit mode
       assert has_element?(component, "input")
       assert has_element?(component, "button", "X")
-      assert has_element?(component, "span[role='selected community']", direct_community.name)
+
+      assert has_element?(
+               component,
+               "ul[aria-label='Selected communities'] li",
+               direct_community.name
+             )
     end
 
     test "institution communities are shown without remove button", %{
@@ -133,9 +138,10 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
       component |> element("div[phx-click='toggle_edit']") |> render_click()
 
       # Should show institution community with "(via institution)" label
+
       assert has_element?(
                component,
-               "span[role='institution community']",
+               "ul[aria-label='Communities via institution'] li",
                institution_community.name
              )
 
@@ -244,9 +250,10 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponentTest do
         })
 
       # Should show direct community
-      assert has_element?(component, "span[role='selected community']", direct_community.name)
-      # Should not show any institution communities
-      refute has_element?(component, "span[role='institution community']")
+      assert has_element?(component, "ul[aria-label='Communities'] li", direct_community.name)
+      # Should not show any institution communities (in display mode, all are shown in one list)
+      html = render(component)
+      refute html =~ "(via institution)"
     end
 
     test "search filters available communities", %{
