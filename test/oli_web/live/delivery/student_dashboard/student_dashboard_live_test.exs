@@ -178,7 +178,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
       assert has_element?(
                view,
                "th[phx-value-sort_by='student_completion']",
-               "Class Progress"
+               "Student Progress"
              )
 
       # Link that triggers the opening of the modal

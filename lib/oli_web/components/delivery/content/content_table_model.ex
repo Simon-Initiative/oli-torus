@@ -21,12 +21,12 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       },
       %ColumnSpec{
         name: :student_completion,
-        label: HTMLComponents.student_progress_label(%{title: "Class Progress"}),
+        label: HTMLComponents.student_progress_label(%{title: "Student Progress"}),
         render_fn: &render_student_completion/3
       },
       %ColumnSpec{
         name: :student_proficiency,
-        label: "Class Proficiency",
+        label: "Student Proficiency",
         tooltip:
           "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it.",
         render_fn: &render_student_proficiency/3

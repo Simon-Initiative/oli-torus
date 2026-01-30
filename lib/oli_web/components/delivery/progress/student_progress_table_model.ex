@@ -10,7 +10,7 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
       column_specs: [
         %ColumnSpec{
           name: :index,
-          label: "Order",
+          label: "#",
           td_class: "text-center pl-0",
           th_class: "!text-center"
         },
