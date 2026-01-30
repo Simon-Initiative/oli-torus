@@ -586,8 +586,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp subobjective_filters_active?(params) do
+    selected_ids = safely_decode_list(params.selected_proficiency_ids)
+
     (not is_nil(params.text_search) and params.text_search != "") or
-      params.selected_proficiency_ids != "[]" or
+      selected_ids != [] or
       params.selected_card_value == :low_proficiency_skills
   end
 
@@ -809,6 +811,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   defp subobjective?(objective), do: not is_nil(objective.subobjective)
   defp top_level_objective?(objective), do: is_nil(objective.subobjective)
+
+  defp safely_decode_list(value) when is_list(value), do: value
 
   defp safely_decode_list(value) when is_binary(value) do
     case Jason.decode(value) do
