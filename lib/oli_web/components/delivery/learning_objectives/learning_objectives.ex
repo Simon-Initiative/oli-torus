@@ -531,6 +531,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
         _ ->
           filtered_objectives
+          |> sort_by(params.sort_by, params.sort_order)
       end
 
     total_count = length(table_objectives)
