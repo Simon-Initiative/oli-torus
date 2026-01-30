@@ -626,7 +626,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   defp maybe_filter_by_subobjective_card(objectives, _), do: objectives
 
-  defp scoped_objectives(objectives, params), do: maybe_filter_by_option(objectives, params.filter_by)
+  defp scoped_objectives(objectives, params),
+    do: maybe_filter_by_option(objectives, params.filter_by)
 
   defp parent_objectives_from(filtered_objectives, scoped_objectives) do
     parent_ids =
