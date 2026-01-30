@@ -104,7 +104,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       }
     ]
 
-    selected_proficiency_ids = Jason.decode!(params.selected_proficiency_ids)
+    selected_proficiency_ids = safely_decode_list(params.selected_proficiency_ids)
 
     proficiency_options =
       update_proficiency_options(selected_proficiency_ids, @proficiency_options)
@@ -604,7 +604,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp maybe_filter_by_subobjective_proficiency(objectives, "[]"), do: objectives
 
   defp maybe_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids) do
-    selected_proficiency_ids = Jason.decode!(selected_proficiency_ids)
+    selected_proficiency_ids = safely_decode_list(selected_proficiency_ids)
 
     mapper_ids =
       Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
@@ -717,8 +717,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp maybe_filter_by_proficiency(objectives, "[]"), do: objectives
 
   defp maybe_filter_by_proficiency(objectives, selected_proficiency_ids) do
-    selected_proficiency_ids =
-      Jason.decode!(selected_proficiency_ids)
+    selected_proficiency_ids = safely_decode_list(selected_proficiency_ids)
 
     mapper_ids =
       Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
@@ -786,6 +785,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   defp subobjective?(objective), do: not is_nil(objective.subobjective)
   defp top_level_objective?(objective), do: is_nil(objective.subobjective)
+
+  defp safely_decode_list(value) when is_binary(value) do
+    case Jason.decode(value) do
+      {:ok, list} when is_list(list) -> list
+      _ -> []
+    end
+  end
+
+  defp safely_decode_list(_), do: []
 
   defp parent_id(objective),
     do:
