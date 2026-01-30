@@ -525,8 +525,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     table_objectives =
       case patch_url_type do
         :instructor_dashboard ->
-          parent_lookup = parent_objectives_lookup(objectives)
-          parent_objectives_from(filtered_objectives, parent_lookup)
+          parent_objectives_from(filtered_objectives)
 
         _ ->
           filtered_objectives
@@ -632,28 +631,17 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     |> maybe_filter_by_option(params.filter_by)
   end
 
-  defp parent_objectives_lookup(objectives) do
-    Enum.reduce(objectives, %{}, fn obj, acc ->
-      if is_nil(obj.subobjective) do
-        Map.put(acc, obj.resource_id, obj)
-      else
-        acc
-      end
-    end)
-  end
-
-  defp parent_objectives_from(filtered_objectives, parent_lookup) do
-    filtered_objectives
-    |> Enum.reduce(%{}, fn obj, acc ->
-      parent_id =
+  defp parent_objectives_from(filtered_objectives) do
+    parent_ids =
+      filtered_objectives
+      |> Enum.map(fn obj ->
         if is_nil(obj.subobjective), do: obj.resource_id, else: obj.objective_resource_id
+      end)
+      |> MapSet.new()
 
-      case Map.get(parent_lookup, parent_id) do
-        nil -> acc
-        parent -> Map.put(acc, parent_id, parent)
-      end
+    Enum.filter(filtered_objectives, fn obj ->
+      is_nil(obj.subobjective) and MapSet.member?(parent_ids, obj.resource_id)
     end)
-    |> Map.values()
   end
 
   @proficiency_rank ["High", "Medium", "Low", "Not enough data"]
