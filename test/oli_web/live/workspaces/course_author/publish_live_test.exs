@@ -504,7 +504,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
 
       assert has_element?(
                view,
-               "h6",
+               "p",
                "Updates will only apply to courses that match the latest version of this project."
              )
 
