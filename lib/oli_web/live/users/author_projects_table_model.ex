@@ -55,17 +55,29 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
   end
 
   def render_role_column(assigns, project, _) do
-    case project.role do
-      "owner" ->
-        ~H"""
-        <span class="badge badge-primary">Owner</span>
-        """
+    {bg_color, text_color} =
+      case project.role do
+        "contributor" -> {"bg-Fill-Accent-fill-accent-green-bold", "text-Text-text-white"}
+        "owner" -> {"bg-Fill-Accent-fill-accent-blue-bold", "text-Text-text-white"}
+        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
+      end
 
-      "contributor" ->
-        ~H"""
-        <span class="badge badge-dark">Collaborator</span>
-        """
-    end
+    assigns =
+      Map.merge(assigns, %{
+        label: project.role,
+        bg_color: bg_color,
+        text_color: text_color
+      })
+
+    ~H"""
+    <span class={[
+      "inline-flex items-center rounded-full shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-3 py-1 text-sm font-normal",
+      @bg_color,
+      @text_color
+    ]}>
+      {@label}
+    </span>
+    """
   end
 
   def render_date_created_column(assigns, project, _) do

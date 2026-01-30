@@ -75,6 +75,7 @@ defmodule OliWeb.Users.UsersDetailView do
            credentials_label: credentials_label(user, has_google),
            disabled_edit: true,
            user_name: user.name,
+           user_header_name: formatted_header_name(user),
            password_reset_link: ""
          )}
     end
@@ -89,6 +90,7 @@ defmodule OliWeb.Users.UsersDetailView do
   attr(:disabled_edit, :boolean, default: true)
   attr(:disabled_submit, :boolean, default: false)
   attr(:user_name, :string)
+  attr(:user_header_name, :string)
   attr(:password_reset_link, :string)
   attr(:credentials_has_google, :boolean)
   attr(:credentials_label, :string)
@@ -98,6 +100,11 @@ defmodule OliWeb.Users.UsersDetailView do
     <div>
       {render_modal(assigns)}
       <Groups.render>
+        <div class="pt-6 pb-2">
+          <h2 class="text-Text-text-high text-2xl font-semibold leading-8">
+            {@user_header_name}
+          </h2>
+        </div>
         <div class="flex flex-col py-5 border-b border-Border-border-subtle">
           <h4>Enrolled Sections</h4>
           <div class="text-Text-text-low-alpha">Course sections to which the user is enrolled.</div>
@@ -482,12 +489,14 @@ defmodule OliWeb.Users.UsersDetailView do
     form = user_form(socket.assigns.user, params)
 
     user_name = combined_user_name(form, socket.assigns.user)
+    user_header_name = combined_header_name_from_form(form, socket.assigns.user)
 
     socket =
       socket
       |> assign(form: form)
       |> assign(disabled_submit: !Enum.empty?(form.errors))
       |> assign(user_name: user_name)
+      |> assign(user_header_name: user_header_name)
 
     {:noreply, socket}
   end
@@ -508,7 +517,8 @@ defmodule OliWeb.Users.UsersDetailView do
          |> assign(user: user)
          |> assign(form: updated_form)
          |> assign(disabled_edit: true)
-         |> assign(user_name: combined_user_name(updated_form, user))}
+         |> assign(user_name: combined_user_name(updated_form, user))
+         |> assign(user_header_name: combined_header_name_from_form(updated_form, user))}
 
       {:error, error} ->
         form = to_form(error)
@@ -559,6 +569,30 @@ defmodule OliWeb.Users.UsersDetailView do
     |> case do
       "" -> fallback_user.name || ""
       name -> name
+    end
+  end
+
+  defp formatted_header_name(%User{} = user) do
+    family = user.family_name || ""
+    given = user.given_name || ""
+
+    case {String.trim(family), String.trim(given)} do
+      {"", ""} -> user.name || ""
+      {family, ""} -> family
+      {"", given} -> given
+      {family, given} -> "#{family}, #{given}"
+    end
+  end
+
+  defp combined_header_name_from_form(form, fallback_user) do
+    given = form[:given_name].value || fallback_user.given_name || ""
+    family = form[:family_name].value || fallback_user.family_name || ""
+
+    case {String.trim(family), String.trim(given)} do
+      {"", ""} -> fallback_user.name || ""
+      {family, ""} -> family
+      {"", given} -> given
+      {family, given} -> "#{family}, #{given}"
     end
   end
 

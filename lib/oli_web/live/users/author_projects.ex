@@ -49,7 +49,7 @@ defmodule OliWeb.Users.AuthorProjects do
 
   def render(assigns) do
     ~H"""
-    <div id={@id}>
+    <div id={@id} class="flex flex-col gap-2">
       <%= if @projects != [] do %>
         <form
           for="search"
@@ -64,16 +64,14 @@ defmodule OliWeb.Users.AuthorProjects do
           />
         </form>
       <% end %>
-      <div
-        class={[
-          "w-full overflow-x-auto",
-          if(@total_count > 10, do: "max-h-[570px] overflow-y-auto", else: "")
-        ]}
-      >
+      <div class={[
+        "w-full overflow-x-auto",
+        if(@total_count > 10, do: "max-h-[570px] overflow-y-auto", else: "")
+      ]}>
         <StripedTable.render
           model={@table_model}
           sort={JS.push("paged_table_sort", target: @myself)}
-          additional_table_class="instructor_dashboard_table w-full"
+          additional_table_class="instructor_dashboard_table table_header_separated w-full"
           sticky_header_offset={0}
         />
       </div>

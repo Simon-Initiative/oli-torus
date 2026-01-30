@@ -78,7 +78,7 @@ defmodule OliWeb.Users.UserEnrolledSections do
             <StripedTable.render
               model={@table_model}
               sort={JS.push("paged_table_sort", target: @myself)}
-              additional_table_class="instructor_dashboard_table user_enrolled_sections_table w-full"
+              additional_table_class="instructor_dashboard_table table_header_separated w-full"
               sticky_header_offset={0}
             />
           </div>

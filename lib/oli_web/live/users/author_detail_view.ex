@@ -73,6 +73,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
            credentials_label: credentials_label(author, has_google),
            password_reset_link: "",
            author_name: author.name,
+           author_header_name: formatted_header_name(author),
            form: author_form(author)
          )}
     end
@@ -88,6 +89,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   attr(:author_roles, :map, default: %{})
   attr(:password_reset_link, :string)
   attr(:author_name, :string)
+  attr(:author_header_name, :string)
   attr(:form, :map)
   attr(:credentials_has_google, :boolean)
   attr(:credentials_label, :string)
@@ -98,6 +100,11 @@ defmodule OliWeb.Users.AuthorsDetailView do
       {render_modal(assigns)}
 
       <Groups.render>
+        <div class="pt-6 pb-2">
+          <h2 class="text-Text-text-high text-2xl font-semibold leading-8">
+            {@author_header_name}
+          </h2>
+        </div>
         <div class="flex flex-col py-5 border-b border-Border-border-subtle">
           <h4>Projects</h4>
           <div class="text-Text-text-low-alpha">
@@ -219,6 +226,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
                     <.button
                       variant={:primary}
                       type="submit"
+                      size={:sm}
+                      class="!bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
                       disabled={@disabled_submit}
                     >
                       Save
@@ -228,7 +237,12 @@ defmodule OliWeb.Users.AuthorsDetailView do
               </.form>
               <%= if @disabled_edit do %>
                 <div class="mt-4 flex justify-end">
-                  <.button variant={:primary} phx-click="start_edit">
+                  <.button
+                    variant={:primary}
+                    size={:sm}
+                    class="!bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
+                    phx-click="start_edit"
+                  >
                     Edit
                   </.button>
                 </div>
@@ -449,12 +463,14 @@ defmodule OliWeb.Users.AuthorsDetailView do
     form = author_form(socket.assigns.author, params)
 
     author_name = combined_name_from_form(form, socket.assigns.author)
+    author_header_name = combined_header_name_from_form(form, socket.assigns.author)
 
     socket =
       socket
       |> assign(form: form)
       |> assign(disabled_submit: !Enum.empty?(form.errors))
       |> assign(author_name: author_name)
+      |> assign(author_header_name: author_header_name)
 
     {:noreply, socket}
   end
@@ -482,7 +498,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author: author,
            form: updated_form,
            disabled_edit: true,
-           author_name: combined_name_from_form(updated_form, author)
+           author_name: combined_name_from_form(updated_form, author),
+           author_header_name: combined_header_name_from_form(updated_form, author)
          )}
 
       {:error, error} ->
@@ -543,6 +560,30 @@ defmodule OliWeb.Users.AuthorsDetailView do
     |> case do
       "" -> fallback_author.name || ""
       name -> name
+    end
+  end
+
+  defp formatted_header_name(%Author{} = author) do
+    family = author.family_name || ""
+    given = author.given_name || ""
+
+    case {String.trim(family), String.trim(given)} do
+      {"", ""} -> author.name || ""
+      {family, ""} -> family
+      {"", given} -> given
+      {family, given} -> "#{family}, #{given}"
+    end
+  end
+
+  defp combined_header_name_from_form(form, fallback_author) do
+    given = form[:given_name].value || fallback_author.given_name || ""
+    family = form[:family_name].value || fallback_author.family_name || ""
+
+    case {String.trim(family), String.trim(given)} do
+      {"", ""} -> fallback_author.name || ""
+      {family, ""} -> family
+      {"", given} -> given
+      {family, given} -> "#{family}, #{given}"
     end
   end
 

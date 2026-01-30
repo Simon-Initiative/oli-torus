@@ -34,23 +34,23 @@
   @apply border-r-0 border-l-0;
 }
 
-.user_enrolled_sections_table tr {
+.table_header_separated tr {
   @apply font-normal;
 }
 
-.user_enrolled_sections_table td {
+.table_header_separated td {
   @apply font-normal;
 }
 
-.user_enrolled_sections_table th {
+.table_header_separated th {
   @apply font-semibold;
 }
 
-.user_enrolled_sections_table thead th:not(:last-child) {
+.table_header_separated thead th:not(:last-child) {
   @apply relative;
 }
 
-.user_enrolled_sections_table thead th:not(:last-child)::after {
+.table_header_separated thead th:not(:last-child)::after {
   content: "";
   @apply absolute right-0 top-0 bottom-0 w-px bg-Border-border-default;
 }
