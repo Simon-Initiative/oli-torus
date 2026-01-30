@@ -655,10 +655,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     Enum.sort_by(
       objectives,
       fn objective ->
-        case Map.get(objective, :subobjective) do
-          nil -> @proficiency_rank[objective.student_proficiency_obj]
-          _ -> @proficiency_rank[objective.student_proficiency_subobj]
-        end
+        proficiency_rank =
+          case Map.get(objective, :subobjective) do
+            nil -> @proficiency_rank[objective.student_proficiency_obj]
+            _ -> @proficiency_rank[objective.student_proficiency_subobj]
+          end
+
+        {proficiency_rank, normalized_title(objective)}
       end,
       sort_order
     )
@@ -677,25 +680,42 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       :desc ->
         Enum.sort_by(
           objectives,
-          &{@proficiency_rank_desc[&1.student_proficiency_subobj]},
+          fn objective ->
+            {@proficiency_rank_desc[objective.student_proficiency_subobj],
+             normalized_title(objective)}
+          end,
           sort_order
         )
 
       :asc ->
         Enum.sort_by(
           objectives,
-          &{@proficiency_rank[&1.student_proficiency_subobj]},
+          fn objective ->
+            {@proficiency_rank[objective.student_proficiency_subobj], normalized_title(objective)}
+          end,
           sort_order
         )
     end
   end
 
   defp sort_by(objectives, :related_activities_count, sort_order) do
-    Enum.sort_by(objectives, &Map.get(&1, :related_activities_count, 0), sort_order)
+    Enum.sort_by(
+      objectives,
+      fn objective ->
+        {Map.get(objective, :related_activities_count, 0), normalized_title(objective)}
+      end,
+      sort_order
+    )
   end
 
   defp sort_by(objectives, sort_by, sort_order) do
     Enum.sort_by(objectives, fn obj -> obj[sort_by] end, sort_order)
+  end
+
+  defp normalized_title(objective) do
+    objective
+    |> Map.get(:title, "")
+    |> String.downcase()
   end
 
   defp maybe_filter_by_option(objectives, "root"), do: objectives
