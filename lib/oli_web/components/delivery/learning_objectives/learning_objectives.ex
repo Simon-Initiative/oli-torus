@@ -81,6 +81,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       })
 
     selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
+
     objectives_count =
       objectives_tab.objectives
       |> card_scope_objectives(params)
