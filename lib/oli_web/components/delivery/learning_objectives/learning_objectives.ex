@@ -81,7 +81,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       })
 
     selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
-    objectives_count = objectives_count(filtered_objectives)
+    objectives_count =
+      objectives_tab.objectives
+      |> card_scope_objectives(params)
+      |> objectives_count()
 
     card_props = [
       %{
@@ -622,6 +625,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     do: Enum.filter(objectives, &(&1.student_proficiency_subobj == "Low"))
 
   defp maybe_filter_by_subobjective_card(objectives, _), do: objectives
+
+  defp card_scope_objectives(objectives, params) do
+    objectives
+    |> maybe_filter_by_option(params.filter_by)
+  end
 
   defp parent_objectives_lookup(objectives) do
     Enum.reduce(objectives, %{}, fn obj, acc ->
