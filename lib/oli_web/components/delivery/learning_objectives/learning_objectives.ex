@@ -560,7 +560,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     filtered_objectives
     |> filtered_subobjectives(params)
     |> Enum.reduce(expanded_rows, fn obj, acc ->
-      MapSet.put(acc, "row_#{obj.objective_resource_id}")
+      MapSet.put(acc, "row_#{parent_id(obj)}")
     end)
   end
 
@@ -575,7 +575,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp filtered_subobjectives(filtered_objectives, params) do
     if subobjective_filters_active?(params) do
       filtered_objectives
-      |> Enum.filter(fn obj -> not is_nil(obj.subobjective) end)
+      |> Enum.filter(&subobjective?/1)
       |> maybe_filter_by_subobjective_text(params.text_search)
       |> maybe_filter_by_subobjective_proficiency(params.selected_proficiency_ids)
       |> maybe_filter_by_subobjective_card(params.selected_card_value)
@@ -596,8 +596,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp maybe_filter_by_subobjective_text(objectives, text_search) do
     text = String.downcase(text_search)
 
-    Enum.filter(objectives, fn objective ->
-      String.contains?(String.downcase(to_string(objective.subobjective || "")), text)
+    Enum.filter(objectives, fn obj ->
+      String.contains?(String.downcase(to_string(obj.subobjective || "")), text)
     end)
   end
 
@@ -634,13 +634,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp parent_objectives_from(filtered_objectives) do
     parent_ids =
       filtered_objectives
-      |> Enum.map(fn obj ->
-        if is_nil(obj.subobjective), do: obj.resource_id, else: obj.objective_resource_id
-      end)
+      |> Enum.map(&parent_id/1)
       |> MapSet.new()
 
     Enum.filter(filtered_objectives, fn obj ->
-      is_nil(obj.subobjective) and MapSet.member?(parent_ids, obj.resource_id)
+      top_level_objective?(obj) and MapSet.member?(parent_ids, obj.resource_id)
     end)
   end
 
@@ -736,7 +734,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
     Enum.filter(objectives, fn objective ->
       proficiency =
-        if is_nil(objective.subobjective),
+        if top_level_objective?(objective),
           do: objective.student_proficiency_obj,
           else: objective.student_proficiency_subobj
 
@@ -745,16 +743,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp maybe_filter_by_card(objectives, :low_proficiency_outcomes),
-    do:
-      Enum.filter(objectives, fn objective ->
-        objective.student_proficiency_obj == "Low"
-      end)
+    do: Enum.filter(objectives, &(&1.student_proficiency_obj == "Low"))
 
   defp maybe_filter_by_card(objectives, :low_proficiency_skills),
-    do:
-      Enum.filter(objectives, fn objective ->
-        objective.student_proficiency_subobj == "Low"
-      end)
+    do: Enum.filter(objectives, &(&1.student_proficiency_subobj == "Low"))
 
   defp maybe_filter_by_card(objectives, _), do: objectives
 
@@ -785,14 +777,24 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     %{
       low_proficiency_outcomes:
         Enum.count(objectives, fn obj ->
-          obj.student_proficiency_obj == "Low" and is_nil(obj.subobjective)
+          obj.student_proficiency_obj == "Low" and top_level_objective?(obj)
         end),
       low_proficiency_skills:
         Enum.count(objectives, fn obj ->
-          obj.student_proficiency_subobj == "Low" and not is_nil(obj.subobjective)
+          obj.student_proficiency_subobj == "Low" and subobjective?(obj)
         end)
     }
   end
+
+  defp subobjective?(objective), do: not is_nil(objective.subobjective)
+  defp top_level_objective?(objective), do: is_nil(objective.subobjective)
+
+  defp parent_id(objective),
+    do:
+      if(top_level_objective?(objective),
+        do: objective.resource_id,
+        else: objective.objective_resource_id
+      )
 
   # Returns true if the filter by module feature is disabled for the section.
   # This happens when the contained objectives for the section were not yet created.
