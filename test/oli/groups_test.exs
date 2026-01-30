@@ -1,6 +1,7 @@
 defmodule Oli.GroupsTest do
   use Oli.DataCase
 
+  import Ecto.Query
   import Oli.Factory
 
   alias Oli.Groups
@@ -466,6 +467,168 @@ defmodule Oli.GroupsTest do
       communities_visibilities = Groups.list_community_visibilities(community.id)
 
       assert [] = communities_visibilities
+    end
+  end
+
+  describe "user communities ordered by date" do
+    test "list_user_direct_communities_ordered/1 returns communities ordered by most recently added first" do
+      user = insert(:user)
+      community1 = insert(:community, name: "Community A")
+      community2 = insert(:community, name: "Community B")
+      community3 = insert(:community, name: "Community C")
+
+      # Add communities with different timestamps (simulate order by manipulating inserted_at)
+      {:ok, ca1} =
+        Groups.create_community_account(%{user_id: user.id, community_id: community1.id})
+
+      {:ok, ca2} =
+        Groups.create_community_account(%{user_id: user.id, community_id: community2.id})
+
+      {:ok, _ca3} =
+        Groups.create_community_account(%{user_id: user.id, community_id: community3.id})
+
+      # Update inserted_at to ensure proper ordering
+      Oli.Repo.update_all(
+        from(ca in Oli.Groups.CommunityAccount, where: ca.id == ^ca1.id),
+        set: [inserted_at: ~U[2024-01-01 10:00:00Z]]
+      )
+
+      Oli.Repo.update_all(
+        from(ca in Oli.Groups.CommunityAccount, where: ca.id == ^ca2.id),
+        set: [inserted_at: ~U[2024-01-02 10:00:00Z]]
+      )
+
+      communities = Groups.list_user_direct_communities_ordered(user.id)
+
+      assert length(communities) == 3
+      # Most recent first (community3 has the latest inserted_at)
+      assert Enum.at(communities, 0).id == community3.id
+      assert Enum.at(communities, 1).id == community2.id
+      assert Enum.at(communities, 2).id == community1.id
+    end
+
+    test "list_user_direct_communities_ordered/1 returns empty list when user has no communities" do
+      user = insert(:user)
+
+      assert [] == Groups.list_user_direct_communities_ordered(user.id)
+    end
+
+    test "list_user_direct_communities_ordered/1 returns empty list for non-existent user" do
+      assert [] == Groups.list_user_direct_communities_ordered(-1)
+    end
+  end
+
+  describe "institution communities ordered by date" do
+    alias Oli.Groups.CommunityInstitution
+
+    test "list_institution_communities_ordered/1 returns communities ordered by most recently added first" do
+      institution = insert(:institution)
+      community1 = insert(:community, name: "Community X")
+      community2 = insert(:community, name: "Community Y")
+      community3 = insert(:community, name: "Community Z")
+
+      # Add communities with different timestamps
+      {:ok, ci1} =
+        Groups.create_community_institution(%{
+          institution_id: institution.id,
+          community_id: community1.id
+        })
+
+      {:ok, ci2} =
+        Groups.create_community_institution(%{
+          institution_id: institution.id,
+          community_id: community2.id
+        })
+
+      {:ok, _ci3} =
+        Groups.create_community_institution(%{
+          institution_id: institution.id,
+          community_id: community3.id
+        })
+
+      # Update inserted_at to ensure proper ordering
+      Oli.Repo.update_all(
+        from(ci in CommunityInstitution, where: ci.id == ^ci1.id),
+        set: [inserted_at: ~U[2024-01-01 10:00:00Z]]
+      )
+
+      Oli.Repo.update_all(
+        from(ci in CommunityInstitution, where: ci.id == ^ci2.id),
+        set: [inserted_at: ~U[2024-01-02 10:00:00Z]]
+      )
+
+      communities = Groups.list_institution_communities_ordered(institution)
+
+      assert length(communities) == 3
+      # Most recent first (community3 has the latest inserted_at)
+      assert Enum.at(communities, 0).id == community3.id
+      assert Enum.at(communities, 1).id == community2.id
+      assert Enum.at(communities, 2).id == community1.id
+    end
+
+    test "list_institution_communities_ordered/1 returns empty list when institution has no communities" do
+      institution = insert(:institution)
+
+      assert [] == Groups.list_institution_communities_ordered(institution)
+    end
+
+    test "list_institution_communities_ordered/1 returns empty list for nil institution" do
+      assert [] == Groups.list_institution_communities_ordered(nil)
+    end
+  end
+
+  describe "list_communities_filtered/2" do
+    test "returns communities matching search term (case insensitive)" do
+      insert(:community, name: "Alpha Community")
+      insert(:community, name: "Beta Community")
+      insert(:community, name: "Gamma Community")
+
+      results = Groups.list_communities_filtered("alpha")
+      assert length(results) == 1
+      assert Enum.at(results, 0).name == "Alpha Community"
+
+      # Case insensitive
+      results = Groups.list_communities_filtered("BETA")
+      assert length(results) == 1
+      assert Enum.at(results, 0).name == "Beta Community"
+    end
+
+    test "returns all active communities when search is empty" do
+      insert(:community, name: "Community A")
+      insert(:community, name: "Community B")
+      insert(:community, name: "Community C", status: :deleted)
+
+      results = Groups.list_communities_filtered("")
+      assert length(results) == 2
+    end
+
+    test "respects limit parameter" do
+      for i <- 1..10, do: insert(:community, name: "Community #{i}")
+
+      results = Groups.list_communities_filtered("", 5)
+      assert length(results) == 5
+    end
+
+    test "only returns id and name fields" do
+      insert(:community, name: "Test Community", description: "Full description")
+
+      [community] = Groups.list_communities_filtered("Test")
+
+      assert community.id != nil
+      assert community.name == "Test Community"
+      # Other fields should be nil since we only select id and name
+      assert community.description == nil
+    end
+
+    test "returns communities ordered by name" do
+      insert(:community, name: "Zebra Community")
+      insert(:community, name: "Alpha Community")
+      insert(:community, name: "Beta Community")
+
+      results = Groups.list_communities_filtered("")
+      names = Enum.map(results, & &1.name)
+
+      assert names == ["Alpha Community", "Beta Community", "Zebra Community"]
     end
   end
 

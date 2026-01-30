@@ -10,6 +10,7 @@ defmodule OliWeb.Users.UsersDetailView do
   alias Oli.AssentAuth.UserAssentAuth
   alias Oli.Auditing
   alias Oli.Delivery.{Metrics, Paywall, Sections}
+  alias Oli.Institutions
   alias Oli.Lti.LtiParams
 
   alias OliWeb.Accounts.Modals.{
@@ -20,6 +21,7 @@ defmodule OliWeb.Users.UsersDetailView do
   }
 
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Live.Components.Communities.CommunitiesSelectComponent
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
@@ -50,7 +52,7 @@ defmodule OliWeb.Users.UsersDetailView do
         _session,
         socket
       ) do
-    user = user_with_platform_roles(user_id)
+    user = user_with_preloaded_fields(user_id)
 
     case user do
       nil ->
@@ -61,6 +63,7 @@ defmodule OliWeb.Users.UsersDetailView do
           Sections.list_user_enrolled_sections(user)
           |> add_necessary_information(user)
 
+        institution = Institutions.get_institution_by_lti_user(user)
         has_google = credentials_has_google?(user.user_identities)
 
         {:ok,
@@ -71,6 +74,7 @@ defmodule OliWeb.Users.UsersDetailView do
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
+           institution: institution,
            credentials_has_google: has_google,
            credentials_label: credentials_label(user, has_google),
            disabled_edit: true,
@@ -86,6 +90,7 @@ defmodule OliWeb.Users.UsersDetailView do
   attr(:modal, :any, default: nil)
   attr(:title, :string, default: "User Details")
   attr(:user, User, required: true)
+  attr(:institution, :any, default: nil)
   attr(:disabled_edit, :boolean, default: true)
   attr(:disabled_submit, :boolean, default: false)
   attr(:user_name, :string)
@@ -149,6 +154,17 @@ defmodule OliWeb.Users.UsersDetailView do
                     />
                   </div>
                   <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
+                  <.institution_field institution={@institution} />
+                  <div class="form-group">
+                    <label>Communities</label>
+                    <.live_component
+                      module={CommunitiesSelectComponent}
+                      id={"communities-user-#{@user.id}"}
+                      user_id={@user.id}
+                      institution={@institution}
+                      disabled_edit={@disabled_edit}
+                    />
+                  </div>
                   <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
                     <ReadOnly.render
                       label="Confirmed is 13 or older on creation"
@@ -305,7 +321,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("generate_reset_password_link", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
 
     encoded_token = Accounts.generate_user_reset_password_token(user)
 
@@ -345,7 +361,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("resend_confirmation_link", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
 
     case Accounts.deliver_user_confirmation_instructions(
            user,
@@ -360,7 +376,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("send_reset_password_link", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
 
     case Accounts.deliver_user_reset_password_instructions(
            user,
@@ -387,13 +403,13 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("lock_account", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
 
     case Accounts.lock_user(user) do
       {:ok, _} ->
         {:noreply,
          socket
-         |> assign(user: user_with_platform_roles(id))
+         |> assign(user: user_with_preloaded_fields(id))
          |> hide_modal(modal_assigns: nil)}
 
       {:error, _error} ->
@@ -419,13 +435,13 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("unlock_account", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
 
     case Accounts.unlock_user(user) do
       {:ok, _} ->
         {:noreply,
          socket
-         |> assign(user: user_with_platform_roles(id))
+         |> assign(user: user_with_preloaded_fields(id))
          |> hide_modal(modal_assigns: nil)}
 
       {:error, _error} ->
@@ -451,7 +467,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("delete_account", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
     admin = socket.assigns.current_author
 
     case Accounts.delete_user(user) do
@@ -562,7 +578,7 @@ defmodule OliWeb.Users.UsersDetailView do
     end
   end
 
-  defp user_with_platform_roles(id) do
+  defp user_with_preloaded_fields(id) do
     Accounts.get_user(id, preload: [:platform_roles, :user_identities])
   end
 
@@ -602,5 +618,27 @@ defmodule OliWeb.Users.UsersDetailView do
         }
       )
     end)
+  end
+
+  attr :institution, :any, required: true
+
+  defp institution_field(assigns) do
+    ~H"""
+    <div class="form-group">
+      <label>Institution</label>
+      <div>
+        <%= if @institution do %>
+          <.link
+            href={Routes.institution_path(OliWeb.Endpoint, :show, @institution.id)}
+            class="justify-start text-Text-text-button text-base font-medium"
+          >
+            {@institution.name}
+          </.link>
+        <% else %>
+          <span>Direct Delivery</span>
+        <% end %>
+      </div>
+    </div>
+    """
   end
 end

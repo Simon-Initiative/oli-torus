@@ -45,6 +45,38 @@ defmodule Oli.Groups do
   end
 
   @doc """
+  Returns a filtered list of communities by name search with a limit.
+  Only returns id and name fields for efficiency.
+
+  ## Examples
+
+      iex> list_communities_filtered("alpha", 20)
+      [%Community{id: 1, name: "Alpha Community"}, ...]
+
+      iex> list_communities_filtered("", 20)
+      [%Community{}, ...]
+  """
+  def list_communities_filtered(search \\ "", limit \\ 50) do
+    query =
+      from(c in Community,
+        where: c.status == :active,
+        order_by: [asc: c.name],
+        limit: ^limit,
+        select: struct(c, [:id, :name])
+      )
+
+    query =
+      if search != "" do
+        search_pattern = "%#{search}%"
+        from(c in query, where: ilike(c.name, ^search_pattern))
+      else
+        query
+      end
+
+    Repo.all(query)
+  end
+
+  @doc """
   Creates a community.
 
   ## Examples
@@ -472,6 +504,49 @@ defmodule Oli.Groups do
   """
   def list_associated_communities(user_id, institution),
     do: Repo.all(associated_communities_query(user_id, institution))
+
+  @doc """
+  Get all direct communities for a user ordered by when they were added (most recent first).
+  Only returns id and name fields for efficiency.
+
+  ## Examples
+
+      iex> list_user_direct_communities_ordered(1)
+      [%Community{id: 1, name: "Alpha"}, ...]
+
+      iex> list_user_direct_communities_ordered(123)
+      []
+  """
+  def list_user_direct_communities_ordered(user_id) do
+    from(community in Community,
+      join: ca in CommunityAccount,
+      on: community.id == ca.community_id and ca.user_id == ^user_id,
+      order_by: [desc: ca.inserted_at],
+      select: struct(community, [:id, :name])
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Get all communities associated with an institution ordered by when the association was created (most recent first).
+  Only returns id and name fields for efficiency.
+
+  ## Examples
+
+      iex> list_institution_communities_ordered(%Institution{id: 1})
+      [%Community{id: 1, name: "Alpha"}, ...]
+  """
+  def list_institution_communities_ordered(nil), do: []
+
+  def list_institution_communities_ordered(%Institution{id: institution_id}) do
+    from(community in Community,
+      join: ci in CommunityInstitution,
+      on: community.id == ci.community_id and ci.institution_id == ^institution_id,
+      order_by: [desc: ci.inserted_at],
+      select: struct(community, [:id, :name])
+    )
+    |> Repo.all()
+  end
 
   @doc """
   Get all the publications associated with:
