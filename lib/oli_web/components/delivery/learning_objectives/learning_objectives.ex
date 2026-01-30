@@ -548,7 +548,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     |> maybe_filter_by_text(params.text_search)
     |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
     |> maybe_filter_by_card(params.selected_card_value)
-    |> sort_by(params.sort_by, params.sort_order)
   end
 
   defp maybe_expand_for_matching_subobjectives(
@@ -626,8 +625,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   defp maybe_filter_by_subobjective_card(objectives, _), do: objectives
 
-  defp scoped_objectives(objectives, params),
-    do: maybe_filter_by_option(objectives, params.filter_by)
+  # Scoped objectives are the base ordered list for the view.
+  defp scoped_objectives(objectives, params) do
+    objectives
+    |> maybe_filter_by_option(params.filter_by)
+    |> sort_by(params.sort_by, params.sort_order)
+  end
 
   defp parent_objectives_from(filtered_objectives, scoped_objectives) do
     parent_ids =
