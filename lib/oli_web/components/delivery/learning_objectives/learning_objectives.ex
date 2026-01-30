@@ -84,7 +84,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
     objectives_count =
       objectives_tab.objectives
-      |> card_scope_objectives(params)
+      |> scoped_objectives(params)
       |> objectives_count()
 
     card_props = [
@@ -520,12 +520,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp apply_filters(objectives, params, patch_url_type) do
-    filtered_objectives = filtered_objectives(objectives, params)
+    scoped_objectives = scoped_objectives(objectives, params)
+    filtered_objectives = filtered_objectives(scoped_objectives, params)
 
     table_objectives =
       case patch_url_type do
         :instructor_dashboard ->
-          parent_objectives_from(filtered_objectives)
+          parent_objectives_from(filtered_objectives, scoped_objectives)
 
         _ ->
           filtered_objectives
@@ -545,7 +546,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   def filtered_objectives(objectives, params) do
     objectives
     |> maybe_filter_by_text(params.text_search)
-    |> maybe_filter_by_option(params.filter_by)
     |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
     |> maybe_filter_by_card(params.selected_card_value)
     |> sort_by(params.sort_by, params.sort_order)
@@ -626,18 +626,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   defp maybe_filter_by_subobjective_card(objectives, _), do: objectives
 
-  defp card_scope_objectives(objectives, params) do
-    objectives
-    |> maybe_filter_by_option(params.filter_by)
-  end
+  defp scoped_objectives(objectives, params), do: maybe_filter_by_option(objectives, params.filter_by)
 
-  defp parent_objectives_from(filtered_objectives) do
+  defp parent_objectives_from(filtered_objectives, scoped_objectives) do
     parent_ids =
       filtered_objectives
       |> Enum.map(&parent_id/1)
       |> MapSet.new()
 
-    Enum.filter(filtered_objectives, fn obj ->
+    Enum.filter(scoped_objectives, fn obj ->
       top_level_objective?(obj) and MapSet.member?(parent_ids, obj.resource_id)
     end)
   end
