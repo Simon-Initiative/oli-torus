@@ -40,7 +40,6 @@ defmodule OliWeb.Projects.PublicationDetails do
        has_changes: assigns.has_changes,
        latest_published_publication: assigns.latest_published_publication,
        params: params,
-       parent_pages: assigns.parent_pages,
        project: assigns.project,
        publication_changes: publication_changes,
        table_model: table_model,
@@ -52,7 +51,6 @@ defmodule OliWeb.Projects.PublicationDetails do
   attr(:ctx, :map, required: true)
   attr(:has_changes, :boolean, required: true)
   attr(:latest_published_publication, :any, required: true)
-  attr(:parent_pages, :map, required: true)
   attr(:project, :map, required: true)
   attr(:limit, :integer, default: 10)
   attr(:offset, :integer, default: 0)
