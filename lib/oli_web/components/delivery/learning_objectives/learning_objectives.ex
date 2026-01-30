@@ -720,10 +720,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp maybe_filter_by_text(objectives, ""), do: objectives
 
   defp maybe_filter_by_text(objectives, text_search) do
+    text = String.downcase(text_search)
+
     objectives
     |> Enum.filter(fn objective ->
-      text = String.downcase(text_search)
-
       String.contains?(String.downcase(objective.objective), text) or
         String.contains?(String.downcase(to_string(objective.subobjective || "")), text)
     end)
