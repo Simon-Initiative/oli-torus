@@ -261,6 +261,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     <.button
       id={"button_#{@id}"}
       class="flex !p-0"
+      aria-expanded={@is_expanded}
+      aria-controls={"details-#{@id}"}
       phx-click={
         JS.toggle(to: "#details-#{@id}")
         |> JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="#{@id}"]))
