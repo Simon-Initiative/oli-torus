@@ -55,7 +55,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     expanded_objectives =
       maybe_expand_for_matching_subobjectives(
         expanded_objectives,
-        objectives_tab.objectives,
+        filtered_objectives,
         params,
         assigns[:patch_url_type]
       )
@@ -550,11 +550,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   defp maybe_expand_for_matching_subobjectives(
          expanded_rows,
-         objectives,
+         filtered_objectives,
          params,
          :instructor_dashboard
        ) do
-    objectives
+    filtered_objectives
     |> filtered_subobjectives(params)
     |> Enum.reduce(expanded_rows, fn obj, acc ->
       MapSet.put(acc, "row_#{obj.objective_resource_id}")
@@ -569,12 +569,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        ),
        do: expanded_rows
 
-  defp filtered_subobjectives(objectives, params) do
+  defp filtered_subobjectives(filtered_objectives, params) do
     if subobjective_filters_active?(params) do
-      objectives
+      filtered_objectives
       |> Enum.filter(fn obj -> not is_nil(obj.subobjective) end)
       |> maybe_filter_by_subobjective_text(params.text_search)
-      |> maybe_filter_by_option(params.filter_by)
       |> maybe_filter_by_subobjective_proficiency(params.selected_proficiency_ids)
       |> maybe_filter_by_subobjective_card(params.selected_card_value)
     else
