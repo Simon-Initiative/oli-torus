@@ -527,6 +527,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       case patch_url_type do
         :instructor_dashboard ->
           parent_objectives_from(filtered_objectives, scoped_objectives)
+          |> sort_by(params.sort_by, params.sort_order)
 
         _ ->
           filtered_objectives
@@ -625,11 +626,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   defp maybe_filter_by_subobjective_card(objectives, _), do: objectives
 
-  # Scoped objectives are the base ordered list for the view.
+  # Unit/Module scope filter defines base set (unordered) of objectives/subobjectives for the view
   defp scoped_objectives(objectives, params) do
     objectives
     |> maybe_filter_by_option(params.filter_by)
-    |> sort_by(params.sort_by, params.sort_order)
   end
 
   defp parent_objectives_from(filtered_objectives, scoped_objectives) do
