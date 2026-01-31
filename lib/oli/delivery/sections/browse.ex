@@ -320,15 +320,12 @@ defmodule Oli.Delivery.Sections.Browse do
         }
       )
 
-    # LATERAL subquery to get the most recent publication for each section
-    # Uses LIMIT 1 with parent_as reference for efficient "first row per group" query
-    # Orders by published DESC, id DESC to get the most recently published publication
-    # (matches pattern in Oli.Delivery.Sections.check_for_available_publication_updates)
+    # Get publication for the queried project (sections can have multiple project associations)
     publication_subquery =
       from(spp in SectionsProjectsPublications,
         join: pub in Publication,
         on: pub.id == spp.publication_id,
-        where: spp.section_id == parent_as(:section).id,
+        where: spp.section_id == parent_as(:section).id and spp.project_id == ^project_id,
         order_by: [desc: pub.published, desc: pub.id],
         limit: 1,
         select: %{
