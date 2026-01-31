@@ -65,7 +65,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.FiltersTest do
       params = %{
         text_search: nil,
         filter_by: 10,
-        selected_proficiency_ids: "[]",
+        selected_proficiency_ids: [],
         selected_card_value: :low_proficiency_outcomes,
         sort_by: :objective_instructor_dashboard,
         sort_order: :asc
@@ -125,7 +125,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.FiltersTest do
       params = %{
         text_search: "Sub.LO.2a",
         filter_by: 10,
-        selected_proficiency_ids: "[]",
+        selected_proficiency_ids: [],
         selected_card_value: nil,
         sort_by: :objective_instructor_dashboard,
         sort_order: :asc
