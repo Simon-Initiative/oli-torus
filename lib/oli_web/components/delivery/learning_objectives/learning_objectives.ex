@@ -17,7 +17,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     sort_by: :objective,
     text_search: nil,
     filter_by: "root",
-    selected_proficiency_ids: Jason.encode!([]),
+    selected_proficiency_ids: [],
     selected_card_value: nil
   }
 
@@ -104,7 +104,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       }
     ]
 
-    selected_proficiency_ids = safely_decode_list(params.selected_proficiency_ids)
+    selected_proficiency_ids = params.selected_proficiency_ids
 
     proficiency_options =
       update_proficiency_options(selected_proficiency_ids, @proficiency_options)
@@ -481,7 +481,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       filter_by: Params.get_int_param(params, "filter_by", @default_params.filter_by),
       selected_proficiency_ids:
-        Params.get_param(
+        Params.get_list_param(
           params,
           "selected_proficiency_ids",
           @default_params.selected_proficiency_ids
@@ -517,6 +517,16 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     Map.filter(params, fn {key, value} ->
       @default_params[key] != value
     end)
+  end
+
+  defp encode_params_for_url(params) do
+    case Map.fetch(params, :selected_proficiency_ids) do
+      {:ok, ids} when is_list(ids) ->
+        Map.put(params, :selected_proficiency_ids, Jason.encode!(ids))
+
+      _ ->
+        params
+    end
   end
 
   defp apply_filters(objectives, params, patch_url_type) do
@@ -586,10 +596,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp subobjective_filters_active?(params) do
-    selected_ids = safely_decode_list(params.selected_proficiency_ids)
-
     (not is_nil(params.text_search) and params.text_search != "") or
-      selected_ids != [] or
+      params.selected_proficiency_ids != [] or
       params.selected_card_value == :low_proficiency_skills
   end
 
@@ -605,11 +613,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp maybe_filter_by_subobjective_proficiency(objectives, []), do: objectives
-  defp maybe_filter_by_subobjective_proficiency(objectives, "[]"), do: objectives
 
   defp maybe_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids) do
-    selected_proficiency_ids = safely_decode_list(selected_proficiency_ids)
+    do_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids)
+  end
 
+  defp do_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids) do
     mapper_ids =
       Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
         case id do
@@ -620,9 +629,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         end
       end)
 
-    Enum.filter(objectives, fn objective ->
-      objective.student_proficiency_subobj in mapper_ids
-    end)
+    if mapper_ids == [] do
+      objectives
+    else
+      Enum.filter(objectives, fn objective ->
+        objective.student_proficiency_subobj in mapper_ids
+      end)
+    end
   end
 
   defp maybe_filter_by_subobjective_card(objectives, :low_proficiency_skills),
@@ -742,11 +755,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp maybe_filter_by_proficiency(objectives, []), do: objectives
-  defp maybe_filter_by_proficiency(objectives, "[]"), do: objectives
 
   defp maybe_filter_by_proficiency(objectives, selected_proficiency_ids) do
-    selected_proficiency_ids = safely_decode_list(selected_proficiency_ids)
+    do_filter_by_proficiency(objectives, selected_proficiency_ids)
+  end
 
+  defp do_filter_by_proficiency(objectives, selected_proficiency_ids) do
     mapper_ids =
       Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
         case id do
@@ -757,14 +771,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         end
       end)
 
-    Enum.filter(objectives, fn objective ->
-      proficiency =
-        if top_level_objective?(objective),
-          do: objective.student_proficiency_obj,
-          else: objective.student_proficiency_subobj
+    if mapper_ids == [] do
+      objectives
+    else
+      Enum.filter(objectives, fn objective ->
+        proficiency =
+          if top_level_objective?(objective),
+            do: objective.student_proficiency_obj,
+            else: objective.student_proficiency_subobj
 
-      proficiency in mapper_ids
-    end)
+        proficiency in mapper_ids
+      end)
+    end
   end
 
   defp maybe_filter_by_card(objectives, :low_proficiency_outcomes),
@@ -782,7 +800,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       socket.assigns.section_slug,
       socket.assigns.view,
       :learning_objectives,
-      update_params(socket.assigns.params, new_params)
+      update_params(socket.assigns.params, new_params) |> encode_params_for_url()
     )
   end
 
@@ -793,7 +811,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       socket.assigns.section_slug,
       socket.assigns.student_id,
       :learning_objectives,
-      update_params(socket.assigns.params, new_params)
+      update_params(socket.assigns.params, new_params) |> encode_params_for_url()
     )
   end
 
@@ -813,17 +831,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   defp subobjective?(objective), do: not is_nil(objective.subobjective)
   defp top_level_objective?(objective), do: is_nil(objective.subobjective)
-
-  defp safely_decode_list(value) when is_list(value), do: value
-
-  defp safely_decode_list(value) when is_binary(value) do
-    case Jason.decode(value) do
-      {:ok, list} when is_list(list) -> list
-      _ -> []
-    end
-  end
-
-  defp safely_decode_list(_), do: []
 
   defp parent_id(objective),
     do:
