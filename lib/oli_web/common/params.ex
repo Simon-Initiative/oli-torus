@@ -25,6 +25,22 @@ defmodule OliWeb.Common.Params do
     end
   end
 
+  def get_list_param(params, name, default_value) do
+    case params[name] do
+      nil ->
+        default_value
+
+      value when is_binary(value) ->
+        case Jason.decode(value) do
+          {:ok, list} when is_list(list) -> list
+          _ -> default_value
+        end
+
+      _ ->
+        default_value
+    end
+  end
+
   def get_boolean_param(params, name, default_value) do
     case params[name] do
       nil ->

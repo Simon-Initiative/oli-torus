@@ -572,7 +572,7 @@ defmodule OliWeb.Components.Delivery.Students do
               selected_values={@selected_proficiency_options}
               selected_ids={@selected_proficiency_ids}
               target={@myself}
-              disabled={@selected_proficiency_ids == %{}}
+              disabled={@proficiency_options == []}
               placeholder="Proficiency"
             />
 
