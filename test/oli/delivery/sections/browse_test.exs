@@ -10,6 +10,16 @@ defmodule Oli.Delivery.Sections.BrowseTest do
   import Ecto.Query, warn: false
   import Oli.Factory
 
+  # Test data counts - see setup_session/1 for how these are created
+  # 10 sections for "CMU" + 10 for "ZZZ" + 7 with no institution + 3 special = 30 total
+  @total_sections 30
+  # Sections in ZZZ institution: 10 regular + 1 special characters section
+  @zzz_sections 11
+  # Enrollment pattern: section at index N gets N+1 students (for testing sort by enrollment count)
+  @max_enrollments 27
+  # Page size used in browse helper
+  @page_size 3
+
   @default_opts %BrowseOptions{
     institution_id: nil,
     blueprint_id: nil,
@@ -25,77 +35,77 @@ defmodule Oli.Delivery.Sections.BrowseTest do
 
     test "sorting" do
       results = browse(0, :title, :asc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       assert hd(results).title == "aA"
 
       results = browse(0, :title, :desc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       assert hd(results).title == "zzzDeleted"
 
       results = browse(0, :type, :asc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       refute hd(results).title == "aA"
 
       results = browse(0, :type, :desc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       assert hd(results).title == "aA"
 
       results = browse(0, :requires_payment, :asc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       refute hd(results).requires_payment
       assert Enum.at(results, 1).amount == Money.new(1, "USD")
 
       results = browse(0, :requires_payment, :desc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       assert hd(results).requires_payment
       assert hd(results).amount == Money.new(100, "USD")
 
       results = browse(0, :base, :asc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       # Base sorting should work - just verify we get a result
       assert hd(results).title in ["aA", "aB", "bA", "cA"]
 
       results = browse(0, :base, :desc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       # Base sorting descending should work - just verify we get a result
       assert hd(results).title in ["aA", "aB", "bA", "cA"]
 
       results = browse(0, :institution, :asc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       assert hd(results).institution_name == "CMU"
 
       results = browse(12, :institution, :asc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       assert hd(results).institution_name == "ZZZ"
 
       results = browse(0, :enrollments_count, :desc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
-      assert hd(results).enrollments_count == 27
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
+      assert hd(results).enrollments_count == @max_enrollments
 
       results = browse(0, :enrollments_count, :asc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       assert hd(results).enrollments_count == 0
 
       results = browse(0, :instructor, :desc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       assert hd(results).instructor_name == "Instructor"
 
       results = browse(12, :instructor, :asc, @default_opts)
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
       refute hd(results).instructor_name
     end
 
@@ -118,8 +128,8 @@ defmodule Oli.Delivery.Sections.BrowseTest do
 
       # all created sections are with base on project titled "Example..."
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "Example"}))
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
 
       # there is one section with an instructor associated with name "Instructor"
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "instructor"}))
@@ -128,8 +138,8 @@ defmodule Oli.Delivery.Sections.BrowseTest do
 
       # do not exclude stop words
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "a"}))
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
 
       # exclude special characters
       results =
@@ -148,8 +158,8 @@ defmodule Oli.Delivery.Sections.BrowseTest do
     test "filtering", %{second: second, sections: sections, project: project} do
       # by institution
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{institution_id: second.id}))
-      assert length(results) == 3
-      assert hd(results).total_count == 11
+      assert length(results) == @page_size
+      assert hd(results).total_count == @zzz_sections
       assert hd(results).institution_name == "ZZZ"
 
       # by active date: finds the one section with start and end dates that overlap today
@@ -176,8 +186,9 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       assert hd(results).title == "aA"
 
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{filter_type: :lms}))
-      assert length(results) == 3
-      assert hd(results).total_count == 29
+      assert length(results) == @page_size
+      # All sections except the one open_and_free section
+      assert hd(results).total_count == @total_sections - 1
       refute hd(results).title == "aA"
 
       # by blueprint
@@ -189,8 +200,8 @@ defmodule Oli.Delivery.Sections.BrowseTest do
 
       # by project
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{project_id: project.id}))
-      assert length(results) == 3
-      assert hd(results).total_count == 30
+      assert length(results) == @page_size
+      assert hd(results).total_count == @total_sections
     end
 
     test "filtering by requires_payment" do
@@ -203,9 +214,9 @@ defmodule Oli.Delivery.Sections.BrowseTest do
           Map.merge(@default_opts, %{filter_requires_payment: true})
         )
 
-      assert length(results) == 3
+      assert length(results) == @page_size
       # All sections except the one we set to requires_payment: false should require payment
-      assert hd(results).total_count == 29
+      assert hd(results).total_count == @total_sections - 1
       assert hd(results).requires_payment
 
       # Filter for sections that don't require payment (false)
@@ -288,7 +299,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
           })
         )
 
-      assert length(results) == 3
+      assert length(results) == @page_size
       # Should find all sections inserted on or after 2024-01-15
       assert hd(results).total_count >= 2
 
@@ -312,7 +323,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
 
   defp browse(offset, field, direction, browse_options) do
     Browse.browse_sections(
-      %Paging{offset: offset, limit: 3},
+      %Paging{offset: offset, limit: @page_size},
       %Sorting{field: field, direction: direction},
       browse_options
     )
