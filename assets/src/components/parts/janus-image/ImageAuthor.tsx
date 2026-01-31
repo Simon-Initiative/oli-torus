@@ -77,7 +77,8 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
       lockAspectRatio &&
       !(isResponsiveLayout && scaleContent === true);
 
-    if (shouldAdjust) {
+    // Skip when model has no dimensions (user removed them for responsive layout)
+    if (shouldAdjust && model.width != null && model.height != null) {
       debounceImageAdjust(model);
     }
   }, [model, lockAspectRatio, scaleContent, isResponsiveLayout]);
@@ -95,6 +96,12 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
 
     // Skip when scaleContent is true (CSS handles sizing for scale-only and both flags)
     if (isInResponsiveLayout && updatedModel.scaleContent === true) {
+      return;
+    }
+
+    // Only adjust and persist when the model already has both dimensions.
+    // If the user removed width or height (for responsive layout), do not re-add them.
+    if (updatedModel.width == null || updatedModel.height == null) {
       return;
     }
 
