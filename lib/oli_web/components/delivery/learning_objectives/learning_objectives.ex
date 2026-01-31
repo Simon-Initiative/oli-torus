@@ -604,6 +604,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end)
   end
 
+  defp maybe_filter_by_subobjective_proficiency(objectives, []), do: objectives
   defp maybe_filter_by_subobjective_proficiency(objectives, "[]"), do: objectives
 
   defp maybe_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids) do
@@ -740,6 +741,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end)
   end
 
+  defp maybe_filter_by_proficiency(objectives, []), do: objectives
   defp maybe_filter_by_proficiency(objectives, "[]"), do: objectives
 
   defp maybe_filter_by_proficiency(objectives, selected_proficiency_ids) do
