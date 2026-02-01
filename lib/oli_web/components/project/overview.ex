@@ -5,6 +5,21 @@ defmodule OliWeb.Components.Overview do
   attr :title, :string, required: true
   attr :description, :string, required: false
   attr :is_last, :boolean, required: false
+  attr :layout, :atom, default: :side_by_side, values: [:side_by_side, :stacked]
+
+  def section(%{layout: :stacked} = assigns) do
+    ~H"""
+    <div class={"py-5 #{if !assigns[:is_last], do: "border-b dark:border-gray-700"}"}>
+      <h4>{@title}</h4>
+      <%= if assigns[:description] do %>
+        <div class="text-muted mb-4">{@description}</div>
+      <% end %>
+      <div>
+        {render_slot(@inner_block)}
+      </div>
+    </div>
+    """
+  end
 
   def section(assigns) do
     ~H"""
