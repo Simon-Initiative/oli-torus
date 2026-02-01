@@ -387,18 +387,16 @@ defmodule Oli.Delivery.Sections.BrowseTest do
     Map.put(map, :sections, sections) |> Map.put(:second, institution2)
   end
 
-  # For each section, enroll a different number of students. First section gets 1,
-  # section gets 2, then third gets 3, etc
+  # Enroll students with increasing counts: section at index N gets N+1 students
   defp enroll(sections) do
-    map =
-      Enum.map(1..32, fn _ -> user_fixture() end)
-      |> Enum.map(fn u -> u.id end)
-      |> Enum.with_index(fn u, i -> {i, u} end)
-      |> Enum.reduce(%{}, fn {i, id}, m -> Map.put(m, i, id) end)
+    # Need enough users for the last section (index + 1 students)
+    user_count = length(sections) + 1
+    user_ids = Enum.map(1..user_count, fn _ -> user_fixture().id end)
+    learner = ContextRoles.get_role(:context_learner)
 
-    Enum.with_index(sections, fn s, i ->
-      Enum.each(1..(i + 1), fn i ->
-        Sections.enroll(Map.get(map, i), s.id, [ContextRoles.get_role(:context_learner)])
+    Enum.with_index(sections, fn section, index ->
+      Enum.each(1..(index + 1), fn n ->
+        Sections.enroll(Enum.at(user_ids, n), section.id, [learner])
       end)
     end)
 
