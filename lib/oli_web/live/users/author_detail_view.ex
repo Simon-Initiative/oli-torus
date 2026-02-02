@@ -102,7 +102,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
       <Groups.render>
         <div class="pt-6 pb-2">
           <h2 class="text-Text-text-high text-2xl font-semibold leading-8">
-            {@author_header_name}
+            {if @author_header_name == "", do: "Unnamed author", else: @author_header_name}
           </h2>
         </div>
         <div class="flex flex-col py-5 border-b border-Border-border-subtle">
