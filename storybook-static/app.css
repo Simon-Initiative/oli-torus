@@ -16187,6 +16187,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 34px;
 }
 
+.min-h-\[38px\] {
+  min-height: 38px;
+}
+
 .min-h-\[400px\] {
   min-height: 400px;
 }
@@ -18707,6 +18711,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-\[rgba\(0\2c 0\2c 0\2c 0\.01\)\] {
   background-color: rgba(0,0,0,0.01);
+}
+
+.bg-\[var\(--color-gray-100\)\] {
+  background-color: var(--color-gray-100);
 }
 
 .bg-amber-100 {
@@ -26464,6 +26472,14 @@ Not supports in Firefox and IE */
 
 .dark .hover\:border-Border-border-subtle:hover {
   border-color: #2B282E;
+}
+
+.hover\:border-Border-border-hover:hover {
+  border-color: #8AB8E5;
+}
+
+.dark .hover\:border-Border-border-hover:hover {
+  border-color: #524D59;
 }
 
 .hover\:border-Border-border-active:hover {
