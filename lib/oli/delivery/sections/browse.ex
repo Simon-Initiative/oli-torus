@@ -344,7 +344,6 @@ defmodule Oli.Delivery.Sections.Browse do
         left_lateral_join: p in subquery(publication_subquery),
         on: true,
         where: s.base_project_id == ^project_id,
-        where: is_nil(s.blueprint_id),
         where: s.type == :enrollable,
         where: s.status == :active,
         where: not is_nil(s.end_date),

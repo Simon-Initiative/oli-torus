@@ -541,14 +541,30 @@ defmodule Oli.Delivery.Sections.BrowseTest do
 
       future_date = DateTime.add(DateTime.utc_now(), 30, :day)
 
+      # Create a product (blueprint) for the project
+      product =
+        insert(:section,
+          title: "Course Product",
+          base_project: project,
+          type: :blueprint,
+          status: :active
+        )
+
+      insert(:section_project_publication,
+        section: product,
+        project: project,
+        publication: publication
+      )
+
       # Create sections with different titles
+      # section1 is FROM PRODUCT (has blueprint_id) - tests that product-based sections appear
       section1 =
         insert(:section,
           title: "Introduction to Biology",
           base_project: project,
           type: :enrollable,
           status: :active,
-          blueprint_id: nil,
+          blueprint_id: product.id,
           start_date: DateTime.utc_now(),
           end_date: future_date
         )

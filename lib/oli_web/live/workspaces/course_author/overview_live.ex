@@ -512,14 +512,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         description="Course sections created from this base project"
         layout={:stacked}
       >
-        <.form for={%{}} phx-change="course_sections_search_change" class="mb-4">
-          <SearchInput.render
-            id="course-sections-search"
-            name="search"
-            text={@course_sections_search}
-            aria_label="Search course sections"
-          />
-        </.form>
         <.async_result :let={data} assign={@course_sections_data}>
           <:loading>
             <div class="flex items-center justify-center py-8">
@@ -532,6 +524,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               Failed to load course sections. Please refresh the page.
             </div>
           </:failed>
+          <.form
+            :if={data.total > 0 or @course_sections_search != ""}
+            for={%{}}
+            phx-change="course_sections_search_change"
+            class="mb-4"
+          >
+            <SearchInput.render
+              id="course-sections-search"
+              name="search"
+              text={@course_sections_search}
+              aria_label="Search course sections"
+            />
+          </.form>
           <StripedPagedTable.render
             table_model={data.table_model}
             total_count={data.total}

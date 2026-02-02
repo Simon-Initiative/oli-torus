@@ -625,13 +625,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       future_date = DateTime.add(DateTime.utc_now(), 30, :day)
       past_date = DateTime.add(DateTime.utc_now(), -30, :day)
 
-      # Section with future end date - should be shown
+      # Create a product (blueprint) for the project
+      product =
+        insert(:section,
+          title: "Course Product",
+          base_project: project,
+          type: :blueprint,
+          status: :active
+        )
+
+      insert(:section_project_publication,
+        section: product,
+        project: project,
+        publication: publication
+      )
+
+      # Section FROM PRODUCT with future end date - should be shown
+      # (tests that product-based sections appear, not just direct sections)
       future_section =
         insert(:section,
           title: "Future Section",
           base_project: project,
+          blueprint_id: product.id,
           type: :enrollable,
           status: :active,
+          start_date: DateTime.utc_now(),
           end_date: future_date
         )
 
@@ -664,6 +682,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       assert has_element?(view, "a", "Future Section")
       refute has_element?(view, "a", "Past Section")
+      # Product itself should NOT appear (type: :blueprint)
+      refute has_element?(view, "a", "Course Product")
     end
 
     test "shows the correct payment status", %{conn: conn, author: author} do
