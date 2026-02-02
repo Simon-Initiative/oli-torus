@@ -99,7 +99,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     assigns = Map.merge(assigns, %{row: row})
 
     ~H"""
-    <div class="ml-8">
+    <div>
       {@row.label}
     </div>
     """
@@ -125,7 +125,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     ~H"""
     <div>
       <a
-        class={"ml-8 #{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black dark:text-gray-300"}"}
+        class={"#{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black dark:text-gray-300"}"}
         href={
           Routes.live_path(
             OliWeb.Endpoint,

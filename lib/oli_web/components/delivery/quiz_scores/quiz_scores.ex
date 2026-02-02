@@ -53,7 +53,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     <div class="container mx-auto flex flex-col gap-2 mb-10">
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div class="py-4">
-          <div class="flex justify-between items-center mb-6 pl-10 pr-4 sm:pr-9">
+          <div class="flex justify-between items-center mb-6 pl-[16px] pr-4 sm:pr-9">
             <div class="justify-center text-Text-text-high text-lg font-bold leading-normal">
               Assessment Scores
             </div>
@@ -69,7 +69,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
               <Icons.download />
             </a>
           </div>
-          <div class="flex flex-col gap-6 pl-10 pr-4 sm:pr-9">
+          <div class="flex flex-col gap-6 pl-[16px]">
             <%= if is_nil(assigns[:student_id]) do %>
               <div class="form-check">
                 <input

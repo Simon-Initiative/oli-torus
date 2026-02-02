@@ -82,13 +82,15 @@ defmodule OliWeb.Components.Delivery.Progress do
         </div>
 
         <div class="px-4 pb-4">
-          <.form for={%{}} phx-target={@myself} phx-change="search_progress" class="w-56">
-            <SearchInput.render
-              id="progress_search_input"
-              name="resource_title"
-              text={@params.text_search}
-            />
-          </.form>
+          <div class="inline-flex items-center gap-4 px-3 py-2 border border-Border-border-default bg-white dark:bg-gray-800 w-fit">
+            <.form for={%{}} phx-target={@myself} phx-change="search_progress" class="w-auto">
+              <SearchInput.render
+                id="progress_search_input"
+                name="resource_title"
+                text={@params.text_search}
+              />
+            </.form>
+          </div>
         </div>
 
         <%= if @total_count > 0 do %>
