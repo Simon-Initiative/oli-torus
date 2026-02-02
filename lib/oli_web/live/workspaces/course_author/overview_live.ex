@@ -166,14 +166,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           </div>
           <div class="form-label-group mb-3">
             <label class="control-label">Tags</label>
-            <.live_component
-              module={TagsComponent}
-              id={"project-tags-#{@project.id}"}
-              entity_type={:project}
-              entity_id={@project.id}
-              current_tags={@project.tags}
-              variant={:form}
-            />
+            <%= if @is_admin do %>
+              <.live_component
+                module={TagsComponent}
+                id={"project-tags-#{@project.id}"}
+                entity_type={:project}
+                entity_id={@project.id}
+                current_tags={@project.tags}
+                variant={:form}
+              />
+            <% else %>
+              <.read_only_tags tags={@project.tags} />
+            <% end %>
           </div>
           <% welcome_title =
             (fetch_field(f.source, :welcome_title) &&
@@ -1051,6 +1055,29 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             )}
           </div>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  # Read-only tags display for non-admin users
+  # Shows tag pills without any edit functionality
+  attr :tags, :list, required: true
+
+  defp read_only_tags(assigns) do
+    sorted_tags = Enum.sort_by(assigns.tags, & &1.name)
+    assigns = assign(assigns, :sorted_tags, sorted_tags)
+
+    ~H"""
+    <div class="min-h-[40px] w-full rounded border border-Border-border-default bg-Fill-fill-form-field px-3 py-2 flex items-center">
+      <span :if={@sorted_tags == []} class="text-Text-text-tertiary">None</span>
+      <div :if={@sorted_tags != []} class="flex flex-wrap gap-1">
+        <span
+          :for={tag <- @sorted_tags}
+          class={"px-2 py-1 rounded-full text-sm leading-4 font-semibold #{TagsComponent.get_tag_pill_classes(tag.name)}"}
+        >
+          {tag.name}
+        </span>
       </div>
     </div>
     """

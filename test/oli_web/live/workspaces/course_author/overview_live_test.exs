@@ -489,75 +489,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
     end
   end
 
-  describe "project overview tags" do
+  describe "project overview communities and institutions" do
     setup [:author_conn]
-
-    test "displays tags in Details section when project has tags", %{conn: conn, author: author} do
-      project = create_project_with_author(author)
-      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      {:ok, _} = Tags.associate_tag_with_project(project, tag)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      # Should show the Tags label in Details section
-      assert has_element?(view, "label", "Tags")
-      # Should show the tag
-      assert has_element?(view, "span[role='listitem']", "Biology")
-    end
-
-    test "displays empty tags component when project has no tags", %{conn: conn, author: author} do
-      project = create_project_with_author(author)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      # Should show the Tags label
-      assert has_element?(view, "label", "Tags")
-      # Should not show any tags
-      refute has_element?(view, "span[role='listitem']")
-    end
-
-    test "displays multiple tags in alphabetical order", %{conn: conn, author: author} do
-      project = create_project_with_author(author)
-      {:ok, zebra_tag} = Tags.create_tag(%{name: "Zebra"})
-      {:ok, apple_tag} = Tags.create_tag(%{name: "Apple"})
-      {:ok, _} = Tags.associate_tag_with_project(project, zebra_tag)
-      {:ok, _} = Tags.associate_tag_with_project(project, apple_tag)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      # Should show both tags
-      assert has_element?(view, "span[role='listitem']", "Apple")
-      assert has_element?(view, "span[role='listitem']", "Zebra")
-
-      # Check alphabetical order
-      html = render(view)
-      apple_index = :binary.match(html, "Apple") |> elem(0)
-      zebra_index = :binary.match(html, "Zebra") |> elem(0)
-      assert apple_index < zebra_index
-    end
-
-    test "can enter edit mode and see available tags", %{conn: conn, author: author} do
-      project = create_project_with_author(author)
-      {:ok, existing_tag} = Tags.create_tag(%{name: "Chemistry"})
-      {:ok, _available_tag} = Tags.create_tag(%{name: "Physics"})
-      {:ok, _} = Tags.associate_tag_with_project(project, existing_tag)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      # Enter edit mode by clicking on the tags component
-      view |> element("div[phx-click='toggle_edit']") |> render_click()
-
-      # Should show input field in edit mode
-      assert has_element?(view, "input[type='text']")
-      # Should show existing tag with remove button (X icon)
-      assert has_element?(view, "span[role='listitem']", "Chemistry")
-      assert has_element?(view, "button[phx-click='remove_tag'] svg")
-      # Should show available tag to add
-      assert has_element?(view, "button[phx-click='add_tag']", "Physics")
-
-      # The available tag that's not yet associated should be selectable
-      refute has_element?(view, "button[phx-click='add_tag']", "Chemistry")
-    end
 
     test "displays communities in Details section when project has communities", %{
       conn: conn,
@@ -1007,6 +940,116 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       })
 
       assert Course.get_project!(project.id).attributes.calculate_embeddings_on_publish
+    end
+
+    # Tags are admin-only per MER-5022
+    test "displays Tags section in Details for admin users", %{conn: conn, admin: admin} do
+      project = create_project_with_author(admin)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      {:ok, _} = Tags.associate_tag_with_project(project, tag)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Admin should see Tags label and TagsComponent
+      assert has_element?(view, "label", "Tags")
+      assert has_element?(view, "div[phx-hook='TagsComponent']")
+      assert has_element?(view, "span[role='listitem']", "Biology")
+    end
+
+    test "admin can edit tags (enter edit mode)", %{conn: conn, admin: admin} do
+      project = create_project_with_author(admin)
+      {:ok, existing_tag} = Tags.create_tag(%{name: "Chemistry"})
+      {:ok, _available_tag} = Tags.create_tag(%{name: "Physics"})
+      {:ok, _} = Tags.associate_tag_with_project(project, existing_tag)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Enter edit mode by clicking on the tags component
+      view |> element("div[phx-click='toggle_edit']") |> render_click()
+
+      # Should show input field in edit mode
+      assert has_element?(view, "input[type='text']")
+      # Should show existing tag with remove button
+      assert has_element?(view, "span[role='listitem']", "Chemistry")
+      assert has_element?(view, "button[phx-click='remove_tag'] svg")
+      # Should show available tag to add
+      assert has_element?(view, "button[phx-click='add_tag']", "Physics")
+    end
+  end
+
+  describe "project overview tags visibility for authors (non-admin)" do
+    setup [:author_conn]
+
+    # MER-5022: Tag EDITING is admin-only, but authors should be able to VIEW tags
+    # "This functionality is reserved for admins" - "functionality" = editing capability
+    # "This could lead to tags being made by any author" - concern is about creating, not viewing
+
+    test "displays tags as read-only for regular authors", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      {:ok, _} = Tags.associate_tag_with_project(project, tag)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Author SHOULD see Tags label and tag values
+      assert has_element?(view, "label", "Tags")
+      assert has_element?(view, "span", "Biology")
+    end
+
+    test "displays 'None' when project has no tags for regular authors", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Author should see Tags label with "None" when no tags
+      assert has_element?(view, "label", "Tags")
+      html = render(view)
+      # Find the Tags section - it should show "None"
+      assert html =~ ~r/Tags.*None/s or has_element?(view, "span", "None")
+    end
+
+    test "cannot edit tags - no interactive TagsComponent rendered", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      {:ok, _} = Tags.associate_tag_with_project(project, tag)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # TagsComponent hook should NOT be present (no edit capability)
+      refute has_element?(view, "div[phx-hook='TagsComponent']")
+      # No remove buttons
+      refute has_element?(view, "button[phx-click='remove_tag']")
+      # No edit toggle
+      refute has_element?(view, "div[phx-click='toggle_edit']")
+    end
+
+    test "displays multiple tags in alphabetical order for regular authors", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+      {:ok, zebra_tag} = Tags.create_tag(%{name: "Zebra"})
+      {:ok, apple_tag} = Tags.create_tag(%{name: "Apple"})
+      {:ok, _} = Tags.associate_tag_with_project(project, zebra_tag)
+      {:ok, _} = Tags.associate_tag_with_project(project, apple_tag)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show both tags
+      assert render(view) =~ "Apple"
+      assert render(view) =~ "Zebra"
+
+      # Check alphabetical order
+      html = render(view)
+      apple_index = :binary.match(html, "Apple") |> elem(0)
+      zebra_index = :binary.match(html, "Zebra") |> elem(0)
+      assert apple_index < zebra_index
     end
   end
 end
