@@ -12,10 +12,25 @@ jobs:
   elixir-build-test:
     name: Elixir build and test
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: ankane/pgvector
+        env:
+          POSTGRES_DB: oli_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d oli_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
       MIX_ENV: test
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/oli_test
 
     steps:
       - name: 🛎️ Checkout
@@ -23,11 +38,7 @@ jobs:
 
       - name: 🔧 Configure
         run: |
-          cp postgres.example.env postgres.env
           cp oli.example.env oli.env
-
-      - name: 🗄 Start test database
-        run: docker compose up -d postgres
 
       - name: 💾 Restore the deps cache
         id: mix-deps-cache

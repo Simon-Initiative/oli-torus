@@ -432,6 +432,133 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     end
   end
 
+  describe "Institution and Communities display" do
+    setup [:setup_session]
+
+    test "shows institution name with link for LTI user", %{
+      conn: conn,
+      admin: admin,
+      lms_student: lms_student
+    } do
+      institution = insert(:institution)
+
+      # Create a section with institution and enroll user
+      section =
+        insert(:section,
+          type: :enrollable,
+          institution: institution,
+          status: :active
+        )
+
+      Sections.enroll(lms_student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, lms_student.id))
+
+      {:ok, view, html} = live(conn)
+
+      assert html =~ "Institution"
+      assert has_element?(view, "a", institution.name)
+    end
+
+    test "shows 'Direct Delivery' for independent user without institution", %{
+      conn: conn,
+      admin: admin,
+      independent_student: independent_student
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, independent_student.id)
+        )
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "Institution"
+      assert html =~ "Direct Delivery"
+    end
+
+    test "shows Communities section", %{
+      conn: conn,
+      admin: admin,
+      independent_student: independent_student
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, independent_student.id)
+        )
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "Communities"
+    end
+
+    test "shows user's direct communities", %{
+      conn: conn,
+      admin: admin,
+      independent_student: independent_student
+    } do
+      community = insert(:community, name: "Test Community")
+
+      {:ok, _} =
+        Oli.Groups.create_community_account(%{
+          user_id: independent_student.id,
+          community_id: community.id
+        })
+
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, independent_student.id)
+        )
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "Test Community"
+    end
+
+    test "shows institution communities for LTI user", %{
+      conn: conn,
+      admin: admin,
+      lms_student: lms_student
+    } do
+      institution = insert(:institution)
+      community = insert(:community, name: "Institution Community")
+
+      # Link community to institution
+      {:ok, _} =
+        Oli.Groups.create_community_institution(%{
+          institution_id: institution.id,
+          community_id: community.id
+        })
+
+      # Create a section with institution and enroll user
+      section =
+        insert(:section,
+          type: :enrollable,
+          institution: institution,
+          status: :active
+        )
+
+      Sections.enroll(lms_student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, lms_student.id))
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "Institution Community"
+    end
+  end
+
   describe "Enrolled sections info" do
     setup [:admin_conn, :enrolled_student_to_sections, :stub_real_current_time]
 

@@ -19,6 +19,16 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
     setup do
       {:ok, dir} = Briefly.create(type: :directory)
 
+      original_config = Application.get_env(:oli, :xapi_upload_pipeline, [])
+
+      new_config =
+        original_config
+        |> Keyword.put(:uploader_module, Oli.Analytics.XAPI.FileWriterUploader)
+
+      Application.put_env(:oli, :xapi_upload_pipeline, new_config)
+
+      on_exit(fn -> Application.put_env(:oli, :xapi_upload_pipeline, original_config) end)
+
       map =
         Seeder.base_project_with_resource2()
         |> Map.put(:upload_directory, dir)

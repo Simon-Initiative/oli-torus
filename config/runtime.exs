@@ -100,6 +100,185 @@ config :oli, :certificates,
   generate_pdf_lambda: System.get_env("CERTIFICATES_GENERATE_PDF_LAMBDA", "generate-certificate"),
   s3_pdf_bucket: System.get_env("CERTIFICATES_S3_PDF_URL", "torus-pdf-certificates")
 
+inventory_manifest_bucket = System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_BUCKET")
+inventory_manifest_prefix = System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_PREFIX")
+
+default_inventory_chunk_size = 1000
+
+inventory_chunk_size =
+  case System.get_env("CLICKHOUSE_INVENTORY_BATCH_CHUNK_SIZE") do
+    nil ->
+      default_inventory_chunk_size
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> default_inventory_chunk_size
+      end
+  end
+
+inventory_max_simultaneous =
+  case System.get_env("CLICKHOUSE_INVENTORY_MAX_SIMULTANEOUS_BATCHES") do
+    nil ->
+      nil
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> nil
+      end
+  end
+
+inventory_max_retries =
+  case System.get_env("CLICKHOUSE_INVENTORY_MAX_BATCH_RETRIES") do
+    nil ->
+      nil
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> nil
+      end
+  end
+
+inventory_manifest_host =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_HOST") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
+inventory_manifest_scheme =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_SCHEME") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
+inventory_manifest_port =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_PORT") do
+    nil ->
+      nil
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> nil
+      end
+  end
+
+inventory_manifest_page_size =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_PAGE_SIZE") do
+    nil ->
+      nil
+
+    value ->
+      case Integer.parse(value) do
+        {int, _} when int > 0 -> int
+        _ -> nil
+      end
+  end
+
+inventory_manifest_access_key_id =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_ACCESS_KEY_ID") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
+inventory_manifest_secret_access_key =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_SECRET_ACCESS_KEY") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
+inventory_manifest_session_token =
+  case System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_SESSION_TOKEN") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
+inventory_overrides =
+  [
+    {:manifest_bucket, inventory_manifest_bucket},
+    {:manifest_prefix, inventory_manifest_prefix},
+    {:manifest_suffix, System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_SUFFIX")},
+    {:directory_time_suffix, System.get_env("CLICKHOUSE_INVENTORY_DIRECTORY_SUFFIX")},
+    {:manifest_host, inventory_manifest_host},
+    {:manifest_scheme, inventory_manifest_scheme},
+    {:manifest_port, inventory_manifest_port},
+    {:manifest_page_size, inventory_manifest_page_size},
+    {:manifest_access_key_id, inventory_manifest_access_key_id},
+    {:manifest_secret_access_key, inventory_manifest_secret_access_key},
+    {:manifest_session_token, inventory_manifest_session_token},
+    {:manifest_base_url, System.get_env("CLICKHOUSE_INVENTORY_MANIFEST_BASE_URL")},
+    {:batch_chunk_size, inventory_chunk_size},
+    {:max_simultaneous_batches, inventory_max_simultaneous},
+    {:max_batch_retries, inventory_max_retries}
+  ]
+  |> Enum.reject(fn
+    {_key, nil} -> true
+    _ -> false
+  end)
+
+existing_inventory_config = Application.get_env(:oli, :clickhouse_inventory, [])
+
+clickhouse_olap_enabled = get_env_as_boolean.("CLICKHOUSE_OLAP_ENABLED", "false")
+
+config :oli, :clickhouse_olap_enabled?, clickhouse_olap_enabled
+
+if clickhouse_olap_enabled do
+  config :oli,
+         :clickhouse_inventory,
+         Keyword.merge(existing_inventory_config, inventory_overrides)
+
+  # ClickHouse configuration for XAPI analytics
+  config :oli, :clickhouse,
+    host: System.get_env("CLICKHOUSE_HOST", "localhost"),
+    http_port: String.to_integer(System.get_env("CLICKHOUSE_HTTP_PORT", "8123")),
+    native_port: String.to_integer(System.get_env("CLICKHOUSE_NATIVE_PORT", "9000")),
+    user: System.get_env("CLICKHOUSE_USER", "default"),
+    password: System.fetch_env!("CLICKHOUSE_PASSWORD"),
+    database: System.get_env("CLICKHOUSE_DATABASE", "default")
+end
+
 if runtime_env != :test do
   config :ex_aws, :s3,
     region: [{:system, "AWS_S3_REGION"}, {:system, "AWS_REGION"}, "us-east-1"],
@@ -137,6 +316,7 @@ if runtime_env == :prod do
 
   config :oli, Oli.Repo,
     url: database_url,
+    ssl: get_env_as_boolean.("DB_SSL", "false"),
     database: System.get_env("DB_NAME", "oli"),
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     timeout: db_timeout,
@@ -239,7 +419,12 @@ if runtime_env == :prod do
       favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
     ],
     node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
-    genai_hackney_pool_size: String.to_integer(System.get_env("GENAI_HACKNEY_POOL_SIZE", "100")),
+    genai_hackney_pool_max_size:
+      String.to_integer(System.get_env("GENAI_HACKNEY_POOL_MAX_SIZE", "1000")),
+    genai_hackney_fast_pool_size:
+      String.to_integer(System.get_env("GENAI_FAST_POOL_SIZE", "100")),
+    genai_hackney_slow_pool_size:
+      String.to_integer(System.get_env("GENAI_SLOW_POOL_SIZE", "100")),
     screen_idle_timeout_in_seconds:
       String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
@@ -468,6 +653,26 @@ if runtime_env == :prod do
   config :oli, :student_sign_in,
     background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
 
+  # Lambda ETL configuration for XAPI analytics
+  config :oli, :xapi_lambda_etl,
+    function_name: System.get_env("XAPI_LAMBDA_FUNCTION_NAME", "xapi-etl-processor"),
+    aws_region: System.get_env("AWS_REGION", "us-east-1")
+
+  # Configure xAPI upload pipeline based on ETL mode
+  xapi_etl_mode = System.get_env("XAPI_ETL_MODE", "s3")
+
+  uploader_module =
+    case xapi_etl_mode do
+      "file" -> Oli.Analytics.XAPI.FileUploader
+      "clickhouse" -> Oli.Analytics.XAPI.ClickHouseUploader
+      # Default S3 uploader
+      _ -> Oli.Analytics.XAPI.S3Uploader
+    end
+
+  config :oli, :xapi_upload_pipeline,
+    producer_module: Oli.Analytics.XAPI.QueueProducer,
+    uploader_module: uploader_module
+
   config :oli, Oban,
     repo: Oli.Repo,
     plugins: [
@@ -490,6 +695,12 @@ if runtime_env == :prod do
       grades: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_GRADES", "30")),
       auto_submit: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_AUTOSUBMIT", "3")),
       analytics_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_ANALYTICS", "1")),
+      clickhouse_backfill:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CLICKHOUSE_BACKFILL", "1")),
+      clickhouse_inventory:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CLICKHOUSE_INVENTORY", "1")),
+      clickhouse_inventory_batches:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CLICKHOUSE_INVENTORY_BATCHES", "2")),
       datashop_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DATASHOP", "1")),
       project_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_PROJECT_EXPORT", "3")),
       objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3")),
