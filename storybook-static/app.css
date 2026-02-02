@@ -26554,6 +26554,14 @@ Not supports in Firefox and IE */
   border-color: #99CCFF;
 }
 
+.hover\:text-Text-text-link:hover {
+  color: #1B67B2;
+}
+
+.dark .hover\:text-Text-text-link:hover {
+  color: #99CCFF;
+}
+
 .hover\:text-Text-text-danger-hover:hover {
   color: #B21D1D;
 }
