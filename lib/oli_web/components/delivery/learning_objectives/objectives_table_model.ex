@@ -264,8 +264,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       aria-expanded={@is_expanded}
       aria-controls={"details-#{@id}"}
       phx-click={
-        JS.toggle(to: "#details-#{@id}")
-        |> JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="#{@id}"]))
+        JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="#{@id}"]))
         |> JS.push("toggle_objective_details", value: %{objective_id: @id}, target: @component_target)
       }
     >
