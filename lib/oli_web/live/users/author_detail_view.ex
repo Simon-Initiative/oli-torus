@@ -8,9 +8,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, SystemRole}
-  alias Oli.AssentAuth.AuthorAssentAuth
   alias Oli.Auditing
   alias Oli.Repo
+  alias OliWeb.Users.DetailViewHelpers
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -60,7 +60,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
       author ->
         author = Repo.preload(author, :user_identities)
-        has_google = credentials_has_google?(author.user_identities)
+        has_google = DetailViewHelpers.credentials_has_google?(author.user_identities)
 
         {:ok,
          assign(socket,
@@ -70,10 +70,10 @@ defmodule OliWeb.Users.AuthorsDetailView do
            disabled_edit: true,
            author_roles: SystemRole.role_id(),
            credentials_has_google: has_google,
-           credentials_label: credentials_label(author, has_google),
+           credentials_label: DetailViewHelpers.credentials_label(author, has_google),
            password_reset_link: "",
            author_name: author.name,
-           author_header_name: formatted_header_name(author),
+           author_header_name: DetailViewHelpers.formatted_header_name(author),
            form: author_form(author)
          )}
     end
@@ -563,18 +563,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
     end
   end
 
-  defp formatted_header_name(%Author{} = author) do
-    family = author.family_name || ""
-    given = author.given_name || ""
-
-    case {String.trim(family), String.trim(given)} do
-      {"", ""} -> author.name || ""
-      {family, ""} -> family
-      {"", given} -> given
-      {family, given} -> "#{family}, #{given}"
-    end
-  end
-
   defp combined_header_name_from_form(form, fallback_author) do
     given = form[:given_name].value || fallback_author.given_name || ""
     family = form[:family_name].value || fallback_author.family_name || ""
@@ -584,21 +572,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
       {family, ""} -> family
       {"", given} -> given
       {family, given} -> "#{family}, #{given}"
-    end
-  end
-
-  defp credentials_has_google?(identities) when is_list(identities) do
-    Enum.any?(identities, &(&1.provider == "google"))
-  end
-
-  defp credentials_label(%Author{} = author, has_google) do
-    has_password = AuthorAssentAuth.has_password?(author)
-
-    cond do
-      has_google and has_password -> "Email & Password"
-      has_google -> nil
-      has_password -> "Email & Password"
-      true -> "None"
     end
   end
 

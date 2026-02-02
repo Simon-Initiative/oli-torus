@@ -269,7 +269,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       assert view
              |> element("#author_projects table tr[id='#{project.id}']")
              |> render() =~
-               "Jul. 21, 2023 - 12:31 PM"
+               "ago"
     end
 
     test "can search author projects", %{conn: conn} do

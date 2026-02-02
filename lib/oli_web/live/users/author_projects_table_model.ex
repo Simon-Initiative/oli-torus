@@ -4,30 +4,31 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Common.Utils
 
   def new(projects, ctx) do
     column_specs = [
       %ColumnSpec{
         name: :title,
-        label: "TITLE",
+        label: "Title",
         render_fn: &__MODULE__.render_title_column/3,
         th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :role,
-        label: "ROLE",
+        label: "Role",
         render_fn: &__MODULE__.render_role_column/3,
         th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :created_at,
-        label: "DATE CREATED",
+        label: "Date Created",
         render_fn: &__MODULE__.render_date_created_column/3,
         th_class: "whitespace-nowrap"
       },
       %ColumnSpec{
         name: :most_recent_edit,
-        label: "MOST RECENT EDIT",
+        label: "Most Recent Edit",
         render_fn: &__MODULE__.render_most_recent_edit_column/3,
         th_class: "whitespace-nowrap"
       }
@@ -99,7 +100,7 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
     assigns = Map.merge(assigns, %{most_recent_edit: project.most_recent_edit})
 
     ~H"""
-    {parse_datetime(@most_recent_edit, @ctx)}
+    {Utils.render_relative_date(%{most_recent_edit: @most_recent_edit}, :most_recent_edit, @ctx)}
     """
   end
 
