@@ -10,6 +10,7 @@ import { modalActions } from 'actions/modal';
 import { BibEntry } from 'data/content/bibentry';
 import { Message, Severity, createMessage } from 'data/messages/messages';
 import * as BibPersistence from 'data/persistence/bibentry';
+import { toCslArray } from 'utils/bibliography';
 import { BibEntryEditor } from './BibEntryEditor';
 import { BibEntryView } from './BibEntryView';
 import { EditBibEntry } from './EditBibEntry';
@@ -51,13 +52,27 @@ export function confirmDelete(): Promise<boolean> {
   });
 }
 
-export function confirmTextBibEditor(bibEntry?: BibEntry): Promise<string> {
+export function confirmTextBibEditor(
+  bibEntry?: BibEntry,
+  onInvalid?: (reason: string) => void,
+): Promise<string> {
   return new Promise((resolve, reject) => {
     let bibContent = '';
+    let isContentValid = true;
+
+    const handleValidityChange = (content: string, valid: boolean) => {
+      bibContent = content;
+      isContentValid = valid;
+    };
+
     const modelOpen = (
       <Modal
         title={bibEntry ? 'Edit Entry' : 'Create Entry'}
         onOk={() => {
+          if (!isContentValid) {
+            onInvalid?.('Please fix the entry format before saving.');
+            return;
+          }
           dismiss();
           resolve(bibContent);
         }}
@@ -67,12 +82,7 @@ export function confirmTextBibEditor(bibEntry?: BibEntry): Promise<string> {
         }}
         okLabel={bibEntry ? 'Update' : 'Create'}
       >
-        <PlainEntryEditor
-          bibEntry={bibEntry}
-          onContentChange={(content: string) => {
-            bibContent = content;
-          }}
-        />
+        <PlainEntryEditor bibEntry={bibEntry} onContentChange={handleValidityChange} />
       </Modal>
     );
 
@@ -218,7 +228,15 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
     if (key) {
       context = bibEntrys.get(key);
     }
-    confirmTextBibEditor(context).then((content: string) => {
+    confirmTextBibEditor(context, (reason) => {
+      const message = createMessage({
+        guid: 'bib-entry-invalid-plain',
+        canUserDismiss: true,
+        content: reason,
+        severity: Severity.Error,
+      });
+      addAsUnique(message);
+    }).then((content: string) => {
       handleCreateOrEdit(content, context);
     });
   };
@@ -230,6 +248,13 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
   const createBibEntryViews = () => {
     return bibEntrys.toArray().map((item) => {
       const [key, bibEntry] = item;
+      const parsed = toCslArray(bibEntry.content.data);
+      const citeModel: CitationModel | undefined =
+        (parsed[0] as CitationModel) ||
+        (Array.isArray(bibEntry.content.data)
+          ? (bibEntry.content.data[0] as CitationModel)
+          : undefined);
+      const manualEditDisabled = !citeModel;
 
       // const onDeleted = () => {
       //   const thisKey = key;
@@ -242,11 +267,19 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
       };
 
       const onManualEdit = () => {
-        const bibEntry: BibEntry | undefined = bibEntrys.get(key);
-        if (bibEntry) {
-          const citeModel: CitationModel = bibEntry.content.data[0];
-          onManualCreateOrEdit(citeModel, bibEntry);
+        if (!citeModel) {
+          const message = createMessage({
+            guid: `bib-manual-edit-error-${key}`,
+            canUserDismiss: true,
+            content:
+              'This entry format cannot be opened in the manual editor. Try editing the raw text version instead.',
+            severity: Severity.Warning,
+          });
+          addAsUnique(message);
+          return;
         }
+
+        onManualCreateOrEdit(citeModel, bibEntry);
       };
 
       return (
@@ -256,7 +289,11 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
               <EditBibEntry icon="fas fa-edit" onEdit={onEdit} />
             </div>
             <div className="mb-1">
-              <EditBibEntry icon="fas fa-user-edit" onEdit={onManualEdit} />
+              <EditBibEntry
+                icon="fas fa-user-edit"
+                onEdit={onManualEdit}
+                disabled={manualEditDisabled}
+              />
             </div>
             {/* <div>
               <DeleteBibEntry onDelete={onDeleted} />

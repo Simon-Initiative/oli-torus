@@ -51,10 +51,10 @@ defmodule OliWeb.Projects.PublishView do
 
     active_publication = Publishing.project_working_publication(project_slug)
 
-    {version_change, active_publication_changes, parent_pages} =
+    {version_change, active_publication_changes} =
       case latest_published_publication do
         nil ->
-          {true, nil, %{}}
+          {true, nil}
 
         _ ->
           %PublicationDiff{
@@ -65,24 +65,7 @@ defmodule OliWeb.Projects.PublishView do
             changes: changes
           } = Publishing.diff_publications(latest_published_publication, active_publication)
 
-          parent_pages =
-            case classification do
-              {:no_changes, _} ->
-                %{}
-
-              _ ->
-                Map.values(changes)
-                |> Enum.map(fn {_, %{revision: revision}} -> revision end)
-                |> Enum.filter(fn r ->
-                  r.resource_type_id == Oli.Resources.ResourceType.id_for_activity()
-                end)
-                |> Enum.map(fn r -> r.resource_id end)
-                |> Oli.Publishing.determine_parent_pages(
-                  Oli.Publishing.project_working_publication(project_slug).id
-                )
-            end
-
-          {{classification, {edition, major, minor}}, changes, parent_pages}
+          {{classification, {edition, major, minor}}, changes}
       end
 
     base_url = Oli.Utils.get_base_url()
@@ -129,7 +112,6 @@ defmodule OliWeb.Projects.PublishView do
        has_changes: has_changes,
        latest_published_publication: latest_published_publication,
        lti_connect_info: lti_connect_info,
-       parent_pages: parent_pages,
        project: project,
        publication_changes: publication_changes,
        push_affected: push_affected,
@@ -162,7 +144,6 @@ defmodule OliWeb.Projects.PublishView do
             ctx={@ctx}
             has_changes={@has_changes}
             latest_published_publication={@latest_published_publication}
-            parent_pages={@parent_pages}
             project={@project}
             publication_changes={@publication_changes}
           />

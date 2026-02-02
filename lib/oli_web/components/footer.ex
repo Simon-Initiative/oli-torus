@@ -77,7 +77,9 @@ defmodule OliWeb.Components.Footer do
     <div class="flex-1 text-left sm:text-center">
       {@footer_text}
       <%= if not_blank?(@footer_link_1_text) and not_blank?(@footer_link_1_location) do %>
-        <a href={@footer_link_1_location} target="_blank">{@footer_link_1_text}</a>
+        <a href={@footer_link_1_location} target="_blank" rel="noopener noreferrer">
+          {@footer_link_1_text}
+        </a>
       <% end %>
     </div>
     """
@@ -93,7 +95,9 @@ defmodule OliWeb.Components.Footer do
     ~H"""
     <div class="shrink-0 text-left">
       <%= if not_blank?(@footer_link_2_text) and not_blank?(@footer_link_2_location) do %>
-        <a href={@footer_link_2_location} target="_blank">{@footer_link_2_text}</a>
+        <a href={@footer_link_2_location} target="_blank" rel="noopener noreferrer">
+          {@footer_link_2_text}
+        </a>
       <% end %>
     </div>
     """
@@ -119,8 +123,8 @@ defmodule OliWeb.Components.Footer do
       <%= if not_blank?(@privacy_policies_url) do %>
         <a
           href="javascript:;"
-          onclick={"OLI.selectCookiePreferences({privacyPoliciesUrl: '#{@privacy_policies_url}'})"}
-          class={[@class, "whitespace-nowrap"]}
+          onclick={"OLI.handleCookiePreferences('#{@privacy_policies_url}')"}
+          class={[@class, "whitespace-nowrap text-Text-text-button"]}
         >
           Cookie Preferences
         </a>
@@ -135,6 +139,12 @@ defmodule OliWeb.Components.Footer do
     ~H"""
     <%= if not_blank?(@privacy_policies_url) do %>
       <script>
+        // Set device information for consistent mobile/tablet vs desktop detection
+        window.isMobileOrTablet = <%= case assigns do
+          %{conn: conn} -> OliWeb.Common.DeviceDetection.is_mobile_or_tablet?(conn)
+          %{socket: socket} -> OliWeb.Common.DeviceDetection.is_mobile_or_tablet?(socket)
+          _ -> "false"
+        end %>;
         OLI.onReady(() => OLI.retrieveCookies('<%= ~p"/consent/cookie" %>', {privacyPoliciesUrl: '<%= @privacy_policies_url %>'}));
       </script>
     <% end %>

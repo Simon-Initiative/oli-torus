@@ -23,6 +23,10 @@ config :oli,
     favicons: "/favicons"
   ]
 
+config :oli, :blob_storage,
+  bucket_name: "torus-blob-test",
+  use_deprecated_api: true
+
 config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,
   uploader_module: Oli.Analytics.XAPI.FileWriterUploader,
@@ -33,12 +37,20 @@ config :oli, :xapi_upload_pipeline,
   suppress_event_emitting: true,
   xapi_local_output_dir: System.get_env("XAPI_LOCAL_TEST_OUTPUT_DIR", "./xapi_test_output")
 
-# Configure your database
+# Configure database
+database_url = System.get_env("DATABASE_URL")
+
+if database_url && database_url != "" do
+  config :oli, Oli.Repo, url: database_url
+else
+  config :oli, Oli.Repo,
+    username: System.get_env("DB_USER", "postgres"),
+    password: System.get_env("DB_PASSWORD", "postgres"),
+    hostname: System.get_env("DB_HOST", "localhost"),
+    database: "oli_test"
+end
+
 config :oli, Oli.Repo,
-  username: System.get_env("DB_USER", "postgres"),
-  password: System.get_env("DB_PASSWORD", "postgres"),
-  hostname: System.get_env("DB_HOST", "localhost"),
-  database: "oli_test",
   pool: Ecto.Adapters.SQL.Sandbox,
   timeout: 600_000,
   pool_size: 30,
@@ -61,6 +73,26 @@ config :oli, :help, dispatcher: Oli.Help.Providers.EmailHelp
 
 # Configure Email
 config :oli, Oli.Mailer, adapter: Swoosh.Adapters.Test
+
+config :oli, :clickhouse_inventory,
+  manifest_bucket: "test-inventory-bucket",
+  manifest_prefix: "inventory/test-prefix",
+  manifest_suffix: "manifest.json",
+  directory_time_suffix: "T01-00Z",
+  batch_chunk_size: 5,
+  max_simultaneous_batches: 1,
+  max_batch_retries: 1
+
+config :oli, :clickhouse,
+  host: "localhost",
+  http_port: 8123,
+  native_port: 9000,
+  user: "default",
+  password: "",
+  database: "default"
+
+config :oli, :clickhouse_analytics_module, Oli.Test.ClickhouseStub
+config :oli, :clickhouse_olap_enabled?, true
 
 # speed up tests by lowering the hash iterations
 config :bcrypt_elixir, log_rounds: 4
@@ -109,6 +141,10 @@ config :oli, :lti_access_token_provider, provider: Oli.Lti.AccessTokenTest
 # Print only warnings and errors during test
 config :logger, level: :warning
 
+config :oli,
+  enable_playwright_scenarios: true,
+  playwright_scenario_token: System.get_env("PLAYWRIGHT_SCENARIO_TOKEN")
+
 truncate =
   System.get_env("LOGGER_TRUNCATE", "8192")
   |> String.downcase()
@@ -129,11 +165,17 @@ config :oli, :section_cache, dispatcher: Oli.TestHelpers.CustomDispatcher
 config :assent, http_adapter: Oli.Test.MockHTTP
 
 config :ex_aws,
-  region: System.get_env("AWS_REGION", "us-east-1"),
-  access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "your_minio_access_key"),
-  secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "your_minio_secret_key")
+  region: "us-east-1",
+  access_key_id: "test-access-key",
+  secret_access_key: "test-secret-key"
 
-config :ex_aws, :s3, region: System.get_env("AWS_REGION", "us-east-1")
+config :ex_aws, :s3,
+  region: "us-east-1",
+  access_key_id: "test-access-key",
+  secret_access_key: "test-secret-key",
+  scheme: "https://",
+  port: 443,
+  host: "s3.amazonaws.com"
 
 config :ex_aws, :emr, region: System.get_env("AWS_REGION", "us-east-1")
 

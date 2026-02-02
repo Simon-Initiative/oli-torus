@@ -202,7 +202,7 @@ defmodule OliWeb.Workspaces.Utils do
     """
   end
 
-  @urls_without_padding ~w[/workspaces/instructor /workspaces/course_author /workspaces/student]
+  @urls_without_padding ~w[/workspaces/instructor /workspaces/course_author /workspaces/student /users/settings /cookie-preferences]
 
   def maybe_add_padding(nil), do: ""
 

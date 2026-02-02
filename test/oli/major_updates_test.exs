@@ -7,6 +7,7 @@ defmodule Oli.MajorUpdatesTest do
   alias Oli.Publishing
   alias Oli.Delivery.Hierarchy
   alias Oli.Seeder
+  alias Oli.Repo
 
   describe "remix major updates" do
     setup do
@@ -178,6 +179,117 @@ defmodule Oli.MajorUpdatesTest do
       # it incorrectly removes remixed containers from OTHER projects that were added to the section
       assert remaining_source_container != nil,
              "BUG: Major publication update incorrectly removed remixed container from source project"
+    end
+
+    @tag capture_log: true
+    test "remixed project update then base project major update causes crash without fix", %{
+      source_map: source_map,
+      dest_map: dest_map,
+      section: section
+    } do
+      # Bug: Remix external project → external adds resource (children: nil) →
+      # base project major update → crash on nil.children in update_container_children.
+      # Fix: Add guard `and not is_nil(new_published_resource)` in Oli.Delivery.Sections.Updates
+
+      # Publish source project (seeder returns unpublished working publication)
+      {:ok, source_initial_pub} =
+        Publishing.publish_project(source_map.project, "initial source", source_map.author.id)
+
+      # STEP 1: Remix source container into section
+      current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+      source_container_resource_id = source_map.container.resource.id
+      selection = [{source_initial_pub.id, source_container_resource_id}]
+
+      published_resources_by_resource_id_by_pub =
+        Publishing.get_published_resources_for_publications([source_initial_pub.id])
+
+      updated_hierarchy =
+        Hierarchy.add_materials_to_hierarchy(
+          current_hierarchy,
+          current_hierarchy,
+          selection,
+          published_resources_by_resource_id_by_pub
+        )
+        |> Hierarchy.finalize()
+
+      updated_pinned_publications =
+        Sections.get_pinned_project_publications(section.id)
+        |> Map.put(source_map.project.id, source_initial_pub)
+
+      Sections.rebuild_section_curriculum(section, updated_hierarchy, updated_pinned_publications)
+      assert DeliveryResolver.full_hierarchy(section.slug).children |> Enum.count() == 3
+
+      # STEP 2: Source project adds NEW ACTIVITY (using activity, not page - pages get culled)
+      source_working_pub = Publishing.project_working_publication(source_map.project.slug)
+
+      %{resource: new_source_activity_resource, revision: _} =
+        Seeder.create_activity(
+          %{title: "New Source Activity", content: %{}},
+          source_working_pub,
+          source_map.project,
+          source_map.author
+        )
+
+      {:ok, source_update_pub} =
+        Publishing.publish_project(source_map.project, "added activity", source_map.author.id)
+
+      # STEP 3: Apply source update → new activity gets children: nil (the bug trigger)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, source_update_pub.id)
+
+      new_activity_sr =
+        Repo.get_by(Oli.Delivery.Sections.SectionResource,
+          section_id: section.id,
+          resource_id: new_source_activity_resource.id
+        )
+
+      assert new_activity_sr != nil
+      assert new_activity_sr.children == nil, "children must be nil to trigger the bug"
+
+      # STEP 4: Base project (dest) publishes MAJOR update
+      dest_working_pub = Publishing.project_working_publication(dest_map.project.slug)
+
+      %{resource: new_dest_container_resource, revision: new_dest_container_revision} =
+        Seeder.create_container(
+          "New Dest Container",
+          dest_working_pub,
+          dest_map.project,
+          dest_map.author
+        )
+
+      %{resource: new_dest_page_resource, revision: _} =
+        Seeder.create_page("New Dest Page", dest_working_pub, dest_map.project, dest_map.author)
+
+      _new_dest_container_revision =
+        Seeder.attach_pages_to(
+          [new_dest_page_resource],
+          new_dest_container_resource,
+          new_dest_container_revision,
+          dest_working_pub
+        )
+
+      dest_container = dest_map.container
+
+      _updated_dest_container_revision =
+        Seeder.attach_pages_to(
+          [new_dest_container_resource],
+          dest_container.resource,
+          dest_container.revision,
+          dest_working_pub
+        )
+
+      {:ok, dest_major_pub} =
+        Publishing.publish_project(dest_map.project, "major update", dest_map.author.id)
+
+      # STEP 5: Apply base project major update → crashes without fix, succeeds with fix
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, dest_major_pub.id)
+
+      # Verify remixed content is preserved
+      final_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      source_container_in_section =
+        Enum.find(final_hierarchy.children, &(&1.resource_id == source_container_resource_id))
+
+      assert source_container_in_section != nil, "Remixed container should be preserved"
     end
   end
 end

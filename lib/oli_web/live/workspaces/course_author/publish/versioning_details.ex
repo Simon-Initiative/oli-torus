@@ -128,6 +128,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Publish.VersioningDetails do
         <%= if @auto_update_sections do %>
           <div class="alert alert-warning" role="alert">
             <%= if @push_affected.section_count > 0 or @push_affected.product_count > 0 do %>
+              <p class="font-bold mb-4">
+                Updates will only apply to courses that match the latest version of this project.
+              </p>
               <h6>This force push update will affect:</h6>
               <ul class="mb-0">
                 <li>{@push_affected.section_count} course section(s)</li>

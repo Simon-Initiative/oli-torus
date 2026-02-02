@@ -24,7 +24,7 @@ defmodule Oli.GenAI.FeatureConfig do
     case from(
            g in __MODULE__,
            where: (g.section_id == ^section_id or is_nil(g.section_id)) and g.feature == ^feature,
-           preload: [service_config: [:primary_model, :backup_model]]
+           preload: [service_config: [:primary_model, :secondary_model, :backup_model]]
          )
          |> Oli.Repo.all() do
       [] ->

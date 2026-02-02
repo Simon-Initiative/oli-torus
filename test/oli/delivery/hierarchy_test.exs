@@ -220,7 +220,9 @@ defmodule Oli.Delivery.HierarchyTest do
       page1: page1,
       nested_page1: nested_page1
     } do
-      unit_node_with_duplicate_page_one = %HierarchyNode{
+      %HierarchyNode{} = unit_node
+
+      unit_node_with_duplicate_page_one = %{
         unit_node
         | children: [page_one_node | unit_node.children]
       }
@@ -260,6 +262,124 @@ defmodule Oli.Delivery.HierarchyTest do
              |> Map.get(:children)
              |> Enum.at(0)
              |> Map.get(:resource_id) == nested_page1.id
+    end
+  end
+
+  ## SectionResourceDepot returns a map-based hierarchy flavour instead of a HierarchyNode struct for the full hierarchy
+  describe "map-based hierarchy functions" do
+    test "find_in_hierarchy/2 with map-based hierarchy and function predicate" do
+      hierarchy = %{
+        "resource_id" => 1,
+        "numbering" => %{"level" => 0, "index" => 1},
+        "children" => [
+          %{
+            "resource_id" => 2,
+            "numbering" => %{"level" => 1, "index" => 1},
+            "children" => [
+              %{
+                "resource_id" => 3,
+                "numbering" => %{"level" => 2, "index" => 1},
+                "children" => []
+              }
+            ]
+          },
+          %{
+            "resource_id" => 4,
+            "numbering" => %{"level" => 1, "index" => 2},
+            "children" => []
+          }
+        ]
+      }
+
+      # Find root node
+      root_node =
+        Hierarchy.find_in_hierarchy(hierarchy, fn node -> node["resource_id"] == 1 end)
+
+      assert root_node["resource_id"] == 1
+      assert root_node["numbering"]["level"] == 0
+
+      # Find nested node
+      nested_node =
+        Hierarchy.find_in_hierarchy(hierarchy, fn node -> node["resource_id"] == 3 end)
+
+      assert nested_node["resource_id"] == 3
+      assert nested_node["numbering"]["level"] == 2
+
+      # Find leaf node
+      leaf_node =
+        Hierarchy.find_in_hierarchy(hierarchy, fn node -> node["resource_id"] == 4 end)
+
+      assert leaf_node["resource_id"] == 4
+      assert leaf_node["numbering"]["level"] == 1
+
+      # Find non-existent node
+      result =
+        Hierarchy.find_in_hierarchy(hierarchy, fn node -> node["resource_id"] == 999 end)
+
+      assert result == nil
+    end
+
+    test "find_parent_in_hierarchy/2 with map-based hierarchy and function predicate" do
+      hierarchy = %{
+        "resource_id" => 1,
+        "numbering" => %{"level" => 0, "index" => 1},
+        "children" => [
+          %{
+            "resource_id" => 2,
+            "numbering" => %{"level" => 1, "index" => 1},
+            "children" => [
+              %{
+                "resource_id" => 3,
+                "numbering" => %{"level" => 2, "index" => 1},
+                "children" => []
+              }
+            ]
+          },
+          %{
+            "resource_id" => 4,
+            "numbering" => %{"level" => 1, "index" => 2},
+            "children" => []
+          }
+        ]
+      }
+
+      # Find parent of nested node (should return node with resource_id 2)
+      parent =
+        Hierarchy.find_parent_in_hierarchy(
+          hierarchy,
+          fn node -> node["resource_id"] == 3 end
+        )
+
+      assert parent["resource_id"] == 2
+      assert parent["numbering"]["level"] == 1
+
+      # Find parent of leaf node (should return root)
+      parent_of_leaf =
+        Hierarchy.find_parent_in_hierarchy(
+          hierarchy,
+          fn node -> node["resource_id"] == 4 end
+        )
+
+      assert parent_of_leaf["resource_id"] == 1
+      assert parent_of_leaf["numbering"]["level"] == 0
+
+      # Find parent of root (should return nil)
+      parent_of_root =
+        Hierarchy.find_parent_in_hierarchy(
+          hierarchy,
+          fn node -> node["resource_id"] == 1 end
+        )
+
+      assert parent_of_root == nil
+
+      # Find parent of non-existent node
+      result =
+        Hierarchy.find_parent_in_hierarchy(
+          hierarchy,
+          fn node -> node["resource_id"] == 999 end
+        )
+
+      assert result == nil
     end
   end
 

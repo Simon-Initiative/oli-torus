@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import chroma from 'chroma-js';
 import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
@@ -55,6 +55,7 @@ let sharedActivityPromise: any;
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const currentLesson = useSelector(selectPageSlug);
@@ -370,6 +371,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             currentUserId,
             currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
             mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
+            responsiveLayout: responsiveLayout || false,
           },
         };
 
@@ -531,6 +533,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const [localActivityTree, setLocalActivityTree] = useState<any>(currentActivityTree);
   const [triggerWindowsScrollPosition, setTriggerWindowsScrollPosition] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const previousActivityIdRef = React.useRef<string | null>(null);
+  const isInitialMountRef = React.useRef<boolean>(true);
+  const previousTreeLengthRef = React.useRef<number>(0);
 
   useEffect(() => {
     if (currentActivityTree && currentActivityTree?.length > 1) {
@@ -605,6 +610,83 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }));
     });
   }, [currentActivityTree, historyModeNavigation, reviewMode]);
+
+  const lastFocusedAdaptiveRef = useRef<HTMLElement | null>(null);
+
+  // Focus management: Move focus to content container when screen changes
+  useEffect(() => {
+    if (!localActivityTree?.length || !contentRef.current) return;
+
+    const currentActivity = localActivityTree[localActivityTree.length - 1];
+    const currentActivityId = currentActivity?.id;
+
+    // Initial mount
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      previousActivityIdRef.current = currentActivityId;
+      previousTreeLengthRef.current = localActivityTree.length;
+      return;
+    }
+
+    // Skip review / history
+    if (reviewMode || historyModeNavigation) {
+      previousActivityIdRef.current = currentActivityId;
+      previousTreeLengthRef.current = localActivityTree.length;
+      return;
+    }
+
+    // Same activity → no focus change
+    if (currentActivityId === previousActivityIdRef.current) {
+      previousTreeLengthRef.current = localActivityTree.length;
+      return;
+    }
+
+    const container = contentRef.current;
+    const isSubscreenNavigation = localActivityTree.length > previousTreeLengthRef.current;
+
+    const focusElement = (el: HTMLElement) => {
+      if (el.getAttribute('tabindex') === null) {
+        el.setAttribute('tabindex', '-1');
+      }
+      el.focus();
+      lastFocusedAdaptiveRef.current = el;
+    };
+
+    const findTarget = (): HTMLElement | null => {
+      const elements = Array.from(
+        container.querySelectorAll('oli-adaptive-delivery'),
+      ) as HTMLElement[];
+
+      if (!elements.length) return null;
+
+      // 🔥 SUBSCREEN: find the *new* adaptive element
+      if (isSubscreenNavigation) {
+        return elements[elements.length - 1];
+      }
+      // FULL SCREEN: first adaptive element
+      return elements[0];
+    };
+
+    requestAnimationFrame(() => {
+      const target = findTarget();
+
+      if (target) {
+        focusElement(target);
+      } else {
+        const observer = new MutationObserver(() => {
+          const el = findTarget();
+          if (el) {
+            focusElement(el);
+            observer.disconnect();
+          }
+        });
+        observer.observe(container, { childList: true, subtree: true });
+      }
+    });
+
+    previousActivityIdRef.current = currentActivityId;
+    previousTreeLengthRef.current = localActivityTree.length;
+  }, [localActivityTree, reviewMode, historyModeNavigation]);
 
   const renderActivities = useCallback(() => {
     if (!localActivityTree || !localActivityTree.length) {
@@ -697,7 +779,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     });
 
     return (
-      <div className="content" style={styles}>
+      <div ref={contentRef} className="content" tabIndex={-1} style={styles}>
         {activities}
       </div>
     );

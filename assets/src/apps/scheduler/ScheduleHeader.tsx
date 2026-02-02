@@ -4,27 +4,40 @@ import { DayGeometry, weekGeometry } from './date-utils';
 interface ScheduleHeaderRowProps {
   labels: boolean;
   dayGeometry: DayGeometry;
-  attachBarContainer?: (ref: any) => void;
 }
 
 export const ScheduleHeaderRow: React.FC<ScheduleHeaderRowProps> = ({
   labels = false,
-  attachBarContainer,
   dayGeometry,
 }) => {
+  const g = weekGeometry(dayGeometry);
+  const totalWidth = g.reduce((sum, week) => sum + week.width, 0);
+
   return (
     <>
-      <tr className="h-12 border-t-0 ">
-        <th className="w-[1px] p-[2px] border-r-0  border-l-0 bg-delivery-body dark:bg-delivery-body-dark"></th>
-        <th className="w-48 font-bold text-[12px] bg-delivery-body dark:bg-delivery-body-dark" />
-        <th className="p-0 relative bg-white dark:bg-black border-t">
+      <tr className="h-12 border-t-0 relative">
+        <th className="w-[1px] p-[2px] border-r-0 border-l-0 bg-delivery-body dark:bg-delivery-body-dark sticky left-0 z-20 isolate relative">
+          <div className="absolute -top-px left-0 right-0 h-px bg-delivery-body dark:bg-delivery-body-dark" />
+        </th>
+        <th className="w-48 font-bold text-[12px] bg-delivery-body dark:bg-delivery-body-dark sticky left-[1px] z-20 isolate relative">
+          <div className="absolute -top-px left-0 right-0 h-px bg-delivery-body dark:bg-delivery-body-dark" />
+        </th>
+        <th
+          className="p-0 relative bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800"
+          style={{ minWidth: totalWidth }}
+        >
           <ScheduleMonths dayGeometry={dayGeometry} />
         </th>
       </tr>
-      <tr className="h-12 border-t-0 ">
-        <th className="w-[1px] p-[2px] border-r-0 'bg-white dark:bg-black border-l'"></th>
-        <th className="w-48 font-bold text-[12px] bg-white dark:bg-black">CONTENT</th>
-        <th className="p-0 relative bg-white dark:bg-black border-t-0" ref={attachBarContainer}>
+      <tr className="h-12 border-t-0">
+        <th className="w-[1px] p-[2px] border-r-0 bg-white dark:bg-black border-l sticky left-0 z-20 isolate"></th>
+        <th className="w-48 font-bold text-[12px] bg-white dark:bg-black sticky left-[1px] z-20 isolate">
+          CONTENT
+        </th>
+        <th
+          className="p-0 relative bg-white dark:bg-black border-t-0"
+          style={{ minWidth: totalWidth }}
+        >
           <ScheduleHeader labels={labels} dayGeometry={dayGeometry} />
         </th>
       </tr>
@@ -58,11 +71,13 @@ const monthNames = [
 
 export const ScheduleHeader: React.FC<ScheduleHeaderProps> = ({ labels, dayGeometry }) => {
   const g = weekGeometry(dayGeometry);
+  const totalWidth = g.reduce((sum, week) => sum + week.width, 0);
 
   return (
-    <div className="absolute top-0 left-0 right-0 h-full">
+    <div className="absolute top-0 left-0 h-full" style={{ width: totalWidth }}>
       {g.map((g, i) => (
         <div
+          role="week"
           key={i}
           className="p-0 align-top inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal border-l-[#CED1D9] dark:border-gray-800 "
           style={{ width: g.width }}
@@ -91,10 +106,13 @@ export const ScheduleMonths: React.FC<ScheduleMonthsProps> = ({ dayGeometry }) =
     return acc;
   }, new Map());
 
+  const totalWidth = g.reduce((sum, week) => sum + week.width, 0);
+
   return (
-    <div className="absolute top-0 left-0 right-0 h-full">
+    <div className="absolute top-0 left-0 h-full" style={{ width: totalWidth }}>
       {Array.from(gMonths).map(([key, value], i) => (
         <div
+          role="month"
           key={i}
           className="pb-2 align-top content-end inline-block border-l h-full whitespace-nowrap text-ellipsis font-normal border-l-[#CED1D9] dark:border-gray-800 "
           style={{ width: value }}

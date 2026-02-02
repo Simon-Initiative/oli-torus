@@ -32,6 +32,7 @@ defmodule OliWeb.Components.Modal do
   attr :header_class, :string, default: "flex items-start justify-between p-4"
   attr :body_class, :string, default: "p-6 space-y-6"
   attr :confirm_class, :string, default: "py-2 px-3"
+  attr :header_level, :integer, default: 1
 
   attr :cancel_class, :string,
     default: "bg-transparent text-blue-500 hover:underline hover:bg-transparent"
@@ -53,7 +54,7 @@ defmodule OliWeb.Components.Modal do
       id={@id}
       phx-mounted={@show && show_modal(@id)}
       phx-remove={hide_modal(@id)}
-      class="relative z-[2000] hidden"
+      class={["relative z-[2000]", @show && "block", !@show && "hidden"]}
     >
       <div
         id={"#{@id}-bg"}
@@ -76,18 +77,22 @@ defmodule OliWeb.Components.Modal do
               phx-window-keydown={hide_modal(@on_cancel, @id)}
               phx-key="escape"
               phx-click-away={hide_modal(@on_cancel, @id)}
-              class="hidden relative bg-white dark:bg-body-dark shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition"
+              class={[
+                "relative bg-white dark:bg-body-dark shadow-lg shadow-zinc-700/10 ring-1 ring-zinc-700/10 transition",
+                @show && "block",
+                !@show && "hidden"
+              ]}
             >
               <!-- Modal header -->
               <div class={@header_class}>
                 <div>
                   <div :if={@title != []}>
-                    <h1
-                      id={"#{@id}-title"}
-                      class="text-xl font-semibold text-gray-900 dark:text-white"
-                    >
-                      {render_slot(@title)}
-                    </h1>
+                    {Phoenix.HTML.Tag.content_tag(
+                      :"h#{@header_level}",
+                      render_slot(@title),
+                      id: "#{@id}-title",
+                      class: "text-xl font-semibold text-gray-900 dark:text-white"
+                    )}
                     <p
                       :if={@subtitle != []}
                       id={"#{@id}-description"}
@@ -217,12 +222,12 @@ defmodule OliWeb.Components.Modal do
               <div class="flex items-start justify-between px-4 sm:px-0">
                 <div :if={@title != []} class="mb-6 lg:mb-11 w-full">
                   <div class="flex items-start justify-between sticky top-0 z-10 pt-8 sm:pt-14 lg:pt-16 xl:pt-20 bg-Specially-Tokens-Background-lesson-page w-full pb-2">
-                    <h1
+                    <h2
                       id={"#{@id}-title"}
                       class="text-zinc-700 dark:text-neutral-300 text-xl sm:text-3xl lg:text-[40px] font-bold font-['Inter'] leading-normal sm:leading-[60px]"
                     >
                       {render_slot(@title)}
-                    </h1>
+                    </h2>
                     <!-- Desktop: X icon -->
                     <button
                       type="button"

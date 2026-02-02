@@ -66,6 +66,7 @@ npm-debug.log
 /assets/styles/themes/delivery/custom/*
 !/assets/styles/themes/delivery/custom/README.md
 
+.env
 oli.env
 postgres.env
 /assets/test-results/
@@ -109,6 +110,15 @@ MnesiaCore.nonode@nohost_1698_943806_800396
 .cursor/mcp.json
 .cursor/rules/user-custom-rules.mdc
 .cursor/rules/oli.mdc
+
+# Python cache files
+__pycache__/
+
+# AWS Lambda package files
+cloud/xapi-etl-processor/xapi-etl-processor.zip
+cloud/xapi-etl-processor/.env
+devops/.env
+
 .codex/log/
 .codex/sessions/
 .codex/auth.json
@@ -116,6 +126,7 @@ MnesiaCore.nonode@nohost_1698_943806_800396
 .codex/history.jsonl
 .codex/version.json
 .codex/internal_storage.json
+.codex/skills/.system/
 
 # Python cache files
 ./**/*.pyc

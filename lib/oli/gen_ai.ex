@@ -21,7 +21,8 @@ defmodule Oli.GenAI do
           service_config_count:
             fragment(
               "(SELECT count(*) FROM completions_service_configs sc
-                WHERE sc.primary_model_id = ? OR sc.backup_model_id = ?)",
+                WHERE sc.primary_model_id = ? OR sc.secondary_model_id = ? OR sc.backup_model_id = ?)",
+              r.id,
               r.id,
               r.id
             )
@@ -62,7 +63,7 @@ defmodule Oli.GenAI do
     query =
       from r in ServiceConfig,
         order_by: r.id,
-        preload: [:primary_model, :backup_model],
+        preload: [:primary_model, :secondary_model, :backup_model],
         select_merge: %{
           usage_count:
             fragment(

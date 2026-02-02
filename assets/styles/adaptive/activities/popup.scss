@@ -6,10 +6,28 @@ janus-popup:has(input) {
   input {
     cursor: pointer;
   }
-  input[src*='data'] {
+  // Input with data URL - visible when no src attribute (CSS background-image used instead)
+  input:not([src]) {
+    opacity: 1;
+  }
+  // Legacy: hide input with src data URL (old behavior - icon shown via background-image on janus-popup)
+  // Only match data URLs that start with "data:" to avoid matching URLs containing "data" in the path
+  input[src^='data:'] {
     opacity: 0;
   }
-  &[model*='repo/icons'] {
+  // Ensure custom icon URLs (non-data URLs) are visible
+  input[src]:not([src^='data:']) {
+    opacity: 1 !important;
+  }
+  // Prevent focus/active styles from causing layout shifts on custom icon URLs
+  input[src]:not([src^='data:']):focus,
+  input[src]:not([src^='data:']):active {
+    outline: none;
+    box-shadow: none;
+  }
+
+  // Target input elements directly instead of janus-popup element
+  &[model*='repo/icons'] input {
     border-radius: 100px;
     background-position: center;
     background-repeat: no-repeat;
@@ -17,42 +35,42 @@ janus-popup:has(input) {
     transition: all 0.1s linear;
   }
 
-  //Default Colors
-  &[model*='orange'] {
+  //Default Colors - target input
+  &[model*='orange'] input {
     background-color: var(--orange100);
   }
-  &[model*='orange']:hover {
+  &[model*='orange']:hover input {
     background-color: var(--orange20dark);
   }
-  &[model*='red'] {
+  &[model*='red'] input {
     background-color: var(--red100);
   }
-  &[model*='red']:hover {
+  &[model*='red']:hover input {
     background-color: var(--red20dark);
   }
-  &[model*='green'] {
+  &[model*='green'] input {
     background-color: var(--green100);
   }
-  &[model*='green']:hover {
+  &[model*='green']:hover input {
     background-color: var(--green20dark);
   }
-  &[model*='blue'] {
+  &[model*='blue'] input {
     background-color: var(--blue100);
   }
-  &[model*='blue']:hover {
+  &[model*='blue']:hover input {
     background-color: var(--blue20dark);
   }
 
-  //Icons
-  &[model*='question'] {
+  //Icons - target input
+  &[model*='question'] input {
     background-size: 50%;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' viewBox='0 0 318.293 318.293'><g><path fill='white' d='M159.148,0c-52.696,0-95.544,39.326-95.544,87.662h47.736c0-22.007,21.438-39.927,47.808-39.927   c26.367,0,47.804,17.92,47.804,39.927v6.929c0,23.39-10.292,34.31-25.915,50.813c-20.371,21.531-45.744,48.365-45.744,105.899   h47.745c0-38.524,15.144-54.568,32.692-73.12c17.368-18.347,38.96-41.192,38.96-83.592v-6.929C254.689,39.326,211.845,0,159.148,0z'/><rect fill='white' x='134.475' y='277.996' width='49.968' height='40.297'/></g></svg>");
   }
-  &[model*='information'] {
+  &[model*='information'] input {
     background-size: 70%;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' viewBox='0 0 350.29 350.29'><g transform='translate(-202 -474.36)'><g transform='translate(79 352.36)'><g transform='translate(265.1 165.98)'><path fill='%23ffffff' d='m0 30.61c0-8.461 3.217-15.677 9.651-21.65 6.434-5.9727 14.142-8.959 23.122-8.96 9.115 0.001 16.89 2.9873 23.324 8.9599 6.434 5.9731 9.651 13.189 9.652 21.65-0.001 8.338-3.218 15.555-9.652 21.652-6.434 5.972-14.209 8.958-23.324 8.958-8.98 0-16.688-2.986-23.122-8.958-6.434-6.097-9.651-13.314-9.651-21.652zm62.933 57.301v176.2h-59.716v-176.2c0 0.001 59.716 0.001 59.716 0.001'/></g></g></g></svg>");
   }
-  &[model*='exclamation'] {
+  &[model*='exclamation'] input {
     background-size: 50%;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' viewBox='0 0 301.691 301.691'><g><polygon fill='white' points='119.151,0 129.6,218.406 172.06,218.406 182.54,0  '/><rect fill='white' x='130.563' y='261.168' width='40.525' height='40.523'/></g></svg>");
   }
@@ -69,14 +87,16 @@ janus-popup:has(input) {
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42.33 42.33' fill='white'><defs></defs><title>zoom-in</title><g id='Layer_2' data-name='Layer 2'><g id='Layer_2-2' data-name='Layer 2'><path class='cls-1' d='M15,3A12,12,0,1,1,6.51,6.51,12,12,0,0,1,15,3m0-3A15,15,0,1,0,25.61,4.39,15,15,0,0,0,15,0Z'/><path class='cls-1' d='M41.16,35.51,32.68,27a4,4,0,0,0-3.85-1l-2.52-2.51-2.82,2.82L26,28.83a4,4,0,0,0,1,3.85l8.49,8.48a4,4,0,0,0,5.65,0h0A4,4,0,0,0,41.16,35.51Z'/><rect class='cls-1' x='13.63' y='9.87' width='2.75' height='10.25' rx='1.38' ry='1.38'/><rect class='cls-1' x='13.63' y='9.88' width='2.75' height='10.25' rx='1.38' ry='1.38' transform='translate(30 0) rotate(90)'/></g></g></svg>");
   }
 
-  //Custom URL
-  &[model*='repo/icons']:not(janus-popup[model*='"iconURL":""']) {
+  //Custom URL - target input
+  &[model*='repo/icons']:not(janus-popup[model*='"iconURL":""']) input {
     background: initial;
     box-shadow: initial;
   }
 
-  input[src*='data']:focus,
-  input[src*='data']:active {
+  // Focus/active styles for inputs with src (legacy behavior)
+  // Only match data URLs that start with "data:" to avoid matching URLs containing "data" in the path
+  input[src^='data:']:focus,
+  input[src^='data:']:active {
     opacity: 1;
     border-radius: 100px;
     width: 0% !important;
@@ -84,10 +104,10 @@ janus-popup:has(input) {
     padding: 50%;
     margin: 0px;
   }
-  input[src*='data']:focus {
+  input[src^='data:']:focus {
     box-shadow: inset 0 0 0 4px var(--white40_a), 0 0 0 4px var(--black20_a);
   }
-  input[src*='data']:active {
+  input[src^='data:']:active {
     box-shadow: inset 0 0 0 4px var(--white40_a);
   }
 }
@@ -152,8 +172,8 @@ janus-popup:has(input) {
 }
 
 .dark janus-popup:has(input) {
-  input[src*='data']:focus,
-  input[src*='data']:active {
+  input[src^='data:']:focus,
+  input[src^='data:']:active {
     background-color: rgba(0, 0, 0, 0);
   }
 }

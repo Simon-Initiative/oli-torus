@@ -7,8 +7,10 @@ defmodule OliWeb.Users.UsersDetailView do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.AssentAuth.UserAssentAuth
   alias Oli.Auditing
   alias Oli.Delivery.{Metrics, Paywall, Sections}
+  alias Oli.Institutions
   alias Oli.Lti.LtiParams
 
   alias OliWeb.Accounts.Modals.{
@@ -19,7 +21,9 @@ defmodule OliWeb.Users.UsersDetailView do
   }
 
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Live.Components.Communities.CommunitiesSelectComponent
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
+  alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
 
@@ -48,7 +52,7 @@ defmodule OliWeb.Users.UsersDetailView do
         _session,
         socket
       ) do
-    user = user_with_platform_roles(user_id)
+    user = user_with_preloaded_fields(user_id)
 
     case user do
       nil ->
@@ -59,6 +63,9 @@ defmodule OliWeb.Users.UsersDetailView do
           Sections.list_user_enrolled_sections(user)
           |> add_necessary_information(user)
 
+        institution = Institutions.get_institution_by_lti_user(user)
+        has_google = credentials_has_google?(user.user_identities)
+
         {:ok,
          assign(socket,
            current_author: socket.assigns.current_author,
@@ -67,6 +74,9 @@ defmodule OliWeb.Users.UsersDetailView do
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
+           institution: institution,
+           credentials_has_google: has_google,
+           credentials_label: credentials_label(user, has_google),
            disabled_edit: true,
            user_name: user.name,
            password_reset_link: ""
@@ -80,123 +90,188 @@ defmodule OliWeb.Users.UsersDetailView do
   attr(:modal, :any, default: nil)
   attr(:title, :string, default: "User Details")
   attr(:user, User, required: true)
+  attr(:institution, :any, default: nil)
   attr(:disabled_edit, :boolean, default: true)
   attr(:disabled_submit, :boolean, default: false)
   attr(:user_name, :string)
   attr(:password_reset_link, :string)
+  attr(:credentials_has_google, :boolean)
+  attr(:credentials_label, :string)
 
   def render(assigns) do
     ~H"""
     <div>
       {render_modal(assigns)}
       <Groups.render>
-        <Group.render label="Details" description="User details">
-          <.form for={@form} phx-change="change" phx-submit="submit" autocomplete="off">
-            <ReadOnly.render label="Sub" value={@user.sub} />
-            <ReadOnly.render label="Name" value={@user_name} />
-            <div class="form-group">
-              <.input
-                field={@form[:given_name]}
-                label="Given Name"
-                class="form-control"
-                disabled={@disabled_edit}
-                error_position={:top}
-              />
-            </div>
-            <div class="form-group">
-              <.input
-                field={@form[:family_name]}
-                label="Last Name"
-                class="form-control"
-                disabled={@disabled_edit}
-                error_position={:top}
-              />
-            </div>
-            <div class="form-group">
-              <.input
-                field={@form[:email]}
-                label="Email"
-                class="form-control"
-                disabled={@disabled_edit}
-                error_position={:top}
-              />
-            </div>
-            <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
-            <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
-              <ReadOnly.render
-                label="Confirmed is 13 or older on creation"
-                value={boolean(@user.age_verified)}
-              />
-            <% end %>
-            <div class="form-control mb-3">
-              <.input
-                field={@form[:independent_learner]}
-                type="checkbox"
-                label="Independent Learner"
-                class="form-check-input"
-                disabled={@disabled_edit}
-              />
-            </div>
-            <section class="mb-2">
-              <heading>
-                <p>Enable Independent Section Creation</p>
-                <small>
-                  Allow this user to create "Independent" sections and enroll students via invitation link without an LMS
-                </small>
-              </heading>
-              <div class="form-control">
-                <.input
-                  field={@form[:can_create_sections]}
-                  type="checkbox"
-                  label="Can Create Sections"
-                  class="form-check-input"
-                  disabled={@disabled_edit}
-                />
-              </div>
-            </section>
-            <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
-              <div class="form-control mb-3">
-                <.input
-                  field={@form[:is_internal]}
-                  type="checkbox"
-                  label="Internal staff"
-                  class="form-check-input"
-                  disabled={@disabled_edit}
-                />
-                <p class="mt-1 text-xs text-gray-500">
-                  Internal users gain early access to internal-only and canary features.
-                </p>
-              </div>
-            <% else %>
-              <ReadOnly.render
-                label="Internal actor"
-                value={if(@user.is_internal, do: "Yes", else: "No")}
-              />
-            <% end %>
-            <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)} />
-            <ReadOnly.render
-              label="Email Confirmed"
-              value={render_date(@user, :email_confirmed_at, @ctx)}
+        <div class="flex flex-col py-5 border-b border-Border-border-subtle">
+          <h4>Enrolled Sections</h4>
+          <div class="text-Text-text-low-alpha">Course sections to which the user is enrolled.</div>
+          <div class="mt-4">
+            <.live_component
+              module={OliWeb.Users.UserEnrolledSections}
+              id="user_enrolled_sections"
+              user={@user}
+              params={@params}
+              ctx={@ctx}
+              enrolled_sections={@enrolled_sections}
             />
-            <ReadOnly.render label="Created" value={render_date(@user, :inserted_at, @ctx)} />
-            <ReadOnly.render label="Last Updated" value={render_date(@user, :updated_at, @ctx)} />
-            <%= unless @disabled_edit do %>
+          </div>
+        </div>
+        <div class="flex flex-col py-5 border-b border-Border-border-subtle">
+          <h4>Details</h4>
+          <div class="text-Text-text-low-alpha">User details</div>
+          <div class="mt-4">
+            <.form for={@form} phx-change="change" phx-submit="submit" autocomplete="off">
+              <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-x-10">
+                <div class="flex flex-col gap-4">
+                  <ReadOnly.render label="Sub" value={@user.sub} />
+                  <ReadOnly.render label="Name" value={@user_name} />
+                  <div class="form-group">
+                    <.input
+                      field={@form[:given_name]}
+                      label="Given Name"
+                      class="form-control"
+                      disabled={@disabled_edit}
+                      error_position={:top}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <.input
+                      field={@form[:family_name]}
+                      label="Last Name"
+                      class="form-control"
+                      disabled={@disabled_edit}
+                      error_position={:top}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <.input
+                      field={@form[:email]}
+                      label="Email"
+                      class="form-control"
+                      disabled={@disabled_edit}
+                      error_position={:top}
+                    />
+                  </div>
+                  <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
+                  <.institution_field institution={@institution} />
+                  <div class="form-group">
+                    <label>Communities</label>
+                    <.live_component
+                      module={CommunitiesSelectComponent}
+                      id={"communities-user-#{@user.id}"}
+                      user_id={@user.id}
+                      institution={@institution}
+                      disabled_edit={@disabled_edit}
+                    />
+                  </div>
+                  <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
+                    <ReadOnly.render
+                      label="Confirmed is 13 or older on creation"
+                      value={boolean(@user.age_verified)}
+                    />
+                  <% end %>
+                </div>
+                <div class="flex flex-col gap-4">
+                  <div class="form-group">
+                    <span class="form-label">Credentials Managed By</span>
+                    <div class="mt-2 flex flex-col gap-2 text-Text-text-low-alpha">
+                      <%= if @credentials_has_google do %>
+                        <div class="flex flex-col items-start gap-1">
+                          <Icons.google />
+                          <span class="text-[11px] uppercase tracking-wide text-Text-text-low-alpha">
+                            Google
+                          </span>
+                        </div>
+                      <% end %>
+                      <%= if @credentials_label do %>
+                        <span class="text-sm font-semibold text-Text-text-high">
+                          {@credentials_label}
+                        </span>
+                      <% end %>
+                      <%= if !@credentials_has_google && is_nil(@credentials_label) do %>
+                        <span class="text-sm text-Text-text-low-alpha">None</span>
+                      <% end %>
+                    </div>
+                  </div>
+                  <div class="form-control">
+                    <.input
+                      field={@form[:independent_learner]}
+                      type="checkbox"
+                      label="Independent Learner"
+                      class="form-check-input"
+                      disabled={@disabled_edit}
+                    />
+                  </div>
+                  <section class="mb-2">
+                    <heading>
+                      <p>Enable Independent Section Creation</p>
+                      <small>
+                        Allow this user to create "Independent" sections and enroll students via invitation link without an LMS
+                      </small>
+                    </heading>
+                    <div class="form-control">
+                      <.input
+                        field={@form[:can_create_sections]}
+                        type="checkbox"
+                        label="Can Create Sections"
+                        class="form-check-input"
+                        disabled={@disabled_edit}
+                      />
+                    </div>
+                  </section>
+                  <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
+                    <div class="form-control mb-3">
+                      <.input
+                        field={@form[:is_internal]}
+                        type="checkbox"
+                        label="Internal staff"
+                        class="form-check-input"
+                        disabled={@disabled_edit}
+                      />
+                      <p class="mt-1 text-xs text-Text-text-low-alpha">
+                        Internal users gain early access to internal-only and canary features.
+                      </p>
+                    </div>
+                  <% else %>
+                    <ReadOnly.render
+                      label="Internal actor"
+                      value={if(@user.is_internal, do: "Yes", else: "No")}
+                    />
+                  <% end %>
+                  <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)} />
+                  <ReadOnly.render
+                    label="Email Confirmed"
+                    value={render_date(@user, :email_confirmed_at, @ctx)}
+                  />
+                  <ReadOnly.render label="Created" value={render_date(@user, :inserted_at, @ctx)} />
+                  <ReadOnly.render label="Last Updated" value={render_date(@user, :updated_at, @ctx)} />
+                </div>
+              </div>
+              <%= unless @disabled_edit do %>
+                <.button
+                  variant={:primary}
+                  type="submit"
+                  size={:sm}
+                  class="float-right mt-4 !bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
+                  disabled={@disabled_submit}
+                >
+                  Save
+                </.button>
+              <% end %>
+            </.form>
+            <%= if @disabled_edit do %>
               <.button
                 variant={:primary}
-                type="submit"
-                class="float-right mt-2"
-                disabled={@disabled_submit}
+                size={:sm}
+                class="float-right mt-4 !bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
+                phx-click="start_edit"
               >
-                Save
+                Edit
               </.button>
             <% end %>
-          </.form>
-          <%= if @disabled_edit do %>
-            <.button variant={:primary} class="float-right mt-2" phx-click="start_edit">
-              Edit
-            </.button>
-          <% end %>
-        </Group.render>
+          </div>
+        </div>
         <%= if !Enum.empty?(@user_lti_params) do %>
           <Group.render label="LTI Details" description="LTI 1.3 details provided by an LMS">
             <ul class="list-group">
@@ -214,32 +289,23 @@ defmodule OliWeb.Users.UsersDetailView do
             </ul>
           </Group.render>
         <% end %>
-        <Group.render
-          label="Enrolled Sections"
-          description="Course sections to which the student is enrolled"
-        >
-          <.live_component
-            module={OliWeb.Users.UserEnrolledSections}
-            id="user_enrolled_sections"
-            user={@user}
-            params={@params}
-            ctx={@ctx}
-            enrolled_sections={@enrolled_sections}
-          />
-        </Group.render>
-        <Group.render label="Actions" description="Actions that can be taken for this user">
-          <%= if @user.independent_learner do %>
-            <Actions.render
-              user_id={@user.id}
-              account_locked={!is_nil(@user.locked_at)}
-              email_confirmation_pending={Accounts.user_confirmation_pending?(@user)}
-              password_reset_link={@password_reset_link}
-            />
-          <% else %>
-            <div>No actions available</div>
-            <div class="text-secondary">LTI users are managed by their LMS</div>
-          <% end %>
-        </Group.render>
+        <div class="flex flex-col py-5 border-b border-Border-border-subtle">
+          <h4>Actions</h4>
+          <div class="text-Text-text-low-alpha">Actions that can be taken for this user</div>
+          <div class="mt-4 w-full max-w-[535px]">
+            <%= if @user.independent_learner do %>
+              <Actions.render
+                user_id={@user.id}
+                account_locked={!is_nil(@user.locked_at)}
+                email_confirmation_pending={Accounts.user_confirmation_pending?(@user)}
+                password_reset_link={@password_reset_link}
+              />
+            <% else %>
+              <div>No actions available</div>
+              <div class="text-Text-text-low-alpha">LTI users are managed by their LMS</div>
+            <% end %>
+          </div>
+        </div>
       </Groups.render>
     </div>
     """
@@ -255,7 +321,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("generate_reset_password_link", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
 
     encoded_token = Accounts.generate_user_reset_password_token(user)
 
@@ -295,7 +361,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("resend_confirmation_link", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
 
     case Accounts.deliver_user_confirmation_instructions(
            user,
@@ -310,7 +376,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("send_reset_password_link", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
 
     case Accounts.deliver_user_reset_password_instructions(
            user,
@@ -337,13 +403,13 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("lock_account", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
 
     case Accounts.lock_user(user) do
       {:ok, _} ->
         {:noreply,
          socket
-         |> assign(user: user_with_platform_roles(id))
+         |> assign(user: user_with_preloaded_fields(id))
          |> hide_modal(modal_assigns: nil)}
 
       {:error, _error} ->
@@ -369,13 +435,13 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("unlock_account", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
 
     case Accounts.unlock_user(user) do
       {:ok, _} ->
         {:noreply,
          socket
-         |> assign(user: user_with_platform_roles(id))
+         |> assign(user: user_with_preloaded_fields(id))
          |> hide_modal(modal_assigns: nil)}
 
       {:error, _error} ->
@@ -401,7 +467,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("delete_account", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
+    user = user_with_preloaded_fields(id)
     admin = socket.assigns.current_author
 
     case Accounts.delete_user(user) do
@@ -512,8 +578,8 @@ defmodule OliWeb.Users.UsersDetailView do
     end
   end
 
-  defp user_with_platform_roles(id) do
-    Accounts.get_user(id, preload: [:platform_roles])
+  defp user_with_preloaded_fields(id) do
+    Accounts.get_user(id, preload: [:platform_roles, :user_identities])
   end
 
   defp user_form(user, attrs \\ %{}) do
@@ -521,6 +587,21 @@ defmodule OliWeb.Users.UsersDetailView do
     |> User.noauth_changeset(attrs)
     |> Map.put(:action, :update)
     |> to_form()
+  end
+
+  defp credentials_has_google?(identities) when is_list(identities) do
+    Enum.any?(identities, &(&1.provider == "google"))
+  end
+
+  defp credentials_label(%User{} = user, has_google) do
+    has_password = UserAssentAuth.has_password?(user)
+
+    cond do
+      has_google and has_password -> "Email & Password"
+      has_google -> nil
+      has_password -> "Email & Password"
+      true -> "None"
+    end
   end
 
   defp add_necessary_information(sections, user) do
@@ -537,5 +618,27 @@ defmodule OliWeb.Users.UsersDetailView do
         }
       )
     end)
+  end
+
+  attr :institution, :any, required: true
+
+  defp institution_field(assigns) do
+    ~H"""
+    <div class="form-group">
+      <label>Institution</label>
+      <div>
+        <%= if @institution do %>
+          <.link
+            href={Routes.institution_path(OliWeb.Endpoint, :show, @institution.id)}
+            class="justify-start text-Text-text-button text-base font-medium"
+          >
+            {@institution.name}
+          </.link>
+        <% else %>
+          <span>Direct Delivery</span>
+        <% end %>
+      </div>
+    </div>
+    """
   end
 end

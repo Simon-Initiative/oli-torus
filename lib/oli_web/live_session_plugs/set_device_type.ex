@@ -9,9 +9,9 @@ defmodule OliWeb.LiveSessionPlugs.SetDeviceType do
 
   def on_mount(:default, _params, _session, socket) do
     device_type =
-      case socket.private do
-        %{connect_info: %{user_agent: user_agent}} when is_binary(user_agent) ->
-          DeviceDetection.device_type(socket)
+      case Phoenix.LiveView.get_connect_info(socket, :user_agent) do
+        user_agent when is_binary(user_agent) ->
+          DeviceDetection.device_type(user_agent)
 
         _ ->
           # Default to desktop when connect_info is not available

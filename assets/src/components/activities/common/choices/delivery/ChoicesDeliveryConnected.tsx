@@ -10,12 +10,14 @@ interface Props {
   onSelect: (id: ChoiceId) => void;
   unselectedIcon: React.ReactNode;
   selectedIcon: React.ReactNode;
+  multiSelect?: boolean;
 }
 export const ChoicesDeliveryConnected: React.FC<Props> = ({
   onSelect,
   unselectedIcon,
   selectedIcon,
   partId,
+  multiSelect = false,
 }) => {
   const { writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
@@ -28,6 +30,7 @@ export const ChoicesDeliveryConnected: React.FC<Props> = ({
       onSelect={onSelect}
       isEvaluated={isEvaluated(uiState)}
       context={writerContext}
+      multiSelect={multiSelect}
     />
   );
 };

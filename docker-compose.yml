@@ -33,5 +33,16 @@ services:
       - ./data:/data
     command: ["server", "--console-address", ":9001", "/data"]
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "8123:8123" # HTTP interface
+      - "9090:9000" # Native client (changed to avoid conflict with minio)
+      - "9009:9009" # TCP for inter-server communication
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse/users.xml:/etc/clickhouse-server/users.d/dev-users.xml
+
 volumes:
   postgres_data:
+  clickhouse_data:

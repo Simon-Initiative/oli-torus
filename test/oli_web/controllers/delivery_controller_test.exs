@@ -224,6 +224,40 @@ defmodule OliWeb.DeliveryControllerTest do
       assert response(conn, 200)
     end
 
+    test "returns 403 when user is only a student in the section", %{
+      conn: conn,
+      section: section,
+      student: student
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        conn
+        |> log_in_user(student)
+        |> get(Routes.delivery_path(conn, :download_course_content_info, section.slug))
+
+      assert conn.status == 403
+    end
+
+    test "returns 403 when user is an instructor of a different section", %{
+      conn: conn,
+      section: section
+    } do
+      other_instructor = user_fixture()
+      other_section = insert(:section)
+
+      Sections.enroll(other_instructor.id, other_section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      conn =
+        conn
+        |> log_in_user(other_instructor)
+        |> get(Routes.delivery_path(conn, :download_course_content_info, section.slug))
+
+      assert conn.status == 403
+    end
+
     test "downloads the course content when section exists and filters by modules", %{
       conn: conn,
       section: section,
@@ -255,7 +289,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(student)
         |> get(Routes.delivery_path(conn, :download_course_content_info, "invalid_section_slug"))
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -468,6 +502,31 @@ defmodule OliWeb.DeliveryControllerTest do
                Enum.at(students, 7)
     end
 
+    test "returns 403 for learners", %{conn: conn} do
+      %{section: section, student1: student} = prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(student)
+        |> get(~p"/sections/#{section.slug}/instructor_dashboard/downloads/students_progress")
+
+      assert conn.status == 403
+    end
+
+    test "prevents slug swapping across sections", %{conn: conn} do
+      %{instructor: instructor} = prepare_student_progress_data()
+      other_section = insert(:section)
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{other_section.slug}/instructor_dashboard/downloads/students_progress"
+        )
+
+      assert conn.status == 403
+    end
+
     test "Redirects to \"Not found\" page if the section doesn't exist", %{conn: conn} do
       %{instructor: instructor, section: _section} = prepare_student_progress_data()
 
@@ -478,7 +537,7 @@ defmodule OliWeb.DeliveryControllerTest do
           ~p"/sections/invalid_section_slug/instructor_dashboard/downloads/students_progress"
         )
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -516,7 +575,7 @@ defmodule OliWeb.DeliveryControllerTest do
         conn
         |> get(Routes.delivery_path(conn, :download_learning_objectives, "invalid_section_slug"))
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -528,6 +587,7 @@ defmodule OliWeb.DeliveryControllerTest do
       instructor: instructor
     } do
       %{section: section} = basic_section(nil)
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       conn =
         conn
@@ -552,7 +612,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_quiz_scores, "invalid_section_slug"))
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -587,7 +647,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_scored_pages, "invalid_section_slug"))
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -622,7 +682,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_practice_pages, "invalid_section_slug"))
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -996,6 +1056,10 @@ defmodule OliWeb.DeliveryControllerTest do
     instructor_no_rc = user_fixture(%{independent_learner: false})
     instructor_no_section = user_fixture(%{independent_learner: false})
     student_instructor_no_section = user_fixture(%{independent_learner: false})
+
+    instructor_ctx = [ContextRoles.get_role(:context_instructor)]
+    Sections.enroll(instructor.id, section.id, instructor_ctx)
+    Sections.enroll(instructor_no_rc.id, section_no_rc.id, instructor_ctx)
 
     %{project: project, publication: publication} = project_fixture(author)
 

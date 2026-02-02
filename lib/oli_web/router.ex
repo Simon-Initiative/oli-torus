@@ -206,6 +206,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireIndependentInstructor)
   end
 
+  pipeline :store_settings_return_to do
+    plug OliWeb.Plugs.StoreSettingsReturnTo
+  end
+
   pipeline :community_admin do
     plug(Oli.Plugs.CommunityAdmin)
   end
@@ -271,7 +275,12 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
-    pipe_through [:browser, :require_authenticated_user, :require_independent_user]
+    pipe_through [
+      :browser,
+      :require_authenticated_user,
+      :require_independent_user,
+      :store_settings_return_to
+    ]
 
     live_session :require_authenticated_user,
       root_layout: {OliWeb.LayoutView, :delivery},
@@ -310,6 +319,22 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
+    pipe_through [:browser]
+
+    live_session :cookie_preferences,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        {OliWeb.UserAuth, :mount_current_user},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode
+      ] do
+      live "/cookie-preferences", CookiePreferencesLive, :index
+    end
+  end
+
+  scope "/", OliWeb do
     pipe_through [
       :browser,
       :delivery,
@@ -318,6 +343,14 @@ defmodule OliWeb.Router do
     ]
 
     live "/users/link_account", LinkAccountLive, :link_account
+  end
+
+  if Application.compile_env(:oli, :enable_playwright_scenarios, false) do
+    scope "/test", OliWeb do
+      pipe_through [:api]
+
+      post "/scenario-yaml", PlaywrightScenarioController, :run
+    end
   end
 
   scope "/", OliWeb do
@@ -1135,7 +1168,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
-    pipe_through([:browser, :delivery_protected])
+    pipe_through([:browser, :require_section, :delivery_protected])
 
     get(
       "/downloads/progress/:container_id/:title",
@@ -1737,6 +1770,8 @@ defmodule OliWeb.Router do
       live("/restore_progress", Admin.RestoreUserProgress)
 
       live("/xapi", Admin.UploadPipelineView)
+      live("/clickhouse/backfill", Admin.ClickhouseBackfillLive)
+      live("/clickhouse", Admin.ClickHouseAnalyticsView)
       get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
 
       # Authoring Activity Management

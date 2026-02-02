@@ -502,6 +502,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
         "publication" => %{"auto_push_update" => "true", "description" => "some description"}
       })
 
+      assert has_element?(
+               view,
+               "p",
+               "Updates will only apply to courses that match the latest version of this project."
+             )
+
       assert has_element?(view, "li", "#{push_affected.product_count} product(s)")
       assert has_element?(view, "li", "#{push_affected.section_count} course section(s)")
     end

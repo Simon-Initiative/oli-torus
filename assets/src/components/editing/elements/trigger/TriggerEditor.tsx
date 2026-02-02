@@ -1,12 +1,69 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Transforms } from 'slate';
+import { ExpandablePromptHelp } from 'components/common/ExpandablePromptHelp';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import { AIIcon } from 'components/misc/AIIcon';
 import { DeleteButton } from 'components/misc/DeleteButton';
+import { InfoTip } from 'components/misc/InfoTip';
 import { Model } from 'data/content/model/elements/factories';
 import * as ContentModel from 'data/content/model/elements/types';
+
+let triggerPromptEditorId = 0;
+
+interface TriggerPromptEditorProps {
+  value: string;
+  onPromptChange: (value: string) => void;
+  promptSamples: readonly string[];
+  textareaClassName?: string;
+  disabled?: boolean;
+  headingClassName?: string;
+}
+
+export const TriggerPromptEditor: React.FC<TriggerPromptEditorProps> = ({
+  value,
+  onPromptChange,
+  promptSamples,
+  textareaClassName,
+  disabled,
+  headingClassName = 'mt-2',
+}) => {
+  const promptHelpIdRef = React.useRef<string>();
+  const promptHeadingIdRef = React.useRef<string>();
+  if (!promptHelpIdRef.current) {
+    triggerPromptEditorId += 1;
+    promptHelpIdRef.current = `trigger-prompt-help-${triggerPromptEditorId}`;
+    promptHeadingIdRef.current = `trigger-prompt-heading-${triggerPromptEditorId}`;
+  }
+
+  return (
+    <>
+      <h6 id={promptHeadingIdRef.current} className={headingClassName}>
+        <strong>Prompt</strong>
+        <InfoTip
+          title="This is the instruction or question DOT will use to guide its response--such as offering feedback, explanations, or learning support tailored to your learners."
+          className="ml-2"
+        />
+      </h6>
+
+      <ExpandablePromptHelp samples={promptSamples} />
+
+      <span id={promptHelpIdRef.current} className="sr-only">
+        Examples of helpful prompts are available above. Use the button to expand or collapse them.
+      </span>
+
+      <textarea
+        className={textareaClassName}
+        value={value}
+        onChange={(e) => onPromptChange(e.target.value)}
+        disabled={disabled}
+        aria-describedby={promptHelpIdRef.current}
+        aria-labelledby={promptHeadingIdRef.current}
+      />
+    </>
+  );
+};
 
 export const insertTrigger = createButtonCommandDesc({
   icon: <AIIcon size="sm" className="inline mr-1" />,
@@ -21,36 +78,24 @@ export const insertTrigger = createButtonCommandDesc({
 });
 
 export const TriggerEditorCore = ({
-  children,
   instructions,
   onDelete,
   showDelete,
+  promptSamples,
+  promptValue,
+  onPromptChange,
+  promptTextareaClassName,
+  promptDisabled,
 }: {
   showDelete: boolean;
   onDelete: any;
-  children: any;
   instructions: any;
+  promptSamples: string[];
+  promptValue: string;
+  onPromptChange: (value: string) => void;
+  promptTextareaClassName: string;
+  promptDisabled?: boolean;
 }) => {
-  const [promptsExpanded, setPromptsExpanded] = useState<boolean>(false);
-
-  const ExpandablePromptHelp = () => (
-    <div className={`mt-2 ${promptsExpanded ? 'bg-gray-100 dark:bg-gray-800 rounded-lg' : ''}`}>
-      <button
-        className="bg-slate-300 dark:bg-gray-800 rounded-lg p-1"
-        onClick={(e) => setPromptsExpanded(!promptsExpanded)}
-      >
-        View examples of helpful prompts&nbsp;&nbsp; {promptsExpanded ? '^' : '\u22C1'}
-      </button>
-      {promptsExpanded && (
-        <ul className="list-disc list-inside py-2 ml-10">
-          <li>&quot;Highlight the most important concepts present on this page&quot;</li>
-          <li>&quot;Ask the student to summarize the previous paragraphs&quot;</li>
-          <li>&quot;Introduce the following video&quot;</li>
-        </ul>
-      )}
-    </div>
-  );
-
   return (
     <div className="bg-gray-100 dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
       <div className="flex justify-between">
@@ -60,28 +105,16 @@ export const TriggerEditorCore = ({
         </h4>
         {showDelete ? <DeleteButton onClick={() => onDelete()} editMode={true} /> : null}
       </div>
-      <p className="mt-2">
-        Customize a prompt for our AI assistant, DOT, to follow the student clicks this button.
-      </p>
-
-      <h6 className="mt-2">
-        <strong>Activation Point</strong>
-      </h6>
 
       {instructions}
 
-      <h6 className="mt-2">
-        <strong>Prompt</strong>
-      </h6>
-
-      <p>
-        An AI prompt is a question or instruction given to our AI assistant, DOT, to guide its
-        response, helping it generate useful feedback, explanations, or support for learners.
-      </p>
-
-      <ExpandablePromptHelp />
-
-      {children}
+      <TriggerPromptEditor
+        value={promptValue}
+        onPromptChange={onPromptChange}
+        promptSamples={promptSamples}
+        textareaClassName={promptTextareaClassName}
+        disabled={promptDisabled}
+      />
     </div>
   );
 };
@@ -93,18 +126,20 @@ export const TriggerEditor: React.FC<Props> = ({ model }) => {
     <TriggerEditorCore
       showDelete={false}
       onDelete={() => onEdit(undefined as any)}
+      promptValue={model.prompt}
+      onPromptChange={(value) => onEdit({ prompt: value })}
+      promptTextareaClassName="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      promptSamples={[
+        'Highlight the most important concepts present on this page',
+        'Ask the student to summarize the previous paragraphs',
+        'Introduce the following video',
+      ]}
       instructions={
         <p>
           When a student clicks the <AIIcon size="sm" className="inline mr-1" /> icon within this
           text block, our AI assistant, DOT will appear and follow your custom prompt.
         </p>
       }
-    >
-      <textarea
-        className="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        value={model.prompt}
-        onChange={(e) => onEdit({ prompt: e.target.value })}
-      />
-    </TriggerEditorCore>
+    />
   );
 };
