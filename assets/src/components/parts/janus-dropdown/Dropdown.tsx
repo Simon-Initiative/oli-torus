@@ -415,10 +415,12 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
         onChange={handleSelectChange}
       >
         {prompt ? (
-          <option value="-1" style={{ display: 'none' }}>
+          <option value="-1" disabled>
             {prompt}
           </option>
-        ) : null}
+        ) : (
+          <option value="-1"></option>
+        )}
         {optionLabels?.map((optionLabel: string, index: number) => (
           <option key={index + 1} value={index + 1}>
             {optionLabel}
