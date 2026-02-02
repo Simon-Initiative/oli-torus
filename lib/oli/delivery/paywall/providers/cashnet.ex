@@ -47,7 +47,7 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
            <input type="hidden" name="ref4type1" value="#{cashnet_store}-lname"/>
            <input type="hidden" name="ref4val1" value="#{safe_get(user.family_name, "Unknown")}"/>
            <input type="hidden" name="ref5type1" value="#{cashnet_store}-email"/>
-           <input type="hidden" name="ref5val1" value="#{safe_get(user.email, Application.get_env(:oli, :email_reply_to))}"/>
+           <input type="hidden" name="ref5val1" value="#{get_cashnet_email(user.email)}"/>
            <input type="hidden" name="ref6type1" value="#{cashnet_store}-title"/>
            <input type="hidden" name="ref6val1" value="#{section.title}"/>
 
@@ -119,4 +119,10 @@ defmodule Oli.Delivery.Paywall.Providers.Cashnet do
       item -> item
     end
   end
+
+  defp get_cashnet_email(nil) do
+    Application.get_env(:oli, :cashnet_email_fallback, "")
+  end
+
+  defp get_cashnet_email(email), do: email
 end
