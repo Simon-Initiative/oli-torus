@@ -82,10 +82,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
     selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
 
-    objectives_count =
-      objectives_tab.objectives
-      |> scoped_objectives(params)
-      |> objectives_count()
+    scoped_objectives = scoped_objectives(objectives_tab.objectives, params)
+    objectives_count = objectives_count(scoped_objectives)
 
     card_props = [
       %{
@@ -131,9 +129,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        proficiency_options: proficiency_options,
        selected_proficiency_options: selected_proficiency_options,
        selected_proficiency_ids: selected_proficiency_ids,
-       card_props: card_props
-     )
-     |> assign_new(:expanded_objectives, fn -> MapSet.new() end)}
+       card_props: card_props,
+       expanded_objectives: expanded_objectives
+     )}
   end
 
   attr(:params, :any)
@@ -306,7 +304,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           ~p"/sections/#{section_slug}/student_dashboard/#{student_id}/learning_objectives"
       end
 
-    {:noreply, push_patch(socket, to: path)}
+    {:noreply, socket |> assign(expanded_objectives: MapSet.new()) |> push_patch(to: path)}
   end
 
   def handle_event("filter_by", %{"filter" => filter}, socket) do
