@@ -57,10 +57,11 @@ defmodule OliWeb.InviteControllerTest do
              )
              |> Repo.one()
 
-      # and email is sent
+      # and email is sent with correct reply_to header
       assert_email_sent(
         to: @invite_email,
-        subject: "You were invited as an instructor to \"#{section.title}\""
+        subject: "You were invited as an instructor to \"#{section.title}\"",
+        reply_to: {"", "test@test.com"}
       )
     end
 
@@ -108,11 +109,11 @@ defmodule OliWeb.InviteControllerTest do
              )
              |> Repo.one()
 
-      # and email is sent
-
+      # and email is sent with correct reply_to header
       assert_email_sent(
         to: @invite_email,
-        subject: "You were invited as a student to \"#{section.title}\""
+        subject: "You were invited as a student to \"#{section.title}\"",
+        reply_to: {"", "test@test.com"}
       )
     end
 
@@ -159,10 +160,11 @@ defmodule OliWeb.InviteControllerTest do
              )
              |> Repo.one()
 
-      # and email is sent
+      # and email is sent with correct reply_to header
       assert_email_sent(
         to: @invite_email,
-        subject: "You were invited as an instructor to \"#{section.title}\""
+        subject: "You were invited as an instructor to \"#{section.title}\"",
+        reply_to: {"", "test@test.com"}
       )
     end
 
@@ -209,11 +211,11 @@ defmodule OliWeb.InviteControllerTest do
              )
              |> Repo.one()
 
-      # and email is sent
-
+      # and email is sent with correct reply_to header
       assert_email_sent(
         to: @invite_email,
-        subject: "You were invited as a student to \"#{section.title}\""
+        subject: "You were invited as a student to \"#{section.title}\"",
+        reply_to: {"", "test@test.com"}
       )
     end
 
@@ -298,11 +300,11 @@ defmodule OliWeb.InviteControllerTest do
                from(ut in Oli.Accounts.UserToken, where: ut.id == ^original_invitation_token.id)
              )
 
-      # and a new email is sent
-
+      # and a new email is sent with correct reply_to header
       assert_email_sent(
         to: @invite_email,
-        subject: "You were invited as a student to \"#{section.title}\""
+        subject: "You were invited as a student to \"#{section.title}\"",
+        reply_to: {"", "test@test.com"}
       )
     end
   end

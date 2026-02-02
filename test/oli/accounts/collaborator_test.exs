@@ -62,10 +62,11 @@ defmodule Oli.Accounts.CollaboratorTest do
              )
              |> Repo.one()
 
-      # and email is sent
+      # and email is sent with correct reply_to header
       assert_email_sent(
         to: "non_existing_author@gmail.com",
-        subject: "You were invited as a collaborator to \"#{project.title}\""
+        subject: "You were invited as a collaborator to \"#{project.title}\"",
+        reply_to: {"", "inviter@gmail.com"}
       )
     end
 
@@ -99,10 +100,11 @@ defmodule Oli.Accounts.CollaboratorTest do
              )
              |> Repo.one()
 
-      # and email is sent
+      # and email is sent with correct reply_to header
       assert_email_sent(
         to: existing_author.email,
-        subject: "You were invited as a collaborator to \"#{project.title}\""
+        subject: "You were invited as a collaborator to \"#{project.title}\"",
+        reply_to: {"", "inviter@gmail.com"}
       )
     end
   end
