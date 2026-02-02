@@ -42,8 +42,12 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       html = render(view)
 
-      assert String.index(html, "Projects") < String.index(html, "Details")
-      assert String.index(html, "Details") < String.index(html, "Actions")
+      {projects_idx, _} = :binary.match(html, "Projects")
+      {details_idx, _} = :binary.match(html, "Details")
+      {actions_idx, _} = :binary.match(html, "Actions")
+
+      assert projects_idx < details_idx
+      assert details_idx < actions_idx
 
       assert html =~ "Projects that the Author has either created or is a collaborator within"
       assert html =~ "User details"
@@ -63,7 +67,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       assert render(view) =~ "Projects"
 
-      assert view |> element("#author_projects") |> render() =~ "None exist"
+      refute has_element?(view, "#author_projects tbody tr")
     end
 
     test "author projects get listed", %{conn: conn} do
@@ -84,7 +88,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       assert view
              |> element("#author_projects table tr[id='#{project_1.id}']")
              |> render() =~
-               "Owner"
+               "owner"
 
       assert view
              |> element("#author_projects table tr[id='#{project_2.id}']")
@@ -94,7 +98,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       assert view
              |> element("#author_projects table tr[id='#{project_2.id}']")
              |> render() =~
-               "Collaborator"
+               "contributor"
 
       refute view |> element("#author_projects") |> render() =~ "JS"
     end
@@ -260,7 +264,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       assert view
              |> element("#author_projects table tr[id='#{project.id}']")
              |> render() =~
-               "Owner"
+               "owner"
 
       assert view
              |> element("#author_projects table tr[id='#{project.id}']")
