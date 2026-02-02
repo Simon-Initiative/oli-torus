@@ -71,14 +71,15 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   useEffect(() => {
     // Only adjust size if lockAspectRatio is checked AND we're not in responsive layout with scaleContent
     // When scaleContent is true (including when both flags are checked), CSS handles sizing
+    const hasExplicitDimensions = model.width != null && model.height != null;
     const shouldAdjust =
       src?.length &&
       src !== defaultSrc &&
       lockAspectRatio &&
-      !(isResponsiveLayout && scaleContent === true);
+      !(isResponsiveLayout && scaleContent === true) &&
+      hasExplicitDimensions;
 
-    // Skip when model has no dimensions (user removed them for responsive layout)
-    if (shouldAdjust && model.width != null && model.height != null) {
+    if (shouldAdjust) {
       debounceImageAdjust(model);
     }
   }, [model, lockAspectRatio, scaleContent, isResponsiveLayout]);
