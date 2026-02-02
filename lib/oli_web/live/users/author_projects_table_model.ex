@@ -62,9 +62,16 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
         _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
       end
 
+    label =
+      case project.role do
+        "owner" -> "Owner"
+        "contributor" -> "Collaborator"
+        other -> other
+      end
+
     assigns =
       Map.merge(assigns, %{
-        label: project.role,
+        label: label,
         bg_color: bg_color,
         text_color: text_color
       })

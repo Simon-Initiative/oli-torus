@@ -88,7 +88,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       assert view
              |> element("#author_projects table tr[id='#{project_1.id}']")
              |> render() =~
-               "owner"
+               "Owner"
 
       assert view
              |> element("#author_projects table tr[id='#{project_2.id}']")
@@ -98,7 +98,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       assert view
              |> element("#author_projects table tr[id='#{project_2.id}']")
              |> render() =~
-               "contributor"
+               "Collaborator"
 
       refute view |> element("#author_projects") |> render() =~ "JS"
     end
@@ -264,7 +264,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       assert view
              |> element("#author_projects table tr[id='#{project.id}']")
              |> render() =~
-               "owner"
+               "Owner"
 
       assert view
              |> element("#author_projects table tr[id='#{project.id}']")
