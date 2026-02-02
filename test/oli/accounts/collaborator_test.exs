@@ -31,12 +31,13 @@ defmodule Oli.Accounts.CollaboratorTest do
       assert {:error, _} = Collaborators.add_collaborator(author.email, project.slug)
     end
 
-    test "invite_collaborator/3 for a new author: creates author, adds author to the given project (as :pending_confirmation with contributor role), creates invitation token and delivers email invitation" do
+    test "invite_collaborator/4 for a new author: creates author, adds author to the given project (as :pending_confirmation with contributor role), creates invitation token and delivers email invitation" do
       project = insert(:project)
 
       {:ok, author_project} =
         Collaborators.invite_collaborator(
-          "some_author@gmail.com",
+          "Inviter Author",
+          "inviter@gmail.com",
           "non_existing_author@gmail.com",
           project.slug
         )
@@ -68,13 +69,14 @@ defmodule Oli.Accounts.CollaboratorTest do
       )
     end
 
-    test "invite_collaborator/3 for an existing author: adds author to the given project (as :pending_confirmation with contributor role), creates invitation token and delivers email invitation" do
+    test "invite_collaborator/4 for an existing author: adds author to the given project (as :pending_confirmation with contributor role), creates invitation token and delivers email invitation" do
       project = insert(:project)
       existing_author = insert(:author)
 
       {:ok, author_project} =
         Collaborators.invite_collaborator(
-          "some_author@gmail.com",
+          "Inviter Author",
+          "inviter@gmail.com",
           existing_author.email,
           project.slug
         )

@@ -154,7 +154,13 @@ defmodule OliWeb.InviteController do
       )
     end)
     |> Ecto.Multi.run(:send_invitations, fn _repo, %{email_data: email_data} ->
-      case send_email_invitations(email_data, inviter_struct.name, role, section.title) do
+      case send_email_invitations(
+             email_data,
+             inviter_struct.name,
+             inviter_struct.email,
+             role,
+             section.title
+           ) do
         :ok ->
           {:ok, :ok}
 
@@ -221,7 +227,7 @@ defmodule OliWeb.InviteController do
     {:ok, email_data}
   end
 
-  defp send_email_invitations(email_data, inviter_name, role, section_title) do
+  defp send_email_invitations(email_data, inviter_name, inviter_email, role, section_title) do
     Enum.each(email_data, fn data ->
       Email.create_email(
         data.sent_to,
@@ -235,6 +241,7 @@ defmodule OliWeb.InviteController do
           button_label: "Go to invitation"
         }
       )
+      |> Swoosh.Email.reply_to(inviter_email)
       |> Mailer.deliver()
     end)
   end

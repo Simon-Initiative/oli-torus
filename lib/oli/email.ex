@@ -3,9 +3,14 @@ defmodule Oli.Email do
     view: OliWeb.EmailView,
     layout: {OliWeb.LayoutView, :email}
 
-  def help_desk_email(from_email, help_desk_email, subject, view, assigns) do
+  @doc """
+  Creates a help desk email where the user is the initiator.
+  Sets both from and reply_to to the user's email so replies go back to them.
+  """
+  def help_desk_email(user_email, help_desk_email, subject, view, assigns) do
     base_email()
-    |> reply_to(from_email)
+    |> from(user_email)
+    |> reply_to(user_email)
     |> put_layout({OliWeb.LayoutView, :help_email})
     |> to(help_desk_email)
     |> subject(subject)
@@ -36,15 +41,25 @@ defmodule Oli.Email do
     |> html_text_body()
   end
 
+  @doc """
+  Creates a base email with default from address and optional Errors-To/Return-Path headers.
+  Does NOT set reply_to by default - specific email types should set this if needed.
+  """
   def base_email do
     from_email_name = Application.get_env(:oli, :email_from_name)
     from_email_address = Application.get_env(:oli, :email_from_address)
-    email_reply_to = Application.get_env(:oli, :email_reply_to)
+    errors_to_address = Application.get_env(:oli, :email_errors_to_address)
+    return_path_address = Application.get_env(:oli, :email_return_path_address)
 
     new()
     |> from({from_email_name, from_email_address})
-    |> reply_to(email_reply_to)
+    |> maybe_header("Errors-To", errors_to_address)
+    |> maybe_header("Return-Path", return_path_address)
   end
+
+  defp maybe_header(email, _name, nil), do: email
+  defp maybe_header(email, _name, ""), do: email
+  defp maybe_header(email, name, value), do: header(email, name, value)
 
   defp html_text_body(email) do
     html = Premailex.to_inline_css(email.html_body)
