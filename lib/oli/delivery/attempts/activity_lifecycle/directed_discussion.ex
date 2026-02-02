@@ -29,7 +29,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
   }
 
   alias Oli.Delivery.Attempts.ActivityLifecycle
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+  alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
 
   @doc """
   Checks if participation requirements are met for a Directed Discussion activity.
@@ -267,7 +267,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.DirectedDiscussion do
                     # Apply client evaluation using the centralized evaluation infrastructure.
                     # This ensures proper rollup, metrics updates, and xAPI statement generation.
 
-                    Evaluate.apply_client_evaluation(
+                    ApplyClientEvaluation.apply(
                       section_slug,
                       activity_attempt_guid,
                       client_evaluations,

@@ -49,16 +49,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   ---
 
-  #### `apply_client_evaluation/5`
-  Processes already evaluated results - some either a client-side activity or some other process external to the system.
-
-  - **Params**: `section_slug`, `activity_attempt_guid`, `client_evaluations`, `datashop_session_id`, optional opts
-  - **Options**:
-    - `:part_attempts_input`: Pre-fetched part attempts.
-    - `:use_fixed_score`: Forces a fixed score/out_of on rollup.
-    - `:no_roll_up`: Disables rollup after part evaluation.
-    - `:enforce_client_side_eval`: Ensures client-side evaluation is permitted by the activity type.
-  - **Returns**: `{:ok, results}` or `{:error, reason}`
+  Client-evaluation application (persist part results, rollup, metrics, snapshots) is handled by
+  `Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation`. Callers should use that module
+  for applying client evaluations. Activity type specializations (e.g. DirectedDiscussion) also
+  use ApplyClientEvaluation for the pipeline.
 
   ---
 
@@ -89,6 +83,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Delivery.Evaluation.EvaluationContext
   alias Oli.Activities.Model
   alias Oli.Delivery.Experiments.LogWorker
+  alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
 
   @doc """
@@ -254,102 +249,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end)
     |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
     |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
-  end
-
-  @doc """
-  Processes a set of client evaluations for some number of parts for the given
-  activity attempt guid.  If this collection of evaluations completes the activity
-  the results of the part evaluations (including ones already having been evaluated)
-  will be rolled up to the activity attempt record.
-
-  The optional "normalize_mode" takes values of :normalize or :do_not_normalize.  The default
-  :normalize mode will normalize the part based score and out_of to a range of 0 to 1.
-  This ensures for all basic page based assessments that every activity has equal weight.
-
-  On success returns an `{:ok, results}` tuple where results in an array of maps. Each
-  map instance contains the result of one of the evaluations in the form:
-
-  `${score: score, out_of: out_of, feedback: feedback, attempt_guid, attempt_guid}`
-
-  On failure returns `{:error, error}`
-  """
-  def apply_client_evaluation(
-        section_slug,
-        activity_attempt_guid,
-        client_evaluations,
-        datashop_session_id,
-        opts \\ []
-      ) do
-    part_attempts_input = Keyword.get(opts, :part_attempts_input, nil)
-    use_fixed_score = Keyword.get(opts, :use_fixed_score, nil)
-    no_roll_up = Keyword.get(opts, :no_roll_up, false)
-    enforce_client_side_eval = Keyword.get(opts, :enforce_client_side_eval, true)
-
-    # verify this activity type allows client evaluation
-    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
-    activity_registration_slug = activity_attempt.revision.activity_type.slug
-
-    part_inputs =
-      Enum.map(client_evaluations, fn %{
-                                        attempt_guid: attempt_guid,
-                                        client_evaluation: %ClientEvaluation{
-                                          input: input,
-                                          timestamp: timestamp
-                                        }
-                                      } ->
-        %{attempt_guid: attempt_guid, input: input, timestamp: timestamp}
-      end)
-
-    %Oli.Activities.ActivityRegistration{allow_client_evaluation: allow_client_evaluation} =
-      Oli.Activities.get_registration_by_slug(activity_registration_slug)
-
-    if not enforce_client_side_eval or allow_client_evaluation do
-      Repo.transaction(fn ->
-        part_attempts = part_attempts_input || get_latest_part_attempts(activity_attempt_guid)
-        part_inputs = filter_already_evaluated(part_inputs, part_attempts)
-
-        roll_up_fn =
-          case use_fixed_score do
-            nil ->
-              RollUp.determine_activity_rollup_fn(
-                activity_attempt_guid,
-                part_inputs,
-                part_attempts
-              )
-
-            {score, out_of} ->
-              fn result ->
-                evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of)
-                result
-              end
-          end
-
-        # Override the rollup function if no_roll_up is set
-        roll_up_fn =
-          if no_roll_up do
-            fn result -> result end
-          else
-            roll_up_fn
-          end
-
-        result =
-          persist_client_evaluations(
-            part_inputs,
-            client_evaluations,
-            roll_up_fn,
-            false,
-            datashop_session_id
-          )
-
-        Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
-
-        result
-      end)
-      |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
-      |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
-    else
-      {:error, "Activity type does not allow client evaluation"}
-    end
   end
 
   @doc """
@@ -582,12 +481,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
           {:ok, decodedResults}
         else
-          case apply_client_evaluation(
+          case ApplyClientEvaluation.apply(
                  section_slug,
                  activity_attempt_guid,
                  client_evaluations,
                  datashop_session_id,
-                 part_attempts: part_attempts,
+                 part_attempts_input: part_attempts,
                  use_fixed_score: {score, out_of}
                ) do
             {:ok, _} ->
@@ -734,62 +633,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     attempt_state = Map.merge(response_state, extrinsic_state)
     Map.merge(input_state, attempt_state)
-  end
-
-  defp persist_client_evaluations(
-         part_inputs,
-         client_evaluations,
-         roll_up_fn,
-         _,
-         datashop_session_id
-       ) do
-    case client_evaluations
-         |> Enum.map(fn %{
-                          attempt_guid: attempt_guid,
-                          client_evaluation: %ClientEvaluation{
-                            score: score,
-                            out_of: out_of,
-                            feedback: feedback
-                          }
-                        } ->
-           {:ok,
-            %Oli.Delivery.Evaluation.Actions.FeedbackAction{
-              type: "FeedbackAction",
-              attempt_guid: attempt_guid,
-              feedback: feedback,
-              score: score,
-              out_of: out_of
-            }}
-         end)
-         |> (fn evaluations -> {:ok, evaluations} end).()
-         |> persist_evaluations(part_inputs, roll_up_fn, datashop_session_id) do
-      {:ok, results} ->
-        results
-
-      {:error, error} ->
-        Oli.Utils.log_error("error inside apply_client_evaluation", error)
-        Repo.rollback(error)
-
-      _ ->
-        Repo.rollback("unknown error")
-    end
-  end
-
-  # Allows the adaptive page to mark an activity attempt as evaluated, using a given score and out_of
-  defp evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of) do
-    Logger.debug("evaluate_with_rule_engine_score: score: #{score}, out_of: #{out_of}")
-
-    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
-
-    now = DateTime.utc_now()
-
-    update_activity_attempt(activity_attempt, %{
-      score: score,
-      out_of: out_of,
-      lifecycle_state: :evaluated,
-      date_evaluated: now,
-      date_submitted: now
-    })
   end
 
   # Evaluate a list of part_input submissions for a matching list of part_attempt records
