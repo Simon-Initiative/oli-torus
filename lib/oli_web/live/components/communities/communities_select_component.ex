@@ -296,9 +296,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
                 <!-- Direct communities (removable) -->
                 <ul class="contents" aria-label="Selected communities">
                   <%= for community <- @direct_communities do %>
-                    <li
-                      class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_community_pill_classes(community.name)}"}
-                    >
+                    <li class={"px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm flex items-center gap-2 #{get_community_pill_classes(community.name)}"}>
                       <span>{community.name}</span>
                       <button
                         type="button"
@@ -332,6 +330,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
                     type="text"
                     phx-keyup="search_communities"
                     phx-keydown="handle_keydown"
+                    phx-debounce={500}
                     phx-target={@myself}
                     value={@input_value}
                     placeholder="Search communities..."
@@ -388,9 +387,7 @@ defmodule OliWeb.Live.Components.Communities.CommunitiesSelectComponent do
             <%= if @communities_count > 0 do %>
               <ul class="flex flex-wrap gap-1" aria-label="Communities">
                 <%= for community <- @all_communities do %>
-                  <li
-                    class={"px-3 py-1 rounded-full text-sm font-semibold shadow-sm #{get_community_pill_classes(community.name)}"}
-                  >
+                  <li class={"px-3 py-1 rounded-full text-sm font-semibold shadow-sm #{get_community_pill_classes(community.name)}"}>
                     {community.name}
                   </li>
                 <% end %>
