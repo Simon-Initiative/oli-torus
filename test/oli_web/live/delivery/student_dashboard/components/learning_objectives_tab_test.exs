@@ -561,7 +561,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
     col_1 =
       view
       |> element(
-        "table.instructor_dashboard_table > tbody > tr:nth-child(#{row}) [data-proficiency-check='true'] > span:last-child"
+        "table.instructor_dashboard_table > tbody > tr:nth-child(#{row}) [data-proficiency-check] > span"
       )
       |> render()
       |> Floki.parse_document!()
@@ -570,7 +570,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
     col_2 =
       view
       |> element(
-        "table.instructor_dashboard_table > tbody > tr:nth-child(#{row}) > td:nth-child(2) > div > div"
+        "table.instructor_dashboard_table > tbody > tr:nth-child(#{row}) > td:nth-child(3) > div"
       )
       |> render()
       |> Floki.parse_document!()
