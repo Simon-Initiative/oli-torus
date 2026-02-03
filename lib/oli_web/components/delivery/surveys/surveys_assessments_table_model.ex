@@ -101,27 +101,30 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
               <% end %>
             </span>
             <div
-              :if={activity.students_with_attempts_count < Enum.count(@students)}
+              :if={
+                activity.students_with_attempts_count <
+                  (Map.get(activity, :students_count) || Enum.count(@students))
+              }
               class="flex gap-x-2 items-center w-full"
             >
               <span class="text-xs">
-                {~s{#{Enum.count(activity.student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
+                {~s{#{Map.get(activity, :emails_without_attempts_count) || Enum.count(activity.student_emails_without_attempts || [])} #{Gettext.ngettext(OliWeb.Gettext,
                 "student has",
                 "students have",
-                Enum.count(activity.student_emails_without_attempts))} not completed any attempt.}}
+                Map.get(activity, :emails_without_attempts_count) || Enum.count(activity.student_emails_without_attempts || []))} not completed any attempt.}}
               </span>
               <input
                 type="text"
-                id="email_inputs"
+                id={"email_inputs_#{activity.id}"}
                 class="form-control hidden"
                 value={Enum.join(activity.student_emails_without_attempts, "; ")}
                 readonly
               />
               <button
-                id="copy_emails_button"
+                id={"copy_emails_button_#{activity.id}"}
                 class="flex items-center gap-x-1.5 text-xs text-Text-text-button ml-auto"
                 phx-hook="CopyListener"
-                data-clipboard-target="#email_inputs"
+                data-clipboard-target={"#email_inputs_#{activity.id}"}
               >
                 <Icons.email /> <span>Email</span>
               </button>

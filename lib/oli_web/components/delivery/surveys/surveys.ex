@@ -245,28 +245,58 @@ defmodule OliWeb.Components.Delivery.Surveys do
 
     existing_map = Map.get(table_model.data || %{}, :survey_activities_map, %{})
 
+    new_survey_ids = Enum.reject(selected_survey_ids, &Map.has_key?(existing_map, &1))
+
     survey_activities_map =
-      Enum.reduce(selected_survey_ids, existing_map, fn survey_id, acc ->
-        if Map.has_key?(acc, survey_id) do
-          acc
-        else
-          survey_page_revision =
-            DeliveryResolver.from_resource_id(section.slug, survey_id)
+      if new_survey_ids == [] do
+        existing_map
+      else
+        revisions_list = DeliveryResolver.from_resource_id(section.slug, new_survey_ids)
 
-          survey_activity_ids = get_survey_activity_ids(survey_page_revision)
+        id_revision_pairs =
+          Enum.zip(new_survey_ids, revisions_list)
+          |> Enum.reject(fn {_id, rev} -> is_nil(rev) end)
 
-          activities =
-            ActivityHelpers.summarize_activity_performance(
-              section,
-              survey_page_revision,
-              activity_types_map,
-              students,
-              survey_activity_ids
-            )
+        students_count = length(students)
 
-          Map.put(acc, survey_id, activities)
-        end
-      end)
+        new_entries =
+          Task.async_stream(
+            id_revision_pairs,
+            fn {survey_id, revision} ->
+              activity_ids = get_survey_activity_ids(revision)
+
+              activities =
+                ActivityHelpers.summarize_activity_performance(
+                  section,
+                  revision,
+                  activity_types_map,
+                  students,
+                  activity_ids
+                )
+
+              activities_with_counts =
+                Enum.map(activities, fn a ->
+                  Map.merge(a, %{
+                    students_count: students_count,
+                    emails_without_attempts_count: length(a.student_emails_without_attempts || [])
+                  })
+                end)
+
+              {survey_id, activities_with_counts}
+            end,
+            max_concurrency: 4,
+            ordered: false
+          )
+          |> Enum.reduce(existing_map, fn
+            {:ok, {survey_id, activities}}, acc ->
+              Map.put(acc, survey_id, activities)
+
+            _other, acc ->
+              acc
+          end)
+
+        new_entries
+      end
 
     table_model =
       table_model
