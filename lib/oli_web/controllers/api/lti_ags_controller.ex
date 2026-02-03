@@ -5,7 +5,7 @@ defmodule OliWeb.Api.LtiAgsController do
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.{ClientEvaluation, ActivityAttempt, ResourceAttempt}
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+  alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
 
   require Logger
 
@@ -321,7 +321,7 @@ defmodule OliWeb.Api.LtiAgsController do
       }
     ]
 
-    case Evaluate.apply_client_evaluation(
+    case ApplyClientEvaluation.apply(
            section_slug,
            activity_attempt_guid,
            client_evaluations,

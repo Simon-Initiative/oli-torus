@@ -4,8 +4,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   import Phoenix.Component
   import OliWeb.Components.Common
 
-  alias Oli.{Accounts, Activities, Inventories, Publishing}
+  alias Oli.{Accounts, Activities, Inventories, Publishing, Repo}
   alias Oli.Authoring.{Broadcaster, Course, ProjectExportWorker}
+  alias Oli.Delivery.Sections.Browse
+  alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Course.{CreativeCommons, Project}
   alias Oli.Delivery.Experiments
@@ -16,11 +18,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   alias OliWeb.Common.Utils
   alias OliWeb.Components.{Common, Modal, Overview}
   alias OliWeb.Components.Project.{AdvancedActivityItem, AsyncExporter}
+  alias OliWeb.Live.Components.Tags.TagsComponent
+  alias OliWeb.Common.{Params, SearchInput}
+  alias OliWeb.Common.StripedPagedTable
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
+  alias OliWeb.Workspaces.CourseAuthor.OverviewSectionsTableModel
+
+  @course_sections_limit 10
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns
+    project = Repo.preload(project, [:tags, :communities])
+
+    # Get institutions with visibility access to this project
+    visibility_institutions =
+      Publishing.get_all_project_visibilities(project.id)
+      |> Enum.map(& &1.institution)
+      |> Enum.reject(&is_nil/1)
 
     is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
@@ -49,33 +64,70 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     # Subscribe to any project export progress updates for this project
     Subscriber.subscribe_to_project_export_status(project.slug)
 
-    {:ok,
-     assign(socket,
-       ctx: ctx,
-       collaborators:
-         Accounts.authors_projects(project)
-         |> Enum.group_by(& &1.author_project_status),
-       project_selected_activities:
-         Activities.selected_activities_for_project(project.id, is_admin?),
-       can_enable_experiments: is_admin? and Experiments.experiments_enabled?(),
-       is_admin: is_admin?,
-       changeset: Project.changeset(project),
-       latest_published_publication: latest_published_publication,
-       publishers: Inventories.list_publishers(),
-       resource_title: project.title,
-       resource_slug: project.slug,
-       attributes: project.attributes,
-       language_codes: LanguageCodesIso639.codes(),
-       license_opts: cc_options,
-       custom_license: custom_license?,
-       collab_space_config: collab_space_config,
-       revision_slug: revision_slug,
-       latest_publication: latest_publication,
-       notes_config: %{},
-       project_export_status: project_export_status,
-       project_export_url: project_export_url,
-       project_export_timestamp: project_export_timestamp
-     )}
+    socket =
+      socket
+      |> assign(
+        ctx: ctx,
+        project: project,
+        collaborators:
+          Accounts.authors_projects(project)
+          |> Enum.group_by(& &1.author_project_status),
+        project_selected_activities:
+          Activities.selected_activities_for_project(project.id, is_admin?),
+        can_enable_experiments: is_admin? and Experiments.experiments_enabled?(),
+        is_admin: is_admin?,
+        changeset: Project.changeset(project),
+        latest_published_publication: latest_published_publication,
+        publishers: Inventories.list_publishers(),
+        resource_title: project.title,
+        resource_slug: project.slug,
+        attributes: project.attributes,
+        language_codes: LanguageCodesIso639.codes(),
+        license_opts: cc_options,
+        custom_license: custom_license?,
+        collab_space_config: collab_space_config,
+        revision_slug: revision_slug,
+        latest_publication: latest_publication,
+        notes_config: %{},
+        project_export_status: project_export_status,
+        project_export_url: project_export_url,
+        project_export_timestamp: project_export_timestamp,
+        visibility_institutions: visibility_institutions,
+        course_sections_search: "",
+        course_sections_offset: 0,
+        course_sections_limit: @course_sections_limit,
+        course_sections_sort_by: :title,
+        course_sections_sort_order: :asc,
+        course_sections_project_id: project.id
+      )
+      |> assign_async(:course_sections_data, fn ->
+        load_course_sections_data(project.id, ctx, 0, @course_sections_limit, :asc, :title, "")
+      end)
+
+    {:ok, socket}
+  end
+
+  # Load course sections data - used by assign_async and event handlers
+  defp load_course_sections_data(project_id, ctx, offset, limit, sort_order, sort_by, search) do
+    course_sections =
+      Browse.browse_project_sections(
+        project_id,
+        %Paging{offset: offset, limit: limit},
+        %Sorting{direction: sort_order, field: sort_by},
+        text_search: search
+      )
+
+    total = Browse.determine_total(course_sections)
+    {:ok, table_model} = OverviewSectionsTableModel.new(ctx, course_sections)
+
+    table_model =
+      table_model
+      |> Map.put(:sort_by_spec, Enum.find(table_model.column_specs, &(&1.name == sort_by)))
+      |> Map.put(:sort_order, sort_order)
+      |> Map.put(:rows, course_sections)
+
+    # Return with the assign key name to match assign_async requirements
+    {:ok, %{course_sections_data: %{table_model: table_model, total: total}}}
   end
 
   @impl Phoenix.LiveView
@@ -112,6 +164,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               errors={f.errors}
             />
           </div>
+          <div class="form-label-group mb-3">
+            <label class="control-label">Tags</label>
+            <.live_component
+              module={TagsComponent}
+              id={"project-tags-#{@project.id}"}
+              entity_type={:project}
+              entity_id={@project.id}
+              current_tags={@project.tags}
+              variant={:form}
+            />
+          </div>
           <% welcome_title =
             (fetch_field(f.source, :welcome_title) &&
                fetch_field(f.source, :welcome_title)["children"]) || [] %>
@@ -135,6 +198,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               error_position={:top}
               errors={f.errors}
             />
+          </div>
+          <div class="form-label-group mb-3">
+            <Common.label class="control-label">Communities</Common.label>
+            <p class="text-secondary">
+              <span :if={Enum.empty?(@project.communities)}>None</span>
+              <span :for={{community, index} <- Enum.with_index(@project.communities)}>
+                <.link
+                  href={~p"/authoring/communities/#{community.id}"}
+                  class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
+                >
+                  {community.name}
+                </.link>
+                <span :if={index < length(@project.communities) - 1}>, </span>
+              </span>
+            </p>
+          </div>
+          <div class="form-label-group mb-3">
+            <Common.label class="control-label">Institutions</Common.label>
+            <p class="text-secondary">
+              <span :if={Enum.empty?(@visibility_institutions)}>None</span>
+              <span :for={{institution, index} <- Enum.with_index(@visibility_institutions)}>
+                <.link
+                  href={~p"/admin/institutions/#{institution.id}"}
+                  class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
+                >
+                  {institution.name}
+                </.link>
+                <span :if={index < length(@visibility_institutions) - 1}>, </span>
+              </span>
+            </p>
           </div>
           <div class="form-label-group mb-3">
             <Common.label class="control-label">Latest Publication</Common.label>
@@ -410,6 +503,47 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         />
       </Overview.section>
 
+      <Overview.section
+        title="Course Sections"
+        description="Course sections created from this base project"
+        layout={:stacked}
+      >
+        <.form for={%{}} phx-change="course_sections_search_change" class="mb-4">
+          <SearchInput.render
+            id="course-sections-search"
+            name="search"
+            text={@course_sections_search}
+            aria_label="Search course sections"
+          />
+        </.form>
+        <.async_result :let={data} assign={@course_sections_data}>
+          <:loading>
+            <div class="flex items-center justify-center py-8">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span class="ml-3 text-gray-600">Loading sections...</span>
+            </div>
+          </:loading>
+          <:failed :let={_reason}>
+            <div class="text-red-600 py-4">
+              Failed to load course sections. Please refresh the page.
+            </div>
+          </:failed>
+          <StripedPagedTable.render
+            table_model={data.table_model}
+            total_count={data.total}
+            offset={@course_sections_offset}
+            limit={@course_sections_limit}
+            table_container_class="relative"
+            header_bg_class="!bg-white dark:!bg-black"
+            sort="course_sections_sort"
+            page_change="course_sections_page_change"
+            show_limit_change={false}
+            render_top_info={false}
+            no_records_message="None exist"
+          />
+        </.async_result>
+      </Overview.section>
+
       <%= if @is_admin do %>
         <Overview.section
           title="Feature Flags"
@@ -592,6 +726,96 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event("paged_table_limit_change", params, socket) do
+    limit = Params.get_int_param(params, "limit", @course_sections_limit)
+
+    # Extract values before async to avoid copying entire socket
+    project_id = socket.assigns.course_sections_project_id
+    ctx = socket.assigns.ctx
+    sort_order = socket.assigns.course_sections_sort_order
+    sort_by = socket.assigns.course_sections_sort_by
+    search = socket.assigns.course_sections_search
+
+    socket =
+      socket
+      |> assign(course_sections_limit: limit, course_sections_offset: 0)
+      |> assign_async(:course_sections_data, fn ->
+        load_course_sections_data(project_id, ctx, 0, limit, sort_order, sort_by, search)
+      end)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("course_sections_sort", %{"sort_by" => sort_by}, socket) do
+    sort_by = String.to_existing_atom(sort_by)
+
+    # Toggle sort order if same column, otherwise default to :asc
+    sort_order =
+      if sort_by == socket.assigns.course_sections_sort_by do
+        if socket.assigns.course_sections_sort_order == :asc, do: :desc, else: :asc
+      else
+        :asc
+      end
+
+    # Extract values before async to avoid copying entire socket
+    project_id = socket.assigns.course_sections_project_id
+    ctx = socket.assigns.ctx
+    limit = socket.assigns.course_sections_limit
+    search = socket.assigns.course_sections_search
+
+    socket =
+      socket
+      |> assign(
+        course_sections_sort_by: sort_by,
+        course_sections_sort_order: sort_order,
+        course_sections_offset: 0
+      )
+      |> assign_async(:course_sections_data, fn ->
+        load_course_sections_data(project_id, ctx, 0, limit, sort_order, sort_by, search)
+      end)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("course_sections_page_change", params, socket) do
+    offset = Params.get_int_param(params, "offset", 0)
+
+    # Extract values before async to avoid copying entire socket
+    project_id = socket.assigns.course_sections_project_id
+    ctx = socket.assigns.ctx
+    limit = socket.assigns.course_sections_limit
+    sort_order = socket.assigns.course_sections_sort_order
+    sort_by = socket.assigns.course_sections_sort_by
+    search = socket.assigns.course_sections_search
+
+    socket =
+      socket
+      |> assign(course_sections_offset: offset)
+      |> assign_async(:course_sections_data, fn ->
+        load_course_sections_data(project_id, ctx, offset, limit, sort_order, sort_by, search)
+      end)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("course_sections_search_change", %{"search" => search}, socket) do
+    # Extract values before async to avoid copying entire socket
+    project_id = socket.assigns.course_sections_project_id
+    ctx = socket.assigns.ctx
+    limit = socket.assigns.course_sections_limit
+    sort_order = socket.assigns.course_sections_sort_order
+    sort_by = socket.assigns.course_sections_sort_by
+
+    socket =
+      socket
+      |> assign(course_sections_search: search, course_sections_offset: 0)
+      |> assign_async(:course_sections_data, fn ->
+        load_course_sections_data(project_id, ctx, 0, limit, sort_order, sort_by, search)
+      end)
+
+    {:noreply, socket}
+  end
+
   def handle_event(
         "on_select_license_type",
         %{"project" => %{"attributes" => %{"license" => %{"license_type" => license_type}}}},
