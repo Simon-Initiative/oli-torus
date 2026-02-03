@@ -34,6 +34,25 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       assert render(view) =~ author.name
     end
+
+    test "author details layout order and copy", %{conn: conn} do
+      author = insert(:author)
+
+      {:ok, view, _html} = live(conn, authors_detail_view(author.id))
+
+      html = render(view)
+
+      {projects_idx, _} = :binary.match(html, "Projects")
+      {details_idx, _} = :binary.match(html, "Details")
+      {actions_idx, _} = :binary.match(html, "Actions")
+
+      assert projects_idx < details_idx
+      assert details_idx < actions_idx
+
+      assert html =~ "Projects that the Author has either created or is a collaborator within"
+      assert html =~ "User details"
+      assert html =~ "Actions that can be taken for this user"
+    end
   end
 
   describe "author details - projects group" do
@@ -48,7 +67,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       assert render(view) =~ "Projects"
 
-      assert view |> element("#author_projects") |> render() =~ "None exist"
+      refute has_element?(view, "#author_projects tbody tr")
     end
 
     test "author projects get listed", %{conn: conn} do
@@ -89,7 +108,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       author = insert(:author)
       project = create_project_for(author, :owner, %{title: "Elixir"})
 
-      #  first publication
+      #  first publication 
       # (its date should not be considered as most recent edit as there will be a more recent one)
       page_1_revision =
         insert(:revision,
@@ -250,7 +269,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       assert view
              |> element("#author_projects table tr[id='#{project.id}']")
              |> render() =~
-               "Jul. 21, 2023 - 12:31 PM"
+               "ago"
     end
 
     test "can search author projects", %{conn: conn} do

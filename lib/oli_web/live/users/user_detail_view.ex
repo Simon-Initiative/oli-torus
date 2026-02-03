@@ -7,11 +7,11 @@ defmodule OliWeb.Users.UsersDetailView do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
-  alias Oli.AssentAuth.UserAssentAuth
   alias Oli.Auditing
   alias Oli.Delivery.{Metrics, Paywall, Sections}
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
+  alias OliWeb.Users.DetailViewHelpers
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -64,7 +64,7 @@ defmodule OliWeb.Users.UsersDetailView do
           |> add_necessary_information(user)
 
         institution = Institutions.get_institution_by_lti_user(user)
-        has_google = credentials_has_google?(user.user_identities)
+        has_google = DetailViewHelpers.credentials_has_google?(user.user_identities)
 
         {:ok,
          assign(socket,
@@ -76,9 +76,10 @@ defmodule OliWeb.Users.UsersDetailView do
            enrolled_sections: enrolled_sections,
            institution: institution,
            credentials_has_google: has_google,
-           credentials_label: credentials_label(user, has_google),
+           credentials_label: DetailViewHelpers.credentials_label(user, has_google),
            disabled_edit: true,
            user_name: user.name,
+           user_header_name: DetailViewHelpers.formatted_header_name(user),
            password_reset_link: ""
          )}
     end
@@ -94,6 +95,7 @@ defmodule OliWeb.Users.UsersDetailView do
   attr(:disabled_edit, :boolean, default: true)
   attr(:disabled_submit, :boolean, default: false)
   attr(:user_name, :string)
+  attr(:user_header_name, :string)
   attr(:password_reset_link, :string)
   attr(:credentials_has_google, :boolean)
   attr(:credentials_label, :string)
@@ -103,6 +105,11 @@ defmodule OliWeb.Users.UsersDetailView do
     <div>
       {render_modal(assigns)}
       <Groups.render>
+        <div class="pt-6 pb-2">
+          <h2 class="text-Text-text-high text-2xl font-semibold leading-8">
+            {if @user_header_name == "", do: "Unnamed user", else: @user_header_name}
+          </h2>
+        </div>
         <div class="flex flex-col py-5 border-b border-Border-border-subtle">
           <h4>Enrolled Sections</h4>
           <div class="text-Text-text-low-alpha">Course sections to which the user is enrolled.</div>
@@ -498,12 +505,14 @@ defmodule OliWeb.Users.UsersDetailView do
     form = user_form(socket.assigns.user, params)
 
     user_name = combined_user_name(form, socket.assigns.user)
+    user_header_name = combined_header_name_from_form(form, socket.assigns.user)
 
     socket =
       socket
       |> assign(form: form)
       |> assign(disabled_submit: !Enum.empty?(form.errors))
       |> assign(user_name: user_name)
+      |> assign(user_header_name: user_header_name)
 
     {:noreply, socket}
   end
@@ -524,7 +533,8 @@ defmodule OliWeb.Users.UsersDetailView do
          |> assign(user: user)
          |> assign(form: updated_form)
          |> assign(disabled_edit: true)
-         |> assign(user_name: combined_user_name(updated_form, user))}
+         |> assign(user_name: combined_user_name(updated_form, user))
+         |> assign(user_header_name: combined_header_name_from_form(updated_form, user))}
 
       {:error, error} ->
         form = to_form(error)
@@ -578,6 +588,18 @@ defmodule OliWeb.Users.UsersDetailView do
     end
   end
 
+  defp combined_header_name_from_form(form, fallback_user) do
+    given = form[:given_name].value || fallback_user.given_name || ""
+    family = form[:family_name].value || fallback_user.family_name || ""
+
+    case {String.trim(family), String.trim(given)} do
+      {"", ""} -> fallback_user.name || ""
+      {family, ""} -> family
+      {"", given} -> given
+      {family, given} -> "#{family}, #{given}"
+    end
+  end
+
   defp user_with_preloaded_fields(id) do
     Accounts.get_user(id, preload: [:platform_roles, :user_identities])
   end
@@ -587,21 +609,6 @@ defmodule OliWeb.Users.UsersDetailView do
     |> User.noauth_changeset(attrs)
     |> Map.put(:action, :update)
     |> to_form()
-  end
-
-  defp credentials_has_google?(identities) when is_list(identities) do
-    Enum.any?(identities, &(&1.provider == "google"))
-  end
-
-  defp credentials_label(%User{} = user, has_google) do
-    has_password = UserAssentAuth.has_password?(user)
-
-    cond do
-      has_google and has_password -> "Email & Password"
-      has_google -> nil
-      has_password -> "Email & Password"
-      true -> "None"
-    end
   end
 
   defp add_necessary_information(sections, user) do

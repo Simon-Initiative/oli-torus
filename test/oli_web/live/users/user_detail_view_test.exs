@@ -36,6 +36,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       assert html =~ "User details"
       assert html =~ lms_student.name
+      assert html =~ "#{lms_student.family_name}, #{lms_student.given_name}"
 
       conn =
         recycle_author_session(conn, admin)
@@ -45,6 +46,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       assert html =~ "User details"
       assert html =~ independent_student.name
+      assert html =~ "#{independent_student.family_name}, #{independent_student.given_name}"
     end
 
     test "system admin toggles internal flag and records audit event", %{
