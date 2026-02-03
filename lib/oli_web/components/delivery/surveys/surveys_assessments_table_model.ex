@@ -87,11 +87,11 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
     ~H"""
     <%= if @should_show_details do %>
       <div :for={activity <- @activities} class="px-10">
-        <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
+        <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-full whitespace-nowrap rounded-t-md font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
           <div role="activity_title">{activity.title} - Question details</div>
           <div
             id={"student_attempts_summary_#{activity.id}"}
-            class="flex flex-row gap-x-2 lowercase"
+            class="flex flex-row items-center gap-x-2 lowercase w-full h-6"
           >
             <span class="text-xs">
               <%= if activity.students_with_attempts_count == 0 do %>
@@ -102,7 +102,7 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
             </span>
             <div
               :if={activity.students_with_attempts_count < Enum.count(@students)}
-              class="flex flex-col gap-x-2 items-center"
+              class="flex gap-x-2 items-center w-full"
             >
               <span class="text-xs">
                 {~s{#{Enum.count(activity.student_emails_without_attempts)} #{Gettext.ngettext(OliWeb.Gettext,
@@ -119,16 +119,11 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
               />
               <button
                 id="copy_emails_button"
-                class="text-xs text-primary underline ml-auto"
+                class="flex items-center gap-x-1.5 text-xs text-Text-text-button ml-auto"
                 phx-hook="CopyListener"
                 data-clipboard-target="#email_inputs"
               >
-                <i class="fa-solid fa-copy mr-2" />{Gettext.ngettext(
-                  OliWeb.Gettext,
-                  "Copy email address",
-                  "Copy email addresses",
-                  Enum.count(activity.student_emails_without_attempts)
-                )}
+                <Icons.email /> <span>Email</span>
               </button>
             </div>
           </div>
