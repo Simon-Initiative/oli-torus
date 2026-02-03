@@ -52,7 +52,8 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
      |> assign(:error, nil)
      |> assign(:input_value, "")
      |> assign(:font_style, "font-family: 'Open Sans', sans-serif;")
-     |> assign_new(:variant, fn -> :table end)}
+     |> assign_new(:variant, fn -> :table end)
+     |> assign_new(:current_author, fn -> nil end)}
   end
 
   @impl true
@@ -119,8 +120,9 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     tag_id = String.to_integer(tag_id)
     entity_type = socket.assigns.entity_type
     entity_id = socket.assigns.entity_id
+    current_author = socket.assigns.current_author
 
-    case associate_tag(entity_type, entity_id, tag_id) do
+    case associate_tag(entity_type, entity_id, tag_id, current_author) do
       {:ok, _} ->
         # Find the tag in available_tags
         case Enum.find(socket.assigns.available_tags, &(&1.id == tag_id)) do
@@ -156,8 +158,9 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     tag_id = String.to_integer(tag_id)
     entity_type = socket.assigns.entity_type
     entity_id = socket.assigns.entity_id
+    current_author = socket.assigns.current_author
 
-    case remove_tag(entity_type, entity_id, tag_id, remove_if_unused: true) do
+    case remove_tag(entity_type, entity_id, tag_id, current_author, remove_if_unused: true) do
       {:ok, _, result} ->
         # Find and remove the tag from current_tags
         removed_tag = Enum.find(socket.assigns.current_tags, &(&1.id == tag_id))
@@ -485,24 +488,25 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     Tags.get_section_tags(section_id)
   end
 
-  defp associate_tag(:project, project_id, tag_id) do
-    Tags.associate_tag_with_project(project_id, tag_id)
+  defp associate_tag(:project, project_id, tag_id, actor) do
+    Tags.associate_tag_with_project(project_id, tag_id, actor: actor)
   end
 
-  defp associate_tag(:section, section_id, tag_id) do
-    Tags.associate_tag_with_section(section_id, tag_id)
+  defp associate_tag(:section, section_id, tag_id, actor) do
+    Tags.associate_tag_with_section(section_id, tag_id, actor: actor)
   end
 
-  defp remove_tag(:project, project_id, tag_id, opts) do
-    Tags.remove_tag_from_project(project_id, tag_id, opts)
+  defp remove_tag(:project, project_id, tag_id, actor, opts) do
+    Tags.remove_tag_from_project(project_id, tag_id, Keyword.put(opts, :actor, actor))
   end
 
-  defp remove_tag(:section, section_id, tag_id, opts) do
-    Tags.remove_tag_from_section(section_id, tag_id, opts)
+  defp remove_tag(:section, section_id, tag_id, actor, opts) do
+    Tags.remove_tag_from_section(section_id, tag_id, Keyword.put(opts, :actor, actor))
   end
 
   defp create_tag_from_input_value(socket) do
     input_value = String.trim(socket.assigns.input_value)
+    current_author = socket.assigns.current_author
 
     if input_value == "" do
       assign(socket, :error, "Please enter a tag name")
@@ -519,7 +523,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
           entity_type = socket.assigns.entity_type
           entity_id = socket.assigns.entity_id
 
-          case associate_tag(entity_type, entity_id, tag_id) do
+          case associate_tag(entity_type, entity_id, tag_id, current_author) do
             {:ok, _} ->
               # Add existing tag to current_tags and sort
               updated_current_tags = [existing_tag | socket.assigns.current_tags]
@@ -552,7 +556,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
               entity_type = socket.assigns.entity_type
               entity_id = socket.assigns.entity_id
 
-              case associate_tag(entity_type, entity_id, tag.id) do
+              case associate_tag(entity_type, entity_id, tag.id, current_author) do
                 {:ok, _} ->
                   # Add new tag to current_tags and sort
                   updated_current_tags = [tag | socket.assigns.current_tags]
@@ -593,7 +597,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                   entity_type = socket.assigns.entity_type
                   entity_id = socket.assigns.entity_id
 
-                  case associate_tag(entity_type, entity_id, tag_id) do
+                  case associate_tag(entity_type, entity_id, tag_id, current_author) do
                     {:ok, _} ->
                       # Find the tag that was created and add it to current_tags
                       found_tag =

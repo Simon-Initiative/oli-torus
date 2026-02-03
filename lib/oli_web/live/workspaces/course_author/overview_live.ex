@@ -177,6 +177,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                 entity_type={:project}
                 entity_id={@project.id}
                 current_tags={@project.tags}
+                current_author={@current_author}
                 variant={:form}
               />
             <% else %>

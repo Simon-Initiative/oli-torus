@@ -36,7 +36,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       ProductsTableModel.new(products, ctx, project.slug,
         sort_by_spec: :inserted_at,
         sort_order: :desc,
-        is_admin: false
+        is_admin: false,
+        current_author: socket.assigns.current_author
       )
 
     published? = Publishing.project_published?(project.slug)
@@ -128,7 +129,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       {:ok, _blueprint} ->
         products = get_products(socket.assigns)
 
-        {:ok, table_model} = ProductsTableModel.new(products, socket.assigns.ctx, project_slug)
+        {:ok, table_model} =
+          ProductsTableModel.new(products, socket.assigns.ctx, project_slug,
+            current_author: socket.assigns.current_author
+          )
 
         {:noreply,
          socket

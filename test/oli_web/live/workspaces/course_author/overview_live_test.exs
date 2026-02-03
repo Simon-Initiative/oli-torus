@@ -966,7 +966,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
     test "displays Tags section in Details for admin users", %{conn: conn, admin: admin} do
       project = create_project_with_author(admin)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      {:ok, _} = Tags.associate_tag_with_project(project, tag)
+      {:ok, _} = Tags.associate_tag_with_project(project, tag, actor: admin)
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
@@ -980,7 +980,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       project = create_project_with_author(admin)
       {:ok, existing_tag} = Tags.create_tag(%{name: "Chemistry"})
       {:ok, _available_tag} = Tags.create_tag(%{name: "Physics"})
-      {:ok, _} = Tags.associate_tag_with_project(project, existing_tag)
+      {:ok, _} = Tags.associate_tag_with_project(project, existing_tag, actor: admin)
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
@@ -1000,14 +1000,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
   describe "project overview tags visibility for authors (non-admin)" do
     setup [:author_conn]
 
+    setup do
+      # Create an admin for tag operations in tests
+      admin =
+        Oli.Factory.insert(:author,
+          system_role_id: Oli.Accounts.SystemRole.role_id().content_admin
+        )
+
+      %{tag_admin: admin}
+    end
+
     # MER-5022: Tag EDITING is admin-only, but authors should be able to VIEW tags
     # "This functionality is reserved for admins" - "functionality" = editing capability
     # "This could lead to tags being made by any author" - concern is about creating, not viewing
 
-    test "displays tags as read-only for regular authors", %{conn: conn, author: author} do
+    test "displays tags as read-only for regular authors", %{
+      conn: conn,
+      author: author,
+      tag_admin: tag_admin
+    } do
       project = create_project_with_author(author)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      {:ok, _} = Tags.associate_tag_with_project(project, tag)
+      {:ok, _} = Tags.associate_tag_with_project(project, tag, actor: tag_admin)
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
@@ -1033,11 +1047,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
     test "cannot edit tags - no interactive TagsComponent rendered", %{
       conn: conn,
-      author: author
+      author: author,
+      tag_admin: tag_admin
     } do
       project = create_project_with_author(author)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      {:ok, _} = Tags.associate_tag_with_project(project, tag)
+      {:ok, _} = Tags.associate_tag_with_project(project, tag, actor: tag_admin)
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
@@ -1051,13 +1066,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
     test "displays multiple tags in alphabetical order for regular authors", %{
       conn: conn,
-      author: author
+      author: author,
+      tag_admin: tag_admin
     } do
       project = create_project_with_author(author)
       {:ok, zebra_tag} = Tags.create_tag(%{name: "Zebra"})
       {:ok, apple_tag} = Tags.create_tag(%{name: "Apple"})
-      {:ok, _} = Tags.associate_tag_with_project(project, zebra_tag)
-      {:ok, _} = Tags.associate_tag_with_project(project, apple_tag)
+      {:ok, _} = Tags.associate_tag_with_project(project, zebra_tag, actor: tag_admin)
+      {:ok, _} = Tags.associate_tag_with_project(project, apple_tag, actor: tag_admin)
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 

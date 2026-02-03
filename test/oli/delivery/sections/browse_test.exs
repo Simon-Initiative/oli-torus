@@ -234,14 +234,17 @@ defmodule Oli.Delivery.Sections.BrowseTest do
     end
 
     test "filtering by tags", %{sections: sections} do
+      # Create an admin for tag operations
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+
       # Create some tags
       tag1 = insert(:tag, name: "Tag1")
       tag2 = insert(:tag, name: "Tag2")
 
       # Associate tags with sections
-      Oli.Tags.associate_tag_with_section(hd(sections), tag1)
-      Oli.Tags.associate_tag_with_section(Enum.at(sections, 1), tag1)
-      Oli.Tags.associate_tag_with_section(Enum.at(sections, 1), tag2)
+      Oli.Tags.associate_tag_with_section(hd(sections), tag1, actor: admin)
+      Oli.Tags.associate_tag_with_section(Enum.at(sections, 1), tag1, actor: admin)
+      Oli.Tags.associate_tag_with_section(Enum.at(sections, 1), tag2, actor: admin)
 
       # Filter by tag1 - should find 2 sections
       results =
