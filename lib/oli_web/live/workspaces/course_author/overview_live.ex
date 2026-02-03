@@ -529,12 +529,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               Failed to load course sections. Please refresh the page.
             </div>
           </:failed>
-          <.form
-            :if={data.total > 0 or @course_sections_search != ""}
-            for={%{}}
-            phx-change="course_sections_search_change"
-            class="mb-4"
-          >
+          <.form for={%{}} phx-change="course_sections_search_change" class="mb-4">
             <SearchInput.render
               id="course-sections-search"
               name="search"
@@ -813,21 +808,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   end
 
   def handle_event("course_sections_search_change", %{"search" => search}, socket) do
-    # Extract values before async to avoid copying entire socket
-    project_id = socket.assigns.course_sections_project_id
-    ctx = socket.assigns.ctx
-    limit = socket.assigns.course_sections_limit
-    sort_order = socket.assigns.course_sections_sort_order
-    sort_by = socket.assigns.course_sections_sort_by
+    # Skip query when list is empty - nothing to search
+    case socket.assigns.course_sections_data do
+      %{result: %{total: 0}} ->
+        {:noreply, assign(socket, course_sections_search: search, course_sections_offset: 0)}
 
-    socket =
-      socket
-      |> assign(course_sections_search: search, course_sections_offset: 0)
-      |> assign_async(:course_sections_data, fn ->
-        load_course_sections_data(project_id, ctx, 0, limit, sort_order, sort_by, search)
-      end)
+      _ ->
+        # Extract values before async to avoid copying entire socket
+        project_id = socket.assigns.course_sections_project_id
+        ctx = socket.assigns.ctx
+        limit = socket.assigns.course_sections_limit
+        sort_order = socket.assigns.course_sections_sort_order
+        sort_by = socket.assigns.course_sections_sort_by
 
-    {:noreply, socket}
+        socket =
+          socket
+          |> assign(course_sections_search: search, course_sections_offset: 0)
+          |> assign_async(:course_sections_data, fn ->
+            load_course_sections_data(project_id, ctx, 0, limit, sort_order, sort_by, search)
+          end)
+
+        {:noreply, socket}
+    end
   end
 
   def handle_event(

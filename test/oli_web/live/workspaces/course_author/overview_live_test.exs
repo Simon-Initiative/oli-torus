@@ -605,7 +605,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
   describe "project overview course sections" do
     setup [:author_conn]
 
-    test "displays Course Sections section with 'None exist' when project has no active sections",
+    test "displays Course Sections section with search box and 'None exist' when project has no active sections",
          %{conn: conn, author: author} do
       project = create_project_with_author(author)
 
@@ -616,6 +616,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       # Wait for async data to load
       html = render_async(view)
       assert html =~ "None exist"
+
+      # Search box should be visible even when empty (consistent with other views)
+      assert has_element?(view, "form[phx-change='course_sections_search_change']")
     end
 
     test "only displays sections with future end dates", %{conn: conn, author: author} do
@@ -994,6 +997,77 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert has_element?(view, "button[phx-click='remove_tag'] svg")
       # Should show available tag to add
       assert has_element?(view, "button[phx-click='add_tag']", "Physics")
+    end
+  end
+
+  describe "course_sections_search_change handler unit tests" do
+    alias OliWeb.Workspaces.CourseAuthor.OverviewLive
+
+    test "skips query when course_sections_data total is 0" do
+      # Create a socket with course_sections_data showing total: 0
+      original_data = %{result: %{total: 0, table_model: %{}}}
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          course_sections_data: original_data,
+          course_sections_search: "",
+          course_sections_offset: 0
+        }
+      }
+
+      # Call handler directly
+      {:noreply, updated_socket} =
+        OverviewLive.handle_event(
+          "course_sections_search_change",
+          %{"search" => "biology"},
+          socket
+        )
+
+      # Verify search was updated
+      assert updated_socket.assigns.course_sections_search == "biology"
+      assert updated_socket.assigns.course_sections_offset == 0
+
+      # Verify course_sections_data is UNCHANGED (no assign_async was called)
+      # If assign_async was called, the data would be wrapped in a new AsyncResult with loading: true
+      assert updated_socket.assigns.course_sections_data == original_data
+    end
+
+    test "executes query when course_sections_data total is greater than 0" do
+      # Create a socket with course_sections_data showing total: 5
+      original_data = %{result: %{total: 5, table_model: %{}}}
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          course_sections_data: original_data,
+          course_sections_search: "",
+          course_sections_offset: 0,
+          course_sections_project_id: 1,
+          course_sections_limit: 10,
+          course_sections_sort_order: :asc,
+          course_sections_sort_by: :title,
+          ctx: %{}
+        }
+      }
+
+      # Call handler directly
+      {:noreply, updated_socket} =
+        OverviewLive.handle_event(
+          "course_sections_search_change",
+          %{"search" => "biology"},
+          socket
+        )
+
+      # Verify search was updated
+      assert updated_socket.assigns.course_sections_search == "biology"
+
+      # Verify course_sections_data IS changed (assign_async was called)
+      # When assign_async is called, the assign becomes an AsyncResult struct
+      assert updated_socket.assigns.course_sections_data != original_data
+      # The assign is now an AsyncResult with a loading key set to the async keys
+      assert is_map(updated_socket.assigns.course_sections_data)
+      assert Map.has_key?(updated_socket.assigns.course_sections_data, :loading)
     end
   end
 
