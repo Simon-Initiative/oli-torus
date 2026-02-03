@@ -107,7 +107,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
           allow_selection={true}
           show_bottom_paging={false}
           show_limit_change={true}
-          no_records_message="There are no surveys present in this course"
+          no_records_message={no_records_message(@params.text_search)}
           details_render_fn={&SurveysAssessmentsTableModel.render_survey_details/2}
           sticky_header_offset={56}
         />
@@ -300,6 +300,11 @@ defmodule OliWeb.Components.Delivery.Surveys do
 
   defp parse_survey_id(id) when is_integer(id), do: id
   defp parse_survey_id(id) when is_binary(id), do: String.to_integer(id)
+
+  defp no_records_message(text_search) when text_search in [nil, ""],
+    do: "There are no surveys present in this course"
+
+  defp no_records_message(_), do: "No surveys match your search"
 
   defp apply_filters(assessments, params) do
     assessments =
