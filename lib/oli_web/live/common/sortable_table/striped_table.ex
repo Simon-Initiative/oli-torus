@@ -90,7 +90,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     row_id =
       if assigns.model.data[:view_type] in [
            :objectives_instructor_dashboard,
-           :activities_instructor_dashboard
+           :activities_instructor_dashboard,
+           :surveys_instructor_dashboard
          ],
          do: "row_#{row.resource_id}",
          else: id_field(row, assigns.model)
