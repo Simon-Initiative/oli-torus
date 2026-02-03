@@ -74,7 +74,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             section_id: assigns[:section_id],
             section_title: assigns[:section_title],
             current_user: assigns[:current_user],
-            current_params: params,
+            current_params: encode_params_for_url(params),
             component_target: socket.assigns.myself,
             expanded_rows: expanded_objectives
           })
