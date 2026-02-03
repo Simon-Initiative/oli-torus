@@ -42,6 +42,7 @@ defmodule OliWeb.Sections.InvalidSectionInviteViewTest do
 
     test "shows enroll view", %{conn: conn} do
       section_invite_slig = "12345"
+
       section =
         insert(:section, open_and_free: true, lti_1p3_deployment: nil, lti_1p3_deployment_id: nil)
 

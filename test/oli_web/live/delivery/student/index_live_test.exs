@@ -717,6 +717,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
           lti_1p3_deployment: nil,
           lti_1p3_deployment_id: nil
         )
+
       student = insert(:user)
 
       Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -730,6 +731,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
     test "can not access when not enrolled to course", context do
       {:ok, conn: conn, user: _user} = user_conn(context)
+
       section =
         insert(:section,
           requires_enrollment: true,

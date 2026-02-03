@@ -38,7 +38,8 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
                # this current user refers to the one that is logged in
                # and might be different from the user that is being invited
                current_user:
-                 session["user_token"] && Accounts.get_user_by_session_token(session["user_token"]),
+                 session["user_token"] &&
+                   Accounts.get_user_by_session_token(session["user_token"]),
                section: section,
                enrollment: enrollment,
                invitation_role:

@@ -109,6 +109,7 @@ defmodule OliWeb.CollaborationLiveTest do
         lti_1p3_deployment: nil,
         lti_1p3_deployment_id: nil
       )
+
     {:ok, _sr} = Sections.create_section_resources(section, publication)
 
     sr = Sections.get_section_resource(section.id, page_resource_cs.id)

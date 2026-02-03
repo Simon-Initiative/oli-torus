@@ -145,7 +145,9 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
                )
 
       assert {:redirect, %{to: "/workspaces/student"}} = redirected_socket.redirected
-      assert redirected_socket.assigns.flash["error"] == "This course is only available through your LMS."
+
+      assert redirected_socket.assigns.flash["error"] ==
+               "This course is only available through your LMS."
     end
 
     test "allows access for admin author", %{author: author} do
