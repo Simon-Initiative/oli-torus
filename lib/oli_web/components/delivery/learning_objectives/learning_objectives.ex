@@ -74,7 +74,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             section_id: assigns[:section_id],
             section_title: assigns[:section_title],
             current_user: assigns[:current_user],
-            current_params: params,
+            current_params: encode_params_for_url(params),
             component_target: socket.assigns.myself,
             expanded_rows: expanded_objectives
           })
@@ -815,6 +815,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   @doc false
   def objectives_count(objectives) do
+    in_scope_parent_ids = in_scope_parent_ids(objectives)
+
     %{
       low_proficiency_outcomes:
         Enum.count(objectives, fn obj ->
@@ -822,13 +824,28 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         end),
       low_proficiency_skills:
         Enum.count(objectives, fn obj ->
-          obj.student_proficiency_subobj == "Low" and subobjective?(obj)
+          obj.student_proficiency_subobj == "Low" and
+            subobjective_with_in_scope_parent?(obj, in_scope_parent_ids)
         end)
     }
   end
 
   defp subobjective?(objective), do: not is_nil(objective.subobjective)
   defp top_level_objective?(objective), do: is_nil(objective.subobjective)
+
+  defp in_scope_parent_ids(objectives) do
+    objectives
+    |> Enum.filter(&top_level_objective?/1)
+    |> Enum.map(& &1.resource_id)
+    |> MapSet.new()
+  end
+
+  defp subobjective_with_in_scope_parent?(objective, in_scope_parent_ids) do
+    case Map.get(objective, :objective_resource_id) do
+      nil -> false
+      parent_id -> subobjective?(objective) and MapSet.member?(in_scope_parent_ids, parent_id)
+    end
+  end
 
   defp parent_id(objective),
     do:
