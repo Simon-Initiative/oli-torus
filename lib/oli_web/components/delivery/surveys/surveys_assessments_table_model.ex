@@ -86,67 +86,73 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
 
     ~H"""
     <%= if @should_show_details do %>
-      <div :for={activity <- @activities} class="px-10">
-        <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-full whitespace-nowrap rounded-t-md font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
-          <div role="activity_title">{activity.title} - Question details</div>
-          <div
-            id={"student_attempts_summary_#{activity.id}"}
-            class="flex flex-row items-center gap-x-2 lowercase w-full h-6"
-          >
-            <span class="text-xs">
-              <%= if activity.students_with_attempts_count == 0 do %>
-                No student has completed any attempts.
-              <% else %>
-                {~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} completed #{activity.total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", activity.total_attempts_count)}.}}
-              <% end %>
-            </span>
+      <%= if @activities == [] do %>
+        <div class="px-10 py-6 text-sm text-Text-text-muted dark:text-Text-text-muted">
+          No attempts have been recorded for this survey yet.
+        </div>
+      <% else %>
+        <div :for={activity <- @activities} class="px-10">
+          <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-full whitespace-nowrap rounded-t-md font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
+            <div role="activity_title">{activity.title} - Question details</div>
             <div
-              :if={
-                activity.students_with_attempts_count <
-                  (Map.get(activity, :students_count) || Enum.count(@students))
-              }
-              class="flex gap-x-2 items-center w-full"
+              id={"student_attempts_summary_#{activity.id}"}
+              class="flex flex-row items-center gap-x-2 lowercase w-full h-6"
             >
               <span class="text-xs">
-                {~s{#{Map.get(activity, :emails_without_attempts_count) || Enum.count(activity.student_emails_without_attempts || [])} #{Gettext.ngettext(OliWeb.Gettext,
-                "student has",
-                "students have",
-                Map.get(activity, :emails_without_attempts_count) || Enum.count(activity.student_emails_without_attempts || []))} not completed any attempt.}}
+                <%= if activity.students_with_attempts_count == 0 do %>
+                  No student has completed any attempts.
+                <% else %>
+                  {~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} completed #{activity.total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", activity.total_attempts_count)}.}}
+                <% end %>
               </span>
-              <input
-                type="text"
-                id={"email_inputs_#{activity.id}"}
-                class="form-control hidden"
-                value={Enum.join(activity.student_emails_without_attempts, "; ")}
-                readonly
-              />
-              <button
-                id={"copy_emails_button_#{activity.id}"}
-                class="flex items-center gap-x-1.5 text-xs text-Text-text-button ml-auto"
-                phx-hook="CopyListener"
-                data-clipboard-target={"#email_inputs_#{activity.id}"}
+              <div
+                :if={
+                  activity.students_with_attempts_count <
+                    (Map.get(activity, :students_count) || Enum.count(@students))
+                }
+                class="flex gap-x-2 items-center w-full"
               >
-                <Icons.email /> <span>Email</span>
-              </button>
+                <span class="text-xs">
+                  {~s{#{Map.get(activity, :emails_without_attempts_count) || Enum.count(activity.student_emails_without_attempts || [])} #{Gettext.ngettext(OliWeb.Gettext,
+                  "student has",
+                  "students have",
+                  Map.get(activity, :emails_without_attempts_count) || Enum.count(activity.student_emails_without_attempts || []))} not completed any attempt.}}
+                </span>
+                <input
+                  type="text"
+                  id={"email_inputs_#{activity.id}"}
+                  class="form-control hidden"
+                  value={Enum.join(activity.student_emails_without_attempts, "; ")}
+                  readonly
+                />
+                <button
+                  id={"copy_emails_button_#{activity.id}"}
+                  class="flex items-center gap-x-1.5 text-xs text-Text-text-button ml-auto"
+                  phx-hook="CopyListener"
+                  data-clipboard-target={"#email_inputs_#{activity.id}"}
+                >
+                  <Icons.email /> <span>Email</span>
+                </button>
+              </div>
             </div>
           </div>
+          <div
+            class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
+            id={"activity_detail_#{activity.id}"}
+            phx-hook="LoadSurveyScripts"
+            phx-update="ignore"
+          >
+            <%= if Map.get(activity, :preview_rendered) != nil do %>
+              <ActivityHelpers.rendered_activity
+                activity={activity}
+                activity_types_map={@activity_types_map}
+              />
+            <% else %>
+              <p class="pt-9 pb-5">No attempt registered for this question</p>
+            <% end %>
+          </div>
         </div>
-        <div
-          class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
-          id={"activity_detail_#{activity.id}"}
-          phx-hook="LoadSurveyScripts"
-          phx-update="ignore"
-        >
-          <%= if Map.get(activity, :preview_rendered) != nil do %>
-            <ActivityHelpers.rendered_activity
-              activity={activity}
-              activity_types_map={@activity_types_map}
-            />
-          <% else %>
-            <p class="pt-9 pb-5">No attempt registered for this question</p>
-          <% end %>
-        </div>
-      </div>
+      <% end %>
     <% else %>
       <div class="p-6 flex justify-center items-center">
         <span
