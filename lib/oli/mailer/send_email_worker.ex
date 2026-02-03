@@ -71,6 +71,10 @@ defmodule Oli.Mailer.SendEmailWorker do
   defp serialize_reply_to(email) when is_binary(email), do: email
 
   defp maybe_set_reply_to(email, nil), do: email
-  defp maybe_set_reply_to(email, %{"name" => name, "email" => addr}), do: Swoosh.Email.reply_to(email, {name, addr})
-  defp maybe_set_reply_to(email, reply_to) when is_binary(reply_to), do: Swoosh.Email.reply_to(email, reply_to)
+
+  defp maybe_set_reply_to(email, %{"name" => name, "email" => addr}),
+    do: Swoosh.Email.reply_to(email, {name, addr})
+
+  defp maybe_set_reply_to(email, reply_to) when is_binary(reply_to),
+    do: Swoosh.Email.reply_to(email, reply_to)
 end

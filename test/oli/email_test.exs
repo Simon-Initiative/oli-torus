@@ -82,7 +82,10 @@ defmodule Oli.EmailTest do
 
   describe "create_email/4" do
     test "creates email with recipient, subject, and does not set reply_to" do
-      email = Email.create_email("recipient@test.com", "Test Subject", :email_confirmation, %{url: "http://test.com"})
+      email =
+        Email.create_email("recipient@test.com", "Test Subject", :email_confirmation, %{
+          url: "http://test.com"
+        })
 
       assert email.to == [{"", "recipient@test.com"}]
       assert email.subject == "Test Subject"
@@ -90,7 +93,10 @@ defmodule Oli.EmailTest do
     end
 
     test "inherits from address from base_email" do
-      email = Email.create_email("recipient@test.com", "Test Subject", :email_confirmation, %{url: "http://test.com"})
+      email =
+        Email.create_email("recipient@test.com", "Test Subject", :email_confirmation, %{
+          url: "http://test.com"
+        })
 
       assert email.from == {
                Application.get_env(:oli, :email_from_name),
@@ -118,49 +124,53 @@ defmodule Oli.EmailTest do
 
   describe "help_desk_email/5" do
     test "sets from to the user's email" do
-      email = Email.help_desk_email(
-        "user@test.com",
-        "helpdesk@test.com",
-        "Help Request",
-        :help_email,
-        %{message: "Test message"}
-      )
+      email =
+        Email.help_desk_email(
+          "user@test.com",
+          "helpdesk@test.com",
+          "Help Request",
+          :help_email,
+          %{message: "Test message"}
+        )
 
       assert email.from == {"", "user@test.com"}
     end
 
     test "sets reply_to to the user's email" do
-      email = Email.help_desk_email(
-        "user@test.com",
-        "helpdesk@test.com",
-        "Help Request",
-        :help_email,
-        %{message: "Test message"}
-      )
+      email =
+        Email.help_desk_email(
+          "user@test.com",
+          "helpdesk@test.com",
+          "Help Request",
+          :help_email,
+          %{message: "Test message"}
+        )
 
       assert email.reply_to == {"", "user@test.com"}
     end
 
     test "sets to to the help desk email" do
-      email = Email.help_desk_email(
-        "user@test.com",
-        "helpdesk@test.com",
-        "Help Request",
-        :help_email,
-        %{message: "Test message"}
-      )
+      email =
+        Email.help_desk_email(
+          "user@test.com",
+          "helpdesk@test.com",
+          "Help Request",
+          :help_email,
+          %{message: "Test message"}
+        )
 
       assert email.to == [{"", "helpdesk@test.com"}]
     end
 
     test "sets the subject correctly" do
-      email = Email.help_desk_email(
-        "user@test.com",
-        "helpdesk@test.com",
-        "Help Request Subject",
-        :help_email,
-        %{message: "Test message"}
-      )
+      email =
+        Email.help_desk_email(
+          "user@test.com",
+          "helpdesk@test.com",
+          "Help Request Subject",
+          :help_email,
+          %{message: "Test message"}
+        )
 
       assert email.subject == "Help Request Subject"
     end
