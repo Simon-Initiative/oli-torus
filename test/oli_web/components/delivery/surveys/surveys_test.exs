@@ -70,7 +70,7 @@ defmodule OliWeb.Components.Delivery.SurveysTest do
               render_fn: fn _, _, _ -> "" end
             }
           ],
-          data: %{expanded_row_ids: [], survey_activities_map: %{}},
+          data: %{expanded_rows: [], survey_activities_map: %{}},
           sort_order: :asc,
           id_field: [:resource_id],
           selected: nil,
@@ -128,7 +128,7 @@ defmodule OliWeb.Components.Delivery.SurveysTest do
             expandable_rows: true,
             selected_survey_ids: [1],
             survey_activities_map: %{1 => [activity]},
-            expanded_row_ids: [1],
+            expanded_rows: MapSet.new(["row_1"]),
             activity_types_map: %{},
             students: [%{id: 1}]
           },
@@ -191,7 +191,7 @@ defmodule OliWeb.Components.Delivery.SurveysTest do
             expandable_rows: true,
             selected_survey_ids: [1],
             survey_activities_map: %{1 => [activity]},
-            expanded_row_ids: [1],
+            expanded_rows: MapSet.new(["row_1"]),
             activity_types_map: %{},
             students: [%{id: 1}]
           },
@@ -251,7 +251,7 @@ defmodule OliWeb.Components.Delivery.SurveysTest do
             expandable_rows: true,
             selected_survey_ids: [1],
             survey_activities_map: %{1 => [activity]},
-            expanded_row_ids: [1],
+            expanded_rows: MapSet.new(["row_1"]),
             activity_types_map: %{},
             students: [%{id: 1}]
           },

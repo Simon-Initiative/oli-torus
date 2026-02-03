@@ -226,7 +226,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
         Map.merge(data, %{
           selected_survey_ids: [],
           survey_activities_map: %{},
-          expanded_row_ids: []
+          expanded_rows: MapSet.new()
         })
       end)
 
@@ -274,7 +274,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
         Map.merge(data, %{
           selected_survey_ids: selected_survey_ids,
           survey_activities_map: survey_activities_map,
-          expanded_row_ids: selected_survey_ids,
+          expanded_rows: MapSet.new(Enum.map(selected_survey_ids, &"row_#{&1}")),
           activity_types_map: activity_types_map,
           scripts: scripts,
           target: socket.assigns.myself
