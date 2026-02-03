@@ -4,6 +4,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   import Phoenix.Component
   import OliWeb.Components.Common
 
+  import Ecto.Query, only: [from: 2]
+
   alias Oli.{Accounts, Activities, Inventories, Publishing, Repo}
   alias Oli.Authoring.{Broadcaster, Course, ProjectExportWorker}
   alias Oli.Delivery.Sections.Browse
@@ -29,7 +31,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns
-    project = Repo.preload(project, [:tags, :communities])
+
+    project =
+      Repo.preload(project, [:communities, tags: from(t in Oli.Tags.Tag, order_by: t.name)])
 
     # Get institutions with visibility access to this project
     visibility_institutions =
@@ -1070,15 +1074,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   attr :tags, :list, required: true
 
   defp read_only_tags(assigns) do
-    sorted_tags = Enum.sort_by(assigns.tags, & &1.name)
-    assigns = assign(assigns, :sorted_tags, sorted_tags)
-
     ~H"""
     <div class="min-h-[40px] w-full rounded border border-Border-border-default bg-Fill-fill-form-field px-3 py-2 flex items-center">
-      <span :if={@sorted_tags == []} class="text-Text-text-tertiary">None</span>
-      <div :if={@sorted_tags != []} class="flex flex-wrap gap-1">
+      <span :if={@tags == []} class="text-Text-text-tertiary">None</span>
+      <div :if={@tags != []} class="flex flex-wrap gap-1">
         <span
-          :for={tag <- @sorted_tags}
+          :for={tag <- @tags}
           class={"px-2 py-1 rounded-full text-sm leading-4 font-semibold #{TagsComponent.get_tag_pill_classes(tag.name)}"}
         >
           {tag.name}
