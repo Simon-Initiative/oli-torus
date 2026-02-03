@@ -207,7 +207,7 @@ defmodule Oli.Delivery do
 
   defp maybe_enroll_user_as_instructor(%User{id: user_id} = user, section) do
     with :ok <-
-           Sections.ensure_direct_delivery_enrollment_allowed(
+           Sections.ensure_enrollment_allowed(
              user,
              section
            ) do

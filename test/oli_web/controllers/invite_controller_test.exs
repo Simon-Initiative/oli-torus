@@ -17,7 +17,7 @@ defmodule OliWeb.InviteControllerTest do
          %{conn: conn} do
       expect_recaptcha_http_post()
       stub_real_current_time()
-      section = insert(:section)
+      section = insert_direct_delivery_section()
 
       post(
         conn,
@@ -68,7 +68,7 @@ defmodule OliWeb.InviteControllerTest do
          %{conn: conn} do
       expect_recaptcha_http_post()
       stub_real_current_time()
-      section = insert(:section)
+      section = insert_direct_delivery_section()
 
       post(
         conn,
@@ -120,7 +120,7 @@ defmodule OliWeb.InviteControllerTest do
          %{conn: conn} do
       expect_recaptcha_http_post()
       stub_real_current_time()
-      section = insert(:section)
+      section = insert_direct_delivery_section()
       existing_instructor = user_fixture(email: @invite_email)
 
       post(
@@ -170,7 +170,7 @@ defmodule OliWeb.InviteControllerTest do
          %{conn: conn} do
       expect_recaptcha_http_post()
       stub_real_current_time()
-      section = insert(:section)
+      section = insert_direct_delivery_section()
       existing_student = user_fixture(email: @invite_email)
 
       post(
@@ -221,7 +221,7 @@ defmodule OliWeb.InviteControllerTest do
          %{conn: conn} do
       expect_recaptcha_http_post()
       stub_real_current_time()
-      section = insert(:section)
+      section = insert_direct_delivery_section()
       existing_student = user_fixture(email: @invite_email)
 
       # send the first invitation and mark it as rejected
@@ -431,7 +431,7 @@ defmodule OliWeb.InviteControllerTest do
   end
 
   defp create_section_and_user(%{conn: conn}) do
-    {:ok, conn: conn, section: insert(:section), user: user_fixture()}
+    {:ok, conn: conn, section: insert_direct_delivery_section(), user: user_fixture()}
   end
 
   defp create_project_and_author(%{conn: conn}) do
@@ -440,5 +440,13 @@ defmodule OliWeb.InviteControllerTest do
 
   defp create_author(%{conn: conn}) do
     {:ok, conn: conn, author: author_fixture()}
+  end
+
+  defp insert_direct_delivery_section do
+    insert(:section,
+      open_and_free: true,
+      lti_1p3_deployment: nil,
+      lti_1p3_deployment_id: nil
+    )
   end
 end

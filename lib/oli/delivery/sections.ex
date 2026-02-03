@@ -441,20 +441,16 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Ensures a user is permitted to enroll in a direct-delivery section.
+  Ensures a user is permitted to enroll in a section based on section delivery mode.
 
-  The section must be flagged as open-and-free and the enrolling user must be an
-  independent learner (not an LMS account). This guards against scenarios where LMS
-  identities attempt to enter direct-delivery courses, which can cause conflicting
-  account state such as duplicate emails tied to mixed enrollment types.
+  - Open-and-free sections only allow independent learners.
+  - LTI (non open-and-free) sections only allow LMS users.
   """
-  @spec ensure_direct_delivery_enrollment_allowed(User.t() | nil, Section.t()) ::
-          :ok | {:error, :non_independent_user}
-  def ensure_direct_delivery_enrollment_allowed(_user, %Section{open_and_free: false}), do: :ok
+  @spec ensure_enrollment_allowed(User.t() | nil, Section.t()) ::
+          :ok | {:error, :non_independent_user} | {:error, :independent_learner_not_allowed}
+  def ensure_enrollment_allowed(nil, %Section{}), do: :ok
 
-  def ensure_direct_delivery_enrollment_allowed(nil, %Section{}), do: :ok
-
-  def ensure_direct_delivery_enrollment_allowed(%User{} = user, %Section{open_and_free: true}) do
+  def ensure_enrollment_allowed(%User{} = user, %Section{open_and_free: true}) do
     if user.independent_learner do
       :ok
     else
@@ -462,26 +458,39 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  def ensure_enrollment_allowed(%User{} = user, %Section{open_and_free: false}) do
+    if user.independent_learner do
+      {:error, :independent_learner_not_allowed}
+    else
+      :ok
+    end
+  end
+
   @doc """
-  Validates a batch enrollment into a direct-delivery section.
+  Validates a batch enrollment into a section based on delivery mode.
 
   When the section is open-and-free, every user in the list must be an independent learner.
-  This prevents LMS accounts from being bulk-enrolled into direct-delivery courses, which
-  could otherwise produce the mixed-account scenario.
+  When the section is LTI (non open-and-free), no user in the list may be an independent learner.
   """
-  @spec ensure_direct_delivery_batch_enrollment_allowed(list(), Section.t()) ::
-          :ok | {:error, {:non_independent_users, [integer()]}}
-  def ensure_direct_delivery_batch_enrollment_allowed(_user_entries, %Section{
-        open_and_free: false
-      }),
-      do: :ok
-
-  def ensure_direct_delivery_batch_enrollment_allowed(user_entries, _section) do
+  @spec ensure_batch_enrollment_allowed(list(), Section.t()) ::
+          :ok
+          | {:error, {:non_independent_users, [integer()]}}
+          | {:error, {:independent_learner_not_allowed, [integer()]}}
+  def ensure_batch_enrollment_allowed(user_entries, %Section{open_and_free: true}) do
     user_entries
     |> normalize_user_ids()
     |> case do
       [] -> :ok
       user_ids -> validate_independent_users(user_ids)
+    end
+  end
+
+  def ensure_batch_enrollment_allowed(user_entries, %Section{open_and_free: false}) do
+    user_entries
+    |> normalize_user_ids()
+    |> case do
+      [] -> :ok
+      user_ids -> validate_non_independent_users(user_ids)
     end
   end
 
@@ -496,6 +505,20 @@ defmodule Oli.Delivery.Sections do
     case non_independent_ids do
       [] -> :ok
       ids -> {:error, {:non_independent_users, ids}}
+    end
+  end
+
+  defp validate_non_independent_users(user_ids) do
+    independent_ids =
+      from(u in User,
+        where: u.id in ^user_ids and u.independent_learner == true,
+        select: u.id
+      )
+      |> Repo.all()
+
+    case independent_ids do
+      [] -> :ok
+      ids -> {:error, {:independent_learner_not_allowed, ids}}
     end
   end
 
