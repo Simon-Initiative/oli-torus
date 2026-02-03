@@ -262,7 +262,7 @@ defmodule OliWeb.UserSettingsLive do
     socket =
       socket
       |> assign(:active_workspace, :student)
-      |> assign(:is_admin, !!ctx.author && Accounts.is_admin?(ctx.author))
+      |> assign(:is_admin, Accounts.is_admin?(ctx.author))
       |> assign(:current_email, user.email)
       |> assign(:user_form, to_form(user_changeset))
       |> assign(:email_form, to_form(email_changeset))
