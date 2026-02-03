@@ -108,7 +108,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
       author = insert(:author)
       project = create_project_for(author, :owner, %{title: "Elixir"})
 
-      #  first publication
+      #  first publication 
       # (its date should not be considered as most recent edit as there will be a more recent one)
       page_1_revision =
         insert(:revision,
