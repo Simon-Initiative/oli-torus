@@ -190,6 +190,21 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
+  @doc """
+  Returns the enrollments for a given section and list of emails,
+  limited to independent learner users.
+  """
+  def get_independent_enrollments_by_emails(section_slug, emails) do
+    from(e in Enrollment,
+      join: s in assoc(e, :section),
+      join: ecr in assoc(e, :context_roles),
+      join: u in assoc(e, :user),
+      where: s.slug == ^section_slug and u.email in ^emails and u.independent_learner == true,
+      preload: [:user]
+    )
+    |> Repo.all()
+  end
+
   def browse_enrollments_query(
         %Section{id: section_id},
         %Paging{limit: limit, offset: offset},

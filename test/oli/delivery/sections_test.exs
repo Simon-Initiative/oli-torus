@@ -2739,6 +2739,23 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "get_independent_enrollments_by_emails/2" do
+    test "returns enrollments only for independent learner users" do
+      section = insert(:section)
+      independent_user = insert(:user, email: "shared@example.com", independent_learner: true)
+      lti_user = insert(:user, email: "shared@example.com", independent_learner: false)
+
+      Sections.enroll(independent_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(lti_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      enrollments =
+        Sections.get_independent_enrollments_by_emails(section.slug, ["shared@example.com"])
+
+      assert length(enrollments) == 1
+      assert hd(enrollments).user_id == independent_user.id
+    end
+  end
+
   describe "bulk_update_enrollment_status/3" do
     test "updates the status of enrollments for the specified section and emails" do
       user_1 = insert(:user)
