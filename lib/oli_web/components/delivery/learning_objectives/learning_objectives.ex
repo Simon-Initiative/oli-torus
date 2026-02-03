@@ -815,6 +815,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   @doc false
   def objectives_count(objectives) do
+    in_scope_parent_ids = in_scope_parent_ids(objectives)
+
     %{
       low_proficiency_outcomes:
         Enum.count(objectives, fn obj ->
@@ -822,13 +824,25 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         end),
       low_proficiency_skills:
         Enum.count(objectives, fn obj ->
-          obj.student_proficiency_subobj == "Low" and subobjective?(obj)
+          obj.student_proficiency_subobj == "Low" and
+            subobjective_with_in_scope_parent?(obj, in_scope_parent_ids)
         end)
     }
   end
 
   defp subobjective?(objective), do: not is_nil(objective.subobjective)
   defp top_level_objective?(objective), do: is_nil(objective.subobjective)
+
+  defp in_scope_parent_ids(objectives) do
+    objectives
+    |> Enum.filter(&top_level_objective?/1)
+    |> Enum.map(& &1.resource_id)
+    |> MapSet.new()
+  end
+
+  defp subobjective_with_in_scope_parent?(objective, in_scope_parent_ids) do
+    subobjective?(objective) and MapSet.member?(in_scope_parent_ids, parent_id(objective))
+  end
 
   defp parent_id(objective),
     do:
