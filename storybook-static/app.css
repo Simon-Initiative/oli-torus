@@ -23790,32 +23790,32 @@ a {
   border-left-width: 0px;
 }
 
-.user_enrolled_sections_table tr {
+.table_header_separated tr {
   font-weight: 400;
 }
 
-.user_enrolled_sections_table td {
+.table_header_separated td {
   font-weight: 400;
 }
 
-.user_enrolled_sections_table th {
+.table_header_separated th {
   font-weight: 600;
 }
 
-.user_enrolled_sections_table thead th:not(:last-child) {
+.table_header_separated thead th:not(:last-child) {
   position: relative;
 }
 
-.user_enrolled_sections_table thead th:not(:last-child)::after {
+.table_header_separated thead th:not(:last-child)::after {
   content: "";
   background-color: #CED1D9;
 }
 
-.dark .user_enrolled_sections_table thead th:not(:last-child)::after {
+.dark .table_header_separated thead th:not(:last-child)::after {
   background-color: #3B3740;
 }
 
-.user_enrolled_sections_table thead th:not(:last-child)::after {
+.table_header_separated thead th:not(:last-child)::after {
   position: absolute;
   right: 0px;
   top: 0px;
