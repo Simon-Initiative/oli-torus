@@ -174,7 +174,7 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
       })
 
     ~H"""
-    <div class="pl-9 pr-4 flex flex-col">
+    <div class="pr-4 flex flex-col">
       <span>
         {@title}
       </span>
