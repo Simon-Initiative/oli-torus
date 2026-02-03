@@ -785,7 +785,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "redirects to section unavailable when section has yet to be started", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       later = DateTime.add(DateTime.utc_now(), 100_000)
 
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{start_date: later})
@@ -801,7 +801,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "redirects to section unavailable when section has already ended", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       in_the_past = DateTime.add(DateTime.utc_now(), -100_000)
 
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{end_date: in_the_past})
@@ -817,7 +817,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "shows enroll view", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       section_invite = insert(:section_invite, %{section: section})
 
       conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
@@ -826,7 +826,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "does not display Sign Up link", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       section_invite = insert(:section_invite, %{section: section})
 
       conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
@@ -842,7 +842,7 @@ defmodule OliWeb.DeliveryControllerTest do
     setup [:guest_conn]
 
     test "redirects to invalid join view", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       date_expires = DateTime.add(DateTime.utc_now(), -3600)
       section_invite = insert(:section_invite, %{section: section, date_expires: date_expires})
 
@@ -853,7 +853,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "redirects to section unavailable when section has yet to be started", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       later = DateTime.add(DateTime.utc_now(), 100_000)
 
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{start_date: later})
@@ -869,7 +869,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "redirects to section unavailable when section has already ended", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       in_the_past = DateTime.add(DateTime.utc_now(), -100_000)
 
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{end_date: in_the_past})
@@ -886,7 +886,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "redirects to login form with section slug and from_invitation_link? as true as query params",
          %{conn: conn} do
-      section = insert(:section, requires_enrollment: true)
+      section = direct_delivery_section(%{requires_enrollment: true})
       section_invite = insert(:section_invite, %{section: section})
 
       conn =
@@ -901,7 +901,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "shows enroll view and Sign In link", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       section_invite = insert(:section_invite, %{section: section})
 
       conn =
@@ -919,7 +919,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "shows enroll view and Sign Up link", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       section_invite = insert(:section_invite, %{section: section})
 
       conn =
@@ -941,7 +941,7 @@ defmodule OliWeb.DeliveryControllerTest do
     setup [:user_conn]
 
     test "redirects to overview section screen if section requires enrollment", %{conn: conn} do
-      section = insert(:section, requires_enrollment: true)
+      section = direct_delivery_section(%{requires_enrollment: true})
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~
@@ -956,7 +956,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "redirects to overview section screen if section does not requires enrollment", %{
       conn: conn
     } do
-      section = insert(:section, requires_enrollment: false)
+      section = direct_delivery_section(%{requires_enrollment: false})
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~
@@ -971,7 +971,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
   describe "enroll in the section without being logged in" do
     test "redirects to login screen if section requires enrollment", %{conn: conn} do
-      section = insert(:section, requires_enrollment: true)
+      section = direct_delivery_section(%{requires_enrollment: true})
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert_redirect_to_login(conn, section.slug)
@@ -988,7 +988,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "redirects to overview section screen if section does not requires enrollment", %{
       conn: conn
     } do
-      section = insert(:section, requires_enrollment: false)
+      section = direct_delivery_section(%{requires_enrollment: false})
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~
@@ -1415,5 +1415,19 @@ defmodule OliWeb.DeliveryControllerTest do
       student1: student_1,
       student2: student_2
     }
+  end
+
+  defp direct_delivery_section(attrs \\ %{}) do
+    insert(
+      :section,
+      Map.merge(
+        %{
+          open_and_free: true,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        },
+        attrs
+      )
+    )
   end
 end
