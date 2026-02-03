@@ -61,6 +61,20 @@ defmodule Oli.Email do
   defp maybe_header(email, _name, ""), do: email
   defp maybe_header(email, name, value), do: header(email, name, value)
 
+  @doc """
+  Sets reply_to only if the value is not nil or empty.
+  """
+  def maybe_reply_to(email, nil), do: email
+  def maybe_reply_to(email, ""), do: email
+  def maybe_reply_to(email, value), do: reply_to(email, value)
+
+  @doc """
+  Sets from only if the value is not nil or empty.
+  """
+  def maybe_from(email, nil), do: email
+  def maybe_from(email, ""), do: email
+  def maybe_from(email, value), do: from(email, value)
+
   defp html_text_body(email) do
     html = Premailex.to_inline_css(email.html_body)
     text = Premailex.to_text(email.html_body)

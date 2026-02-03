@@ -229,8 +229,8 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
         "Note from your #{course_name} Instructor #{instructor_email}",
         message
       )
-      |> Swoosh.Email.from(instructor_email)
-      |> Swoosh.Email.reply_to(instructor_email)
+      |> Oli.Email.maybe_from(instructor_email)
+      |> Oli.Email.maybe_reply_to(instructor_email)
     end)
     |> Oli.Mailer.deliver_later()
   end

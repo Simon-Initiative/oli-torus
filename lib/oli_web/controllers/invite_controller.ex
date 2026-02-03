@@ -241,7 +241,7 @@ defmodule OliWeb.InviteController do
           button_label: "Go to invitation"
         }
       )
-      |> Swoosh.Email.reply_to(inviter_email)
+      |> Email.maybe_reply_to(inviter_email)
       |> Mailer.deliver()
     end)
   end
