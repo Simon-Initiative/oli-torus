@@ -1101,7 +1101,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       # Author SHOULD see Tags label and tag values
       assert has_element?(view, "label", "Tags")
-      assert has_element?(view, "span", "Biology")
+      assert has_element?(view, "li", "Biology")
     end
 
     test "displays 'None' when project has no tags for regular authors", %{

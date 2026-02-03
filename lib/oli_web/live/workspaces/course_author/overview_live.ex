@@ -1080,15 +1080,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     ~H"""
     <div class="min-h-[40px] w-full rounded border border-Border-border-default bg-Fill-fill-form-field px-3 py-2 flex items-center">
       <span :if={@tags == []} class="text-Text-text-tertiary">None</span>
-      <div :if={@tags != []} role="list" class="flex flex-wrap gap-1">
-        <span
+      <ul :if={@tags != []} class="list-none m-0 p-0 flex flex-wrap gap-1">
+        <li
           :for={tag <- @tags}
-          role="listitem"
           class={"px-2 py-1 rounded-full text-sm leading-4 font-semibold #{TagsComponent.get_tag_pill_classes(tag.name)}"}
         >
           {tag.name}
-        </span>
-      </div>
+        </li>
+      </ul>
     </div>
     """
   end
