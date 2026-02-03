@@ -841,7 +841,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp subobjective_with_in_scope_parent?(objective, in_scope_parent_ids) do
-    subobjective?(objective) and MapSet.member?(in_scope_parent_ids, parent_id(objective))
+    case Map.get(objective, :objective_resource_id) do
+      nil -> false
+      parent_id -> subobjective?(objective) and MapSet.member?(in_scope_parent_ids, parent_id)
+    end
   end
 
   defp parent_id(objective),
