@@ -32,6 +32,21 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
       {_, %Response{feedback: feedback, score: score, show_page: show_page} = response, _, out_of} ->
+        effective_out_of =
+          case part.out_of do
+            nil -> out_of
+            value -> max(out_of, value)
+          end
+
+        targeted_response_ids = Map.get(part, :targeted_response_ids, [])
+        response_is_targeted = response.id in targeted_response_ids
+
+        {score, out_of} =
+          case {response.correct, response_is_targeted, score < effective_out_of} do
+            {true, false, true} -> {effective_out_of, effective_out_of}
+            _ -> {score, out_of}
+          end
+
         {:ok,
          %FeedbackAction{
            type: "FeedbackAction",
