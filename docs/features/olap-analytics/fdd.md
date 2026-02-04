@@ -213,4 +213,13 @@ The OLAP Analytics feature introduces a ClickHouse-backed analytics pipeline tha
 
 ## 16. Open Questions & Follow-ups
 
-- What is the retention policy for `raw_events` and inventory logs?
+## 17. Data Retention & Rollups
+
+- Retention window: keep `raw_events` for 18 months; data older than that is deleted from ClickHouse.
+- TTL configuration: apply a ClickHouse `TTL` expression on `raw_events` using `timestamp` (event time), e.g., `TTL timestamp + INTERVAL 18 MONTH`.
+- ClickHouse TTL purge behavior: expired rows are marked and removed during background merges (not immediately on expiry).
+- Partitioning: `raw_events` is partitioned by `toYYYYMM(timestamp)` so TTL expiration aligns with monthly partitions and enables efficient pruning.
+- Rollup tables: create `raw_events_daily_agg` and `raw_events_weekly_agg` keyed by `section_id`, `project_id`, `event_type`, and rollup date; store counts and key metrics needed by dashboards.
+- Materialized views: add MVs that insert aggregated rows into the daily/weekly tables on ingest; use `POPULATE` or a one-time backfill job to seed historical aggregates.
+- Query routing: analytics queries should read from `raw_events` for recent windows and from rollup tables for dates older than 18 months to preserve long-term trends.
+- Operational guardrails: expose retention/rollup health metrics (rows expired, merge lag, rollup row counts) via the admin ClickHouse dashboard.

@@ -67,21 +67,21 @@ This feature introduces a ClickHouse-based OLAP layer to ingest, store, and quer
 
 ## 6. Functional Requirements
 
-| ID     | Description                                                                                                          | Priority | Owner              |
-| ------ | -------------------------------------------------------------------------------------------------------------------- | -------- | ------------------ |
-| FR-001 | Create and maintain a ClickHouse `raw_events` table that stores unified xAPI event data.                             | P0       | Analytics Platform |
-| FR-002 | Provide ClickHouse migration tooling and environment configuration (dev + runtime).                                  | P0       | Platform           |
-| FR-003 | Ingest xAPI JSONL objects to ClickHouse via S3 -> SQS -> Lambda ETL, with a direct ClickHouse uploader for dev mode. | P0       | Analytics Platform |
-| FR-004 | Provide an admin UI for ClickHouse health checks and operational metrics.                                             | P0       | Admin UX           |
-| FR-005 | Provide manual backfill runs from S3 patterns with dry-run and insert modes, including run status and metrics.       | P0       | Analytics Platform |
-| FR-006 | Provide inventory-based backfills driven by S3 Inventory manifests, with batch scheduling and concurrency controls.  | P0       | Analytics Platform |
-| FR-007 | Record per-run and per-batch metrics, and expose per-chunk log streaming for inventory backfills.                    | P1       | Analytics Platform |
-| FR-008 | Expose instructor analytics dashboard categories backed by ClickHouse queries and Vega visualizations.               | P0       | Delivery UX        |
+| ID     | Description                                                                                                                                               | Priority | Owner              |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------ |
+| FR-001 | Create and maintain a ClickHouse `raw_events` table that stores unified xAPI event data.                                                                  | P0       | Analytics Platform |
+| FR-002 | Provide ClickHouse migration tooling and environment configuration (dev + runtime).                                                                       | P0       | Platform           |
+| FR-003 | Ingest xAPI JSONL objects to ClickHouse via S3 -> SQS -> Lambda ETL, with a direct ClickHouse uploader for dev mode.                                      | P0       | Analytics Platform |
+| FR-004 | Provide an admin UI for ClickHouse health checks and operational metrics.                                                                                 | P0       | Admin UX           |
+| FR-005 | Provide manual backfill runs from S3 patterns with dry-run and insert modes, including run status and metrics.                                            | P0       | Analytics Platform |
+| FR-006 | Provide inventory-based backfills driven by S3 Inventory manifests, with batch scheduling and concurrency controls.                                       | P0       | Analytics Platform |
+| FR-007 | Record per-run and per-batch metrics, and expose per-chunk log streaming for inventory backfills.                                                         | P1       | Analytics Platform |
+| FR-008 | Expose instructor analytics dashboard categories backed by ClickHouse queries and Vega visualizations.                                                    | P0       | Delivery UX        |
 | FR-009 | Support custom analytics: read-only SQL editor + Vega spec input, rendering custom charts on demand with enforced read-only validation and scope filters. | P1       | Delivery UX        |
-| FR-010 | Gate admin tooling behind a global feature flag and instructor analytics behind a section-scoped feature flag.       | P0       | Platform           |
-| FR-011 | Provide analytics load state messaging (not loaded, loading, error) for sections without ClickHouse data.            | P1       | Delivery UX        |
-| FR-012 | Add project-level analytics dashboard backed by ClickHouse queries scoped to `project_id`.                           | P1       | Authoring UX       |
-| FR-013 | Add ClickHouse index on `project_id` to support project-level queries.                                                | P1       | Analytics Platform |
+| FR-010 | Gate admin tooling behind a global feature flag and instructor analytics behind a section-scoped feature flag.                                            | P0       | Platform           |
+| FR-011 | Provide analytics load state messaging (not loaded, loading, error) for sections without ClickHouse data.                                                 | P1       | Delivery UX        |
+| FR-012 | Add project-level analytics dashboard backed by ClickHouse queries scoped to `project_id`.                                                                | P1       | Authoring UX       |
+| FR-013 | Add ClickHouse index on `project_id` to support project-level queries.                                                                                    | P1       | Analytics Platform |
 
 ## 7. Acceptance Criteria
 
@@ -121,13 +121,13 @@ This feature introduces a ClickHouse-based OLAP layer to ingest, store, and quer
   - Project analytics LiveView: `OliWeb.ProjectAnalyticsLive` (name TBD).
 - Permissions Matrix:
 
-| Role       | Run Backfill | View Admin Analytics | View Instructor Analytics | Run Custom SQL       |
-| ---------- | ------------ | -------------------- | ------------------------- | -------------------- |
-| Admin      | Yes          | Yes                  | Yes (if enabled)          | Yes                  |
-| Instructor | No           | No                   | Yes (section-scoped)      | Yes (section-scoped) |
-| Author     | No           | No                   | No                        | No                   |
-| Student    | No           | No                   | No                        | No                   |
-| Project Admin | No        | No                   | Yes (project-scoped)         | Yes (project-scoped)         |
+| Role          | Run Backfill | View Admin Analytics | View Instructor Analytics | Run Custom SQL       |
+| ------------- | ------------ | -------------------- | ------------------------- | -------------------- |
+| Admin         | Yes          | Yes                  | Yes (if enabled)          | Yes                  |
+| Instructor    | No           | No                   | Yes (section-scoped)      | Yes (section-scoped) |
+| Author        | No           | No                   | No                        | No                   |
+| Student       | No           | No                   | No                        | No                   |
+| Project Admin | No           | No                   | Yes (project-scoped)      | Yes (project-scoped) |
 
 ## 10. Integrations & Platform Considerations
 
@@ -182,5 +182,10 @@ This feature introduces a ClickHouse-based OLAP layer to ingest, store, and quer
   - xAPI JSONL files are consistently structured and accessible via S3 credentials.
   - Backfill runs are initiated manually by admins; ongoing data arrives via Lambda ETL.
 - Open Questions:
-  - What are the long-term retention policies for `raw_events` in ClickHouse?
   - What are the required roles/permissions for project-level analytics (author vs admin vs instructor)?
+
+## 15. Data Retention & Rollups
+
+- Retention window: keep `raw_events` for 18 months; data older than that is deleted from ClickHouse.
+- Rollups: materialized views populate daily and weekly aggregates by `section_id`, `project_id`, and `event_type`.
+- Long-term trends: analytics dashboards should read from aggregate tables for data outside the 18-month window.
