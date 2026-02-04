@@ -61,6 +61,18 @@ defmodule OliWeb.UserSettingsLiveTest do
 
       assert result =~ "No changes to save."
     end
+
+    test "renders settings page for student with can_create_sections", %{conn: conn} do
+      user = user_fixture(%{can_create_sections: true})
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user)
+        |> put_settings_return_to()
+        |> live(~p"/users/settings")
+
+      assert html =~ "Account Settings"
+    end
   end
 
   describe "update name form" do
