@@ -811,7 +811,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     # Skip query when list is empty - nothing to search
     case socket.assigns.course_sections_data do
       %{result: %{total: 0}} ->
-        {:noreply, assign(socket, course_sections_search: search, course_sections_offset: 0)}
+        {:noreply, socket}
 
       _ ->
         # Extract values before async to avoid copying entire socket
