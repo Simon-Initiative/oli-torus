@@ -300,41 +300,40 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
               </div>
             </div>
             <!-- Available tags dropdown - positioned below input with full width -->
-            <div class="absolute top-[calc(100%+1px)] left-0 w-full z-[5] bg-Table-table-row-1 border border-Table-table-border rounded-[3px] max-h-60 overflow-y-auto shadow-xl">
-              <!-- Available tags list -->
-              <%= if Enum.any?(@available_tags, fn tag -> tag.id not in @selected_tag_ids end) do %>
-                <div class="p-3 space-y-2">
-                  <div
-                    class="text-Text-text-low text-xs font-semibold mb-2"
+            <!-- Only render when there are unselected tags to show -->
+            <div
+              :if={Enum.any?(@available_tags, fn tag -> tag.id not in @selected_tag_ids end)}
+              class="absolute top-[calc(100%+1px)] left-0 w-full z-[5] bg-Table-table-row-1 border border-Table-table-border rounded-[3px] max-h-60 overflow-y-auto shadow-xl"
+            >
+              <div class="p-3 space-y-2">
+                <div
+                  class="text-Text-text-low text-xs font-semibold mb-2"
+                  style={@font_style}
+                >
+                  Create or select an option
+                </div>
+                <div class={
+                  if @variant == :table, do: "flex flex-col gap-2", else: "flex flex-wrap gap-2"
+                }>
+                  <button
+                    :for={tag <- @available_tags}
+                    :if={tag.id not in @selected_tag_ids}
+                    phx-click="add_tag"
+                    phx-value-tag_id={tag.id}
+                    phx-target={@myself}
+                    class={
+                      if @variant == :table,
+                        do:
+                          "px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}",
+                        else:
+                          "px-2 py-1 rounded-full text-sm leading-4 font-semibold transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}"
+                    }
                     style={@font_style}
                   >
-                    Create or select an option
-                  </div>
-                  <div class={
-                    if @variant == :table, do: "flex flex-col gap-2", else: "flex flex-wrap gap-2"
-                  }>
-                    <%= for tag <- @available_tags do %>
-                      <%= if tag.id not in @selected_tag_ids do %>
-                        <button
-                          phx-click="add_tag"
-                          phx-value-tag_id={tag.id}
-                          phx-target={@myself}
-                          class={
-                            if @variant == :table,
-                              do:
-                                "px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}",
-                              else:
-                                "px-2 py-1 rounded-full text-sm leading-4 font-semibold transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}"
-                          }
-                          style={@font_style}
-                        >
-                          {tag.name}
-                        </button>
-                      <% end %>
-                    <% end %>
-                  </div>
+                    {tag.name}
+                  </button>
                 </div>
-              <% end %>
+              </div>
             </div>
           </div>
         </div>
