@@ -184,26 +184,28 @@ defmodule OliWeb.Users.UsersDetailView do
                       type="checkbox"
                       label="Independent Learner"
                       class="form-check-input"
-                      disabled={@disabled_edit}
+                      disabled={true}
                     />
                   </div>
-                  <section class="mb-2">
-                    <heading>
-                      <p>Enable Independent Section Creation</p>
-                      <small>
-                        Allow this user to create "Independent" sections and enroll students via invitation link without an LMS
-                      </small>
-                    </heading>
-                    <div class="form-control">
-                      <.input
-                        field={@form[:can_create_sections]}
-                        type="checkbox"
-                        label="Can Create Sections"
-                        class="form-check-input"
-                        disabled={@disabled_edit}
-                      />
-                    </div>
-                  </section>
+                  <%= if @user.independent_learner do %>
+                    <section class="mb-2">
+                      <heading>
+                        <p>Enable Independent Section Creation</p>
+                        <small>
+                          Allow this user to create "Independent" sections and enroll students via invitation link without an LMS
+                        </small>
+                      </heading>
+                      <div class="form-control">
+                        <.input
+                          field={@form[:can_create_sections]}
+                          type="checkbox"
+                          label="Can Create Sections"
+                          class="form-check-input"
+                          disabled={@disabled_edit}
+                        />
+                      </div>
+                    </section>
+                  <% end %>
                   <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
                     <div class="form-control mb-3">
                       <.input
