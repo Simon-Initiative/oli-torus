@@ -187,6 +187,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
           lti_1p3_deployment: nil,
           lti_1p3_deployment_id: nil
         )
+
       student = insert(:user)
 
       Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
