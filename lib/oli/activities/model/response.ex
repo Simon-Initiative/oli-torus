@@ -12,7 +12,7 @@ defmodule Oli.Activities.Model.Response do
            score: score,
            feedback: feedback,
            show_page: Map.get(response, "showPage", nil),
-           correct: Map.get(response, "correct", false)
+           correct: Map.get(response, "correct")
          }}
 
       error ->
