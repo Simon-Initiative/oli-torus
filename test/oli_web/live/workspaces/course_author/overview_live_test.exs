@@ -1024,8 +1024,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
           socket
         )
 
-      # Verify search was updated
-      assert updated_socket.assigns.course_sections_search == "biology"
+      # Verify assigns are UNCHANGED (no update needed - LiveView preserves input value)
+      assert updated_socket.assigns.course_sections_search == ""
       assert updated_socket.assigns.course_sections_offset == 0
 
       # Verify course_sections_data is UNCHANGED (no assign_async was called)
