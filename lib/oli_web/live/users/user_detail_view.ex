@@ -148,7 +148,6 @@ defmodule OliWeb.Users.UsersDetailView do
                       error_position={:top}
                     />
                   </div>
-                  <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
                   <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
                     <ReadOnly.render
                       label="Confirmed is 13 or older on creation"
@@ -177,15 +176,6 @@ defmodule OliWeb.Users.UsersDetailView do
                         <span class="text-sm text-Text-text-low-alpha">None</span>
                       <% end %>
                     </div>
-                  </div>
-                  <div class="form-control">
-                    <.input
-                      field={@form[:independent_learner]}
-                      type="checkbox"
-                      label="Independent Learner"
-                      class="form-check-input"
-                      disabled={true}
-                    />
                   </div>
                   <%= if @user.independent_learner do %>
                     <section class="mb-2">
@@ -225,6 +215,11 @@ defmodule OliWeb.Users.UsersDetailView do
                       value={if(@user.is_internal, do: "Yes", else: "No")}
                     />
                   <% end %>
+                  <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
+                  <ReadOnly.render
+                    label="Independent Learner"
+                    value={boolean(@user.independent_learner)}
+                  />
                   <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)} />
                   <ReadOnly.render
                     label="Email Confirmed"
