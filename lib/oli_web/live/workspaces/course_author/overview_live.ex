@@ -1079,7 +1079,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   defp read_only_tags(assigns) do
     ~H"""
     <div class="min-h-[40px] w-full rounded border border-Border-border-default bg-Fill-fill-form-field px-3 py-2 flex items-center">
-      <span :if={@tags == []} class="text-Text-text-tertiary">None</span>
+      <span :if={@tags == []} class="text-Text-text-tertiary">{gettext("None")}</span>
       <ul :if={@tags != []} class="list-none m-0 p-0 flex flex-wrap gap-1">
         <li
           :for={tag <- @tags}

@@ -43,6 +43,7 @@ interface FocusContainerPayload {
  */
 interface TagsHandlers {
   handleFocusout: (event: FocusEvent) => void;
+  handleKeydown: (event: KeyboardEvent) => void;
   cancelPendingCallbacks: () => void;
   focusInputEventRef: CallbackRef;
   focusContainerEventRef: CallbackRef;
@@ -172,6 +173,16 @@ export const TagsComponent: Hook<TagsHookState> = {
       });
     };
 
+    const handleKeydown = (event: KeyboardEvent) => {
+      // Prevent default Enter key behavior on the input field
+      // This stops form submission or other default browser behaviors
+      // Note: Moved from inline onkeydown handler for CSP compliance
+      // @see https://content-security-policy.com/unsafe-inline/
+      if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
+        event.preventDefault();
+      }
+    };
+
     const handleFocusout = (event: FocusEvent) => {
       // Only act if we're in edit mode (input exists)
       const input = this.el.querySelector('input[type="text"]');
@@ -213,12 +224,16 @@ export const TagsComponent: Hook<TagsHookState> = {
     const focusInputEventRef = this.handleEvent('focus_input', handleFocusInput);
     const focusContainerEventRef = this.handleEvent('focus_container', handleFocusContainer);
 
-    // Add focusout listener for tab-out handling
+    // Add DOM event listeners
+    // - keydown: prevent Enter default behavior (CSP compliant alternative to inline handler)
+    // - focusout: handle tab-out to close edit mode
+    this.el.addEventListener('keydown', handleKeydown);
     this.el.addEventListener('focusout', handleFocusout);
 
     // Store references for cleanup
     this.__tagsHandlers = {
       handleFocusout,
+      handleKeydown,
       focusInputEventRef,
       focusContainerEventRef,
       cancelPendingCallbacks: () => {
@@ -239,7 +254,8 @@ export const TagsComponent: Hook<TagsHookState> = {
     // Clean up event listeners and pending callbacks to prevent memory leaks
     const handlers = this.__tagsHandlers;
     if (handlers) {
-      // Remove DOM event listener
+      // Remove DOM event listeners
+      this.el.removeEventListener('keydown', handlers.handleKeydown);
       this.el.removeEventListener('focusout', handlers.handleFocusout);
 
       // Remove LiveView event handlers (cleanup is NOT automatic)

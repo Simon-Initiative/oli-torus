@@ -36,7 +36,7 @@ defmodule Oli.Tags do
   alias Oli.Tags.ProjectTag
   alias Oli.Tags.SectionTag
 
-  # Authorization helper - checks if actor has content_admin or system_admin role
+  # Authorization helper - requires content_admin role (system_admin implicitly has all roles)
   defp authorized_to_manage_tags?(nil), do: false
 
   defp authorized_to_manage_tags?(actor) do

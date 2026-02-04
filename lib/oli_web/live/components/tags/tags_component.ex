@@ -296,7 +296,6 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                   class="w-full px-3 border-0 outline-none text-Text-text-low-alpha font-semibold focus:bg-transparent focus:ring-0 focus:border focus:border-Border-border-active"
                   id={"tag-input-#{@id}"}
                   style={@font_style}
-                  onkeydown="if(event.key==='Enter') event.preventDefault()"
                 />
               </div>
             </div>
