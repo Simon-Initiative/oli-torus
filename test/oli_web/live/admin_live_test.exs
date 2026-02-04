@@ -650,6 +650,7 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(view, "input[value='#{user.given_name}']")
       assert has_element?(view, "input[value='#{user.family_name}']")
       assert has_element?(view, "input[value='#{user.email}']")
+
       assert view
              |> element("div.form-group", "Guest")
              |> render() =~ "value=\"#{boolean(user.guest)}\""
