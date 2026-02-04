@@ -62,12 +62,6 @@ defmodule OliWeb.Grades.GradebookTableModel do
   def new(graded_pages, section_slug, student_id) do
     column_specs = [
       %ColumnSpec{
-        name: :index,
-        label: "Order",
-        render_fn: &__MODULE__.render_grade_order/3,
-        th_class: "pl-10"
-      },
-      %ColumnSpec{
         name: :name,
         label: "Assessment",
         render_fn: &__MODULE__.render_grade/3,
@@ -105,7 +99,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     assigns = Map.merge(assigns, %{row: row})
 
     ~H"""
-    <div class="ml-8">
+    <div>
       {@row.label}
     </div>
     """
@@ -131,7 +125,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     ~H"""
     <div>
       <a
-        class={"ml-8 #{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black dark:text-gray-300"}"}
+        class={"#{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black dark:text-gray-300"}"}
         href={
           Routes.live_path(
             OliWeb.Endpoint,

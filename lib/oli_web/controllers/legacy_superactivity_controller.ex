@@ -15,7 +15,7 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.ActivityLifecycle
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate, as: ActivityEvaluation
+  alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.Core.ClientEvaluation
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Activities.Model.Feedback
@@ -460,7 +460,7 @@ defmodule OliWeb.LegacySuperactivityController do
 
         Repo.transaction(fn ->
           if length(client_evaluations) > 0 do
-            ActivityEvaluation.apply_client_evaluation(
+            ApplyClientEvaluation.apply(
               context.section.slug,
               context.activity_attempt.attempt_guid,
               client_evaluations,
@@ -503,7 +503,7 @@ defmodule OliWeb.LegacySuperactivityController do
       create_evaluation(context, score, out_of, part_attempt)
     ]
 
-    case ActivityEvaluation.apply_client_evaluation(
+    case ApplyClientEvaluation.apply(
            context.section.slug,
            context.activity_attempt.attempt_guid,
            client_evaluations,

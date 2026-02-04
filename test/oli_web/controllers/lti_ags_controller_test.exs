@@ -6,7 +6,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Sections
   alias Lti_1p3.Roles.ContextRoles
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+  alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.Core.{ClientEvaluation}
 
   defp generate_lti_content() do
@@ -475,7 +475,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
          out_of,
          datashop_id
        ) do
-    Evaluate.apply_client_evaluation(
+    ApplyClientEvaluation.apply(
       section_slug,
       activity_attempt_guid,
       [

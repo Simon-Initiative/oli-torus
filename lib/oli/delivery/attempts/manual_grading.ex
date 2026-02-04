@@ -12,6 +12,8 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   alias Oli.Resources.Revision
   alias Oli.Delivery.Attempts.Core
 
+  alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
+
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
     ResourceAttempt,
@@ -262,7 +264,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
       end)
 
     Oli.Repo.transaction(fn ->
-      case Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.apply_client_evaluation(
+      case ApplyClientEvaluation.apply(
              section_slug,
              activity_attempt.attempt_guid,
              client_evaluations,
@@ -286,7 +288,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
   # This function takes a list of part attempts and a map of score feedbacks from the UI
   # and converts them to a list of client evaluations that can be used to
-  # to evaluate these part attempts via Evaluate.apply_client_evaluation/5
+  # to evaluate these part attempts via ApplyClientEvaluation.apply/5
   defp to_client_evaluations(part_attempts, score_feedbacks_map) do
     Enum.filter(part_attempts, fn pa ->
       pa.grading_approach == :manual and pa.lifecycle_state == :submitted
