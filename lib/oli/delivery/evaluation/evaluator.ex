@@ -38,6 +38,8 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
             value -> max(out_of, value)
           end
 
+        # Workaround for bad activity models where the default correct response score is lower
+        # than part.outOf and a targeted feedback score (also correct). See MER-5263.
         targeted_response_ids = Map.get(part, :targeted_response_ids, [])
         response_is_targeted = response.id in targeted_response_ids
 
