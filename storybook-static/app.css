@@ -20144,6 +20144,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-left: 16.5px;
 }
 
+.pl-\[16px\] {
+  padding-left: 16px;
+}
+
 .pl-\[189px\] {
   padding-left: 189px;
 }
@@ -30565,11 +30569,6 @@ Not supports in Firefox and IE */
     padding-right: 1.5rem;
   }
 
-  .sm\:px-9 {
-    padding-left: 2.25rem;
-    padding-right: 2.25rem;
-  }
-
   .sm\:px-\[5px\] {
     padding-left: 5px;
     padding-right: 5px;
@@ -30622,6 +30621,10 @@ Not supports in Firefox and IE */
 
   .sm\:pr-0 {
     padding-right: 0px;
+  }
+
+  .sm\:pr-9 {
+    padding-right: 2.25rem;
   }
 
   .sm\:pt-0 {
