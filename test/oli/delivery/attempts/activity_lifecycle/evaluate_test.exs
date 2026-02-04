@@ -283,7 +283,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
         })
 
       setup =
-        setup_activity_attempt(user, section, activity_revision, out_of: 8, graded: true)
+        setup_activity_attempt(user, section, activity_revision, out_of: 8.0, graded: true)
 
       part_attempt_2 =
         insert(:part_attempt,
