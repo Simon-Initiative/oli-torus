@@ -12,9 +12,11 @@ import {
 } from 'components/activities/types';
 import {
   RESPONSES_PATH,
+  getPartIdForResponse,
   getResponseBy,
   getResponseId,
   getResponsesByPartId,
+  normalizeCustomScoringForPart,
 } from 'data/activities/model/responses';
 import { getParts } from 'data/activities/model/utils';
 import { EditorType } from 'data/content/resource';
@@ -52,6 +54,11 @@ export const ResponseActions = {
   editResponseScore(responseId: ResponseId, score: number) {
     return (model: HasParts) => {
       getResponseBy(model, (r) => r.id === responseId).score = score;
+
+      const partId = getPartIdForResponse(model, responseId);
+      if (partId) {
+        normalizeCustomScoringForPart(model, partId);
+      }
     };
   },
 

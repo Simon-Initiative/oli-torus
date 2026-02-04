@@ -240,4 +240,76 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
                Evaluate.evaluate_activity(section.slug, fake_guid, [], nil)
     end
   end
+
+  describe "evaluate_from_input/5 - custom scoring repair" do
+    defp response(id, rule, score, correct \\ false) do
+      %{
+        "id" => id,
+        "rule" => rule,
+        "score" => score,
+        "correct" => correct,
+        "feedback" => %{"id" => "f-#{id}", "content" => []}
+      }
+    end
+
+    test "uses part outOf / targeted max to avoid inflated out_of when correct response is low" do
+      user = insert(:user)
+      section = insert(:section)
+
+      activity_revision =
+        create_activity_with_type("oli_short_answer", %{
+          "authoring" => %{
+            "targeted" => [[["dummy"], "t2"]],
+            "parts" => [
+              %{
+                "id" => "1",
+                "outOf" => 4,
+                "responses" => [
+                  response("c1", "input like {a}", 1, true),
+                  response("i1", "input like {.*}", 0, false)
+                ]
+              },
+              %{
+                "id" => "2",
+                "outOf" => 4,
+                "responses" => [
+                  response("c2", "input like {b}", 1, true),
+                  response("t2", "input like {b2}", 4, false),
+                  response("i2", "input like {.*}", 0, false)
+                ]
+              }
+            ]
+          }
+        })
+
+      setup =
+        setup_activity_attempt(user, section, activity_revision, out_of: 8.0, graded: true)
+
+      part_attempt_2 =
+        insert(:part_attempt,
+          activity_attempt: setup.activity_attempt,
+          part_id: "2",
+          lifecycle_state: :active
+        )
+
+      part_inputs = [
+        %{attempt_guid: setup.part_attempt.attempt_guid, input: %StudentInput{input: "a"}},
+        %{attempt_guid: part_attempt_2.attempt_guid, input: %StudentInput{input: "b"}}
+      ]
+
+      {:ok, _} =
+        Evaluate.evaluate_from_input(
+          section.slug,
+          setup.activity_attempt.attempt_guid,
+          part_inputs,
+          nil
+        )
+
+      updated_attempt =
+        Core.get_activity_attempt_by(attempt_guid: setup.activity_attempt.attempt_guid)
+
+      assert updated_attempt.score == 8.0
+      assert updated_attempt.out_of == 8.0
+    end
+  end
 end
