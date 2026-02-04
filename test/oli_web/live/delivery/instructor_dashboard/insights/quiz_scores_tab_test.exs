@@ -114,7 +114,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
 
       {:ok, view, _html} = live(conn, live_view_quiz_scores_route(section.slug))
 
-      assert has_element?(view, "h4", "Assessment Scores")
+      assert has_element?(view, "div", "Assessment Scores")
     end
 
     test "applies searching", %{

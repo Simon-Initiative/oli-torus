@@ -68,23 +68,23 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     column_specs = [
       %ColumnSpec{
         name: :objective,
-        label: "LEARNING OBJECTIVE",
+        label: "Learning Objective",
         render_fn: &custom_render/3,
         th_class: "pl-10"
       },
       %ColumnSpec{
-        name: :subobjective,
-        label: "SUB LEARNING OBJ.",
-        render_fn: &custom_render/3
-      },
-      %ColumnSpec{
         name: :student_proficiency_obj,
-        label: "STUDENT PROFICIENCY OBJ.",
+        label: "Obj. Proficiency",
         tooltip: @student_proficiency_tooltip_text
       },
       %ColumnSpec{
+        name: :subobjective,
+        label: "Sub-Objective",
+        render_fn: &custom_render/3
+      },
+      %ColumnSpec{
         name: :student_proficiency_subobj,
-        label: "STUDENT PROFICIENCY (SUB OBJ.)",
+        label: "Sub-Obj. Proficiency",
         tooltip: @student_proficiency_tooltip_text
       }
     ]
@@ -138,8 +138,6 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       class="flex items-center gap-x-4"
       data-proficiency-check={if @student_proficiency == "Low", do: "false", else: "true"}
     >
-      <span class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @student_proficiency == "Low", do: "bg-red-600", else: "bg-gray-500"}"}>
-      </span>
       <span>{@objective}</span>
     </div>
     """
