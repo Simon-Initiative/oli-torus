@@ -86,7 +86,8 @@ defmodule OliWeb.Sections.SectionsView do
         sort_by_spec: :start_date,
         sort_order: :desc,
         search_term: "",
-        is_admin: is_admin
+        is_admin: is_admin,
+        current_author: author
       )
 
     {:ok,

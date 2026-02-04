@@ -234,14 +234,17 @@ defmodule Oli.Delivery.Sections.BrowseTest do
     end
 
     test "filtering by tags", %{sections: sections} do
+      # Create an admin for tag operations
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+
       # Create some tags
       tag1 = insert(:tag, name: "Tag1")
       tag2 = insert(:tag, name: "Tag2")
 
       # Associate tags with sections
-      Oli.Tags.associate_tag_with_section(hd(sections), tag1)
-      Oli.Tags.associate_tag_with_section(Enum.at(sections, 1), tag1)
-      Oli.Tags.associate_tag_with_section(Enum.at(sections, 1), tag2)
+      Oli.Tags.associate_tag_with_section(hd(sections), tag1, actor: admin)
+      Oli.Tags.associate_tag_with_section(Enum.at(sections, 1), tag1, actor: admin)
+      Oli.Tags.associate_tag_with_section(Enum.at(sections, 1), tag2, actor: admin)
 
       # Filter by tag1 - should find 2 sections
       results =
@@ -541,14 +544,30 @@ defmodule Oli.Delivery.Sections.BrowseTest do
 
       future_date = DateTime.add(DateTime.utc_now(), 30, :day)
 
+      # Create a product (blueprint) for the project
+      product =
+        insert(:section,
+          title: "Course Product",
+          base_project: project,
+          type: :blueprint,
+          status: :active
+        )
+
+      insert(:section_project_publication,
+        section: product,
+        project: project,
+        publication: publication
+      )
+
       # Create sections with different titles
+      # section1 is FROM PRODUCT (has blueprint_id) - tests that product-based sections appear
       section1 =
         insert(:section,
           title: "Introduction to Biology",
           base_project: project,
           type: :enrollable,
           status: :active,
-          blueprint_id: nil,
+          blueprint_id: product.id,
           start_date: DateTime.utc_now(),
           end_date: future_date
         )

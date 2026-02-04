@@ -85,7 +85,8 @@ defmodule OliWeb.Projects.ProjectsLive do
         sort_by_spec: :inserted_at,
         sort_order: :desc,
         search_term: applied_search,
-        is_admin: is_content_admin
+        is_admin: is_content_admin,
+        current_author: author
       )
 
     total_count = determine_total(projects)

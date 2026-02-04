@@ -52,7 +52,8 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
      |> assign(:error, nil)
      |> assign(:input_value, "")
      |> assign(:font_style, "font-family: 'Open Sans', sans-serif;")
-     |> assign_new(:variant, fn -> :table end)}
+     |> assign_new(:variant, fn -> :table end)
+     |> assign_new(:current_author, fn -> nil end)}
   end
 
   @impl true
@@ -119,8 +120,9 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     tag_id = String.to_integer(tag_id)
     entity_type = socket.assigns.entity_type
     entity_id = socket.assigns.entity_id
+    current_author = socket.assigns.current_author
 
-    case associate_tag(entity_type, entity_id, tag_id) do
+    case associate_tag(entity_type, entity_id, tag_id, current_author) do
       {:ok, _} ->
         # Find the tag in available_tags
         case Enum.find(socket.assigns.available_tags, &(&1.id == tag_id)) do
@@ -156,8 +158,9 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     tag_id = String.to_integer(tag_id)
     entity_type = socket.assigns.entity_type
     entity_id = socket.assigns.entity_id
+    current_author = socket.assigns.current_author
 
-    case remove_tag(entity_type, entity_id, tag_id, remove_if_unused: true) do
+    case remove_tag(entity_type, entity_id, tag_id, current_author, remove_if_unused: true) do
       {:ok, _, result} ->
         # Find and remove the tag from current_tags
         removed_tag = Enum.find(socket.assigns.current_tags, &(&1.id == tag_id))
@@ -256,7 +259,12 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
       data-myself={@myself}
     >
       <%= if @edit_mode do %>
-        <div class="z-20" phx-click-away="exit_edit_mode" phx-target={@myself}>
+        <div
+          id={"tags-edit-wrapper-#{@id}"}
+          class="z-20"
+          phx-click-away="exit_edit_mode"
+          phx-target={@myself}
+        >
           <!-- Edit mode container - full cell -->
           <div class="relative w-full h-full">
             <!-- Edit mode input with selected tags - full cell -->
@@ -292,41 +300,40 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
               </div>
             </div>
             <!-- Available tags dropdown - positioned below input with full width -->
-            <div class="absolute top-[calc(100%+1px)] left-0 w-full z-[5] bg-Table-table-row-1 border border-Table-table-border rounded-[3px] max-h-60 overflow-y-auto shadow-xl">
-              <!-- Available tags list -->
-              <%= if Enum.any?(@available_tags, fn tag -> tag.id not in @selected_tag_ids end) do %>
-                <div class="p-3 space-y-2">
-                  <div
-                    class="text-Text-text-low text-xs font-semibold mb-2"
+            <!-- Only render when there are unselected tags to show -->
+            <div
+              :if={Enum.any?(@available_tags, fn tag -> tag.id not in @selected_tag_ids end)}
+              class="absolute top-[calc(100%+1px)] left-0 w-full z-[5] bg-Table-table-row-1 border border-Table-table-border rounded-[3px] max-h-60 overflow-y-auto shadow-xl"
+            >
+              <div class="p-3 space-y-2">
+                <div
+                  class="text-Text-text-low text-xs font-semibold mb-2"
+                  style={@font_style}
+                >
+                  Create or select an option
+                </div>
+                <div class={
+                  if @variant == :table, do: "flex flex-col gap-2", else: "flex flex-wrap gap-2"
+                }>
+                  <button
+                    :for={tag <- @available_tags}
+                    :if={tag.id not in @selected_tag_ids}
+                    phx-click="add_tag"
+                    phx-value-tag_id={tag.id}
+                    phx-target={@myself}
+                    class={
+                      if @variant == :table,
+                        do:
+                          "px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}",
+                        else:
+                          "px-2 py-1 rounded-full text-sm leading-4 font-semibold transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}"
+                    }
                     style={@font_style}
                   >
-                    Create or select an option
-                  </div>
-                  <div class={
-                    if @variant == :table, do: "flex flex-col gap-2", else: "flex flex-wrap gap-2"
-                  }>
-                    <%= for tag <- @available_tags do %>
-                      <%= if tag.id not in @selected_tag_ids do %>
-                        <button
-                          phx-click="add_tag"
-                          phx-value-tag_id={tag.id}
-                          phx-target={@myself}
-                          class={
-                            if @variant == :table,
-                              do:
-                                "px-3 py-1 mr-auto rounded-full text-sm font-semibold shadow-sm transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}",
-                              else:
-                                "px-2 py-1 rounded-full text-sm leading-4 font-semibold transition-colors hover:opacity-80 #{get_tag_pill_classes(tag.name)}"
-                          }
-                          style={@font_style}
-                        >
-                          {tag.name}
-                        </button>
-                      <% end %>
-                    <% end %>
-                  </div>
+                    {tag.name}
+                  </button>
                 </div>
-              <% end %>
+              </div>
             </div>
           </div>
         </div>
@@ -485,24 +492,25 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
     Tags.get_section_tags(section_id)
   end
 
-  defp associate_tag(:project, project_id, tag_id) do
-    Tags.associate_tag_with_project(project_id, tag_id)
+  defp associate_tag(:project, project_id, tag_id, actor) do
+    Tags.associate_tag_with_project(project_id, tag_id, actor: actor)
   end
 
-  defp associate_tag(:section, section_id, tag_id) do
-    Tags.associate_tag_with_section(section_id, tag_id)
+  defp associate_tag(:section, section_id, tag_id, actor) do
+    Tags.associate_tag_with_section(section_id, tag_id, actor: actor)
   end
 
-  defp remove_tag(:project, project_id, tag_id, opts) do
-    Tags.remove_tag_from_project(project_id, tag_id, opts)
+  defp remove_tag(:project, project_id, tag_id, actor, opts) do
+    Tags.remove_tag_from_project(project_id, tag_id, Keyword.put(opts, :actor, actor))
   end
 
-  defp remove_tag(:section, section_id, tag_id, opts) do
-    Tags.remove_tag_from_section(section_id, tag_id, opts)
+  defp remove_tag(:section, section_id, tag_id, actor, opts) do
+    Tags.remove_tag_from_section(section_id, tag_id, Keyword.put(opts, :actor, actor))
   end
 
   defp create_tag_from_input_value(socket) do
     input_value = String.trim(socket.assigns.input_value)
+    current_author = socket.assigns.current_author
 
     if input_value == "" do
       assign(socket, :error, "Please enter a tag name")
@@ -519,7 +527,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
           entity_type = socket.assigns.entity_type
           entity_id = socket.assigns.entity_id
 
-          case associate_tag(entity_type, entity_id, tag_id) do
+          case associate_tag(entity_type, entity_id, tag_id, current_author) do
             {:ok, _} ->
               # Add existing tag to current_tags and sort
               updated_current_tags = [existing_tag | socket.assigns.current_tags]
@@ -552,7 +560,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
               entity_type = socket.assigns.entity_type
               entity_id = socket.assigns.entity_id
 
-              case associate_tag(entity_type, entity_id, tag.id) do
+              case associate_tag(entity_type, entity_id, tag.id, current_author) do
                 {:ok, _} ->
                   # Add new tag to current_tags and sort
                   updated_current_tags = [tag | socket.assigns.current_tags]
@@ -593,7 +601,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                   entity_type = socket.assigns.entity_type
                   entity_id = socket.assigns.entity_id
 
-                  case associate_tag(entity_type, entity_id, tag_id) do
+                  case associate_tag(entity_type, entity_id, tag_id, current_author) do
                     {:ok, _} ->
                       # Find the tag that was created and add it to current_tags
                       found_tag =

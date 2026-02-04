@@ -489,75 +489,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
     end
   end
 
-  describe "project overview tags" do
+  describe "project overview communities and institutions" do
     setup [:author_conn]
-
-    test "displays tags in Details section when project has tags", %{conn: conn, author: author} do
-      project = create_project_with_author(author)
-      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      {:ok, _} = Tags.associate_tag_with_project(project, tag)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      # Should show the Tags label in Details section
-      assert has_element?(view, "label", "Tags")
-      # Should show the tag
-      assert has_element?(view, "span[role='listitem']", "Biology")
-    end
-
-    test "displays empty tags component when project has no tags", %{conn: conn, author: author} do
-      project = create_project_with_author(author)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      # Should show the Tags label
-      assert has_element?(view, "label", "Tags")
-      # Should not show any tags
-      refute has_element?(view, "span[role='listitem']")
-    end
-
-    test "displays multiple tags in alphabetical order", %{conn: conn, author: author} do
-      project = create_project_with_author(author)
-      {:ok, zebra_tag} = Tags.create_tag(%{name: "Zebra"})
-      {:ok, apple_tag} = Tags.create_tag(%{name: "Apple"})
-      {:ok, _} = Tags.associate_tag_with_project(project, zebra_tag)
-      {:ok, _} = Tags.associate_tag_with_project(project, apple_tag)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      # Should show both tags
-      assert has_element?(view, "span[role='listitem']", "Apple")
-      assert has_element?(view, "span[role='listitem']", "Zebra")
-
-      # Check alphabetical order
-      html = render(view)
-      apple_index = :binary.match(html, "Apple") |> elem(0)
-      zebra_index = :binary.match(html, "Zebra") |> elem(0)
-      assert apple_index < zebra_index
-    end
-
-    test "can enter edit mode and see available tags", %{conn: conn, author: author} do
-      project = create_project_with_author(author)
-      {:ok, existing_tag} = Tags.create_tag(%{name: "Chemistry"})
-      {:ok, _available_tag} = Tags.create_tag(%{name: "Physics"})
-      {:ok, _} = Tags.associate_tag_with_project(project, existing_tag)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      # Enter edit mode by clicking on the tags component
-      view |> element("div[phx-click='toggle_edit']") |> render_click()
-
-      # Should show input field in edit mode
-      assert has_element?(view, "input[type='text']")
-      # Should show existing tag with remove button (X icon)
-      assert has_element?(view, "span[role='listitem']", "Chemistry")
-      assert has_element?(view, "button[phx-click='remove_tag'] svg")
-      # Should show available tag to add
-      assert has_element?(view, "button[phx-click='add_tag']", "Physics")
-
-      # The available tag that's not yet associated should be selectable
-      refute has_element?(view, "button[phx-click='add_tag']", "Chemistry")
-    end
 
     test "displays communities in Details section when project has communities", %{
       conn: conn,
@@ -672,7 +605,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
   describe "project overview course sections" do
     setup [:author_conn]
 
-    test "displays Course Sections section with 'None exist' when project has no active sections",
+    test "displays Course Sections section with search box and 'None exist' when project has no active sections",
          %{conn: conn, author: author} do
       project = create_project_with_author(author)
 
@@ -683,6 +616,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       # Wait for async data to load
       html = render_async(view)
       assert html =~ "None exist"
+
+      # Search box should be visible even when empty (consistent with other views)
+      assert has_element?(view, "form[phx-change='course_sections_search_change']")
     end
 
     test "only displays sections with future end dates", %{conn: conn, author: author} do
@@ -692,13 +628,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       future_date = DateTime.add(DateTime.utc_now(), 30, :day)
       past_date = DateTime.add(DateTime.utc_now(), -30, :day)
 
-      # Section with future end date - should be shown
+      # Create a product (blueprint) for the project
+      product =
+        insert(:section,
+          title: "Course Product",
+          base_project: project,
+          type: :blueprint,
+          status: :active
+        )
+
+      insert(:section_project_publication,
+        section: product,
+        project: project,
+        publication: publication
+      )
+
+      # Section FROM PRODUCT with future end date - should be shown
+      # (tests that product-based sections appear, not just direct sections)
       future_section =
         insert(:section,
           title: "Future Section",
           base_project: project,
+          blueprint_id: product.id,
           type: :enrollable,
           status: :active,
+          start_date: DateTime.utc_now(),
           end_date: future_date
         )
 
@@ -731,6 +685,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       assert has_element?(view, "a", "Future Section")
       refute has_element?(view, "a", "Past Section")
+      # Product itself should NOT appear (type: :blueprint)
+      refute has_element?(view, "a", "Course Product")
     end
 
     test "shows the correct payment status", %{conn: conn, author: author} do
@@ -1007,6 +963,203 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       })
 
       assert Course.get_project!(project.id).attributes.calculate_embeddings_on_publish
+    end
+
+    # Tags are admin-only per MER-5022
+    test "displays Tags section in Details for admin users", %{conn: conn, admin: admin} do
+      project = create_project_with_author(admin)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      {:ok, _} = Tags.associate_tag_with_project(project, tag, actor: admin)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Admin should see Tags label and TagsComponent
+      assert has_element?(view, "label", "Tags")
+      assert has_element?(view, "div[phx-hook='TagsComponent']")
+      assert has_element?(view, "span[role='listitem']", "Biology")
+    end
+
+    test "admin can edit tags (enter edit mode)", %{conn: conn, admin: admin} do
+      project = create_project_with_author(admin)
+      {:ok, existing_tag} = Tags.create_tag(%{name: "Chemistry"})
+      {:ok, _available_tag} = Tags.create_tag(%{name: "Physics"})
+      {:ok, _} = Tags.associate_tag_with_project(project, existing_tag, actor: admin)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Enter edit mode by clicking on the tags component
+      view |> element("div[phx-click='toggle_edit']") |> render_click()
+
+      # Should show input field in edit mode
+      assert has_element?(view, "input[type='text']")
+      # Should show existing tag with remove button
+      assert has_element?(view, "span[role='listitem']", "Chemistry")
+      assert has_element?(view, "button[phx-click='remove_tag'] svg")
+      # Should show available tag to add
+      assert has_element?(view, "button[phx-click='add_tag']", "Physics")
+    end
+  end
+
+  describe "course_sections_search_change handler unit tests" do
+    alias OliWeb.Workspaces.CourseAuthor.OverviewLive
+
+    test "skips query when course_sections_data total is 0" do
+      # Create a socket with course_sections_data showing total: 0
+      original_data = %{result: %{total: 0, table_model: %{}}}
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          course_sections_data: original_data,
+          course_sections_search: "",
+          course_sections_offset: 0
+        }
+      }
+
+      # Call handler directly
+      {:noreply, updated_socket} =
+        OverviewLive.handle_event(
+          "course_sections_search_change",
+          %{"search" => "biology"},
+          socket
+        )
+
+      # Verify assigns are UNCHANGED (no update needed - LiveView preserves input value)
+      assert updated_socket.assigns.course_sections_search == ""
+      assert updated_socket.assigns.course_sections_offset == 0
+
+      # Verify course_sections_data is UNCHANGED (no assign_async was called)
+      # If assign_async was called, the data would be wrapped in a new AsyncResult with loading: true
+      assert updated_socket.assigns.course_sections_data == original_data
+    end
+
+    test "executes query when course_sections_data total is greater than 0" do
+      # Create a socket with course_sections_data showing total: 5
+      original_data = %{result: %{total: 5, table_model: %{}}}
+
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          __changed__: %{},
+          course_sections_data: original_data,
+          course_sections_search: "",
+          course_sections_offset: 0,
+          course_sections_project_id: 1,
+          course_sections_limit: 10,
+          course_sections_sort_order: :asc,
+          course_sections_sort_by: :title,
+          ctx: %{}
+        }
+      }
+
+      # Call handler directly
+      {:noreply, updated_socket} =
+        OverviewLive.handle_event(
+          "course_sections_search_change",
+          %{"search" => "biology"},
+          socket
+        )
+
+      # Verify search was updated
+      assert updated_socket.assigns.course_sections_search == "biology"
+
+      # Verify course_sections_data IS changed (assign_async was called)
+      # When assign_async is called, the assign becomes an AsyncResult struct
+      assert updated_socket.assigns.course_sections_data != original_data
+      # The assign is now an AsyncResult with a loading key set to the async keys
+      assert is_map(updated_socket.assigns.course_sections_data)
+      assert Map.has_key?(updated_socket.assigns.course_sections_data, :loading)
+    end
+  end
+
+  describe "project overview tags visibility for authors (non-admin)" do
+    setup [:author_conn]
+
+    setup do
+      # Create an admin for tag operations in tests
+      admin =
+        Oli.Factory.insert(:author,
+          system_role_id: Oli.Accounts.SystemRole.role_id().content_admin
+        )
+
+      %{tag_admin: admin}
+    end
+
+    # MER-5022: Tag EDITING is admin-only, but authors should be able to VIEW tags
+    # "This functionality is reserved for admins" - "functionality" = editing capability
+    # "This could lead to tags being made by any author" - concern is about creating, not viewing
+
+    test "displays tags as read-only for regular authors", %{
+      conn: conn,
+      author: author,
+      tag_admin: tag_admin
+    } do
+      project = create_project_with_author(author)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      {:ok, _} = Tags.associate_tag_with_project(project, tag, actor: tag_admin)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Author SHOULD see Tags label and tag values
+      assert has_element?(view, "label", "Tags")
+      assert has_element?(view, "li", "Biology")
+    end
+
+    test "displays 'None' when project has no tags for regular authors", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Author should see Tags label with "None" when no tags
+      assert has_element?(view, "label", "Tags")
+      html = render(view)
+      # Find the Tags section - it should show "None"
+      assert html =~ ~r/Tags.*None/s or has_element?(view, "span", "None")
+    end
+
+    test "cannot edit tags - no interactive TagsComponent rendered", %{
+      conn: conn,
+      author: author,
+      tag_admin: tag_admin
+    } do
+      project = create_project_with_author(author)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      {:ok, _} = Tags.associate_tag_with_project(project, tag, actor: tag_admin)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # TagsComponent hook should NOT be present (no edit capability)
+      refute has_element?(view, "div[phx-hook='TagsComponent']")
+      # No remove buttons
+      refute has_element?(view, "button[phx-click='remove_tag']")
+      # No edit toggle
+      refute has_element?(view, "div[phx-click='toggle_edit']")
+    end
+
+    test "displays multiple tags in alphabetical order for regular authors", %{
+      conn: conn,
+      author: author,
+      tag_admin: tag_admin
+    } do
+      project = create_project_with_author(author)
+      {:ok, zebra_tag} = Tags.create_tag(%{name: "Zebra"})
+      {:ok, apple_tag} = Tags.create_tag(%{name: "Apple"})
+      {:ok, _} = Tags.associate_tag_with_project(project, zebra_tag, actor: tag_admin)
+      {:ok, _} = Tags.associate_tag_with_project(project, apple_tag, actor: tag_admin)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Should show both tags
+      assert render(view) =~ "Apple"
+      assert render(view) =~ "Zebra"
+
+      # Check alphabetical order
+      html = render(view)
+      apple_index = :binary.match(html, "Apple") |> elem(0)
+      zebra_index = :binary.match(html, "Zebra") |> elem(0)
+      assert apple_index < zebra_index
     end
   end
 end

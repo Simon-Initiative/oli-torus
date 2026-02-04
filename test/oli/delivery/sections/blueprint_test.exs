@@ -332,6 +332,9 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
     end
 
     test "browse/3 lists products and applies filtering by tags" do
+      # Create an admin for tag operations
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+
       # Create tags
       tag1 = insert(:tag, name: "Tag1")
       tag2 = insert(:tag, name: "Tag2")
@@ -341,9 +344,9 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       product2 = insert(:section, title: "Product2", type: :blueprint)
       product3 = insert(:section, title: "Product3", type: :blueprint)
 
-      Oli.Tags.associate_tag_with_section(product1, tag1)
-      Oli.Tags.associate_tag_with_section(product2, tag1)
-      Oli.Tags.associate_tag_with_section(product2, tag2)
+      Oli.Tags.associate_tag_with_section(product1, tag1, actor: admin)
+      Oli.Tags.associate_tag_with_section(product2, tag1, actor: admin)
+      Oli.Tags.associate_tag_with_section(product2, tag2, actor: admin)
 
       # Filter by tag1 - should find product1 and product2
       results =

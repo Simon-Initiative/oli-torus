@@ -4,6 +4,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   import Phoenix.Component
   import OliWeb.Components.Common
 
+  import Ecto.Query, only: [from: 2]
+
   alias Oli.{Accounts, Activities, Inventories, Publishing, Repo}
   alias Oli.Authoring.{Broadcaster, Course, ProjectExportWorker}
   alias Oli.Delivery.Sections.Browse
@@ -29,7 +31,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns
-    project = Repo.preload(project, [:tags, :communities])
+
+    project =
+      Repo.preload(project, [:communities, tags: from(t in Oli.Tags.Tag, order_by: t.name)])
 
     # Get institutions with visibility access to this project
     visibility_institutions =
@@ -166,14 +170,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           </div>
           <div class="form-label-group mb-3">
             <label class="control-label">Tags</label>
-            <.live_component
-              module={TagsComponent}
-              id={"project-tags-#{@project.id}"}
-              entity_type={:project}
-              entity_id={@project.id}
-              current_tags={@project.tags}
-              variant={:form}
-            />
+            <%= if @is_admin do %>
+              <.live_component
+                module={TagsComponent}
+                id={"project-tags-#{@project.id}"}
+                entity_type={:project}
+                entity_id={@project.id}
+                current_tags={@project.tags}
+                current_author={@current_author}
+                variant={:form}
+              />
+            <% else %>
+              <.read_only_tags tags={@project.tags} />
+            <% end %>
           </div>
           <% welcome_title =
             (fetch_field(f.source, :welcome_title) &&
@@ -508,14 +517,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         description="Course sections created from this base project"
         layout={:stacked}
       >
-        <.form for={%{}} phx-change="course_sections_search_change" class="mb-4">
-          <SearchInput.render
-            id="course-sections-search"
-            name="search"
-            text={@course_sections_search}
-            aria_label="Search course sections"
-          />
-        </.form>
         <.async_result :let={data} assign={@course_sections_data}>
           <:loading>
             <div class="flex items-center justify-center py-8">
@@ -528,6 +529,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               Failed to load course sections. Please refresh the page.
             </div>
           </:failed>
+          <.form for={%{}} phx-change="course_sections_search_change" class="mb-4">
+            <SearchInput.render
+              id="course-sections-search"
+              name="search"
+              text={@course_sections_search}
+              aria_label="Search course sections"
+            />
+          </.form>
           <StripedPagedTable.render
             table_model={data.table_model}
             total_count={data.total}
@@ -799,21 +808,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   end
 
   def handle_event("course_sections_search_change", %{"search" => search}, socket) do
-    # Extract values before async to avoid copying entire socket
-    project_id = socket.assigns.course_sections_project_id
-    ctx = socket.assigns.ctx
-    limit = socket.assigns.course_sections_limit
-    sort_order = socket.assigns.course_sections_sort_order
-    sort_by = socket.assigns.course_sections_sort_by
+    # Skip query when list is empty - nothing to search
+    case socket.assigns.course_sections_data do
+      %{result: %{total: 0}} ->
+        {:noreply, socket}
 
-    socket =
-      socket
-      |> assign(course_sections_search: search, course_sections_offset: 0)
-      |> assign_async(:course_sections_data, fn ->
-        load_course_sections_data(project_id, ctx, 0, limit, sort_order, sort_by, search)
-      end)
+      _ ->
+        # Extract values before async to avoid copying entire socket
+        project_id = socket.assigns.course_sections_project_id
+        ctx = socket.assigns.ctx
+        limit = socket.assigns.course_sections_limit
+        sort_order = socket.assigns.course_sections_sort_order
+        sort_by = socket.assigns.course_sections_sort_by
 
-    {:noreply, socket}
+        socket =
+          socket
+          |> assign(course_sections_search: search, course_sections_offset: 0)
+          |> assign_async(:course_sections_data, fn ->
+            load_course_sections_data(project_id, ctx, 0, limit, sort_order, sort_by, search)
+          end)
+
+        {:noreply, socket}
+    end
   end
 
   def handle_event(
@@ -1052,6 +1068,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           </div>
         </div>
       </div>
+    </div>
+    """
+  end
+
+  # Read-only tags display for non-admin users
+  # Shows tag pills without any edit functionality
+  attr :tags, :list, required: true
+
+  defp read_only_tags(assigns) do
+    ~H"""
+    <div class="min-h-[40px] w-full rounded border border-Border-border-default bg-Fill-fill-form-field px-3 py-2 flex items-center">
+      <span :if={@tags == []} class="text-Text-text-tertiary">{gettext("None")}</span>
+      <ul :if={@tags != []} class="list-none m-0 p-0 flex flex-wrap gap-1">
+        <li
+          :for={tag <- @tags}
+          class={"px-2 py-1 rounded-full text-sm leading-4 font-semibold #{TagsComponent.get_tag_pill_classes(tag.name)}"}
+        >
+          {tag.name}
+        </li>
+      </ul>
     </div>
     """
   end

@@ -10,6 +10,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
 
   describe "TagsComponent" do
     setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
       project = insert(:project)
       section = insert(:section)
 
@@ -18,10 +19,11 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       {:ok, tag3} = Tags.create_tag(%{name: "Physics"})
 
       # Associate some tags with entities
-      {:ok, _} = Tags.associate_tag_with_project(project, tag1)
-      {:ok, _} = Tags.associate_tag_with_section(section, tag2)
+      {:ok, _} = Tags.associate_tag_with_project(project, tag1, actor: admin)
+      {:ok, _} = Tags.associate_tag_with_section(section, tag2, actor: admin)
 
       %{
+        admin: admin,
         project: project,
         section: section,
         tags: [tag1, tag2, tag3],
@@ -259,9 +261,13 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       assert has_element?(component, "span[role='listitem']", "Chemistry")
     end
 
-    test "works with blueprint sections (products)", %{conn: conn, chemistry: chemistry} do
+    test "works with blueprint sections (products)", %{
+      conn: conn,
+      admin: admin,
+      chemistry: chemistry
+    } do
       product = insert(:section, %{type: :blueprint})
-      {:ok, _} = Tags.associate_tag_with_section(product, chemistry)
+      {:ok, _} = Tags.associate_tag_with_section(product, chemistry, actor: admin)
 
       {:ok, component, _html} =
         live_component_isolated(conn, TagsComponent, %{
@@ -306,11 +312,11 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       assert has_element?(component, "input[type='text']")
     end
 
-    test "tags are displayed in alphabetical order", %{conn: conn, project: project} do
+    test "tags are displayed in alphabetical order", %{conn: conn, admin: admin, project: project} do
       {:ok, zebra} = Tags.create_tag(%{name: "Zebra"})
       {:ok, apple} = Tags.create_tag(%{name: "Apple"})
-      {:ok, _} = Tags.associate_tag_with_project(project, zebra)
-      {:ok, _} = Tags.associate_tag_with_project(project, apple)
+      {:ok, _} = Tags.associate_tag_with_project(project, zebra, actor: admin)
+      {:ok, _} = Tags.associate_tag_with_project(project, apple, actor: admin)
 
       {:ok, component, _html} =
         live_component_isolated(conn, TagsComponent, %{
@@ -328,10 +334,13 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       assert apple_index < zebra_index
     end
 
-    test "removes unused tags from database when remove_if_unused is true", %{conn: conn} do
+    test "removes unused tags from database when remove_if_unused is true", %{
+      conn: conn,
+      admin: admin
+    } do
       project = insert(:project)
       {:ok, unique_tag} = Tags.create_tag(%{name: "UniqueTag"})
-      {:ok, _} = Tags.associate_tag_with_project(project, unique_tag)
+      {:ok, _} = Tags.associate_tag_with_project(project, unique_tag, actor: admin)
 
       {:ok, component, _html} =
         live_component_isolated(conn, TagsComponent, %{

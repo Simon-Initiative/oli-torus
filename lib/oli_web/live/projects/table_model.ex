@@ -10,6 +10,7 @@ defmodule OliWeb.Projects.TableModel do
     default_th_class = "!border-r border-Table-table-border"
     search_term = Keyword.get(opts, :search_term, "")
     is_admin = Keyword.get(opts, :is_admin, false)
+    current_author = Keyword.get(opts, :current_author)
 
     base_columns = [
       %ColumnSpec{
@@ -95,7 +96,8 @@ defmodule OliWeb.Projects.TableModel do
       sort_order: sort_order,
       data: %{
         ctx: ctx,
-        search_term: search_term
+        search_term: search_term,
+        current_author: current_author
       }
     )
   end
@@ -134,6 +136,7 @@ defmodule OliWeb.Projects.TableModel do
         entity_type={:project}
         entity_id={@project.id}
         current_tags={Map.get(@project, :tags, [])}
+        current_author={@current_author}
       />
     </div>
     """

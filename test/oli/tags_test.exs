@@ -89,167 +89,199 @@ defmodule Oli.TagsTest do
     end
   end
 
-  describe "associate_tag_with_project/2" do
-    test "associates tag with project using structs" do
+  describe "associate_tag_with_project/3" do
+    setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      %{admin: admin}
+    end
+
+    test "associates tag with project using structs", %{admin: admin} do
       project = insert(:project)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
 
-      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project, tag)
+      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project, tag, actor: admin)
     end
 
-    test "associates tag with project using IDs" do
+    test "associates tag with project using IDs", %{admin: admin} do
       project = insert(:project)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
 
-      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project.id, tag.id)
+      assert {:ok, %ProjectTag{}} =
+               Tags.associate_tag_with_project(project.id, tag.id, actor: admin)
     end
 
-    test "handles non-existent project" do
+    test "handles non-existent project", %{admin: admin} do
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
 
-      assert {:error, :project_not_found} = Tags.associate_tag_with_project(999_999, tag)
+      assert {:error, :project_not_found} =
+               Tags.associate_tag_with_project(999_999, tag, actor: admin)
     end
 
-    test "handles non-existent tag" do
+    test "handles non-existent tag", %{admin: admin} do
       project = insert(:project)
 
-      assert {:error, :tag_not_found} = Tags.associate_tag_with_project(project, 999_999)
+      assert {:error, :tag_not_found} =
+               Tags.associate_tag_with_project(project, 999_999, actor: admin)
     end
 
-    test "handles duplicate associations" do
+    test "handles duplicate associations", %{admin: admin} do
       project = insert(:project)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
 
       # First association should succeed
-      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project, tag)
+      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project, tag, actor: admin)
 
       # Second association should return already_exists error
-      assert {:error, :already_exists} = Tags.associate_tag_with_project(project, tag)
+      assert {:error, :already_exists} =
+               Tags.associate_tag_with_project(project, tag, actor: admin)
     end
   end
 
-  describe "associate_tag_with_section/2" do
-    test "associates tag with section" do
+  describe "associate_tag_with_section/3" do
+    setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      %{admin: admin}
+    end
+
+    test "associates tag with section", %{admin: admin} do
       section = insert(:section)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
 
-      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(section, tag)
+      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(section, tag, actor: admin)
     end
 
-    test "associates tag with product (blueprint section)" do
+    test "associates tag with product (blueprint section)", %{admin: admin} do
       product = insert(:section, %{type: :blueprint})
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
 
-      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(product, tag)
+      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(product, tag, actor: admin)
     end
 
-    test "associates tag with section using IDs" do
+    test "associates tag with section using IDs", %{admin: admin} do
       section = insert(:section)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
 
-      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(section.id, tag.id)
+      assert {:ok, %SectionTag{}} =
+               Tags.associate_tag_with_section(section.id, tag.id, actor: admin)
     end
 
-    test "handles non-existent section" do
+    test "handles non-existent section", %{admin: admin} do
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
 
-      assert {:error, :section_not_found} = Tags.associate_tag_with_section(999_999, tag)
+      assert {:error, :section_not_found} =
+               Tags.associate_tag_with_section(999_999, tag, actor: admin)
     end
 
-    test "handles non-existent tag" do
+    test "handles non-existent tag", %{admin: admin} do
       section = insert(:section)
 
-      assert {:error, :tag_not_found} = Tags.associate_tag_with_section(section, 999_999)
+      assert {:error, :tag_not_found} =
+               Tags.associate_tag_with_section(section, 999_999, actor: admin)
     end
   end
 
   describe "remove_tag_from_project/3" do
-    test "removes tag from project" do
+    setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      %{admin: admin}
+    end
+
+    test "removes tag from project", %{admin: admin} do
       project = insert(:project)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project, tag)
+      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project, tag, actor: admin)
 
       assert {:ok, %ProjectTag{}, :removed_from_entity} =
-               Tags.remove_tag_from_project(project, tag)
+               Tags.remove_tag_from_project(project, tag, actor: admin)
     end
 
-    test "returns error when association doesn't exist" do
+    test "returns error when association doesn't exist", %{admin: admin} do
       project = insert(:project)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
 
-      assert {:error, :not_found} = Tags.remove_tag_from_project(project, tag)
+      assert {:error, :not_found} = Tags.remove_tag_from_project(project, tag, actor: admin)
     end
 
-    test "with remove_if_unused: true deletes unused tag" do
+    test "with remove_if_unused: true deletes unused tag", %{admin: admin} do
       project = insert(:project)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project, tag)
+      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project, tag, actor: admin)
 
       assert {:ok, %Tag{}, :completely_removed} =
-               Tags.remove_tag_from_project(project, tag, remove_if_unused: true)
+               Tags.remove_tag_from_project(project, tag, actor: admin, remove_if_unused: true)
 
       assert Tags.get_tag_by_name("Biology") == nil
     end
 
-    test "with remove_if_unused: true keeps tag when used elsewhere" do
+    test "with remove_if_unused: true keeps tag when used elsewhere", %{admin: admin} do
       project1 = insert(:project)
       project2 = insert(:project)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project1, tag)
-      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project2, tag)
+      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project1, tag, actor: admin)
+      assert {:ok, %ProjectTag{}} = Tags.associate_tag_with_project(project2, tag, actor: admin)
 
       assert {:ok, %ProjectTag{}, :removed_from_entity} =
-               Tags.remove_tag_from_project(project1, tag, remove_if_unused: true)
+               Tags.remove_tag_from_project(project1, tag, actor: admin, remove_if_unused: true)
 
       assert Tags.get_tag_by_name("Biology") != nil
     end
   end
 
   describe "remove_tag_from_section/3" do
-    test "removes tag from section" do
-      section = insert(:section)
-      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(section, tag)
-
-      assert {:ok, %SectionTag{}, :removed_from_entity} =
-               Tags.remove_tag_from_section(section, tag)
+    setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      %{admin: admin}
     end
 
-    test "removes tag from product" do
+    test "removes tag from section", %{admin: admin} do
+      section = insert(:section)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(section, tag, actor: admin)
+
+      assert {:ok, %SectionTag{}, :removed_from_entity} =
+               Tags.remove_tag_from_section(section, tag, actor: admin)
+    end
+
+    test "removes tag from product", %{admin: admin} do
       product = insert(:section, %{type: :blueprint})
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(product, tag)
+      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(product, tag, actor: admin)
 
       assert {:ok, %SectionTag{}, :removed_from_entity} =
-               Tags.remove_tag_from_section(product, tag)
+               Tags.remove_tag_from_section(product, tag, actor: admin)
     end
 
-    test "returns error when association doesn't exist" do
+    test "returns error when association doesn't exist", %{admin: admin} do
       section = insert(:section)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
 
-      assert {:error, :not_found} = Tags.remove_tag_from_section(section, tag)
+      assert {:error, :not_found} = Tags.remove_tag_from_section(section, tag, actor: admin)
     end
 
-    test "with remove_if_unused: true deletes unused tag" do
+    test "with remove_if_unused: true deletes unused tag", %{admin: admin} do
       section = insert(:section)
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
-      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(section, tag)
+      assert {:ok, %SectionTag{}} = Tags.associate_tag_with_section(section, tag, actor: admin)
 
       assert {:ok, %Tag{}, :completely_removed} =
-               Tags.remove_tag_from_section(section, tag, remove_if_unused: true)
+               Tags.remove_tag_from_section(section, tag, actor: admin, remove_if_unused: true)
 
       assert Tags.get_tag_by_name("Biology") == nil
     end
   end
 
   describe "get_project_tags/1" do
-    test "returns all tags associated with a project" do
+    setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      %{admin: admin}
+    end
+
+    test "returns all tags associated with a project", %{admin: admin} do
       project = insert(:project)
       {:ok, tag1} = Tags.create_tag(%{name: "Biology"})
       {:ok, tag2} = Tags.create_tag(%{name: "Chemistry"})
-      assert {:ok, _} = Tags.associate_tag_with_project(project, tag1)
-      assert {:ok, _} = Tags.associate_tag_with_project(project, tag2)
+      assert {:ok, _} = Tags.associate_tag_with_project(project, tag1, actor: admin)
+      assert {:ok, _} = Tags.associate_tag_with_project(project, tag2, actor: admin)
 
       tags = Tags.get_project_tags(project)
       assert length(tags) == 2
@@ -265,12 +297,12 @@ defmodule Oli.TagsTest do
       assert tags == []
     end
 
-    test "returns tags in alphabetical order" do
+    test "returns tags in alphabetical order", %{admin: admin} do
       project = insert(:project)
       {:ok, tag_c} = Tags.create_tag(%{name: "Chemistry"})
       {:ok, tag_a} = Tags.create_tag(%{name: "Biology"})
-      assert {:ok, _} = Tags.associate_tag_with_project(project, tag_c)
-      assert {:ok, _} = Tags.associate_tag_with_project(project, tag_a)
+      assert {:ok, _} = Tags.associate_tag_with_project(project, tag_c, actor: admin)
+      assert {:ok, _} = Tags.associate_tag_with_project(project, tag_a, actor: admin)
 
       tags = Tags.get_project_tags(project)
       assert hd(tags).name == "Biology"
@@ -278,12 +310,17 @@ defmodule Oli.TagsTest do
   end
 
   describe "get_section_tags/1" do
-    test "returns all tags associated with a section" do
+    setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      %{admin: admin}
+    end
+
+    test "returns all tags associated with a section", %{admin: admin} do
       section = insert(:section)
       {:ok, tag1} = Tags.create_tag(%{name: "Biology"})
       {:ok, tag2} = Tags.create_tag(%{name: "Chemistry"})
-      assert {:ok, _} = Tags.associate_tag_with_section(section, tag1)
-      assert {:ok, _} = Tags.associate_tag_with_section(section, tag2)
+      assert {:ok, _} = Tags.associate_tag_with_section(section, tag1, actor: admin)
+      assert {:ok, _} = Tags.associate_tag_with_section(section, tag2, actor: admin)
 
       tags = Tags.get_section_tags(section)
       assert length(tags) == 2
@@ -292,12 +329,12 @@ defmodule Oli.TagsTest do
       assert "Chemistry" in tag_names
     end
 
-    test "returns all tags associated with a product" do
+    test "returns all tags associated with a product", %{admin: admin} do
       product = insert(:section, %{type: :blueprint})
       {:ok, tag1} = Tags.create_tag(%{name: "Biology"})
       {:ok, tag2} = Tags.create_tag(%{name: "Chemistry"})
-      assert {:ok, _} = Tags.associate_tag_with_section(product, tag1)
-      assert {:ok, _} = Tags.associate_tag_with_section(product, tag2)
+      assert {:ok, _} = Tags.associate_tag_with_section(product, tag1, actor: admin)
+      assert {:ok, _} = Tags.associate_tag_with_section(product, tag2, actor: admin)
 
       tags = Tags.get_section_tags(product)
       assert length(tags) == 2
@@ -310,12 +347,12 @@ defmodule Oli.TagsTest do
       assert tags == []
     end
 
-    test "returns tags in alphabetical order" do
+    test "returns tags in alphabetical order", %{admin: admin} do
       section = insert(:section)
       {:ok, tag_c} = Tags.create_tag(%{name: "Chemistry"})
       {:ok, tag_a} = Tags.create_tag(%{name: "Biology"})
-      assert {:ok, _} = Tags.associate_tag_with_section(section, tag_c)
-      assert {:ok, _} = Tags.associate_tag_with_section(section, tag_a)
+      assert {:ok, _} = Tags.associate_tag_with_section(section, tag_c, actor: admin)
+      assert {:ok, _} = Tags.associate_tag_with_section(section, tag_a, actor: admin)
 
       tags = Tags.get_section_tags(section)
       assert hd(tags).name == "Biology"
@@ -371,6 +408,139 @@ defmodule Oli.TagsTest do
 
       tags = Tags.search_tags("bio")
       assert hd(tags).name == "Biology"
+    end
+  end
+
+  describe "authorization for associate_tag_with_project/3" do
+    setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      regular_author = insert(:author)
+      project = insert(:project)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+
+      %{admin: admin, regular_author: regular_author, project: project, tag: tag}
+    end
+
+    test "allows content_admin to associate tag with project", %{
+      admin: admin,
+      project: project,
+      tag: tag
+    } do
+      assert {:ok, %ProjectTag{}} =
+               Tags.associate_tag_with_project(project, tag, actor: admin)
+    end
+
+    test "allows system_admin to associate tag with project", %{project: project, tag: tag} do
+      system_admin =
+        insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().system_admin)
+
+      assert {:ok, %ProjectTag{}} =
+               Tags.associate_tag_with_project(project, tag, actor: system_admin)
+    end
+
+    test "denies regular author from associating tag with project", %{
+      regular_author: regular_author,
+      project: project,
+      tag: tag
+    } do
+      assert {:error, :not_authorized} =
+               Tags.associate_tag_with_project(project, tag, actor: regular_author)
+    end
+
+    test "denies when actor is nil", %{project: project, tag: tag} do
+      assert {:error, :not_authorized} =
+               Tags.associate_tag_with_project(project, tag, actor: nil)
+    end
+  end
+
+  describe "authorization for associate_tag_with_section/3" do
+    setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      regular_author = insert(:author)
+      section = insert(:section)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+
+      %{admin: admin, regular_author: regular_author, section: section, tag: tag}
+    end
+
+    test "allows content_admin to associate tag with section", %{
+      admin: admin,
+      section: section,
+      tag: tag
+    } do
+      assert {:ok, %SectionTag{}} =
+               Tags.associate_tag_with_section(section, tag, actor: admin)
+    end
+
+    test "denies regular author from associating tag with section", %{
+      regular_author: regular_author,
+      section: section,
+      tag: tag
+    } do
+      assert {:error, :not_authorized} =
+               Tags.associate_tag_with_section(section, tag, actor: regular_author)
+    end
+  end
+
+  describe "authorization for remove_tag_from_project/3" do
+    setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      regular_author = insert(:author)
+      project = insert(:project)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      # Associate the tag first (using admin)
+      {:ok, _} = Tags.associate_tag_with_project(project, tag, actor: admin)
+
+      %{admin: admin, regular_author: regular_author, project: project, tag: tag}
+    end
+
+    test "allows content_admin to remove tag from project", %{
+      admin: admin,
+      project: project,
+      tag: tag
+    } do
+      assert {:ok, %ProjectTag{}, :removed_from_entity} =
+               Tags.remove_tag_from_project(project, tag, actor: admin)
+    end
+
+    test "denies regular author from removing tag from project", %{
+      regular_author: regular_author,
+      project: project,
+      tag: tag
+    } do
+      assert {:error, :not_authorized} =
+               Tags.remove_tag_from_project(project, tag, actor: regular_author)
+    end
+  end
+
+  describe "authorization for remove_tag_from_section/3" do
+    setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      regular_author = insert(:author)
+      section = insert(:section)
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      # Associate the tag first (using admin)
+      {:ok, _} = Tags.associate_tag_with_section(section, tag, actor: admin)
+
+      %{admin: admin, regular_author: regular_author, section: section, tag: tag}
+    end
+
+    test "allows content_admin to remove tag from section", %{
+      admin: admin,
+      section: section,
+      tag: tag
+    } do
+      assert {:ok, %SectionTag{}, :removed_from_entity} =
+               Tags.remove_tag_from_section(section, tag, actor: admin)
+    end
+
+    test "denies regular author from removing tag from section", %{
+      regular_author: regular_author,
+      section: section,
+      tag: tag
+    } do
+      assert {:error, :not_authorized} =
+               Tags.remove_tag_from_section(section, tag, actor: regular_author)
     end
   end
 end
