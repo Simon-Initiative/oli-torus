@@ -203,7 +203,8 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
         student_emails,
         socket.assigns.email_message,
         socket.assigns.section_title,
-        socket.assigns.instructor_email
+        socket.assigns.instructor_email,
+        socket.assigns[:instructor_name] || "Instructor"
       )
 
       # Send flash message to parent LiveView
@@ -221,7 +222,13 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
     {:noreply, socket}
   end
 
-  defp send_student_emails(student_emails, message, course_name, instructor_email) do
+  defp send_student_emails(
+         student_emails,
+         message,
+         course_name,
+         instructor_email,
+         instructor_name
+       ) do
     student_emails
     |> Enum.map(fn student_email ->
       Oli.Email.create_text_email(
@@ -229,8 +236,8 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
         "Note from your #{course_name} Instructor #{instructor_email}",
         message
       )
-      |> Oli.Email.maybe_from(instructor_email)
-      |> Oli.Email.maybe_reply_to(instructor_email)
+      |> Oli.Email.maybe_from({instructor_name, instructor_email})
+      |> Oli.Email.maybe_reply_to({instructor_name, instructor_email})
     end)
     |> Oli.Mailer.deliver_later()
   end

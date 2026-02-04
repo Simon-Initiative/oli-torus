@@ -126,6 +126,7 @@ defmodule Oli.EmailTest do
     test "sets from to the user's email" do
       email =
         Email.help_desk_email(
+          "User Name",
           "user@test.com",
           "helpdesk@test.com",
           "Help Request",
@@ -133,12 +134,13 @@ defmodule Oli.EmailTest do
           %{message: "Test message"}
         )
 
-      assert email.from == {"", "user@test.com"}
+      assert email.from == {"User Name", "user@test.com"}
     end
 
     test "sets reply_to to the user's email" do
       email =
         Email.help_desk_email(
+          "User Name",
           "user@test.com",
           "helpdesk@test.com",
           "Help Request",
@@ -146,12 +148,13 @@ defmodule Oli.EmailTest do
           %{message: "Test message"}
         )
 
-      assert email.reply_to == {"", "user@test.com"}
+      assert email.reply_to == {"User Name", "user@test.com"}
     end
 
     test "sets to to the help desk email" do
       email =
         Email.help_desk_email(
+          "User Name",
           "user@test.com",
           "helpdesk@test.com",
           "Help Request",
@@ -165,6 +168,7 @@ defmodule Oli.EmailTest do
     test "sets the subject correctly" do
       email =
         Email.help_desk_email(
+          "User Name",
           "user@test.com",
           "helpdesk@test.com",
           "Help Request Subject",

@@ -66,7 +66,7 @@ defmodule Oli.Accounts.CollaboratorTest do
       assert_email_sent(
         to: "non_existing_author@gmail.com",
         subject: "You were invited as a collaborator to \"#{project.title}\"",
-        reply_to: {"", "inviter@gmail.com"}
+        reply_to: {"Inviter Author", "inviter@gmail.com"}
       )
     end
 
@@ -104,7 +104,7 @@ defmodule Oli.Accounts.CollaboratorTest do
       assert_email_sent(
         to: existing_author.email,
         subject: "You were invited as a collaborator to \"#{project.title}\"",
-        reply_to: {"", "inviter@gmail.com"}
+        reply_to: {"Inviter Author", "inviter@gmail.com"}
       )
     end
   end

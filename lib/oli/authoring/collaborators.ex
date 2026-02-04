@@ -101,7 +101,7 @@ defmodule Oli.Authoring.Collaborators do
         project_title: project_title
       }
     )
-    |> Email.maybe_reply_to(inviter_email)
+    |> Email.maybe_reply_to({inviter_name, inviter_email})
     |> Mailer.deliver()
   end
 

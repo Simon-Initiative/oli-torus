@@ -241,7 +241,7 @@ defmodule OliWeb.InviteController do
           button_label: "Go to invitation"
         }
       )
-      |> Email.maybe_reply_to(inviter_email)
+      |> Email.maybe_reply_to({inviter_name, inviter_email})
       |> Mailer.deliver()
     end)
   end

@@ -61,7 +61,7 @@ defmodule OliWeb.InviteControllerTest do
       assert_email_sent(
         to: @invite_email,
         subject: "You were invited as an instructor to \"#{section.title}\"",
-        reply_to: {"", "test@test.com"}
+        reply_to: {"First Last", "test@test.com"}
       )
     end
 
@@ -113,7 +113,7 @@ defmodule OliWeb.InviteControllerTest do
       assert_email_sent(
         to: @invite_email,
         subject: "You were invited as a student to \"#{section.title}\"",
-        reply_to: {"", "test@test.com"}
+        reply_to: {"First Last", "test@test.com"}
       )
     end
 
@@ -164,7 +164,7 @@ defmodule OliWeb.InviteControllerTest do
       assert_email_sent(
         to: @invite_email,
         subject: "You were invited as an instructor to \"#{section.title}\"",
-        reply_to: {"", "test@test.com"}
+        reply_to: {"First Last", "test@test.com"}
       )
     end
 
@@ -215,7 +215,7 @@ defmodule OliWeb.InviteControllerTest do
       assert_email_sent(
         to: @invite_email,
         subject: "You were invited as a student to \"#{section.title}\"",
-        reply_to: {"", "test@test.com"}
+        reply_to: {"First Last", "test@test.com"}
       )
     end
 
@@ -304,7 +304,7 @@ defmodule OliWeb.InviteControllerTest do
       assert_email_sent(
         to: @invite_email,
         subject: "You were invited as a student to \"#{section.title}\"",
-        reply_to: {"", "test@test.com"}
+        reply_to: {"First Last", "test@test.com"}
       )
     end
   end

@@ -7,10 +7,10 @@ defmodule Oli.Email do
   Creates a help desk email where the user is the initiator.
   Sets both from and reply_to to the user's email so replies go back to them.
   """
-  def help_desk_email(user_email, help_desk_email, subject, view, assigns) do
+  def help_desk_email(user_name, user_email, help_desk_email, subject, view, assigns) do
     base_email()
-    |> from(user_email)
-    |> reply_to(user_email)
+    |> from({user_name, user_email})
+    |> reply_to({user_name, user_email})
     |> put_layout({OliWeb.LayoutView, :help_email})
     |> to(help_desk_email)
     |> subject(subject)
