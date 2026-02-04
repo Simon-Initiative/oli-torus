@@ -177,27 +177,12 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns the enrollments for a given section and a list of user emails.
-  """
-  def get_enrollments_by_emails(section_slug, emails) do
-    from(e in Enrollment,
-      join: s in assoc(e, :section),
-      join: ecr in assoc(e, :context_roles),
-      join: u in assoc(e, :user),
-      where: s.slug == ^section_slug and u.email in ^emails,
-      preload: [:user]
-    )
-    |> Repo.all()
-  end
-
-  @doc """
   Returns the enrollments for a given section and list of emails,
   limited to independent learner users.
   """
   def get_independent_enrollments_by_emails(section_slug, emails) do
     from(e in Enrollment,
       join: s in assoc(e, :section),
-      join: ecr in assoc(e, :context_roles),
       join: u in assoc(e, :user),
       where: s.slug == ^section_slug and u.email in ^emails and u.independent_learner == true,
       preload: [:user]

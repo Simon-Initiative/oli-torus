@@ -51,7 +51,10 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           {:error, :non_independent_user} ->
             {:ok,
              socket
-             |> put_flash(:error, "This course is only available with a direct delivery account.")
+             |> put_flash(
+               :error,
+               gettext("This course is only available with a direct delivery account.")
+             )
              |> redirect(
                to:
                  ~p"/lms_user_instructions?#{[section_title: section.title, request_path: "/users/invite/#{token}"]}"
@@ -60,7 +63,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           {:error, :independent_learner_not_allowed} ->
             {:ok,
              socket
-             |> put_flash(:error, "This course is only available through your LMS.")
+             |> put_flash(:error, gettext("This course is only available through your LMS."))
              |> redirect(to: ~p"/workspaces/student")}
         end
     end

@@ -2711,34 +2711,6 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
-  describe "get_enrollments_by_emails/2" do
-    test "returns enrollments for the specified section and emails" do
-      user_1 = insert(:user)
-      user_2 = insert(:user)
-      user_3 = insert(:user)
-      section = insert(:section)
-
-      Sections.enroll(
-        [user_1.id, user_2.id],
-        section.id,
-        [ContextRoles.get_role(:context_learner)],
-        :enrolled
-      )
-
-      Sections.enroll(
-        [user_3.id],
-        section.id,
-        [ContextRoles.get_role(:context_learner)],
-        :pending_confirmation
-      )
-
-      enrollments = Sections.get_enrollments_by_emails(section.slug, [user_1.email, user_2.email])
-
-      assert length(enrollments) == 2
-      assert Enum.all?(enrollments, fn e -> e.status == :enrolled end)
-    end
-  end
-
   describe "get_independent_enrollments_by_emails/2" do
     test "returns enrollments only for independent learner users" do
       section = insert(:section)
@@ -2784,7 +2756,7 @@ defmodule Oli.Delivery.SectionsTest do
       )
 
       enrollments =
-        Sections.get_enrollments_by_emails(section.slug, [
+        Sections.get_independent_enrollments_by_emails(section.slug, [
           user_1.email,
           user_2.email,
           user_3.email
