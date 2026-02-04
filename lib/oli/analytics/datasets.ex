@@ -146,25 +146,19 @@ defmodule Oli.Analytics.Datasets do
   def create_job(job_type, project_id, initiated_by_id, %JobConfig{} = config) do
     Logger.info("Dataset job creation initiated for project #{project_id}, job type #{job_type}")
 
-    case init(job_type, project_id, initiated_by_id, config) do
-      {:ok, job} ->
-        with {:ok, job} <- step(job, &preprocess/1, :preprocess),
-             {:ok, job} <- step(job, &stage_lookup_data/1, :stage_lookup_data),
-             {:ok, job} <- step(job, &submit/1, :submit),
-             {:ok, job} <- persist(job) do
-          Logger.info(
-            "Dataset job successfully created for project #{project_id}, job id #{job.job_id}"
-          )
+    with {:ok, job} <- init(job_type, project_id, initiated_by_id, config),
+         {:ok, job} <- step(job, &preprocess/1, :preprocess),
+         {:ok, job} <- step(job, &stage_lookup_data/1, :stage_lookup_data),
+         {:ok, job} <- step(job, &submit/1, :submit),
+         {:ok, job} <- persist(job) do
+      Logger.info(
+        "Dataset job successfully created for project #{project_id}, job id #{job.job_id}"
+      )
 
-          {:ok, job}
-        else
-          {:error, {job, error, step}} ->
-            handle_create_job_failure(job, error, step)
-
-          {:error, error} ->
-            Logger.error("Failed to create dataset job: #{format_error(error)}")
-            {:error, format_error(error)}
-        end
+      {:ok, job}
+    else
+      {:error, {job, error, step}} ->
+        handle_create_job_failure(job, error, step)
 
       {:error, error} ->
         Logger.error("Failed to create dataset job: #{format_error(error)}")
