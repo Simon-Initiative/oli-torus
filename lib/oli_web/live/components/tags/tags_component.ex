@@ -259,7 +259,12 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
       data-myself={@myself}
     >
       <%= if @edit_mode do %>
-        <div class="z-20" phx-click-away="exit_edit_mode" phx-target={@myself}>
+        <div
+          id={"tags-edit-wrapper-#{@id}"}
+          class="z-20"
+          phx-click-away="exit_edit_mode"
+          phx-target={@myself}
+        >
           <!-- Edit mode container - full cell -->
           <div class="relative w-full h-full">
             <!-- Edit mode input with selected tags - full cell -->
@@ -291,6 +296,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
                   class="w-full px-3 border-0 outline-none text-Text-text-low-alpha font-semibold focus:bg-transparent focus:ring-0 focus:border focus:border-Border-border-active"
                   id={"tag-input-#{@id}"}
                   style={@font_style}
+                  onkeydown="if(event.key==='Enter') event.preventDefault()"
                 />
               </div>
             </div>
