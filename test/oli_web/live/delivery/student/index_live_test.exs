@@ -795,6 +795,25 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Upcoming Agenda")
     end
 
+    test "shows due info for upcoming assignments when only end_date is set", %{
+      conn: conn,
+      section: section,
+      page_3: page_3
+    } do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+
+      Sections.get_section_resource(section.id, page_3.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: nil,
+        end_date: ~U[2023-11-04 20:00:00Z],
+        scheduling_type: :due_by
+      })
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "div#home-assignments", "Due Today")
+    end
+
     test "renders paywall message when grace period is not over (or gets redirected when over)",
          %{
            conn: conn,
