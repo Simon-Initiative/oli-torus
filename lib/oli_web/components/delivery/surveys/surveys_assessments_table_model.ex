@@ -4,7 +4,6 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
   import OliWeb.Components.Common
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Icons
-  alias Phoenix.LiveView.JS
   alias OliWeb.Delivery.ActivityHelpers
 
   def new(assessments, target, students, activity_types_map) do
