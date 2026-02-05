@@ -454,6 +454,10 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~
                "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
+
+      refute html_response(conn, 200) =~ "phx-"
+      refute html_response(conn, 200) =~ "/live"
+      refute html_response(conn, 200) =~ "/js/app.js"
     end
 
     test "authorize_redirect get successful for author", %{conn: conn} do
@@ -504,6 +508,10 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~
                "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
+
+      refute html_response(conn, 200) =~ "phx-"
+      refute html_response(conn, 200) =~ "/live"
+      refute html_response(conn, 200) =~ "/js/app.js"
     end
 
     test "show_registration_form displays registration page with params from session", %{

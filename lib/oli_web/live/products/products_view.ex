@@ -118,7 +118,8 @@ defmodule OliWeb.Products.ProductsView do
         sort_by_spec: :inserted_at,
         sort_order: :desc,
         search_term: applied_search,
-        is_admin: is_admin_view
+        is_admin: is_admin_view,
+        current_author: author
       )
 
     published? =

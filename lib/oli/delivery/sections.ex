@@ -829,7 +829,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns a listing of all enrolled sections for a given user.
+  Returns a listing of all enrolled or suspended sections for a given user.
   """
   def list_user_enrolled_sections(%{id: user_id} = _user) do
     query =
@@ -837,7 +837,9 @@ defmodule Oli.Delivery.Sections do
         s in Section,
         join: e in Enrollment,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.status == :active and e.status == :enrolled,
+        where:
+          e.user_id == ^user_id and s.status == :active and
+            e.status in [:enrolled, :suspended],
         select: s
       )
 

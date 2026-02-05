@@ -3,6 +3,7 @@ import {
   getIncorrectPoints,
   getOutOfPoints,
   multiHasCustomScoring,
+  normalizeCustomScoringForPart,
 } from 'data/activities/model/responses';
 
 export const ScoringActions = {
@@ -90,6 +91,10 @@ export const ScoringActions = {
       part.incorrectScore = incorrectScore;
       if (scoringStrategy) {
         part.scoringStrategy = scoringStrategy;
+      }
+
+      if (correctScore !== null) {
+        normalizeCustomScoringForPart(model, partId);
       }
     };
   },

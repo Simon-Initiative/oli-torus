@@ -598,12 +598,12 @@ defmodule OliWeb.ProductsLiveTest do
   describe "products with tags" do
     setup [:admin_conn, :create_product]
 
-    test "displays product tags in table", %{conn: conn, product: product} do
+    test "displays product tags in table", %{conn: conn, admin: admin, product: product} do
       # Create and associate tags with the product
       {:ok, biology_tag} = Oli.Tags.create_tag(%{name: "Biology"})
       {:ok, chemistry_tag} = Oli.Tags.create_tag(%{name: "Chemistry"})
-      {:ok, _} = Oli.Tags.associate_tag_with_section(product, biology_tag)
-      {:ok, _} = Oli.Tags.associate_tag_with_section(product, chemistry_tag)
+      {:ok, _} = Oli.Tags.associate_tag_with_section(product, biology_tag, actor: admin)
+      {:ok, _} = Oli.Tags.associate_tag_with_section(product, chemistry_tag, actor: admin)
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
 
@@ -631,13 +631,14 @@ defmodule OliWeb.ProductsLiveTest do
 
     test "tags work specifically with blueprint sections (products)", %{
       conn: conn,
+      admin: admin,
       product: product
     } do
       # Ensure this is a blueprint section
       assert product.type == :blueprint
 
       {:ok, product_tag} = Oli.Tags.create_tag(%{name: "ProductTag"})
-      {:ok, _} = Oli.Tags.associate_tag_with_section(product, product_tag)
+      {:ok, _} = Oli.Tags.associate_tag_with_section(product, product_tag, actor: admin)
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
 

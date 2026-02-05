@@ -24,7 +24,7 @@ export const schema: JSONSchema7Object = {
     type: 'string',
   },
   alt: {
-    title: 'Alternate Text',
+    title: 'Audio Description (optional)',
     type: 'string',
   },
   triggerCheck: {
@@ -75,7 +75,7 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'string',
   },
   alt: {
-    title: 'Alternate Text',
+    title: 'Audio Description (optional)',
     type: 'string',
   },
   autoPlay: {

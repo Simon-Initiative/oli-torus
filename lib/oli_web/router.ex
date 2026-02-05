@@ -1655,6 +1655,7 @@ defmodule OliWeb.Router do
     live("/products", Products.ProductsView)
     live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
     live("/agent_monitor", Admin.AgentMonitorView)
+    live("/intelligent_dashboard", Admin.IntelligentDashboardLive)
 
     # Gen AI
     live("/gen_ai/registered_models", GenAI.RegisteredModelsView)
@@ -1768,6 +1769,8 @@ defmodule OliWeb.Router do
       live("/restore_progress", Admin.RestoreUserProgress)
 
       live("/xapi", Admin.UploadPipelineView)
+      live("/clickhouse/backfill", Admin.ClickhouseBackfillLive)
+      live("/clickhouse", Admin.ClickHouseAnalyticsView)
       get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
 
       # Authoring Activity Management

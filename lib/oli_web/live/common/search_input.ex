@@ -6,6 +6,7 @@ defmodule OliWeb.Common.SearchInput do
   attr :text, :string, default: ""
   attr :id, :string, required: true
   attr :name, :string, required: true
+  attr :aria_label, :string, default: nil
 
   def render(assigns) do
     ~H"""
@@ -22,6 +23,7 @@ defmodule OliWeb.Common.SearchInput do
         placeholder={@placeholder}
         value={@text}
         name={@name}
+        aria-label={@aria_label}
       />
     </div>
     """

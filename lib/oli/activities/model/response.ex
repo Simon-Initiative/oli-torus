@@ -1,6 +1,6 @@
 defmodule Oli.Activities.Model.Response do
   @derive Jason.Encoder
-  defstruct [:id, :rule, :score, :feedback, :show_page]
+  defstruct [:id, :rule, :score, :feedback, :show_page, :correct]
 
   def parse(%{"id" => id, "rule" => rule, "score" => score, "feedback" => feedback} = response) do
     case Oli.Activities.Model.Feedback.parse(feedback) do
@@ -11,7 +11,8 @@ defmodule Oli.Activities.Model.Response do
            rule: rule,
            score: score,
            feedback: feedback,
-           show_page: Map.get(response, "showPage", nil)
+           show_page: Map.get(response, "showPage", nil),
+           correct: Map.get(response, "correct")
          }}
 
       error ->

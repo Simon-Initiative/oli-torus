@@ -36,6 +36,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       assert html =~ "User details"
       assert html =~ lms_student.name
+      assert html =~ "#{lms_student.family_name}, #{lms_student.given_name}"
 
       conn =
         recycle_author_session(conn, admin)
@@ -45,6 +46,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       assert html =~ "User details"
       assert html =~ independent_student.name
+      assert html =~ "#{independent_student.family_name}, #{independent_student.given_name}"
     end
 
     test "system admin toggles internal flag and records audit event", %{
@@ -430,6 +432,133 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     end
   end
 
+  describe "Institution and Communities display" do
+    setup [:setup_session]
+
+    test "shows institution name with link for LTI user", %{
+      conn: conn,
+      admin: admin,
+      lms_student: lms_student
+    } do
+      institution = insert(:institution)
+
+      # Create a section with institution and enroll user
+      section =
+        insert(:section,
+          type: :enrollable,
+          institution: institution,
+          status: :active
+        )
+
+      Sections.enroll(lms_student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, lms_student.id))
+
+      {:ok, view, html} = live(conn)
+
+      assert html =~ "Institution"
+      assert has_element?(view, "a", institution.name)
+    end
+
+    test "shows 'Direct Delivery' for independent user without institution", %{
+      conn: conn,
+      admin: admin,
+      independent_student: independent_student
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, independent_student.id)
+        )
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "Institution"
+      assert html =~ "Direct Delivery"
+    end
+
+    test "shows Communities section", %{
+      conn: conn,
+      admin: admin,
+      independent_student: independent_student
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, independent_student.id)
+        )
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "Communities"
+    end
+
+    test "shows user's direct communities", %{
+      conn: conn,
+      admin: admin,
+      independent_student: independent_student
+    } do
+      community = insert(:community, name: "Test Community")
+
+      {:ok, _} =
+        Oli.Groups.create_community_account(%{
+          user_id: independent_student.id,
+          community_id: community.id
+        })
+
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, independent_student.id)
+        )
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "Test Community"
+    end
+
+    test "shows institution communities for LTI user", %{
+      conn: conn,
+      admin: admin,
+      lms_student: lms_student
+    } do
+      institution = insert(:institution)
+      community = insert(:community, name: "Institution Community")
+
+      # Link community to institution
+      {:ok, _} =
+        Oli.Groups.create_community_institution(%{
+          institution_id: institution.id,
+          community_id: community.id
+        })
+
+      # Create a section with institution and enroll user
+      section =
+        insert(:section,
+          type: :enrollable,
+          institution: institution,
+          status: :active
+        )
+
+      Sections.enroll(lms_student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> log_in_author(admin)
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, lms_student.id))
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "Institution Community"
+    end
+  end
+
   describe "Enrolled sections info" do
     setup [:admin_conn, :enrolled_student_to_sections, :stub_real_current_time]
 
@@ -441,7 +570,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
         live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
 
       assert view |> element("h4", "Enrolled Sections")
-      assert view |> element("div", "Course sections to which the student is enrolled")
+      assert view |> element("div", "Course sections to which the user is enrolled.")
     end
 
     test "shows message when student is not enrolled to any course section", %{
@@ -460,7 +589,8 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       student: student,
       section_1: section_1,
       section_2: section_2,
-      section_3: section_3
+      section_3: section_3,
+      suspended_section: suspended_section
     } do
       {:ok, view, _html} =
         live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
@@ -481,6 +611,18 @@ defmodule OliWeb.Users.UsersDetailViewTest do
                view,
                "a",
                "#{section_3.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{suspended_section.title}"
+             )
+
+      assert has_element?(
+               view,
+               "td",
+               "Suspended"
              )
     end
 
@@ -564,22 +706,22 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       student: student,
       section_1: section_1,
       section_2: section_2,
-      section_3: section_3
+      section_3: section_3,
+      suspended_section: suspended_section
     } do
+      sections = [section_1, section_2, section_3, suspended_section]
+      sorted_titles = sections |> Enum.map(& &1.title) |> Enum.sort()
+
       {:ok, view, _html} =
         live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ section_1.title
-
-      assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ section_2.title
+             |> render() =~ hd(sorted_titles)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:last-child")
-             |> render() =~ section_3.title
+             |> render() =~ List.last(sorted_titles)
 
       ## sorting by section
       params = %{
@@ -594,23 +736,20 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:last-child")
-             |> render() =~ section_1.title
-
-      assert view
-             |> element("table.instructor_dashboard_table > tbody > tr:nth-child(2)")
-             |> render() =~ section_2.title
+             |> render() =~ hd(sorted_titles)
 
       assert view
              |> element("table.instructor_dashboard_table > tbody > tr:first-child")
-             |> render() =~ section_3.title
+             |> render() =~ List.last(sorted_titles)
     end
 
-    test "applies pagination", %{
+    test "ignores pagination params", %{
       conn: conn,
       student: student,
       section_1: section_1,
       section_2: section_2,
-      section_3: section_3
+      section_3: section_3,
+      suspended_section: suspended_section
     } do
       {:ok, view, _html} =
         live(
@@ -636,7 +775,13 @@ defmodule OliWeb.Users.UsersDetailViewTest do
                "#{section_3.title}"
              )
 
-      ## aplies limit
+      assert has_element?(
+               view,
+               "a",
+               "#{suspended_section.title}"
+             )
+
+      ## pagination params are ignored for this table
       params = %{
         limit: 2,
         sort_order: "asc"
@@ -660,13 +805,19 @@ defmodule OliWeb.Users.UsersDetailViewTest do
                "#{section_2.title}"
              )
 
-      refute has_element?(
+      assert has_element?(
                view,
                "a",
                "#{section_3.title}"
              )
 
-      ## aplies pagination
+      assert has_element?(
+               view,
+               "a",
+               "#{suspended_section.title}"
+             )
+
+      ## pagination params are ignored for this table
       params = %{
         limit: 2,
         offset: 2,
@@ -679,13 +830,13 @@ defmodule OliWeb.Users.UsersDetailViewTest do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id, params)
         )
 
-      refute has_element?(
+      assert has_element?(
                view,
                "a",
                "#{section_1.title}"
              )
 
-      refute has_element?(
+      assert has_element?(
                view,
                "a",
                "#{section_2.title}"
@@ -695,6 +846,12 @@ defmodule OliWeb.Users.UsersDetailViewTest do
                view,
                "a",
                "#{section_3.title}"
+             )
+
+      assert has_element?(
+               view,
+               "a",
+               "#{suspended_section.title}"
              )
     end
   end
@@ -725,11 +882,27 @@ defmodule OliWeb.Users.UsersDetailViewTest do
         requires_payment: true
       )
 
+    suspended_section =
+      insert(:section,
+        type: :enrollable,
+        start_date: yesterday(),
+        end_date: tomorrow()
+      )
+
     student = insert(:user)
     Sections.enroll(student.id, section_1.id, [ContextRoles.get_role(:context_learner)])
     Sections.enroll(student.id, section_2.id, [ContextRoles.get_role(:context_learner)])
     Sections.enroll(student.id, section_3.id, [ContextRoles.get_role(:context_learner)])
-    %{student: student, section_1: section_1, section_2: section_2, section_3: section_3}
+    Sections.enroll(student.id, suspended_section.id, [ContextRoles.get_role(:context_learner)])
+    {:ok, _} = Sections.unenroll_learner(student.id, suspended_section.id)
+
+    %{
+      student: student,
+      section_1: section_1,
+      section_2: section_2,
+      section_3: section_3,
+      suspended_section: suspended_section
+    }
   end
 
   defp setup_session(%{conn: conn}) do

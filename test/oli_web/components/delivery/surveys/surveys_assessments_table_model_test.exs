@@ -3,28 +3,32 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModelTest do
 
   alias OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel
 
-  describe "new/3" do
+  describe "new/4" do
     test "creates a table model with correct columns and data" do
       assessments = [
         %{
           id: 1,
+          resource_id: 100,
           title: "Survey 1",
-          container_label: nil,
-          avg_score: 0.5,
-          total_attempts: 2,
-          students_completion: 0.7
+          container_label: nil
         }
       ]
 
-      ctx = %{user: %{id: 1}}
       target = :target
-      {:ok, model} = SurveysAssessmentsTableModel.new(assessments, ctx, target)
-      assert length(model.column_specs) == 4
+      students = []
+      activity_types_map = %{}
+
+      {:ok, model} =
+        SurveysAssessmentsTableModel.new(assessments, target, students, activity_types_map)
+
+      assert length(model.column_specs) == 2
       assert Enum.any?(model.column_specs, &(&1.name == :title))
-      assert Enum.any?(model.column_specs, &(&1.name == :avg_score))
-      assert Enum.any?(model.column_specs, &(&1.name == :total_attempts))
-      assert Enum.any?(model.column_specs, &(&1.name == :students_completion))
       assert model.rows == assessments
+      assert model.data.expandable_rows == true
+      assert model.data.view_type == :surveys_instructor_dashboard
+      assert model.data.target == target
+      assert model.data.students == students
+      assert model.data.activity_types_map == activity_types_map
     end
   end
 end

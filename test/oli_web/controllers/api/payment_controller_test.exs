@@ -1,4 +1,4 @@
-defmodule OliWeb.PaymentControllerTest do
+defmodule OliWeb.ApiPaymentControllerTest do
   use OliWeb.ConnCase
 
   import Oli.Factory

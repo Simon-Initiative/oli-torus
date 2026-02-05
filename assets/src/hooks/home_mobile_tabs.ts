@@ -15,14 +15,73 @@ const getScrollOffset = (menu: HTMLElement) => {
 
 export const HomeMobileTabs = {
   mounted() {
-    this.tabsContainer = this.el.querySelector('[data-home-tabs-container]');
-    this.tabs = Array.from(this.el.querySelectorAll('[data-home-tab]'));
-    this.bannerTitle = document.getElementById('home-banner-title');
-    this.banner = document.getElementById('home-continue-learning');
-    this.sections = [];
-
     this.activeTab = null;
     this.ticking = false;
+    this.isDrawerOpen = false;
+
+    this.assignElements = () => {
+      this.tabsContainer = this.el.querySelector('[data-home-tabs-container]');
+      this.tabs = Array.from(this.el.querySelectorAll('[data-home-tab]'));
+      this.bannerTitle = document.getElementById('home-banner-title');
+      this.banner = document.getElementById('home-continue-learning');
+      this.sections = [];
+
+      this.drawer = document.getElementById('home-drawer');
+      this.drawerBackdrop = document.getElementById('home-drawer-backdrop');
+      this.drawerToggle = this.el.querySelector('[data-drawer-toggle]');
+      this.drawerCloseButtons = Array.from(document.querySelectorAll('[data-drawer-close]'));
+      this.drawerItems = Array.from(document.querySelectorAll('[data-drawer-item]'));
+    };
+
+    this.removeEventListeners = () => {
+      if (this.tabs) {
+        this.tabs.forEach((tab: HTMLButtonElement) => {
+          tab.removeEventListener('click', this.onTabClick);
+        });
+      }
+
+      if (this.drawerToggle) {
+        this.drawerToggle.removeEventListener('click', this.onDrawerToggle);
+      }
+
+      if (this.drawerCloseButtons) {
+        this.drawerCloseButtons.forEach((button: Element) => {
+          button.removeEventListener('click', this.closeDrawer);
+        });
+      }
+
+      if (this.drawerItems) {
+        this.drawerItems.forEach((item: HTMLButtonElement) => {
+          item.removeEventListener('click', this.onDrawerItemClick);
+        });
+      }
+
+      if (this.drawerBackdrop) {
+        this.drawerBackdrop.removeEventListener('click', this.closeDrawer);
+      }
+    };
+
+    this.addEventListeners = () => {
+      this.tabs.forEach((tab: HTMLButtonElement) => {
+        tab.addEventListener('click', this.onTabClick);
+      });
+
+      if (this.drawerToggle) {
+        this.drawerToggle.addEventListener('click', this.onDrawerToggle);
+      }
+
+      this.drawerCloseButtons.forEach((button: Element) => {
+        button.addEventListener('click', this.closeDrawer);
+      });
+
+      this.drawerItems.forEach((item: HTMLButtonElement) => {
+        item.addEventListener('click', this.onDrawerItemClick);
+      });
+
+      if (this.drawerBackdrop) {
+        this.drawerBackdrop.addEventListener('click', this.closeDrawer);
+      }
+    };
 
     this.updateTabOrder = () => {
       if (!this.tabsContainer) {
@@ -57,6 +116,99 @@ export const HomeMobileTabs = {
 
       this.activeTab = tab;
       tab.scrollIntoView({ behavior: getScrollBehavior(), block: 'nearest', inline: 'start' });
+
+      this.updateDrawerCheckmarks(tab.dataset.target);
+    };
+
+    this.updateDrawerCheckmarks = (targetId: string | undefined) => {
+      if (!targetId) {
+        return;
+      }
+
+      this.drawerItems.forEach((item: HTMLButtonElement) => {
+        const checkmark = item.querySelector('[data-checkmark]');
+        if (checkmark) {
+          const isActive = item.dataset.target === targetId;
+          checkmark.classList.toggle('hidden', !isActive);
+        }
+      });
+    };
+
+    this.openDrawer = () => {
+      if (!this.drawer || !this.drawerBackdrop || this.isDrawerOpen) {
+        return;
+      }
+
+      this.isDrawerOpen = true;
+      this.drawer.classList.remove('hidden');
+      this.drawerBackdrop.classList.remove('hidden');
+
+      requestAnimationFrame(() => {
+        this.drawer.classList.remove('translate-y-full');
+        this.drawer.classList.add('translate-y-0');
+      });
+
+      document.body.style.overflow = 'hidden';
+
+      if (this.activeTab?.dataset.target) {
+        this.updateDrawerCheckmarks(this.activeTab.dataset.target);
+      }
+    };
+
+    this.closeDrawer = () => {
+      if (!this.drawer || !this.drawerBackdrop || !this.isDrawerOpen) {
+        return;
+      }
+
+      this.isDrawerOpen = false;
+      this.drawer.classList.remove('translate-y-0');
+      this.drawer.classList.add('translate-y-full');
+
+      setTimeout(() => {
+        this.drawer.classList.add('hidden');
+        this.drawerBackdrop.classList.add('hidden');
+      }, 300);
+
+      document.body.style.overflow = '';
+    };
+
+    this.onDrawerToggle = () => {
+      if (this.isDrawerOpen) {
+        this.closeDrawer();
+      } else {
+        this.openDrawer();
+      }
+    };
+
+    this.onDrawerItemClick = (event: Event) => {
+      const target = event.currentTarget as HTMLButtonElement;
+      const sectionId = target?.dataset?.target;
+      const section = sectionId ? document.getElementById(sectionId) : null;
+
+      if (!section) {
+        return;
+      }
+
+      this.closeDrawer();
+
+      const tab = this.tabs.find(
+        (t: HTMLButtonElement) => t.dataset.target === sectionId,
+      ) as HTMLButtonElement;
+
+      if (tab) {
+        this.setActiveTab(tab);
+      }
+
+      const offset = getScrollOffset(this.el);
+      const top = section.getBoundingClientRect().top + window.scrollY - offset;
+
+      window.scrollTo({ top, behavior: getScrollBehavior() });
+      if (!section.hasAttribute('tabindex')) {
+        section.setAttribute('tabindex', '-1');
+      }
+      window.requestAnimationFrame(() => {
+        section.focus({ preventScroll: true });
+      });
     };
 
     this.onTabClick = (event: Event) => {
@@ -140,10 +292,8 @@ export const HomeMobileTabs = {
       this.el.classList.toggle('is-visible', visible);
     };
 
-    this.tabs.forEach((tab: HTMLButtonElement) => {
-      tab.addEventListener('click', this.onTabClick);
-    });
-
+    this.assignElements();
+    this.addEventListeners();
     window.addEventListener('scroll', this.onScroll, { passive: true });
     this.onResize = () => {
       this.updateTabOrder();
@@ -156,16 +306,22 @@ export const HomeMobileTabs = {
     this.onScroll();
   },
 
-  destroyed() {
-    if (this.tabs) {
-      this.tabs.forEach((tab: HTMLButtonElement) => {
-        tab.removeEventListener('click', this.onTabClick);
-      });
-    }
+  updated() {
+    this.removeEventListeners();
+    this.assignElements();
+    this.addEventListeners();
+    this.updateTabOrder();
+    this.updateVisibility();
+    this.onScroll();
+  },
 
+  destroyed() {
+    this.removeEventListeners();
     window.removeEventListener('scroll', this.onScroll);
     if (this.onResize) {
       window.removeEventListener('resize', this.onResize);
     }
+
+    document.body.style.overflow = '';
   },
 };

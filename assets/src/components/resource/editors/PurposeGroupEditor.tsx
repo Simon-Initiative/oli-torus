@@ -237,20 +237,22 @@ const GroupTriggerEditor = ({
       <TriggerEditorCore
         showDelete={true}
         onDelete={() => onEdit(undefined as any)}
+        promptValue={trigger.prompt}
+        onPromptChange={(value) => onEdit(Object.assign(trigger, { prompt: value }))}
+        promptTextareaClassName="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        promptDisabled={!editMode}
+        promptSamples={[
+          'Highlight the most important concepts present on this page',
+          'Ask the student to summarize the previous paragraphs',
+          'Introduce the following video',
+        ]}
         instructions={
           <p>
             When a student clicks the <AIIcon size="sm" className="inline mr-1" /> icon within this
             content group, our AI assistant, DOT will appear and follow your custom prompt.
           </p>
         }
-      >
-        <textarea
-          disabled={!editMode}
-          className="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={trigger.prompt}
-          onChange={(e) => onEdit(Object.assign(trigger, { prompt: e.target.value }))}
-        />
-      </TriggerEditorCore>
+      />
     </div>
   );
 };

@@ -3,6 +3,7 @@ defmodule OliWeb.Api.AttemptController do
   use OpenApiSpex.Controller
 
   alias Oli.Delivery.Attempts.ActivityLifecycle, as: Activity
+  alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate, as: ActivityEvaluation
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.StudentInput
@@ -744,7 +745,7 @@ defmodule OliWeb.Api.AttemptController do
         }
       end)
 
-    case ActivityEvaluation.apply_client_evaluation(
+    case ApplyClientEvaluation.apply(
            section_slug,
            activity_attempt_guid,
            client_evaluations,

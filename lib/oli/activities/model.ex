@@ -10,7 +10,32 @@ defmodule Oli.Activities.Model do
   defstruct [:parts, :transformations, :delivery, :authoring, :rules]
 
   def parse(%{"authoring" => authoring} = model) when is_map(authoring) do
-    with {:ok, parts} <- Oli.Activities.Model.Part.parse(Map.get(authoring, "parts", [])),
+    targeted_response_ids =
+      Map.get(authoring, "targeted", [])
+      |> Enum.map(fn
+        [_, response_id] -> response_id
+        _ -> nil
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> MapSet.new()
+
+    parts_with_targeted =
+      Map.get(authoring, "parts", [])
+      |> Enum.map(fn part ->
+        response_ids =
+          Map.get(part, "responses", [])
+          |> Enum.map(fn r -> Map.get(r, "id") end)
+          |> Enum.reject(&is_nil/1)
+          |> MapSet.new()
+
+        targeted_for_part =
+          MapSet.intersection(targeted_response_ids, response_ids)
+          |> MapSet.to_list()
+
+        Map.put(part, "targetedResponseIds", targeted_for_part)
+      end)
+
+    with {:ok, parts} <- Oli.Activities.Model.Part.parse(parts_with_targeted),
          {:ok, rules} <-
            Oli.Activities.Model.ConditionalOutcome.parse(Map.get(authoring, "rules", [])),
          {:ok, transformations} <-

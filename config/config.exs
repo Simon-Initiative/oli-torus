@@ -30,6 +30,28 @@ world_universities_and_domains_json =
 
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
+git_sha = fn ->
+  case System.cmd("git", ["rev-parse", "--short", "HEAD"]) do
+    {sha, 0} ->
+      String.trim(sha)
+
+    _ ->
+      nil
+  end
+end
+
+build_sha =
+  case System.get_env("SHA") do
+    nil ->
+      if Mix.env() == :dev, do: default_sha, else: git_sha.() || default_sha
+
+    "" ->
+      if Mix.env() == :dev, do: default_sha, else: git_sha.() || default_sha
+
+    sha ->
+      sha
+  end
+
 get_env_as_boolean = fn key, default ->
   System.get_env(key, default)
   |> String.downcase()
@@ -58,7 +80,7 @@ config :oli,
   ecto_repos: [Oli.Repo],
   build: %{
     version: Mix.Project.config()[:version],
-    sha: System.get_env("SHA", default_sha),
+    sha: build_sha,
     date: DateTime.now!("Etc/UTC"),
     env: Mix.env()
   },
@@ -84,7 +106,10 @@ config :oli,
   ],
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
-  genai_hackney_pool_size: String.to_integer(System.get_env("GENAI_HACKNEY_POOL_SIZE", "100")),
+  genai_hackney_pool_max_size:
+    String.to_integer(System.get_env("GENAI_HACKNEY_POOL_MAX_SIZE", "1000")),
+  genai_hackney_fast_pool_size: String.to_integer(System.get_env("GENAI_FAST_POOL_SIZE", "100")),
+  genai_hackney_slow_pool_size: String.to_integer(System.get_env("GENAI_SLOW_POOL_SIZE", "100")),
   screen_idle_timeout_in_seconds:
     String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
   log_incomplete_requests: true
@@ -113,7 +138,7 @@ config :oli, :dataset_generation,
 
 config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,
-  uploader_module: Oli.Analytics.XAPI.Uploader,
+  uploader_module: Oli.Analytics.XAPI.S3Uploader,
   xapi_local_output_dir: System.get_env("XAPI_LOCAL_OUTPUT_DIR", "./xapi_output")
 
 rule_evaluator_provider =
@@ -228,6 +253,9 @@ config :oli, Oban,
     auto_submit: 3,
     project_export: 3,
     analytics_export: 3,
+    clickhouse_backfill: 1,
+    clickhouse_inventory: 1,
+    clickhouse_inventory_batches: 2,
     datashop_export: 3,
     objectives: 3,
     mailer: 10,
@@ -301,7 +329,7 @@ if Mix.env() == :dev do
     clear: true
 end
 
-config :appsignal, :config, revision: System.get_env("SHA", default_sha)
+config :appsignal, :config, revision: build_sha
 
 # Configure Privacy Policies link
 config :oli, :privacy_policies,

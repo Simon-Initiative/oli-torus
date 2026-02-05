@@ -250,6 +250,7 @@ defmodule OliWeb.UserSettingsLive do
 
   def mount(_params, session, socket) do
     user = socket.assigns.current_user
+    ctx = socket.assigns.ctx
     user_changeset = Accounts.change_user_details(user)
     email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
@@ -261,6 +262,7 @@ defmodule OliWeb.UserSettingsLive do
     socket =
       socket
       |> assign(:active_workspace, :student)
+      |> assign(:is_admin, Accounts.is_admin?(ctx.author))
       |> assign(:current_email, user.email)
       |> assign(:user_form, to_form(user_changeset))
       |> assign(:email_form, to_form(email_changeset))
