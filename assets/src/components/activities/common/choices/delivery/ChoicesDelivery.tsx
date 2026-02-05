@@ -66,14 +66,16 @@ export const ChoicesDelivery: React.FC<Props> = ({
 
   const onClicked = useCallback(
     (choiceId: ChoiceId, index: number) => (event: React.MouseEvent) => {
-      // MER-5271: mobile browsers may not stop click propagation from native media controls,
-      // so avoid selecting when clicks originate from nested interactive elements.
-      const target = event.target;
-      if (target instanceof Element && target.closest(interactiveSelector)) {
-        return;
-      }
       if (event.isDefaultPrevented()) {
         // Allow sub-elements to have clickable items that do things (like command buttons)
+        return;
+      }
+      // MER-5271: mobile browsers may not stop click propagation from native media controls,
+      // so avoid selecting when clicks originate from nested interactive elements and stop
+      // propagation to mirror desktop behavior.
+      const target = event.target;
+      if (target instanceof Element && target.closest(interactiveSelector)) {
+        event.stopPropagation();
         return;
       }
       if (!isEvaluated && !disabled) {
