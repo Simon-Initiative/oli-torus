@@ -1117,7 +1117,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       <div class="pr-2 pl-1 self-end">
         <div class="flex items-end gap-1">
           <div
-            :if={!is_nil(@lesson.start_date) and !is_nil(@lesson.end_date)}
+            :if={!is_nil(@lesson.end_date)}
             class="text-right dark:text-white text-opacity-90 text-xs font-semibold"
           >
             {if is_nil(@lesson.settings),
