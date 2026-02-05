@@ -94,6 +94,14 @@ defmodule Oli.Analytics.Datasets.Utils do
     SELECT jsonb_build_object(
            #{users_fragment}
            'dataset_name', (SELECT slug FROM projects WHERE id = $1) || '-' || substring(md5(random()::text) from 1 for 10),
+           'sections', (
+               SELECT jsonb_object_agg(s.id::text, jsonb_build_object(
+                          'title', s.title,
+                          'slug', s.slug
+                      ))
+               FROM sections s
+               WHERE s.id in (#{section_ids})
+           ),
            'skill_titles', (
                SELECT jsonb_object_agg(r.resource_id::text, r.title)
                FROM published_resources pr
@@ -118,6 +126,7 @@ defmodule Oli.Analytics.Datasets.Utils do
                SELECT jsonb_object_agg(r.resource_id::text, jsonb_build_object(
                           'choices', r.content->'choices',
                           'items', r.content->'items',
+                          'stem', r.content->'stem',
                           'type', a.slug,
                           'parts', (
                               SELECT jsonb_agg(

@@ -5946,7 +5946,16 @@ defmodule Oli.Delivery.Sections do
     The second argument is a list of fields to be selected from the Section table.
     If the second argument is not passed, all fields will be selected.
   """
-  def get_sections_by(clauses, select_fields \\ nil) do
+  def get_sections_by(clauses, select_fields \\ nil)
+
+  def get_sections_by(clauses, select_fields) when is_list(clauses) do
+    Section
+    |> apply_section_clauses(clauses)
+    |> maybe_select_section_fields(select_fields)
+    |> Repo.all()
+  end
+
+  def get_sections_by(clauses, select_fields) do
     Section
     |> from(where: ^clauses)
     |> maybe_select_section_fields(select_fields)
@@ -5957,6 +5966,18 @@ defmodule Oli.Delivery.Sections do
 
   defp maybe_select_section_fields(query, select_fields),
     do: select(query, [s], struct(s, ^select_fields))
+
+  defp apply_section_clauses(query, []), do: query
+
+  defp apply_section_clauses(query, clauses) do
+    Enum.reduce(clauses, query, fn
+      {field, value}, query when is_list(value) ->
+        where(query, [s], field(s, ^field) in ^value)
+
+      {field, value}, query ->
+        where(query, [s], field(s, ^field) == ^value)
+    end)
+  end
 
   @doc """
   Returns true if the section has the ai assistant feature enabled.
