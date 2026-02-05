@@ -5340,6 +5340,7 @@ defmodule Oli.Delivery.Sections do
     {student_ids, proficiency_dist_for_objectives} =
       if is_nil(student_id) do
         student_ids = Sections.enrolled_student_ids(section_slug)
+        student_id_set = MapSet.new(student_ids)
 
         proficiency_dist_for_objectives =
           proficiencies_for_objectives
@@ -5347,7 +5348,9 @@ defmodule Oli.Delivery.Sections do
             # Filter proficiency data to only include enrolled students (exclude instructors)
             filtered_student_proficiency =
               student_proficiency
-              |> Enum.filter(fn {user_id, _proficiency_level} -> user_id in student_ids end)
+              |> Enum.filter(fn {user_id, _proficiency_level} ->
+                MapSet.member?(student_id_set, user_id)
+              end)
               |> Map.new()
 
             # Add "Not enough data" for students who don't have proficiency data
