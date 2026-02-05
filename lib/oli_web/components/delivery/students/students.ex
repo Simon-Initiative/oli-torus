@@ -6,6 +6,7 @@ defmodule OliWeb.Components.Delivery.Students do
   alias Oli.Delivery.{Metrics, GrantedCertificates}
   alias OliWeb.Common.{SearchInput, Params, StripedPagedTable, Utils}
   alias OliWeb.Components.Delivery.CardHighlights
+  alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Delivery.Content.{PercentageSelector, MultiSelect, SelectDropdown}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
@@ -653,6 +654,7 @@ defmodule OliWeb.Components.Delivery.Students do
           students={@all_students}
           section_title={@section_title}
           instructor_email={issued_by_email(@current_author, @current_user)}
+          instructor_name={issued_by_name(@current_author, @current_user)}
           section_slug={@section_slug}
           show_modal={@show_email_modal}
         />
@@ -663,6 +665,9 @@ defmodule OliWeb.Components.Delivery.Students do
 
   defp issued_by_email(author, _user) when not is_nil(author), do: author.email
   defp issued_by_email(_author, user), do: user.email
+
+  defp issued_by_name(author, _user) when not is_nil(author), do: DeliveryUtils.user_name(author)
+  defp issued_by_name(_author, user), do: DeliveryUtils.user_name(user)
 
   #### Add enrollments modal related stuff ####
   def add_enrollments(%{add_enrollments_step: :step_1} = assigns) do

@@ -15,9 +15,11 @@ defmodule Oli.Mailer.SendEmailWorker do
     %{
       "to" => serialize_address(email.to),
       "from" => serialize_address(email.from),
+      "reply_to" => serialize_reply_to(email.reply_to),
       "subject" => email.subject,
       "html_body" => email.html_body,
-      "text_body" => email.text_body
+      "text_body" => email.text_body,
+      "headers" => email.headers
     }
   end
 
@@ -30,15 +32,21 @@ defmodule Oli.Mailer.SendEmailWorker do
       "text_body" => text_body
     } = args
 
+    reply_to = Map.get(args, "reply_to")
+    headers = Map.get(args, "headers", %{})
+
     opts = [
       to: deserialize_address(to),
       from: deserialize_address(from),
       subject: subject,
       html_body: html_body,
-      text_body: text_body
+      text_body: text_body,
+      headers: headers
     ]
 
-    Swoosh.Email.new(opts)
+    opts
+    |> Swoosh.Email.new()
+    |> maybe_set_reply_to(reply_to)
   end
 
   defp serialize_address(addresses) when is_list(addresses) do
@@ -56,4 +64,17 @@ defmodule Oli.Mailer.SendEmailWorker do
   defp deserialize_address(%{"name" => name, "email" => email}) do
     {name, email}
   end
+
+  # reply_to can be a single address or a list, but Swoosh stores it as a single value
+  defp serialize_reply_to(nil), do: nil
+  defp serialize_reply_to({name, email}), do: %{"name" => name, "email" => email}
+  defp serialize_reply_to(email) when is_binary(email), do: email
+
+  defp maybe_set_reply_to(email, nil), do: email
+
+  defp maybe_set_reply_to(email, %{"name" => name, "email" => addr}),
+    do: Swoosh.Email.reply_to(email, {name, addr})
+
+  defp maybe_set_reply_to(email, reply_to) when is_binary(reply_to),
+    do: Swoosh.Email.reply_to(email, reply_to)
 end
