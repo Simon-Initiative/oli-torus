@@ -140,7 +140,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       insert(:section,
         base_project: project,
         title: "The best course ever!",
-        contains_discussions: true
+        contains_discussions: true,
+        open_and_free: true,
+        lti_1p3_deployment: nil,
+        lti_1p3_deployment_id: nil
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -177,7 +180,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
   describe "user" do
     test "can not access page when it is not logged in", %{conn: conn} do
-      section = insert(:section)
+      section =
+        insert(:section,
+          open_and_free: true,
+          requires_enrollment: true,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        )
+
       student = insert(:user)
 
       Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])

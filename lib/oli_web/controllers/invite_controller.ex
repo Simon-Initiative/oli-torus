@@ -190,7 +190,7 @@ defmodule OliWeb.InviteController do
     context_role = ContextRoles.get_role(context_identifier)
     user_ids = Enum.map(users, & &1.id)
 
-    with :ok <- Sections.ensure_direct_delivery_batch_enrollment_allowed(user_ids, section) do
+    with :ok <- Sections.ensure_batch_enrollment_allowed(user_ids, section) do
       Sections.enroll(user_ids, section.id, [context_role], :pending_confirmation)
     end
   end

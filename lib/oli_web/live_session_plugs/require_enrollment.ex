@@ -8,6 +8,7 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
   alias Oli.Delivery.Sections.Section
 
   @suspended_message "Your access to this course has been suspended. Please contact your instructor."
+  @lti_only_message "This course is only available through your LMS."
 
   def on_mount(:default, %{"section_slug" => section_slug}, _session, socket) do
     is_admin? = Oli.Accounts.is_admin?(socket.assigns[:current_author])
@@ -40,6 +41,28 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
              socket
              |> put_flash(:error, @suspended_message)
              |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")}
+
+          section.registration_open &&
+              match?(
+                {:error, :independent_learner_not_allowed},
+                Sections.ensure_enrollment_allowed(user, section)
+              ) ->
+            {:halt,
+             socket
+             |> put_flash(:error, @lti_only_message)
+             |> redirect(to: ~p"/workspaces/student")}
+
+          section.registration_open &&
+              match?(
+                {:error, :non_independent_user},
+                Sections.ensure_enrollment_allowed(user, section)
+              ) ->
+            {:halt,
+             socket
+             |> redirect(
+               to:
+                 ~p"/lms_user_instructions?#{[section_title: section.title, request_path: "/sections/#{section.slug}"]}"
+             )}
 
           section.registration_open ->
             {:halt,

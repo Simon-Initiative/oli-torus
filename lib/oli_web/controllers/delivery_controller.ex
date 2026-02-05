@@ -113,6 +113,7 @@ defmodule OliWeb.DeliveryController do
 
     with {:available, section} <- Sections.available?(section),
          {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, create_guest),
+         :ok <- Sections.ensure_enrollment_allowed(user, section),
          {:not_enrolled, nil} <- fetch_enrollment(section.slug, user.id) do
       render(conn, "enroll.html",
         section: Oli.Repo.preload(section, [:base_project]),
@@ -139,6 +140,14 @@ defmodule OliWeb.DeliveryController do
         |> put_flash(:error, @suspended_message)
         |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")
 
+      {:error, :independent_learner_not_allowed} ->
+        conn
+        |> put_flash(:error, "This course is only available through your LMS.")
+        |> redirect(to: ~p"/workspaces/student")
+
+      {:error, :non_independent_user} ->
+        redirect_to_lms_instructions(conn, conn.assigns.section)
+
       # guest user cannot access courses that require enrollment
       {:redirect, nil} ->
         params = [
@@ -160,7 +169,7 @@ defmodule OliWeb.DeliveryController do
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       with {:available, section} <- Sections.available?(conn.assigns.section),
            {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, create_guest),
-           :ok <- Sections.ensure_direct_delivery_enrollment_allowed(user, section),
+           :ok <- Sections.ensure_enrollment_allowed(user, section),
            user <- Repo.preload(user, [:platform_roles]) do
         if Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
@@ -184,6 +193,11 @@ defmodule OliWeb.DeliveryController do
       else
         {:error, :non_independent_user} ->
           redirect_to_lms_instructions(conn, conn.assigns.section)
+
+        {:error, :independent_learner_not_allowed} ->
+          conn
+          |> put_flash(:error, "This course is only available through your LMS.")
+          |> redirect(to: ~p"/workspaces/student")
 
         {:redirect, nil} ->
           # guest user cant access courses that require enrollment

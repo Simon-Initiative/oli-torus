@@ -219,7 +219,10 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         base_project: project,
         title: "The best course ever!",
         start_date: ~U[2023-10-30 20:00:00Z],
-        analytics_version: :v2
+        analytics_version: :v2,
+        open_and_free: true,
+        lti_1p3_deployment: nil,
+        lti_1p3_deployment_id: nil
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)

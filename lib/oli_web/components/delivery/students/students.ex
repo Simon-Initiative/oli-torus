@@ -1070,7 +1070,10 @@ defmodule OliWeb.Components.Delivery.Students do
 
     # From the existing users we need to distinguish wich have already an enrollment in the current course
     enrollments_by_emails =
-      Oli.Delivery.Sections.get_enrollments_by_emails(socket.assigns.section_slug, existing_users)
+      Oli.Delivery.Sections.get_independent_enrollments_by_emails(
+        socket.assigns.section_slug,
+        existing_users
+      )
 
     enrolled_emails = Enum.map(enrollments_by_emails, & &1.user.email)
 

@@ -20,7 +20,7 @@ defmodule OliWeb.Plugs.PlugOrderIntegrationTest do
 
       # Create a user who is NOT enrolled yet
       user =
-        insert(:user)
+        insert(:user, independent_learner: false)
         |> Map.merge(%{
           platform_roles: [Lti_1p3.Roles.PlatformRoles.get_role(:institution_learner)]
         })

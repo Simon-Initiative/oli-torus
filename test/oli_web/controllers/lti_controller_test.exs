@@ -270,8 +270,10 @@ defmodule OliWeb.LtiControllerTest do
       sub = Oli.Lti.TestHelpers.security_detail_data()["sub"]
       email = Oli.Lti.TestHelpers.user_detail_data()["email"]
 
-      lti_user = insert(:user, %{sub: sub, email: email})
-      another_lti_user = insert(:user, %{sub: sub, email: "another_lti_user@email.com"})
+      lti_user = insert(:user, %{sub: sub, email: email, independent_learner: false})
+
+      another_lti_user =
+        insert(:user, %{sub: sub, email: "another_lti_user@email.com", independent_learner: false})
 
       # Create another institution and sections.
       another_institution = insert(:institution)
@@ -287,7 +289,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) =~ "/workspaces/student"
+      assert html_response(conn, 200) =~ "This course section is not available"
 
       # Check that the user is the same as lti_user, but has some new field defined (it was
       # updated).

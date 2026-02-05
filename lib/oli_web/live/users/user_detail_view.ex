@@ -160,7 +160,6 @@ defmodule OliWeb.Users.UsersDetailView do
                       error_position={:top}
                     />
                   </div>
-                  <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
                   <.institution_field institution={@institution} />
                   <div class="form-group">
                     <label>Communities</label>
@@ -201,32 +200,25 @@ defmodule OliWeb.Users.UsersDetailView do
                       <% end %>
                     </div>
                   </div>
-                  <div class="form-control">
-                    <.input
-                      field={@form[:independent_learner]}
-                      type="checkbox"
-                      label="Independent Learner"
-                      class="form-check-input"
-                      disabled={@disabled_edit}
-                    />
-                  </div>
-                  <section class="mb-2">
-                    <heading>
-                      <p>Enable Independent Section Creation</p>
-                      <small>
-                        Allow this user to create "Independent" sections and enroll students via invitation link without an LMS
-                      </small>
-                    </heading>
-                    <div class="form-control">
-                      <.input
-                        field={@form[:can_create_sections]}
-                        type="checkbox"
-                        label="Can Create Sections"
-                        class="form-check-input"
-                        disabled={@disabled_edit}
-                      />
-                    </div>
-                  </section>
+                  <%= if @user.independent_learner do %>
+                    <section class="mb-2">
+                      <heading>
+                        <p>Enable Independent Section Creation</p>
+                        <small>
+                          Allow this user to create "Independent" sections and enroll students via invitation link without an LMS
+                        </small>
+                      </heading>
+                      <div class="form-control">
+                        <.input
+                          field={@form[:can_create_sections]}
+                          type="checkbox"
+                          label="Can Create Sections"
+                          class="form-check-input"
+                          disabled={@disabled_edit}
+                        />
+                      </div>
+                    </section>
+                  <% end %>
                   <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
                     <div class="form-control mb-3">
                       <.input
@@ -246,6 +238,11 @@ defmodule OliWeb.Users.UsersDetailView do
                       value={if(@user.is_internal, do: "Yes", else: "No")}
                     />
                   <% end %>
+                  <ReadOnly.render label="Guest" value={boolean(@user.guest)} />
+                  <ReadOnly.render
+                    label="Independent Learner"
+                    value={boolean(@user.independent_learner)}
+                  />
                   <ReadOnly.render label="Research Opt Out" value={boolean(@user.research_opt_out)} />
                   <ReadOnly.render
                     label="Email Confirmed"
