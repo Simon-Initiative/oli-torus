@@ -5,6 +5,17 @@ import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { classNames } from 'utils/classNames';
 import styles from './ChoicesDelivery.modules.scss';
 
+const INTERACTIVE_SELECTOR = [
+  'audio',
+  'video',
+  'iframe',
+  'button',
+  'a[href]',
+  '[role="button"]',
+  '[role="link"]',
+  '[data-stop-choice-select="true"]',
+].join(', ');
+
 interface Props {
   choices: Choice[];
   selected: ChoiceId[];
@@ -27,16 +38,6 @@ export const ChoicesDelivery: React.FC<Props> = ({
   disabled = false,
   multiSelect = false,
 }) => {
-  const interactiveSelector = [
-    'audio',
-    'video',
-    'iframe',
-    'button',
-    'a[href]',
-    '[role="button"]',
-    '[role="link"]',
-    '[data-stop-choice-select="true"]',
-  ].join(', ');
   const choiceRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isSelected = (choiceId: ChoiceId) => !!selected.find((s) => s === choiceId);
 
@@ -76,7 +77,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
       const targetNode = event.target as Node | null;
       const targetElement =
         targetNode instanceof Element ? targetNode : targetNode?.parentElement ?? null;
-      if (targetElement && targetElement.closest(interactiveSelector)) {
+      if (targetElement && targetElement.closest(INTERACTIVE_SELECTOR)) {
         event.stopPropagation();
         return;
       }
