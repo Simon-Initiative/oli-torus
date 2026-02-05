@@ -70,6 +70,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
         students={@filtered_student_data}
         section_title={@section_title}
         instructor_email={@instructor_email}
+        instructor_name={@instructor_name}
         section_slug={@section_slug}
         show_modal={@show_email_modal}
         email_handler_id={@id}

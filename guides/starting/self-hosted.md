@@ -91,7 +91,9 @@ DATABASE_URL=ecto://<db_username>:<db_password>@postgres/oli
 ## Email sending
 EMAIL_FROM_NAME="OLI Torus"
 EMAIL_FROM_ADDRESS="no-reply@example.edu"
-EMAIL_REPLY_TO=<admin@example.edu>
+# Optional headers for email error handling
+# EMAIL_ERRORS_TO_ADDRESS=<torus-admin@example.edu>
+# EMAIL_RETURN_PATH_ADDRESS=<torus-admin@example.edu>
 
 ## Amazon AWS S3 and SES email services
 AWS_ACCESS_KEY_ID=<your_aws_access_key>

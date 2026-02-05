@@ -22,6 +22,9 @@ update this file accordingly.
 | AWS_S3_REGION                      | No       | AWS region for S3 URLs (Default: AWS_REGION or "us-east-1")                    |
 | AWS_S3_ACCESS_KEY_ID               | No       | AWS access key ID for S3 access (Default: AWS_ACCESS_KEY_ID)                   |
 | AWS_S3_SECRET_ACCESS_KEY           | No       | AWS secret access key for S3 access (Default: AWS_SECRET_ACCESS_KEY)           |
+| EMAIL_ERRORS_TO_ADDRESS            | No       | Email address for the Errors-To header (bounces and errors)                    |
+| EMAIL_RETURN_PATH_ADDRESS          | No       | Email address for the Return-Path header (delivery failures)                   |
+| CASHNET_EMAIL_FALLBACK             | No       | Fallback email for Cashnet when user has no email                              |
 
 - `CLOAK_VAULT_KEY` is now required. This key is used to encrypt and decrypt sensitive data
   stored in the database. It should be a secure, random string of sufficient length
@@ -48,6 +51,16 @@ update this file accordingly.
   These are optional and will fallback to the configured AWS settings if not provided.
   This is useful for deployments that use a different S3-compatible storage service
   other than AWS.
+
+- **Email Headers:** The email system properly handles Reply-To headers based on the email type:
+
+  - System notification emails (confirmations, password resets, etc.) do not set a Reply-To header
+  - Emails sent on behalf of users (enrollment invitations, collaborator invites, instructor messages,
+    help desk) set Reply-To to the initiating user's email address
+  - Optional headers `Errors-To` and `Return-Path` can be configured for bounce handling
+
+- `CASHNET_EMAIL_FALLBACK` provides a fallback email address for the Cashnet payment form
+  when a user doesn't have an email address. If not set, the field will be empty.
 
 ### Infrastructure Changes
 
