@@ -5323,53 +5323,73 @@ defmodule Oli.Delivery.Sections do
     proficiencies_for_objectives =
       Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
 
-    student_ids =
-      Sections.enrolled_student_ids(section_slug)
+    student_proficiency_for_objectives =
+      if student_id do
+        Enum.reduce(id_list, %{}, fn objective_id, acc ->
+          proficiency =
+            proficiencies_for_objectives
+            |> Map.get(objective_id, %{})
+            |> Map.get(student_id, "Not enough data")
 
-    proficiency_dist_for_objectives =
-      proficiencies_for_objectives
-      |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
-        # Filter proficiency data to only include enrolled students (exclude instructors)
-        filtered_student_proficiency =
-          student_proficiency
-          |> Enum.filter(fn {user_id, _proficiency_level} -> user_id in student_ids end)
-          |> Map.new()
+          Map.put(acc, objective_id, proficiency)
+        end)
+      else
+        %{}
+      end
 
-        # Add "Not enough data" for students who don't have proficiency data
-        student_proficiency =
-          student_ids
-          |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
-          |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
-            Map.put(acc, user_id, "Not enough data")
+    {student_ids, proficiency_dist_for_objectives} =
+      if is_nil(student_id) do
+        student_ids = Sections.enrolled_student_ids(section_slug)
+
+        proficiency_dist_for_objectives =
+          proficiencies_for_objectives
+          |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
+            # Filter proficiency data to only include enrolled students (exclude instructors)
+            filtered_student_proficiency =
+              student_proficiency
+              |> Enum.filter(fn {user_id, _proficiency_level} -> user_id in student_ids end)
+              |> Map.new()
+
+            # Add "Not enough data" for students who don't have proficiency data
+            student_proficiency =
+              student_ids
+              |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
+              |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
+                Map.put(acc, user_id, "Not enough data")
+              end)
+
+            proficiency_dist =
+              Enum.frequencies_by(student_proficiency, fn {_student_id, proficiency} ->
+                proficiency
+              end)
+
+            proficiency_mode =
+              proficiency_dist
+              |> Enum.map(fn {key, value} ->
+                ordinal =
+                  case String.downcase(key) do
+                    "low" -> 0
+                    "medium" -> 1
+                    "high" -> 2
+                    _ -> 3
+                  end
+
+                {key, value, ordinal}
+              end)
+              |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
+              |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
+              |> elem(0)
+
+            Map.put(acc, objective_id,
+              proficiency_dist: proficiency_dist,
+              proficiency_mode: proficiency_mode
+            )
           end)
 
-        proficiency_dist =
-          Enum.frequencies_by(student_proficiency, fn {_student_id, proficiency} ->
-            proficiency
-          end)
-
-        proficiency_mode =
-          proficiency_dist
-          |> Enum.map(fn {key, value} ->
-            ordinal =
-              case String.downcase(key) do
-                "low" -> 0
-                "medium" -> 1
-                "high" -> 2
-                _ -> 3
-              end
-
-            {key, value, ordinal}
-          end)
-          |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
-          |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
-          |> elem(0)
-
-        Map.put(acc, objective_id,
-          proficiency_dist: proficiency_dist,
-          proficiency_mode: proficiency_mode
-        )
-      end)
+        {student_ids, proficiency_dist_for_objectives}
+      else
+        {[], %{}}
+      end
 
     objective_to_container_ids_map =
       from(co in ContainedObjective)
@@ -5418,14 +5438,22 @@ defmodule Oli.Delivery.Sections do
         # this is a top-level objective
         false ->
           {student_proficiency_obj, student_proficiency_obj_dist} =
-            case Map.get(proficiency_dist_for_objectives, objective.resource_id) do
-              nil ->
-                # When there's no proficiency data, create distribution with all students as "Not enough data"
-                not_enough_data_dist = %{"Not enough data" => length(student_ids)}
-                {"Not enough data", not_enough_data_dist}
+            if student_id do
+              {Map.get(
+                 student_proficiency_for_objectives,
+                 objective.resource_id,
+                 "Not enough data"
+               ), nil}
+            else
+              case Map.get(proficiency_dist_for_objectives, objective.resource_id) do
+                nil ->
+                  # When there's no proficiency data, create distribution with all students as "Not enough data"
+                  not_enough_data_dist = %{"Not enough data" => length(student_ids)}
+                  {"Not enough data", not_enough_data_dist}
 
-              prof ->
-                {prof[:proficiency_mode], prof[:proficiency_dist]}
+                prof ->
+                  {prof[:proficiency_mode], prof[:proficiency_dist]}
+              end
             end
 
           objective =
@@ -5449,14 +5477,22 @@ defmodule Oli.Delivery.Sections do
                   sub_objective = Map.get(lookup_map, child)
 
                   {student_proficiency_subobj, student_proficiency_subobj_dist} =
-                    case Map.get(proficiency_dist_for_objectives, sub_objective.resource_id) do
-                      nil ->
-                        # When there's no proficiency data, create distribution with all students as "Not enough data"
-                        not_enough_data_dist = %{"Not enough data" => length(student_ids)}
-                        {"Not enough data", not_enough_data_dist}
+                    if student_id do
+                      {Map.get(
+                         student_proficiency_for_objectives,
+                         sub_objective.resource_id,
+                         "Not enough data"
+                       ), nil}
+                    else
+                      case Map.get(proficiency_dist_for_objectives, sub_objective.resource_id) do
+                        nil ->
+                          # When there's no proficiency data, create distribution with all students as "Not enough data"
+                          not_enough_data_dist = %{"Not enough data" => length(student_ids)}
+                          {"Not enough data", not_enough_data_dist}
 
-                      prof ->
-                        {prof[:proficiency_mode], prof[:proficiency_dist]}
+                        prof ->
+                          {prof[:proficiency_mode], prof[:proficiency_dist]}
+                      end
                     end
 
                   Map.merge(sub_objective, %{
