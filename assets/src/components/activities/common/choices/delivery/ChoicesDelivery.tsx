@@ -5,6 +5,17 @@ import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { classNames } from 'utils/classNames';
 import styles from './ChoicesDelivery.modules.scss';
 
+const INTERACTIVE_SELECTOR = [
+  'audio',
+  'video',
+  'iframe',
+  'button',
+  'a[href]',
+  '[role="button"]',
+  '[role="link"]',
+  '[data-stop-choice-select="true"]',
+].join(', ');
+
 interface Props {
   choices: Choice[];
   selected: ChoiceId[];
@@ -58,6 +69,16 @@ export const ChoicesDelivery: React.FC<Props> = ({
     (choiceId: ChoiceId, index: number) => (event: React.MouseEvent) => {
       if (event.isDefaultPrevented()) {
         // Allow sub-elements to have clickable items that do things (like command buttons)
+        return;
+      }
+      // MER-5271: mobile browsers may not stop click propagation from native media controls,
+      // so avoid selecting when clicks originate from nested interactive elements and stop
+      // propagation to mirror desktop behavior.
+      const targetNode = event.target as Node | null;
+      const targetElement =
+        targetNode instanceof Element ? targetNode : targetNode?.parentElement ?? null;
+      if (targetElement && targetElement.closest(INTERACTIVE_SELECTOR)) {
+        event.stopPropagation();
         return;
       }
       if (!isEvaluated && !disabled) {
