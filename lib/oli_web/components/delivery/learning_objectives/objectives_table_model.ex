@@ -75,7 +75,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %ColumnSpec{
         name: :student_proficiency_obj,
         label: "Obj. Proficiency",
-        tooltip: @student_proficiency_tooltip_text
+        tooltip: @student_proficiency_tooltip_text,
+        render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :subobjective,
@@ -85,7 +86,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %ColumnSpec{
         name: :student_proficiency_subobj,
         label: "Sub-Obj. Proficiency",
-        tooltip: @student_proficiency_tooltip_text
+        tooltip: @student_proficiency_tooltip_text,
+        render_fn: &custom_render/3
       }
     ]
 
