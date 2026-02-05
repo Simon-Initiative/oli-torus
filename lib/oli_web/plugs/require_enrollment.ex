@@ -78,7 +78,5 @@ defmodule OliWeb.Plugs.RequireEnrollment do
   defp suspended?(_), do: false
 
   defp build_request_path(%{request_path: nil}), do: nil
-  defp build_request_path(%{query_string: ""} = conn), do: conn.request_path
-  defp build_request_path(%{query_string: nil} = conn), do: conn.request_path
-  defp build_request_path(conn), do: conn.request_path <> "?" <> conn.query_string
+  defp build_request_path(conn), do: conn.request_path
 end

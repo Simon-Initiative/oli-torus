@@ -57,7 +57,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
              )
              |> redirect(
                to:
-                 ~p"/lms_user_instructions?#{[section_title: section.title, request_path: "/users/invite/#{token}"]}"
+                 ~p"/lms_user_instructions?#{[section_title: section.title]}"
              )}
 
           {:error, :independent_learner_not_allowed} ->
