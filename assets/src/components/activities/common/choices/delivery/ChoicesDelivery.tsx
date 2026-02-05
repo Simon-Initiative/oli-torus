@@ -73,8 +73,10 @@ export const ChoicesDelivery: React.FC<Props> = ({
       // MER-5271: mobile browsers may not stop click propagation from native media controls,
       // so avoid selecting when clicks originate from nested interactive elements and stop
       // propagation to mirror desktop behavior.
-      const target = event.target;
-      if (target instanceof Element && target.closest(interactiveSelector)) {
+      const targetNode = event.target as Node | null;
+      const targetElement =
+        targetNode instanceof Element ? targetNode : targetNode?.parentElement ?? null;
+      if (targetElement && targetElement.closest(interactiveSelector)) {
         event.stopPropagation();
         return;
       }
