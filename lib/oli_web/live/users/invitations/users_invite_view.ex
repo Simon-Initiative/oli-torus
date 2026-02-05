@@ -55,10 +55,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
                :error,
                gettext("This course is only available with a direct delivery account.")
              )
-             |> redirect(
-               to:
-                 ~p"/lms_user_instructions?#{[section_title: section.title]}"
-             )}
+             |> redirect(to: ~p"/lms_user_instructions?#{[section_title: section.title]}")}
 
           {:error, :independent_learner_not_allowed} ->
             {:ok,
