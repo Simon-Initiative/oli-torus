@@ -127,6 +127,33 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
+  defp custom_render(assigns, objectives, %ColumnSpec{name: :student_proficiency_subobj}) do
+    student_proficiency =
+      case Map.get(objectives, :student_proficiency_subobj) do
+        nil -> objectives.student_proficiency_obj
+        value -> value
+      end
+
+    {bg_color, text_color} =
+      case student_proficiency do
+        "High" -> {"bg-Fill-Chip-Green", "text-Text-Chip-Green"}
+        "Medium" -> {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
+        "Low" -> {"bg-Fill-fill-danger", "text-Text-text-danger"}
+        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
+      end
+
+    assigns =
+      Map.merge(assigns, %{
+        label: student_proficiency,
+        bg_color: bg_color,
+        text_color: text_color
+      })
+
+    ~H"""
+    <Chip.render {assigns} />
+    """
+  end
+
   # OBJECTIVE
   defp custom_render(assigns, objective, %ColumnSpec{name: :objective}) do
     assigns =
