@@ -446,10 +446,8 @@ defmodule Oli.Delivery.Sections do
   - Open-and-free sections only allow independent learners.
   - LTI (non open-and-free) sections only allow LMS users.
   """
-  @spec ensure_enrollment_allowed(User.t() | nil, Section.t()) ::
+  @spec ensure_enrollment_allowed(User.t(), Section.t()) ::
           :ok | {:error, :non_independent_user} | {:error, :independent_learner_not_allowed}
-  def ensure_enrollment_allowed(nil, _section), do: {:error, :nil_user}
-
   def ensure_enrollment_allowed(%User{} = user, %Section{open_and_free: true}) do
     if user.independent_learner do
       :ok
