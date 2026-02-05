@@ -153,7 +153,9 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const iconSrc = getIconSrc(iconURL, defaultURL);
 
-  const shouldShowIcon = !hideIcon;
+  // Hide icon if hideIcon is true OR if both defaultURL and iconURL are empty
+  // If iconURL is set, it takes precedence even if defaultURL is empty (None selected)
+  const shouldShowIcon = !hideIcon && (iconURL !== '' || defaultURL !== '');
   const shouldShowLabel = labelText && labelText.trim().length > 0;
 
   // Icon sizing:

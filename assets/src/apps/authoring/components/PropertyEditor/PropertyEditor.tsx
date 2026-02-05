@@ -21,6 +21,7 @@ import { SpokeOptionsEditor } from './custom/SpokeOptionsEditor';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
+import { PopupIconSelector } from './custom/PopupIconSelector';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
@@ -50,6 +51,7 @@ const widgets: any = {
   DropdownOptionsEditor: DropdownOptionsEditor,
   MCQCustomErrorFeedbackAuthoring: MCQCustomErrorFeedbackAuthoring,
   SliderOptionsTextEditor: SliderOptionsTextEditor,
+  PopupIconSelector: PopupIconSelector,
 };
 
 /**

@@ -242,7 +242,9 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
 
-  const shouldShowIcon = !hideIcon;
+  // Hide icon if hideIcon is true OR if both defaultURL and iconURL are empty
+  // If iconURL is set, it takes precedence even if defaultURL is empty (None selected)
+  const shouldShowIcon = !hideIcon && (model.iconURL !== '' || model.defaultURL !== '');
   const shouldShowLabel = labelText && labelText.trim().length > 0;
 
   // Determine if iconSrc is a standard icon (data URL) or custom URL
