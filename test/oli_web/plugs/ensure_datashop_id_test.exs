@@ -69,5 +69,21 @@ defmodule OliWeb.Plugs.EnsureDatashopIdTest do
 
       assert get_session(conn, :datashop_session_updated_at) > expired_timestamp
     end
+
+    test "create new datashop session id if legacy tuple timestamp is present", %{conn: conn} do
+      existing_session_id = "existing-session-id"
+      legacy_timestamp = {23, 59, 0}
+
+      conn =
+        Plug.Test.init_test_session(conn, %{
+          datashop_session_id: existing_session_id,
+          datashop_session_updated_at: legacy_timestamp
+        })
+
+      conn = EnsureDatashopId.call(conn, @opts)
+
+      assert existing_session_id != get_session(conn, :datashop_session_id)
+      assert is_integer(get_session(conn, :datashop_session_updated_at))
+    end
   end
 end
