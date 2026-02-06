@@ -8,6 +8,7 @@ defmodule Oli.CloneTest do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Locks
   alias Oli.Authoring.MediaLibrary
+  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Family
   alias Oli.Authoring.Clone
   alias Oli.Authoring.Editing.PageEditor
@@ -33,20 +34,24 @@ defmodule Oli.CloneTest do
   describe "project duplication" do
     setup do
       project_map = Oli.Seeder.base_project_with_resource2()
+      _survey_revision = Course.create_project_survey(project_map.project, project_map.author.id)
+
+      project =
+        Repo.get!(Oli.Authoring.Course.Project, project_map.project.id)
 
       # Acquire a lock to edit the published_resource mapping in place
       Locks.acquire(
-        project_map.project.slug,
+        project.slug,
         project_map.publication.id,
         project_map.container.resource.id,
         project_map.author.id
       )
 
       {:ok, duplicated_project} =
-        Clone.clone_project(project_map.project.slug, project_map.author2)
+        Clone.clone_project(project.slug, project_map.author2)
 
       Map.put(
-        project_map,
+        Map.put(project_map, :project, project),
         :duplicated,
         Repo.preload(duplicated_project, [:parent_project, :family])
       )
@@ -163,6 +168,11 @@ defmodule Oli.CloneTest do
       assert duplicated.publisher_id == project.publisher_id
     end
 
+    test "clone_project/2 copies required survey", %{project: project, duplicated: duplicated} do
+      assert project.required_survey_resource_id
+      assert duplicated.required_survey_resource_id == project.required_survey_resource_id
+    end
+
     test "clone_project/2 creates a new collaborator", %{author2: author, duplicated: duplicated} do
       # AuthorProject schema
       collaborator = Collaborators.get_collaborator(author.id, duplicated.id)
@@ -202,15 +212,23 @@ defmodule Oli.CloneTest do
 
       Clone.clone_all_published_resources(publication.id, cloned_publication.id)
 
-      # 3 published resources
-      [head | tail] =
+      base_count =
+        Oli.Repo.aggregate(
+          from(mapping in Oli.Publishing.PublishedResource,
+            where: mapping.publication_id == ^publication.id
+          ),
+          :count,
+          :id
+        )
+
+      cloned_resources =
         Oli.Repo.all(
           from mapping in Oli.Publishing.PublishedResource,
             where: mapping.publication_id == ^cloned_publication.id
         )
 
-      assert Enum.count([head | tail]) == 3
-      assert head.publication_id == cloned_publication.id
+      assert Enum.count(cloned_resources) == base_count
+      assert Enum.all?(cloned_resources, &(&1.publication_id == cloned_publication.id))
     end
 
     test "clone_project/2 creates a new project with the author email in the name when optional field is passed in",
