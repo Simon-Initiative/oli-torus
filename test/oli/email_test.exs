@@ -122,8 +122,8 @@ defmodule Oli.EmailTest do
     end
   end
 
-  describe "help_desk_email/5" do
-    test "sets from to the user's email" do
+  describe "help_desk_email/6" do
+    test "uses default from address (for SES compatibility) instead of user's email" do
       email =
         Email.help_desk_email(
           "User Name",
@@ -134,7 +134,12 @@ defmodule Oli.EmailTest do
           %{message: "Test message"}
         )
 
-      assert email.from == {"User Name", "user@test.com"}
+      # FROM should be the configured default, not the user's email
+      # (Amazon SES requires verified sender addresses)
+      assert email.from == {
+               Application.get_env(:oli, :email_from_name),
+               Application.get_env(:oli, :email_from_address)
+             }
     end
 
     test "sets reply_to to the user's email" do

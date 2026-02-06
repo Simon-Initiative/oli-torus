@@ -236,7 +236,9 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
         "Note from your #{course_name} Instructor #{instructor_email}",
         message
       )
-      |> Oli.Email.maybe_from({instructor_name, instructor_email})
+      # Note: We don't set FROM to instructor's email because email providers like
+      # Amazon SES require verified sender addresses. The reply_to header ensures
+      # replies go back to the instructor.
       |> Oli.Email.maybe_reply_to({instructor_name, instructor_email})
     end)
     |> Oli.Mailer.deliver_later()
