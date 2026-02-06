@@ -36,7 +36,7 @@ defmodule OliWeb.Plugs.EnsureDatashopIdTest do
     test "updates timestamp on existing datashop_session_id if present in session", %{conn: conn} do
       # lifetime is 30 minutes
       existing_session_id = "existing-session-id"
-      original_timestamp = Time.utc_now() |> Time.shift(minute: -29) |> Time.to_erl()
+      original_timestamp = System.os_time(:second) - 29 * 60
 
       conn =
         Plug.Test.init_test_session(conn, %{
@@ -48,15 +48,14 @@ defmodule OliWeb.Plugs.EnsureDatashopIdTest do
 
       assert existing_session_id == get_session(conn, :datashop_session_id)
 
-      assert get_session(conn, :datashop_session_updated_at) |> Time.from_erl!() >
-               original_timestamp
+      assert get_session(conn, :datashop_session_updated_at) > original_timestamp
     end
 
     test "create new datashop session id if session is older than the configured session lifetime",
          %{conn: conn} do
       # lifetime is 30 minutes
       existing_session_id = "existing-session-id"
-      expired_timestamp = Time.utc_now() |> Time.shift(minute: -31) |> Time.to_erl()
+      expired_timestamp = System.os_time(:second) - 31 * 60
 
       conn =
         Plug.Test.init_test_session(conn, %{
@@ -68,8 +67,23 @@ defmodule OliWeb.Plugs.EnsureDatashopIdTest do
 
       assert existing_session_id != get_session(conn, :datashop_session_id)
 
-      assert get_session(conn, :datashop_session_updated_at) |> Time.from_erl!() >
-               expired_timestamp
+      assert get_session(conn, :datashop_session_updated_at) > expired_timestamp
+    end
+
+    test "create new datashop session id if legacy tuple timestamp is present", %{conn: conn} do
+      existing_session_id = "existing-session-id"
+      legacy_timestamp = {23, 59, 0}
+
+      conn =
+        Plug.Test.init_test_session(conn, %{
+          datashop_session_id: existing_session_id,
+          datashop_session_updated_at: legacy_timestamp
+        })
+
+      conn = EnsureDatashopId.call(conn, @opts)
+
+      assert existing_session_id != get_session(conn, :datashop_session_id)
+      assert is_integer(get_session(conn, :datashop_session_updated_at))
     end
   end
 end
