@@ -648,6 +648,59 @@ defmodule Oli.Institutions do
   end
 
   @doc """
+  Approves a pending registration request using a specific existing institution.
+
+  The operation guarantees all actions or none are performed.
+
+  ## Examples
+      iex> approve_pending_registration(pending_registration, institution_id)
+      {:ok, {%Institution{}, %Registration{}}}
+      iex> approve_pending_registration(pending_registration, institution_id)
+      {:error, reason}
+  """
+  def approve_pending_registration(
+        %PendingRegistration{} = pending_registration,
+        institution_id
+      ) do
+    Repo.transaction(fn ->
+      with {:ok, institution} <- fetch_active_institution(institution_id),
+           {:ok, active_jwk} = Lti_1p3.get_active_jwk(),
+           registration_attrs =
+             Map.merge(PendingRegistration.registration_attrs(pending_registration), %{
+               institution_id: institution.id,
+               tool_jwk_id: active_jwk.id
+             }),
+           {:ok, registration} <- find_or_create_registration(registration_attrs),
+           deployment_attrs =
+             Map.merge(PendingRegistration.deployment_attrs(pending_registration), %{
+               institution_id: institution.id,
+               registration_id: registration.id
+             }),
+           {:ok, deployment} <- maybe_create_deployment(deployment_attrs),
+           {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
+        {institution, registration, deployment}
+      else
+        error -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp fetch_active_institution(institution_id) do
+    institution_id = parse_institution_id(institution_id)
+
+    case Repo.get(Institution, institution_id) do
+      nil -> {:error, :institution_not_found}
+      %Institution{status: :deleted} -> {:error, :institution_deleted}
+      institution -> {:ok, institution}
+    end
+  end
+
+  defp parse_institution_id(institution_id) when is_binary(institution_id),
+    do: String.to_integer(institution_id)
+
+  defp parse_institution_id(institution_id), do: institution_id
+
+  @doc """
   Approves a pending registration request. If successful, a new deployment will be created and attached
   to a the required new institution.
 
