@@ -601,11 +601,13 @@ defmodule Oli.InstitutionsTest do
 
       count_before = length(Institutions.list_institutions())
 
-      {:ok, {institution, registration, _deployment}} =
+      {:ok, {institution, registration, deployment}} =
         Institutions.approve_pending_registration(pending_registration, existing_institution.id)
 
       assert institution.id == existing_institution.id
-      assert registration.institution_id == existing_institution.id
+      assert registration.id != nil
+      assert deployment.institution_id == existing_institution.id
+      assert deployment.registration_id == registration.id
       assert length(Institutions.list_institutions()) == count_before
 
       assert Institutions.get_pending_registration(
