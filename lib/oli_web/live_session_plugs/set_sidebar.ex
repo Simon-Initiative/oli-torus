@@ -103,16 +103,16 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
     false
   end
 
+  defp user_is_only_a_student?(%SessionContext{user: user}) do
+    user_is_only_a_student_in_general?(user)
+  end
+
   defp user_is_only_a_student?(%SessionContext{} = ctx, assigns) do
     if Map.get(assigns, :section) do
       false
     else
       user_is_only_a_student?(ctx)
     end
-  end
-
-  defp user_is_only_a_student?(%SessionContext{user: user}) do
-    user_is_only_a_student_in_general?(user)
   end
 
   defp user_is_only_a_student_in_general?(%{id: user_id}) do
