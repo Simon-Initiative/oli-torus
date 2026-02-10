@@ -629,6 +629,9 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
   defp approve_pending_registration("", pending_registration),
     do: Institutions.approve_pending_registration_as_new_institution(pending_registration)
 
+  defp approve_pending_registration(nil, pending_registration),
+    do: Institutions.approve_pending_registration(pending_registration)
+
   defp approve_pending_registration(institution_id, pending_registration),
     do: Institutions.approve_pending_registration(pending_registration, institution_id)
 
