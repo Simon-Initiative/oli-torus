@@ -654,7 +654,7 @@ defmodule Oli.Institutions do
 
   ## Examples
       iex> approve_pending_registration(pending_registration, institution_id)
-      {:ok, {%Institution{}, %Registration{}}}
+      {:ok, {%Institution{}, %Registration{}, %Deployment{}}}
       iex> approve_pending_registration(pending_registration, institution_id)
       {:error, reason}
   """
@@ -664,7 +664,7 @@ defmodule Oli.Institutions do
       ) do
     Repo.transaction(fn ->
       with {:ok, institution} <- fetch_active_institution(institution_id),
-           {:ok, active_jwk} = Lti_1p3.get_active_jwk(),
+           {:ok, active_jwk} <- Lti_1p3.get_active_jwk(),
            registration_attrs =
              Map.merge(PendingRegistration.registration_attrs(pending_registration), %{
                institution_id: institution.id,
@@ -686,19 +686,30 @@ defmodule Oli.Institutions do
   end
 
   defp fetch_active_institution(institution_id) do
-    institution_id = parse_institution_id(institution_id)
+    case parse_institution_id(institution_id) do
+      {:ok, parsed_id} ->
+        case Repo.get(Institution, parsed_id) do
+          nil -> {:error, :institution_not_found}
+          %Institution{status: :deleted} -> {:error, :institution_deleted}
+          institution -> {:ok, institution}
+        end
 
-    case Repo.get(Institution, institution_id) do
-      nil -> {:error, :institution_not_found}
-      %Institution{status: :deleted} -> {:error, :institution_deleted}
-      institution -> {:ok, institution}
+      {:error, :invalid_institution_id} ->
+        {:error, :invalid_institution_id}
     end
   end
 
-  defp parse_institution_id(institution_id) when is_binary(institution_id),
-    do: String.to_integer(institution_id)
+  defp parse_institution_id(institution_id) when is_binary(institution_id) do
+    case Integer.parse(institution_id) do
+      {parsed_id, ""} -> {:ok, parsed_id}
+      _ -> {:error, :invalid_institution_id}
+    end
+  end
 
-  defp parse_institution_id(institution_id), do: institution_id
+  defp parse_institution_id(institution_id) when is_integer(institution_id),
+    do: {:ok, institution_id}
+
+  defp parse_institution_id(_), do: {:error, :invalid_institution_id}
 
   @doc """
   Approves a pending registration request. If successful, a new deployment will be created and attached
