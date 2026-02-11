@@ -196,6 +196,20 @@ defmodule Oli.Delivery.Hierarchy do
     end
   end
 
+  def find_in_hierarchy(
+        %{"children" => children} = node,
+        find_by
+      )
+      when is_function(find_by) do
+    if find_by.(node) do
+      node
+    else
+      Enum.reduce(children, nil, fn child, acc ->
+        if acc == nil, do: find_in_hierarchy(child, find_by), else: acc
+      end)
+    end
+  end
+
   @doc """
   Finds the parent node of the matching node in the hierarchy with the given uuid
   or function `fn node -> true`.

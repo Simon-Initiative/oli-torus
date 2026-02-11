@@ -3,6 +3,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Workspaces.CourseAuthor.Datasets.Common
 
   def new(rows, indclude_admin_fields? \\ false) do
     standard_columns = [
@@ -13,7 +14,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
       },
       %ColumnSpec{
         name: :job_type,
-        label: "Type"
+        label: "Type",
+        render_fn: &render_job_type/3,
+        sort_fn: &sort_job_type/2
       },
       %ColumnSpec{
         name: :inserted_at,
@@ -26,6 +29,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
       %ColumnSpec{
         name: :initiator_email,
         label: "Started By"
+      },
+      %ColumnSpec{
+        name: :section_count,
+        label: "# of sections",
+        render_fn: &render_section_count/3
       },
       %ColumnSpec{
         name: :configuration,
@@ -97,6 +105,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
     """
   end
 
+  defp render_job_type(_assigns, job, _a), do: Common.job_type_label(job)
+
   defp render_project(assigns, job, _) do
     assigns = Map.merge(assigns, %{job: job})
 
@@ -111,6 +121,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
       {@job.project_title}
     </a>
     """
+  end
+
+  defp render_section_count(_assigns, job, _a) do
+    job
+    |> Map.get(:configuration)
+    |> section_ids_count()
   end
 
   def render(assigns) do
@@ -132,4 +148,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
       :queued -> "badge badge-info"
     end
   end
+
+  defp sort_job_type(sort_order, sort_spec) do
+    {fn job ->
+       Map.put(job, :job_type, Common.job_type_label(job) |> String.downcase())
+     end, ColumnSpec.default_sort_fn(sort_order, sort_spec)}
+  end
+
+  defp section_ids_count(%{section_ids: section_ids}) when is_list(section_ids),
+    do: Enum.count(section_ids)
+
+  defp section_ids_count(_), do: 0
 end

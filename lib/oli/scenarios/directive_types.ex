@@ -6,12 +6,21 @@ defmodule Oli.Scenarios.DirectiveTypes do
   # Directive types
   defmodule ProjectDirective do
     @moduledoc "Creates a new project with specified structure"
-    defstruct [:name, :title, :root, :objectives, :tags]
+    defstruct [:name, :title, :root, :objectives, :tags, :slug, :visibility]
   end
 
   defmodule SectionDirective do
     @moduledoc "Creates a section from a project or standalone"
-    defstruct [:name, :title, :from, :type, :registration_open]
+    defstruct [
+      :name,
+      :title,
+      :from,
+      :type,
+      :registration_open,
+      :slug,
+      :open_and_free,
+      :requires_enrollment
+    ]
   end
 
   defmodule ProductDirective do
@@ -50,12 +59,22 @@ defmodule Oli.Scenarios.DirectiveTypes do
 
   defmodule UserDirective do
     @moduledoc "Creates users (authors, instructors, students)"
-    defstruct [:name, :type, :email, :given_name, :family_name]
+    defstruct [
+      :name,
+      :type,
+      :email,
+      :given_name,
+      :family_name,
+      :password,
+      :system_role,
+      :can_create_sections,
+      :email_verified
+    ]
   end
 
   defmodule EnrollDirective do
     @moduledoc "Enrolls users in sections"
-    defstruct [:user, :section, :role]
+    defstruct [:user, :section, :role, :email]
   end
 
   defmodule InstitutionDirective do
@@ -173,6 +192,35 @@ defmodule Oli.Scenarios.DirectiveTypes do
     file: relative path to the YAML file to include (relative to the current file's directory)
     """
     defstruct [:file]
+  end
+
+  defmodule CollaboratorDirective do
+    @moduledoc """
+    Adds an existing author as a collaborator to an existing project.
+    user: scenario name of the author
+    project: scenario name of the project
+    email: optional explicit email to resolve the author
+    """
+    defstruct [:user, :project, :email]
+  end
+
+  defmodule MediaDirective do
+    @moduledoc """
+    Uploads a media file into a project's media library.
+    project: scenario name of the project
+    path: file path (relative to scenario file if relative)
+    mime: optional mime type override
+    """
+    defstruct [:project, :path, :mime]
+  end
+
+  defmodule BibliographyDirective do
+    @moduledoc """
+    Adds a bibliography entry to a project.
+    project: scenario name of the project
+    entry: bibtex or raw entry text
+    """
+    defstruct [:project, :entry]
   end
 
   defmodule HookDirective do

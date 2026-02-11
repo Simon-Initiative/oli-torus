@@ -6,7 +6,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Sections
   alias Lti_1p3.Roles.ContextRoles
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+  alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
   alias Oli.Delivery.Attempts.Core.{ClientEvaluation}
 
   defp generate_lti_content() do
@@ -438,6 +438,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         revision_id: page.id,
         revision: page,
         attempt_guid: UUID.uuid4(),
+        attempt_number: 1,
         content: page.content
       })
 
@@ -450,6 +451,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         resource_id: activity_revision.resource_id,
         resource: activity_revision.resource,
         attempt_guid: UUID.uuid4(),
+        attempt_number: 1,
         out_of: out_of
       })
 
@@ -458,6 +460,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
         activity_attempt_id: activity_attempt.id,
         activity_attempt: activity_attempt,
         attempt_guid: UUID.uuid4(),
+        attempt_number: 1,
         part_id: "1"
       })
 
@@ -472,7 +475,7 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
          out_of,
          datashop_id
        ) do
-    Evaluate.apply_client_evaluation(
+    ApplyClientEvaluation.apply(
       section_slug,
       activity_attempt_guid,
       [
@@ -756,9 +759,13 @@ defmodule OliWeb.Api.LtiAgsControllerTest do
           student_1.id
         )
 
+      assert latest_activity_attempt.attempt_number == part_attempt.attempt_number + 1
+
       latest_part_attempt =
         latest_activity_attempt.part_attempts
-        |> hd()
+        |> Enum.find(&(&1.part_id == part_attempt.part_id))
+
+      refute is_nil(latest_part_attempt)
 
       assert resource_attempt.lifecycle_state == :active
 

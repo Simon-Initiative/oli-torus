@@ -30,10 +30,10 @@ defmodule OliWeb.Grades.GradebookTableModel do
       [
         %ColumnSpec{
           name: :name,
-          label: "STUDENT NAME",
+          label: "Student Name",
           render_fn: &__MODULE__.render_student/3,
           th_class: "pl-10 whitespace-nowrap !sticky left-0 z-10",
-          td_class: "sticky bg-white dark:bg-neutral-800 left-0 z-10"
+          td_class: "sticky left-0 z-10"
         }
       ] ++
         Enum.map(graded_pages, fn sr ->
@@ -42,7 +42,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
             label:
               if(sr.has_lti_activity,
                 do: HTMLComponents.lti_label_component(%{title: sr.title, id: sr.resource_id}),
-                else: String.upcase(sr.title)
+                else: sr.title
               ),
             render_fn: &__MODULE__.render_score/3,
             th_class: "whitespace-nowrap",
@@ -61,12 +61,6 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
   def new(graded_pages, section_slug, student_id) do
     column_specs = [
-      %ColumnSpec{
-        name: :index,
-        label: "Order",
-        render_fn: &__MODULE__.render_grade_order/3,
-        th_class: "pl-10"
-      },
       %ColumnSpec{
         name: :name,
         label: "Assessment",
@@ -105,7 +99,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     assigns = Map.merge(assigns, %{row: row})
 
     ~H"""
-    <div class="ml-8">
+    <div>
       {@row.label}
     </div>
     """
@@ -131,8 +125,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     ~H"""
     <div>
       <a
-        class={"ml-8 #{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black dark:text-gray-300"}"}
-        data-score-check={if @has_score? and @perc < 40, do: "false", else: "true"}
+        class={"#{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black dark:text-gray-300"}"}
         href={
           Routes.live_path(
             OliWeb.Endpoint,
@@ -150,7 +143,9 @@ defmodule OliWeb.Grades.GradebookTableModel do
         <% end %>
       </a>
       <%= if @was_late do %>
-        <span class="ml-2 badge badge-xs badge-pill badge-danger">LATE</span>
+        <span class="ml-2 inline-flex items-center justify-center px-2 py-1 rounded-[999px] bg-Icon-icon-danger text-white text-xs font-semibold shadow-[0px_2px_4px_0px_rgba(0,52,99,0.1)]">
+          LATE
+        </span>
       <% end %>
     </div>
     """
@@ -167,10 +162,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     assigns = Map.merge(assigns, %{disapproved_count: disapproved_count, row: row})
 
     ~H"""
-    <div
-      class="ml-8 text-gray-800 dark:text-gray-300"
-      data-score-check={if @disapproved_count > 0, do: "false", else: "true"}
-    >
+    <div class="text-Text-text-high">
       {OliWeb.Common.Utils.name(@row.user)}
     </div>
     """
@@ -263,19 +255,16 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
     if out_of == 0 or out_of == 0.0 do
       ~H"""
-      <a
-        class="text-red-500"
-        href={
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Progress.StudentResourceView,
-            @row.section.slug,
-            @row.id,
-            @resource_id
-          )
-        }
-      >
-        <span>{"#{@score}/#{@out_of}"}</span>
+      <a href={
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Progress.StudentResourceView,
+          @row.section.slug,
+          @row.id,
+          @resource_id
+        )
+      }>
+        <.score_badge score={@score} out_of={@out_of} />
       </a>
       """
     else
@@ -299,22 +288,21 @@ defmodule OliWeb.Grades.GradebookTableModel do
         Map.merge(assigns, %{perc: perc, safe_out_of: safe_out_of, safe_score: safe_score})
 
       ~H"""
-      <a
-        class={if @perc < 50, do: "text-red-500", else: "text-black dark:text-gray-300"}
-        href={
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Progress.StudentResourceView,
-            @row.section.slug,
-            @row.id,
-            @resource_id
-          )
-        }
-      >
-        {"#{@safe_score}/#{@safe_out_of}"}
+      <a href={
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Progress.StudentResourceView,
+          @row.section.slug,
+          @row.id,
+          @resource_id
+        )
+      }>
+        <.score_badge score={@safe_score} out_of={@safe_out_of} perc={@perc} />
       </a>
       <%= if @was_late do %>
-        <span class="ml-2 badge badge-xs badge-pill badge-danger">LATE</span>
+        <span class="ml-2 w-11 h-5 inline-flex items-center justify-center px-2 py-1 rounded-[999px] bg-Icon-icon-danger text-white text-xs shadow-[0px_2px_4px_0px_rgba(0,52,99,0.1)]">
+          LATE
+        </span>
       <% end %>
       """
     end
@@ -323,6 +311,20 @@ defmodule OliWeb.Grades.GradebookTableModel do
   def render(assigns) do
     ~H"""
     <div>nothing</div>
+    """
+  end
+
+  attr :score, :any, required: true
+  attr :out_of, :any, required: true
+  attr :perc, :float, default: 0.0
+
+  defp score_badge(assigns) do
+    ~H"""
+    <%= if @perc < 50 do %>
+      <span class="text-Text-text-danger no-underline">{@score}</span><span class="text-Text-text-high">{"/#{@out_of}"}</span>
+    <% else %>
+      <span class="text-Text-text-button no-underline">{@score}</span><span class="text-Text-text-high">{"/#{@out_of}"}</span>
+    <% end %>
     """
   end
 end

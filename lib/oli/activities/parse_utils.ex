@@ -31,11 +31,12 @@ defmodule Oli.Activities.ParseUtils do
     }
   ```
   """
-  def remove_empty(items) do
-    Enum.filter(items, &has_content?(&1))
-  end
+  def remove_empty(nil), do: []
+  def remove_empty(items), do: Enum.filter(items, &has_content?/1)
 
   # The model is stored using atoms or strings depending on where it is in the system
+  def has_content?(nil), do: false
+
   def has_content?(xs) do
     case xs do
       # a list under the "content" or "children" key.

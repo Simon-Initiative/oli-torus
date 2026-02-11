@@ -34,16 +34,25 @@
   @apply border-r-0 border-l-0;
 }
 
-.instructor_dashboard_table tr:has(div[data-score-check='true']) td {
-  @apply bg-white dark:bg-neutral-800 dark:text-white;
+.table_header_separated tr {
+  @apply font-normal;
 }
 
-.instructor_dashboard_table tr:has(div[data-score-check='true']) td a {
-  @apply bg-white dark:bg-neutral-800 dark:text-white;
+.table_header_separated td {
+  @apply font-normal;
 }
 
-.instructor_dashboard_table tr:has(a[data-score-check='true']) td {
-  @apply bg-white dark:bg-neutral-800 dark:text-white;
+.table_header_separated th {
+  @apply font-semibold;
+}
+
+.table_header_separated thead th:not(:last-child) {
+  @apply relative;
+}
+
+.table_header_separated thead th:not(:last-child)::after {
+  content: "";
+  @apply absolute right-0 top-0 bottom-0 w-px bg-Border-border-default;
 }
 
 .publish_changes_table tr:has(div[data-is-structural='true']) td {
@@ -62,8 +71,22 @@
   @apply bg-Table-table-row-1;
 }
 
+/* Apply background to sticky columns */
+.schedule_table tbody tr:nth-child(even) td:nth-child(2) {
+  @apply bg-Table-table-row-2;
+}
+
+.schedule_table tbody tr:nth-child(odd) td:nth-child(2) {
+  @apply bg-Table-table-row-1;
+}
+
 .schedule_table tbody tr {
   @apply hover:bg-Table-table-hover;
+}
+
+/* Apply hover background to sticky columns */
+.schedule_table tbody tr:hover td:nth-child(2) {
+  @apply bg-Table-table-hover;
 }
 
 div:has(.instructor_dashboard_table) #header_paging {

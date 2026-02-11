@@ -1,4 +1,16 @@
 janus-mcq {
+  .sr-only {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+    white-space: nowrap;
+  }
+
   .mcq-input {
     border: none !important;
     padding: 0px;
@@ -17,7 +29,7 @@ janus-mcq {
     input {
       position: absolute;
       opacity: 0;
-      z-index: 100;
+      z-index: 999;
       /*pointer-events: none;*/
       cursor: pointer;
       width: 1rem;
@@ -46,6 +58,7 @@ janus-mcq {
       background-color: var(--black5_a);
       outline: solid 10px var(--black5_a);
     }
+
     label:before {
       content: '';
       position: absolute;
@@ -135,6 +148,9 @@ janus-mcq {
     }
     > br {
       display: none !important;
+    }
+    input:focus {
+      z-index: 10000; /* ensures SR sees real focus */
     }
   }
 

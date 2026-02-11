@@ -8,6 +8,7 @@ defmodule Oli.GenAI.Agent.LLMBridge do
   alias Oli.GenAI.Agent.{ToolBroker, Decision}
   alias Oli.GenAI.Completions
   alias Oli.GenAI.Completions.{ServiceConfig, RegisteredModel, Message, Function}
+  alias Oli.GenAI.Execution
 
   @type message :: %{role: :system | :user | :assistant | :tool, content: term()}
   @type opts :: %{
@@ -24,8 +25,8 @@ defmodule Oli.GenAI.Agent.LLMBridge do
   def next_decision(messages, opts) do
     config = Map.fetch!(opts, :service_config)
 
-    with {:ok, primary, fallbacks} <- select_models(config),
-         {:ok, response} <- call_provider_with_fallback(primary, fallbacks, messages, opts) do
+    with {:ok, _primary, _fallbacks} <- select_models(config),
+         {:ok, response} <- call_with_routing(config, messages, opts) do
       Decision.from_completion(response)
     else
       {:error, reason} ->
@@ -80,29 +81,20 @@ defmodule Oli.GenAI.Agent.LLMBridge do
     end
   end
 
-  defp call_provider_with_fallback(primary, fallbacks, messages, opts) do
-    case call_provider(primary, messages, opts) do
-      {:ok, response} ->
-        {:ok, response}
+  defp call_with_routing(%ServiceConfig{} = config, messages, opts) do
+    completion_messages = convert_messages_to_completion_format(messages)
+    tools = ToolBroker.tools_for_completion()
+    completion_functions = convert_tools_to_completion_functions(tools)
 
-      {:error, _reason} ->
-        # Try fallbacks
-        try_fallbacks(fallbacks, messages, opts)
-    end
-  end
+    request_ctx = %{
+      request_type: :generate,
+      feature: :agent,
+      section_id: Map.get(opts, :section_id),
+      actor_id: Map.get(opts, :actor_id),
+      service_config_id: config.id
+    }
 
-  defp try_fallbacks([], _messages, _opts) do
-    {:error, "All models failed"}
-  end
-
-  defp try_fallbacks([model | rest], messages, opts) do
-    case call_provider(model, messages, opts) do
-      {:ok, response} ->
-        {:ok, response}
-
-      {:error, _reason} ->
-        try_fallbacks(rest, messages, opts)
-    end
+    Execution.generate(request_ctx, completion_messages, completion_functions, config)
   end
 
   defp convert_messages_to_completion_format(messages) do

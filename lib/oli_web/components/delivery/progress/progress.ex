@@ -1,16 +1,17 @@
 defmodule OliWeb.Components.Delivery.Progress do
   use OliWeb, :live_component
 
-  alias OliWeb.Common.{PagedTable, SearchInput, Params}
+  alias OliWeb.Common.{StripedPagedTable, SearchInput, Params}
   alias OliWeb.Components.Delivery.StudentProgressTabelModel
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
     limit: 20,
     sort_order: :asc,
-    sort_by: :title,
+    sort_by: :index,
     text_search: nil
   }
 
@@ -52,7 +53,8 @@ defmodule OliWeb.Components.Delivery.Progress do
        total_count: total_count,
        params: params,
        section_slug: section_slug,
-       student_id: student_id
+       student_id: student_id,
+       ctx: ctx
      )}
   end
 
@@ -64,42 +66,56 @@ defmodule OliWeb.Components.Delivery.Progress do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-10 mb-10 bg-white">
-      <div class="flex flex-col sm:flex-row sm:items-end px-6 py-4 instructor_dashboard_table">
-        <h4 class="pl-9 !py-2 torus-h4 mr-auto">{@title}</h4>
-        <form
-          for="search"
-          phx-target={@myself}
-          phx-change="search_progress"
-          class="pb-6 ml-9 w-44 sm:pb-0"
-        >
-          <SearchInput.render
-            id="progress_search_input"
-            name="resource_title"
-            text={@params.text_search}
-          />
-        </form>
-      </div>
+    <div class="flex flex-col gap-2 mb-10">
+      <div class="bg-white dark:bg-gray-800 shadow-sm">
+        <div class="flex justify-between items-center px-4 pt-8 pb-4 instructor_dashboard_table">
+          <h4 class="justify-center text-Text-text-high text-lg font-bold leading-normal">
+            {@title}
+          </h4>
 
-      <%= if @total_count > 0 do %>
-        <div id="progress-table">
-          <PagedTable.render
-            table_model={@table_model}
-            page_change={JS.push("paged_table_page_change", target: @myself)}
-            sort={JS.push("paged_table_sort", target: @myself)}
-            total_count={@total_count}
-            offset={@params.offset}
-            limit={@params.limit}
-            additional_table_class="instructor_dashboard_table"
-            show_bottom_paging={false}
-            render_top_info={false}
-            limit_change={JS.push("paged_table_limit_change", target: @myself)}
-            show_limit_change={true}
-          />
+          <a
+            href="#"
+            class="flex items-center justify-center gap-x-2 text-Text-text-button font-bold"
+          >
+            Download CSV <Icons.download />
+          </a>
         </div>
-      <% else %>
-        <h6 class="text-center py-4">There are no progress to show</h6>
-      <% end %>
+
+        <div class="px-4 pb-4">
+          <div class="inline-flex items-center gap-4 px-3 py-2 border border-Border-border-default bg-white dark:bg-gray-800 w-fit">
+            <.form for={%{}} phx-target={@myself} phx-change="search_progress" class="w-auto">
+              <SearchInput.render
+                id="progress_search_input"
+                name="resource_title"
+                text={@params.text_search}
+              />
+            </.form>
+          </div>
+        </div>
+
+        <%= if @total_count > 0 do %>
+          <div id="progress-table">
+            <StripedPagedTable.render
+              table_model={@table_model}
+              page_change={JS.push("paged_table_page_change", target: @myself)}
+              sort={JS.push("paged_table_sort", target: @myself)}
+              total_count={@total_count}
+              offset={@params.offset}
+              limit={@params.limit}
+              additional_table_class="instructor_dashboard_table"
+              show_bottom_paging={false}
+              render_top_info={false}
+              limit_change={JS.push("paged_table_limit_change", target: @myself)}
+              show_limit_change={true}
+              sticky_header_offset={0}
+            />
+          </div>
+        <% else %>
+          <h6 class="text-center py-4 bg-white dark:bg-gray-800">
+            There are no progress records to show
+          </h6>
+        <% end %>
+      </div>
     </div>
     """
   end
@@ -114,7 +130,7 @@ defmodule OliWeb.Components.Delivery.Progress do
            socket.assigns.section_slug,
            socket.assigns.student_id,
            :progress,
-           update_params(socket.assigns.params, %{text_search: resource_title})
+           update_params(socket.assigns.params, %{text_search: resource_title, offset: 0})
          )
      )}
   end

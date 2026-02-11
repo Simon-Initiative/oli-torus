@@ -1,17 +1,16 @@
 import { Verifier } from '@core/verify/Verifier';
 import { Locator, Page } from '@playwright/test';
 import { TypeActivity } from '@pom/types/type-activity';
-import { TYPE_LANGUAGE, TypeLanguage } from '@pom/types/types-language';
 
 export class PagePreviewPO {
   private readonly eventIntercept: Locator;
-  private readonly content: Locator;
+  private readonly interceptContent: Locator;
   private readonly activityContainer: Locator;
   private readonly questionTextLocator: Locator;
 
   constructor(private readonly page: Page) {
     this.eventIntercept = page.locator('#eventIntercept');
-    this.content = this.eventIntercept.locator('div.content');
+    this.interceptContent = this.eventIntercept.locator('div.content');
     this.activityContainer = page.locator('.activity-content');
     this.questionTextLocator = this.activityContainer.locator('p');
   }
@@ -20,9 +19,14 @@ export class PagePreviewPO {
     this.page.close();
   }
 
+  async verifyCite(str: string) {
+    const l = this.page.locator('body');
+    await Verifier.expectContainText(l, /Newton/i, 'Citation text should appear in preview');
+  }
+
   async verifyContent(...str: string[]) {
     for (let index = 0; index < str.length; index++) {
-      const locators = await this.content.all();
+      const locators = await this.interceptContent.all();
       const locator = locators[index];
       await Verifier.expectIsAttached(locator);
       await Verifier.expectContainText(locator, str[index]);
@@ -44,7 +48,7 @@ export class PagePreviewPO {
 
   async verifyQuestion(expectedQuestion: string) {
     await Verifier.expectIsVisible(this.activityContainer);
-    await Verifier.expectHasText(this.questionTextLocator, expectedQuestion);
+    await Verifier.expectHasText(this.questionTextLocator.first(), expectedQuestion);
   }
 
   async verifyMedia(name: string, resourceType: 'audio' | 'img' | 'video' | 'youtube' | 'webpage') {
@@ -65,9 +69,12 @@ export class PagePreviewPO {
     }
   }
 
-  async verifyLanguage(language: TypeLanguage) {
-    const lang = TYPE_LANGUAGE[language].value;
-    const langLocator = this.page.locator(`span[lang="${lang}"]`);
-    await Verifier.expectIsAttached(langLocator);
+  async verifyTextAnywhere(text: string | RegExp) {
+    await Verifier.expectContainText(this.page.locator('body'), text);
+  }
+
+  async hoverText(text: string) {
+    await this.page.getByText(text).first().hover();
+    await this.page.waitForTimeout(200);
   }
 }

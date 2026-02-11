@@ -15,7 +15,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
     sort_by_spec: :start_date,
     sort_order: :desc,
     search_term: "",
-    is_admin: false
+    is_admin: false,
+    current_author: nil
   ]
 
   def new(%SessionContext{} = ctx, sections, opts \\ []) do
@@ -29,6 +30,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
 
     search_term = Keyword.get(opts, :search_term, "")
     is_admin = Keyword.get(opts, :is_admin, false)
+    current_author = Keyword.get(opts, :current_author)
 
     base_columns = [
       %ColumnSpec{
@@ -141,7 +143,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
         ctx: ctx,
         fade_data: true,
         render_institution_action: opts[:render_institution_action],
-        search_term: search_term
+        search_term: search_term,
+        current_author: current_author
       }
     )
   end
@@ -177,6 +180,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
         entity_type={:section}
         entity_id={@section.id}
         current_tags={Map.get(@section, :tags, [])}
+        current_author={@current_author}
       />
     </div>
     """

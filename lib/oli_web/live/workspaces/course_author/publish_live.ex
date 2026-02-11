@@ -9,7 +9,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
   alias Oli.Delivery.Sections
   alias Oli.Publishing
   alias Oli.Publishing.Publications.PublicationDiff
-  alias Oli.Resources.ResourceType
   alias Oli.Search.Embeddings
   alias OliWeb.Common.{Confirm, Listing}
 
@@ -39,7 +38,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
     push_affected = calculate_push_affected(latest_published_publication, project.id)
     active_publication = Publishing.project_working_publication(project.slug)
 
-    {version_change, active_publication_changes, parent_pages} =
+    {version_change, active_publication_changes} =
       calculate_publication_changes(
         latest_published_publication,
         active_publication,
@@ -65,7 +64,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
        latest_published_publication: latest_published_publication,
        limit: 10,
        lti_connect_info: lti_connect_info,
-       parent_pages: parent_pages,
        project: project,
        publication_changes: publication_changes,
        push_affected: push_affected,
@@ -100,7 +98,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
             ctx={@ctx}
             has_changes={@has_changes}
             latest_published_publication={@latest_published_publication}
-            parent_pages={@parent_pages}
             project={@project}
             publication_changes={@publication_changes}
           />
@@ -306,11 +303,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
   def calculate_publication_changes(
         latest_published_publication,
         active_publication,
-        project_slug
+        _project_slug
       ) do
     case latest_published_publication do
       nil ->
-        {true, nil, %{}}
+        {true, nil}
 
       _ ->
         %PublicationDiff{
@@ -321,25 +318,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
           changes: changes
         } = Publishing.diff_publications(latest_published_publication, active_publication)
 
-        parent_pages =
-          case classification do
-            {:no_changes, _} ->
-              %{}
-
-            _ ->
-              changes
-              |> Map.values()
-              |> Enum.reduce([], fn {_, %{revision: revision}}, acc ->
-                if revision.resource_type_id == ResourceType.id_for_activity(),
-                  do: [revision.resource_id | acc],
-                  else: acc
-              end)
-              |> Publishing.determine_parent_pages(
-                Publishing.project_working_publication(project_slug).id
-              )
-          end
-
-        {{classification, {edition, major, minor}}, changes, parent_pages}
+        {{classification, {edition, major, minor}}, changes}
     end
   end
 

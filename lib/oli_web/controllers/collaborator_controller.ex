@@ -182,7 +182,14 @@ defmodule OliWeb.CollaboratorController do
   end
 
   defp invite_collaborator(conn, email, project_id, failures) do
-    case Collaborators.invite_collaborator(conn.assigns.current_author.name, email, project_id) do
+    current_author = conn.assigns.current_author
+
+    case Collaborators.invite_collaborator(
+           current_author.name,
+           current_author.email,
+           email,
+           project_id
+         ) do
       {:ok, _results} ->
         {conn, failures}
 

@@ -7,7 +7,7 @@
     "test-config": "npm run pw config.spec.ts",
     "test-config:headed": "npm run test-config -- --headed",
     "test-useraccounts": "npm run pw user-accounts.spec",
-    "test-all": "npm run pw user-accounts.spec",
+    "test-all": "npm run pw user-accounts.spec course-authoring.spec.ts",
     "show-report": "npx playwright show-report",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "csv-parse": "^5.6.0",
-    "dotenv": "^16.5.0",
     "eslint": "^9.27.0",
     "ww-torus-e2e": "file:"
   }

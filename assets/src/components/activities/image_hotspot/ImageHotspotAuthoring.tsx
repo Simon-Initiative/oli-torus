@@ -278,6 +278,7 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
             }
             isEvaluated={false}
             context={writerContext}
+            multiSelect={model.multiple}
           />
           <SimpleFeedback partId={selectedPartId} />
           <TargetedFeedback

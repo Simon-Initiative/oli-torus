@@ -9,13 +9,19 @@ import { newCS_CantResults, newCS_Filter, newCS_Title } from './data/data-projec
 import { TypeLanguage } from '@pom/types/types-language';
 import { TypeLicenseOption } from '@pom/types/type-license-options';
 import { step } from '@core/decoration/step';
+import { ProductsPO } from '@pom/product/ProductsPO';
+import { ProductOverviewPO } from '@pom/product/ProductOverviewPO';
+import { Waiter } from '@core/wait/Waiter';
+import { Verifier } from '@core/verify/Verifier';
 
 export class ProjectTask {
   private readonly authorDB: AuthorDashboardPO;
   private readonly instructorDB: InstructorDashboardPO;
-  private readonly overviewP: OverviewProjectPO;
+  public readonly overviewP: OverviewProjectPO;
   private readonly publishP: PublishProjectPO;
   private readonly newCS: NewCourseSetupPO;
+  private readonly products: ProductsPO;
+  private readonly productOverview: ProductOverviewPO;
   private readonly utils: Utils;
 
   constructor(private readonly page: Page) {
@@ -24,6 +30,8 @@ export class ProjectTask {
     this.overviewP = new OverviewProjectPO(page);
     this.publishP = new PublishProjectPO(page);
     this.newCS = new NewCourseSetupPO(page);
+    this.products = new ProductsPO(page);
+    this.productOverview = new ProductOverviewPO(page);
     this.utils = new Utils(page);
   }
 
@@ -34,6 +42,7 @@ export class ProjectTask {
     await this.overviewP.details.waitForEditorReady();
   }
 
+  @step("Create a new project '{projectName}' as open")
   async createNewProjectAsOpen(projectName: string) {
     await this.authorDB.clickNewProjectButton();
     await this.authorDB.fillProjectName(projectName);
@@ -45,12 +54,13 @@ export class ProjectTask {
     return { projectName, projectID };
   }
 
-  async filterAndReturnProjectCreated(projectName: string) {
+  @step("Filter project by name '{projectName}' and return the last result")
+  async filterAndReturnProject(projectName: string) {
     await this.authorDB.searchProject(projectName);
     await this.authorDB.sortByTitleDescending();
     const lastProject = await this.authorDB.getFirstRowTable();
 
-    if (lastProject.length > 0) return lastProject[0];
+    if (lastProject?.length > 0) return lastProject[0];
     else return projectName;
   }
 
@@ -76,17 +86,53 @@ export class ProjectTask {
     await this.newCS.verify(nr);
   }
 
+  @step('Publish project')
   async publishProject(description?: string) {
-    if (description) await this.publishP.fillDescription(description);
+    if (description) {
+      await this.publishP.fillDescription(description);
+    }
+
+    const autoPush = await this.publishP.autoPushIsChecked();
+    if (!autoPush && autoPush != null) {
+      await this.publishP.clickAutoPush();
+    }
     await this.publishP.clickPublish();
     await this.publishP.clickOk();
     await this.utils.modalDisappears();
   }
 
+  @step('Configure project attributes. Language: {languageValue}, License: {licenseValue}')
   async configureProjectAttributes(languageValue: TypeLanguage, licenseValue: TypeLicenseOption) {
     await this.overviewP.projectAttributes.selectLearningLanguage(languageValue);
     await this.overviewP.projectAttributes.selectLicense(licenseValue);
     await this.overviewP.projectAttributes.clickSave();
     await this.overviewP.projectAttributes.expectSelectedValues(languageValue, licenseValue);
+  }
+
+  @step('Ceate the product "{projectName}" and open it')
+  async createAndOpenProduct(projectName: string) {
+    await this.products.waitingToBeCentered();
+    const { productName, productId } = await this.products.createProduct(projectName);
+    await this.products.openProduct(productName);
+    await this.productOverview.details.waitForEditorReady();
+    await this.productOverview.verifyHeader();
+    await this.productOverview.verifyProductTitle(productName);
+    return { productName, productId };
+  }
+
+  @step('Add a bibliography to the project name')
+  async addBibliographyToProject(bibliography: string) {
+    await Waiter.waitFor(this.page.locator('#content > div.mx-auto'), 'visible');
+    await this.page.getByRole('button', { name: 'Add Entry', exact: true }).click();
+    await Waiter.waitFor(
+      this.page.getByRole('heading', { level: 5, name: 'Create Entry' }),
+      'visible',
+    );
+    await this.page.locator('div.modal-body>div>textarea').fill(bibliography);
+    await this.page.locator('div.modal-footer').getByRole('button', { name: 'Create' }).click();
+    await Verifier.expectIsVisible(
+      this.page.getByText('Showing result 1 - 1 of 1').first(),
+      'visible',
+    );
   }
 }

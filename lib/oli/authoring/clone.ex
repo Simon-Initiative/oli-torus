@@ -35,6 +35,7 @@ defmodule Oli.Authoring.Clone do
                family_id: cloned_family.id,
                project_id: base_project.id,
                publisher_id: base_project.publisher_id,
+               required_survey_resource_id: base_project.required_survey_resource_id,
                customizations: customizations,
                attributes: attributes,
                analytics_version: :v2

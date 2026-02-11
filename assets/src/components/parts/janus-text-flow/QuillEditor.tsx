@@ -13,7 +13,13 @@ import {
 } from '../janus-fill-blanks/FIBUtils';
 import { OptionItem, QuillFIBOptionEditor } from './QuillFIBOptionEditor';
 import { QuillImageUploader } from './QuillImageUploader';
-import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
+import {
+  convertJanusToQuill,
+  convertQuillToJanus,
+  fontFamilyMapping,
+  getFontName,
+  getSupportedFonts,
+} from './quill-utils';
 
 interface QuillEditorProps {
   tree: any[];
@@ -27,12 +33,8 @@ interface QuillEditorProps {
   options?: any;
 }
 
-const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
-
-// get code friendly font names
-const getFontName = (font: string) => {
-  return font.toLowerCase().replace(/\s/g, '-');
-};
+// Get supported fonts from shared mapping (ensures consistency)
+const supportedFonts = getSupportedFonts();
 Quill.import('ui/icons')['insertFIBOption'] =
   '<i class="fa-solid fa-square-caret-down" style="color:rgb(55, 58, 68)"></i>';
 
@@ -41,38 +43,61 @@ FontAttributor.whitelist = supportedFonts.map(getFontName);
 Quill.register(FontAttributor, true);
 
 const FontSizeAttributor = Quill.import('attributors/style/size');
-// Expanding the font-size whitelist to include sizes above 20px, ensuring that migrated lessons with larger font sizes render correctly.
-// This also resolves an issue where editing a text field with a larger font size previously caused the editor to remove the font size, making the text smaller.
-FontSizeAttributor.whitelist = [
-  '10px',
-  '12px',
-  '14px',
-  '16px',
-  '18px',
-  '20px',
-  '24px',
-  '32px',
-  '36px',
-  '48px',
-  '72px',
-];
+// Expanding the font-size whitelist to include the newly supported responsive sizes while keeping compatibility with migrated lessons.
+FontSizeAttributor.whitelist = ['16px', '14px', '18px', '20px', '24px', '28px', '32px'];
 Quill.register(FontSizeAttributor, true);
+
+const BaseImage = Quill.import('formats/image');
+
+class ImageWithAlt extends BaseImage {
+  static blotName = 'image';
+  static tagName = 'IMG';
+
+  static create(value: any) {
+    const node = super.create(value);
+
+    if (typeof value === 'object') {
+      node.setAttribute('src', value.src);
+      if (value.alt) node.setAttribute('alt', value.alt);
+    } else {
+      node.setAttribute('src', value);
+    }
+    return node;
+  }
+
+  static value(node: HTMLElement) {
+    return {
+      src: node.getAttribute('src'),
+      alt: node.getAttribute('alt'),
+    };
+  }
+
+  static formats(node: HTMLElement) {
+    return {
+      alt: node.getAttribute('alt'),
+    };
+  }
+}
+
+Quill.register(ImageWithAlt, true);
 
 const getCssForFonts = (fonts: string[]) => {
   return fonts
-    .map(
-      (font) => `
-    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value='${getFontName(font)}']::before,
-    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value='${getFontName(font)}']::before
+    .map((font) => {
+      const fontCode = getFontName(font);
+      const fontFamily = fontFamilyMapping[fontCode] || `'${font}'`;
+      return `
+    .ql-snow .ql-picker.ql-font .ql-picker-label[data-value='${fontCode}']::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item[data-value='${fontCode}']::before
     {
       content: '${font}';
-      font-family: '${font}';
+      font-family: ${fontFamily};
     }
-    .ql-font-${getFontName(font)} {
-      font-family: '${font}';
+    .ql-font-${fontCode} {
+      font-family: ${fontFamily};
     }
-  `,
-    )
+  `;
+    })
     .join('\n');
 };
 
@@ -81,42 +106,60 @@ const fontStyles = `${getCssForFonts(supportedFonts)}
 .ql-container {
   font-size: 16px !important;
 }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12px"]::before {
-  content: '12px';
-  font-size: 12px !important;
+.ql-snow .ql-picker.ql-font .ql-picker-label:not([data-value])::before {
+  content: 'Open Sans';
+  font-family: 'Open Sans';
 }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14px"]::before {
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="__size-divider__"],
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="__font-divider__"] {
+  display: block;
+  width: 100%;
+  height: 1px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  background-color: #d0d7de;
+  pointer-events: none;
+  cursor: default;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="__size-divider__"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="__font-divider__"]::before {
+  content: '';
+}
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="14px"]::before {
   content: '14px';
   font-size: 14px !important;
 }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before {
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="16px"]::before {
   content: '16px';
   font-size: 16px !important;
 }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before {
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="18px"]::before {
   content: '18px';
   font-size: 18px !important;
 }
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="20px"]::before {
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="20px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="20px"]::before {
   content: '20px';
   font-size: 20px !important;
 }
-  .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="12px"]::before {
-  content: '12px';
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="24px"]::before {
+  content: '24px';
+  font-size: 24px !important;
 }
-.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="14px"]::before {
-  content: '14px';
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="28px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="28px"]::before {
+  content: '28px';
+  font-size: 28px !important;
 }
-.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="16px"]::before {
-  content: '16px';
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="32px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="32px"]::before {
+  content: '32px';
+  font-size: 32px !important;
 }
-.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="18px"]::before {
-  content: '18px';
-}
-.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="20px"]::before {
-  content: '20px';
-}
-
 `;
 let localOptions: any = [];
 export const QuillEditor: React.FC<QuillEditorProps> = ({
@@ -134,13 +177,10 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   const [contents, setContents] = React.useState<any>(tree);
   const [selectedKey, setSelectedKey] = useState<number>(0);
   const [fibElements, setFibElements] = React.useState<any>([]);
-  // Set default font size to 16px in initial delta
+  // Convert Janus tree to Quill delta without adding default font size
+  // The editor will display 16px via CSS (.ql-container) but won't add inline styles
   const initialDelta = useMemo(() => {
-    const d = convertJanusToQuill(tree);
-    if (d && d.ops && d.ops.length > 0 && !d.ops[0].attributes?.size) {
-      d.ops[0].attributes = { ...(d.ops[0].attributes || {}), size: '16px' };
-    }
-    return d;
+    return convertJanusToQuill(tree);
   }, [tree]);
   const [delta, setDelta] = React.useState<any>(initialDelta);
   const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
@@ -230,16 +270,13 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   };
   const handleImageDetailsSave = (imageURL: string, imageAltText: string) => {
     setShowImageSelectorDailog(false);
-    if (quill?.current) {
-      if (imageURL) {
-        const img = document.createElement('img');
-        img.src = imageURL;
-        img.alt = imageAltText;
-        // quill.insertEmbed does not allow inserting any additional attributes hence using dangerouslyPasteHTML function to set the Alt text
-        // This code only gets executed when user tries to add a Image in MCQ Options.
-        quill.current.editor.clipboard.dangerouslyPasteHTML(currentQuillRange, img.outerHTML);
-      }
-    }
+
+    if (!quill?.current || !imageURL) return;
+
+    const editor = quill.current.getEditor();
+    const index = currentQuillRange ?? editor.getLength();
+
+    editor.insertEmbed(index, 'image', { src: imageURL, alt: imageAltText }, 'user');
   };
 
   const handleFIBOptionsEditorSave = (Options: Array<OptionItem>) => {
@@ -367,7 +404,33 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           },
           { background: [] },
         ], // dropdown with defaults from theme
-        [{ font: FontAttributor.whitelist }, { size: ['16px', '12px', '14px', '18px', '20px'] }],
+        [
+          {
+            font: [
+              getFontName('Open Sans'),
+              '__font-divider__',
+              getFontName('Aleo'),
+              getFontName('Courier Prime'),
+              getFontName('Brawler'),
+              getFontName('Montserrat'),
+              getFontName('Open Sans'),
+              getFontName('Patrick Hand'),
+            ],
+          },
+          {
+            size: [
+              '16px',
+              '__size-divider__',
+              '14px',
+              '16px',
+              '18px',
+              '20px',
+              '24px',
+              '28px',
+              '32px',
+            ],
+          },
+        ],
         [{ align: [] }],
         ['link', 'adaptivity'],
         ['clean'], // remove formatting button

@@ -2,15 +2,14 @@ import { Page } from '@playwright/test';
 import { MenuDropdownCO } from '@pom/home/MenuDropdownCO';
 import { LoginPO } from '@pom/home/LoginPO';
 import { TypeUser } from '@pom/types/type-user';
-import { TestData } from 'tests/torus/test-data';
-import { SidebarCO } from '@pom/home/SidebarCO';
+import { SidebarButtonName, SidebarCO, SidebarLinkName } from '@pom/home/SidebarCO';
 import { Waiter } from '@core/wait/Waiter';
 import { Utils } from '@core/Utils';
 import { step } from '@core/decoration/step';
+import { getLoginData } from '@core/runtimeConfig';
 
 export class HomeTask {
   private readonly utils: Utils;
-  private readonly testData: TestData;
   private readonly loginpo: LoginPO;
   private readonly menu: MenuDropdownCO;
   private readonly sidebar: SidebarCO;
@@ -21,22 +20,23 @@ export class HomeTask {
   ) {
     this.utils = new Utils(page);
     this.loginpo = new LoginPO(page);
-    this.testData = new TestData();
     this.menu = new MenuDropdownCO(page);
     this.sidebar = new SidebarCO(page);
   }
 
+  @step('Go to site: {environment}')
   async goToSite(environment = this.environment) {
     await this.page.goto(environment);
   }
 
+  @step('Close site')
   async closeSite() {
     await this.page.close();
   }
 
   @step('Login as {role}')
   async login(role: TypeUser) {
-    const dataUser = this.testData.loginData[role];
+    const dataUser = getLoginData(role);
 
     await this.loginpo.acceptCookies();
     await this.utils.modalDisappears();
@@ -63,12 +63,7 @@ export class HomeTask {
 
   @step('Enter to Curriculum')
   async enterToCurriculum() {
-    const visible = await this.sidebar.isVisible('Curriculum');
-
-    if (!visible) {
-      await this.sidebar.clickInMenu('Create');
-    }
-    await this.sidebar.clickInMenu('Curriculum');
+    await this.menuCreate('Curriculum');
   }
 
   @step('Enter to Course Author')
@@ -83,12 +78,7 @@ export class HomeTask {
 
   @step('Enter to Publish')
   async enterToPublish() {
-    const visible = await this.sidebar.isVisible('Publish');
-
-    if (!visible) {
-      await this.sidebar.clickInMenu('PublishBTN');
-    }
-    await this.sidebar.clickInMenu('Publish');
+    await this.menuPublish('Publish');
   }
 
   @step('Enter to Learn')
@@ -98,18 +88,30 @@ export class HomeTask {
 
   @step('Enter to Products')
   async enterToProducts() {
-    await this.sidebar.clickInMenu('Products');
+    await this.menuCreate('Products');
   }
 
-  @step('Login as {role} {variable1} {variable2} {varialbe3} {variable4}')
-  async probando(
-    role: TypeUser,
-    variable1: string,
-    variable2 = 'hola',
-    varialbe3 = 1,
-    variable4?: string,
-  ) {
-    console.log('algo');
+  @step('Enter to Bibliography')
+  async enterToBibliography() {
+    await this.menuCreate('Bibliography');
+  }
+
+  private async menuCreate(menu: SidebarButtonName | SidebarLinkName) {
+    const visible = await this.sidebar.isVisible(menu);
+
+    if (!visible) {
+      await this.sidebar.clickInMenu('Create');
+    }
+    await this.sidebar.clickInMenu(menu);
+  }
+
+  private async menuPublish(menu: SidebarButtonName | SidebarLinkName) {
+    const visible = await this.sidebar.isVisible(menu);
+
+    if (!visible) {
+      await this.sidebar.clickInMenu('PublishBTN');
+    }
+    await this.sidebar.clickInMenu(menu);
   }
 
   private async dismissFlashMessages() {
@@ -145,7 +147,9 @@ export class HomeTask {
       try {
         await Waiter.waitFor(possibleFlash, 'hidden');
       } catch {
-        const hidden = await possibleFlash.waitFor({ state: 'hidden', timeout: 1000 }).catch(() => undefined);
+        const hidden = await possibleFlash
+          .waitFor({ state: 'hidden', timeout: 1000 })
+          .catch(() => undefined);
 
         if (!hidden) {
           break;

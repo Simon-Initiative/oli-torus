@@ -1,4 +1,5 @@
 defmodule Oli.Utils.Seeder.Project do
+  import Ecto.Query
   import Oli.Utils.Seeder.Utils
 
   alias Oli.Publishing.AuthoringResolver
@@ -422,8 +423,23 @@ defmodule Oli.Utils.Seeder.Project do
     publication =
       case publication do
         %Publication{published: nil} ->
-          project = Oli.Authoring.Course.get_project!(publication.project_id)
-          {:ok, published} = Oli.Publishing.publish_project(project, "ensure published", 1)
+          project =
+            publication.project_id
+            |> Oli.Authoring.Course.get_project!()
+            |> Repo.preload(:authors)
+
+          author_id =
+            case project.authors do
+              [%{id: id} | _] ->
+                id
+
+              _ ->
+                Repo.one(from(a in Author, select: a.id, limit: 1)) ||
+                  raise "ensure_published requires at least one author"
+            end
+
+          {:ok, published} =
+            Oli.Publishing.publish_project(project, "ensure published", author_id)
 
           published
 

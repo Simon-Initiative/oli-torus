@@ -1,9 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {
-  CookiePreferencesProps,
-  selectCookiePreferences,
-} from 'components/cookies/CookiePreferences';
+import { CookiePreferencesProps } from 'components/cookies/CookiePreferences';
 import { consentOptions, setCookies } from 'components/cookies/utils';
 import { Modal } from 'components/modal/Modal';
 
@@ -41,7 +38,7 @@ export function selectCookieConsent(cookiePreferences: CookiePreferencesProps): 
         className="btn btn-outline-primary"
         onClick={() => {
           dismiss();
-          selectCookiePreferences(cookiePreferences);
+          (window as any).OLI.handleCookiePreferences(cookiePreferences.privacyPoliciesUrl);
         }}
       >
         Cookie Preferences

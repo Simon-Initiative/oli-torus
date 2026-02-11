@@ -323,7 +323,7 @@ defmodule Oli.Factory do
       auth_token_url: "some auth_token_url",
       client_id: sequence("some client_id"),
       issuer: "some issuer",
-      key_set_url: "some key_set_url",
+      key_set_url: "https://example.com/jwks",
       tool_jwk_id: nil,
       line_items_service_domain: "some line_items_service_domain"
     }
@@ -801,10 +801,9 @@ defmodule Oli.Factory do
   end
 
   def scoped_feature_flag_state_for_section_factory() do
-    # Note: This factory uses mcp_authoring which is authoring-only
-    # In real usage, you'd need a delivery-scoped feature for sections
+    # Use a delivery-scoped feature for section feature flags
     %Oli.ScopedFeatureFlags.ScopedFeatureFlagState{
-      feature_name: "mcp_authoring",
+      feature_name: "instructor_dashboard_analytics",
       section: build(:section)
     }
   end

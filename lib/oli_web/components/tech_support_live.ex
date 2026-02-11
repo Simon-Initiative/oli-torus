@@ -47,7 +47,12 @@ defmodule OliWeb.TechSupportLive do
       phx-click={Modal.show_modal(@modal_id)}
       data-hide_modal={Modal.hide_modal(@modal_id)}
     />
-    <Modal.modal id={@modal_id} class="md:w-8/12" on_cancel={JS.push("clear_result_request_message")}>
+    <Modal.modal
+      id={@modal_id}
+      class="md:w-8/12"
+      on_cancel={JS.push("clear_result_request_message")}
+      header_level={2}
+    >
       <:title>Tech Support</:title>
 
       <.process_result_message
@@ -120,7 +125,8 @@ defmodule OliWeb.TechSupportLive do
         </div>
 
         <div class="drop" phx-drop-target={@uploads.attached_screenshots.ref}>
-          <.live_file_input upload={@uploads.attached_screenshots} />
+          <.live_file_input upload={@uploads.attached_screenshots} aria-label="Choose Files" />
+
           <div>
             or drag and drop here
           </div>
@@ -164,11 +170,18 @@ defmodule OliWeb.TechSupportLive do
             <.error :if={@recaptcha_error}>{@recaptcha_error}</.error>
           </div>
 
-          <div class="flex w-full justify-around lg:justify-end items-center">
-            <.button type="link" variant={:link} phx-click={Modal.hide_modal(@modal_id)}>
+          <div class="flex w-full justify-around lg:justify-end items-center gap-2">
+            <.button
+              type="button"
+              phx-click={Modal.hide_modal(@modal_id)}
+              class="text-Text-text-white hover:text-Specially-Tokens-Text-text-button-primary-hover bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-sm font-semibold leading-4 px-8 py-3 shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] inline-flex justify-center items-center"
+            >
               Cancel
             </.button>
-            <.button type="submit" class="btn btn-primary h-fit">
+            <.button
+              type="submit"
+              class="text-Text-text-white hover:text-Specially-Tokens-Text-text-button-primary-hover bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-sm font-semibold leading-4 px-8 py-3 shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] inline-flex justify-center items-center"
+            >
               Send Request
             </.button>
           </div>
@@ -180,7 +193,11 @@ defmodule OliWeb.TechSupportLive do
 
   defp process_result_message(%{submission_result: nil} = assigns) do
     ~H"""
-    <a href={@knowledge_base_link} target="_blank">
+    <a
+      href={@knowledge_base_link}
+      target="_blank"
+      class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
+    >
       Find answers quickly in the knowledge base.
     </a>
     """

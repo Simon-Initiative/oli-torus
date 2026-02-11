@@ -20,6 +20,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [selectedItem, setSelectedItem] = useState<string>('');
   const [_cssClass, setCssClass] = useState('');
+  const [liveAnnouncement, setLiveAnnouncement] = useState('');
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -164,22 +165,26 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     props.onResize({ id: `${id}`, settings: styleChanges });
   }, [width, height]);
 
+  const resolvedWidth =
+    typeof width === 'number'
+      ? width
+      : typeof width === 'string' && width.trim() !== ''
+      ? Number(width)
+      : undefined;
+
   const dropdownContainerStyles: CSSProperties = {
-    width,
+    width: resolvedWidth ? `${resolvedWidth}px` : 'auto',
+    position: 'relative',
+    display: 'inline-flex',
+    flexDirection: 'column',
+    gap: '4px',
   };
 
   const dropDownStyle: CSSProperties = {
-    width: 'auto',
+    width: '100%',
     height: 'auto',
+    minHeight: '42px',
   };
-  if (!(showLabel && label)) {
-    dropDownStyle.width = `${Number(width) - 10}px`;
-  }
-  if (showLabel && label && width) {
-    //is this the best way to handle?
-    //if lable is visible then need to set the maxWidth otherwise it gets out of the container
-    dropDownStyle.maxWidth = `${Number(width)}px`;
-  }
 
   useEffect(() => {
     //TODO commenting for now. Need to revisit once state structure logic is in place
@@ -224,14 +229,29 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     });
   };
 
-  const handleChange = (event: any) => {
-    const val = Number(event.target.value);
-    // Update/set the value
-    setSelectedIndex(val);
+  const totalOptions = Array.isArray(optionLabels) ? optionLabels.length : 0;
+
+  const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value;
+    const newIndex = Number(value);
+
+    if (newIndex === -1) {
+      // Prompt option selected, don't update state
+      return;
+    }
+
+    if (!optionLabels || newIndex < 1 || newIndex > optionLabels.length) {
+      return;
+    }
+
+    const optionLabel = optionLabels[newIndex - 1];
+    setSelectedIndex(newIndex);
+    setSelectedItem(optionLabel);
+    setLiveAnnouncement(`${optionLabel} selected ${newIndex} of ${totalOptions}`);
     saveState({
-      selectedIndex: val,
-      selectedItem: event.target.options[event.target.selectedIndex].text,
-      value: event.target.options[event.target.selectedIndex].text,
+      selectedIndex: newIndex,
+      selectedItem: optionLabel,
+      value: optionLabel,
       enabled,
     });
   };
@@ -364,49 +384,48 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     };
   }, [props.notify, optionLabels]);
 
-  // Generate a list of options using optionLabels
-  const dropdownOptions = () => {
-    // use explicit Array() since we're using Elements
-    const options = [];
+  const containerStyle: CSSProperties = {
+    ...dropdownContainerStyles,
+    position: 'relative',
+  };
 
-    if (prompt) {
-      // If a prompt exists and the selectedIndex is not set or is set to -1, set prompt as disabled first option
-      options.push(
-        <option key="-1" value="-1" style={{ display: 'none' }}>
-          {prompt}
-        </option>,
-      );
-    } else if (!selectedIndex || selectedIndex === -1) {
-      // If a prompt is blank and the selectedIndex is not set or is set to -1, set empty first option
-      options.push(
-        <option key="-1" value="-1" selected={true} style={{ display: 'none' }}></option>,
-      );
-    }
-    if (optionLabels) {
-      for (let i = 0; i < optionLabels.length; i++) {
-        // Set selected if selectedIndex equals current index
-        options.push(
-          <option key={i + 1} value={i + 1} selected={i + 1 === selectedIndex}>
-            {optionLabels[i]}
-          </option>,
-        );
-      }
-    }
-    return options;
+  const srOnlyStyle: CSSProperties = {
+    position: 'absolute',
+    width: '1px',
+    height: '1px',
+    padding: 0,
+    margin: '-1px',
+    overflow: 'hidden',
+    clip: 'rect(0, 0, 0, 0)',
+    border: 0,
   };
 
   return ready ? (
-    <div data-janus-type={tagName} className="dropdown-input" style={dropdownContainerStyles}>
-      <label htmlFor={`${id}-select`}>{showLabel && label ? label : ''}</label>
+    <div data-janus-type={tagName} className="dropdown-input" style={containerStyle}>
+      <span className="sr-only" style={srOnlyStyle} role="status" aria-live="polite">
+        {liveAnnouncement}
+      </span>
+      {showLabel && label ? <label htmlFor={`${id}-select`}>{label}</label> : null}
       <select
-        style={dropDownStyle}
         id={`${id}-select`}
-        value={selectedIndex}
-        className={'dropdown '}
-        onChange={handleChange}
+        className="dropdown"
+        style={dropDownStyle}
+        value={selectedIndex > 0 ? selectedIndex : -1}
         disabled={!enabled}
+        onChange={handleSelectChange}
       >
-        {dropdownOptions()}
+        {prompt ? (
+          <option value="-1" disabled>
+            {prompt}
+          </option>
+        ) : (
+          <option value="-1"></option>
+        )}
+        {optionLabels?.map((optionLabel: string, index: number) => (
+          <option key={index + 1} value={index + 1}>
+            {optionLabel}
+          </option>
+        ))}
       </select>
     </div>
   ) : null;

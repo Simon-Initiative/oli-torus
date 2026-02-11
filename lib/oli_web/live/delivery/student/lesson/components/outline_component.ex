@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   alias OliWeb.Delivery.Student.Utils
   alias Oli.Delivery.{Hierarchy, Metrics}
   alias OliWeb.Components.Common
+  alias Phoenix.LiveView.JS
 
   def mount(socket) do
     {:ok,
@@ -63,28 +64,38 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
 
   def render(assigns) do
     ~H"""
-    <div>
+    <div
+      id="outline_panel_container"
+      role="complementary"
+      aria-labelledby="outline_panel_title"
+      phx-mounted={JS.focus(to: "#outline_panel_close_button")}
+      phx-remove={JS.pop_focus()}
+      phx-window-keydown="toggle_outline_sidebar"
+      phx-key="escape"
+    >
       <div
         id="outline_panel"
         class="flex flex-col max-h-[calc(100vh-176px)] sm:w-[360px] sm:max-h-[75vh] lg:max-h-[80vh] px-2 py-4 bg-Surface-surface-background text-[#353740] dark:text-[#eeebf5] mx-3 sm:mx-2 rounded-t-2xl sm:rounded-2xl gap-6"
       >
         <button
+          id="outline_panel_close_button"
           phx-click="toggle_outline_sidebar"
+          aria-label="Close outline panel"
           class="hidden sm:inline-flex self-stretch px-2 justify-end items-center gap-2.5 hover:cursor-pointer"
         >
           <i class="fa-solid fa-xmark hover:scale-110"></i>
         </button>
         <div class="self-stretch h-12 px-2 flex-col justify-start items-start gap-4 flex">
           <div class="self-stretch py-2 justify-start items-center inline-flex">
-            <div class="text-base font-bold leading-none">
+            <h2 id="outline_panel_title" tabindex="-1" class="text-base font-bold leading-none">
               Course Content
-            </div>
+            </h2>
           </div>
           <div class="self-stretch h-0 flex-col justify-center items-center flex border-b border-Border-border-subtle">
           </div>
         </div>
-        <div class="flex flex-1 flex-col overflow-hidden pl-2 justify-start items-start gap-2 inline-flex">
-          <div class="flex flex-1 flex-col scrollbar overflow-y-scroll px-2 justify-start items-center gap-4 inline-flex w-full">
+        <div class="flex flex-1 flex-col overflow-hidden pl-2 justify-start items-start gap-2">
+          <div class="flex flex-1 flex-col scrollbar overflow-y-scroll px-2 sm:py-1 justify-start items-center gap-4 w-full">
             <.outline_item
               :for={node <- @hierarchy["children"]}
               item={node}
@@ -104,6 +115,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       <div class="flex items-center justify-center sm:hidden bg-Surface-surface-background h-16 mx-3 p-4 border-t border-Border-border-default">
         <button
           phx-click="toggle_outline_sidebar"
+          aria-label="Close outline panel"
           class="text-Specially-Tokens-Text-text-button-secondary font-semibold text-sm leading-4 px-8 py-3 border border-Border-border-bold h-10 rounded-lg w-full"
         >
           Close
@@ -186,6 +198,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   def outline_item(assigns) do
     ~H"""
     <% expanded? = Integer.to_string(@item["id"]) in @expanded_items %>
+    <% children_id = "outline_children_#{@item["id"]}" %>
     <div
       id={"outline_item_#{@item["id"]}"}
       class={[
@@ -193,17 +206,20 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         left_indentation(@item["numbering"]["level"])
       ]}
     >
-      <div
+      <button
+        type="button"
         phx-click="expand_item"
         phx-value-item_id={@item["id"]}
         phx-target={@target}
+        aria-expanded={to_string(expanded?)}
+        aria-controls={children_id}
         class={[
-          "w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33] hover:cursor-pointer",
+          "w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33] hover:cursor-pointer text-left",
           if(@progress, do: "bg-Specially-Tokens-Fill-fill-nav-hover")
         ]}
       >
         <div class="text-[#353740] dark:text-[#eeebf5] self-stretch justify-start items-start gap-1 inline-flex">
-          <div>
+          <div aria-hidden="true">
             <%= if expanded? do %>
               <Icons.chevron_down width="20" height="20" />
             <% else %>
@@ -211,7 +227,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             <% end %>
           </div>
 
-          <div class="grow shrink basis-0 text-base font-bold leading-normal" role="title">
+          <div class="grow shrink basis-0 text-base font-bold leading-normal">
             {resource_label(@item)}
             {@item["title"]}
           </div>
@@ -224,9 +240,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           completed_colour="bg-[#0CAF61]"
           role="progress bar"
         />
-      </div>
+      </button>
       <div
         :if={expanded?}
+        id={children_id}
         class="grow shrink basis-0 py-1 flex-col justify-start items-start gap-1 inline-flex"
       >
         <.outline_item
@@ -249,8 +266,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   def toggle_outline_button(assigns) do
     ~H"""
     <button
+      id="toggle_outline_button"
       role="toggle outline button"
       data-view="desktop"
+      aria-label="Toggle Course Content panel"
+      aria-pressed={to_string(@is_active || false)}
       class={[
         "flex flex-col items-center rounded-lg bg-Surface-surface-background hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
         if(@is_active,
@@ -258,7 +278,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             "!text-white bg-[#0080ff] dark:bg-[#0062f2] hover:bg-[#0080ff]/75 hover:dark:bg-[#0062f2]/75"
         )
       ]}
-      phx-click="toggle_outline_sidebar"
+      phx-click={JS.push_focus() |> JS.push("toggle_outline_sidebar")}
     >
       <div class="p-1.5 rounded justify-start items-center gap-2.5 inline-flex">
         {render_slot(@inner_block)}

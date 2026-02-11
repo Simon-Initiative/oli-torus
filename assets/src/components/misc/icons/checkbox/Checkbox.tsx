@@ -12,6 +12,7 @@ const Checked = ({ className, disabled }: Props) => (
     checked
     disabled={disabled || false}
     readOnly
+    tabIndex={-1}
   />
 );
 
@@ -21,6 +22,7 @@ const Unchecked = ({ className, disabled }: Props) => (
     type="checkbox"
     disabled={disabled || false}
     readOnly
+    tabIndex={-1}
   />
 );
 const Correct = () => <Checked className="correct" disabled />;

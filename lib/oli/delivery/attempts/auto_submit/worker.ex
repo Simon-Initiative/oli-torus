@@ -202,6 +202,9 @@ defmodule Oli.Delivery.Attempts.AutoSubmit.Worker do
   end
 
   defp has_deadline?(effective_settings) do
-    effective_settings.end_date != nil or effective_settings.time_limit > 0
+    has_due_by_deadline =
+      effective_settings.scheduling_type == :due_by and not is_nil(effective_settings.end_date)
+
+    has_due_by_deadline or effective_settings.time_limit > 0
   end
 end

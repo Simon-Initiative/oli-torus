@@ -10,7 +10,12 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
   alias Oli.AssentAuth.UserIdentity
 
   def create_section_and_user(%{conn: conn}) do
-    %{conn: conn, section: insert(:section), user: insert(:user)}
+    %{
+      conn: conn,
+      section:
+        insert(:section, open_and_free: true, lti_1p3_deployment: nil, lti_1p3_deployment_id: nil),
+      user: insert(:user)
+    }
   end
 
   defp users_invite_url(token), do: ~p"/users/invite/#{token}"

@@ -40,7 +40,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
       class={[
         @column_spec.th_class,
         "pl-2.5 font-semibold",
-        if(@column_spec.sortable, do: "cursor-pointer", else: "")
+        if(@column_spec.sortable, do: "cursor-pointer", else: ""),
+        @header_bg_class
       ]}
       phx-click={if @column_spec.sortable, do: @sort, else: nil}
       phx-value-sort_by={@column_spec.name}
@@ -90,7 +91,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     row_id =
       if assigns.model.data[:view_type] in [
            :objectives_instructor_dashboard,
-           :activities_instructor_dashboard
+           :activities_instructor_dashboard,
+           :surveys_instructor_dashboard
          ],
          do: "row_#{row.resource_id}",
          else: id_field(row, assigns.model)
@@ -101,7 +103,7 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     <tr
       id={@row_id}
       data-row-id={@row_id}
-      class={@row_class <> " hover:bg-Table-table-hover" <>
+      class={@row_class <> " group hover:bg-Table-table-hover" <>
     if Map.get(@row, :selected) || id_field(@row, @model) == @model.selected,
       do: " bg-delivery-primary-100 shadow-inner dark:bg-gray-700 dark:text-black",
       else: ""}
@@ -110,7 +112,13 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
       phx-value-id={id_field(@row, @model)}
     >
       <%= for column_spec <- @model.column_specs do %>
-        <td class={"#{column_spec.td_class} border-r p-2 pl-2.5"}>
+        <td class={
+          "#{column_spec.td_class} border-r p-2 pl-2.5" <>
+          if(String.contains?(column_spec.td_class || "", "sticky"),
+            do: " #{@additional_row_class} group-hover:bg-Table-table-hover",
+            else: ""
+          )
+        }>
           <div class={if Map.get(@model.data, :fade_data, false), do: "fade-text", else: ""}>
             <%= if is_nil(column_spec.render_fn) do %>
               {ColumnSpec.default_render_fn(column_spec, @row)}
@@ -148,6 +156,11 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
     doc:
       "Optional function to render custom expandable row content. Function receives (assigns, row) and returns rendered content."
 
+  attr :header_bg_class, :string,
+    default: nil,
+    doc:
+      "Optional CSS class for header cell background. When set, applies to <th> elements to override default styling."
+
   def render(assigns) do
     ~H"""
     <table
@@ -167,7 +180,8 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
                   model: @model,
                   sort: @sort,
                   select: @select,
-                  additional_table_class: @additional_table_class
+                  additional_table_class: @additional_table_class,
+                  header_bg_class: @header_bg_class
                 },
                 @model.data
               ),
@@ -226,11 +240,22 @@ defmodule OliWeb.Common.SortableTable.StripedTable do
   defp render_details_row(assigns, row) do
     col_span = length(assigns.model.column_specs)
     unique_id = "row_#{row.resource_id}"
+    # expanded_rows controls which details rows should start expanded.
+    expanded_rows = Map.get(assigns.model.data, :expanded_rows, MapSet.new())
+    row_hidden = not MapSet.member?(expanded_rows, unique_id)
+    row_class = if row_hidden, do: "hidden", else: ""
 
-    assigns = Map.merge(assigns, %{col_span: col_span, unique_id: unique_id, row: row})
+    assigns =
+      Map.merge(assigns, %{
+        col_span: col_span,
+        unique_id: unique_id,
+        row: row,
+        row_class: row_class,
+        row_hidden: row_hidden
+      })
 
     ~H"""
-    <tr id={"details-#{@unique_id}"} class="hidden">
+    <tr id={"details-#{@unique_id}"} class={@row_class} aria-hidden={@row_hidden}>
       <td colspan={@col_span} class="bg-Table-table-hover p-4">
         <%= if @details_render_fn do %>
           {@details_render_fn.(assigns, @row)}

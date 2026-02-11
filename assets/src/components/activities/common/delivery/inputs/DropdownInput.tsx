@@ -27,6 +27,7 @@ export const DropdownInput: React.FC<Props> = (props) => {
         'custom-select dropdown-input',
         props.size && `input-size-${props.size}`,
       )} // see: multi-input.scss
+      aria-label="Select answer"
     >
       {options.map((option, i) => (
         <option

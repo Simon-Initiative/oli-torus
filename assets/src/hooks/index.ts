@@ -1,10 +1,13 @@
 import LiveReact from 'phoenix_live_react';
+import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
+import { ChunkLogsDetails, ChunkLogsViewer } from './chunk_logs_viewer';
 import { ClickOutside } from './click_outside';
 import { ClickExecJS, HoverAway } from './click_variations';
 import { ConditionalToggle } from './conditional_toggle';
+import { ContainerToggleAriaLabel } from './container_toggle_aria_label';
 import { CopyListener } from './copy_listener';
 import { CopyToClipboard } from './copy_to_clipboard';
 import { Countdown } from './countdown';
@@ -24,6 +27,7 @@ import { GlobalTooltip } from './global_tooltip';
 import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { HighlightCode } from './highlight_code';
+import { HomeMobileTabs } from './home_mobile_tabs';
 import { InputAutoSelect } from './input_auto_select';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
 import { LiveModal } from './live_modal';
@@ -37,9 +41,12 @@ import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
+import { ReadMoreToggle } from './read_more_toggle';
 import { Recaptcha } from './recaptcha';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
+import { SaveCookiePreferences } from './save_cookie_preferences';
+import { ScrollToTheTop } from './scroll_to_the_top';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
 import { ShowTeaser } from './show_teaser';
@@ -53,13 +60,13 @@ import { TagsComponent } from './tags_component';
 import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
-import { ToggleReadMore } from './toggle_read_more';
-import { AutoHideTooltip, TooltipInit, TooltipWithTarget } from './tooltip';
+import { AutoHideTooltip, Popover, TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
+  AnnotationBubbles,
   DebouncedTextInputListener,
   GlobalTooltip,
   WakeUpDot,
@@ -70,6 +77,7 @@ export const Hooks = {
   GraphNavigation,
   DropTarget,
   DragSource,
+  HomeMobileTabs,
   ModalLaunch,
   InputAutoSelect,
   ProjectsTypeahead,
@@ -84,6 +92,7 @@ export const Hooks = {
   TooltipInit,
   TooltipWithTarget,
   AutoHideTooltip,
+  Popover,
   ClickExecJS,
   HoverAway,
   BeforeUnloadListener,
@@ -91,13 +100,14 @@ export const Hooks = {
   LtiConnectInstructions,
   HierarchySelector,
   TextareaListener,
-  ToggleReadMore,
   LiveReact,
   SubmitForm,
   LoadSurveyScripts,
   LiveModal,
   EmailList,
   ClickOutside,
+  ChunkLogsDetails,
+  ChunkLogsViewer,
   Scroller,
   ResizeListener,
   KeepScrollAtBottom,
@@ -124,5 +134,9 @@ export const Hooks = {
   SyncChevronState,
   ConditionalToggle,
   CopyToClipboard,
+  ReadMoreToggle,
   TagsComponent,
+  SaveCookiePreferences,
+  ScrollToTheTop,
+  ContainerToggleAriaLabel,
 };

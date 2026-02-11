@@ -5,7 +5,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.{Hierarchy, VisitContext, AttemptState}
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+  alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
 
   alias Oli.Activities.Model.{Part, Feedback}
   alias Oli.Delivery.Page.PageContext
@@ -822,7 +822,7 @@ defmodule Oli.Delivery.AttemptsTest do
       ]
 
       # check that client evaluation submission succeeds
-      assert Evaluate.apply_client_evaluation(
+      assert ApplyClientEvaluation.apply(
                context_id,
                activity_attempt_guid,
                client_evaluations,
@@ -937,7 +937,7 @@ defmodule Oli.Delivery.AttemptsTest do
       ]
 
       # verify the client evaluation submission fails with error message
-      assert Evaluate.apply_client_evaluation(
+      assert ApplyClientEvaluation.apply(
                context_id,
                activity_attempt_guid,
                client_evaluations,

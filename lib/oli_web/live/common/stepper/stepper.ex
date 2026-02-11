@@ -68,6 +68,20 @@ defmodule OliWeb.Common.Stepper do
               </button>
             <% end %>
             <div class="flex gap-2">
+              <!-- Hidden automation helper button for E2E tests to bypass wizard -->
+              <button
+                id="automation-go-to-course"
+                class="absolute w-6 h-6 opacity-0 -left-10 -top-10"
+                aria-hidden="true"
+                aria-disabled="true"
+                tabindex="-1"
+                phx-click={
+                  @selected_step.on_next_step
+                  |> fade_out_transition("stepper_content")
+                }
+              >
+                Automation go to course
+              </button>
               <%= if @current_step != 0 do %>
                 <button
                   phx-click={

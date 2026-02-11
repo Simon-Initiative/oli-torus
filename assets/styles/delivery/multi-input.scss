@@ -10,4 +10,18 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
+
+  @media (max-width: 767px) {
+    .input-size-large {
+      width: 100% !important;
+      max-width: none;
+      min-width: 0;
+    }
+
+    div.math-input.input-size-large math-field {
+      width: 100% !important;
+      max-width: none;
+      min-width: 0;
+    }
+  }
 }

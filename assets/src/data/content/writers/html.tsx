@@ -154,23 +154,33 @@ export class HtmlParser implements WriterImpl {
   p(context: WriterContext, next: Next, p: Paragraph) {
     return <p {...maybePointMarkerAttr(p, pointMarkerContextFrom(context, p))}>{next()}</p>;
   }
+
+  private renderShiftedHeading(level: number, next: Next): React.ReactElement {
+    // bump authored content header levels for semantic consistency w/page title as h1
+    // h1 => <h2 class="h1">, h2 => <h3 class="h2">, ...
+    // h6 can't be shifted, but h6 rare to non-existent. Authoring now only allows h1-2
+    const Tag = `h${globalThis.Math.min(level + 1, 6)}` as keyof JSX.IntrinsicElements;
+
+    return <Tag className={`h${level}`}>{next()}</Tag>;
+  }
+
   h1(context: WriterContext, next: Next, _x: HeadingOne) {
-    return <h1>{next()}</h1>;
+    return this.renderShiftedHeading(1, next);
   }
   h2(context: WriterContext, next: Next, _x: HeadingTwo) {
-    return <h2>{next()}</h2>;
+    return this.renderShiftedHeading(2, next);
   }
   h3(context: WriterContext, next: Next, _x: HeadingThree) {
-    return <h3>{next()}</h3>;
+    return this.renderShiftedHeading(3, next);
   }
   h4(context: WriterContext, next: Next, _x: HeadingFour) {
-    return <h4>{next()}</h4>;
+    return this.renderShiftedHeading(4, next);
   }
   h5(context: WriterContext, next: Next, _x: HeadingFive) {
-    return <h5>{next()}</h5>;
+    return this.renderShiftedHeading(5, next);
   }
   h6(context: WriterContext, next: Next, _x: HeadingSix) {
-    return <h6>{next()}</h6>;
+    return this.renderShiftedHeading(6, next);
   }
 
   figure(ctx: WriterContext, next: Next, element: Figure) {

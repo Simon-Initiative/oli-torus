@@ -1,0 +1,39 @@
+# Scenario used to seed canonical data for Playwright E2E tests.
+# Extend this file with additional directives (users, sections, permissions) as needs evolve.
+
+- user:
+    name: "playwright_author"
+    type: "author"
+    email: "author@example.com"
+    given_name: "Playwright"
+    family_name: "Author"
+    password: "changeme123456"
+
+- user:
+    name: "playwright_instructor"
+    type: "instructor"
+    email: "instructor@example.com"
+    given_name: "Playwright"
+    family_name: "Instructor"
+    password: "changeme123456"
+    can_create_sections: true
+
+- user:
+    name: "playwright_student"
+    type: "student"
+    email: "student@example.com"
+    given_name: "Melissa"
+    family_name: "Student"
+    password: "changeme123456"
+
+- project:
+    name: "playwright_seed_project"
+    title: "Playwright Seed Project"
+    root:
+      children:
+        - page: "Getting Started"
+        - container: "Module 1"
+          children:
+            - page: "Lesson 1"
+            - page: "Lesson 2"
+        - page: "Wrap Up"

@@ -154,7 +154,13 @@ defmodule OliWeb.InviteController do
       )
     end)
     |> Ecto.Multi.run(:send_invitations, fn _repo, %{email_data: email_data} ->
-      case send_email_invitations(email_data, inviter_struct.name, role, section.title) do
+      case send_email_invitations(
+             email_data,
+             inviter_struct.name,
+             inviter_struct.email,
+             role,
+             section.title
+           ) do
         :ok ->
           {:ok, :ok}
 
@@ -184,7 +190,7 @@ defmodule OliWeb.InviteController do
     context_role = ContextRoles.get_role(context_identifier)
     user_ids = Enum.map(users, & &1.id)
 
-    with :ok <- Sections.ensure_direct_delivery_batch_enrollment_allowed(user_ids, section) do
+    with :ok <- Sections.ensure_batch_enrollment_allowed(user_ids, section) do
       Sections.enroll(user_ids, section.id, [context_role], :pending_confirmation)
     end
   end
@@ -221,7 +227,7 @@ defmodule OliWeb.InviteController do
     {:ok, email_data}
   end
 
-  defp send_email_invitations(email_data, inviter_name, role, section_title) do
+  defp send_email_invitations(email_data, inviter_name, inviter_email, role, section_title) do
     Enum.each(email_data, fn data ->
       Email.create_email(
         data.sent_to,
@@ -235,6 +241,7 @@ defmodule OliWeb.InviteController do
           button_label: "Go to invitation"
         }
       )
+      |> Email.maybe_reply_to({inviter_name, inviter_email})
       |> Mailer.deliver()
     end)
   end

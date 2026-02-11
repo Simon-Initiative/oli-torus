@@ -7,15 +7,22 @@ export class Utils {
     this.page = page;
   }
 
-  async forceClick(elementToClick: Locator, elementToValidate: Locator) {
-    let condition = true;
-    while (condition) {
-      await elementToClick.click();
+  async forceClick(
+    elementToClick: Locator,
+    elementToValidate: Locator,
+    maxAttempts = 5,
+    waitMs = 200,
+  ) {
+    for (let i = 0; i < maxAttempts; i++) {
+      await elementToClick.click({ force: true });
       try {
         await Verifier.expectIsVisible(elementToValidate, "Force click didn't work");
-        condition = false;
+        return;
       } catch {
-        condition = true;
+        if (i === maxAttempts - 1) {
+          throw new Error(`forceClick failed after ${maxAttempts} attempts`);
+        }
+        await this.page?.waitForTimeout(waitMs);
       }
     }
   }

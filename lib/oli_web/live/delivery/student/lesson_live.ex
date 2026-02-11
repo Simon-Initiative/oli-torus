@@ -19,6 +19,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias Oli.Resources.Collaboration.Post
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
   alias OliWeb.Delivery.Student.Lesson.Components.OutlineComponent
@@ -28,6 +29,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias OliWeb.Icons
 
   require Logger
+  import OliWeb.ViewHelpers, only: [is_section_instructor_or_admin?: 2]
 
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
@@ -375,7 +377,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       {:noreply,
        socket
        |> assign_annotations(selected_point: point_marker_id, posts: nil)
-       |> push_event("highlight_point_marker", %{id: point_marker_id})}
+       |> push_event("highlight_point_marker", %{id: point_marker_id})
+       |> push_event("js-exec", %{to: "#annotation_input", attr: "phx-focus-on-select"})}
     end
   end
 
@@ -736,19 +739,32 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def handle_event(
         "set_delete_post_id",
-        %{"post-id" => post_id, "visibility" => visibility},
+        %{"post-id" => post_id, "visibility" => _visibility},
         socket
       ) do
-    {:noreply,
-     assign_annotations(socket,
-       delete_post_id: {String.to_existing_atom(visibility), String.to_integer(post_id)}
-     )}
+    %{current_user: current_user, section: section} = socket.assigns
+    post_id = String.to_integer(post_id)
+
+    case Collaboration.get_post_by(%{id: post_id}) do
+      %Post{} = post ->
+        if authorized_to_delete?(post, current_user, section) do
+          {:noreply,
+           assign_annotations(socket,
+             delete_post_id: {post.visibility, post.id}
+           )}
+        else
+          {:noreply, put_flash(socket, :error, "You are not authorized to delete this note")}
+        end
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "You are not authorized to delete this note")}
+    end
   end
 
   def handle_event("delete_post", _params, socket) do
     %{annotations: %{delete_post_id: {_visibility, post_id}}} = socket.assigns
 
-    case Collaboration.soft_delete_post(post_id) do
+    case Collaboration.soft_delete_post(post_id, socket.assigns.current_user) do
       {1, _} ->
         {:noreply, mark_post_deleted(socket, post_id)}
 
@@ -855,6 +871,57 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
+    <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
+      <.page_header
+        page_context={@page_context}
+        ctx={@ctx}
+        index={@current_page["index"]}
+        objectives={@objectives}
+        container_label={Utils.get_container_label(@current_page["id"], @section)}
+      />
+
+      <div
+        id="page_content"
+        class="content"
+        phx-update="ignore"
+        role="region"
+        aria-label="Page content"
+        phx-hook="PointMarkers"
+      >
+        {raw(@html)}
+        <div class="flex w-full justify-center">
+          <.reset_attempts_button
+            activity_count={@activity_count}
+            advanced_delivery={@advanced_delivery}
+            page_context={@page_context}
+            section_slug={@section.slug}
+          />
+        </div>
+        <.references ctx={@ctx} bib_app_params={@bib_app_params} />
+      </div>
+
+      <:point_markers :if={@active_sidebar_panel == :notes && @annotations.point_markers}>
+        <% total_bubbles = length(@annotations.point_markers) + 1 %>
+        <div id="annotation_bubbles_container" phx-hook="AnnotationBubbles">
+          <Annotations.annotation_bubble
+            point_marker={:page}
+            selected={@annotations.selected_point == :page}
+            count={@annotations.post_counts && @annotations.post_counts[nil]}
+            index={0}
+            total_bubbles={total_bubbles}
+          />
+          <Annotations.annotation_bubble
+            :for={{point_marker, idx} <- Enum.with_index(@annotations.point_markers, 1)}
+            point_marker={point_marker}
+            selected={@annotations.selected_point == point_marker.id}
+            count={@annotations.post_counts && @annotations.post_counts[point_marker.id]}
+            index={idx}
+            total_bubbles={total_bubbles}
+          />
+        </div>
+      </:point_markers>
+    </.page_content_with_sidebar_layout>
+
     <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
@@ -912,13 +979,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <% end %>
       </div>
     </div>
+    <Annotations.delete_post_modal />
+    """
+  end
 
+  def render(%{view: :practice_page} = assigns) do
+    # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
+    ~H"""
+    <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
     <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
       <.page_header
         page_context={@page_context}
         ctx={@ctx}
-        index={@current_page["index"]}
         objectives={@objectives}
+        index={@current_page["index"]}
         container_label={Utils.get_container_label(@current_page["id"], @section)}
       />
 
@@ -926,8 +1000,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         id="page_content"
         class="content"
         phx-update="ignore"
-        role="page content"
-        phx-hook="PointMarkers"
+        role="region"
+        aria-label="Page content"
       >
         {raw(@html)}
         <div class="flex w-full justify-center">
@@ -940,29 +1014,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
         <.references ctx={@ctx} bib_app_params={@bib_app_params} />
       </div>
-
-      <:point_markers :if={@active_sidebar_panel == :notes && @annotations.point_markers}>
-        <Annotations.annotation_bubble
-          point_marker={:page}
-          selected={@annotations.selected_point == :page}
-          count={@annotations.post_counts && @annotations.post_counts[nil]}
-        />
-        <Annotations.annotation_bubble
-          :for={point_marker <- @annotations.point_markers}
-          point_marker={point_marker}
-          selected={@annotations.selected_point == point_marker.id}
-          count={@annotations.post_counts && @annotations.post_counts[point_marker.id]}
-        />
-      </:point_markers>
     </.page_content_with_sidebar_layout>
-    <Annotations.delete_post_modal />
-    """
-  end
 
-  def render(%{view: :practice_page} = assigns) do
-    # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
-    ~H"""
-    <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
     <div id="sticky_panel" class="absolute w-full sm:w-auto sm:top-4 sm:right-0 z-50 sm:h-full">
       <div class="fixed z-50 bottom-0 w-full sm:sticky sm:ml-auto sm:top-20 sm:right-0">
         <div class={[
@@ -997,28 +1050,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </div>
     </div>
-    <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
-      <.page_header
-        page_context={@page_context}
-        ctx={@ctx}
-        objectives={@objectives}
-        index={@current_page["index"]}
-        container_label={Utils.get_container_label(@current_page["id"], @section)}
-      />
-
-      <div id="page_content" class="content" phx-update="ignore" role="page content">
-        {raw(@html)}
-        <div class="flex w-full justify-center">
-          <.reset_attempts_button
-            activity_count={@activity_count}
-            advanced_delivery={@advanced_delivery}
-            page_context={@page_context}
-            section_slug={@section.slug}
-          />
-        </div>
-        <.references ctx={@ctx} bib_app_params={@bib_app_params} />
-      </div>
-    </.page_content_with_sidebar_layout>
     """
   end
 
@@ -1099,7 +1130,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             current_out_of={@current_out_of}
           />
 
-          <div id="page_content" class="content w-full" phx-update="ignore" role="page content">
+          <div
+            id="page_content"
+            class="content w-full"
+            phx-update="ignore"
+            role="region"
+            aria-label="Page content"
+          >
             {raw(@html)}
             <.submit_button batch_scoring={@page_context.effective_settings.batch_scoring} />
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
@@ -1182,7 +1219,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         z-index: 1000 !important;
       }
     </style>
-    <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
+    <div id="sticky_panel" class="absolute right-0 z-50 h-full">
       <div class="sticky ml-auto top-20 right-0">
         <div class={[
           "absolute top-24",
@@ -1829,6 +1866,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         end)
     )
   end
+
+  defp authorized_to_delete?(post, %Oli.Accounts.User{} = current_user, section) do
+    post.user_id == current_user.id ||
+      is_section_instructor_or_admin?(section.slug, current_user)
+  end
+
+  defp authorized_to_delete?(_, _, _), do: false
 
   defp slim_assigns(socket) do
     Enum.reduce(@required_keys_per_assign, socket, fn {assign_name, {required_keys, struct}},

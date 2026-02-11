@@ -36,6 +36,13 @@ defmodule Oli.GenAITest do
       assert model.api_key == "test_api_key"
       assert model.timeout == 8000
       assert model.recv_timeout == 60000
+      assert model.pool_class == :slow
+      assert model.max_concurrent == 95
+      assert model.routing_breaker_error_rate_threshold == 0.2
+      assert model.routing_breaker_429_threshold == 0.1
+      assert model.routing_breaker_latency_p95_ms == 6000
+      assert model.routing_open_cooldown_ms == 30_000
+      assert model.routing_half_open_probe_count == 3
 
       m = GenAI.registered_models() |> Enum.reverse() |> hd
       assert m.id == model.id
@@ -46,6 +53,13 @@ defmodule Oli.GenAITest do
       assert m.api_key == "test_api_key"
       assert m.timeout == 8000
       assert m.recv_timeout == 60000
+      assert m.pool_class == :slow
+      assert m.max_concurrent == 95
+      assert m.routing_breaker_error_rate_threshold == 0.2
+      assert m.routing_breaker_429_threshold == 0.1
+      assert m.routing_breaker_latency_p95_ms == 6000
+      assert m.routing_open_cooldown_ms == 30_000
+      assert m.routing_half_open_probe_count == 3
       assert m.service_config_count == 0
 
       {:ok, service_config} =
@@ -59,12 +73,14 @@ defmodule Oli.GenAITest do
       assert sc.name == "Test Service Config"
       assert sc.primary_model_id == model.id
       assert sc.backup_model_id == nil
+      assert sc.secondary_model_id == nil
 
       sc1 = GenAI.service_configs() |> Enum.reverse() |> hd
       assert sc1.id == sc.id
       assert sc1.name == "Test Service Config"
       assert sc1.primary_model_id == model.id
       assert sc1.backup_model_id == nil
+      assert sc1.secondary_model_id == nil
 
       GenAI.delete_service_config(sc)
       assert Oli.Repo.get(Oli.GenAI.Completions.ServiceConfig, sc.id) == nil

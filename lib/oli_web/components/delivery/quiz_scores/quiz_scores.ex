@@ -6,9 +6,8 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
   alias Oli.Resources
-  alias OliWeb.Common.InstructorDashboardPagedTable
-  alias OliWeb.Common.Params
-  alias OliWeb.Common.SearchInput
+  alias OliWeb.Icons
+  alias OliWeb.Common.{Params, SearchInput, StripedPagedTable}
   alias OliWeb.Grades.GradebookTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
@@ -53,21 +52,24 @@ defmodule OliWeb.Components.Delivery.QuizScores do
     ~H"""
     <div class="container mx-auto flex flex-col gap-2 mb-10">
       <div class="bg-white dark:bg-gray-800 shadow-sm">
-        <div
-          style="min-height: 83px;"
-          class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table"
-        >
-          <div>
-            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Assessment Scores</h4>
+        <div class="py-4">
+          <div class="flex justify-between items-center mb-6 pl-[16px] pr-4 sm:pr-9">
+            <div class="justify-center text-Text-text-high text-lg font-bold leading-normal">
+              Assessment Scores
+            </div>
             <a
+              role="button"
               download="gradebook.csv"
+              class="flex items-center justify-center gap-x-2 text-Text-text-button hover:text-Text-text-button-hover font-bold leading-none hover:no-underline"
               href={~p"/sections/#{@section_slug}/grades/export"}
-              class="self-end"
             >
-              <i class="fa-solid fa-download ml-1" /> Download
+              <span class="border-b border-transparent hover:border-Text-text-button-hover transition-all duration-100 ease-out py-1">
+                Download CSV
+              </span>
+              <Icons.download />
             </a>
           </div>
-          <div class="flex flex-col-reverse sm:flex-row gap-2 items-center">
+          <div class="flex flex-col gap-6 pl-[16px]">
             <%= if is_nil(assigns[:student_id]) do %>
               <div class="form-check">
                 <input
@@ -80,22 +82,24 @@ defmodule OliWeb.Components.Delivery.QuizScores do
                   phx-debounce="500"
                 />
                 <label for="toggle_show_all_links" class="form-check-label">
-                  Shows links for all entries
+                  Show links for all entries
                 </label>
               </div>
             <% end %>
-            <form for="search" phx-target={@myself} phx-change="search_student" class="w-auto">
-              <SearchInput.render
-                id="student_search_input"
-                name="student_name"
-                text={@params.text_search}
-              />
-            </form>
+            <div class="inline-flex items-center gap-4 px-3 py-2 border border-Border-border-default bg-white dark:bg-gray-800 w-fit">
+              <form for="search" phx-target={@myself} phx-change="search_student" class="w-auto">
+                <SearchInput.render
+                  id="student_search_input"
+                  name="student_name"
+                  text={@params.text_search}
+                />
+              </form>
+            </div>
           </div>
         </div>
 
         <%= if @total_count > 0 do %>
-          <InstructorDashboardPagedTable.render
+          <StripedPagedTable.render
             table_model={@grades_table_model}
             total_count={@total_count}
             offset={@params.offset}
@@ -108,9 +112,12 @@ defmodule OliWeb.Components.Delivery.QuizScores do
             limit_change={JS.push("paged_table_limit_change", target: @myself)}
             show_limit_change={true}
             overflow_class="block scrollbar"
+            sticky_header_offset={0}
           />
         <% else %>
-          <h6 class="text-center py-4">There are no assessment scores to show</h6>
+          <h6 class="text-center py-4 bg-white dark:bg-gray-800">
+            There are no assessment scores to show
+          </h6>
         <% end %>
       </div>
     </div>
