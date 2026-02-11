@@ -497,85 +497,96 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         deployment_id -> deployment_id
       end
 
-    socket =
-      case Institutions.get_pending_registration(issuer, client_id, deployment_id) do
-        nil ->
-          socket
-          |> put_flash(
-            :error,
-            "Pending registration with issuer '#{issuer}', client_id '#{client_id}' and deployment_id '#{deployment_id}' does not exist"
-          )
+    case Institutions.get_pending_registration(issuer, client_id, deployment_id) do
+      nil ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "Pending registration with issuer '#{issuer}', client_id '#{client_id}' and deployment_id '#{deployment_id}' does not exist"
+         )
+         |> push_event("js-exec", %{
+           to: "#review-registration-modal-trigger",
+           attr: "data-hide_modal"
+         })}
 
-        pending_registration ->
-          with {:ok, pending_registration} <-
-                 Institutions.update_pending_registration(
-                   pending_registration,
-                   registration
-                 ),
-               {:ok, {institution, registration, _deployment}} <-
-                 approve_pending_registration(
-                   registration["institution_id"],
-                   pending_registration
-                 ) do
-            registration_approved_email =
-              Oli.Email.create_email(
-                institution.institution_email,
-                "Registration Approved",
-                "registration_approved.html",
-                %{institution: institution, registration: registration}
-              )
-
-            Oli.Mailer.deliver(registration_approved_email)
-
-            # send a Slack notification regarding the new registration approval
-            approving_admin = socket.assigns[:current_author]
-
-            Slack.send(%{
-              "username" => approving_admin.name,
-              "icon_emoji" => ":robot_face:",
-              "blocks" => [
-                %{
-                  "type" => "section",
-                  "text" => %{
-                    "type" => "mrkdwn",
-                    "text" =>
-                      "Registration request for *#{pending_registration.name}* has been approved."
-                  }
-                }
-              ]
-            })
-
-            socket
-            |> assign(
-              pending_registrations:
-                Enum.filter(
-                  socket.assigns.pending_registrations,
-                  &(&1.id != pending_registration.id)
-                ),
-              institutions: Institutions.list_institutions()
+      pending_registration ->
+        with {:ok, pending_registration} <-
+               Institutions.update_pending_registration(
+                 pending_registration,
+                 registration
+               ),
+             {:ok, {institution, registration, _deployment}} <-
+               approve_pending_registration(
+                 registration["institution_id"],
+                 pending_registration
+               ) do
+          registration_approved_email =
+            Oli.Email.create_email(
+              institution.institution_email,
+              "Registration Approved",
+              "registration_approved.html",
+              %{institution: institution, registration: registration}
             )
-            |> put_flash(:info, [
-              "Registration for ",
-              content_tag(:b, pending_registration.name),
-              " approved"
-            ])
-          else
-            error ->
-              Logger.error("Failed to approve registration request", error)
 
-              socket
-              |> put_flash(
-                :error,
-                "Failed to approve registration. Please double check your entries and try again."
-              )
-          end
-      end
+          Oli.Mailer.deliver(registration_approved_email)
 
-    {:noreply,
-     push_event(socket, "js-exec", %{
-       to: "#review-registration-modal-trigger",
-       attr: "data-hide_modal"
-     })}
+          # send a Slack notification regarding the new registration approval
+          approving_admin = socket.assigns[:current_author]
+
+          Slack.send(%{
+            "username" => approving_admin.name,
+            "icon_emoji" => ":robot_face:",
+            "blocks" => [
+              %{
+                "type" => "section",
+                "text" => %{
+                  "type" => "mrkdwn",
+                  "text" =>
+                    "Registration request for *#{pending_registration.name}* has been approved."
+                }
+              }
+            ]
+          })
+
+          institutions = Institutions.list_institutions()
+
+          {:noreply,
+           socket
+           |> assign(
+             pending_registrations:
+               Enum.filter(
+                 socket.assigns.pending_registrations,
+                 &(&1.id != pending_registration.id)
+               ),
+             institutions: institutions,
+             institutions_list: [{"New institution", nil} | Enum.map(institutions, &{&1.name, &1.id})]
+           )
+           |> put_flash(:info, [
+             "Registration for ",
+             content_tag(:b, pending_registration.name),
+             " approved"
+           ])
+           |> push_event("js-exec", %{
+             to: "#review-registration-modal-trigger",
+             attr: "data-hide_modal"
+           })}
+        else
+          error ->
+            Logger.error("Failed to approve registration request", error)
+
+            {:noreply,
+             socket
+             |> put_flash(
+               :error,
+               "Failed to approve registration. Please double check your entries and try again."
+             )
+             |> push_event("js-exec", %{
+               to: "#review-registration-modal-trigger",
+               attr: "data-hide_modal"
+             })}
+        end
+    end
   end
 
   def handle_event("decline_registration", %{"registration_id" => registration_id}, socket) do
