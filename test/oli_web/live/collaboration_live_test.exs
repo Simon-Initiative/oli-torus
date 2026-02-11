@@ -100,7 +100,16 @@ defmodule OliWeb.CollaborationLiveTest do
       author: author
     })
 
-    section = insert(:section, title: "Example Section", base_project: project, type: :enrollable)
+    section =
+      insert(:section,
+        title: "Example Section",
+        base_project: project,
+        type: :enrollable,
+        open_and_free: true,
+        lti_1p3_deployment: nil,
+        lti_1p3_deployment_id: nil
+      )
+
     {:ok, _sr} = Sections.create_section_resources(section, publication)
 
     sr = Sections.get_section_resource(section.id, page_resource_cs.id)
@@ -191,6 +200,8 @@ defmodule OliWeb.CollaborationLiveTest do
       conn: conn,
       section: section
     } do
+      {:ok, section} = Sections.update_section(section, %{requires_enrollment: true})
+
       conn =
         conn
         |> get(live_view_collab_space_index(section.slug))
@@ -207,6 +218,8 @@ defmodule OliWeb.CollaborationLiveTest do
       section: section,
       page_revision: page_revision
     } do
+      {:ok, section} = Sections.update_section(section, %{requires_enrollment: true})
+
       conn =
         conn
         |> get(live_view_student_page(section.slug, page_revision.slug))
@@ -759,7 +772,14 @@ defmodule OliWeb.CollaborationLiveTest do
       end
 
       section =
-        insert(:section, title: "Example Section", base_project: project, type: :enrollable)
+        insert(:section,
+          title: "Example Section",
+          base_project: project,
+          type: :enrollable,
+          open_and_free: true,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        )
 
       {:ok, _sr} = Sections.create_section_resources(section, publication)
       enroll_user_to_section(user, section, :context_instructor)

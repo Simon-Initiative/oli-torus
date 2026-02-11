@@ -30,10 +30,18 @@ defmodule Oli.Tags do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
+  alias Oli.Accounts
 
   alias Oli.Tags.Tag
   alias Oli.Tags.ProjectTag
   alias Oli.Tags.SectionTag
+
+  # Authorization helper - requires content_admin role (system_admin implicitly has all roles)
+  defp authorized_to_manage_tags?(nil), do: false
+
+  defp authorized_to_manage_tags?(actor) do
+    Accounts.has_admin_role?(actor, :content_admin)
+  end
 
   @doc """
   Creates a tag.
@@ -145,57 +153,87 @@ defmodule Oli.Tags do
   @doc """
   Associates a tag with a project.
 
+  ## Options
+
+  - `:actor` - The author performing the action (required for authorization).
+    Must have content_admin or system_admin role.
+
   ## Examples
 
-      iex> associate_tag_with_project(project, tag)
+      iex> associate_tag_with_project(project, tag, actor: admin)
       {:ok, %ProjectTag{}}
 
-      iex> associate_tag_with_project(project, nonexistent_tag)
+      iex> associate_tag_with_project(project, tag, actor: regular_author)
+      {:error, :not_authorized}
+
+      iex> associate_tag_with_project(project, nonexistent_tag, actor: admin)
       {:error, :tag_not_found}
 
   """
   @spec associate_tag_with_project(
           Oli.Authoring.Course.Project.t() | integer(),
-          Oli.Tags.Tag.t() | integer()
+          Oli.Tags.Tag.t() | integer(),
+          keyword()
         ) ::
           {:ok, Oli.Tags.ProjectTag.t()}
-          | {:error, :tag_not_found | :project_not_found | Ecto.Changeset.t()}
-  def associate_tag_with_project(project, tag) do
-    project_id = get_entity_id(project)
-    tag_id = get_entity_id(tag)
+          | {:error, :not_authorized | :tag_not_found | :project_not_found | Ecto.Changeset.t()}
+  def associate_tag_with_project(project, tag, opts \\ []) do
+    actor = Keyword.get(opts, :actor)
 
-    %ProjectTag{}
-    |> ProjectTag.changeset(%{project_id: project_id, tag_id: tag_id})
-    |> Repo.insert()
-    |> parse_association_errors(:project)
+    if authorized_to_manage_tags?(actor) do
+      project_id = get_entity_id(project)
+      tag_id = get_entity_id(tag)
+
+      %ProjectTag{}
+      |> ProjectTag.changeset(%{project_id: project_id, tag_id: tag_id})
+      |> Repo.insert()
+      |> parse_association_errors(:project)
+    else
+      {:error, :not_authorized}
+    end
   end
 
   @doc """
   Associates a tag with a section (works for both regular sections and products).
 
+  ## Options
+
+  - `:actor` - The author performing the action (required for authorization).
+    Must have content_admin or system_admin role.
+
   ## Examples
 
-      iex> associate_tag_with_section(section, tag)
+      iex> associate_tag_with_section(section, tag, actor: admin)
       {:ok, %SectionTag{}}
 
-      iex> associate_tag_with_section(product, tag)
+      iex> associate_tag_with_section(product, tag, actor: admin)
       {:ok, %SectionTag{}}
+
+      iex> associate_tag_with_section(section, tag, actor: regular_author)
+      {:error, :not_authorized}
 
   """
   @spec associate_tag_with_section(
           Oli.Delivery.Sections.Section.t() | integer(),
-          Oli.Tags.Tag.t() | integer()
+          Oli.Tags.Tag.t() | integer(),
+          keyword()
         ) ::
           {:ok, Oli.Tags.SectionTag.t()}
-          | {:error, :tag_not_found | :section_not_found | Ecto.Changeset.t()}
-  def associate_tag_with_section(section, tag) do
-    section_id = get_entity_id(section)
-    tag_id = get_entity_id(tag)
+          | {:error, :not_authorized | :tag_not_found | :section_not_found | Ecto.Changeset.t()}
+  def associate_tag_with_section(section, tag, opts \\ []) do
+    actor = Keyword.get(opts, :actor)
 
-    %SectionTag{}
-    |> SectionTag.changeset(%{section_id: section_id, tag_id: tag_id})
-    |> Repo.insert()
-    |> parse_association_errors(:section)
+    if authorized_to_manage_tags?(actor) do
+      section_id = get_entity_id(section)
+      tag_id = get_entity_id(tag)
+
+      %SectionTag{}
+      |> SectionTag.changeset(%{section_id: section_id, tag_id: tag_id})
+      |> Repo.insert()
+      |> parse_association_errors(:section)
+    else
+      {:error, :not_authorized}
+    end
   end
 
   @doc """
@@ -203,6 +241,8 @@ defmodule Oli.Tags do
 
   ## Options
 
+  - `:actor` - The author performing the action (required for authorization).
+    Must have content_admin or system_admin role.
   - `:remove_if_unused` - If true, also deletes the tag from the database if it becomes unused (default: false)
 
   ## Returns
@@ -210,17 +250,18 @@ defmodule Oli.Tags do
   - `{:ok, %ProjectTag{}, :removed_from_entity}` - Tag association removed, tag still exists in database
   - `{:ok, %Tag{}, :completely_removed}` - Tag association removed and tag deleted from database
   - `{:error, :not_found}` - No association found between project and tag
+  - `{:error, :not_authorized}` - Actor does not have permission
 
   ## Examples
 
-      iex> remove_tag_from_project(project, tag)
+      iex> remove_tag_from_project(project, tag, actor: admin)
       {:ok, %ProjectTag{}, :removed_from_entity}
 
-      iex> remove_tag_from_project(project, tag, remove_if_unused: true)
+      iex> remove_tag_from_project(project, tag, actor: admin, remove_if_unused: true)
       {:ok, %Tag{}, :completely_removed}
 
-      iex> remove_tag_from_project(project, nonexistent_tag)
-      {:error, :not_found}
+      iex> remove_tag_from_project(project, tag, actor: regular_author)
+      {:error, :not_authorized}
 
   """
   @spec remove_tag_from_project(
@@ -230,18 +271,21 @@ defmodule Oli.Tags do
         ) ::
           {:ok, Oli.Tags.ProjectTag.t(), :removed_from_entity}
           | {:ok, Oli.Tags.Tag.t(), :completely_removed}
-          | {:error, :not_found}
+          | {:error, :not_found | :not_authorized}
   def remove_tag_from_project(project, tag, opts \\ []) do
-    project_id = get_entity_id(project)
-    tag_id = get_entity_id(tag)
-    remove_if_unused = Keyword.get(opts, :remove_if_unused, false)
+    actor = Keyword.get(opts, :actor)
 
-    case Repo.get_by(ProjectTag, project_id: project_id, tag_id: tag_id) do
-      nil ->
-        {:error, :not_found}
+    if authorized_to_manage_tags?(actor) do
+      project_id = get_entity_id(project)
+      tag_id = get_entity_id(tag)
+      remove_if_unused = Keyword.get(opts, :remove_if_unused, false)
 
-      project_tag ->
-        handle_tag_removal(project_tag, tag_id, remove_if_unused)
+      case Repo.get_by(ProjectTag, project_id: project_id, tag_id: tag_id) do
+        nil -> {:error, :not_found}
+        project_tag -> handle_tag_removal(project_tag, tag_id, remove_if_unused)
+      end
+    else
+      {:error, :not_authorized}
     end
   end
 
@@ -250,6 +294,8 @@ defmodule Oli.Tags do
 
   ## Options
 
+  - `:actor` - The author performing the action (required for authorization).
+    Must have content_admin or system_admin role.
   - `:remove_if_unused` - If true, also deletes the tag from the database if it becomes unused (default: false)
 
   ## Returns
@@ -257,17 +303,18 @@ defmodule Oli.Tags do
   - `{:ok, %SectionTag{}, :removed_from_entity}` - Tag association removed, tag still exists in database
   - `{:ok, %Tag{}, :completely_removed}` - Tag association removed and tag deleted from database
   - `{:error, :not_found}` - No association found between section and tag
+  - `{:error, :not_authorized}` - Actor does not have permission
 
   ## Examples
 
-      iex> remove_tag_from_section(section, tag)
+      iex> remove_tag_from_section(section, tag, actor: admin)
       {:ok, %SectionTag{}, :removed_from_entity}
 
-      iex> remove_tag_from_section(product, tag, remove_if_unused: true)
+      iex> remove_tag_from_section(product, tag, actor: admin, remove_if_unused: true)
       {:ok, %Tag{}, :completely_removed}
 
-      iex> remove_tag_from_section(section, nonexistent_tag)
-      {:error, :not_found}
+      iex> remove_tag_from_section(section, tag, actor: regular_author)
+      {:error, :not_authorized}
 
   """
   @spec remove_tag_from_section(
@@ -277,18 +324,21 @@ defmodule Oli.Tags do
         ) ::
           {:ok, Oli.Tags.SectionTag.t(), :removed_from_entity}
           | {:ok, Oli.Tags.Tag.t(), :completely_removed}
-          | {:error, :not_found}
+          | {:error, :not_found | :not_authorized}
   def remove_tag_from_section(section, tag, opts \\ []) do
-    section_id = get_entity_id(section)
-    tag_id = get_entity_id(tag)
-    remove_if_unused = Keyword.get(opts, :remove_if_unused, false)
+    actor = Keyword.get(opts, :actor)
 
-    case Repo.get_by(SectionTag, section_id: section_id, tag_id: tag_id) do
-      nil ->
-        {:error, :not_found}
+    if authorized_to_manage_tags?(actor) do
+      section_id = get_entity_id(section)
+      tag_id = get_entity_id(tag)
+      remove_if_unused = Keyword.get(opts, :remove_if_unused, false)
 
-      section_tag ->
-        handle_tag_removal(section_tag, tag_id, remove_if_unused)
+      case Repo.get_by(SectionTag, section_id: section_id, tag_id: tag_id) do
+        nil -> {:error, :not_found}
+        section_tag -> handle_tag_removal(section_tag, tag_id, remove_if_unused)
+      end
+    else
+      {:error, :not_authorized}
     end
   end
 

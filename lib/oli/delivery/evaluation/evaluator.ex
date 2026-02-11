@@ -32,6 +32,44 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
       {_, %Response{feedback: feedback, score: score, show_page: show_page} = response, _, out_of} ->
+        effective_out_of =
+          case part.out_of do
+            nil -> out_of
+            value -> max(out_of, value)
+          end
+
+        # Workaround for bad activity models where the default correct response score is lower
+        # than part.outOf and a targeted feedback score (also correct). See MER-5263.
+        targeted_response_ids = Map.get(part, :targeted_response_ids, [])
+        response_is_targeted = response.id in targeted_response_ids
+        correct_is_implicit = Enum.all?(part.responses, &is_nil(&1.correct))
+
+        max_score_response_id =
+          if correct_is_implicit do
+            case Enum.reduce(part.responses, nil, fn response, max_response ->
+                   cond do
+                     is_nil(max_response) -> response
+                     response.score > max_response.score -> response
+                     true -> max_response
+                   end
+                 end) do
+              %Response{id: id} -> id
+              _ -> nil
+            end
+          else
+            nil
+          end
+
+        response_is_default_correct =
+          response.correct == true or
+            (correct_is_implicit and response.id == max_score_response_id)
+
+        {score, out_of} =
+          case {response_is_default_correct, response_is_targeted, score < effective_out_of} do
+            {true, false, true} -> {effective_out_of, effective_out_of}
+            _ -> {score, out_of}
+          end
+
         {:ok,
          %FeedbackAction{
            type: "FeedbackAction",

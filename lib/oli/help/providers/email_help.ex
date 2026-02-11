@@ -14,9 +14,17 @@ defmodule Oli.Help.Providers.EmailHelp do
     subject = HelpContent.get_subject(contents.subject)
     message = %{message: build_help_message(contents)}
     requester_email = requester_data.requester_email
+    requester_name = requester_data.requester_name
 
     email =
-      Oli.Email.help_desk_email(requester_email, support_email, subject, :help_email, message)
+      Oli.Email.help_desk_email(
+        requester_name,
+        requester_email,
+        support_email,
+        subject,
+        :help_email,
+        message
+      )
 
     Oli.Mailer.deliver(email)
   end

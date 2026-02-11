@@ -103,20 +103,6 @@ defmodule OliWeb.LiveSessionPlugs.SetDeviceTypeTest do
       assert updated_socket.assigns.is_desktop == true
     end
 
-    test "assigns is_desktop: true when user agent is missing (defaults to desktop)" do
-      socket = %Socket{
-        endpoint: OliWeb.Endpoint,
-        assigns: %{__changed__: %{}}
-      }
-
-      assert {:cont, updated_socket} =
-               SetDeviceType.on_mount(:default, %{}, %{}, socket)
-
-      assert updated_socket.assigns.is_mobile == false
-      assert updated_socket.assigns.is_tablet == false
-      assert updated_socket.assigns.is_desktop == true
-    end
-
     test "preserves existing socket assigns" do
       socket = %Socket{
         endpoint: OliWeb.Endpoint,

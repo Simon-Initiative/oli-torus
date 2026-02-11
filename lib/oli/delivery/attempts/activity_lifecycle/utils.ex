@@ -102,7 +102,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Utils do
   defp determine_scale_factor(parts, activity_out_of) do
     total =
       Enum.map(parts, fn p ->
-        Enum.reduce(p.responses, 0, fn r, max -> max(max, r.score) end)
+        max_response_score = Enum.reduce(p.responses, 0, fn r, max -> max(max, r.score) end)
+        part_out_of = if is_nil(p.out_of), do: 0, else: p.out_of
+        max(max_response_score, part_out_of)
       end)
       |> Enum.reduce(0, fn v, acc -> acc + v end)
 

@@ -248,16 +248,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       <div
         id={"view_example_outter_button_#{@id}"}
         phx-click={JS.show(to: "#view_example_container_#{@id}") |> JS.hide()}
-        class="cursor-pointer translate-x-[12px] translate-y-[5px] max-w-fit px-3 py-1 bg-[#ced9f2] rounded-3xl shadow flex-col justify-start items-start inline-flex"
+        class="cursor-pointer translate-x-[12px] translate-y-[5px] max-w-fit px-3 py-1 bg-Fill-fill-info-dropdown rounded-3xl shadow flex-col justify-start items-start inline-flex"
       >
         <div class="justify-center items-center gap-1.5 inline-flex">
-          <div class="text-black text-sm font-normal">View Example</div>
-          <Icons.chevron_down class="fill-black dark:fill-dark" />
+          <div class="text-Text-text-high text-sm font-normal">View Example</div>
+          <Icons.chevron_down class="fill-Icon-icon-active" />
         </div>
       </div>
       <div
         id={"view_example_container_#{@id}"}
-        class="hidden px-3 py-1.5 bg-[#ced9f2]/30 rounded-xl shadow flex-col justify-start items-start inline-flex"
+        class="hidden px-3 py-1.5 bg-Fill-fill-info-dropdown-expanded rounded-xl shadow flex-col justify-start items-start inline-flex"
       >
         <div
           id={"view_example_inner_button_#{@id}"}
@@ -265,11 +265,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
             JS.show(to: "#view_example_outter_button_#{@id}")
             |> JS.hide(to: "#view_example_container_#{@id}")
           }
-          class="max-w-fit px-3 py-1 bg-[#ced9f2] rounded-3xl shadow flex-col justify-start items-start inline-flex"
+          class="max-w-fit px-3 py-1 bg-Fill-fill-info-dropdown rounded-3xl shadow flex-col justify-start items-start inline-flex"
         >
           <div class="justify-center items-center gap-1.5 inline-flex">
-            <div class="text-black text-sm font-normal">View Example</div>
-            <Icons.chevron_down class="fill-black dark:fill-dark -rotate-180" />
+            <div class="text-Text-text-high text-sm font-normal">View Example</div>
+            <Icons.chevron_down class="fill-Icon-icon-active -rotate-180" />
           </div>
         </div>
         {render_slot(@inner_block)}
@@ -311,7 +311,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       class="flex items-center gap-2"
     >
       <Icons.plug />
-      <span class="uppercase">{@title}</span>
+      <span>{@title}</span>
     </div>
     """
   end

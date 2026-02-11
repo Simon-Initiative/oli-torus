@@ -861,6 +861,203 @@ defmodule Oli.PublishingTest do
     end
   end
 
+  describe "determine_parent_pages" do
+    test "determine_parent_pages/2 skips activity-reference nodes without activity_id and does not crash" do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      publication = insert(:publication, project: project)
+
+      page_resource = insert(:resource)
+      insert(:project_resource, project_id: project.id, resource_id: page_resource.id)
+
+      page_revision =
+        insert(:revision, %{
+          resource: page_resource,
+          resource_type_id: ResourceType.id_for_page(),
+          content: %{
+            "model" => [
+              %{"type" => "activity-reference", "id" => "1", "activitySlug" => "legacy_slug"},
+              %{"type" => "activity-reference", "id" => "2", "resourceId" => 99_999}
+            ]
+          },
+          title: "Page with legacy refs",
+          slug: "page-legacy-refs",
+          author_id: author.id,
+          deleted: false
+        })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_resource,
+        revision: page_revision
+      })
+
+      result = Publishing.determine_parent_pages([99_999], publication.id)
+
+      assert result == %{}
+    end
+
+    test "determine_parent_pages/1 skips activity-reference nodes without activity_id and does not crash" do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      publication = insert(:publication, project: project)
+
+      page_resource = insert(:resource)
+      insert(:project_resource, project_id: project.id, resource_id: page_resource.id)
+
+      page_revision =
+        insert(:revision, %{
+          resource: page_resource,
+          resource_type_id: ResourceType.id_for_page(),
+          content: %{
+            "model" => [
+              %{"type" => "activity-reference", "id" => "1", "activitySlug" => "legacy_slug"}
+            ]
+          },
+          title: "Page with legacy ref",
+          slug: "page-legacy-ref",
+          author_id: author.id,
+          deleted: false
+        })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_resource,
+        revision: page_revision
+      })
+
+      result = Publishing.determine_parent_pages(publication.id)
+
+      assert result == %{}
+    end
+
+    test "determine_parent_pages/2 returns parent page only for activities with activity_id in content" do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      publication = insert(:publication, project: project)
+
+      activity_resource = insert(:resource)
+
+      activity_revision =
+        insert(:revision, %{
+          resource: activity_resource,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Activity",
+          slug: "activity-1",
+          author_id: author.id
+        })
+
+      insert(:project_resource, project_id: project.id, resource_id: activity_resource.id)
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: activity_resource,
+        revision: activity_revision
+      })
+
+      page_resource = insert(:resource)
+      insert(:project_resource, project_id: project.id, resource_id: page_resource.id)
+
+      page_revision =
+        insert(:revision, %{
+          resource: page_resource,
+          resource_type_id: ResourceType.id_for_page(),
+          content: %{
+            "model" => [
+              %{
+                "type" => "activity-reference",
+                "id" => "1",
+                "activity_id" => activity_resource.id
+              },
+              %{"type" => "activity-reference", "id" => "2", "activitySlug" => "legacy_only"}
+            ]
+          },
+          title: "Page mixed refs",
+          slug: "page-mixed-refs",
+          author_id: author.id,
+          deleted: false
+        })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_resource,
+        revision: page_revision
+      })
+
+      result = Publishing.determine_parent_pages([activity_resource.id], publication.id)
+
+      assert Map.has_key?(result, activity_resource.id)
+      assert result[activity_resource.id] == %{slug: "page-mixed-refs", id: page_resource.id}
+      assert map_size(result) == 1
+    end
+
+    test "determine_parent_pages/1 returns parent page only for activities with activity_id in content" do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      publication = insert(:publication, project: project)
+
+      activity_resource = insert(:resource)
+
+      activity_revision =
+        insert(:revision, %{
+          resource: activity_resource,
+          resource_type_id: ResourceType.id_for_activity(),
+          title: "Activity",
+          slug: "activity-2",
+          author_id: author.id
+        })
+
+      insert(:project_resource, project_id: project.id, resource_id: activity_resource.id)
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: activity_resource,
+        revision: activity_revision
+      })
+
+      page_resource = insert(:resource)
+      insert(:project_resource, project_id: project.id, resource_id: page_resource.id)
+
+      page_revision =
+        insert(:revision, %{
+          resource: page_resource,
+          resource_type_id: ResourceType.id_for_page(),
+          content: %{
+            "model" => [
+              %{
+                "type" => "activity-reference",
+                "id" => "1",
+                "activity_id" => activity_resource.id
+              },
+              %{"type" => "activity-reference", "id" => "2", "activitySlug" => "legacy_only"}
+            ]
+          },
+          title: "Page mixed refs 1-arity",
+          slug: "page-mixed-refs-1",
+          author_id: author.id,
+          deleted: false
+        })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page_resource,
+        revision: page_revision
+      })
+
+      result = Publishing.determine_parent_pages(publication.id)
+
+      assert Map.has_key?(result, activity_resource.id)
+
+      assert result[activity_resource.id] == %{
+               slug: "page-mixed-refs-1",
+               id: page_resource.id,
+               title: "Page mixed refs 1-arity"
+             }
+
+      assert map_size(result) == 1
+    end
+  end
+
   describe "publishing retrieve visible publications" do
     test "retrieve_visible_publications/2 returns empty when there are no publications for existing projects" do
       user = insert(:user)

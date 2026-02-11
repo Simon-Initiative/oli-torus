@@ -9,12 +9,15 @@ defmodule OliWeb.Projects.VisibilityLive do
   def mount(
         _params,
         %{
-          "project_slug" => project_slug
+          "project_slug" => project_slug,
+          "current_author_id" => current_author_id
         },
         socket
       ) do
     project = Course.get_project_by_slug(project_slug)
     project_visibilities = Publishing.get_all_project_visibilities(project.id)
+    current_author = Accounts.get_author!(current_author_id)
+    is_admin? = Accounts.is_admin?(current_author)
 
     {:ok,
      assign(socket,
@@ -22,7 +25,8 @@ defmodule OliWeb.Projects.VisibilityLive do
        project_visibilities: project_visibilities,
        user_emails: [],
        institution_names: [],
-       tab: :users
+       tab: :users,
+       is_admin: is_admin?
      )}
   end
 
@@ -60,188 +64,196 @@ defmodule OliWeb.Projects.VisibilityLive do
         </div>
       </div>
       <div class="md:col-span-8">
-        <form phx-change="option" id="visibility_option">
-          <div class="form-check">
-            <div class="form-group mb-2">
-              <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
-                {radio_button(:visibility, :option, "authors",
-                  class: "form-check-input",
-                  checked: @project.visibility == :authors or is_nil(@project.visibility)
-                )}
-                <div class="block ml-2">
-                  <div class="d-flex align-items-center">
-                    <div>Project authors</div>
-                    <span class="ml-2 badge badge-xs badge-pill badge-primary">default</span>
+        <%= if @is_admin do %>
+          <form phx-change="option" id="visibility_option">
+            <div class="form-check">
+              <div class="form-group mb-2">
+                <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
+                  {radio_button(:visibility, :option, "authors",
+                    class: "form-check-input",
+                    checked: @project.visibility == :authors or is_nil(@project.visibility)
+                  )}
+                  <div class="block ml-2">
+                    <div class="d-flex align-items-center">
+                      <div>Project authors</div>
+                      <span class="ml-2 badge badge-xs badge-pill badge-primary">default</span>
+                    </div>
+                    <small>
+                      Only instructors with linked authoring accounts that are project collaborators
+                    </small>
                   </div>
-                  <small>
-                    Only instructors with linked authoring accounts that are project collaborators
-                  </small>
-                </div>
-              <% end %>
-            </div>
-            <div class="form-group mb-2">
-              <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
-                {radio_button(:visibility, :option, "global",
-                  class: "form-check-input",
-                  checked: @project.visibility == :global
-                )}
-                <div class="block ml-2">
-                  <div>Open</div>
-                  <small>Any instructor</small>
-                </div>
-              <% end %>
-            </div>
-            <div class="form-group mb-2">
-              <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
-                {radio_button(:visibility, :option, "selected",
-                  class: "form-check-input",
-                  checked: @project.visibility == :selected
-                )}
-                <div class="block ml-2">
-                  <div>Restricted</div>
-                  <small>
-                    Only instructors with these linked authoring accounts or from these institutions...
-                  </small>
-                </div>
-              <% end %>
-            </div>
-          </div>
-        </form>
-        <%= if @project.visibility == :selected do %>
-          <div class="grid grid-cols-12">
-            <div class="sm:col-span-12">
-              <ul class="nav nav-tabs">
-                <li class="nav-item">
-                  <a
-                    phx-click="users_tab"
-                    class={"nav-link #{if  @tab == :users, do: "active"}"}
-                    data-bs-toggle="tab"
-                    href="#users"
-                  >
-                    Authors
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a
-                    phx-click="institutions_tab"
-                    class={"nav-link #{if  @tab == :institutions, do: "active"}"}
-                    data-bs-toggle="tab"
-                    href="#institutions"
-                  >
-                    Institutions
-                  </a>
-                </li>
-              </ul>
-              <!-- Tab panes -->
-              <div class="tab-content mt-2">
-                <div
-                  id="users"
-                  class={"container tab-pane pl-0 #{if  @tab == :users, do: "active", else: "fade"}"}
-                >
-                  <div>
-                    <form phx-change="instructor_search" class="form-inline form-grow">
-                      {text_input(:instructor_search_field, :query,
-                        placeholder: "Enter an author email here",
-                        class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
-                        autofocus: true,
-                        "phx-debounce": "300",
-                        autocomplete: "off"
-                      )}
-                    </form>
+                <% end %>
+              </div>
+              <div class="form-group mb-2">
+                <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
+                  {radio_button(:visibility, :option, "global",
+                    class: "form-check-input",
+                    checked: @project.visibility == :global
+                  )}
+                  <div class="block ml-2">
+                    <div>Open</div>
+                    <small>Any instructor</small>
                   </div>
-                  <div class="grid grid-cols-12 justify-content-center">
-                    <%= if !Enum.empty?(@user_emails) do %>
+                <% end %>
+              </div>
+              <div class="form-group mb-2">
+                <%= label class: "form-check-label flex flex-row cursor-pointer" do %>
+                  {radio_button(:visibility, :option, "selected",
+                    class: "form-check-input",
+                    checked: @project.visibility == :selected
+                  )}
+                  <div class="block ml-2">
+                    <div>Restricted</div>
+                    <small>
+                      Only instructors with these linked authoring accounts or from these institutions...
+                    </small>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </form>
+          <%= if @project.visibility == :selected do %>
+            <div class="grid grid-cols-12">
+              <div class="sm:col-span-12">
+                <ul class="nav nav-tabs">
+                  <li class="nav-item">
+                    <a
+                      phx-click="users_tab"
+                      class={"nav-link #{if  @tab == :users, do: "active"}"}
+                      data-bs-toggle="tab"
+                      href="#users"
+                    >
+                      Authors
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a
+                      phx-click="institutions_tab"
+                      class={"nav-link #{if  @tab == :institutions, do: "active"}"}
+                      data-bs-toggle="tab"
+                      href="#institutions"
+                    >
+                      Institutions
+                    </a>
+                  </li>
+                </ul>
+                <!-- Tab panes -->
+                <div class="tab-content mt-2">
+                  <div
+                    id="users"
+                    class={"container tab-pane pl-0 #{if  @tab == :users, do: "active", else: "fade"}"}
+                  >
+                    <div>
+                      <form phx-change="instructor_search" class="form-inline form-grow">
+                        {text_input(:instructor_search_field, :query,
+                          placeholder: "Enter an author email here",
+                          class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
+                          autofocus: true,
+                          "phx-debounce": "300",
+                          autocomplete: "off"
+                        )}
+                      </form>
+                    </div>
+                    <div class="grid grid-cols-12 justify-content-center">
+                      <%= if !Enum.empty?(@user_emails) do %>
+                        <div class="flex-fill">
+                          <p>Select from the list below and submit</p>
+                          <form phx-submit="selected_email" id="user_submit">
+                            {multiple_select(:multi, :emails, @user_emails,
+                              class: "form-control w-100"
+                            )}
+                            {submit("Submit", class: "btn btn-primary")}
+                          </form>
+                        </div>
+                      <% end %>
                       <div class="flex-fill">
-                        <p>Select from the list below and submit</p>
-                        <form phx-submit="selected_email" id="user_submit">
-                          {multiple_select(:multi, :emails, @user_emails, class: "form-control w-100")}
-                          {submit("Submit", class: "btn btn-primary")}
-                        </form>
-                      </div>
-                    <% end %>
-                    <div class="flex-fill">
-                      <ul class="list-group list-group-flush">
-                        <%= for v <- @project_visibilities do %>
-                          <%= if v.author != nil do %>
-                            <li class="list-group-item">
-                              <div class="d-flex">
-                                <div class="flex-fill">{v.author.email}</div>
-                                <div>
-                                  <button
-                                    id={"delete_#{v.visibility.id}"}
-                                    phx-click="delete_visibility"
-                                    phx-value-id={v.visibility.id}
-                                    data-backdrop="static"
-                                    data-keyboard="false"
-                                    class="ml-1 btn btn-sm btn-danger"
-                                  >
-                                    <i class="fas fa-trash-alt fa-lg"></i>
-                                  </button>
+                        <ul class="list-group list-group-flush">
+                          <%= for v <- @project_visibilities do %>
+                            <%= if v.author != nil do %>
+                              <li class="list-group-item">
+                                <div class="d-flex">
+                                  <div class="flex-fill">{v.author.email}</div>
+                                  <div>
+                                    <button
+                                      id={"delete_#{v.visibility.id}"}
+                                      phx-click="delete_visibility"
+                                      phx-value-id={v.visibility.id}
+                                      data-backdrop="static"
+                                      data-keyboard="false"
+                                      class="ml-1 btn btn-sm btn-danger"
+                                    >
+                                      <i class="fas fa-trash-alt fa-lg"></i>
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            </li>
+                              </li>
+                            <% end %>
                           <% end %>
-                        <% end %>
-                      </ul>
+                        </ul>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div
-                  id="institutions"
-                  class={"container tab-pane pl-0 #{if  @tab == :institutions, do: "active", else: "fade"}"}
-                >
-                  <div>
-                    <form phx-change="institution_search" class="form-inline form-grow">
-                      {text_input(:institution_search_field, :query,
-                        placeholder: "Search for institutions by name here",
-                        class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
-                        autofocus: true,
-                        "phx-debounce": "300"
-                      )}
-                    </form>
-                  </div>
-                  <div class="grid grid-col-12 justify-content-start">
-                    <%= if !Enum.empty?(@institution_names) do %>
+                  <div
+                    id="institutions"
+                    class={"container tab-pane pl-0 #{if  @tab == :institutions, do: "active", else: "fade"}"}
+                  >
+                    <div>
+                      <form phx-change="institution_search" class="form-inline form-grow">
+                        {text_input(:institution_search_field, :query,
+                          placeholder: "Search for institutions by name here",
+                          class: "form-control mb-2 mb-sm-0 title container-fluid flex-fill",
+                          autofocus: true,
+                          "phx-debounce": "300"
+                        )}
+                      </form>
+                    </div>
+                    <div class="grid grid-col-12 justify-content-start">
+                      <%= if !Enum.empty?(@institution_names) do %>
+                        <div class="flex-fill">
+                          <p>Select from the list below and submit</p>
+                          <form phx-submit="selected_institution" id="institutions_submit">
+                            {multiple_select(:multi, :institutions, @institution_names,
+                              class: "form-control w-100"
+                            )}
+                            {submit("Submit", class: "btn btn-primary")}
+                          </form>
+                        </div>
+                      <% end %>
                       <div class="flex-fill">
-                        <p>Select from the list below and submit</p>
-                        <form phx-submit="selected_institution" id="institutions_submit">
-                          {multiple_select(:multi, :institutions, @institution_names,
-                            class: "form-control w-100"
-                          )}
-                          {submit("Submit", class: "btn btn-primary")}
-                        </form>
-                      </div>
-                    <% end %>
-                    <div class="flex-fill">
-                      <ul class="list-group list-group-flush">
-                        <%= for v <- @project_visibilities do %>
-                          <%= if v.institution != nil do %>
-                            <li class="list-group-item">
-                              <div class="d-flex">
-                                <div class="flex-fill">{v.institution.name}</div>
-                                <div>
-                                  <button
-                                    id={"delete_#{v.visibility.id}"}
-                                    phx-click="delete_visibility"
-                                    phx-value-id={v.visibility.id}
-                                    data-backdrop="static"
-                                    data-keyboard="false"
-                                    class="ml-1 btn btn-sm btn-danger"
-                                  >
-                                    <i class="fas fa-trash-alt fa-lg"></i>
-                                  </button>
+                        <ul class="list-group list-group-flush">
+                          <%= for v <- @project_visibilities do %>
+                            <%= if v.institution != nil do %>
+                              <li class="list-group-item">
+                                <div class="d-flex">
+                                  <div class="flex-fill">{v.institution.name}</div>
+                                  <div>
+                                    <button
+                                      id={"delete_#{v.visibility.id}"}
+                                      phx-click="delete_visibility"
+                                      phx-value-id={v.visibility.id}
+                                      data-backdrop="static"
+                                      data-keyboard="false"
+                                      class="ml-1 btn btn-sm btn-danger"
+                                    >
+                                      <i class="fas fa-trash-alt fa-lg"></i>
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            </li>
+                              </li>
+                            <% end %>
                           <% end %>
-                        <% end %>
-                      </ul>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          <% end %>
+        <% else %>
+          <p class="mt-3">
+            To make this content public in the Torus Course Builder for any instructor to use, please use the Support tool and send us a request.
+          </p>
         <% end %>
       </div>
     </div>
@@ -254,30 +266,40 @@ defmodule OliWeb.Projects.VisibilityLive do
         socket
       )
       when query not in [nil, ""] do
-    list =
-      Institutions.search_institutions_matching(query)
-      |> Enum.reduce([], fn institution, acc ->
-        {name, id} = {institution.name, institution.id}
+    # Only admins can search for institutions to add to visibility restrictions
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      list =
+        Institutions.search_institutions_matching(query)
+        |> Enum.reduce([], fn institution, acc ->
+          {name, id} = {institution.name, institution.id}
 
-        # Check if institution is already in project visibilities
-        already_exists =
-          Enum.any?(socket.assigns.project_visibilities, fn x ->
-            x.institution != nil && x.institution.id == id
-          end)
+          # Check if institution is already in project visibilities
+          already_exists =
+            Enum.any?(socket.assigns.project_visibilities, fn x ->
+              x.institution != nil && x.institution.id == id
+            end)
 
-        if !already_exists do
-          [{name, id} | acc]
-        else
-          acc
-        end
-      end)
-      |> Enum.sort()
+          if !already_exists do
+            [{name, id} | acc]
+          else
+            acc
+          end
+        end)
+        |> Enum.sort()
 
-    {:noreply, assign(socket, :institution_names, list)}
+      {:noreply, assign(socket, :institution_names, list)}
+    end
   end
 
-  def handle_event("institution_search", _, socket),
-    do: {:noreply, assign(socket, :institution_names, [])}
+  def handle_event("institution_search", _, socket) do
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, :institution_names, [])}
+    end
+  end
 
   def handle_event(
         "instructor_search",
@@ -285,34 +307,49 @@ defmodule OliWeb.Projects.VisibilityLive do
         socket
       )
       when query not in [nil, ""] do
-    list =
-      Accounts.search_authors_matching(query)
-      |> Enum.reduce([], fn author, acc ->
-        {email, id} = {author.email, author.id}
+    # Only admins can search for authors to add to visibility restrictions
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      list =
+        Accounts.search_authors_matching(query)
+        |> Enum.reduce([], fn author, acc ->
+          {email, id} = {author.email, author.id}
 
-        # Check if author is already in project visibilities
-        already_exists =
-          Enum.any?(socket.assigns.project_visibilities, fn x ->
-            x.author != nil && x.author.id == id
-          end)
+          # Check if author is already in project visibilities
+          already_exists =
+            Enum.any?(socket.assigns.project_visibilities, fn x ->
+              x.author != nil && x.author.id == id
+            end)
 
-        if !already_exists do
-          [{email, id} | acc]
-        else
-          acc
-        end
-      end)
-      |> Enum.sort()
+          if !already_exists do
+            [{email, id} | acc]
+          else
+            acc
+          end
+        end)
+        |> Enum.sort()
 
-    {:noreply, assign(socket, :user_emails, list)}
+      {:noreply, assign(socket, :user_emails, list)}
+    end
   end
 
-  def handle_event("instructor_search", _, socket),
-    do: {:noreply, assign(socket, :user_emails, [])}
+  def handle_event("instructor_search", _, socket) do
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, :user_emails, [])}
+    end
+  end
 
   def handle_event("option", %{"visibility" => %{"option" => option}}, socket) do
-    {:ok, project} = Course.update_project(socket.assigns.project, %{visibility: option})
-    {:noreply, assign(socket, :project, project)}
+    # Only admins can change project visibility
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {:ok, project} = Course.update_project(socket.assigns.project, %{visibility: option})
+      {:noreply, assign(socket, :project, project)}
+    end
   end
 
   def handle_event("duplication", %{"duplication" => %{"allow_duplication" => value}}, socket) do
@@ -321,22 +358,27 @@ defmodule OliWeb.Projects.VisibilityLive do
   end
 
   def handle_event("selected_email", %{"multi" => %{"emails" => emails}}, socket) do
-    emails
-    |> Enum.each(fn e ->
-      {id, _} = Integer.parse(e)
+    # Only admins can add authors to visibility restrictions
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      emails
+      |> Enum.each(fn e ->
+        {id, _} = Integer.parse(e)
 
-      f =
-        Enum.find(socket.assigns.project_visibilities, fn x ->
-          x.author != nil && x.author.id == id
-        end)
+        f =
+          Enum.find(socket.assigns.project_visibilities, fn x ->
+            x.author != nil && x.author.id == id
+          end)
 
-      if f == nil do
-        Publishing.insert_visibility(%{project_id: socket.assigns.project.id, author_id: id})
-      end
-    end)
+        if f == nil do
+          Publishing.insert_visibility(%{project_id: socket.assigns.project.id, author_id: id})
+        end
+      end)
 
-    project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
-    {:noreply, assign(socket, project_visibilities: project_visibilities, user_emails: [])}
+      project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
+      {:noreply, assign(socket, project_visibilities: project_visibilities, user_emails: [])}
+    end
   end
 
   def handle_event(
@@ -344,45 +386,70 @@ defmodule OliWeb.Projects.VisibilityLive do
         %{"multi" => %{"institutions" => institutions}},
         socket
       ) do
-    institutions
-    |> Enum.each(fn e ->
-      {id, _} = Integer.parse(e)
+    # Only admins can add institutions to visibility restrictions
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      institutions
+      |> Enum.each(fn e ->
+        {id, _} = Integer.parse(e)
 
-      f =
-        Enum.find(socket.assigns.project_visibilities, fn x ->
-          x.institution != nil && x.institution.id == id
-        end)
+        f =
+          Enum.find(socket.assigns.project_visibilities, fn x ->
+            x.institution != nil && x.institution.id == id
+          end)
 
-      if f == nil do
-        Publishing.insert_visibility(%{project_id: socket.assigns.project.id, institution_id: id})
-      end
-    end)
+        if f == nil do
+          Publishing.insert_visibility(%{
+            project_id: socket.assigns.project.id,
+            institution_id: id
+          })
+        end
+      end)
 
-    project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
-    {:noreply, assign(socket, project_visibilities: project_visibilities, institution_names: [])}
+      project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
+
+      {:noreply,
+       assign(socket, project_visibilities: project_visibilities, institution_names: [])}
+    end
   end
 
   def handle_event("users_tab", _option, socket) do
-    {:noreply, assign(socket, :tab, :users)}
+    # Only admins can switch between visibility restriction tabs
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, :tab, :users)}
+    end
   end
 
   def handle_event("institutions_tab", _option, socket) do
-    {:noreply, assign(socket, :tab, :institutions)}
+    # Only admins can switch between visibility restriction tabs
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, :tab, :institutions)}
+    end
   end
 
   def handle_event("delete_visibility", %{"id" => visibility_id}, socket) do
-    {id, _} = Integer.parse(visibility_id)
+    # Only admins can remove visibility restrictions
+    if !socket.assigns.is_admin do
+      {:noreply, socket}
+    else
+      {id, _} = Integer.parse(visibility_id)
 
-    v =
-      Enum.find(socket.assigns.project_visibilities, fn x ->
-        x.visibility != nil && x.visibility.id == id
-      end)
+      v =
+        Enum.find(socket.assigns.project_visibilities, fn x ->
+          x.visibility != nil && x.visibility.id == id
+        end)
 
-    if v != nil do
-      Publishing.remove_visibility(v.visibility)
+      if v != nil do
+        Publishing.remove_visibility(v.visibility)
+      end
+
+      project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
+      {:noreply, assign(socket, project_visibilities: project_visibilities)}
     end
-
-    project_visibilities = Publishing.get_all_project_visibilities(socket.assigns.project.id)
-    {:noreply, assign(socket, project_visibilities: project_visibilities)}
   end
 end

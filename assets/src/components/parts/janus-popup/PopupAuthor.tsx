@@ -13,13 +13,21 @@ import { PopupModel } from './schema';
 import { ContextProps } from './types';
 
 // eslint-disable-next-line react/display-name
-const Designer: React.FC<any> = React.memo(({ screenModel, onChange, portal }) => {
-  /* console.log('PopupAuthor: Designer', { screenModel, portal }); */
-  return (
-    portal &&
-    ReactDOM.createPortal(<ScreenAuthor screen={screenModel} onChange={onChange} />, portal)
-  );
-});
+const Designer: React.FC<any> = React.memo(
+  ({ screenModel, onChange, portal, responsiveLayout }) => {
+    return (
+      portal &&
+      ReactDOM.createPortal(
+        <ScreenAuthor
+          screen={screenModel}
+          onChange={onChange}
+          responsiveLayout={responsiveLayout}
+        />,
+        portal,
+      )
+    );
+  },
+);
 
 const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   const { id, model, configuremode, onConfigure, onSaveConfigure } = props;
@@ -31,8 +39,8 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   }, [configuremode]);
 
   const [context, setContext] = useState<ContextProps>({ currentActivity: '', mode: '' });
+  const [responsiveLayout, setResponsiveLayout] = useState<boolean>(false);
   const [showWindow, setShowWindow] = useState(false);
-
   const [windowModel, setWindowModel] = useState<any>(model.popup);
   useEffect(() => {
     // console.log('PopupAuthor windowModel changed!!', { windowModel, gnu: model.popup });
@@ -107,7 +115,18 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     };
   }, [props.notify, handleNotificationSave]);
 
-  const { z, width, height, visible = true, defaultURL, iconURL, description } = model;
+  const {
+    z,
+    width,
+    height,
+    visible = true,
+    defaultURL,
+    iconURL,
+    description,
+    labelText,
+    labelPosition = 'right',
+    hideIcon = false,
+  } = model;
 
   // need to offset the window position by the position of the parent element
   // since it's a child of the parent element and not the activity (screen) directly
@@ -134,14 +153,100 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const iconSrc = getIconSrc(iconURL, defaultURL);
 
-  const styles: CSSProperties = {
-    width,
-    height,
-  };
+  const shouldShowIcon = !hideIcon;
+  const shouldShowLabel = labelText && labelText.trim().length > 0;
+
+  // Icon sizing:
+  // - Fixed 32x32px when label exists (regardless of icon type)
+  // - Resizable when no label (uses container size or min 32x32)
+  const shouldFixIconSize = shouldShowLabel;
+  const iconTriggerStyle: CSSProperties = shouldFixIconSize
+    ? { width: 32, height: 32, flexShrink: 0 } // Always fixed when label exists
+    : {
+        width: width && typeof width === 'number' && width > 0 ? width : undefined,
+        height: height && typeof height === 'number' && height > 0 ? height : undefined,
+        minWidth: 32,
+        minHeight: 32,
+      }; // When no label, use container size if set, otherwise allow resizing with min 32x32
 
   // for authoring we don't actually want to hide it
   if (!visible) {
-    styles.opacity = 0.5;
+    iconTriggerStyle.opacity = 0.5;
+  }
+
+  // Determine flex direction based on label position
+  // Label always appears first in DOM, so we use flexDirection and order to maintain visual positioning
+  const getFlexDirection = () => {
+    switch (labelPosition) {
+      case 'left':
+        return 'row'; // Label first in DOM, visually on left (no order needed)
+      case 'right':
+        return 'row'; // Label first in DOM, visually on right (use order)
+      case 'top':
+        return 'column'; // Label first in DOM, visually on top (no order needed)
+      case 'bottom':
+        return 'column'; // Label first in DOM, visually on bottom (use order)
+      default:
+        return 'row';
+    }
+  };
+
+  // Determine alignment based on label position
+  const getAlignItems = () => {
+    switch (labelPosition) {
+      case 'left':
+      case 'right':
+        return 'center';
+      case 'top':
+      case 'bottom':
+        return 'center';
+      default:
+        return 'center';
+    }
+  };
+
+  // Determine justify content for vertical positions (top/bottom)
+  const getJustifyContent = () => {
+    switch (labelPosition) {
+      case 'top':
+      case 'bottom':
+        return 'center';
+      case 'left':
+      case 'right':
+        return 'flex-start';
+      default:
+        return 'flex-start';
+    }
+  };
+
+  // Container should respect width/height from model
+  const containerStyle: CSSProperties = {
+    display: 'flex',
+    flexDirection: getFlexDirection(),
+    alignItems: getAlignItems(),
+    justifyContent: getJustifyContent(),
+    gap: '10px',
+    width: width || 'auto',
+    height: height || 'auto',
+  };
+
+  const labelStyle: CSSProperties = {
+    fontSize: '1rem',
+    cursor: 'pointer',
+    userSelect: 'none',
+    flex: 1,
+    minWidth: 0,
+    minHeight: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    wordWrap: 'break-word',
+    // Use CSS order to maintain visual positioning when label is first in DOM
+    order: labelPosition === 'right' || labelPosition === 'bottom' ? 2 : undefined,
+  };
+
+  // Apply CSS order to icon for visual positioning
+  if (labelPosition === 'right' || labelPosition === 'bottom') {
+    iconTriggerStyle.order = 1;
   }
 
   const init = useCallback(async () => {
@@ -149,7 +254,9 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     console.log('PA INIT', { id, initResult });
 
     setContext((c) => ({ ...c, ...initResult.context }));
-
+    //setting it to false for now until we fix the pop-up responsive layout issues
+    setResponsiveLayout(false);
+    //setResponsiveLayout(initResult.context?.responsiveLayout ?? false);
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
   }, [props]);
@@ -205,29 +312,67 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     <React.Fragment>
       <style>{authorStyleOverride}</style>
       {inConfigureMode && portalEl && (
-        <Designer screenModel={windowModel} onChange={handleScreenAuthorChange} portal={portalEl} />
+        <Designer
+          screenModel={windowModel}
+          onChange={handleScreenAuthorChange}
+          portal={portalEl}
+          responsiveLayout={responsiveLayout}
+        />
       )}
-      <input
-        role="button"
-        draggable="false"
-        {...(iconSrc
-          ? {
-              src: iconSrc,
-              type: 'image',
-              alt: description,
+      <div className="popup-container" style={containerStyle}>
+        {/* Label appears first in DOM for screen reader context */}
+        {shouldShowLabel && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-controls={id}
+            aria-haspopup="true"
+            aria-label={shouldShowLabel ? `${labelText}, opens dialog` : undefined}
+            style={labelStyle}
+            onDoubleClick={() => {
+              setShowWindow(true);
+            }}
+          >
+            {labelText}
+          </span>
+        )}
+        {/* Icon is decorative when label exists, focusable when no label */}
+        {shouldShowIcon && (
+          <input
+            role={shouldShowLabel ? 'img' : 'button'}
+            draggable="false"
+            {...(iconSrc
+              ? // In authoring mode, always use src (CSS override makes data URLs visible)
+                {
+                  src: iconSrc,
+                  type: 'image',
+                  alt: description,
+                }
+              : {
+                  type: 'button',
+                })}
+            className={`info-icon`}
+            {...(shouldShowLabel
+              ? {} // No event handlers when label exists (icon is decorative)
+              : {
+                  onDoubleClick: () => {
+                    setShowWindow(true);
+                  },
+                })}
+            aria-controls={shouldShowLabel ? undefined : id}
+            aria-haspopup={shouldShowLabel ? undefined : 'true'}
+            aria-label={
+              shouldShowLabel
+                ? description // Icon is decorative, aria-label used for alt text
+                : description
+                ? `${description}, opens dialog`
+                : 'Additional Information, opens dialog'
             }
-          : {
-              type: 'button',
-            })}
-        className={`info-icon`}
-        onDoubleClick={() => {
-          setShowWindow(true);
-        }}
-        aria-controls={id}
-        aria-haspopup="true"
-        aria-label={description}
-        style={styles}
-      />
+            tabIndex={shouldShowLabel ? -1 : 0}
+            style={iconTriggerStyle}
+          />
+        )}
+      </div>
       {showWindow && <PortalWindow />}
     </React.Fragment>
   );

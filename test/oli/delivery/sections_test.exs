@@ -2711,31 +2711,20 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
-  describe "get_enrollments_by_emails/2" do
-    test "returns enrollments for the specified section and emails" do
-      user_1 = insert(:user)
-      user_2 = insert(:user)
-      user_3 = insert(:user)
+  describe "get_independent_enrollments_by_emails/2" do
+    test "returns enrollments only for independent learner users" do
       section = insert(:section)
+      independent_user = insert(:user, email: "shared@example.com", independent_learner: true)
+      lti_user = insert(:user, email: "shared@example.com", independent_learner: false)
 
-      Sections.enroll(
-        [user_1.id, user_2.id],
-        section.id,
-        [ContextRoles.get_role(:context_learner)],
-        :enrolled
-      )
+      Sections.enroll(independent_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(lti_user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      Sections.enroll(
-        [user_3.id],
-        section.id,
-        [ContextRoles.get_role(:context_learner)],
-        :pending_confirmation
-      )
+      enrollments =
+        Sections.get_independent_enrollments_by_emails(section.slug, ["shared@example.com"])
 
-      enrollments = Sections.get_enrollments_by_emails(section.slug, [user_1.email, user_2.email])
-
-      assert length(enrollments) == 2
-      assert Enum.all?(enrollments, fn e -> e.status == :enrolled end)
+      assert length(enrollments) == 1
+      assert hd(enrollments).user_id == independent_user.id
     end
   end
 
@@ -2767,7 +2756,7 @@ defmodule Oli.Delivery.SectionsTest do
       )
 
       enrollments =
-        Sections.get_enrollments_by_emails(section.slug, [
+        Sections.get_independent_enrollments_by_emails(section.slug, [
           user_1.email,
           user_2.email,
           user_3.email
@@ -3361,19 +3350,52 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "filters by student_id when provided", %{
       section: section,
-      objectives: %{objective_a: objective_a}
+      objectives: %{objective_a: objective_a, sub_objective_a1: sub_objective_a1}
     } do
-      # Create a student
       student = insert(:user)
+      objective_type_id = ResourceType.id_for_objective()
+
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: student.id,
+        resource_id: objective_a.resource_id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 3,
+        num_attempts: 3,
+        num_hints: 0,
+        num_first_attempts: 3,
+        num_first_attempts_correct: 3
+      })
+
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: student.id,
+        resource_id: sub_objective_a1.resource_id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 0,
+        num_attempts: 3,
+        num_hints: 0,
+        num_first_attempts: 3,
+        num_first_attempts_correct: 0
+      })
 
       result = Sections.get_objectives_and_subobjectives(section, student_id: student.id)
-
-      # Should still return the same structure but with student-specific proficiency
-      assert length(result) > 0
 
       top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
       assert top_level_a != nil
       assert top_level_a.section_id == section.id
+      assert top_level_a.student_proficiency_obj == "High"
+      assert top_level_a.student_proficiency_obj_dist == nil
+
+      sub_a1 = Enum.find(result, &(&1.subobjective == "Sub-objective A.1"))
+      assert sub_a1 != nil
+      assert sub_a1.student_proficiency_obj == "High"
+      assert sub_a1.student_proficiency_subobj == "Low"
+      assert sub_a1.student_proficiency_subobj_dist == nil
     end
 
     test "returns proficiency data with correct structure", %{section: section} do

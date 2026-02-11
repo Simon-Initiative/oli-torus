@@ -259,8 +259,8 @@ export const initializeActivity = createAsyncThunk(
     thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));
 
     // in preview mode we don't talk to the server, so we're done
-    // if we're in history mode we shouldn't be writing anything
-    if (isPreviewMode || isHistoryMode) {
+    // if we're in history mode or review mode we shouldn't be writing anything
+    if (isReviewMode || isPreviewMode || isHistoryMode) {
       const allGood = results.every(({ result }) => result === null);
       // TODO: report actual errors?
       const status = allGood ? 'success' : 'error';

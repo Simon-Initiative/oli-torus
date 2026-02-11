@@ -7,6 +7,7 @@ import {
   HasParts,
   Part,
   Response,
+  ResponseId,
   makeResponse,
 } from 'components/activities/types';
 import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
@@ -42,6 +43,9 @@ export const getResponses = (model: HasParts): Response[] =>
 
 export const getResponsesByPartId = (model: HasParts, partId: string): Response[] =>
   getPartById(model, partId).responses;
+
+export const getPartIdForResponse = (model: HasParts, responseId: ResponseId) =>
+  model.authoring.parts.find((p) => p.responses.some((r) => r.id === responseId))?.id;
 
 export const getResponseBy = (model: HasParts, predicate: (x: Response) => boolean) =>
   getByUnsafe(getResponses(model), predicate);
@@ -156,4 +160,30 @@ export const findTargetedResponses = (model: HasParts, partId: string) => {
   const incorrect = getIncorrectResponse(model, partId);
 
   return responses.filter((r) => r !== correct && r !== incorrect);
+};
+
+const hasAnyCustomScoring = (model: HasParts, partId: string) =>
+  hasCustomScoring(model, partId) || multiHasCustomScoring(model as ActivityLevelScoring);
+
+// Ensure custom scoring stays consistent:
+// - correct response score >= max targeted response score
+// - part.outOf equals max(correct, max targeted)
+export const normalizeCustomScoringForPart = (model: HasParts, partId: string) => {
+  if (!hasAnyCustomScoring(model, partId)) return;
+
+  const part = getPartById(model, partId);
+  const correct = getCorrectResponse(model, partId);
+  const targeted = findTargetedResponses(model, partId);
+
+  const maxTargeted = targeted.reduce((max, response) => Math.max(max, response.score ?? 0), 0);
+
+  const correctScore = correct.score ?? 0;
+  const newCorrectScore = Math.max(correctScore, maxTargeted);
+
+  if (correct.score !== newCorrectScore) {
+    correct.score = newCorrectScore;
+  }
+
+  const newOutOf = Math.max(newCorrectScore, maxTargeted);
+  part.outOf = newOutOf;
 };

@@ -6,6 +6,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
   alias Oli.GenAI.Completions
   alias Oli.GenAI
   alias Oli.GenAI.Completions.{RegisteredModel, Message}
+  alias Oli.GenAI.HackneyPool
   alias OliWeb.Common.Breadcrumb
 
   @form_control_classes "block w-full p-2.5
@@ -19,13 +20,14 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
     all = all()
     selected = Enum.at(all, 0)
     changeset = RegisteredModel.changeset(selected, %{})
+    pool_sizes = pool_sizes()
 
     {:ok,
      assign(socket,
        editing: false,
        test_results: "",
-       form: to_form(changeset),
-       changeset: changeset,
+       form: to_form(changeset, as: :registered_model),
+       pool_form: to_form(pool_sizes, as: :pool_sizes),
        selected: selected,
        registered_models: all,
        breadcrumbs: breadcrumb()
@@ -35,7 +37,8 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
   attr :registered_models, :list, required: true
   attr(:selected, RegisteredModel)
   attr :breadcrumbs, :any
-  attr :changeset, :any
+  attr :form, :any
+  attr :pool_form, :any
   attr :title, :string, default: "Registered LLM Models"
   attr :editing, :boolean, default: false
   attr :test_results, :string, default: ""
@@ -71,7 +74,8 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
 
         <.selected_item
           selected={@selected}
-          changeset={@changeset}
+          form={@form}
+          pool_form={@pool_form}
           editing={@editing}
           test_results={@test_results}
         />
@@ -128,7 +132,8 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
   end
 
   attr(:selected, RegisteredModel)
-  attr :changeset, :any
+  attr :form, :any
+  attr :pool_form, :any
   attr :editing, :boolean, default: false
   attr :test_results, :string, default: ""
 
@@ -139,6 +144,41 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
 
     ~H"""
     <div class="basis-1/2 p-4">
+      <div class="mb-4 border border-gray-200 rounded-md p-3">
+        <h3 class="text-sm font-semibold text-gray-900">GenAI Pool Sizes</h3>
+        <.form for={@pool_form} id="pool-sizes-form" phx-submit="update_pool_sizes">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+            <.input
+              field={@pool_form[:fast_pool_size]}
+              type="number"
+              min="1"
+              step="1"
+              label="Fast Pool Max Connections"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+            <.input
+              field={@pool_form[:slow_pool_size]}
+              type="number"
+              min="1"
+              step="1"
+              label="Slow Pool Max Connections"
+              disabled={!@editing}
+              class={@form_control_classes}
+            />
+          </div>
+          <div class="mt-2">
+            <.button
+              disabled={!@editing}
+              class="btn btn-primary btn-sm"
+              phx-disable-with="Updating…"
+            >
+              Update Pool Sizes
+            </.button>
+          </div>
+        </.form>
+      </div>
+
       <div class="flex">
         <button
           title="Test the selected model by asking it to describe the sun in one word"
@@ -151,15 +191,15 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
         <div>{@test_results}</div>
       </div>
 
-      <.form :let={f} for={@changeset} id="registered-model-form" phx-submit="save">
+      <.form for={@form} id="registered-model-form" phx-submit="save">
         <.input
-          field={f[:name]}
+          field={@form[:name]}
           label="Friendly Name"
           disabled={!@editing}
           class={@form_control_classes}
         />
         <.input
-          field={f[:provider]}
+          field={@form[:provider]}
           type="select"
           disabled={!@editing}
           class={@form_control_classes}
@@ -170,36 +210,97 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
           ]}
           label="Provider"
         />
-        <.input field={f[:model]} label="Model" disabled={!@editing} class={@form_control_classes} />
         <.input
-          field={f[:url_template]}
+          field={@form[:model]}
+          label="Model"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:pool_class]}
+          type="select"
+          disabled={!@editing}
+          class={@form_control_classes}
+          options={[{"Slow (default)", :slow}, {"Fast", :fast}]}
+          label="Pool Class"
+        />
+        <.input
+          field={@form[:max_concurrent]}
+          type="number"
+          label="Max Concurrent (Model Cap)"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:routing_breaker_error_rate_threshold]}
+          type="number"
+          step="0.01"
+          min="0"
+          max="1"
+          label="Breaker Error Rate Threshold"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:routing_breaker_429_threshold]}
+          type="number"
+          step="0.01"
+          min="0"
+          max="1"
+          label="Breaker 429 Threshold"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:routing_breaker_latency_p95_ms]}
+          type="number"
+          label="Breaker Latency p95 (ms)"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:routing_open_cooldown_ms]}
+          type="number"
+          label="Breaker Open Cooldown (ms)"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:routing_half_open_probe_count]}
+          type="number"
+          label="Breaker Half-Open Probe Count"
+          disabled={!@editing}
+          class={@form_control_classes}
+        />
+        <.input
+          field={@form[:url_template]}
           label="URL Template"
           disabled={!@editing}
           class={@form_control_classes}
         />
         <.input
-          field={f[:api_key]}
+          field={@form[:api_key]}
           type="password"
           label="API Key"
           disabled={!@editing}
           class={@form_control_classes}
         />
         <.input
-          field={f[:secondary_api_key]}
+          field={@form[:secondary_api_key]}
           type="password"
           label="Secondary API Key"
           disabled={!@editing}
           class={@form_control_classes}
         />
         <.input
-          field={f[:timeout]}
+          field={@form[:timeout]}
           type="number"
           label="Timeout (ms)"
           disabled={!@editing}
           class={@form_control_classes}
         />
         <.input
-          field={f[:recv_timeout]}
+          field={@form[:recv_timeout]}
           type="number"
           label="Recv Timeout (ms)"
           disabled={!@editing}
@@ -231,7 +332,9 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
     selected = Enum.find(socket.assigns.registered_models, &(&1.id == id))
 
     {:noreply,
-     assign(socket, selected: selected, changeset: RegisteredModel.changeset(selected, %{}))}
+     socket
+     |> assign(selected: selected)
+     |> assign_form(RegisteredModel.changeset(selected, %{}))}
   end
 
   def handle_event("toggle_editing", _, socket) do
@@ -255,6 +358,25 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
     end
   end
 
+  def handle_event("update_pool_sizes", %{"pool_sizes" => params}, socket) do
+    with {:ok, fast_size} <- parse_pool_size(params["fast_pool_size"], "fast"),
+         {:ok, slow_size} <- parse_pool_size(params["slow_pool_size"], "slow") do
+      HackneyPool.set_max_connections(:fast, fast_size)
+      HackneyPool.set_max_connections(:slow, slow_size)
+
+      {:noreply,
+       socket
+       |> put_flash(:info, "Updated GenAI pool sizes")
+       |> assign_pool_form(pool_sizes())}
+    else
+      {:error, message} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, message)
+         |> assign_pool_form(pool_form_params(params))}
+    end
+  end
+
   def handle_event("delete", %{"id" => id}, socket) do
     id = String.to_integer(id)
 
@@ -262,8 +384,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
       nil ->
         socket = put_flash(socket, :error, "Registered model not found")
 
-        {:noreply,
-         assign(socket, changeset: RegisteredModel.changeset(socket.assigns.selected, %{}))}
+        {:noreply, assign_form(socket, RegisteredModel.changeset(socket.assigns.selected, %{}))}
 
       item ->
         socket = clear_flash(socket)
@@ -274,19 +395,20 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
             selected = Enum.at(all, 0)
 
             {:noreply,
-             assign(socket,
+             socket
+             |> assign(
                editing: false,
                registered_models: all,
-               selected: selected,
-               changeset: RegisteredModel.changeset(selected, %{})
-             )}
+               selected: selected
+             )
+             |> assign_form(RegisteredModel.changeset(selected, %{}))}
 
           {:error, reason} ->
             socket =
               put_flash(socket, :error, "Couldn't delete registered model: #{inspect(reason)}")
 
             {:noreply,
-             assign(socket, changeset: RegisteredModel.changeset(socket.assigns.selected, %{}))}
+             assign_form(socket, RegisteredModel.changeset(socket.assigns.selected, %{}))}
         end
     end
   end
@@ -299,8 +421,7 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
       nil ->
         socket = put_flash(socket, :error, "Registered model not found")
 
-        {:noreply,
-         assign(socket, changeset: RegisteredModel.changeset(socket.assigns.selected, %{}))}
+        {:noreply, assign_form(socket, RegisteredModel.changeset(socket.assigns.selected, %{}))}
 
       selected ->
         case GenAI.update_registered_model(selected, params) do
@@ -308,16 +429,17 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
             all = all()
 
             {:noreply,
-             assign(socket,
+             socket
+             |> assign(
                registered_models: all,
                selected: registered_model,
-               editing: false,
-               changeset: RegisteredModel.changeset(registered_model, %{})
-             )}
+               editing: false
+             )
+             |> assign_form(RegisteredModel.changeset(registered_model, %{}))}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             socket = put_flash(socket, :error, "Couldn't update registered model")
-            {:noreply, assign(socket, changeset: changeset)}
+            {:noreply, assign_form(socket, changeset)}
         end
     end
   end
@@ -339,7 +461,9 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
         changeset = RegisteredModel.changeset(selected, %{})
 
         {:noreply,
-         assign(socket, selected: selected, registered_models: all, changeset: changeset)}
+         socket
+         |> assign(selected: selected, registered_models: all)
+         |> assign_form(changeset)}
 
       {:error, changeset} ->
         # Handle error (e.g., show a flash message)
@@ -365,5 +489,46 @@ defmodule OliWeb.GenAI.RegisteredModelsView do
   # Returns all registered models sorted by ID, which provides a stable sorting order
   def all do
     GenAI.registered_models()
+  end
+
+  defp assign_form(socket, changeset) do
+    assign(socket, form: to_form(changeset, as: :registered_model))
+  end
+
+  defp assign_pool_form(socket, pool_sizes) do
+    assign(socket, pool_form: to_form(pool_sizes, as: :pool_sizes))
+  end
+
+  defp pool_sizes do
+    %{
+      "fast_pool_size" => HackneyPool.max_connections(:fast),
+      "slow_pool_size" => HackneyPool.max_connections(:slow)
+    }
+  end
+
+  defp pool_form_params(params) do
+    %{
+      "fast_pool_size" => params["fast_pool_size"],
+      "slow_pool_size" => params["slow_pool_size"]
+    }
+  end
+
+  defp parse_pool_size(value, label) do
+    max_allowed = max_pool_size()
+
+    case Integer.parse(to_string(value)) do
+      {size, ""} when size > 0 and size <= max_allowed ->
+        {:ok, size}
+
+      {size, ""} when size > max_allowed ->
+        {:error, "Pool size for #{label} must be <= #{max_allowed}"}
+
+      _ ->
+        {:error, "Pool size for #{label} must be a positive integer"}
+    end
+  end
+
+  defp max_pool_size do
+    Application.get_env(:oli, :genai_hackney_pool_max_size, 1000)
   end
 end

@@ -21,9 +21,10 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
   describe "on_mount: :default with section_slug" do
     test "redirects learner to enroll page when user is not enrolled",
          %{
-           user: user
+           user: _user
          } do
       section = insert(:section)
+      user = insert(:user, independent_learner: false)
 
       socket = %LiveView.Socket{
         endpoint: OliWeb.Endpoint,
@@ -117,6 +118,36 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollmentTest do
       assert {:redirect, %{to: "/workspaces/student"}} = redirected_socket.redirected
 
       assert redirected_socket.assigns.flash["error"] == "You are not enrolled in this course"
+    end
+
+    test "redirects independent learner away from LTI enrollment", %{user: user} do
+      section = insert(:section, open_and_free: false, registration_open: true)
+
+      user = %{user | independent_learner: true}
+
+      socket = %LiveView.Socket{
+        endpoint: OliWeb.Endpoint,
+        assigns: %{
+          __changed__: %{},
+          current_user: user,
+          current_author: nil,
+          section: section,
+          flash: %{}
+        }
+      }
+
+      assert {:halt, redirected_socket} =
+               RequireEnrollment.on_mount(
+                 :default,
+                 %{"section_slug" => section.slug},
+                 %{},
+                 socket
+               )
+
+      assert {:redirect, %{to: "/workspaces/student"}} = redirected_socket.redirected
+
+      assert redirected_socket.assigns.flash["error"] ==
+               "This course is only available through your LMS."
     end
 
     test "allows access for admin author", %{author: author} do

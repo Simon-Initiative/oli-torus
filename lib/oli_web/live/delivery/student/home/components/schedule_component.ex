@@ -187,11 +187,11 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
   defp item_bg_color(true = _completed),
     do:
-      "bg-black/[.07] hover:bg-black/[.1] border border-white/[.1] dark:bg-white/[.02] dark:hover:bg-white/[.06] dark:border-white/[0.06] dark:hover:border-white/[0.02]"
+      "bg-Surface-surface-secondary border border-Border-border-subtle hover:bg-Surface-surface-secondary-muted hover:shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
 
   defp item_bg_color(false = _completed),
     do:
-      "bg-black/[.1] hover:bg-black/[.2] border border-white/[.6] dark:bg-white/[.08] dark:hover:bg-white/[.12] dark:border-black hover:!border-transparent"
+      "bg-Surface-surface-secondary border border-Border-border-subtle hover:bg-Surface-surface-secondary-muted hover:shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
 
   defp maybe_assignment_left_bar(true),
     do:
@@ -346,19 +346,19 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
         class="hover:cursor-pointer absolute top-3.5 left-3 z-10"
       >
         <div class={[
-          if(@completed,
-            do: "bg-black/[0.1] dark:bg-white/[0.1]",
-            else: "bg-[#5798f8] dark:bg-[#0F6CF5]"
-          ),
-          "flex px-2 py-0.5 rounded-xl shadow tracking-tight gap-2 items-center align-center"
+          "bg-Fill-Buttons-fill-primary text-Text-text-white flex px-2 py-0.5 rounded-xl shadow tracking-tight gap-2 items-center align-center"
         ]}>
           <div role="count" class="pl-1 justify-start items-center gap-2.5 flex">
-            <div class="dark:text-white text-xs font-semibold">
+            <div class="text-xs font-semibold">
               {length(@resources)} pages
             </div>
           </div>
           <div class="w-4 h-4">
-            <Icons.chevron_down width="16" height="16" class={if @expanded, do: "rotate-180"} />
+            <Icons.chevron_down
+              width="16"
+              height="16"
+              class={"text-Text-text-white#{if(@expanded, do: " rotate-180", else: "")}"}
+            />
           </div>
         </div>
       </button>

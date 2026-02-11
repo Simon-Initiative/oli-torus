@@ -26,6 +26,12 @@
 - [ ] **Timing**: No essential time limits; if present, provide extend/pause/disable.
 - [ ] **Assistive tech**: Landmarks (`header/main/nav/footer`), skip-to-content link, descriptive page titles.
 - [ ] **Media**: Images have meaningful `alt`; decorative images are empty `alt`. Video captions + transcripts.
+- [ ] **Forms**: required/optional clear; errors are textual + field-associated (aria-describedby, aria-invalid); placeholder ≠ label; use autocomplete.
+- [ ] **Overlays**: dialogs trap focus + restore focus; Esc supported; live regions for async status/toasts.
+- [ ] **Pointer + touch**: hit targets ≥24px (prefer 44px); hover content also on focus/touch; avoid down-event activation for destructive actions.
+- [ ] **Structure**: one H1; headings in order; DOM order matches visual; lang set.
+- [ ] **Reflow/zoom**: usable at 200% zoom / 320px width; no lost content; text spacing doesn’t break layout.
+- [ ] **Data UI**: real tables with headers/scope; sorting announced (aria-sort); charts have text summary/table.
 
 ---
 

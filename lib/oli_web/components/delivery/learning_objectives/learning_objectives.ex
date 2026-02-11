@@ -17,7 +17,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     sort_by: :objective,
     text_search: nil,
     filter_by: "root",
-    selected_proficiency_ids: Jason.encode!([]),
+    selected_proficiency_ids: [],
     selected_card_value: nil
   }
 
@@ -38,7 +38,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       ) do
     params = decode_params(params)
 
-    {total_count, rows} =
+    {total_count, rows, filtered_objectives} =
       apply_filters(objectives_tab.objectives, params, assigns[:patch_url_type])
 
     indexed_rows =
@@ -51,6 +51,14 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       ObjectivesTableModel.new(indexed_rows, assigns[:patch_url_type])
 
     expanded_objectives = socket.assigns[:expanded_objectives] || MapSet.new()
+
+    expanded_objectives =
+      maybe_expand_for_matching_subobjectives(
+        expanded_objectives,
+        filtered_objectives,
+        params,
+        assigns[:patch_url_type]
+      )
 
     objectives_table_model =
       Map.merge(objectives_table_model, %{
@@ -66,14 +74,16 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             section_id: assigns[:section_id],
             section_title: assigns[:section_title],
             current_user: assigns[:current_user],
-            current_params: params,
+            current_params: encode_params_for_url(params),
             component_target: socket.assigns.myself,
-            expanded_objectives: expanded_objectives
+            expanded_rows: expanded_objectives
           })
       })
 
     selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
-    objectives_count = objectives_count(objectives_tab.objectives)
+
+    scoped_objectives = scoped_objectives(objectives_tab.objectives, params)
+    objectives_count = objectives_count(scoped_objectives)
 
     card_props = [
       %{
@@ -92,7 +102,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       }
     ]
 
-    selected_proficiency_ids = Jason.decode!(params.selected_proficiency_ids)
+    selected_proficiency_ids = params.selected_proficiency_ids
 
     proficiency_options =
       update_proficiency_options(selected_proficiency_ids, @proficiency_options)
@@ -119,9 +129,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        proficiency_options: proficiency_options,
        selected_proficiency_options: selected_proficiency_options,
        selected_proficiency_ids: selected_proficiency_ids,
-       card_props: card_props
-     )
-     |> assign_new(:expanded_objectives, fn -> MapSet.new() end)}
+       card_props: card_props,
+       expanded_objectives: expanded_objectives
+     )}
   end
 
   attr(:params, :any)
@@ -294,7 +304,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           ~p"/sections/#{section_slug}/student_dashboard/#{student_id}/learning_objectives"
       end
 
-    {:noreply, push_patch(socket, to: path)}
+    {:noreply, socket |> assign(expanded_objectives: MapSet.new()) |> push_patch(to: path)}
   end
 
   def handle_event("filter_by", %{"filter" => filter}, socket) do
@@ -398,10 +408,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         MapSet.put(expanded_objectives, objective_id)
       end
 
-    # Update the table model with the new expanded_objectives
+    # Update the table model with the new expanded_rows
     updated_table_model =
       Map.update!(socket.assigns.table_model, :data, fn data ->
-        Map.put(data, :expanded_objectives, expanded_objectives)
+        Map.put(data, :expanded_rows, expanded_objectives)
       end)
 
     {:noreply,
@@ -469,7 +479,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       filter_by: Params.get_int_param(params, "filter_by", @default_params.filter_by),
       selected_proficiency_ids:
-        Params.get_param(
+        Params.get_list_param(
           params,
           "selected_proficiency_ids",
           @default_params.selected_proficiency_ids
@@ -507,30 +517,145 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end)
   end
 
-  defp apply_filters(objectives, params, :instructor_dashboard) do
-    objectives
-    |> do_apply_filters(params)
+  defp encode_params_for_url(params) do
+    case Map.fetch(params, :selected_proficiency_ids) do
+      {:ok, ids} when is_list(ids) ->
+        Map.put(params, :selected_proficiency_ids, Jason.encode!(ids))
+
+      _ ->
+        params
+    end
   end
 
-  defp apply_filters(objectives, params, _), do: do_apply_filters(objectives, params)
+  defp apply_filters(objectives, params, patch_url_type) do
+    scoped_objectives = scoped_objectives(objectives, params)
+    filtered_objectives = filtered_objectives(scoped_objectives, params)
 
-  defp do_apply_filters(objectives, params) do
-    objectives =
-      objectives
-      |> maybe_filter_by_text(params.text_search)
-      |> maybe_filter_by_option(params.filter_by)
-      |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
-      |> maybe_filter_by_card(params.selected_card_value)
-      |> sort_by(params.sort_by, params.sort_order)
+    table_objectives =
+      case patch_url_type do
+        :instructor_dashboard ->
+          parent_objectives_from(filtered_objectives, scoped_objectives)
+          |> sort_by(params.sort_by, params.sort_order)
 
-    total_count = length(objectives)
+        _ ->
+          filtered_objectives
+          |> sort_by(params.sort_by, params.sort_order)
+      end
+
+    total_count = length(table_objectives)
 
     rows =
-      objectives
+      table_objectives
       |> Enum.drop(params.offset)
       |> Enum.take(params.limit)
 
-    {total_count, rows}
+    {total_count, rows, filtered_objectives}
+  end
+
+  @doc false
+  def filtered_objectives(objectives, params) do
+    objectives
+    |> maybe_filter_by_text(params.text_search)
+    |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
+    |> maybe_filter_by_card(params.selected_card_value)
+  end
+
+  defp maybe_expand_for_matching_subobjectives(
+         expanded_rows,
+         filtered_objectives,
+         params,
+         :instructor_dashboard
+       ) do
+    filtered_objectives
+    |> filtered_subobjectives(params)
+    |> Enum.reduce(expanded_rows, fn obj, acc ->
+      MapSet.put(acc, "row_#{parent_id(obj)}")
+    end)
+  end
+
+  defp maybe_expand_for_matching_subobjectives(
+         expanded_rows,
+         _objectives,
+         _params,
+         _patch_url_type
+       ),
+       do: expanded_rows
+
+  defp filtered_subobjectives(filtered_objectives, params) do
+    if subobjective_filters_active?(params) do
+      filtered_objectives
+      |> Enum.filter(&subobjective?/1)
+      |> maybe_filter_by_subobjective_text(params.text_search)
+      |> maybe_filter_by_subobjective_proficiency(params.selected_proficiency_ids)
+      |> maybe_filter_by_subobjective_card(params.selected_card_value)
+    else
+      []
+    end
+  end
+
+  defp subobjective_filters_active?(params) do
+    (not is_nil(params.text_search) and params.text_search != "") or
+      params.selected_proficiency_ids != [] or
+      params.selected_card_value == :low_proficiency_skills
+  end
+
+  defp maybe_filter_by_subobjective_text(objectives, nil), do: objectives
+  defp maybe_filter_by_subobjective_text(objectives, ""), do: objectives
+
+  defp maybe_filter_by_subobjective_text(objectives, text_search) do
+    text = String.downcase(text_search)
+
+    Enum.filter(objectives, fn obj ->
+      String.contains?(String.downcase(to_string(obj.subobjective || "")), text)
+    end)
+  end
+
+  defp maybe_filter_by_subobjective_proficiency(objectives, []), do: objectives
+
+  defp maybe_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids) do
+    do_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids)
+  end
+
+  defp do_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids) do
+    mapper_ids =
+      Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
+        case id do
+          1 -> ["Low" | acc]
+          2 -> ["Medium" | acc]
+          3 -> ["High" | acc]
+          _ -> acc
+        end
+      end)
+
+    if mapper_ids == [] do
+      objectives
+    else
+      Enum.filter(objectives, fn objective ->
+        objective.student_proficiency_subobj in mapper_ids
+      end)
+    end
+  end
+
+  defp maybe_filter_by_subobjective_card(objectives, :low_proficiency_skills),
+    do: Enum.filter(objectives, &(&1.student_proficiency_subobj == "Low"))
+
+  defp maybe_filter_by_subobjective_card(objectives, _), do: objectives
+
+  # Unit/Module scope filter defines base set (unordered) of objectives/subobjectives for the view
+  defp scoped_objectives(objectives, params) do
+    objectives
+    |> maybe_filter_by_option(params.filter_by)
+  end
+
+  defp parent_objectives_from(filtered_objectives, scoped_objectives) do
+    parent_ids =
+      filtered_objectives
+      |> Enum.map(&parent_id/1)
+      |> MapSet.new()
+
+    Enum.filter(scoped_objectives, fn obj ->
+      top_level_objective?(obj) and MapSet.member?(parent_ids, obj.resource_id)
+    end)
   end
 
   @proficiency_rank ["High", "Medium", "Low", "Not enough data"]
@@ -545,10 +670,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     Enum.sort_by(
       objectives,
       fn objective ->
-        case Map.get(objective, :subobjective) do
-          nil -> @proficiency_rank[objective.student_proficiency_obj]
-          _ -> @proficiency_rank[objective.student_proficiency_subobj]
-        end
+        proficiency_rank =
+          case Map.get(objective, :subobjective) do
+            nil -> @proficiency_rank[objective.student_proficiency_obj]
+            _ -> @proficiency_rank[objective.student_proficiency_subobj]
+          end
+
+        {proficiency_rank, normalized_title(objective)}
       end,
       sort_order
     )
@@ -567,25 +695,42 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       :desc ->
         Enum.sort_by(
           objectives,
-          &{@proficiency_rank_desc[&1.student_proficiency_subobj]},
+          fn objective ->
+            {@proficiency_rank_desc[objective.student_proficiency_subobj],
+             normalized_title(objective)}
+          end,
           sort_order
         )
 
       :asc ->
         Enum.sort_by(
           objectives,
-          &{@proficiency_rank[&1.student_proficiency_subobj]},
+          fn objective ->
+            {@proficiency_rank[objective.student_proficiency_subobj], normalized_title(objective)}
+          end,
           sort_order
         )
     end
   end
 
   defp sort_by(objectives, :related_activities_count, sort_order) do
-    Enum.sort_by(objectives, &Map.get(&1, :related_activities_count, 0), sort_order)
+    Enum.sort_by(
+      objectives,
+      fn objective ->
+        {Map.get(objective, :related_activities_count, 0), normalized_title(objective)}
+      end,
+      sort_order
+    )
   end
 
   defp sort_by(objectives, sort_by, sort_order) do
     Enum.sort_by(objectives, fn obj -> obj[sort_by] end, sort_order)
+  end
+
+  defp normalized_title(objective) do
+    objective
+    |> Map.get(:title, "")
+    |> String.downcase()
   end
 
   defp maybe_filter_by_option(objectives, "root"), do: objectives
@@ -598,21 +743,22 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp maybe_filter_by_text(objectives, ""), do: objectives
 
   defp maybe_filter_by_text(objectives, text_search) do
+    text = String.downcase(text_search)
+
     objectives
     |> Enum.filter(fn objective ->
-      String.contains?(
-        String.downcase(objective.objective),
-        String.downcase(text_search)
-      )
+      String.contains?(String.downcase(objective.objective), text) or
+        String.contains?(String.downcase(to_string(objective.subobjective || "")), text)
     end)
   end
 
-  defp maybe_filter_by_proficiency(objectives, "[]"), do: objectives
+  defp maybe_filter_by_proficiency(objectives, []), do: objectives
 
   defp maybe_filter_by_proficiency(objectives, selected_proficiency_ids) do
-    selected_proficiency_ids =
-      Jason.decode!(selected_proficiency_ids)
+    do_filter_by_proficiency(objectives, selected_proficiency_ids)
+  end
 
+  defp do_filter_by_proficiency(objectives, selected_proficiency_ids) do
     mapper_ids =
       Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
         case id do
@@ -623,22 +769,25 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         end
       end)
 
-    Enum.filter(objectives, fn objective ->
-      objective.student_proficiency_obj in mapper_ids
-    end)
+    if mapper_ids == [] do
+      objectives
+    else
+      Enum.filter(objectives, fn objective ->
+        proficiency =
+          if top_level_objective?(objective),
+            do: objective.student_proficiency_obj,
+            else: objective.student_proficiency_subobj
+
+        proficiency in mapper_ids
+      end)
+    end
   end
 
   defp maybe_filter_by_card(objectives, :low_proficiency_outcomes),
-    do:
-      Enum.filter(objectives, fn objective ->
-        objective.student_proficiency_obj == "Low"
-      end)
+    do: Enum.filter(objectives, &(&1.student_proficiency_obj == "Low"))
 
   defp maybe_filter_by_card(objectives, :low_proficiency_skills),
-    do:
-      Enum.filter(objectives, fn objective ->
-        objective.student_proficiency_subobj == "Low"
-      end)
+    do: Enum.filter(objectives, &(&1.student_proficiency_subobj == "Low"))
 
   defp maybe_filter_by_card(objectives, _), do: objectives
 
@@ -649,7 +798,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       socket.assigns.section_slug,
       socket.assigns.view,
       :learning_objectives,
-      update_params(socket.assigns.params, new_params)
+      update_params(socket.assigns.params, new_params) |> encode_params_for_url()
     )
   end
 
@@ -660,22 +809,50 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       socket.assigns.section_slug,
       socket.assigns.student_id,
       :learning_objectives,
-      update_params(socket.assigns.params, new_params)
+      update_params(socket.assigns.params, new_params) |> encode_params_for_url()
     )
   end
 
-  defp objectives_count(objectives) do
+  @doc false
+  def objectives_count(objectives) do
+    in_scope_parent_ids = in_scope_parent_ids(objectives)
+
     %{
       low_proficiency_outcomes:
         Enum.count(objectives, fn obj ->
-          obj.student_proficiency_obj == "Low"
+          obj.student_proficiency_obj == "Low" and top_level_objective?(obj)
         end),
       low_proficiency_skills:
         Enum.count(objectives, fn obj ->
-          obj.student_proficiency_subobj == "Low"
+          obj.student_proficiency_subobj == "Low" and
+            subobjective_with_in_scope_parent?(obj, in_scope_parent_ids)
         end)
     }
   end
+
+  defp subobjective?(objective), do: not is_nil(objective.subobjective)
+  defp top_level_objective?(objective), do: is_nil(objective.subobjective)
+
+  defp in_scope_parent_ids(objectives) do
+    objectives
+    |> Enum.filter(&top_level_objective?/1)
+    |> Enum.map(& &1.resource_id)
+    |> MapSet.new()
+  end
+
+  defp subobjective_with_in_scope_parent?(objective, in_scope_parent_ids) do
+    case Map.get(objective, :objective_resource_id) do
+      nil -> false
+      parent_id -> subobjective?(objective) and MapSet.member?(in_scope_parent_ids, parent_id)
+    end
+  end
+
+  defp parent_id(objective),
+    do:
+      if(top_level_objective?(objective),
+        do: objective.resource_id,
+        else: objective.objective_resource_id
+      )
 
   # Returns true if the filter by module feature is disabled for the section.
   # This happens when the contained objectives for the section were not yet created.

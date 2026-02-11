@@ -59,6 +59,7 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
         "type" => "selection",
         "logic" => %{
           "conditions" => %{
+            "operator" => "all",
             "children" => [%{"fact" => "tags", "value" => [old_id1, old_id2], "operator" => "in"}]
           }
         }
@@ -67,7 +68,7 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
       tag_map = %{old_id1 => new_id1, old_id2 => new_id2}
       result = Rewiring.rewire_bank_selections(content, tag_map)
       [child] = result["logic"]["conditions"]["children"]
-      assert child["value"] == [new_id2, new_id1]
+      assert Enum.sort(child["value"]) == Enum.sort([new_id1, new_id2])
     end
 
     test "leaves unmapped tag references unchanged in selection logic (children)" do
@@ -86,6 +87,71 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
       result = Rewiring.rewire_bank_selections(content, tag_map)
       [child] = result["logic"]["conditions"]["children"]
       assert child["value"] == [old_id]
+    end
+  end
+
+  describe "rewire_bank_selections/2 with objectives" do
+    test "rewires objective references in selection logic (expression)" do
+      old_obj1 = 10
+      old_obj2 = 11
+      new_obj1 = 110
+      new_obj2 = 111
+
+      content = %{
+        "type" => "selection",
+        "logic" => %{
+          "conditions" => %{
+            "operator" => "all",
+            "children" => [
+              %{"fact" => "objectives", "operator" => "contains", "value" => [old_obj1, old_obj2]}
+            ]
+          }
+        }
+      }
+
+      id_map = %{old_obj1 => new_obj1, old_obj2 => new_obj2}
+      result = Rewiring.rewire_bank_selections(content, id_map)
+      [child] = result["logic"]["conditions"]["children"]
+      assert Enum.sort(child["value"]) == Enum.sort([new_obj1, new_obj2])
+    end
+
+    test "rewires objective references in nested clauses" do
+      old_obj1 = 20
+      old_obj2 = 21
+      new_obj1 = 120
+      new_obj2 = 121
+
+      content = %{
+        "type" => "selection",
+        "logic" => %{
+          "conditions" => %{
+            "operator" => "any",
+            "children" => [
+              %{
+                "operator" => "all",
+                "children" => [
+                  %{"fact" => "objectives", "operator" => "contains", "value" => [old_obj1]}
+                ]
+              },
+              %{
+                "operator" => "all",
+                "children" => [
+                  %{"fact" => "objectives", "operator" => "contains", "value" => [old_obj2]}
+                ]
+              }
+            ]
+          }
+        }
+      }
+
+      id_map = %{old_obj1 => new_obj1, old_obj2 => new_obj2}
+      result = Rewiring.rewire_bank_selections(content, id_map)
+      [first_clause, second_clause] = result["logic"]["conditions"]["children"]
+      [first_expr] = first_clause["children"]
+      [second_expr] = second_clause["children"]
+
+      assert first_expr["value"] == [new_obj1]
+      assert second_expr["value"] == [new_obj2]
     end
   end
 

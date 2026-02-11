@@ -1,33 +1,23 @@
 defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
   use Phoenix.Component
 
+  import OliWeb.Components.Common
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias Phoenix.LiveView.JS
+  alias OliWeb.Icons
+  alias OliWeb.Delivery.ActivityHelpers
 
-  def new(assessments, ctx, target) do
+  def new(assessments, target, students, activity_types_map) do
     column_specs = [
       %ColumnSpec{
+        render_fn: &render_expanded/3,
+        sortable: false,
+        th_class: "w-4"
+      },
+      %ColumnSpec{
         name: :title,
-        label: "ASSESSMENT",
+        label: "Survey Name",
         render_fn: &__MODULE__.render_assessment_column/3,
         th_class: "pl-10"
-      },
-      %ColumnSpec{
-        name: :avg_score,
-        label: "AVG SCORE",
-        render_fn: &__MODULE__.render_avg_score_column/3
-      },
-      %ColumnSpec{
-        name: :total_attempts,
-        label: "TOTAL ATTEMPTS",
-        render_fn: &__MODULE__.render_attempts_column/3
-      },
-      %ColumnSpec{
-        name: :students_completion,
-        label: "STUDENTS PROGRESS",
-        tooltip:
-          "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
-        render_fn: &__MODULE__.render_students_completion_column/3
       }
     ]
 
@@ -35,87 +25,150 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
       rows: assessments,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id],
+      id_field: [:resource_id],
       data: %{
-        ctx: ctx,
-        target: target
+        expandable_rows: true,
+        view_type: :surveys_instructor_dashboard,
+        target: target,
+        students: students,
+        activity_types_map: activity_types_map
       }
     )
+  end
+
+  def render_expanded(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        id: "#{assessment.resource_id}",
+        target: assigns.model.data.target,
+        assessment: assessment
+      })
+
+    ~H"""
+    <.button
+      id={"button_#{@id}"}
+      class="flex !p-0"
+    >
+      <Icons.chevron_down class="fill-Text-text-high transition-transform duration-200" />
+    </.button>
+    """
+  end
+
+  def render_survey_details(assigns, survey) do
+    selected_survey_ids = get_in(assigns.model.data, [:selected_survey_ids]) || []
+    survey_activities_map = get_in(assigns.model.data, [:survey_activities_map]) || %{}
+
+    activity_types_map =
+      get_in(assigns.model.data, [:activity_types_map]) || assigns[:activity_types_map]
+
+    students = get_in(assigns.model.data, [:students]) || []
+
+    activities = Map.get(survey_activities_map, survey.resource_id, [])
+    should_show_details = survey.resource_id in selected_survey_ids and is_list(activities)
+
+    assigns =
+      Map.merge(assigns, %{
+        activities: activities,
+        activity_types_map: activity_types_map,
+        students: students,
+        should_show_details: should_show_details
+      })
+
+    ~H"""
+    <%= if @should_show_details do %>
+      <%= if @activities == [] do %>
+        <div class="px-10 py-6 text-sm text-Text-text-muted dark:text-Text-text-muted">
+          No attempts have been recorded for this survey yet.
+        </div>
+      <% else %>
+        <div :for={activity <- @activities} class="px-10">
+          <div class="flex flex-col bg-white dark:bg-gray-800 dark:text-white w-full whitespace-nowrap rounded-t-md font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4 my-4 gap-y-2">
+            <div role="activity_title">{activity.title} - Question details</div>
+            <div
+              id={"student_attempts_summary_#{activity.id}"}
+              class="flex flex-row items-center gap-x-2 lowercase w-full h-6"
+            >
+              <span class="text-xs">
+                <%= if activity.students_with_attempts_count == 0 do %>
+                  No student has completed any attempts.
+                <% else %>
+                  {~s{#{activity.students_with_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "student has", "students have", activity.students_with_attempts_count)} completed #{activity.total_attempts_count} #{Gettext.ngettext(OliWeb.Gettext, "attempt", "attempts", activity.total_attempts_count)}.}}
+                <% end %>
+              </span>
+              <div
+                :if={
+                  activity.students_with_attempts_count <
+                    (Map.get(activity, :students_count) || Enum.count(@students))
+                }
+                class="flex gap-x-2 items-center w-full"
+              >
+                <span class="text-xs">
+                  {~s{#{Map.get(activity, :emails_without_attempts_count) || Enum.count(activity.student_emails_without_attempts || [])} #{Gettext.ngettext(OliWeb.Gettext,
+                  "student has",
+                  "students have",
+                  Map.get(activity, :emails_without_attempts_count) || Enum.count(activity.student_emails_without_attempts || []))} not completed any attempt.}}
+                </span>
+                <input
+                  type="text"
+                  id={"email_inputs_#{activity.id}"}
+                  class="form-control hidden"
+                  value={Enum.join(activity.student_emails_without_attempts, "; ")}
+                  readonly
+                />
+                <button
+                  id={"copy_emails_button_#{activity.id}"}
+                  class="flex items-center gap-x-1.5 text-xs text-Text-text-button ml-auto"
+                  phx-hook="CopyListener"
+                  data-clipboard-target={"#email_inputs_#{activity.id}"}
+                >
+                  <Icons.email /> <span>Email</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div
+            class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
+            id={"activity_detail_#{activity.id}"}
+            phx-hook="LoadSurveyScripts"
+            phx-update="ignore"
+          >
+            <%= if Map.get(activity, :preview_rendered) != nil do %>
+              <ActivityHelpers.rendered_activity
+                activity={activity}
+                activity_types_map={@activity_types_map}
+              />
+            <% else %>
+              <p class="pt-9 pb-5">No attempt registered for this question</p>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="p-6 flex justify-center items-center">
+        <span
+          class="spinner-border spinner-border-sm h-8 w-8 text-Text-text-button"
+          role="status"
+          aria-hidden="true"
+        >
+        </span>
+      </div>
+    <% end %>
+    """
   end
 
   def render_assessment_column(assigns, assessment, _) do
     assigns =
       Map.merge(assigns, %{
         title: assessment.title,
-        container_label: assessment.container_label,
         id: assessment.id
       })
 
     ~H"""
-    <div
-      class="pl-9 pr-4 flex flex-col"
-      phx-click={JS.push("paged_table_selection_change", target: @target)}
-      phx-value-id={@id}
-    >
-      <%= if @container_label do %>
-        <span class="text-gray-600 font-bold text-sm">{@container_label}</span>
-      <% end %>
+    <div class="pr-4 flex flex-col">
       <span>
         {@title}
       </span>
     </div>
     """
-  end
-
-  def render_avg_score_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{avg_score: assessment.avg_score})
-
-    ~H"""
-    <div class={if @avg_score < 0.40, do: "text-red-600 font-bold"}>
-      {format_value(@avg_score)}
-    </div>
-    """
-  end
-
-  def render_attempts_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{total_attempts: assessment.total_attempts})
-
-    ~H"""
-    {@total_attempts || "-"}
-    """
-  end
-
-  def render_students_completion_column(assigns, assessment, _) do
-    assigns =
-      Map.merge(assigns, %{
-        students_completion: assessment.students_completion,
-        avg_score: assessment.avg_score
-      })
-
-    ~H"""
-    <%= if @avg_score != nil do %>
-      <div class={if @students_completion < 0.40, do: "text-red-600 font-bold"}>
-        {format_value(@students_completion)}
-      </div>
-    <% else %>
-      -
-    <% end %>
-    """
-  end
-
-  defp format_value(nil), do: "-"
-  defp format_value(value), do: "#{parse_percentage(value)}%"
-
-  defp parse_percentage(value) when is_integer(value) do
-    value * 100
-  end
-
-  defp parse_percentage(value) when is_float(value) do
-    {value, _} =
-      Float.round(value * 100)
-      |> Float.to_string()
-      |> Integer.parse()
-
-    value
   end
 end

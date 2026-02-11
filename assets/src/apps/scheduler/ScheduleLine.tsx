@@ -29,6 +29,7 @@ interface ScheduleLineProps {
   indent: number;
   rowColor: string;
   dayGeometry: DayGeometry;
+  minScheduleWidth: number;
 }
 
 function flattenItem(item: VisibleHierarchyItem): HierarchyItem {
@@ -44,6 +45,7 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({
   indent,
   rowColor,
   dayGeometry,
+  minScheduleWidth,
 }) => {
   if (item.resource_type_id === ScheduleItemType.Page) {
     return (
@@ -53,6 +55,7 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({
         indent={indent}
         rowColor={rowColor}
         dayGeometry={dayGeometry}
+        minScheduleWidth={minScheduleWidth}
       />
     );
   }
@@ -64,6 +67,7 @@ export const ScheduleLine: React.FC<ScheduleLineProps> = ({
       indent={indent}
       rowColor={rowColor}
       dayGeometry={dayGeometry}
+      minScheduleWidth={minScheduleWidth}
     />
   );
 };
@@ -74,6 +78,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   indent,
   rowColor,
   dayGeometry,
+  minScheduleWidth,
 }) => {
   const dispatch = useDispatch();
 
@@ -150,9 +155,12 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
   return (
     <>
       <tr style={rowSelectColor}>
-        <td className="border-r-0 w-[1px] !p-[2px]" style={{ backgroundColor: rowColor }}></td>
         <td
-          className={`w-48 ${labelClasses} font-bold`}
+          className="border-r-0 w-[1px] !p-[2px] sticky left-0 z-10"
+          style={{ backgroundColor: rowColor }}
+        ></td>
+        <td
+          className={`w-48 ${labelClasses} font-bold sticky left-[1px] z-10`}
           style={backgroundWithPadding}
           onClick={onSelect}
         >
@@ -173,7 +181,10 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
             )}
           </div>
         </td>
-        <td className="relative p-0" style={removedBackgroundColor}>
+        <td
+          className="relative p-0"
+          style={{ ...removedBackgroundColor, minWidth: minScheduleWidth }}
+        >
           <ScheduleHeader labels={false} dayGeometry={dayGeometry} />
           {item.startDate && item.endDate && (
             <DragBar
@@ -199,6 +210,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
             indent={indent + 1}
             rowColor={rowColor}
             dayGeometry={dayGeometry}
+            minScheduleWidth={minScheduleWidth}
           />
         ))}
       {expanded &&
@@ -210,6 +222,7 @@ const ContainerScheduleLine: React.FC<ScheduleLineProps> = ({
             indent={indent + 1}
             rowColor={rowColor}
             dayGeometry={dayGeometry}
+            minScheduleWidth={minScheduleWidth}
           />
         ))}
     </>

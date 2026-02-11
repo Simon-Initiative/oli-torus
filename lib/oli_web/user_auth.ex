@@ -6,6 +6,7 @@ defmodule OliWeb.UserAuth do
 
   alias Oli.Accounts
   alias Oli.Accounts.{User}
+  alias Oli.Consent
   alias Oli.Delivery.Sections.Section
   alias OliWeb.AuthorAuth
 
@@ -26,14 +27,41 @@ defmodule OliWeb.UserAuth do
       maybe_return_to_section(params["section"]) || params["request_path"] ||
         get_session(conn, :user_return_to) || signed_in_path(conn)
 
+    # Sync cookie preferences from browser to DB if user has none saved
+    maybe_sync_cookie_preferences(conn, user)
+
     conn
     |> renew_session()
     |> put_token_in_session(token)
+    |> maybe_put_settings_return_to(params)
     # A lot of existing liveviews depends on the current_user_id being in the session.
     # We eventually want to remove this, but for now, we will add it to appease the existing code.
     |> put_user_id_in_session(user.id)
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: user_return_to)
+  end
+
+  # Syncs cookie preferences from browser to database on login.
+  # Only syncs if user has no existing preferences in DB (Pattern 4: sync only if DB empty).
+  defp maybe_sync_cookie_preferences(conn, user) do
+    # Check if cookies were fetched (real HTTP request vs unit test)
+    browser_cookie =
+      case conn.cookies do
+        %Plug.Conn.Unfetched{} -> nil
+        cookies -> cookies["_cky_opt_choices"]
+      end
+
+    if browser_cookie && browser_cookie != "" do
+      existing_cookies = Consent.retrieve_cookies(user.id)
+
+      if Enum.empty?(existing_cookies) do
+        # User has no DB preferences, sync from browser
+        expiration = DateTime.utc_now() |> DateTime.add(365, :day) |> DateTime.truncate(:second)
+        Consent.insert_cookie("_cky_opt_choices", browser_cookie, expiration, user.id)
+      end
+    end
+
+    :ok
   end
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
@@ -43,6 +71,13 @@ defmodule OliWeb.UserAuth do
   defp maybe_write_remember_me_cookie(conn, _token, _params) do
     conn
   end
+
+  defp maybe_put_settings_return_to(conn, %{"settings_return_to" => return_to})
+       when is_binary(return_to) and return_to != "" do
+    put_session(conn, "settings_return_to", return_to)
+  end
+
+  defp maybe_put_settings_return_to(conn, _params), do: conn
 
   @doc """
   Creates a new session for the user.
@@ -97,6 +132,7 @@ defmodule OliWeb.UserAuth do
         "author_token",
         "author_live_socket_id",
         "current_author_id",
+        "settings_return_to",
         # Preserve enrollment invitation data for SSO flows
         "pending_section_enrollment",
         "invitation_email",

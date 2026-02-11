@@ -322,8 +322,8 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
       # Create and associate tags with the project
       {:ok, biology_tag} = Oli.Tags.create_tag(%{name: "Biology"})
       {:ok, chemistry_tag} = Oli.Tags.create_tag(%{name: "Chemistry"})
-      {:ok, _} = Oli.Tags.associate_tag_with_project(project, biology_tag)
-      {:ok, _} = Oli.Tags.associate_tag_with_project(project, chemistry_tag)
+      {:ok, _} = Oli.Tags.associate_tag_with_project(project, biology_tag, actor: admin)
+      {:ok, _} = Oli.Tags.associate_tag_with_project(project, chemistry_tag, actor: admin)
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 
@@ -366,13 +366,19 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
     setup [:author_conn, :set_timezone]
 
     test "does not display tags column for regular authors", %{conn: conn, author: author} do
+      # Create admin for tag operations
+      tag_admin =
+        Oli.Factory.insert(:author,
+          system_role_id: Oli.Accounts.SystemRole.role_id().content_admin
+        )
+
       project = create_project_with_owner(author)
 
       # Create and associate tags with the project
       {:ok, biology_tag} = Oli.Tags.create_tag(%{name: "Biology"})
       {:ok, chemistry_tag} = Oli.Tags.create_tag(%{name: "Chemistry"})
-      {:ok, _} = Oli.Tags.associate_tag_with_project(project, biology_tag)
-      {:ok, _} = Oli.Tags.associate_tag_with_project(project, chemistry_tag)
+      {:ok, _} = Oli.Tags.associate_tag_with_project(project, biology_tag, actor: tag_admin)
+      {:ok, _} = Oli.Tags.associate_tag_with_project(project, chemistry_tag, actor: tag_admin)
 
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
 

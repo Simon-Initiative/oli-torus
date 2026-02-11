@@ -9,6 +9,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
   alias Oli.Accounts
   alias Oli.Accounts.{Author, SystemRole}
   alias Oli.Auditing
+  alias Oli.Repo
+  alias OliWeb.Users.DetailViewHelpers
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -18,7 +20,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
   }
 
   alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
+  alias OliWeb.Common.Properties.{Groups, ReadOnly}
+  alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
 
@@ -56,6 +59,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
          |> redirect(to: ~p"/admin/authors")}
 
       author ->
+        author = Repo.preload(author, :user_identities)
+        has_google = DetailViewHelpers.credentials_has_google?(author.user_identities)
+
         {:ok,
          assign(socket,
            current_author: socket.assigns.current_author,
@@ -63,8 +69,11 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author: author,
            disabled_edit: true,
            author_roles: SystemRole.role_id(),
+           credentials_has_google: has_google,
+           credentials_label: DetailViewHelpers.credentials_label(author, has_google),
            password_reset_link: "",
            author_name: author.name,
+           author_header_name: DetailViewHelpers.formatted_header_name(author),
            form: author_form(author)
          )}
     end
@@ -80,7 +89,10 @@ defmodule OliWeb.Users.AuthorsDetailView do
   attr(:author_roles, :map, default: %{})
   attr(:password_reset_link, :string)
   attr(:author_name, :string)
+  attr(:author_header_name, :string)
   attr(:form, :map)
+  attr(:credentials_has_google, :boolean)
+  attr(:credentials_label, :string)
 
   def render(assigns) do
     ~H"""
@@ -88,122 +100,170 @@ defmodule OliWeb.Users.AuthorsDetailView do
       {render_modal(assigns)}
 
       <Groups.render>
-        <Group.render label="Details" description="User details">
-          <.form
-            id="edit_author"
-            for={@form}
-            phx-change="change"
-            phx-submit="submit"
-            autocomplete="off"
-          >
-            <ReadOnly.render label="Name" value={@author_name} />
-            <div class="form-group">
-              <label for="given_name">First Name</label>
-              <.input
-                field={@form[:given_name]}
-                id="given_name"
-                class="form-control"
-                disabled={@disabled_edit}
-                error_position={:bottom}
-              />
-            </div>
-            <div class="form-group">
-              <label for="family_name">Last Name</label>
-              <.input
-                field={@form[:family_name]}
-                id="family_name"
-                class="form-control"
-                disabled={@disabled_edit}
-                error_position={:bottom}
-              />
-            </div>
-            <div class="form-group">
-              <label for="email">Email</label>
-              <.input
-                field={@form[:email]}
-                id="email"
-                class="form-control"
-                disabled={@disabled_edit}
-                error_position={:bottom}
-              />
-            </div>
-            <div class="form-group">
-              <label for="role">Role</label>
-              <.input
-                type="select"
-                class="form-control"
-                field={@form[:system_role_id]}
-                options={
-                  Enum.map(@author_roles, fn {_type, id} ->
-                    {role(id), id}
-                  end)
-                }
-                disabled={
-                  @disabled_edit or not Accounts.has_admin_role?(@current_author, :system_admin)
-                }
-              />
-            </div>
-            <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
-              <div class="form-control">
-                <.input
-                  type="checkbox"
-                  field={@form[:is_internal]}
-                  label="Internal staff"
-                  class="form-check-input"
-                  disabled={@disabled_edit}
-                />
-                <p class="mt-1 text-xs text-gray-500">
-                  Internal actors gain early access to internal-only and canary features.
-                </p>
-              </div>
-            <% else %>
-              <ReadOnly.render
-                label="Internal actor"
-                value={if(@author.is_internal, do: "Yes", else: "No")}
-              />
-            <% end %>
-            <%= unless @disabled_edit do %>
-              <.button
-                variant={:primary}
-                type="submit"
-                class="float-right btn btn-md btn-primary mt-2"
-                disabled={@disabled_submit}
-              >
-                Save
-              </.button>
-            <% end %>
-          </.form>
-          <%= if @disabled_edit do %>
-            <.button
-              variant={:primary}
-              class="float-right btn btn-md btn-primary mt-2"
-              phx-click="start_edit"
-            >
-              Edit
-            </.button>
-          <% end %>
-        </Group.render>
-        <Group.render
-          label="Projects"
-          description="Projects that the Author has either created or is a collaborator within"
-        >
-          <.live_component
-            module={OliWeb.Users.AuthorProjects}
-            id="author_projects"
-            user={@author}
-            ctx={@ctx}
-          />
-        </Group.render>
-        <Group.render label="Actions" description="Actions that can be taken for this user">
-          <%= if @author.id != @current_author.id and @author.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
-            <Actions.render
-              user_id={@author.id}
-              account_locked={!is_nil(@author.locked_at)}
-              email_confirmation_pending={Accounts.author_confirmation_pending?(@author)}
-              password_reset_link={@password_reset_link}
+        <div class="pt-6 pb-2">
+          <h2 class="text-Text-text-high text-2xl font-semibold leading-8">
+            {if @author_header_name == "", do: "Unnamed author", else: @author_header_name}
+          </h2>
+        </div>
+        <div class="flex flex-col py-5 border-b border-Border-border-subtle">
+          <h4>Projects</h4>
+          <div class="text-Text-text-low-alpha">
+            Projects that the Author has either created or is a collaborator within
+          </div>
+          <div class="mt-4">
+            <.live_component
+              module={OliWeb.Users.AuthorProjects}
+              id="author_projects"
+              user={@author}
+              ctx={@ctx}
             />
-          <% end %>
-        </Group.render>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-8 py-5 border-b border-Border-border-subtle lg:grid-cols-2">
+          <div class="flex flex-col">
+            <h4>Details</h4>
+            <div class="text-Text-text-low-alpha">User details</div>
+            <div class="mt-4">
+              <.form
+                id="edit_author"
+                for={@form}
+                phx-change="change"
+                phx-submit="submit"
+                autocomplete="off"
+              >
+                <div class="flex flex-col gap-4">
+                  <ReadOnly.render label="Name" value={@author_name} />
+                  <div class="form-group">
+                    <label for="given_name">First Name</label>
+                    <.input
+                      field={@form[:given_name]}
+                      id="given_name"
+                      class="form-control"
+                      disabled={@disabled_edit}
+                      error_position={:bottom}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="family_name">Last Name</label>
+                    <.input
+                      field={@form[:family_name]}
+                      id="family_name"
+                      class="form-control"
+                      disabled={@disabled_edit}
+                      error_position={:bottom}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="email">Email</label>
+                    <.input
+                      field={@form[:email]}
+                      id="email"
+                      class="form-control"
+                      disabled={@disabled_edit}
+                      error_position={:bottom}
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="role">Role</label>
+                    <.input
+                      type="select"
+                      class="form-control"
+                      field={@form[:system_role_id]}
+                      options={
+                        Enum.map(@author_roles, fn {_type, id} ->
+                          {role(id), id}
+                        end)
+                      }
+                      disabled={
+                        @disabled_edit or not Accounts.has_admin_role?(@current_author, :system_admin)
+                      }
+                    />
+                  </div>
+                  <%= if Accounts.has_admin_role?(@current_author, :system_admin) do %>
+                    <div class="form-control">
+                      <.input
+                        type="checkbox"
+                        field={@form[:is_internal]}
+                        label="Internal staff"
+                        class="form-check-input"
+                        disabled={@disabled_edit}
+                      />
+                      <p class="mt-1 text-xs text-Text-text-low-alpha">
+                        Internal actors gain early access to internal-only and canary features.
+                      </p>
+                    </div>
+                  <% else %>
+                    <ReadOnly.render
+                      label="Internal actor"
+                      value={if(@author.is_internal, do: "Yes", else: "No")}
+                    />
+                  <% end %>
+                  <div class="form-group">
+                    <span class="form-label">Credentials Managed By</span>
+                    <div class="mt-2 flex flex-col gap-2 text-Text-text-low-alpha">
+                      <%= if @credentials_has_google do %>
+                        <div class="flex flex-col items-start gap-1">
+                          <Icons.google />
+                          <span class="text-[11px] uppercase tracking-wide text-Text-text-low-alpha">
+                            Google
+                          </span>
+                        </div>
+                      <% end %>
+                      <%= if @credentials_label do %>
+                        <span class="text-sm font-semibold text-Text-text-high">
+                          {@credentials_label}
+                        </span>
+                      <% end %>
+                      <%= if !@credentials_has_google && is_nil(@credentials_label) do %>
+                        <span class="text-sm text-Text-text-low-alpha">None</span>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+                <%= unless @disabled_edit do %>
+                  <div class="mt-4 flex justify-end">
+                    <.button
+                      variant={:primary}
+                      type="submit"
+                      size={:sm}
+                      class="!bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
+                      disabled={@disabled_submit}
+                    >
+                      Save
+                    </.button>
+                  </div>
+                <% end %>
+              </.form>
+              <%= if @disabled_edit do %>
+                <div class="mt-4 flex justify-end">
+                  <.button
+                    variant={:primary}
+                    size={:sm}
+                    class="!bg-Fill-Buttons-fill-primary hover:!bg-Fill-Buttons-fill-primary-hover"
+                    phx-click="start_edit"
+                  >
+                    Edit
+                  </.button>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="flex flex-col">
+            <h4>Actions</h4>
+            <div class="text-Text-text-low-alpha">Actions that can be taken for this user</div>
+            <div class="mt-4 w-full max-w-[535px]">
+              <%= if @author.id != @current_author.id and @author.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
+                <Actions.render
+                  user_id={@author.id}
+                  account_locked={!is_nil(@author.locked_at)}
+                  email_confirmation_pending={Accounts.author_confirmation_pending?(@author)}
+                  password_reset_link={@password_reset_link}
+                />
+              <% end %>
+            </div>
+          </div>
+        </div>
       </Groups.render>
     </div>
     """
@@ -403,12 +463,14 @@ defmodule OliWeb.Users.AuthorsDetailView do
     form = author_form(socket.assigns.author, params)
 
     author_name = combined_name_from_form(form, socket.assigns.author)
+    author_header_name = combined_header_name_from_form(form, socket.assigns.author)
 
     socket =
       socket
       |> assign(form: form)
       |> assign(disabled_submit: !Enum.empty?(form.errors))
       |> assign(author_name: author_name)
+      |> assign(author_header_name: author_header_name)
 
     {:noreply, socket}
   end
@@ -436,7 +498,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
            author: author,
            form: updated_form,
            disabled_edit: true,
-           author_name: combined_name_from_form(updated_form, author)
+           author_name: combined_name_from_form(updated_form, author),
+           author_header_name: combined_header_name_from_form(updated_form, author)
          )}
 
       {:error, error} ->
@@ -497,6 +560,18 @@ defmodule OliWeb.Users.AuthorsDetailView do
     |> case do
       "" -> fallback_author.name || ""
       name -> name
+    end
+  end
+
+  defp combined_header_name_from_form(form, fallback_author) do
+    given = form[:given_name].value || fallback_author.given_name || ""
+    family = form[:family_name].value || fallback_author.family_name || ""
+
+    case {String.trim(family), String.trim(given)} do
+      {"", ""} -> fallback_author.name || ""
+      {family, ""} -> family
+      {"", given} -> given
+      {family, given} -> "#{family}, #{given}"
     end
   end
 

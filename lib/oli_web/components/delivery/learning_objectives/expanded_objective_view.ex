@@ -226,6 +226,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ExpandedObjectiveView do
                 section_slug={@section_slug}
                 section_title={@section_title}
                 instructor_email={@current_user.email}
+                instructor_name={Utils.name(@current_user)}
               />
             </div>
           <% end %>

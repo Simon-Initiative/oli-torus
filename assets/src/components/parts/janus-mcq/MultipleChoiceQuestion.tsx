@@ -80,23 +80,10 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   }
 
   const textValue = getNodeText(nodes);
-  const itemIndex = index !== undefined ? index : idx;
-  const positionText = `${itemIndex + 1} of ${totalItems}`;
-
-  /** A11y label rules:
-   *  ✔ For checkbox: "OptionText, unchecked, checkbox, group, 1 of 4"
-   *  ✔ For radio: only text (browser handles group/checked state)
-   */
   const labelId = `${itemId}-label`;
-  const positionId = `${itemId}-position`;
-
-  // For multiple selection, create full aria-label with text, state, and position
-  const ariaLabel = multipleSelection
-    ? `${textValue}, ${selected ? 'checked' : 'unchecked'}, checkbox, group, ${positionText}`
-    : undefined;
 
   /** When user checks/unchecks, we must refocus the input so SR
-   *  re-announces: "Tomato, checkbox, 2 of 4, checked"
+   *  re-announces the option text with updated state
    */
   const handleChanged = (e: { target: { checked: boolean } }) => {
     const selection = {
@@ -138,6 +125,45 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       // Track that this is a keyboard interaction (Enter or Space)
       if (e.key === 'Enter' || e.key === ' ') {
         isMouseInteraction.current = false;
+      }
+    } else {
+      // For single-select (radio buttons), prevent arrow keys from navigating options
+      // This allows users to scroll the page with arrow keys instead
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.currentTarget.blur();
+        // Manually scroll the page
+        const scrollAmount = 50;
+        window.scrollBy({
+          top: e.key === 'ArrowUp' ? -scrollAmount : scrollAmount,
+          behavior: 'auto',
+        });
+      }
+      // Handle Tab navigation between options for single-select
+      if (e.key === 'Tab') {
+        const container = e.currentTarget.closest('.mcq-input');
+        if (!container) return;
+        const allOptions = container.querySelectorAll<HTMLInputElement>(
+          `input[name="${groupId}"]:not([disabled])`,
+        );
+        const currentIndex = Array.from(allOptions).indexOf(e.currentTarget);
+        if (currentIndex === -1) return;
+
+        if (e.shiftKey) {
+          // Shift+Tab: move to previous option
+          if (currentIndex > 0) {
+            e.preventDefault();
+            allOptions[currentIndex - 1].focus();
+          }
+          // If at first option, allow normal Tab behavior to move to previous control
+        } else {
+          // Tab: move to next option
+          if (currentIndex < allOptions.length - 1) {
+            e.preventDefault();
+            allOptions[currentIndex + 1].focus();
+          }
+          // If at last option, allow normal Tab behavior to move to next control
+        }
       }
     }
   };
@@ -193,18 +219,12 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
           onChange={handleChanged}
           onMouseDown={handleMouseDown}
           onKeyDown={handleKeyDown}
-          aria-label={ariaLabel}
-          aria-labelledby={!multipleSelection ? labelId : undefined}
+          aria-labelledby={labelId}
           tabIndex={disabled ? -1 : 0}
         />
 
-        {/* Label holds content + optional sr-only position */}
+        {/* Label holds only the option content */}
         <label id={labelId} htmlFor={itemId}>
-          {multipleSelection && (
-            <span id={positionId} className="sr-only">
-              {positionText}
-            </span>
-          )}
           <MCQItemContent itemId={itemId} nodes={nodes} state={state} />
         </label>
       </div>
@@ -856,10 +876,8 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   }
 
   const groupLabelId = `mcq-group-label-${id}`;
-  const groupLabelText = ariaLabelledBy?.trim() || 'Multiple choice, group';
-  const groupLabel = multipleSelection
-    ? `${groupLabelText}, group, ${options.length} items`
-    : groupLabelText;
+  const groupLabelText =
+    ariaLabelledBy?.trim() || (multipleSelection ? 'Select all that apply' : 'Multiple choice');
 
   return ready ? (
     <div
@@ -872,7 +890,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       aria-atomic="false"
     >
       <span id={groupLabelId} className="sr-only">
-        {groupLabel}
+        {groupLabelText}
       </span>
       {options?.map((item, index) => {
         const { index: _itemIndex, ...itemWithoutIndex } = item;

@@ -3,9 +3,10 @@ defmodule OliWeb.Components.Delivery.Students do
 
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.{Author, User}
-  alias Oli.Delivery.Metrics
+  alias Oli.Delivery.{Metrics, GrantedCertificates}
   alias OliWeb.Common.{SearchInput, Params, StripedPagedTable, Utils}
   alias OliWeb.Components.Delivery.CardHighlights
+  alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Delivery.Content.{PercentageSelector, MultiSelect, SelectDropdown}
   alias OliWeb.Delivery.InstructorDashboard.Helpers
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
@@ -364,7 +365,18 @@ defmodule OliWeb.Components.Delivery.Students do
         )
 
       :overall_proficiency ->
-        Enum.sort_by(students, fn student -> student.overall_proficiency end, sort_order)
+        Enum.sort_by(
+          students,
+          fn student ->
+            normalized = normalize_proficiency(student.overall_proficiency)
+
+            {
+              overall_proficiency_rank(normalized),
+              normalized
+            }
+          end,
+          sort_order
+        )
 
       :engagement ->
         Enum.sort_by(students, fn student -> student.engagement end, sort_order)
@@ -540,7 +552,7 @@ defmodule OliWeb.Components.Delivery.Students do
         </div>
 
         <div class="flex w-fit gap-2 mx-4 mt-4 mb-4 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
-          <div class="flex p-2 gap-2">
+          <div class="flex p-2 gap-2 items-center">
             <form for="search" phx-target={@myself} phx-change="search_student" class="w-56">
               <SearchInput.render
                 id="students_search_input"
@@ -561,7 +573,7 @@ defmodule OliWeb.Components.Delivery.Students do
               selected_values={@selected_proficiency_options}
               selected_ids={@selected_proficiency_ids}
               target={@myself}
-              disabled={@selected_proficiency_ids == %{}}
+              disabled={@proficiency_options == []}
               placeholder="Proficiency"
             />
 
@@ -631,6 +643,7 @@ defmodule OliWeb.Components.Delivery.Students do
           selected_modal={nil}
           granted_certificate_guid={nil}
           section_slug={@section_slug}
+          certificate_label={GrantedCertificates.certificate_label(false)}
         />
 
         <.live_component
@@ -641,6 +654,7 @@ defmodule OliWeb.Components.Delivery.Students do
           students={@all_students}
           section_title={@section_title}
           instructor_email={issued_by_email(@current_author, @current_user)}
+          instructor_name={issued_by_name(@current_author, @current_user)}
           section_slug={@section_slug}
           show_modal={@show_email_modal}
         />
@@ -651,6 +665,9 @@ defmodule OliWeb.Components.Delivery.Students do
 
   defp issued_by_email(author, _user) when not is_nil(author), do: author.email
   defp issued_by_email(_author, user), do: user.email
+
+  defp issued_by_name(author, _user) when not is_nil(author), do: DeliveryUtils.user_name(author)
+  defp issued_by_name(_author, user), do: DeliveryUtils.user_name(user)
 
   #### Add enrollments modal related stuff ####
   def add_enrollments(%{add_enrollments_step: :step_1} = assigns) do
@@ -1053,7 +1070,10 @@ defmodule OliWeb.Components.Delivery.Students do
 
     # From the existing users we need to distinguish wich have already an enrollment in the current course
     enrollments_by_emails =
-      Oli.Delivery.Sections.get_enrollments_by_emails(socket.assigns.section_slug, existing_users)
+      Oli.Delivery.Sections.get_independent_enrollments_by_emails(
+        socket.assigns.section_slug,
+        existing_users
+      )
 
     enrolled_emails = Enum.map(enrollments_by_emails, & &1.user.email)
 
@@ -1510,6 +1530,22 @@ defmodule OliWeb.Components.Delivery.Students do
           diff_days > 7 and is_learner_selected(student, filter_by)
         end)
     }
+  end
+
+  defp overall_proficiency_rank(value) do
+    case value do
+      "high" -> 0
+      "medium" -> 1
+      "low" -> 2
+      _ -> 3
+    end
+  end
+
+  defp normalize_proficiency(value) do
+    value
+    |> to_string()
+    |> String.trim()
+    |> String.downcase()
   end
 
   ## Determine if a learner is selected based on the filter_by value

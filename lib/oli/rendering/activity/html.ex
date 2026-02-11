@@ -174,6 +174,7 @@ defmodule Oli.Rendering.Activity.Html do
            mode: mode,
            user: user,
            resource_attempt: resource_attempt,
+           extrinsic_state: extrinsic_state,
            group_id: group_id,
            survey_id: survey_id,
            learning_language: learning_language,
@@ -213,12 +214,7 @@ defmodule Oli.Rendering.Activity.Html do
           else
             resource_attempt.attempt_guid
           end,
-        pageState:
-          if is_nil(resource_attempt) do
-            "{}"
-          else
-            resource_attempt.state
-          end,
+        pageState: extrinsic_state || %{},
         renderPointMarkers: render_opts.render_point_markers,
         isAnnotationLevel: true,
         variables: variables,

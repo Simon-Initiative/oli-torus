@@ -177,14 +177,14 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns the enrollments for a given section and a list of user emails.
+  Returns the enrollments for a given section and list of emails,
+  limited to independent learner users.
   """
-  def get_enrollments_by_emails(section_slug, emails) do
+  def get_independent_enrollments_by_emails(section_slug, emails) do
     from(e in Enrollment,
       join: s in assoc(e, :section),
-      join: ecr in assoc(e, :context_roles),
       join: u in assoc(e, :user),
-      where: s.slug == ^section_slug and u.email in ^emails,
+      where: s.slug == ^section_slug and u.email in ^emails and u.independent_learner == true,
       preload: [:user]
     )
     |> Repo.all()
@@ -441,20 +441,14 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Ensures a user is permitted to enroll in a direct-delivery section.
+  Ensures a user is permitted to enroll in a section based on section delivery mode.
 
-  The section must be flagged as open-and-free and the enrolling user must be an
-  independent learner (not an LMS account). This guards against scenarios where LMS
-  identities attempt to enter direct-delivery courses, which can cause conflicting
-  account state such as duplicate emails tied to mixed enrollment types.
+  - Open-and-free sections only allow independent learners.
+  - LTI (non open-and-free) sections only allow LMS users.
   """
-  @spec ensure_direct_delivery_enrollment_allowed(User.t() | nil, Section.t()) ::
-          :ok | {:error, :non_independent_user}
-  def ensure_direct_delivery_enrollment_allowed(_user, %Section{open_and_free: false}), do: :ok
-
-  def ensure_direct_delivery_enrollment_allowed(nil, %Section{}), do: :ok
-
-  def ensure_direct_delivery_enrollment_allowed(%User{} = user, %Section{open_and_free: true}) do
+  @spec ensure_enrollment_allowed(User.t(), Section.t()) ::
+          :ok | {:error, :non_independent_user} | {:error, :independent_learner_not_allowed}
+  def ensure_enrollment_allowed(%User{} = user, %Section{open_and_free: true}) do
     if user.independent_learner do
       :ok
     else
@@ -462,26 +456,39 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  def ensure_enrollment_allowed(%User{} = user, %Section{open_and_free: false}) do
+    if user.independent_learner do
+      {:error, :independent_learner_not_allowed}
+    else
+      :ok
+    end
+  end
+
   @doc """
-  Validates a batch enrollment into a direct-delivery section.
+  Validates a batch enrollment into a section based on delivery mode.
 
   When the section is open-and-free, every user in the list must be an independent learner.
-  This prevents LMS accounts from being bulk-enrolled into direct-delivery courses, which
-  could otherwise produce the mixed-account scenario.
+  When the section is LTI (non open-and-free), no user in the list may be an independent learner.
   """
-  @spec ensure_direct_delivery_batch_enrollment_allowed(list(), Section.t()) ::
-          :ok | {:error, {:non_independent_users, [integer()]}}
-  def ensure_direct_delivery_batch_enrollment_allowed(_user_entries, %Section{
-        open_and_free: false
-      }),
-      do: :ok
-
-  def ensure_direct_delivery_batch_enrollment_allowed(user_entries, _section) do
+  @spec ensure_batch_enrollment_allowed(list(), Section.t()) ::
+          :ok
+          | {:error, {:non_independent_users, [integer()]}}
+          | {:error, {:independent_learner_not_allowed, [integer()]}}
+  def ensure_batch_enrollment_allowed(user_entries, %Section{open_and_free: true}) do
     user_entries
     |> normalize_user_ids()
     |> case do
       [] -> :ok
       user_ids -> validate_independent_users(user_ids)
+    end
+  end
+
+  def ensure_batch_enrollment_allowed(user_entries, %Section{open_and_free: false}) do
+    user_entries
+    |> normalize_user_ids()
+    |> case do
+      [] -> :ok
+      user_ids -> validate_non_independent_users(user_ids)
     end
   end
 
@@ -496,6 +503,20 @@ defmodule Oli.Delivery.Sections do
     case non_independent_ids do
       [] -> :ok
       ids -> {:error, {:non_independent_users, ids}}
+    end
+  end
+
+  defp validate_non_independent_users(user_ids) do
+    independent_ids =
+      from(u in User,
+        where: u.id in ^user_ids and u.independent_learner == true,
+        select: u.id
+      )
+      |> Repo.all()
+
+    case independent_ids do
+      [] -> :ok
+      ids -> {:error, {:independent_learner_not_allowed, ids}}
     end
   end
 
@@ -829,7 +850,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns a listing of all enrolled sections for a given user.
+  Returns a listing of all enrolled or suspended sections for a given user.
   """
   def list_user_enrolled_sections(%{id: user_id} = _user) do
     query =
@@ -837,7 +858,9 @@ defmodule Oli.Delivery.Sections do
         s in Section,
         join: e in Enrollment,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.status == :active and e.status == :enrolled,
+        where:
+          e.user_id == ^user_id and s.status == :active and
+            e.status in [:enrolled, :suspended],
         select: s
       )
 
@@ -3991,8 +4014,10 @@ defmodule Oli.Delivery.Sections do
                   false
               end
 
-            if is_container? or is_nil(current_children) do
-              new_published_resource = new_published_resources_map[resource_id]
+            # Guard: skip resources not in this publication (e.g., remixed from another project)
+            new_published_resource = new_published_resources_map[resource_id]
+
+            if (is_container? or is_nil(current_children)) and not is_nil(new_published_resource) do
               new_children = new_published_resource.children
 
               updated_section_resource =
@@ -5319,53 +5344,76 @@ defmodule Oli.Delivery.Sections do
     proficiencies_for_objectives =
       Metrics.proficiency_per_student_for_objective(section.id, id_list, student_id: student_id)
 
-    student_ids =
-      Sections.enrolled_student_ids(section_slug)
+    student_proficiency_for_objectives =
+      if student_id do
+        Enum.reduce(id_list, %{}, fn objective_id, acc ->
+          proficiency =
+            proficiencies_for_objectives
+            |> Map.get(objective_id, %{})
+            |> Map.get(student_id, "Not enough data")
 
-    proficiency_dist_for_objectives =
-      proficiencies_for_objectives
-      |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
-        # Filter proficiency data to only include enrolled students (exclude instructors)
-        filtered_student_proficiency =
-          student_proficiency
-          |> Enum.filter(fn {user_id, _proficiency_level} -> user_id in student_ids end)
-          |> Map.new()
+          Map.put(acc, objective_id, proficiency)
+        end)
+      else
+        %{}
+      end
 
-        # Add "Not enough data" for students who don't have proficiency data
-        student_proficiency =
-          student_ids
-          |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
-          |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
-            Map.put(acc, user_id, "Not enough data")
+    {student_ids, proficiency_dist_for_objectives} =
+      if is_nil(student_id) do
+        student_ids = Sections.enrolled_student_ids(section_slug)
+        student_id_set = MapSet.new(student_ids)
+
+        proficiency_dist_for_objectives =
+          proficiencies_for_objectives
+          |> Enum.reduce(%{}, fn {objective_id, student_proficiency}, acc ->
+            # Filter proficiency data to only include enrolled students (exclude instructors)
+            filtered_student_proficiency =
+              student_proficiency
+              |> Enum.filter(fn {user_id, _proficiency_level} ->
+                MapSet.member?(student_id_set, user_id)
+              end)
+              |> Map.new()
+
+            # Add "Not enough data" for students who don't have proficiency data
+            student_proficiency =
+              student_ids
+              |> Enum.reject(&Map.has_key?(filtered_student_proficiency, &1))
+              |> Enum.reduce(filtered_student_proficiency, fn user_id, acc ->
+                Map.put(acc, user_id, "Not enough data")
+              end)
+
+            proficiency_dist =
+              Enum.frequencies_by(student_proficiency, fn {_student_id, proficiency} ->
+                proficiency
+              end)
+
+            proficiency_mode =
+              proficiency_dist
+              |> Enum.map(fn {key, value} ->
+                ordinal =
+                  case String.downcase(key) do
+                    "low" -> 0
+                    "medium" -> 1
+                    "high" -> 2
+                    _ -> 3
+                  end
+
+                {key, value, ordinal}
+              end)
+              |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
+              |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
+              |> elem(0)
+
+            Map.put(acc, objective_id,
+              proficiency_dist: proficiency_dist,
+              proficiency_mode: proficiency_mode
+            )
           end)
 
-        proficiency_dist =
-          Enum.frequencies_by(student_proficiency, fn {_student_id, proficiency} ->
-            proficiency
-          end)
-
-        proficiency_mode =
-          proficiency_dist
-          |> Enum.map(fn {key, value} ->
-            ordinal =
-              case String.downcase(key) do
-                "low" -> 0
-                "medium" -> 1
-                "high" -> 2
-                _ -> 3
-              end
-
-            {key, value, ordinal}
-          end)
-          |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
-          |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
-          |> elem(0)
-
-        Map.put(acc, objective_id,
-          proficiency_dist: proficiency_dist,
-          proficiency_mode: proficiency_mode
-        )
-      end)
+        {student_ids, proficiency_dist_for_objectives}
+      else
+        {[], %{}}
+      end
 
     objective_to_container_ids_map =
       from(co in ContainedObjective)
@@ -5414,14 +5462,22 @@ defmodule Oli.Delivery.Sections do
         # this is a top-level objective
         false ->
           {student_proficiency_obj, student_proficiency_obj_dist} =
-            case Map.get(proficiency_dist_for_objectives, objective.resource_id) do
-              nil ->
-                # When there's no proficiency data, create distribution with all students as "Not enough data"
-                not_enough_data_dist = %{"Not enough data" => length(student_ids)}
-                {"Not enough data", not_enough_data_dist}
+            if student_id do
+              {Map.get(
+                 student_proficiency_for_objectives,
+                 objective.resource_id,
+                 "Not enough data"
+               ), nil}
+            else
+              case Map.get(proficiency_dist_for_objectives, objective.resource_id) do
+                nil ->
+                  # When there's no proficiency data, create distribution with all students as "Not enough data"
+                  not_enough_data_dist = %{"Not enough data" => length(student_ids)}
+                  {"Not enough data", not_enough_data_dist}
 
-              prof ->
-                {prof[:proficiency_mode], prof[:proficiency_dist]}
+                prof ->
+                  {prof[:proficiency_mode], prof[:proficiency_dist]}
+              end
             end
 
           objective =
@@ -5445,14 +5501,22 @@ defmodule Oli.Delivery.Sections do
                   sub_objective = Map.get(lookup_map, child)
 
                   {student_proficiency_subobj, student_proficiency_subobj_dist} =
-                    case Map.get(proficiency_dist_for_objectives, sub_objective.resource_id) do
-                      nil ->
-                        # When there's no proficiency data, create distribution with all students as "Not enough data"
-                        not_enough_data_dist = %{"Not enough data" => length(student_ids)}
-                        {"Not enough data", not_enough_data_dist}
+                    if student_id do
+                      {Map.get(
+                         student_proficiency_for_objectives,
+                         sub_objective.resource_id,
+                         "Not enough data"
+                       ), nil}
+                    else
+                      case Map.get(proficiency_dist_for_objectives, sub_objective.resource_id) do
+                        nil ->
+                          # When there's no proficiency data, create distribution with all students as "Not enough data"
+                          not_enough_data_dist = %{"Not enough data" => length(student_ids)}
+                          {"Not enough data", not_enough_data_dist}
 
-                      prof ->
-                        {prof[:proficiency_mode], prof[:proficiency_dist]}
+                        prof ->
+                          {prof[:proficiency_mode], prof[:proficiency_dist]}
+                      end
                     end
 
                   Map.merge(sub_objective, %{
@@ -5903,7 +5967,16 @@ defmodule Oli.Delivery.Sections do
     The second argument is a list of fields to be selected from the Section table.
     If the second argument is not passed, all fields will be selected.
   """
-  def get_sections_by(clauses, select_fields \\ nil) do
+  def get_sections_by(clauses, select_fields \\ nil)
+
+  def get_sections_by(clauses, select_fields) when is_list(clauses) do
+    Section
+    |> apply_section_clauses(clauses)
+    |> maybe_select_section_fields(select_fields)
+    |> Repo.all()
+  end
+
+  def get_sections_by(clauses, select_fields) do
     Section
     |> from(where: ^clauses)
     |> maybe_select_section_fields(select_fields)
@@ -5914,6 +5987,18 @@ defmodule Oli.Delivery.Sections do
 
   defp maybe_select_section_fields(query, select_fields),
     do: select(query, [s], struct(s, ^select_fields))
+
+  defp apply_section_clauses(query, []), do: query
+
+  defp apply_section_clauses(query, clauses) do
+    Enum.reduce(clauses, query, fn
+      {field, value}, query when is_list(value) ->
+        where(query, [s], field(s, ^field) in ^value)
+
+      {field, value}, query ->
+        where(query, [s], field(s, ^field) == ^value)
+    end)
+  end
 
   @doc """
   Returns true if the section has the ai assistant feature enabled.

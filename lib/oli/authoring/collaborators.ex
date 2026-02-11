@@ -64,8 +64,9 @@ defmodule Oli.Authoring.Collaborators do
   and then creates an invitation token and sends an email to the invited author/collaborator.
   """
 
-  @spec invite_collaborator(String.t(), String.t(), String.t()) :: {:ok, any()} | {:error, any()}
-  def invite_collaborator(inviter_name, email, project_slug) do
+  @spec invite_collaborator(String.t(), String.t(), String.t(), String.t()) ::
+          {:ok, any()} | {:error, any()}
+  def invite_collaborator(inviter_name, inviter_email, email, project_slug) do
     with {:ok, author} <- get_or_create_invited_author(email),
          {:ok, results} <- do_add_collaborator(email, project_slug, :pending_confirmation),
          {:ok, email_data} <- create_invitation_token(author, project_slug),
@@ -73,7 +74,7 @@ defmodule Oli.Authoring.Collaborators do
            Course.get_project_by_slug(project_slug)
            |> trap_nil("The project was not found."),
          {:ok, _mail} <-
-           send_email_invitation(email_data, inviter_name, project.title) do
+           send_email_invitation(email_data, inviter_name, inviter_email, project.title) do
       {:ok, results}
     else
       {:error, message} -> {:error, message}
@@ -89,7 +90,7 @@ defmodule Oli.Authoring.Collaborators do
     {:ok, %{sent_to: author_token.sent_to, token: non_hashed_token}}
   end
 
-  defp send_email_invitation(email_data, inviter_name, project_title) do
+  defp send_email_invitation(email_data, inviter_name, inviter_email, project_title) do
     Email.create_email(
       email_data.sent_to,
       "You were invited as a collaborator to \"#{project_title}\"",
@@ -100,6 +101,7 @@ defmodule Oli.Authoring.Collaborators do
         project_title: project_title
       }
     )
+    |> Email.maybe_reply_to({inviter_name, inviter_email})
     |> Mailer.deliver()
   end
 

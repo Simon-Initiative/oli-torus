@@ -8,16 +8,13 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
   def render(assigns) do
     ~H"""
     <div id="email_modal_wrapper">
-      <div
-        id="email_modal_container"
-        phx-hook="OnMountAndUpdate"
-        data-event={if @show_modal, do: Modal.show_modal("email_modal"), else: ""}
-      >
+      <div id="email_modal_container">
         <Modal.modal
           id="email_modal"
           class="w-[800px]"
           header_class="flex items-start justify-between px-[35px] pt-[27px] pb-4"
           body_class="border-t border-Border-border-subtle px-[35px] pb-[50px] pt-[30px]"
+          show={@show_modal}
           on_cancel={JS.push("close_email_modal", target: @myself)}
         >
           <:title>Email Students</:title>
@@ -37,7 +34,9 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
                 placeholder="Type here..."
                 class="w-full h-32 p-3 border border-Border-border-default rounded-md resize-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary focus:border-transparent bg-Specially-Tokens-Fill-fill-input text-Text-text-high"
                 phx-target={@myself}
+                phx-keyup="update_message"
                 phx-blur="update_message"
+                phx-debounce="200"
               ><%= @email_message %></textarea>
             </div>
 
@@ -204,7 +203,8 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
         student_emails,
         socket.assigns.email_message,
         socket.assigns.section_title,
-        socket.assigns.instructor_email
+        socket.assigns.instructor_email,
+        socket.assigns[:instructor_name] || "Instructor"
       )
 
       # Send flash message to parent LiveView
@@ -222,7 +222,13 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
     {:noreply, socket}
   end
 
-  defp send_student_emails(student_emails, message, course_name, instructor_email) do
+  defp send_student_emails(
+         student_emails,
+         message,
+         course_name,
+         instructor_email,
+         instructor_name
+       ) do
     student_emails
     |> Enum.map(fn student_email ->
       Oli.Email.create_text_email(
@@ -230,6 +236,10 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
         "Note from your #{course_name} Instructor #{instructor_email}",
         message
       )
+      # Note: We don't set FROM to instructor's email because email providers like
+      # Amazon SES require verified sender addresses. The reply_to header ensures
+      # replies go back to the instructor.
+      |> Oli.Email.maybe_reply_to({instructor_name, instructor_email})
     end)
     |> Oli.Mailer.deliver_later()
   end
@@ -238,7 +248,8 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
     student = Enum.find(students, fn s -> s.id == selected_student_id end)
 
     student_full_name =
-      student[:full_name] || Utils.name(student.name, student.given_name, student.family_name)
+      Map.get(student, :full_name, nil) ||
+        Utils.name(student.name, student.given_name, student.family_name)
 
     assigns = %{student_name: student_full_name, student_email: student.email}
 

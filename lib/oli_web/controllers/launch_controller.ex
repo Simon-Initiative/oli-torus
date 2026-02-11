@@ -35,7 +35,7 @@ defmodule OliWeb.LaunchController do
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       with {:available, section} <- Sections.available?(conn.assigns.section),
            {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
-           :ok <- Sections.ensure_direct_delivery_enrollment_allowed(user, section),
+           :ok <- Sections.ensure_enrollment_allowed(user, section),
            user <- Repo.preload(user, [:platform_roles]) do
         first_page_slug = DeliveryResolver.get_first_page_slug(section.slug)
         first_page_url = ~p"/sections/#{section.slug}/page/#{first_page_slug}"
@@ -63,6 +63,11 @@ defmodule OliWeb.LaunchController do
       else
         {:error, :non_independent_user} ->
           redirect_to_lms_instructions(conn, conn.assigns.section)
+
+        {:error, :independent_learner_not_allowed} ->
+          conn
+          |> put_flash(:error, "This course is only available through your LMS.")
+          |> redirect(to: ~p"/workspaces/student")
 
         {:redirect, nil} ->
           # guest user cant access courses that require enrollment

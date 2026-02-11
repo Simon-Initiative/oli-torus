@@ -1535,11 +1535,24 @@ defmodule Oli.Publishing do
   end
 
   @doc """
-  For a given list of activity resource ids and a given project publication id,
-  find and retrieve all revisions for the pages that contain the activities.
+  Finds the parent page for each activity in a publication.
 
-  Returns a map of activity_ids to a map containing the slug and resource id of the
-  page that encloses it
+  For a given list of activity resource ids and a given project publication id,
+  finds and returns the page (slug and resource id) that encloses each activity.
+
+  ## Returns
+
+  A map of `activity_id` to `%{slug: slug, id: page_resource_id}` (2-arity) or
+  `%{slug: slug, id: page_resource_id, title: title}` (1-arity) for the page
+  that contains that activity.
+
+  ## Excluded activities
+
+  Activity-reference nodes in page content that do **not** have an `"activity_id"` key
+  are skipped and do not appear in the result. This includes legacy or corrupted
+  references that only have `"activitySlug"`, `"resourceId"`, or similar fields
+  (e.g. older adaptive content from the Bio Beyond project that have already been migrated from the previous platform).
+  Those activities will not have a parent-page entry and will not cause a crash.
   """
   def determine_parent_pages(activity_resource_ids, publication_id) do
     page_id = ResourceType.id_for_page()
@@ -1561,11 +1574,14 @@ defmodule Oli.Publishing do
 
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
-    Enum.filter(results, fn [_, _, %{"activity_id" => activity_id}] ->
-      MapSet.member?(activities, activity_id)
-    end)
-    |> Enum.reduce(%{}, fn [id, slug, %{"activity_id" => activity_id}], map ->
-      Map.put(map, activity_id, %{slug: slug, id: id})
+    Enum.reduce(results, %{}, fn
+      [id, slug, %{"activity_id" => activity_id}], map ->
+        if MapSet.member?(activities, activity_id),
+          do: Map.put(map, activity_id, %{slug: slug, id: id}),
+          else: map
+
+      _row, map ->
+        map
     end)
   end
 
@@ -1588,8 +1604,12 @@ defmodule Oli.Publishing do
 
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
-    Enum.reduce(results, %{}, fn [id, slug, title, %{"activity_id" => activity_id}], map ->
-      Map.put(map, activity_id, %{slug: slug, id: id, title: title})
+    Enum.reduce(results, %{}, fn
+      [id, slug, title, %{"activity_id" => activity_id}], map ->
+        Map.put(map, activity_id, %{slug: slug, id: id, title: title})
+
+      _row, map ->
+        map
     end)
   end
 

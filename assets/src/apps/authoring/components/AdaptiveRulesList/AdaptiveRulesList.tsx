@@ -284,10 +284,22 @@ const IRulesList: React.FC<any> = (props: any) => {
   }, [currentActivity]);
 
   const inputToFocus = useRef<HTMLInputElement>(null);
+  const inputJustFocusedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    if (!ruleToEdit) return;
-    inputToFocus.current?.focus();
+    if (!ruleToEdit) {
+      inputJustFocusedRef.current = false;
+      return;
+    }
+    // Use setTimeout to ensure focus happens after context menu closes and DOM updates
+    setTimeout(() => {
+      inputToFocus.current?.focus();
+      inputJustFocusedRef.current = true;
+      // Reset the flag after a short delay to allow normal blur handling
+      setTimeout(() => {
+        inputJustFocusedRef.current = false;
+      }, 150);
+    }, 0);
   }, [ruleToEdit]);
 
   const RuleItemContextMenu = (props: {
@@ -473,6 +485,11 @@ const IRulesList: React.FC<any> = (props: any) => {
                           dispatch(setCurrentPartPropertyFocus({ focus: false }));
                         }}
                         onBlur={() => {
+                          // Don't handle blur if input was just focused (context menu closing)
+                          if (inputJustFocusedRef.current) {
+                            inputJustFocusedRef.current = false;
+                            return;
+                          }
                           handleRenameRule(rule);
                           dispatch(setCurrentPartPropertyFocus({ focus: true }));
                         }}

@@ -10,6 +10,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
 
   describe "TagsComponent" do
     setup do
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
       project = insert(:project)
       section = insert(:section)
 
@@ -18,10 +19,11 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       {:ok, tag3} = Tags.create_tag(%{name: "Physics"})
 
       # Associate some tags with entities
-      {:ok, _} = Tags.associate_tag_with_project(project, tag1)
-      {:ok, _} = Tags.associate_tag_with_section(section, tag2)
+      {:ok, _} = Tags.associate_tag_with_project(project, tag1, actor: admin)
+      {:ok, _} = Tags.associate_tag_with_section(section, tag2, actor: admin)
 
       %{
+        admin: admin,
         project: project,
         section: section,
         tags: [tag1, tag2, tag3],
@@ -44,9 +46,10 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
           current_tags: [biology]
         })
 
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      assert has_element?(component, "span[role='listitem']", "Biology")
       refute has_element?(component, "input")
-      refute has_element?(component, "button", "X")
+      # Table variant: NO X button in display mode (original behavior)
+      refute has_element?(component, "button[phx-click='remove_tag']")
     end
 
     test "renders empty display when no tags", %{conn: conn} do
@@ -61,7 +64,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
           current_tags: []
         })
 
-      refute has_element?(component, "span[role='selected tag']")
+      refute has_element?(component, "span[role='listitem']")
     end
 
     test "handles unloaded association in current_tags", %{conn: conn, project: project} do
@@ -77,7 +80,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
           }
         })
 
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      assert has_element?(component, "span[role='listitem']", "Biology")
     end
 
     test "edit mode shows input and remove buttons", %{
@@ -98,8 +101,9 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
 
       # Should show input and remove buttons in edit mode
       assert has_element?(component, "input")
-      assert has_element?(component, "button", "X")
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      # Table variant: SVG close icon button
+      assert has_element?(component, "button[phx-click='remove_tag'] svg")
+      assert has_element?(component, "span[role='listitem']", "Biology")
     end
 
     test "add_tag button is rendered in edit mode", %{
@@ -140,9 +144,9 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       # Enter edit mode
       component |> element("div[phx-click='toggle_edit']") |> render_click()
 
-      # Should show tag with X button for removal
-      assert has_element?(component, "span[role='selected tag']", "Biology")
-      assert has_element?(component, "button[phx-click='remove_tag']", "X")
+      # Should show tag with X button for removal (SVG close icon)
+      assert has_element?(component, "span[role='listitem']", "Biology")
+      assert has_element?(component, "button[phx-click='remove_tag'] svg")
     end
 
     test "available tags are shown in edit mode", %{
@@ -192,7 +196,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       assert has_element?(component, "input[phx-keydown='handle_keydown']")
 
       # Current tags should still be displayed
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      assert has_element?(component, "span[role='listitem']", "Biology")
     end
 
     test "input field supports search functionality", %{
@@ -216,7 +220,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       assert has_element?(component, "input[phx-keyup='search_tags']")
 
       # Current tags should be displayed
-      assert has_element?(component, "span[role='selected tag']", "Biology")
+      assert has_element?(component, "span[role='listitem']", "Biology")
     end
 
     test "handle_keydown with Escape exits edit mode", %{
@@ -254,12 +258,16 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
           current_tags: [chemistry]
         })
 
-      assert has_element?(component, "span[role='selected tag']", "Chemistry")
+      assert has_element?(component, "span[role='listitem']", "Chemistry")
     end
 
-    test "works with blueprint sections (products)", %{conn: conn, chemistry: chemistry} do
+    test "works with blueprint sections (products)", %{
+      conn: conn,
+      admin: admin,
+      chemistry: chemistry
+    } do
       product = insert(:section, %{type: :blueprint})
-      {:ok, _} = Tags.associate_tag_with_section(product, chemistry)
+      {:ok, _} = Tags.associate_tag_with_section(product, chemistry, actor: admin)
 
       {:ok, component, _html} =
         live_component_isolated(conn, TagsComponent, %{
@@ -269,7 +277,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
           current_tags: [chemistry]
         })
 
-      assert has_element?(component, "span[role='selected tag']", "Chemistry")
+      assert has_element?(component, "span[role='listitem']", "Chemistry")
     end
 
     test "displays error state styling when needed", %{conn: conn, project: project} do
@@ -304,11 +312,11 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       assert has_element?(component, "input[type='text']")
     end
 
-    test "tags are displayed in alphabetical order", %{conn: conn, project: project} do
+    test "tags are displayed in alphabetical order", %{conn: conn, admin: admin, project: project} do
       {:ok, zebra} = Tags.create_tag(%{name: "Zebra"})
       {:ok, apple} = Tags.create_tag(%{name: "Apple"})
-      {:ok, _} = Tags.associate_tag_with_project(project, zebra)
-      {:ok, _} = Tags.associate_tag_with_project(project, apple)
+      {:ok, _} = Tags.associate_tag_with_project(project, zebra, actor: admin)
+      {:ok, _} = Tags.associate_tag_with_project(project, apple, actor: admin)
 
       {:ok, component, _html} =
         live_component_isolated(conn, TagsComponent, %{
@@ -326,10 +334,13 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       assert apple_index < zebra_index
     end
 
-    test "removes unused tags from database when remove_if_unused is true", %{conn: conn} do
+    test "removes unused tags from database when remove_if_unused is true", %{
+      conn: conn,
+      admin: admin
+    } do
       project = insert(:project)
       {:ok, unique_tag} = Tags.create_tag(%{name: "UniqueTag"})
-      {:ok, _} = Tags.associate_tag_with_project(project, unique_tag)
+      {:ok, _} = Tags.associate_tag_with_project(project, unique_tag, actor: admin)
 
       {:ok, component, _html} =
         live_component_isolated(conn, TagsComponent, %{
@@ -342,8 +353,8 @@ defmodule OliWeb.Live.Components.Tags.TagsComponentTest do
       # Enter edit mode
       component |> element("div[phx-click='toggle_edit']") |> render_click()
 
-      # Should show the tag with remove button
-      assert has_element?(component, "button[phx-click='remove_tag']", "X")
+      # Should show the tag with remove button (SVG close icon)
+      assert has_element?(component, "button[phx-click='remove_tag'] svg")
 
       # Tag should still exist in database (removal happens when button is clicked)
       assert Tags.get_tag_by_name("UniqueTag") != nil

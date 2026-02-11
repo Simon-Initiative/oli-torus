@@ -58,7 +58,7 @@ defmodule Oli.DeliveryTest do
       {:ok, _published} = Oli.Publishing.publish_project(map.project, "ensure published", 1)
 
       institution = insert(:institution)
-      user = insert(:user)
+      user = insert(:user, independent_learner: false)
       jwk = jwk_fixture()
       registration = registration_fixture(%{tool_jwk_id: jwk.id})
 

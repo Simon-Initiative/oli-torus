@@ -85,12 +85,16 @@ defmodule OliWeb.Workspaces.Student do
     ~H"""
     <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div
-        class="absolute top-0 left-0 h-full w-full"
+        class="absolute top-0 left-0 h-full w-full dark:hidden"
         style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
       />
-      <h1 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px] z-10">
+      <div
+        class="absolute top-0 left-0 h-full w-full hidden dark:block"
+        style="background: linear-gradient(90deg, rgba(217, 217, 217, 0.250) 0%, rgba(217, 217, 217, 0.00) 100%);"
+      />
+      <h2 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px] z-10">
         Hi, <span class="font-bold">{@ctx.author.given_name}</span>
-      </h1>
+      </h2>
     </div>
     <div class="flex flex-col items-start py-[60px] px-[100px]">
       <div class="flex mb-9 w-full">
@@ -157,8 +161,12 @@ defmodule OliWeb.Workspaces.Student do
     ~H"""
     <div class="relative flex items-center min-h-[100px] md:min-h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div
-        class="absolute top-0 left-0 h-full w-full"
+        class="absolute top-0 left-0 h-full w-full dark:hidden"
         style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
+      />
+      <div
+        class="absolute top-0 left-0 h-full w-full hidden dark:block"
+        style="background: linear-gradient(90deg, rgba(217, 217, 217, 0.250) 0%, rgba(217, 217, 217, 0.00) 100%);"
       />
       <h1 class="text-3xl md:text-[64px] leading-[87px] tracking-[0.02px] px-4 md:pl-[100px] z-10">
         Hi, <span class="font-bold">{user_given_name(@ctx)}</span>
@@ -166,9 +174,9 @@ defmodule OliWeb.Workspaces.Student do
     </div>
     <div class="flex flex-col items-start py-6 md:py-[60px] px-4 md:px-[100px]">
       <div class="flex flex-col md:flex-row mb-9 w-full">
-        <h3 class="w-full py-2 md:py-0 text-xl md:text-[26px] md:leading-[32px] tracking-[0.02px] font-semibold dark:text-white">
+        <h2 class="w-full py-2 md:py-0 text-xl md:text-[26px] md:leading-[32px] tracking-[0.02px] font-semibold dark:text-white">
           Courses available
-        </h3>
+        </h2>
         <div class="ml-auto flex items-center w-full justify-start md:justify-end gap-3">
           <.form for={%{}} phx-change="search_section" class="w-full max-w-[400px]">
             <SearchInput.render
@@ -226,7 +234,7 @@ defmodule OliWeb.Workspaces.Student do
       style={"background-image: url('#{SourceImage.cover_image(@section)}');"}
     >
       <div class="top-0 left-0 rounded-xl absolute w-full h-full mix-blend-difference bg-[linear-gradient(180deg,rgba(0,0,0,0.00)_0%,rgba(0,0,0,0.80)_100%),linear-gradient(90deg,rgba(0,0,0,0.80)_0%,rgba(0,0,0,0.40)_100%)]" />
-      <div class="top-0 left-0 rounded-xl absolute w-full h-full dark:bg-black/40" />
+      <div class="top-0 left-0 rounded-xl absolute w-full h-full bg-black/40" />
       <div class="top-0 left-0 rounded-xl absolute w-full h-full backdrop-blur-[30px] bg-[rgba(0,0,0,0.01)]" />
       <span
         :if={@section.progress == 100}
@@ -247,9 +255,9 @@ defmodule OliWeb.Workspaces.Student do
               "{Mshort} {YYYY}"
             )}
           </div>
-          <h5 class="text-2xl md:text-[36px] md:leading-[49px] font-semibold drop-shadow-md">
+          <h3 class="text-2xl md:text-[36px] md:leading-[49px] font-semibold drop-shadow-md">
             {@section.title}
-          </h5>
+          </h3>
           <div
             class="justify-center text-[#bab8bf] text-base font-bold leading-normal"
             role="instructors"

@@ -16,6 +16,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   alias Oli.Analytics.Common.Pipeline
   alias OliWeb.Delivery.Student.Utils
   alias Oli.Analytics.XAPI.Events.Context
+  alias Floki
 
   alias Oli.Analytics.Summary.{
     AttemptGroup
@@ -468,7 +469,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         base_project: project,
         title: "The best course ever!",
         start_date: ~U[2023-10-30 20:00:00Z],
-        analytics_version: :v2
+        analytics_version: :v2,
+        open_and_free: true,
+        lti_1p3_deployment: nil,
+        lti_1p3_deployment_id: nil
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -874,19 +878,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 1 has an intro card with a video url provided, so there must be a play button
       assert has_element?(
                view,
-               ~s{div[role="unit_1"] div[role="slider"] div[role="youtube_intro_video_card"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_1"] div[role="slider"] div[role="resource youtube intro video"] div[role="play_unit_intro_video"]}
              )
 
       # unit 2 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_2"] div[role="slider"] div[role="youtube_intro_video_card"] div[role="play_unit_intro_video"]}
+               ~s{div[role="unit_2"] div[role="slider"] div[role="resource youtube intro video"] div[role="play_unit_intro_video"]}
              )
 
       # unit 3 has no video intro card
       refute has_element?(
                view,
-               ~s{div[role="unit_3"] div[role="slider"] div[role="youtube_intro_video_card"]}
+               ~s{div[role="unit_3"] div[role="slider"] div[role="resource youtube intro video"]}
              )
     end
 
@@ -1709,13 +1713,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert view
-             |> element(~s{div[role='unit_1'] div[role='youtube_intro_video_card']})
+             |> element(~s{div[role='unit_1'] div[role='resource youtube intro video']})
              |> render =~
                "style=\"background-image: url(&#39;https://img.youtube.com/vi/123456789ab/hqdefault.jpg&#39;)"
 
       # S3 video
       assert view
-             |> has_element?(~s{div[role='unit_4'] div[role='intro_video_card']})
+             |> has_element?(~s{div[role='unit_4'] div[role='resource intro video']})
     end
 
     test "can see pages at the top level of the curriculum (at unit level) with it's header and corresponding card",
@@ -2716,6 +2720,47 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # right arrow is present
       assert has_element?(view, ~s{button[id=slider_right_button_#{unit_1.resource_id}]})
     end
+
+    test "can switch views in preview mode", %{conn: conn, section: section} do
+      # Start in gallery view in preview mode
+      {:ok, view, _html} =
+        live(conn, "/sections/#{section.slug}/preview/learn?selected_view=gallery")
+
+      # Verify we're in gallery view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
+
+      # Switch to outline view
+      view
+      |> element(~s{div[id=view_selector] button[phx-click="expand_select"]})
+      |> render_click()
+
+      view
+      |> element(~s{button[phx-value-selected_view=outline]})
+      |> render_click()
+
+      # Verify the path stays in preview mode (includes /preview)
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/preview/learn?sidebar_expanded=true&selected_view=outline"
+      )
+
+      # Verify we're in outline view now
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
+
+      # Switch back to gallery view
+      view
+      |> element(~s{button[phx-value-selected_view=gallery]})
+      |> render_click()
+
+      # Verify the path still stays in preview mode
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/preview/learn?sidebar_expanded=true&selected_view=gallery"
+      )
+
+      # Verify we're in gallery view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
+    end
   end
 
   describe "sidebar menu" do
@@ -2852,9 +2897,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       ]
 
       Enum.each(labels, fn label ->
-        assert view
-               |> element(~s{nav[id='desktop-nav-menu']})
-               |> render() =~ label
+        html =
+          view
+          |> element(~s{nav[id='desktop-nav-menu']})
+          |> render()
+
+        assert html =~ label
       end)
 
       {:ok, view, _html} =
@@ -2863,9 +2911,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, ~s{nav[id='desktop-nav-menu'][aria-expanded=false]})
 
       Enum.each(labels, fn label ->
-        refute view
-               |> element(~s{nav[id='desktop-nav-menu']})
-               |> render() =~ label
+        html =
+          view
+          |> element(~s{nav[id='desktop-nav-menu']})
+          |> render()
+
+        text_content =
+          html
+          |> Floki.parse_document!()
+          |> Floki.filter_out("span.sr-only")
+          |> Floki.text()
+          |> String.trim()
+
+        refute String.contains?(text_content, label)
       end)
     end
 
@@ -2904,7 +2962,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       view
-      |> element(~s{nav[id='desktop-nav-menu'] a[id="exit_course_button"]}, "Exit Course")
+      |> element(~s{nav[id='desktop-nav-menu'] a[id="exit_workspace_button"]}, "Exit Course")
       |> render_click()
 
       assert_redirect(view, "/workspaces/student?sidebar_expanded=true")
@@ -2982,7 +3040,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, redirect_path)
 
       assert view |> element(~s{#header span}, "(Preview Mode)") |> render() =~ "(Preview Mode)"
-      assert view |> element(~s{h1}) |> render() =~ "Your Practice Pages"
+      assert view |> element(~s{h1.text-4xl}) |> render() =~ "Your Practice Pages"
     end
   end
 
@@ -3258,6 +3316,33 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         refute view |> has_element?("span[role='page title']", title)
       end)
     end
+
+    test "search works in preview mode without causing routing errors", %{
+      conn: conn,
+      section: section
+    } do
+      # Start in outline view in preview mode
+      {:ok, view, _html} =
+        live(conn, "/sections/#{section.slug}/preview/learn?selected_view=outline")
+
+      # Perform a search - this should not cause a routing error
+      view
+      |> element("form[phx-change='search']")
+      |> render_change(%{"search_term" => "Page 1"})
+
+      # Verify search results are shown (no error occurred)
+      assert has_element?(view, "span[role='page title']", "Page 1")
+      assert has_element?(view, "span[role='page title']", "Page 10")
+
+      # Clear the search by searching for empty string
+      view
+      |> element("form[phx-change='search']")
+      |> render_change(%{"search_term" => ""})
+
+      # Verify all content is shown again after clearing search
+      assert has_element?(view, "div[role='unit title']", "Introduction")
+      assert has_element?(view, "span[role='page title']", "Page 2")
+    end
   end
 
   describe "get_viewed_intro_video_resource_ids/2" do
@@ -3308,6 +3393,472 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       result = LearnLive.get_viewed_intro_video_resource_ids(section.slug, user.id)
       assert result == viewed_ids
+    end
+  end
+
+  describe "socket connection handling" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    test "renders loading spinner when socket is not connected", %{
+      conn: conn,
+      section: section
+    } do
+      assert conn
+             |> get("/sections/#{section.slug}/learn")
+             |> html_response(200) =~
+               ~s{<svg aria-label=\"Loading\" class=\"loading\"}
+    end
+  end
+
+  describe "mobile outline view" do
+    setup [
+      :user_conn,
+      :mobile_conn,
+      :create_elixir_project,
+      :enroll_as_student,
+      :mark_section_visited
+    ]
+
+    test "shows unit layer when clicking a unit in mobile outline view", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Find the unit row - verify it has phx-click attribute for mobile
+      # This confirms is_mobile is true (phx-click is only added when is_mobile is true)
+      unit_element = "div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']"
+
+      assert has_element?(view, unit_element)
+
+      # Click on the unit to show unit layer
+      view
+      |> element(unit_element)
+      |> render_click()
+
+      # Verify selected_unit_resource_id is set and unit layer is rendered
+      assert has_element?(view, "div#mobile_outline_unit")
+      assert has_element?(view, "button[aria-label='Back to outline']")
+      assert has_element?(view, "div[role='unit title']", "Introduction")
+
+      # Verify only the selected unit is shown
+      assert has_element?(view, "h6", "UNIT 1")
+    end
+
+    test "navigates back to outline view from unit layer", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+
+      # Click back button
+      view
+      |> element("button[aria-label='Back to outline']")
+      |> render_click()
+
+      # Verify navigation back to outline view
+      assert_patch(
+        view,
+        ~p"/sections/#{section.slug}/learn?selected_view=outline&target_resource_id=#{unit_1.resource_id}"
+      )
+    end
+
+    test "shows unit layer when navigating to nested page in mobile outline view", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      # Navigate directly to a nested page (page_1 is nested in module_1 which is in unit_1)
+      # This should trigger scroll_to_page_in_unit_layer in handle_params
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug,
+            selected_view: :outline,
+            target_resource_id: page_1.resource_id
+          )
+        )
+
+      # Verify unit layer is shown with selected_unit_resource_id set
+      assert has_element?(view, "div#mobile_outline_unit")
+      assert has_element?(view, "div[role='unit title']", "Introduction")
+
+      # Verify the page is accessible in the unit layer
+      assert has_element?(view, "span[role='page title']", "Page 1")
+    end
+
+    test "complete mobile outline navigation flow", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      # Start at outline view
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Verify outline view is shown
+      assert has_element?(view, "div#student_learn")
+
+      assert has_element?(
+               view,
+               "div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']"
+             )
+
+      # Click on unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+      assert has_element?(view, "button[aria-label='Back to outline']")
+
+      # Click back button
+      view
+      |> element("button[aria-label='Back to outline']")
+      |> render_click()
+
+      # Verify we're back to outline view
+      assert_patch(
+        view,
+        ~p"/sections/#{section.slug}/learn?selected_view=outline&target_resource_id=#{unit_1.resource_id}"
+      )
+    end
+
+    test "preserves search term when navigating from outline to unit layer", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      search_term = "Page 1"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug,
+            selected_view: :outline,
+            search_term: search_term
+          )
+        )
+
+      # Verify search term is in the URL
+      assert has_element?(view, "input[name='search_term'][value='#{search_term}']")
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+
+      # Verify search term is preserved in the unit layer
+      assert has_element?(
+               view,
+               "div#mobile_outline_unit input[name='search_term'][value='#{search_term}']"
+             )
+    end
+
+    test "preserves search term when navigating back from unit layer to outline", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      search_term = "Page 1"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+
+      # Enter search term in unit layer
+      view
+      |> element("div#mobile_outline_unit form[phx-submit='search']")
+      |> render_change(%{"search_term" => search_term})
+
+      # Click back button
+      view
+      |> element("button[aria-label='Back to outline']")
+      |> render_click()
+
+      # Verify search term is preserved in the URL when navigating back
+      assert_patch(
+        view,
+        ~p"/sections/#{section.slug}/learn?selected_view=outline&target_resource_id=#{unit_1.resource_id}&search_term=#{search_term}"
+      )
+    end
+
+    test "search box appears in mobile unit layer", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+
+      # Verify search box is present in unit layer
+      assert has_element?(view, "div#mobile_outline_unit form[phx-submit='search']")
+      assert has_element?(view, "div#mobile_outline_unit input[name='search_term']")
+    end
+
+    test "search filters content within mobile unit layer", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1,
+      page_1: _page_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown and contains the page
+      assert has_element?(view, "div#mobile_outline_unit")
+      assert has_element?(view, "span[role='page title']", "Page 1")
+
+      # Perform search for "Page 1"
+      view
+      |> element("div#mobile_outline_unit form[phx-submit='search']")
+      |> render_change(%{"search_term" => "Page 1"})
+
+      # Verify search term is set
+      assert has_element?(
+               view,
+               "div#mobile_outline_unit input[name='search_term'][value='Page 1']"
+             )
+
+      # Verify matching page is still visible
+      assert has_element?(view, "span[role='page title']", "Page 1")
+    end
+
+    test "search triggers js-exec event to mobile_outline_unit when in unit layer", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+
+      # Perform search
+      view
+      |> element("div#mobile_outline_unit form[phx-submit='search']")
+      |> render_submit(%{"search_term" => "Page 1"})
+
+      # Verify js-exec event is pushed with correct target
+      assert_push_event(view, "js-exec", %{
+        to: "#mobile_outline_unit",
+        attr: "data-show-matches-with-search-term"
+      })
+    end
+
+    test "toggle expand button appears in mobile unit layer", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+
+      # Verify toggle expand button is present
+      assert has_element?(view, "div#mobile_outline_unit button#expand_all_button")
+      assert has_element?(view, "div#mobile_outline_unit button#expand_all_button", "Expand All")
+    end
+
+    test "toggle visibility button appears in mobile unit layer", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+
+      # Verify toggle visibility button is present
+      assert has_element?(view, "div#mobile_outline_unit button#hide_completed_button")
+
+      assert has_element?(
+               view,
+               "div#mobile_outline_unit button#hide_completed_button",
+               "Hide Completed"
+             )
+    end
+
+    test "units with child_matches_search_term show yellow background in mobile outline view", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      search_term = "Page 1"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug,
+            selected_view: :outline,
+            search_term: search_term
+          )
+        )
+
+      # Verify we're in mobile outline view
+      assert has_element?(view, "div#student_learn")
+
+      # Find the unit that contains the matching page
+      # The unit should have a chevron icon with yellow background when child_matches_search_term is true
+      # This is indicated by the class "bg-yellow-100 dark:bg-yellow-800 rounded-full scale-110 p-2"
+      # on the icon element when is_mobile is true and child_matches_search_term is true
+      unit_chevron_icon =
+        "div[role='unit_#{unit_1.resource_id}_outline'] #icon-#{unit_1.resource_id}"
+
+      # The yellow background styling is applied conditionally, so we verify the structure exists
+      # The actual styling depends on the data attribute child_matches_search_term being set
+      assert has_element?(view, unit_chevron_icon)
+    end
+
+    test "no results warning appears in mobile unit layer when search has no matches", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      search_term = "nonexistent_content_xyz"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+
+      # Perform search with no matches
+      view
+      |> element("div#mobile_outline_unit form[phx-submit='search']")
+      |> render_submit(%{"search_term" => search_term})
+
+      # Verify no results warning appears
+      assert has_element?(
+               view,
+               "div#mobile_outline_unit div[role='no search results warning']",
+               "There are no results for the search term"
+             )
+    end
+
+    test "containers with search matches are automatically expanded when search is performed", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      search_term = "Page 1"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline)
+        )
+
+      # Click on the unit to show unit layer
+      view
+      |> element("div[role='unit_#{unit_1.resource_id}_outline'][phx-click='show_unit_layer']")
+      |> render_click()
+
+      # Verify unit layer is shown
+      assert has_element?(view, "div#mobile_outline_unit")
+
+      # Perform search
+      view
+      |> element("div#mobile_outline_unit form[phx-submit='search']")
+      |> render_submit(%{"search_term" => search_term})
+
+      # Verify the data attribute is set on mobile_outline_unit for auto-expansion
+      # This triggers the reset_toggle_buttons_and_expand_containers function
+      assert has_element?(view, "div#mobile_outline_unit[data-show-matches-with-search-term]")
+
+      # Verify matching page is visible (container should be expanded)
+      assert has_element?(view, "span[role='page title']", "Page 1")
     end
   end
 end

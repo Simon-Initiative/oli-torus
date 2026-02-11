@@ -30,15 +30,8 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       end
 
     case api_post(config.api_url <> "/v1/chat/completions", params, config) do
-      {:ok, string_response} ->
-        case Jason.decode!(string_response) do
-          %{"choices" => [%{"message" => %{"content" => content}} | _]} ->
-            {:ok, content}
-
-          _ ->
-            Logger.error("Unexpected OpenAI response format: #{inspect(string_response)}")
-            {:error, :unexpected_response}
-        end
+      {:ok, response} ->
+        extract_content(response)
 
       {:error, reason} ->
         {:error, reason}
@@ -254,7 +247,8 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     %OpenAI.Config{
       http_options: [
         timeout: registered_model.timeout,
-        recv_timeout: registered_model.recv_timeout
+        recv_timeout: registered_model.recv_timeout,
+        hackney: [pool: Oli.GenAI.HackneyPool.pool_name(registered_model)]
       ],
       api_key: registered_model.api_key,
       organization_key: registered_model.secondary_api_key,
@@ -275,7 +269,8 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
         timeout: registered_model.timeout,
         recv_timeout: registered_model.recv_timeout,
         stream_to: self(),
-        async: :once
+        async: :once,
+        hackney: [pool: Oli.GenAI.HackneyPool.pool_name(registered_model)]
       ],
       api_key: registered_model.api_key,
       organization_key: registered_model.secondary_api_key,
@@ -314,4 +309,30 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   end
 
   defp normalize_response(response), do: response
+
+  defp extract_content(response) do
+    response = decode_response(response)
+
+    case response do
+      %{"choices" => [%{"message" => %{"content" => content}} | _]}
+      when is_binary(content) ->
+        {:ok, content}
+
+      %{choices: [%{message: %{content: content}} | _]} when is_binary(content) ->
+        {:ok, content}
+
+      _ ->
+        Logger.error("Unexpected OpenAI response format: #{inspect(response)}")
+        {:error, :unexpected_response}
+    end
+  end
+
+  defp decode_response(response) when is_binary(response) do
+    case Jason.decode(response) do
+      {:ok, parsed} -> parsed
+      {:error, _} -> response
+    end
+  end
+
+  defp decode_response(response), do: response
 end

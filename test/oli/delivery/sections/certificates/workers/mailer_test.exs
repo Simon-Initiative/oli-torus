@@ -48,17 +48,19 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.MailerTest do
             student_name: "John Doe",
             course_name: "Test Course",
             platform_name: "Torus",
-            certificate_link: "some_url"
+            certificate_link: "some_url",
+            certificate_label: "Certificate of Completion"
           }
         })
         |> Oban.insert()
 
       perform_job(Mailer, job.args)
 
-      assert_email_sent(
-        to: "some_student@test.com",
-        subject: "Congratulations You've Earned a Certificate of Completion"
-      )
+      assert_email_sent(fn email ->
+        assert Enum.any?(email.to, fn {_name, addr} -> addr == "some_student@test.com" end)
+        assert email.subject == "Congratulations You've Earned a Certificate of Completion"
+        assert email.html_body =~ "Certificate of Completion"
+      end)
 
       ## With distinction
       granted_certificate = insert(:granted_certificate, with_distinction: true)
@@ -72,17 +74,19 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.MailerTest do
             student_name: "John Doe",
             course_name: "Test Course",
             platform_name: "Torus",
-            certificate_link: "some_url"
+            certificate_link: "some_url",
+            certificate_label: "Certificate with Distinction"
           }
         })
         |> Oban.insert()
 
       perform_job(Mailer, job.args)
 
-      assert_email_sent(
-        to: "some_student@test.com",
-        subject: "Congratulations You've Earned a Certificate with Distinction"
-      )
+      assert_email_sent(fn email ->
+        assert Enum.any?(email.to, fn {_name, addr} -> addr == "some_student@test.com" end)
+        assert email.subject == "Congratulations You've Earned a Certificate with Distinction"
+        assert email.html_body =~ "Certificate with Distinction"
+      end)
     end
 
     test "sends an email to the student when the job is performed with the template `student_denial`" do

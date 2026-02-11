@@ -81,7 +81,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert has_element?(
                view,
                "th[phx-value-sort_by='student_completion']",
-               "Class Progress"
+               "Student Progress"
              )
 
       # Link that triggers the opening of the modal
@@ -143,6 +143,107 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       assert String.trim(student_1_email) == student_1.email
       assert String.trim(student_2_email) == student_2.email
+    end
+
+    test "student proficiency column sorts using the defined ranking", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{
+        section: section,
+        page1: page1
+      } =
+        Oli.Seeder.base_project_with_units()
+
+      user1 = insert(:user, %{given_name: "Kevin", family_name: "Durant"})
+      user2 = insert(:user, %{given_name: "LeBron", family_name: "James"})
+      user3 = insert(:user, %{given_name: "Luka", family_name: "Doncic"})
+      user4 = insert(:user, %{given_name: "Stephen", family_name: "Curry"})
+      user5 = insert(:user, %{given_name: "Jimmy", family_name: "Butler"})
+      user6 = insert(:user, %{given_name: "Chris", family_name: "Paul"})
+
+      instructor_role = ContextRoles.get_role(:context_instructor)
+      learner_role = ContextRoles.get_role(:context_learner)
+
+      Sections.enroll(instructor.id, section.id, [instructor_role])
+
+      [user1, user2, user3, user4, user5, user6]
+      |> Enum.each(fn student ->
+        Sections.enroll(student.id, section.id, [learner_role])
+      end)
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      resource_type_id = Oli.Resources.ResourceType.id_for_page()
+
+      [
+        {user1, 5, 5},
+        {user2, 5, 3},
+        {user3, 5, 1},
+        {user4, 2, 2},
+        {user5, 5, 1},
+        {user6, 5, 3}
+      ]
+      |> Enum.each(fn {student, first_attempts, first_correct} ->
+        add_resource_summary([
+          -1,
+          -1,
+          section.id,
+          student.id,
+          page1.id,
+          nil,
+          resource_type_id,
+          first_correct,
+          first_attempts,
+          0,
+          first_attempts,
+          first_correct
+        ])
+      end)
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      ## Sort by overall proficiency ascending
+      view
+      |> element("th[phx-value-sort_by='overall_proficiency']")
+      |> render_click()
+
+      asc_proficiencies =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-child(6)})
+        |> Enum.map(fn td -> td |> Floki.text() |> String.trim() end)
+
+      assert asc_proficiencies == [
+               "High",
+               "Medium",
+               "Medium",
+               "Low",
+               "Low",
+               "Not enough data"
+             ]
+
+      ## Sort by overall proficiency descending
+      view
+      |> element("th[phx-value-sort_by='overall_proficiency']")
+      |> render_click()
+
+      desc_proficiencies =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-child(6)})
+        |> Enum.map(fn td -> td |> Floki.text() |> String.trim() end)
+
+      assert desc_proficiencies == [
+               "Not enough data",
+               "Low",
+               "Low",
+               "Medium",
+               "Medium",
+               "High"
+             ]
     end
 
     test "students last interaction gets rendered (for a student with interaction and yet with no interaction)",

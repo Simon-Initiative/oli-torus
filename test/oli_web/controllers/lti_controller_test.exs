@@ -157,8 +157,8 @@ defmodule OliWeb.LtiControllerTest do
 
       platform_jwk = jwk_fixture()
 
-      Oli.Test.MockHTTP
-      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      # Pre-cache the keyset since we no longer fetch on-demand
+      cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -214,8 +214,8 @@ defmodule OliWeb.LtiControllerTest do
     } do
       platform_jwk = jwk_fixture()
 
-      Oli.Test.MockHTTP
-      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      # Pre-cache the keyset since we no longer fetch on-demand
+      cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -246,8 +246,8 @@ defmodule OliWeb.LtiControllerTest do
     } do
       platform_jwk = jwk_fixture()
 
-      Oli.Test.MockHTTP
-      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      # Pre-cache the keyset since we no longer fetch on-demand
+      cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -270,8 +270,10 @@ defmodule OliWeb.LtiControllerTest do
       sub = Oli.Lti.TestHelpers.security_detail_data()["sub"]
       email = Oli.Lti.TestHelpers.user_detail_data()["email"]
 
-      lti_user = insert(:user, %{sub: sub, email: email})
-      another_lti_user = insert(:user, %{sub: sub, email: "another_lti_user@email.com"})
+      lti_user = insert(:user, %{sub: sub, email: email, independent_learner: false})
+
+      another_lti_user =
+        insert(:user, %{sub: sub, email: "another_lti_user@email.com", independent_learner: false})
 
       # Create another institution and sections.
       another_institution = insert(:institution)
@@ -287,7 +289,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) =~ "/workspaces/student"
+      assert html_response(conn, 200) =~ "This course section is not available"
 
       # Check that the user is the same as lti_user, but has some new field defined (it was
       # updated).
@@ -308,8 +310,8 @@ defmodule OliWeb.LtiControllerTest do
     } do
       platform_jwk = jwk_fixture()
 
-      Oli.Test.MockHTTP
-      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      # Pre-cache the keyset since we no longer fetch on-demand
+      cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -340,8 +342,8 @@ defmodule OliWeb.LtiControllerTest do
     } do
       platform_jwk = jwk_fixture()
 
-      Oli.Test.MockHTTP
-      |> expect(:get, 1, mock_keyset_endpoint("some key_set_url", platform_jwk))
+      # Pre-cache the keyset since we no longer fetch on-demand
+      cache_keyset_for_registration(registration, platform_jwk)
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -454,6 +456,10 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~
                "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
+
+      refute html_response(conn, 200) =~ "phx-"
+      refute html_response(conn, 200) =~ "/live"
+      refute html_response(conn, 200) =~ "/js/app.js"
     end
 
     test "authorize_redirect get successful for author", %{conn: conn} do
@@ -504,6 +510,10 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~
                "<form name=\"post_redirect\" action=\"#{target_link_uri}\" method=\"post\">"
+
+      refute html_response(conn, 200) =~ "phx-"
+      refute html_response(conn, 200) =~ "/live"
+      refute html_response(conn, 200) =~ "/js/app.js"
     end
 
     test "show_registration_form displays registration page with params from session", %{
@@ -1024,27 +1034,21 @@ defmodule OliWeb.LtiControllerTest do
     }
   end
 
-  defp mock_keyset_endpoint(url, platform_jwk) do
-    fn ^url ->
-      {:ok,
-       %HTTPoison.Response{
-         status_code: 200,
-         body:
-           Jason.encode!(%{
-             keys: [
-               platform_jwk.pem
-               |> JOSE.JWK.from_pem()
-               |> JOSE.JWK.to_public()
-               |> JOSE.JWK.to_map()
-               |> (fn {_kty, public_jwk} -> public_jwk end).()
-               |> Map.put("typ", platform_jwk.typ)
-               |> Map.put("alg", platform_jwk.alg)
-               |> Map.put("kid", platform_jwk.kid)
-               |> Map.put("use", "sig")
-             ]
-           })
-       }}
-    end
+  defp cache_keyset_for_registration(registration, platform_jwk) do
+    # Convert JWK to map format expected by JWKS
+    public_jwk_map =
+      platform_jwk.pem
+      |> JOSE.JWK.from_pem()
+      |> JOSE.JWK.to_public()
+      |> JOSE.JWK.to_map()
+      |> (fn {_kty, public_jwk} -> public_jwk end).()
+      |> Map.put("typ", platform_jwk.typ)
+      |> Map.put("alg", platform_jwk.alg)
+      |> Map.put("kid", platform_jwk.kid)
+      |> Map.put("use", "sig")
+
+    # Cache the keyset in ETS
+    Oli.Lti.KeysetCache.put_keyset(registration.key_set_url, [public_jwk_map], 3600)
   end
 
   defp create_lti_external_tool_activity() do

@@ -48,6 +48,14 @@ module.exports = {
     light: '#0000001A',
     dark: '#FFFFFF1A',
   },
+  'Fill-fill-info-dropdown': {
+    light: '#CADFFC',
+    dark: '#2B282E',
+  },
+  'Fill-fill-info-dropdown-expanded': {
+    light: '#F2F9FF',
+    dark: '#1B191F',
+  },
   'Fill-fill-transparent': {
     light: '#FFFFFF33',
     dark: '#FFFFFF33',
@@ -66,12 +74,12 @@ module.exports = {
   },
   // Fill/Buttons
   'Fill-Buttons-fill-primary': {
-    light: '#0080FF',
+    light: '#0062F2',
     dark: '#0062F2',
   },
   'Fill-Buttons-fill-primary-hover': {
-    light: '#0075EB',
-    dark: '#0D70FF',
+    light: '#003179',
+    dark: '#4CA6FF',
   },
   'Fill-Buttons-fill-primary-muted': {
     light: '#DEECFF',
@@ -81,7 +89,15 @@ module.exports = {
     light: '#CADFFC',
     dark: '#063A85',
   },
+  'Fill-Buttons-fill-secondary': {
+    light: '#FFFFFF1A',
+    dark: '#FFFFFF1A',
+  },
   'Fill-Buttons-fill-secondary-hover': {
+    light: '#1B67B2',
+    dark: '#FFFFFF1A',
+  },
+  'Fill-Buttons-fill-tertiary-hover': {
     light: '#DEECFF',
     dark: '#FFFFFF1A',
   },
@@ -109,6 +125,10 @@ module.exports = {
   'Fill-Accent-fill-accent-blue': {
     light: '#DEECFF',
     dark: '#363B59',
+  },
+  'Fill-Accent-fill-accent-blue-soft': {
+    light: '#CED9F2',
+    dark: '#CED9F2',
   },
   'Fill-Accent-fill-accent-teal': {
     light: '#DCF3F5',
@@ -170,6 +190,14 @@ module.exports = {
   'Border-border-bold-hover': {
     light: '#0080FF',
     dark: '#FFFFFF',
+  },
+  'Border-border-high': {
+    light: '#353740',
+    dark: '#EEEBF5',
+  },
+  'Border-border-low': {
+    light: '#45464C',
+    dark: '#BAB8BF',
   },
   'Border-border-danger': {
     light: '#FF4040',
@@ -247,6 +275,14 @@ module.exports = {
   'Text-Chip-Gray': {
     light: '#000000',
     dark: '#FFFFFF',
+  },
+  'Text-text-mathjax-blue': {
+    light: '#1B67B2',
+    dark: '#4CA6FF',
+  },
+  'Text-text-mathjax-red': {
+    light: '#B60202',
+    dark: '#FF4040',
   },
   // Table
   'Table-table-row-1': {
@@ -417,6 +453,22 @@ module.exports = {
   'Specially-Tokens-Text-text-button-secondary': {
     light: '#006CD9',
     dark: '#FFFFFF',
+  },
+  'Specially-Tokens-Text-text-button-secondary-hover': {
+    light: '#1B67B2',
+    dark: '#FFFFFF',
+  },
+  'Specially-Tokens-Text-text-button-primary-hover': {
+    light: '#FFFFFF',
+    dark: '#0D0C0F',
+  },
+  'Specially-Tokens-Text-text-button-tertiary': {
+    light: '#006CD9',
+    dark: '#4CA6FF',
+  },
+  'Specially-Tokens-Text-text-button-tertiary-hover': {
+    light: '#1B67B2',
+    dark: '#99CCFF',
   },
   'Specially-Tokens-Text-text-inverse': {
     light: '#FFFFFF',

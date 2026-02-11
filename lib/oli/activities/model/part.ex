@@ -9,7 +9,8 @@ defmodule Oli.Activities.Model.Part do
     :grading_approach,
     :out_of,
     :explanation,
-    :targets
+    :targets,
+    :targeted_response_ids
   ]
 
   @grading_approaches MapSet.new(["automatic", "manual"])
@@ -23,6 +24,7 @@ defmodule Oli.Activities.Model.Part do
     responses = Map.get(part, "responses", [])
     explanation = Map.get(part, "explanation")
     targets = Map.get(part, "targets", [])
+    targeted_response_ids = Map.get(part, "targetedResponseIds", [])
     triggers = Map.get(part, "triggers", [])
 
     grading_approach_str =
@@ -52,7 +54,8 @@ defmodule Oli.Activities.Model.Part do
          grading_approach: grading_approach,
          out_of: out_of,
          explanation: explanation,
-         targets: targets
+         targets: targets,
+         targeted_response_ids: targeted_response_ids
        }}
     else
       error -> error
