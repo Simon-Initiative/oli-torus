@@ -25,6 +25,9 @@ defmodule Oli.Scenarios.Engine do
     ViewPracticePageDirective,
     AnswerQuestionDirective,
     UseDirective,
+    CollaboratorDirective,
+    MediaDirective,
+    BibliographyDirective,
     HookDirective
   }
 
@@ -47,6 +50,9 @@ defmodule Oli.Scenarios.Engine do
     ViewPracticePageHandler,
     AnswerQuestionHandler,
     UseHandler,
+    CollaboratorHandler,
+    MediaHandler,
+    BibliographyHandler,
     HookHandler
   }
 
@@ -241,6 +247,18 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%AnswerQuestionDirective{} = directive, state) do
     AnswerQuestionHandler.handle(directive, state)
+  end
+
+  def execute_directive(%CollaboratorDirective{} = directive, state) do
+    CollaboratorHandler.handle(directive, state)
+  end
+
+  def execute_directive(%MediaDirective{} = directive, state) do
+    MediaHandler.handle(directive, state)
+  end
+
+  def execute_directive(%BibliographyDirective{} = directive, state) do
+    BibliographyHandler.handle(directive, state)
   end
 
   def execute_directive(%HookDirective{} = directive, state) do

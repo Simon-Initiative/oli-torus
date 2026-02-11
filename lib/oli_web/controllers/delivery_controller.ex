@@ -18,6 +18,7 @@ defmodule OliWeb.DeliveryController do
   alias OliWeb.Delivery.InstructorDashboard.Helpers
   alias OliWeb.DeliveryWeb
   alias OliWeb.Delivery.Student.Utils
+  import OliWeb.ViewHelpers, only: [is_section_instructor_or_admin?: 2]
   alias Timex
 
   require Logger
@@ -112,6 +113,7 @@ defmodule OliWeb.DeliveryController do
 
     with {:available, section} <- Sections.available?(section),
          {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, create_guest),
+         :ok <- Sections.ensure_enrollment_allowed(user, section),
          {:not_enrolled, nil} <- fetch_enrollment(section.slug, user.id) do
       render(conn, "enroll.html",
         section: Oli.Repo.preload(section, [:base_project]),
@@ -138,6 +140,14 @@ defmodule OliWeb.DeliveryController do
         |> put_flash(:error, @suspended_message)
         |> redirect(to: ~p"/users/log_in?request_path=%2Fsections%2F#{section.slug}")
 
+      {:error, :independent_learner_not_allowed} ->
+        conn
+        |> put_flash(:error, "This course is only available through your LMS.")
+        |> redirect(to: ~p"/workspaces/student")
+
+      {:error, :non_independent_user} ->
+        redirect_to_lms_instructions(conn, conn.assigns.section)
+
       # guest user cannot access courses that require enrollment
       {:redirect, nil} ->
         params = [
@@ -159,7 +169,7 @@ defmodule OliWeb.DeliveryController do
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       with {:available, section} <- Sections.available?(conn.assigns.section),
            {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, create_guest),
-           :ok <- Sections.ensure_direct_delivery_enrollment_allowed(user, section),
+           :ok <- Sections.ensure_enrollment_allowed(user, section),
            user <- Repo.preload(user, [:platform_roles]) do
         if Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
@@ -183,6 +193,11 @@ defmodule OliWeb.DeliveryController do
       else
         {:error, :non_independent_user} ->
           redirect_to_lms_instructions(conn, conn.assigns.section)
+
+        {:error, :independent_learner_not_allowed} ->
+          conn
+          |> put_flash(:error, "This course is only available through your LMS.")
+          |> redirect(to: ~p"/workspaces/student")
 
         {:redirect, nil} ->
           # guest user cant access courses that require enrollment
@@ -263,335 +278,313 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  def download_course_content_info(conn, %{"section_slug" => slug} = params) do
-    case Oli.Delivery.Sections.get_section_by_slug(slug) do
-      nil ->
-        Phoenix.Controller.redirect(conn,
-          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+  def download_course_content_info(conn, params) do
+    with {:ok, section} <- ensure_instructor_access(conn) do
+      {_total_count, containers_with_metrics} = Helpers.get_containers(section, async: false)
+
+      container_filter_by =
+        Params.get_atom_param(
+          params,
+          "container_filter_by",
+          [:modules, :units, :pages],
+          :units
         )
 
-      section ->
-        {_total_count, containers_with_metrics} = Helpers.get_containers(section, async: false)
+      filter_fn = fn container ->
+        case container_filter_by do
+          :units ->
+            container.numbering_level == 1
 
-        container_filter_by =
-          Params.get_atom_param(
-            params,
-            "container_filter_by",
-            [:modules, :units, :pages],
-            :units
-          )
+          :modules ->
+            container.numbering_level == 2
 
-        filter_fn = fn container ->
-          case container_filter_by do
-            :units ->
-              container.numbering_level == 1
-
-            :modules ->
-              container.numbering_level == 2
-
-            _ ->
-              true
-          end
+          _ ->
+            true
         end
+      end
 
-        contents =
-          containers_with_metrics
-          |> Enum.filter(filter_fn)
-          |> Enum.map(
-            &%{
-              title: &1.title,
-              progress: &1.progress,
-              student_proficiency: &1.student_proficiency
+      contents =
+        containers_with_metrics
+        |> Enum.filter(filter_fn)
+        |> Enum.map(
+          &%{
+            title: &1.title,
+            progress: &1.progress,
+            student_proficiency: &1.student_proficiency
+          }
+        )
+        |> DataTable.new()
+        |> DataTable.headers([:title, :progress, :student_proficiency])
+        |> DataTable.to_csv_content()
+
+      conn
+      |> send_download({:binary, contents},
+        filename: "#{section.slug}_course_content.csv"
+      )
+    else
+      {:error, :forbidden} -> render_forbidden(conn)
+      {:error, :not_found} -> render_section_not_found(conn)
+    end
+  end
+
+  def download_students_progress(conn, _params) do
+    with {:ok, section} <- ensure_instructor_access(conn) do
+      students = Helpers.get_students(section, :context_learner)
+
+      base_headers = [
+        name: "Name",
+        email: "Email",
+        lms_id: "LMS ID",
+        last_interaction: "Last Interaction",
+        progress: "Progress (Pct)",
+        overall_proficiency: "Proficiency",
+        requires_payment: "Requires Payment",
+        status: "Status"
+      ]
+
+      headers =
+        if section.certificate_enabled,
+          do: base_headers ++ [certificate_status: "Certificate Status"],
+          else: base_headers
+
+      contents =
+        Enum.map(
+          students,
+          fn student ->
+            base_map = %{
+              name: OliWeb.Common.Utils.name(student),
+              email: student.email,
+              lms_id: student.sub,
+              last_interaction: student.last_interaction,
+              progress: convert_to_percentage(student),
+              overall_proficiency: student.overall_proficiency,
+              requires_payment: Map.get(student, :requires_payment, "N/A"),
+              status: Utils.parse_enrollment_status(student.enrollment_status)
             }
-          )
-          |> DataTable.new()
-          |> DataTable.headers([:title, :progress, :student_proficiency])
-          |> DataTable.to_csv_content()
 
-        conn
-        |> send_download({:binary, contents},
-          filename: "#{slug}_course_content.csv"
+            if section.certificate_enabled,
+              do:
+                Map.put(
+                  base_map,
+                  :certificate_status,
+                  Utils.parse_certificate_status(
+                    case Map.get(student, :certificate) do
+                      nil -> nil
+                      cert -> cert.state
+                    end
+                  )
+                ),
+              else: base_map
+          end
         )
+        |> sort_data()
+        |> DataTable.new()
+        |> DataTable.headers(headers)
+        |> DataTable.to_csv_content()
+
+      conn
+      |> put_resp_header("content-type", "text/csv")
+      |> send_download({:binary, contents},
+        filename: "#{section.slug}_students.csv"
+      )
+    else
+      {:error, :forbidden} -> render_forbidden(conn)
+      {:error, :not_found} -> render_section_not_found(conn)
     end
   end
 
-  def download_students_progress(conn, %{"section_slug" => slug}) do
-    case Oli.Delivery.Sections.get_section_by_slug(slug) do
-      nil ->
-        Phoenix.Controller.redirect(conn,
-          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
-        )
+  def download_learning_objectives(conn, _params) do
+    with {:ok, section} <- ensure_instructor_access(conn) do
+      contents =
+        Sections.get_objectives_and_subobjectives(section, exclude_sub_objectives: false)
+        |> Enum.map(fn objective ->
+          %{
+            subobjective: subobjective,
+            student_proficiency_subobj: student_proficiency_subobj,
+            student_proficiency_obj: student_proficiency_obj
+          } =
+            objective
 
-      section ->
-        students = Helpers.get_students(section, :context_learner)
+          %{
+            objective: (!subobjective && objective.title) || nil,
+            subobjective: subobjective,
+            student_proficiency_obj:
+              (!student_proficiency_subobj && student_proficiency_obj) || nil,
+            student_proficiency_subobj: student_proficiency_subobj
+          }
+        end)
+        |> DataTable.new()
+        |> DataTable.headers([
+          :objective,
+          :subobjective,
+          :student_proficiency_obj,
+          :student_proficiency_subobj
+        ])
+        |> DataTable.to_csv_content()
 
-        base_headers = [
-          name: "Name",
-          email: "Email",
-          lms_id: "LMS ID",
-          last_interaction: "Last Interaction",
-          progress: "Progress (Pct)",
-          overall_proficiency: "Proficiency",
-          requires_payment: "Requires Payment",
-          status: "Status"
-        ]
-
-        headers =
-          if section.certificate_enabled,
-            do: base_headers ++ [certificate_status: "Certificate Status"],
-            else: base_headers
-
-        contents =
-          Enum.map(
-            students,
-            fn student ->
-              base_map = %{
-                name: OliWeb.Common.Utils.name(student),
-                email: student.email,
-                lms_id: student.sub,
-                last_interaction: student.last_interaction,
-                progress: convert_to_percentage(student),
-                overall_proficiency: student.overall_proficiency,
-                requires_payment: Map.get(student, :requires_payment, "N/A"),
-                status: Utils.parse_enrollment_status(student.enrollment_status)
-              }
-
-              if section.certificate_enabled,
-                do:
-                  Map.put(
-                    base_map,
-                    :certificate_status,
-                    Utils.parse_certificate_status(
-                      case Map.get(student, :certificate) do
-                        nil -> nil
-                        cert -> cert.state
-                      end
-                    )
-                  ),
-                else: base_map
-            end
-          )
-          |> sort_data()
-          |> DataTable.new()
-          |> DataTable.headers(headers)
-          |> DataTable.to_csv_content()
-
-        conn
-        |> put_resp_header("content-type", "text/csv")
-        |> send_download({:binary, contents},
-          filename: "#{slug}_students.csv"
-        )
+      conn
+      |> put_resp_header("content-type", "text/csv")
+      |> send_download({:binary, contents},
+        filename: "#{section.slug}_learning_objectives.csv"
+      )
+    else
+      {:error, :forbidden} -> render_forbidden(conn)
+      {:error, :not_found} -> render_section_not_found(conn)
     end
   end
 
-  def download_learning_objectives(conn, %{"section_slug" => slug}) do
-    case Oli.Delivery.Sections.get_section_by_slug(slug) do
-      nil ->
-        Phoenix.Controller.redirect(conn,
-          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+  def download_scored_pages(conn, _params) do
+    with {:ok, section} <- ensure_instructor_access(conn) do
+      students = instructor_dashboard_students(section.slug)
+
+      pages =
+        Helpers.get_assessments(section, students)
+        |> Helpers.load_metrics(section, students)
+
+      conn
+      |> send_pages_csv(section, pages, :scored)
+    else
+      {:error, :forbidden} -> render_forbidden(conn)
+      {:error, :not_found} -> render_section_not_found(conn)
+    end
+  end
+
+  def download_practice_pages(conn, _params) do
+    with {:ok, section} <- ensure_instructor_access(conn) do
+      students = instructor_dashboard_students(section.slug)
+
+      pages =
+        Helpers.get_practice_pages(section, students)
+        |> Helpers.load_metrics(section, students)
+
+      conn
+      |> send_pages_csv(section, pages, :practice)
+    else
+      {:error, :forbidden} -> render_forbidden(conn)
+      {:error, :not_found} -> render_section_not_found(conn)
+    end
+  end
+
+  def download_quiz_scores(conn, _params) do
+    with {:ok, section} <- ensure_instructor_access(conn) do
+      enrollments =
+        Sections.browse_enrollments(
+          section,
+          %Paging{offset: 0, limit: nil},
+          %Sorting{direction: :desc, field: :name},
+          %EnrollmentBrowseOptions{
+            text_search: "",
+            is_student: true,
+            is_instructor: false
+          }
         )
 
-      section ->
-        contents =
-          Sections.get_objectives_and_subobjectives(section, exclude_sub_objectives: false)
-          |> Enum.map(fn objective ->
-            %{
-              subobjective: subobjective,
-              student_proficiency_subobj: student_proficiency_subobj,
-              student_proficiency_obj: student_proficiency_obj
-            } =
-              objective
+      hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
 
-            %{
-              objective: (!subobjective && objective.title) || nil,
-              subobjective: subobjective,
-              student_proficiency_obj:
-                (!student_proficiency_subobj && student_proficiency_obj) || nil,
-              student_proficiency_subobj: student_proficiency_subobj
-            }
+      graded_pages =
+        hierarchy
+        |> Oli.Delivery.Hierarchy.flatten()
+        |> Enum.filter(fn node -> node.revision.graded end)
+        |> Enum.map(fn node -> node.revision end)
+
+      resource_accesses = fetch_resource_accesses(enrollments, section)
+
+      by_user =
+        Enum.reduce(resource_accesses, %{}, fn ra, m ->
+          case Map.has_key?(m, ra.user_id) do
+            true ->
+              user = Map.get(m, ra.user_id)
+              Map.put(m, ra.user_id, Map.put(user, ra.resource_id, ra))
+
+            false ->
+              Map.put(m, ra.user_id, Map.put(%{}, ra.resource_id, ra))
+          end
+        end)
+
+      pages = Enum.map(graded_pages, &{&1.resource_id, &1.title})
+
+      contents =
+        Enum.map(enrollments, fn user ->
+          Map.get(by_user, user.id, %{})
+          |> Map.merge(%{user: user, id: user.id, section: section})
+        end)
+        |> Enum.map(fn enrollment ->
+          Enum.reduce(pages, %{}, fn {page_id, page_title}, acc ->
+            page_enrollment = Map.get(enrollment, page_id, %{})
+            score = Map.get(page_enrollment, :score)
+            out_of = Map.get(page_enrollment, :out_of)
+            Map.put(acc, page_title, safe_score(score, out_of))
           end)
-          |> DataTable.new()
-          |> DataTable.headers([
-            :objective,
-            :subobjective,
-            :student_proficiency_obj,
-            :student_proficiency_subobj
-          ])
-          |> DataTable.to_csv_content()
-
-        conn
-        |> put_resp_header("content-type", "text/csv")
-        |> send_download({:binary, contents},
-          filename: "#{slug}_learning_objectives.csv"
+          |> Map.put(:student_id, enrollment.user.id)
+          |> Map.put(:student_lms_id, enrollment.user.sub)
+          |> Map.put(:student_family_name, enrollment.user.family_name)
+          |> Map.put(:student_given_name, enrollment.user.given_name)
+          |> Map.put(:student_email, enrollment.user.email)
+        end)
+        |> DataTable.new()
+        |> DataTable.headers(
+          [
+            :student_id,
+            :student_lms_id,
+            :student_family_name,
+            :student_given_name,
+            :student_email
+          ] ++ Enum.map(pages, &elem(&1, 1))
         )
-    end
-  end
+        |> DataTable.to_csv_content()
 
-  def download_scored_pages(conn, %{"section_slug" => slug}) do
-    case Sections.get_section_by_slug(slug) do
-      nil ->
-        Phoenix.Controller.redirect(conn,
-          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
-        )
-
-      section ->
-        students = instructor_dashboard_students(section.slug)
-
-        pages =
-          Helpers.get_assessments(section, students)
-          |> Helpers.load_metrics(section, students)
-
-        conn
-        |> send_pages_csv(section, pages, :scored)
-    end
-  end
-
-  def download_practice_pages(conn, %{"section_slug" => slug}) do
-    case Sections.get_section_by_slug(slug) do
-      nil ->
-        Phoenix.Controller.redirect(conn,
-          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
-        )
-
-      section ->
-        students = instructor_dashboard_students(section.slug)
-
-        pages =
-          Helpers.get_practice_pages(section, students)
-          |> Helpers.load_metrics(section, students)
-
-        conn
-        |> send_pages_csv(section, pages, :practice)
-    end
-  end
-
-  def download_quiz_scores(conn, %{"section_slug" => slug}) do
-    case Oli.Delivery.Sections.get_section_by_slug(slug) do
-      nil ->
-        Phoenix.Controller.redirect(conn,
-          to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
-        )
-
-      section ->
-        enrollments =
-          Sections.browse_enrollments(
-            section,
-            %Paging{offset: 0, limit: nil},
-            %Sorting{direction: :desc, field: :name},
-            %EnrollmentBrowseOptions{
-              text_search: "",
-              is_student: true,
-              is_instructor: false
-            }
-          )
-
-        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
-
-        graded_pages =
-          hierarchy
-          |> Oli.Delivery.Hierarchy.flatten()
-          |> Enum.filter(fn node -> node.revision.graded end)
-          |> Enum.map(fn node -> node.revision end)
-
-        resource_accesses = fetch_resource_accesses(enrollments, section)
-
-        by_user =
-          Enum.reduce(resource_accesses, %{}, fn ra, m ->
-            case Map.has_key?(m, ra.user_id) do
-              true ->
-                user = Map.get(m, ra.user_id)
-                Map.put(m, ra.user_id, Map.put(user, ra.resource_id, ra))
-
-              false ->
-                Map.put(m, ra.user_id, Map.put(%{}, ra.resource_id, ra))
-            end
-          end)
-
-        pages = Enum.map(graded_pages, &{&1.resource_id, &1.title})
-
-        contents =
-          Enum.map(enrollments, fn user ->
-            Map.get(by_user, user.id, %{})
-            |> Map.merge(%{user: user, id: user.id, section: section})
-          end)
-          |> Enum.map(fn enrollment ->
-            Enum.reduce(pages, %{}, fn {page_id, page_title}, acc ->
-              page_enrollment = Map.get(enrollment, page_id, %{})
-              score = Map.get(page_enrollment, :score)
-              out_of = Map.get(page_enrollment, :out_of)
-              Map.put(acc, page_title, safe_score(score, out_of))
-            end)
-            |> Map.put(:student_id, enrollment.user.id)
-            |> Map.put(:student_lms_id, enrollment.user.sub)
-            |> Map.put(:student_family_name, enrollment.user.family_name)
-            |> Map.put(:student_given_name, enrollment.user.given_name)
-            |> Map.put(:student_email, enrollment.user.email)
-          end)
-          |> DataTable.new()
-          |> DataTable.headers(
-            [
-              :student_id,
-              :student_lms_id,
-              :student_family_name,
-              :student_given_name,
-              :student_email
-            ] ++ Enum.map(pages, &elem(&1, 1))
-          )
-          |> DataTable.to_csv_content()
-
-        conn
-        |> send_download({:binary, contents},
-          filename: "#{slug}_quiz_scores.csv"
-        )
+      conn
+      |> send_download({:binary, contents},
+        filename: "#{section.slug}_quiz_scores.csv"
+      )
+    else
+      {:error, :forbidden} -> render_forbidden(conn)
+      {:error, :not_found} -> render_section_not_found(conn)
     end
   end
 
   @doc """
   Endpoint that triggers download of a container specific progress report.
   """
-  def download_container_progress(
-        conn,
-        %{"section_slug" => slug, "container_id" => container_id, "title" => title} = params
-      ) do
+  def download_container_progress(conn, %{"container_id" => container_id, "title" => title}) do
     {container_id, _} = Integer.parse(container_id)
 
-    case Oli.Delivery.Sections.get_section_by_slug(slug) do
-      nil ->
-        OliWeb.StaticPageController.not_found(conn, params)
+    with {:ok, section} <- ensure_instructor_access(conn) do
+      students =
+        Helpers.get_students(section, %{container_id: container_id}, :context_learner)
 
-      section ->
-        students =
-          Helpers.get_students(section, %{container_id: container_id}, :context_learner)
-
-        contents =
-          Enum.map(
-            students,
-            &%{
-              status: Utils.parse_enrollment_status(&1.enrollment_status),
-              name: OliWeb.Common.Utils.name(&1),
-              email: &1.email,
-              lms_id: &1.sub,
-              last_interaction: &1.last_interaction,
-              progress: convert_to_percentage(&1),
-              overall_proficiency: &1.overall_proficiency
-            }
-          )
-          |> sort_data()
-          |> DataTable.new()
-          |> DataTable.headers(
-            status: "Status",
-            name: "Name",
-            email: "Email",
-            lms_id: "LMS ID",
-            last_interaction: "Last Interaction",
-            progress: "Progress (Pct)",
-            overall_proficiency: "Proficiency"
-          )
-          |> DataTable.to_csv_content()
-
-        send_download(conn, {:binary, contents},
-          filename: "progress__#{slug}__#{generate_title(title)}.csv"
+      contents =
+        Enum.map(
+          students,
+          &%{
+            status: Utils.parse_enrollment_status(&1.enrollment_status),
+            name: OliWeb.Common.Utils.name(&1),
+            email: &1.email,
+            lms_id: &1.sub,
+            last_interaction: &1.last_interaction,
+            progress: convert_to_percentage(&1),
+            overall_proficiency: &1.overall_proficiency
+          }
         )
+        |> sort_data()
+        |> DataTable.new()
+        |> DataTable.headers(
+          status: "Status",
+          name: "Name",
+          email: "Email",
+          lms_id: "LMS ID",
+          last_interaction: "Last Interaction",
+          progress: "Progress (Pct)",
+          overall_proficiency: "Proficiency"
+        )
+        |> DataTable.to_csv_content()
+
+      send_download(conn, {:binary, contents},
+        filename: "progress__#{section.slug}__#{generate_title(title)}.csv"
+      )
+    else
+      {:error, :forbidden} -> render_forbidden(conn)
+      {:error, :not_found} -> render_section_not_found(conn)
     end
   end
 
@@ -742,6 +735,41 @@ defmodule OliWeb.DeliveryController do
   defp convert_to_percentage(%{progress: _progress} = user_data) do
     Logger.error("Progress exceeds 1.0 threshold: #{inspect(user_data)}")
     nil
+  end
+
+  defp ensure_instructor_access(conn) do
+    case conn.assigns[:section] do
+      %Sections.Section{} = section ->
+        if authorized_instructor?(conn, section) do
+          {:ok, section}
+        else
+          {:error, :forbidden}
+        end
+
+      _ ->
+        {:error, :not_found}
+    end
+  end
+
+  defp authorized_instructor?(conn, section) do
+    conn.assigns[:is_instructor] ||
+      is_section_instructor_or_admin?(section.slug, conn.assigns[:current_user])
+  end
+
+  defp render_forbidden(conn) do
+    conn
+    |> put_view(OliWeb.PageDeliveryView)
+    |> put_status(:forbidden)
+    |> render("not_authorized.html")
+    |> halt()
+  end
+
+  defp render_section_not_found(conn) do
+    conn
+    |> put_view(OliWeb.DeliveryView)
+    |> put_status(:not_found)
+    |> render("section_not_found.html")
+    |> halt()
   end
 
   @doc """

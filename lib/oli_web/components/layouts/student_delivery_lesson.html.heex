@@ -84,6 +84,7 @@
                   assigns[:page_progress_state] == :in_progress and assigns[:annotations]
               }
               phx-click="toggle_notes_sidebar"
+              aria-label="Notes"
               aria-pressed={to_string(assigns[:active_sidebar_panel] == :notes)}
               class={[
                 "flex flex-row items-center h-full px-3",
@@ -102,6 +103,7 @@
                   assigns[:page_progress_state] == :in_progress
               }
               phx-click="toggle_outline_sidebar"
+              aria-label="Course Content"
               aria-pressed={to_string(assigns[:active_sidebar_panel] == :outline)}
               class={[
                 "flex flex-row items-center h-full px-3",
@@ -161,7 +163,7 @@
                 class="ml-10 stroke-gray-500 hover:stroke-gray-400"
                 phx-click={JS.hide(to: "#pay_early_message")}
               >
-                <OliWeb.Icons.close />
+                <OliWeb.Icons.close class="stroke-zinc-700" />
               </button>
             </div>
           </div>

@@ -2,37 +2,12 @@
 
 This platform contains the automated e2e tests.
 
-## 🔑 Required environment variables
+## 🔑 Runtime configuration (no .env files)
 
-### 📄 login.env
-
-Before running the tests, make sure you configure the following environment variables in a .env file, which must be located at `tests/resources/login.env` These are required for authenticating the users and accessing the platform.
-
-```env
-BASE_URL=https://your-url.com
-
-EMAIL_AUTHOR=your_author_email@example.com
-PASS_AUTHOR=your_author_password
-
-EMAIL_STUDENT=your_student_email@example.com
-PASS_STUDENT=your_student_password
-NAME_STUDENT=Your Student Name
-LASTNAME_STUDENT=Your Student last name
-
-EMAIL_INSTRUCTOR=your_instructor_email@example.com
-PASS_INSTRUCTOR=your_instructor_password
-
-EMAIL_ADMIN=your_admin_email@example.com
-PASS_ADMIN=your_admin_password
-```
-
-### config.env
-
-This file is located in `tests/resources/login.env`
-
-| Name                 | Accepted values | Description                                                                                                     |
-| -------------------- | --------------- | --------------------------------------------------------------------------------------------------------------- |
-| `AUTO_CLOSE_BROWSER` | `true`, `false` | Closes the browser automatically after the run. Set to `false` to keep it open for debugging between test runs. |
+- Playwright config uses a fixed `baseURL` of `http://localhost` (see `playwright.config.ts`). Adjust there if you target another host.
+- Each spec defines its own runtime login data (emails, passwords, names) and seeds its own YAML scenario in `beforeAll`, using a per-run `RUN_ID` to avoid collisions.
+- Scenario seeding is authenticated with a default token of `my-token`; change this in the spec runtime config and in your Phoenix `PLAYWRIGHT_SCENARIO_TOKEN` if needed.
+- Browser auto-close behavior is controlled by runtime config in specs (defaults to keep the browser open between tests).
 
 ## 🧪 Configuration Tests & Report
 
@@ -54,12 +29,6 @@ Run it in headed mode (visible browser)
 npm run test-config:headed
 ```
 
-Run all suites
-
-```bash
-npm run test-all
-```
-
 Open the latest Playwright HTML report
 
 ```bash
@@ -73,26 +42,24 @@ The following processes are included.
 
 ### 📁 Project Creation
 
-The following projects are automatically created with these names:
-
-- `TQA-10-automation`
-- `TQA-11-automation`
-- `TQA-12-automation`
-- `TQA-13-automation`
-- `TQA-14-automation`
-- `TQA-15-automation`
-- `TQA-17-automation`
+Course authoring scenarios create projects with names suffixed by the current `RUN_ID` (e.g., `TQA-10-automation-1700000000000`).
 
 ### 🎨 Multimedia File Configuration
 
-The upload of multimedia resources is automated for the following projects:
+The upload of multimedia resources is automated for the following projects (names include the `RUN_ID` suffix):
 
-| 📂 Project Name   | 📄 File Name            | 🏷️ Type |
-| :---------------- | :---------------------- | :------ |
-| TQA-12-automation | img-mock-05-16-2025.jpg | image   |
-| TQA-13-automation | img-mock-05-16-2025.jpg | image   |
-| TQA-13-automation | audio-test-01.mp3       | audio   |
-| TQA-13-automation | video-test-01.mp4       | video   |
+| 📂 Project Name            | 📄 File Name            | 🏷️ Type |
+| :------------------------- | :---------------------- | :------ |
+| TQA-12-automation${RUN_ID} | img-mock-05-16-2025.jpg | image   |
+| TQA-13-automation${RUN_ID} | img-mock-05-16-2025.jpg | image   |
+| TQA-13-automation${RUN_ID} | audio-test-01.mp3       | audio   |
+| TQA-13-automation${RUN_ID} | video-test-01.mp4       | video   |
+
+### 📚 Bibliography
+
+| 📂 Project Name            | 🏷️ Type                                                                                                                                                                                                                                   |
+| :------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TQA-13-automation${RUN_ID} | `@book{Newton2015Philosophiae, address = {Garsington, England}, author = {Newton, Isaac}, year = {2015}, month = {5}, publisher = {Benediction Classics}, title = {Philosophiae {Naturalis} {Principia} {Mathematica} ({Latin},1687)}, }` |
 
 ## 🧩 Platform Features
 

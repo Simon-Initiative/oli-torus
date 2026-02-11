@@ -94,7 +94,7 @@ defmodule Oli.Analytics.Datasets do
         {:ok, Poison.decode!(result.body)}
 
       {:error, e} ->
-        Logger.error("Failed to fetch manifest for job #{job_id}: #{Kernel.to_string(e)}")
+        Logger.error("Failed to fetch manifest for job #{job_id}: #{format_error(e)}")
         {:error, e}
     end
   end
@@ -127,8 +127,9 @@ defmodule Oli.Analytics.Datasets do
   4. Submit the job to the EMR serverless environment
   5. Persist the job to the database
 
-  Any of steps 2-5 can fail, in which case the job will not be persisted to the database
-  and an error will be returned.  The error will be logged to the console. If the job
+  Any of steps 2-5 can fail, in which case the job will be persisted to the database
+  with a failed status (where possible) and an error will be returned. The error will be
+  logged to the console. If the job
   submission fails in step 4, it is okay that the context had been successfully
   staged in step 3, as the staging is done in a way that is idempotent for job ids, but more
   importantly, retries of the entire job creation process results in a new context
@@ -146,9 +147,9 @@ defmodule Oli.Analytics.Datasets do
     Logger.info("Dataset job creation initiated for project #{project_id}, job type #{job_type}")
 
     with {:ok, job} <- init(job_type, project_id, initiated_by_id, config),
-         {:ok, job} <- preprocess(job),
-         {:ok, job} <- stage_lookup_data(job),
-         {:ok, job} <- submit(job),
+         {:ok, job} <- step(job, &preprocess/1, :preprocess),
+         {:ok, job} <- step(job, &stage_lookup_data/1, :stage_lookup_data),
+         {:ok, job} <- step(job, &submit/1, :submit),
          {:ok, job} <- persist(job) do
       Logger.info(
         "Dataset job successfully created for project #{project_id}, job id #{job.job_id}"
@@ -156,9 +157,12 @@ defmodule Oli.Analytics.Datasets do
 
       {:ok, job}
     else
-      {:error, e} ->
-        Logger.error("Failed to create dataset job #{Kernel.to_string(e)}")
-        e
+      {:error, {job, error, step}} ->
+        handle_create_job_failure(job, error, step)
+
+      {:error, error} ->
+        Logger.error("Failed to create dataset job: #{format_error(error)}")
+        {:error, format_error(error)}
     end
   end
 
@@ -419,7 +423,7 @@ defmodule Oli.Analytics.Datasets do
             jobs ++ all
 
           {:error, reason} ->
-            Logger.warning("Failed to fetch job statuses: #{Kernel.to_string(reason)}")
+            Logger.warning("Failed to fetch job statuses: #{format_error(reason)}")
             all
         end
       end)
@@ -574,7 +578,7 @@ defmodule Oli.Analytics.Datasets do
         |> EmrServerless.submit_job()
 
       {:error, e} ->
-        Logger.error("Failed to submit job #{job.job_id}: #{Kernel.to_string(e)}")
+        Logger.error("Failed to submit job #{job.job_id}: #{format_error(e)}")
         {:error, e}
     end
   end
@@ -596,7 +600,7 @@ defmodule Oli.Analytics.Datasets do
         end
 
       e ->
-        Logger.error("Failed to list applications: #{Kernel.to_string(e)}")
+        Logger.error("Failed to list applications: #{format_error(e)}")
         e
     end
   end
@@ -647,6 +651,50 @@ defmodule Oli.Analytics.Datasets do
 
   defp persist(job) do
     Repo.insert(job)
+  end
+
+  defp step(job, fun, step) do
+    case fun.(job) do
+      {:ok, %DatasetJob{} = job} ->
+        {:ok, job}
+
+      {:error, error} ->
+        {:error, {job, error, step}}
+
+      other ->
+        {:error, {job, other, step}}
+    end
+  end
+
+  defp handle_create_job_failure(%DatasetJob{} = job, error, step) do
+    Logger.error("Failed to create dataset job #{job.job_id} at #{step}: #{format_error(error)}")
+
+    failed_job = %DatasetJob{
+      job
+      | status: :failed,
+        finished_on: DateTime.truncate(DateTime.utc_now(), :second)
+    }
+
+    case persist(failed_job) do
+      {:ok, _job} ->
+        {:error, format_error(error)}
+
+      {:error, persist_error} ->
+        Logger.error(
+          "Failed to persist failed dataset job #{job.job_id}: #{format_error(persist_error)}"
+        )
+
+        {:error, format_error(persist_error)}
+
+      other ->
+        Logger.error("Failed to persist failed dataset job #{job.job_id}: #{format_error(other)}")
+
+        {:error, format_error(other)}
+    end
+  end
+
+  defp format_error(error) do
+    error |> inspect(pretty: true, limit: 5, printable_limit: 2_000)
   end
 
   defp fetch_app_job_ids() do

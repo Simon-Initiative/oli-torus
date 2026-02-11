@@ -669,6 +669,18 @@ defmodule Oli.Accounts do
   def get_author(id), do: Repo.get(Author, id)
 
   @doc """
+    Gets a single author with the associated communities.
+    Returns nil if the Author does not exist.
+    ## Examples
+      iex> get_author_with_communities(123)
+      %Author{communities: []}
+      iex> get_author_with_communities(456)
+      nil
+
+  """
+  def get_author_with_communities(id), do: Repo.get(Author, id) |> Repo.preload(:communities)
+
+  @doc """
   Gets a single author with the count of communities for which the author is an admin.
 
   ## Examples
@@ -1093,26 +1105,6 @@ defmodule Oli.Accounts do
   def get_independent_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email, independent_learner: true)
   end
-
-  @doc """
-  Gets a user by email and password.
-
-  ## Examples
-
-      iex> get_user_by_email_and_password("foo@example.com", "correct_password")
-      %User{}
-
-      iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
-      nil
-
-  """
-  def get_user_by_email_and_password(email, password)
-      when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
-    if User.valid_password?(user, password), do: user
-  end
-
-  def get_user_by_email_and_password(_email, _password), do: nil
 
   @doc """
   Gets an independent user by email and password.

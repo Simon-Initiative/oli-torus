@@ -1,3 +1,4 @@
+import { ScoringActions } from 'components/activities/common/authoring/actions/scoringActions';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import {
   ChoiceIdsToResponseId,
@@ -8,7 +9,7 @@ import {
   makeFeedback,
   makeResponse,
 } from 'components/activities/types';
-import { getResponses } from 'data/activities/model/responses';
+import { getResponses, normalizeCustomScoringForPart } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { dispatch } from 'utils/test_utils';
 
@@ -57,5 +58,87 @@ describe('responses', () => {
     const newModel = dispatch(model, ResponseActions.removeTargetedFeedback(response.id));
     expect(newModel.authoring.parts[0].responses).toHaveLength(1);
     expect(newModel.authoring.targeted).toHaveLength(0);
+  });
+
+  describe('custom scoring normalization', () => {
+    const buildModel = ({
+      correctScore,
+      targetedScores,
+      customScoring,
+      outOf = null,
+    }: {
+      correctScore: number;
+      targetedScores: number[];
+      customScoring: boolean;
+      outOf?: number | null;
+    }) => {
+      const correct = makeResponse(matchRule('a'), correctScore, '', true);
+      const targeted = targetedScores.map((score, index) =>
+        makeResponse(matchRule(`t${index}`), score, ''),
+      );
+      const incorrect = makeResponse(matchRule('.*'), 0, '');
+
+      return {
+        customScoring,
+        authoring: {
+          parts: [
+            {
+              id: DEFAULT_PART_ID,
+              responses: [correct, ...targeted, incorrect],
+              hints: [],
+              scoringStrategy: {} as ScoringStrategy,
+              outOf,
+              incorrectScore: 0,
+            },
+          ],
+        },
+      } as HasParts & { customScoring?: boolean };
+    };
+
+    it('updates correct and outOf when targeted score exceeds correct', () => {
+      const model = buildModel({
+        correctScore: 1,
+        targetedScores: [2],
+        customScoring: true,
+        outOf: 1,
+      });
+
+      const targetedId = model.authoring.parts[0].responses[1].id;
+      const updated = dispatch(model, ResponseActions.editResponseScore(targetedId, 4));
+
+      expect(updated.authoring.parts[0].responses[0].score).toBe(4);
+      expect(updated.authoring.parts[0].outOf).toBe(4);
+    });
+
+    it('keeps correct at least max targeted when correct score is edited lower', () => {
+      const model = buildModel({
+        correctScore: 5,
+        targetedScores: [6],
+        customScoring: true,
+        outOf: 5,
+      });
+
+      const updated = dispatch(
+        model,
+        ScoringActions.editPartScore(DEFAULT_PART_ID, 2, 0, 'average'),
+      );
+
+      expect(updated.authoring.parts[0].responses[0].score).toBe(6);
+      expect(updated.authoring.parts[0].outOf).toBe(6);
+    });
+
+    it('does nothing when custom scoring is not enabled', () => {
+      const model = buildModel({
+        correctScore: 1,
+        targetedScores: [1],
+        customScoring: false,
+        outOf: null,
+      });
+
+      normalizeCustomScoringForPart(model, DEFAULT_PART_ID);
+
+      expect(model.authoring.parts[0].responses[0].score).toBe(1);
+      expect(model.authoring.parts[0].outOf).toBeNull();
+    });
   });
 });

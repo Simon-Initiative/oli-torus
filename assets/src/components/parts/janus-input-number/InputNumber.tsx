@@ -53,6 +53,8 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
   const [ready, setReady] = useState<boolean>(false);
   const [inputNumberValue, setInputNumberValue] = useState<string | number>('');
   const [enabled, setEnabled] = useState(true);
+  const [shouldAnnounceMinMax, setShouldAnnounceMinMax] = useState(true);
+  const [liveAnnouncement, setLiveAnnouncement] = useState('');
 
   const {
     x,
@@ -68,6 +70,12 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
     enableScrollIncrement = false,
     prompt = '',
   } = model;
+
+  /* ---------------- IDs ---------------- */
+
+  const inputId = `${id}-number-input`;
+  const descriptionId = `${id}-number-desc`;
+  const liveAnnouncementId = `${id}-live-announcement`;
 
   /**
    * Given a value, return either a number or an empty string, the value will be between
@@ -282,6 +290,17 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
     const rawInput = (event.target as HTMLInputElement).value;
     const normalizedValue = sanitizeValue(rawInput);
     setInputNumberValue(normalizedValue);
+
+    // Disable min/max announcement after first value change
+    setShouldAnnounceMinMax(false);
+
+    // Announce only value + units via live region
+    if (normalizedValue !== '') {
+      setLiveAnnouncement(`${normalizedValue}${unitsLabel ? ` ${unitsLabel}` : ''}`);
+    } else {
+      setLiveAnnouncement('');
+    }
+
     debounceSave(normalizedValue, rawInput);
   };
 
@@ -289,12 +308,27 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
     <div data-janus-type={tagName} style={inputNumberDivStyles} className={`number-input`}>
       {showLabel && (
         <React.Fragment>
-          <label htmlFor={`${id}-number-input`} className="inputNumberLabel">
+          <label htmlFor={`${inputId}`} className="inputNumberLabel">
             {label?.length > 0 ? label : ''}
           </label>
           <br />
         </React.Fragment>
       )}
+      {/* ---------- Static SR text ---------- */}
+      {/* Screen-reader-only description */}
+      <span id={descriptionId} className="sr-only">
+        {inputNumberValue !== '' &&
+          !isNaN(Number(inputNumberValue)) &&
+          `Current value: ${inputNumberValue}. `}
+        {unitsLabel && `Units: ${unitsLabel}. `}
+        {shouldAnnounceMinMax && typeof minValue === 'number' && `Minimum value: ${minValue}. `}
+        {shouldAnnounceMinMax && typeof maxValue === 'number' && `Maximum value: ${maxValue}.`}
+      </span>
+      {/* ---------- Live value announcement ---------- */}
+      <span id={liveAnnouncementId} className="sr-only" role="status" aria-live="polite">
+        {liveAnnouncement}
+      </span>
+
       <input
         type="number"
         disabled={!enabled}
@@ -306,13 +340,28 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
         className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
         style={inputNumberCompStyles}
         value={inputNumberValue}
+        aria-describedby={descriptionId}
+        onFocus={() => {
+          // Re-enable min/max announcement when field receives focus
+          setShouldAnnounceMinMax(true);
+        }}
+        onBlur={() => {
+          // Reset flag so min/max can be announced again on next focus
+          setShouldAnnounceMinMax(true);
+          // Clear live announcement
+          setLiveAnnouncement('');
+        }}
         onWheel={(e) => {
           if (!enableScrollIncrement) {
             (e.currentTarget as HTMLInputElement).blur();
           }
         }}
       />
-      {unitsLabel && <span className="unitsLabel">{unitsLabel}</span>}
+      {unitsLabel && (
+        <span className="unitsLabel" aria-hidden="true">
+          {unitsLabel}
+        </span>
+      )}
     </div>
   ) : null;
 };

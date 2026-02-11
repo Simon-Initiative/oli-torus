@@ -11,9 +11,9 @@ defmodule Oli.FeaturesTest do
 
     test "basic operations of feature flags", _ do
       [{%Feature{label: "adaptivity"}, state} | _] = Features.list_features_and_states()
-      assert state == :disabled
+      assert state == :enabled
 
-      refute Features.enabled?("adaptivity")
+      assert Features.enabled?("adaptivity")
 
       Features.change_state("adaptivity", :enabled)
 

@@ -144,22 +144,22 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def toggle_expand_button(assigns) do
     ~H"""
-    <div class="flex items-center justify-start w-32 px-2 text-sm font-bold text-[#0080FF] dark:text-[#0062F2]">
+    <div class="flex items-center justify-start w-32 px-2 text-sm font-bold text-Text-text-button">
       <button
         id="expand_all_button"
         phx-click={@on_expand |> JS.hide() |> JS.show(to: "#collapse_all_button", display: "flex")}
-        class="flex space-x-3"
+        class="flex space-x-3 whitespace-nowrap hover:text-Text-text-button-hover"
       >
-        <Icons.expand />
+        <Icons.expand class="stroke-current" />
         <span>Expand All</span>
       </button>
 
       <button
         id="collapse_all_button"
         phx-click={@on_collapse |> JS.hide() |> JS.show(to: "#expand_all_button", display: "flex")}
-        class="hidden space-x-3"
+        class="hidden space-x-3 whitespace-nowrap hover:text-Text-text-button-hover"
       >
-        <Icons.collapse />
+        <Icons.collapse class="stroke-current" />
         <span>Collapse All</span>
       </button>
     </div>
@@ -185,6 +185,7 @@ defmodule OliWeb.Components.Delivery.Utils do
           placeholder={@rest[:placeholder]}
           class="h-9 sm:h-auto w-full border bg-Specially-Tokens-Fill-fill-input border-Specially-Tokens-Border-border-input rounded-lg px-12 py-3"
           phx-debounce="500"
+          aria-label="search"
         />
         <button
           :if={@search_term not in ["", nil]}
@@ -363,7 +364,7 @@ defmodule OliWeb.Components.Delivery.Utils do
     <button
       id="hide_completed_button"
       phx-click={hide_completed(@target_selector, @on_toggle)}
-      class={["self-stretch justify-center items-center gap-2 flex", @class]}
+      class={["self-stretch sm:justify-center sm:items-center gap-2 flex", @class]}
     >
       <div class="w-4 h-4"><Icons.hidden /></div>
       <span>Hide Completed</span>
@@ -371,7 +372,7 @@ defmodule OliWeb.Components.Delivery.Utils do
     <button
       id="show_completed_button"
       phx-click={show_completed(@target_selector, @on_toggle)}
-      class={["hidden self-stretch justify-center items-center gap-2", @class]}
+      class={["hidden self-stretch sm:justify-center sm:items-center gap-2", @class]}
     >
       <div class="w-4 h-4"><Icons.visible /></div>
       <span>Show Completed</span>

@@ -8,7 +8,8 @@ defmodule OliWeb.Users.AuthorProjects do
   alias Oli.Accounts.Author
   alias Oli.Authoring.Authors.ProjectRole
   alias OliWeb.Users.AuthorProjectsTableModel
-  alias OliWeb.Common.{PagedTable, SearchInput}
+  alias OliWeb.Common.SearchInput
+  alias OliWeb.Common.SortableTable.StripedTable
   alias OliWeb.Common.Table.SortableTableModel
   alias Phoenix.LiveView.JS
 
@@ -48,35 +49,32 @@ defmodule OliWeb.Users.AuthorProjects do
 
   def render(assigns) do
     ~H"""
-    <div id={@id}>
+    <div id={@id} class="flex flex-col gap-2">
       <%= if @projects != [] do %>
         <form
           for="search"
           phx-target={@myself}
           phx-change="search_project"
-          class="pb-6 ml-auto lg:ml-auto lg:pt-7"
+          class="w-56"
         >
-          <div class="w-44 ml-auto">
-            <SearchInput.render
-              id="projects_search_input"
-              name="project_title"
-              text={@params.text_search}
-            />
-          </div>
+          <SearchInput.render
+            id="projects_search_input"
+            name="project_title"
+            text={@params.text_search}
+          />
         </form>
       <% end %>
-      <PagedTable.render
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@params.offset}
-        limit={@params.limit}
-        page_change={JS.push("paged_table_page_change", target: @myself)}
-        selection_change={JS.push("paged_table_selection_change", target: @myself)}
-        sort={JS.push("paged_table_sort", target: @myself)}
-        additional_table_class="instructor_dashboard_table"
-        show_bottom_paging={false}
-        render_top_info={false}
-      />
+      <div class={[
+        "w-full overflow-x-auto",
+        if(@total_count > 10, do: "max-h-[570px] overflow-y-auto", else: "")
+      ]}>
+        <StripedTable.render
+          model={@table_model}
+          sort={JS.push("paged_table_sort", target: @myself)}
+          additional_table_class="instructor_dashboard_table table_header_separated w-full"
+          sticky_header_offset={0}
+        />
+      </div>
     </div>
     """
   end
@@ -187,7 +185,7 @@ defmodule OliWeb.Users.AuthorProjects do
       |> maybe_filter_by_text(params.text_search)
       |> sort_by(params.sort_by, params.sort_order)
 
-    {length(projects), projects |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+    {length(projects), projects}
   end
 
   defp sort_by(projects, sort_by, sort_order) do

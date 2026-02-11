@@ -134,7 +134,9 @@ defmodule Oli.Delivery do
             welcome_title: blueprint.welcome_title,
             encouraging_subtitle: blueprint.encouraging_subtitle,
             amount: amount,
-            requires_payment: requires_payment
+            requires_payment: requires_payment,
+            registration_open: true,
+            requires_enrollment: true
           })
           |> SectionSpecification.apply(section_spec)
 
@@ -205,7 +207,7 @@ defmodule Oli.Delivery do
 
   defp maybe_enroll_user_as_instructor(%User{id: user_id} = user, section) do
     with :ok <-
-           Sections.ensure_direct_delivery_enrollment_allowed(
+           Sections.ensure_enrollment_allowed(
              user,
              section
            ) do

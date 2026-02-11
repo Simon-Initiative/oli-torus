@@ -269,7 +269,12 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
     const { snapshot, context, env } = await partInit(payload.id.toString());
     // TODO: something with save result? check for errors?
-    return { snapshot, context, env, responsiveLayout: props?.context?.responsiveLayout || false };
+    return {
+      snapshot,
+      context,
+      env,
+      responsiveLayout: props?.context?.responsiveLayout || false,
+    };
   };
 
   const handlePartReady = async (payload: { id: string | number }) => {

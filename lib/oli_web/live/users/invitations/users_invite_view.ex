@@ -29,21 +29,40 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
         authentication_providers =
           Oli.AssentAuth.UserAssentAuth.authentication_providers() |> Keyword.keys()
 
-        {:ok,
-         assign(socket,
-           user: user,
-           token: token,
-           # this current user refers to the one that is logged in
-           # and might be different from the user that is being invited
-           current_user:
-             session["user_token"] && Accounts.get_user_by_session_token(session["user_token"]),
-           section: section,
-           enrollment: enrollment,
-           invitation_role:
-             if(hd(enrollment.context_roles).id == 4, do: :student, else: :instructor),
-           step: "accept_or_reject_invitation",
-           authentication_providers: authentication_providers
-         )}
+        case Sections.ensure_enrollment_allowed(user, section) do
+          :ok ->
+            {:ok,
+             assign(socket,
+               user: user,
+               token: token,
+               # this current user refers to the one that is logged in
+               # and might be different from the user that is being invited
+               current_user:
+                 session["user_token"] &&
+                   Accounts.get_user_by_session_token(session["user_token"]),
+               section: section,
+               enrollment: enrollment,
+               invitation_role:
+                 if(hd(enrollment.context_roles).id == 4, do: :student, else: :instructor),
+               step: "accept_or_reject_invitation",
+               authentication_providers: authentication_providers
+             )}
+
+          {:error, :non_independent_user} ->
+            {:ok,
+             socket
+             |> put_flash(
+               :error,
+               gettext("This course is only available with a direct delivery account.")
+             )
+             |> redirect(to: ~p"/lms_user_instructions?#{[section_title: section.title]}")}
+
+          {:error, :independent_learner_not_allowed} ->
+            {:ok,
+             socket
+             |> put_flash(:error, gettext("This course is only available through your LMS."))
+             |> redirect(to: ~p"/workspaces/student")}
+        end
     end
   end
 
@@ -294,7 +313,10 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   def handle_event("log_in_existing_user", params, socket) do
     %{user: user, enrollment: enrollment} = socket.assigns
 
-    case Accounts.get_user_by_email_and_password(user.email, params["user"]["password"]) do
+    case Accounts.get_independent_user_by_email_and_password(
+           user.email,
+           params["user"]["password"]
+         ) do
       nil ->
         {:noreply, put_flash(socket, :error, "Invalid email or password")}
 

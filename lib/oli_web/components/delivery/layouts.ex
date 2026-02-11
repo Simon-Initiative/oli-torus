@@ -99,13 +99,34 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
         <div class="flex items-center p-2">
           <button
+            id="mobile-nav-open"
             class={[
-              "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
+              "py-1.5 px-3 rounded border border-transparent text-Text-text-low hover:text-Text-text-high hover:border-Border-border-subtle active:bg-Surface-surface-secondary focus:outline-none",
               if(@sidebar_enabled, do: "md:hidden", else: "hidden")
             ]}
-            phx-click={JS.toggle(to: "#mobile-nav-menu", display: "flex")}
+            aria-label="menu"
+            phx-click={
+              JS.show(to: "#mobile-nav-menu", display: "flex")
+              |> JS.hide(to: "#mobile-nav-open")
+              |> JS.show(to: "#mobile-nav-close")
+            }
           >
             <i class="fa-solid fa-bars"></i>
+          </button>
+          <button
+            id="mobile-nav-close"
+            class={[
+              "hidden py-1.5 px-3 rounded border border-Border-border-subtle bg-Surface-surface-secondary text-Text-text-high focus:outline-none",
+              if(@sidebar_enabled, do: "md:hidden", else: "hidden")
+            ]}
+            aria-label="close menu"
+            phx-click={
+              JS.hide(to: "#mobile-nav-menu")
+              |> JS.show(to: "#mobile-nav-open")
+              |> JS.hide(to: "#mobile-nav-close")
+            }
+          >
+            <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
       </div>
@@ -218,39 +239,83 @@ defmodule OliWeb.Components.Delivery.Layouts do
         id="mobile-nav-menu"
         class="
         fixed
+        inset-0
         z-50
-        w-full
-        mt-14
         hidden
         md:hidden
         flex-col
+        h-[100dvh]
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
       "
-        phx-click-away={JS.hide()}
+        phx-click-away={
+          JS.hide(to: "#mobile-nav-menu")
+          |> JS.show(to: "#mobile-nav-open")
+          |> JS.hide(to: "#mobile-nav-close")
+        }
       >
-        <div class="px-4 py-2 flex flex-row items-center align-center justify-between border-b border-gray-300 dark:border-gray-800">
-          <div class="flex items-center">
-            <.tech_support_button id="mobile-tech-support" />
+        <div class="border-b border-Border-border-subtle h-14 px-3 flex items-center gap-3">
+          <.link
+            :if={@section}
+            id="mobile_header_logo_button"
+            navigate={
+              logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_admin)
+            }
+            class="shrink-0"
+          >
+            <.logo_img section={@section} />
+          </.link>
+          <div class="flex-1 min-w-0 text-sm text-Text-text-low truncate">
+            {if @section, do: @section.title, else: ""}
           </div>
-          <UserAccount.menu
-            id="mobile-user-account-menu-sidebar"
-            ctx={@ctx}
-            is_admin={@is_admin}
-            section={@section}
-            dropdown_class="absolute right-0 border"
-          />
+          <button
+            class="p-2"
+            aria-label="Close menu"
+            phx-click={
+              JS.hide(to: "#mobile-nav-menu")
+              |> JS.show(to: "#mobile-nav-open")
+              |> JS.hide(to: "#mobile-nav-close")
+            }
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <.sidebar_links
-          active_tab={@active_tab}
-          section={@section}
-          preview_mode={@preview_mode}
-          notes_enabled={@notes_enabled}
-          discussions_enabled={@discussions_enabled}
-          has_scheduled_resources?={@has_scheduled_resources?}
-          platform="mobile"
-        />
+        <div class="flex-1 flex flex-col justify-between px-3 py-2 overflow-y-auto">
+          <div class="flex flex-col gap-2">
+            <.sidebar_links
+              active_tab={@active_tab}
+              section={@section}
+              preview_mode={@preview_mode}
+              notes_enabled={@notes_enabled}
+              discussions_enabled={@discussions_enabled}
+              has_scheduled_resources?={@has_scheduled_resources?}
+              platform="mobile"
+            />
+          </div>
+          <div class="flex flex-col gap-2 pt-4">
+            <.tech_support_button id="mobile-tech-support" class="w-full" />
+            <.exit_course_button id="mobile_exit_course_button" />
+          </div>
+        </div>
+        <div class="border-t border-Border-border-subtle px-3 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <UserAccount.menu
+              id="mobile-user-account-menu-sidebar"
+              ctx={@ctx}
+              is_admin={@is_admin}
+              section={@section}
+              class="h-10 w-10"
+              dropdown_class="!top-auto !bottom-14 right-0 border"
+            />
+            <div class="text-sm text-Text-text-low truncate">
+              {user_name(@ctx)}
+            </div>
+          </div>
+          <.link href={~p"/users/settings"} class="p-2" aria-label="Settings">
+            <Icons.adjustments />
+          </.link>
+        </div>
       </nav>
     </div>
     """
@@ -312,6 +377,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_view, :atom, default: nil)
   attr(:sidebar_expanded, :boolean)
   attr(:preview_mode, :boolean)
+  attr(:section, Section, default: nil)
   attr(:resource_title, :string)
   attr(:resource_slug, :string)
   attr(:active_tab, :atom)
@@ -366,12 +432,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
           />
           <div class="h-[var(--main-links-height)]">
             <div class="h-[24px]">
-              <h2
+              <span
                 :if={@sidebar_expanded}
                 class="text-[14px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6"
               >
                 WORKSPACE
-              </h2>
+              </span>
             </div>
             <.workspace_sidebar_links
               preview_mode={@preview_mode}
@@ -410,35 +476,81 @@ defmodule OliWeb.Components.Delivery.Layouts do
         id="mobile-nav-menu"
         class="
         fixed
+        inset-0
         z-50
-        w-full
-        mt-14
         hidden
         md:hidden
         flex-col
+        h-[100dvh]
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
       "
-        phx-click-away={JS.hide()}
+        phx-click-away={
+          JS.hide(to: "#mobile-nav-menu")
+          |> JS.show(to: "#mobile-nav-open")
+          |> JS.hide(to: "#mobile-nav-close")
+        }
       >
-        <div class="px-4 py-2 flex flex-row items-center align-center justify-between border-b border-gray-300 dark:border-gray-800">
-          <div class="flex items-center">
-            <.tech_support_button id="mobile-tech-support" />
+        <div class="border-b border-Border-border-subtle h-14 px-3 flex items-center gap-3">
+          <.link
+            id="mobile_workspace_logo_button"
+            navigate={logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded, @is_admin)}
+            class="shrink-0"
+          >
+            <.logo_img />
+          </.link>
+          <div class="flex-1 min-w-0 text-sm text-Text-text-low truncate">
+            {if @resource_title, do: @resource_title, else: "Workspace"}
           </div>
-          <UserAccount.menu
-            id="mobile-user-account-menu-workspace-sidebar"
-            ctx={@ctx}
-            is_admin={@is_admin}
-            dropdown_class="absolute right-0 border"
-          />
+          <button
+            class="p-2"
+            aria-label="Close menu"
+            phx-click={
+              JS.hide(to: "#mobile-nav-menu")
+              |> JS.show(to: "#mobile-nav-open")
+              |> JS.hide(to: "#mobile-nav-close")
+            }
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <.workspace_sidebar_links
-          preview_mode={@preview_mode}
-          sidebar_expanded={@sidebar_expanded}
-          active_workspace={@active_workspace}
-          platform="mobile"
-        />
+        <div class="flex-1 flex flex-col justify-between px-3 py-2 overflow-y-auto">
+          <div class="flex flex-col gap-2">
+            <.workspace_sidebar_links
+              preview_mode={@preview_mode}
+              sidebar_expanded={@sidebar_expanded}
+              active_workspace={@active_workspace}
+              platform="mobile"
+            />
+          </div>
+          <div class="flex flex-col gap-2 pt-4">
+            <.tech_support_button id="mobile-tech-support-workspace" class="w-full" />
+            <.exit_workspace_button
+              :if={@section}
+              id="mobile_exit_workspace_button"
+              sidebar_expanded={true}
+              target_workspace={@active_workspace || :student}
+            />
+          </div>
+        </div>
+        <div class="border-t border-Border-border-subtle px-3 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <UserAccount.menu
+              id="mobile-user-account-menu-workspace-sidebar"
+              ctx={@ctx}
+              is_admin={@is_admin}
+              class="h-10 w-10"
+              dropdown_class="!top-auto !bottom-14 right-0 border"
+            />
+            <div class="text-sm text-Text-text-low truncate">
+              {user_name(@ctx)}
+            </div>
+          </div>
+          <.link href={~p"/users/settings"} class="p-2" aria-label="Settings">
+            <Icons.adjustments />
+          </.link>
+        </div>
       </nav>
     </div>
     """
@@ -515,6 +627,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:index, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :index}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Home"
       >
         <:icon><Icons.home is_active={@active_tab == :index} /></:icon>
         <:text>Home</:text>
@@ -525,6 +638,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:learn, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :learn}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Learn"
       >
         <:icon><Icons.learn is_active={@active_tab == :learn} /></:icon>
         <:text>Learn</:text>
@@ -536,6 +650,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:schedule, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :schedule}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Schedule"
       >
         <:icon><Icons.schedule is_active={@active_tab == :schedule} /></:icon>
         <:text>Schedule</:text>
@@ -548,6 +663,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         is_active={@active_tab == :discussions}
         sidebar_expanded={@sidebar_expanded}
         badge={Map.get(@notification_badges, :discussions)}
+        aria_label="Notes"
       >
         <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
         <:text>Notes</:text>
@@ -559,6 +675,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:assignments, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :assignments}
         sidebar_expanded={@sidebar_expanded}
+        aria_label="Assignments"
       >
         <:icon><Icons.assignments is_active={@active_tab == :assignments} /></:icon>
         <:text>Assignments</:text>
@@ -714,12 +831,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr :badge, :integer, default: nil
   attr :on_active_bg, :string, default: "bg-zinc-400 bg-opacity-20"
   attr :navigation_type, :string, default: "navigate"
+  attr :aria_label, :string, default: nil
 
   def nav_link(%{navigation_type: "navigate"} = assigns) do
     ~H"""
     <.link
       id={@id}
       navigate={@href}
+      aria-label={@aria_label}
       class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content {assigns} />
@@ -732,6 +851,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <.link
       id={@id}
       href={@href}
+      aria-label={@aria_label}
       class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content {assigns} />
@@ -747,13 +867,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         do: @on_active_bg
       )
     ]}>
-      <div class="w-5 h-5 flex items-center justify-center">
+      <div class="w-5 h-5 flex items-center justify-center" aria-hidden="true">
         {render_slot(@icon)}
       </div>
       <div
         :if={@sidebar_expanded}
         class={[
-          "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
+          "text-[#353740] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
           if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
         ]}
       >
@@ -780,22 +900,27 @@ defmodule OliWeb.Components.Delivery.Layouts do
       |> assign(:logo_src_dark, Branding.brand_logo_url_dark(assigns[:section]))
 
     ~H"""
-    <img src={@logo_src} class="inline-block dark:hidden h-9 object-cover object-left" alt="logo" />
+    <img
+      src={@logo_src}
+      class="inline-block dark:hidden h-9 object-cover object-left"
+      alt="OLI Torus logo"
+    />
     <img
       src={@logo_src_dark}
       class="hidden dark:inline-block h-9 object-cover object-left"
-      alt="logo dark"
+      alt="OLI Torus logo"
     />
     """
   end
 
+  attr :id, :string, default: "exit_workspace_button"
   attr :sidebar_expanded, :boolean, default: true
   attr :target_workspace, :atom, default: :student_workspace
 
   def exit_course_button(assigns) do
     ~H"""
     <.link
-      id="exit_course_button"
+      id={@id}
       navigate={~p"/workspaces/student?#{%{sidebar_expanded: @sidebar_expanded}}"}
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white"
     >
@@ -804,11 +929,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
           Exit Course
         </div>
+        <span :if={!@sidebar_expanded} class="sr-only">Exit Course</span>
       </div>
     </.link>
     """
   end
 
+  attr :id, :string, default: "exit_course_button"
   attr :sidebar_expanded, :boolean, default: true
   attr :target_workspace, :atom, default: :student
   attr :title, :string, default: "Exit Course"
@@ -826,7 +953,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
     ~H"""
     <.link
-      id="exit_course_button"
+      id={@id}
       navigate={Routes.live_path(OliWeb.Endpoint, @base_module, sidebar_expanded: @sidebar_expanded)}
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
@@ -835,6 +962,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
           {@title}
         </div>
+        <span :if={!@sidebar_expanded} class="sr-only">{@title}</span>
       </div>
     </.link>
     """
@@ -855,103 +983,148 @@ defmodule OliWeb.Components.Delivery.Layouts do
     # and the page would not react to interactions after navigation to another page
     # ("working" loader kept spinning after interacting with an activity)
     ~H"""
-    <div
-      id="bottom-bar-wrapper"
-      phx-hook="FixedNavigationBar"
-      class="group fixed bottom-0 left-1/2 -translate-x-1/2 w-full lg:w-[720px] z-50 h-[10px] lg:h-[74px]"
-    >
+    <div :if={!is_nil(@current_page)}>
       <div
-        :if={!is_nil(@current_page)}
-        id="bottom-bar"
-        class="translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 absolute bottom-0 left-1/2 -translate-x-1/2 h-[74px] lg:py-4 shadow-lg bg-white dark:bg-black lg:rounded-tl-[40px] lg:rounded-tr-[40px] flex items-center gap-3 lg:w-[720px] w-full z-50 transition-all duration-500 ease-in-out"
+        id="bottom-bar-wrapper"
+        phx-hook="FixedNavigationBar"
+        data-trigger-point="200"
+        class="group fixed bottom-0 left-1/2 -translate-x-1/2 w-full lg:w-[720px] z-50 h-[10px] lg:h-[74px]"
       >
-        <div class="hidden lg:block absolute -left-[114px] z-0">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="170"
-            height="74"
-            viewBox="0 0 170 74"
-            fill="none"
-          >
-            <path
-              class="fill-white dark:fill-black"
-              d="M170 0H134C107 0 92.5 13 68.5 37C44.5 61 24.2752 74 0 74H170V0Z"
-            />
-          </svg>
-        </div>
-
         <div
-          :if={!is_nil(@previous_page)}
-          class="grow shrink basis-0 h-10 justify-start items-center flex z-10 overflow-hidden whitespace-nowrap"
-          role="prev_page"
+          id="bottom-bar"
+          class="translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 absolute bottom-0 left-1/2 -translate-x-1/2 h-auto lg:h-[74px] lg:py-4 shadow-lg bg-white dark:bg-black lg:rounded-tl-[40px] lg:rounded-tr-[40px] flex flex-col lg:flex-row items-center gap-2 lg:gap-3 lg:w-[720px] w-full z-50 transition-all duration-500 ease-in-out px-2 lg:px-0 lg:pb-0"
         >
           <div
-            class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex"
-            tooltip="Previous Page"
+            :if={!is_nil(@previous_page) or !is_nil(@next_page)}
+            class="flex w-full items-center gap-3 lg:hidden justify-center md:justify-between px-4 my-4"
           >
-            <.link
-              href={
-                resource_navigation_url(
-                  @previous_page,
-                  @section_slug,
-                  assigns[:request_path],
-                  assigns[:selected_view]
-                )
-              }
-              class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2]/50 flex items-center justify-center"
-            >
-              <.left_arrow />
-            </.link>
-          </div>
-          <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
-            {maybe_add_icon(@previous_page, @pages_progress)}
-            <span class="overflow-hidden text-ellipsis" title={@previous_page["title"]}>
-              {@previous_page["title"]}
-            </span>
-          </div>
-        </div>
+            <%= if @previous_page do %>
+              <.link
+                href={
+                  resource_navigation_url(
+                    @previous_page,
+                    @section_slug,
+                    assigns[:request_path],
+                    assigns[:selected_view]
+                  )
+                }
+                aria-label="Back"
+                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary-muted text-Specially-Tokens-Text-text-button-muted py-2 text-sm font-semibold hover:text-Text-text-white hover:no-underline focus-ring-Fill-Buttons-fill-primary"
+              >
+                <Icons.chevron_right class="rotate-90" />
+                <span>Previous</span>
+              </.link>
+            <% end %>
 
-        <div
-          :if={!is_nil(@next_page)}
-          class="grow shrink basis-0 h-10 justify-end items-center flex z-10 overflow-hidden whitespace-nowrap"
-          role="next_page"
-        >
-          <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis">
-            {maybe_add_icon(@next_page, @pages_progress)}
-            <span class="overflow-hidden text-ellipsis" title={@next_page["title"]}>
-              {@next_page["title"]}
-            </span>
+            <%= if @next_page do %>
+              <.link
+                href={
+                  resource_navigation_url(
+                    @next_page,
+                    @section_slug,
+                    assigns[:request_path],
+                    assigns[:selected_view]
+                  )
+                }
+                aria-label="Next"
+                class="w-full md:w-[20%] flex items-center justify-center gap-1 rounded-md bg-Fill-Buttons-fill-primary text-Text-text-white py-2 text-sm font-semibold hover:text-Text-text-white hover:no-underline focus-ring-Fill-Buttons-fill-primary"
+              >
+                <span>Next</span>
+                <Icons.chevron_right class="-rotate-90" />
+              </.link>
+            <% end %>
           </div>
-          <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
-            <.link
-              href={
-                resource_navigation_url(
-                  @next_page,
-                  @section_slug,
-                  assigns[:request_path],
-                  assigns[:selected_view]
-                )
-              }
-              class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-[#0062F2] flex items-center justify-center"
-            >
-              <.right_arrow />
-            </.link>
-          </div>
-        </div>
 
-        <div class="hidden lg:block absolute -right-[114px] z-0">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="170"
-            height="74"
-            viewBox="0 0 170 74"
-            fill="none"
+          <div class="hidden lg:block absolute -left-[114px] z-0">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="170"
+              height="74"
+              viewBox="0 0 170 74"
+              fill="none"
+            >
+              <path
+                class="fill-white dark:fill-black"
+                d="M170 0H134C107 0 92.5 13 68.5 37C44.5 61 24.2752 74 0 74H170V0Z"
+              />
+            </svg>
+          </div>
+
+          <div
+            :if={!is_nil(@previous_page)}
+            class="hidden lg:flex grow shrink basis-0 h-10 justify-start items-center z-10"
+            role="prev_page"
           >
-            <path
-              class="fill-white dark:fill-black"
-              d="M0 0H36C63 0 77.5 13 101.5 37C125.5 61 145.725 74 170 74H0V0Z"
-            />
-          </svg>
+            <div
+              class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex"
+              tooltip="Previous Page"
+            >
+              <.link
+                aria-label="previous"
+                href={
+                  resource_navigation_url(
+                    @previous_page,
+                    @section_slug,
+                    assigns[:request_path],
+                    assigns[:selected_view]
+                  )
+                }
+                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-Fill-Buttons-fill-primary/50 flex items-center justify-center focus-ring-Fill-Buttons-fill-primary"
+              >
+                <.left_arrow />
+              </.link>
+            </div>
+            <div class="hidden sm:flex flex-row gap-x-1 justify-start items-center grow shrink basis-0 dark:text-white text-xs font-normal overflow-hidden text-ellipsis whitespace-nowrap">
+              {maybe_add_icon(@previous_page, @pages_progress)}
+              <span class="overflow-hidden text-ellipsis" title={@previous_page["title"]}>
+                {@previous_page["title"]}
+              </span>
+            </div>
+          </div>
+
+          <div
+            :if={!is_nil(@next_page)}
+            class="hidden lg:flex grow shrink basis-0 h-10 justify-end items-center z-10"
+            role="next_page"
+          >
+            <div class="hidden sm:flex flex-row gap-x-1 justify-end items-center grow shrink basis-0 text-right dark:text-white text-xs font-normal overflow-hidden text-ellipsis whitespace-nowrap">
+              {maybe_add_icon(@next_page, @pages_progress)}
+              <span class="overflow-hidden text-ellipsis" title={@next_page["title"]}>
+                {@next_page["title"]}
+              </span>
+            </div>
+            <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
+              <.link
+                aria-label="next"
+                href={
+                  resource_navigation_url(
+                    @next_page,
+                    @section_slug,
+                    assigns[:request_path],
+                    assigns[:selected_view]
+                  )
+                }
+                class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-Fill-Buttons-fill-primary flex items-center justify-center focus-ring-Fill-Buttons-fill-primary"
+              >
+                <.right_arrow />
+              </.link>
+            </div>
+          </div>
+
+          <div class="hidden lg:block absolute -right-[114px] z-0">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="170"
+              height="74"
+              viewBox="0 0 170 74"
+              fill="none"
+            >
+              <path
+                class="fill-white dark:fill-black"
+                d="M0 0H36C63 0 77.5 13 101.5 37C125.5 61 145.725 74 170 74H0V0Z"
+              />
+            </svg>
+          </div>
         </div>
       </div>
     </div>
@@ -1010,6 +1183,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :if={@view == :adaptive_chromeless}
         href={@to}
         class="hover:no-underline hover:scale-105 cursor-pointer"
+        aria-label="Back"
       >
         <Icons.left_arrow class="hover:opacity-100 hover:scale-105 fill-[#9D9D9D]" />
       </.link>
@@ -1017,6 +1191,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :if={@view != :adaptive_chromeless}
         navigate={@to}
         class="hover:no-underline hover:scale-105 cursor-pointer"
+        aria-label="Back"
       >
         <Icons.left_arrow class="hover:opacity-100 hover:scale-105 fill-[#9D9D9D]" />
       </.link>

@@ -13,6 +13,7 @@ defmodule Oli.Resources.Collaboration do
 
   import Ecto.Query, warn: false
   import Oli.Utils
+  require Logger
 
   # ------------------------------------------------------------
   # Collaborative Spaces
@@ -441,6 +442,47 @@ defmodule Oli.Resources.Collaboration do
         preload: [:user]
       )
     )
+  end
+
+  @doc """
+  Counts posts and replies for a user in a specific section and resource using DB-side aggregation.
+
+  Returns `{posts_count, replies_count}` where:
+  - `posts_count` is the number of top-level posts (where parent_post_id is nil)
+  - `replies_count` is the number of reply posts (where parent_post_id is not nil)
+
+  ## Examples
+
+      iex> count_posts_and_replies_for_user(1, 1, 1)
+      {5, 3}
+  """
+  @spec count_posts_and_replies_for_user(
+          section_id :: integer(),
+          resource_id :: integer(),
+          user_id :: integer()
+        ) :: {integer(), integer()}
+  def count_posts_and_replies_for_user(section_id, resource_id, user_id) do
+    base_query =
+      from(
+        post in Post,
+        where:
+          post.section_id == ^section_id and post.resource_id == ^resource_id and
+            post.user_id == ^user_id and
+            (post.status in [:approved, :archived] or
+               post.status == :submitted)
+      )
+
+    posts_count =
+      base_query
+      |> where([p], is_nil(p.parent_post_id))
+      |> Repo.aggregate(:count, :id)
+
+    replies_count =
+      base_query
+      |> where([p], not is_nil(p.parent_post_id))
+      |> Repo.aggregate(:count, :id)
+
+    {posts_count, replies_count}
   end
 
   @doc """
@@ -1024,20 +1066,35 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
-  Soft deletes a single post with the given id.
+  Soft deletes a single post with the given id, authorized for the actor.
 
-  ## Examples
-
-      iex> delete_post(post)
-      {number, nil | returned data}` where number is the number of deleted entries
+  Only the post owner or a section instructor/admin may delete.
   """
-  def soft_delete_post(post_id) do
-    from(
-      p in Post,
-      where: p.id == ^post_id
-    )
-    |> Repo.update_all(set: [status: :deleted])
+  def soft_delete_post(post_id, actor) do
+    actor = maybe_preload_actor(actor)
+
+    case get_post_by(%{id: post_id}) |> Repo.preload(:section) do
+      %Post{} = post ->
+        if authorized_to_delete?(post, actor) do
+          from(p in Post, where: p.id == ^post_id)
+          |> Repo.update_all(set: [status: :deleted])
+        else
+          section_slug = post.section && post.section.slug
+
+          Logger.warning(
+            "Unauthorized delete attempt for post #{post_id} by #{actor && actor.id} in section #{section_slug}"
+          )
+
+          {:error, :unauthorized}
+        end
+
+      nil ->
+        {:error, :not_found}
+    end
   end
+
+  @doc deprecated: "Use soft_delete_post/2 with an actor for authorization"
+  def soft_delete_post(post_id), do: soft_delete_post(post_id, nil)
 
   @doc """
   Delete a post or a set of posts.
@@ -1104,6 +1161,18 @@ defmodule Oli.Resources.Collaboration do
       )
     end)
   end
+
+  defp authorized_to_delete?(%Post{user_id: user_id}, %{id: actor_id}) when user_id == actor_id,
+    do: true
+
+  defp authorized_to_delete?(%Post{section: %{slug: slug}}, actor) do
+    Sections.is_instructor?(actor, slug) || Sections.is_admin?(actor, slug)
+  end
+
+  defp authorized_to_delete?(_, _), do: false
+
+  defp maybe_preload_actor(nil), do: nil
+  defp maybe_preload_actor(%User{} = actor), do: Repo.preload(actor, [:platform_roles])
 
   @doc """
   Returns the list of posts that a user can see for a particular point content block id.

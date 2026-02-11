@@ -10,7 +10,12 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
   alias Oli.AssentAuth.UserIdentity
 
   def create_section_and_user(%{conn: conn}) do
-    %{conn: conn, section: insert(:section), user: insert(:user)}
+    %{
+      conn: conn,
+      section:
+        insert(:section, open_and_free: true, lti_1p3_deployment: nil, lti_1p3_deployment_id: nil),
+      user: insert(:user)
+    }
   end
 
   defp users_invite_url(token), do: ~p"/users/invite/#{token}"
@@ -158,7 +163,10 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
       |> render_submit()
 
       just_created_user =
-        Accounts.get_user_by_email_and_password(non_existing_student.email, "a_valid_password")
+        Accounts.get_independent_user_by_email_and_password(
+          non_existing_student.email,
+          "a_valid_password"
+        )
 
       updated_enrollment = Sections.get_enrollment(section.slug, non_existing_student.id)
 
@@ -330,7 +338,10 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
       |> render_submit()
 
       just_created_user =
-        Accounts.get_user_by_email_and_password(non_existing_instructor.email, "a_valid_password")
+        Accounts.get_independent_user_by_email_and_password(
+          non_existing_instructor.email,
+          "a_valid_password"
+        )
 
       updated_enrollment =
         Sections.get_enrollment(section.slug, non_existing_instructor.id)

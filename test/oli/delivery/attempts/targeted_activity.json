@@ -1,0 +1,576 @@
+{
+  "stem": {
+    "id": "4118292607",
+    "content": [
+      {
+        "id": "1112366559",
+        "type": "p",
+        "children": [
+          {
+            "text": "Enter the full electron configuration for each element given below."
+          }
+        ]
+      },
+      {
+        "id": "3743343565",
+        "type": "p",
+        "children": [
+          {
+            "text": "Be sure to list the subshells in order of increasing energy."
+          }
+        ]
+      },
+      {
+        "id": "656325421",
+        "type": "h2",
+        "children": [
+          {
+            "id": "xw3xs677hkbarj2",
+            "text": ""
+          }
+        ]
+      },
+      {
+        "id": "323670333",
+        "type": "p",
+        "children": [
+          {
+            "em": true,
+            "text": "For superscripts, use the ^ symbol before the number. For example, 2s"
+          },
+          {
+            "em": true,
+            "sup": true,
+            "text": "2"
+          },
+          {
+            "em": true,
+            "text": " should be entered as: 2s^2. In between sublevels add a space. For example, 3s"
+          },
+          {
+            "em": true,
+            "sup": true,
+            "text": "2"
+          },
+          {
+            "em": true,
+            "text": "3p"
+          },
+          {
+            "em": true,
+            "sup": true,
+            "text": "3"
+          },
+          {
+            "em": true,
+            "text": " should be entered as: 3s^2 3p^3."
+          },
+          {
+            "text": " "
+          }
+        ]
+      },
+      {
+        "id": "393306262",
+        "type": "h2",
+        "children": [
+          {
+            "id": "qmuq51vtdaflo0a",
+            "text": " "
+          }
+        ]
+      },
+      {
+        "id": "1250137068",
+        "type": "p",
+        "children": [
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "id": "81587677",
+        "type": "p",
+        "children": [
+          {
+            "text": "Nitrogen:  "
+          },
+          {
+            "id": "2901939504",
+            "type": "input_ref",
+            "children": [
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "text": ""
+          }
+        ]
+      },
+      {
+        "id": "267579025",
+        "type": "h2",
+        "children": [
+          {
+            "id": "z2bfufnqpol2624",
+            "text": ""
+          }
+        ]
+      },
+      {
+        "id": "2694189279",
+        "type": "p",
+        "children": [
+          {
+            "text": "Aluminum: "
+          },
+          {
+            "id": "3162096361",
+            "type": "input_ref",
+            "children": [
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "text": ""
+          }
+        ]
+      }
+    ]
+  },
+  "inputs": [
+    {
+      "id": "2901939504",
+      "size": "large",
+      "partId": "1",
+      "inputType": "text"
+    },
+    {
+      "id": "3162096361",
+      "size": "large",
+      "partId": "3677703835",
+      "inputType": "text"
+    }
+  ],
+  "bibrefs": [],
+  "choices": [],
+  "authoring": {
+    "parts": [
+      {
+        "id": "1",
+        "hints": [
+          {
+            "id": "4017257395",
+            "editor": "slate",
+            "content": [
+              {
+                "id": "3749354449",
+                "type": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              }
+            ],
+            "textDirection": "ltr"
+          }
+        ],
+        "outOf": 4,
+        "targets": [],
+        "responses": [
+          {
+            "id": "1542179085",
+            "rule": "input iequals {1s^2 2s^2 2p^3}",
+            "score": 1,
+            "correct": true,
+            "feedback": {
+              "id": "1118252870",
+              "editor": "slate",
+              "content": [
+                {
+                  "id": "1336990892",
+                  "type": "p",
+                  "children": [
+                    {
+                      "text": "Correct.  The electron configuration for  nitrogen is 1s"
+                    },
+                    {
+                      "sup": true,
+                      "text": "2"
+                    },
+                    {
+                      "text": "2s"
+                    },
+                    {
+                      "sup": true,
+                      "text": "2"
+                    },
+                    {
+                      "text": "2p"
+                    },
+                    {
+                      "sup": true,
+                      "text": "3"
+                    },
+                    {
+                      "text": ". "
+                    }
+                  ]
+                }
+              ],
+              "textDirection": "ltr"
+            }
+          },
+          {
+            "id": "3915978140",
+            "rule": "input like {.*}",
+            "score": 0,
+            "feedback": {
+              "id": "3863921473",
+              "editor": "slate",
+              "content": [
+                {
+                  "id": "3451535708",
+                  "type": "p",
+                  "children": [
+                    {
+                      "text": "Incorrect.   Review nitrogen's placement on the periodic table and try again.  "
+                    }
+                  ]
+                }
+              ],
+              "textDirection": "ltr"
+            }
+          }
+        ],
+        "explanation": {
+          "id": "4193390235",
+          "editor": "slate",
+          "content": [
+            {
+              "id": "2915619650",
+              "type": "p",
+              "children": [
+                {
+                  "text": "Incorrect. "
+                }
+              ]
+            },
+            {
+              "id": "3368652583",
+              "type": "p",
+              "children": [
+                {
+                  "text": "Solution",
+                  "underline": true
+                }
+              ]
+            },
+            {
+              "id": "1487613690",
+              "type": "p",
+              "children": [
+                {
+                  "text": "  The electron configuration for  nitrogen is "
+                },
+                {
+                  "text": "1s",
+                  "strong": true
+                },
+                {
+                  "sup": true,
+                  "text": "2",
+                  "strong": true
+                },
+                {
+                  "text": "2s",
+                  "strong": true
+                },
+                {
+                  "sup": true,
+                  "text": "2",
+                  "strong": true
+                },
+                {
+                  "text": "2p",
+                  "strong": true
+                },
+                {
+                  "sup": true,
+                  "text": "3",
+                  "strong": true
+                },
+                {
+                  "text": ". Entered as: 1s^2 2s^2 2p^3."
+                }
+              ]
+            }
+          ],
+          "textDirection": "ltr"
+        },
+        "incorrectScore": null,
+        "gradingApproach": "automatic",
+        "scoringStrategy": "average"
+      },
+      {
+        "id": "3677703835",
+        "hints": [
+          {
+            "id": "1156203024",
+            "editor": "slate",
+            "content": [
+              {
+                "id": "3989397618",
+                "type": "p",
+                "children": [
+                  {
+                    "text": ""
+                  }
+                ]
+              }
+            ],
+            "textDirection": "ltr"
+          }
+        ],
+        "outOf": 4,
+        "targets": [],
+        "responses": [
+          {
+            "id": "990362607",
+            "rule": "input iequals {1s^2 2s^2 2p^6 3s^2 3p^1}",
+            "score": 1,
+            "correct": true,
+            "feedback": {
+              "id": "3918824606",
+              "editor": "slate",
+              "content": [
+                {
+                  "id": "3513372218",
+                  "type": "p",
+                  "children": [
+                    {
+                      "text": "Correct.  The electron configuration for  aluminum is 1s"
+                    },
+                    {
+                      "sup": true,
+                      "text": "2"
+                    },
+                    {
+                      "text": "2s"
+                    },
+                    {
+                      "sup": true,
+                      "text": "2"
+                    },
+                    {
+                      "text": "2p"
+                    },
+                    {
+                      "sup": true,
+                      "text": "6"
+                    },
+                    {
+                      "text": "3s"
+                    },
+                    {
+                      "sup": true,
+                      "text": "2"
+                    },
+                    {
+                      "text": "3p"
+                    },
+                    {
+                      "sup": true,
+                      "text": "1"
+                    },
+                    {
+                      "text": ". "
+                    }
+                  ]
+                }
+              ],
+              "textDirection": "ltr"
+            }
+          },
+          {
+            "id": "38673405",
+            "rule": "input iequals {1s^22s^22p^63s^23p^1}",
+            "score": 4,
+            "feedback": {
+              "id": "3458845034",
+              "editor": "slate",
+              "content": [
+                {
+                  "id": "111605711",
+                  "type": "p",
+                  "children": [
+                    {
+                      "text": "   Correct.  The electron configuration for  aluminum is 1s"
+                    },
+                    {
+                      "sup": true,
+                      "text": "2"
+                    },
+                    {
+                      "text": "2s"
+                    },
+                    {
+                      "sup": true,
+                      "text": "2"
+                    },
+                    {
+                      "text": "2p"
+                    },
+                    {
+                      "sup": true,
+                      "text": "6"
+                    },
+                    {
+                      "text": "3s"
+                    },
+                    {
+                      "sup": true,
+                      "text": "2"
+                    },
+                    {
+                      "text": "3p"
+                    },
+                    {
+                      "sup": true,
+                      "text": "1"
+                    },
+                    {
+                      "text": ".  "
+                    }
+                  ]
+                }
+              ],
+              "textDirection": "ltr"
+            }
+          },
+          {
+            "id": "3523177342",
+            "rule": "input like {.*}",
+            "score": 0,
+            "feedback": {
+              "id": "699689354",
+              "editor": "slate",
+              "content": [
+                {
+                  "id": "2193825857",
+                  "type": "p",
+                  "children": [
+                    {
+                      "text": "Incorrect.  Review aluminum's placement on the periodic table and try again.  "
+                    }
+                  ]
+                }
+              ],
+              "textDirection": "ltr"
+            }
+          }
+        ],
+        "explanation": {
+          "id": "2384214032",
+          "editor": "slate",
+          "content": [
+            {
+              "id": "2266776753",
+              "type": "p",
+              "children": [
+                {
+                  "text": "Incorrect.  "
+                }
+              ]
+            },
+            {
+              "id": "1961243825",
+              "type": "p",
+              "children": [
+                {
+                  "text": "Solution",
+                  "underline": true
+                }
+              ]
+            },
+            {
+              "id": "1576530630",
+              "type": "p",
+              "children": [
+                {
+                  "text": "The electron configuration for  aluminum is 1s"
+                },
+                {
+                  "sup": true,
+                  "text": "2"
+                },
+                {
+                  "text": "2s"
+                },
+                {
+                  "sup": true,
+                  "text": "2"
+                },
+                {
+                  "text": "2p"
+                },
+                {
+                  "sup": true,
+                  "text": "6"
+                },
+                {
+                  "text": "3s"
+                },
+                {
+                  "sup": true,
+                  "text": "2"
+                },
+                {
+                  "text": "3p"
+                },
+                {
+                  "sup": true,
+                  "text": "1"
+                },
+                {
+                  "text": ". Entered as: "
+                }
+              ]
+            },
+            {
+              "id": "218719744",
+              "type": "p",
+              "children": [
+                {
+                  "text": "1s^2 2s^2 2p^6 3s^2 3p^1."
+                }
+              ]
+            }
+          ],
+          "textDirection": "ltr"
+        },
+        "incorrectScore": null,
+        "gradingApproach": "automatic",
+        "scoringStrategy": "average"
+      }
+    ],
+    "targeted": [],
+    "previewText": "Enter the full electron configuration for each element given below.Be sure to list the subshells in order of increasing energy.For superscripts, use the ^ symbol before the number. For example, 2s2 should be entered as: 2s^2. In between sublevels add a space. For example, 3s23p3 should be entered as: 3s^2 3p^3.  Nitrogen:  Aluminum: ",
+    "transformations": [
+      {
+        "id": "2003590476",
+        "path": "choices",
+        "operation": "shuffle",
+        "firstAttemptOnly": true
+      }
+    ]
+  },
+  "customScoring": true,
+  "submitPerPart": false
+}

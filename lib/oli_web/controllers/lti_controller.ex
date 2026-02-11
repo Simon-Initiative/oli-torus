@@ -62,6 +62,11 @@ defmodule OliWeb.LtiController do
             |> assign(:current_user, user)
             |> DeliveryWeb.redirect_user(allow_new_section_creation: true)
 
+          {:error, :independent_learner_not_allowed} ->
+            conn
+            |> put_status(:bad_request)
+            |> render("lti_error.html", reason: "This course must be accessed through the LMS.")
+
           {:error, error} ->
             # Log the error for debugging purposes
             Logger.error("Failed to handle valid LTI 1.3 launch: #{inspect(error)}")
@@ -199,12 +204,14 @@ defmodule OliWeb.LtiController do
             lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
           )
 
-        case Sections.enroll(user.id, section.id, context_roles) do
-          {:ok, _enrollment} ->
-            :ok
+        with :ok <- Sections.ensure_enrollment_allowed(user, section) do
+          case Sections.enroll(user.id, section.id, context_roles) do
+            {:ok, _enrollment} ->
+              :ok
 
-          {:error, _changeset} ->
-            {:error, :failed_to_enroll_user_in_section}
+            {:error, _changeset} ->
+              {:error, :failed_to_enroll_user_in_section}
+          end
         end
     end
   end
@@ -325,6 +332,8 @@ defmodule OliWeb.LtiController do
              ) do
           {:ok, redirect_uri, state, id_token} ->
             conn
+            |> put_view(OliWeb.LtiHTML)
+            |> put_root_layout({OliWeb.LayoutView, :lti_redirect})
             |> render("post_redirect.html",
               redirect_uri: redirect_uri,
               state: state,

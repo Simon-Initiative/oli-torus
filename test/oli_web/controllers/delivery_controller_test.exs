@@ -224,6 +224,40 @@ defmodule OliWeb.DeliveryControllerTest do
       assert response(conn, 200)
     end
 
+    test "returns 403 when user is only a student in the section", %{
+      conn: conn,
+      section: section,
+      student: student
+    } do
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        conn
+        |> log_in_user(student)
+        |> get(Routes.delivery_path(conn, :download_course_content_info, section.slug))
+
+      assert conn.status == 403
+    end
+
+    test "returns 403 when user is an instructor of a different section", %{
+      conn: conn,
+      section: section
+    } do
+      other_instructor = user_fixture()
+      other_section = insert(:section)
+
+      Sections.enroll(other_instructor.id, other_section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+
+      conn =
+        conn
+        |> log_in_user(other_instructor)
+        |> get(Routes.delivery_path(conn, :download_course_content_info, section.slug))
+
+      assert conn.status == 403
+    end
+
     test "downloads the course content when section exists and filters by modules", %{
       conn: conn,
       section: section,
@@ -255,7 +289,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(student)
         |> get(Routes.delivery_path(conn, :download_course_content_info, "invalid_section_slug"))
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -468,6 +502,31 @@ defmodule OliWeb.DeliveryControllerTest do
                Enum.at(students, 7)
     end
 
+    test "returns 403 for learners", %{conn: conn} do
+      %{section: section, student1: student} = prepare_student_progress_data()
+
+      conn =
+        conn
+        |> log_in_user(student)
+        |> get(~p"/sections/#{section.slug}/instructor_dashboard/downloads/students_progress")
+
+      assert conn.status == 403
+    end
+
+    test "prevents slug swapping across sections", %{conn: conn} do
+      %{instructor: instructor} = prepare_student_progress_data()
+      other_section = insert(:section)
+
+      conn =
+        conn
+        |> log_in_user(instructor)
+        |> get(
+          ~p"/sections/#{other_section.slug}/instructor_dashboard/downloads/students_progress"
+        )
+
+      assert conn.status == 403
+    end
+
     test "Redirects to \"Not found\" page if the section doesn't exist", %{conn: conn} do
       %{instructor: instructor, section: _section} = prepare_student_progress_data()
 
@@ -478,7 +537,7 @@ defmodule OliWeb.DeliveryControllerTest do
           ~p"/sections/invalid_section_slug/instructor_dashboard/downloads/students_progress"
         )
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -516,7 +575,7 @@ defmodule OliWeb.DeliveryControllerTest do
         conn
         |> get(Routes.delivery_path(conn, :download_learning_objectives, "invalid_section_slug"))
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -528,6 +587,7 @@ defmodule OliWeb.DeliveryControllerTest do
       instructor: instructor
     } do
       %{section: section} = basic_section(nil)
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       conn =
         conn
@@ -552,7 +612,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_quiz_scores, "invalid_section_slug"))
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -587,7 +647,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_scored_pages, "invalid_section_slug"))
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -622,7 +682,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_practice_pages, "invalid_section_slug"))
 
-      assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
+      assert response(conn, 404)
     end
   end
 
@@ -725,7 +785,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "redirects to section unavailable when section has yet to be started", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       later = DateTime.add(DateTime.utc_now(), 100_000)
 
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{start_date: later})
@@ -741,7 +801,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "redirects to section unavailable when section has already ended", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       in_the_past = DateTime.add(DateTime.utc_now(), -100_000)
 
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{end_date: in_the_past})
@@ -757,7 +817,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "shows enroll view", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       section_invite = insert(:section_invite, %{section: section})
 
       conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
@@ -766,7 +826,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "does not display Sign Up link", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       section_invite = insert(:section_invite, %{section: section})
 
       conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
@@ -782,7 +842,7 @@ defmodule OliWeb.DeliveryControllerTest do
     setup [:guest_conn]
 
     test "redirects to invalid join view", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       date_expires = DateTime.add(DateTime.utc_now(), -3600)
       section_invite = insert(:section_invite, %{section: section, date_expires: date_expires})
 
@@ -793,7 +853,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "redirects to section unavailable when section has yet to be started", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       later = DateTime.add(DateTime.utc_now(), 100_000)
 
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{start_date: later})
@@ -809,7 +869,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "redirects to section unavailable when section has already ended", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       in_the_past = DateTime.add(DateTime.utc_now(), -100_000)
 
       {:ok, section} = Oli.Delivery.Sections.update_section(section, %{end_date: in_the_past})
@@ -826,7 +886,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "redirects to login form with section slug and from_invitation_link? as true as query params",
          %{conn: conn} do
-      section = insert(:section, requires_enrollment: true)
+      section = direct_delivery_section(%{requires_enrollment: true})
       section_invite = insert(:section_invite, %{section: section})
 
       conn =
@@ -841,7 +901,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "shows enroll view and Sign In link", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       section_invite = insert(:section_invite, %{section: section})
 
       conn =
@@ -859,7 +919,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
 
     test "shows enroll view and Sign Up link", %{conn: conn} do
-      section = insert(:section)
+      section = direct_delivery_section()
       section_invite = insert(:section_invite, %{section: section})
 
       conn =
@@ -881,7 +941,7 @@ defmodule OliWeb.DeliveryControllerTest do
     setup [:user_conn]
 
     test "redirects to overview section screen if section requires enrollment", %{conn: conn} do
-      section = insert(:section, requires_enrollment: true)
+      section = direct_delivery_section(%{requires_enrollment: true})
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~
@@ -896,7 +956,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "redirects to overview section screen if section does not requires enrollment", %{
       conn: conn
     } do
-      section = insert(:section, requires_enrollment: false)
+      section = direct_delivery_section(%{requires_enrollment: false})
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~
@@ -911,7 +971,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
   describe "enroll in the section without being logged in" do
     test "redirects to login screen if section requires enrollment", %{conn: conn} do
-      section = insert(:section, requires_enrollment: true)
+      section = direct_delivery_section(%{requires_enrollment: true})
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert_redirect_to_login(conn, section.slug)
@@ -928,7 +988,7 @@ defmodule OliWeb.DeliveryControllerTest do
     test "redirects to overview section screen if section does not requires enrollment", %{
       conn: conn
     } do
-      section = insert(:section, requires_enrollment: false)
+      section = direct_delivery_section(%{requires_enrollment: false})
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~
@@ -996,6 +1056,10 @@ defmodule OliWeb.DeliveryControllerTest do
     instructor_no_rc = user_fixture(%{independent_learner: false})
     instructor_no_section = user_fixture(%{independent_learner: false})
     student_instructor_no_section = user_fixture(%{independent_learner: false})
+
+    instructor_ctx = [ContextRoles.get_role(:context_instructor)]
+    Sections.enroll(instructor.id, section.id, instructor_ctx)
+    Sections.enroll(instructor_no_rc.id, section_no_rc.id, instructor_ctx)
 
     %{project: project, publication: publication} = project_fixture(author)
 
@@ -1351,5 +1415,19 @@ defmodule OliWeb.DeliveryControllerTest do
       student1: student_1,
       student2: student_2
     }
+  end
+
+  defp direct_delivery_section(attrs \\ %{}) do
+    insert(
+      :section,
+      Map.merge(
+        %{
+          open_and_free: true,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        },
+        attrs
+      )
+    )
   end
 end

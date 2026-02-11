@@ -305,7 +305,7 @@ defmodule OliWeb.OpenAndFreeController do
       {:ok, nil}
     else
       with :ok <-
-             Sections.ensure_direct_delivery_enrollment_allowed(
+             Sections.ensure_enrollment_allowed(
                conn.assigns.current_user,
                section
              ) do

@@ -7,6 +7,31 @@ For a complete list of changes and release notes, please refer to the [GitHub re
 If a PR is opened that adds a new environment config or requires infrastructure changes, please
 update this file accordingly.
 
+## 0.32.5
+
+### Environment Configs
+
+| Name                      | Required | Description                                                  |
+| ------------------------- | -------- | ------------------------------------------------------------ |
+| EMAIL_ERRORS_TO_ADDRESS   | No       | Email address for the Errors-To header (bounces and errors)  |
+| EMAIL_RETURN_PATH_ADDRESS | No       | Email address for the Return-Path header (delivery failures) |
+| CASHNET_EMAIL_FALLBACK    | No       | Fallback email for Cashnet when user has no email            |
+
+- **Email Headers:** The email system properly handles Reply-To headers based on the email type:
+  - System notification emails (confirmations, password resets, etc.) do not set a Reply-To header
+  - Emails sent on behalf of users (enrollment invitations, collaborator invites, instructor messages,
+    help desk) set Reply-To to the initiating user's email address
+  - Optional headers `Errors-To` and `Return-Path` can be configured for bounce handling
+
+- `CASHNET_EMAIL_FALLBACK` provides a fallback email address for the Cashnet payment form
+  when a user doesn't have an email address. If not set, the field will be empty.
+
+### Infrastructure Changes
+
+None
+
+---
+
 ## 0.32.0
 
 ### Environment Configs
@@ -51,7 +76,7 @@ update this file accordingly.
 
 ### Infrastructure Changes
 
-- [ ] Configure required environment variables in deployment environments
+None
 
 ---
 

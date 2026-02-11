@@ -4,20 +4,19 @@ import { NewCourseSetupPO } from '@pom/course/NewCourseSetupPO';
 import { InstructorDashboardPO } from '@pom/dashboard/InstructorDashboardPO';
 import { StudentDashboardPO } from '@pom/dashboard/StudentDashboardPO';
 import { StudentCoursePO } from '@pom/course/StudentCoursePO';
-import { Waiter } from '@core/wait/Waiter';
 import { step } from '@core/decoration/step';
 
 export class StudentTask {
   private readonly sidebar: SidebarCO;
   private readonly instructorDB: InstructorDashboardPO;
-  private readonly studenDN: StudentDashboardPO;
+  private readonly studentDB: StudentDashboardPO;
   private readonly newCS: NewCourseSetupPO;
   private readonly studentCourse: StudentCoursePO;
 
-  constructor(private readonly page: Page) {
+  constructor(page: Page) {
     this.sidebar = new SidebarCO(page);
     this.instructorDB = new InstructorDashboardPO(page);
-    this.studenDN = new StudentDashboardPO(page);
+    this.studentDB = new StudentDashboardPO(page);
     this.newCS = new NewCourseSetupPO(page);
     this.studentCourse = new StudentCoursePO(page);
   }
@@ -29,17 +28,20 @@ export class StudentTask {
     await this.newCS.verify(textToVerify);
   }
 
+  @step('Search project "{courseName}"')
   async searchProject(courseName: string) {
-    await Waiter.waitForLoadState(this.page, 'load');
-    await this.studenDN.fillSearchInput(courseName);
-    await Waiter.waitForLoadState(this.page, 'load');
-    await this.studenDN.enterCourse(courseName);
-    await Waiter.waitForLoadState(this.page);
+    await this.studentDB.waitForVisibleCourses();
+    await this.studentDB.fillSearchInput(courseName);
+    await this.studentDB.enterCourse(courseName);
+    await this.studentCourse.goToCourseIfPrompted();
     await this.studentCourse.presentAssignmentBlock();
   }
 
-  async validateResource(pageName: string) {
+  @step('Validate resource "{pageName}"')
+  async validateResource(pageName: string[]) {
     await this.studentCourse.presentViewSelector();
-    await this.studentCourse.presentPage(pageName);
+    for (const name of pageName) {
+      await this.studentCourse.presentPage(name);
+    }
   }
 }

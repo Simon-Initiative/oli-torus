@@ -18,7 +18,7 @@ export const DiscussionParticipation: React.FC<Props> = ({ requirements, partici
   if (!hasParticipationRequirement) return null;
 
   return (
-    <div className="absolute right-0 top-0 w-24 text-sm text-center">
+    <div className="float-right w-fit text-sm text-center">
       Participation
       <table
         style={
@@ -62,13 +62,14 @@ const ParticipationState: React.FC<{
     minWidth: 0,
     maxWidth: 48,
     padding: '0px 3px',
-    border: '1px solid #E6E6E6',
   };
 
   return (
-    <tr className="bg-gray-100 rounded-md px-2 m-2 text-sm">
-      <td style={tailwindTablePageReset}>{children}</td>
-      <td className="text-center" style={tailwindTablePageReset}>
+    <tr className="dark:text-white px-2 m-2 text-sm">
+      <td style={tailwindTablePageReset} className="border border-Border-border-active">
+        {children}
+      </td>
+      <td className="text-center border border-Border-border-active" style={tailwindTablePageReset}>
         {current < target && `${current}/${target}`}
         {current >= target && `✅`}
       </td>

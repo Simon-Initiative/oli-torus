@@ -15,7 +15,7 @@ import {
 import { ViewMode } from './ScheduleEditor';
 import { ScheduleHeaderRow } from './ScheduleHeader';
 import { ScheduleLine } from './ScheduleLine';
-import { generateDayGeometry } from './date-utils';
+import { generateDayGeometry, weekGeometry } from './date-utils';
 import {
   VisibleHierarchyItem,
   getVisibleSchedule,
@@ -81,8 +81,8 @@ export const ScheduleGrid: React.FC<GridProps> = ({
   onClear,
   onViewSelected,
 }) => {
-  const [barContainer, attachBarContainer] = useCallbackRef<HTMLElement>();
-  const rect = useResizeObserver(barContainer || null);
+  const [scrollContainer, attachScrollContainer] = useCallbackRef<HTMLElement>();
+  const rect = useResizeObserver(scrollContainer || null);
   const agendaEnabled = useSelector((state: SchedulerAppState) => state.scheduler.agenda);
 
   const schedule = useSelector(getVisibleSchedule) as VisibleHierarchyItem[];
@@ -97,6 +97,11 @@ export const ScheduleGrid: React.FC<GridProps> = ({
       ),
     [rect?.width, startDate, endDate],
   );
+
+  const totalScheduleWidth = useMemo(() => {
+    const g = weekGeometry(dayGeometry);
+    return g.reduce((sum, week) => sum + week.width, 0);
+  }, [dayGeometry]);
 
   const dispatch = useDispatch();
   const anyExpanded = useSelector(isAnyVisibleContainerExpanded);
@@ -316,14 +321,10 @@ export const ScheduleGrid: React.FC<GridProps> = ({
           </Dropdown.Menu>
         </Dropdown>
       </div>
-      <div className="w-full px-4">
-        <table className="select-none schedule_table border-t-0 border-l-0">
-          <thead className="sticky top-14 z-10">
-            <ScheduleHeaderRow
-              labels={true}
-              attachBarContainer={attachBarContainer}
-              dayGeometry={dayGeometry}
-            />
+      <div className="w-full pr-4 overflow-x-auto" ref={attachScrollContainer}>
+        <table className="select-none schedule_table border-t-0 border-l-0 w-max">
+          <thead>
+            <ScheduleHeaderRow labels={true} dayGeometry={dayGeometry} />
           </thead>
           <tbody>
             {schedule
@@ -340,6 +341,7 @@ export const ScheduleGrid: React.FC<GridProps> = ({
                       : rowPalette[index % rowPalette.length]
                   }
                   dayGeometry={dayGeometry}
+                  minScheduleWidth={totalScheduleWidth}
                 />
               ))}
           </tbody>

@@ -2884,7 +2884,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   end
 
   defp setup_lti_session(%{conn: conn}) do
-    user = user_fixture()
+    user = user_fixture(%{independent_learner: false})
 
     content = %{
       "stem" => "1",
@@ -3077,7 +3077,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         base_project_id: project.id,
         context_id: UUID.uuid4(),
         open_and_free: true,
-        registration_open: true
+        registration_open: true,
+        lti_1p3_deployment_id: nil
       })
 
     {:ok, section} = Sections.create_section_resources(section, publication)

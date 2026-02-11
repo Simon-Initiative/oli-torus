@@ -1,7 +1,7 @@
 defmodule OliWeb.RevisionHistory.Details do
   use OliWeb, :live_component
 
-  alias OliWeb.Common.MonacoEditor
+  alias OliWeb.Common.Monaco
   alias Oli.Utils.SchemaResolver
   alias OliWeb.Components.Modal
   alias Phoenix.LiveView.JS
@@ -87,7 +87,7 @@ defmodule OliWeb.RevisionHistory.Details do
           on_cancel={Modal.hide_modal("edit_attribute_modal")}
         >
           <:title>Edit <i>{String.capitalize(@modal_assigns[:title])}</i> attribute</:title>
-          <MonacoEditor.render
+          <Monaco.editor
             id="attribute-monaco-editor"
             height="200px"
             language="json"
@@ -114,7 +114,7 @@ defmodule OliWeb.RevisionHistory.Details do
         </Modal.modal>
       </div>
       <div class="revision-details">
-        <MonacoEditor.render
+        <Monaco.editor
           id={"details-editor-#{@revision.id}"}
           height="500px"
           language="json"

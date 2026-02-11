@@ -4,10 +4,12 @@ defmodule Oli.Application do
   @moduledoc false
 
   use Application
+  require Logger
 
   def start(_type, _args) do
     # Install the logger truncator
     Oli.LoggerTruncator.init()
+    maybe_add_appsignal_logger_backend()
 
     # List all child processes to be supervised
     children =
@@ -91,11 +93,20 @@ defmodule Oli.Application do
         Oli.Delivery.Sections.SectionCache,
         Oli.ScopedFeatureFlags.CacheSubscriber,
 
-        # Starts the LTI 1.3 examples key provider
-        Lti_1p3.Examples.KeyProviderConfig.child_spec(),
+        # Starts the LTI 1.3 keyset cache for caching platform public keys
+        Oli.Lti.KeysetCache,
 
         # a supervisor which can be used to dynamically supervise tasks
         {Task.Supervisor, name: Oli.TaskSupervisor},
+
+        # GenAI hackney connection pool
+        Oli.GenAI.HackneyPool,
+
+        # GenAI routing and breaker infrastructure
+        Oli.GenAI.AdmissionControl,
+        Oli.GenAI.Telemetry,
+        {Registry, keys: :unique, name: Oli.GenAI.BreakerRegistry},
+        Oli.GenAI.BreakerSupervisor,
 
         # MCP (Model Context Protocol) server for AI agents
         Anubis.Server.Registry,
@@ -120,7 +131,19 @@ defmodule Oli.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Oli.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    case Supervisor.start_link(children, opts) do
+      {:ok, pid} ->
+        Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+          Process.sleep(1_000)
+          safe_inventory_recovery()
+        end)
+
+        {:ok, pid}
+
+      other ->
+        other
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -164,6 +187,34 @@ defmodule Oli.Application do
       ]
     else
       []
+    end
+  end
+
+  defp safe_inventory_recovery do
+    try do
+      Oli.Analytics.Backfill.Inventory.recover_inflight_batches(boot?: true)
+    rescue
+      exception ->
+        Logger.error(
+          "Inventory recovery failed: #{Exception.format(:error, exception, __STACKTRACE__)}"
+        )
+
+        :ok
+    end
+  end
+
+  defp maybe_add_appsignal_logger_backend do
+    case Application.get_env(:oli, :appsignal_logger_backend) do
+      nil ->
+        :ok
+
+      opts when is_list(opts) ->
+        _ = LoggerBackends.add({Appsignal.Logger.Backend, opts})
+        :ok
+
+      opts ->
+        _ = LoggerBackends.add({Appsignal.Logger.Backend, List.wrap(opts)})
+        :ok
     end
   end
 

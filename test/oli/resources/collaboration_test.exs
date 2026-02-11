@@ -10,6 +10,7 @@ defmodule Oli.Resources.CollaborationTest do
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post}
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
+  alias Lti_1p3.Roles.ContextRoles
 
   defp build_project_with_one_collab_space(published \\ nil) do
     page_revision_1 =
@@ -440,6 +441,46 @@ defmodule Oli.Resources.CollaborationTest do
     end
   end
 
+  describe "soft_delete_post/2 authorization" do
+    setup do
+      section = insert(:section)
+      owner = insert(:user)
+      other_user = insert(:user)
+      instructor = insert(:user)
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      post =
+        insert(:post,
+          user: owner,
+          section: section
+        )
+
+      %{
+        section: section,
+        owner: owner,
+        other_user: other_user,
+        instructor: instructor,
+        post: post
+      }
+    end
+
+    test "allows owner to delete", %{owner: owner, post: post} do
+      assert {1, _} = Collaboration.soft_delete_post(post.id, owner)
+      assert %{status: :deleted} = Collaboration.get_post_by(%{id: post.id})
+    end
+
+    test "prevents other student from deleting", %{other_user: other_user, post: post} do
+      assert {:error, :unauthorized} = Collaboration.soft_delete_post(post.id, other_user)
+      assert %{status: :approved} = Collaboration.get_post_by(%{id: post.id})
+    end
+
+    test "allows instructor for the section to delete", %{instructor: instructor, post: post} do
+      assert {1, _} = Collaboration.soft_delete_post(post.id, instructor)
+      assert %{status: :deleted} = Collaboration.get_post_by(%{id: post.id})
+    end
+  end
+
   describe "posts" do
     test "create_post/1 with valid data creates a post" do
       params = params_with_assocs(:post)
@@ -601,6 +642,113 @@ defmodule Oli.Resources.CollaborationTest do
                  enter_time
                )
              )
+    end
+
+    test "count_posts_and_replies_for_user/3 returns correct counts for posts and replies" do
+      user = insert(:user)
+      other_user = insert(:user)
+      section = insert(:section)
+      other_section = insert(:section)
+      resource = insert(:resource)
+      other_resource = insert(:resource)
+
+      # Create top-level posts for the user in the target section/resource
+      parent_post1 = insert(:post, user: user, section: section, resource: resource)
+      parent_post2 = insert(:post, user: user, section: section, resource: resource)
+
+      # Create replies for the user in the target section/resource
+      insert(:post,
+        user: user,
+        section: section,
+        resource: resource,
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      insert(:post,
+        user: user,
+        section: section,
+        resource: resource,
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      insert(:post,
+        user: user,
+        section: section,
+        resource: resource,
+        parent_post_id: parent_post2.id,
+        thread_root_id: parent_post2.id,
+        status: :submitted
+      )
+
+      # Create posts for other users (should not be counted)
+      insert(:post, user: other_user, section: section, resource: resource)
+
+      insert(:post,
+        user: other_user,
+        section: section,
+        resource: resource,
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      # Create posts in other sections (should not be counted)
+      insert(:post, user: user, section: other_section, resource: resource)
+
+      insert(:post,
+        user: user,
+        section: other_section,
+        resource: resource,
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      # Create posts in other resources (should not be counted)
+      insert(:post, user: user, section: section, resource: other_resource)
+
+      insert(:post,
+        user: user,
+        section: section,
+        resource: other_resource,
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      # Create deleted posts (should not be counted)
+      insert(:post,
+        user: user,
+        section: section,
+        resource: resource,
+        status: :deleted
+      )
+
+      insert(:post,
+        user: user,
+        section: section,
+        resource: resource,
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id,
+        status: :deleted
+      )
+
+      {posts_count, replies_count} =
+        Collaboration.count_posts_and_replies_for_user(section.id, resource.id, user.id)
+
+      assert posts_count == 2
+      assert replies_count == 3
+    end
+
+    test "count_posts_and_replies_for_user/3 returns {0, 0} when no posts exist" do
+      user = insert(:user)
+      section = insert(:section)
+      resource = insert(:resource)
+
+      {posts_count, replies_count} =
+        Collaboration.count_posts_and_replies_for_user(section.id, resource.id, user.id)
+
+      assert posts_count == 0
+      assert replies_count == 0
     end
 
     test "list_posts_for_instructor_in_page_section/2 returns posts meeting the criteria" do

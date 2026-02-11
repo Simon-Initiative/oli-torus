@@ -26,7 +26,7 @@ defmodule OliWeb.Dev.IconsLive do
       <div class="flex flex-col mb-4">
         <div class="flex justify-between items-center h-20">
           <h1 class="text-3xl">Icons</h1>
-          {React.component(@ctx, "Components.DarkModeSelector", %{showLabels: false},
+          {React.component(@ctx, "Components.DarkModeSelector", %{idPrefix: "dark_mode_selector"},
             id: "dark_mode_selector"
           )}
         </div>

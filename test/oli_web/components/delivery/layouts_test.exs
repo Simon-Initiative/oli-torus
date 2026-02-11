@@ -29,6 +29,27 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
 
       assert render_component(&Layouts.header/1, assigns) =~ "header_logo_button"
     end
+
+    test "renders logos with descriptive alt text" do
+      assigns = %{
+        include_logo: true,
+        preview_mode: false,
+        section: %Section{id: 1, brand: nil, lti_1p3_deployment: nil},
+        ctx: %SessionContext{
+          user: %User{id: 1},
+          browser_timezone: "America/Montevideo",
+          is_liveview: true,
+          author: nil,
+          local_tz: "America/Montevideo"
+        },
+        sidebar_expanded: true,
+        is_admin: true
+      }
+
+      html = render_component(&Layouts.header/1, assigns)
+
+      assert html =~ ~s(alt="OLI Torus logo")
+    end
   end
 
   describe "title/1" do
@@ -134,6 +155,84 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
 
     test "returns true otherwise" do
       assert Layouts.show_collab_space?(%CollabSpaceConfig{status: :enabled}) == true
+    end
+  end
+
+  describe "sidebar_nav/1" do
+    test "renders mobile menu as a full-screen overlay with settings" do
+      assigns = %{
+        ctx: %SessionContext{
+          user: %User{id: 1, name: "Test User", platform_roles: []},
+          browser_timezone: "America/Montevideo",
+          is_liveview: true,
+          author: nil,
+          local_tz: "America/Montevideo"
+        },
+        is_admin: false,
+        section: %Section{
+          id: 1,
+          title: "Test Section",
+          slug: "test-section",
+          brand: nil,
+          lti_1p3_deployment: nil
+        },
+        active_tab: :index,
+        sidebar_expanded: true,
+        notes_enabled: false,
+        discussions_enabled: false,
+        preview_mode: false,
+        has_scheduled_resources?: false,
+        notification_badges: %{}
+      }
+
+      html = render_component(&Layouts.sidebar_nav/1, assigns)
+
+      assert html =~ ~s(id="mobile-nav-menu")
+      assert html =~ "fixed"
+      assert html =~ "inset-0"
+      assert html =~ "h-[100dvh]"
+      assert html =~ ~s(aria-label="Close menu")
+      assert html =~ ~s(aria-label="Settings")
+      assert html =~ "Exit Course"
+    end
+  end
+
+  describe "workspace_sidebar_nav/1" do
+    test "renders mobile menu as a full-screen overlay with settings" do
+      assigns = %{
+        ctx: %SessionContext{
+          user: %User{id: 1, name: "Test User", platform_roles: []},
+          browser_timezone: "America/Montevideo",
+          is_liveview: true,
+          author: nil,
+          local_tz: "America/Montevideo"
+        },
+        is_admin: false,
+        active_workspace: :student,
+        active_view: nil,
+        sidebar_expanded: true,
+        preview_mode: false,
+        section: %Section{
+          id: 1,
+          title: "Test Section",
+          slug: "test-section",
+          brand: nil,
+          lti_1p3_deployment: nil
+        },
+        resource_title: "Workspace",
+        resource_slug: nil,
+        show_desktop: true
+      }
+
+      html = render_component(&Layouts.workspace_sidebar_nav/1, assigns)
+
+      assert html =~ ~s(id="mobile-nav-menu")
+      assert html =~ "fixed"
+      assert html =~ "inset-0"
+      assert html =~ "h-[100dvh]"
+      assert html =~ ~s(aria-label="Close menu")
+      assert html =~ ~s(aria-label="Settings")
+      assert html =~ "Exit Course"
     end
   end
 end

@@ -4,7 +4,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
   require Logger
 
   alias Oli.Analytics.Datasets
+  alias Oli.Delivery.Sections
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Workspaces.CourseAuthor.Datasets.Common
 
   @impl Phoenix.LiveView
   def mount(%{"project_id" => project_slug, "job_id" => job_id}, _session, socket) do
@@ -36,10 +38,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
               nil
           end
 
+        course_sections = load_course_sections(section_ids_for_job(job))
+
         {:ok,
          assign(socket,
            active: :datasets,
            job: job,
+           course_sections: course_sections,
            lookup_url: Datasets.lookup_url(job),
            results_manifest: results_manifest
          )}
@@ -55,13 +60,29 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
         <p class="card-text">
           <strong>Job Id:</strong> {@job.job_id}<br />
           <strong>Job Run Id:</strong> {@job.job_run_id}<br />
-          <strong>Job Type:</strong> {@job.job_type}<br />
+          <strong>Job Type:</strong> {Common.job_type_label(@job)}<br />
           <strong>Status:</strong> {@job.status}<br />
           <strong>Notify:</strong> {@job.notify_emails |> Enum.join(" ")}<br />
           <strong>Started:</strong> {@job.inserted_at}<br />
           <strong>Finished:</strong> {@job.finished_on}<br />
           <strong>Started By:</strong> {@job.initiator_email}<br />
         </p>
+        <details class="border rounded bg-light p-2 mt-3">
+          <summary class="cursor-pointer font-weight-bold">
+            Course Sections ({Enum.count(@course_sections)})
+          </summary>
+          <div class="mt-2">
+            <%= if Enum.empty?(@course_sections) do %>
+              <span class="text-muted">No course sections were configured for this job.</span>
+            <% else %>
+              <ul class="mb-0">
+                <%= for section <- @course_sections do %>
+                  <li>{section.title} (slug: {section.slug}, id: {section.id})</li>
+                <% end %>
+              </ul>
+            <% end %>
+          </div>
+        </details>
       </div>
     </div>
     <div class="card mt-5 mb-5">
@@ -180,5 +201,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
 
   def handle_info(_, socket) do
     {:noreply, socket}
+  end
+
+  defp section_ids_for_job(%{configuration: %{section_ids: section_ids}})
+       when is_list(section_ids),
+       do: section_ids
+
+  defp section_ids_for_job(_), do: []
+
+  defp load_course_sections(section_ids) do
+    section_ids = section_ids |> Enum.uniq()
+
+    case section_ids do
+      [] ->
+        []
+
+      _ ->
+        Sections.get_sections_by([id: section_ids], [:id, :slug, :title])
+        |> Enum.sort_by(fn section ->
+          title = section.title || ""
+          {String.downcase(title), section.slug, section.id}
+        end)
+    end
   end
 end

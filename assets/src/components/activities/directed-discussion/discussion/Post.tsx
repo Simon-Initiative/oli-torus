@@ -74,7 +74,7 @@ export const Post: React.FC<{
 const DeleteLink: React.FC<{ onClick: () => void }> = ({ onClick }) => {
   const [confirm, toggleConfirm] = useToggle(false);
   return (
-    <div className="absolute right-1 top-1">
+    <div className="sm:absolute sm:right-1 sm:top-1 mt-1 sm:mt-0">
       {confirm || <LinkButton onClick={toggleConfirm}>Delete</LinkButton>}
       {confirm && (
         <>

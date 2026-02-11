@@ -68,24 +68,26 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     column_specs = [
       %ColumnSpec{
         name: :objective,
-        label: "LEARNING OBJECTIVE",
+        label: "Learning Objective",
         render_fn: &custom_render/3,
         th_class: "pl-10"
       },
       %ColumnSpec{
-        name: :subobjective,
-        label: "SUB LEARNING OBJ.",
+        name: :student_proficiency_obj,
+        label: "Obj. Proficiency",
+        tooltip: @student_proficiency_tooltip_text,
         render_fn: &custom_render/3
       },
       %ColumnSpec{
-        name: :student_proficiency_obj,
-        label: "STUDENT PROFICIENCY OBJ.",
-        tooltip: @student_proficiency_tooltip_text
+        name: :subobjective,
+        label: "Sub-Objective",
+        render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :student_proficiency_subobj,
-        label: "STUDENT PROFICIENCY (SUB OBJ.)",
-        tooltip: @student_proficiency_tooltip_text
+        label: "Sub-Obj. Proficiency",
+        tooltip: @student_proficiency_tooltip_text,
+        render_fn: &custom_render/3
       }
     ]
 
@@ -125,6 +127,33 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
+  defp custom_render(assigns, objectives, %ColumnSpec{name: :student_proficiency_subobj}) do
+    student_proficiency =
+      case Map.get(objectives, :student_proficiency_subobj) do
+        nil -> objectives.student_proficiency_obj
+        value -> value
+      end
+
+    {bg_color, text_color} =
+      case student_proficiency do
+        "High" -> {"bg-Fill-Chip-Green", "text-Text-Chip-Green"}
+        "Medium" -> {"bg-Fill-Accent-fill-accent-orange", "text-Text-Chip-Orange"}
+        "Low" -> {"bg-Fill-fill-danger", "text-Text-text-danger"}
+        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
+      end
+
+    assigns =
+      Map.merge(assigns, %{
+        label: student_proficiency,
+        bg_color: bg_color,
+        text_color: text_color
+      })
+
+    ~H"""
+    <Chip.render {assigns} />
+    """
+  end
+
   # OBJECTIVE
   defp custom_render(assigns, objective, %ColumnSpec{name: :objective}) do
     assigns =
@@ -138,8 +167,6 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       class="flex items-center gap-x-4"
       data-proficiency-check={if @student_proficiency == "Low", do: "false", else: "true"}
     >
-      <span class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @student_proficiency == "Low", do: "bg-red-600", else: "bg-gray-500"}"}>
-      </span>
       <span>{@objective}</span>
     </div>
     """
@@ -246,9 +273,9 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   # RENDER EXPANDED
   defp render_expanded(assigns, objective, _) do
     component_target = assigns[:component_target]
-    expanded_objectives = assigns.model.data[:expanded_objectives] || MapSet.new()
+    expanded_rows = assigns.model.data[:expanded_rows] || MapSet.new()
     row_id = "row_#{objective.resource_id}"
-    is_expanded = MapSet.member?(expanded_objectives, row_id)
+    is_expanded = MapSet.member?(expanded_rows, row_id)
 
     assigns =
       Map.merge(assigns, %{
@@ -261,9 +288,10 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     <.button
       id={"button_#{@id}"}
       class="flex !p-0"
+      aria-expanded={@is_expanded}
+      aria-controls={"details-#{@id}"}
       phx-click={
-        JS.toggle(to: "#details-#{@id}")
-        |> JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="#{@id}"]))
+        JS.toggle_class("bg-Table-table-select", to: ~s(tr[data-row-id="#{@id}"]))
         |> JS.push("toggle_objective_details", value: %{objective_id: @id}, target: @component_target)
       }
     >
@@ -370,9 +398,9 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       student_proficiency_obj_dist: student_proficiency_obj_dist
     } = objective
 
-    expanded_objectives = assigns.model.data[:expanded_objectives] || MapSet.new()
+    expanded_rows = assigns.model.data[:expanded_rows] || MapSet.new()
     row_id = "row_#{objective_id}"
-    is_expanded = MapSet.member?(expanded_objectives, row_id)
+    is_expanded = MapSet.member?(expanded_rows, row_id)
 
     section_slug = assigns[:section_slug] || assigns.model.data[:section_slug]
     section_id = assigns[:section_id] || assigns.model.data[:section_id]

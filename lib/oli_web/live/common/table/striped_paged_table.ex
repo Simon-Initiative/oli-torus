@@ -23,6 +23,11 @@ defmodule OliWeb.Common.StripedPagedTable do
   attr :no_records_message, :string, default: "None exist"
   attr :overflow_class, :string, default: "inline"
   attr :sticky_header_offset, :integer, default: 0
+  attr :table_container_class, :string, default: "relative mx-4"
+
+  attr :header_bg_class, :string,
+    default: nil,
+    doc: "Optional CSS class for header cell background. Passed through to StripedTable."
 
   attr :details_render_fn, :any,
     default: nil,
@@ -40,7 +45,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         <div :if={@total_count <= @limit and @render_top_info} class="px-5 py-2">
           Showing all results ({@total_count} total)
         </div>
-        <div class="relative mx-4">
+        <div class={@table_container_class}>
           {render_table(%{
             allow_selection: @allow_selection,
             table_model: @table_model,
@@ -49,7 +54,8 @@ defmodule OliWeb.Common.StripedPagedTable do
             additional_table_class: @additional_table_class,
             additional_row_class: @additional_row_class,
             details_render_fn: @details_render_fn,
-            sticky_header_offset: @sticky_header_offset
+            sticky_header_offset: @sticky_header_offset,
+            header_bg_class: @header_bg_class
           })}
         </div>
         <Paging.render
@@ -84,6 +90,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         additional_row_class={@additional_row_class}
         details_render_fn={@details_render_fn}
         sticky_header_offset={@sticky_header_offset}
+        header_bg_class={@header_bg_class}
       />
       """
     else
@@ -95,6 +102,7 @@ defmodule OliWeb.Common.StripedPagedTable do
         additional_row_class={@additional_row_class}
         details_render_fn={@details_render_fn}
         sticky_header_offset={@sticky_header_offset}
+        header_bg_class={@header_bg_class}
       />
       """
     end

@@ -12,6 +12,7 @@ defmodule OliWeb.Sections.SectionsView do
 
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Components.FilterPanel
+  alias OliWeb.Icons
   alias OliWeb.Sections.SectionsTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Admin.BrowseFilters
@@ -77,6 +78,7 @@ defmodule OliWeb.Sections.SectionsView do
       )
 
     total_count = determine_total(sections)
+    export_filename = "sections-" <> Date.to_iso8601(Date.utc_today()) <> ".csv"
 
     {:ok, table_model} =
       SectionsTableModel.new(ctx, sections,
@@ -84,7 +86,8 @@ defmodule OliWeb.Sections.SectionsView do
         sort_by_spec: :start_date,
         sort_order: :desc,
         search_term: "",
-        is_admin: is_admin
+        is_admin: is_admin,
+        current_author: author
       )
 
     {:ok,
@@ -94,6 +97,7 @@ defmodule OliWeb.Sections.SectionsView do
        sections: sections,
        total_count: total_count,
        table_model: table_model,
+       export_filename: export_filename,
        options: @default_options,
        filters: filters,
        text_search_input: "",
@@ -181,34 +185,45 @@ defmodule OliWeb.Sections.SectionsView do
           <i class="fa fa-plus pr-2"></i> New Section
         </a>
       </div>
-      <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
-        <.form for={%{}} phx-change="text_search_change" class="w-56">
-          <SearchInput.render id="text-search" name="section_name" text={@text_search_input} />
-        </.form>
+      <div class="flex justify-between">
+        <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-[#ced1d9] dark:border-[#3B3740] dark:bg-[#000000]">
+          <.form for={%{}} phx-change="text_search_change" class="w-56">
+            <SearchInput.render id="text-search" name="section_name" text={@text_search_input} />
+          </.form>
 
-        <Check.render
-          id="filter-active-today"
-          checked={@options.active_today}
-          click="active_today"
-          class="text-Text-text-high"
+          <Check.render
+            id="filter-active-today"
+            checked={@options.active_today}
+            click="active_today"
+            class="text-Text-text-high"
+          >
+            <span class="text-sm font-normal leading-none">
+              Active (start/end dates include today)
+            </span>
+          </Check.render>
+
+          <.live_component
+            module={FilterPanel}
+            id="sections-filter-panel"
+            parent_pid={self()}
+            filters={@filters}
+            fields={@filter_fields}
+            status_options={@status_options}
+            delivery_options={@delivery_options}
+            requires_payment_options={@requires_payment_options}
+            institution_options={@institution_options}
+            date_field_options={@date_field_options}
+          />
+        </div>
+        <a
+          role="button"
+          class="group mr-4 inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover"
+          href={~p"/admin/sections/export?#{current_params(assigns)}"}
+          download={@export_filename}
         >
-          <span class="text-sm font-normal leading-none">
-            Active (start/end dates include today)
-          </span>
-        </Check.render>
-
-        <.live_component
-          module={FilterPanel}
-          id="sections-filter-panel"
-          parent_pid={self()}
-          filters={@filters}
-          fields={@filter_fields}
-          status_options={@status_options}
-          delivery_options={@delivery_options}
-          requires_payment_options={@requires_payment_options}
-          institution_options={@institution_options}
-          date_field_options={@date_field_options}
-        />
+          Download CSV
+          <Icons.download stroke_class="group-hover:stroke-Text-text-button-hover stroke-Text-text-button" />
+        </a>
       </div>
 
       <div class="sections-table overflow-x-auto">
@@ -325,18 +340,20 @@ defmodule OliWeb.Sections.SectionsView do
      )}
   end
 
-  defp current_params(socket) do
+  defp current_params(%Phoenix.LiveView.Socket{} = socket), do: current_params(socket.assigns)
+
+  defp current_params(assigns) do
     base = %{
-      sort_by: socket.assigns.table_model.sort_by_spec.name,
-      sort_order: socket.assigns.table_model.sort_order,
-      offset: socket.assigns.offset,
-      limit: socket.assigns.limit,
-      text_search: socket.assigns.text_search_input,
-      active_today: socket.assigns.options.active_today
+      sort_by: assigns.table_model.sort_by_spec.name,
+      sort_order: assigns.table_model.sort_order,
+      offset: assigns.offset,
+      limit: assigns.limit,
+      text_search: assigns.text_search_input,
+      active_today: assigns.options.active_today
     }
 
     filter_params =
-      case Map.get(socket.assigns, :filters) do
+      case Map.get(assigns, :filters) do
         nil -> %{}
         filters -> BrowseFilters.to_query_params(filters, as: :atoms)
       end

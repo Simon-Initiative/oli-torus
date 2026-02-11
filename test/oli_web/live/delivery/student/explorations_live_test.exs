@@ -135,7 +135,10 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
         base_project: project,
         title: "The best course ever!",
         start_date: ~U[2023-10-30 20:00:00Z],
-        analytics_version: :v2
+        analytics_version: :v2,
+        open_and_free: true,
+        lti_1p3_deployment: nil,
+        lti_1p3_deployment_id: nil
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -159,7 +162,14 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
 
   describe "user" do
     test "can not access page when it is not logged in", %{conn: conn} do
-      section = insert(:section)
+      section =
+        insert(:section,
+          open_and_free: true,
+          requires_enrollment: true,
+          lti_1p3_deployment: nil,
+          lti_1p3_deployment_id: nil
+        )
+
       student = insert(:user)
 
       Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])

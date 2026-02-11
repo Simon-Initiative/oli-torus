@@ -1,8 +1,8 @@
 defmodule OliWeb.Users.UserEnrolledTableModel do
   use Phoenix.Component
 
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
+  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
   def render(assigns) do
@@ -28,7 +28,8 @@ defmodule OliWeb.Users.UserEnrolledTableModel do
         },
         %ColumnSpec{
           name: :enrollment_role,
-          label: "Enrollment Role",
+          label: "Role",
+          render_fn: &__MODULE__.render_role_column/3,
           th_class: "whitespace-nowrap"
         },
         %ColumnSpec{
@@ -99,7 +100,7 @@ defmodule OliWeb.Users.UserEnrolledTableModel do
       assigns,
       row.title,
       route_path,
-      "instructor_dashboard_table_link"
+      "text-Text-text-link hover:text-Text-text-button-hover font-semibold hover:underline underline-offset-2"
     )
   end
 
@@ -135,5 +136,31 @@ defmodule OliWeb.Users.UserEnrolledTableModel do
         <span>Unknown</span>
         """
     end
+  end
+
+  def render_role_column(assigns, row, _col_spec) do
+    {bg_color, text_color} =
+      case row.enrollment_role do
+        "Instructor" -> {"bg-Fill-Accent-fill-accent-green-bold", "text-Text-text-white"}
+        "Student" -> {"bg-Fill-Accent-fill-accent-blue-bold", "text-Text-text-white"}
+        _ -> {"bg-Fill-Chip-Gray", "text-Text-Chip-Gray"}
+      end
+
+    assigns =
+      Map.merge(assigns, %{
+        label: row.enrollment_role,
+        bg_color: bg_color,
+        text_color: text_color
+      })
+
+    ~H"""
+    <span class={[
+      "inline-flex items-center rounded-full shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] px-3 py-1 text-sm font-normal",
+      @bg_color,
+      @text_color
+    ]}>
+      {@label}
+    </span>
+    """
   end
 end
