@@ -23,7 +23,9 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
       assign(
         socket,
         institutions: institutions,
-        institutions_list: [{new_institution_label, nil} | Enum.map(institutions, &{&1.name, &1.id})],
+        institutions_list: [
+          {new_institution_label, nil} | Enum.map(institutions, &{&1.name, &1.id})
+        ],
         pending_registrations: Institutions.list_pending_registrations(),
         breadcrumbs: root_breadcrumbs(),
         country_codes: Predefined.country_codes(),
@@ -564,8 +566,9 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                  &(&1.id != pending_registration.id)
                ),
              institutions: institutions,
-             institutions_list:
-               [{new_institution_label, nil} | Enum.map(institutions, &{&1.name, &1.id})]
+             institutions_list: [
+               {new_institution_label, nil} | Enum.map(institutions, &{&1.name, &1.id})
+             ]
            )
            |> put_flash(:info, [
              "Registration for ",
