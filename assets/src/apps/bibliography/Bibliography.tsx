@@ -82,10 +82,7 @@ export function confirmTextBibEditor(
         }}
         okLabel={bibEntry ? 'Update' : 'Create'}
       >
-        <PlainEntryEditor
-          bibEntry={bibEntry}
-          onContentChange={handleValidityChange}
-        />
+        <PlainEntryEditor bibEntry={bibEntry} onContentChange={handleValidityChange} />
       </Modal>
     );
 
@@ -254,7 +251,9 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
       const parsed = toCslArray(bibEntry.content.data);
       const citeModel: CitationModel | undefined =
         (parsed[0] as CitationModel) ||
-        (Array.isArray(bibEntry.content.data) ? (bibEntry.content.data[0] as CitationModel) : undefined);
+        (Array.isArray(bibEntry.content.data)
+          ? (bibEntry.content.data[0] as CitationModel)
+          : undefined);
       const manualEditDisabled = !citeModel;
 
       // const onDeleted = () => {
@@ -272,7 +271,8 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
           const message = createMessage({
             guid: `bib-manual-edit-error-${key}`,
             canUserDismiss: true,
-            content: 'This entry format cannot be opened in the manual editor. Try editing the raw text version instead.',
+            content:
+              'This entry format cannot be opened in the manual editor. Try editing the raw text version instead.',
             severity: Severity.Warning,
           });
           addAsUnique(message);
@@ -289,7 +289,11 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
               <EditBibEntry icon="fas fa-edit" onEdit={onEdit} />
             </div>
             <div className="mb-1">
-              <EditBibEntry icon="fas fa-user-edit" onEdit={onManualEdit} disabled={manualEditDisabled} />
+              <EditBibEntry
+                icon="fas fa-user-edit"
+                onEdit={onManualEdit}
+                disabled={manualEditDisabled}
+              />
             </div>
             {/* <div>
               <DeleteBibEntry onDelete={onDeleted} />
