@@ -642,7 +642,8 @@ defmodule Oli.Institutions do
            {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
         {institution, registration, deployment}
       else
-        error -> Repo.rollback(error)
+        {:error, reason} -> Repo.rollback(reason)
+        other -> Repo.rollback(other)
       end
     end)
   end

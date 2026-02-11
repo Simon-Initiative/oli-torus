@@ -17,12 +17,13 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
 
   def mount(_params, _session, socket) do
     institutions = Institutions.list_institutions()
+    new_institution_label = gettext("New institution")
 
     socket =
       assign(
         socket,
         institutions: institutions,
-        institutions_list: [{"New institution", nil} | Enum.map(institutions, &{&1.name, &1.id})],
+        institutions_list: [{new_institution_label, nil} | Enum.map(institutions, &{&1.name, &1.id})],
         pending_registrations: Institutions.list_pending_registrations(),
         breadcrumbs: root_breadcrumbs(),
         country_codes: Predefined.country_codes(),
@@ -521,35 +522,38 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                  registration["institution_id"],
                  pending_registration
                ) do
-          registration_approved_email =
-            Oli.Email.create_email(
-              institution.institution_email,
-              "Registration Approved",
-              "registration_approved.html",
-              %{institution: institution, registration: registration}
-            )
+          Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+            registration_approved_email =
+              Oli.Email.create_email(
+                institution.institution_email,
+                "Registration Approved",
+                "registration_approved.html",
+                %{institution: institution, registration: registration}
+              )
 
-          Oli.Mailer.deliver(registration_approved_email)
+            Oli.Mailer.deliver(registration_approved_email)
 
-          # send a Slack notification regarding the new registration approval
-          approving_admin = socket.assigns[:current_author]
+            # send a Slack notification regarding the new registration approval
+            approving_admin = socket.assigns[:current_author]
 
-          Slack.send(%{
-            "username" => approving_admin.name,
-            "icon_emoji" => ":robot_face:",
-            "blocks" => [
-              %{
-                "type" => "section",
-                "text" => %{
-                  "type" => "mrkdwn",
-                  "text" =>
-                    "Registration request for *#{pending_registration.name}* has been approved."
+            Slack.send(%{
+              "username" => approving_admin.name,
+              "icon_emoji" => ":robot_face:",
+              "blocks" => [
+                %{
+                  "type" => "section",
+                  "text" => %{
+                    "type" => "mrkdwn",
+                    "text" =>
+                      "Registration request for *#{pending_registration.name}* has been approved."
+                  }
                 }
-              }
-            ]
-          })
+              ]
+            })
+          end)
 
           institutions = Institutions.list_institutions()
+          new_institution_label = gettext("New institution")
 
           {:noreply,
            socket
@@ -560,7 +564,8 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                  &(&1.id != pending_registration.id)
                ),
              institutions: institutions,
-             institutions_list: [{"New institution", nil} | Enum.map(institutions, &{&1.name, &1.id})]
+             institutions_list:
+               [{new_institution_label, nil} | Enum.map(institutions, &{&1.name, &1.id})]
            )
            |> put_flash(:info, [
              "Registration for ",
@@ -573,7 +578,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
            })}
         else
           error ->
-            Logger.error("Failed to approve registration request", error)
+            Logger.error("Failed to approve registration request", error: error)
 
             {:noreply,
              socket
