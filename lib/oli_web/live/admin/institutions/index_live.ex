@@ -560,7 +560,9 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                  &(&1.id != pending_registration.id)
                ),
              institutions: institutions,
-             institutions_list: [{"New institution", nil} | Enum.map(institutions, &{&1.name, &1.id})]
+             institutions_list: [
+               {"New institution", nil} | Enum.map(institutions, &{&1.name, &1.id})
+             ]
            )
            |> put_flash(:info, [
              "Registration for ",
