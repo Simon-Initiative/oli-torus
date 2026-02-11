@@ -125,7 +125,10 @@ defmodule OliWeb.UserSettingsLive do
                   phx-change="validate_user"
                 />
               </div>
-              <div :for={{msg, opts} <- @user_form[:given_name].errors} class="mt-1 text-sm text-red-600">
+              <div
+                :for={{msg, opts} <- @user_form[:given_name].errors}
+                class="mt-1 text-sm text-red-600"
+              >
                 {OliWeb.Components.Common.translate_error({msg, opts})}
               </div>
             </div>
@@ -145,7 +148,10 @@ defmodule OliWeb.UserSettingsLive do
                   phx-change="validate_user"
                 />
               </div>
-              <div :for={{msg, opts} <- @user_form[:family_name].errors} class="mt-1 text-sm text-red-600">
+              <div
+                :for={{msg, opts} <- @user_form[:family_name].errors}
+                class="mt-1 text-sm text-red-600"
+              >
                 {OliWeb.Components.Common.translate_error({msg, opts})}
               </div>
             </div>
