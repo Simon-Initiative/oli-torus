@@ -35,6 +35,32 @@ janus-popup:has(input) {
     transition: all 0.1s linear;
   }
 
+  //Default Colors - target input
+  &[model*='orange'] input {
+    background-color: var(--orange100);
+  }
+  &[model*='orange']:hover input {
+    background-color: var(--orange20dark);
+  }
+  &[model*='red'] input {
+    background-color: var(--red100);
+  }
+  &[model*='red']:hover input {
+    background-color: var(--red20dark);
+  }
+  &[model*='green'] input {
+    background-color: var(--green100);
+  }
+  &[model*='green']:hover input {
+    background-color: var(--green20dark);
+  }
+  &[model*='blue'] input {
+    background-color: var(--blue100);
+  }
+  &[model*='blue']:hover input {
+    background-color: var(--blue20dark);
+  }
+
   //Icons - target input
   &[model*='question'] input {
     background-size: 50%;
@@ -65,6 +91,24 @@ janus-popup:has(input) {
   &[model*='repo/icons']:not(janus-popup[model*='"iconURL":""']) input {
     background: initial;
     box-shadow: initial;
+  }
+
+  // Focus/active styles for inputs with src (legacy behavior)
+  // Only match data URLs that start with "data:" to avoid matching URLs containing "data" in the path
+  input[src^='data:']:focus,
+  input[src^='data:']:active {
+    opacity: 1;
+    border-radius: 100px;
+    width: 0% !important;
+    height: 0% !important;
+    padding: 50%;
+    margin: 0px;
+  }
+  input[src^='data:']:focus {
+    box-shadow: inset 0 0 0 4px var(--white40_a), 0 0 0 4px var(--black20_a);
+  }
+  input[src^='data:']:active {
+    box-shadow: inset 0 0 0 4px var(--white40_a);
   }
 }
 
@@ -124,5 +168,12 @@ janus-popup:has(input) {
     janus-image img {
       width: 100% !important;
     }
+  }
+}
+
+.dark janus-popup:has(input) {
+  input[src^='data:']:focus,
+  input[src^='data:']:active {
+    background-color: rgba(0, 0, 0, 0);
   }
 }
