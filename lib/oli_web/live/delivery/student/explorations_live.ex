@@ -79,8 +79,8 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
         </div>
         <div class="flex flex-row justify-end items-center space-x-6">
           <.button
-            variant={nil}
-            class="bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white font-semibold"
+            variant={:primary}
+            class="bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white"
             href={exploration_link(@section_slug, @exploration, @preview_mode)}
           >
             {exploration_link_text(@status)}
