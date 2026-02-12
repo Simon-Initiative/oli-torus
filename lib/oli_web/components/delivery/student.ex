@@ -416,7 +416,10 @@ defmodule OliWeb.Components.Delivery.Student do
 
     ~H"""
     <div :if={@duration_minutes} class="sm:ml-auto items-center gap-1.5 flex">
-      <div :if={@graded} class="w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center text-Text-text-low">
+      <div
+        :if={@graded}
+        class="w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center text-Text-text-low"
+      >
         <Icons.clock />
       </div>
       <div class="text-right text-Text-text-low whitespace-nowrap">
