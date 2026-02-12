@@ -98,7 +98,7 @@ defmodule OliWeb.UserSettingsLiveTest do
       assert reloaded_user.given_name == user.given_name
     end
 
-    test "shows error message when Last Name is less than two characters", %{conn: conn} do
+    test "shows error message when Last Name is empty", %{conn: conn} do
       user = user_fixture()
 
       {:ok, lv, _html} =
@@ -112,7 +112,7 @@ defmodule OliWeb.UserSettingsLiveTest do
         |> form("#settings_form", %{
           "user" => %{
             "given_name" => "John",
-            "family_name" => "D"
+            "family_name" => ""
           }
         })
         |> render_submit()
