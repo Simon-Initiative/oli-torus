@@ -110,12 +110,7 @@ The Google Docs Page Import feature lets Torus administrators convert a Google D
 - Media payload budget: ≤ 5 MB combined base64; warn and skip beyond that.
 - Repo pool (default 10) and hackney pool (default 5) sufficient for expected ≤ 20 imports/hour.
 
-### 9.2 Load Tests
-- Use Phoenix LiveView test harness or k6 scripts to simulate 5 concurrent imports of medium-sized docs (3 MB) and measure latency.
-- Include media-heavy fixture (10 images) to profile upload time and ensure budgets hold.
-- Passing gate: no task crashes, latency budgets met, memory steady (< 50 MB spike).
-
-### 9.3 Hotspots & Mitigations
+### 9.2 Hotspots & Mitigations
 - Markdown parsing CPU spikes → stream AST, short-circuit unsupported patterns.
 - Media upload bottlenecks → sequential uploads with timeout; optional resizing or rejection for >5 MB images.
 - MCQ fan-out → sequential creation; warn and fallback if limit exceeded.

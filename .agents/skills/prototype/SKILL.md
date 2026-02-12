@@ -22,16 +22,25 @@ Deliver a runnable spike fast to validate feasibility, UX direction, or integrat
 - Short problem statement and success signal for the spike
 - Optional constraints (timebox, target module/area, demo path)
 
+## Required Resources
+Always load before prototyping:
+
+- `references/persona.md`
+- `references/approach.md`
+- `references/considerations.md`
+- `references/output_requirements.md`
+
 ## Outputs (files changed/created)
 - Minimal runnable code for the prototype path
 - Optional minimal docs note only if needed to run the spike
 
 ## Process (step-by-step)
 1. Confirm prototype scope and timebox.
-2. Implement the smallest runnable path that demonstrates the core idea.
-3. Prefer local, reversible changes and clear TODO markers for missing production concerns.
-4. Verify it runs (manual path is acceptable).
-5. Summarize what worked, what is unknown, and hardening steps.
+2. Follow `references/approach.md` and keep decisions aligned with `references/considerations.md`.
+3. Implement the smallest runnable path that demonstrates the core idea.
+4. Prefer local, reversible changes and clear TODO markers for missing production concerns.
+5. Verify it runs (manual path is acceptable).
+6. Summarize what worked, what is unknown, and hardening steps using `references/output_requirements.md`.
 
 ## Quality bar / guardrails
 - Trigger policy: only run when user says `prototype` or explicitly invokes `$prototype`.
@@ -46,4 +55,3 @@ Deliver a runnable spike fast to validate feasibility, UX direction, or integrat
 - `Known limitations:` concise bullets
 - `How to harden this into production code:`
   - 3-7 bullets
-

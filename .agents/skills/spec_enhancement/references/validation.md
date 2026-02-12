@@ -6,10 +6,10 @@ Primary command (all modes):
 python3 .agents/skills/spec_enhancement/scripts/validate_enhancement_doc.py <enhancement_doc_path>
 ```
 
-Feature-pack command (required for `docs/features/<feature_slug>/...`):
+Feature-pack command (required for `<feature_dir>/...`):
 
 ```bash
-.agents/scripts/spec_validate.sh --slug <feature_slug> --check all
+.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all
 ```
 
 Rules:

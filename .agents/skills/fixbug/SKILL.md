@@ -24,22 +24,31 @@ Fix a bug with regression safety and minimal change scope.
 - Current codebase and relevant tests
 - Optional logs, stack traces, or reproduction notes
 
+## Required Resources
+Always load before fixing:
+
+- `references/persona.md`
+- `references/approach.md`
+- `references/considerations.md`
+- `references/output_requirements.md`
+
 ## Outputs (files changed/created)
 - New or updated failing-then-passing ExUnit regression test
 - Minimal production code fix
 - Optional docs updates if behavior contract changed
 
 ## Process (step-by-step)
-1. Read the JIRA ticket and extract:
+1. Read the ticket and extract:
    - Reproduction steps
    - Expected behavior
    - Actual behavior
-2. Reproduce the bug locally where possible.
-3. Write a failing ExUnit test that captures the bug.
-4. Implement the minimal fix to make the test pass.
-5. Run relevant tests (at least the new regression test and affected suite) until green.
-6. Verify no unnecessary scope expansion occurred.
-7. Prepare a PR-ready summary.
+2. Follow `references/approach.md` and keep changes aligned with `references/considerations.md`.
+3. Reproduce the bug locally where possible.
+4. Write a failing ExUnit test that captures the bug.
+5. Implement the minimal fix to make the test pass.
+6. Run relevant tests (at least the new regression test and affected suite) until green.
+7. Verify no unnecessary scope expansion occurred.
+8. Prepare a PR-ready summary using `references/output_requirements.md`.
 
 ## Quality bar / guardrails
 - Trigger policy: run only with JIRA ticket context or explicit `$fixbug`.
@@ -53,4 +62,3 @@ Fix a bug with regression safety and minimal change scope.
 - `Changes:` concise bullets (test + fix)
 - `Verification:` tests run and outcomes
 - `Risk:` one short assessment
-

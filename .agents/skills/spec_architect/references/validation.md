@@ -3,7 +3,7 @@
 Primary command:
 
 ```bash
-.agents/scripts/spec_validate.sh --slug <feature_slug> --check fdd
+.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check fdd
 ```
 
 This is a hard gate. If validation fails, fix the FDD and re-run before proceeding.

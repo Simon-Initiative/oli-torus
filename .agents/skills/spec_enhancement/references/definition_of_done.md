@@ -8,6 +8,6 @@ An enhancement is done only when all checks below pass:
 - No unresolved `TODO` / `TBD` / `FIXME` markers remain.
 - Validation gates pass:
   - Enhancement doc validation always.
-  - Full spec-pack validation when operating in `docs/features/<feature_slug>/`.
+  - Full spec-pack validation when operating in feature-pack mode (`docs/features/<feature_slug>/` or `docs/epics/<epic_slug>/<feature_slug>/`).
 - Implementation and tests align with acceptance criteria.
 - Rollout notes are explicit (or explicitly state not needed).

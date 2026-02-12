@@ -2,8 +2,8 @@
 
 Use this order to choose where the enhancement doc lives:
 
-1. If user provides an explicit feature slug, use it.
-2. Else search `docs/features/` for confident match:
+1. If user provides an explicit feature directory path, use it.
+2. Else search both `docs/features/` and `docs/epics/*/` for a confident match:
    - Ticket key appears in existing docs.
    - Folder/topic names clearly align with request keywords.
    - No competing folder with similar confidence.
@@ -12,7 +12,10 @@ Use this order to choose where the enhancement doc lives:
 Destinations:
 
 - Feature-pack mode:
-  - `docs/features/<feature_slug>/enhancements/<jira-key>.md`
+  - `<feature_dir>/enhancements/<jira-key>.md`
+  - Supported roots:
+    - `docs/features/<feature_slug>/`
+    - `docs/epics/<epic_slug>/<feature_slug>/`
 - Mini-pack mode:
   - `docs/work/<jira-key>/enhancement.md`
 

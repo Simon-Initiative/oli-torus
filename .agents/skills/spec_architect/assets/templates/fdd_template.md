@@ -57,7 +57,7 @@
 ### 9.1 Budgets
 <latency, throughput, memory budgets>
 
-### 9.3 Hotspots & Mitigations
+### 9.2 Hotspots & Mitigations
 <risk items>
 
 ## 10. Failure Modes & Resilience

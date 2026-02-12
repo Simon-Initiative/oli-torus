@@ -259,7 +259,10 @@ def gather_targets(feature_dir: Path, check: str, design_file: str | None) -> Li
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate spec-pack markdown artifacts")
-    parser.add_argument("feature_dir", help="Feature pack directory, e.g. docs/features/my-feature")
+    parser.add_argument(
+        "feature_dir",
+        help="Feature pack directory, e.g. docs/features/my-feature or docs/epics/my-epic/my-feature",
+    )
     parser.add_argument("--check", choices=["all", "prd", "fdd", "plan", "design"], default="all")
     parser.add_argument("--file", dest="design_file", help="Specific design file for --check design")
     parser.add_argument("--check-external-links", action="store_true", help="HTTP HEAD external links")

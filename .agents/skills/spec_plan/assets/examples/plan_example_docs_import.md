@@ -1,6 +1,6 @@
 # Google Docs Page Import — Delivery Plan
 
-Scope and guardrails reference the approved PRD (`docs/features/docs_import/prd.md`) and FDD (`docs/features/docs_import/fdd.md`). The plan decomposes work into dependency-ordered phases with gating tests and explicit definitions of done.
+Scope and guardrails reference the approved PRD (`docs/epics/content-ingestion/docs_import/prd.md`) and FDD (`docs/epics/content-ingestion/docs_import/fdd.md`). The plan decomposes work into dependency-ordered phases with gating tests and explicit definitions of done.
 
 - **Scope Summary:** Deliver an admin-only workflow that imports Google Docs via Markdown export, converts content (including CustomElements), uploads embedded images to the Torus media library, creates the resulting page in the curriculum hierarchy.
 - **Non-Functional Guardrails:** p50 import ≤ 6 s, p95 ≤ 12 s for ≤ 3 MB Markdown; fail at 10 MB. ≤ 1 % error rate; admin-only access; tenant isolation; WCAG-compliant modal; media ingestion dedupes by hash.

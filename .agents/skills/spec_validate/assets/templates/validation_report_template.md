@@ -1,12 +1,12 @@
 # Spec Validation Report
 
-Feature: `docs/features/<feature_slug>`
+Feature: `<feature_dir>`
 Date: `<YYYY-MM-DD>`
 Validator: `.agents/skills/spec_validate/scripts/validate_spec_pack.py`
 
 ## Command
 ```bash
-python3 .agents/skills/spec_validate/scripts/validate_spec_pack.py docs/features/<feature_slug> --check all
+python3 .agents/skills/spec_validate/scripts/validate_spec_pack.py <feature_dir> --check all
 ```
 
 ## Result

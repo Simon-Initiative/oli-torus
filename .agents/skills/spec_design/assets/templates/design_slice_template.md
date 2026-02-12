@@ -1,9 +1,9 @@
 # <Slice Name> — Detailed Design
 
 Source Specs:
-- PRD: `docs/features/<feature_slug>/prd.md`
-- FDD: `docs/features/<feature_slug>/fdd.md`
-- Plan (optional): `docs/features/<feature_slug>/plan.md`
+- PRD: `<feature_dir>/prd.md`
+- FDD: `<feature_dir>/fdd.md`
+- Plan (optional): `<feature_dir>/plan.md`
 
 ## 1. Slice Summary
 - Objective: <what this slice delivers>

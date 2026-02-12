@@ -1,6 +1,7 @@
 # Enhancement Checklist
 
 - Use all sections from `assets/templates/enhancement_template.md`.
+- Apply `references/considerations.md` while drafting scope, risks, and rollout notes.
 - Keep scope ticket-sized; explicitly list out-of-scope items.
 - Write acceptance criteria as testable statements with IDs (`AC-001`, `AC-002`, ...).
 - Include concrete risks and mitigation notes.
