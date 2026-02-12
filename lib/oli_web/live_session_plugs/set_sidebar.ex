@@ -36,7 +36,7 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
             _ -> true
           end
       )
-      |> assign(disable_sidebar?: user_is_only_a_student?(socket.assigns.ctx))
+      |> assign(disable_sidebar?: user_is_only_a_student?(socket.assigns.ctx, socket.assigns))
       |> assign(footer_enabled?: true)
 
     if connected?(socket) do
@@ -96,7 +96,26 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
   defp user_is_only_a_student?(%SessionContext{user: nil}), do: false
   defp user_is_only_a_student?(%SessionContext{user: %{can_create_sections: true}}), do: false
 
-  defp user_is_only_a_student?(%SessionContext{user: %{id: user_id}}) do
+  defp user_is_only_a_student?(%SessionContext{
+         section: %{slug: _section_slug}
+       }) do
+    # Always enable sidebar within course sections.
+    false
+  end
+
+  defp user_is_only_a_student?(%SessionContext{user: user}) do
+    user_is_only_a_student_in_general?(user)
+  end
+
+  defp user_is_only_a_student?(%SessionContext{} = ctx, assigns) do
+    if Map.get(assigns, :section) do
+      false
+    else
+      user_is_only_a_student?(ctx)
+    end
+  end
+
+  defp user_is_only_a_student_in_general?(%{id: user_id}) do
     user_roles =
       user_id
       |> Oli.Accounts.user_roles()
