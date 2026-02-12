@@ -53,6 +53,7 @@ export const AttemptSelector = (props: AttemptSelectorProps) => {
           fetchAttempt(activityId, sectionSlug, a.attemptGuid);
           setCurrent(a);
         }}
+        className="bg-Fill-Buttons-fill-primary"
       >
         Attempt #{a.attemptNumber}: [{a.state}] {a.date}
       </Dropdown.Item>
@@ -70,7 +71,7 @@ export const AttemptSelector = (props: AttemptSelectorProps) => {
 
   return (
     <Dropdown className="btn-group">
-      <Dropdown.Toggle variant="info" className="btn">
+      <Dropdown.Toggle className="bg-Fill-Buttons-fill-primary">
         Attempt #{current.attemptNumber}: [{current.state}] {current.date}
       </Dropdown.Toggle>
       <Dropdown.Menu className="dropdown-menu">{choices}</Dropdown.Menu>

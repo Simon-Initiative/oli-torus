@@ -19,7 +19,7 @@ export const SubmitButton: React.FC<Props> = ({
   return (
     <button
       aria-label="submit"
-      className="btn text-Text-text-white self-start mt-3 mb-3 bg-Fill-Buttons-fill-primary hover:text-Specially-Tokens-Text-text-button-primary-hover hover:bg-Fill-Buttons-fill-primary-hover"
+      className="px-3 py-2 rounded-sm cursor-pointer text-white self-start mt-3 mb-3 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover disabled:text-Text-text-low disabled:bg-Fill-Chip-Gray disabled:cursor-not-allowed"
       disabled={disabled}
       onClick={onClick}
     >

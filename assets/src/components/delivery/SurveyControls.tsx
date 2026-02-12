@@ -31,7 +31,10 @@ type SubmitSurveyButtonProps = {
 const SubmitSurveyButton = ({ onSubmit }: SubmitSurveyButtonProps) => (
   <div className="d-flex mb-4">
     <div className="flex-grow-1"></div>
-    <button className="btn btn-primary" onClick={onSubmit}>
+    <button
+      className="px-3 py-2 rounded-sm cursor-pointer text-white self-start mt-3 mb-3 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover disabled:text-Text-text-low disabled:bg-Fill-Chip-Gray disabled:cursor-not-allowed"
+      onClick={onSubmit}
+    >
       Submit Survey
     </button>
     <div className="flex-grow-1"></div>

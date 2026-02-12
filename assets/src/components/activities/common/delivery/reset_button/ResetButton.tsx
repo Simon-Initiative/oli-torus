@@ -13,7 +13,7 @@ export const ResetButton: React.FC<Props> = ({ disabled = false, shouldShow = tr
   return (
     <button
       aria-label="reset"
-      className="btn btn-primary self-start mt-3 mb-3"
+      className="px-3 py-2 rounded-sm cursor-pointer text-white self-start mt-3 mb-3 bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover disabled:text-Text-text-low disabled:bg-Fill-Chip-Gray disabled:cursor-not-allowed"
       disabled={disabled}
       onClick={() => action()}
       onKeyPress={(e) => (e.key === 'Enter' ? action() : null)}
