@@ -92,24 +92,6 @@ janus-popup:has(input) {
     background: initial;
     box-shadow: initial;
   }
-
-  // Focus/active styles for inputs with src (legacy behavior)
-  // Only match data URLs that start with "data:" to avoid matching URLs containing "data" in the path
-  input[src^='data:']:focus,
-  input[src^='data:']:active {
-    opacity: 1;
-    border-radius: 100px;
-    width: 0% !important;
-    height: 0% !important;
-    padding: 50%;
-    margin: 0px;
-  }
-  input[src^='data:']:focus {
-    box-shadow: inset 0 0 0 4px var(--white40_a), 0 0 0 4px var(--black20_a);
-  }
-  input[src^='data:']:active {
-    box-shadow: inset 0 0 0 4px var(--white40_a);
-  }
 }
 
 /*----------------------------------
