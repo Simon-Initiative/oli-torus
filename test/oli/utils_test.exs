@@ -147,4 +147,15 @@ defmodule Oli.UtilsTest do
       assert Utils.validate_email("user@" <> String.duplicate("a", 63) <> ".com")
     end
   end
+
+  describe "common_name_validations/1" do
+    test "accepts single character family_name" do
+      changeset =
+        %Oli.Accounts.User{}
+        |> Ecto.Changeset.change(%{given_name: "Ada", family_name: "B"})
+        |> Utils.common_name_validations()
+
+      assert changeset.valid?
+    end
+  end
 end
