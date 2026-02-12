@@ -74,7 +74,7 @@ defmodule OliWeb.UserSettingsLive do
             <input type="hidden" name="settings_return_to" value={@back_path} />
 
             <div :if={@has_password} class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low-alpha">
+              <label class="font-semibold text-sm leading-4 text-Text-text-low">
                 Current Password*
               </label>
               <div
@@ -94,7 +94,7 @@ defmodule OliWeb.UserSettingsLive do
             </div>
 
             <div class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low-alpha">
+              <label class="font-semibold text-sm leading-4 text-Text-text-low">
                 E-mail
               </label>
               <div class="border border-Border-border-default flex flex-col h-14 items-start justify-center px-4 py-2 rounded-md w-full bg-Background-bg-primary">
@@ -111,7 +111,7 @@ defmodule OliWeb.UserSettingsLive do
             </div>
 
             <div class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low-alpha">
+              <label class="font-semibold text-sm leading-4 text-Text-text-low">
                 First Name
               </label>
               <div class="border border-Border-border-default flex flex-col h-14 items-start justify-center px-4 py-2 rounded-md w-full bg-Background-bg-primary">
@@ -134,7 +134,7 @@ defmodule OliWeb.UserSettingsLive do
             </div>
 
             <div class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low-alpha">
+              <label class="font-semibold text-sm leading-4 text-Text-text-low">
                 Last Name
               </label>
               <div class="border border-Border-border-default flex flex-col h-14 items-start justify-center px-4 py-2 rounded-md w-full bg-Background-bg-primary">
@@ -157,7 +157,7 @@ defmodule OliWeb.UserSettingsLive do
             </div>
 
             <div class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low-alpha">
+              <label class="font-semibold text-sm leading-4 text-Text-text-low">
                 New Password
               </label>
               <div class="border border-Border-border-default flex flex-col h-14 items-start justify-center px-4 py-2 rounded-md w-full bg-Background-bg-primary">
@@ -184,7 +184,7 @@ defmodule OliWeb.UserSettingsLive do
             </div>
 
             <div class="flex flex-col gap-2 w-full">
-              <label class="font-semibold text-sm leading-4 text-Text-text-low-alpha">
+              <label class="font-semibold text-sm leading-4 text-Text-text-low">
                 Confirm New Password
               </label>
               <div class="border border-Border-border-default flex flex-col h-14 items-start justify-center px-4 py-2 rounded-md w-full bg-Background-bg-primary">

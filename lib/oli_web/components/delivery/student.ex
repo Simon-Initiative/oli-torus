@@ -16,10 +16,10 @@ defmodule OliWeb.Components.Delivery.Student do
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path
           d="M3.88301 14.0007L4.96634 9.31732L1.33301 6.16732L6.13301 5.75065L7.99967 1.33398L9.86634 5.75065L14.6663 6.16732L11.033 9.31732L12.1163 14.0007L7.99967 11.5173L3.88301 14.0007Z"
-          class="fill-[#0CAF61] dark:fill-[#12E56A]"
+          class="fill-Icon-icon-accent-green-bold"
         />
       </svg>
-      <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
+      <span class="text-[12px] leading-[16px] tracking-[0.02px] text-Text-text-accent-green font-semibold whitespace-nowrap">
         {Utils.parse_score(@raw_avg_score[:score])} / {Utils.parse_score(@raw_avg_score[:out_of])}
       </span>
     </div>
@@ -32,7 +32,7 @@ defmodule OliWeb.Components.Delivery.Student do
     ~H"""
     <div role="score summary" class="flex gap-[6px] ml-auto">
       <Icons.score_as_you_go />
-      <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
+      <span class="text-[12px] leading-[16px] tracking-[0.02px] text-Text-text-accent-green font-semibold whitespace-nowrap">
         {Utils.format_score(@raw_avg_score[:score])} / {Utils.format_score(@raw_avg_score[:out_of])}
       </span>
     </div>
@@ -88,7 +88,7 @@ defmodule OliWeb.Components.Delivery.Student do
     <div class="self-stretch justify-start items-start gap-6 inline-flex relative mb-1">
       <button
         id={"#{@id}-dropdown-button"}
-        class="opacity-80 dark:text-white text-sm font-bold font-['Open Sans'] uppercase whitespace-nowrap tracking-wider"
+        class="text-Text-text-high text-sm font-bold font-['Open Sans'] uppercase whitespace-nowrap tracking-wider"
         phx-click={show_attempts_dropdown("##{@id}-dropdown", @page_revision_slug)}
         phx-value-hide-target={"##{@id}-dropdown"}
       >
@@ -187,7 +187,7 @@ defmodule OliWeb.Components.Delivery.Student do
         <div class="mr-2"><strong>SCORE AS YOU GO</strong></div>
         <div>
           <Icons.score_as_you_go />
-          <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
+          <span class="text-[12px] leading-[16px] tracking-[0.02px] text-Text-text-accent-green font-semibold whitespace-nowrap">
             {Utils.format_score(@raw_avg_score[:score])} / {Utils.format_score(
               @raw_avg_score[:out_of]
             )}
@@ -285,7 +285,9 @@ defmodule OliWeb.Components.Delivery.Student do
     <div class="flex flex-col">
       <div class="flex flex-row justify-between gap-10 text-xs">
         <div class="flex flex-row gap-10 text-xs font-semibold w-full">
-          <div class="font-semibold uppercase text-gray-500 mr-1">Attempt {@index}:</div>
+          <div class="font-semibold uppercase text-Text-text-low mr-1">
+            Attempt {@index}:
+          </div>
           <div class="ml-auto flex flex-col gap-1 items-end">
             <.time_remaining
               :if={attempt_expires?(@attempt, @effective_settings)}
@@ -316,7 +318,9 @@ defmodule OliWeb.Components.Delivery.Student do
     <div class="flex flex-col">
       <div class="flex flex-row justify-between gap-10 text-xs">
         <div class="flex flex-row gap-1 text-xs font-semibold text-green-700 dark:text-green-500">
-          <div class="font-semibold uppercase text-gray-500 mr-1">Attempt {@index}:</div>
+          <div class="font-semibold uppercase text-Text-text-low mr-1">
+            Attempt {@index}:
+          </div>
           <div class="w-4 h-4 relative"><Icons.star /></div>
 
           <div role="attempt score" class="tracking-tight">
@@ -394,7 +398,7 @@ defmodule OliWeb.Components.Delivery.Student do
   defp time_remaining(assigns) do
     ~H"""
     <div class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex">
-      <span class="text-xs text-gray-500 mr-1">
+      <span class="text-xs text-Text-text-low mr-1">
         Time Remaining:
       </span>
       <div role="countdown">
@@ -412,10 +416,13 @@ defmodule OliWeb.Components.Delivery.Student do
 
     ~H"""
     <div :if={@duration_minutes} class="sm:ml-auto items-center gap-1.5 flex">
-      <div :if={@graded} class="w-4 h-4 sm:w-6 sm:h-6 opacity-60 flex items-center justify-center">
+      <div
+        :if={@graded}
+        class="w-4 h-4 sm:w-6 sm:h-6 flex items-center justify-center text-Text-text-low"
+      >
         <Icons.clock />
       </div>
-      <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
+      <div class="text-right text-Text-text-low whitespace-nowrap">
         <span class="text-sm font-semibold" role="duration in minutes">
           {@duration_minutes}
           <span class="w-[25px] self-stretch text-[13px] font-semibold">
