@@ -9,7 +9,7 @@ when_to_use:
   - "User wants one default workflow entry point and routing should be automatic."
   - "Task intent is unclear and should be classified as bug vs enhancement vs new feature."
 when_not_to_use:
-  - "User explicitly requires a specific lane already ($fixbug, $spec_enhancement, or $spec_analyze)."
+  - "User explicitly requires a specific lane already ($fixbug, $spec_work, or $spec_analyze)."
 ---
 
 ## Required Resources
@@ -25,7 +25,7 @@ Always load before dispatching:
    - `This looks like a <lane> because <reason>.`
 4. Execute the selected playbook:
    - Bug lane (`fixbug_tdd` via `$fixbug`): run TDD-first regression-safe fix workflow.
-   - Enhancement lane: run `$spec_enhancement` playbook (mini spec + design/develop + validation).
+   - Enhancement lane: run `$spec_work` playbook (Jira-MCP intake, brief in-chat approach/plan, implement after approval, no persistent spec docs).
    - New feature lane: run `$spec_analyze` playbook (create new docs/features/<slug>, create/update PRD with hard validation gate).
 5. If nested skill invocation is not available, execute the exact target lane workflow inline in the same run.
 6. Do not switch lanes mid-run unless new evidence clearly invalidates the original classification; if switched, record why.
@@ -40,5 +40,5 @@ Always load before dispatching:
 - Always report:
   - Selected lane.
   - One-sentence reason.
-  - Key artifacts created/updated.
+  - Key code/docs artifacts created/updated (or explicitly state "none" for no-doc enhancement runs).
   - Validation/test status from the chosen playbook.

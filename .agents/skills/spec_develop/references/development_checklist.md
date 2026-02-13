@@ -1,6 +1,6 @@
 # Development Checklist
 
-- Confirm selected phase tasks and dependencies from `plan.md`.
+- Confirm selected phase tasks and dependencies from formal `plan.md` or informal plan.
 - If phase selector input is provided, implement only that phase.
 - Implement only the scoped phase; defer extras.
 - Update tests in the same change set as behavior changes.

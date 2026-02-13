@@ -11,7 +11,7 @@ when_to_use:
   - "Spec validation is failing and the task is to repair spec artifacts rather than write new feature specs."
 when_not_to_use:
   - "Net-new feature definition before coding (use $spec_analyze, $spec_architect, $spec_plan)."
-  - "Ticket-sized enhancement execution (use $spec_enhancement)."
+  - "Ticket-sized enhancement execution (use $spec_work)."
 ---
 
 ## Required Resources
