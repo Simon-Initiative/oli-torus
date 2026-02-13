@@ -3,6 +3,7 @@ name: spec_update_docs
 description: Reconcile spec-pack docs after implementation drift by reading changed files/diff context, updating PRD/FDD/plan with explicit decision entries, and running spec validation to green before completion.
 examples:
   - "$spec_update_docs docs/features/docs_import"
+  - "$spec_update_docs docs/epics/course-authoring/docs_import"
   - "Sync specs to this branch diff for docs_import and media_ingestion ($spec_update_docs)"
   - "We already coded this. Update PRD/FDD/plan to match reality using changed files list ($spec_update_docs)"
 when_to_use:
@@ -10,7 +11,7 @@ when_to_use:
   - "Spec validation is failing and the task is to repair spec artifacts rather than write new feature specs."
 when_not_to_use:
   - "Net-new feature definition before coding (use $spec_analyze, $spec_architect, $spec_plan)."
-  - "Ticket-sized enhancement execution (use $spec_enhancement)."
+  - "Ticket-sized enhancement execution (use $spec_work)."
 ---
 
 ## Required Resources
@@ -25,28 +26,29 @@ Always load before editing:
 - Optional calibration example: `assets/examples/decision_entry_example.md`
 
 ## Workflow
-1. Resolve scope from provided feature slug(s), changed files, or branch diff using `references/input_resolution.md`.
+1. Resolve scope from provided feature directory path(s), changed files, or branch diff using `references/input_resolution.md`.
+   - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
 2. Identify affected feature packs and collect evidence of drift from changed code, migrations, APIs, tests, and behavior changes.
 3. Update affected docs:
    - `prd.md` for acceptance/scope changes.
    - `fdd.md` for interface, data model, migration, and operational changes.
    - `plan.md` for phase mapping/status changes caused by implementation reality.
 4. For every material doc change, append a short decision entry using `references/decision_log.md`.
-5. Run `.agents/scripts/spec_validate.sh --slug <feature_slug> --check all` for each affected feature slug.
-6. Hard gate: if validation fails, fix docs and re-run until green for every affected slug.
+5. Run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all` for each affected feature directory.
+6. Hard gate: if validation fails, fix docs and re-run until green for every affected feature directory.
 7. Report the synchronized docs, key decisions, and validation results.
 
 ## Validation Gate
-- Mandatory command per slug:
-  - `.agents/scripts/spec_validate.sh --slug <feature_slug> --check all`
-- This is a hard gate. Do not mark completion while any slug is failing.
+- Mandatory command per feature directory:
+  - `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all`
+- This is a hard gate. Do not mark completion while any feature directory is failing.
 - Execute commands directly when environment access allows; do not merely suggest them.
 
 ## Output Contract
 - Update PRD/FDD/plan files in-place for each affected feature pack.
 - Include at least one decision entry for each materially changed spec file.
 - Final response must include:
-  - Affected slugs.
+  - Affected feature directories.
   - Files updated.
   - Decision summary.
-  - Validation pass/fail per slug.
+  - Validation pass/fail per feature directory.

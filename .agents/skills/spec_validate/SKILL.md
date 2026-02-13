@@ -1,10 +1,11 @@
 ---
 name: spec_validate
-description: Validate spec-pack markdown quality for docs/features/<feature_slug> by checking required headings, unresolved TODO markers, acceptance criteria presence, numbered plan phases with Definition of Done, and markdown link integrity.
+description: Validate spec-pack markdown quality for <feature_dir> by checking required headings, unresolved TODO markers, acceptance criteria presence, numbered plan phases with Definition of Done, and markdown link integrity.
 examples:
   - "$spec_validate docs/features/docs_import"
+  - "$spec_validate docs/epics/course-authoring/docs_import"
   - "Validate this spec pack before implementation ($spec_validate)"
-  - "Run heading/AC/link checks on docs/features/genai-routing"
+  - "Run heading/AC/link checks on docs/epics/ai/genai-routing"
 when_to_use:
   - "Before handing specs to implementation."
   - "After editing PRD/FDD/plan/design docs."
@@ -22,9 +23,10 @@ Always load before running checks:
 - Optional example: `assets/examples/validation_report_example_docs_import.md`
 
 ## Workflow
-1. Resolve feature directory (`docs/features/<feature_slug>`).
+1. Resolve feature directory (`docs/features/<feature_slug>` or `docs/epics/<epic_slug>/<feature_slug>`).
+   - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
 2. Run validator:
-   - `python3 .agents/skills/spec_validate/scripts/validate_spec_pack.py docs/features/<feature_slug> --check all`
+   - `python3 .agents/skills/spec_validate/scripts/validate_spec_pack.py <feature_dir> --check all`
 3. If needed, run targeted checks (`--check prd|fdd|plan|design`).
 4. If network is available and external links matter, re-run with `--check-external-links`.
 5. Report findings using `assets/templates/validation_report_template.md` structure.

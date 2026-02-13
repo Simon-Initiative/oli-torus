@@ -1,12 +1,12 @@
 # Spec Validation Report
 
-Feature: `docs/features/docs_import`
+Feature: `docs/epics/content-ingestion/docs_import`
 Date: `2026-02-06`
 Validator: `.agents/skills/spec_validate/scripts/validate_spec_pack.py`
 
 ## Command
 ```bash
-python3 .agents/skills/spec_validate/scripts/validate_spec_pack.py docs/features/docs_import --check all
+python3 .agents/skills/spec_validate/scripts/validate_spec_pack.py docs/epics/content-ingestion/docs_import --check all
 ```
 
 ## Result

@@ -1,8 +1,8 @@
 # Google Docs Import Media Ingestion Slice — Detailed Design
 
 Source Specs:
-- PRD: `docs/features/docs_import/prd.md`
-- FDD: `docs/features/docs_import/fdd.md`
+- PRD: `docs/epics/content-ingestion/docs_import/prd.md`
+- FDD: `docs/epics/content-ingestion/docs_import/fdd.md`
 
 ## 1. Slice Summary
 - Objective: Convert embedded base64 images in imported markdown into Torus media assets and replace references in the resulting page model.
@@ -49,4 +49,4 @@ Source Specs:
 - [x] AC mapping is explicit
 - [x] Signature and failure behavior are concrete
 - [x] Test plan includes edge paths
-- [x] Source content aligns with docs/features/docs_import spec pack
+- [x] Source content aligns with docs/epics/content-ingestion/docs_import spec pack

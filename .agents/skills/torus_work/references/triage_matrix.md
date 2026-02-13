@@ -10,14 +10,14 @@ Strong signals:
 - Repro steps with expected vs actual behavior.
 - Existing behavior unexpectedly changed.
 
-## Enhancement lane (`$spec_enhancement`)
+## Enhancement lane (`$spec_work`)
 
 Strong signals:
 
 - Ticket-sized behavior tweak or refactor.
 - Existing feature area; bounded scope.
 - Words like "enhancement", "improve", "update".
-- Needs AC/risk/test/rollout structure but not full PRD+FDD+plan ceremony.
+- Needs lightweight planning/review but not full PRD+FDD+plan ceremony.
 
 ## New feature lane (`$spec_analyze`)
 

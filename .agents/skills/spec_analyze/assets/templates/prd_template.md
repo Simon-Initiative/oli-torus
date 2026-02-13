@@ -3,12 +3,17 @@
 ## 1. Overview
 Feature Name: <name>
 
-Summary: <2-4 sentence summary>
+Summary: <2-3 sentence summary describing user value and primary capability>
 
 Links: <related docs/issues or `None`>
 
 ## 2. Background & Problem Statement
-<problem, impact, urgency>
+- Current behavior / limitations:
+  - <details>
+- Affected users/roles:
+  - <authors/instructors/students/admins>
+- Why now:
+  - <trigger/dependency/business value>
 
 ## 3. Goals & Non-Goals
 - Goals:
@@ -18,9 +23,9 @@ Links: <related docs/issues or `None`>
 
 ## 4. Users & Use Cases
 - Primary Users / Roles:
-  - <role>
+  - <role and Torus/LTI context>
 - Use Cases:
-  - <scenario>
+  - <scenario narrative(s)>
 
 ## 5. UX / UI Requirements
 - Key Screens/States:
@@ -43,10 +48,11 @@ Links: <related docs/issues or `None`>
 - AC-001 (FR-001) — Given <context>, when <action>, then <observable result>.
 
 ## 8. Non-Functional Requirements
-- Reliability: <target>
-- Security & Privacy: <requirements>
-- Compliance: <requirements>
-- Performance: <budgets>
+- Performance & Scale: <latency p50/p95, throughput/concurrency, LiveView responsiveness>
+- Reliability: <error budgets, timeout/retry expectations, graceful degradation>
+- Security & Privacy: <authn/authz, PII handling, abuse controls>
+- Compliance: <accessibility, retention, audit logging requirements>
+- Observability: <telemetry events, metrics, logs, traces, AppSignal dashboard/alert impact>
 
 ## 9. Data Model & APIs
 - Ecto Schemas & Migrations:
@@ -63,14 +69,13 @@ Links: <related docs/issues or `None`>
 
 ## 10. Integrations & Platform Considerations
 - LTI 1.3: <impact>
-- External services: <impact>
+- GenAI (if applicable): <routing/fallback/rate limit/cost/redaction implications>
+- External services: <impact and contract notes>
 - Caching/Perf: <impact>
 - Multi-tenancy: <impact>
 
 ## 11. Feature Flagging, Rollout & Migration
-- Feature flags: <strategy>
-- Rollout: <stages>
-- Rollback: <strategy>
+- <If informal description explicitly requires feature flags or flag-driven rollout, document strategy/rollout/rollback here. Otherwise include exactly: No feature flags present in this feature>
 
 ## 12. Analytics & Success Metrics
 - KPIs:
@@ -92,12 +97,14 @@ Links: <related docs/issues or `None`>
 
 ## 16. QA Plan
 - Automated:
-  - <tests>
+  - <unit/property/liveview/integration/migration tests as applicable>
 - Manual:
-  - <checks>
+  - <exploratory/regression/accessibility checks>
+- Performance Verification:
+  - <how NFR performance targets will be verified>
 
 ## 17. Definition of Done
 - [ ] All FRs mapped to ACs
 - [ ] Validation checks pass
 - [ ] Open questions triaged
-- [ ] Rollout/rollback documented
+- [ ] Rollout/rollback posture documented (or explicitly not required)

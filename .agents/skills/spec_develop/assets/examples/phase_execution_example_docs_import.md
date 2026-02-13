@@ -1,6 +1,6 @@
 # Phase 6 Execution Record (Example)
 
-Feature: `docs/features/docs_import`
+Feature: `docs/epics/content-ingestion/docs_import`
 Phase: `6 - Import Orchestrator & Persistence Transaction`
 
 ## Scope from plan.md

@@ -2,21 +2,23 @@
 
 Accept any of:
 
-- Explicit feature slug(s), e.g. `docs_import`.
+- Explicit feature directory path(s), e.g. `docs/features/docs_import` or `docs/epics/course-authoring/docs_import`.
 - Changed file list.
 - Branch/diff context.
 
-Resolve slugs with this order:
+Resolve feature directories with this order:
 
-1. Use explicit slug input when provided.
-2. Extract from changed paths matching `docs/features/<slug>/...`.
-3. If still unknown, infer from nearest touched feature docs or ask user for the slug.
+1. Use explicit feature directory input when provided.
+2. Extract from changed paths matching either:
+   - `docs/features/<feature_slug>/...`
+   - `docs/epics/<epic_slug>/<feature_slug>/...`
+3. If still unknown, infer from nearest touched feature docs or ask the user for the feature directory path.
 
 Useful commands:
 
 ```bash
 git diff --name-only <base>...HEAD
-git diff --name-only -- docs/features
+git diff --name-only -- docs/features docs/epics
 ```
 
-If multiple slugs are affected, process all of them.
+If multiple feature directories are affected, process all of them.

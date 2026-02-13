@@ -3,7 +3,7 @@
 Primary command:
 
 ```bash
-.agents/scripts/spec_validate.sh --slug <feature_slug> --check prd
+.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check prd
 ```
 
 This is a hard gate. If validation fails, fix the PRD and re-run before proceeding.

@@ -70,7 +70,7 @@
 <authz, tenancy, data handling>
 
 ## 13. Testing Strategy
-<unit/integration/liveview/manual>
+<unit/integration/liveview/manual/>
 
 ## 14. Backwards Compatibility
 <compatibility strategy or `N/A`>
