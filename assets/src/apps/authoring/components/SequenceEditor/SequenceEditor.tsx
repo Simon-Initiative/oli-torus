@@ -397,6 +397,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
     const newGroup = { ...currentGroup, children: newSequence };
     dispatch(upsertGroup({ group: newGroup }));
     await dispatch(upsertActivity({ activity: activityClone }));
+    await dispatch(saveActivity({ activity: activityClone, undoable: false, immediate: true }));
     await dispatch(savePage({ undoable: false }));
     setItemToRename(undefined);
   };
