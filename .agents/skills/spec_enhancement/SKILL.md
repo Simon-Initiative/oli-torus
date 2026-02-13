@@ -34,6 +34,7 @@ Always load before running:
 4. Create/update enhancement doc from template:
    - Feature-pack mode: `<feature_dir>/enhancements/<jira-key>.md`
      - Supported roots: `docs/features/<feature_slug>` and `docs/epics/<epic_slug>/<feature_slug>`.
+     - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
    - Mini-pack mode: `docs/work/<jira-key>/enhancement.md`
 5. Fill required sections with concise, testable content from `references/enhancement_checklist.md`.
 6. Run enhancement-doc validation hard gate from `references/validation.md`.

@@ -31,6 +31,7 @@ Always load these files before drafting:
 ## Workflow
 1. Resolve `feature_dir` and open/create `<feature_dir>/prd.md`.
    - Supported roots: `docs/features/<feature_slug>` and `docs/epics/<epic_slug>/<feature_slug>`.
+   - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
 2. Ensure an informal feature description exists. If missing, ask the user to paste or type it before drafting.
 3. Restate the feature in product terms: user value, scope, role impacts, constraints, and measurable success signals.
 4. Copy the exact section blocks from `assets/templates/prd_template.md`.

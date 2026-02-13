@@ -27,6 +27,7 @@ Always load before editing:
 
 ## Workflow
 1. Resolve scope from provided feature directory path(s), changed files, or branch diff using `references/input_resolution.md`.
+   - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
 2. Identify affected feature packs and collect evidence of drift from changed code, migrations, APIs, tests, and behavior changes.
 3. Update affected docs:
    - `prd.md` for acceptance/scope changes.

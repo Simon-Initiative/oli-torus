@@ -33,6 +33,7 @@ Always load before coding:
 ## Workflow
 1. Read `prd.md`, `fdd.md`, `plan.md`, and relevant `design/*.md` for the target phase.
    - If any of `prd.md`, `fdd.md`, or `plan.md` is missing, stop and report that required spec-pack inputs are missing.
+   - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
 2. Determine scope from inputs:
    - `$1`: required feature directory (`docs/features/<feature_slug>` or `docs/epics/<epic_slug>/<feature_slug>`).
    - `$2`: optional phase selector; when present, implement only that phase.

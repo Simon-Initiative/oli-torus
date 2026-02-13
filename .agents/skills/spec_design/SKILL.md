@@ -26,6 +26,7 @@ Always load before writing:
 ## Workflow
 1. Resolve `feature_dir` and read PRD/FDD (and plan if relevant) for the target feature.
    - Supported roots: `docs/features/<feature_slug>` and `docs/epics/<epic_slug>/<feature_slug>`.
+   - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
 2. Copy section blocks from `assets/templates/design_slice_template.md`.
 3. Fill the doc for exactly one slice with AC mapping, signatures, data flow, and tests.
 4. Apply `references/design_checklist.md` and `references/definition_of_done.md`.

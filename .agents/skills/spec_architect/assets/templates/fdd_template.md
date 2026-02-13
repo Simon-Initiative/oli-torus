@@ -57,7 +57,7 @@
 ### 9.1 Budgets
 <latency, throughput, memory budgets>
 
-### 9.2 Hotspots & Mitigations
+### 9.3 Hotspots & Mitigations
 <risk items>
 
 ## 10. Failure Modes & Resilience
@@ -70,7 +70,7 @@
 <authz, tenancy, data handling>
 
 ## 13. Testing Strategy
-<unit/integration/liveview/manual>
+<unit/integration/liveview/manual/>
 
 ## 14. Backwards Compatibility
 <compatibility strategy or `N/A`>

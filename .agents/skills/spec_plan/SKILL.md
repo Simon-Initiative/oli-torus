@@ -31,6 +31,7 @@ Always load before drafting:
 ## Workflow
 1. Resolve `feature_dir` and locate `<feature_dir>/prd.md` and `<feature_dir>/fdd.md`.
    - Supported roots: `docs/features/<feature_slug>` and `docs/epics/<epic_slug>/<feature_slug>`.
+   - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
 2. If either file is missing, stop and tell the user exactly: `I cannot find both the prd.md and fdd.md files`.
 3. Ingest PRD/FDD and extract scope, constraints, non-functional requirements, and coupling points (data model, caches, tenancy, LiveView boundaries).
 4. Record unknowns as Clarifications with explicit default assumptions.

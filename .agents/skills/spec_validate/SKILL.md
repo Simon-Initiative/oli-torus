@@ -24,6 +24,7 @@ Always load before running checks:
 
 ## Workflow
 1. Resolve feature directory (`docs/features/<feature_slug>` or `docs/epics/<epic_slug>/<feature_slug>`).
+   - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
 2. Run validator:
    - `python3 .agents/skills/spec_validate/scripts/validate_spec_pack.py <feature_dir> --check all`
 3. If needed, run targeted checks (`--check prd|fdd|plan|design`).

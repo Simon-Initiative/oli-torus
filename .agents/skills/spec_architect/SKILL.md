@@ -31,6 +31,7 @@ Always load before writing:
 ## Workflow
 1. Resolve `feature_dir` and read `<feature_dir>/prd.md`.
    - Supported roots: `docs/features/<feature_slug>` and `docs/epics/<epic_slug>/<feature_slug>`.
+   - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
 2. Restate the request in architecture terms: scope, non-goals, constraints, FR/AC success criteria, and NFR targets.
 3. Ingest local Torus design docs from `guides/design/**/*.md` and summarize "What we know / Unknowns to confirm".
 4. Do lightweight codebase waypointing for relevant contexts, schemas, LiveViews, jobs, caches, supervisors, and telemetry hooks.
