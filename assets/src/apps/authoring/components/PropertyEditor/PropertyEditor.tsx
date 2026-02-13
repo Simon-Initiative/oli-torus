@@ -302,7 +302,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
                 lastFocusedInputId = id;
               } else if (id && (id as any).target?.id) {
                 const extractedId = (id as any).target.id;
-                if (extractedId && typeof extractedId === 'string' && extractedId.startsWith('root_')) {
+                if (
+                  extractedId &&
+                  typeof extractedId === 'string' &&
+                  extractedId.startsWith('root_')
+                ) {
                   targetId = extractedId;
                   lastFocusedInputId = extractedId;
                 }
