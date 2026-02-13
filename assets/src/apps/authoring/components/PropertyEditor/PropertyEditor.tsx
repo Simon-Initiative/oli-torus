@@ -58,11 +58,15 @@ const widgets: any = {
  * lastFocusedInputId: The ID of the input that last had focus (e.g., "root_custom_title").
  *                     Used to restore focus after form re-renders caused by Redux updates.
  *
+ * lastFocusedInputCursorPosition: The cursor position (start/end) of the last focused input.
+ *                                  Used to restore cursor position when focus is restored.
+ *
  * pointerDownOutside: Short-lived flag indicating if the last pointer down event occurred
  *                     outside the form. Used to distinguish between user-initiated outside
  *                     clicks and temporary blurs caused by re-renders.
  */
 let lastFocusedInputId: string | null = null;
+let lastFocusedInputCursorPosition: { start: number; end: number } | null = null;
 let pointerDownOutside = false;
 
 const PropertyEditor: React.FC<PropertyEditorProps> = ({
@@ -114,11 +118,25 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
           return;
         }
 
+        // Skip restoration if the element is already focused (user is actively editing)
+        if (document.activeElement === el) {
+          return;
+        }
+
         try {
           el.focus();
-          // Position cursor at end for better UX
-          const len = el.value?.length ?? 0;
-          el.setSelectionRange(len, len);
+
+          // Restore cursor position if we have it stored, otherwise position at end
+          if (lastFocusedInputCursorPosition) {
+            const len = el.value?.length ?? 0;
+            const start = Math.min(lastFocusedInputCursorPosition.start, len);
+            const end = Math.min(lastFocusedInputCursorPosition.end, len);
+            el.setSelectionRange(start, end);
+          } else {
+            // Fallback: position cursor at end
+            const len = el.value?.length ?? 0;
+            el.setSelectionRange(len, len);
+          }
         } catch (err) {
           // Ignore selection errors for input types that don't support setSelectionRange
         }
@@ -171,12 +189,65 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
       pointerDownOutside = !!(isOutside && lastFocusedInputId);
     };
 
+    /**
+     * Track focus events from any input/textarea within the form, including custom widgets.
+     * This ensures we capture focus from nested inputs that might not trigger RJSF's onFocus.
+     */
+    const onFocusCapture = (ev: FocusEvent) => {
+      const target = ev.target as HTMLElement | null;
+      if (!target) return;
+
+      const formRoot = formContainerRef.current?.querySelector('.rjsf');
+      if (!formRoot || !formRoot.contains(target)) return;
+
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+        const targetId = target.id;
+        // Track any input with an ID (including custom widget inputs)
+        if (targetId) {
+          lastFocusedInputId = targetId;
+          lastFocusedInputCursorPosition = {
+            start: target.selectionStart ?? 0,
+            end: target.selectionEnd ?? 0,
+          };
+        }
+      }
+    };
+
+    /**
+     * Capture blur events to save cursor position before focus is lost.
+     */
+    const onBlurCapture = (ev: FocusEvent) => {
+      const target = ev.target as HTMLElement | null;
+      if (!target) return;
+
+      const formRoot = formContainerRef.current?.querySelector('.rjsf');
+      if (!formRoot || !formRoot.contains(target)) return;
+
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+        const targetId = target.id;
+        if (targetId && targetId === lastFocusedInputId) {
+          lastFocusedInputCursorPosition = {
+            start: target.selectionStart ?? 0,
+            end: target.selectionEnd ?? 0,
+          };
+        }
+      }
+    };
+
     // Use capture phase to catch events before they bubble to other handlers
     // pointerdown unifies mouse, touch, and pen interactions
     document.addEventListener('pointerdown', onPointerDown, true);
 
+    // Store the container element for cleanup
+    const containerElement = formContainerRef.current;
+    // Use capture phase for focus/blur to catch events from custom widgets
+    containerElement?.addEventListener('focusin', onFocusCapture, true);
+    containerElement?.addEventListener('focusout', onBlurCapture, true);
+
     return () => {
       document.removeEventListener('pointerdown', onPointerDown, true);
+      containerElement?.removeEventListener('focusin', onFocusCapture, true);
+      containerElement?.removeEventListener('focusout', onBlurCapture, true);
     };
   }, [isExpertMode]);
 
@@ -219,17 +290,36 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
         }}
         onFocus={(id) => {
           /**
-           * Track the focused input ID for restoration after re-renders.
+           * Track the focused input ID and cursor position for restoration after re-renders.
            * RJSF may pass either a string ID or an event object depending on version.
            */
           if (isExpertMode) {
             try {
+              let targetId: string | null = null;
+
               if (typeof id === 'string' && id.startsWith('root_')) {
+                targetId = id;
                 lastFocusedInputId = id;
               } else if (id && (id as any).target?.id) {
-                const targetId = (id as any).target.id;
-                if (targetId.startsWith('root_')) {
-                  lastFocusedInputId = targetId;
+                const extractedId = (id as any).target.id;
+                if (
+                  extractedId &&
+                  typeof extractedId === 'string' &&
+                  extractedId.startsWith('root_')
+                ) {
+                  targetId = extractedId;
+                  lastFocusedInputId = extractedId;
+                }
+              }
+
+              // Capture cursor position from the active element
+              if (targetId) {
+                const el = document.getElementById(targetId);
+                if (el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+                  lastFocusedInputCursorPosition = {
+                    start: el.selectionStart ?? 0,
+                    end: el.selectionEnd ?? 0,
+                  };
                 }
               }
             } catch (e) {
@@ -255,6 +345,17 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
           if (isExpertMode) {
             const wasPointerDownOutside = pointerDownOutside;
 
+            // Capture cursor position before blur if we have a tracked input
+            if (lastFocusedInputId) {
+              const el = document.getElementById(lastFocusedInputId);
+              if (el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) {
+                lastFocusedInputCursorPosition = {
+                  start: el.selectionStart ?? 0,
+                  end: el.selectionEnd ?? 0,
+                };
+              }
+            }
+
             // Check if focus is moving to another input in the form
             const activeElement = document.activeElement;
             const formRoot = formContainerRef.current?.querySelector('.rjsf');
@@ -267,6 +368,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
             // Only clear if user clicked outside AND focus is not moving to another form input
             if (wasPointerDownOutside && !focusMovingToFormInput) {
               lastFocusedInputId = null;
+              lastFocusedInputCursorPosition = null;
             }
 
             // Reset flag for next interaction

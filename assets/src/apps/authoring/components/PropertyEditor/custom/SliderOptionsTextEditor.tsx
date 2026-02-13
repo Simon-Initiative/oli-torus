@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
 import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
@@ -44,6 +44,8 @@ export const SliderOptionsTextEditor: React.FC<Props> = ({ id, value, onChange, 
         {value.map((option, index) => (
           <OptionsEditor
             key={index}
+            id={id}
+            index={index}
             sliderText={option}
             onChange={editEntry(index)}
             onDelete={deleteEntry(index)}
@@ -74,17 +76,29 @@ export const SliderOptionsTextEditor: React.FC<Props> = ({ id, value, onChange, 
 };
 
 const OptionsEditor: React.FC<{
+  id: string;
+  index: number;
   sliderText: string;
   onChange: (v: string) => void;
   onDelete: () => void;
   options: string[];
-}> = ({ sliderText, onChange, onDelete, options }) => {
+}> = ({ id, index, sliderText, onChange, onDelete, options }) => {
   const dispatch = useDispatch();
   const [currentOptionLabel, setCurrentOptionLabel] = useState(sliderText);
+
+  // Sync local state when prop changes (e.g., after Redux update)
+  useEffect(() => {
+    setCurrentOptionLabel(sliderText);
+  }, [sliderText]);
+
+  // Generate proper ID that matches RJSF pattern for focus tracking
+  const inputId = `${id}_option_${index}`;
+
   return (
     <div className="flex mb-2">
       <div className="flex-1">
         <input
+          id={inputId}
           type="text"
           className="form-control"
           value={currentOptionLabel}
