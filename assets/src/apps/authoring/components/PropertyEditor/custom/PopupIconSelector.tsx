@@ -51,7 +51,12 @@ Object.entries(iconOptions).forEach(([categoryKey, category]) => {
     urlToLabelMap[''] = 'None';
   } else if ('colors' in category) {
     Object.entries(category.colors).forEach(([colorKey, colorOption]) => {
-      if (colorOption && typeof colorOption === 'object' && 'url' in colorOption && 'label' in colorOption) {
+      if (
+        colorOption &&
+        typeof colorOption === 'object' &&
+        'url' in colorOption &&
+        'label' in colorOption
+      ) {
         urlToLabelMap[colorOption.url] = `${category.label} - ${colorOption.label}`;
       }
     });
@@ -96,90 +101,93 @@ export const PopupIconSelector: React.FC<PopupIconSelectorProps> = ({
       <div className="d-flex flex-column">
         {label && <span className="form-label">{label}</span>}
         <Dropdown>
-        <Dropdown.Toggle
-          variant="link"
-          id={id}
-          className="form-control dropdown-toggle d-flex justify-content-between align-items-center popup-icon-selector-toggle"
-          style={{
-            textAlign: 'left',
-            height:  '37px'
-          }}
-        >
-          <span>{displayLabel}</span>
-          <i className="fas fa-caret-down my-auto ml-auto" style={{ float: 'right', paddingRight: '10px' }} />
-        </Dropdown.Toggle>
-
-        <Dropdown.Menu
-          className="popup-icon-selector-menu"
-          style={{ maxHeight: '300px', overflowY: 'auto', width: '225px' }}
-        >
-          {/* None option */}
-          <Dropdown.Item
-            onClick={() => handleSelect('')}
-            active={!value || value === ''}
-            style={{ fontWeight: !value || value === '' ? 'bold' : 'normal' }}
+          <Dropdown.Toggle
+            variant="link"
+            id={id}
+            className="form-control dropdown-toggle d-flex justify-content-between align-items-center popup-icon-selector-toggle"
+            style={{
+              textAlign: 'left',
+              height: '37px',
+            }}
           >
-            None
-          </Dropdown.Item>
+            <span>{displayLabel}</span>
+            <i
+              className="fas fa-caret-down my-auto ml-auto"
+              style={{ float: 'right', paddingRight: '10px' }}
+            />
+          </Dropdown.Toggle>
 
-          <Dropdown.Divider />
-
-          {/* Question mark group */}
-          <Dropdown.Header style={{ fontWeight: 'bold', paddingLeft: '12px' }}>
-            {iconOptions.question_mark.icon} {iconOptions.question_mark.label}
-          </Dropdown.Header>
-          {Object.entries(iconOptions.question_mark.colors).map(([colorKey, colorOption]) => (
+          <Dropdown.Menu
+            className="popup-icon-selector-menu"
+            style={{ maxHeight: '300px', overflowY: 'auto', width: '225px' }}
+          >
+            {/* None option */}
             <Dropdown.Item
-              key={colorOption.url}
-              onClick={() => handleSelect(colorOption.url)}
-              active={value === colorOption.url}
-              style={{
-                paddingLeft: '24px',
-                fontWeight: value === colorOption.url ? 'bold' : 'normal',
-              }}
+              onClick={() => handleSelect('')}
+              active={!value || value === ''}
+              style={{ fontWeight: !value || value === '' ? 'bold' : 'normal' }}
             >
-              {colorOption.label}
+              None
             </Dropdown.Item>
-          ))}
 
-          {/* Information group */}
-          <Dropdown.Header style={{ fontWeight: 'bold', paddingLeft: '12px' }}>
-            {iconOptions.information.icon} {iconOptions.information.label}
-          </Dropdown.Header>
-          {Object.entries(iconOptions.information.colors).map(([colorKey, colorOption]) => (
-            <Dropdown.Item
-              key={colorOption.url}
-              onClick={() => handleSelect(colorOption.url)}
-              active={value === colorOption.url}
-              style={{
-                paddingLeft: '24px',
-                fontWeight: value === colorOption.url ? 'bold' : 'normal',
-              }}
-            >
-              {colorOption.label}
-            </Dropdown.Item>
-          ))}
+            <Dropdown.Divider />
 
-          {/* Exclamation group */}
-          <Dropdown.Header style={{ fontWeight: 'bold', paddingLeft: '12px' }}>
-            {iconOptions.exclamation.icon} {iconOptions.exclamation.label}
-          </Dropdown.Header>
-          {Object.entries(iconOptions.exclamation.colors).map(([colorKey, colorOption]) => (
-            <Dropdown.Item
-              key={colorOption.url}
-              onClick={() => handleSelect(colorOption.url)}
-              active={value === colorOption.url}
-              style={{
-                paddingLeft: '24px',
-                fontWeight: value === colorOption.url ? 'bold' : 'normal',
-              }}
-            >
-              {colorOption.label}
-            </Dropdown.Item>
-          ))}
-        </Dropdown.Menu>
-      </Dropdown>
-    </div>
+            {/* Question mark group */}
+            <Dropdown.Header style={{ fontWeight: 'bold', paddingLeft: '12px' }}>
+              {iconOptions.question_mark.icon} {iconOptions.question_mark.label}
+            </Dropdown.Header>
+            {Object.entries(iconOptions.question_mark.colors).map(([colorKey, colorOption]) => (
+              <Dropdown.Item
+                key={colorOption.url}
+                onClick={() => handleSelect(colorOption.url)}
+                active={value === colorOption.url}
+                style={{
+                  paddingLeft: '24px',
+                  fontWeight: value === colorOption.url ? 'bold' : 'normal',
+                }}
+              >
+                {colorOption.label}
+              </Dropdown.Item>
+            ))}
+
+            {/* Information group */}
+            <Dropdown.Header style={{ fontWeight: 'bold', paddingLeft: '12px' }}>
+              {iconOptions.information.icon} {iconOptions.information.label}
+            </Dropdown.Header>
+            {Object.entries(iconOptions.information.colors).map(([colorKey, colorOption]) => (
+              <Dropdown.Item
+                key={colorOption.url}
+                onClick={() => handleSelect(colorOption.url)}
+                active={value === colorOption.url}
+                style={{
+                  paddingLeft: '24px',
+                  fontWeight: value === colorOption.url ? 'bold' : 'normal',
+                }}
+              >
+                {colorOption.label}
+              </Dropdown.Item>
+            ))}
+
+            {/* Exclamation group */}
+            <Dropdown.Header style={{ fontWeight: 'bold', paddingLeft: '12px' }}>
+              {iconOptions.exclamation.icon} {iconOptions.exclamation.label}
+            </Dropdown.Header>
+            {Object.entries(iconOptions.exclamation.colors).map(([colorKey, colorOption]) => (
+              <Dropdown.Item
+                key={colorOption.url}
+                onClick={() => handleSelect(colorOption.url)}
+                active={value === colorOption.url}
+                style={{
+                  paddingLeft: '24px',
+                  fontWeight: value === colorOption.url ? 'bold' : 'normal',
+                }}
+              >
+                {colorOption.label}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+      </div>
     </Fragment>
   );
 };

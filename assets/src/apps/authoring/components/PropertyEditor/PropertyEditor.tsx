@@ -13,6 +13,7 @@ import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedback
 import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
 import { OptionsCorrectPicker } from './custom/OptionsCorrectPicker';
 import { OptionsCustomErrorFeedbackAuthoring } from './custom/OptionsCustomErrorFeedbackAuthoring';
+import { PopupIconSelector } from './custom/PopupIconSelector';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
 import { SliderOptionsTextEditor } from './custom/SliderOptionsTextEditor';
 import { SpokeCompletedOption } from './custom/SpokeCompletedOption';
@@ -21,7 +22,6 @@ import { SpokeOptionsEditor } from './custom/SpokeOptionsEditor';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
-import { PopupIconSelector } from './custom/PopupIconSelector';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
