@@ -28,7 +28,7 @@ defmodule OliWeb.Delivery.Student.PracticeLive do
       <%= for {container_name, practices} <- @practices_by_container do %>
         <h2
           :if={container_name != :default}
-          class="text-sm font-bold my-6 uppercase text-Text-text-low dark:text-Text-text-high"
+          class="text-sm font-bold my-6 uppercase text-Text-text-high"
         >
           {container_name}
         </h2>
