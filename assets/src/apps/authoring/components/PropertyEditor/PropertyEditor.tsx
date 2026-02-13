@@ -13,6 +13,7 @@ import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedback
 import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
 import { OptionsCorrectPicker } from './custom/OptionsCorrectPicker';
 import { OptionsCustomErrorFeedbackAuthoring } from './custom/OptionsCustomErrorFeedbackAuthoring';
+import { PopupIconSelector } from './custom/PopupIconSelector';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
 import { SliderOptionsTextEditor } from './custom/SliderOptionsTextEditor';
 import { SpokeCompletedOption } from './custom/SpokeCompletedOption';
@@ -50,6 +51,7 @@ const widgets: any = {
   DropdownOptionsEditor: DropdownOptionsEditor,
   MCQCustomErrorFeedbackAuthoring: MCQCustomErrorFeedbackAuthoring,
   SliderOptionsTextEditor: SliderOptionsTextEditor,
+  PopupIconSelector: PopupIconSelector,
 };
 
 /**
