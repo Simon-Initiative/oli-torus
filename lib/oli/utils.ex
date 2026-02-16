@@ -551,10 +551,7 @@ defmodule Oli.Utils do
     |> update_change(:given_name, &maybe_trim/1)
     |> update_change(:family_name, &maybe_trim/1)
     |> validate_length(:given_name, min: 1, message: "Please enter a First Name.")
-    |> validate_length(:family_name,
-      min: 2,
-      message: "Please enter a Last Name that is at least two characters long."
-    )
+    |> validate_length(:family_name, min: 1, message: "Please enter a Last Name.")
   end
 
   defp maybe_trim(nil), do: ""

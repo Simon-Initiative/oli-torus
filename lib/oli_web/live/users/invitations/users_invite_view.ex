@@ -313,7 +313,10 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   def handle_event("log_in_existing_user", params, socket) do
     %{user: user, enrollment: enrollment} = socket.assigns
 
-    case Accounts.get_user_by_email_and_password(user.email, params["user"]["password"]) do
+    case Accounts.get_independent_user_by_email_and_password(
+           user.email,
+           params["user"]["password"]
+         ) do
       nil ->
         {:noreply, put_flash(socket, :error, "Invalid email or password")}
 

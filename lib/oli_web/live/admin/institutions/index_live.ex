@@ -17,12 +17,15 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
 
   def mount(_params, _session, socket) do
     institutions = Institutions.list_institutions()
+    new_institution_label = gettext("New institution")
 
     socket =
       assign(
         socket,
         institutions: institutions,
-        institutions_list: [{"New institution", nil} | Enum.map(institutions, &{&1.name, &1.id})],
+        institutions_list: [
+          {new_institution_label, nil} | Enum.map(institutions, &{&1.name, &1.id})
+        ],
         pending_registrations: Institutions.list_pending_registrations(),
         breadcrumbs: root_breadcrumbs(),
         country_codes: Predefined.country_codes(),
@@ -497,26 +500,31 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         deployment_id -> deployment_id
       end
 
-    socket =
-      case Institutions.get_pending_registration(issuer, client_id, deployment_id) do
-        nil ->
-          socket
-          |> put_flash(
-            :error,
-            "Pending registration with issuer '#{issuer}', client_id '#{client_id}' and deployment_id '#{deployment_id}' does not exist"
-          )
+    case Institutions.get_pending_registration(issuer, client_id, deployment_id) do
+      nil ->
+        {:noreply,
+         socket
+         |> put_flash(
+           :error,
+           "Pending registration with issuer '#{issuer}', client_id '#{client_id}' and deployment_id '#{deployment_id}' does not exist"
+         )
+         |> push_event("js-exec", %{
+           to: "#review-registration-modal-trigger",
+           attr: "data-hide_modal"
+         })}
 
-        pending_registration ->
-          with {:ok, pending_registration} <-
-                 Institutions.update_pending_registration(
-                   pending_registration,
-                   registration
-                 ),
-               {:ok, {institution, registration, _deployment}} <-
-                 approve_pending_registration(
-                   registration["institution_id"],
-                   pending_registration
-                 ) do
+      pending_registration ->
+        with {:ok, pending_registration} <-
+               Institutions.update_pending_registration(
+                 pending_registration,
+                 registration
+               ),
+             {:ok, {institution, registration, _deployment}} <-
+               approve_pending_registration(
+                 registration["institution_id"],
+                 pending_registration
+               ) do
+          Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
             registration_approved_email =
               Oli.Email.create_email(
                 institution.institution_email,
@@ -544,38 +552,49 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                 }
               ]
             })
+          end)
 
-            socket
-            |> assign(
-              pending_registrations:
-                Enum.filter(
-                  socket.assigns.pending_registrations,
-                  &(&1.id != pending_registration.id)
-                ),
-              institutions: Institutions.list_institutions()
-            )
-            |> put_flash(:info, [
-              "Registration for ",
-              content_tag(:b, pending_registration.name),
-              " approved"
-            ])
-          else
-            error ->
-              Logger.error("Failed to approve registration request", error)
+          institutions = Institutions.list_institutions()
+          new_institution_label = gettext("New institution")
 
-              socket
-              |> put_flash(
-                :error,
-                "Failed to approve registration. Please double check your entries and try again."
-              )
-          end
-      end
+          {:noreply,
+           socket
+           |> assign(
+             pending_registrations:
+               Enum.filter(
+                 socket.assigns.pending_registrations,
+                 &(&1.id != pending_registration.id)
+               ),
+             institutions: institutions,
+             institutions_list: [
+               {new_institution_label, nil} | Enum.map(institutions, &{&1.name, &1.id})
+             ]
+           )
+           |> put_flash(:info, [
+             "Registration for ",
+             content_tag(:b, pending_registration.name),
+             " approved"
+           ])
+           |> push_event("js-exec", %{
+             to: "#review-registration-modal-trigger",
+             attr: "data-hide_modal"
+           })}
+        else
+          error ->
+            Logger.error("Failed to approve registration request", error: error)
 
-    {:noreply,
-     push_event(socket, "js-exec", %{
-       to: "#review-registration-modal-trigger",
-       attr: "data-hide_modal"
-     })}
+            {:noreply,
+             socket
+             |> put_flash(
+               :error,
+               "Failed to approve registration. Please double check your entries and try again."
+             )
+             |> push_event("js-exec", %{
+               to: "#review-registration-modal-trigger",
+               attr: "data-hide_modal"
+             })}
+        end
+    end
   end
 
   def handle_event("decline_registration", %{"registration_id" => registration_id}, socket) do
@@ -629,8 +648,11 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
   defp approve_pending_registration("", pending_registration),
     do: Institutions.approve_pending_registration_as_new_institution(pending_registration)
 
-  defp approve_pending_registration(_, pending_registration),
+  defp approve_pending_registration(nil, pending_registration),
     do: Institutions.approve_pending_registration(pending_registration)
+
+  defp approve_pending_registration(institution_id, pending_registration),
+    do: Institutions.approve_pending_registration(pending_registration, institution_id)
 
   defp root_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb() ++
