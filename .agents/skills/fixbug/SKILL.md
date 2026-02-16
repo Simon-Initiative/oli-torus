@@ -3,9 +3,9 @@ name: fixbug
 description: >
   Execute a ticket-driven, TDD-first bug-fix workflow for Torus by reproducing the issue from a JIRA ticket, writing a failing ExUnit regression test, implementing the minimal safe fix, verifying tests pass, and ending with a PR-ready summary.
 examples:
-  - "$fixbug JIRA-1234"
-  - "Fix JIRA-981 using TDD ($fixbug)"
-  - "Investigate and patch this ticket: https://jira.example.com/browse/JIRA-77"
+  - "$fixbug MER-1234"
+  - "Fix MER-2981 using TDD ($fixbug)"
+  - "Investigate and patch this ticket: https://eliterate.atlassian.net/browse/MER-5178"
 when_to_use:
   - "A JIRA ticket is provided with bug details."
   - "User explicitly invokes $fixbug."
