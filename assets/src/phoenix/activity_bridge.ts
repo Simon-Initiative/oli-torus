@@ -22,10 +22,46 @@ function makeRequest(
   };
   window
     .fetch(url, params)
-    .then((response) => response.json())
+    .then(parseResponse)
     .then((result) => transform(result))
     .then((result) => continuation(result))
     .catch((error) => continuation(undefined, error));
+}
+
+async function parseResponse(response: Response) {
+  const text = await response.text();
+  const parsed = parseJsonOrNull(text);
+
+  if (!response.ok) {
+    const message =
+      (parsed && typeof parsed === 'object' && 'message' in parsed && (parsed as any).message) ||
+      text ||
+      response.statusText;
+
+    throw {
+      status: response.status,
+      statusText: response.statusText,
+      message,
+    };
+  }
+
+  if (parsed === null) {
+    throw {
+      status: response.status,
+      statusText: response.statusText,
+      message: 'Invalid JSON response from server',
+    };
+  }
+
+  return parsed;
+}
+
+function parseJsonOrNull(text: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 const nothingTransform = (result: any) => Promise.resolve(result);
 const submissionTransform = (key: string, result: any) => {

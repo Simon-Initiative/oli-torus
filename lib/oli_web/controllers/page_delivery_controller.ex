@@ -549,16 +549,23 @@ defmodule OliWeb.PageDeliveryController do
 
     base_project_attributes = Sections.get_section_attributes(section)
 
-    submitted_surveys =
+    {submitted_surveys, resettable_surveys} =
       PageContent.survey_activities(hd(context.resource_attempts).content)
-      |> Enum.reduce(%{}, fn {survey_id, activity_ids}, acc ->
-        survey_state =
+      |> Enum.reduce({%{}, %{}}, fn {survey_id, activity_ids}, {submitted_acc, resettable_acc} ->
+        survey_submitted =
           Enum.all?(activity_ids, fn id ->
             context.activities[id].lifecycle_state === :submitted ||
               context.activities[id].lifecycle_state === :evaluated
           end)
 
-        Map.put(acc, survey_id, survey_state)
+        survey_resettable =
+          survey_submitted &&
+            Enum.all?(activity_ids, fn id -> context.activities[id].has_more_attempts end)
+
+        {
+          Map.put(submitted_acc, survey_id, survey_submitted),
+          Map.put(resettable_acc, survey_id, survey_resettable)
+        }
       end)
 
     base_project_slug =
@@ -601,6 +608,7 @@ defmodule OliWeb.PageDeliveryController do
       extrinsic_read_section_fn: &Oli.Delivery.ExtrinsicState.read_section/3,
       bib_app_params: context.bib_revisions,
       submitted_surveys: submitted_surveys,
+      resettable_surveys: resettable_surveys,
       historical_attempts: context.historical_attempts,
       learning_language: base_project_attributes.learning_language,
       effective_settings: effective_settings
