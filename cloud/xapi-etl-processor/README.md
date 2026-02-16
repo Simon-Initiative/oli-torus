@@ -229,6 +229,71 @@ environment.
 3. Confirm the data appears in ClickHouse (e.g. `SELECT count(*) FROM table`).
 4. If errors occur, inspect the DLQ messages and corresponding logs.
 
+## ClickHouse credential management
+
+Use a dedicated ClickHouse service user for this Lambda. Do not use a shared
+admin/default account.
+
+### Provision a least-privilege user
+
+Run as a ClickHouse admin user:
+
+```sql
+CREATE USER IF NOT EXISTS xapi_etl_processor
+  IDENTIFIED WITH sha256_password BY '<strong-random-password>';
+
+GRANT INSERT ON default.raw_events TO xapi_etl_processor;
+```
+
+Optional hardening (adjust to your cluster baseline):
+
+```sql
+ALTER USER xapi_etl_processor SETTINGS
+  max_execution_time = 60,
+  max_memory_usage = 2000000000,
+  max_threads = 4;
+```
+
+Verify effective grants:
+
+```sql
+SHOW GRANTS FOR xapi_etl_processor;
+```
+
+### Configure Lambda credentials
+
+Set these Lambda environment variables:
+
+- `CLICKHOUSE_USER=xapi_etl_processor`
+- `CLICKHOUSE_PASSWORD=<strong-random-password>`
+- `CLICKHOUSE_DATABASE=default`
+- `CLICKHOUSE_TABLE=raw_events`
+
+If you manage env vars via CLI, note that `update-function-configuration`
+replaces the entire `Variables` object. Merge with existing values before
+updating.
+
+### Rotation playbook
+
+1. Create a new password for `xapi_etl_processor`:
+
+   ```sql
+   ALTER USER xapi_etl_processor IDENTIFIED WITH sha256_password BY '<new-strong-password>';
+   ```
+
+2. Update Lambda env vars to the new secret.
+3. Validate ingestion with a test JSONL upload and confirm inserts in
+   `raw_events`.
+4. If rotation used a temporary user, remove the old user after validation:
+
+   ```sql
+   DROP USER IF EXISTS xapi_etl_processor_old;
+   ```
+
+For zero-downtime rotations on strict environments, use a dual-user approach:
+create `xapi_etl_processor_v2`, grant `INSERT`, switch Lambda credentials, then
+drop or disable the old user after validation.
+
 ## Operational guidance
 
 - Monitor CloudWatch metrics for Lambda duration, errors, and throttles.
