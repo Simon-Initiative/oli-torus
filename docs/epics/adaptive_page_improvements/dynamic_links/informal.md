@@ -30,7 +30,7 @@ As a student:
 
 * Given that an author is editing text in an adaptive screen
     * When they select text and add a link
-        * Then they can choose from available screens/resources in the same project (by ID or slug)
+        * Then they can choose from available screens/resources in the same project using `resource_id` only (slug-based links are not allowed)
 
 * Given a course section is created from a project
     * When dynamic links are included in adaptive pages

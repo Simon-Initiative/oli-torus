@@ -70,7 +70,7 @@ This new component should be independently placeable on any screen and configura
 ## Technical Notes
 
 * This component should be implemented as part of the **adaptive component library**, distinct from basic page components.
-* Configuration should include a boolean for launch type:
+* Configuration should include an enum/string for launch type:
     * `launch_mode: 'auto' | 'click'`
 
 ## Darren Siegel Technical Guidance Comment
@@ -80,7 +80,7 @@ Technical guidance:
 This is a FEATURE. slug: adaptive_triggers
 
 - The clickable component should be implemented as part of the **adaptive component library**, distinct from basic page components.
-- Configuration should include a boolean for launch type:
+- Configuration should include an enum/string for launch type:
   - `launch_mode: 'auto' | 'click'`
 
 Similar to the trigger implementation in basic pages, we need a mechanism that checks for a page level adaptive trigger on page visit and fires the AI trigger. For the clickable AI trigger we must extend existing part components to allow an image and button part components, when clicked, to trigger the AI activation. In the authoring UI this means a checkbox for "Enable AI Activation point" along with a text input for "AI activation prompt". These will be two new attributes on these two existing part components. At Adaptive page delivery, when these components are clicked the trigger is emitted (when one is set). The adaptive page will use the same client-side API that is currently being used for basic page components that fire triggers.

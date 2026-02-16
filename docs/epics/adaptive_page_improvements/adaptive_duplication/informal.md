@@ -34,10 +34,10 @@ As an author I want to be able to duplicate pages I've already created in a proj
 ## Negative
 
 * Given the author created a project with an adaptive page
-    * When they duplicate an page within a project
-        * Then the adaptive pages is duplicated without any contents or internal references.
+    * When duplication cannot safely preserve activity content or internal references
+        * Then duplication is blocked and no duplicate page is created.
 
-# Desing notes
+# Design notes
 
 N/A
 
