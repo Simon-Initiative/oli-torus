@@ -1,187 +1,231 @@
-# Instructor Intelligent Dashboard - Development Plan
+# Instructor Intelligent Dashboard — High-Level Development Plan
 
-Last updated: 2026-02-10
+Last updated: 2026-02-16
 
-This plan decomposes epic `MER-5198` into engineering features (implementation chunks), independent of the current Jira story boundaries. The goal is to make dependencies explicit so teams can start work in parallel where possible.
+Context references:
+- Epic overview: `docs/epics/intelligent_dashboard/overview.md`
+- Epic PRD: `docs/epics/intelligent_dashboard/prd.md`
+- Epic EDD: `docs/epics/intelligent_dashboard/edd.md`
+- Data workstream design: `docs/epics/intelligent_dashboard/data.md`
+- Lane 1 feature tracks:
+  - `docs/epics/intelligent_dashboard/data_oracles/prd.md`
+  - `docs/epics/intelligent_dashboard/data_oracles/fdd.md`
+  - `docs/epics/intelligent_dashboard/data_coordinator/prd.md`
+  - `docs/epics/intelligent_dashboard/data_coordinator/fdd.md`
+  - `docs/epics/intelligent_dashboard/data_cache/prd.md`
+  - `docs/epics/intelligent_dashboard/data_cache/fdd.md`
+  - `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
+  - `docs/epics/intelligent_dashboard/data_snapshot/fdd.md`
+- Lane-structured reference format: `docs/epics/adaptive_page_improvements/plan.md`
 
-## Planning Principles
+## Why We Are Organizing By Lanes
 
-- Build from reusable infrastructure upward, then compose product-specific UI features.
-- Keep data/runtime contracts stable before scaling tile and AI implementation.
-- Treat dependencies as first-class so teams can identify immediate start points.
-- Use Jira stories for traceability, not as engineering decomposition constraints.
+Lanes group tightly related work so teams can execute in coherent streams with explicit dependency boundaries. This reduces context switching, prevents hidden sequencing conflicts, and makes immediate-start work visible.
 
-## Feature Decomposition
+## Lane Summary
 
-| ID | Feature | Scope | Jira Trace (primary) | Depends On |
-|---|---|---|---|---|
-| F01 | Dashboard Core Contracts | `Oli.Dashboard` scope model, `OracleContext`, oracle behavior/interface, registry contracts | `MER-5248`, `MER-5266` | None |
-| F02 | Live Data Runtime | `LiveDataCoordinator` semantics: one in-flight + one queued + stale token suppression | `MER-5248` | F01 |
-| F03 | InProcess Cache | LiveView-local oracle cache, enrollment-tiered container limits, TTL, LRU | `MER-5248` | F01 |
-| F04 | Revisit Cache | Node-wide per-user revisit cache, parameterized revisit-only use, short TTL | `MER-5248` | F01 |
-| F05 | Snapshot Assembly and Projection Core | Assemble normalized snapshot from independent oracles; projection contracts | `MER-5248`, `MER-5266` | F01 |
-| F06 | Instructor Oracle Set v1 | Instructor-specific oracle implementations: students, progress, proficiency, assessments, content structure, AI context projection | `MER-5251`-`MER-5254`, `MER-5249` | F01 |
-| F07 | Dashboard Shell and Entry | Default dashboard entry behavior, base shell, mount lifecycle hooks | `MER-5246` | F01 |
-| F08 | Container Filter Integration | Global container filter + params flow + runtime/cache wiring into LiveView | `MER-5248` | F02, F03, F04, F05, F06, F07 |
-| F09 | Tile Groups Framework | Tile group layout (`Engagement`, `Content`), collapse/reorder, conditional rendering | `MER-5258` | F07, F08 |
-| F10 | Progress Tile | Tile UX + dependencies + drill-through for progress domain | `MER-5251` | F08 |
-| F11 | Student Support Tile | Student support list, filters, selection, activity states, drill-through hooks | `MER-5252`, `MER-5255`, `MER-5256` | F08 |
-| F12 | Challenging Objectives Tile | Low-proficiency objective views + navigation behaviors | `MER-5253` | F08 |
-| F13 | Assessments Tile | Completion/status/metrics/distribution + actions | `MER-5254` | F08 |
-| F14 | Tile Resize Framework | Resizable tile interactions and non-overlap reflow | `MER-5259` | F09 |
-| F15 | Summary Metrics Tile | Summary metric strip (non-AI behavior) and scoped updates | `MER-5249` | F08 |
-| F16 | AI Recommendation Infrastructure | AI generation pipeline, regen, feedback ingestion pipeline, prompt/context contracts | `MER-5218`, `MER-5249`, `MER-5250` | F05, F06 |
-| F17 | AI Recommendation UI | Summary tile AI presentation + feedback + regen interactions | `MER-5249`, `MER-5250` | F15, F16 |
-| F18 | AI Email Infrastructure | Context-aware draft generation, tone/regeneration contract, send integration | `MER-5257` | F05, F06 |
-| F19 | AI Email UI | Modal UX, recipient handling, tone controls, draft/send interactions | `MER-5257` | F11, F13, F18 |
-| F20 | CSV Export | ZIP/CSV transform from snapshot, scoped export endpoint/flow | `MER-5266` | F05, F06, F08 |
-| F21 | Performance and Observability Hardening | Perf budgets, telemetry, benchmark harness, query/runtime profiling | `MER-5248`, `MER-5266` | F08, F10, F11, F12, F13, F15, F16, F20 |
-| F22 | Quality and Accessibility Hardening | Automated test review (unit/liveview/e2e), a11y pass, docs update | all | F09, F10, F11, F12, F13, F14, F15, F17, F19, F20 |
+- Lane 1: Data Infrastructure and Contracts
+  - Builds the shared oracle/snapshot/cache/runtime backbone in `Oli.Dashboard.*` and `Oli.InstructorDashboard.DataSnapshot.*`.
+- Lane 2: Dashboard Shell, Scope Navigation, and Layout Controls
+  - Delivers dashboard entry/default behavior, global container filtering, grouping containers, and tile expansion/reflow controls.
+- Lane 3: Core Insights Tiles and Student Support Extensions
+  - Delivers progress, student support, challenging objectives, assessments, plus student profile hover and support-parameter customization.
+- Lane 4: AI Recommendation Experience
+  - Delivers AI recommendation infrastructure first, then summary/UI recommendation interactions, feedback capture, and regeneration.
+- Lane 5: AI Email Outreach
+  - Delivers context-aware AI draft email generation and send workflows from supported dashboard entry points.
+- Lane 6: CSV Export and Release Hardening
+  - Delivers scoped CSV ZIP export from shared snapshot data and closes performance/reliability/a11y hardening gates.
 
-## Dependency Graph
+## Clarifications and Assumptions
+
+- This plan is intentionally high-level and lane-oriented.
+- Jira scope and story descriptions were revalidated from Jira on 2026-02-16 for epic `MER-5198` and children:
+  - `MER-5246`, `MER-5248`, `MER-5249`, `MER-5250`, `MER-5251`, `MER-5252`, `MER-5253`, `MER-5254`, `MER-5255`, `MER-5256`, `MER-5257`, `MER-5258`, `MER-5259`, `MER-5266`.
+- `MER-5218` (Instructor AI Recommendations POC) is treated as discovery input/reference, not primary delivery scope.
+- Serial order inside each lane is dependency-first, then risk reduction, then workflow completion.
+- Lane dependencies are lane-level by default; ticket-level constraints are called out when needed.
+
+## Lane 1: Data Infrastructure and Contracts
+
+### Scope
+- `MER-5301` Data Infra: Scope/Oracle Contracts and Registry (`data_oracles`)
+  - `docs/epics/intelligent_dashboard/data_oracles/prd.md`
+  - `docs/epics/intelligent_dashboard/data_oracles/fdd.md`
+- `MER-5302` Data Infra: Live Data Coordinator and Request Control (`data_coordinator`)
+  - `docs/epics/intelligent_dashboard/data_coordinator/prd.md`
+  - `docs/epics/intelligent_dashboard/data_coordinator/fdd.md`
+- `MER-5303` Data Infra: InProcess/Revisit Cache and Tiered Limits (`data_cache`)
+  - `docs/epics/intelligent_dashboard/data_cache/prd.md`
+  - `docs/epics/intelligent_dashboard/data_cache/fdd.md`
+- `MER-5304` Data Infra: Snapshot Assembler and CSV Reuse Contract (`data_snapshot`)
+  - `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
+  - `docs/epics/intelligent_dashboard/data_snapshot/fdd.md`
+- Enabling stories that consume this lane:
+  - `MER-5248` Global Filter Navigation Learning Dashboard
+  - `MER-5266` Intelligent Dashboard CSV Download
+
+### Proposed Serial Order
+1. `MER-5301` Data Infra: Scope/Oracle Contracts and Registry
+2. `MER-5302` Data Infra: Live Data Coordinator and Request Control
+3. `MER-5303` Data Infra: InProcess/Revisit Cache and Tiered Limits
+4. `MER-5304` Data Infra: Snapshot Assembler and CSV Reuse Contract
+5. `MER-5248` Global Filter Navigation Learning Dashboard
+6. `MER-5266` Intelligent Dashboard CSV Download
+
+### Dependency Notes
+- `MER-5248` requires deterministic scope/filter runtime and cache behavior, which are Lane 1 concerns.
+- `MER-5266` requires export from the same scoped snapshot model (no independent analytics query path), also a Lane 1 concern.
+- `MER-5301` to `MER-5304` establish the explicit infra sequence that unblocks `MER-5248` and export consistency for `MER-5266`.
+- Keeping this lane first prevents tile-level or AI-level direct query accretion that conflicts with PRD/EDD architecture.
+
+### Cross-Lane Dependencies
+- No inbound lane dependency; this lane can start immediately.
+- Lanes 2, 3, 4, 5, and 6 depend on Lane 1.
+
+## Lane 2: Dashboard Shell, Scope Navigation, and Layout Controls
+
+### Scope
+- `MER-5246` Insights > Learning Dashboard
+- `MER-5248` Global Filter Navigation Learning Dashboard
+- `MER-5258` Engagement & Content Containers
+- `MER-5259` Expandable Tiles
+
+### Proposed Serial Order
+1. `MER-5246` Insights > Learning Dashboard
+2. `MER-5248` Global Filter Navigation Learning Dashboard
+3. `MER-5258` Engagement & Content Containers
+4. `MER-5259` Expandable Tiles
+
+### Dependency Notes
+- `MER-5246` establishes the instructor landing/entry shell used by all downstream tile and AI workflows.
+- `MER-5248` defines global scope selection/navigation behavior that all tiles and AI features must respect.
+- `MER-5258` and `MER-5259` are presentation/layout controls that should follow stable shell/filter semantics to avoid repeated UI state churn.
+
+### Cross-Lane Dependencies
+- Hard dependency on completion of Lane 1.
+- Lane 3 and Lane 4 depend on completion of Lane 2.
+
+## Lane 3: Core Insights Tiles and Student Support Extensions
+
+### Scope
+- `MER-5251` Progress Tile
+- `MER-5252` Student Support Tile
+- `MER-5253` Challenging Objectives Tile
+- `MER-5254` Assessments Tile
+- `MER-5255` View Students Profile on Hover Student Support Tile
+- `MER-5256` Customizing Student Support Parameters
+
+### Proposed Serial Order
+1. `MER-5251` Progress Tile
+2. `MER-5252` Student Support Tile
+3. `MER-5253` Challenging Objectives Tile
+4. `MER-5254` Assessments Tile
+5. `MER-5255` View Students Profile on Hover Student Support Tile
+6. `MER-5256` Customizing Student Support Parameters
+
+### Dependency Notes
+- `MER-5255` and `MER-5256` are explicit extensions of Student Support behavior and should follow `MER-5252`.
+- Progress/objectives/assessments/support tiles all rely on the same scoped snapshot/oracle model and should be sequenced after stable Lane 2 scope/filter behavior.
+
+### Cross-Lane Dependencies
+- Hard dependency on completion of Lanes 1 and 2.
+- Lane 5 depends on completion of Lane 3.
+
+## Lane 4: AI Recommendation Experience
+
+### Scope
+- `MER-5305` AI Infra: Recommendation Pipeline and Contracts
+- `MER-5249` Summary Tile & AI Recommendation
+- `MER-5250` AI Recommendations Feedback & Regeneration
+
+### Proposed Serial Order
+1. `MER-5305` AI Infra: Recommendation Pipeline and Contracts
+2. `MER-5249` Summary Tile & AI Recommendation
+3. `MER-5250` AI Recommendations Feedback & Regeneration
+
+### Dependency Notes
+- AI recommendation infrastructure must land first so UI work is built on stable context and generation contracts.
+- `MER-5249` establishes the baseline recommendation surface and summary tile context on top of that infrastructure.
+- `MER-5250` is an interaction refinement layer (feedback/regeneration) that should follow stable recommendation generation/display behavior.
+- AI recommendation quality depends on normalized context derived from Lane 1 contracts and Lane 2 scope selection.
+
+### Cross-Lane Dependencies
+- Hard dependency on completion of Lanes 1 and 2.
+- Lane 5 has a soft dependency on Lane 4 for shared AI interaction patterns and prompt/context consistency.
+
+## Lane 5: AI Email Outreach
+
+### Scope
+- `MER-5257` AI Email Capabilities & updates
+
+### Proposed Serial Order
+1. `MER-5257` AI Email Capabilities & updates
+
+### Dependency Notes
+- Jira scope requires context-aware drafting from supported initiation points including student/assessment workflows, so Lane 3 behavior must be stable first.
+- Delivery should align with recommendation-era AI context conventions from Lane 4 to reduce divergent prompt/feedback patterns.
+
+### Cross-Lane Dependencies
+- Hard dependency on completion of Lanes 1, 2, and 3.
+- Soft dependency on completion of Lane 4.
+
+## Lane 6: CSV Export and Release Hardening
+
+### Scope
+- `MER-5266` Intelligent Dashboard CSV Download
+- Epic-level hardening from PRD NFR and acceptance gates:
+  - Performance/reliability verification
+  - Accessibility and regression hardening
+
+### Proposed Serial Order
+1. `MER-5266` Intelligent Dashboard CSV Download
+2. Epic hardening (perf, observability, accessibility, regression gates)
+
+### Dependency Notes
+- `MER-5266` depends on mature snapshot contracts and scope semantics from Lanes 1 and 2.
+- Export correctness is strongest after core insight tile data contracts are stable (Lane 3), since CSV content should align with on-screen metrics.
+- Final hardening must happen after all functional lanes land.
+
+### Cross-Lane Dependencies
+- Hard dependency on completion of Lanes 1 and 2.
+- `MER-5266` should follow Lane 3 completion.
+- Final hardening depends on completion of Lanes 3, 4, and 5.
+
+## Suggested Global Execution Shape
+
+1. Start Lane 1 (Data Infrastructure and Contracts) first.
+2. After Lane 1 completes, start Lane 2 (Dashboard Shell, Scope Navigation, and Layout Controls).
+3. After Lane 2 completes, run Lane 3 (Core Insights Tiles) and Lane 4 (AI Recommendation Experience) in parallel.
+4. After Lane 3 completes, run Lane 5 (AI Email Outreach), while aligning with Lane 4 outcomes.
+5. Start Lane 6 (`MER-5266`) after Lanes 1-3 are stable; then run epic-level hardening after all functional lanes complete.
+
+## Lane Dependency Flow (Mermaid)
 
 ```mermaid
 flowchart TD
-    F01[F01 Core Contracts]
-    F02[F02 Live Data Runtime]
-    F03[F03 InProcess Cache]
-    F04[F04 Revisit Cache]
-    F05[F05 Snapshot and Projection Core]
-    F06[F06 Instructor Oracle Set v1]
-    F07[F07 Dashboard Shell and Entry]
-    F08[F08 Container Filter Integration]
-    F09[F09 Tile Groups Framework]
-    F10[F10 Progress Tile]
-    F11[F11 Student Support Tile]
-    F12[F12 Challenging Objectives Tile]
-    F13[F13 Assessments Tile]
-    F14[F14 Tile Resize Framework]
-    F15[F15 Summary Metrics Tile]
-    F16[F16 AI Recommendation Infrastructure]
-    F17[F17 AI Recommendation UI]
-    F18[F18 AI Email Infrastructure]
-    F19[F19 AI Email UI]
-    F20[F20 CSV Export]
-    F21[F21 Performance and Observability]
-    F22[F22 Quality and Accessibility]
+  L1["Lane 1: Data Infrastructure and Contracts"]
+  L2["Lane 2: Shell, Scope Navigation, Layout Controls"]
+  L3["Lane 3: Core Insights Tiles and Student Support Extensions"]
+  L4["Lane 4: AI Recommendation Experience"]
+  L5["Lane 5: AI Email Outreach"]
+  L6["Lane 6: CSV Export and Release Hardening"]
+  REL["Epic-wide Integration and Regression Hardening"]
 
-    F01 --> F02
-    F01 --> F03
-    F01 --> F04
-    F01 --> F05
-    F01 --> F06
-    F01 --> F07
+  L1 --> L2
+  L2 --> L3
+  L2 --> L4
+  L3 --> L5
+  L4 -. soft dependency .-> L5
+  L3 --> L6
+  L1 --> L6
+  L2 --> L6
+  L6 --> REL
+  L4 --> REL
+  L5 --> REL
 
-    F02 --> F08
-    F03 --> F08
-    F04 --> F08
-    F05 --> F08
-    F06 --> F08
-    F07 --> F08
-
-    F07 --> F09
-    F08 --> F09
-
-    F08 --> F10
-    F08 --> F11
-    F08 --> F12
-    F08 --> F13
-    F09 --> F14
-    F08 --> F15
-
-    F05 --> F16
-    F06 --> F16
-    F15 --> F17
-    F16 --> F17
-
-    F05 --> F18
-    F06 --> F18
-    F11 --> F19
-    F13 --> F19
-    F18 --> F19
-
-    F05 --> F20
-    F06 --> F20
-    F08 --> F20
-
-    F08 --> F21
-    F10 --> F21
-    F11 --> F21
-    F12 --> F21
-    F13 --> F21
-    F15 --> F21
-    F16 --> F21
-    F20 --> F21
-
-    F09 --> F22
-    F10 --> F22
-    F11 --> F22
-    F12 --> F22
-    F13 --> F22
-    F14 --> F22
-    F15 --> F22
-    F17 --> F22
-    F19 --> F22
-    F20 --> F22
+  classDef immediate fill:#dff5df,stroke:#2e7d32,stroke-width:1px,color:#1b5e20;
+  class L1 immediate;
 ```
 
-## Suggested Execution Waves
-
-1. Wave 0 - Start immediately (no dependencies)
-- F01 Core Contracts
-
-2. Wave 1 - Core runtime primitives
-- F02 Live Data Runtime
-- F03 InProcess Cache
-- F04 Revisit Cache
-- F05 Snapshot and Projection Core
-- F06 Instructor Oracle Set v1
-- F07 Dashboard Shell and Entry
-
-3. Wave 2 - Integration backbone
-- F08 Container Filter Integration
-- F09 Tile Groups Framework
-
-4. Wave 3 - Core product value
-- F10 Progress Tile
-- F11 Student Support Tile
-- F12 Challenging Objectives Tile
-- F13 Assessments Tile
-- F15 Summary Metrics Tile
-- F14 Tile Resize Framework
-
-5. Wave 4 - AI and export surfaces
-- F16 AI Recommendation Infrastructure
-- F17 AI Recommendation UI
-- F18 AI Email Infrastructure
-- F19 AI Email UI
-- F20 CSV Export
-
-6. Wave 5 - Stabilization
-- F21 Performance and Observability Hardening
-- F22 Quality and Accessibility Hardening
-
-## Parallel Start Guidance
-
-After F01 is complete, separate teams can run in parallel on:
-- Runtime: F02
-- Caching: F03 and F04
-- Snapshot/projections: F05
-- Oracle implementations: F06
-- Base shell: F07
-
-After F08 is complete, tile teams can parallelize:
-- F10, F11, F12, F13, F15
-
-## Key Risks to Manage in Planning
-
-- Overloading F06 (oracle set) if all domains are built serially.
-- UI teams blocked if F08 integration contracts are unstable.
-- AI UI churn if F16/F18 contracts are not frozen early.
-- Perf regressions if F21 is deferred too long.
-
-## Open Decisions for Refinement
-
-- Final ownership split for F06 oracle domains across engineers.
-- Whether F16 and F18 share a common internal AI service interface.
-- Exact release slicing strategy (feature flags and staged rollouts) across Waves 3-5.
+Note: Light green lane nodes indicate lanes with no inbound dependencies and can be started immediately.

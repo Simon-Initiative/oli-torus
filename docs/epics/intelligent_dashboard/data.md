@@ -60,7 +60,7 @@ Instructor dashboard composition (product-specific):
 
 - `Oli.InstructorDashboard.DataSnapshot`
   - Public API for fetching instructor dashboard scoped data views.
-  - Wires instructor oracle set into `Oli.Dashboard.*` runtime/cache/snapshot services.
+  - Wires instructor oracle bindings into `Oli.Dashboard.*` runtime/cache/snapshot services.
 
 - `Oli.InstructorDashboard.DataSnapshot.CsvExport`
   - Instructor dashboard-specific transform from assembled snapshot -> CSV files -> zip payload.
@@ -70,21 +70,23 @@ Instructor dashboard composition (product-specific):
 
 Design rule: dashboard queries are organized around reusable domain oracles, not current tile-specific implementations.
 
-Initial oracle set (draft):
-- `student_oracle`
+Illustrative oracle capability slots (draft, non-binding in lane-1):
+- `roster_capability_oracle`
   - Student identity and roster data (name, email, enrollment/activity anchors).
-- `progress_oracle`
+- `progress_capability_oracle`
   - Progress metrics across scoped containers and completion-threshold-aware aggregates.
-- `proficiency_oracle`
+- `proficiency_capability_oracle`
   - Objective proficiency metrics and low-proficiency indicators.
-- `assessment_oracle`
+- `assessment_capability_oracle`
   - Assessment completion/performance/distribution summaries.
-- `activity_oracle` (optional split)
+- `activity_capability_oracle` (optional split)
   - Last activity and inactivity support signals.
-- `content_structure_oracle`
+- `content_structure_capability_oracle`
   - Scoped hierarchy metadata used by filter navigation and labels.
-- `ai_context_oracle` (derived)
+- `ai_context_capability_oracle` (derived)
   - AI-ready context projection assembled from normalized oracle outputs (not by direct oracle-to-oracle calls).
+
+Important: exact concrete instructor oracle keys/modules and final payload shapes are intentionally tile-driven and finalized in tile implementation stories. Lane-1 defines contracts, dependency model, and orchestration behavior.
 
 Oracle independence rule:
 - Oracle implementations should not directly call or depend on other oracle implementations.
@@ -127,10 +129,10 @@ Oracle behaviour (conceptual):
 
 Tiles declare required and optional oracle dependencies explicitly.
 
-Examples:
-- Progress Tile requires: `progress_oracle`; optional: `content_structure_oracle`
-- Student Support Tile requires: `student_oracle`, `progress_oracle`, `proficiency_oracle`; optional: `activity_oracle`
-- Summary Tile requires: `progress_oracle`, `proficiency_oracle`, `assessment_oracle`
+Illustrative examples (non-binding):
+- Progress Tile requires: `progress_capability_oracle`; optional: `content_structure_capability_oracle`
+- Student Support Tile requires: `roster_capability_oracle`, `progress_capability_oracle`, `proficiency_capability_oracle`; optional: `activity_capability_oracle`
+- Summary Tile requires: `progress_capability_oracle`, `proficiency_capability_oracle`, `assessment_capability_oracle`
 
 Render rules:
 - Tile renders when all required oracles are ready.
@@ -190,7 +192,7 @@ Initial mount:
 
 Incremental behavior:
 - Tiles subscribe to oracle-ready and projection-ready events.
-- Example: if Progress tile depends only on `progress_oracle`, it can render before `student_oracle` finishes.
+- Example: if Progress tile depends only on `progress_capability_oracle`, it can render before `roster_capability_oracle` finishes.
 - Example: a tile can render chart shell from one oracle and enrich details after second oracle is ready.
 - UI remains interactive while data computation continues.
 - Any stale task result is ignored via request token mismatch.
@@ -291,11 +293,13 @@ TTL policy:
 - TTL is the primary freshness control plus optional manual/emergency flush hooks.
 
 Revisit cache behavior (strict):
-- Revisit cache stores only currently viewed container payloads for one specific user:
-  - `progress_oracle`
-  - `proficiency_oracle`
-  - `student_oracle`
-  - `assessment_oracle`
+- Revisit cache stores only currently viewed container payloads for one specific user.
+- The exact oracle subset is defined by instructor capability bindings from tile implementations.
+- Initial candidate subset (non-binding) includes:
+  - `progress_capability_oracle`
+  - `proficiency_capability_oracle`
+  - `roster_capability_oracle`
+  - `assessment_capability_oracle`
 - Revisit cache is checked only when LiveView is entered with explicit container params (for example, return via browser history).
 - Revisit cache is not checked during a base dashboard mount that does not preselect a specific container.
 
@@ -349,7 +353,7 @@ Phase A: foundation
 - Coordinator state machine and tokenized async handling.
 
 Phase B: shared builder
-- Implement initial oracle set and bounded query plans.
+- Implement tile-driven oracle bindings/sets and bounded query plans.
 - Implement assembler from oracle outputs to snapshot/projections.
 - Validate data parity against existing views for core metrics.
 
