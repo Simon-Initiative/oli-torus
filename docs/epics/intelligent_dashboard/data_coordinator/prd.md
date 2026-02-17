@@ -4,7 +4,7 @@ Last updated: 2026-02-16
 Feature: `data_coordinator`
 Epic: `MER-5198`
 Primary Jira: `MER-5302` Data Infra: Live Data Coordinator and Request Control
-Related docs: `docs/epics/intelligent_dashboard/data.md`, `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`
+Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`, `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
 
 ## 1. Overview
 
@@ -71,6 +71,7 @@ Use cases:
 | FR-009 | System SHALL provide deterministic state transitions and transition-level validation errors for invalid coordinator events. | P1 |
 | FR-010 | System SHALL enforce a one-way boundary: coordinator depends on cache API; cache does not depend on coordinator state machine internals. | P0 |
 | FR-011 | System SHALL include extensive automated unit testing for coordinator state/action logic, and SHALL use mocked/stubbed dependencies (for example cache facade and oracle-result producers) where needed to validate end-to-end component interactions in tests. | P0 |
+| FR-012 | System SHALL enforce a configurable hard timeout for active scope builds and emit deterministic timeout fallback state/events that keep the dashboard responsive and eligible for next-request processing. | P0 |
 
 ## 7. Acceptance Criteria
 
@@ -81,6 +82,7 @@ Use cases:
 - AC-005: Given boundary review, coordinator module code contains no cache policy implementation (TTL/LRU/key-building/revisit retention logic).
 - AC-006: Given telemetry inspection, request queue transitions, stale discards, cache consult outcomes, and end-to-end scope transition timings are observable.
 - AC-007: Given coordinator unit test execution, mocked/stubbed cache/runtime dependencies are used where necessary to exercise token guards, queue transitions, and stale-result handling end-to-end at component boundaries.
+- AC-008: Given an active scope build exceeding configured timeout, coordinator emits deterministic timeout fallback state/events for that scope and remains available to process subsequent latest-intent requests.
 
 ## 8. Non-Functional Requirements
 
@@ -144,6 +146,7 @@ Boundary rule:
 
 - `scope_request_started`, `scope_request_queued`, `scope_request_queue_replaced`, `scope_request_completed` counts.
 - `scope_request_stale_discarded` count and rate.
+- `scope_request_timeout` count and rate.
 - Cache consult outcome counts (`full_hit`, `partial_hit`, `miss`) at coordinator boundary.
 - Time-to-first-required-ready and time-to-required-complete latencies.
 
@@ -183,12 +186,13 @@ Open questions:
   - rapid scope changes (`A/B/C`) with deterministic latest-intent outcomes.
   - partial-hit cache path with incremental hydration.
   - stale completion warms cache but does not mutate UI.
+  - active scope timeout emits deterministic fallback state and does not block subsequent requests.
 - LiveView tests:
   - end-to-end event ordering and assign stability.
 
 ## 17. Definition of Done
 
-- FR-001 through FR-011 implemented or explicitly deferred with rationale.
-- AC-001 through AC-007 passing.
+- FR-001 through FR-012 implemented or explicitly deferred with rationale.
+- AC-001 through AC-008 passing.
 - No stale UI updates in automated race tests.
 - Coordinator/cache boundary is explicit in code and docs, with coordinator using cache API only.

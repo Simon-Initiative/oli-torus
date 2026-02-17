@@ -38,7 +38,7 @@ Assumption risks:
 
 What we know:
 - Epic architecture already defines shared `Oli.Dashboard.*` foundation and instructor composition layer (`docs/epics/intelligent_dashboard/edd.md`).
-- `docs/epics/intelligent_dashboard/data.md` already defines oracle contract intent, `OracleContext`, no-oracle-to-oracle direct-calling rule, and dependency-driven tile hydration.
+- `docs/epics/intelligent_dashboard/data_oracles/prd.md` defines oracle contract intent, `OracleContext`, no-oracle-to-oracle direct-calling rule, and dependency-driven consumer hydration.
 - Current instructor dashboard code still contains direct analytics query helpers in `lib/oli_web/components/delivery/instructor_dashboard/section_analytics.ex` and call sites in `lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`.
 - Existing section hierarchy/container lookups are available via `lib/oli/delivery/sections/section_resource_depot.ex`, which should be reused for scope/container resolution support.
 - Existing telemetry patterns use `:telemetry.execute` with structured metadata and AppSignal mapping (`lib/oli/gen_ai/telemetry.ex`, `lib/oli/feature_telemetry.ex`).
@@ -348,7 +348,6 @@ Integration tests:
 ## 17. References
 
 - `docs/epics/intelligent_dashboard/data_oracles/prd.md`
-- `docs/epics/intelligent_dashboard/data.md`
 - `docs/epics/intelligent_dashboard/edd.md`
 - `docs/epics/intelligent_dashboard/plan.md`
 - `lib/oli_web/components/delivery/instructor_dashboard/section_analytics.ex`

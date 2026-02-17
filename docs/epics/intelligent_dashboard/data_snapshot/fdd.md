@@ -39,7 +39,7 @@ Assumption risks:
 ## 3. Torus Context Summary
 
 What we know:
-- `docs/epics/intelligent_dashboard/data.md` defines canonical snapshot intent and CSV reuse path.
+- `docs/epics/intelligent_dashboard/data_snapshot/prd.md` defines canonical snapshot intent and CSV reuse path.
 - Upgraded lane docs now define explicit boundaries:
   - `data_oracles`: query/contract and dependency planning layer.
   - `data_coordinator`: queue/token orchestration and cache integration layer.
@@ -339,7 +339,6 @@ Regression tests:
 ## 17. References
 
 - `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
-- `docs/epics/intelligent_dashboard/data.md`
 - `docs/epics/intelligent_dashboard/edd.md`
 - `docs/epics/intelligent_dashboard/data_oracles/prd.md`
 - `docs/epics/intelligent_dashboard/data_coordinator/prd.md`

@@ -54,7 +54,10 @@ Implementation stories:
 
 - `docs/epics/intelligent_dashboard/prd.md`
 - `docs/epics/intelligent_dashboard/edd.md`
-- `docs/epics/intelligent_dashboard/data.md`
+- `docs/epics/intelligent_dashboard/data_oracles/prd.md`
+- `docs/epics/intelligent_dashboard/data_coordinator/prd.md`
+- `docs/epics/intelligent_dashboard/data_cache/prd.md`
+- `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
 - `docs/epics/intelligent_dashboard/plan.md`
 
 ## Development Lanes

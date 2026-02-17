@@ -4,7 +4,7 @@ Last updated: 2026-02-16
 Feature: `data_cache`
 Epic: `MER-5198`
 Primary Jira: `MER-5303` Data Infra: InProcess/Revisit Cache and Tiered Limits
-Related docs: `docs/epics/intelligent_dashboard/data.md`, `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`
+Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`, `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
 
 ## 1. Overview
 
@@ -162,7 +162,7 @@ Key shapes (from data design):
 ## 14. Open Questions & Assumptions
 
 Assumptions:
-- TTL defaults from `data.md` are acceptable for baseline.
+- TTL defaults defined in this PRD are acceptable for baseline.
 - Revisit cache remains intentionally narrow (selected oracle subset only).
 
 Open questions:

@@ -19,6 +19,7 @@ Functional requirements (PRD mapping):
 - FR-007, FR-010: strict boundary where coordinator uses cache API and avoids cache policy internals.
 - FR-008, FR-009: observability and deterministic transition semantics.
 - FR-011: extensive unit testing with mocked/stubbed dependencies for coordinator boundary interactions.
+- FR-012: configurable hard timeout with deterministic timeout fallback handling and continued request responsiveness.
 
 Non-functional targets:
 - LiveView scope-change transition handling p95 <= 100ms.
@@ -37,7 +38,7 @@ Assumption risks:
 ## 3. Torus Context Summary
 
 What we know:
-- `docs/epics/intelligent_dashboard/data.md` defines required rapid-filter policy and stale suppression semantics.
+- `docs/epics/intelligent_dashboard/data_coordinator/prd.md` defines required rapid-filter policy, timeout fallback behavior, and stale suppression semantics.
 - `docs/epics/intelligent_dashboard/edd.md` positions `Oli.Dashboard.LiveDataCoordinator` as runtime orchestrator between LiveView, runtime, and cache.
 - Existing instructor dashboard LiveView paths already perform asynchronous loading and message-based updates (`lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`), making a session-scoped coordinator fit the platform model.
 - Existing telemetry style uses structured `:telemetry.execute` with AppSignal mapping, which this feature follows.
@@ -256,6 +257,7 @@ Coordinator exclusions:
 | Runtime oracle failure | completion error envelope | emit scoped dependency failure state |
 | Cache lookup failure | cache API error | fallback to runtime load for required dependencies |
 | Cache write failure | cache API error | continue UI flow; emit telemetry for degraded cache path |
+| Active scope build timeout | timeout threshold exceeded | emit deterministic timeout fallback event/state for active token, preserve coordinator liveness, allow next request processing |
 | Invalid coordinator transition | transition guard failure | return deterministic internal error action and preserve state integrity |
 
 ## 11. Observability
@@ -265,6 +267,7 @@ Telemetry events (proposed):
 - `[:oli, :dashboard, :coordinator, :request, :queued]`
 - `[:oli, :dashboard, :coordinator, :request, :queue_replaced]`
 - `[:oli, :dashboard, :coordinator, :request, :stale_discarded]`
+- `[:oli, :dashboard, :coordinator, :request, :timeout]`
 - `[:oli, :dashboard, :coordinator, :cache, :consult]`
 - `[:oli, :dashboard, :coordinator, :request, :completed]`
 
@@ -291,6 +294,7 @@ Integration tests:
 - rapid A/B/C scope cycling and latest-intent outcomes
 - cache partial-hit + runtime miss load integration
 - stale completion cache-write plus UI suppression
+- active request timeout produces deterministic fallback state and preserves subsequent request handling
 
 LiveView tests:
 - incremental hydration ordering
@@ -319,7 +323,6 @@ LiveView tests:
 ## 17. References
 
 - `docs/epics/intelligent_dashboard/data_coordinator/prd.md`
-- `docs/epics/intelligent_dashboard/data.md`
 - `docs/epics/intelligent_dashboard/edd.md`
 - `docs/epics/intelligent_dashboard/data_cache/prd.md`
 - `lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`

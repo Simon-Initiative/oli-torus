@@ -4,7 +4,7 @@ Last updated: 2026-02-16
 Feature: `data_snapshot`
 Epic: `MER-5198`
 Primary Jira: `MER-5304` Data Infra: Snapshot Assembler and CSV Reuse Contract
-Related docs: `docs/epics/intelligent_dashboard/data.md`, `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/prd.md`, `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`
+Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/prd.md`, `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`
 
 ## 1. Overview
 

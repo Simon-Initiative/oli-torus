@@ -6,7 +6,7 @@ Context references:
 - Epic overview: `docs/epics/intelligent_dashboard/overview.md`
 - Epic PRD: `docs/epics/intelligent_dashboard/prd.md`
 - Epic EDD: `docs/epics/intelligent_dashboard/edd.md`
-- Data workstream design: `docs/epics/intelligent_dashboard/data.md`
+- Data workstream design: `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`, `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
 - Lane 1 feature tracks:
   - `docs/epics/intelligent_dashboard/data_oracles/prd.md`
   - `docs/epics/intelligent_dashboard/data_oracles/fdd.md`

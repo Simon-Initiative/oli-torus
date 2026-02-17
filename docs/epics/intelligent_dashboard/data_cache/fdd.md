@@ -37,7 +37,7 @@ Assumption risks:
 ## 3. Torus Context Summary
 
 What we know:
-- `docs/epics/intelligent_dashboard/data.md` already defines key shapes, TTL defaults, tiered capacity env vars, late-write requirements, and strict revisit policy.
+- `docs/epics/intelligent_dashboard/data_cache/prd.md` defines key shapes, TTL defaults, tiered capacity env vars, late-write requirements, and strict revisit policy.
 - `docs/epics/intelligent_dashboard/edd.md` positions cache as reusable `Oli.Dashboard.*` infrastructure consumed by coordinator/runtime flows.
 - Existing Torus system includes cache/depot patterns and telemetry conventions that fit this design.
 
@@ -326,6 +326,5 @@ Concurrency tests:
 ## 17. References
 
 - `docs/epics/intelligent_dashboard/data_cache/prd.md`
-- `docs/epics/intelligent_dashboard/data.md`
 - `docs/epics/intelligent_dashboard/edd.md`
 - `docs/epics/intelligent_dashboard/data_coordinator/prd.md`

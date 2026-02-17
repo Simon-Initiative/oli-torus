@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-09
 Epic: `MER-5198`
-Related docs: `docs/epics/intelligent_dashboard/overview.md`, `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/data.md`, `docs/epics/intelligent_dashboard/plan.md`
+Related docs: `docs/epics/intelligent_dashboard/overview.md`, `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/plan.md`, `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`, `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
 
 ## 1. Overview
 
@@ -119,7 +119,7 @@ Primary use cases:
 
 ## 8. Data and Architecture Requirements
 
-- Use the oracle-based data platform defined in `docs/epics/intelligent_dashboard/data.md`.
+- Use the oracle-based data platform defined in the `data_oracles`, `data_coordinator`, `data_cache`, and `data_snapshot` feature specs.
 - Data orchestration must live in `Oli` namespace modules, outside UI components.
 - Tile rendering must be dependency-driven: required oracles gate full render; optional oracles may enrich partial render.
 - Cache strategy must include oracle-level caching and assembled projection reuse.

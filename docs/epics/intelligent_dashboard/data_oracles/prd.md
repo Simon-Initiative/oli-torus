@@ -4,7 +4,7 @@ Last updated: 2026-02-16
 Feature: `data_oracles`
 Epic: `MER-5198` (Instructor Intelligent Dashboard)
 Primary Jira: `MER-5301` Data Infra: Scope/Oracle Contracts and Registry
-Related docs: `docs/epics/intelligent_dashboard/data.md`, `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/prd.md`, `docs/epics/intelligent_dashboard/plan.md`
+Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/prd.md`, `docs/epics/intelligent_dashboard/plan.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`, `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
 
 ## 1. Overview
 
@@ -189,7 +189,7 @@ Notional instructor specialization modules:
 ## 14. Open Questions & Assumptions
 
 Assumptions:
-- Instructor dashboard domains listed in `data.md` are sufficient for initial oracle coverage.
+- Instructor dashboard capability domains defined in the current lane PRDs are sufficient for initial oracle coverage.
 - `Oli.Dashboard.*` modules are net-new and can be introduced without conflicting existing namespaces.
 - Runtime features (`data_coordinator`, `data_cache`, `data_snapshot`) will consume these contracts without redefining them.
 - Exact concrete instructor oracle keys/modules and final payload shapes are intentionally deferred to tile implementation stories.
@@ -227,4 +227,4 @@ Open questions:
 - AC-001 through AC-009 passing.
 - Shared and instructor-specific boundaries are documented and reflected in module layout.
 - Covered instructor dashboard consumers use oracle contract paths with no direct analytics query bypass.
-- PRD/FDD references remain aligned with `data.md`, epic EDD, and lane plan.
+- PRD/FDD references remain aligned with lane PRDs/FDDs, epic EDD, and lane plan.
