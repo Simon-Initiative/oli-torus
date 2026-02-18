@@ -1,6 +1,6 @@
 # Data Cache PRD
 
-Last updated: 2026-02-16
+Last updated: 2026-02-17
 Feature: `data_cache`
 Epic: `MER-5198`
 Primary Jira: `MER-5303` Data Infra: InProcess/Revisit Cache and Tiered Limits
@@ -11,6 +11,10 @@ Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent
 This feature defines the dashboard cache subsystem used by live orchestration to accelerate repeated scope requests and revisit flows. It provides deterministic keying, TTL freshness, enrollment-tiered capacity, container-level LRU eviction, late-write support, and per-oracle miss coalescing.
 
 `data_cache` is a storage and cache-policy layer. It is used by `data_coordinator`, but it does not implement queue/token request orchestration behavior.
+
+Prototype alignment:
+- Minimal in-process cache keyed by scope identity + oracle key already validates read-through wins for repeated scope requests.
+- Cache behavior should stay storage-focused (`fetch`/`put`) while orchestration logic stays in coordinator/controller.
 
 ## 2. Background & Problem Statement
 
@@ -194,3 +198,16 @@ Open questions:
 - AC-001 through AC-009 passing.
 - Metrics for hits/misses/evictions/ttl/coalescing available.
 - Clear one-way boundary present: coordinator uses cache API; cache does not implement coordinator orchestration policy.
+
+Prototype references:
+- `lib/oli/instructor_dashboard/prototype/in_process_cache.ex`
+- `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
+- `lib/oli/instructor_dashboard/prototype/scope.ex`
+
+## 18. Decision Log
+
+### 2026-02-17 - Align Cache PRD to Prototype Baseline Identity and Layer Split
+- Change: Added prototype alignment language for scope+oracle key identity and strict storage-vs-orchestration separation.
+- Reason: Prototype confirms this boundary is effective and keeps coordinator/cache responsibilities clear.
+- Evidence: `lib/oli/instructor_dashboard/prototype/in_process_cache.ex`, `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
+- Impact: Clarifies FR-001/FR-006/FR-010 and AC-002/AC-008 expectations.

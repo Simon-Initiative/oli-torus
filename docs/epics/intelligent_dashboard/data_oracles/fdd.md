@@ -1,6 +1,6 @@
 # Data Oracles FDD
 
-Last updated: 2026-02-16
+Last updated: 2026-02-17
 Feature: `data_oracles`
 Epic: `MER-5198`
 Primary Jira: `MER-5301`
@@ -42,6 +42,10 @@ What we know:
 - Current instructor dashboard code still contains direct analytics query helpers in `lib/oli_web/components/delivery/instructor_dashboard/section_analytics.ex` and call sites in `lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`.
 - Existing section hierarchy/container lookups are available via `lib/oli/delivery/sections/section_resource_depot.ex`, which should be reused for scope/container resolution support.
 - Existing telemetry patterns use `:telemetry.execute` with structured metadata and AppSignal mapping (`lib/oli/gen_ai/telemetry.ex`, `lib/oli/feature_telemetry.ex`).
+- Prototype evidence confirms a slot-based tile dependency declaration model:
+  - `required_oracles/0` and `optional_oracles/0` maps (`lib/oli/instructor_dashboard/prototype/tile.ex`).
+  - Tile registry unioning and conflict detection by canonical oracle key (`lib/oli/instructor_dashboard/prototype/tile_registry.ex`).
+- Prototype evidence also confirms no inter-oracle calls in v1 and direct oracle loading by orchestrator (`lib/oli/instructor_dashboard/prototype/oracle.ex`, `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`).
 
 Unknowns to confirm:
 - Exact initial instructor capability-key set for v1 registry profiles.
@@ -58,7 +62,7 @@ Shared reusable layer (`Oli.Dashboard.*`):
 | `Oli.Dashboard.Scope` | Normalize and validate scope input; produce canonical container key metadata. | `new/1`, `normalize/1`, `container_key/1`, `course_scope?/1` |
 | `Oli.Dashboard.ScopeResolver` | Resolve allowed container scope against dashboard context (section/project) and user permissions. | `resolve/2`, `resolve_default/1`, `validate_container/2` |
 | `Oli.Dashboard.OracleContext` | Build immutable execution context shared by all oracle loads. | `new/1`, `with_scope/2`, `to_metadata/1` |
-| `Oli.Dashboard.Oracle` (behavior) | Contract for all oracle modules, including prerequisite declaration metadata. | `key/0`, `version/0`, `requires/0`, `load/2`, optional `project/2` |
+| `Oli.Dashboard.Oracle` (behavior) | Contract for all oracle modules. Prototype-validated baseline is no inter-oracle dependency calls; prerequisites remain optional and runtime-managed. | `key/0`, `version/0`, `requires/0`, `load/2`, optional `project/2` |
 | `Oli.Dashboard.Oracle.Result` | Normalize oracle result envelope for runtime/caching/snapshot consumers. | `ok/3`, `error/3`, `stale?/1` |
 | `Oli.Dashboard.OracleRegistry` (behavior) | Contract for dependency profile, oracle module lookup, and prerequisite-aware execution planning. | `dependencies_for/2`, `required_for/2`, `optional_for/2`, `oracle_module/2`, `execution_plan_for/2`, `known_consumers/1` |
 | `Oli.Dashboard.OracleRegistry.Validator` | Validate registry declarations at compile/startup time. | `validate!/1`, `validate_profile!/2` |
@@ -77,6 +81,7 @@ Boundary rule:
 - Product layer may depend on shared layer contracts only.
 - LiveView/tile code consumes only registry/runtime/snapshot APIs, never oracle modules directly.
 - Oracle modules do not call other oracle modules; prerequisites are resolved and injected by runtime/orchestration layers.
+- Tile-facing dependency declarations remain slot-based maps and are resolved into canonical oracle keys by registry/runtime.
 
 ### 4.2 State & Message Flow
 
@@ -148,6 +153,10 @@ sequenceDiagram
   - Rejected because it weakens reusable/shared boundaries for future dashboards.
 - Alternative: dynamic runtime oracle discovery.
   - Rejected because deterministic dependency contracts and validation are harder.
+
+Prototype alignment:
+- The prototype validated slot-based dependency maps as simpler than tile-specific dependency fields.
+- The production registry should keep slot aliases local to consumer definitions but canonicalize identity by `oracle_key` for runtime/cache/snapshot.
 
 ## 5. Interfaces
 
@@ -345,7 +354,15 @@ Integration tests:
   - Recommended default: no, keep declarations explicit in v1 for simpler validation.
 - Follow-up: align this contract with `MER-5302` runtime API final signatures before implementation starts.
 
-## 17. References
+## 17. Decision Log
+
+### 2026-02-17 - Adopt Prototype Slot-Based Dependency Semantics
+- Change: Updated low-level design language to make slot-based dependency declarations and canonical oracle-key identity explicit.
+- Reason: Prototype showed consistent dependency introspection and conflict handling through slot maps merged by oracle key.
+- Evidence: `lib/oli/instructor_dashboard/prototype/tile.ex`, `lib/oli/instructor_dashboard/prototype/tile_registry.ex`
+- Impact: Clarifies `FR-005`/`FR-011` implementation boundaries and reduces ambiguity in registry-to-runtime contracts.
+
+## 18. References
 
 - `docs/epics/intelligent_dashboard/data_oracles/prd.md`
 - `docs/epics/intelligent_dashboard/edd.md`
@@ -353,5 +370,9 @@ Integration tests:
 - `lib/oli_web/components/delivery/instructor_dashboard/section_analytics.ex`
 - `lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`
 - `lib/oli/delivery/sections/section_resource_depot.ex`
+- `lib/oli/instructor_dashboard/prototype/tile.ex`
+- `lib/oli/instructor_dashboard/prototype/tile_registry.ex`
+- `lib/oli/instructor_dashboard/prototype/oracle.ex`
+- `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
 - `guides/design/high-level.md`
 - `guides/design/publication-model.md`

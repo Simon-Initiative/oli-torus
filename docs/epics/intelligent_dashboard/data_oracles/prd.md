@@ -1,6 +1,6 @@
 # Data Oracles PRD
 
-Last updated: 2026-02-16
+Last updated: 2026-02-17
 Feature: `data_oracles`
 Epic: `MER-5198` (Instructor Intelligent Dashboard)
 Primary Jira: `MER-5301` Data Infra: Scope/Oracle Contracts and Registry
@@ -11,6 +11,10 @@ Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent
 This feature defines the canonical data-access contract for dashboard consumers by introducing a shared oracle interface, deterministic dependency registry, and normalized scope/context model.
 
 The design must fully encapsulate dashboard queries behind an oracle boundary so tile code, AI consumers, and CSV flows do not run direct analytics queries. The same shared contracts must work across any future dashboard product, while allowing Instructor Dashboard to provide product-specific dependency profiles and binding hooks. Exact concrete instructor oracle modules/keys are intentionally tile-driven and finalized in tile implementation stories.
+
+Prototype alignment:
+- Tile dependencies are best expressed as slot maps (`required_oracles/0`, `optional_oracles/0`) and canonicalized by oracle key.
+- Oracle modules should not call peer oracles directly; orchestration/runtime resolves dependencies.
 
 ## 2. Background & Problem Statement
 
@@ -228,3 +232,16 @@ Open questions:
 - Shared and instructor-specific boundaries are documented and reflected in module layout.
 - Covered instructor dashboard consumers use oracle contract paths with no direct analytics query bypass.
 - PRD/FDD references remain aligned with lane PRDs/FDDs, epic EDD, and lane plan.
+
+Prototype references:
+- `lib/oli/instructor_dashboard/prototype/tile.ex`
+- `lib/oli/instructor_dashboard/prototype/tile_registry.ex`
+- `lib/oli/instructor_dashboard/prototype/oracle.ex`
+
+## 18. Decision Log
+
+### 2026-02-17 - Align Oracle PRD With Prototype Dependency Declarations
+- Change: Added explicit prototype alignment for slot-based dependency declarations and no direct oracle-to-oracle calling.
+- Reason: Prototype implementation validated this pattern as the most consistent dependency contract for tile-driven composition.
+- Evidence: `lib/oli/instructor_dashboard/prototype/tile.ex`, `lib/oli/instructor_dashboard/prototype/tile_registry.ex`, `lib/oli/instructor_dashboard/prototype/oracle.ex`
+- Impact: Tightens interpretation of FR-005/FR-012 without changing feature scope.

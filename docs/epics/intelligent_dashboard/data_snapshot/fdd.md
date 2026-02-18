@@ -1,6 +1,6 @@
 # Data Snapshot FDD
 
-Last updated: 2026-02-16
+Last updated: 2026-02-17
 Feature: `data_snapshot`
 Epic: `MER-5198`
 Primary Jira: `MER-5304`
@@ -46,6 +46,10 @@ What we know:
   - `data_cache`: storage policy layer with read-through APIs.
 - Existing Torus code contains many CSV download patterns and utility ZIP helpers (for example `Oli.Utils.zip/2`), which can be reused by export adapters.
 - No current `Oli.Dashboard.Snapshot.*` implementation exists, so this is greenfield design in lane scope.
+- Prototype snapshot and projection path already exercises core contract expectations:
+  - Snapshot stores `scope`, `oracle_payloads`, `oracle_statuses`, `projections`, `projection_statuses` (`lib/oli/instructor_dashboard/prototype/snapshot.ex`).
+  - `project/4` supports projection assembly from externally provided oracle payloads/statuses, separate from loading.
+  - Tile data modules own joins/categorization and axis logic, not UI components (`lib/oli/instructor_dashboard/prototype/tiles/*/data.ex`).
 
 Unknowns to confirm:
 - Final endpoint/LiveView integration point for `MER-5266` export initiation with this contract.
@@ -60,7 +64,7 @@ Shared modules (`Oli.Dashboard.*`):
 | Module | Responsibility | Public functions |
 |---|---|---|
 | `Oli.Dashboard.Snapshot.Contract` | Typed snapshot and projection structs, status enums, version fields. | `new_snapshot/1`, `new_projection_status/1` |
-| `Oli.Dashboard.Snapshot.Assembler` | Build canonical snapshot from oracle result envelopes; no queries. | `assemble/4`, `merge_oracle_results/2` |
+| `Oli.Dashboard.Snapshot.Assembler` | Build canonical snapshot from oracle result envelopes; no queries. Must support projection from externally supplied oracle payload/status maps (prototype `project/4` pattern). | `assemble/4`, `merge_oracle_results/2` |
 | `Oli.Dashboard.Snapshot.Projections` | Derive capability projections from canonical snapshot. | `derive_all/2`, `derive/3` |
 | `Oli.Dashboard.Snapshot.Parity` | Compute projection/export parity fingerprints and comparisons. | `fingerprint/2`, `compare/2` |
 
@@ -77,6 +81,7 @@ Boundary rules:
 - `DataSnapshot` may use coordinator/cache APIs; assembler/projection/export modules remain queryless.
 - `CsvExport` cannot call oracles, runtime, coordinator, or analytics query modules directly.
 - Projection modules consume snapshot contracts only.
+- Global `scope.filters` must be available to projection modules to support parameterized thresholds and rule-based categorization.
 
 ### 4.2 State & Message Flow
 
@@ -166,6 +171,10 @@ sequenceDiagram
   - Rejected due to inconsistent contracts and no central parity verification.
 - Snapshot as persistence-first datastore table.
   - Rejected for baseline due to complexity and freshness ambiguity; in-memory contract is sufficient now.
+
+Prototype alignment:
+- Keep snapshot tile-agnostic and dependency-aware; projection modules evaluate tile semantics.
+- Preserve projection status map as first-class output for incremental readiness and export policy decisions.
 
 ## 5. Interfaces
 
@@ -336,7 +345,15 @@ Regression tests:
 - Which default export policy should v1 use when a non-critical dataset fails: fail-closed or partial-with-manifest?
 - Should parity checks run synchronously on export path or asynchronously sampled in baseline?
 
-## 17. References
+## 17. Decision Log
+
+### 2026-02-17 - Align Snapshot FDD With Prototype Projection Boundary
+- Change: Added explicit `project/4`-style externally supplied projection path and scope-filter propagation requirement for projection modules.
+- Reason: Prototype demonstrated that separating load orchestration from projection assembly improves incremental updates and reuse across controller paths.
+- Evidence: `lib/oli/instructor_dashboard/prototype/snapshot.ex`, `lib/oli/instructor_dashboard/prototype/tiles/progress/data.ex`, `lib/oli/instructor_dashboard/prototype/tiles/student_support/data.ex`
+- Impact: Clarifies `FR-001`/`FR-004`/`FR-011` boundaries and strengthens deterministic projection-status behavior.
+
+## 18. References
 
 - `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
 - `docs/epics/intelligent_dashboard/edd.md`
@@ -344,3 +361,6 @@ Regression tests:
 - `docs/epics/intelligent_dashboard/data_coordinator/prd.md`
 - `docs/epics/intelligent_dashboard/data_cache/prd.md`
 - `lib/oli/utils.ex`
+- `lib/oli/instructor_dashboard/prototype/snapshot.ex`
+- `lib/oli/instructor_dashboard/prototype/tiles/progress/data.ex`
+- `lib/oli/instructor_dashboard/prototype/tiles/student_support/data.ex`

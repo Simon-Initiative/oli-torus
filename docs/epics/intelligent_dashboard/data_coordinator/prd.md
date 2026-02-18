@@ -1,6 +1,6 @@
 # Data Coordinator PRD
 
-Last updated: 2026-02-16
+Last updated: 2026-02-17
 Feature: `data_coordinator`
 Epic: `MER-5198`
 Primary Jira: `MER-5302` Data Infra: Live Data Coordinator and Request Control
@@ -11,6 +11,10 @@ Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent
 This feature defines runtime request orchestration for Intelligent Dashboard scope changes. It controls in-flight and queued work, suppresses stale UI mutation, and emits incremental hydration updates as oracles complete.
 
 `data_coordinator` is an orchestration layer, not a storage layer. It uses `data_cache` through a stable cache API boundary and does not own cache keying, TTL, capacity, revisit policy, or eviction implementation.
+
+Prototype alignment:
+- `LiveDataController` already models dependency resolution, cache read-through, miss loading, and projection assembly in one orchestration path.
+- Production coordinator should preserve oracle-source observability (`cache`, `loaded`, `skipped_optional`, `error`) to support incremental readiness and debugging.
 
 ## 2. Background & Problem Statement
 
@@ -196,3 +200,16 @@ Open questions:
 - AC-001 through AC-008 passing.
 - No stale UI updates in automated race tests.
 - Coordinator/cache boundary is explicit in code and docs, with coordinator using cache API only.
+
+Prototype references:
+- `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
+- `lib/oli/instructor_dashboard/prototype/snapshot.ex`
+- `lib/oli/instructor_dashboard/prototype/tile_registry.ex`
+
+## 18. Decision Log
+
+### 2026-02-17 - Incorporate Prototype Coordinator Flow and Source Metadata
+- Change: Added explicit prototype-aligned orchestration expectations and oracle-source metadata guidance.
+- Reason: Prototype confirmed that cache read-through + source attribution are key to incremental hydration behavior.
+- Evidence: `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
+- Impact: Refines interpretation of FR-004/FR-005/FR-008 and AC-003/AC-006.

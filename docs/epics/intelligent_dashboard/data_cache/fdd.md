@@ -1,6 +1,6 @@
 # Data Cache FDD
 
-Last updated: 2026-02-16
+Last updated: 2026-02-17
 Feature: `data_cache`
 Epic: `MER-5198`
 Primary Jira: `MER-5303`
@@ -40,6 +40,9 @@ What we know:
 - `docs/epics/intelligent_dashboard/data_cache/prd.md` defines key shapes, TTL defaults, tiered capacity env vars, late-write requirements, and strict revisit policy.
 - `docs/epics/intelligent_dashboard/edd.md` positions cache as reusable `Oli.Dashboard.*` infrastructure consumed by coordinator/runtime flows.
 - Existing Torus system includes cache/depot patterns and telemetry conventions that fit this design.
+- Prototype validates a minimal, effective in-process cache shape:
+  - key by normalized scope fields + oracle key (`lib/oli/instructor_dashboard/prototype/in_process_cache.ex`).
+  - coordinator/controller performs read-through orchestration and cache writes (`lib/oli/instructor_dashboard/prototype/live_data_controller.ex`).
 
 Unknowns to confirm:
 - Final implementation choice for in-process backing store (LiveView-owned map vs ETS-backed structure).
@@ -56,7 +59,7 @@ Core components:
 - `Oli.Dashboard.Cache.Key`
   - Canonical key construction/parsing and identity guards.
 - `Oli.Dashboard.Cache.InProcessStore`
-  - Session-local oracle payload store by container.
+  - Session-local oracle payload store by scope + oracle identity.
   - Tracks container recency for LRU.
 - `Oli.Dashboard.RevisitCache`
   - Node-wide per-user short-lived store for eligible return flows.
@@ -68,6 +71,7 @@ Core components:
 Boundary rule:
 - Coordinator calls cache facade APIs.
 - Cache layer contains no coordinator queue/token transition logic.
+- Prototype-confirmed separation: cache module has only `new/fetch/put`; orchestration stays controller-owned.
 
 ### 4.2 State & Message Flow
 
@@ -235,6 +239,10 @@ Lookup order:
 - Normal flow: `InProcess -> build/load`.
 - Revisit-eligible flow: `InProcess -> Revisit -> build/load`.
 
+Prototype alignment notes:
+- Scope filters are part of cache identity in prototype and should remain part of canonical scope key semantics.
+- TTL/LRU/revisit/coalescing are production additions beyond prototype and should be implemented in cache layer without moving orchestration into coordinator.
+
 ## 9. Performance and Scalability Plan
 
 ### 9.1 Budgets
@@ -323,8 +331,19 @@ Concurrency tests:
 - Should revisit cache become optionally distributed across nodes in a later phase?
 - Should per-oracle TTL override support be introduced after baseline metrics are collected?
 
-## 17. References
+## 17. Decision Log
+
+### 2026-02-17 - Capture Prototype Baseline for Cache Identity and Orchestration Split
+- Change: Updated FDD language to explicitly anchor baseline cache identity on scope+oracle key and preserve cache-only storage responsibilities.
+- Reason: Prototype proved read-through value with minimal cache APIs and clear controller/cache responsibility boundaries.
+- Evidence: `lib/oli/instructor_dashboard/prototype/in_process_cache.ex`, `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
+- Impact: Clarifies `FR-001`/`FR-006`/`FR-010` implementation boundaries and prevents policy leakage into coordinator.
+
+## 18. References
 
 - `docs/epics/intelligent_dashboard/data_cache/prd.md`
 - `docs/epics/intelligent_dashboard/edd.md`
 - `docs/epics/intelligent_dashboard/data_coordinator/prd.md`
+- `lib/oli/instructor_dashboard/prototype/in_process_cache.ex`
+- `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
+- `lib/oli/instructor_dashboard/prototype/scope.ex`

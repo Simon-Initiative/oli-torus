@@ -1,6 +1,6 @@
 # Data Coordinator FDD
 
-Last updated: 2026-02-16
+Last updated: 2026-02-17
 Feature: `data_coordinator`
 Epic: `MER-5198`
 Primary Jira: `MER-5302`
@@ -42,6 +42,9 @@ What we know:
 - `docs/epics/intelligent_dashboard/edd.md` positions `Oli.Dashboard.LiveDataCoordinator` as runtime orchestrator between LiveView, runtime, and cache.
 - Existing instructor dashboard LiveView paths already perform asynchronous loading and message-based updates (`lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`), making a session-scoped coordinator fit the platform model.
 - Existing telemetry style uses structured `:telemetry.execute` with AppSignal mapping, which this feature follows.
+- Prototype `LiveDataController` already demonstrates coordinator-fit orchestration:
+  - resolve tile dependencies, read cache first, load misses, write-through cache, then project (`lib/oli/instructor_dashboard/prototype/live_data_controller.ex`).
+  - expose per-oracle source metadata (`:cache`, `:loaded`, `:skipped_optional`) to support observability and incremental UX.
 
 Unknowns to confirm:
 - Final action/event naming conventions shared with `MER-5304` snapshot assembly integration.
@@ -68,6 +71,7 @@ Boundary contract:
 - Coordinator depends on cache facade and runtime facade only.
 - Coordinator does not build cache keys or implement TTL/LRU/revisit/coalescing policy.
 - Cache does not own coordinator queue/token state.
+- Prototype-validated baseline orchestration order: `resolve_oracles -> cache lookup -> load misses -> cache write -> snapshot.project`.
 
 ### 4.2 State & Message Flow
 
@@ -115,6 +119,10 @@ sequenceDiagram
         LDC-->>LV: transition complete(token)
     end
 ```
+
+Prototype alignment notes:
+- `load/2` in prototype returns both snapshot and orchestration metadata, including oracle source counts. Production should keep equivalent metadata on emitted events/telemetry.
+- Optional oracle deferral is represented with deterministic `:skipped_optional` status and should map to tile-level readiness semantics.
 
 Stale completion behavior:
 
@@ -320,9 +328,20 @@ LiveView tests:
 - Should cooperative cancellation be enabled after baseline stability (to reduce wasted runtime work)?
 - Should optional short debounce be introduced only when queue replacement rate exceeds threshold?
 
-## 17. References
+## 17. Decision Log
+
+### 2026-02-17 - Align Coordinator FDD With Prototype LiveDataController Flow
+- Change: Added explicit prototype-backed orchestration sequence and metadata expectations for oracle source attribution.
+- Reason: Prototype validated that read-through orchestration and source tagging are central to incremental hydration and cache observability.
+- Evidence: `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`, `lib/oli/instructor_dashboard/prototype/snapshot.ex`
+- Impact: Tightens `FR-004`/`FR-005`/`FR-008` implementation details without changing queue/token acceptance outcomes.
+
+## 18. References
 
 - `docs/epics/intelligent_dashboard/data_coordinator/prd.md`
 - `docs/epics/intelligent_dashboard/edd.md`
 - `docs/epics/intelligent_dashboard/data_cache/prd.md`
 - `lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`
+- `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
+- `lib/oli/instructor_dashboard/prototype/snapshot.ex`
+- `lib/oli/instructor_dashboard/prototype/tile_registry.ex`

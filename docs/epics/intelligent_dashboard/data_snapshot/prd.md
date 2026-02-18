@@ -1,6 +1,6 @@
 # Data Snapshot PRD
 
-Last updated: 2026-02-16
+Last updated: 2026-02-17
 Feature: `data_snapshot`
 Epic: `MER-5198`
 Primary Jira: `MER-5304` Data Infra: Snapshot Assembler and CSV Reuse Contract
@@ -11,6 +11,11 @@ Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent
 This feature defines the canonical snapshot and projection layer for Intelligent Dashboard and makes it the single data contract consumed by tiles, AI context assembly, and CSV export.
 
 `data_snapshot` is a composition and transform layer. It assembles deterministic scoped snapshots from oracle outputs and derives consumer-oriented projections. It does not run direct analytics queries or implement queue/token/cache policy logic. Exact concrete instructor oracle implementations remain tile-driven; this layer consumes whatever oracle contracts/bindings are active for the scope request.
+
+Prototype alignment:
+- Snapshot contract in prototype already includes `scope`, oracle payload/status maps, projection map, and projection-status map.
+- Projection-only assembly (`project/4`) from externally supplied oracle results should remain a first-class path.
+- Tile-specific joins/categorization and axis rules belong in projection modules, not UI modules.
 
 ## 2. Background & Problem Statement
 
@@ -208,3 +213,17 @@ Open questions:
 - Snapshot/projection/export module boundaries are explicit and enforced.
 - CSV generation uses transform-only path from snapshot/projection contracts.
 - Parity checks and observability metrics are in place for rollout confidence.
+
+Prototype references:
+- `lib/oli/instructor_dashboard/prototype/snapshot.ex`
+- `lib/oli/instructor_dashboard/prototype/tiles/progress/data.ex`
+- `lib/oli/instructor_dashboard/prototype/tiles/student_support/data.ex`
+- `lib/oli/instructor_dashboard/prototype/scope.ex`
+
+## 18. Decision Log
+
+### 2026-02-17 - Capture Prototype Snapshot and Projection Boundaries
+- Change: Added explicit prototype alignment for snapshot shape, externally supplied projection assembly, and projection-module ownership of rules/joins.
+- Reason: Prototype demonstrated this split is necessary for reusable, incremental data consumption across UI/export.
+- Evidence: `lib/oli/instructor_dashboard/prototype/snapshot.ex`, `lib/oli/instructor_dashboard/prototype/tiles/progress/data.ex`, `lib/oli/instructor_dashboard/prototype/tiles/student_support/data.ex`
+- Impact: Strengthens FR-001/FR-002/FR-004/FR-011 interpretation and AC-001/AC-006 review criteria.
