@@ -33,6 +33,7 @@ Implementation stories:
 - `MER-5302` [Intelligent Dashboard] Data Infra: Live Data Coordinator and Request Control
 - `MER-5303` [Intelligent Dashboard] Data Infra: InProcess/Revisit Cache and Tiered Limits
 - `MER-5304` [Intelligent Dashboard] Data Infra: Snapshot Assembler and CSV Reuse Contract
+- `MER-5310` [Intelligent Dashboard] Technical Story: Concrete Oracle Implementations
 - `MER-5305` [Intelligent Dashboard] AI Infra: Recommendation Pipeline and Contracts
 
 ## Feature-Spec Required Tracks
@@ -49,6 +50,8 @@ Implementation stories:
 - `data_snapshot` (`MER-5304`)
   - `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
   - `docs/epics/intelligent_dashboard/data_snapshot/fdd.md`
+- `concrete_oracles` (`MER-5310`)
+  - `docs/epics/intelligent_dashboard/concrete_oracles/README.md`
 
 ## Related Documents
 
@@ -58,6 +61,7 @@ Implementation stories:
 - `docs/epics/intelligent_dashboard/data_coordinator/prd.md`
 - `docs/epics/intelligent_dashboard/data_cache/prd.md`
 - `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
+- `docs/epics/intelligent_dashboard/concrete_oracles/README.md`
 - `docs/epics/intelligent_dashboard/plan.md`
 
 ## Development Lanes

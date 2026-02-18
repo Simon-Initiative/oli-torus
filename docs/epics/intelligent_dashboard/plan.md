@@ -6,7 +6,7 @@ Context references:
 - Epic overview: `docs/epics/intelligent_dashboard/overview.md`
 - Epic PRD: `docs/epics/intelligent_dashboard/prd.md`
 - Epic EDD: `docs/epics/intelligent_dashboard/edd.md`
-- Data workstream design: `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`, `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
+- Data workstream design: `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`, `docs/epics/intelligent_dashboard/data_snapshot/prd.md`, `docs/epics/intelligent_dashboard/concrete_oracles/README.md`
 - Lane 1 feature tracks:
   - `docs/epics/intelligent_dashboard/data_oracles/prd.md`
   - `docs/epics/intelligent_dashboard/data_oracles/fdd.md`
@@ -16,6 +16,7 @@ Context references:
   - `docs/epics/intelligent_dashboard/data_cache/fdd.md`
   - `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
   - `docs/epics/intelligent_dashboard/data_snapshot/fdd.md`
+  - `docs/epics/intelligent_dashboard/concrete_oracles/README.md`
 - Lane-structured reference format: `docs/epics/adaptive_page_improvements/plan.md`
 
 ## Why We Are Organizing By Lanes
@@ -41,7 +42,7 @@ Lanes group tightly related work so teams can execute in coherent streams with e
 
 - This plan is intentionally high-level and lane-oriented.
 - Jira scope and story descriptions were revalidated from Jira on 2026-02-16 for epic `MER-5198` and children:
-  - `MER-5246`, `MER-5248`, `MER-5249`, `MER-5250`, `MER-5251`, `MER-5252`, `MER-5253`, `MER-5254`, `MER-5255`, `MER-5256`, `MER-5257`, `MER-5258`, `MER-5259`, `MER-5266`.
+  - `MER-5246`, `MER-5248`, `MER-5249`, `MER-5250`, `MER-5251`, `MER-5252`, `MER-5253`, `MER-5254`, `MER-5255`, `MER-5256`, `MER-5257`, `MER-5258`, `MER-5259`, `MER-5266`, `MER-5310`.
 - `MER-5218` (Instructor AI Recommendations POC) is treated as discovery input/reference, not primary delivery scope.
 - Serial order inside each lane is dependency-first, then risk reduction, then workflow completion.
 - Lane dependencies are lane-level by default; ticket-level constraints are called out when needed.
@@ -61,6 +62,8 @@ Lanes group tightly related work so teams can execute in coherent streams with e
 - `MER-5304` Data Infra: Snapshot Assembler and CSV Reuse Contract (`data_snapshot`)
   - `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
   - `docs/epics/intelligent_dashboard/data_snapshot/fdd.md`
+- `MER-5310` Technical Story: Concrete Oracle Implementations (`concrete_oracles`)
+  - `docs/epics/intelligent_dashboard/concrete_oracles/README.md`
 - Enabling stories that consume this lane:
   - `MER-5248` Global Filter Navigation Learning Dashboard
   - `MER-5266` Intelligent Dashboard CSV Download
@@ -70,8 +73,7 @@ Lanes group tightly related work so teams can execute in coherent streams with e
 2. `MER-5302` Data Infra: Live Data Coordinator and Request Control
 3. `MER-5303` Data Infra: InProcess/Revisit Cache and Tiered Limits
 4. `MER-5304` Data Infra: Snapshot Assembler and CSV Reuse Contract
-5. `MER-5248` Global Filter Navigation Learning Dashboard
-6. `MER-5266` Intelligent Dashboard CSV Download
+5. `MER-5310` Technical Story: Concrete Oracle Implementations
 
 ### Dependency Notes
 - `MER-5248` requires deterministic scope/filter runtime and cache behavior, which are Lane 1 concerns.

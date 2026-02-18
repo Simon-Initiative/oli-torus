@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-09
 Epic: `MER-5198`
-Related docs: `docs/epics/intelligent_dashboard/overview.md`, `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/plan.md`, `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`, `docs/epics/intelligent_dashboard/data_snapshot/prd.md`
+Related docs: `docs/epics/intelligent_dashboard/overview.md`, `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent_dashboard/plan.md`, `docs/epics/intelligent_dashboard/data_oracles/prd.md`, `docs/epics/intelligent_dashboard/data_coordinator/prd.md`, `docs/epics/intelligent_dashboard/data_cache/prd.md`, `docs/epics/intelligent_dashboard/data_snapshot/prd.md`, `docs/epics/intelligent_dashboard/concrete_oracles/README.md`
 
 ## 1. Overview
 
