@@ -21,6 +21,9 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
              "FROM s3('s3://bucket/section/**/*.jsonl', 'AKIA_TEST', 'secret', 'JSONAsString', 'json String')"
 
     assert sql =~ "cityHash64(json) AS event_hash"
+    assert sql =~ "coalesce(nullIf(JSON_VALUE(json, '$.id'), ''), nullIf(JSON_VALUE(json, '$.statement.id'), ''))"
+    assert sql =~ "nullIf(JSON_VALUE(json, '$.timestamp'), '')"
+    assert sql =~ "nullIf(JSON_VALUE(json, '$.statement.timestamp'), '')"
 
     assert sql =~
              ~r/rowNumberInAllBlocks\(\)\s+- min\(rowNumberInAllBlocks\(\)\) OVER \(PARTITION BY _path\)\s+\+ 1 AS source_line/
