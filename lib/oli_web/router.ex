@@ -15,6 +15,7 @@ defmodule OliWeb.Router do
     plug(:fetch_session)
     plug(:fetch_current_author)
     plug(:fetch_current_user)
+    plug(OliWeb.Plugs.FetchMasquerade)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :default})
     plug(:put_layout, html: {OliWeb.LayoutView, :app})
@@ -170,6 +171,8 @@ defmodule OliWeb.Router do
     plug(:require_authenticated_author)
 
     plug(:require_admin)
+
+    plug(OliWeb.Plugs.BlockAdminDuringMasquerade)
   end
 
   pipeline :require_authenticated_account_admin do
@@ -188,6 +191,8 @@ defmodule OliWeb.Router do
     plug(:require_authenticated_author)
 
     plug(:require_system_admin)
+
+    plug(OliWeb.Plugs.BlockAdminDuringMasquerade)
   end
 
   # parse url encoded forms
@@ -1593,7 +1598,11 @@ defmodule OliWeb.Router do
   ### Admin Dashboard / Telemetry
 
   scope "/admin", OliWeb do
-    pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin])
+    pipe_through([
+      :browser,
+      :authoring_protected,
+      :require_authenticated_system_admin
+    ])
 
     live_dashboard("/dashboard",
       metrics: {OliWeb.Telemetry, :non_distributed_metrics},
@@ -1725,6 +1734,9 @@ defmodule OliWeb.Router do
     scope "/" do
       pipe_through([:require_authenticated_system_admin])
       live("/audit_log", Admin.AuditLogLive)
+      get("/users/:user_id/act_as", MasqueradeController, :confirm)
+      post("/masquerade/users/:user_id/start", MasqueradeController, :start)
+      delete("/masquerade", MasqueradeController, :stop)
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
 

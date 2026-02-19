@@ -9,6 +9,7 @@ defmodule OliWeb.Users.UsersDetailView do
   alias Oli.Accounts.User
   alias Oli.Auditing
   alias Oli.Delivery.{Metrics, Paywall, Sections}
+  alias Oli.Features
   alias Oli.Lti.LtiParams
 
   alias OliWeb.Accounts.Modals.{
@@ -228,17 +229,17 @@ defmodule OliWeb.Users.UsersDetailView do
           />
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
-          <%= if @user.independent_learner do %>
-            <Actions.render
-              user_id={@user.id}
-              account_locked={!is_nil(@user.locked_at)}
-              email_confirmation_pending={Accounts.user_confirmation_pending?(@user)}
-              password_reset_link={@password_reset_link}
-            />
-          <% else %>
-            <div>No actions available</div>
-            <div class="text-secondary">LTI users are managed by their LMS</div>
-          <% end %>
+          <Actions.render
+            user_id={@user.id}
+            account_locked={!is_nil(@user.locked_at)}
+            email_confirmation_pending={Accounts.user_confirmation_pending?(@user)}
+            password_reset_link={@password_reset_link}
+            include_account_actions={@user.independent_learner}
+            act_as_enabled={
+              Accounts.has_admin_role?(@current_author, :system_admin) and
+                Features.enabled?("admin-act-as-user")
+            }
+          />
         </Group.render>
       </Groups.render>
     </div>

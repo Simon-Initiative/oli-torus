@@ -1,0 +1,24 @@
+<div class="container py-8 max-w-3xl">
+  <h2 class="mb-2">Act as user confirmation</h2>
+  <p class="text-muted mb-6">
+    You are about to act as this user. Admin pages will be unavailable until you stop.
+  </p>
+
+  <div class="card p-4 mb-6">
+    <div><strong>Name:</strong> {@target_user.name}</div>
+    <div><strong>Email:</strong> {@target_user.email}</div>
+    <div>
+      <strong>Independent learner:</strong>
+      {if @target_user.independent_learner, do: "Yes", else: "No"}
+    </div>
+  </div>
+
+  <div class="d-flex gap-3">
+    <form action={~p"/admin/masquerade/users/#{@target_user.id}/start"} method="post">
+      <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+      <button type="submit" class="btn btn-danger">Proceed</button>
+    </form>
+
+    <a href={~p"/admin/users/#{@target_user.id}"} class="btn btn-secondary">Cancel</a>
+  </div>
+</div>

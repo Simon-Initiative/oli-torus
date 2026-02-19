@@ -7,7 +7,8 @@ defmodule Oli.Features do
   @features [
     %Feature{label: "adaptivity", description: "Adaptive lesson authoring"},
     %Feature{label: "equity", description: "Equity qa check"},
-    %Feature{label: "live-debugging", description: "Live attempt debugging/observation support"}
+    %Feature{label: "live-debugging", description: "Live attempt debugging/observation support"},
+    %Feature{label: "admin-act-as-user", description: "System admin act-as-user masquerade flow"}
   ]
 
   def features, do: @features
@@ -15,9 +16,13 @@ defmodule Oli.Features do
   def enabled?("adaptivity"), do: get_state("adaptivity") == :enabled
   def enabled?("equity"), do: get_state("equity") == :enabled
   def enabled?("live-debugging"), do: get_state("live-debugging") == :enabled
+  def enabled?("admin-act-as-user"), do: get_state("admin-act-as-user") == :enabled
 
   defp get_state(label) do
-    Repo.get!(FeatureState, label).state
+    case Repo.get(FeatureState, label) do
+      nil -> :disabled
+      feature_state -> feature_state.state
+    end
   end
 
   @doc """
@@ -27,15 +32,28 @@ defmodule Oli.Features do
       [{%Feature{}, state}, ...]
   """
   def list_features_and_states do
-    query = from(s in FeatureState, select: s.state, order_by: :label)
+    states_by_label =
+      from(s in FeatureState, select: {s.label, s.state})
+      |> Repo.all()
+      |> Map.new()
 
-    Enum.zip(@features, Repo.all(query))
+    Enum.map(@features, fn feature ->
+      {feature, Map.get(states_by_label, feature.label, :disabled)}
+    end)
   end
 
   def change_state(label, state) do
-    Repo.get!(FeatureState, label)
-    |> FeatureState.changeset(%{state: state})
-    |> Repo.update()
+    case Repo.get(FeatureState, label) do
+      nil ->
+        %FeatureState{}
+        |> FeatureState.changeset(%{label: label, state: state})
+        |> Repo.insert()
+
+      feature_state ->
+        feature_state
+        |> FeatureState.changeset(%{state: state})
+        |> Repo.update()
+    end
   end
 
   def bootstrap_feature_states() do

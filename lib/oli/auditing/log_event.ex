@@ -22,7 +22,9 @@ defmodule Oli.Auditing.LogEvent do
     :feature_rollout_stage_deleted,
     :feature_rollout_exemption_upserted,
     :feature_rollout_exemption_deleted,
-    :account_internal_flag_changed
+    :account_internal_flag_changed,
+    :masquerade_started,
+    :masquerade_stopped
   ]
 
   schema "audit_log_events" do
@@ -169,6 +171,14 @@ defmodule Oli.Auditing.LogEvent do
         new_value = get_in(event.details, ["is_internal"])
         status = if(new_value, do: "internal", else: "external")
         "Updated internal flag for #{account_type} (#{status})"
+
+      :masquerade_started ->
+        subject_name = get_in(event.details, ["subject_name"]) || "user"
+        "Started masquerade as #{subject_name}"
+
+      :masquerade_stopped ->
+        subject_name = get_in(event.details, ["subject_name"]) || "user"
+        "Stopped masquerade as #{subject_name}"
 
       _ ->
         "#{event.event_type}"

@@ -147,6 +147,19 @@
     </script>
   </head>
   <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
+    <%= if assigns[:masquerade] do %>
+      <div class="fixed inset-0 z-[9998] pointer-events-none border-[6px] border-[#FF00FF]"></div>
+      <div class="fixed bottom-0 inset-x-0 z-[9999] bg-[#FF00FF] text-black px-4 py-2 text-sm flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <strong>Acting as user:</strong> {assigns.masquerade.subject_name} ({assigns.masquerade.subject_email})
+        </div>
+        <form action="/admin/masquerade" method="post" class="m-0">
+          <input type="hidden" name="_method" value="delete" />
+          <input type="hidden" name="_csrf_token" value={Plug.CSRFProtection.get_csrf_token()} />
+          <button type="submit" class="btn btn-dark btn-sm">Stop acting as user</button>
+        </form>
+      </div>
+    <% end %>
     <input type="hidden" id="layout-id" data-layout-id="delivery" />
     {live_render(@conn, OliWeb.SystemMessageLive.ShowView)}
 
