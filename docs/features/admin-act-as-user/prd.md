@@ -26,12 +26,14 @@ Links: None
   - Show persistent, high-visibility masquerade chrome (magenta border + bottom bar with target identity + stop action).
   - Audit exactly when impersonation starts and stops, and which admin initiated/stopped it.
   - Gate the feature behind a system-level feature flag.
+  - Block access to `/admin/*` pages while masquerading so the acting experience stays user-equivalent.
   - Structure the design so "Act as author" can be added later with minimal architecture changes.
 - Non-Goals:
   - Acting as author accounts in this phase.
   - Bulk impersonation operations.
   - Long-term impersonation history UI beyond existing audit log browsing.
   - Cross-browser/session synchronization beyond the active browser session.
+  - Enforcing a maximum masquerade duration in v1.
 
 ## 4. Users & Use Cases
 - Primary Users / Roles:
@@ -76,6 +78,7 @@ Links: None
 | FR-009 | Masquerade behavior must apply across both controller and LiveView paths (not just one rendering mode). | P1 | Backend |
 | FR-010 | System feature flag must fully disable entry points and start/stop execution paths when off. | P0 | Backend |
 | FR-011 | Architecture must define an extensible impersonation subject model so author masquerade can be added without redesigning core flow. | P1 | Backend |
+| FR-012 | While masquerading, requests to `/admin/*` pages (including admin LiveViews) must be blocked and redirected to a non-admin user-facing route with an explanatory flash. | P0 | Backend |
 
 ## 7. Acceptance Criteria (Testable)
 - AC-001 (FR-001, FR-010) — Given the acting feature flag is disabled, when a system admin opens `/admin/users/:user_id`, then no `Act as user` action is visible and start endpoints reject with forbidden/not found.
@@ -87,6 +90,7 @@ Links: None
 - AC-007 (FR-007) — Given masquerade is started/stopped, when querying audit log, then one start event and one stop event exist with timestamps, admin actor identity, and target user identity.
 - AC-008 (FR-009) — Given masquerade is active, when navigating across LiveView and controller routes, then authorization and rendered behavior align with the target user account context.
 - AC-009 (FR-011) — Given impersonation core modules, when reviewing APIs and schema/contracts, then subject type is not hard-coded to user-only internals (supports future `author` subject addition).
+- AC-010 (FR-012) — Given masquerade is active, when the actor navigates to `/admin/*`, then access is blocked and they are redirected away from admin pages with a clear message.
 
 ## 8. Non-Functional Requirements
 - Performance & Scale:
@@ -97,6 +101,7 @@ Links: None
   - Stop action is idempotent.
   - Session restoration is deterministic when pre-masquerade user session exists or is nil.
   - If target user cannot be loaded at start time, masquerade is not started and no partial session state remains.
+  - Access blocking for `/admin/*` during masquerade must be consistently enforced for both controller and LiveView admin routes.
 - Security & Privacy:
   - Only system admins can initiate/terminate masquerade.
   - Masquerade metadata in session must be server-side trusted only.
@@ -180,9 +185,9 @@ Links: None
   - Acting is initiated from admin author session and may occur even if no pre-existing `current_user` session exists.
   - Existing audit log schema accepts new event types without DB schema changes.
   - UI chrome can be injected through shared root/layout templates used by both LiveView and controller-rendered pages.
+  - Max masquerade duration is intentionally not enforced in v1.
 - Open Questions:
-  - Should forced timeout/expiry of masquerade be added in v1 (e.g., 60-minute max duration) or deferred?
-  - Should stop events include reason taxonomy (`manual_stop`, `logout`, `flag_disabled`) as required fields?
+  - None at this time.
 
 ## 15. Timeline & Milestones (Draft)
 - Milestone 1: PRD/FDD approved and feature flag defined.

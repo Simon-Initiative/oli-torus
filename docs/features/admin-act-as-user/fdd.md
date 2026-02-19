@@ -12,6 +12,7 @@ This design introduces a system-admin-only masquerade flow that allows an admin 
   - FR-008/FR-010: Restrict to system admin and gate everything behind system-level feature flag.
   - FR-009: Behavior consistent across controller and LiveView surfaces.
   - FR-011: Internals must support future `author` masquerade.
+  - FR-012: Block `/admin/*` access while masquerading.
 - Non-Functional Requirements:
   - Start/stop latency p95 < 250ms.
   - Added per-request masquerade overhead < 2ms p95.
@@ -22,6 +23,7 @@ This design introduces a system-admin-only masquerade flow that allows an admin 
   - `audit_log_events.event_type` remains string-backed; adding new enum atoms requires app code changes only.
   - Root/layout templates are sufficient injection points for global chrome across primary app surfaces.
   - Admin author session should remain active during masquerade to allow explicit stop and attribution.
+  - Maximum masquerade duration is intentionally not enforced in v1.
 
 ## 3. Torus Context Summary
 - What we know:
@@ -33,7 +35,7 @@ This design introduces a system-admin-only masquerade flow that allows an admin 
   - Admin user detail route exists at `/admin/users/:user_id` in `lib/oli_web/router.ex`.
 - Unknowns to confirm:
   - Whether any niche routes bypass shared layouts and need extra chrome injection points.
-  - Whether current authorization checks that rely on `is_admin` need explicit suppression during masquerade for strict "act exactly as user" semantics.
+  - None currently; `/admin/*` access will be explicitly blocked during masquerade.
 
 ## 4. Proposed Design
 ### 4.1 Component Roles & Interactions
@@ -50,6 +52,9 @@ This design introduces a system-admin-only masquerade flow that allows an admin 
 - `OliWeb.Plugs.FetchMasquerade` (new plug):
   - Reads session masquerade metadata and assigns normalized `:masquerade` payload to `conn.assigns`.
   - Used by layouts and request-time policy helpers.
+- `OliWeb.Plugs.BlockAdminDuringMasquerade` (new plug):
+  - Enforces FR-012 by rejecting/redirecting any `/admin/*` request while masquerade is active.
+  - Added in admin pipelines after auth plugs so actor identity is available for messaging/audit telemetry.
 - `OliWeb.LiveSessionPlugs.SetMasquerade` (new on_mount helper):
   - Mirrors conn masquerade payload into socket assigns for LiveView-driven rendering consistency.
 - Layout/UI layer:
@@ -72,11 +77,12 @@ This design introduces a system-admin-only masquerade flow that allows an admin 
   - Persist masquerade metadata (`active`, `subject_type=user`, `subject_id`, `admin_author_id`, `started_at`).
 7. Controller logs audit `:masquerade_started` with admin + target metadata and redirects to user-facing landing path.
 8. On every request/mount, auth reads effective user as target; plug/on_mount expose `:masquerade` for chrome rendering.
-9. `Stop acting as user` sends `DELETE /admin/masquerade`.
-10. Controller invokes `Oli.Accounts.Masquerade.stop/2`:
+9. If a masquerading actor navigates to `/admin/*`, `BlockAdminDuringMasquerade` redirects to a user-facing route with explanatory flash.
+10. `Stop acting as user` sends `DELETE /admin/masquerade`.
+11. Controller invokes `Oli.Accounts.Masquerade.stop/2`:
   - Restore original user session keys if present, else clear user session keys.
   - Remove masquerade metadata.
-11. Controller logs audit `:masquerade_stopped` and redirects to admin user detail page.
+12. Controller logs audit `:masquerade_stopped` and redirects to admin user detail page.
 
 ### 4.3 Supervision & Lifecycle
 - No new long-lived OTP processes required.
@@ -106,6 +112,8 @@ This design introduces a system-admin-only masquerade flow that allows an admin 
 - `DELETE /admin/masquerade`
   - Stops active masquerade.
   - Idempotent: safe when not active.
+- All `/admin/*` routes while masquerading:
+  - Redirect to non-admin route with flash (`Admin pages are unavailable while acting as a user`).
 
 ### 5.2 LiveView
 - `OliWeb.Users.UsersDetailView`:
@@ -169,7 +177,7 @@ This design introduces a system-admin-only masquerade flow that allows an admin 
 - Hotspot: layout rendering checks on every request.
   - Mitigation: constant-time session key reads, no DB lookups for chrome display.
 - Hotspot: privilege branching complexity during masquerade.
-  - Mitigation: central helper `Masquerade.effective_admin?/1` and explicit tests for guarded routes.
+  - Mitigation: central helper + dedicated blocking plug for `/admin/*` and explicit route tests.
 - Hotspot: token churn if repeatedly switching users.
   - Mitigation: keep one active masquerade and require stop before starting another.
 
@@ -186,7 +194,8 @@ This design introduces a system-admin-only masquerade flow that allows an admin 
 ## 11. Observability
 - Telemetry events:
   - `[:oli, :masquerade, :start]` metadata: `%{admin_author_id, subject_type, subject_id}`
-  - `[:oli, :masquerade, :stop]` metadata: `%{admin_author_id, subject_type, subject_id, reason, duration_seconds}`
+  - `[:oli, :masquerade, :stop]` metadata: `%{admin_author_id, subject_type, subject_id, duration_seconds}`
+  - `[:oli, :masquerade, :admin_blocked]` metadata: `%{admin_author_id, path}`
   - `[:oli, :masquerade, :denied]` metadata: `%{reason}`
 - Structured logs:
   - Warning logs for invalid session recovery and audit write failures.
@@ -227,16 +236,14 @@ This design introduces a system-admin-only masquerade flow that allows an admin 
 
 ## 15. Risks & Mitigations
 - Risk: admin authorization leaks while acting.
-  - Mitigation: central effective-principal helper and strict route tests for admin-only access while masquerading.
+  - Mitigation: hard block `/admin/*` during masquerade plus strict route tests.
 - Risk: missing end audits for abnormal browser/session termination.
   - Mitigation: capture on explicit stop and logout; record this residual limitation in docs.
 - Risk: layout inconsistency across less-common templates.
   - Mitigation: enumerate and patch all root/primary layouts in implementation checklist.
 
 ## 16. Open Questions & Follow-ups
-- Should v1 enforce maximum masquerade duration and auto-stop policy?
-- Should admin be blocked from visiting `/admin/*` pages while masquerading to enforce stricter "exact user view" semantics?
-- Should stop reason taxonomy be standardized in audit details (`manual_stop`, `logout`, `flag_disabled`, `recovery_cleanup`)?
+- None.
 - Follow-up for phase 2: implement `subject_type = author` using same contracts and UI.
 
 ## 17. References
