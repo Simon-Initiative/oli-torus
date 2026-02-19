@@ -18,6 +18,7 @@ defmodule Oli.InstructorDashboard.Prototype.Tiles.Progress.Data do
     axis_type = axis_container_type(scope)
     threshold = Map.get(scope.filters, :completion_threshold, 80)
     containers = containers_for_axis(scope, contents_payload, axis_type)
+
     progress_by_container =
       progress_payload
       |> Map.get(:by_container, %{})

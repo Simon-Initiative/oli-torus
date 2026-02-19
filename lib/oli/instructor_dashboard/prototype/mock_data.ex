@@ -4,12 +4,36 @@ defmodule Oli.InstructorDashboard.Prototype.MockData do
   """
 
   @units [
-    %{id: 1, title: "Unit 1", modules: [%{id: 101, title: "Module 1A"}, %{id: 102, title: "Module 1B"}]},
-    %{id: 2, title: "Unit 2", modules: [%{id: 201, title: "Module 2A"}, %{id: 202, title: "Module 2B"}]},
-    %{id: 3, title: "Unit 3", modules: [%{id: 301, title: "Module 3A"}, %{id: 302, title: "Module 3B"}]},
-    %{id: 4, title: "Unit 4", modules: [%{id: 401, title: "Module 4A"}, %{id: 402, title: "Module 4B"}]},
-    %{id: 5, title: "Unit 5", modules: [%{id: 501, title: "Module 5A"}, %{id: 502, title: "Module 5B"}]},
-    %{id: 6, title: "Unit 6", modules: [%{id: 601, title: "Module 6A"}, %{id: 602, title: "Module 6B"}]}
+    %{
+      id: 1,
+      title: "Unit 1",
+      modules: [%{id: 101, title: "Module 1A"}, %{id: 102, title: "Module 1B"}]
+    },
+    %{
+      id: 2,
+      title: "Unit 2",
+      modules: [%{id: 201, title: "Module 2A"}, %{id: 202, title: "Module 2B"}]
+    },
+    %{
+      id: 3,
+      title: "Unit 3",
+      modules: [%{id: 301, title: "Module 3A"}, %{id: 302, title: "Module 3B"}]
+    },
+    %{
+      id: 4,
+      title: "Unit 4",
+      modules: [%{id: 401, title: "Module 4A"}, %{id: 402, title: "Module 4B"}]
+    },
+    %{
+      id: 5,
+      title: "Unit 5",
+      modules: [%{id: 501, title: "Module 5A"}, %{id: 502, title: "Module 5B"}]
+    },
+    %{
+      id: 6,
+      title: "Unit 6",
+      modules: [%{id: 601, title: "Module 6A"}, %{id: 602, title: "Module 6B"}]
+    }
   ]
 
   @students [

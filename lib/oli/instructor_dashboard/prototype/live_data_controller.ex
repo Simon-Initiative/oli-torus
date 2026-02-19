@@ -33,7 +33,8 @@ defmodule Oli.InstructorDashboard.Prototype.LiveDataController do
 
   defp load_oracles(scope, oracle_modules, cache, skip_optional) do
     Enum.reduce(oracle_modules, {%{}, %{}, cache, %{}}, fn {oracle_key, module, optional?},
-                                                          {payloads, statuses, cache_acc, sources} ->
+                                                           {payloads, statuses, cache_acc,
+                                                            sources} ->
       cond do
         optional? and MapSet.member?(skip_optional, oracle_key) ->
           {
