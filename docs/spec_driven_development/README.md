@@ -26,39 +26,43 @@ flowchart TD
 
 J[Informal Description]
 
-J --> SA([spec_analyze])
+J --> SA([`spec_analyze`])
 SA --> PRD[/prd.md/]
 
-PRD --> SAR([spec_architect])
+PRD --> RPRD[Review / Revise]
+RPRD --> SAR([`spec_architect`])
 SAR --> FDD[/fdd.md/]
 
-PRD --> SP([spec_plan])
-FDD --> SP
+FDD --> RFDD[Review / Revise]
+PRD --> SP([`spec_plan`])
+RFDD --> SP
 SP --> PLAN[/plan.md/]
+PLAN --> RPLAN[Review / Revise]
 
-PRD --> SD([spec_develop])
-FDD --> SD
-PLAN --> SD
+PRD --> SD([`spec_develop`])
+RFDD --> SD
+RPLAN --> SD
 SD -->|repeat for each plan phase| SD
-SD --> REVIEW[Manual Testing, Review]
-REVIEW --> OPEN[Open PR]
+SD --> REVIEW[Review]
+REVIEW --> QA[QA]
+QA --> OPEN[Open PR]
 
 classDef artifact fill:#fff7d1,stroke:#cfa74a,stroke-width:2px,color:#3b2b00;
 class PRD,FDD,PLAN artifact;
 classDef skill fill:#dff5df,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
 class SA,SAR,SP,SD skill;
 classDef manual fill:#f8e1ff,stroke:#8e44ad,stroke-width:2px,color:#4a235a;
-class REVIEW,OPEN manual;
+class RPRD,RFDD,RPLAN,REVIEW,QA,OPEN manual;
 ```
 
 Legend: Yellow nodes are artifacts, green nodes are spec skills, and light magenta nodes are manual steps.
 
 ### Workflow Summary
 
--   spec_analyze → Informal description → PRD
--   spec_architect → PRD → FDD
--   spec_plan → PRD + FDD → Phased Plan
--   spec_develop → Plan (with PRD + FDD context) → Code
+-   `spec_analyze` → Informal description → PRD
+-   `spec_architect` → PRD → FDD
+-   `spec_plan` → PRD + FDD → Phased Plan
+-   `spec_develop` → Plan (with PRD + FDD context) → Code
 
 
 Each step:
@@ -143,22 +147,33 @@ Legend: Light green lane nodes indicate lanes with no inbound dependencies and c
 
 Core Workflow:
 
--   spec_analyze -- Converts informal feature description into
+-   `spec_analyze` -- Converts informal feature description into
     structured PRD.
--   spec_architect -- Converts PRD into Feature Design Document (FDD).
--   spec_plan -- Converts PRD + FDD into phased implementation plan.
--   spec_develop -- Implements a specific phase using all prior
+-   `spec_architect` -- Converts PRD into Feature Design Document (FDD).
+-   `spec_plan` -- Converts PRD + FDD into phased implementation plan.
+-   `spec_develop` -- Implements a specific phase using all prior
     artifacts.
 
 Supporting Skills:
 
--   spec_validate -- Validates artifact structure and completeness.
--   spec_work -- Lightweight plan + implement workflow for small
+-   `spec_validate` -- Validates artifact structure and completeness.
+-   `spec_work` -- Lightweight plan + implement workflow for small
     tickets.
--   fixbug -- TDD-first targeted bugfix workflow from Jira.
--   spec_update_docs -- Ensures documentation reflects implemented code.
-- self_review -- Does a detailed code review using CI review guidelines
-- prototype -- Build a quick, throwaway prototype, with no docs, no tests
+-   `spec_fixbug` -- TDD-first targeted bugfix workflow from Jira.
+-   `spec_update_docs` -- Ensures documentation reflects implemented code.
+-   `spec_review` -- Does a detailed code review using CI review guidelines
+-   `spec_prototype` -- Build a quick, throwaway prototype, with no docs, no tests
+
+To be developed (soon) Skills:
+- `spec_scenario` -- Creates an `Oli.Scenarios` based non-UX integration test
+- `spec_playwright` -- Creates a UI based Playwright automation test
+- `spec_epic` -- Supports epic planning, epic docs creation from JIRA tickets
+
+Other upcoming existing Skill enhancements:
+- Improve requirements traceability
+- Better support for feature flag, canary deployment
+- Cleaner story for telemetry and AppSignal reporting needs
+
 
 Skills are reusable, version-controlled capabilities defined at the
 project level (under `.agents/skills`). They replace ad hoc prompting with structured, shared workflows.
@@ -168,7 +183,7 @@ project level (under `.agents/skills`). They replace ad hoc prompting with struc
 During pre-planning, tickets are marked as:
 
 -   Feature → Requires full SDD workflow.
--   Non-Feature → Use spec_work.
+-   Non-Feature → Use `spec_work`.
 
 Not every Jira story requires full PRD/FDD/Plan artifacts. Only
 sufficiently complex or high-impact work is treated as a Feature.
@@ -185,7 +200,7 @@ For Features:
 - Documentation must remain aligned with code.
 
 For Non-Feature Tickets:
-- Use spec_work.
+- Use `spec_work`.
 - Follow structured but lightweight execution.
 
 Starting with Version 33, SDD is our required development model.

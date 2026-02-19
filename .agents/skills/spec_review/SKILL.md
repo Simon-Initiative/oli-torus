@@ -1,15 +1,15 @@
 ---
-name: self_review
+name: spec_review
 description: >
   Perform a concise, prioritized review of current code changes with concrete fixes, focusing on correctness, reliability, performance, and maintainability in Torus (especially Elixir/Phoenix conventions) while keeping output compact and actionable.
 examples:
-  - "$self_review"
-  - "Review this diff for risks before I open a PR ($self_review)"
-  - "Quick self review of changed files, keep it concise"
+  - "$spec_review"
+  - "Review this diff for risks before I open a PR ($spec_review)"
+  - "Quick spec review of changed files, keep it concise"
 when_to_use:
   - "Any implementation is complete and needs a quality pass."
   - "User asks for review, risk scan, or PR readiness check."
-  - "A skill (for example $spec_develop) requires a final self-review gate."
+  - "A skill (for example $spec_develop) requires a final spec-review gate."
 when_not_to_use:
   - "No meaningful changes are present to review."
   - "The user wants a full rewrite instead of issue-oriented review."
@@ -22,7 +22,7 @@ Return a short, prioritized list of issues and suggested fixes for current chang
 ## Inputs
 - Current diff / changed files
 - Optional context docs (`prd.md`, `fdd.md`, `plan.md`) when available
-- Review guides (required for every self review):
+- Review guides (required for every spec review):
   - `.review/elixir.md`
   - `.review/performance.md`
   - `.review/requirements.md`

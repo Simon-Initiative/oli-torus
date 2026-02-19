@@ -11,6 +11,6 @@ After approval, implement directly with strict scope control.
 - Report residual risk and follow-up items clearly.
 
 ## Lane Boundaries
-- If ticket is a bug/regression, route to `$fixbug`.
+- If ticket is a bug/regression, route to `$spec_fixbug`.
 - If scope expands into net-new feature discovery, stop and recommend full feature lane (`$spec_analyze` + follow-ons).
 - Do not create enhancement markdown artifacts under `docs/` in this lane.

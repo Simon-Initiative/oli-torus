@@ -1,18 +1,18 @@
 ---
-name: prototype
+name: spec_prototype
 description: >
   Build a fast, low-ceremony prototype to validate an idea quickly with runnable code where possible, intentionally skipping spec docs, hardening, and unit tests, then provide a short path to production hardening.
 examples:
-  - "$prototype Build a quick LiveView spike for inline rubric editing"
+  - "$spec_prototype Build a quick LiveView spike for inline rubric editing"
   - "Prototype a rough ingestion flow for CSV roster uploads"
   - "I want a prototype only, no production hardening yet"
 when_to_use:
-  - "User explicitly invokes $prototype."
+  - "User explicitly invokes $spec_prototype."
   - "User explicitly asks for a prototype using the word 'prototype'."
 when_not_to_use:
   - "User asks for production-ready implementation with tests."
   - "The request belongs in the spec-driven lane (use $spec_*)."
-  - "The task is a ticketed bug fix requiring TDD (use $fixbug)."
+  - "The task is a ticketed bug fix requiring TDD (use $spec_fixbug)."
 ---
 
 ## Purpose
@@ -43,7 +43,7 @@ Always load before prototyping:
 6. Summarize what worked, what is unknown, and hardening steps using `references/output_requirements.md`.
 
 ## Quality bar / guardrails
-- Trigger policy: only run when user says `prototype` or explicitly invokes `$prototype`.
+- Trigger policy: only run when user says `prototype` or explicitly invokes `$spec_prototype`.
 - Do not create PRD/FDD/plan docs in this lane.
 - Do not add unit tests in this lane.
 - Do not harden for production best practices unless user asks to move beyond prototype mode.

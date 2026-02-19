@@ -10,7 +10,7 @@ when_to_use:
   - "Ticket should be implemented from a concise, reviewed technical approach."
 when_not_to_use:
   - "Large net-new capabilities that need full feature lane planning (use $spec_analyze, $spec_architect, $spec_plan, $spec_develop)."
-  - "Bug/regression tickets (use $fixbug)."
+  - "Bug/regression tickets (use $spec_fixbug)."
 ---
 
 ## Required Resources
@@ -34,7 +34,7 @@ Always load before running:
 1. Parse input and require Jira ticket key/URL.
 2. Fetch ticket details and comments from Jira using configured MCP resources.
 3. Extract concise requirements from title, description, acceptance text, and engineering clarification comments.
-4. If issue type is bug/regression, stop and route to `$fixbug`.
+4. If issue type is bug/regression, stop and route to `$spec_fixbug`.
 5. If ticket is linked to an epic, read epic context docs from `docs/epics/<epic_slug>/` (`overview.md`, `prd.md`, `edd.md`, `plan.md`) when present.
 6. Produce an in-chat review draft:
    - Very brief technical approach (2-4 sentences + short bullet list).
@@ -48,7 +48,7 @@ Always load before running:
 1. Before coding, load required implementation references listed above from `.agents/skills/spec_develop/references/`.
 2. Implement approved scope only, with minimal changes and Torus best practices.
 3. Add/update all new or affected automated tests.
-4. Run `self_review` after tests pass:
+4. Run `spec_review` after tests pass:
    - Execute at least one review round.
    - Address findings and re-run review up to 3 rounds total.
    - Resolve all high/medium findings before completion.
