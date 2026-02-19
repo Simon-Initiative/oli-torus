@@ -17,14 +17,18 @@ It is intended to be implementation guidance for the new oracle modules, not a f
    - Projection bins the pie chart from these raw values; modal can render a real scatter plot.
 
 3. **StudentInfoOracle** (student drilldown lists)
-   - Returns enrolled student identifiers and display fields (id, email, first/last name).
+   - Returns enrolled student identifiers and display fields (id, email, first/last name, `last_interaction_at`).
+   - `last_interaction_at` is sourced from `Enrollment.updated_at` for each student enrollment in section.
 
 4. **ScopeResourcesOracle** (titles + types for direct items in scope)
    - Returns direct children of the current scope container with `resource_id`, `resource_type_id`, `title`.
    - Can also expose the course/section title.
 
 5. **GradesOracle** (graded pages within scope)
-   - Returns per-student grades for graded pages in the selected scope, with empty grades filled.
+   - Returns one aggregate record per graded page (not raw per-student grade rows).
+   - Aggregate includes `minimum`, `median`, `mean`, `maximum`, `standard_deviation` and fixed 10% histogram bins (`0-10` through `90-100`).
+   - Includes `available_at` and `due_at` per page from `SectionResourceDepot` (in-memory metadata enrichment).
+   - Exposes a direct read-through function to fetch emails of students with no attempts for a single graded page.
 
 6. **ObjectivesProficiencyOracle** (learning objectives proficiency in scope)
    - Returns objective proficiency distributions for objectives contained within the selected scope.
@@ -253,7 +257,13 @@ In Elixir:
 
 ```
 [
-  %{student_id: 123, email: "a@b.com", given_name: "Ada", family_name: "Lovelace"},
+  %{
+    student_id: 123,
+    email: "a@b.com",
+    given_name: "Ada",
+    family_name: "Lovelace",
+    last_interaction_at: ~U[2026-02-19 18:41:00Z]
+  },
   ...
 ]
 ```
@@ -277,7 +287,8 @@ query =
       student_id: u.id,
       email: u.email,
       given_name: u.given_name,
-      family_name: u.family_name
+      family_name: u.family_name,
+      last_interaction_at: e.updated_at
     },
     distinct: u.id
   )
@@ -332,14 +343,23 @@ Use `SectionResourceDepot` (in-memory) to avoid DB round trips. The depot alread
 ### Output
 
 ```
-%{
-  page_ids: [201, 202, ...],
-  grades: [
-    %{student_id: 123, page_id: 201, score: 7.0, out_of: 10.0},
-    %{student_id: 123, page_id: 202, score: nil, out_of: 10.0},
-    ...
-  ]
-}
+[
+  %{
+    page_id: 201,
+    available_at: ~U[2026-02-10 00:00:00Z],
+    due_at: ~U[2026-02-24 23:59:00Z],
+    score_stats: %{
+      minimum_pct: 12.5,
+      median_pct: 70.0,
+      mean_pct: 68.4,
+      maximum_pct: 100.0,
+      standard_deviation_pct: 18.2
+    },
+    histogram_bins: %{0 => 1, 10 => 3, 20 => 4, 30 => 2, 40 => 3, 50 => 4, 60 => 5, 70 => 6, 80 => 8, 90 => 12},
+    total_scored_students: 48
+  },
+  ...
+]
 ```
 
 ### Query Strategy
@@ -351,10 +371,21 @@ Options:
    descendants of the current container.
 2. **SQL**: use `contained_pages` to filter graded pages by container id.
 
-Step 2: Query `resource_accesses` for those pages and enrolled students.
-Fill empty grades for students with no attempts.
+Step 2: Compute **per-page normalized score aggregates** and histogram bins.
 
-#### Ecto Sketch (SQL-based containment)
+Preferred path:
+- ClickHouse query grouped by `page_id` computing:
+  - `minimum_pct`, `median_pct`, `mean_pct`, `maximum_pct`, `standard_deviation_pct`
+  - histogram bucket counts for lower bounds `{0, 10, 20, ..., 90}`
+
+Fallback path:
+- Postgres aggregation query with identical payload semantics when ClickHouse is unavailable.
+
+Step 3: Enrich aggregate rows with schedule metadata from `SectionResourceDepot`:
+- `available_at`
+- `due_at`
+
+#### SQL Sketch (Postgres fallback)
 
 ```elixir
 page_ids =
@@ -370,26 +401,60 @@ page_ids =
   )
   |> Repo.all()
 
-grades =
+grade_aggregates =
   from(ra in ResourceAccess,
     where:
       ra.section_id == ^section_id and
         ra.resource_id in ^page_ids and
         ra.user_id in ^student_ids,
-    select: %{student_id: ra.user_id, page_id: ra.resource_id, score: ra.score, out_of: ra.out_of}
+    where: not is_nil(ra.score) and not is_nil(ra.out_of) and ra.out_of > 0,
+    group_by: ra.resource_id,
+    select: %{
+      page_id: ra.resource_id,
+      minimum_pct: fragment("MIN((? / ?) * 100.0)", ra.score, ra.out_of),
+      median_pct: fragment("PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ((? / ?) * 100.0))", ra.score, ra.out_of),
+      mean_pct: fragment("AVG((? / ?) * 100.0)", ra.score, ra.out_of),
+      maximum_pct: fragment("MAX((? / ?) * 100.0)", ra.score, ra.out_of),
+      standard_deviation_pct: fragment("STDDEV_POP((? / ?) * 100.0)", ra.score, ra.out_of)
+    }
   )
   |> Repo.all()
 ```
 
-#### Fill Missing Grades
+#### Histogram Bin Notes
 
-In Elixir, build a complete matrix over `{student_ids x page_ids}`.
-If no `resource_access` exists, emit `{score: nil, out_of: nil}` (or `score: 0.0, out_of: max` if UI requires a numeric default).
+Normalize score to percent (`score / out_of * 100`) and map to fixed bins:
+- `0` for `[0, 10)`
+- `10` for `[10, 20)`
+- ...
+- `90` for `[90, 100]`
+
+### Additional Function: No-attempt Email Read-through
+
+This read-through helper is intentionally separate from the aggregate payload and only used when UI requests an email action.
+
+Function contract (illustrative):
+
+```elixir
+@spec students_without_attempt_emails(section_id :: pos_integer(), resource_id :: pos_integer()) ::
+        {:ok, [String.t()]} | {:error, term()}
+```
+
+Behavior:
+- Input: `section_id`, graded `resource_id`.
+- Executes a direct query to return enrolled learner emails for students with no recorded attempt for that graded page.
+- Uses the same enrollment + role filtering as other oracles (`:enrolled`, `context_learner`).
+
+Possible query shape:
+- `enrollments` + `users` filtered to enrolled learners.
+- `LEFT JOIN resource_accesses` on section/resource/user.
+- `WHERE resource_accesses.id IS NULL` (or no attempt marker) to identify not-yet-attempted students.
 
 ### Notes
 
-- If using the in-memory hierarchy, you can avoid joining `contained_pages` entirely.
-- `SectionResourceDepot.graded_pages/1` already returns graded page section resources.
+- This oracle should be the first ClickHouse-backed concrete oracle because aggregates and buckets are a natural fit.
+- `available_at` and `due_at` should come from in-memory section resources (depot), not additional DB reads.
+- The no-attempt email helper should remain direct read-through and not be cached in the main grade aggregate payload.
 
 ## Oracle 6: ObjectivesProficiencyOracle (learning objectives in scope)
 
@@ -460,7 +525,7 @@ This uses:
 ### Alternative (ClickHouse)
 
 If we need lower latency or richer attempt-level slicing, a ClickHouse query over xAPI can
-aggregate by objective ids per scope pages. This would be the **first CH-backed oracle** and
+aggregate by objective ids per scope pages. This remains optional and
 adds operational risk; the Postgres `contained_objectives` + `resource_summary` path should be
 the baseline unless performance proves insufficient.
 
