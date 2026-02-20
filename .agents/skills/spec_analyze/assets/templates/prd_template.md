@@ -75,7 +75,7 @@ Links: <related docs/issues or `None`>
 - Multi-tenancy: <impact>
 
 ## 11. Feature Flagging, Rollout & Migration
-- <If informal description explicitly requires feature flags or flag-driven rollout, document strategy/rollout/rollback here. Otherwise include exactly: No feature flags present in this feature>
+- <If informal description explicitly requires feature flags or flag-driven rollout, document strategy/rollout/rollback here. Otherwise include exactly: No feature flags present in this feature. Do not add canary, phased rollout, or rollout runbook requirements.>
 
 ## 12. Analytics & Success Metrics
 - KPIs:
@@ -100,11 +100,14 @@ Links: <related docs/issues or `None`>
   - <unit/property/liveview/integration/migration tests as applicable>
 - Manual:
   - <exploratory/regression/accessibility checks>
-- Performance Verification:
-  - <how NFR performance targets will be verified>
+  - <focus areas for manual testing based on risky or hard-to-automate behavior>
+- Oli.Scenarios Recommendation:
+  - Status: <Required | Suggested | Not applicable>
+  - Rationale: <why this feature should or should not include Oli.Scenarios coverage>
+  - Existing Coverage Signal: <what existing Oli.Scenarios YAML coverage exists in touched areas, or `None found`>
 
 ## 17. Definition of Done
 - [ ] All FRs mapped to ACs
 - [ ] Validation checks pass
 - [ ] Open questions triaged
-- [ ] Rollout/rollback posture documented (or explicitly not required)
+- [ ] If feature flags are required, rollout/rollback posture is documented; otherwise Section 11 contains only the required no-feature-flag statement

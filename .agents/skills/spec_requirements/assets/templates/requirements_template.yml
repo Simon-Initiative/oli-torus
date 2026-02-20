@@ -1,0 +1,14 @@
+version: 1
+feature: "<feature-name>"
+generated_from: "prd.md"
+
+requirements:
+  - id: "FR-001"
+    title: "<functional requirement title>"
+    status: "proposed"
+    acceptance_criteria:
+      - id: "AC-001"
+        title: "<acceptance criterion title>"
+        status: "proposed"
+        verification_method: "automated"
+        proofs: []

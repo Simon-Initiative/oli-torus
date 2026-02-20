@@ -12,5 +12,5 @@ Use these Torus-specific considerations while drafting the PRD:
 - Observability: telemetry events, metrics, logs, traces, and AppSignal dashboard/alert implications.
 - Data and API boundaries: schemas/migrations/indexes, context boundaries, API and LiveView contracts, and permission matrix expectations.
 - Integrations: LTI flows, external service contracts, and GenAI-specific concerns when applicable (routing, fallback, rate limits, cost controls).
-- Rollout and migration: rollout/rollback posture, data migration/backfill implications, and operational safety checks.
+- Rollout and migration: include rollout/rollback/canary/runbook posture only when feature flags are explicitly required; otherwise limit to data migration/backfill implications and operational safety checks that are independently necessary.
 - Delivery and QA readiness: test strategy across automated and manual coverage, plus explicit Definition of Done criteria.

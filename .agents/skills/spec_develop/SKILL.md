@@ -51,6 +51,10 @@ Always load before coding:
 10. Postflight gate: run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all` after implementation and doc updates.
 11. Hard gate: if postflight validation fails, the run is not complete; fix docs and re-run until it passes.
 12. If validation cannot run, instruct the user to run it and report blockers.
+13. REQUIREMENTS TRACEABILITY (required):
+   - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action verify_implementation`.
+   - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action master_validate --stage implementation_complete`.
+   - Do not mark the feature complete unless every AC is `verified`.
 
 ## Validation Gate
 - Preflight: execute `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all` before coding.

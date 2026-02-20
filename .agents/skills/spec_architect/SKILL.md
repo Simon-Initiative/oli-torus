@@ -43,6 +43,10 @@ Always load before writing:
 10. Run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check fdd` immediately after updating `fdd.md`.
 11. Hard gate: if validation fails, fix `fdd.md` and re-run until it passes before proceeding.
 12. If validation cannot run, instruct the user to run it and report failures.
+13. REQUIREMENTS TRACEABILITY (required):
+   - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action verify_fdd`.
+   - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action master_validate --stage fdd_only`.
+   - Fail the run if any AC remains `proposed`.
 
 ## Validation Gate
 - After updating any spec-pack doc(s), execute `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check fdd`.

@@ -36,9 +36,12 @@ Produce only the PRD body in markdown with these headings in this exact order:
 - Feature Flagging, Rollout & Migration:
   - Include feature flag details only when informal input explicitly asks for flags/flag-driven rollout.
   - Otherwise include exactly: `No feature flags present in this feature`.
+  - When no feature flags are present, do not include canary/phased rollout notes or rollout runbook requirements.
 - QA Plan:
   - Include automated and manual validation strategy.
-  - Include performance verification approach for NFR confidence.
+  - Include explicit manual-testing focus areas for risky or hard-to-automate behavior.
+  - Include an `Oli.Scenarios Recommendation` with one of: `Required`, `Suggested`, or `Not applicable`.
+  - For the `Oli.Scenarios Recommendation`, state whether related subsystem areas already have YAML-driven `Oli.Scenarios` coverage and use that as a strong signal for whether additional scenario coverage is needed.
 
 ## Generation Rules
 

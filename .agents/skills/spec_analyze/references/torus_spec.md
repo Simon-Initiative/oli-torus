@@ -20,5 +20,5 @@ Treat each feature as a versioned spec pack under one of:
 - Assume Torus constraints: Elixir/Phoenix LiveView, Ecto/Postgres, multi-tenant boundaries, LTI 1.3 roles, WCAG AA, AppSignal and telemetry.
 - Keep requirements testable and specific (FR IDs and Given/When/Then ACs).
 - State assumptions and open questions explicitly.
-- Respect role and permission boundaries, tenant isolation, performance posture, observability, and migration/rollback needs.
+- Respect role and permission boundaries, tenant isolation, performance posture, observability, and migration needs. Add rollback/rollout planning only when feature flags are explicitly required.
 - If implementation and spec diverge, update spec docs first and keep code aligned to latest `prd.md` and `fdd.md`.

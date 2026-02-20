@@ -45,6 +45,10 @@ Always load before drafting:
 12. Run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check plan` immediately after updating `plan.md`.
 13. Hard gate: if validation fails, fix `plan.md` and re-run until it passes before proceeding.
 14. If validation cannot run, instruct the user to run it before implementation.
+15. REQUIREMENTS TRACEABILITY (required):
+   - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action verify_plan`.
+   - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action master_validate --stage plan_present`.
+   - Fail the run if any AC is not at least `verified_plan`.
 
 ## Validation Gate
 - After updating any spec-pack doc(s), execute `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check plan`.
