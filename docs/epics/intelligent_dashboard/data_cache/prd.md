@@ -61,10 +61,32 @@ Use cases:
 - Cache misses and cache subsystem degradation should fall back to build path without UI lockup.
 
 ## 6. Functional Requirements
-Requirements are found in requirements.yml
+
+| ID | Requirement | Priority |
+|---|---|---|
+| FR-001 | System SHALL implement in-process oracle cache keyed by dashboard context + container + oracle identity + version metadata. | P0 |
+| FR-002 | System SHALL implement revisit oracle cache keyed by user + dashboard context + container + oracle identity + version metadata. | P0 |
+| FR-003 | System SHALL enforce TTL freshness policy for in-process and revisit entries via configuration. | P0 |
+| FR-004 | System SHALL enforce enrollment-tiered max container capacity with container-scoped LRU eviction for in-process cache. | P0 |
+| FR-005 | System SHALL support oracle-granular writes, including late completion writes for previously viewed containers when identity guard passes. | P0 |
+| FR-006 | System SHALL support deterministic partial-hit responses (`hits`, `misses`) for required oracle lookups. | P0 |
+| FR-007 | System SHALL provide per-oracle miss coalescing API so concurrent requests for the same missing key share one build. | P1 |
+| FR-008 | System SHALL enforce strict revisit eligibility: revisit cache reads occur only on explicit-container entry flows. | P0 |
+| FR-009 | System SHALL expose cache public APIs consumed by coordinator; cache internals SHALL remain hidden from coordinator modules. | P0 |
+| FR-010 | System SHALL NOT implement request queueing, token generation, or stale-result UI suppression policy. | P0 |
+| FR-011 | System SHALL include extensive automated unit testing for cache key/policy/store behavior, and SHALL use mocked/stubbed dependencies (for example oracle payload producers and coalescing participants) where needed to validate end-to-end component interactions in tests. | P0 |
 
 ## 7. Acceptance Criteria
-Requirements are found in requirements.yml
+
+- AC-001: Given repeated lookups for same context/container/oracle identity within TTL, when cache is warm, then payload is returned from cache.
+- AC-002: Given partial container completeness, when required lookup runs, then response includes deterministic `hits` and `misses` and only misses proceed to build.
+- AC-003: Given capacity threshold breach, when new container payloads are written, then least-recently-used container entries are evicted as a group.
+- AC-004: Given late oracle completion for prior container, when identity guard passes, then payload is written for that container key without affecting active UI scope directly.
+- AC-005: Given revisit flow with explicit container params, when revisit cache has eligible payloads, then those payloads are returned prior to build.
+- AC-006: Given revisit-ineligible flow (base mount without explicit container), revisit cache lookup is skipped.
+- AC-007: Given concurrent misses for identical oracle key, exactly one build producer is elected and other requests await/shared result.
+- AC-008: Given boundary inspection, cache modules contain no request queue/token orchestration logic.
+- AC-009: Given cache unit test execution, mocked/stubbed producers/waiters and oracle payload sources are used where necessary to exercise coalescing, late writes, and boundary interactions end-to-end at component boundaries.
 
 ## 8. Non-Functional Requirements
 
@@ -172,6 +194,8 @@ Open questions:
 
 ## 17. Definition of Done
 
+- FR-001 through FR-011 implemented or explicitly deferred with rationale.
+- AC-001 through AC-009 passing.
 - Metrics for hits/misses/evictions/ttl/coalescing available.
 - Clear one-way boundary present: coordinator uses cache API; cache does not implement coordinator orchestration policy.
 
@@ -186,3 +210,4 @@ Prototype references:
 - Change: Added prototype alignment language for scope+oracle key identity and strict storage-vs-orchestration separation.
 - Reason: Prototype confirms this boundary is effective and keeps coordinator/cache responsibilities clear.
 - Evidence: `lib/oli/instructor_dashboard/prototype/in_process_cache.ex`, `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
+- Impact: Clarifies FR-001/FR-006/FR-010 and AC-002/AC-008 expectations.

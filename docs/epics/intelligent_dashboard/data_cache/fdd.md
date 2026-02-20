@@ -34,14 +34,6 @@ Assumption risks:
 - If version metadata is inconsistent across oracles, stale/collision behavior risk increases.
 - Node-local revisit scope may reduce hit rate in some multi-node navigation paths.
 
-## Requirements Traceability
-
-- Source of truth: `docs/epics/intelligent_dashboard/data_cache/requirements.yml`
-- FDD verification command:
-  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/data_cache --action verify_fdd`
-- Stage gate command:
-  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/data_cache --action master_validate --stage fdd_only`
-
 ## 3. Torus Context Summary
 
 What we know:

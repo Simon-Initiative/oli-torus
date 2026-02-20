@@ -34,14 +34,6 @@ Assumption risks:
 - If namespace collisions appear, module placement may need adjustment.
 - If legacy query paths are tightly coupled to UI assigns, migration could require an interim adapter layer.
 
-## Requirements Traceability
-
-- Source of truth: `docs/epics/intelligent_dashboard/data_oracles/requirements.yml`
-- FDD verification command:
-  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/data_oracles --action verify_fdd`
-- Stage gate command:
-  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/data_oracles --action master_validate --stage fdd_only`
-
 ## 3. Torus Context Summary
 
 What we know:

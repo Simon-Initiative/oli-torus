@@ -62,10 +62,33 @@ Use cases:
 - Users should receive explicit export failure reasons when required projection data is unavailable.
 
 ## 6. Functional Requirements
-Requirements are found in requirements.yml
+
+| ID | Requirement | Priority |
+|---|---|---|
+| FR-001 | System SHALL assemble a canonical scoped snapshot from oracle result envelopes for a request token and scope context. | P0 |
+| FR-002 | System SHALL include snapshot metadata, oracle payload map, oracle status map, and derived projection blocks. | P0 |
+| FR-003 | System SHALL provide projection contracts for instructor capability consumers (`summary`, `progress`, `student_support`, `challenging_objectives`, `assessments`, `ai_context`). | P0 |
+| FR-004 | System SHALL expose deterministic projection readiness states (`ready`, `partial`, `failed`, `unavailable`) per capability. | P0 |
+| FR-005 | System SHALL provide `Oli.InstructorDashboard.DataSnapshot` public API for scoped snapshot/projection retrieval. | P0 |
+| FR-006 | System SHALL generate CSV ZIP outputs from snapshot/projections via transform-only adapters. | P0 |
+| FR-007 | System SHALL NOT execute direct analytics/oracle queries from CSV export adapters when snapshot/projections are available. | P0 |
+| FR-008 | System SHALL define deterministic export dataset inclusion policy when projections are partial or failed. | P0 |
+| FR-009 | System SHALL define stable dataset registry mapping CSV datasets to projection requirements and serializers. | P1 |
+| FR-010 | System SHALL include contract versioning fields for snapshot schema and projection schema evolution. | P1 |
+| FR-011 | System SHALL define explicit one-way boundaries: DataSnapshot may use coordinator/cache APIs; assembler/projection/export modules SHALL remain queryless and policy-agnostic. | P0 |
+| FR-012 | System SHALL emit parity-check metadata/fingerprints to support UI/CSV semantic equivalence verification. | P1 |
+| FR-013 | System SHALL include extensive automated unit testing for snapshot assembler/projection/export orchestration behavior, and SHALL use mocked or stubbed concrete dependencies (for example oracle-result producers and serializer adapters) where needed to validate end-to-end component interactions in tests. | P0 |
 
 ## 7. Acceptance Criteria
-Requirements are found in requirements.yml
+
+- AC-001: Given oracle outputs for scope `S`, snapshot assembly produces deterministic metadata, oracle blocks, and projection blocks.
+- AC-002: Given same scope `S`, UI projections and CSV datasets derived from those projections are semantically equivalent for core metrics.
+- AC-003: Given export request with valid snapshot/projection state, no independent analytics query path is executed.
+- AC-004: Given partial projection readiness, dataset inclusion/exclusion in export follows documented deterministic policy.
+- AC-005: Given failed required projection for export, export returns deterministic failure with explicit reason codes.
+- AC-006: Given boundary review, assembler/projection/export modules contain no queue/token/cache-policy logic and no direct oracle/query calls.
+- AC-007: Given projection schema version update, existing consumers can continue on prior version contract until migrated.
+- AC-008: Given snapshot unit test execution, mocked/stubbed concrete dependencies are used where necessary to exercise assembler/projection/export orchestration interactions end-to-end at component boundaries.
 
 ## 8. Non-Functional Requirements
 
@@ -185,6 +208,8 @@ Open questions:
 
 ## 17. Definition of Done
 
+- FR-001 through FR-013 implemented or explicitly deferred with rationale.
+- AC-001 through AC-008 passing.
 - Snapshot/projection/export module boundaries are explicit and enforced.
 - CSV generation uses transform-only path from snapshot/projection contracts.
 - Parity checks and observability metrics are in place for rollout confidence.
@@ -201,3 +226,4 @@ Prototype references:
 - Change: Added explicit prototype alignment for snapshot shape, externally supplied projection assembly, and projection-module ownership of rules/joins.
 - Reason: Prototype demonstrated this split is necessary for reusable, incremental data consumption across UI/export.
 - Evidence: `lib/oli/instructor_dashboard/prototype/snapshot.ex`, `lib/oli/instructor_dashboard/prototype/tiles/progress/data.ex`, `lib/oli/instructor_dashboard/prototype/tiles/student_support/data.ex`
+- Impact: Strengthens FR-001/FR-002/FR-004/FR-011 interpretation and AC-001/AC-006 review criteria.
