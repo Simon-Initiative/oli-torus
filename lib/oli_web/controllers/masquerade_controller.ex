@@ -7,6 +7,7 @@ defmodule OliWeb.MasqueradeController do
   alias OliWeb.Accounts.Masquerade
   alias Oli.Auditing
   alias Oli.Features
+  alias OliWeb.Common.Links
 
   @feature_label "admin-act-as-user"
 
@@ -45,7 +46,7 @@ defmodule OliWeb.MasqueradeController do
 
       conn
       |> put_flash(:info, "You are now acting as #{target_user.name}.")
-      |> redirect(to: ~p"/")
+      |> redirect(to: Links.my_courses_path(target_user))
     else
       {:error, :already_active} ->
         conn
@@ -65,7 +66,7 @@ defmodule OliWeb.MasqueradeController do
   end
 
   def stop(conn, _params) do
-    with {:ok, admin} <- ensure_system_admin(conn),
+    with {:ok, admin} <- resolve_masquerade_admin(conn),
          {:ok, conn, stop_details} <- stop_masquerade(conn, admin) do
       redirect_to =
         case stop_details do
@@ -103,6 +104,19 @@ defmodule OliWeb.MasqueradeController do
         })
 
         {:ok, conn, stop_details}
+    end
+  end
+
+  defp resolve_masquerade_admin(conn) do
+    case Masquerade.from_session(get_session(conn)) do
+      %{admin_author_id: admin_author_id} ->
+        case Accounts.get_author(admin_author_id) do
+          nil -> {:error, "Unable to restore the original admin session."}
+          admin -> {:ok, admin}
+        end
+
+      _ ->
+        {:error, "No active act-as-user session."}
     end
   end
 

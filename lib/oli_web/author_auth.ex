@@ -148,7 +148,12 @@ defmodule OliWeb.AuthorAuth do
   and remember me token.
   """
   def fetch_current_author(conn, _opts) do
-    {author_token, conn} = ensure_author_token(conn)
+    {author_token, conn} =
+      if get_session(conn, :masquerade_active) do
+        {nil, conn}
+      else
+        ensure_author_token(conn)
+      end
 
     author =
       case author_token do

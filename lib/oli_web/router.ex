@@ -171,8 +171,6 @@ defmodule OliWeb.Router do
     plug(:require_authenticated_author)
 
     plug(:require_admin)
-
-    plug(OliWeb.Plugs.BlockAdminDuringMasquerade)
   end
 
   pipeline :require_authenticated_account_admin do
@@ -191,8 +189,6 @@ defmodule OliWeb.Router do
     plug(:require_authenticated_author)
 
     plug(:require_system_admin)
-
-    plug(OliWeb.Plugs.BlockAdminDuringMasquerade)
   end
 
   # parse url encoded forms
@@ -1598,6 +1594,12 @@ defmodule OliWeb.Router do
   ### Admin Dashboard / Telemetry
 
   scope "/admin", OliWeb do
+    pipe_through([:browser])
+
+    delete("/masquerade", MasqueradeController, :stop)
+  end
+
+  scope "/admin", OliWeb do
     pipe_through([
       :browser,
       :authoring_protected,
@@ -1736,7 +1738,6 @@ defmodule OliWeb.Router do
       live("/audit_log", Admin.AuditLogLive)
       get("/users/:user_id/act_as", MasqueradeController, :confirm)
       post("/masquerade/users/:user_id/start", MasqueradeController, :start)
-      delete("/masquerade", MasqueradeController, :stop)
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
 

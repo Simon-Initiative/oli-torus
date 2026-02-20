@@ -16,6 +16,9 @@ defmodule OliWeb.Accounts.Masquerade do
     :masquerade_subject_email,
     :masquerade_admin_author_id,
     :masquerade_started_at,
+    :masquerade_original_author_token,
+    :masquerade_original_current_author_id,
+    :masquerade_original_author_live_socket_id,
     :masquerade_original_user_token,
     :masquerade_original_current_user_id,
     :masquerade_target_user_token
@@ -28,6 +31,9 @@ defmodule OliWeb.Accounts.Masquerade do
     "masquerade_subject_email" => :masquerade_subject_email,
     "masquerade_admin_author_id" => :masquerade_admin_author_id,
     "masquerade_started_at" => :masquerade_started_at,
+    "masquerade_original_author_token" => :masquerade_original_author_token,
+    "masquerade_original_current_author_id" => :masquerade_original_current_author_id,
+    "masquerade_original_author_live_socket_id" => :masquerade_original_author_live_socket_id,
     "masquerade_original_user_token" => :masquerade_original_user_token,
     "masquerade_original_current_user_id" => :masquerade_original_current_user_id,
     "masquerade_target_user_token" => :masquerade_target_user_token
@@ -54,6 +60,11 @@ defmodule OliWeb.Accounts.Masquerade do
       false ->
         target_user_token = Accounts.generate_user_session_token(target_user)
         started_at = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601()
+        author_live_socket_id = get_session(conn, :author_live_socket_id)
+
+        if is_binary(author_live_socket_id) do
+          OliWeb.Endpoint.broadcast(author_live_socket_id, "disconnect", %{})
+        end
 
         conn =
           conn
@@ -64,12 +75,24 @@ defmodule OliWeb.Accounts.Masquerade do
           |> put_session(:masquerade_subject_email, target_user.email)
           |> put_session(:masquerade_admin_author_id, admin_author_id)
           |> put_session(:masquerade_started_at, started_at)
+          |> put_session(:masquerade_original_author_token, get_session(conn, :author_token))
+          |> put_session(
+            :masquerade_original_current_author_id,
+            get_session(conn, :current_author_id)
+          )
+          |> put_session(
+            :masquerade_original_author_live_socket_id,
+            author_live_socket_id
+          )
           |> put_session(:masquerade_original_user_token, get_session(conn, :user_token))
           |> put_session(
             :masquerade_original_current_user_id,
             get_session(conn, :current_user_id)
           )
           |> put_session(:masquerade_target_user_token, target_user_token)
+          |> delete_session(:author_token)
+          |> delete_session(:current_author_id)
+          |> delete_session(:author_live_socket_id)
           |> put_session(:user_token, target_user_token)
           |> put_session(:current_user_id, target_user.id)
 
@@ -100,6 +123,7 @@ defmodule OliWeb.Accounts.Masquerade do
 
         conn =
           conn
+          |> restore_original_author_session()
           |> restore_original_user_session()
           |> clear()
 
@@ -176,6 +200,25 @@ defmodule OliWeb.Accounts.Masquerade do
     case get_session(conn, :masquerade_original_current_user_id) do
       user_id when is_integer(user_id) -> put_session(conn, :current_user_id, user_id)
       _ -> delete_session(conn, :current_user_id)
+    end
+  end
+
+  defp restore_original_author_session(conn) do
+    conn =
+      case get_session(conn, :masquerade_original_author_token) do
+        token when is_binary(token) -> put_session(conn, :author_token, token)
+        _ -> delete_session(conn, :author_token)
+      end
+
+    conn =
+      case get_session(conn, :masquerade_original_current_author_id) do
+        author_id when is_integer(author_id) -> put_session(conn, :current_author_id, author_id)
+        _ -> delete_session(conn, :current_author_id)
+      end
+
+    case get_session(conn, :masquerade_original_author_live_socket_id) do
+      socket_id when is_binary(socket_id) -> put_session(conn, :author_live_socket_id, socket_id)
+      _ -> delete_session(conn, :author_live_socket_id)
     end
   end
 
