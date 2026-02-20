@@ -23,10 +23,10 @@ Produce only the PRD body in markdown with these headings in this exact order:
 ## Section Requirements
 
 - Functional Requirements:
-  - Use table format with `FR-###` IDs, priorities (`P0/P1/P2`), and owner.
+  - Include exactly: `Requirements are found in requirements.yml`
 - Acceptance Criteria:
-  - Use `AC-### (FR-###)` and Given/When/Then statements.
-  - Ensure criteria are directly testable/automatable when possible.
+  - Include exactly: `Requirements are found in requirements.yml`
+  - Do not include `FR-###` or `AC-###` entries in `prd.md`; they belong in `requirements.yml`.
 - Non-Functional Requirements:
   - Include concrete targets for performance, reliability, security/privacy, compliance, and observability.
 - Data Model & APIs:
@@ -47,6 +47,7 @@ Produce only the PRD body in markdown with these headings in this exact order:
 
 - Be specific and testable; avoid vague statements.
 - Infer plausible Torus-aligned details when missing, then capture them under assumptions.
+- Keep FR/AC source-of-truth in `requirements.yml` only; avoid duplicating requirement IDs/content in `prd.md`.
 - Do not leave unresolved placeholders (`TODO`, `TBD`, `FIXME`) in final content.
 - If something is unknown, frame it as an Open Question and specify what decision/input is needed.
 - Use plain markdown only (no HTML).

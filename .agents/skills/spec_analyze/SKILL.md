@@ -8,7 +8,7 @@ examples:
   - "Turn these notes into docs/epics/learning-tools/content-remix/prd.md"
 when_to_use:
   - "A new feature needs a PRD."
-  - "Existing PRD lacks clear FR/AC structure."
+  - "Existing PRD lacks clear requirements traceability."
 when_not_to_use:
   - "The task is architecture design (use $spec_architect)."
   - "The task is implementation (use $spec_develop)."
@@ -36,6 +36,9 @@ Always load these files before drafting:
 3. Restate the feature in product terms: user value, scope, role impacts, constraints, and measurable success signals.
 4. Copy the exact section blocks from `assets/templates/prd_template.md`.
 5. Fill each section using `references/considerations.md` and `references/output_requirements.md`, keeping requirements concrete and testable.
+   - In `## 6. Functional Requirements`, include exactly: `Requirements are found in requirements.yml`
+   - In `## 7. Acceptance Criteria`, include exactly: `Requirements are found in requirements.yml`
+   - Do not include `FR-###`/`AC-###` entries in `prd.md`; `requirements.yml` is the source of truth.
    - In `## 16. QA Plan`, do not introduce load-testing or performance-testing requirements.
    - In `## 16. QA Plan`, identify risky or hard-to-automate areas and make those the explicit focus of manual testing.
    - In `## 16. QA Plan`, include an `Oli.Scenarios Recommendation` (`Required`, `Suggested`, or `Not applicable`).
@@ -47,7 +50,7 @@ Always load these files before drafting:
 9. Hard gate: if validation fails, fix `prd.md` and re-run until it passes before proceeding.
 10. If validation cannot be run, instruct the user to run it and do not claim the PRD is complete.
 11. REQUIREMENTS CAPTURE (required):
-   - Build a bulk FR/AC payload from the authored PRD requirement content.
+   - Build a bulk FR/AC payload from the authored feature requirements (do not duplicate FR/AC content in `prd.md`).
    - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action capture --bulk-file <bulk_payload_path>`.
    - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action validate_structure`.
    - Ensure `<feature_dir>/requirements.yml` exists and is committed with the PRD update.

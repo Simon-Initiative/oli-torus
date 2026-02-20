@@ -40,12 +40,10 @@ Links: <related docs/issues or `None`>
   - <links or `None`>
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | <requirement> | P0 | <owner> |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001) — Given <context>, when <action>, then <observable result>.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: <latency p50/p95, throughput/concurrency, LiveView responsiveness>

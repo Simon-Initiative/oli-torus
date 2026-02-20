@@ -52,27 +52,10 @@ Links: `docs/epics/intelligent_dashboard/csv_download/informal.md`, `docs/epics/
   - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/csv_download/informal.md`.
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | Render `Download dashboard data (CSV)` action in Instructor Dashboard with keyboard/screen-reader accessible labeling. | P0 | UI |
-| FR-002 | On click, orchestrate export using current dashboard scope and active parameter settings at that moment. | P0 | UI/Data |
-| FR-003 | Define tile-level export contract where each tile returns zero or more dataset descriptors (`file_name`, `rows`, optional `columns`) representing its current projected view state. | P0 | Data |
-| FR-004 | Implement non-UI CSV renderer service that converts dataset descriptors to CSV content deterministically. | P0 | Data |
-| FR-005 | Implement non-UI ZIP assembler service that packages CSV files in memory and returns downloadable binary payload. | P0 | Data |
-| FR-006 | Include required metadata/summary files and applicable tile files per acceptance criteria when data exists for current section/scope. | P0 | Data |
-| FR-007 | Omit files for datasets with no applicable data; do not generate placeholder CSV files. | P0 | Data |
-| FR-008 | Use synchronous request-path generation in v1 with loading/disabled UI feedback during processing. | P0 | UI/Data |
-| FR-009 | ZIP filename includes course-oriented prefix and timestamp in documented format. | P1 | UI |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001) — Given instructor is on dashboard, when page renders, then download button is visible and keyboard-operable with screen-reader label.
-- AC-002 (FR-002) — Given instructor selects scope/parameters then clicks download, when ZIP is generated, then CSV values match that exact active scope/settings.
-- AC-003 (FR-003) — Given tile dataset providers are invoked, when assembly runs, then each tile contributes zero-or-more dataset descriptors from its current projected state.
-- AC-004 (FR-004, FR-005) — Given dataset descriptors are returned, when export runs, then CSV files are generated and zipped in memory before download response.
-- AC-005 (FR-006) — Given data exists for specified CSV categories, when ZIP is opened, then required CSV files are present with expected columns/content types.
-- AC-006 (FR-007) — Given a dataset has no applicable data, when ZIP is assembled, then corresponding CSV file is absent.
-- AC-007 (FR-008) — Given export is in progress, when synchronous processing occurs, then UI displays loading/disabled feedback until completion/failure.
-- AC-008 (FR-009) — Given download succeeds, when file is named, then ZIP filename includes expected timestamp pattern.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: No load or performance testing requirements for this phase.

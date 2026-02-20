@@ -59,34 +59,10 @@ Developer UX requirements:
 - Shared-vs-product module ownership is obvious from names and boundaries.
 
 ## 6. Functional Requirements
-
-| ID | Requirement | Priority |
-|---|---|---|
-| FR-001 | System SHALL define canonical scope structs and normalization rules that support course-level and container-level scope selection. | P0 |
-| FR-002 | System SHALL define canonical `OracleContext` for every oracle invocation, including dashboard context type/id, user id, and scope container selection. | P0 |
-| FR-003 | System SHALL define a shared oracle behavior contract with stable callbacks (`key/0`, `version/0`, `load/2`, optional `project/2`, optional prerequisite declaration callback) and normalized result envelope semantics. | P0 |
-| FR-004 | System SHALL define a shared registry contract for dependency resolution and oracle module lookup. | P0 |
-| FR-005 | System SHALL provide an Instructor Dashboard registry implementation scaffold that maps instructor capability consumers to required/optional oracle slots; concrete oracle key/module bindings MAY be provisional in this layer and finalized in tile implementation stories. | P0 |
-| FR-006 | System SHALL keep datastore selection internal to oracle modules; consumers SHALL be datastore-agnostic. | P0 |
-| FR-007 | System SHALL support deterministic validation errors for unknown consumer keys, undeclared oracle keys, and invalid dependency declarations. | P0 |
-| FR-008 | System SHALL enforce a no-bypass rule for covered dashboard domains: tile and LiveView consumers SHALL NOT execute direct analytics queries. | P0 |
-| FR-009 | System SHALL define extension workflow for adding an oracle (module + registry wiring + contract tests) without modifying unrelated consumers. | P1 |
-| FR-010 | System SHALL include explicit shared-vs-product boundary rules so reusable modules live in `Oli.Dashboard.*` and Instructor-specialized modules live in `Oli.InstructorDashboard.*`. | P0 |
-| FR-011 | System SHALL expose deterministic dependency profile introspection to support runtime/caching/snapshot features in downstream stories. | P1 |
-| FR-012 | System SHALL support oracle prerequisite dependencies declared in contracts (for example `oracle_capability_b` requires `oracle_capability_a`) and expose a deterministic execution plan where prerequisites load first and their payloads are injected into dependent oracle `load/2` calls. | P0 |
-| FR-013 | System SHALL include extensive automated unit testing for oracle contracts/registry/planner behavior, and SHALL use mocked or stubbed concrete oracle modules where needed to validate end-to-end component interactions in tests. | P0 |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-
-- AC-001: Given a valid instructor consumer key, when dependencies are resolved, then required and optional oracle keys are deterministic and stable.
-- AC-002: Given an unknown consumer key, when dependencies are resolved, then registry returns a deterministic validation error.
-- AC-003: Given a valid oracle key, when module lookup is requested, then the registry resolves exactly one implementing module.
-- AC-004: Given a canonical `OracleContext`, when an oracle is executed, then it receives only contract-defined context fields and returns contract-compliant success/error envelopes.
-- AC-005: Given tile or LiveView consumer code for covered domains, when code is reviewed/tested, then no direct analytics query path is required to obtain dashboard data.
-- AC-006: Given a new oracle added through the extension workflow, when integrated into one consumer profile, then unrelated consumer profiles continue to resolve unchanged dependencies.
-- AC-007: Given a future non-instructor dashboard product, when it implements a product-specific registry on shared contracts, then no change to shared oracle behavior signatures is required.
-- AC-008: Given a dependency graph where multiple oracles require a shared prerequisite oracle, when a scope request is executed, then that prerequisite is loaded once and its payload is provided to each dependent oracle through injected prerequisite inputs.
-- AC-009: Given unit test execution for this feature, mocked/stubbed concrete oracle modules are used where necessary to exercise registry resolution, prerequisite planning, and contract execution interactions end-to-end at component boundaries.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 
@@ -227,8 +203,6 @@ Open questions:
 
 ## 17. Definition of Done
 
-- FR-001 through FR-013 implemented or explicitly deferred with rationale.
-- AC-001 through AC-009 passing.
 - Shared and instructor-specific boundaries are documented and reflected in module layout.
 - Covered instructor dashboard consumers use oracle contract paths with no direct analytics query bypass.
 - PRD/FDD references remain aligned with lane PRDs/FDDs, epic EDD, and lane plan.
@@ -244,4 +218,3 @@ Prototype references:
 - Change: Added explicit prototype alignment for slot-based dependency declarations and no direct oracle-to-oracle calling.
 - Reason: Prototype implementation validated this pattern as the most consistent dependency contract for tile-driven composition.
 - Evidence: `lib/oli/instructor_dashboard/prototype/tile.ex`, `lib/oli/instructor_dashboard/prototype/tile_registry.ex`, `lib/oli/instructor_dashboard/prototype/oracle.ex`
-- Impact: Tightens interpretation of FR-005/FR-012 without changing feature scope.

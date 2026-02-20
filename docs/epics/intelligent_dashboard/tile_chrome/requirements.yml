@@ -1,0 +1,95 @@
+version: 1
+feature: tile_chrome
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Build reusable dashboard section chrome components in dashboard-shared UI
+    modules with no dependency on instructor-specific tile code.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: "(FR-001) \u2014 Given reusable chrome package, when consumed by instructor\
+      \ dashboard, then it renders arbitrary section children without importing instructor-specific\
+      \ tiles."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: Chrome supports section collapse/expand with default expanded state and emits
+    expansion change callback to consuming dashboard.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: "(FR-002) \u2014 Given instructor toggles section caret, when action completes,\
+      \ then section expands/collapses and callback emits updated expansion state."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: Chrome supports section drag-reorder with visual feedback and emits updated
+    order callback on drop.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: "(FR-003) \u2014 Given instructor drags section handle, when dropped, then\
+      \ section order updates immediately and callback emits new ordered identifiers."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Instructor dashboard persists order and expansion preferences at section
+    scope (shared among instructors in same section).
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: "(FR-004, FR-005) \u2014 Given reorder/collapse actions are saved, when\
+      \ another instructor opens same section dashboard, then saved layout state matches\
+      \ section-level persisted preferences across scopes."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: Instructor dashboard applies tile eligibility rules before passing sections
+    to chrome (including Content-section suppression when both objectives and assessments
+    tiles are ineligible).
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: "(FR-006, FR-007) \u2014 Given course has no objectives and no graded assessments,\
+      \ when dashboard composes sections, then Content section is omitted entirely."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: Sections with zero eligible tiles are omitted entirely; sections with one
+    tile render that tile full-width with section controls preserved.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: "(FR-007) \u2014 Given section has exactly one eligible tile, when rendered,\
+      \ then tile spans full width and section controls remain available."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-008
+  title: Reordering is section-level only; tiles cannot be dragged across sections
+    and invalid nested positions are prevented.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: "(FR-008) \u2014 Given drag interaction, when user attempts invalid nested/cross-tile\
+      \ movement, then system prevents invalid reordering."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-009
+  title: Reorder actions do not auto-collapse sections and preserve existing expansion
+    state.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: "(FR-009) \u2014 Given section is collapsed then reordered, when reorder\
+      \ completes, then collapse state is preserved."
+    status: proposed
+    verification_method: automated
+    proofs: []

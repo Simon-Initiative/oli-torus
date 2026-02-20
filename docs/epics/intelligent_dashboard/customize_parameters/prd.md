@@ -51,26 +51,10 @@ Links: `docs/epics/intelligent_dashboard/customize_parameters/informal.md`, `doc
   - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/customize_parameters/informal.md`.
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | Student Support tile exposes `Edit parameters` action that opens customization modal. | P0 | UI |
-| FR-002 | Modal supports inactivity window options (7/14/30/90 days) and threshold editing for struggling/excelling progress and proficiency bounds. | P0 | UI |
-| FR-003 | Threshold values are constrained to numeric 0-100 range and non-overlap rules between struggling and excelling boundaries are enforced in real time. | P0 | UI/Data |
-| FR-004 | Comparator logic is fixed and not editable by instructors. | P0 | UI |
-| FR-005 | Saving parameters persists configuration at section level and not per instructor. | P0 | Data |
-| FR-006 | On successful save, Student Support tile reprojections/reloads immediately using newly persisted section settings. | P0 | UI/Data |
-| FR-007 | Cancel/outside click/Esc discards unsaved edits and leaves persisted settings and tile outputs unchanged. | P0 | UI |
-| FR-008 | On modal open/tile load, active settings resolve as persisted section configuration if present, otherwise section defaults. | P0 | Data/UI |
-| FR-009 | Save failure leaves previously persisted settings active and shows actionable error feedback; no partial apply. | P1 | UI/Data |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001, FR-002) — Given instructor opens Student Support tile, when clicking `Edit parameters`, then customization modal opens with inactivity and group-range controls.
-- AC-002 (FR-003, FR-004) — Given instructor edits thresholds, when values become invalid (overlap/out-of-range/non-numeric), then invalid state is blocked and cannot be saved.
-- AC-003 (FR-005, FR-008) — Given no prior customization exists, when tile loads, then defaults are used; after save, persisted section settings become authoritative.
-- AC-004 (FR-005) — Given instructor A saves settings, when instructor B opens same section dashboard, then B sees the same saved settings.
-- AC-005 (FR-006) — Given save succeeds, when modal closes, then Student Support donut/list rerender from reprojected data using saved settings.
-- AC-006 (FR-007) — Given instructor cancels or dismisses modal, when modal closes, then unsaved edits are discarded and tile remains on prior persisted configuration.
-- AC-007 (FR-009) — Given save request fails, when response returns error, then existing tile outputs persist and error feedback is shown.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: No load or performance testing requirements for this phase.

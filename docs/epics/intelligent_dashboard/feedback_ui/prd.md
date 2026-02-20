@@ -55,27 +55,10 @@ Links: `docs/epics/intelligent_dashboard/feedback_ui/informal.md`, `docs/epics/i
   - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/feedback_ui/informal.md`.
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | Render thumbs-up, thumbs-down, and regenerate controls for each displayed recommendation instance. | P0 | UI |
-| FR-002 | Selecting thumbs-up or thumbs-down records one sentiment decision for the current recommendation instance and prevents repeat thumbs submission for that same instance. | P0 | UI/AI |
-| FR-003 | After thumbs submission, replace thumbs controls with `Additional feedback` button for optional qualitative feedback. | P0 | UI |
-| FR-004 | `Additional feedback` opens a modal with free-text input, submit, and cancel actions; submit dispatches feedback to configured backend endpoint. | P0 | UI/AI |
-| FR-005 | Regenerate action requests new recommendation for current scope and shows `Thinking...` state until completion/failure. | P0 | UI/AI |
-| FR-006 | On regeneration failure/timeout, preserve previous recommendation and show non-blocking error/fallback message. | P0 | UI |
-| FR-007 | Canceling additional feedback modal closes it without submitting and preserves dashboard state. | P1 | UI |
-| FR-008 | Additional feedback submission success shows confirmation message and closes/reset modal state. | P1 | UI |
-| FR-009 | All feedback controls and modal interactions are fully keyboard and screen-reader accessible. | P0 | UI |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001) — Given a recommendation is shown, when instructor views controls, then thumbs up/down/regenerate actions are visible and interactive.
-- AC-002 (FR-002) — Given instructor clicks thumbs up/down, when backend acknowledges, then sentiment is stored and same recommendation instance cannot receive another thumbs action.
-- AC-003 (FR-003, FR-004) — Given sentiment submitted, when UI updates, then thumbs controls are replaced by `Additional feedback`; clicking it opens modal with text input and submit/cancel.
-- AC-004 (FR-004, FR-008) — Given instructor submits qualitative feedback, when submission succeeds, then confirmation appears and modal closes.
-- AC-005 (FR-005) — Given instructor clicks regenerate, when request is in flight, then thinking state appears and new recommendation replaces prior one on success.
-- AC-006 (FR-006) — Given regenerate fails, when error is returned, then prior recommendation remains visible and error/fallback message is shown.
-- AC-007 (FR-007) — Given modal is open, when instructor cancels, then no feedback is sent and prior dashboard state remains intact.
-- AC-008 (FR-009) — Given keyboard-only or screen-reader usage, when controls/modals are used, then all actions are operable, labeled, and focus-managed correctly.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: No load or performance testing requirements for this phase.

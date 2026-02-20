@@ -21,6 +21,13 @@ Deliver template preview from Template Overview by reusing canonical student del
 - Browser popup-blocks are treated as client launch failures; backend enrollment work is not retried solely because popup dispatch failed.
 - Existing enrollment uniqueness constraints (`enrollments.user_id+section_id` and enrollment-role uniqueness) are present in all deployed environments.
 
+## Requirements Traceability
+- Source of truth: `docs/epics/product_overhaul/template_preview/requirements.yml`
+- Plan verification command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/template_preview --action verify_plan`
+- Stage gate command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/template_preview --action master_validate --stage plan_present`
+
 ## Phase 1: Entry Point, Authorization, and UX Wiring
 - Goal: Add a Preview control in Template Overview with strict authorization-gated visibility and accessible in-flight/error states.
 - Tasks:

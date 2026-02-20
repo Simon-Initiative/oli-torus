@@ -55,25 +55,10 @@ Primary use cases:
 - Export scoped dashboard data as CSV ZIP (`MER-5266`).
 
 ## 6. Functional Requirements (Epic-Level)
+Requirements are found in requirements.yml
 
 | ID | Requirement | Jira Trace |
 |---|---|---|
-| FR-001 | Instructor interface defaults to `Insights -> Learning Dashboard` for existing sections, while preserving current first-entry behavior after initial course creation. | `MER-5246` |
-| FR-002 | Dashboard supports global content-container filtering with persistence and previous/next navigation semantics. | `MER-5248` |
-| FR-003 | Dashboard includes a summary region with scoped key metrics and AI recommendation output. | `MER-5249` |
-| FR-004 | AI recommendation interactions support thumbs feedback, optional qualitative feedback, and controlled regeneration. | `MER-5250` |
-| FR-005 | Progress tile visualizes completion/progress with threshold controls, schedule-aware behavior, and drill-through. | `MER-5251` |
-| FR-006 | Student Support tile classifies and filters students by support categories and activity status, with actionable selection/emailing. | `MER-5252` |
-| FR-007 | Challenging Objectives tile surfaces low-proficiency objectives/sub-objectives with navigable drill-through. | `MER-5253` |
-| FR-008 | Assessments tile provides completion status, score distribution/summary metrics, and actions for student outreach and question review. | `MER-5254` |
-| FR-009 | Student Support list supports profile quick access from row hover interaction. | `MER-5255` |
-| FR-010 | Student Support parameters are configurable (performance thresholds and inactivity window) with deterministic precedence behavior. | `MER-5256` |
-| FR-011 | Email workflows support context-aware AI subject/body generation, tone-controlled regeneration, editable draft fields, and explicit send action. | `MER-5257` |
-| FR-012 | Dashboard supports tile groups (Engagement/Content), collapse/expand, reorder, and conditional group rendering behavior. | `MER-5258` |
-| FR-013 | Dashboard tiles support constrained resize/expand interactions with stable layout reflow and persisted state. | `MER-5259` |
-| FR-014 | Dashboard data can be exported as a ZIP containing scoped CSV datasets aligned to on-screen metrics. | `MER-5266` |
-| FR-015 | Dashboard data access is provided by a reusable oracle/data-source framework (not tile-specific query code), enabling incremental per-tile hydration based on declared dependencies. | `MER-5248`, `MER-5266`, `MER-5251`-`MER-5254` |
-| FR-016 | Dashboard and tile interactions satisfy defined accessibility behaviors (keyboard operation, focus management, semantic labeling, screen reader announcements). | `MER-5248`-`MER-5250`, `MER-5257`, `MER-5266` |
 
 ## 7. Non-Functional Requirements
 
@@ -127,14 +112,8 @@ Primary use cases:
 - High-cardinality aggregate analytics paths for dashboard oracles must use ClickHouse as the primary query engine; Postgres remains for transactional/entity lookups.
 
 ## 9. Acceptance Criteria (Epic-Level)
+Requirements are found in requirements.yml
 
-- AC-001: Instructors can enter a section and use the Learning Dashboard as the primary insight surface with scoped filtering and responsive interaction behavior.
-- AC-002: Core tiles (summary/progress/support/objectives/assessments) deliver actionable, scoped information and correct drill-through behavior.
-- AC-003: AI recommendation and AI email experiences operate with explicit instructor control and context relevance.
-- AC-004: Dashboard layout controls (section ordering/collapse and tile sizing) are usable, persistent, and stable.
-- AC-005: CSV export produces a valid ZIP with expected datasets derived from the same scoped dashboard data model.
-- AC-006: Measured production-like performance and reliability meet NFR targets.
-- AC-007: Automated test suites cover critical data orchestration, LiveView behavior, and key end-to-end user journeys.
 
 ## 10. Traceability by Workstream
 

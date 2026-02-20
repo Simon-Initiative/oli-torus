@@ -1,0 +1,95 @@
+version: 1
+feature: csv_download
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Render `Download dashboard data (CSV)` action in Instructor Dashboard with
+    keyboard/screen-reader accessible labeling.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: "(FR-001) \u2014 Given instructor is on dashboard, when page renders, then\
+      \ download button is visible and keyboard-operable with screen-reader label."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: On click, orchestrate export using current dashboard scope and active parameter
+    settings at that moment.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: "(FR-002) \u2014 Given instructor selects scope/parameters then clicks\
+      \ download, when ZIP is generated, then CSV values match that exact active scope/settings."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: Define tile-level export contract where each tile returns zero or more dataset
+    descriptors (`file_name`, `rows`, optional `columns`) representing its current
+    projected view state.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: "(FR-003) \u2014 Given tile dataset providers are invoked, when assembly\
+      \ runs, then each tile contributes zero-or-more dataset descriptors from its\
+      \ current projected state."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Implement non-UI CSV renderer service that converts dataset descriptors to
+    CSV content deterministically.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: "(FR-004, FR-005) \u2014 Given dataset descriptors are returned, when export\
+      \ runs, then CSV files are generated and zipped in memory before download response."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: Include required metadata/summary files and applicable tile files per acceptance
+    criteria when data exists for current section/scope.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: "(FR-006) \u2014 Given data exists for specified CSV categories, when ZIP\
+      \ is opened, then required CSV files are present with expected columns/content\
+      \ types."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: Omit files for datasets with no applicable data; do not generate placeholder
+    CSV files.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: "(FR-007) \u2014 Given a dataset has no applicable data, when ZIP is assembled,\
+      \ then corresponding CSV file is absent."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-008
+  title: Use synchronous request-path generation in v1 with loading/disabled UI feedback
+    during processing.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: "(FR-008) \u2014 Given export is in progress, when synchronous processing\
+      \ occurs, then UI displays loading/disabled feedback until completion/failure."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-009
+  title: ZIP filename includes course-oriented prefix and timestamp in documented
+    format.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: "(FR-009) \u2014 Given download succeeds, when file is named, then ZIP\
+      \ filename includes expected timestamp pattern."
+    status: proposed
+    verification_method: automated
+    proofs: []

@@ -49,25 +49,10 @@ Links: `docs/epics/intelligent_dashboard/assessment_tile/informal.md`, `docs/epi
   - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/assessment_tile/informal.md`.
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | Render Assessments tile for selected scope when at least one graded page exists. | P0 | UI |
-| FR-002 | Consume aggregated grades oracle payloads (stats + score bins + availability metadata) as primary data contract. | P0 | Data/UI |
-| FR-003 | Pair aggregated assessment data with content titles from content oracle/depot metadata where needed for display labels. | P0 | Data/UI |
-| FR-004 | Display per-assessment score statistics (min/median/mean/max/std dev) and completion counts per design. | P0 | UI |
-| FR-005 | Display score-range distribution bins from oracle output without recomputation in UI layer. | P1 | UI |
-| FR-006 | Reflect selected global scope and update consistently when scope changes. | P0 | UI/Data |
-| FR-007 | If no graded assessments exist in selected scope, tile shows conditional empty state or is omitted according to section-composition rules. | P0 | UI |
-| FR-008 | Keep all projection/normalization logic in non-UI module; UI renders view models only. | P0 | Data |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001, FR-002) — Given selected scope includes graded assessments, when tile renders, then assessment rows appear using aggregated oracle payload data.
-- AC-002 (FR-003) — Given assessment payload contains resource identifiers, when tile renders, then human-readable assessment titles are shown from content metadata mapping.
-- AC-003 (FR-004) — Given assessment aggregate stats are present, when tile renders, then min/median/mean/max/std dev and completion counts are displayed per design.
-- AC-004 (FR-005) — Given score bin distributions are present, when tile renders, then distribution visualization reflects oracle-provided bins without client-side re-aggregation.
-- AC-005 (FR-006) — Given instructor changes global scope, when update completes, then tile values reflect only new scope data.
-- AC-006 (FR-007) — Given no graded assessments exist for selected scope, when tile evaluates visibility, then configured empty/omitted state behavior is applied consistently.
-- AC-007 (FR-008) — Given code review and tests, when assessment tile logic is inspected, then non-UI projection module boundaries are preserved.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: No load or performance testing requirements for this phase.

@@ -1,0 +1,91 @@
+version: 1
+feature: support_tile
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Render Student Support tile with donut chart and bucket legend using projected
+    support-category data.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: "(FR-001) \u2014 Given tile loads with support projection data, when rendered,\
+      \ then donut and legend display bucket percentages/counts."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: Compute bucket assignments (struggling/on-track/excelling/not-enough-information)
+    in non-UI projection code from progress-proficiency and student info oracles.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: "(FR-002, FR-003) \u2014 Given student progress/proficiency inputs, when\
+      \ projection executes, then each student is assigned to exactly one valid category\
+      \ using deterministic rule precedence."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Default selected bucket is `struggling`; selecting legend item or donut segment
+    updates highlighted segment and student list.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: "(FR-004) \u2014 Given default load, when tile first renders, then struggling\
+      \ bucket is selected and list shows struggling students."
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-004
+    title: "(FR-004) \u2014 Given instructor clicks donut segment or legend item,\
+      \ when selection changes, then list updates to corresponding category and segment\
+      \ highlight matches."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: Student list supports search, 20-item initial page, `Load more` pagination,
+    and no-scroll-reset behavior on load more.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: "(FR-005) \u2014 Given >20 students in selected list, when instructor clicks\
+      \ `Load more`, then next page appends without duplicate rows or scroll reset."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: Active/inactive filtering uses projection-level inactivity derivation from
+    `last_interaction_at` (7-day rule for this feature).
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: "(FR-006) \u2014 Given 7-day inactivity rule, when active/inactive filter\
+      \ toggles, then list updates and counts match projection-derived inactivity\
+      \ flags."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: Row and master selection checkboxes support selecting visible students only;
+    `Email` action enables only when selection is non-empty.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: "(FR-007, FR-008) \u2014 Given selection changes, when no rows selected\
+      \ then Email is disabled; when rows selected and Email clicked then modal opens\
+      \ with those recipients."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-009
+  title: If no student activity exists, tile shows informational no-data state instead
+    of donut/list.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: "(FR-009) \u2014 Given no activity data exists, when tile renders, then\
+      \ informational state appears and donut/list are not shown."
+    status: proposed
+    verification_method: automated
+    proofs: []

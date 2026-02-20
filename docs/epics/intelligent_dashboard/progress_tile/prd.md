@@ -53,27 +53,10 @@ Links: `docs/epics/intelligent_dashboard/progress_tile/informal.md`, `docs/epics
   - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/progress_tile/informal.md`.
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | Render Progress tile scoped to current global filter (course/unit/module/container level). | P0 | UI |
-| FR-002 | Use concrete progress and content-title oracle data to build a non-UI projection model consumed by the chart component. | P0 | Data/UI |
-| FR-003 | Provide `Completion Threshold` control with selectable values 10%-100%, and reproject chart data on selection changes. | P0 | UI |
-| FR-004 | Render chart axis granularity based on selected scope level (course->units, unit->modules, module->children). | P0 | UI |
-| FR-005 | Provide y-axis mode toggle between student count and class percentage without full page reload. | P0 | UI |
-| FR-006 | If schedule exists, render schedule position indicator and schedule-aware visual treatment; if no schedule, omit these visuals entirely. | P1 | UI |
-| FR-007 | Provide horizontal pagination controls when axis items exceed available width, preserving chart state and accessibility semantics. | P1 | UI |
-| FR-008 | Handle empty/edge states for no activity and zero class size with explicit explanatory messaging. | P0 | UI |
-| FR-009 | Keep UI rendering and interaction state isolated from projection logic to maximize unit-test coverage. | P0 | UI/Data |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001) — Given an instructor opens dashboard, when Progress tile loads, then it reflects currently selected global scope.
-- AC-002 (FR-002, FR-009) — Given progress oracle payloads, when projection runs, then chart-ready data is produced by non-UI module and UI consumes projected output only.
-- AC-003 (FR-003) — Given instructor selects a new completion threshold, when selection changes, then chart reprojects and rerenders using the new threshold.
-- AC-004 (FR-004) — Given scope is Entire Course/Unit/Module, when chart renders, then x-axis items correspond to direct children of that scope.
-- AC-005 (FR-005) — Given instructor toggles count/percentage mode, when toggle changes, then y-axis values and bar tooltips update without page refresh.
-- AC-006 (FR-006) — Given schedule exists/does not exist, when tile renders, then schedule indicators appear only for scheduled contexts.
-- AC-007 (FR-007) — Given too many x-axis items for viewport width, when tile renders, then pagination controls appear and navigate sets without stale labels.
-- AC-008 (FR-008) — Given no activity or class size zero, when tile renders, then explanatory empty state appears and misleading chart is not shown.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: No load or performance testing requirements for this phase.

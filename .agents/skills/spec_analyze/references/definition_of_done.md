@@ -3,7 +3,8 @@
 A spec artifact is done only when all checks below pass:
 
 - Required headings exist and are in the expected order.
-- Requirement IDs (`FR-###`) and acceptance IDs (`AC-###`) are present when required.
+- `requirements.yml` exists with `FR-###` and `AC-###` IDs and passes structure validation.
+- `prd.md` does not duplicate FR/AC entries and sections 6 and 7 point to `requirements.yml`.
 - No unresolved `TODO` / `TBD` / `FIXME` markers remain.
 - Links are valid (local paths resolve, anchors resolve, external URLs are syntactically valid).
 - Assumptions and open questions are explicit (none hidden in narrative prose).

@@ -67,59 +67,95 @@ def line_for_id(content: str, req_id: str) -> Optional[int]:
 
 def parse_prd_requirements(prd_content: str) -> List[dict]:
     requirements: List[dict] = []
-    current_fr: Optional[dict] = None
+    by_fr_id: Dict[str, dict] = {}
+    current_fr_id: Optional[str] = None
     seen_fr: Set[str] = set()
     seen_ac: Set[str] = set()
+
+    def get_or_create_fr(fr_id: str, title: Optional[str] = None) -> dict:
+        existing = by_fr_id.get(fr_id)
+        if existing is not None:
+            if title and existing.get("title", "").endswith(" requirement"):
+                existing["title"] = title
+            return existing
+
+        fr_obj = {
+            "id": fr_id,
+            "title": title or f"{fr_id} requirement",
+            "status": "proposed",
+            "acceptance_criteria": [],
+        }
+        by_fr_id[fr_id] = fr_obj
+        requirements.append(fr_obj)
+        return fr_obj
+
+    def extract_fr_title(line: str, fr_id: str) -> str:
+        if "|" in line:
+            cells = [c.strip() for c in line.split("|")]
+            # Markdown table row: | FR-001 | Description | Priority | Owner |
+            if len(cells) >= 3 and cells[1] == fr_id and cells[2]:
+                return cells[2]
+
+        return (
+            line.split(fr_id, 1)[1]
+            .lstrip(":-. ")
+            .strip()
+            or f"{fr_id} requirement"
+        )
+
+    def extract_ac_title(line: str, ac_id: str) -> str:
+        title = (
+            line.split(ac_id, 1)[1]
+            .lstrip(":-. ")
+            .strip()
+            or f"{ac_id} acceptance criterion"
+        )
+        # Strip leading "(FR-001, FR-002) — " linkage markers from AC lines.
+        title = re.sub(
+            r"^\((?:FR-\d{3}(?:\s*,\s*FR-\d{3})*)\)\s*(?:\u2014|-)?\s*",
+            "",
+            title,
+        )
+        return title or f"{ac_id} acceptance criterion"
 
     for raw_line in prd_content.splitlines():
         line = raw_line.strip()
         if not line:
             continue
 
-        fr_match = re.search(r"\b(FR-\d{3})\b", line)
-        if fr_match:
-            fr_id = fr_match.group(1)
-            if fr_id in seen_fr:
-                continue
-            title = (
-                line[fr_match.end() :]
-                .lstrip(":-. ")
-                .strip()
-                or f"{fr_id} requirement"
-            )
-            current_fr = {
-                "id": fr_id,
-                "title": title,
-                "status": "proposed",
-                "acceptance_criteria": [],
-            }
-            requirements.append(current_fr)
-            seen_fr.add(fr_id)
-            continue
-
+        # AC lines often include FR IDs in parentheses. Parse ACs first.
         ac_match = re.search(r"\b(AC-\d{3})\b", line)
         if ac_match:
             ac_id = ac_match.group(1)
             if ac_id in seen_ac:
                 continue
-            if current_fr is None:
+
+            linked_frs = FR_PATTERN.findall(line)
+            target_fr_id = linked_frs[0] if linked_frs else current_fr_id
+            if target_fr_id is None:
                 continue
-            title = (
-                line[ac_match.end() :]
-                .lstrip(":-. ")
-                .strip()
-                or f"{ac_id} acceptance criterion"
-            )
-            current_fr["acceptance_criteria"].append(
+
+            fr_obj = get_or_create_fr(target_fr_id)
+            fr_obj["acceptance_criteria"].append(
                 {
                     "id": ac_id,
-                    "title": title,
+                    "title": extract_ac_title(line, ac_id),
                     "status": "proposed",
                     "verification_method": "automated",
                     "proofs": [],
                 }
             )
             seen_ac.add(ac_id)
+            continue
+
+        fr_match = re.search(r"\b(FR-\d{3})\b", line)
+        if fr_match:
+            fr_id = fr_match.group(1)
+            current_fr_id = fr_id
+            if fr_id in seen_fr:
+                continue
+            get_or_create_fr(fr_id, extract_fr_title(line, fr_id))
+            seen_fr.add(fr_id)
 
     return [fr for fr in requirements if fr["acceptance_criteria"]]
 
@@ -227,8 +263,6 @@ def upsert_requirements(doc: dict, incoming: List[dict]) -> Tuple[int, int]:
 def remove_inline_requirements_from_prd(prd_path: Path) -> None:
     content = read_text(prd_path)
     lines = content.splitlines()
-
-    filtered_lines = [line for line in lines if not FR_PATTERN.search(line) and not AC_PATTERN.search(line)]
     sentence = "Requirements are found in requirements.yml"
 
     def headings_with_idx(current_lines: List[str]) -> List[Tuple[int, str]]:
@@ -239,24 +273,26 @@ def remove_inline_requirements_from_prd(prd_path: Path) -> None:
                 out.append((i, m.group(2).strip().lower()))
         return out
 
-    touched = 0
-    for key in ("functional requirements", "acceptance criteria"):
-        heading_idx = headings_with_idx(filtered_lines)
+    def replace_section_body(current_lines: List[str], key: str) -> bool:
+        heading_idx = headings_with_idx(current_lines)
         match = next(((i, h) for i, h in heading_idx if key in h), None)
         if match is None:
-            continue
+            return False
 
-        idx, _heading = match
-        next_heading = next((n for n, _h in heading_idx if n > idx), len(filtered_lines))
-        section = "\n".join(filtered_lines[idx:next_heading])
-        if sentence not in section:
-            filtered_lines.insert(idx + 1, sentence)
-        touched += 1
+        idx, _ = match
+        next_heading = next((n for n, _h in heading_idx if n > idx), len(current_lines))
+        # Replace full section body with the single pointer sentence.
+        current_lines[idx + 1 : next_heading] = [sentence]
+        return True
 
-    if touched == 0:
-        if filtered_lines and filtered_lines[-1].strip():
-            filtered_lines.append("")
-        filtered_lines.extend(
+    touched = 0
+    touched += 1 if replace_section_body(lines, "functional requirements") else 0
+    touched += 1 if replace_section_body(lines, "acceptance criteria") else 0
+
+    if touched < 2:
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.extend(
             [
                 "## Functional Requirements",
                 sentence,
@@ -266,7 +302,7 @@ def remove_inline_requirements_from_prd(prd_path: Path) -> None:
             ]
         )
 
-    prd_path.write_text("\n".join(filtered_lines).rstrip() + "\n", encoding="utf-8")
+    prd_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
 
 def derive_fr_status(ac_list: Sequence[dict]) -> str:

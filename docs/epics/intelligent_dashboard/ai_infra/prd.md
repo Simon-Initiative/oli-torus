@@ -52,28 +52,10 @@ Links: `docs/epics/intelligent_dashboard/ai_infra/informal.md`, `docs/epics/inte
   - Refer to Jira-linked design notes and prototype reference.
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | Implement recommendation generation as an instructor dashboard oracle-compatible backend capability. | P0 | AI/Data |
-| FR-002 | Define normalized recommendation input contract using scoped dashboard snapshot/projection context and descriptor-driven dataset injection. | P0 | AI |
-| FR-003 | Define recommendation output contract including body text and metadata fields required by UI (e.g., generated_at, source_scope, confidence/quality metadata where applicable). | P0 | AI |
-| FR-004 | Implement implicit generation rate-limit cache persisted per section+container, allowing auto-regeneration only when prior implicit generation is older than 24 hours. | P0 | Data |
-| FR-005 | Support explicit regeneration operation that bypasses implicit rate limit and refreshes recommendation payload for current scope. | P0 | AI/Data |
-| FR-006 | Regeneration must invalidate or refresh in-process and revisit cache entries so subsequent navigation does not show stale recommendation content. | P0 | Data |
-| FR-007 | Implement feedback ingestion contracts for thumbs sentiment and additional textual feedback through recommendation service boundary. | P0 | AI/Data |
-| FR-008 | Provide deterministic no-signal and failure fallback responses safe for UI display (no fabricated urgency). | P0 | AI |
-| FR-009 | Enforce secure handling of prompt/context data and prevent raw student PII leakage in logs/telemetry payloads. | P0 | AI/Security |
-| FR-010 | Reference existing prototype prompting structure and evaluate compatibility with tool-driven architecture, retaining contract-level pluggable dataset inputs. | P1 | AI |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001, FR-002, FR-003) — Given scoped dashboard context, when recommendation generation is requested, then service returns contract-compliant recommendation output consumable by summary UI.
-- AC-002 (FR-004) — Given implicit generation already occurred within prior 24 hours for same section+container, when implicit request arrives, then cached/recent recommendation is returned without new generation.
-- AC-003 (FR-004) — Given implicit generation timestamp exceeds 24 hours, when implicit request arrives, then new recommendation is generated and rate-limit timestamp updated.
-- AC-004 (FR-005, FR-006) — Given instructor triggers explicit regenerate, when operation succeeds, then new recommendation is returned and relevant in-process/revisit cache entries are refreshed/invalidated.
-- AC-005 (FR-007) — Given thumbs or additional feedback submission, when request completes, then feedback is persisted/forwarded through contract-defined pathway.
-- AC-006 (FR-008) — Given low-signal or generation failure scenarios, when response is returned, then deterministic fallback payload is provided and UI can render without breaking.
-- AC-007 (FR-009) — Given telemetry/logging events, when emitted, then they exclude raw student PII fields and include only sanctioned metadata.
-- AC-008 (FR-010) — Given prototype prompt baseline, when architecture is finalized, then chosen prompt composition path remains compatible with contract-level pluggable dataset descriptors.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: No load or performance testing requirements for this phase.

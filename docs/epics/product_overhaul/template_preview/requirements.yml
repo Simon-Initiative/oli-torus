@@ -1,0 +1,82 @@
+version: 1
+feature: template_preview
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: System SHALL expose a Preview action on Template Overview only to users authorized
+    to manage the template section.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: Given a user with template-management permissions on Template Overview,
+      when they view page actions, then a Preview action is visible and enabled.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-002
+    title: Given a user without template-management permissions, when they view Template
+      Overview or attempt direct preview endpoint access, then Preview is hidden/denied
+      and server-side authorization rejects access.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: On preview request, system SHALL resolve the underlying template-backed section
+    and validate institution/tenant scoping before continuing.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: Given an authorized user without existing student enrollment for the template-backed
+      section, when they click Preview, then exactly one student enrollment is created
+      and the student home opens in a new window/tab.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: System SHALL ensure the current user has an active student enrollment in
+    the resolved section; if absent, create it via idempotent upsert semantics.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: Given an authorized user already enrolled as a student in that section,
+      when they click Preview, then no additional enrollment row is created and launch
+      still succeeds.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: System SHALL preserve the user's existing author/admin identity and permissions
+    in authoring while enabling student-view launch context for preview.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: Given an authorized author/admin launches preview, when the student home
+      loads, then rendered content and navigation match the standard student delivery
+      experience for the same section.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: System SHALL provide deterministic error handling when enrollment upsert
+    or launch URL resolution fails, without partial/duplicate writes.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: Given enrollment upsert or launch resolution fails, when user clicks Preview,
+      then no duplicate enrollments are created, failure feedback is shown, and no
+      blank window is left without destination.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-008
+  title: System SHALL emit telemetry for preview requested, enrollment created/reused,
+    preview launch success, and preview launch failure.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: Given preview request lifecycle events occur, when telemetry is inspected,
+      then request/start/success/failure events include section/user identifiers and
+      outcome metadata scoped to tenant and without sensitive payloads.
+    status: proposed
+    verification_method: automated
+    proofs: []

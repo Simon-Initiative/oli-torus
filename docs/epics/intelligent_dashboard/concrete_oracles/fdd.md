@@ -28,8 +28,16 @@ This FDD defines the concrete oracle implementations that power Instructor Intel
   - A Postgres fallback implementation is acceptable during staged ClickHouse rollout but must match payload semantics exactly.
   - `contained_objectives` is maintained and current for scope filtering.
   - `StudentInfoOracle.last_interaction_at` is sourced from `Oli.Delivery.Sections.Enrollment.updated_at` per student enrollment within the section.
-  - This source is valid because existing page-visit tracking updates enrollment state (including `most_recently_visited_resource`), which updates `Enrollment.updated_at`.
-  - This FDD primarily transposes the technical guidance from `concrete_oracles/README.md` into the FDD template.
+- This source is valid because existing page-visit tracking updates enrollment state (including `most_recently_visited_resource`), which updates `Enrollment.updated_at`.
+- This FDD primarily transposes the technical guidance from `concrete_oracles/README.md` into the FDD template.
+
+## Requirements Traceability
+
+- Source of truth: `docs/epics/intelligent_dashboard/concrete_oracles/requirements.yml`
+- FDD verification command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/concrete_oracles --action verify_fdd`
+- Stage gate command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/concrete_oracles --action master_validate --stage fdd_only`
 
 ## 3. Torus Context Summary
 - What we know:

@@ -36,6 +36,14 @@ Assumption risks:
 - If oracle envelopes vary unexpectedly, projection adapters may require normalization shim layers.
 - If product policy on partial export is unresolved, rollout may require temporary fail-closed fallback.
 
+## Requirements Traceability
+
+- Source of truth: `docs/epics/intelligent_dashboard/data_snapshot/requirements.yml`
+- FDD verification command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/data_snapshot --action verify_fdd`
+- Stage gate command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/data_snapshot --action master_validate --stage fdd_only`
+
 ## 3. Torus Context Summary
 
 What we know:

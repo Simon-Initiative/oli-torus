@@ -1,0 +1,94 @@
+version: 1
+feature: ai_infra
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Implement recommendation generation as an instructor dashboard oracle-compatible
+    backend capability.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: "(FR-001, FR-002, FR-003) \u2014 Given scoped dashboard context, when recommendation\
+      \ generation is requested, then service returns contract-compliant recommendation\
+      \ output consumable by summary UI."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Implement implicit generation rate-limit cache persisted per section+container,
+    allowing auto-regeneration only when prior implicit generation is older than 24
+    hours.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: "(FR-004) \u2014 Given implicit generation already occurred within prior\
+      \ 24 hours for same section+container, when implicit request arrives, then cached/recent\
+      \ recommendation is returned without new generation."
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-003
+    title: "(FR-004) \u2014 Given implicit generation timestamp exceeds 24 hours,\
+      \ when implicit request arrives, then new recommendation is generated and rate-limit\
+      \ timestamp updated."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: Support explicit regeneration operation that bypasses implicit rate limit
+    and refreshes recommendation payload for current scope.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: "(FR-005, FR-006) \u2014 Given instructor triggers explicit regenerate,\
+      \ when operation succeeds, then new recommendation is returned and relevant\
+      \ in-process/revisit cache entries are refreshed/invalidated."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: Implement feedback ingestion contracts for thumbs sentiment and additional
+    textual feedback through recommendation service boundary.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: "(FR-007) \u2014 Given thumbs or additional feedback submission, when request\
+      \ completes, then feedback is persisted/forwarded through contract-defined pathway."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-008
+  title: Provide deterministic no-signal and failure fallback responses safe for UI
+    display (no fabricated urgency).
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: "(FR-008) \u2014 Given low-signal or generation failure scenarios, when\
+      \ response is returned, then deterministic fallback payload is provided and\
+      \ UI can render without breaking."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-009
+  title: Enforce secure handling of prompt/context data and prevent raw student PII
+    leakage in logs/telemetry payloads.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: "(FR-009) \u2014 Given telemetry/logging events, when emitted, then they\
+      \ exclude raw student PII fields and include only sanctioned metadata."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-010
+  title: Reference existing prototype prompting structure and evaluate compatibility
+    with tool-driven architecture, retaining contract-level pluggable dataset inputs.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: "(FR-010) \u2014 Given prototype prompt baseline, when architecture is\
+      \ finalized, then chosen prompt composition path remains compatible with contract-level\
+      \ pluggable dataset descriptors."
+    status: proposed
+    verification_method: automated
+    proofs: []

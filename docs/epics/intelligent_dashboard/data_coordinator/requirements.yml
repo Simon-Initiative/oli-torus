@@ -1,0 +1,61 @@
+version: 1
+feature: data_coordinator
+generated_from: prd.md
+requirements:
+- id: FR-012
+  title: '| System SHALL enforce a configurable hard timeout for active scope builds
+    and emit deterministic timeout fallback state/events that keep the dashboard responsive
+    and eligible for next-request processing. | P0 |'
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: Given rapid scope cycling, when selections occur while one build is active,
+      then only one active + one latest queued request is retained.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-002
+    title: Given stale completion for token `T_old`, when result arrives after token
+      `T_new` is active, then no UI assigns/events are applied from `T_old`.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-003
+    title: Given cache lookup with partial hit, when request starts, then cached required
+      payloads are applied immediately and only missing required oracles are loaded.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-004
+    title: Given stale completion that passes cache identity checks, when it arrives,
+      then cache is warmed for its original `(context, container, oracle)` key and
+      UI remains unchanged.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-005
+    title: Given boundary review, coordinator module code contains no cache policy
+      implementation (TTL/LRU/key-building/revisit retention logic).
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-006
+    title: Given telemetry inspection, request queue transitions, stale discards,
+      cache consult outcomes, and end-to-end scope transition timings are observable.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-007
+    title: Given coordinator unit test execution, mocked/stubbed cache/runtime dependencies
+      are used where necessary to exercise token guards, queue transitions, and stale-result
+      handling end-to-end at component boundaries.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-008
+    title: Given an active scope build exceeding configured timeout, coordinator emits
+      deterministic timeout fallback state/events for that scope and remains available
+      to process subsequent latest-intent requests.
+    status: proposed
+    verification_method: automated
+    proofs: []

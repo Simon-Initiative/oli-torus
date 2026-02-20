@@ -47,6 +47,13 @@ Lanes group tightly related work so teams can execute in coherent streams with e
 - Serial order inside each lane is dependency-first, then risk reduction, then workflow completion.
 - Lane dependencies are lane-level by default; ticket-level constraints are called out when needed.
 
+## Requirements Traceability
+- Source of truth: `docs/epics/intelligent_dashboard/requirements.yml`
+- Plan verification command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard --action verify_plan`
+- Stage gate command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard --action master_validate --stage plan_present`
+
 ## Lane 1: Data Infrastructure and Contracts
 
 ### Scope

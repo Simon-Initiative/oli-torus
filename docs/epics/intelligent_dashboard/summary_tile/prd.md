@@ -53,27 +53,10 @@ Links: `docs/epics/intelligent_dashboard/summary_tile/informal.md`, `docs/epics/
   - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/summary_tile/informal.md`.
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | Render a Summary section directly below the global content filter in the Learning Dashboard. | P0 | UI |
-| FR-002 | Summary section consumes up to four optional data sources (progress, proficiency_progress, assessment, recommendation) and renders incrementally as each becomes available. | P0 | UI/Data |
-| FR-003 | Show metric tiles for average class proficiency, average assessment score, and average student progress only when applicable in the selected scope. | P0 | UI |
-| FR-004 | When one or more metric tiles are unavailable, remaining tiles expand responsively with no placeholder shells. | P1 | UI |
-| FR-005 | AI recommendation panel renders scoped recommendation content with thinking and beginning-course fallback states. | P0 | UI/AI |
-| FR-006 | Recommendation regenerate action must be disabled while a regenerate request is in flight and re-enabled on completion/failure. | P0 | UI |
-| FR-007 | Summary metrics and recommendation must update on global scope changes without full page reload. | P0 | UI/Data |
-| FR-008 | Recommendation feedback controls (thumbs up/down and regenerate trigger surface) are displayed and wired for downstream feedback handling contracts. | P1 | UI/AI |
-| FR-009 | Tile projections and data shaping for metrics are implemented in non-UI modules, with UI components consuming projection output only. | P0 | Data |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001) — Given an instructor is on Learning Dashboard, when dashboard renders, then Summary section appears directly below global filter.
-- AC-002 (FR-002) — Given only a subset of optional summary oracles are available, when rendering completes, then available subcomponents render and unavailable ones remain in loading/hidden states without breaking layout.
-- AC-003 (FR-003, FR-004) — Given selected scope has no objectives or no assessments, when summary renders, then corresponding tiles are hidden and remaining tiles expand to fill available space.
-- AC-004 (FR-005) — Given no meaningful activity exists yet, when summary renders, then beginning-course recommendation message is shown instead of fabricated recommendation.
-- AC-005 (FR-006) — Given instructor clicks regenerate, when request is in progress, then regenerate button is disabled and thinking state is visible until response/error.
-- AC-006 (FR-007) — Given instructor changes global scope, when scope update completes, then all summary values and recommendation reflect new scope without browser refresh.
-- AC-007 (FR-008) — Given recommendation is displayed, when instructor interacts with thumbs/re-generate controls, then events route through defined contracts and UI state remains consistent.
-- AC-008 (FR-009) — Given code review and tests, when summary logic is inspected, then data projection logic is isolated from UI rendering components.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: No load or performance testing requirements for this phase.

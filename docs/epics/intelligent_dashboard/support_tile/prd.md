@@ -54,27 +54,10 @@ Links: `docs/epics/intelligent_dashboard/support_tile/informal.md`, `docs/epics/
   - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/support_tile/informal.md`.
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | Render Student Support tile with donut chart and bucket legend using projected support-category data. | P0 | UI |
-| FR-002 | Compute bucket assignments (struggling/on-track/excelling/not-enough-information) in non-UI projection code from progress-proficiency and student info oracles. | P0 | Data |
-| FR-003 | Ensure each student belongs to exactly one support bucket or not-enough-information category per deterministic rule ordering. | P0 | Data |
-| FR-004 | Default selected bucket is `struggling`; selecting legend item or donut segment updates highlighted segment and student list. | P0 | UI |
-| FR-005 | Student list supports search, 20-item initial page, `Load more` pagination, and no-scroll-reset behavior on load more. | P0 | UI |
-| FR-006 | Active/inactive filtering uses projection-level inactivity derivation from `last_interaction_at` (7-day rule for this feature). | P0 | Data/UI |
-| FR-007 | Row and master selection checkboxes support selecting visible students only; `Email` action enables only when selection is non-empty. | P0 | UI |
-| FR-008 | Clicking `Email` opens email modal with selected recipients pre-populated. | P1 | UI |
-| FR-009 | If no student activity exists, tile shows informational no-data state instead of donut/list. | P0 | UI |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001) — Given tile loads with support projection data, when rendered, then donut and legend display bucket percentages/counts.
-- AC-002 (FR-002, FR-003) — Given student progress/proficiency inputs, when projection executes, then each student is assigned to exactly one valid category using deterministic rule precedence.
-- AC-003 (FR-004) — Given default load, when tile first renders, then struggling bucket is selected and list shows struggling students.
-- AC-004 (FR-004) — Given instructor clicks donut segment or legend item, when selection changes, then list updates to corresponding category and segment highlight matches.
-- AC-005 (FR-005) — Given >20 students in selected list, when instructor clicks `Load more`, then next page appends without duplicate rows or scroll reset.
-- AC-006 (FR-006) — Given 7-day inactivity rule, when active/inactive filter toggles, then list updates and counts match projection-derived inactivity flags.
-- AC-007 (FR-007, FR-008) — Given selection changes, when no rows selected then Email is disabled; when rows selected and Email clicked then modal opens with those recipients.
-- AC-008 (FR-009) — Given no activity data exists, when tile renders, then informational state appears and donut/list are not shown.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: No load or performance testing requirements for this phase.

@@ -15,6 +15,13 @@ Context references:
 - `GradesOracle` uses ClickHouse as the preferred execution path, with Postgres fallback for staged rollout/parity validation.
 - `GradesOracle` also exposes `students_without_attempt_emails(section_id, resource_id)` as a direct read-through helper for instructor outreach actions.
 
+## Requirements Traceability
+- Source of truth: `docs/epics/intelligent_dashboard/concrete_oracles/requirements.yml`
+- Plan verification command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/concrete_oracles --action verify_plan`
+- Stage gate command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/concrete_oracles --action master_validate --stage plan_present`
+
 ## Phase Gate Summary
 - Gate A (Contract Ready): payload contracts and acceptance criteria are finalized and validated in PRD/FDD.
 - Gate B (Core Implementation): all concrete oracle modules are implemented with deterministic scoped outputs and unit tests.

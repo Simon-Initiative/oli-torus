@@ -51,29 +51,10 @@ Links: `docs/epics/intelligent_dashboard/overview.md`, `docs/epics/intelligent_d
   - None.
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | Define `ProgressBinsOracle` that returns per-container histogram counts in fixed 10% bins (0..100) for the selected scope and direct child containers. | P0 | Data |
-| FR-002 | Define `ProgressProficiencyOracle` that returns per-student tuples `{student_id, progress_pct, proficiency_pct}` for the selected scope (no per-container breakdown). | P0 | Data |
-| FR-003 | Define `StudentInfoOracle` that returns enrolled student identifiers, display fields, and `last_interaction_at` for drilldown lists. | P0 | Data |
-| FR-004 | Define `ScopeResourcesOracle` that returns the course title and direct children of the current scope (resource id, type, title) using in-memory depot data. | P1 | Data |
-| FR-005 | Define `GradesOracle` that returns graded pages within scope and per-page aggregate assessment statistics (minimum, median, mean, maximum, standard deviation) plus 10% histogram bucket counts (0-10 through 90-100), and per-page scheduling metadata (`available_at`, `due_at`) sourced from `SectionResourceDepot`, without per-student raw rows. | P1 | Data |
-| FR-006 | Define `ObjectivesProficiencyOracle` that returns objective proficiency distributions for objectives contained within the selected scope. | P0 | Data |
-| FR-007 | All oracles must filter to enrolled learners only, excluding instructors and non-enrolled users. | P0 | Data |
-| FR-008 | Oracles must accept scope inputs `(section_id, container_type, container_id)` and be deterministic for identical inputs. | P0 | Data |
-| FR-009 | Oracles must normalize outputs into stable payload shapes consumable by snapshots and projections. | P0 | Data |
-| FR-010 | Oracles must respect existing progress/proficiency formulas and thresholds (progress as average page progress, proficiency as resource_summary formula with minimum-attempt gating). | P0 | Data |
-| FR-011 | `GradesOracle` must provide a direct read-through function that accepts `(section_id, resource_id)` and returns emails for enrolled learners with no attempt on that graded page, for instructor email actions. | P1 | Data |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001) — Given a unit scope and its module ids, when `ProgressBinsOracle` executes, then it returns 0..100 bin counts per module with all enrolled students represented (including 0% progress).
-- AC-002 (FR-002) — Given a container scope, when `ProgressProficiencyOracle` executes, then it returns one row per enrolled student with `progress_pct` defaulting to 0.0 if missing and `proficiency_pct` set to nil when attempt thresholds are not met.
-- AC-003 (FR-003) — Given a section, when `StudentInfoOracle` executes, then it returns unique enrolled student ids with email, names, and `last_interaction_at`, excludes instructor accounts, and sources `last_interaction_at` from `Oli.Delivery.Sections.Enrollment.updated_at` for each student enrollment in that section.
-- AC-004 (FR-004) — Given a scope, when `ScopeResourcesOracle` executes, then it returns the course title and direct child items with id, type, and title sourced from the section resource depot.
-- AC-005 (FR-005) — Given a scope, when `GradesOracle` executes, then it returns one aggregate record per graded page in scope containing score stats (`minimum`, `median`, `mean`, `maximum`, `standard_deviation`), histogram counts for fixed percentage buckets `0-10, 10-20, ... 90-100`, and scheduling metadata (`available_at`, `due_at`) sourced from `SectionResourceDepot`, and does not include per-student raw grade rows.
-- AC-006 (FR-006) — Given a scope, when `ObjectivesProficiencyOracle` executes, then it returns objective proficiency distributions for objectives contained within that scope using `contained_objectives` mappings.
-- AC-007 (FR-007, FR-008) — Given identical scope inputs and enrollments, when any oracle executes repeatedly, then the payload shapes and values are deterministic and scoped only to enrolled learners.
-- AC-008 (FR-011) — Given a section and graded page id, when `GradesOracle.students_without_attempt_emails/2` executes, then it returns only enrolled learner emails for students with no attempt on that page and excludes instructors/non-learners.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: Oracles should meet p95 <= 300ms (Normal 200 learners) and p95 <= 700ms (Large 2,000 learners) for single-scope execution when uncached; queries must avoid unbounded fan-out.
@@ -173,17 +154,14 @@ No feature flags present in this feature
 
 ## 18. Decision Log
 ### 2026-02-19 - Grades Oracle Switched to Aggregate Payload
-- Change: Updated `FR-005`, `AC-005`, and the `GradesOracle` contract to return per-page aggregate statistics and fixed 10-bin score histograms, removing per-student raw grade tuples from this oracle.
 - Reason: Assessment tile requirements need distribution/statistical summaries per graded page rather than raw learner rows to drive histogram and summary rendering.
 - Evidence: `docs/epics/intelligent_dashboard/concrete_oracles/prd.md`, `docs/epics/intelligent_dashboard/concrete_oracles/fdd.md`.
 - Impact: Acceptance criteria now validate aggregate outputs and histogram bins for `GradesOracle`; implementation should prioritize ClickHouse for this oracle with Postgres fallback during rollout.
 ### 2026-02-19 - Grades Oracle Added No-attempt Email Read-through
-- Change: Added `FR-011`/`AC-008` and an explicit `GradesOracle.students_without_attempt_emails(section_id, resource_id)` API contract to support targeted instructor outreach.
 - Reason: UI requires an on-demand action to email students who have not attempted a selected graded page; this should not bloat the main aggregate payload.
 - Evidence: `docs/epics/intelligent_dashboard/concrete_oracles/README.md`, `docs/epics/intelligent_dashboard/concrete_oracles/fdd.md`.
 - Impact: Implementation must include a direct query helper with learner-role filtering and no-attempt semantics verification.
 ### 2026-02-19 - Grades Payload Includes Availability and Due Dates
-- Change: Extended `FR-005`/`AC-005` and the `GradesOracle` payload to include `available_at` and `due_at` per graded page from `SectionResourceDepot`.
 - Reason: Assessments tile renders schedule metadata alongside aggregate statistics and should receive all required fields from one oracle payload.
 - Evidence: `docs/epics/intelligent_dashboard/concrete_oracles/README.md`, `docs/epics/intelligent_dashboard/concrete_oracles/fdd.md`.
 - Impact: `GradesOracle` implementation must perform in-memory metadata enrichment for each graded page record without introducing extra DB reads.

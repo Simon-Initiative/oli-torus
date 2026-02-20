@@ -35,6 +35,14 @@ Assumption risks:
 - If cache API contracts drift, coordinator action model may need refactoring.
 - If request volume exceeds one-queue design assumptions, starvation tuning may be needed.
 
+## Requirements Traceability
+
+- Source of truth: `docs/epics/intelligent_dashboard/data_coordinator/requirements.yml`
+- FDD verification command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/data_coordinator --action verify_fdd`
+- Stage gate command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/intelligent_dashboard/data_coordinator --action master_validate --stage fdd_only`
+
 ## 3. Torus Context Summary
 
 What we know:

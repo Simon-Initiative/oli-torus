@@ -52,27 +52,10 @@ Links: `docs/epics/intelligent_dashboard/objectives_tile/informal.md`, `docs/epi
   - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/objectives_tile/informal.md`.
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | Render `Challenging Objectives` tile for scopes where objectives exist. | P0 | UI |
-| FR-002 | Use objective proficiency oracle data to list objectives at or below low-proficiency threshold (<=40%) for selected scope. | P0 | Data/UI |
-| FR-003 | Show parent objective numbering/order and sub-objective entries where relationships exist. | P1 | UI |
-| FR-004 | Objective entries with sub-objectives provide expandable/collapsible disclosure controls; entries without children show no disclosure affordance. | P1 | UI |
-| FR-005 | Objective click navigates to Insights -> Learning Objectives with selected objective expanded. | P0 | UI |
-| FR-006 | Sub-objective click navigates to Insights -> Learning Objectives with corresponding sub-objective visible/highlighted. | P0 | UI |
-| FR-007 | `View Learning Objectives` button navigates to all-objectives view with no rows expanded. | P1 | UI |
-| FR-008 | If no objectives exist, hide tile entirely; if objectives exist but none qualify as low proficiency, show contextual empty-state message. | P0 | UI |
-| FR-009 | Tile updates consistently on global scope changes without stale objective rows. | P0 | UI/Data |
+Requirements are found in requirements.yml
 
 ## 7. Acceptance Criteria
-- AC-001 (FR-001, FR-002) — Given objectives exist in selected scope, when tile renders, then only objectives with proficiency <=40% are listed.
-- AC-002 (FR-003, FR-004) — Given objective has sub-objectives, when row renders, then disclosure control is present and keyboard-operable; objectives without children show no disclosure control.
-- AC-003 (FR-005) — Given instructor clicks objective row, when navigation occurs, then Insights -> Learning Objectives opens with that objective expanded.
-- AC-004 (FR-006) — Given instructor clicks sub-objective row, when navigation occurs, then corresponding sub-objective is visible/highlighted in Insights context.
-- AC-005 (FR-007) — Given instructor clicks `View Learning Objectives`, when navigation completes, then all-objectives default view is shown with no expanded row.
-- AC-006 (FR-008) — Given no objectives exist in course/scope, when dashboard renders, then tile is not displayed.
-- AC-007 (FR-008) — Given objectives exist but none are low proficiency, when tile renders, then contextual informational empty state is shown.
-- AC-008 (FR-009) — Given rapid scope changes, when tile updates, then rows reflect current scope only with no stale carry-over.
+Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: No load or performance testing requirements for this phase.

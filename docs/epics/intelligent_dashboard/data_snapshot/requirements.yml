@@ -1,0 +1,60 @@
+version: 1
+feature: data_snapshot
+generated_from: prd.md
+requirements:
+- id: FR-013
+  title: '| System SHALL include extensive automated unit testing for snapshot assembler/projection/export
+    orchestration behavior, and SHALL use mocked or stubbed concrete dependencies
+    (for example oracle-result producers and serializer adapters) where needed to
+    validate end-to-end component interactions in tests. | P0 |'
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: Given oracle outputs for scope `S`, snapshot assembly produces deterministic
+      metadata, oracle blocks, and projection blocks.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-002
+    title: Given same scope `S`, UI projections and CSV datasets derived from those
+      projections are semantically equivalent for core metrics.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-003
+    title: Given export request with valid snapshot/projection state, no independent
+      analytics query path is executed.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-004
+    title: Given partial projection readiness, dataset inclusion/exclusion in export
+      follows documented deterministic policy.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-005
+    title: Given failed required projection for export, export returns deterministic
+      failure with explicit reason codes.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-006
+    title: Given boundary review, assembler/projection/export modules contain no queue/token/cache-policy
+      logic and no direct oracle/query calls.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-007
+    title: Given projection schema version update, existing consumers can continue
+      on prior version contract until migrated.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-008
+    title: Given snapshot unit test execution, mocked/stubbed concrete dependencies
+      are used where necessary to exercise assembler/projection/export orchestration
+      interactions end-to-end at component boundaries.
+    status: proposed
+    verification_method: automated
+    proofs: []
