@@ -1,6 +1,6 @@
 import React from 'react';
-import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
 import { useCommandTargetable } from 'components/editing/elements/command_button/useCommandTargetable';
+import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { elementBorderStyle, useEditModelCallback } from 'components/editing/elements/utils';
 import { WebpageSettings } from 'components/editing/elements/webpage/WebpageSettings';

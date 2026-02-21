@@ -10,8 +10,8 @@ import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInpu
 import { MultiInputDelivery } from 'components/activities/multi_input/schema';
 import { ECLRepl as ECLReplView } from 'components/common/ECLRepl';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
-import { YoutubePlayer } from 'components/youtube_player/YoutubePlayer';
 import { WebpageEmbed } from 'components/webpage/WebpageEmbed';
+import { YoutubePlayer } from 'components/youtube_player/YoutubePlayer';
 import {
   Audio,
   Blockquote,

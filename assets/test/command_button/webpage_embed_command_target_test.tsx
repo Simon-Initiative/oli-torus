@@ -58,4 +58,3 @@ describe('WebpageEmbed command targeting', () => {
     expect(postMessage).not.toHaveBeenCalled();
   });
 });
-

@@ -703,11 +703,15 @@ defmodule Oli.Rendering.Content.Html do
     [next.(), "\n"]
   end
 
-  def command_button(%Context{} = _context, next, %{
-        "style" => style,
-        "target" => target,
-        "message" => message
-      } = attrs) do
+  def command_button(
+        %Context{} = _context,
+        next,
+        %{
+          "style" => style,
+          "target" => target,
+          "message" => message
+        } = attrs
+      ) do
     css_class =
       case style do
         "link" -> "btn btn-link command-button"
@@ -721,10 +725,14 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-  def command_button(%Context{} = _context, next, %{
-        "target" => target,
-        "message" => message
-      } = attrs) do
+  def command_button(
+        %Context{} = _context,
+        next,
+        %{
+          "target" => target,
+          "message" => message
+        } = attrs
+      ) do
     [
       "<span class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{escape_xml!(message)}\"#{maybe_toggle_states_attr(attrs)}>",
       next.(),
