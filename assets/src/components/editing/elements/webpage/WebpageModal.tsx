@@ -19,6 +19,7 @@ interface ModalProps {
 const stringToNumOrUndefined = (v: string): string | undefined => (v === '' ? undefined : v);
 
 export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProps) => {
+  const [id, setId] = useState(model.id ?? '');
   const [srcType, setSrcType] = useState<ContentModel.WebpageSrcType>(model.srcType || 'url');
   const [src, setSrc] = useState(model.src);
   const [alt, setAlt] = useState(model.alt ?? '');
@@ -45,6 +46,7 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
       onCancel={onCancel}
       onOk={() =>
         onDone({
+          id: id.trim() === '' ? model.id : id.trim(),
           alt,
           width: stringToNumOrUndefined(width),
           height: stringToNumOrUndefined(height),
@@ -96,6 +98,15 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
           value={alt}
           onChange={(e) => setAlt(e.target.value)}
           placeholder="Enter a short description of this webpage"
+        />
+
+        <h4 className="mt-3 mb-2">Webpage ID</h4>
+        <p className="mb-2">Used as the command button target identifier.</p>
+        <input
+          className="form-control mb-3"
+          value={id}
+          onChange={(e) => setId(e.target.value)}
+          placeholder="Webpage ID"
         />
       </div>
     </Modal>

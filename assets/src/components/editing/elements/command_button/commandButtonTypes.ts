@@ -7,5 +7,5 @@ export interface CommandTarget {
   id: string;
   componentType: string;
   label: string;
-  MessageEditor: MessageEditorComponent;
+  MessageEditor?: MessageEditorComponent;
 }

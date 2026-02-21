@@ -50,6 +50,7 @@ const csrfToken = (document as any)
 const liveSocket = new LiveSocket('/live', Socket, {
   hooks: Hooks,
   params: { _csrf_token: csrfToken },
+  debug: false,
   timeout: 60000,
   metadata: {
     keydown: (e: any, _el: any) => {
