@@ -54,26 +54,9 @@ Links: `docs/epics/product_overhaul/prd.md`, `docs/epics/product_overhaul/overvi
   - None
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | System SHALL provide preview rendering for cover image in three contexts: My Course, Course Picker, and Welcome page. | P0 | Product + Eng |
-| FR-002 | System SHALL extract and reuse canonical runtime templates/components for each context so preview and destination UI use the same rendering units. | P0 | Eng |
-| FR-003 | System SHALL update destination UIs to consume the shared rendering units before preview wiring is considered complete. | P0 | Eng |
-| FR-004 | System SHALL preserve responsive behavior of each destination context at supported breakpoints in preview mode. | P1 | Eng |
-| FR-005 | System SHALL provide deterministic fallback behavior for missing/invalid cover images consistent with destination UI behavior. | P1 | Eng |
-| FR-006 | System SHALL enforce existing role/permission boundaries so only authorized template-management roles can access preview controls. | P0 | Eng |
-| FR-007 | System SHALL emit telemetry for preview context selection and preview render failures to support observability. | P1 | Eng |
-
+Requirements are found in requirements.yml
 ## 7. Acceptance Criteria
-- AC-001 (FR-001) — Given an authorized author viewing template settings, when they select My Course preview, then the cover image preview renders using the My Course production presentation.
-- AC-002 (FR-001) — Given an authorized author viewing template settings, when they select Course Picker preview, then the cover image preview renders using the Course Picker production presentation.
-- AC-003 (FR-001) — Given an authorized author viewing template settings, when they select Welcome preview, then the cover image preview renders using the Welcome production presentation.
-- AC-004 (FR-002, FR-003) — Given a code change to shared destination cover-image markup for one context, when tests run, then both destination UI and preview output reflect the same change without a second markup update.
-- AC-005 (FR-004) — Given desktop and mobile viewport breakpoints, when each preview context is rendered, then layout/spacing/image treatment matches destination UI behavior for the same breakpoint.
-- AC-006 (FR-005) — Given a template with missing or invalid cover image data, when preview loads, then fallback visuals and messaging match destination UI fallback behavior.
-- AC-007 (FR-006) — Given a user without template-management permissions, when they navigate to template editing surfaces, then preview controls are not shown and direct access is denied by server-side authorization.
-- AC-008 (FR-007) — Given preview context changes or render errors, when events occur, then telemetry events are recorded with context type and result metadata and no PII payloads.
-
+Requirements are found in requirements.yml
 ## 8. Non-Functional Requirements
 - Performance & Scale: Preview context switch p95 <= 400ms after initial data load; initial preview render p95 <= 700ms for standard template payloads; no additional N+1 queries introduced.
 - Reliability: Preview failures degrade gracefully with fallback state and actionable logging; no uncaught LiveView crashes from missing assets.

@@ -1,0 +1,89 @@
+version: 1
+feature: image_preview
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: 'System SHALL provide preview rendering for cover image in three contexts:
+    My Course, Course Picker, and Welcome page.'
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: Given an authorized author viewing template settings, when they select
+      My Course preview, then the cover image preview renders using the My Course
+      production presentation.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-002
+    title: Given an authorized author viewing template settings, when they select
+      Course Picker preview, then the cover image preview renders using the Course
+      Picker production presentation.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-003
+    title: Given an authorized author viewing template settings, when they select
+      Welcome preview, then the cover image preview renders using the Welcome production
+      presentation.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: System SHALL extract and reuse canonical runtime templates/components for
+    each context so preview and destination UI use the same rendering units.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: Given a code change to shared destination cover-image markup for one context,
+      when tests run, then both destination UI and preview output reflect the same
+      change without a second markup update.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: System SHALL preserve responsive behavior of each destination context at
+    supported breakpoints in preview mode.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: Given desktop and mobile viewport breakpoints, when each preview context
+      is rendered, then layout/spacing/image treatment matches destination UI behavior
+      for the same breakpoint.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: System SHALL provide deterministic fallback behavior for missing/invalid
+    cover images consistent with destination UI behavior.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: Given a template with missing or invalid cover image data, when preview
+      loads, then fallback visuals and messaging match destination UI fallback behavior.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: System SHALL enforce existing role/permission boundaries so only authorized
+    template-management roles can access preview controls.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: Given a user without template-management permissions, when they navigate
+      to template editing surfaces, then preview controls are not shown and direct
+      access is denied by server-side authorization.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: System SHALL emit telemetry for preview context selection and preview render
+    failures to support observability.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: Given preview context changes or render errors, when events occur, then
+      telemetry events are recorded with context type and result metadata and no PII
+      payloads.
+    status: proposed
+    verification_method: automated
+    proofs: []

@@ -4,7 +4,7 @@
 Checks:
 - required headings exist
 - unresolved TODO/TBD/FIXME markers do not exist
-- acceptance criteria count > 0 (PRD/design)
+- acceptance criteria traceability is present (PRD/design)
 - plan phases are numbered and each phase has Definition of Done
 - markdown links are valid (local paths + anchors; optional external URL checks)
 """
@@ -22,6 +22,7 @@ from urllib.request import Request, urlopen
 
 TODO_RE = re.compile(r"\b(TODO|TBD|FIXME)\b", re.IGNORECASE)
 AC_RE = re.compile(r"\bAC-\d{3}[A-Za-z]?\b")
+REQ_POINTER_SENTENCE = "Requirements are found in requirements.yml"
 LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.MULTILINE)
 PHASE_HEADING_RE = re.compile(r"^##+\s*Phase\s+(\d+)\s*:\s*(.+)$", re.IGNORECASE | re.MULTILINE)
@@ -76,6 +77,38 @@ def check_ac_count(content: str, file_label: str, result: ValidationResult) -> N
     count = len(AC_RE.findall(content))
     if count <= 0:
         result.add_error(f"{file_label}: acceptance criteria count must be > 0")
+
+
+def section_block(content: str, heading_contains: str) -> str:
+    matches = list(HEADING_RE.finditer(content))
+    for idx, match in enumerate(matches):
+        heading = normalize_heading(match.group(2))
+        if heading_contains in heading:
+            start = match.end()
+            end = matches[idx + 1].start() if idx + 1 < len(matches) else len(content)
+            return content[start:end]
+    return ""
+
+
+def check_prd_requirements_traceability(content: str, file_path: Path, result: ValidationResult) -> None:
+    # Legacy mode: inline AC IDs in PRD remain valid.
+    if len(AC_RE.findall(content)) > 0:
+        return
+
+    # New mode: PRD sections 6/7 point to requirements.yml as source of truth.
+    fr_block = section_block(content, "functional requirements")
+    ac_block = section_block(content, "acceptance criteria")
+    has_pointer = REQ_POINTER_SENTENCE in fr_block and REQ_POINTER_SENTENCE in ac_block
+
+    if not has_pointer:
+        result.add_error(
+            f"{file_path}: no inline AC IDs found; sections 6 and 7 must contain '{REQ_POINTER_SENTENCE}'"
+        )
+        return
+
+    req_path = file_path.parent / "requirements.yml"
+    if not req_path.exists():
+        result.add_error(f"{file_path}: uses requirements.yml pointer pattern but '{req_path}' is missing")
 
 
 def split_link_target(target: str) -> Tuple[str, str]:
@@ -224,7 +257,9 @@ def validate_file(file_path: Path, doc_type: str, check_external: bool, timeout:
     check_todo_markers(content, label, result)
     check_links(content, file_path, check_external, timeout, result)
 
-    if doc_type in {"prd", "design"}:
+    if doc_type == "prd":
+        check_prd_requirements_traceability(content, file_path, result)
+    if doc_type == "design":
         check_ac_count(content, label, result)
 
     if doc_type == "plan":

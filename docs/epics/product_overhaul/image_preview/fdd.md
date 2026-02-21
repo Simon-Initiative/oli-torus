@@ -22,8 +22,16 @@ This design implements image preview by rendering the exact existing runtime UI 
 - Explicit Assumptions:
   - Product/template record already contains sufficient image/title/description data for preview surfaces.
   - Product preview host remains `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive`.
-  - Existing author auth and product mount authorization remain unchanged.
-  - Dynamic runtime fields not present in Product view (for example enrolled instructors, progress) can be represented using deterministic preview adapter values.
+- Existing author auth and product mount authorization remain unchanged.
+- Dynamic runtime fields not present in Product view (for example enrolled instructors, progress) can be represented using deterministic preview adapter values.
+
+## Requirements Traceability
+
+- Source of truth: `docs/epics/product_overhaul/image_preview/requirements.yml`
+- FDD verification command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/image_preview --action verify_fdd`
+- Stage gate command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/image_preview --action master_validate --stage fdd_only`
 
 ## 3. Torus Context Summary
 - What we know:

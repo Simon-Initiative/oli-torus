@@ -1,6 +1,6 @@
 ---
 name: spec_develop
-description: Implement one phase from <feature_dir>/plan.md using the spec pack as source of truth, with mandatory tests, mandatory self-review-after-tests loop, and spec synchronization when implementation diverges.
+description: Implement one phase from <feature_dir>/plan.md using the spec pack as source of truth, with mandatory tests, mandatory spec-review-after-tests loop, and spec synchronization when implementation diverges.
 examples:
   - "$spec_develop docs/features/gradebook-overrides phase=2"
   - "$spec_develop docs/epics/authoring-modernization/gradebook-overrides phase=2"
@@ -11,7 +11,7 @@ when_to_use:
   - "Work requires strict test and validation closure."
 when_not_to_use:
   - "Spec pack is missing or incomplete."
-  - "Task is low-ceremony prototype work (use $prototype)."
+  - "Task is low-ceremony prototype work (use $spec_prototype)."
 ---
 
 ## Required Resources
@@ -45,12 +45,16 @@ Always load before coding:
    - Run `mix compile` and fix all warnings.
    - Run new/affected tests and ensure they pass.
 8. End-of-phase review gate (required):
-   - Run at least one `self_review` round after compile/tests pass for that phase.
+   - Run at least one `spec_review` round after compile/tests pass for that phase.
    - Fix high/medium findings before marking phase complete.
 9. Sync spec docs when implementation diverges.
 10. Postflight gate: run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all` after implementation and doc updates.
 11. Hard gate: if postflight validation fails, the run is not complete; fix docs and re-run until it passes.
 12. If validation cannot run, instruct the user to run it and report blockers.
+13. REQUIREMENTS TRACEABILITY (required):
+   - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action verify_implementation`.
+   - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action master_validate --stage implementation_complete`.
+   - Do not mark the feature complete unless every AC is `verified`.
 
 ## Validation Gate
 - Preflight: execute `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all` before coding.
@@ -58,10 +62,10 @@ Always load before coding:
 - If either validation run fails, stop and fix docs before proceeding.
 - Execute the command directly when environment access allows; do not merely suggest it.
 
-## Self-Review Requirement
-- Run at least one `self_review` round at the end of each completed phase, after compile/tests execute.
+## Spec-Review Requirement
+- Run at least one `spec_review` round at the end of each completed phase, after compile/tests execute.
 - Resolve high/medium findings before completion.
 - Cap at 3 review/fix rounds.
 
 ## Output Contract
-- Report implemented phase, key files changed, compile/test commands run, self-review rounds/findings, and validation status.
+- Report implemented phase, key files changed, compile/test commands run, spec-review rounds/findings, and validation status.

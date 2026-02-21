@@ -25,7 +25,7 @@ Phase: `<n or name>`
 - [ ] PRD/FDD/plan updated when implementation diverged
 - [ ] Open questions added to spec docs
 
-## Self-Review Loop
+## Spec-Review Loop
 - Required timing: run after compile/tests pass for this phase.
 - Round 1 findings:
 - Round 1 fixes:
@@ -36,6 +36,6 @@ Phase: `<n or name>`
 - [ ] Phase tasks complete
 - [ ] Tests pass
 - [ ] Compile passes with no warnings
-- [ ] End-of-phase self-review completed
+- [ ] End-of-phase spec-review completed
 - [ ] Validation checks pass
 - [ ] No unresolved high/medium review findings

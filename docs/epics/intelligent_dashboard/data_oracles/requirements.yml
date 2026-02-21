@@ -1,0 +1,71 @@
+version: 1
+feature: data_oracles
+generated_from: prd.md
+requirements:
+- id: FR-013
+  title: '| System SHALL include extensive automated unit testing for oracle contracts/registry/planner
+    behavior, and SHALL use mocked or stubbed concrete oracle modules where needed
+    to validate end-to-end component interactions in tests. | P0 |'
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: Given a valid instructor consumer key, when dependencies are resolved,
+      then required and optional oracle keys are deterministic and stable.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-002
+    title: Given an unknown consumer key, when dependencies are resolved, then registry
+      returns a deterministic validation error.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-003
+    title: Given a valid oracle key, when module lookup is requested, then the registry
+      resolves exactly one implementing module.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-004
+    title: Given a canonical `OracleContext`, when an oracle is executed, then it
+      receives only contract-defined context fields and returns contract-compliant
+      success/error envelopes.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-005
+    title: Given tile or LiveView consumer code for covered domains, when code is
+      reviewed/tested, then no direct analytics query path is required to obtain dashboard
+      data.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-006
+    title: Given a new oracle added through the extension workflow, when integrated
+      into one consumer profile, then unrelated consumer profiles continue to resolve
+      unchanged dependencies.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-007
+    title: Given a future non-instructor dashboard product, when it implements a product-specific
+      registry on shared contracts, then no change to shared oracle behavior signatures
+      is required.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-008
+    title: Given a dependency graph where multiple oracles require a shared prerequisite
+      oracle, when a scope request is executed, then that prerequisite is loaded once
+      and its payload is provided to each dependent oracle through injected prerequisite
+      inputs.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-009
+    title: Given unit test execution for this feature, mocked/stubbed concrete oracle
+      modules are used where necessary to exercise registry resolution, prerequisite
+      planning, and contract execution interactions end-to-end at component boundaries.
+    status: proposed
+    verification_method: automated
+    proofs: []

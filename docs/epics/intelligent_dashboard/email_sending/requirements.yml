@@ -1,0 +1,120 @@
+version: 1
+feature: email_sending
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Capture normalized initiation context from supported dashboard entry points
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: Modal initialization includes available section/course/instructor, recipient
+      subset, and applicable situation/content/deadline/performance signals
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: Use stable situation contract for prompt semantics
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: Same situation key always resolves to canonical description across entry
+      points
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: Generate initial AI draft on modal open with default neutral tone
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: Modal open auto-populates subject and body from AI output
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: Allow instructor editing of generated subject and body
+  status: proposed
+  acceptance_criteria:
+  - id: AC-012
+    title: Manual subject/body edits persist for send unless explicitly replaced by
+      regenerate
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: Tone selection changes state only until regenerate action
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: Tone selection alone does not alter current draft
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: Regenerate replaces subject/body with selected tone and preserved recipients
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: Generate new draft replaces content while preserving recipient edits
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: Prefill and manage recipients via truncating chips and manual additions
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: Chips truncate visually, remain accessible, and support keyboard/mouse
+      removal
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-008
+  title: Block send when recipients or required fields are invalid
+  status: proposed
+  acceptance_criteria:
+  - id: AC-007
+    title: Invalid send attempts are blocked with visible and announced validation
+      feedback
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-009
+  title: Realize templates per recipient via whitelist placeholder substitution
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: Supported placeholders resolve deterministically without leaking resolvable
+      raw tokens
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-010
+  title: Dispatch via existing Torus email mechanism with one job per recipient
+  status: proposed
+  acceptance_criteria:
+  - id: AC-009
+    title: Valid send enqueues or dispatches exactly one email job per recipient
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-011
+  title: Keep failures recoverable with retry-friendly modal behavior
+  status: proposed
+  acceptance_criteria:
+  - id: AC-010
+    title: Generation or send failures keep modal open and allow retry with actionable
+      errors
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-012
+  title: Meet modal accessibility behavior requirements
+  status: proposed
+  acceptance_criteria:
+  - id: AC-011
+    title: Keyboard and screen-reader modal semantics satisfy focus and announcement
+      requirements
+    status: proposed
+    verification_method: automated
+    proofs: []

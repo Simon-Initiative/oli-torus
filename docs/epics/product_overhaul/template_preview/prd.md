@@ -54,26 +54,9 @@ Links: `docs/epics/product_overhaul/overview.md`, `docs/epics/product_overhaul/p
   - None
 
 ## 6. Functional Requirements
-| ID | Description | Priority | Owner |
-|---|---|---|---|
-| FR-001 | System SHALL expose a Preview action on Template Overview only to users authorized to manage the template section. | P0 | Product + Eng |
-| FR-002 | On preview request, system SHALL resolve the underlying template-backed section and validate institution/tenant scoping before continuing. | P0 | Eng |
-| FR-003 | System SHALL ensure the current user has an active student enrollment in the resolved section; if absent, create it via idempotent upsert semantics. | P0 | Eng |
-| FR-004 | System SHALL preserve the user's existing author/admin identity and permissions in authoring while enabling student-view launch context for preview. | P0 | Eng |
-| FR-005 | System SHALL open the canonical section student home/delivery entrypoint in a new browser window/tab after enrollment validation/upsert succeeds. | P0 | Eng |
-| FR-006 | Repeated preview requests by the same user for the same section SHALL not create duplicate enrollment records. | P0 | Eng |
-| FR-007 | System SHALL provide deterministic error handling when enrollment upsert or launch URL resolution fails, without partial/duplicate writes. | P1 | Eng |
-| FR-008 | System SHALL emit telemetry for preview requested, enrollment created/reused, preview launch success, and preview launch failure. | P1 | Eng |
-
+Requirements are found in requirements.yml
 ## 7. Acceptance Criteria
-- AC-001 (FR-001) — Given a user with template-management permissions on Template Overview, when they view page actions, then a Preview action is visible and enabled.
-- AC-002 (FR-001) — Given a user without template-management permissions, when they view Template Overview or attempt direct preview endpoint access, then Preview is hidden/denied and server-side authorization rejects access.
-- AC-003 (FR-002, FR-003, FR-005) — Given an authorized user without existing student enrollment for the template-backed section, when they click Preview, then exactly one student enrollment is created and the student home opens in a new window/tab.
-- AC-004 (FR-003, FR-006) — Given an authorized user already enrolled as a student in that section, when they click Preview, then no additional enrollment row is created and launch still succeeds.
-- AC-005 (FR-004, FR-005) — Given an authorized author/admin launches preview, when the student home loads, then rendered content and navigation match the standard student delivery experience for the same section.
-- AC-006 (FR-007) — Given enrollment upsert or launch resolution fails, when user clicks Preview, then no duplicate enrollments are created, failure feedback is shown, and no blank window is left without destination.
-- AC-007 (FR-008) — Given preview request lifecycle events occur, when telemetry is inspected, then request/start/success/failure events include section/user identifiers and outcome metadata scoped to tenant and without sensitive payloads.
-
+Requirements are found in requirements.yml
 ## 8. Non-Functional Requirements
 - Performance & Scale: Preview launch preparation (authorization + enrollment check/upsert + launch URL generation) p95 <= 700ms under normal authoring load; duplicate-click handling remains consistent under concurrent requests.
 - Reliability: Enrollment upsert operation is atomic/idempotent and maintains zero duplicate enrollments for `(user_id, section_id, role=student)` across retries; preview launch failure rate <= 1% excluding external browser-popup blocking.

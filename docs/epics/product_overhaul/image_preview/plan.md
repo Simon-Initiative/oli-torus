@@ -24,6 +24,13 @@ Deliver template cover-image preview in `OliWeb.Workspaces.CourseAuthor.Products
 - Supported parity breakpoints for sign-off are mobile and desktop; if tablet-specific QA is requested, it is additive and does not block initial implementation.
 - No feature flag is required for rollout; standard deploy gates and test coverage are the release control.
 
+## Requirements Traceability
+- Source of truth: `docs/epics/product_overhaul/image_preview/requirements.yml`
+- Plan verification command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/image_preview --action verify_plan`
+- Stage gate command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/image_preview --action master_validate --stage plan_present`
+
 ## Phase 1: Contract Baseline and Safety Net
 - Goal: Lock parity-critical rendering contracts and establish a regression harness before extraction/wiring.
 - Tasks:

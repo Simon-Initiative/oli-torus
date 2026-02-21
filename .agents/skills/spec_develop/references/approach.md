@@ -10,7 +10,7 @@ Use this implementation sequence:
    - `mix compile` with zero warnings.
    - New and affected tests pass.
 6. End-of-phase review gate:
-   - Run `self_review` after compile/tests.
+   - Run `spec_review` after compile/tests.
    - Fix high/medium findings.
 7. If implementation diverges from spec, update `prd.md`/`fdd.md`/`plan.md` accordingly.
 8. Run postflight spec validation and do not mark complete until it passes.

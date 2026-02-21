@@ -3,7 +3,9 @@
 A spec artifact is done only when all checks below pass:
 
 - Required headings exist and are in the expected order.
-- Requirement IDs (`FR-###`) and acceptance IDs (`AC-###`) are present when required.
+- Requirement traceability is explicit:
+  - PRD uses inline `AC-###` IDs or points sections `6` and `7` to `requirements.yml`, and
+  - `requirements.yml` exists when pointer pattern is used.
 - No unresolved `TODO` / `TBD` / `FIXME` markers remain.
 - Links are valid (local paths resolve, anchors resolve, external URLs are syntactically valid).
 - Assumptions and open questions are explicit (none hidden in narrative prose).

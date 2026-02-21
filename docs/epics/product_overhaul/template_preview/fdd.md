@@ -22,8 +22,16 @@ This design adds a Template Overview preview action that launches the real stude
 - Explicit Assumptions:
   - Template entities are `sections.type == :blueprint` and can be previewed through standard delivery student home (`/sections/:section_slug`).
   - A usable delivery user identity is available in session context (`socket.assigns.current_user`) for authors/admins using template preview.
-  - Existing enrollment constraints (`index_user_section`, unique `enrollments_context_roles`) are present in all supported environments.
-  - No feature flag is required for this ticket scope.
+- Existing enrollment constraints (`index_user_section`, unique `enrollments_context_roles`) are present in all supported environments.
+- No feature flag is required for this ticket scope.
+
+## Requirements Traceability
+
+- Source of truth: `docs/epics/product_overhaul/template_preview/requirements.yml`
+- FDD verification command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/template_preview --action verify_fdd`
+- Stage gate command:
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/template_preview --action master_validate --stage fdd_only`
 
 ## 3. Torus Context Summary
 - What we know:

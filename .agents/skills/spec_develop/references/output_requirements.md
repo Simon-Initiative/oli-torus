@@ -16,5 +16,5 @@ A phase is complete only when all are true:
 - Scoped phase tasks are implemented.
 - `mix compile` passes with no warnings.
 - New and affected tests pass.
-- At least one `self_review` round is executed after compile/tests.
+- At least one `spec_review` round is executed after compile/tests.
 - High/medium review findings are fixed (or explicitly documented with rationale).

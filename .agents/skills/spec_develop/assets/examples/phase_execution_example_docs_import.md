@@ -23,7 +23,7 @@ Phase: `6 - Import Orchestrator & Persistence Transaction`
 - [x] Plan phase DoD reflects implemented behavior
 - [x] Warnings/fallback assumptions preserved in spec docs
 
-## Self-Review Loop
+## Spec-Review Loop
 - Round 1 findings: Ensure warning aggregation remains non-blocking and test-covered.
 - Round 1 fixes: Added failure-path assertions and warning propagation checks.
 

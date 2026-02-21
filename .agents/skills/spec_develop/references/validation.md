@@ -1,6 +1,6 @@
 # Validation
 
-Run technical validation first (compile/tests), then self-review, then spec validation.
+Run technical validation first (compile/tests), then spec-review, then spec validation.
 For this skill, spec validation is a hard gate and must run twice: preflight (before coding) and postflight (after implementation/doc updates).
 
 Example commands:

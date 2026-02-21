@@ -1,0 +1,67 @@
+version: 1
+feature: data_cache
+generated_from: prd.md
+requirements:
+- id: FR-011
+  title: '| System SHALL include extensive automated unit testing for cache key/policy/store
+    behavior, and SHALL use mocked/stubbed dependencies (for example oracle payload
+    producers and coalescing participants) where needed to validate end-to-end component
+    interactions in tests. | P0 |'
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: Given repeated lookups for same context/container/oracle identity within
+      TTL, when cache is warm, then payload is returned from cache.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-002
+    title: Given partial container completeness, when required lookup runs, then response
+      includes deterministic `hits` and `misses` and only misses proceed to build.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-003
+    title: Given capacity threshold breach, when new container payloads are written,
+      then least-recently-used container entries are evicted as a group.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-004
+    title: Given late oracle completion for prior container, when identity guard passes,
+      then payload is written for that container key without affecting active UI scope
+      directly.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-005
+    title: Given revisit flow with explicit container params, when revisit cache has
+      eligible payloads, then those payloads are returned prior to build.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-006
+    title: Given revisit-ineligible flow (base mount without explicit container),
+      revisit cache lookup is skipped.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-007
+    title: Given concurrent misses for identical oracle key, exactly one build producer
+      is elected and other requests await/shared result.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-008
+    title: Given boundary inspection, cache modules contain no request queue/token
+      orchestration logic.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-009
+    title: Given cache unit test execution, mocked/stubbed producers/waiters and oracle
+      payload sources are used where necessary to exercise coalescing, late writes,
+      and boundary interactions end-to-end at component boundaries.
+    status: proposed
+    verification_method: automated
+    proofs: []

@@ -1,0 +1,89 @@
+version: 1
+feature: objectives_tile
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Render `Challenging Objectives` tile for scopes where objectives exist.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: "(FR-001, FR-002) \u2014 Given objectives exist in selected scope, when\
+      \ tile renders, then only objectives with proficiency <=40% are listed."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: Show parent objective numbering/order and sub-objective entries where relationships
+    exist.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-002
+    title: "(FR-003, FR-004) \u2014 Given objective has sub-objectives, when row renders,\
+      \ then disclosure control is present and keyboard-operable; objectives without\
+      \ children show no disclosure control."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: Objective click navigates to Insights -> Learning Objectives with selected
+    objective expanded.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: "(FR-005) \u2014 Given instructor clicks objective row, when navigation\
+      \ occurs, then Insights -> Learning Objectives opens with that objective expanded."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: Sub-objective click navigates to Insights -> Learning Objectives with corresponding
+    sub-objective visible/highlighted.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: "(FR-006) \u2014 Given instructor clicks sub-objective row, when navigation\
+      \ occurs, then corresponding sub-objective is visible/highlighted in Insights\
+      \ context."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-007
+  title: '`View Learning Objectives` button navigates to all-objectives view with
+    no rows expanded.'
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: "(FR-007) \u2014 Given instructor clicks `View Learning Objectives`, when\
+      \ navigation completes, then all-objectives default view is shown with no expanded\
+      \ row."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-008
+  title: If no objectives exist, hide tile entirely; if objectives exist but none
+    qualify as low proficiency, show contextual empty-state message.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-006
+    title: "(FR-008) \u2014 Given no objectives exist in course/scope, when dashboard\
+      \ renders, then tile is not displayed."
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-007
+    title: "(FR-008) \u2014 Given objectives exist but none are low proficiency, when\
+      \ tile renders, then contextual informational empty state is shown."
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-009
+  title: Tile updates consistently on global scope changes without stale objective
+    rows.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: "(FR-009) \u2014 Given rapid scope changes, when tile updates, then rows\
+      \ reflect current scope only with no stale carry-over."
+    status: proposed
+    verification_method: automated
+    proofs: []
