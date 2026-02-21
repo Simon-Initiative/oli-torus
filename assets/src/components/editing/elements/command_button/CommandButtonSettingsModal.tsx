@@ -92,22 +92,15 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
   }, []);
 
   const onToggleMessageChanged = useCallback((index: number, message: string) => {
-    setToggleStates((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, message } : item)),
-    );
+    setToggleStates((prev) => prev.map((item, i) => (i === index ? { ...item, message } : item)));
   }, []);
 
   const onToggleTitleChanged = useCallback((index: number, title: string) => {
-    setToggleStates((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, title } : item)),
-    );
+    setToggleStates((prev) => prev.map((item, i) => (i === index ? { ...item, title } : item)));
   }, []);
 
   const addToggleMessage = useCallback(() => {
-    setToggleStates((prev) => [
-      ...prev,
-      { title: `State ${prev.length + 1}`, message: '' },
-    ]);
+    setToggleStates((prev) => [...prev, { title: `State ${prev.length + 1}`, message: '' }]);
   }, []);
 
   const removeToggleMessage = useCallback((index: number) => {
@@ -231,7 +224,11 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
       </div>
 
       {messageMode === 'single' ? (
-        <CommandMessageEditor onChange={onCommandChanged} value={workingCopy.message} target={target} />
+        <CommandMessageEditor
+          onChange={onCommandChanged}
+          value={workingCopy.message}
+          target={target}
+        />
       ) : (
         <>
           {toggleStates.map((entry, index) => (
@@ -262,7 +259,11 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
               )}
             </div>
           ))}
-          <button type="button" className="btn btn-sm btn-outline-primary" onClick={addToggleMessage}>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-primary"
+            onClick={addToggleMessage}
+          >
             Add State
           </button>
         </>

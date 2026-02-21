@@ -30,10 +30,7 @@ export const commandButtonClicked = (event: any) => {
   const toggleStates = parseToggleStatesFromDataAttribute(rawToggleStates);
   if (toggleStates) {
     const currentTitle = buttonEl?.textContent?.trim();
-    const { currentState, nextState } = selectCurrentAndNextToggleState(
-      toggleStates,
-      currentTitle,
-    );
+    const { currentState, nextState } = selectCurrentAndNextToggleState(toggleStates, currentTitle);
     message = currentState.message;
     if (buttonEl) {
       buttonEl.textContent = nextState.title;

@@ -41,4 +41,3 @@ describe('Command Button Toggle', () => {
     dispatchSpy.mockRestore();
   });
 });
-

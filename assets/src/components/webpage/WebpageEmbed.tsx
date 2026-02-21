@@ -20,9 +20,12 @@ export const WebpageEmbed: React.FC<{
   const targetOrigin = useMemo(() => getTargetOrigin(webpage.src), [webpage.src]);
 
   if (!webpage.id) {
-    console.warn('WebpageEmbed missing id; command-button targeting will not work for this iframe', {
-      src: webpage.src,
-    });
+    console.warn(
+      'WebpageEmbed missing id; command-button targeting will not work for this iframe',
+      {
+        src: webpage.src,
+      },
+    );
   }
 
   const onCommandReceived = useCallback(
