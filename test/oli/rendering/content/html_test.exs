@@ -52,7 +52,10 @@ defmodule Oli.Content.Content.HtmlTest do
                "<pre><code class=\"torus-code language-python\" data-point-marker=\"4076323894\">import fresh-pots</code></pre>"
 
       assert rendered_html_string =~
-               ~r/<iframe class=".*"  allowfullscreen src="https:\/\/www.wikipedia.org" data-point-marker="1713634991"><\/iframe>/
+               ~r/<div data-react-class="Components\.WebpageEmbed"/
+
+      assert rendered_html_string =~
+               ~r/https:(?:\\\/\\\/|\/\/)www\.wikipedia\.org/
 
       assert rendered_html_string =~ "<span class=\"callout-block\">a richtext callout</span>"
 
