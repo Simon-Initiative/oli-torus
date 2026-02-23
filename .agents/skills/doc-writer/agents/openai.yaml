@@ -1,0 +1,4 @@
+interface:
+  display_name: "Torus Documentation Writer"
+  short_description: "Write and maintain Torus technical and user docs"
+  default_prompt: "Use $doc-writer to draft or update Torus technical and user-facing documentation from code and product context."
