@@ -101,12 +101,19 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
         />
 
         <h4 className="mt-3 mb-2">Webpage ID</h4>
-        <p className="mb-2">Used as the command button target identifier.</p>
+        <p id="webpage-id-help" className="mb-2">
+          Used as the command button target identifier.
+        </p>
+        <label className="sr-only" htmlFor="webpage-id">
+          Webpage ID
+        </label>
         <input
+          id="webpage-id"
           className="form-control mb-3"
           value={id}
           onChange={(e) => setId(e.target.value)}
           placeholder="Webpage ID"
+          aria-describedby="webpage-id-help"
         />
       </div>
     </Modal>

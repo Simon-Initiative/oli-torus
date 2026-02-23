@@ -207,7 +207,8 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
 
       <hr />
       <h4 className="mb-2">Command Message</h4>
-      <div className="mb-2">
+      <fieldset className="mb-2">
+        <legend className="h6 mb-2">Message Mode</legend>
         <div className="form-check form-check-inline">
           <input
             className="form-check-input"
@@ -234,7 +235,7 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
             Toggle Messages
           </label>
         </div>
-      </div>
+      </fieldset>
 
       {messageMode === 'single' ? (
         <CommandMessageEditor
