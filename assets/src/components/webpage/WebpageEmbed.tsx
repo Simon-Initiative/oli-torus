@@ -4,11 +4,11 @@ import * as ContentModel from 'data/content/model/elements/types';
 import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
 
 const getTargetOrigin = (src?: string) => {
-  if (!src) return '*';
+  if (!src) return null;
   try {
     return new URL(src, window.location.href).origin;
   } catch {
-    return '*';
+    return null;
   }
 };
 
@@ -30,10 +30,11 @@ export const WebpageEmbed: React.FC<{
 
   const onCommandReceived = useCallback(
     (message: string) => {
+      if (!targetOrigin) return;
       if (!iframeRef.current?.contentWindow) return;
       iframeRef.current.contentWindow.postMessage(message, targetOrigin);
     },
-    [targetOrigin, webpage.id],
+    [targetOrigin],
   );
 
   useCommandTarget(webpage.id, onCommandReceived);
