@@ -122,6 +122,26 @@ defmodule Oli.Rendering.Content.Html do
   defp extract_src_url([%{"url" => url} | _]) when is_list(url), do: Enum.join(url, "")
   defp extract_src_url(_), do: "unknown"
 
+  defp sanitize_dom_id(value) when is_binary(value) do
+    value
+    |> String.replace(~r/[^A-Za-z0-9_-]/, "-")
+    |> String.trim("-")
+    |> case do
+      "" -> "unknown"
+      sanitized -> sanitized
+    end
+  end
+
+  defp iframe_element_id(attrs) do
+    case attrs["id"] do
+      id when is_binary(id) and id != "" ->
+        sanitize_dom_id(id)
+
+      _ ->
+        "src-#{:erlang.phash2(extract_src_url(attrs["src"]))}"
+    end
+  end
+
   def video(%Context{} = context, _, attrs) do
     attempt_guid =
       case context.resource_attempt do
@@ -206,14 +226,14 @@ defmodule Oli.Rendering.Content.Html do
 
   def youtube(%Context{} = _context, _, _e), do: ""
 
-  def iframe(%Context{} = context, _, %{"src" => src} = attrs) do
+  def iframe(%Context{} = context, _, %{"src" => _src} = attrs) do
     attempt_guid =
       case context.resource_attempt do
         nil -> ""
         attempt -> attempt.attempt_guid
       end
 
-    element_id = attrs["id"] || extract_src_url(src)
+    element_id = iframe_element_id(attrs)
 
     {:safe, webpage_embed} =
       OliWeb.Common.React.component(
