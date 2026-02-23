@@ -122,7 +122,8 @@ defmodule Oli.Rendering.Content.Html do
   defp extract_src_url([%{"url" => url} | _]) when is_list(url), do: Enum.join(url, "")
   defp extract_src_url(_), do: "unknown"
 
-  defp sanitize_dom_id(value, empty_fallback) when is_binary(value) and is_binary(empty_fallback) do
+  defp sanitize_dom_id(value, empty_fallback)
+       when is_binary(value) and is_binary(empty_fallback) do
     value
     |> String.replace(~r/[^A-Za-z0-9_-]/, "-")
     |> String.trim("-")
