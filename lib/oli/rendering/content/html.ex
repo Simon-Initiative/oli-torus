@@ -126,7 +126,8 @@ defmodule Oli.Rendering.Content.Html do
     sanitize_dom_id(value, "id-#{:erlang.phash2(value)}")
   end
 
-  defp sanitize_dom_id(value, empty_fallback) when is_binary(value) and is_binary(empty_fallback) do
+  defp sanitize_dom_id(value, empty_fallback)
+       when is_binary(value) and is_binary(empty_fallback) do
     value
     |> String.replace(~r/[^A-Za-z0-9_-]/, "-")
     |> String.trim("-")
