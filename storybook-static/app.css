@@ -5740,6 +5740,10 @@ select {
   background-color: #39E581e6;
 }
 
+.text-Text-text-accent-green {
+  color: #218358;
+}
+
 .dark .text-Text-text-accent-green {
   color: #39E581;
 }
@@ -8086,6 +8090,10 @@ select {
 
 .dark .ring-Icon-icon-accent-green-bold {
   --tw-ring-color: #39E581;
+}
+
+.fill-Icon-icon-accent-green-bold {
+  fill: #0FB863;
 }
 
 .dark .fill-Icon-icon-accent-green-bold {
@@ -20769,11 +20777,6 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(1 101 218 / var(--tw-text-opacity));
 }
 
-.text-\[\#0CAF61\] {
-  --tw-text-opacity: 1;
-  color: rgb(12 175 97 / var(--tw-text-opacity));
-}
-
 .text-\[\#0FB863\] {
   --tw-text-opacity: 1;
   color: rgb(15 184 99 / var(--tw-text-opacity));
@@ -26666,6 +26669,46 @@ Not supports in Firefox and IE */
   color: #99CCFF;
 }
 
+.enabled\:bg-Fill-Buttons-fill-primary:enabled {
+  background-color: #0062F2;
+}
+
+.dark .enabled\:bg-Fill-Buttons-fill-primary:enabled {
+  background-color: #0062F2;
+}
+
+.enabled\:border-Fill-Buttons-fill-primary:enabled {
+  border-color: #0062F2;
+}
+
+.dark .enabled\:border-Fill-Buttons-fill-primary:enabled {
+  border-color: #0062F2;
+}
+
+.enabled\:hover\:bg-Fill-Buttons-fill-primary-hover:hover:enabled {
+  background-color: #003179;
+}
+
+.dark .enabled\:hover\:bg-Fill-Buttons-fill-primary-hover:hover:enabled {
+  background-color: #4CA6FF;
+}
+
+.disabled\:bg-Fill-Chip-Gray:disabled {
+  background-color: #CED1D9;
+}
+
+.dark .disabled\:bg-Fill-Chip-Gray:disabled {
+  background-color: #353740;
+}
+
+.disabled\:text-Text-text-low:disabled {
+  color: #45464C;
+}
+
+.dark .disabled\:text-Text-text-low:disabled {
+  color: #BAB8BF;
+}
+
 .group:hover .group-hover\:stroke-Text-text-button-hover {
   stroke: #1B67B2;
 }
@@ -29162,11 +29205,6 @@ Not supports in Firefox and IE */
 .dark .dark\:text-\[\#0062F2\] {
   --tw-text-opacity: 1;
   color: rgb(0 98 242 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-\[\#12E56A\] {
-  --tw-text-opacity: 1;
-  color: rgb(18 229 106 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-\[\#197adc\] {
