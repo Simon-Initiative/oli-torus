@@ -123,11 +123,15 @@ defmodule Oli.Rendering.Content.Html do
   defp extract_src_url(_), do: "unknown"
 
   defp sanitize_dom_id(value) when is_binary(value) do
+    sanitize_dom_id(value, "id-#{:erlang.phash2(value)}")
+  end
+
+  defp sanitize_dom_id(value, empty_fallback) when is_binary(value) and is_binary(empty_fallback) do
     value
     |> String.replace(~r/[^A-Za-z0-9_-]/, "-")
     |> String.trim("-")
     |> case do
-      "" -> "unknown"
+      "" -> empty_fallback
       sanitized -> sanitized
     end
   end
@@ -135,7 +139,7 @@ defmodule Oli.Rendering.Content.Html do
   defp iframe_element_id(attrs) do
     case attrs["id"] do
       id when is_binary(id) and id != "" ->
-        sanitize_dom_id(id)
+        sanitize_dom_id(id, "id-#{:erlang.phash2(id)}")
 
       _ ->
         "src-#{:erlang.phash2(extract_src_url(attrs["src"]))}"
