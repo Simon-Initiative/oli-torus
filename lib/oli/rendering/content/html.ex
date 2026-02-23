@@ -235,13 +235,14 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     element_id = iframe_element_id(attrs)
+    webpage_attrs = Map.put_new(attrs, "id", element_id)
 
     {:safe, webpage_embed} =
       OliWeb.Common.React.component(
         context,
         "Components.WebpageEmbed",
         %{
-          "webpage" => attrs,
+          "webpage" => webpage_attrs,
           "pointMarkerContext" => %{
             renderPointMarkers: context.render_opts.render_point_markers,
             isAnnotationLevel: context.is_annotation_level
