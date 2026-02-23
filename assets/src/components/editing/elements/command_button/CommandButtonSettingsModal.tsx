@@ -41,6 +41,8 @@ interface Props {
   onDone: () => void;
 }
 
+type ToggleStateRow = CommandButtonToggleState & { uiKey: string };
+
 export const CommandButtonSettingsModal: React.FC<Props> = ({
   model,
   onEdit,
@@ -53,11 +55,13 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
   const [messageMode, setMessageMode] = useState<'single' | 'toggle'>(
     initialToggleStates ? 'toggle' : 'single',
   );
-  const [toggleStates, setToggleStates] = useState<CommandButtonToggleState[]>(
-    initialToggleStates || [
-      { title: 'State 1', message: workingCopy.message || '' },
-      { title: 'State 2', message: '' },
-    ],
+  const [toggleStates, setToggleStates] = useState<ToggleStateRow[]>(
+    initialToggleStates
+      ? initialToggleStates.map((state) => ({ ...state, uiKey: v4() }))
+      : [
+          { title: 'State 1', message: workingCopy.message || '', uiKey: v4() },
+          { title: 'State 2', message: '', uiKey: v4() },
+        ],
   );
   const onSubmit = useCallback(() => {
     if (messageMode === 'toggle') {
@@ -65,10 +69,16 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
         (m) => m.title.trim().length > 0 || m.message.trim().length > 0,
       );
       const toggleStatesToSave = cleaned.length > 0 ? cleaned : toggleStates.slice(0, 1);
+      const persistedStates: CommandButtonToggleState[] = toggleStatesToSave.map(
+        ({ title, message }) => ({
+          title,
+          message,
+        }),
+      );
       onEdit({
         ...workingCopy,
-        message: toggleStatesToSave[0]?.message ?? '',
-        toggleStates: toggleStatesToSave,
+        message: persistedStates[0]?.message ?? '',
+        toggleStates: persistedStates,
       });
     } else {
       onEdit({ ...workingCopy, toggleStates: undefined });
@@ -100,7 +110,10 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
   }, []);
 
   const addToggleMessage = useCallback(() => {
-    setToggleStates((prev) => [...prev, { title: `State ${prev.length + 1}`, message: '' }]);
+    setToggleStates((prev) => [
+      ...prev,
+      { title: `State ${prev.length + 1}`, message: '', uiKey: v4() },
+    ]);
   }, []);
 
   const removeToggleMessage = useCallback((index: number) => {
@@ -116,8 +129,8 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
     setToggleStates((prev) => {
       if (prev.length > 0) return prev;
       return [
-        { title: 'State 1', message: workingCopy.message || '' },
-        { title: 'State 2', message: '' },
+        { title: 'State 1', message: workingCopy.message || '', uiKey: v4() },
+        { title: 'State 2', message: '', uiKey: v4() },
       ];
     });
   }, [workingCopy.message]);
@@ -232,7 +245,7 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
       ) : (
         <>
           {toggleStates.map((entry, index) => (
-            <div className="border rounded p-2 mb-2" key={index}>
+            <div className="border rounded p-2 mb-2" key={entry.uiKey}>
               <div className="form-group">
                 <label htmlFor={`toggle-title-${index}`}>Button Title</label>
                 <input
