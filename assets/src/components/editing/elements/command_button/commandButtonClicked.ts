@@ -9,9 +9,19 @@ import {
  * command button. It's hooked up over in app.ts in a jquery-style event handler.
  **/
 export const commandButtonClicked = (event: any) => {
-  const buttonEl = (event.target as HTMLElement)?.closest?.(
-    '[data-action="command-button"]',
-  ) as HTMLElement | null;
+  const fromCurrentTarget =
+    event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  const fromTargetElement = event?.target instanceof HTMLElement ? event.target : null;
+  const fromTargetParent =
+    event?.target && event.target.parentElement instanceof HTMLElement
+      ? event.target.parentElement
+      : null;
+
+  const buttonEl =
+    fromCurrentTarget ||
+    ((fromTargetElement || fromTargetParent)?.closest?.(
+      '[data-action="command-button"]',
+    ) as HTMLElement | null);
 
   const target = buttonEl?.getAttribute('data-target') || undefined;
   const rawToggleStates = buttonEl?.getAttribute('data-toggle-states') || undefined;

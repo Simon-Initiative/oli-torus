@@ -171,8 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
     .call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     .map((el: HTMLElement) => new Tooltip(el));
 
-  // initialize command button elements
-  $('[data-action="command-button"]').on('click', commandButtonClicked);
+  // initialize command button elements (delegated so LiveView-patched content works too)
+  $(document).on('click', '[data-action="command-button"]', commandButtonClicked);
 
   // handle direct tab routing via url hash
   if (location.hash !== '') {

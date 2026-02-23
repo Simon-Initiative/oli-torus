@@ -49,4 +49,24 @@ describe('commandButtonClicked', () => {
 
     dispatchSpy.mockRestore();
   });
+
+  it('uses currentTarget when click target is a text node (SSR/jQuery path)', () => {
+    const button = document.createElement('span');
+    button.setAttribute('data-action', 'command-button');
+    button.setAttribute('data-target', 'targetx');
+    button.setAttribute('data-message', 'innerOrbitsShown.png');
+    button.appendChild(document.createTextNode('Show Inner Orbits'));
+
+    const dispatchSpy = jest.spyOn(document, 'dispatchEvent').mockReturnValue(true);
+
+    commandButtonClicked({ currentTarget: button, target: button.firstChild });
+
+    expect(dispatchSpy).toHaveBeenCalledTimes(1);
+    expect((dispatchSpy.mock.calls[0][0] as CustomEvent).detail).toEqual({
+      forId: 'targetx',
+      message: 'innerOrbitsShown.png',
+    });
+
+    dispatchSpy.mockRestore();
+  });
 });
