@@ -57,6 +57,7 @@ export const WebpageEmbed: React.FC<{
       <iframe
         ref={iframeRef}
         id={webpage.id}
+        title={webpage.alt || webpage.id || 'Embedded webpage'}
         className={iframeClass}
         {...dimensions}
         allowFullScreen
