@@ -18,9 +18,7 @@ interface ModalProps {
 
 const stringToNumOrUndefined = (v: string): string | undefined => (v === '' ? undefined : v);
 const sanitizeWebpageId = (value: string): string =>
-  value
-    .replace(/[^A-Za-z0-9_-]/g, '-')
-    .replace(/^-+|-+$/g, '');
+  value.replace(/[^A-Za-z0-9_-]/g, '-').replace(/^-+|-+$/g, '');
 
 export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProps) => {
   const [id, setId] = useState(model.id ?? '');
