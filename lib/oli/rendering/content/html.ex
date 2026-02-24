@@ -143,6 +143,18 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
+  defp iframe_mount_id(attrs, attempt_guid) do
+    attempt_part =
+      case attempt_guid do
+        value when is_binary(value) and value != "" -> value
+        _ -> "na"
+      end
+
+    # Add a deterministic suffix so mounts don't collide in contexts without attempt GUIDs.
+    uniqueness_hash = :erlang.phash2({attrs["targetId"], attrs["id"], extract_src_url(attrs["src"])})
+    "iframe-#{attempt_part}-#{iframe_element_id(attrs)}-#{uniqueness_hash}"
+  end
+
   def video(%Context{} = context, _, attrs) do
     attempt_guid =
       case context.resource_attempt do
@@ -237,7 +249,7 @@ defmodule Oli.Rendering.Content.Html do
 
       # Keep authored iframe id unchanged in webpage props to avoid command-target drift.
       # We only use sanitized/fallback id for the React mount container id.
-      element_id = iframe_element_id(attrs)
+      mount_id = iframe_mount_id(attrs, attempt_guid)
 
       {:safe, webpage_embed} =
         OliWeb.Common.React.component(
@@ -250,7 +262,7 @@ defmodule Oli.Rendering.Content.Html do
               isAnnotationLevel: context.is_annotation_level
             }
           },
-          id: "iframe-#{attempt_guid}-#{element_id}"
+          id: mount_id
         )
 
       captioned_content(context, attrs, [webpage_embed])
