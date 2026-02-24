@@ -151,7 +151,9 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     # Add a deterministic suffix so mounts don't collide in contexts without attempt GUIDs.
-    uniqueness_hash = :erlang.phash2({attrs["targetId"], attrs["id"], extract_src_url(attrs["src"])})
+    uniqueness_hash =
+      :erlang.phash2({attrs["targetId"], attrs["id"], extract_src_url(attrs["src"])})
+
     "iframe-#{attempt_part}-#{iframe_element_id(attrs)}-#{uniqueness_hash}"
   end
 
