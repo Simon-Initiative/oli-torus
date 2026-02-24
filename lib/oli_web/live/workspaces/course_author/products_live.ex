@@ -1,6 +1,7 @@
 defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   use OliWeb, :live_view
   use OliWeb, :verified_routes
+  use OliWeb.Common.Modal
 
   import Phoenix.Component
   import OliWeb.DelegatedEvents
@@ -14,11 +15,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   alias OliWeb.Common.PagedTable
   alias OliWeb.Common.Params
   alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Products.CreateTemplateModal
   alias OliWeb.Products.ProductsTableModel
 
   @max_items_per_page 20
   @initial_offset 0
-  @initial_create_form to_form(%{"product_title" => ""}, as: "product_form")
+  @initial_create_form to_form(%{"product_title" => ""}, as: :create_product_form)
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -67,30 +69,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <h2 id="header_id" class="pb-2">Products</h2>
+    {render_modal(assigns)}
+    <h2 id="header_id" class="pb-2">Course Section Templates</h2>
+    <p class="pb-3 text-muted">
+      Building a course section template allows you to rearrange content and customize settings to match the unique requirements of institutions and communities. The course sections you create from a template will follow to the template's predefined settings.
+    </p>
     <%= if @published? do %>
-      <.form
-        :let={f}
-        for={@create_product_form}
-        as={:create_product_form}
-        class="full flex items-end w-full gap-1"
-        phx-submit="create"
-      >
-        <div class="flex flex-col-reverse w-[40%]">
-          <.input
-            class="full"
-            field={f[:product_title]}
-            label="Create a new product with title:"
-            required
-          />
-        </div>
-        <button class="btn btn-primary">
-          Create Product
-        </button>
-      </.form>
+      <button id="button-new-template" class="btn btn-primary" phx-click="show_create_template_modal">
+        <i class="fa fa-plus pr-2"></i> New Template
+      </button>
 
       <Check.render checked={@include_archived} click="include_archived">
-        Include archived Products
+        Include archived Templates
       </Check.render>
 
       <div class="mb-3" />
@@ -104,7 +94,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
         table_model={@table_model}
       />
     <% else %>
-      <div>Products cannot be created until project is published.</div>
+      <div>Templates cannot be created until project is published.</div>
     <% end %>
     """
   end
@@ -126,22 +116,34 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
     blueprint = Blueprint.create_blueprint(project_slug, product_title, customizations)
 
     case blueprint do
-      {:ok, _blueprint} ->
-        products = get_products(socket.assigns)
-
-        {:ok, table_model} =
-          ProductsTableModel.new(products, socket.assigns.ctx, project_slug,
-            current_author: socket.assigns.current_author
-          )
-
+      {:ok, blueprint} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Product successfully created.")
-         |> assign(table_model: table_model)}
+         |> put_flash(:info, "Template successfully created.")
+         |> redirect(to: ~p"/workspaces/course_author/#{project_slug}/products/#{blueprint.slug}")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not create product")}
+        {:noreply, put_flash(socket, :error, "Could not create template")}
     end
+  end
+
+  def handle_event("show_create_template_modal", _, socket) do
+    modal_assigns = %{
+      id: "create_template_modal",
+      form: @initial_create_form
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <CreateTemplateModal.render {@modal_assigns} submit_event="create" />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event("validate_create_template", _, socket) do
+    {:noreply, socket}
   end
 
   def handle_event("include_archived", __params, socket) do

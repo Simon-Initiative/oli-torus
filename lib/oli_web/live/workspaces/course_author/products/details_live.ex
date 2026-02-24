@@ -47,7 +47,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
            product: product,
            is_admin: is_admin,
            changeset: changeset,
-           title: "Edit Product",
+           title: "Edit Template",
            show_confirm: false,
            base_project: base_project,
            resource_slug: project.slug,
@@ -66,14 +66,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   def render(assigns) do
     ~H"""
-    <h2 id="header_id" class="pb-2">Product Overview</h2>
+    <h2 id="header_id" class="pb-2">Template Overview</h2>
     {render_modal(assigns)}
     <div class="overview container">
       <div class="grid grid-cols-12 py-5 border-b">
         <div class="md:col-span-4">
           <h4>Details</h4>
           <div class="text-muted">
-            The Product title and description will be shown
+            The template title and description will be shown
             to instructors when they create their course section.
           </div>
         </div>
@@ -92,7 +92,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         <div class="md:col-span-4">
           <h4>Content</h4>
           <div class="text-muted">
-            Manage and customize the presentation of content in this product.
+            Manage and customize the presentation of content in this template.
           </div>
         </div>
         <div class="md:col-span-8">
@@ -109,7 +109,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         <div class="md:col-span-4">
           <h4>Cover Image</h4>
           <div class="text-muted">
-            Manage the cover image for this product. Max file size is 5 MB.
+            Manage the cover image for this template. Max file size is 5 MB.
           </div>
         </div>
         <div class="md:col-span-8">
@@ -134,7 +134,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         </div>
         <div class="flex flex-col md:col-span-8 gap-2">
           <div>
-            This product <b>does {unless @product.certificate_enabled, do: "not"}</b>
+            This template <b>does {unless @product.certificate_enabled, do: "not"}</b>
             currently produce a certificate.
           </div>
           <div>
@@ -162,7 +162,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
       </div>
       <%= if @show_confirm do %>
         <Confirm.render title="Confirm Duplication" id="dialog" ok="duplicate" cancel="cancel_modal">
-          Are you sure that you wish to duplicate this product?
+          Are you sure that you wish to duplicate this template?
         </Confirm.render>
       <% end %>
     </div>
@@ -196,7 +196,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
          )}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not duplicate product")}
+        {:noreply, put_flash(socket, :error, "Could not duplicate template")}
     end
   end
 
@@ -205,12 +205,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
     case Sections.update_section(socket.assigns.product, decode_welcome_title(params)) do
       {:ok, section} ->
-        socket = put_flash(socket, :info, "Product changes saved")
+        socket = put_flash(socket, :info, "Template changes saved")
 
         {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        socket = put_flash(socket, :error, "Couldn't update product title")
+        socket = put_flash(socket, :error, "Couldn't update template title")
         {:noreply, assign(socket, changeset: changeset)}
     end
   end
@@ -235,16 +235,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     with uploaded_path <- Enum.at(uploaded_files, 0),
          {:ok, section} <-
            Sections.update_section(socket.assigns.product, %{cover_image: uploaded_path}) do
-      socket = put_flash(socket, :info, "Product changes saved")
+      socket = put_flash(socket, :info, "Template changes saved")
       {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
     else
       {:error, %Ecto.Changeset{} = changeset} ->
-        socket = put_flash(socket, :info, "Couldn't update product image")
+        socket = put_flash(socket, :info, "Couldn't update template image")
         {:noreply, assign(socket, changeset: changeset)}
 
       {:error, payload} ->
         Logger.error("Error uploading product image to S3: #{inspect(payload)}")
-        socket = put_flash(socket, :info, "Couldn't update product image")
+        socket = put_flash(socket, :info, "Couldn't update template image")
         {:noreply, socket}
     end
   end
