@@ -10,7 +10,8 @@ describe('WebpageEmbed command targeting', () => {
       <WebpageEmbed
         webpage={{
           type: 'iframe',
-          id: 'targetx',
+          id: 'dom-id',
+          targetId: 'targetx',
           src: 'https://d2xvti2irp4c7t.cloudfront.net/media/test.html',
           children: [{ text: '' }],
         }}
@@ -40,7 +41,8 @@ describe('WebpageEmbed command targeting', () => {
       <WebpageEmbed
         webpage={{
           type: 'iframe',
-          id: 'targetx',
+          id: 'dom-id',
+          targetId: 'targetx',
           src: 'https://d2xvti2irp4c7t.cloudfront.net/media/test.html',
           children: [{ text: '' }],
         }}

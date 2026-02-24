@@ -227,32 +227,73 @@ defmodule Oli.Rendering.Content.Html do
 
   def youtube(%Context{} = _context, _, _e), do: ""
 
-  def iframe(%Context{} = context, _, %{"src" => _src} = attrs) do
-    attempt_guid =
-      case context.resource_attempt do
-        nil -> ""
-        attempt -> attempt.attempt_guid
-      end
+  def iframe(%Context{} = context, _, %{"src" => src} = attrs) do
+    if attrs["targetId"] do
+      attempt_guid =
+        case context.resource_attempt do
+          nil -> ""
+          attempt -> attempt.attempt_guid
+        end
 
-    # Keep authored iframe id unchanged in webpage props to avoid command-target drift.
-    # We only use sanitized/fallback id for the React mount container id.
-    element_id = iframe_element_id(attrs)
+      # Keep authored iframe id unchanged in webpage props to avoid command-target drift.
+      # We only use sanitized/fallback id for the React mount container id.
+      element_id = iframe_element_id(attrs)
 
-    {:safe, webpage_embed} =
-      OliWeb.Common.React.component(
-        context,
-        "Components.WebpageEmbed",
-        %{
-          "webpage" => attrs,
-          "pointMarkerContext" => %{
-            renderPointMarkers: context.render_opts.render_point_markers,
-            isAnnotationLevel: context.is_annotation_level
-          }
-        },
-        id: "iframe-#{attempt_guid}-#{element_id}"
-      )
+      {:safe, webpage_embed} =
+        OliWeb.Common.React.component(
+          context,
+          "Components.WebpageEmbed",
+          %{
+            "webpage" => attrs,
+            "pointMarkerContext" => %{
+              renderPointMarkers: context.render_opts.render_point_markers,
+              isAnnotationLevel: context.is_annotation_level
+            }
+          },
+          id: "iframe-#{attempt_guid}-#{element_id}"
+        )
 
-    captioned_content(context, attrs, [webpage_embed])
+      captioned_content(context, attrs, [webpage_embed])
+    else
+      has_width = not is_nil(attrs["width"])
+      has_height = not is_nil(attrs["height"])
+
+      dimensions =
+        cond do
+          has_width and has_height ->
+            " width=\"#{attrs["width"]}\" height=\"#{attrs["height"]}\" "
+
+          has_width ->
+            " width=\"#{attrs["width"]}\" height=\"#{attrs["width"]}\" "
+
+          true ->
+            ""
+        end
+
+      iframe_class =
+        if has_width do
+          ""
+        else
+          "embed-responsive-item"
+        end
+
+      container_class =
+        if has_width do
+          ""
+        else
+          "embed-responsive embed-responsive-16by9"
+        end
+
+      captioned_content(context, attrs, [
+        """
+        <div class="#{container_class}">
+          <div class="embed-wrapper">
+            <iframe#{maybe_alt(attrs)} class="#{iframe_class}" #{dimensions} allowfullscreen src="#{escape_xml!(src)}"#{maybe_point_marker_attr(context, attrs)}></iframe>
+          </div>
+        </div>
+        """
+      ])
+    end
   end
 
   def iframe(%Context{} = context, _, e) do

@@ -12,9 +12,9 @@ export const WebpageEditor = (props: Props) => {
   const selected = useElementSelected();
   const onEdit = useEditModelCallback(props.model);
   useCommandTargetable(
-    props.model.id,
+    props.model.targetId,
     'Webpage',
-    props.model.id || props.model.src || 'No webpage id set',
+    props.model.targetId || props.model.src || 'No command target id set',
   );
 
   const dimensions: { width?: number | string; height?: number | string } = {};

@@ -422,11 +422,45 @@ export class HtmlParser implements WriterImpl {
   }
   iframe(context: WriterContext, next: Next, attrs: Webpage) {
     if (!attrs.src) return <></>;
+    const pointMarkerAttrs = maybePointMarkerAttr(attrs, pointMarkerContextFrom(context, attrs));
+
+    if (attrs.targetId) {
+      return this.captioned_content(
+        context,
+        attrs,
+        <WebpageEmbed webpage={attrs} pointMarkerContext={pointMarkerContextFrom(context, attrs)} />,
+      );
+    }
+
+    const dimensions: { width?: string | number; height?: string | number } = {};
+    if (attrs.width) {
+      dimensions['width'] = attrs.width;
+    }
+    if (attrs.height) {
+      dimensions['height'] = attrs.height;
+    } else if (attrs.width) {
+      dimensions['height'] = attrs.width;
+    }
+
+    const iframeClass = attrs.width ? '' : 'embed-responsive-item';
+    const containerClass = attrs.width ? '' : 'embed-responsive embed-responsive-16by9';
 
     return this.captioned_content(
       context,
       attrs,
-      <WebpageEmbed webpage={attrs} pointMarkerContext={pointMarkerContextFrom(context, attrs)} />,
+      <div className={containerClass}>
+        <div className="embed-wrapper">
+          <iframe
+            id={attrs.id}
+            title={attrs.alt || attrs.id || 'Embedded webpage'}
+            className={iframeClass}
+            {...dimensions}
+            allowFullScreen
+            src={this.escapeXml(attrs.src)}
+            {...pointMarkerAttrs}
+          />
+        </div>
+      </div>,
     );
   }
   audio(context: WriterContext, next: Next, attrs: Audio) {

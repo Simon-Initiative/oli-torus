@@ -21,7 +21,7 @@ const sanitizeWebpageId = (value: string): string =>
   value.replace(/[^A-Za-z0-9_-]/g, '-').replace(/^-+|-+$/g, '');
 
 export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProps) => {
-  const [id, setId] = useState(model.id ?? '');
+  const [targetId, setTargetId] = useState(model.targetId ?? '');
   const [srcType, setSrcType] = useState<ContentModel.WebpageSrcType>(model.srcType || 'url');
   const [src, setSrc] = useState(model.src);
   const [alt, setAlt] = useState(model.alt ?? '');
@@ -40,18 +40,19 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
   );
 
   const onSave = useCallback(() => {
-    const sanitizedId = sanitizeWebpageId(id.trim());
-    const nextId = sanitizedId === '' ? model.id : sanitizedId;
+    const sanitizedTargetId = sanitizeWebpageId(targetId.trim());
+    const nextTargetId =
+      sanitizedTargetId === '' ? undefined : sanitizedTargetId;
 
     onDone({
-      id: nextId,
+      targetId: nextTargetId,
       alt,
       width: stringToNumOrUndefined(width),
       height: stringToNumOrUndefined(height),
       src,
       srcType,
     });
-  }, [alt, height, id, model.id, onDone, src, srcType, width]);
+  }, [alt, height, onDone, src, srcType, targetId, width]);
 
   return (
     <Modal
@@ -107,19 +108,19 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
           placeholder="Enter a short description of this webpage"
         />
 
-        <h4 className="mt-3 mb-2">Webpage ID</h4>
+        <h4 className="mt-3 mb-2">Command Target ID</h4>
         <p id="webpage-id-help" className="mb-2">
-          Used as the command button target identifier.
+          Set this only if command buttons should send messages to this iframe.
         </p>
         <label className="sr-only" htmlFor="webpage-id">
-          Webpage ID
+          Command Target ID
         </label>
         <input
           id="webpage-id"
           className="form-control mb-3"
-          value={id}
-          onChange={(e) => setId(e.target.value)}
-          placeholder="Webpage ID"
+          value={targetId}
+          onChange={(e) => setTargetId(e.target.value)}
+          placeholder="Command Target ID"
           aria-describedby="webpage-id-help"
         />
       </div>

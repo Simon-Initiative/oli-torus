@@ -19,9 +19,9 @@ export const WebpageEmbed: React.FC<{
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const targetOrigin = useMemo(() => getTargetOrigin(webpage.src), [webpage.src]);
 
-  if (!webpage.id) {
+  if (!webpage.targetId) {
     console.warn(
-      'WebpageEmbed missing id; command-button targeting will not work for this iframe',
+      'WebpageEmbed missing targetId; command-button targeting will not work for this iframe',
       {
         src: webpage.src,
       },
@@ -37,7 +37,7 @@ export const WebpageEmbed: React.FC<{
     [targetOrigin],
   );
 
-  useCommandTarget(webpage.id, onCommandReceived);
+  useCommandTarget(webpage.targetId, onCommandReceived);
 
   const dimensions: { width?: string | number; height?: string | number } = {};
   if (webpage.width) {

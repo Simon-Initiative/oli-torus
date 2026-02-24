@@ -52,10 +52,7 @@ defmodule Oli.Content.Content.HtmlTest do
                "<pre><code class=\"torus-code language-python\" data-point-marker=\"4076323894\">import fresh-pots</code></pre>"
 
       assert rendered_html_string =~
-               ~r/<div data-react-class="Components\.WebpageEmbed"/
-
-      assert rendered_html_string =~
-               ~r/https:(?:\\\/\\\/|\/\/)www\.wikipedia\.org/
+               ~r/<iframe class=".*"  allowfullscreen src="https:\/\/www.wikipedia.org" data-point-marker="1713634991"><\/iframe>/
 
       assert rendered_html_string =~ "<span class=\"callout-block\">a richtext callout</span>"
 
@@ -204,6 +201,29 @@ defmodule Oli.Content.Content.HtmlTest do
       # Should use element ID instead of src when available
       assert rendered_html_string =~ ~r/data-live-react-class="Components\.YoutubePlayer"/
       assert rendered_html_string =~ ~r/id="youtube-test-attempt-123-youtube-element-456"/
+    end
+
+    test "renders iframe with targetId via WebpageEmbed", %{author: author} do
+      iframe_content = %{
+        "type" => "iframe",
+        "src" => "https://example.org/embed",
+        "targetId" => "demo_target",
+        "children" => [%{"text" => ""}]
+      }
+
+      context = %Context{
+        user: author,
+        section_slug: "test_section",
+        is_liveview: true,
+        resource_attempt: %{attempt_guid: "test-attempt-123"}
+      }
+
+      rendered_html = Content.render(context, iframe_content, Content.Html)
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+      assert rendered_html_string =~ ~r/data-live-react-class="Components\.WebpageEmbed"/
+      assert rendered_html_string =~ ~r/"targetId":"demo_target"/
+      assert rendered_html_string =~ ~r/id="iframe-test-attempt-123-src-/
     end
 
     test "renders uploaded video with list src format", %{author: author} do
