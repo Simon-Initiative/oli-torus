@@ -27,6 +27,10 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
   const [alt, setAlt] = useState(model.alt ?? '');
   const [width, setWidth] = useState(model.width ? String(model.width) : '');
   const [height, setHeight] = useState(model.height ? String(model.height) : '');
+  const trimmedTargetId = targetId.trim();
+  const sanitizedTargetId = sanitizeWebpageId(trimmedTargetId);
+  const targetIdWillChange = trimmedTargetId !== '' && sanitizedTargetId !== trimmedTargetId;
+  const targetIdInvalid = trimmedTargetId !== '' && sanitizedTargetId === '';
 
   const onSrcTypeChange = useCallback(
     (v: ContentModel.WebpageSrcType) => {
@@ -40,7 +44,6 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
   );
 
   const onSave = useCallback(() => {
-    const sanitizedTargetId = sanitizeWebpageId(targetId.trim());
     const nextTargetId = sanitizedTargetId === '' ? undefined : sanitizedTargetId;
 
     onDone({
@@ -51,7 +54,7 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
       src,
       srcType,
     });
-  }, [alt, height, onDone, src, srcType, targetId, width]);
+  }, [alt, height, onDone, sanitizedTargetId, src, srcType, width]);
 
   return (
     <Modal
@@ -61,6 +64,7 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
       cancelLabel="Cancel"
       onCancel={onCancel}
       onOk={onSave}
+      disableOk={targetIdInvalid}
     >
       <div>
         <h3 className="mb-2">Settings</h3>
@@ -122,6 +126,16 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
           placeholder="Command Target ID"
           aria-describedby="webpage-id-help"
         />
+        {targetIdWillChange && (
+          <p className="text-muted mb-2">
+            Will be saved as: <code>{sanitizedTargetId}</code>
+          </p>
+        )}
+        {targetIdInvalid && (
+          <p className="text-danger mb-2">
+            Command Target ID must include at least one letter, number, underscore, or hyphen.
+          </p>
+        )}
       </div>
     </Modal>
   );

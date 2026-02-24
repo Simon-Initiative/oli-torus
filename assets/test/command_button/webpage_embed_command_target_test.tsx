@@ -59,4 +59,21 @@ describe('WebpageEmbed command targeting', () => {
 
     expect(postMessage).not.toHaveBeenCalled();
   });
+
+  it('does not render unsafe iframe src protocols', () => {
+    const { container } = render(
+      <WebpageEmbed
+        webpage={{
+          type: 'iframe',
+          id: 'dom-id',
+          targetId: 'targetx',
+          src: 'javascript:alert(1)',
+          children: [{ text: '' }],
+        }}
+      />,
+    );
+
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    expect(iframe.getAttribute('src')).toBeNull();
+  });
 });

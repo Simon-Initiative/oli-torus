@@ -3,6 +3,16 @@ import { useCommandTarget } from 'components/editing/elements/command_button/use
 import * as ContentModel from 'data/content/model/elements/types';
 import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
 
+const getSafeIframeSrc = (src?: string): string | undefined => {
+  if (!src) return undefined;
+  try {
+    const url = new URL(src, window.location.href);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? src : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const getTargetOrigin = (src?: string) => {
   if (!src) return null;
   try {
@@ -17,7 +27,8 @@ export const WebpageEmbed: React.FC<{
   pointMarkerContext?: PointMarkerContext;
 }> = React.memo(({ webpage, pointMarkerContext }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const targetOrigin = useMemo(() => getTargetOrigin(webpage.src), [webpage.src]);
+  const safeSrc = useMemo(() => getSafeIframeSrc(webpage.src), [webpage.src]);
+  const targetOrigin = useMemo(() => getTargetOrigin(safeSrc), [safeSrc]);
 
   if (!webpage.targetId) {
     console.warn(
@@ -61,7 +72,7 @@ export const WebpageEmbed: React.FC<{
         className={iframeClass}
         {...dimensions}
         allowFullScreen
-        src={webpage.src}
+        src={safeSrc}
       />
     </div>
   );
