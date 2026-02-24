@@ -30,18 +30,22 @@ function makeRequest(
 
 async function parseResponse(response: Response) {
   const text = await response.text();
-  const parsed = parseJsonOrNull(text);
+  const { parsed, ok } = parseJson(text);
 
   if (!response.ok) {
     const message =
-      (parsed && typeof parsed === 'object' && 'message' in parsed && (parsed as any).message) ||
+      (ok &&
+        parsed &&
+        typeof parsed === 'object' &&
+        'message' in parsed &&
+        (parsed as any).message) ||
       text ||
       response.statusText;
 
     throw makeBridgeError(message, response.status, response.statusText);
   }
 
-  if (parsed === null) {
+  if (!ok) {
     throw makeBridgeError(
       'Invalid JSON response from server',
       response.status,
@@ -59,11 +63,11 @@ function makeBridgeError(message: string, status: number, statusText: string) {
   return error;
 }
 
-function parseJsonOrNull(text: string) {
+function parseJson(text: string): { parsed: any; ok: boolean } {
   try {
-    return JSON.parse(text);
+    return { parsed: JSON.parse(text), ok: true };
   } catch {
-    return null;
+    return { parsed: null, ok: false };
   }
 }
 const nothingTransform = (result: any) => Promise.resolve(result);
