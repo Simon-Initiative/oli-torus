@@ -7,7 +7,7 @@ export interface SurveyControlsProps {
   canReset?: boolean;
 }
 
-export const SurveyControls = ({ id, isSubmitted, canReset = true }: SurveyControlsProps) => {
+export const SurveyControls = ({ id, isSubmitted, canReset = false }: SurveyControlsProps) => {
   const [submitted, setSubmitted] = useState(isSubmitted);
   const onSubmit = () => {
     Events.dispatch(Events.Registry.SurveySubmit, Events.makeSurveySubmitEvent({ id }));
