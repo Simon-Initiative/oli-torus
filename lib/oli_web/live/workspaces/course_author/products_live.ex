@@ -11,6 +11,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   alias Oli.Publishing
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
+  alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Common.Check
   alias OliWeb.Common.Params
   alias OliWeb.Common.StripedPagedTable
@@ -29,8 +30,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   def mount(params, _session, socket) do
     project = socket.assigns.project
     include_archived = Params.get_boolean_param(params, "include_archived", false)
+    text_search = params |> Params.get_param("text_search", "") |> String.trim()
 
-    products = get_products(socket.assigns)
+    products =
+      get_products(
+        socket.assigns
+        |> Map.put(:include_archived, include_archived)
+        |> Map.put(:text_search, text_search)
+      )
 
     ctx = socket.assigns.ctx
 
@@ -51,6 +58,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
        published?: published?,
        is_admin_view: false,
        include_archived: include_archived,
+       text_search: text_search,
        limit: @max_items_per_page,
        offset: @initial_offset,
        total_count: determine_total(products),
@@ -66,12 +74,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
     offset = Params.get_int_param(params, "offset", @initial_offset)
     limit = Params.get_int_param(params, "limit", @max_items_per_page)
     include_archived = Params.get_boolean_param(params, "include_archived", false)
+    text_search = params |> Params.get_param("text_search", "") |> String.trim()
 
     products =
       Blueprint.browse(
         %Paging{offset: offset, limit: limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         include_archived: include_archived,
+        text_search: text_search,
         project_id: socket.assigns.project.id
       )
 
@@ -84,6 +94,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
         limit: limit,
         total_count: determine_total(products),
         include_archived: include_archived,
+        text_search: text_search,
         params: %{offset: offset, limit: limit}
       )
 
@@ -94,14 +105,29 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   def render(assigns) do
     ~H"""
     {render_modal(assigns)}
-    <h2 id="header_id" class="pb-2">Course Section Templates</h2>
-    <p class="pb-3 text-muted">
+    <h2 id="header_id" class="pb-2 text-Text-text-high text-2xl font-bold leading-8">
+      Course Section Templates
+    </h2>
+    <p class="pb-3 text-Text-text-high text-base font-medium leading-6">
       Building a course section template allows you to rearrange content and customize settings to match the unique requirements of institutions and communities. The course sections you create from a template will follow to the template's predefined settings.
     </p>
     <%= if @published? do %>
-      <button id="button-new-template" class="btn btn-primary" phx-click="show_create_template_modal">
-        <i class="fa fa-plus pr-2"></i> New Template
-      </button>
+      <div class="mb-2 flex items-center gap-3">
+        <DeliveryUtils.search_box
+          class="w-full max-w-[350px]"
+          search_term={@text_search}
+          on_search="search_template"
+          on_change="search_template"
+          on_clear_search="clear_template_search"
+        />
+        <button
+          id="button-new-template"
+          class="ml-auto px-4 py-2 bg-Fill-Buttons-fill-primary rounded-md shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] inline-flex justify-center items-center gap-2 overflow-hidden text-Text-text-white text-sm font-semibold"
+          phx-click="show_create_template_modal"
+        >
+          <i class="fa fa-plus pr-2"></i> New Template
+        </button>
+      </div>
 
       <Check.render checked={@include_archived} click="include_archived">
         Include archived Templates
@@ -120,6 +146,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
         additional_table_class="instructor_dashboard_table"
         limit_change="paged_table_limit_change"
         show_limit_change={true}
+        table_container_class="mx-0"
       />
     <% else %>
       <div>Templates cannot be created until project is published.</div>
@@ -186,6 +213,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
         %Paging{offset: offset, limit: limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         include_archived: include_archived,
+        text_search: socket.assigns.text_search,
         project_id: project_id
       )
 
@@ -200,6 +228,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       )
 
     patch_with(socket, %{include_archived: include_archived})
+  end
+
+  def handle_event("search_template", %{"search_term" => search_term}, socket) do
+    patch_with(socket, %{text_search: String.trim(search_term), offset: 0})
+  end
+
+  def handle_event("clear_template_search", _params, socket) do
+    patch_with(socket, %{text_search: "", offset: 0})
   end
 
   def handle_event("hide_overview", _, socket) do
@@ -229,6 +265,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       offset: assigns.offset,
       limit: assigns.limit,
       include_archived: assigns.include_archived,
+      text_search: assigns.text_search,
       sidebar_expanded: assigns.sidebar_expanded
     }
   end
@@ -242,11 +279,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
     field = if table_model, do: assigns.table_model.sort_by_spec.name, else: :inserted_at
 
     include_archived = get_in(assigns, [:include_archived]) || false
+    text_search = get_in(assigns, [:text_search])
 
     Blueprint.browse(
       %Paging{offset: offset, limit: limit},
       %Sorting{direction: direction, field: field},
       include_archived: include_archived,
+      text_search: text_search,
       project_id: assigns.project.id
     )
   end

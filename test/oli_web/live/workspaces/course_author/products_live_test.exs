@@ -107,7 +107,9 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
 
       # Submit form to create a product
       view
-      |> form("form", create_product_form: %{"product_title" => "Some product"})
+      |> form("form[phx-submit='create']",
+        create_product_form: %{"product_title" => "Some product"}
+      )
       |> render_submit()
 
       flash =
@@ -180,6 +182,28 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
 
       assert has_element?(view, "table tbody tr")
       assert has_element?(view, "#footer_paging button[phx-click='paged_table_page_change']", "2")
+    end
+
+    test "search templates by name", %{conn: conn, project: project} do
+      {:ok, _} = Blueprint.create_blueprint(project.slug, "Algebra Template", nil)
+      {:ok, _} = Blueprint.create_blueprint(project.slug, "Biology Template", nil)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element("form[phx-change='search_template']")
+      |> render_change(%{"search_term" => "Algebra"})
+
+      rows =
+        view
+        |> element("table tbody")
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find("tr")
+
+      assert Enum.count(rows) == 1
+      assert Floki.text(rows) =~ "Algebra Template"
+      refute Floki.text(rows) =~ "Biology Template"
     end
   end
 
