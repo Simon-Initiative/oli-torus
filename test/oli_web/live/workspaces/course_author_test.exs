@@ -338,7 +338,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       assert has_element?(view, "div", "Publish")
       assert has_element?(view, "div", "Review")
       assert has_element?(view, "div", "Publish")
-      assert has_element?(view, "div", "Products")
+      assert has_element?(view, "div", "Templates")
 
       assert has_element?(view, "div", "Improve")
       assert has_element?(view, "div", "Insights")

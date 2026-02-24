@@ -286,7 +286,7 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(
                view,
                "a[href='#{~p"/admin/products"}']",
-               "Browse all Products"
+               "Browse all Templates"
              )
 
       assert has_element?(
@@ -424,7 +424,7 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(
                view,
                "a[href='#{~p"/admin/products"}']",
-               "Browse all Products"
+               "Browse all Templates"
              )
 
       assert has_element?(

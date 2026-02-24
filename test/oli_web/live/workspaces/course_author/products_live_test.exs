@@ -54,7 +54,7 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
 
       assert view
              |> element("#content")
-             |> render() =~ "Products cannot be created until project is published."
+             |> render() =~ "Templates cannot be created until project is published."
     end
   end
 
@@ -85,6 +85,10 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
     test "render message when no products exists", %{conn: conn, project: project} do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
+      assert render(view) =~ "Course Section Templates"
+      assert render(view) =~ "Building a course section template allows you to rearrange content"
+      assert render(view) =~ "New Template"
+
       assert view
              |> element("#content")
              |> render() =~ "None exist"
@@ -93,40 +97,26 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
     test "create a product", %{conn: conn, project: project} do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
+      view
+      |> element("#button-new-template")
+      |> render_click()
+
+      assert render(view) =~ "Create Template"
+      assert render(view) =~ "This can be changed later"
+      assert has_element?(view, "button[type='submit']", "Create")
+
       # Submit form to create a product
       view
       |> form("form", create_product_form: %{"product_title" => "Some product"})
       |> render_submit()
 
-      # Flash message
-      assert view |> element("div[role='alert']") |> render() =~ "Product successfully created."
+      flash =
+        assert_redirected(
+          view,
+          "/workspaces/course_author/#{project.slug}/products/some_product"
+        )
 
-      # Total count message
-      assert render(view) =~ "Showing all results (1 total)"
-
-      # Table content
-      product_title_col = render(element(view, "table tbody tr td:nth-of-type(1) div a"))
-
-      # Table content - Product title - text
-      assert product_title_col =~ "Some product"
-
-      # Table content - Product title - anchor
-      assert product_title_col =~
-               "/workspaces/course_author/#{project.slug}/products/some_product"
-
-      # Table content - Status
-      assert render(element(view, "table tbody tr td:last-of-type div span")) =~ "Active"
-      assert render(element(view, "table tbody tr td:nth-of-type(3) div")) =~ "None"
-
-      # Table content - Base project
-      base_project_col = render(element(view, "table tbody tr td:nth-of-type(4) div a"))
-
-      # Table content - Base project - text
-      assert base_project_col =~ "#{project.title}"
-
-      # Table content - Base project - anchor
-      assert base_project_col =~
-               "/workspaces/course_author/#{project.slug}/overview"
+      assert flash["info"] == "Template successfully created."
     end
 
     test "trigger archived products checkbox", %{conn: conn, project: project} do

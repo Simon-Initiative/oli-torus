@@ -384,7 +384,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert view
              |> element("div.alert.alert-danger")
              |> render() =~
-               "Couldn&#39;t update product title"
+               "Couldn&#39;t update template title"
 
       assert view
              |> element("#section_title")
@@ -408,7 +408,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Product changes saved"
+               "Template changes saved"
 
       assert view
              |> element("#section_title")
@@ -442,7 +442,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Product changes saved"
+               "Template changes saved"
 
       view
       |> render()
@@ -470,7 +470,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Product changes saved"
+               "Template changes saved"
 
       assert view
              |> element("#section_encouraging_subtitle")
