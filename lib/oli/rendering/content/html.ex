@@ -234,15 +234,16 @@ defmodule Oli.Rendering.Content.Html do
         attempt -> attempt.attempt_guid
       end
 
+    # Keep authored iframe id unchanged in webpage props to avoid command-target drift.
+    # We only use sanitized/fallback id for the React mount container id.
     element_id = iframe_element_id(attrs)
-    webpage_attrs = Map.put(attrs, "id", element_id)
 
     {:safe, webpage_embed} =
       OliWeb.Common.React.component(
         context,
         "Components.WebpageEmbed",
         %{
-          "webpage" => webpage_attrs,
+          "webpage" => attrs,
           "pointMarkerContext" => %{
             renderPointMarkers: context.render_opts.render_point_markers,
             isAnnotationLevel: context.is_annotation_level

@@ -17,6 +17,10 @@ interface ModalProps {
 }
 
 const stringToNumOrUndefined = (v: string): string | undefined => (v === '' ? undefined : v);
+const sanitizeWebpageId = (value: string): string =>
+  value
+    .replace(/[^A-Za-z0-9_-]/g, '-')
+    .replace(/^-+|-+$/g, '');
 
 export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProps) => {
   const [id, setId] = useState(model.id ?? '');
@@ -37,6 +41,20 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
     [srcType],
   );
 
+  const onSave = useCallback(() => {
+    const sanitizedId = sanitizeWebpageId(id.trim());
+    const nextId = sanitizedId === '' ? model.id : sanitizedId;
+
+    onDone({
+      id: nextId,
+      alt,
+      width: stringToNumOrUndefined(width),
+      height: stringToNumOrUndefined(height),
+      src,
+      srcType,
+    });
+  }, [alt, height, id, model.id, onDone, src, srcType, width]);
+
   return (
     <Modal
       title=""
@@ -44,16 +62,7 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={onCancel}
-      onOk={() =>
-        onDone({
-          id: id.trim() === '' ? model.id : id.trim(),
-          alt,
-          width: stringToNumOrUndefined(width),
-          height: stringToNumOrUndefined(height),
-          src,
-          srcType,
-        })
-      }
+      onOk={onSave}
     >
       <div>
         <h3 className="mb-2">Settings</h3>
