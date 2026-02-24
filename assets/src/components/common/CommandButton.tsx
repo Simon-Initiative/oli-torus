@@ -74,9 +74,17 @@ export const CommandButton: React.FC<Props> = ({
       : 'btn btn-link command-button';
 
   const showToggleTitle = toggleStates && !editorAttributes;
+  const accessibleTitle = toggleStates ? currentTitle || toggleStates[0].title : undefined;
 
   return (
-    <span onClick={onClick} className={cssClass} {...editorAttributes}>
+    <span
+      onClick={onClick}
+      className={cssClass}
+      aria-label={accessibleTitle}
+      aria-live={toggleStates ? 'polite' : undefined}
+      aria-atomic={toggleStates ? 'true' : undefined}
+      {...editorAttributes}
+    >
       {showToggleTitle ? currentTitle || toggleStates[0].title : children}
     </span>
   );
