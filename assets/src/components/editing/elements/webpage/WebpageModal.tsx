@@ -41,8 +41,7 @@ export const WebpageModal = ({ onDone, onCancel, model, projectSlug }: ModalProp
 
   const onSave = useCallback(() => {
     const sanitizedTargetId = sanitizeWebpageId(targetId.trim());
-    const nextTargetId =
-      sanitizedTargetId === '' ? undefined : sanitizedTargetId;
+    const nextTargetId = sanitizedTargetId === '' ? undefined : sanitizedTargetId;
 
     onDone({
       targetId: nextTargetId,

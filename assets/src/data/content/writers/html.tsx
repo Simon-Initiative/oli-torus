@@ -428,7 +428,10 @@ export class HtmlParser implements WriterImpl {
       return this.captioned_content(
         context,
         attrs,
-        <WebpageEmbed webpage={attrs} pointMarkerContext={pointMarkerContextFrom(context, attrs)} />,
+        <WebpageEmbed
+          webpage={attrs}
+          pointMarkerContext={pointMarkerContextFrom(context, attrs)}
+        />,
       );
     }
 

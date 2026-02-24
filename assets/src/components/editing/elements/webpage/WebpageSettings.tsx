@@ -60,7 +60,14 @@ const SettingsButton = (props: SettingsButtonProps) => (
             <WebpageModal
               projectSlug={props.projectSlug}
               model={props.model}
-              onDone={({ targetId, alt, width, height, src, srcType }: Partial<ContentModel.Webpage>) => {
+              onDone={({
+                targetId,
+                alt,
+                width,
+                height,
+                src,
+                srcType,
+              }: Partial<ContentModel.Webpage>) => {
                 window.oliDispatch(modalActions.dismiss());
                 props.onEdit({ targetId, alt, width, src, srcType, height });
               }}
