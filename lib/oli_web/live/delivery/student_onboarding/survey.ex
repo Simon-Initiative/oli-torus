@@ -35,23 +35,20 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
         PageContent.survey_activities(hd(context.resource_attempts).content)
         |> Enum.reduce({%{}, %{}}, fn {survey_id, activity_ids},
                                       {submitted_acc, resettable_acc} ->
-          survey_submitted =
-            Enum.all?(activity_ids, fn id ->
+          {survey_submitted, survey_resettable} =
+            Enum.reduce_while(activity_ids, {true, true}, fn id, {_, resettable} ->
               case Map.get(context.activities, id) do
-                %{lifecycle_state: lifecycle_state}
+                %{
+                  lifecycle_state: lifecycle_state,
+                  has_more_attempts: has_more_attempts
+                }
                 when lifecycle_state in [:submitted, :evaluated] ->
-                  true
+                  {:cont, {true, resettable && has_more_attempts}}
 
                 _ ->
-                  false
+                  {:halt, {false, false}}
               end
             end)
-
-          survey_resettable =
-            survey_submitted &&
-              Enum.all?(activity_ids, fn id ->
-                match?(%{has_more_attempts: true}, Map.get(context.activities, id))
-              end)
 
           {
             Map.put(submitted_acc, survey_id, survey_submitted),
