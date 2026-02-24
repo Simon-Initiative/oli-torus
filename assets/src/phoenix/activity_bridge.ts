@@ -38,22 +38,25 @@ async function parseResponse(response: Response) {
       text ||
       response.statusText;
 
-    throw {
-      status: response.status,
-      statusText: response.statusText,
-      message,
-    };
+    throw makeBridgeError(message, response.status, response.statusText);
   }
 
   if (parsed === null) {
-    throw {
-      status: response.status,
-      statusText: response.statusText,
-      message: 'Invalid JSON response from server',
-    };
+    throw makeBridgeError(
+      'Invalid JSON response from server',
+      response.status,
+      response.statusText,
+    );
   }
 
   return parsed;
+}
+
+function makeBridgeError(message: string, status: number, statusText: string) {
+  const error = new Error(message) as Error & { status: number; statusText: string };
+  error.status = status;
+  error.statusText = statusText;
+  return error;
 }
 
 function parseJsonOrNull(text: string) {
