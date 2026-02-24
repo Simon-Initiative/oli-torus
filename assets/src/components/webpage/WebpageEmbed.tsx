@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useCommandTarget } from 'components/editing/elements/command_button/useCommandTarget';
 import * as ContentModel from 'data/content/model/elements/types';
 import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
@@ -30,14 +30,16 @@ export const WebpageEmbed: React.FC<{
   const safeSrc = useMemo(() => getSafeIframeSrc(webpage.src), [webpage.src]);
   const targetOrigin = useMemo(() => getTargetOrigin(safeSrc), [safeSrc]);
 
-  if (!webpage.targetId) {
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+    if (webpage.targetId) return;
     console.warn(
       'WebpageEmbed missing targetId; command-button targeting will not work for this iframe',
       {
         src: webpage.src,
       },
     );
-  }
+  }, [webpage.targetId, webpage.src]);
 
   const onCommandReceived = useCallback(
     (message: string) => {

@@ -154,11 +154,7 @@ defmodule Oli.Rendering.Content.Html do
     uniqueness_hash =
       :erlang.phash2({attrs["targetId"], attrs["id"], extract_src_url(attrs["src"])})
 
-    # Also add a per-render unique suffix to avoid duplicate DOM ids when
-    # multiple iframe nodes have identical attrs.
-    runtime_unique = :erlang.unique_integer([:positive])
-
-    "iframe-#{attempt_part}-#{iframe_element_id(attrs)}-#{uniqueness_hash}-#{runtime_unique}"
+    "iframe-#{attempt_part}-#{iframe_element_id(attrs)}-#{uniqueness_hash}"
   end
 
   def video(%Context{} = context, _, attrs) do
