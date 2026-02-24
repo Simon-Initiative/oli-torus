@@ -72,20 +72,22 @@ export const CommandButton: React.FC<Props> = ({
     commandButton.style === 'button'
       ? 'btn btn-primary command-button'
       : 'btn btn-link command-button';
+  const editorLayoutClass = editorAttributes ? ' inline-flex items-center' : '';
 
   const showToggleTitle = toggleStates && !editorAttributes;
   const accessibleTitle = toggleStates ? currentTitle || toggleStates[0].title : undefined;
 
   return (
-    <span
+    <button
+      type="button"
       onClick={onClick}
-      className={cssClass}
+      className={`${cssClass}${editorLayoutClass}`}
       aria-label={accessibleTitle}
       aria-live={toggleStates ? 'polite' : undefined}
       aria-atomic={toggleStates ? 'true' : undefined}
       {...editorAttributes}
     >
       {showToggleTitle ? currentTitle || toggleStates[0].title : children}
-    </span>
+    </button>
   );
 };

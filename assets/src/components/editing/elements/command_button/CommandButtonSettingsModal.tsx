@@ -248,9 +248,9 @@ export const CommandButtonSettingsModal: React.FC<Props> = ({
           {toggleStates.map((entry, index) => (
             <div className="border rounded p-2 mb-2" key={entry.uiKey}>
               <div className="form-group">
-                <label htmlFor={`toggle-title-${index}`}>Button Title</label>
+                <label htmlFor={`toggle-title-${entry.uiKey}`}>Button Title</label>
                 <input
-                  id={`toggle-title-${index}`}
+                  id={`toggle-title-${entry.uiKey}`}
                   type="text"
                   className="form-control"
                   value={entry.title}

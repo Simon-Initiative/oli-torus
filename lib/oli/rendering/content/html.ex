@@ -240,7 +240,7 @@ defmodule Oli.Rendering.Content.Html do
   def youtube(%Context{} = _context, _, _e), do: ""
 
   def iframe(%Context{} = context, _, %{"src" => src} = attrs) do
-    if attrs["targetId"] do
+    if is_binary(attrs["targetId"]) and attrs["targetId"] != "" do
       attempt_guid =
         case context.resource_attempt do
           nil -> ""
@@ -284,7 +284,7 @@ defmodule Oli.Rendering.Content.Html do
 
       iframe_class =
         if has_width do
-          ""
+          "mx-auto"
         else
           "embed-responsive-item"
         end
@@ -795,9 +795,9 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     [
-      "<span class=\"#{css_class}\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{escape_xml!(message)}\"#{maybe_toggle_states_attr(attrs)}>",
+      "<button type=\"button\" class=\"#{css_class}\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{escape_xml!(message)}\"#{maybe_toggle_states_attr(attrs)}>",
       next.(),
-      "</span>"
+      "</button>"
     ]
   end
 
@@ -810,9 +810,9 @@ defmodule Oli.Rendering.Content.Html do
         } = attrs
       ) do
     [
-      "<span class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{escape_xml!(message)}\"#{maybe_toggle_states_attr(attrs)}>",
+      "<button type=\"button\" class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{escape_xml!(message)}\"#{maybe_toggle_states_attr(attrs)}>",
       next.(),
-      "</span>"
+      "</button>"
     ]
   end
 

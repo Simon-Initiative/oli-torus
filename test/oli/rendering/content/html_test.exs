@@ -86,7 +86,7 @@ defmodule Oli.Content.Content.HtmlTest do
                "<div class=\"conjugation\" data-point-marker=\"169365461\"><div class=\"title\">My Term</div><div class=\"term\">El Verbo<span class='pronunciation'><p>my pronunciation</p>\n</span>\n</div><figure class=\"figure embed-responsive\"><div class=\"figure-content\"><table class='table-bordered '><tr><th>form</th>\n<th>meaning</th>\n</tr>\n<tr><td>my form</td>\n<td>my meaning</td>\n</tr>\n</table>\n</div></figure></div>"
 
       assert rendered_html_string =~
-               "<span class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"3603298117\" data-message=\"startcuepoint=5.0;endcuepoint=10.0\">Play Intro</span>"
+               "<button type=\"button\" class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"3603298117\" data-message=\"startcuepoint=5.0;endcuepoint=10.0\">Play Intro</button>"
     end
 
     test "renders malformed content gracefully", %{author: author} do
