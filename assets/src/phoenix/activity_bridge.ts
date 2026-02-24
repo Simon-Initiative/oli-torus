@@ -30,14 +30,20 @@ function makeRequest(
 
 async function parseResponse(response: Response) {
   const text = await response.text();
-  const { parsed, ok } = parseJson(text);
+  const emptyBody = text.trim() === '';
 
   if (!response.ok) {
+    const { parsed, ok } = parseJson(text);
     const message = (ok && messageFromParsed(parsed)) || text || response.statusText;
 
     throw makeBridgeError(message, response.status, response.statusText);
   }
 
+  if (response.status === 204 || response.status === 205 || emptyBody) {
+    return null;
+  }
+
+  const { parsed, ok } = parseJson(text);
   if (!ok) {
     throw makeBridgeError(
       'Invalid JSON response from server',
