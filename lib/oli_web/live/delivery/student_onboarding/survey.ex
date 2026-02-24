@@ -37,13 +37,21 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
                                       {submitted_acc, resettable_acc} ->
           survey_submitted =
             Enum.all?(activity_ids, fn id ->
-              context.activities[id].lifecycle_state === :submitted ||
-                context.activities[id].lifecycle_state === :evaluated
+              case Map.get(context.activities, id) do
+                %{lifecycle_state: lifecycle_state}
+                when lifecycle_state in [:submitted, :evaluated] ->
+                  true
+
+                _ ->
+                  false
+              end
             end)
 
           survey_resettable =
             survey_submitted &&
-              Enum.all?(activity_ids, fn id -> context.activities[id].has_more_attempts end)
+              Enum.all?(activity_ids, fn id ->
+                match?(%{has_more_attempts: true}, Map.get(context.activities, id))
+              end)
 
           {
             Map.put(submitted_acc, survey_id, survey_submitted),
