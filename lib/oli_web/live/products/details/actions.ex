@@ -16,7 +16,7 @@ defmodule OliWeb.Products.Details.Actions do
             Duplicate
           </button>
         </div>
-        <div>Create a complete copy of this product.</div>
+        <div>Create a complete copy of this template.</div>
       </div>
 
       <div :if={@is_admin} class="d-flex align-items-center">
@@ -40,7 +40,7 @@ defmodule OliWeb.Products.Details.Actions do
             Transfer Payment Codes
           </button>
         </div>
-        <div>Allow transfer of payment codes to another product.</div>
+        <div>Allow transfer of payment codes to another template.</div>
       </div>
 
       <div class="d-flex align-items-center">

@@ -82,7 +82,7 @@ defmodule OliWeb.Admin.AdminView do
             </li>
             <li>
               <a href={~p"/admin/products"}>
-                Browse all Products
+                Browse all Templates
               </a>
             </li>
             <li>

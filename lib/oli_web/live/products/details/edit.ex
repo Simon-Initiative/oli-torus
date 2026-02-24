@@ -78,7 +78,7 @@ defmodule OliWeb.Products.Details.Edit do
         </div>
 
         <div class="form-group mb-2">
-          {label(f, :publisher_id, "Product Publisher")}
+          {label(f, :publisher_id, "Template Publisher")}
           {select(f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}),
             class: "form-control " <> error_class(f, :publisher_id, "is-invalid"),
             autofocus: focusHelper(f, :publisher_id),
