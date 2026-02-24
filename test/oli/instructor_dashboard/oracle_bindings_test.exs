@@ -12,6 +12,12 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
       assert Map.has_key?(bindings.consumers, :progress_summary)
       assert Map.has_key?(bindings.consumers, :support_summary)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress)
+      assert Map.has_key?(bindings.oracles, :oracle_instructor_progress_bins)
+      assert Map.has_key?(bindings.oracles, :oracle_instructor_progress_proficiency)
+      assert Map.has_key?(bindings.oracles, :oracle_instructor_student_info)
+      assert Map.has_key?(bindings.oracles, :oracle_instructor_scope_resources)
+      assert Map.has_key?(bindings.oracles, :oracle_instructor_grades)
+      assert Map.has_key?(bindings.oracles, :oracle_instructor_objectives_proficiency)
     end
   end
 

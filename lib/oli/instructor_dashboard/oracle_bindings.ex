@@ -12,10 +12,16 @@ defmodule Oli.InstructorDashboard.OracleBindings do
   4. Run registry validation and contract tests.
   """
 
+  alias Oli.InstructorDashboard.Oracles.Grades
+  alias Oli.InstructorDashboard.Oracles.ObjectivesProficiency
   alias Oli.InstructorDashboard.Oracles.Placeholder.Engagement
   alias Oli.InstructorDashboard.Oracles.Placeholder.Progress
   alias Oli.InstructorDashboard.Oracles.Placeholder.Support
+  alias Oli.InstructorDashboard.Oracles.ProgressBins
+  alias Oli.InstructorDashboard.Oracles.ProgressProficiency
   alias Oli.InstructorDashboard.Oracles.SectionAnalytics
+  alias Oli.InstructorDashboard.Oracles.ScopeResources
+  alias Oli.InstructorDashboard.Oracles.StudentInfo
 
   @type consumer_key :: atom()
   @type oracle_key :: atom()
@@ -62,7 +68,13 @@ defmodule Oli.InstructorDashboard.OracleBindings do
         oracle_instructor_progress: Progress,
         oracle_instructor_support: Support,
         oracle_instructor_engagement: Engagement,
-        oracle_instructor_section_analytics: SectionAnalytics
+        oracle_instructor_section_analytics: SectionAnalytics,
+        oracle_instructor_progress_bins: ProgressBins,
+        oracle_instructor_progress_proficiency: ProgressProficiency,
+        oracle_instructor_student_info: StudentInfo,
+        oracle_instructor_scope_resources: ScopeResources,
+        oracle_instructor_grades: Grades,
+        oracle_instructor_objectives_proficiency: ObjectivesProficiency
       }
     }
   end

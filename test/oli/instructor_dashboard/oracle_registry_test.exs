@@ -3,6 +3,8 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
 
   alias Oli.Dashboard.TestSupport.NonInstructorRegistry
   alias Oli.InstructorDashboard.OracleRegistry
+  alias Oli.InstructorDashboard.Oracles.Grades
+  alias Oli.InstructorDashboard.Oracles.ProgressBins
   alias Oli.InstructorDashboard.Oracles.Placeholder.Progress
   alias Oli.InstructorDashboard.Oracles.Placeholder.Support
 
@@ -27,6 +29,8 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
     test "resolves oracle modules for known keys" do
       assert {:ok, Progress} = OracleRegistry.oracle_module(:oracle_instructor_progress)
       assert {:ok, Support} = OracleRegistry.oracle_module(:oracle_instructor_support)
+      assert {:ok, ProgressBins} = OracleRegistry.oracle_module(:oracle_instructor_progress_bins)
+      assert {:ok, Grades} = OracleRegistry.oracle_module(:oracle_instructor_grades)
     end
 
     test "returns deterministic errors for unknown keys" do

@@ -1,12 +1,18 @@
 # Concrete Oracles: Progress Bins + Progress/Proficiency Raw
 
 This note captures the concrete oracle split and query approach for the Instructor Intelligent Dashboard.
-It is intended to be implementation guidance for the new oracle modules, not a final API contract.
+It is a required implementation companion to `prd.md` and `fdd.md` for oracle-specific query and payload details.
+
+## Initial Implementation Policy (Required)
+
+- For this initial concrete-oracle implementation, all oracle data paths must use the main Postgres database through standard Ecto queries (plus existing in-memory depot reads where applicable).
+- Do not implement ClickHouse-backed execution paths in this first implementation pass.
+- ClickHouse support (for selected oracle optimizations) is deferred until the end of the Intelligent Dashboard epic, after baseline Postgres implementations are complete, tested, and validated.
 
 ## Summary (Recommended Split)
 
 1. **ProgressBinsOracle** (progress tile only)
-   - Returns **per-container histogram counts** at fixed 10% bins (10..100).
+   - Returns **per-container histogram counts** at fixed 10% bins (0..100).
    - Container granularity is **module-level** when scope is Unit (or Unit-level when scope is Course).
    - Fixed memory footprint, no per-student payload.
 
@@ -17,14 +23,17 @@ It is intended to be implementation guidance for the new oracle modules, not a f
    - Projection bins the pie chart from these raw values; modal can render a real scatter plot.
 
 3. **StudentInfoOracle** (student drilldown lists)
-   - Returns enrolled student identifiers and display fields (id, email, first/last name).
+   - Returns enrolled student identifiers and display fields (id, email, first/last name) plus `last_interaction_at` from enrollment.
 
 4. **ScopeResourcesOracle** (titles + types for direct items in scope)
    - Returns direct children of the current scope container with `resource_id`, `resource_type_id`, `title`.
    - Can also expose the course/section title.
 
 5. **GradesOracle** (graded pages within scope)
-   - Returns per-student grades for graded pages in the selected scope, with empty grades filled.
+   - Returns per-page aggregate grade statistics and histogram buckets for graded pages in the selected scope.
+   - Enriches each graded page row with `available_at` and `due_at` from `SectionResourceDepot`.
+   - Does not emit per-student raw grade rows from `load/2`.
+   - Also provides `students_without_attempt_emails(section_id, resource_id)` for outreach actions.
 
 6. **ObjectivesProficiencyOracle** (learning objectives proficiency in scope)
    - Returns objective proficiency distributions for objectives contained within the selected scope.
@@ -52,7 +61,7 @@ References in code:
 - `section_id`
 - `scope` (`container_type`, `container_id`)
 - `axis_container_ids` (e.g. module ids within selected unit)
-- `bin_size` fixed at `10` (bins 10..100)
+- `bin_size` fixed at `10` (bins 0..100)
 
 ### Output
 
@@ -60,7 +69,7 @@ References in code:
 %{
   bin_size: 10,
   by_container_bins: %{
-    container_id => %{10 => count, 20 => count, ..., 100 => count}
+    container_id => %{0 => count, 10 => count, ..., 100 => count}
   },
   total_students: integer
 }
@@ -105,7 +114,7 @@ WITH
   )
 SELECT
   c.container_id,
-  LEAST(100, GREATEST(10, CEIL(COALESCE(p.progress, 0) * 10.0) * 10)) AS bin,
+  LEAST(100, GREATEST(0, CEIL(COALESCE(p.progress, 0) * 10.0) * 10)) AS bin,
   COUNT(*) AS student_count
 FROM containers c
 CROSS JOIN students s
@@ -172,7 +181,7 @@ progress_by_student =
 ]
 ```
 
-`progress_pct` should be `0..100`, `proficiency_pct` should be `0..1` (or `0..100`, but be consistent).
+`progress_pct` is normalized to `0..100`, and `proficiency_pct` is normalized to `0.0..1.0`.
 
 ### Query Strategy
 
@@ -253,7 +262,13 @@ In Elixir:
 
 ```
 [
-  %{student_id: 123, email: "a@b.com", given_name: "Ada", family_name: "Lovelace"},
+  %{
+    student_id: 123,
+    email: "a@b.com",
+    given_name: "Ada",
+    family_name: "Lovelace",
+    last_interaction_at: ~U[2026-02-24 12:34:56Z]
+  },
   ...
 ]
 ```
@@ -277,7 +292,8 @@ query =
       student_id: u.id,
       email: u.email,
       given_name: u.given_name,
-      family_name: u.family_name
+      family_name: u.family_name,
+      last_interaction_at: e.updated_at
     },
     distinct: u.id
   )
@@ -333,14 +349,35 @@ Use `SectionResourceDepot` (in-memory) to avoid DB round trips. The depot alread
 
 ```
 %{
-  page_ids: [201, 202, ...],
   grades: [
-    %{student_id: 123, page_id: 201, score: 7.0, out_of: 10.0},
-    %{student_id: 123, page_id: 202, score: nil, out_of: 10.0},
+    %{
+      page_id: 201,
+      minimum: 42.0,
+      median: 71.5,
+      mean: 69.8,
+      maximum: 100.0,
+      standard_deviation: 14.3,
+      histogram: %{
+        "0-10" => 0,
+        "10-20" => 1,
+        "20-30" => 2,
+        "30-40" => 4,
+        "40-50" => 6,
+        "50-60" => 8,
+        "60-70" => 12,
+        "70-80" => 9,
+        "80-90" => 5,
+        "90-100" => 3
+      },
+      available_at: ~U[2026-03-01 14:00:00Z],
+      due_at: ~U[2026-03-07 23:59:59Z]
+    },
     ...
   ]
 }
 ```
+
+`minimum`, `median`, `mean`, `maximum`, and `standard_deviation` are percentage scores (`0.0..100.0`) computed per page for enrolled learners with attempts.
 
 ### Query Strategy
 
@@ -351,8 +388,12 @@ Options:
    descendants of the current container.
 2. **SQL**: use `contained_pages` to filter graded pages by container id.
 
-Step 2: Query `resource_accesses` for those pages and enrolled students.
-Fill empty grades for students with no attempts.
+Step 2: Aggregate `resource_accesses` rows for enrolled learners by `page_id`:
+- score stats: `minimum`, `median`, `mean`, `maximum`, `standard_deviation`
+- histogram bucket counts across fixed percentage ranges: `0-10, 10-20, ..., 90-100`
+
+Step 3: Enrich each graded page aggregate row with `available_at` and `due_at`
+from `SectionResourceDepot` section resources.
 
 #### Ecto Sketch (SQL-based containment)
 
@@ -370,21 +411,43 @@ page_ids =
   )
   |> Repo.all()
 
-grades =
+grade_aggregates =
   from(ra in ResourceAccess,
+    join: e in Enrollment,
+    on: e.section_id == ra.section_id and e.user_id == ra.user_id and e.status == :enrolled,
+    join: ecr in assoc(e, :context_roles),
     where:
       ra.section_id == ^section_id and
         ra.resource_id in ^page_ids and
-        ra.user_id in ^student_ids,
-    select: %{student_id: ra.user_id, page_id: ra.resource_id, score: ra.score, out_of: ra.out_of}
+        ecr.id == ^student_role_id and
+        not is_nil(ra.score) and
+        not is_nil(ra.out_of) and
+        ra.out_of > 0,
+    group_by: ra.resource_id,
+    select: %{
+      page_id: ra.resource_id,
+      minimum: fragment("MIN((? / ?) * 100.0)", ra.score, ra.out_of),
+      median: fragment("PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY (? / ?) * 100.0)", ra.score, ra.out_of),
+      mean: fragment("AVG((? / ?) * 100.0)", ra.score, ra.out_of),
+      maximum: fragment("MAX((? / ?) * 100.0)", ra.score, ra.out_of),
+      standard_deviation: fragment("STDDEV_POP((? / ?) * 100.0)", ra.score, ra.out_of)
+    }
   )
   |> Repo.all()
 ```
 
-#### Fill Missing Grades
+Build the histogram map in SQL or in a second grouped query keyed by `page_id`.
+Merge stats + histogram + schedule metadata in Elixir and return one row per graded page.
 
-In Elixir, build a complete matrix over `{student_ids x page_ids}`.
-If no `resource_access` exists, emit `{score: nil, out_of: nil}` (or `score: 0.0, out_of: max` if UI requires a numeric default).
+#### Direct helper: `students_without_attempt_emails/2`
+
+Expose a read-through function:
+- Input: `(section_id, resource_id)`
+- Output: `{:ok, [email]} | {:error, reason}`
+- Behavior:
+  - includes only enrolled `context_learner` users in the section
+  - excludes users with any attempt row for the page in `resource_accesses`
+  - excludes instructor/non-learner roles
 
 ### Notes
 
@@ -457,12 +520,12 @@ This uses:
 - enrolled student filtering (`Sections.enrolled_student_ids/1`)
 - distribution counts for `High/Medium/Low/Not enough data`
 
-### Alternative (ClickHouse)
+### Deferred Alternative (ClickHouse, Post-epic)
 
 If we need lower latency or richer attempt-level slicing, a ClickHouse query over xAPI can
 aggregate by objective ids per scope pages. This would be the **first CH-backed oracle** and
 adds operational risk; the Postgres `contained_objectives` + `resource_summary` path should be
-the baseline unless performance proves insufficient.
+the baseline for this implementation. Do not implement this alternative in the initial delivery pass.
 
 ### Notes
 
@@ -484,8 +547,8 @@ Proposed modules (names are illustrative):
 
 Both should conform to `Oli.Dashboard.Oracle` and be wired through the instructor registry.
 
-## Open Decisions
+## Resolved Decisions
 
-- Confirm bin size is fixed at 10% for the entire feature.
-- Confirm progress and proficiency percent ranges (`0..1` vs `0..100`) for projection consistency.
-- Decide whether to compute progress 0 for missing students in SQL or in the Oracle code.
+- Bin size is fixed at 10% for the feature (`0, 10, 20, ... 100` for progress bins; `0-10` through `90-100` for grade histograms).
+- Progress missing-student default is `0.0`; proficiency missing/insufficient attempts remains `nil`.
+- Progress zero-fill may be done in SQL (cross-join) or Oracle post-processing, but output semantics are fixed.

@@ -1,5 +1,6 @@
 ./output
 ./output/*
+.codex
 
 temp_init_file
 .vscode

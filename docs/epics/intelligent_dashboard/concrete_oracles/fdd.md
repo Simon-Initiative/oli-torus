@@ -1,24 +1,25 @@
 # Concrete Oracles — Functional Design Document
 
 ## 1. Executive Summary
-This FDD defines the concrete oracle implementations that power Instructor Intelligent Dashboard tiles with bounded memory and deterministic query behavior. It derives its technical direction from `docs/epics/intelligent_dashboard/concrete_oracles/README.md`, which should be treated as authoritative implementation guidance. The design introduces six concrete oracles under `Oli.InstructorDashboard.Oracles.*` for progress bins, progress+proficiency raw tuples, student info, scope resources, grades, and objectives proficiency. These oracles are read-only, scope-aware, and execute within the shared oracle runtime defined by the `data_oracles` feature, returning normalized payloads for snapshot and projection layers. Progress is computed as average page progress using `resource_accesses` and `contained_pages`; proficiency is computed from `resource_summary` with minimum-attempt gating. Scope filtering uses `contained_pages` for page containment and `contained_objectives` for objective containment, with `SectionResourceDepot` providing fast in-memory resource and hierarchy reads. The progress bins oracle uses fixed 10% buckets from 0..100 and fills missing students with 0% in a post-processing step to avoid heavy cross-joins. No new schema changes, feature flags, or external analytics systems are required for this slice. The primary risks are large-scope query costs and stale objective containment mappings; both are mitigated by existing containment tables and bounded payload shapes. Observability is provided via per-oracle telemetry of duration, row counts, and cache hit metadata.
+This FDD defines the concrete oracle implementations that power Instructor Intelligent Dashboard tiles with bounded memory and deterministic query behavior. It derives its technical direction from `docs/epics/intelligent_dashboard/concrete_oracles/README.md`, which is a required implementation companion for oracle-specific query and payload details. The design introduces six concrete oracles under `Oli.InstructorDashboard.Oracles.*` for progress bins, progress+proficiency raw tuples, student info, scope resources, grades, and objectives proficiency. These oracles are read-only, scope-aware, and execute within the shared oracle runtime defined by the `data_oracles` feature, returning normalized payloads for snapshot and projection layers. Progress is computed as average page progress using `resource_accesses` and `contained_pages`; proficiency is computed from `resource_summary` with minimum-attempt gating. Scope filtering uses `contained_pages` for page containment and `contained_objectives` for objective containment, with `SectionResourceDepot` providing fast in-memory resource and hierarchy reads. The progress bins oracle uses fixed 10% buckets from 0..100 and fills missing students with 0% in a post-processing step to avoid heavy cross-joins. No new schema changes, feature flags, or external analytics systems are required for this slice. The primary risks are large-scope query costs and stale objective containment mappings; both are mitigated by existing containment tables and bounded payload shapes. Observability is provided via per-oracle telemetry of duration, row counts, and cache hit metadata.
 
 ## 2. Requirements & Assumptions
 - Functional Requirements:
   - FR-001: ProgressBinsOracle returns per-container histogram counts in fixed 0..100 (10% increment) bins.
   - FR-002: ProgressProficiencyOracle returns per-student `{student_id, progress_pct, proficiency_pct}` tuples scoped to the selected container.
-  - FR-003: StudentInfoOracle returns enrolled student identity fields for drilldowns.
+  - FR-003: StudentInfoOracle returns enrolled student identity fields plus `last_interaction_at` for drilldowns.
   - FR-004: ScopeResourcesOracle returns course title and direct child items for the current scope from `SectionResourceDepot`.
-  - FR-005: GradesOracle returns graded pages in scope and per-student grade tuples with missing attempts filled.
+  - FR-005: GradesOracle returns graded pages in scope with per-page aggregate score statistics, fixed 10% histogram buckets (`0-10` through `90-100`), and `available_at`/`due_at` metadata, without per-student raw rows.
   - FR-006: ObjectivesProficiencyOracle returns proficiency distributions for objectives contained within the selected scope.
   - FR-007: All oracles filter to enrolled learners only.
   - FR-008: Oracles accept `(section_id, container_type, container_id)` scope and are deterministic for identical inputs.
   - FR-009: Oracles return stable payload shapes for snapshot/projection consumption.
   - FR-010: Oracles reuse existing progress/proficiency formulas and thresholds.
+  - FR-011: GradesOracle exposes `students_without_attempt_emails(section_id, resource_id)` for instructor outreach actions.
 - Non-Functional Requirements:
   - p95 <= 300ms (Normal) and p95 <= 700ms (Large) for uncached single-scope execution.
   - Errors are surfaced in oracle envelopes without corrupting cache or snapshots.
-  - PII exposure is limited to student id, email, given/family name.
+  - PII exposure is limited to student id, email, given/family name, and enrollment-level `last_interaction_at`.
   - Telemetry includes per-oracle duration and row counts.
 - Explicit Assumptions:
   - Progress histogram bins are fixed at 10% increments with explicit `0, 10, 20, ... 100` buckets.
@@ -26,6 +27,7 @@ This FDD defines the concrete oracle implementations that power Instructor Intel
   - No ClickHouse dependency is required for these concrete oracles.
   - `contained_objectives` is maintained and current for scope filtering.
   - This FDD primarily transposes the technical guidance from `concrete_oracles/README.md` into the FDD template.
+  - During implementation, developers must use this FDD and the mapped README oracle section together; README details are required, not optional narrative.
 
 ## 3. Torus Context Summary
 - What we know:
@@ -40,6 +42,18 @@ This FDD defines the concrete oracle implementations that power Instructor Intel
   - Exact oracle output shape normalization used by snapshot/projection layers (percent ranges confirmed here as 0..100 for bins).
   - Any additional indexes needed for `contained_objectives` or `resource_summary` queries on large sections.
 
+### 3.1 README Traceability Contract
+- Implementation pairing rule:
+  - For every concrete oracle change, read both this FDD and the oracle's dedicated README section before coding.
+  - If README and FDD diverge, update spec docs (`prd`/`fdd`/`plan`) first, then implement.
+- Oracle to README mapping (required):
+  - `Oli.InstructorDashboard.Oracles.ProgressBins` -> `README.md` section `Oracle 1: ProgressBinsOracle`
+  - `Oli.InstructorDashboard.Oracles.ProgressProficiency` -> `README.md` section `Oracle 2: ProgressProficiencyOracle`
+  - `Oli.InstructorDashboard.Oracles.StudentInfo` -> `README.md` section `Oracle 3: StudentInfoOracle`
+  - `Oli.InstructorDashboard.Oracles.ScopeResources` -> `README.md` section `Oracle 4: ScopeResourcesOracle`
+  - `Oli.InstructorDashboard.Oracles.Grades` -> `README.md` section `Oracle 5: GradesOracle`
+  - `Oli.InstructorDashboard.Oracles.ObjectivesProficiency` -> `README.md` section `Oracle 6: ObjectivesProficiencyOracle`
+
 ## 4. Proposed Design
 ### 4.1 Component Roles & Interactions
 - `Oli.InstructorDashboard.Oracles.ProgressBins`
@@ -52,13 +66,14 @@ This FDD defines the concrete oracle implementations that power Instructor Intel
   - Merges by student id into `{student_id, progress_pct, proficiency_pct}` payload.
 - `Oli.InstructorDashboard.Oracles.StudentInfo`
   - Input: section id.
-  - Returns enrolled learner identity fields (id, email, given/family name).
+  - Returns enrolled learner identity fields (id, email, given/family name) and `last_interaction_at` sourced from `enrollments.updated_at`.
 - `Oli.InstructorDashboard.Oracles.ScopeResources`
   - Input: section + scope.
   - Uses `SectionResourceDepot.get_delivery_resolver_full_hierarchy/1` to return direct children of the scope and course title.
 - `Oli.InstructorDashboard.Oracles.Grades`
   - Input: section + scope.
-  - Determines graded pages in scope via depot + hierarchy filtering (or SQL containment), then returns per-student grade tuples, filling missing attempts.
+  - Determines graded pages in scope via depot + hierarchy filtering (or SQL containment), then returns one aggregate record per graded page with score stats, fixed histogram bucket counts (`0-10` through `90-100`), and `available_at`/`due_at`.
+  - Exposes `students_without_attempt_emails/2` to return enrolled learner emails for no-attempt cases on a specific graded page.
 - `Oli.InstructorDashboard.Oracles.ObjectivesProficiency`
   - Input: section + scope.
   - Uses `Sections.get_section_contained_objectives/2` to scope objective ids, fetches objective titles via depot, then calls `Metrics.objectives_proficiency/3` to compute distributions.
@@ -69,7 +84,7 @@ All concrete oracles implement the shared `Oli.Dashboard.Oracle` behavior and ar
 1. Oracle runtime constructs `OracleContext` with `section_id`, scope, and user identity.
 2. Runtime calls `load/2` on each oracle with injected prerequisite inputs (none for this slice).
 3. Oracle queries run as read-only DB calls (plus depot reads) and normalize payloads.
-4. Post-processing fills missing students (0% progress, nil proficiency for insufficient attempts, nil grades for unattempted pages).
+4. Post-processing fills missing students for progress/proficiency defaults (0% progress, nil proficiency for insufficient attempts) and maintains deterministic ordering.
 5. Payloads return to runtime for caching and snapshot assembly.
 
 ### 4.3 Supervision & Lifecycle
@@ -98,9 +113,10 @@ All concrete oracles implement the shared `Oli.Dashboard.Oracle` behavior and ar
 - Concrete oracle payloads (summarized):
   - ProgressBins: `%{bin_size: 10, by_container_bins: %{container_id => %{0 => count, 10 => count, ...}}, total_students: integer}`
   - ProgressProficiency: `[%{student_id, progress_pct, proficiency_pct}]`
-  - StudentInfo: `[%{student_id, email, given_name, family_name}]`
+  - StudentInfo: `[%{student_id, email, given_name, family_name, last_interaction_at}]`
   - ScopeResources: `%{course_title, items: [%{resource_id, resource_type_id, title}]}`
-  - Grades: `%{page_ids, grades: [%{student_id, page_id, score, out_of}]}`
+  - Grades: `%{grades: [%{page_id, minimum, median, mean, maximum, standard_deviation, histogram: %{"0-10" => count, "10-20" => count, ..., "90-100" => count}, available_at, due_at}]}`
+  - Grades helper: `students_without_attempt_emails(section_id, resource_id) -> {:ok, [email]} | {:error, reason}`
   - ObjectivesProficiency: `[%{objective_id, title, proficiency_distribution}]`
 
 ## 6. Data Model & Storage
@@ -116,6 +132,10 @@ All concrete oracles implement the shared `Oli.Dashboard.Oracle` behavior and ar
 - Progress+Proficiency:
   - Progress query mirrors `Metrics.progress_for/3` with container filter.
   - Proficiency query mirrors `Metrics.proficiency_per_student_across/2` with `resource_summary` and contained pages filter.
+- Grades aggregate:
+  - Resolve graded page ids in scope, then aggregate learner attempts per page into stats (`minimum`, `median`, `mean`, `maximum`, `standard_deviation`) and histogram buckets `0-10` through `90-100`.
+  - Enrich each page aggregate with `available_at` and `due_at` from `SectionResourceDepot` section resources.
+  - `students_without_attempt_emails/2` loads enrolled learners (`context_learner`, status `:enrolled`) and subtracts users with attempts on the selected page.
 - Objectives proficiency:
   - Fetch objective ids from `contained_objectives` then call `Metrics.objectives_proficiency/3`.
 - Index expectations (verify):
@@ -137,7 +157,7 @@ All concrete oracles implement the shared `Oli.Dashboard.Oracle` behavior and ar
 ## 9. Performance and Scalability Plan
 ### 9.1 Budgets
 - p95 <= 300ms (Normal 200 learners) and p95 <= 700ms (Large 2,000 learners) for uncached single-scope execution.
-- Payload sizes bounded by: per-container bins and per-student tuples (<= roster size).
+- Payload sizes bounded by: per-container bins, per-student tuples (<= roster size), and per-page aggregate rows (<= graded pages in scope).
 
 ### 9.3 Hotspots & Mitigations
 - Large cross-joins for 0% progress: mitigate with post-processing roster merge.
@@ -165,9 +185,10 @@ All concrete oracles implement the shared `Oli.Dashboard.Oracle` behavior and ar
 - Unit tests:
   - Progress bins: correct binning, 0% injection, container scoping.
   - Progress+Proficiency: merge correctness, nil proficiency for low attempts.
-  - StudentInfo: role filtering (context_learner only), distinctness.
+  - StudentInfo: role filtering (context_learner only), distinctness, `last_interaction_at` mapping from enrollment.
   - ScopeResources: direct child resolution from depot hierarchy.
-  - Grades: graded page scope filter, missing attempts filled.
+  - Grades: graded page scope filter, aggregate stats correctness, histogram bucket correctness, and `available_at`/`due_at` enrichment.
+  - Grades helper: `students_without_attempt_emails/2` correctness for attempted vs unattempted learner sets.
   - Objectives proficiency: scope filtering via contained_objectives.
 - Integration tests:
   - Oracle runtime loads concrete oracles for a sample scope and returns expected payload shapes.
@@ -186,4 +207,7 @@ All concrete oracles implement the shared `Oli.Dashboard.Oracle` behavior and ar
 - None.
 
 ## 17. References
-- None.
+- `docs/epics/intelligent_dashboard/concrete_oracles/prd.md`
+- `docs/epics/intelligent_dashboard/concrete_oracles/README.md`
+- `lib/oli/delivery/metrics.ex`
+- `guides/design/attempt.md`
