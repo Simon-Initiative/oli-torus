@@ -222,7 +222,7 @@ defmodule Oli.Content.Content.HtmlTest do
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
       assert rendered_html_string =~ ~r/data-live-react-class="Components\.WebpageEmbed"/
-      assert rendered_html_string =~ ~r/"targetId":"demo_target"/
+      assert rendered_html_string =~ ~r/&quot;targetId&quot;:&quot;demo_target&quot;/
       assert rendered_html_string =~ ~r/id="iframe-test-attempt-123-src-/
     end
 
