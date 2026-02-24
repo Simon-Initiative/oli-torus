@@ -560,7 +560,7 @@ defmodule OliWeb.PageDeliveryController do
                 has_more_attempts: has_more_attempts
               }
               when lifecycle_state in [:submitted, :evaluated] ->
-                {:cont, {true, resettable && has_more_attempts}}
+                {:cont, {true, resettable && has_more_attempts == true}}
 
               _ ->
                 {:halt, {false, false}}

@@ -33,14 +33,7 @@ async function parseResponse(response: Response) {
   const { parsed, ok } = parseJson(text);
 
   if (!response.ok) {
-    const message =
-      (ok &&
-        parsed &&
-        typeof parsed === 'object' &&
-        'message' in parsed &&
-        (parsed as any).message) ||
-      text ||
-      response.statusText;
+    const message = (ok && messageFromParsed(parsed)) || text || response.statusText;
 
     throw makeBridgeError(message, response.status, response.statusText);
   }
@@ -63,12 +56,21 @@ function makeBridgeError(message: string, status: number, statusText: string) {
   return error;
 }
 
-function parseJson(text: string): { parsed: any; ok: boolean } {
+function parseJson(text: string): { parsed: unknown; ok: boolean } {
   try {
     return { parsed: JSON.parse(text), ok: true };
   } catch {
     return { parsed: null, ok: false };
   }
+}
+
+function messageFromParsed(value: unknown): string | null {
+  if (!hasMessage(value)) return null;
+  return typeof value.message === 'string' ? value.message : String(value.message);
+}
+
+function hasMessage(value: unknown): value is { message: unknown } {
+  return typeof value === 'object' && value !== null && 'message' in value;
 }
 const nothingTransform = (result: any) => Promise.resolve(result);
 const submissionTransform = (key: string, result: any) => {
