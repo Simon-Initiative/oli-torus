@@ -235,7 +235,7 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     element_id = iframe_element_id(attrs)
-    webpage_attrs = Map.put_new(attrs, "id", element_id)
+    webpage_attrs = Map.put(attrs, "id", element_id)
 
     {:safe, webpage_embed} =
       OliWeb.Common.React.component(
