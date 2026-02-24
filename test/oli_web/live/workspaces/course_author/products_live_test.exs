@@ -133,9 +133,6 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       # Check archived products checkbox is not checked
       refute view |> element("input[type=\"checkbox\"]") |> render() =~ "checked=\"\""
 
-      # Total count message
-      assert render(view) =~ "Showing all results (1 total)"
-
       # Check archived products are not displayed
       rows =
         view
@@ -155,9 +152,6 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
       # Check archived products checkbox is checked
       assert view |> element("input[type=\"checkbox\"]") |> render() =~ "checked=\"\""
 
-      # Total count message
-      assert render(view) =~ "Showing all results (2 total)"
-
       # Check archived products are displayed
       rows =
         view
@@ -170,6 +164,22 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
 
       assert Floki.text(rows) =~ "Some product 1"
       assert Floki.text(rows) =~ "Some product 2"
+    end
+
+    test "changing page size does not crash", %{conn: conn, project: project} do
+      Enum.each(1..12, fn n ->
+        {:ok, _} = Blueprint.create_blueprint(project.slug, "Some product #{n}", nil)
+      end)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      # Ensure page size interaction is handled by the liveview without crashing
+      view
+      |> element("#footer_paging_page_size_form")
+      |> render_change(%{limit: "10"})
+
+      assert has_element?(view, "table tbody tr")
+      assert has_element?(view, "#footer_paging button[phx-click='paged_table_page_change']", "2")
     end
   end
 

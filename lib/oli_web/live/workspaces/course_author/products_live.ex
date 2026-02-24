@@ -12,8 +12,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
   alias OliWeb.Common.Check
-  alias OliWeb.Common.PagedTable
   alias OliWeb.Common.Params
+  alias OliWeb.Common.StripedPagedTable
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Products.CreateTemplateModal
   alias OliWeb.Products.ProductsTableModel
@@ -53,6 +53,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
        include_archived: include_archived,
        limit: @max_items_per_page,
        offset: @initial_offset,
+       total_count: determine_total(products),
+       params: %{offset: @initial_offset, limit: @max_items_per_page},
        table_model: table_model,
        create_product_form: @initial_create_form
      )}
@@ -61,8 +63,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   @impl Phoenix.LiveView
   def handle_params(params, _uri, socket) do
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
-    table_model = Map.put(table_model, :rows, table_model.rows)
-    socket = assign(socket, table_model: table_model)
+    offset = Params.get_int_param(params, "offset", @initial_offset)
+    limit = Params.get_int_param(params, "limit", @max_items_per_page)
+    include_archived = Params.get_boolean_param(params, "include_archived", false)
+
+    products =
+      Blueprint.browse(
+        %Paging{offset: offset, limit: limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        include_archived: include_archived,
+        project_id: socket.assigns.project.id
+      )
+
+    table_model = Map.put(table_model, :rows, products)
+
+    socket =
+      assign(socket,
+        table_model: table_model,
+        offset: offset,
+        limit: limit,
+        total_count: determine_total(products),
+        include_archived: include_archived,
+        params: %{offset: offset, limit: limit}
+      )
+
     {:noreply, socket}
   end
 
@@ -85,13 +109,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
 
       <div class="mb-3" />
 
-      <PagedTable.render
+      <StripedPagedTable.render
         page_change="paged_table_page_change"
         sort="paged_table_sort"
-        total_count={Enum.count(@table_model.rows)}
+        total_count={@total_count}
         limit={@limit}
         offset={@offset}
         table_model={@table_model}
+        render_top_info={false}
+        additional_table_class="instructor_dashboard_table"
+        limit_change="paged_table_limit_change"
+        show_limit_change={true}
       />
     <% else %>
       <div>Templates cannot be created until project is published.</div>
@@ -167,6 +195,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       assign(socket,
         include_archived: include_archived,
         products: products,
+        total_count: determine_total(products),
         table_model: table_model
       )
 
@@ -179,7 +208,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
 
   def handle_event(event, params, socket) do
     delegate_to({event, params, socket, &ProductsLive.patch_with/2}, [
-      &PagedTable.handle_delegated/4
+      &StripedPagedTable.handle_delegated/4
     ])
   end
 
@@ -198,6 +227,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       sort_by: assigns.table_model.sort_by_spec.name,
       sort_order: assigns.table_model.sort_order,
       offset: assigns.offset,
+      limit: assigns.limit,
       include_archived: assigns.include_archived,
       sidebar_expanded: assigns.sidebar_expanded
     }
@@ -219,5 +249,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       include_archived: include_archived,
       project_id: assigns.project.id
     )
+  end
+
+  defp determine_total(products) do
+    case products do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
   end
 end
