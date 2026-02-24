@@ -2,6 +2,8 @@
 
 Run technical validation first (compile/tests), then spec-review, then spec validation.
 For this skill, spec validation is a hard gate and must run twice: preflight (before coding) and postflight (after implementation/doc updates).
+Do not require or run dedicated performance/load/benchmark tests in this workflow.
+Performance requirements are satisfied through telemetry/AppSignal instrumentation and reporting checks.
 
 Example commands:
 

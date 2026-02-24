@@ -7,6 +7,7 @@ At completion, report:
 - Commands run (`mix compile`, tests, validation) and outcomes.
 - Self-review rounds completed and findings resolved.
 - Any spec-sync updates made to `prd.md`, `fdd.md`, or `plan.md`.
+- Telemetry/AppSignal instrumentation updates made for performance posture (when applicable).
 - Remaining risks or explicit follow-ups.
 
 ## Phase Completion Requirements

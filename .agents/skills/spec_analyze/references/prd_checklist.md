@@ -4,6 +4,8 @@ Use this checklist before saving `prd.md`:
 
 - Keep required headings from `assets/templates/prd_template.md`.
 - Ensure sections are in the exact template order and all headings are present.
+- Ensure the PRD favors simplicity and clarity over verbosity.
+- Ensure wording is plain enough for engineers, product, QA, and lay readers to understand without extra translation.
 - Ensure section 6 contains exactly `Requirements are found in requirements.yml`.
 - Ensure section 7 contains exactly `Requirements are found in requirements.yml`.
 - Ensure no `FR-###` or `AC-###` requirement entries appear in `prd.md`.
@@ -14,6 +16,7 @@ Use this checklist before saving `prd.md`:
 - If section 11 has `No feature flags present in this feature`, ensure there are no canary/phased rollout or rollout runbook requirements anywhere in the PRD.
 - Include Torus-specific constraints where relevant: tenancy, LTI roles, accessibility, observability, security/privacy.
 - Include measurable non-functional budgets when relevant.
+- Ensure the PRD does not require performance/load/benchmark tests; performance posture must be telemetry/AppSignal based.
 - Include data model/API contract impacts and permissions matrix entries.
 - Include QA coverage across automated and manual checks.
 - Ensure manual QA calls out focus areas for risky or hard-to-automate behavior.

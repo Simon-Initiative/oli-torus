@@ -1,29 +1,38 @@
 # Data Snapshot FDD
 
-Last updated: 2026-02-17
+Last updated: 2026-02-24
 Feature: `data_snapshot`
 Epic: `MER-5198`
 Primary Jira: `MER-5304`
 
 ## 1. Executive Summary
 
-This feature implements the canonical snapshot and projection layer for Intelligent Dashboard and establishes it as the single semantic source for both UI and CSV consumers. The design separates orchestration concerns from transformation concerns through clear module boundaries: `DataSnapshot` orchestrates retrieval, `Snapshot.Assembler` composes canonical contracts, projection modules derive capability views, and `CsvExport` performs transform-only serialization. Snapshot construction is deterministic and token/scoped so it can safely consume results from cache-hit and runtime-loaded oracle flows. Projection readiness and failure states are explicit and machine-readable, enabling incremental tile hydration and deterministic export handling. CSV generation uses dataset registry mappings that reference projection contracts instead of ad-hoc query logic. The design includes parity metadata/fingerprints so UI and export consistency can be verified operationally and in tests. This layer intentionally does not own queue/token stale suppression or cache policy behavior; those remain in coordinator/cache features. Exact concrete instructor oracle implementations remain tile-driven; this layer is intentionally agnostic and consumes active oracle contracts/bindings. Risks center on projection contract churn and partial-export policy ambiguity, mitigated by capability-scoped projection modules, versioning, and explicit dataset inclusion rules.
+This feature implements the canonical snapshot and projection layer for Intelligent Dashboard and establishes it as the single semantic source for both UI and CSV consumers. The design separates orchestration concerns from transformation concerns through clear module boundaries: `DataSnapshot` orchestrates retrieval, `Snapshot.Assembler` composes canonical contracts, projection modules derive capability views, and `CsvExport` performs transform-only serialization. Snapshot construction is deterministic and token/scoped so it can safely consume results from cache-hit and runtime-loaded oracle flows. Projection readiness and failure states are explicit and machine-readable, enabling incremental tile hydration and deterministic export handling. Incremental rendering is a hard contract: projection readiness is capability-scoped and there is no global all-projection readiness barrier for tile rendering. CSV generation uses dataset registry mappings that reference projection contracts instead of ad-hoc query logic. The design includes parity metadata/fingerprints so UI and export consistency can be verified operationally and in tests. This layer intentionally does not own queue/token stale suppression or cache policy behavior; those remain in coordinator/cache features. Exact concrete instructor oracle implementations remain tile-driven; this layer is intentionally agnostic and consumes active oracle contracts/bindings. Risks center on projection contract churn and partial-export policy ambiguity, mitigated by capability-scoped projection modules, versioning, and explicit dataset inclusion rules.
 
 ## 2. Requirements & Assumptions
 
 Functional requirements (PRD mapping):
 - FR-001, FR-002: deterministic snapshot contract with metadata, oracle map, and projection map.
-- FR-003, FR-004: capability projection interfaces and readiness statuses.
+- FR-003, FR-004: capability projection interfaces and readiness statuses with no global readiness gate.
 - FR-005, FR-011: `DataSnapshot` orchestration API with strict boundaries to coordinator/cache/oracle layers.
 - FR-006, FR-007, FR-009: CSV transform-only generation via dataset registry and serializers.
 - FR-008: deterministic inclusion/failure policy for partial projections.
 - FR-010, FR-012: contract versioning and parity fingerprint instrumentation.
 - FR-013: extensive unit testing with mocked/stubbed concrete dependencies for snapshot boundary interaction coverage.
 
+Acceptance criteria traceability:
+- AC-001: deterministic assembly outputs support immediate consumption of ready capability projections without global readiness blocking.
+- AC-002: UI projections and CSV datasets remain semantically equivalent for shared metrics through parity fingerprints/checks.
+- AC-003: CSV export path remains transform-only over snapshot/projection inputs with no independent analytics query path.
+- AC-004: partial readiness behavior follows deterministic dataset inclusion/exclusion policy.
+- AC-005: required-projection export failures return deterministic reason-coded errors.
+- AC-006: assembler/projection/export boundaries prohibit queue/token/cache-policy logic and direct oracle/query calls.
+- AC-007: contract versioning supports prior projection schema compatibility during migration windows.
+- AC-008: snapshot tests include mocked/stubbed concrete dependencies where needed for boundary interaction coverage.
+
 Non-functional targets:
-- Snapshot assembly p95 <= 700ms.
-- Projection derivation p95 <= 300ms.
-- CSV ZIP generation p95 <= 5s.
+- No performance testing will be done in `MER-5304`.
+- Performance benchmark and latency-threshold validation are deferred to separate tickets.
 - Zero parity mismatches for gated metrics.
 
 Explicit assumptions:
@@ -82,6 +91,7 @@ Boundary rules:
 - `CsvExport` cannot call oracles, runtime, coordinator, or analytics query modules directly.
 - Projection modules consume snapshot contracts only.
 - Global `scope.filters` must be available to projection modules to support parameterized thresholds and rule-based categorization.
+- Ready capability projections must be emitted/consumable immediately; architecture must not wait for unrelated capabilities to become ready.
 
 ### 4.2 State & Message Flow
 
@@ -126,6 +136,7 @@ sequenceDiagram
     IDS->>SUP: derive(snapshot)
     SUP-->>IDS: status=partial (missing proficiency_oracle)
     IDS-->>LV: emit projection_statuses
+    LV-->>LV: render tiles whose required projections are ready; keep others in loading/partial state
 ```
 
 Export reuse path and deterministic policy:
@@ -191,7 +202,11 @@ Potential integration contract for export caller (internal):
 LiveView interaction pattern:
 - Calls `DataSnapshot.get_or_build/2` for current scope/capability set.
 - Consumes `projection_statuses` for incremental rendering decisions.
+- Renders each tile immediately when that tile's required projection is `ready`, even if unrelated projections are still loading.
 - Renders projection-level failure/partial states without bypass queries.
+- Consumer handoff contract: LiveView and CSV callers consume the same `snapshot_bundle` (`snapshot`, `projections`, `projection_statuses`) from `DataSnapshot.get_or_build/2`.
+- Feature-flag posture: none for baseline internal rollout.
+- Rollback posture: code-only rollback to prior dashboard callers; no schema/data rollback path required.
 
 Assigns surfaced (notional):
 - `snapshot_meta`
@@ -231,7 +246,7 @@ Dataset spec shape (notional):
 
 None.
 
-### 6.2 Query Performance
+### 6.2 Query Guardrails
 
 Snapshot layer performs no direct analytics queries.
 
@@ -247,6 +262,7 @@ Hot operations:
 - Snapshot bundle includes request token and scope identity to avoid cross-scope misuse.
 - No DB transaction boundaries are introduced.
 - Projection status and export policy ensure deterministic behavior under partial oracle readiness.
+- Capability-level projection readiness is independent; no global synchronization point is required for UI rendering.
 
 ## 8. Caching Strategy
 
@@ -255,14 +271,12 @@ Snapshot layer caching posture:
 - Does not implement cache keying/TTL/eviction policy itself.
 - May expose optional memoization within request scope only (ephemeral) for repeated projection derivation.
 
-## 9. Performance and Scalability Plan
+## 9. Scalability Considerations
 
-### 9.1 Budgets
+### 9.1 Deferred Performance Testing
 
-- Snapshot assembly p95 <= 700ms.
-- Projection derivation p95 <= 300ms.
-- CSV ZIP generation p95 <= 5s.
-- Projection status computation overhead p95 <= 50ms.
+- No performance testing is included in this feature.
+- Any benchmark, load, or latency-threshold validation is deferred to separate tickets.
 
 ### 9.2 Hotspots & Mitigations
 
@@ -285,7 +299,7 @@ Snapshot layer caching posture:
 
 ## 11. Observability
 
-Telemetry events (proposed):
+Telemetry events (implemented):
 - `[:oli, :dashboard, :snapshot, :assembly, :stop]`
 - `[:oli, :dashboard, :snapshot, :projection, :stop]`
 - `[:oli, :dashboard, :snapshot, :projection, :status]`
@@ -299,6 +313,20 @@ Metadata:
 - `status` (`ready`, `partial`, `failed`, `unavailable`)
 - `export_profile`
 - `reason_code` for failures
+
+AppSignal metric mapping (documented for `MER-5304`):
+- Snapshot readiness distribution:
+  - Source events: `[:oli, :dashboard, :snapshot, :projection, :status]`
+  - Dimensions: `capability_key`, `status`, `reason_code`
+  - Suggested metrics: `dashboard.snapshot.projection.status.count` (counter), `dashboard.snapshot.projection.readiness_ratio` (derived)
+- Export outcomes and failures:
+  - Source event: `[:oli, :dashboard, :snapshot, :export, :stop]`
+  - Dimensions: `export_profile`, `outcome`, `reason_code`, `scope_container_type`
+  - Suggested metrics: `dashboard.snapshot.export.stop.count` (counter), `dashboard.snapshot.export.duration_ms` (histogram), `dashboard.snapshot.export.failure.count` (counter)
+- Parity checks:
+  - Source event: `[:oli, :dashboard, :snapshot, :parity, :check]`
+  - Dimensions: `status` (`match`, `mismatch`, `not_checked`), `export_profile`
+  - Suggested metrics: `dashboard.snapshot.parity.check.count` (counter), `dashboard.snapshot.parity.mismatch.count` (counter)
 
 ## 12. Security & Privacy
 
@@ -324,12 +352,22 @@ Regression tests:
 - no direct query/oracle calls inside `CsvExport` adapters
 - versioned contract compatibility checks for projection consumers
 
+Performance test scope:
+- no load, benchmark, or latency-threshold tests are included in this feature
+
 ## 14. Backwards Compatibility
 
 - Additive internal architecture.
 - Existing consumers can migrate projection-by-projection to snapshot contracts.
 - Export path can be switched after parity gate passes.
 - No end-user API/schema break introduced.
+- No schema migrations or backfill jobs were introduced by this feature.
+
+Operational rollback checklist:
+1. Repoint dashboard/export callers to the prior pre-snapshot path.
+2. Disable new snapshot export/parity telemetry dashboards and alerts.
+3. Roll back application code only; no data/schema rollback is required.
+4. Verify post-rollback that no snapshot export requests are routed to `CsvExport.build_zip/2`.
 
 ## 15. Risks & Mitigations
 
@@ -352,6 +390,18 @@ Regression tests:
 - Reason: Prototype demonstrated that separating load orchestration from projection assembly improves incremental updates and reuse across controller paths.
 - Evidence: `lib/oli/instructor_dashboard/prototype/snapshot.ex`, `lib/oli/instructor_dashboard/prototype/tiles/progress/data.ex`, `lib/oli/instructor_dashboard/prototype/tiles/student_support/data.ex`
 - Impact: Clarifies `FR-001`/`FR-004`/`FR-011` boundaries and strengthens deterministic projection-status behavior.
+
+### 2026-02-24 - Explicit No-Barrier Incremental Rendering
+- Change: Added explicit design guarantees that ready capabilities are consumable immediately and that no all-projections-ready barrier is permitted for tile rendering.
+- Reason: Product requirement requires tiles to render independently as soon as their projection dependencies are satisfied (for example 4/5 projections ready while 1 remains loading).
+- Evidence: Updated boundary rules, incremental sequence flow, LiveView interaction notes, and consistency constraints in this FDD.
+- Impact: Prevents orchestration or projection implementations from introducing global readiness coupling that would block incremental UX.
+
+### 2026-02-24 - Finalized Phase 5 Parity and Observability Contract
+- Change: Finalized export/parity telemetry events and parity comparison metadata in manifests and consumer diagnostics.
+- Reason: Gate E requires parity verification and AppSignal-aligned observability before release handoff.
+- Evidence: `Oli.Dashboard.Snapshot.Telemetry` includes export/parity events, `CsvExport` emits parity comparison + telemetry, `DataSnapshot` exposes parity diagnostics.
+- Impact: Enables deterministic UI/CSV parity monitoring and operations dashboards without introducing PII exposure.
 
 ## 18. References
 

@@ -39,6 +39,8 @@ Always load before writing:
 6. Run targeted external research for Elixir/Phoenix/OTP patterns when needed; prefer primary sources and record citations in FDD section 17 as `Title | URL | Accessed YYYY-MM-DD`.
 7. Copy section blocks from `assets/templates/fdd_template.md` into `<feature_dir>/fdd.md`.
 8. Fill each block using `references/focus_areas.md` and `references/output_requirements.md`, including concrete module boundaries, contracts, rollout/rollback, observability, security, and testing.
+   - Do not design dedicated performance/load/benchmark tests.
+   - Address performance requirements via telemetry/AppSignal instrumentation, dashboards, and alert posture.
 9. Apply `references/fdd_checklist.md` and `references/definition_of_done.md` before finalizing.
 10. Run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check fdd` immediately after updating `fdd.md`.
 11. Hard gate: if validation fails, fix `fdd.md` and re-run until it passes before proceeding.

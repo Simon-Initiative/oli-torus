@@ -91,9 +91,8 @@ Use cases:
 ## 8. Non-Functional Requirements
 
 Performance:
-- NFR-PERF-001: Cache lookup p95 <= 5ms, p99 <= 10ms per key.
-- NFR-PERF-002: Multi-key required lookup p95 <= 20ms for typical required sets.
-- NFR-PERF-003: Miss coalescing overhead p95 <= 3ms.
+- No performance testing will be done in `MER-5303`.
+- Performance benchmark and latency-threshold validation are deferred to separate tickets.
 
 Reliability:
 - NFR-REL-001: No cross-user revisit payload leakage in automated tests.
@@ -145,6 +144,17 @@ Key shapes (from data design):
   1. Introduce cache API and instrumentation.
   2. Enable read-through in coordinator path.
   3. Tune TTL/capacity thresholds using observed metrics.
+- Operational configuration knobs:
+  - `INSTRUCTOR_DASHBOARD_INPROCESS_CACHE_TTL_MINUTES` (default `15`)
+  - `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_TTL_MINUTES` (default `5`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_SMALL_ENROLLMENT_THRESHOLD` (default `20`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_NORMAL_ENROLLMENT_THRESHOLD` (default `200`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_SMALL_MAX_CONTAINERS` (default `12`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_NORMAL_MAX_CONTAINERS` (default `24`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_LARGE_MAX_CONTAINERS` (default `36`)
+- Rollback posture:
+  - Code-only rollback (module/config revert and caller fallback to load path).
+  - No schema migration, no data backfill, and no persistence rollback required.
 
 ## 12. Analytics & Success Metrics
 
@@ -152,7 +162,7 @@ Key shapes (from data design):
 - Revisit hit/miss rate for eligible flows.
 - TTL expiry and eviction counts.
 - Miss coalescing rates (`coalesced`, `producer`, `waiter`).
-- Average and p95 container count held per session.
+- Average container count held per session.
 
 ## 13. Risks & Mitigations
 
@@ -191,6 +201,8 @@ Open questions:
   - revisit eligibility and no-cross-user leakage.
 - Concurrency tests:
   - coalesced miss producer/waiter behavior under contention.
+- Performance test scope:
+  - no load, benchmark, or latency-threshold tests are included in this feature.
 
 ## 17. Definition of Done
 
@@ -211,3 +223,9 @@ Prototype references:
 - Reason: Prototype confirms this boundary is effective and keeps coordinator/cache responsibilities clear.
 - Evidence: `lib/oli/instructor_dashboard/prototype/in_process_cache.ex`, `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
 - Impact: Clarifies FR-001/FR-006/FR-010 and AC-002/AC-008 expectations.
+
+### 2026-02-24 - Finalize Operational Knobs and Rollback Posture
+- Change: Added explicit production configuration knobs for TTL/tiered capacity and documented final rollback posture as code-only with fallback continuity.
+- Reason: Phase 5 requires operational readiness documentation for release and on-call tuning.
+- Evidence: `lib/oli/dashboard/cache/policy.ex`, `lib/oli/dashboard/cache.ex`, `test/oli/dashboard/live_data_coordinator/cache_read_through_test.exs`
+- Impact: Clarifies runtime tuning controls and confirms no schema/backfill coupling for rollout or rollback.

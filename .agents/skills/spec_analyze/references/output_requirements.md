@@ -28,7 +28,8 @@ Produce only the PRD body in markdown with these headings in this exact order:
   - Include exactly: `Requirements are found in requirements.yml`
   - Do not include `FR-###` or `AC-###` entries in `prd.md`; they belong in `requirements.yml`.
 - Non-Functional Requirements:
-  - Include concrete targets for performance, reliability, security/privacy, compliance, and observability.
+  - Include concrete targets for reliability, security/privacy, compliance, and observability.
+  - If performance expectations are required, express them as telemetry/AppSignal thresholds and alerts; do not require performance/load/benchmark tests.
 - Data Model & APIs:
   - Include schema and migration impacts, context boundaries, interface/contracts, and permission matrix.
 - Integrations & Platform:
@@ -39,6 +40,8 @@ Produce only the PRD body in markdown with these headings in this exact order:
   - When no feature flags are present, do not include canary/phased rollout notes or rollout runbook requirements.
 - QA Plan:
   - Include automated and manual validation strategy.
+  - Do not include performance/load/benchmark test requirements.
+  - Validate performance posture via telemetry/AppSignal instrumentation and reporting expectations.
   - Include explicit manual-testing focus areas for risky or hard-to-automate behavior.
   - Include an `Oli.Scenarios Recommendation` with one of: `Required`, `Suggested`, or `Not applicable`.
   - For the `Oli.Scenarios Recommendation`, state whether related subsystem areas already have YAML-driven `Oli.Scenarios` coverage and use that as a strong signal for whether additional scenario coverage is needed.
@@ -46,6 +49,9 @@ Produce only the PRD body in markdown with these headings in this exact order:
 ## Generation Rules
 
 - Be specific and testable; avoid vague statements.
+- Favor simplicity over verbosity for the entire PRD.
+- Use plain language so requirements and acceptance criteria are understandable by engineers, product, QA, and lay readers.
+- Prefer short, direct sentences; avoid dense jargon and unnecessary implementation detail in PRD narrative.
 - Infer plausible Torus-aligned details when missing, then capture them under assumptions.
 - Keep FR/AC source-of-truth in `requirements.yml` only; avoid duplicating requirement IDs/content in `prd.md`.
 - Do not leave unresolved placeholders (`TODO`, `TBD`, `FIXME`) in final content.

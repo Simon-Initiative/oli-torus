@@ -6,56 +6,158 @@ requirements:
   title: '| System SHALL enforce a configurable hard timeout for active scope builds
     and emit deterministic timeout fallback state/events that keep the dashboard responsive
     and eligible for next-request processing. | P0 |'
-  status: proposed
+  status: verified
   acceptance_criteria:
   - id: AC-001
     title: Given rapid scope cycling, when selections occur while one build is active,
       then only one active + one latest queued request is retained.
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - type: plan
+      ref: plan.md:28
+    - type: fdd
+      ref: fdd.md:315
+    - type: plan
+      ref: plan.md:31
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/request_scope_change_test.exs:26
+    - type: test
+      ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"returns deterministic
+        required and optional oracle keys"
   - id: AC-002
     title: Given stale completion for token `T_old`, when result arrives after token
       `T_new` is active, then no UI assigns/events are applied from `T_old`.
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - type: plan
+      ref: plan.md:29
+    - type: fdd
+      ref: fdd.md:316
+    - type: plan
+      ref: plan.md:32
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/stale_suppression_test.exs:54
+    - type: test
+      ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"returns deterministic
+        unknown consumer error"
   - id: AC-003
     title: Given cache lookup with partial hit, when request starts, then cached required
       payloads are applied immediately and only missing required oracles are loaded.
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - type: plan
+      ref: plan.md:30
+    - type: fdd
+      ref: fdd.md:317
+    - type: plan
+      ref: plan.md:33
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/cache_integration_test.exs:42
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/cache_integration_test.exs:83
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/cache_integration_test.exs:118
+    - type: test
+      ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"resolves exactly
+        one module for a known oracle key"
   - id: AC-004
     title: Given stale completion that passes cache identity checks, when it arrives,
       then cache is warmed for its original `(context, container, oracle)` key and
       UI remains unchanged.
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - type: plan
+      ref: plan.md:31
+    - type: fdd
+      ref: fdd.md:318
+    - type: plan
+      ref: plan.md:34
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/stale_suppression_test.exs:55
+    - type: test
+      ref: test/oli/dashboard/oracle_result_test.exs::"returns contract-compliant
+        success envelope with sanitized metadata"
   - id: AC-005
     title: Given boundary review, coordinator module code contains no cache policy
       implementation (TTL/LRU/key-building/revisit retention logic).
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - type: plan
+      ref: plan.md:32
+    - type: fdd
+      ref: fdd.md:319
+    - type: plan
+      ref: plan.md:35
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/boundary_test.exs:29
+    - type: test
+      ref: test/oli/instructor_dashboard/oracle_migration_test.exs::"covered modules
+        do not call ClickHouse analytics directly"
   - id: AC-006
     title: Given telemetry inspection, request queue transitions, stale discards,
       cache consult outcomes, and end-to-end scope transition timings are observable.
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - type: plan
+      ref: plan.md:33
+    - type: fdd
+      ref: fdd.md:320
+    - type: plan
+      ref: plan.md:36
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/observability_test.exs:47
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/observability_test.exs:101
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/observability_test.exs:158
+    - type: test
+      ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"changing one consumer
+        profile does not alter unrelated consumer dependencies"
   - id: AC-007
     title: Given coordinator unit test execution, mocked/stubbed cache/runtime dependencies
       are used where necessary to exercise token guards, queue transitions, and stale-result
       handling end-to-end at component boundaries.
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - type: plan
+      ref: plan.md:34
+    - type: fdd
+      ref: fdd.md:321
+    - type: plan
+      ref: plan.md:37
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/result_handling_test.exs:53
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/stale_suppression_test.exs:56
+    - type: test
+      ref: test/oli/instructor_dashboard/oracle_registry_test.exs::"non-instructor
+        registries can use shared contracts unchanged"
   - id: AC-008
     title: Given an active scope build exceeding configured timeout, coordinator emits
       deterministic timeout fallback state/events for that scope and remains available
       to process subsequent latest-intent requests.
-    status: proposed
+    status: verified
     verification_method: automated
-    proofs: []
+    proofs:
+    - type: plan
+      ref: plan.md:35
+    - type: fdd
+      ref: fdd.md:322
+    - type: plan
+      ref: plan.md:38
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/liveview_integration_test.exs:309
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/timeout_test.exs:39
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/timeout_test.exs:83
+    - type: test
+      ref: test/oli/dashboard/oracle_contract_test.exs::"planner stages prerequisites
+        before dependents"

@@ -91,9 +91,8 @@ Use cases:
 ## 8. Non-Functional Requirements
 
 Performance:
-- NFR-PERF-001: Scope-change transition handling at LiveView boundary p95 <= 100ms, p99 <= 150ms.
-- NFR-PERF-002: Coordinator overhead (excluding oracle query runtime) p95 <= 25ms per transition.
-- NFR-PERF-003: Cached required-oracle hydration dispatch p95 <= 50ms.
+- No performance testing will be done in `MER-5302`.
+- Performance benchmark and latency-threshold validation are deferred to separate tickets.
 
 Reliability:
 - NFR-REL-001: Zero stale-token UI mutations in automated race tests.
@@ -145,6 +144,12 @@ Boundary rule:
   1. Wire coordinator in shadow mode telemetry (non-authoritative) for baseline comparisons.
   2. Enable authoritative apply path for selected dashboard routes.
   3. Remove legacy direct async apply handlers once parity is verified.
+- Phase 4 integration constraint:
+  - LiveView proof is completed in test-only harness code.
+  - No production LiveView wiring is introduced during this feature phase sequence.
+- Rollback posture:
+  - Revert coordinator callsites to prior async handlers if rollout anomalies are detected.
+  - No schema rollback is required because no migrations/backfills are introduced.
 
 ## 12. Analytics & Success Metrics
 
@@ -152,7 +157,13 @@ Boundary rule:
 - `scope_request_stale_discarded` count and rate.
 - `scope_request_timeout` count and rate.
 - Cache consult outcome counts (`full_hit`, `partial_hit`, `miss`) at coordinator boundary.
-- Time-to-first-required-ready and time-to-required-complete latencies.
+- Operational timing telemetry may be emitted for observability, but it is not a performance-test gate in this feature.
+- Implemented telemetry namespace:
+  - `[:oli, :dashboard, :coordinator, :request, :started|:queued|:queue_replaced|:stale_discarded|:timeout|:completed]`
+  - `[:oli, :dashboard, :coordinator, :cache, :consult]`
+- Metadata hygiene:
+  - Includes only operational fields (`dashboard_product`, context/scope type, token/cache/completion outcomes, timing counters).
+  - Excludes `user_id`, `dashboard_context_id`, `container_id`, and payload/hit bodies.
 
 ## 13. Risks & Mitigations
 
@@ -172,6 +183,7 @@ Assumptions:
 Open questions:
 - Should cooperative cancellation of in-flight runtime tasks be introduced after baseline stale suppression is stable?
 - Should queue replacement optionally support a short debounce window in high-thrash scenarios?
+- Should the initial hard timeout default (`30_000ms`) be tuned after observing timeout/fallback rates in production-like load?
 
 ## 15. Timeline & Milestones (Draft)
 
@@ -193,6 +205,8 @@ Open questions:
   - active scope timeout emits deterministic fallback state and does not block subsequent requests.
 - LiveView tests:
   - end-to-end event ordering and assign stability.
+- Performance test scope:
+  - no load, benchmark, or latency-threshold tests are included in this feature.
 
 ## 17. Definition of Done
 
@@ -213,3 +227,9 @@ Prototype references:
 - Reason: Prototype confirmed that cache read-through + source attribution are key to incremental hydration behavior.
 - Evidence: `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
 - Impact: Refines interpretation of FR-004/FR-005/FR-008 and AC-003/AC-006.
+
+### 2026-02-24 - Finalize Coordinator Timeout and Observability Delivery
+- Change: Implemented timeout fallback completion semantics with queued-promotion continuity and finalized coordinator telemetry events/metadata normalization.
+- Reason: Close AC-006/AC-008 and provide operationally useful, PII-safe instrumentation for rollout monitoring.
+- Evidence: `lib/oli/dashboard/live_data_coordinator/{actions,state,telemetry}.ex`, `test/oli/dashboard/live_data_coordinator/{timeout_test,liveview_integration_test,observability_test}.exs`
+- Impact: Confirms no migration/backfill requirement and records queue-churn/timeout-threshold tuning as explicit follow-up work.

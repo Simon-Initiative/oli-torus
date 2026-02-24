@@ -12,11 +12,11 @@ Use expert judgment for depth in later sections, but cover all relevant technica
 ## Section Guidance
 
 1. Executive Summary
-- 8-10 plain-English sentences describing what is delivered, impacted users/systems, design rationale, top risks, and performance posture.
+- 8-10 plain-English sentences describing what is delivered, impacted users/systems, design rationale, top risks, and telemetry/AppSignal-based performance posture.
 
 2. Requirements & Assumptions
 - Functional requirements summary mapped to PRD FR IDs.
-- Non-functional targets (latency/reliability/security/operability).
+- Non-functional targets (latency/reliability/security/operability), with performance expressed as telemetry/AppSignal monitoring expectations.
 - Explicit assumptions with impact/risk.
 
 3. Torus Context Summary
@@ -53,9 +53,10 @@ Use expert judgment for depth in later sections, but cover all relevant technica
 8. Caching Strategy
 - Cache layers, keys/partitioning, TTL/invalidation, multi-node coherence.
 
-9. Performance and Scalability Plan
+9. Performance and Scalability Posture (Telemetry/AppSignal Only)
 9.1 Budgets
 - p50/p95/p99 targets, throughput/capacity limits, pool sizing, memory posture.
+- Specify how these are observed via telemetry/AppSignal; do not define benchmark/load/performance tests.
 9.2 Hotspots & Mitigations
 - N+1, large payloads, mailbox growth, lock contention, fanout risk, sync bottlenecks.
 
@@ -70,6 +71,7 @@ Use expert judgment for depth in later sections, but cover all relevant technica
 
 13. Testing Strategy
 - Unit/integration/system coverage, race/concurrency cases, migration/backfill verification.
+- Exclude dedicated performance/load/benchmark tests; use telemetry/AppSignal coverage and alerting checks for performance posture.
 
 14. Backwards Compatibility
 - Compatibility and migration posture for existing content, activities, and APIs.

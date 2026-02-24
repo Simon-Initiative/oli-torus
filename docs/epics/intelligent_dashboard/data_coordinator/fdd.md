@@ -22,8 +22,8 @@ Functional requirements (PRD mapping):
 - FR-012: configurable hard timeout with deterministic timeout fallback handling and continued request responsiveness.
 
 Non-functional targets:
-- LiveView scope-change transition handling p95 <= 100ms.
-- Coordinator transition overhead p95 <= 25ms.
+- No performance testing will be done in `MER-5302`.
+- Performance benchmark and latency-threshold validation are deferred to separate tickets.
 - Zero stale UI updates in regression suites.
 
 Explicit assumptions:
@@ -208,11 +208,11 @@ Required cache facade calls (coordinator dependency only):
 
 None.
 
-### 6.2 Query Performance
+### 6.2 Query Guardrails
 
 Coordinator performs no direct analytics queries.
 
-Performance impact is orchestration-only:
+Operational impact is orchestration-only:
 - transition logic,
 - cache API call dispatch,
 - runtime job scheduling,
@@ -240,13 +240,12 @@ Coordinator exclusions:
 - no revisit retention decisions
 - no miss coalescing algorithm ownership
 
-## 9. Performance and Scalability Plan
+## 9. Scalability Considerations
 
-### 9.1 Budgets
+### 9.1 Deferred Performance Testing
 
-- LiveView scope-change transition handling p95 <= 100ms, p99 <= 150ms.
-- Coordinator transition logic p95 <= 25ms.
-- Time-to-first-required-ready (warm path) p95 <= 150ms.
+- No performance testing is included in this feature.
+- Any benchmark, load, or latency-threshold validation is deferred to separate tickets.
 
 ### 9.2 Hotspots & Mitigations
 
@@ -270,7 +269,7 @@ Coordinator exclusions:
 
 ## 11. Observability
 
-Telemetry events (proposed):
+Telemetry events (implemented):
 - `[:oli, :dashboard, :coordinator, :request, :started]`
 - `[:oli, :dashboard, :coordinator, :request, :queued]`
 - `[:oli, :dashboard, :coordinator, :request, :queue_replaced]`
@@ -279,10 +278,12 @@ Telemetry events (proposed):
 - `[:oli, :dashboard, :coordinator, :cache, :consult]`
 - `[:oli, :dashboard, :coordinator, :request, :completed]`
 
-Key metadata:
+PII-safe metadata (implemented):
 - `dashboard_product`, `dashboard_context_type`, `scope_container_type`
 - `token_state` (`active`, `queued`, `stale`)
 - `cache_outcome` (`full_hit`, `partial_hit`, `miss`, `error`)
+- `completion_outcome` (`success`, `timeout`) and `duration_ms` for completion/timeout timing visibility
+- Explicitly excluded: `user_id`, `dashboard_context_id`, `container_id`, and payload/hit bodies
 
 ## 12. Security & Privacy
 
@@ -308,11 +309,26 @@ LiveView tests:
 - incremental hydration ordering
 - no stale assigns mutation across concurrent completions
 
+Performance test scope:
+- no load, benchmark, or latency-threshold tests are included in this feature
+
+### 13.1 Acceptance Criteria Traceability
+
+- AC-001: Queue-policy tests assert one active + one replaceable queued request during rapid scope cycling.
+- AC-002: Stale-token tests assert stale completions never emit UI apply actions.
+- AC-003: Cache consult tests assert partial-hit read-through applies hits and loads only misses.
+- AC-004: Completion tests assert stale-but-identity-valid completions warm cache without UI mutation.
+- AC-005: Boundary tests assert coordinator modules do not implement cache policy logic.
+- AC-006: Observability tests assert queue/stale/cache/timing telemetry events and metadata are emitted.
+- AC-007: Coordinator unit/integration boundary tests use mocked/stubbed cache/runtime participants where needed.
+- AC-008: Timeout tests assert deterministic timeout fallback and preserved next-request responsiveness.
+
 ## 14. Backwards Compatibility
 
 - Additive orchestration layer.
 - Existing async paths can be migrated incrementally to coordinator action model.
 - No schema/API break for end users.
+- No schema migration or backfill is required for coordinator rollout.
 
 ## 15. Risks & Mitigations
 
@@ -327,6 +343,7 @@ LiveView tests:
 
 - Should cooperative cancellation be enabled after baseline stability (to reduce wasted runtime work)?
 - Should optional short debounce be introduced only when queue replacement rate exceeds threshold?
+- Should timeout default be tuned from initial `30_000ms` once coordinator timeout metrics stabilize in production-like traffic?
 
 ## 17. Decision Log
 
@@ -335,6 +352,12 @@ LiveView tests:
 - Reason: Prototype validated that read-through orchestration and source tagging are central to incremental hydration and cache observability.
 - Evidence: `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`, `lib/oli/instructor_dashboard/prototype/snapshot.ex`
 - Impact: Tightens `FR-004`/`FR-005`/`FR-008` implementation details without changing queue/token acceptance outcomes.
+
+### 2026-02-24 - Finalize Timeout + Observability Contract
+- Change: Finalized timeout completion semantics (`request_timeout` with deterministic fallback and queued promotion) and implemented coordinator telemetry event set with PII-safe normalization.
+- Reason: Phase 4/5 delivery required deterministic timeout resilience plus AC-006 operational visibility without exposing sensitive identifiers or payloads.
+- Evidence: `lib/oli/dashboard/live_data_coordinator.ex`, `lib/oli/dashboard/live_data_coordinator/state.ex`, `lib/oli/dashboard/live_data_coordinator/telemetry.ex`, `test/oli/dashboard/live_data_coordinator/{timeout_test,liveview_integration_test,observability_test}.exs`
+- Impact: Closes AC-006/AC-008 behavior and leaves queue-churn debounce + timeout-threshold calibration as explicit post-baseline tuning follow-ups.
 
 ## 18. References
 

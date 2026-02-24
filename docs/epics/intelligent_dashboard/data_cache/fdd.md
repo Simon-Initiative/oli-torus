@@ -21,8 +21,8 @@ Functional requirements (PRD mapping):
 - FR-011: extensive unit testing with mocked/stubbed concrete dependencies for cache boundary interaction coverage.
 
 Non-functional targets:
-- Per-key lookup p95 <= 5ms.
-- Required-set lookup p95 <= 20ms.
+- No performance testing will be done in `MER-5303`.
+- Performance benchmark and latency-threshold validation are deferred to separate tickets.
 - No cross-user revisit leakage.
 
 Explicit assumptions:
@@ -203,11 +203,11 @@ Required metadata in `meta`:
 
 None.
 
-### 6.2 Query Performance
+### 6.2 Query Guardrails
 
 Cache layer does not execute analytics queries.
 
-Performance-sensitive operations:
+Operationally sensitive operations:
 - key construction/parsing,
 - lookup and TTL checks,
 - LRU recency updates,
@@ -231,9 +231,11 @@ Freshness and capacity:
 - `INSTRUCTOR_DASHBOARD_INPROCESS_CACHE_TTL_MINUTES` (default `15`).
 - `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_TTL_MINUTES` (default `5`).
 - Enrollment-tiered max containers with container-scoped LRU eviction:
-  - small threshold and max
-  - normal threshold and max
-  - large max
+  - `INSTRUCTOR_DASHBOARD_CACHE_SMALL_ENROLLMENT_THRESHOLD` (default `20`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_NORMAL_ENROLLMENT_THRESHOLD` (default `200`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_SMALL_MAX_CONTAINERS` (default `12`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_NORMAL_MAX_CONTAINERS` (default `24`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_LARGE_MAX_CONTAINERS` (default `36`)
 
 Lookup order:
 - Normal flow: `InProcess -> build/load`.
@@ -243,13 +245,12 @@ Prototype alignment notes:
 - Scope filters are part of cache identity in prototype and should remain part of canonical scope key semantics.
 - TTL/LRU/revisit/coalescing are production additions beyond prototype and should be implemented in cache layer without moving orchestration into coordinator.
 
-## 9. Performance and Scalability Plan
+## 9. Scalability Considerations
 
-### 9.1 Budgets
+### 9.1 Deferred Performance Testing
 
-- Single-key lookup p95 <= 5ms, p99 <= 10ms.
-- Required-set lookup p95 <= 20ms.
-- Eviction operation p95 <= 10ms per container eviction event.
+- No performance testing is included in this feature.
+- Any benchmark, load, or latency-threshold validation is deferred to separate tickets.
 
 ### 9.2 Hotspots & Mitigations
 
@@ -272,19 +273,18 @@ Prototype alignment notes:
 
 ## 11. Observability
 
-Telemetry events (proposed):
+Telemetry events:
 - `[:oli, :dashboard, :cache, :lookup, :stop]`
-- `[:oli, :dashboard, :cache, :revisit_lookup, :stop]`
 - `[:oli, :dashboard, :cache, :write, :stop]`
-- `[:oli, :dashboard, :cache, :eviction, :container]`
-- `[:oli, :dashboard, :cache, :ttl_expired]`
 - `[:oli, :dashboard, :cache, :coalescing, :claim]`
 
 Metadata:
-- `cache_tier` (`inprocess`, `revisit`)
+- `cache_tier` (`inprocess`, `revisit`, `mixed`, `unknown`)
 - `oracle_key`
 - `container_type`
-- `outcome` (`hit`, `miss`, `error`, `expired`, `coalesced_waiter`, `coalesced_producer`)
+- `outcome` (`hit`, `miss`, `partial`, `error`, `skipped`, `accepted`, `rejected`, `coalesced_waiter`, `coalesced_producer`, `coalescer_fallback`)
+- `miss_count`, `expired_count`, `oracle_key_count`
+- `write_mode` (`active`, `late`)
 
 ## 12. Security & Privacy
 
@@ -310,6 +310,21 @@ Integration tests:
 Concurrency tests:
 - miss coalescing producer/waiter correctness
 - fallback behavior when coalescer path fails
+
+Performance test scope:
+- no load, benchmark, or latency-threshold tests are included in this feature
+
+### 13.1 Acceptance Criteria Traceability
+
+- AC-001: In-process warm-hit tests assert repeated lookup returns cached payload within TTL.
+- AC-002: Required-lookup tests assert deterministic `hits` and `misses` output with only misses built.
+- AC-003: Eviction tests assert tier-cap breach removes least-recently-used container entries as a group.
+- AC-004: Write-path tests assert identity-guarded late writes for prior containers are accepted without direct UI coupling.
+- AC-005: Revisit-eligible flow tests assert explicit-container entries can hydrate from revisit cache before build.
+- AC-006: Revisit-ineligible flow tests assert revisit lookup is skipped for base-mount/no-explicit-container flows.
+- AC-007: Coalescing concurrency tests assert one producer and shared waiter result for identical missing keys.
+- AC-008: Boundary tests assert cache modules contain no request queue/token orchestration behavior.
+- AC-009: Unit/integration boundary tests use mocked/stubbed producers/waiters and payload sources where needed.
 
 ## 14. Backwards Compatibility
 
@@ -338,6 +353,12 @@ Concurrency tests:
 - Reason: Prototype proved read-through value with minimal cache APIs and clear controller/cache responsibility boundaries.
 - Evidence: `lib/oli/instructor_dashboard/prototype/in_process_cache.ex`, `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
 - Impact: Clarifies `FR-001`/`FR-006`/`FR-010` implementation boundaries and prevents policy leakage into coordinator.
+
+### 2026-02-24 - Finalize Phase 5 Integration/Operational Contracts
+- Change: Documented implemented cache configuration knobs, finalized telemetry events/metadata, and codified fallback/rollback posture with coordinator-facing read-through integration proof tests.
+- Reason: Phase 5 requires operational readiness evidence and explicit documentation of production knobs/telemetry contracts.
+- Evidence: `lib/oli/dashboard/cache.ex`, `lib/oli/dashboard/cache/policy.ex`, `lib/oli/dashboard/cache/telemetry.ex`, `test/oli/dashboard/live_data_coordinator/cache_read_through_test.exs`
+- Impact: Aligns docs to implementation, clarifies runtime tuning controls, and confirms code-only rollback with no schema/backfill dependency.
 
 ## 18. References
 

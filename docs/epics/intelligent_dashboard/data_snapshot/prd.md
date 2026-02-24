@@ -1,6 +1,6 @@
 # Data Snapshot PRD
 
-Last updated: 2026-02-17
+Last updated: 2026-02-24
 Feature: `data_snapshot`
 Epic: `MER-5198`
 Primary Jira: `MER-5304` Data Infra: Snapshot Assembler and CSV Reuse Contract
@@ -10,7 +10,7 @@ Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent
 
 This feature defines the canonical snapshot and projection layer for Intelligent Dashboard and makes it the single data contract consumed by tiles, AI context assembly, and CSV export.
 
-`data_snapshot` is a composition and transform layer. It assembles deterministic scoped snapshots from oracle outputs and derives consumer-oriented projections. It does not run direct analytics queries or implement queue/token/cache policy logic. Exact concrete instructor oracle implementations remain tile-driven; this layer consumes whatever oracle contracts/bindings are active for the scope request.
+`data_snapshot` is a composition and transform layer. It assembles deterministic scoped snapshots from oracle outputs and derives consumer-oriented projections. It does not run direct analytics queries or implement queue/token/cache policy logic. Exact concrete instructor oracle implementations remain tile-driven; this layer consumes whatever oracle contracts/bindings are active for the scope request. The architecture is explicitly incremental-first: projection readiness is per capability, and ready projections must be consumable immediately without waiting for unrelated projections.
 
 Prototype alignment:
 - Snapshot contract in prototype already includes `scope`, oracle payload/status maps, projection map, and projection-status map.
@@ -35,6 +35,7 @@ Goals:
 - Ensure CSV ZIP export is transform-only over snapshot/projections (no independent analytics query path).
 - Define deterministic partial/failure semantics for UI consumption and export generation.
 - Define clear module boundaries between orchestration (`DataSnapshot`), assembly (`Snapshot.Assembler`), and export adapters (`CsvExport`).
+- Preserve incremental rendering guarantees so a tile can render as soon as its required projection is `ready`, even if other projections remain loading/partial/failed.
 
 Non-Goals:
 - Defining oracle contracts/dependency resolution (`data_oracles`).
@@ -58,6 +59,7 @@ Use cases:
 
 - UI projection values and CSV values must match for the same scope and time window semantics.
 - Incremental hydration should expose deterministic per-capability readiness/error states.
+- Incremental hydration MUST NOT require all projections to be ready before rendering tiles that already have required projection data.
 - Export behavior must be deterministic when some projections are unavailable (defined partial/fail policy).
 - Users should receive explicit export failure reasons when required projection data is unavailable.
 
@@ -68,7 +70,7 @@ Use cases:
 | FR-001 | System SHALL assemble a canonical scoped snapshot from oracle result envelopes for a request token and scope context. | P0 |
 | FR-002 | System SHALL include snapshot metadata, oracle payload map, oracle status map, and derived projection blocks. | P0 |
 | FR-003 | System SHALL provide projection contracts for instructor capability consumers (`summary`, `progress`, `student_support`, `challenging_objectives`, `assessments`, `ai_context`). | P0 |
-| FR-004 | System SHALL expose deterministic projection readiness states (`ready`, `partial`, `failed`, `unavailable`) per capability. | P0 |
+| FR-004 | System SHALL expose deterministic projection readiness states (`ready`, `partial`, `failed`, `unavailable`) per capability, and SHALL NOT gate ready capabilities behind global all-capabilities readiness. | P0 |
 | FR-005 | System SHALL provide `Oli.InstructorDashboard.DataSnapshot` public API for scoped snapshot/projection retrieval. | P0 |
 | FR-006 | System SHALL generate CSV ZIP outputs from snapshot/projections via transform-only adapters. | P0 |
 | FR-007 | System SHALL NOT execute direct analytics/oracle queries from CSV export adapters when snapshot/projections are available. | P0 |
@@ -81,7 +83,7 @@ Use cases:
 
 ## 7. Acceptance Criteria
 
-- AC-001: Given oracle outputs for scope `S`, snapshot assembly produces deterministic metadata, oracle blocks, and projection blocks.
+- AC-001: Given oracle outputs for scope `S`, snapshot assembly produces deterministic metadata, oracle blocks, and projection blocks, and any capability marked `ready` is immediately consumable without waiting for unrelated capabilities.
 - AC-002: Given same scope `S`, UI projections and CSV datasets derived from those projections are semantically equivalent for core metrics.
 - AC-003: Given export request with valid snapshot/projection state, no independent analytics query path is executed.
 - AC-004: Given partial projection readiness, dataset inclusion/exclusion in export follows documented deterministic policy.
@@ -93,9 +95,8 @@ Use cases:
 ## 8. Non-Functional Requirements
 
 Performance:
-- NFR-PERF-001: Snapshot assembly p95 <= 700ms for typical scope.
-- NFR-PERF-002: Projection derivation p95 <= 300ms for typical scope.
-- NFR-PERF-003: CSV ZIP generation p95 <= 5s for typical dataset volume.
+- No performance testing will be done in `MER-5304`.
+- Performance benchmark and latency-threshold validation are deferred to separate tickets.
 
 Reliability:
 - NFR-REL-001: Projection readiness states are deterministic and test-covered.
@@ -105,7 +106,7 @@ Correctness:
 - NFR-COR-001: UI/CSV parity checks for core metrics have zero tolerated mismatches in automated parity suite.
 
 Operability:
-- NFR-OPS-001: Snapshot/projection/export latency and failure metrics are emitted with scope metadata.
+- NFR-OPS-001: Snapshot/projection/export outcome and failure metrics are emitted with scope metadata.
 
 ## 9. Data Model & APIs
 
@@ -121,6 +122,7 @@ Snapshot contract (notional):
 - `oracle_statuses` (ready/failed/stale metadata)
 - `projections` (capability map)
 - `projection_statuses` (ready/partial/failed/unavailable)
+- `projection_statuses` are consumed per capability (no global readiness barrier)
 
 Notional modules and public APIs:
 
@@ -159,9 +161,7 @@ Notional modules and public APIs:
 
 ## 12. Analytics & Success Metrics
 
-- Snapshot assembly latency (`p50/p95/p99`).
-- Projection derivation latency by capability.
-- Export generation latency and failure rates.
+- Snapshot/projection/export outcome and failure rates.
 - UI/CSV parity mismatch count (target `0` for gated metrics).
 - Projection readiness distribution (`ready`, `partial`, `failed`).
 
@@ -205,6 +205,8 @@ Open questions:
   - deterministic partial/failure export policy behavior.
 - Regression tests:
   - no direct query path in export adapter.
+- Performance test scope:
+  - no load, benchmark, or latency-threshold tests are included in this feature.
 
 ## 17. Definition of Done
 
@@ -227,3 +229,9 @@ Prototype references:
 - Reason: Prototype demonstrated this split is necessary for reusable, incremental data consumption across UI/export.
 - Evidence: `lib/oli/instructor_dashboard/prototype/snapshot.ex`, `lib/oli/instructor_dashboard/prototype/tiles/progress/data.ex`, `lib/oli/instructor_dashboard/prototype/tiles/student_support/data.ex`
 - Impact: Strengthens FR-001/FR-002/FR-004/FR-011 interpretation and AC-001/AC-006 review criteria.
+
+### 2026-02-24 - Explicit Incremental Rendering Guarantee
+- Change: Clarified that `data_snapshot` must allow per-capability readiness consumption with no global projection barrier.
+- Reason: Product requirement is to render tiles as soon as required projection data is ready, including partial-oracle scenarios (for example 4/5 projections ready while 1 remains loading).
+- Evidence: FR-004 language, UX requirements, and AC-001 wording updates in this PRD.
+- Impact: Prevents architecture choices that would block incremental tile rendering behind all-projection completion.

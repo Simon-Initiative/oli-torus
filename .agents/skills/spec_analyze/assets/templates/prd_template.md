@@ -1,5 +1,7 @@
 # <Feature Name> — PRD
 
+Writing style guidance: keep wording simple, clear, and concise for engineering, product, QA, and non-technical readers.
+
 ## 1. Overview
 Feature Name: <name>
 
@@ -46,7 +48,7 @@ Requirements are found in requirements.yml
 Requirements are found in requirements.yml
 
 ## 8. Non-Functional Requirements
-- Performance & Scale: <latency p50/p95, throughput/concurrency, LiveView responsiveness>
+- Performance & Scale: <telemetry/AppSignal thresholds for latency/error/concurrency; no dedicated performance/load/benchmark tests>
 - Reliability: <error budgets, timeout/retry expectations, graceful degradation>
 - Security & Privacy: <authn/authz, PII handling, abuse controls>
 - Compliance: <accessibility, retention, audit logging requirements>
@@ -96,6 +98,8 @@ Requirements are found in requirements.yml
 ## 16. QA Plan
 - Automated:
   - <unit/property/liveview/integration/migration tests as applicable>
+- Performance Validation:
+  - <telemetry/AppSignal dashboard and alert checks only; do not define performance/load/benchmark tests>
 - Manual:
   - <exploratory/regression/accessibility checks>
   - <focus areas for manual testing based on risky or hard-to-automate behavior>

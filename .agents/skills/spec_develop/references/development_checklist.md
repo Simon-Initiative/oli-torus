@@ -4,6 +4,8 @@
 - If phase selector input is provided, implement only that phase.
 - Implement only the scoped phase; defer extras.
 - Update tests in the same change set as behavior changes.
+- Do not add dedicated performance/load/benchmark tests.
+- Satisfy performance requirements with telemetry/AppSignal instrumentation and alert/reporting updates.
 - Run `mix compile` and fix all warnings.
 - Run targeted/full new and affected tests and ensure they pass.
 - At end of completed phase, run mandatory spec-review loop and fix findings.

@@ -38,7 +38,8 @@ Always load before drafting:
 5. Derive a bottom-up task list and group into numbered phases.
 6. Build dependency graph and topologically order phases; tie-break by highest uncertainty first, then maximal safe parallelism.
 7. Ensure tests are first-class tasks in each phase; include commands and pass criteria before advancement.
-8. Weave non-functional threads across phases: authz/security, migrations/backfills, caching/invalidation, observability, tenant isolation, feature flag posture when applicable, documentation updates, and performance verification.
+8. Weave non-functional threads across phases: authz/security, migrations/backfills, caching/invalidation, observability, tenant isolation, feature flag posture when applicable, documentation updates, and performance posture via telemetry/AppSignal.
+   - Do not add performance/load/benchmark test tasks to the plan.
 9. Review and remove ambiguity before finalizing.
 10. Copy section blocks from `assets/templates/plan_template.md` into `<feature_dir>/plan.md` and fill with concrete details.
 11. Enforce `references/plan_checklist.md` and `references/definition_of_done.md`.

@@ -32,5 +32,6 @@ Every phase must include:
 - Tasks must be small enough to be independently implemented and reviewed.
 - Testing is mandatory in every phase and must pass before advancement.
 - Non-functional work must be distributed across phases, not deferred to the end.
+- Performance items must be telemetry/AppSignal instrumentation/monitoring tasks; do not include performance/load/benchmark test tasks.
 - Unknowns must be captured as clarifications with default assumptions.
 - Use plain markdown and avoid unresolved placeholders (`TODO`, `TBD`, `FIXME`).

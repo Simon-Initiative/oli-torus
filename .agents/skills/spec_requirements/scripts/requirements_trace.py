@@ -714,6 +714,28 @@ def gather_test_annotations(repo_root: Path) -> Dict[str, List[Tuple[str, int, s
     return mapping
 
 
+def gather_known_ac_ids(repo_root: Path) -> Set[str]:
+    known: Set[str] = set()
+    docs_dir = repo_root / "docs"
+    if not docs_dir.exists():
+        return known
+
+    for req_file in docs_dir.rglob("requirements.yml"):
+        try:
+            payload = load_yaml(req_file)
+        except Exception:  # noqa: BLE001
+            continue
+
+        for fr in payload.get("requirements", []):
+            if not isinstance(fr, dict):
+                continue
+            for ac in fr.get("acceptance_criteria", []):
+                if isinstance(ac, dict) and isinstance(ac.get("id"), str):
+                    known.add(ac["id"])
+
+    return known
+
+
 def find_repo_root(start: Path) -> Path:
     current = start.resolve()
     for candidate in [current, *current.parents]:
@@ -744,7 +766,8 @@ def action_verify_implementation(feature_dir: Path) -> int:
             fr["status"] = expected_fr
             changed = True
 
-    unknown = sorted(set(annotations.keys()) - known_acs)
+    globally_known_acs = gather_known_ac_ids(repo_root) | known_acs
+    unknown = sorted(set(annotations.keys()) - globally_known_acs)
     for ac_id in unknown:
         errors.append(f"unknown AC annotation found in tests: {ac_id}")
 
@@ -859,7 +882,8 @@ def action_master_validate(feature_dir: Path, stage: str) -> int:
             changed = True
 
     annotations = gather_test_annotations(repo_root)
-    unknown = sorted(set(annotations.keys()) - ac_ids)
+    globally_known_acs = gather_known_ac_ids(repo_root) | ac_ids
+    unknown = sorted(set(annotations.keys()) - globally_known_acs)
     for ac_id in unknown:
         errors.append(f"unknown AC ID in test annotations: {ac_id}")
 
