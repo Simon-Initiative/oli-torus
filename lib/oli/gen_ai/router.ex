@@ -206,6 +206,10 @@ defmodule Oli.GenAI.Router do
     end
   end
 
+  defp attempt_backup(nil, _backup_open, _request_type, :primary_over_capacity) do
+    {:error, :over_capacity}
+  end
+
   defp attempt_backup(nil, _backup_open, _request_type, _reason) do
     {:error, :all_breakers_open}
   end
