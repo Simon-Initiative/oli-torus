@@ -148,6 +148,9 @@ defmodule Oli.Dashboard.Cache.InProcessStore do
       next_state = %{state | entries: entries, container_access: container_access}
 
       {:reply, {:ok, %{evicted_containers: evicted_containers}}, next_state}
+    else
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
     end
   end
 
@@ -179,6 +182,9 @@ defmodule Oli.Dashboard.Cache.InProcessStore do
       else
         {:reply, {:ok, %{evicted_containers: 0}}, state}
       end
+    else
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
     end
   end
 

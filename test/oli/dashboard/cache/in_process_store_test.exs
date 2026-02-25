@@ -101,6 +101,25 @@ defmodule Oli.Dashboard.Cache.InProcessStoreTest do
     end
   end
 
+  describe "error reply handling" do
+    test "returns error reply for invalid cache key write without crashing", %{store: store} do
+      assert {:error, {:invalid_cache_key, {:unsupported_key_shape, {:bad, :key}}}} =
+               InProcessStore.write_oracle(store, {:bad, :key}, %{value: 1}, container_cap: 5)
+
+      assert {:ok, _snapshot} = InProcessStore.snapshot(store)
+    end
+
+    test "returns error reply for invalid touch container input without crashing", %{store: store} do
+      assert {:error, {:invalid_context_id, 0}} =
+               InProcessStore.touch_container(store, 0, :container, 1, container_cap: 5)
+
+      assert {:error, {:invalid_container, :container, -1}} =
+               InProcessStore.touch_container(store, 500, :container, -1, container_cap: 5)
+
+      assert {:ok, _snapshot} = InProcessStore.snapshot(store)
+    end
+  end
+
   defp cache_key(oracle_key, container_id) do
     {:ok, key} =
       Key.inprocess(

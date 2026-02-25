@@ -8,7 +8,7 @@ Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent
 
 ## 1. Overview
 
-This feature defines the dashboard cache subsystem used by live orchestration to accelerate repeated scope requests and revisit flows. It provides deterministic keying, TTL freshness, enrollment-tiered capacity, container-level LRU eviction, late-write support, and per-oracle miss coalescing.
+This feature defines the dashboard cache subsystem used by live orchestration to accelerate repeated scope requests and revisit flows. It provides deterministic keying, TTL freshness, enrollment-tiered capacity, container-level LRU eviction, bounded node-wide revisit retention, late-write support, and per-oracle miss coalescing.
 
 `data_cache` is a storage and cache-policy layer. It is used by `data_coordinator` and synchronous snapshot read-through callers, but it does not implement queue/token request orchestration behavior.
 
@@ -18,7 +18,7 @@ Prototype alignment:
 
 ## 2. Background & Problem Statement
 
-Repeated scope changes and revisit navigation can trigger redundant oracle loads and unstable perceived latency if no cache exists. A simplistic cache can also introduce correctness risks (cross-user leakage, stale overuse, memory growth, inconsistent partial completeness behavior).
+Repeated scope changes and revisit navigation can trigger redundant oracle loads and unstable perceived latency if no cache exists. A simplistic cache can also introduce correctness risks (cross-user leakage, stale overuse, unbounded memory growth, inconsistent partial completeness behavior).
 
 The dashboard requires a cache subsystem that is:
 - oracle-granular,
@@ -32,6 +32,7 @@ Goals:
 - Implement in-process cache for session-local speedups.
 - Implement revisit cache for short-lived per-user return flows.
 - Enforce deterministic keying, TTL, and enrollment-tiered container capacity.
+- Keep revisit memory bounded for long-lived node process lifetime.
 - Support oracle-granular late writes and per-key miss coalescing.
 - Expose a stable public API for coordinator and snapshot read-through orchestration.
 
@@ -75,6 +76,7 @@ Use cases:
 | FR-009 | System SHALL expose cache public APIs consumed by coordinator; cache internals SHALL remain hidden from coordinator modules. | P0 |
 | FR-010 | System SHALL NOT implement request queueing, token generation, or stale-result UI suppression policy. | P0 |
 | FR-011 | System SHALL include extensive automated unit testing for cache key/policy/store behavior, and SHALL use mocked/stubbed dependencies (for example oracle payload producers and coalescing participants) where needed to validate end-to-end component interactions in tests. | P0 |
+| FR-012 | System SHALL bound revisit-cache memory with configurable max-entry retention and deterministic write-time pruning/eviction. | P0 |
 
 ## 7. Acceptance Criteria
 
@@ -87,6 +89,7 @@ Use cases:
 - AC-007: Given concurrent misses for identical oracle key, exactly one build producer is elected and other requests await/shared result.
 - AC-008: Given boundary inspection, cache modules contain no request queue/token orchestration logic.
 - AC-009: Given cache unit test execution, mocked/stubbed producers/waiters and oracle payload sources are used where necessary to exercise coalescing, late writes, and boundary interactions end-to-end at component boundaries.
+- AC-010: Given revisit cache writes over long-lived node lifetime, write path prunes expired entries periodically and enforces configurable max-entry retention with deterministic least-recently-used eviction.
 
 ## 8. Non-Functional Requirements
 
@@ -102,6 +105,7 @@ Reliability:
 Scalability:
 - NFR-SCALE-001: In-process memory is bounded by enrollment-tiered container limits.
 - NFR-SCALE-002: Eviction executes at container granularity, not per-oracle random churn.
+- NFR-SCALE-003: Revisit cache memory is bounded by configurable global entry cap under long-lived process operation.
 
 ## 9. Data Model & APIs
 
@@ -148,6 +152,8 @@ Key shapes (from data design):
 - Operational configuration knobs:
   - `INSTRUCTOR_DASHBOARD_INPROCESS_CACHE_TTL_MINUTES` (default `15`)
   - `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_TTL_MINUTES` (default `5`)
+  - `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_MAX_ENTRIES` (default `10000`)
+  - `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_WRITE_SWEEP_INTERVAL` (default `100`)
   - `INSTRUCTOR_DASHBOARD_CACHE_SMALL_ENROLLMENT_THRESHOLD` (default `20`)
   - `INSTRUCTOR_DASHBOARD_CACHE_NORMAL_ENROLLMENT_THRESHOLD` (default `200`)
   - `INSTRUCTOR_DASHBOARD_CACHE_SMALL_MAX_CONTAINERS` (default `12`)
@@ -161,7 +167,7 @@ Key shapes (from data design):
 
 - In-process hit/miss rate by container type and oracle key.
 - Revisit hit/miss rate for eligible flows.
-- TTL expiry and eviction counts.
+- TTL expiry and eviction/pruning counts (in-process and revisit tiers).
 - Miss coalescing rates (`coalesced`, `producer`, `waiter`).
 - Average container count held per session.
 
@@ -171,6 +177,8 @@ Key shapes (from data design):
   - Mitigation: TTL freshness controls + identity/version keys + explicit fallback load path.
 - Risk: memory pressure on large sections.
   - Mitigation: enrollment-tiered container caps + container-scoped LRU eviction.
+- Risk: long-lived revisit process retains one-time keys indefinitely.
+  - Mitigation: write-time expiry pruning + global revisit entry cap with deterministic LRU eviction.
 - Risk: hidden coupling with coordinator internals.
   - Mitigation: API-only integration and explicit non-goal forbidding queue/token logic in cache.
 
@@ -195,6 +203,7 @@ Open questions:
 
 - Unit tests:
   - key composition/parsing, TTL expiry, container eviction, identity guard behavior.
+  - revisit write-time pruning and bounded-entry eviction behavior.
   - mocked/stubbed oracle payload producers and coalescing participants where needed to exercise end-to-end cache component interactions.
 - Integration tests:
   - read-through lookup order and partial-hit behavior.
@@ -207,8 +216,8 @@ Open questions:
 
 ## 17. Definition of Done
 
-- FR-001 through FR-011 implemented or explicitly deferred with rationale.
-- AC-001 through AC-009 passing.
+- FR-001 through FR-012 implemented or explicitly deferred with rationale.
+- AC-001 through AC-010 passing.
 - Metrics for hits/misses/evictions/ttl/coalescing available.
 - Clear one-way boundary present: coordinator uses cache API; cache does not implement coordinator orchestration policy.
 
@@ -242,3 +251,9 @@ Prototype references:
 - Reason: Snapshot simplification removed coordinator action-replay parsing for the default snapshot build mode while keeping cache facade contracts unchanged.
 - Evidence: `lib/oli/instructor_dashboard/data_snapshot.ex`, `lib/oli/dashboard/cache.ex`
 - Impact: Preserves cache/coordinator boundary guarantees and avoids coordinator-only coupling assumptions in rollout guidance.
+
+### 2026-02-26 - Bound Long-Lived Revisit Cache Memory
+- Change: Added revisit write-time expiry pruning and configurable global max-entry retention with deterministic LRU eviction.
+- Reason: Revisit cache is now app-supervised and long-lived at node scope; lookup-only expiry could allow one-time keys to accumulate indefinitely.
+- Evidence: `lib/oli/dashboard/revisit_cache.ex`, `lib/oli/dashboard/cache/policy.ex`, `test/oli/dashboard/cache/revisit_cache_test.exs`
+- Impact: Prevents unbounded node-level memory growth while preserving revisit eligibility, isolation, and fallback behavior.

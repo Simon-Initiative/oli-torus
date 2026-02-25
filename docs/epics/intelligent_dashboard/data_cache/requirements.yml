@@ -146,3 +146,19 @@ requirements:
         required behavior callbacks"
     - type: fdd
       ref: fdd.md:335
+  - id: AC-010
+    title: Given long-lived revisit cache process operation, write path periodically
+      prunes expired entries and enforces deterministic global max-entry eviction.
+    status: verified
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:35
+    - type: fdd
+      ref: fdd.md:336
+    - type: test
+      ref: test/oli/dashboard/cache/revisit_cache_test.exs::"prunes expired entries
+        during write sweep even when old keys are never looked up"
+    - type: test
+      ref: test/oli/dashboard/cache/revisit_cache_test.exs::"enforces max entries
+        with LRU eviction using last access recency"

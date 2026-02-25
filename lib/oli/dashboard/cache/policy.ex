@@ -5,6 +5,8 @@ defmodule Oli.Dashboard.Cache.Policy do
 
   @default_inprocess_ttl_minutes 15
   @default_revisit_ttl_minutes 5
+  @default_revisit_max_entries 10_000
+  @default_revisit_write_sweep_interval 100
   @default_small_enrollment_threshold 20
   @default_normal_enrollment_threshold 200
   @default_small_max_containers 12
@@ -13,6 +15,8 @@ defmodule Oli.Dashboard.Cache.Policy do
 
   @env_inprocess_ttl "INSTRUCTOR_DASHBOARD_INPROCESS_CACHE_TTL_MINUTES"
   @env_revisit_ttl "INSTRUCTOR_DASHBOARD_REVISIT_CACHE_TTL_MINUTES"
+  @env_revisit_max_entries "INSTRUCTOR_DASHBOARD_REVISIT_CACHE_MAX_ENTRIES"
+  @env_revisit_write_sweep_interval "INSTRUCTOR_DASHBOARD_REVISIT_CACHE_WRITE_SWEEP_INTERVAL"
   @env_small_enrollment_threshold "INSTRUCTOR_DASHBOARD_CACHE_SMALL_ENROLLMENT_THRESHOLD"
   @env_normal_enrollment_threshold "INSTRUCTOR_DASHBOARD_CACHE_NORMAL_ENROLLMENT_THRESHOLD"
   @env_small_max_containers "INSTRUCTOR_DASHBOARD_CACHE_SMALL_MAX_CONTAINERS"
@@ -26,6 +30,8 @@ defmodule Oli.Dashboard.Cache.Policy do
   @type snapshot :: %{
           inprocess_ttl_minutes: pos_integer(),
           revisit_ttl_minutes: pos_integer(),
+          revisit_max_entries: pos_integer(),
+          revisit_write_sweep_interval: pos_integer(),
           small_enrollment_threshold: pos_integer(),
           normal_enrollment_threshold: pos_integer(),
           small_max_containers: pos_integer(),
@@ -59,6 +65,26 @@ defmodule Oli.Dashboard.Cache.Policy do
   @spec revisit_ttl_ms() :: pos_integer()
   def revisit_ttl_ms do
     :timer.minutes(revisit_ttl_minutes())
+  end
+
+  @doc "Returns revisit cache max entries bound."
+  @spec revisit_max_entries() :: pos_integer()
+  def revisit_max_entries do
+    read_positive_integer(
+      :revisit_max_entries,
+      @env_revisit_max_entries,
+      @default_revisit_max_entries
+    )
+  end
+
+  @doc "Returns revisit cache write sweep interval (writes between full expiry sweeps)."
+  @spec revisit_write_sweep_interval() :: pos_integer()
+  def revisit_write_sweep_interval do
+    read_positive_integer(
+      :revisit_write_sweep_interval,
+      @env_revisit_write_sweep_interval,
+      @default_revisit_write_sweep_interval
+    )
   end
 
   @doc "Returns enrollment tier for a section enrollment count."
@@ -114,6 +140,8 @@ defmodule Oli.Dashboard.Cache.Policy do
     %{
       inprocess_ttl_minutes: inprocess_ttl_minutes(),
       revisit_ttl_minutes: revisit_ttl_minutes(),
+      revisit_max_entries: revisit_max_entries(),
+      revisit_write_sweep_interval: revisit_write_sweep_interval(),
       small_enrollment_threshold: small_enrollment_threshold,
       normal_enrollment_threshold: normal_enrollment_threshold,
       small_max_containers:

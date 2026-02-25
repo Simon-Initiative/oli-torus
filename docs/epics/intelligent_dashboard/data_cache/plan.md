@@ -12,6 +12,7 @@ Deliver `MER-5303` by implementing the reusable dashboard cache subsystem in `Ol
 - Keep strict one-way boundaries: cache provides storage/policy APIs; coordinator owns request queue/token logic.
 - Enforce tenant/user isolation in revisit cache keys and tests (no cross-user payload leakage).
 - Keep memory bounded with enrollment-tiered container caps and container-level eviction behavior.
+- Keep long-lived revisit process memory bounded with write-time pruning and global max-entry eviction.
 - Emit PII-safe telemetry for lookup/write/eviction/TTL/coalescing outcomes.
 - No relational schema migration or backfill is introduced in this feature.
 - No dedicated performance benchmark or latency-threshold testing is included in `MER-5303`; performance validation is deferred to separate tickets.
@@ -35,6 +36,7 @@ Deliver `MER-5303` by implementing the reusable dashboard cache subsystem in `Ol
 - AC-007: concurrent identical misses coalesce to one producer path.
 - AC-008: cache modules contain no request queue/token orchestration logic.
 - AC-009: test suite uses mocked/stubbed participants where needed for boundary interaction coverage.
+- AC-010: revisit write path prunes expired entries periodically and enforces deterministic global max-entry eviction.
 
 ## Phase Gate Summary
 - Gate A (after Phase 1): cache contracts and key/policy primitives are deterministic and boundary-safe.
@@ -97,15 +99,18 @@ Deliver `MER-5303` by implementing the reusable dashboard cache subsystem in `Ol
   - [ ] Implement `Oli.Dashboard.RevisitCache` storage and lookup APIs using canonical revisit keys with `user_id`.
   - [ ] Enforce strict revisit eligibility gates for explicit-container entry flows only (AC-005, AC-006).
   - [ ] Apply revisit TTL policy and error-to-fallback behavior (degrade to miss).
+  - [ ] Add revisit write-time expiry pruning and configurable global max-entry LRU eviction (AC-010).
   - [ ] Ensure revisit writes/reads preserve user/context/container identity guards.
   - [ ] Emit revisit lookup telemetry outcomes without payload content.
 - Testing Tasks:
   - [ ] Add unit tests for revisit eligibility/ineligibility and TTL expiry semantics.
+  - [ ] Add unit tests for revisit write-time pruning and deterministic cap/LRU eviction semantics.
   - [ ] Add isolation tests proving no cross-user leakage for same context/container/oracle keys.
   - [ ] Command(s): `mix test test/oli/dashboard/cache/revisit_cache_test.exs test/oli/dashboard/cache/revisit_isolation_test.exs`
   - [ ] Pass criteria: AC-005 and AC-006 pass, and reliability guardrails for user isolation are covered.
 - Definition of Done:
   - Revisit tier is available with strict eligibility and user isolation.
+  - Revisit write path is bounded under long-lived process operation.
   - Revisit failures degrade safely to cache-miss behavior.
   - Telemetry captures revisit outcomes with privacy-safe metadata.
 - Gate:

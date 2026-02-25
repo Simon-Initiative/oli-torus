@@ -30,6 +30,9 @@ defmodule Oli.Dashboard.Cache.Telemetry do
           required(:container_type) => :course | :container | :unknown,
           optional(:oracle_key) => atom() | String.t(),
           optional(:write_mode) => :active | :late | :unknown,
+          optional(:pruned_expired_count) => non_neg_integer(),
+          optional(:evicted_count) => non_neg_integer(),
+          optional(:entry_count) => non_neg_integer(),
           optional(:error_type) => String.t()
         }
 
@@ -70,7 +73,14 @@ defmodule Oli.Dashboard.Cache.Telemetry do
   def write_metadata_schema do
     %{
       required: [:cache_tier, :outcome, :container_type],
-      optional: [:oracle_key, :write_mode, :error_type],
+      optional: [
+        :oracle_key,
+        :write_mode,
+        :pruned_expired_count,
+        :evicted_count,
+        :entry_count,
+        :error_type
+      ],
       forbidden_pii: [:user_id, :dashboard_context_id, :container_id, :payload]
     }
   end
@@ -147,6 +157,10 @@ defmodule Oli.Dashboard.Cache.Telemetry do
       container_type: normalize_container_type(Map.get(normalized, :container_type)),
       oracle_key: normalize_oracle_key(Map.get(normalized, :oracle_key)),
       write_mode: normalize_write_mode(Map.get(normalized, :write_mode)),
+      pruned_expired_count:
+        normalize_non_negative_integer(Map.get(normalized, :pruned_expired_count)),
+      evicted_count: normalize_non_negative_integer(Map.get(normalized, :evicted_count)),
+      entry_count: normalize_non_negative_integer(Map.get(normalized, :entry_count)),
       error_type: normalize_error_type(Map.get(normalized, :error_type))
     }
     |> Enum.reject(fn {_k, v} -> is_nil(v) end)

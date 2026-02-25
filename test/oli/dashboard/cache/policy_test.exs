@@ -24,18 +24,24 @@ defmodule Oli.Dashboard.Cache.PolicyTest do
       assert Policy.revisit_ttl_minutes() == 5
       assert Policy.inprocess_ttl_ms() == :timer.minutes(15)
       assert Policy.revisit_ttl_ms() == :timer.minutes(5)
+      assert Policy.revisit_max_entries() == 10_000
+      assert Policy.revisit_write_sweep_interval() == 100
     end
 
     test "honors application config overrides" do
       Application.put_env(:oli, Policy, %{
         inprocess_ttl_minutes: 30,
-        revisit_ttl_minutes: 10
+        revisit_ttl_minutes: 10,
+        revisit_max_entries: 2_500,
+        revisit_write_sweep_interval: 25
       })
 
       assert Policy.inprocess_ttl_minutes() == 30
       assert Policy.revisit_ttl_minutes() == 10
       assert Policy.inprocess_ttl_ms() == :timer.minutes(30)
       assert Policy.revisit_ttl_ms() == :timer.minutes(10)
+      assert Policy.revisit_max_entries() == 2_500
+      assert Policy.revisit_write_sweep_interval() == 25
     end
   end
 

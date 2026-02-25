@@ -57,6 +57,7 @@ defmodule Oli.Dashboard.Cache.FacadeIntegrationTest do
 
       build_fun = fn ->
         Agent.update(counter, &(&1 + 1))
+        Process.sleep(25)
         {:error, :oracle_failure}
       end
 

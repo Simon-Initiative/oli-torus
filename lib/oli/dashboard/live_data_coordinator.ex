@@ -134,33 +134,52 @@ defmodule Oli.Dashboard.LiveDataCoordinator do
   end
 
   defp process_activation_actions(state, transition_actions, opts) do
-    do_process_activation_actions(state, transition_actions, transition_actions, opts)
+    pending_queue = :queue.from_list(transition_actions)
+
+    {final_state, generated_actions_reversed} =
+      do_process_activation_actions(state, pending_queue, [], opts)
+
+    {final_state, transition_actions ++ Enum.reverse(generated_actions_reversed)}
   end
 
-  defp do_process_activation_actions(state, actions_acc, [], _opts), do: {state, actions_acc}
+  defp do_process_activation_actions(state, pending_queue, generated_actions_reversed, opts) do
+    case :queue.out(pending_queue) do
+      {:empty, _queue} ->
+        {state, generated_actions_reversed}
 
-  defp do_process_activation_actions(state, actions_acc, [action | rest], opts) do
-    case activation_request(action) do
-      {:ok, request_token, context, scope, dependency_profile} ->
-        required_oracles = Map.get(dependency_profile, :required, [])
+      {{:value, action}, rest_queue} ->
+        case activation_request(action) do
+          {:ok, request_token, context, scope, dependency_profile} ->
+            required_oracles = Map.get(dependency_profile, :required, [])
 
-        {lookup_actions, misses} =
-          consult_cache_for_required(request_token, context, scope, required_oracles, opts)
+            {lookup_actions, misses} =
+              consult_cache_for_required(request_token, context, scope, required_oracles, opts)
 
-        {state_after_register, register_actions} =
-          register_required_misses(state, request_token, misses)
+            {state_after_register, register_actions} =
+              register_required_misses(state, request_token, misses)
 
-        new_actions = lookup_actions ++ register_actions
+            new_actions = lookup_actions ++ register_actions
 
-        do_process_activation_actions(
-          state_after_register,
-          actions_acc ++ new_actions,
-          rest ++ new_actions,
-          opts
-        )
+            updated_generated_actions_reversed =
+              Enum.reduce(new_actions, generated_actions_reversed, fn new_action, acc ->
+                [new_action | acc]
+              end)
 
-      :ignore ->
-        do_process_activation_actions(state, actions_acc, rest, opts)
+            updated_pending_queue =
+              Enum.reduce(new_actions, rest_queue, fn new_action, queue_acc ->
+                :queue.in(new_action, queue_acc)
+              end)
+
+            do_process_activation_actions(
+              state_after_register,
+              updated_pending_queue,
+              updated_generated_actions_reversed,
+              opts
+            )
+
+          :ignore ->
+            do_process_activation_actions(state, rest_queue, generated_actions_reversed, opts)
+        end
     end
   end
 

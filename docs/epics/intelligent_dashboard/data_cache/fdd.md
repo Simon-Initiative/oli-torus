@@ -7,7 +7,7 @@ Primary Jira: `MER-5303`
 
 ## 1. Executive Summary
 
-This feature implements the storage and caching policy layer for Intelligent Dashboard oracle payloads. It provides two cache tiers: in-process session cache for rapid scope interaction and node-wide revisit cache for short-lived return flows. The design uses deterministic oracle-level keys that include context, container, oracle identity, and version metadata. It enforces TTL freshness and enrollment-tiered container LRU capacity bounds to keep memory predictable. It supports partial container completeness so callers can hydrate cached required payloads while loading only missing dependencies. It supports late oracle writes so previous container payloads can become complete even after user navigation moves to another container. It provides miss coalescing for identical keys to reduce duplicate build work under concurrent demand. The cache layer exposes a stable API consumed by coordinator and synchronous snapshot read-through orchestration. It explicitly does not implement queue/token stale suppression policy, which remains coordinator-owned where applicable.
+This feature implements the storage and caching policy layer for Intelligent Dashboard oracle payloads. It provides two cache tiers: in-process session cache for rapid scope interaction and node-wide revisit cache for short-lived return flows. The design uses deterministic oracle-level keys that include context, container, oracle identity, and version metadata. It enforces TTL freshness and enrollment-tiered container LRU capacity bounds to keep memory predictable, and adds bounded revisit retention through write-time pruning and global entry-cap eviction for long-lived node processes. It supports partial container completeness so callers can hydrate cached required payloads while loading only missing dependencies. It supports late oracle writes so previous container payloads can become complete even after user navigation moves to another container. It provides miss coalescing for identical keys to reduce duplicate build work under concurrent demand. The cache layer exposes a stable API consumed by coordinator and synchronous snapshot read-through orchestration. It explicitly does not implement queue/token stale suppression policy, which remains coordinator-owned where applicable.
 
 ## 2. Requirements & Assumptions
 
@@ -19,6 +19,7 @@ Functional requirements (PRD mapping):
 - FR-008: strict revisit eligibility on explicit-entry flows for top-level course scope and explicit container scope.
 - FR-009, FR-010: clear boundary where cache is used by coordinator/snapshot callers but does not own queue/token policy.
 - FR-011: extensive unit testing with mocked/stubbed concrete dependencies for cache boundary interaction coverage.
+- FR-012: bounded revisit retention via configurable max entries plus write-time pruning/eviction.
 
 Non-functional targets:
 - No performance testing will be done in `MER-5303`.
@@ -63,6 +64,7 @@ Core components:
   - Tracks container recency for LRU.
 - `Oli.Dashboard.RevisitCache`
   - Node-wide per-user short-lived store for eligible return flows.
+  - Applies periodic write-time expiry pruning and global entry-cap LRU eviction.
 - `Oli.Dashboard.Cache.MissCoalescer`
   - Producer/waiter coordination for identical missing keys.
 - `Oli.Dashboard.Cache.Policy`
@@ -230,6 +232,8 @@ Key strategy:
 Freshness and capacity:
 - `INSTRUCTOR_DASHBOARD_INPROCESS_CACHE_TTL_MINUTES` (default `15`).
 - `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_TTL_MINUTES` (default `5`).
+- `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_MAX_ENTRIES` (default `10000`).
+- `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_WRITE_SWEEP_INTERVAL` (default `100` writes).
 - Enrollment-tiered max containers with container-scoped LRU eviction:
   - `INSTRUCTOR_DASHBOARD_CACHE_SMALL_ENROLLMENT_THRESHOLD` (default `20`)
   - `INSTRUCTOR_DASHBOARD_CACHE_NORMAL_ENROLLMENT_THRESHOLD` (default `200`)
@@ -260,6 +264,8 @@ Prototype alignment notes:
   - Mitigation: miss coalescing producer/waiter model.
 - Hotspot: revisit overuse causing stale perception.
   - Mitigation: short revisit TTL + explicit-entry eligibility rules for course/container scope.
+- Hotspot: long-lived revisit process memory growth from one-time keys.
+  - Mitigation: periodic write-time pruning + global revisit entry-cap LRU eviction.
 
 ## 18. Decision Log
 
@@ -275,6 +281,7 @@ Prototype alignment notes:
 |---|---|---|
 | In-process cache unavailable | facade error | return miss/fallback signal to caller |
 | Revisit cache unavailable | revisit read error | continue with in-process + load path |
+| Revisit cache cap exceeded | write-time cap check | evict least-recently-used revisit entries deterministically |
 | TTL expired entry | lookup expiry check | treat as miss and rebuild |
 | Identity mismatch on write | guard validation failure | reject write and emit telemetry |
 | Coalescing failure | claim/publish error | degrade to non-coalesced build path with telemetry |
@@ -292,6 +299,7 @@ Metadata:
 - `container_type`
 - `outcome` (`hit`, `miss`, `partial`, `error`, `skipped`, `accepted`, `rejected`, `coalesced_waiter`, `coalesced_producer`, `coalescer_fallback`)
 - `miss_count`, `expired_count`, `oracle_key_count`
+- `pruned_expired_count`, `evicted_count`, `entry_count` (revisit write behavior)
 - `write_mode` (`active`, `late`)
 
 ## 12. Security & Privacy
@@ -308,6 +316,7 @@ Unit tests:
 - TTL behavior and expiry handling
 - tier capacity computation and LRU eviction correctness
 - revisit eligibility checks
+- revisit write-time pruning and global cap eviction behavior
 - mocked/stubbed oracle payload producers/coalescing participants where needed to exercise end-to-end cache component interactions at boundaries
 
 Integration tests:
@@ -333,6 +342,7 @@ Performance test scope:
 - AC-007: Coalescing concurrency tests assert one producer and shared waiter result for identical missing keys.
 - AC-008: Boundary tests assert cache modules contain no request queue/token orchestration behavior.
 - AC-009: Unit/integration boundary tests use mocked/stubbed producers/waiters and payload sources where needed.
+- AC-010: Revisit write-path tests assert periodic expiry pruning and deterministic global-cap LRU eviction.
 
 ## 14. Backwards Compatibility
 
@@ -373,6 +383,12 @@ Performance test scope:
 - Reason: Snapshot implementation now performs direct read-through orchestration for default build mode while preserving coordinator ownership of queue/token semantics in coordinator-managed paths.
 - Evidence: `lib/oli/instructor_dashboard/data_snapshot.ex`, `lib/oli/dashboard/cache.ex`, `test/oli/instructor_dashboard/data_snapshot/data_snapshot_test.exs`
 - Impact: Keeps cache boundary and failure-mode responsibilities stable while reducing coupling assumptions to coordinator internals.
+
+### 2026-02-26 - Add Bounded Revisit Retention for Long-Lived Node Process
+- Change: Added revisit write-time expiry pruning cadence and configurable global max-entry LRU eviction.
+- Reason: Revisit cache is app-supervised and long-lived; lookup-only expiry left a memory-growth path for never-looked-up keys.
+- Evidence: `lib/oli/dashboard/revisit_cache.ex`, `lib/oli/dashboard/cache/policy.ex`, `test/oli/dashboard/cache/revisit_cache_test.exs`
+- Impact: Preserves revisit UX and isolation while bounding node memory usage.
 
 ## 18. References
 
