@@ -62,7 +62,13 @@ defmodule Oli.InstructorDashboard.DataSnapshot.DatasetRegistry do
     ]
   end
 
-  defp spec(dataset_id, filename, required_projections, optional_projections, failure_policy \\ :fail_closed) do
+  defp spec(
+         dataset_id,
+         filename,
+         required_projections,
+         optional_projections,
+         failure_policy \\ :fail_closed
+       ) do
     %{
       dataset_id: dataset_id,
       filename: filename,

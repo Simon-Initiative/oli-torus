@@ -629,5 +629,4 @@ defmodule Oli.InstructorDashboard.DataSnapshot do
   defp maybe_put_opt(list, _key, nil), do: list
   defp maybe_put_opt(list, _key, []), do: list
   defp maybe_put_opt(list, key, value), do: Keyword.put(list, key, value)
-
 end
