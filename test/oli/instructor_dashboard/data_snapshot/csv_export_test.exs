@@ -1,11 +1,9 @@
 defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportTest do
   use ExUnit.Case, async: true
 
-  alias Oli.Dashboard.Snapshot.Parity
   alias Oli.InstructorDashboard.DataSnapshot.CsvExport
 
   @export_stop_event [:oli, :dashboard, :snapshot, :export, :stop]
-  @parity_check_event [:oli, :dashboard, :snapshot, :parity, :check]
 
   defmodule DeterministicSerializer do
     def serialize(snapshot_bundle, dataset_spec) do
@@ -43,8 +41,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportTest do
       assert manifest.snapshot_version == 1
       assert manifest.projection_version == 1
       assert manifest.export_profile == :default
-      assert manifest.parity.fingerprint == Parity.fingerprint(snapshot_bundle, manifest.datasets)
-      assert manifest.parity.comparison.status == :not_checked
       assert Enum.map(manifest.datasets, & &1.dataset_id) == [:summary, :progress]
       assert Enum.all?(manifest.datasets, &(&1.status == :included))
 
@@ -177,7 +173,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportTest do
     end
 
     # @ac "AC-002"
-    test "attaches parity comparison metadata and emits parity/export telemetry" do
+    test "emits export telemetry with deterministic metadata" do
       snapshot_bundle =
         snapshot_bundle_fixture(
           %{summary: %{students: 17}},
@@ -188,30 +184,16 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportTest do
         dataset_spec(:summary, [:summary], :fail_closed, DeterministicSerializer)
       ]
 
-      expected_fingerprint = Parity.fingerprint(snapshot_bundle, [%{dataset_id: :summary}])
-      handler = attach_telemetry([@export_stop_event, @parity_check_event])
+      handler = attach_telemetry([@export_stop_event])
 
-      assert {:ok, _zip_binary, manifest} =
+      assert {:ok, _zip_binary, _manifest} =
                CsvExport.build_zip(snapshot_bundle, %{
                  export_profile: :instructor_dashboard,
-                 expected_parity_fingerprint: expected_fingerprint,
                  dataset_specs: dataset_specs
                })
 
-      assert manifest.parity.comparison.status == :match
-      assert manifest.parity.comparison.expected_fingerprint == expected_fingerprint
-      assert manifest.parity.comparison.actual_fingerprint == manifest.parity.fingerprint
-
-      assert_receive {:telemetry_event, @parity_check_event, %{count: 1}, parity_metadata}
-      assert parity_metadata.status == :match
-      assert parity_metadata.export_profile == :instructor_dashboard
-      assert parity_metadata.expected_present == true
-      assert parity_metadata.dataset_count == 1
-      assert parity_metadata.mismatch_count == 0
-
       assert_receive {:telemetry_event, @export_stop_event, %{duration_ms: duration_ms},
                       export_metadata}
-
       assert is_integer(duration_ms)
       assert duration_ms >= 0
       assert export_metadata.outcome == :ok
@@ -219,36 +201,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportTest do
       assert export_metadata.dataset_count == 1
       assert export_metadata.included_count == 1
       assert export_metadata.excluded_count == 0
-
-      :telemetry.detach(handler)
-    end
-
-    test "records parity mismatch details when expected fingerprint differs" do
-      snapshot_bundle =
-        snapshot_bundle_fixture(
-          %{summary: %{students: 17}},
-          %{summary: %{status: :ready}}
-        )
-
-      dataset_specs = [
-        dataset_spec(:summary, [:summary], :fail_closed, DeterministicSerializer)
-      ]
-
-      handler = attach_telemetry([@parity_check_event])
-
-      assert {:ok, _zip_binary, manifest} =
-               CsvExport.build_zip(snapshot_bundle, %{
-                 expected_parity_fingerprint: "mismatched-fingerprint",
-                 dataset_specs: dataset_specs
-               })
-
-      assert manifest.parity.comparison.status == :mismatch
-      assert manifest.parity.comparison.expected_fingerprint == "mismatched-fingerprint"
-
-      assert_receive {:telemetry_event, @parity_check_event, %{count: 1}, parity_metadata}
-      assert parity_metadata.status == :mismatch
-      assert parity_metadata.reason_code == :parity_mismatch
-      assert parity_metadata.mismatch_count == 1
 
       :telemetry.detach(handler)
     end

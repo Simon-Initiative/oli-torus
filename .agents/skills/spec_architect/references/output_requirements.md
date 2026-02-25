@@ -11,6 +11,11 @@ Use expert judgment for depth in later sections, but cover all relevant technica
 
 ## Section Guidance
 
+Diagram requirements (global):
+- All diagrams in FDDs MUST use Mermaid syntax.
+- Prefer `sequenceDiagram` for runtime/message flows.
+- Use `stateDiagram-v2` when state-transition semantics are central to the design.
+
 1. Executive Summary
 - 8-10 plain-English sentences describing what is delivered, impacted users/systems, design rationale, top risks, and telemetry/AppSignal-based performance posture.
 
@@ -28,6 +33,7 @@ Use expert judgment for depth in later sections, but cover all relevant technica
 - Describe responsibilities and interactions in prose.
 4.2 State & Message Flow
 - Identify state ownership, message paths, and backpressure points.
+- When message exchange, async coordination, or boundary handoffs are non-trivial, you MUST include at least one Mermaid `sequenceDiagram`.
 4.3 Supervision & Lifecycle
 - Define placement, restart strategy, and failure isolation behavior.
 4.4 Alternatives Considered

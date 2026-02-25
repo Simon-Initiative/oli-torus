@@ -51,7 +51,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.ResultHandlingTest do
     test "active required result completes current request, promotes queued request, and starts promoted flow",
          %{opts: opts, write_sink: write_sink} do
       # @ac "AC-007"
-      initial = LiveDataCoordinator.new_session(timeout_ms: 4_000)
+      initial = LiveDataCoordinator.new_session(timeout_ms: 4_000, scrub_threshold: 2)
 
       {:ok, in_flight, _actions} =
         LiveDataCoordinator.request_scope_change(

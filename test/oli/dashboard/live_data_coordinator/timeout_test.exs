@@ -37,7 +37,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.TimeoutTest do
          opts: opts
        } do
     # @ac "AC-008"
-    initial = LiveDataCoordinator.new_session(timeout_ms: 4_200)
+    initial = LiveDataCoordinator.new_session(timeout_ms: 4_200, scrub_threshold: 2)
 
     {:ok, in_flight, _actions} =
       LiveDataCoordinator.request_scope_change(

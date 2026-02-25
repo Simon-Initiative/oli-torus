@@ -54,7 +54,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.StaleSuppressionTest do
     # @ac "AC-002"
     # @ac "AC-004"
     # @ac "AC-007"
-    initial = LiveDataCoordinator.new_session(timeout_ms: 5_000)
+    initial = LiveDataCoordinator.new_session(timeout_ms: 5_000, scrub_threshold: 2)
 
     {:ok, in_flight, _actions} =
       LiveDataCoordinator.request_scope_change(

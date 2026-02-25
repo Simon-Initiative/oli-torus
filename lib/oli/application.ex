@@ -106,6 +106,7 @@ defmodule Oli.Application do
         Oli.GenAI.AdmissionControl,
         Oli.GenAI.Telemetry,
         Oli.Dashboard.OracleTelemetry,
+        {Oli.Dashboard.RevisitCache, name: Oli.Dashboard.RevisitCache},
         {Registry, keys: :unique, name: Oli.GenAI.BreakerRegistry},
         Oli.GenAI.BreakerSupervisor,
 

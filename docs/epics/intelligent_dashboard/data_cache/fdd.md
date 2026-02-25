@@ -1,13 +1,13 @@
 # Data Cache FDD
 
-Last updated: 2026-02-17
+Last updated: 2026-02-25
 Feature: `data_cache`
 Epic: `MER-5198`
 Primary Jira: `MER-5303`
 
 ## 1. Executive Summary
 
-This feature implements the storage and caching policy layer for Intelligent Dashboard oracle payloads. It provides two cache tiers: in-process session cache for rapid scope interaction and node-wide revisit cache for short-lived return flows. The design uses deterministic oracle-level keys that include context, container, oracle identity, and version metadata. It enforces TTL freshness and enrollment-tiered container LRU capacity bounds to keep memory predictable. It supports partial container completeness so callers can hydrate cached required payloads while loading only missing dependencies. It supports late oracle writes so previous container payloads can become complete even after user navigation moves to another container. It provides miss coalescing for identical keys to reduce duplicate build work under concurrent demand. The cache layer exposes a stable API consumed by coordinator/read-through orchestration. It explicitly does not implement queue/token stale suppression policy, which remains coordinator-owned.
+This feature implements the storage and caching policy layer for Intelligent Dashboard oracle payloads. It provides two cache tiers: in-process session cache for rapid scope interaction and node-wide revisit cache for short-lived return flows. The design uses deterministic oracle-level keys that include context, container, oracle identity, and version metadata. It enforces TTL freshness and enrollment-tiered container LRU capacity bounds to keep memory predictable. It supports partial container completeness so callers can hydrate cached required payloads while loading only missing dependencies. It supports late oracle writes so previous container payloads can become complete even after user navigation moves to another container. It provides miss coalescing for identical keys to reduce duplicate build work under concurrent demand. The cache layer exposes a stable API consumed by coordinator and synchronous snapshot read-through orchestration. It explicitly does not implement queue/token stale suppression policy, which remains coordinator-owned where applicable.
 
 ## 2. Requirements & Assumptions
 
@@ -16,8 +16,8 @@ Functional requirements (PRD mapping):
 - FR-003, FR-004: TTL and enrollment-tiered capacity/LRU policy.
 - FR-005, FR-006: oracle-granular writes and partial-hit semantics.
 - FR-007: per-key miss coalescing.
-- FR-008: strict revisit eligibility on explicit-container return flows.
-- FR-009, FR-010: clear boundary where cache is used by coordinator but does not own queue/token policy.
+- FR-008: strict revisit eligibility on explicit-entry flows for top-level course scope and explicit container scope.
+- FR-009, FR-010: clear boundary where cache is used by coordinator/snapshot callers but does not own queue/token policy.
 - FR-011: extensive unit testing with mocked/stubbed concrete dependencies for cache boundary interaction coverage.
 
 Non-functional targets:
@@ -38,7 +38,7 @@ Assumption risks:
 
 What we know:
 - `docs/epics/intelligent_dashboard/data_cache/prd.md` defines key shapes, TTL defaults, tiered capacity env vars, late-write requirements, and strict revisit policy.
-- `docs/epics/intelligent_dashboard/edd.md` positions cache as reusable `Oli.Dashboard.*` infrastructure consumed by coordinator/runtime flows.
+- `docs/epics/intelligent_dashboard/edd.md` positions cache as reusable `Oli.Dashboard.*` infrastructure consumed by coordinator/runtime/snapshot flows.
 - Existing Torus system includes cache/depot patterns and telemetry conventions that fit this design.
 - Prototype validates a minimal, effective in-process cache shape:
   - key by normalized scope fields + oracle key (`lib/oli/instructor_dashboard/prototype/in_process_cache.ex`).
@@ -75,7 +75,7 @@ Boundary rule:
 
 ### 4.2 State & Message Flow
 
-Read-through behavior with strict revisit policy:
+Read-through behavior with strict explicit-entry revisit policy:
 
 ```mermaid
 sequenceDiagram
@@ -92,7 +92,7 @@ sequenceDiagram
 
     alt misses empty
         CACHE-->>LDC: full_hit(hits)
-    else misses present and revisit_eligible
+    else misses present and explicit-entry revisit eligible (course or container)
         CACHE->>RC: fetch(user_id, context, container, misses)
         RC-->>CACHE: revisit_hits + revisit_misses
         CACHE-->>LDC: partial_hit(hits + revisit_hits, revisit_misses)
@@ -145,9 +145,9 @@ sequenceDiagram
 ### 4.3 Supervision & Lifecycle
 
 - In-process cache lifecycle is tied to LiveView/session lifecycle.
-- Revisit cache is node-scoped and supervised as shared process/storage service.
+- Revisit cache is node-scoped and supervised as shared application-level process/storage service.
 - Miss coalescer lifecycle follows cache process lifecycle.
-- Cache failures degrade to load path (coordinator/runtime) rather than session crash.
+- Cache failures degrade to caller/runtime load paths rather than session crash.
 
 ### 4.4 Alternatives Considered
 
@@ -259,7 +259,15 @@ Prototype alignment notes:
 - Hotspot: repeated concurrent misses for same oracle key.
   - Mitigation: miss coalescing producer/waiter model.
 - Hotspot: revisit overuse causing stale perception.
-  - Mitigation: short revisit TTL + strict eligibility rules.
+  - Mitigation: short revisit TTL + explicit-entry eligibility rules for course/container scope.
+
+## 18. Decision Log
+
+### 2026-02-25 - Align Revisit Eligibility and Lifecycle With Implemented Dashboard Behavior
+- Change: Updated revisit eligibility language to explicit-entry course-or-container semantics and clarified revisit store lifecycle as app-supervised node-local process.
+- Reason: Implemented cache/revisit flow now supports course scope revisit hits and persists across LiveView teardown/remount within node TTL window.
+- Evidence: `lib/oli/dashboard/cache.ex`, `lib/oli/application.ex`, `lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`, `test/oli/dashboard/cache/revisit_cache_test.exs`
+- Impact: Synchronizes FR-008-aligned design details and integration expectations for dashboard revisit behavior.
 
 ## 10. Failure Modes & Resilience
 
@@ -359,6 +367,12 @@ Performance test scope:
 - Reason: Phase 5 requires operational readiness evidence and explicit documentation of production knobs/telemetry contracts.
 - Evidence: `lib/oli/dashboard/cache.ex`, `lib/oli/dashboard/cache/policy.ex`, `lib/oli/dashboard/cache/telemetry.ex`, `test/oli/dashboard/live_data_coordinator/cache_read_through_test.exs`
 - Impact: Aligns docs to implementation, clarifies runtime tuning controls, and confirms code-only rollback with no schema/backfill dependency.
+
+### 2026-02-25 - Clarify Snapshot Synchronous Read-Through Consumption of Cache Facade
+- Change: Updated cache FDD wording to explicitly include synchronous `DataSnapshot.get_or_build/2` read-through as a cache facade consumer without coordinator action-replay dependence.
+- Reason: Snapshot implementation now performs direct read-through orchestration for default build mode while preserving coordinator ownership of queue/token semantics in coordinator-managed paths.
+- Evidence: `lib/oli/instructor_dashboard/data_snapshot.ex`, `lib/oli/dashboard/cache.ex`, `test/oli/instructor_dashboard/data_snapshot/data_snapshot_test.exs`
+- Impact: Keeps cache boundary and failure-mode responsibilities stable while reducing coupling assumptions to coordinator internals.
 
 ## 18. References
 

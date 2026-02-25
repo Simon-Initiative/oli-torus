@@ -8,6 +8,7 @@
 - Specify module boundaries and interface contracts.
 - Include migration and rollback considerations for schema changes.
 - Include observability, security/privacy, and performance/scalability sections.
+- If runtime/message flow complexity is non-trivial, include Mermaid sequence diagram(s) and verify they match the described flow.
 - Ensure performance/scalability guidance is telemetry/AppSignal based and does not require performance/load/benchmark tests.
 - Document feature flags/config toggles and rollout/rollback posture (or explicitly state none).
 - Include concrete testing strategy and failure-mode handling.

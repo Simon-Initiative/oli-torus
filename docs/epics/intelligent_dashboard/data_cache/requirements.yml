@@ -22,6 +22,8 @@ requirements:
     - type: test
       ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"returns deterministic
         required and optional oracle keys"
+    - type: fdd
+      ref: fdd.md:327
   - id: AC-002
     title: Given partial container completeness, when required lookup runs, then response
       includes deterministic `hits` and `misses` and only misses proceed to build.
@@ -35,6 +37,8 @@ requirements:
     - type: test
       ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"returns deterministic
         unknown consumer error"
+    - type: fdd
+      ref: fdd.md:328
   - id: AC-003
     title: Given capacity threshold breach, when new container payloads are written,
       then least-recently-used container entries are evicted as a group.
@@ -48,6 +52,8 @@ requirements:
     - type: test
       ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"resolves exactly
         one module for a known oracle key"
+    - type: fdd
+      ref: fdd.md:329
   - id: AC-004
     title: Given late oracle completion for prior container, when identity guard passes,
       then payload is written for that container key without affecting active UI scope
@@ -62,9 +68,11 @@ requirements:
     - type: test
       ref: test/oli/dashboard/oracle_result_test.exs::"returns contract-compliant
         success envelope with sanitized metadata"
+    - type: fdd
+      ref: fdd.md:330
   - id: AC-005
-    title: Given revisit flow with explicit container params, when revisit cache has
-      eligible payloads, then those payloads are returned prior to build.
+    title: Given explicit-entry revisit flow to course or container scope, when revisit
+      cache has eligible payloads, then those payloads are returned prior to build.
     status: verified
     verification_method: automated
     proofs:
@@ -75,9 +83,11 @@ requirements:
     - type: test
       ref: test/oli/instructor_dashboard/oracle_migration_test.exs::"covered modules
         do not call ClickHouse analytics directly"
+    - type: fdd
+      ref: fdd.md:331
   - id: AC-006
-    title: Given revisit-ineligible flow (base mount without explicit container),
-      revisit cache lookup is skipped.
+    title: Given revisit-ineligible flow (no explicit-entry eligibility), revisit
+      cache lookup is skipped.
     status: verified
     verification_method: automated
     proofs:
@@ -88,6 +98,8 @@ requirements:
     - type: test
       ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"changing one consumer
         profile does not alter unrelated consumer dependencies"
+    - type: fdd
+      ref: fdd.md:332
   - id: AC-007
     title: Given concurrent misses for identical oracle key, exactly one build producer
       is elected and other requests await/shared result.
@@ -101,6 +113,8 @@ requirements:
     - type: test
       ref: test/oli/instructor_dashboard/oracle_registry_test.exs::"non-instructor
         registries can use shared contracts unchanged"
+    - type: fdd
+      ref: fdd.md:333
   - id: AC-008
     title: Given boundary inspection, cache modules contain no request queue/token
       orchestration logic.
@@ -114,6 +128,8 @@ requirements:
     - type: test
       ref: test/oli/dashboard/oracle_contract_test.exs::"planner stages prerequisites
         before dependents"
+    - type: fdd
+      ref: fdd.md:334
   - id: AC-009
     title: Given cache unit test execution, mocked/stubbed producers/waiters and oracle
       payload sources are used where necessary to exercise coalescing, late writes,
@@ -128,3 +144,5 @@ requirements:
     - type: test
       ref: test/oli/dashboard/oracle_contract_test.exs::"contract oracles implement
         required behavior callbacks"
+    - type: fdd
+      ref: fdd.md:335

@@ -10,7 +10,6 @@ defmodule Oli.Dashboard.Snapshot.Telemetry do
   @projection_stop_event [:oli, :dashboard, :snapshot, :projection, :stop]
   @projection_status_event [:oli, :dashboard, :snapshot, :projection, :status]
   @export_stop_event [:oli, :dashboard, :snapshot, :export, :stop]
-  @parity_check_event [:oli, :dashboard, :snapshot, :parity, :check]
 
   @type snapshot_metadata :: %{
           required(:outcome) => :ok | :error | :unknown,
@@ -40,23 +39,13 @@ defmodule Oli.Dashboard.Snapshot.Telemetry do
           optional(:error_type) => String.t()
         }
 
-  @type parity_metadata :: %{
-          required(:status) => :match | :mismatch | :not_checked | :unknown,
-          required(:export_profile) => atom() | String.t(),
-          optional(:dataset_count) => non_neg_integer(),
-          optional(:mismatch_count) => non_neg_integer(),
-          optional(:expected_present) => boolean(),
-          optional(:reason_code) => atom() | String.t()
-        }
-
   @spec events() :: [list(atom())]
   def events do
     [
       @assembly_stop_event,
       @projection_stop_event,
       @projection_status_event,
-      @export_stop_event,
-      @parity_check_event
+      @export_stop_event
     ]
   end
 
@@ -93,15 +82,6 @@ defmodule Oli.Dashboard.Snapshot.Telemetry do
       @export_stop_event,
       normalize_measurements(measurements),
       sanitize_export_metadata(metadata)
-    )
-  end
-
-  @spec parity_check(map() | keyword()) :: :ok
-  def parity_check(metadata) do
-    :telemetry.execute(
-      @parity_check_event,
-      %{count: 1},
-      sanitize_parity_metadata(metadata)
     )
   end
 
@@ -147,21 +127,6 @@ defmodule Oli.Dashboard.Snapshot.Telemetry do
       excluded_count: normalize_non_negative_integer(Map.get(normalized, :excluded_count)),
       reason_code: normalize_reason_code(Map.get(normalized, :reason_code)),
       error_type: normalize_error_type(Map.get(normalized, :error_type))
-    }
-    |> drop_nil_values()
-  end
-
-  @spec sanitize_parity_metadata(map() | keyword()) :: parity_metadata()
-  def sanitize_parity_metadata(metadata) do
-    normalized = normalize_input_metadata(metadata)
-
-    %{
-      status: normalize_parity_status(Map.get(normalized, :status)),
-      export_profile: normalize_export_profile(Map.get(normalized, :export_profile)),
-      dataset_count: normalize_non_negative_integer(Map.get(normalized, :dataset_count)),
-      mismatch_count: normalize_non_negative_integer(Map.get(normalized, :mismatch_count)),
-      expected_present: normalize_boolean(Map.get(normalized, :expected_present)),
-      reason_code: normalize_reason_code(Map.get(normalized, :reason_code))
     }
     |> drop_nil_values()
   end
@@ -214,14 +179,6 @@ defmodule Oli.Dashboard.Snapshot.Telemetry do
 
   defp normalize_non_negative_integer(value) when is_integer(value) and value >= 0, do: value
   defp normalize_non_negative_integer(_), do: nil
-
-  defp normalize_parity_status(:match), do: :match
-  defp normalize_parity_status(:mismatch), do: :mismatch
-  defp normalize_parity_status(:not_checked), do: :not_checked
-  defp normalize_parity_status(_), do: :unknown
-
-  defp normalize_boolean(value) when is_boolean(value), do: value
-  defp normalize_boolean(_), do: nil
 
   defp drop_nil_values(map) do
     map

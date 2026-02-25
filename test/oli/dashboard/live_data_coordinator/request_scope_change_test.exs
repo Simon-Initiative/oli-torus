@@ -24,7 +24,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.RequestScopeChangeTest do
   describe "request queue intake" do
     test "rapid scope cycling keeps one active and one latest queued request", %{context: context} do
       # @ac "AC-001"
-      initial = LiveDataCoordinator.new_session(timeout_ms: 9_000)
+      initial = LiveDataCoordinator.new_session(timeout_ms: 9_000, scrub_threshold: 2)
 
       opts = [
         context: context,

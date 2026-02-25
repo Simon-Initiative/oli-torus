@@ -1,6 +1,6 @@
 # Data Cache PRD
 
-Last updated: 2026-02-17
+Last updated: 2026-02-25
 Feature: `data_cache`
 Epic: `MER-5198`
 Primary Jira: `MER-5303` Data Infra: InProcess/Revisit Cache and Tiered Limits
@@ -10,7 +10,7 @@ Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent
 
 This feature defines the dashboard cache subsystem used by live orchestration to accelerate repeated scope requests and revisit flows. It provides deterministic keying, TTL freshness, enrollment-tiered capacity, container-level LRU eviction, late-write support, and per-oracle miss coalescing.
 
-`data_cache` is a storage and cache-policy layer. It is used by `data_coordinator`, but it does not implement queue/token request orchestration behavior.
+`data_cache` is a storage and cache-policy layer. It is used by `data_coordinator` and synchronous snapshot read-through callers, but it does not implement queue/token request orchestration behavior.
 
 Prototype alignment:
 - Minimal in-process cache keyed by scope identity + oracle key already validates read-through wins for repeated scope requests.
@@ -33,7 +33,7 @@ Goals:
 - Implement revisit cache for short-lived per-user return flows.
 - Enforce deterministic keying, TTL, and enrollment-tiered container capacity.
 - Support oracle-granular late writes and per-key miss coalescing.
-- Expose a stable public API for coordinator read-through orchestration.
+- Expose a stable public API for coordinator and snapshot read-through orchestration.
 
 Non-Goals:
 - Defining request queue and stale-token policy (handled by `data_coordinator`).
@@ -71,7 +71,7 @@ Use cases:
 | FR-005 | System SHALL support oracle-granular writes, including late completion writes for previously viewed containers when identity guard passes. | P0 |
 | FR-006 | System SHALL support deterministic partial-hit responses (`hits`, `misses`) for required oracle lookups. | P0 |
 | FR-007 | System SHALL provide per-oracle miss coalescing API so concurrent requests for the same missing key share one build. | P1 |
-| FR-008 | System SHALL enforce strict revisit eligibility: revisit cache reads occur only on explicit-container entry flows. | P0 |
+| FR-008 | System SHALL enforce strict revisit eligibility on explicit-entry flows, including top-level course scope and explicit container scope. | P0 |
 | FR-009 | System SHALL expose cache public APIs consumed by coordinator; cache internals SHALL remain hidden from coordinator modules. | P0 |
 | FR-010 | System SHALL NOT implement request queueing, token generation, or stale-result UI suppression policy. | P0 |
 | FR-011 | System SHALL include extensive automated unit testing for cache key/policy/store behavior, and SHALL use mocked/stubbed dependencies (for example oracle payload producers and coalescing participants) where needed to validate end-to-end component interactions in tests. | P0 |
@@ -82,8 +82,8 @@ Use cases:
 - AC-002: Given partial container completeness, when required lookup runs, then response includes deterministic `hits` and `misses` and only misses proceed to build.
 - AC-003: Given capacity threshold breach, when new container payloads are written, then least-recently-used container entries are evicted as a group.
 - AC-004: Given late oracle completion for prior container, when identity guard passes, then payload is written for that container key without affecting active UI scope directly.
-- AC-005: Given revisit flow with explicit container params, when revisit cache has eligible payloads, then those payloads are returned prior to build.
-- AC-006: Given revisit-ineligible flow (base mount without explicit container), revisit cache lookup is skipped.
+- AC-005: Given explicit-entry revisit flow to course or container scope, when revisit cache has eligible payloads, then those payloads are returned prior to build.
+- AC-006: Given revisit-ineligible flow (no explicit-entry eligibility), revisit cache lookup is skipped.
 - AC-007: Given concurrent misses for identical oracle key, exactly one build producer is elected and other requests await/shared result.
 - AC-008: Given boundary inspection, cache modules contain no request queue/token orchestration logic.
 - AC-009: Given cache unit test execution, mocked/stubbed producers/waiters and oracle payload sources are used where necessary to exercise coalescing, late writes, and boundary interactions end-to-end at component boundaries.
@@ -135,6 +135,7 @@ Key shapes (from data design):
 - Used by `Oli.Dashboard.LiveDataCoordinator` through public cache APIs.
 - Must support oracle outputs from mixed datastores (Postgres and ClickHouse) transparently.
 - Revisit cache remains node-local in baseline and requires per-user scoping.
+- Revisit cache is process-supervised at application scope (node-local), so entries persist across LiveView teardown/reload within TTL.
 - Supports `Oli.InstructorDashboard.DataSnapshot` read-through patterns.
 
 ## 11. Feature Flagging, Rollout & Migration
@@ -142,7 +143,7 @@ Key shapes (from data design):
 - No user-facing feature flag required.
 - Rollout strategy:
   1. Introduce cache API and instrumentation.
-  2. Enable read-through in coordinator path.
+  2. Enable read-through in coordinator and synchronous `DataSnapshot.get_or_build/2` paths.
   3. Tune TTL/capacity thresholds using observed metrics.
 - Operational configuration knobs:
   - `INSTRUCTOR_DASHBOARD_INPROCESS_CACHE_TTL_MINUTES` (default `15`)
@@ -229,3 +230,15 @@ Prototype references:
 - Reason: Phase 5 requires operational readiness documentation for release and on-call tuning.
 - Evidence: `lib/oli/dashboard/cache/policy.ex`, `lib/oli/dashboard/cache.ex`, `test/oli/dashboard/live_data_coordinator/cache_read_through_test.exs`
 - Impact: Clarifies runtime tuning controls and confirms no schema/backfill coupling for rollout or rollback.
+
+### 2026-02-25 - Expand Revisit Eligibility to Course Scope and Persist Revisit Process Across LiveView Reloads
+- Change: Updated revisit eligibility from explicit-container-only to explicit-entry for both `:course` and explicit `:container` scopes, and aligned runtime expectation to a node-local app-supervised revisit process that survives LiveView remounts.
+- Reason: Instructor dashboard revisit semantics require course scope to behave as top-level container identity and maintain revisit continuity across hard reload/navigation return flows.
+- Evidence: `lib/oli/dashboard/cache.ex`, `lib/oli/application.ex`, `lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`, `test/oli/dashboard/cache/revisit_cache_test.exs`
+- Impact: Updates FR-008 and AC-005/AC-006 interpretation, and clarifies revisit persistence behavior expected by coordinator/dashboard integrations.
+
+### 2026-02-25 - Clarify Cache Facade Use by Snapshot Direct Read-Through
+- Change: Clarified that cache read-through APIs are consumed by both coordinator flows and synchronous `DataSnapshot.get_or_build/2` orchestration.
+- Reason: Snapshot simplification removed coordinator action-replay parsing for the default snapshot build mode while keeping cache facade contracts unchanged.
+- Evidence: `lib/oli/instructor_dashboard/data_snapshot.ex`, `lib/oli/dashboard/cache.ex`
+- Impact: Preserves cache/coordinator boundary guarantees and avoids coordinator-only coupling assumptions in rollout guidance.

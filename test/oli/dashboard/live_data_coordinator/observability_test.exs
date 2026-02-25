@@ -47,7 +47,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.ObservabilityTest do
     # @ac "AC-006"
     handler = attach_telemetry()
 
-    initial = LiveDataCoordinator.new_session()
+    initial = LiveDataCoordinator.new_session(scrub_threshold: 2)
 
     {:ok, in_flight, _actions} =
       LiveDataCoordinator.request_scope_change(
@@ -101,7 +101,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.ObservabilityTest do
     # @ac "AC-006"
     handler = attach_telemetry()
 
-    initial = LiveDataCoordinator.new_session()
+    initial = LiveDataCoordinator.new_session(scrub_threshold: 2)
 
     {:ok, in_flight, _actions} =
       LiveDataCoordinator.request_scope_change(

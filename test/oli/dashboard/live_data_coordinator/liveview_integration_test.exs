@@ -29,7 +29,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.LiveViewIntegrationTest do
     def new(opts, coordinator_state \\ nil) do
       %{
         coordinator_state:
-          coordinator_state || LiveDataCoordinator.new_session(timeout_ms: 3_500),
+          coordinator_state ||
+            LiveDataCoordinator.new_session(timeout_ms: 3_500, scrub_threshold: 2),
         opts: opts,
         active_token: nil,
         loading: [],

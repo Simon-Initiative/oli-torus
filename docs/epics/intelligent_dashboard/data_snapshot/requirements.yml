@@ -34,6 +34,9 @@ requirements:
     - type: test
       ref: test/oli/instructor_dashboard/data_snapshot/data_snapshot_test.exs::"builds
         deterministic bundle from cache-miss plus runtime oracle results"
+    - type: test
+      ref: test/oli/instructor_dashboard/data_snapshot/data_snapshot_test.exs::"degrades
+        to runtime path when cache lookup fails and writes ready results back"
   - id: AC-002
     title: Given same scope `S`, UI projections and CSV datasets derived from those
       projections are semantically equivalent for core metrics.
@@ -50,14 +53,11 @@ requirements:
       ref: test/oli/dashboard/oracle_registry_behavior_test.exs::"returns deterministic
         unknown consumer error"
     - type: test
-      ref: test/oli/dashboard/snapshot/parity_test.exs::"is deterministic across dataset
-        ordering"
+      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"builds
+        zip and manifest from transform-only snapshot inputs"
     - type: test
-      ref: test/oli/dashboard/snapshot/parity_test.exs::"returns match for identical
-        parity fingerprints"
-    - type: test
-      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"attaches
-        parity comparison metadata and emits parity/export telemetry"
+      ref: test/oli/instructor_dashboard/data_snapshot/csv_export_test.exs::"emits
+        export telemetry with deterministic metadata"
   - id: AC-003
     title: Given export request with valid snapshot/projection state, no independent
       analytics query path is executed.
@@ -205,3 +205,5 @@ requirements:
     - type: test
       ref: test/oli/instructor_dashboard/data_snapshot/projections_test.exs::"uses
         capability projection modules with mixed ready and partial outcomes"
+    - type: test
+      ref: test/oli/dashboard/live_data_coordinator/liveview_integration_test.exs:310

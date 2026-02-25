@@ -36,7 +36,6 @@ defmodule Oli.Dashboard.Snapshot.Contract do
     :dataset_policy_excluded,
     :serializer_error,
     :zip_build_failed,
-    :parity_mismatch,
     :export_timeout,
     :export_failed
   ]
@@ -77,7 +76,6 @@ defmodule Oli.Dashboard.Snapshot.Contract do
           | :dataset_policy_excluded
           | :serializer_error
           | :zip_build_failed
-          | :parity_mismatch
           | :export_timeout
           | :export_failed
 
@@ -291,8 +289,6 @@ defmodule Oli.Dashboard.Snapshot.Contract do
   def export_reason_code(:serializer_error), do: :serializer_error
   def export_reason_code({:zip_build_failed, _}), do: :zip_build_failed
   def export_reason_code(:zip_build_failed), do: :zip_build_failed
-  def export_reason_code({:parity_mismatch, _}), do: :parity_mismatch
-  def export_reason_code(:parity_mismatch), do: :parity_mismatch
   def export_reason_code({:timeout, _}), do: :export_timeout
   def export_reason_code(:timeout), do: :export_timeout
   def export_reason_code(_), do: :export_failed

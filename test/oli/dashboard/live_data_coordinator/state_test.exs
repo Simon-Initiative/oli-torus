@@ -22,6 +22,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.StateTest do
       refute State.queued?(state)
       assert state.next_request_token == 1
       assert state.timeout_ms == 30_000
+      assert state.scrub_window_ms == 400
+      assert state.scrub_threshold == 3
     end
 
     test "new session accepts explicit timeout override" do
@@ -60,8 +62,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.StateTest do
              ] = actions
     end
 
-    test "in-flight requests enqueue latest intent and then replace queued request deterministically" do
-      initial = LiveDataCoordinator.new_session()
+    test "in-flight requests enqueue latest intent and then replace queued request deterministically in scrub mode" do
+      initial = LiveDataCoordinator.new_session(scrub_threshold: 2)
 
       {:ok, in_flight, _actions} =
         LiveDataCoordinator.request_scope_change(
@@ -97,8 +99,38 @@ defmodule Oli.Dashboard.LiveDataCoordinator.StateTest do
       assert replaced.next_request_token == 4
     end
 
+    test "outside scrub mode latest scope change preempts active request immediately" do
+      initial = LiveDataCoordinator.new_session(scrub_threshold: 3)
+
+      {:ok, in_flight, _actions} =
+        LiveDataCoordinator.request_scope_change(
+          initial,
+          %{container_type: :container, container_id: 10},
+          %{required: [:progress], optional: []},
+          context: context()
+        )
+
+      assert {:ok, next_state, actions} =
+               LiveDataCoordinator.request_scope_change(
+                 in_flight,
+                 %{container_type: :container, container_id: 11},
+                 %{required: [:objectives], optional: []},
+                 context: context()
+               )
+
+      assert Enum.take(Enum.map(actions, & &1.type), 3) == [
+               :timeout_cancelled,
+               :request_started,
+               :timeout_scheduled
+             ]
+
+      assert next_state.active_request.request_token == 2
+      refute State.queued?(next_state)
+      assert Map.has_key?(next_state.retired_requests, 1)
+    end
+
     test "invalid scope returns deterministic transition error and preserves state" do
-      state = LiveDataCoordinator.new_session()
+      state = LiveDataCoordinator.new_session(scrub_threshold: 2)
 
       assert {:error, {:invalid_scope, _reason}, returned_state, [%{type: :invalid_transition}]} =
                LiveDataCoordinator.request_scope_change(
@@ -112,7 +144,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.StateTest do
     end
 
     test "invalid dependency profile returns deterministic transition error and preserves state" do
-      state = LiveDataCoordinator.new_session()
+      state = LiveDataCoordinator.new_session(scrub_threshold: 2)
 
       assert {:error, {:invalid_dependency_profile, _reason}, returned_state,
               [%{type: :invalid_transition}]} =
@@ -164,7 +196,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.StateTest do
     end
 
     test "oracle results classify active, queued, stale, and unknown tokens deterministically" do
-      state = LiveDataCoordinator.new_session()
+      state = LiveDataCoordinator.new_session(scrub_threshold: 2)
 
       {:ok, in_flight, _actions} =
         LiveDataCoordinator.request_scope_change(

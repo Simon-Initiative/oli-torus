@@ -10,7 +10,7 @@ Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent
 
 This feature defines the canonical snapshot and projection layer for Intelligent Dashboard and makes it the single data contract consumed by tiles, AI context assembly, and CSV export.
 
-`data_snapshot` is a composition and transform layer. It assembles deterministic scoped snapshots from oracle outputs and derives consumer-oriented projections. It does not run direct analytics queries or implement queue/token/cache policy logic. Exact concrete instructor oracle implementations remain tile-driven; this layer consumes whatever oracle contracts/bindings are active for the scope request. The architecture is explicitly incremental-first: projection readiness is per capability, and ready projections must be consumable immediately without waiting for unrelated projections.
+`data_snapshot` is a composition and transform layer. It assembles deterministic scoped snapshots from oracle outputs and derives consumer-oriented projections. It does not run direct analytics queries or implement queue/token/cache policy logic. Exact concrete instructor oracle implementations remain tile-driven; this layer consumes whatever oracle contracts/bindings are active for the scope request. The architecture is explicitly incremental-first: projection readiness is per capability, and ready projections must be consumable immediately without waiting for unrelated projections. `DataSnapshot.get_or_build/2` uses a synchronous read-through orchestration mode (cache lookup for required oracles plus runtime resolution for misses/optional keys) and intentionally avoids coordinator action-replay parsing in this call path.
 
 Prototype alignment:
 - Snapshot contract in prototype already includes `scope`, oracle payload/status maps, projection map, and projection-status map.
@@ -77,8 +77,8 @@ Use cases:
 | FR-008 | System SHALL define deterministic export dataset inclusion policy when projections are partial or failed. | P0 |
 | FR-009 | System SHALL define stable dataset registry mapping CSV datasets to projection requirements and serializers. | P1 |
 | FR-010 | System SHALL include contract versioning fields for snapshot schema and projection schema evolution. | P1 |
-| FR-011 | System SHALL define explicit one-way boundaries: DataSnapshot may use coordinator/cache APIs; assembler/projection/export modules SHALL remain queryless and policy-agnostic. | P0 |
-| FR-012 | System SHALL emit parity-check metadata/fingerprints to support UI/CSV semantic equivalence verification. | P1 |
+| FR-011 | System SHALL define explicit one-way boundaries: DataSnapshot may use cache APIs directly (and MAY use coordinator APIs for event-driven callers), while assembler/projection/export modules SHALL remain queryless and policy-agnostic. | P0 |
+| FR-012 | System SHALL verify UI/CSV semantic equivalence for core metrics through shared snapshot/projection contracts and automated tests. | P1 |
 | FR-013 | System SHALL include extensive automated unit testing for snapshot assembler/projection/export orchestration behavior, and SHALL use mocked or stubbed concrete dependencies (for example oracle-result producers and serializer adapters) where needed to validate end-to-end component interactions in tests. | P0 |
 
 ## 7. Acceptance Criteria
@@ -103,7 +103,7 @@ Reliability:
 - NFR-REL-002: Export failure handling is deterministic and non-crashing.
 
 Correctness:
-- NFR-COR-001: UI/CSV parity checks for core metrics have zero tolerated mismatches in automated parity suite.
+- NFR-COR-001: UI/CSV semantic equivalence for core metrics is enforced through shared snapshot/projection contracts and automated verification.
 
 Operability:
 - NFR-OPS-001: Snapshot/projection/export outcome and failure metrics are emitted with scope metadata.
@@ -145,8 +145,9 @@ Notional modules and public APIs:
 
 ## 10. Integrations & Platform Considerations
 
-- Consumes oracle outputs from coordinator/runtime path.
-- Reuses cache-enabled retrieval via `DataSnapshot` orchestration entry points.
+- Consumes oracle outputs from runtime provider paths supplied to `DataSnapshot`.
+- Reuses cache-enabled retrieval via direct cache read-through in `DataSnapshot` orchestration entry points.
+- Coordinator integrations remain optional for event-driven callers, but `get_or_build/2` is not coupled to coordinator action replay.
 - Provides projection contracts for dashboard tiles and AI downstream features.
 - Provides CSV export transform adapters for `MER-5266`.
 
@@ -154,7 +155,7 @@ Notional modules and public APIs:
 
 - No user-facing feature flag required for baseline.
 - Rollout strategy:
-  1. Introduce snapshot/projection contracts and verify parity against existing views.
+  1. Introduce snapshot/projection contracts and verify semantic equivalence against existing views.
   2. Switch dashboard tile consumers to projection contracts.
   3. Switch CSV export path to `CsvExport.build_zip/2` transform-only contract.
   4. Remove legacy per-surface transform divergence.
@@ -162,7 +163,7 @@ Notional modules and public APIs:
 ## 12. Analytics & Success Metrics
 
 - Snapshot/projection/export outcome and failure rates.
-- UI/CSV parity mismatch count (target `0` for gated metrics).
+- UI/CSV semantic-equivalence test pass rate for gated metrics.
 - Projection readiness distribution (`ready`, `partial`, `failed`).
 
 ## 13. Risks & Mitigations
@@ -170,7 +171,7 @@ Notional modules and public APIs:
 - Risk: projection contract churn from rapidly evolving tile requirements.
   - Mitigation: capability-scoped projection modules + contract versioning.
 - Risk: export drift from UI semantics.
-  - Mitigation: shared projection source + parity tests + fingerprint instrumentation.
+  - Mitigation: shared projection source + semantic-equivalence tests.
 - Risk: snapshot layer absorbing runtime/cache policy concerns.
   - Mitigation: explicit boundary FR + code review checklist + module separation.
 
@@ -178,7 +179,7 @@ Notional modules and public APIs:
 
 Assumptions:
 - Current oracle domains in `data_oracles` are sufficient to derive baseline instructor projections.
-- Coordinator/cache APIs are stable enough for `DataSnapshot` orchestration integration.
+- Cache APIs and runtime provider contracts are stable enough for `DataSnapshot` synchronous read-through orchestration.
 - Exact concrete instructor oracle keys/modules and final payload shapes are finalized in tile implementation stories.
 
 Open questions:
@@ -190,7 +191,7 @@ Open questions:
 1. Define snapshot/projection contract structs and assembler.
 2. Implement instructor projection modules and readiness semantics.
 3. Implement dataset registry and CSV transform adapters.
-4. Land parity suite and observability instrumentation.
+4. Land semantic-equivalence suite and observability instrumentation.
 
 ## 16. QA Plan
 
@@ -201,7 +202,8 @@ Open questions:
   - mocked/stubbed concrete dependencies (oracle-result producers, coordinator/cache facades, serializer adapters) where needed to exercise end-to-end snapshot component interactions.
 - Integration tests:
   - end-to-end `DataSnapshot.get_or_build/2` flow with mixed cache/runtime results.
-  - UI/CSV parity for representative scopes.
+  - cache lookup failure fallback still resolves deterministic runtime-backed bundles.
+  - UI/CSV semantic equivalence for representative scopes.
   - deterministic partial/failure export policy behavior.
 - Regression tests:
   - no direct query path in export adapter.
@@ -214,7 +216,7 @@ Open questions:
 - AC-001 through AC-008 passing.
 - Snapshot/projection/export module boundaries are explicit and enforced.
 - CSV generation uses transform-only path from snapshot/projection contracts.
-- Parity checks and observability metrics are in place for rollout confidence.
+- Semantic-equivalence checks and observability metrics are in place for rollout confidence.
 
 Prototype references:
 - `lib/oli/instructor_dashboard/prototype/snapshot.ex`
@@ -235,3 +237,9 @@ Prototype references:
 - Reason: Product requirement is to render tiles as soon as required projection data is ready, including partial-oracle scenarios (for example 4/5 projections ready while 1 remains loading).
 - Evidence: FR-004 language, UX requirements, and AC-001 wording updates in this PRD.
 - Impact: Prevents architecture choices that would block incremental tile rendering behind all-projection completion.
+
+### 2026-02-25 - Simplify `get_or_build/2` Orchestration to Synchronous Read-Through
+- Change: Replaced coordinator action-replay parsing in `DataSnapshot.get_or_build/2` with direct cache read-through + runtime resolution for misses/optional keys.
+- Reason: This API mode constructs a single scoped bundle per call and does not require cross-request queue/preemption semantics, so replaying coordinator action streams added avoidable control-plane complexity.
+- Evidence: `lib/oli/instructor_dashboard/data_snapshot.ex`, `test/oli/instructor_dashboard/data_snapshot/data_snapshot_test.exs`
+- Impact: Reduces orchestration complexity while preserving snapshot determinism, boundary constraints, and projection/export behavior contracts.

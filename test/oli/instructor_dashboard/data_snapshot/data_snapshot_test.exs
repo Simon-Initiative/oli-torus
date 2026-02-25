@@ -1,7 +1,6 @@
 defmodule Oli.InstructorDashboard.DataSnapshotTest do
   use ExUnit.Case, async: true
 
-  alias Oli.Dashboard.LiveDataCoordinator
   alias Oli.Dashboard.Oracle.Result
   alias Oli.InstructorDashboard.DataSnapshot
 
@@ -11,7 +10,15 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       lookup_fun.(context, scope, required_oracles)
     end
 
-    def write_oracle(_context, _scope, _oracle_key, _payload, _meta, _opts), do: :ok
+    def write_oracle(context, scope, oracle_key, payload, meta, opts) do
+      case Keyword.get(opts, :write_fun) do
+        write_fun when is_function(write_fun, 6) ->
+          write_fun.(context, scope, oracle_key, payload, meta, opts)
+
+        _ ->
+          :ok
+      end
+    end
   end
 
   setup do
@@ -28,7 +35,6 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
 
     %{
       scope_request: scope_request,
-      coordinator_module: LiveDataCoordinator,
       cache_module: StubCache
     }
   end
@@ -36,7 +42,6 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
   describe "get_or_build/2 orchestration" do
     test "builds deterministic bundle from cache-hit path", %{
       scope_request: scope_request,
-      coordinator_module: coordinator_module,
       cache_module: cache_module
     } do
       lookup_fun = fn _context, _scope, _required ->
@@ -50,7 +55,6 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
 
       assert {:ok, bundle} =
                DataSnapshot.get_or_build(scope_request,
-                 coordinator_module: coordinator_module,
                  cache_module: cache_module,
                  cache_opts: [lookup_fun: lookup_fun],
                  dependency_profile: %{
@@ -64,14 +68,11 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       assert bundle.snapshot.oracle_statuses.oracle_instructor_progress.status == :ready
       assert bundle.snapshot.oracle_statuses.oracle_instructor_support.status == :unavailable
       assert bundle.projection_statuses.progress.status == :ready
-      assert is_binary(bundle.parity.fingerprint)
-      assert "progress" in bundle.parity.projection_keys
     end
 
     # @ac "AC-001"
     test "builds deterministic bundle from cache-miss plus runtime oracle results", %{
       scope_request: scope_request,
-      coordinator_module: coordinator_module,
       cache_module: cache_module
     } do
       lookup_fun = fn _context, _scope, required ->
@@ -87,7 +88,6 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
 
       assert {:ok, bundle} =
                DataSnapshot.get_or_build(scope_request,
-                 coordinator_module: coordinator_module,
                  cache_module: cache_module,
                  cache_opts: [lookup_fun: lookup_fun],
                  dependency_profile: %{
@@ -102,14 +102,10 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       assert bundle.snapshot.oracle_statuses.oracle_instructor_progress.status == :ready
       assert bundle.projection_statuses.progress.status == :ready
       assert bundle.projection_statuses.student_support.status == :ready
-      assert is_binary(bundle.parity.fingerprint)
-      assert "progress" in bundle.parity.projection_keys
-      assert "student_support" in bundle.parity.projection_keys
     end
 
     test "memoize hook reuses request-scoped bundle without re-running runtime provider", %{
       scope_request: scope_request,
-      coordinator_module: coordinator_module,
       cache_module: cache_module
     } do
       lookup_fun = fn _context, _scope, required ->
@@ -127,7 +123,6 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       end
 
       opts = [
-        coordinator_module: coordinator_module,
         cache_module: cache_module,
         cache_opts: [lookup_fun: lookup_fun],
         dependency_profile: %{required: [:oracle_instructor_progress], optional: []},
@@ -139,7 +134,56 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       assert {:ok, second_bundle} = DataSnapshot.get_or_build(scope_request, opts)
       assert Agent.get(call_counter, & &1) == 1
       assert first_bundle.request_token == second_bundle.request_token
-      assert first_bundle.parity.fingerprint == second_bundle.parity.fingerprint
+    end
+
+    test "degrades to runtime path when cache lookup fails and writes ready results back", %{
+      scope_request: scope_request,
+      cache_module: cache_module
+    } do
+      write_sink = start_supervised!({Agent, fn -> [] end})
+
+      lookup_fun = fn _context, _scope, _required ->
+        {:error, :cache_down}
+      end
+
+      write_fun = fn _context, _scope, oracle_key, payload, meta, _opts ->
+        Agent.update(write_sink, fn writes ->
+          [%{oracle_key: oracle_key, payload: payload, meta: meta} | writes]
+        end)
+
+        :ok
+      end
+
+      runtime_results = %{
+        oracle_instructor_progress:
+          Result.ok(:oracle_instructor_progress, %{metric: :runtime_progress}, version: 2),
+        oracle_instructor_support: Result.error(:oracle_instructor_support, :support_timeout)
+      }
+
+      assert {:ok, bundle} =
+               DataSnapshot.get_or_build(scope_request,
+                 cache_module: cache_module,
+                 cache_opts: [lookup_fun: lookup_fun, write_fun: write_fun],
+                 dependency_profile: %{
+                   required: [:oracle_instructor_progress],
+                   optional: [:oracle_instructor_support]
+                 },
+                 runtime_results: runtime_results
+               )
+
+      assert bundle.snapshot.oracles.oracle_instructor_progress == %{metric: :runtime_progress}
+      assert bundle.snapshot.oracle_statuses.oracle_instructor_support.status == :failed
+
+      writes = Agent.get(write_sink, & &1)
+      assert length(writes) == 1
+
+      assert [%{oracle_key: :oracle_instructor_progress, payload: %{metric: :runtime_progress}}] =
+               writes
+
+      assert hd(writes).meta.oracle_version == 2
+      assert hd(writes).meta.dashboard_context_id == 7001
+      assert hd(writes).meta.container_type == :container
+      assert hd(writes).meta.container_id == 301
     end
   end
 
@@ -173,7 +217,6 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
     # @ac "AC-006"
     test "returns deterministic projection tuples for ready/partial/unavailable statuses", %{
       scope_request: scope_request,
-      coordinator_module: coordinator_module,
       cache_module: cache_module
     } do
       lookup_fun = fn _context, _scope, required ->
@@ -187,7 +230,6 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
 
       assert {:ok, bundle} =
                DataSnapshot.get_or_build(scope_request,
-                 coordinator_module: coordinator_module,
                  cache_module: cache_module,
                  cache_opts: [lookup_fun: lookup_fun],
                  dependency_profile: %{required: [:oracle_instructor_progress], optional: []},

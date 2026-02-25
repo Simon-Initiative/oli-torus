@@ -7,6 +7,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
   alias Oli.Dashboard.Scope
 
   @default_timeout_ms 30_000
+  @default_scrub_window_ms 400
+  @default_scrub_threshold 3
   @allowed_profile_keys [:required, :optional]
 
   @type request_token :: pos_integer()
@@ -50,7 +52,11 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
     :queued_request,
     :retired_requests,
     :next_request_token,
-    :timeout_ms
+    :timeout_ms,
+    :scrub_window_ms,
+    :scrub_threshold,
+    :nav_burst_started_at_ms,
+    :nav_burst_count
   ]
   defstruct [
     :lifecycle,
@@ -58,7 +64,11 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
     :queued_request,
     :retired_requests,
     :next_request_token,
-    :timeout_ms
+    :timeout_ms,
+    :scrub_window_ms,
+    :scrub_threshold,
+    :nav_burst_started_at_ms,
+    :nav_burst_count
   ]
 
   @type t :: %__MODULE__{
@@ -67,12 +77,18 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
           queued_request: request() | nil,
           retired_requests: %{optional(request_token()) => request()},
           next_request_token: request_token(),
-          timeout_ms: pos_integer()
+          timeout_ms: pos_integer(),
+          scrub_window_ms: pos_integer(),
+          scrub_threshold: pos_integer(),
+          nav_burst_started_at_ms: non_neg_integer() | nil,
+          nav_burst_count: non_neg_integer()
         }
 
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
     timeout_ms = configured_timeout_ms(opts)
+    scrub_window_ms = configured_scrub_window_ms(opts)
+    scrub_threshold = configured_scrub_threshold(opts)
 
     %__MODULE__{
       lifecycle: :idle,
@@ -80,7 +96,11 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
       queued_request: nil,
       retired_requests: %{},
       next_request_token: 1,
-      timeout_ms: timeout_ms
+      timeout_ms: timeout_ms,
+      scrub_window_ms: scrub_window_ms,
+      scrub_threshold: scrub_threshold,
+      nav_burst_started_at_ms: nil,
+      nav_burst_count: 0
     }
   end
 
@@ -107,7 +127,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
     with {:ok, scope} <- Scope.new(scope_input),
          {:ok, dependency_profile} <- normalize_dependency_profile(dependency_profile_input),
          {:ok, context} <- normalize_context(context_input) do
-      dispatch_scope_change(state, context, scope, dependency_profile)
+      {state_with_burst, scrub_mode?} = track_navigation_burst(state)
+      dispatch_scope_change(state_with_burst, context, scope, dependency_profile, scrub_mode?)
     else
       {:error, reason} ->
         transition_error(state, reason)
@@ -204,7 +225,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
          %__MODULE__{lifecycle: :idle} = state,
          context,
          scope,
-         dependency_profile
+         dependency_profile,
+         _scrub_mode?
        ) do
     request = build_request(state.next_request_token, context, scope, dependency_profile)
 
@@ -224,10 +246,36 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
   end
 
   defp dispatch_scope_change(
+         %__MODULE__{lifecycle: :in_flight} = state,
+         context,
+         scope,
+         dependency_profile,
+         false
+       ) do
+    request = build_request(state.next_request_token, context, scope, dependency_profile)
+    replaced_request = state.active_request
+
+    next_state = %{
+      retire_request(state, replaced_request)
+      | active_request: request,
+        queued_request: nil,
+        next_request_token: state.next_request_token + 1
+    }
+
+    {:ok, next_state,
+     [
+       Actions.timeout_cancelled(replaced_request.request_token),
+       Actions.request_started(request),
+       Actions.timeout_scheduled(request.request_token, state.timeout_ms)
+     ]}
+  end
+
+  defp dispatch_scope_change(
          %__MODULE__{lifecycle: :in_flight, queued_request: nil} = state,
          context,
          scope,
-         dependency_profile
+         dependency_profile,
+         true
        ) do
     request = build_request(state.next_request_token, context, scope, dependency_profile)
 
@@ -244,7 +292,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
          %__MODULE__{lifecycle: :in_flight, queued_request: queued_request} = state,
          context,
          scope,
-         dependency_profile
+         dependency_profile,
+         _scrub_mode?
        ) do
     request = build_request(state.next_request_token, context, scope, dependency_profile)
 
@@ -464,11 +513,13 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
   end
 
   defp retire_active_request(%__MODULE__{active_request: active_request} = state) do
-    %{
-      state
-      | retired_requests:
-          Map.put(state.retired_requests, active_request.request_token, active_request)
-    }
+    retire_request(state, active_request)
+  end
+
+  defp retire_request(state, nil), do: state
+
+  defp retire_request(state, request) do
+    %{state | retired_requests: Map.put(state.retired_requests, request.request_token, request)}
   end
 
   defp resolve_request_for_token(
@@ -644,6 +695,44 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
       _ ->
         read_timeout_ms_from_config()
     end
+  end
+
+  defp configured_scrub_window_ms(opts) do
+    case Keyword.get(opts, :scrub_window_ms) do
+      value when is_integer(value) and value > 0 -> value
+      _ -> @default_scrub_window_ms
+    end
+  end
+
+  defp configured_scrub_threshold(opts) do
+    case Keyword.get(opts, :scrub_threshold) do
+      value when is_integer(value) and value > 1 -> value
+      _ -> @default_scrub_threshold
+    end
+  end
+
+  defp track_navigation_burst(state) do
+    now = monotonic_now_ms()
+
+    {started_at_ms, count} =
+      case state.nav_burst_started_at_ms do
+        nil ->
+          {now, 1}
+
+        started_at_ms when now - started_at_ms <= state.scrub_window_ms ->
+          {started_at_ms, state.nav_burst_count + 1}
+
+        _stale_started_at_ms ->
+          {now, 1}
+      end
+
+    next_state = %{
+      state
+      | nav_burst_started_at_ms: started_at_ms,
+        nav_burst_count: count
+    }
+
+    {next_state, count >= state.scrub_threshold}
   end
 
   defp read_timeout_ms_from_config do

@@ -5,7 +5,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
 
   require Logger
 
-  alias Oli.Dashboard.Snapshot.Parity
   alias Oli.Dashboard.Snapshot.Telemetry
   alias Oli.InstructorDashboard.DataSnapshot.DatasetRegistry
   alias Oli.Utils
@@ -19,7 +18,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
           | :dataset_policy_excluded
           | :serializer_error
           | :zip_build_failed
-          | :parity_mismatch
           | :export_timeout
           | :export_failed
   @type error :: {:export_failed, reason_code(), map()}
@@ -237,27 +235,18 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
     end
   end
 
-  defp build_manifest(snapshot_bundle, export_profile, dataset_entries, export_request) do
+  defp build_manifest(snapshot_bundle, export_profile, dataset_entries, _export_request) do
     snapshot = Map.get(snapshot_bundle, :snapshot, %{})
 
-    with {:ok, parity} <-
-           build_parity_metadata(
-             snapshot_bundle,
-             dataset_entries,
-             export_profile,
-             export_request
-           ) do
-      {:ok,
-       %{
-         export_profile: export_profile,
-         generated_at: DateTime.utc_now(),
-         request_token: Map.get(snapshot_bundle, :request_token),
-         snapshot_version: Map.get(snapshot, :snapshot_version),
-         projection_version: Map.get(snapshot, :projection_version),
-         parity: parity,
-         datasets: dataset_entries
-       }}
-    end
+    {:ok,
+     %{
+       export_profile: export_profile,
+       generated_at: DateTime.utc_now(),
+       request_token: Map.get(snapshot_bundle, :request_token),
+       snapshot_version: Map.get(snapshot, :snapshot_version),
+       projection_version: Map.get(snapshot, :projection_version),
+       datasets: dataset_entries
+     }}
   end
 
   defp build_zip_binary(zip_entries, manifest, export_request) do
@@ -378,60 +367,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExport do
   defp export_error(reason_code, details) do
     {:error, {:export_failed, reason_code, details}}
   end
-
-  defp build_parity_metadata(snapshot_bundle, dataset_entries, export_profile, export_request) do
-    actual_fingerprint = Parity.fingerprint(snapshot_bundle, dataset_entries)
-    expected_fingerprint = expected_parity_fingerprint(export_request)
-
-    comparison =
-      case expected_fingerprint do
-        nil ->
-          %{
-            status: :not_checked,
-            expected_fingerprint: nil,
-            actual_fingerprint: actual_fingerprint
-          }
-
-        expected ->
-          case Parity.compare(expected, actual_fingerprint) do
-            :match ->
-              %{
-                status: :match,
-                expected_fingerprint: expected,
-                actual_fingerprint: actual_fingerprint
-              }
-
-            {:mismatch, mismatch} ->
-              %{
-                status: :mismatch,
-                expected_fingerprint: mismatch.expected,
-                actual_fingerprint: mismatch.actual
-              }
-          end
-      end
-
-    Telemetry.parity_check(%{
-      status: comparison.status,
-      export_profile: export_profile,
-      dataset_count: length(dataset_entries),
-      mismatch_count: mismatch_count(comparison.status),
-      expected_present: not is_nil(expected_fingerprint),
-      reason_code: parity_reason_code(comparison.status)
-    })
-
-    {:ok, %{fingerprint: actual_fingerprint, comparison: comparison}}
-  end
-
-  defp expected_parity_fingerprint(export_request) do
-    Map.get(export_request, :expected_parity_fingerprint) ||
-      Map.get(export_request, "expected_parity_fingerprint")
-  end
-
-  defp mismatch_count(:mismatch), do: 1
-  defp mismatch_count(_), do: 0
-
-  defp parity_reason_code(:mismatch), do: :parity_mismatch
-  defp parity_reason_code(_), do: nil
 
   defp is_projection_key?(value) when is_atom(value), do: true
   defp is_projection_key?(value) when is_binary(value) and byte_size(value) > 0, do: true

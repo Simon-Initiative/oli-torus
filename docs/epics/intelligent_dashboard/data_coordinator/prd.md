@@ -1,6 +1,6 @@
 # Data Coordinator PRD
 
-Last updated: 2026-02-17
+Last updated: 2026-02-25
 Feature: `data_coordinator`
 Epic: `MER-5198`
 Primary Jira: `MER-5302` Data Infra: Live Data Coordinator and Request Control
@@ -8,7 +8,7 @@ Related docs: `docs/epics/intelligent_dashboard/edd.md`, `docs/epics/intelligent
 
 ## 1. Overview
 
-This feature defines runtime request orchestration for Intelligent Dashboard scope changes. It controls in-flight and queued work, suppresses stale UI mutation, and emits incremental hydration updates as oracles complete.
+This feature defines runtime request orchestration for Intelligent Dashboard scope changes. It controls in-flight and queued work, supports latest-wins immediate preemption outside scrub bursts, suppresses stale UI mutation, and emits incremental hydration updates as oracles complete.
 
 `data_coordinator` is an orchestration layer, not a storage layer. It uses `data_cache` through a stable cache API boundary and does not own cache keying, TTL, capacity, revisit policy, or eviction implementation.
 
@@ -21,15 +21,16 @@ Prototype alignment:
 Without deterministic request control, rapid scope changes (`A -> B -> C`) can trigger unbounded background work and stale-result races that overwrite newer user intent. Without explicit coordinator/cache boundaries, orchestration and storage concerns can blur, leading to duplicated policy logic and brittle behavior.
 
 The dashboard requires:
-- bounded request concurrency,
-- latest-intent semantics,
+- bounded request concurrency with burst-aware scrub handling,
+- latest-intent semantics with immediate-start behavior on normal navigation,
 - strict stale-result suppression at UI apply points,
 - and cache-aware orchestration that remains decoupled from cache internals.
 
 ## 3. Goals & Non-Goals
 
 Goals:
-- Implement one in-flight + one replaceable queued request policy per dashboard session.
+- Implement one active request with latest-wins immediate preemption in normal navigation.
+- Implement scrub-mode burst handling that keeps at most one replaceable queued request.
 - Ensure latest-intent behavior under rapid filter cycling.
 - Ensure stale tokens never mutate UI state.
 - Integrate cache lookup/write paths through explicit cache APIs.
@@ -65,28 +66,30 @@ Use cases:
 | ID | Requirement | Priority |
 |---|---|---|
 | FR-001 | System SHALL maintain at most one active scope request per dashboard session. | P0 |
-| FR-002 | System SHALL maintain at most one queued scope request per dashboard session and replace queued request with latest intent. | P0 |
-| FR-003 | System SHALL assign and propagate request tokens and SHALL suppress stale-token UI apply operations. | P0 |
-| FR-004 | System SHALL emit incremental readiness events for oracle/projection completion and scoped failure events for dependency errors. | P0 |
-| FR-005 | System SHALL consult cache before launching missing oracle loads using a stable cache API contract. | P0 |
-| FR-006 | System SHALL write oracle completion results to cache through the cache API even when completion is stale for UI, provided identity guards pass. | P0 |
-| FR-007 | System SHALL NOT implement cache keying, TTL, eviction, revisit retention, or miss coalescing logic inside coordinator modules. | P0 |
-| FR-008 | System SHALL expose coordinator telemetry (queue replacement, stale discard, cache consult outcomes, build/apply latency). | P1 |
-| FR-009 | System SHALL provide deterministic state transitions and transition-level validation errors for invalid coordinator events. | P1 |
-| FR-010 | System SHALL enforce a one-way boundary: coordinator depends on cache API; cache does not depend on coordinator state machine internals. | P0 |
-| FR-011 | System SHALL include extensive automated unit testing for coordinator state/action logic, and SHALL use mocked/stubbed dependencies (for example cache facade and oracle-result producers) where needed to validate end-to-end component interactions in tests. | P0 |
-| FR-012 | System SHALL enforce a configurable hard timeout for active scope builds and emit deterministic timeout fallback state/events that keep the dashboard responsive and eligible for next-request processing. | P0 |
+| FR-002 | System SHALL preempt active request with latest scope intent outside scrub-mode and start the latest scope immediately. | P0 |
+| FR-003 | System SHALL maintain at most one queued scope request while in scrub-mode and replace queued request with latest intent. | P0 |
+| FR-004 | System SHALL assign and propagate request tokens and SHALL suppress stale-token UI apply operations. | P0 |
+| FR-005 | System SHALL emit incremental readiness events for oracle/projection completion and scoped failure events for dependency errors. | P0 |
+| FR-006 | System SHALL consult cache before launching missing oracle loads using a stable cache API contract. | P0 |
+| FR-007 | System SHALL write oracle completion results to cache through the cache API even when completion is stale for UI, provided identity guards pass. | P0 |
+| FR-008 | System SHALL NOT implement cache keying, TTL, eviction, revisit retention, or miss coalescing logic inside coordinator modules. | P0 |
+| FR-009 | System SHALL expose coordinator telemetry (queue replacement, stale discard, cache consult outcomes, build/apply latency). | P1 |
+| FR-010 | System SHALL provide deterministic state transitions and transition-level validation errors for invalid coordinator events. | P1 |
+| FR-011 | System SHALL enforce a one-way boundary: coordinator depends on cache API; cache does not depend on coordinator state machine internals. | P0 |
+| FR-012 | System SHALL include extensive automated unit testing for coordinator state/action logic, and SHALL use mocked/stubbed dependencies (for example cache facade and oracle-result producers) where needed to validate end-to-end component interactions in tests. | P0 |
+| FR-013 | System SHALL enforce a configurable hard timeout for active scope builds and emit deterministic timeout fallback state/events that keep the dashboard responsive and eligible for next-request processing. | P0 |
 
 ## 7. Acceptance Criteria
 
-- AC-001: Given rapid scope cycling, when selections occur while one build is active, then only one active + one latest queued request is retained.
-- AC-002: Given stale completion for token `T_old`, when result arrives after token `T_new` is active, then no UI assigns/events are applied from `T_old`.
-- AC-003: Given cache lookup with partial hit, when request starts, then cached required payloads are applied immediately and only missing required oracles are loaded.
-- AC-004: Given stale completion that passes cache identity checks, when it arrives, then cache is warmed for its original `(context, container, oracle)` key and UI remains unchanged.
-- AC-005: Given boundary review, coordinator module code contains no cache policy implementation (TTL/LRU/key-building/revisit retention logic).
-- AC-006: Given telemetry inspection, request queue transitions, stale discards, cache consult outcomes, and end-to-end scope transition timings are observable.
-- AC-007: Given coordinator unit test execution, mocked/stubbed cache/runtime dependencies are used where necessary to exercise token guards, queue transitions, and stale-result handling end-to-end at component boundaries.
-- AC-008: Given an active scope build exceeding configured timeout, coordinator emits deterministic timeout fallback state/events for that scope and remains available to process subsequent latest-intent requests.
+- AC-001: Given normal two-click navigation (`A -> B`), when `B` is selected while `A` is active and scrub-mode is not entered, then `B` becomes active immediately and receives load-start actions without waiting for `A` completion.
+- AC-002: Given rapid scope cycling in scrub-mode (`A -> B -> C -> ...`), when selections continue inside scrub window/threshold, then only one active + one latest queued request is retained and queued intent is replaced by newest selection.
+- AC-003: Given stale completion for token `T_old`, when result arrives after token `T_new` is active, then no UI assigns/events are applied from `T_old`.
+- AC-004: Given cache lookup with partial hit, when request starts, then cached required payloads are applied immediately and only missing required oracles are loaded.
+- AC-005: Given stale completion that passes cache identity checks, when it arrives, then cache is warmed for its original `(context, container, oracle)` key and UI remains unchanged.
+- AC-006: Given boundary review, coordinator module code contains no cache policy implementation (TTL/LRU/key-building/revisit retention logic).
+- AC-007: Given telemetry inspection, request queue transitions, stale discards, cache consult outcomes, and end-to-end scope transition timings are observable.
+- AC-008: Given coordinator unit test execution, mocked/stubbed cache/runtime dependencies are used where necessary to exercise token guards, queue transitions, and stale-result handling end-to-end at component boundaries.
+- AC-009: Given an active scope build exceeding configured timeout, coordinator emits deterministic timeout fallback state/events for that scope and remains available to process subsequent latest-intent requests.
 
 ## 8. Non-Functional Requirements
 
@@ -135,7 +138,7 @@ Boundary rule:
 - Integrates with `Oli.Dashboard.OracleRuntime` for oracle execution.
 - Integrates with `Oli.Dashboard.Cache` and `Oli.Dashboard.RevisitCache` only through cache public interfaces.
 - Integrates with LiveView handlers for params/events and async message application.
-- Integrates with `Oli.InstructorDashboard.DataSnapshot` orchestration paths.
+- Integrates with `Oli.InstructorDashboard.DataSnapshot` only for coordinator-owned apply/event paths; `DataSnapshot.get_or_build/2` default orchestration remains synchronous cache/runtime read-through.
 
 ## 11. Feature Flagging, Rollout & Migration
 
@@ -143,7 +146,7 @@ Boundary rule:
 - Rollout strategy:
   1. Wire coordinator in shadow mode telemetry (non-authoritative) for baseline comparisons.
   2. Enable authoritative apply path for selected dashboard routes.
-  3. Remove legacy direct async apply handlers once parity is verified.
+  3. Remove legacy direct async apply handlers once rollout validation is complete.
 - Phase 4 integration constraint:
   - LiveView proof is completed in test-only harness code.
   - No production LiveView wiring is introduced during this feature phase sequence.
@@ -167,8 +170,8 @@ Boundary rule:
 
 ## 13. Risks & Mitigations
 
-- Risk: queue churn under high-frequency toggling can starve intermediate selections.
-  - Mitigation: explicit latest-intent policy + telemetry + optional debounce follow-up.
+- Risk: aggressive preemption may increase stale completions during moderate navigation.
+  - Mitigation: scrub-mode gating with configurable window/threshold plus stale cache-write support.
 - Risk: stale apply bug in one LiveView handler path.
   - Mitigation: centralized apply guard by token and mandatory integration tests.
 - Risk: coordinator accidentally absorbs cache policy decisions.
@@ -177,12 +180,12 @@ Boundary rule:
 ## 14. Open Questions & Assumptions
 
 Assumptions:
-- One active + one queued request remains correct for initial instructor dashboard interaction rates.
+- Default scrub controls (`400ms` window, threshold `3`) provide balanced responsiveness and backend protection.
 - Cache layer provides deterministic partial-hit semantics and identity-guarded writes.
 
 Open questions:
 - Should cooperative cancellation of in-flight runtime tasks be introduced after baseline stale suppression is stable?
-- Should queue replacement optionally support a short debounce window in high-thrash scenarios?
+- Should scrub window/threshold be course-size aware or user-adaptive in future tuning?
 - Should the initial hard timeout default (`30_000ms`) be tuned after observing timeout/fallback rates in production-like load?
 
 ## 15. Timeline & Milestones (Draft)
@@ -210,8 +213,8 @@ Open questions:
 
 ## 17. Definition of Done
 
-- FR-001 through FR-012 implemented or explicitly deferred with rationale.
-- AC-001 through AC-008 passing.
+- FR-001 through FR-013 implemented or explicitly deferred with rationale.
+- AC-001 through AC-009 passing.
 - No stale UI updates in automated race tests.
 - Coordinator/cache boundary is explicit in code and docs, with coordinator using cache API only.
 
@@ -233,3 +236,15 @@ Prototype references:
 - Reason: Close AC-006/AC-008 and provide operationally useful, PII-safe instrumentation for rollout monitoring.
 - Evidence: `lib/oli/dashboard/live_data_coordinator/{actions,state,telemetry}.ex`, `test/oli/dashboard/live_data_coordinator/{timeout_test,liveview_integration_test,observability_test}.exs`
 - Impact: Confirms no migration/backfill requirement and records queue-churn/timeout-threshold tuning as explicit follow-up work.
+
+### 2026-02-25 - Adopt Latest-Wins Immediate Start with Scrub-Mode Burst Gating
+- Change: Updated coordinator policy to preempt active request immediately in normal navigation while retaining one replaceable queued request only when scrub-mode burst thresholds are met.
+- Reason: Match product requirement that latest click starts now while suppressing unnecessary intermediate work during rapid unit scrubbing.
+- Evidence: `lib/oli/dashboard/live_data_coordinator/state.ex`, `test/oli/dashboard/live_data_coordinator/{state_test,request_scope_change_test,result_handling_test,stale_suppression_test,liveview_integration_test}.exs`
+- Impact: Replaces always-queue behavior with hybrid preempt/scrub semantics and updates FR/AC expectations for navigation responsiveness.
+
+### 2026-02-25 - Clarify Snapshot Integration Boundary After Direct Read-Through Simplification
+- Change: Updated integration wording to make coordinator ownership explicit for coordinator-managed paths while documenting that `DataSnapshot.get_or_build/2` now uses direct synchronous read-through orchestration.
+- Reason: Snapshot orchestration was simplified to remove coordinator action replay for this call mode while preserving coordinator semantics in coordinator-owned request-control paths.
+- Evidence: `lib/oli/instructor_dashboard/data_snapshot.ex`, `lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`
+- Impact: Reduces ambiguity about coordinator scope without changing coordinator FR/AC or rollout/rollback posture.

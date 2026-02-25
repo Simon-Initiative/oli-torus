@@ -11,9 +11,9 @@ Deliver `MER-5304` by implementing canonical snapshot and projection contracts i
 ## Non-Functional Guardrails
 - Keep strict one-way boundaries: `DataSnapshot` may orchestrate through coordinator/cache APIs; assembler/projection/export modules remain queryless and policy-agnostic.
 - Preserve tenant/context isolation by requiring normalized, authorized scope/context metadata on every snapshot build/read path.
-- Emit PII-safe telemetry and AppSignal-aligned metrics for assembly/projection/export outcomes, status distribution, and parity checks.
+- Emit PII-safe telemetry and AppSignal-aligned metrics for assembly/projection/export outcomes and status distribution.
 - No relational schema migration or backfill is introduced; rollback posture is code-only.
-- No user-facing feature flag is required for baseline rollout; rollout is gated by parity and regression checks.
+- No user-facing feature flag is required for baseline rollout; rollout is gated by regression checks.
 - No dedicated performance/load/benchmark testing is included in `MER-5304`; performance posture is enforced through telemetry/AppSignal instrumentation and monitoring.
 
 ## Clarifications & Default Assumptions
@@ -38,7 +38,7 @@ Deliver `MER-5304` by implementing canonical snapshot and projection contracts i
 - Gate B (after Phase 2): Assembler/projection derivation semantics and incremental readiness behavior are deterministic.
 - Gate C (after Phase 3): `DataSnapshot` orchestration integration is stable with cache/coordinator boundaries and tenant guards.
 - Gate D (after Phase 4): Transform-only CSV export and deterministic partial/failure policies are verified.
-- Gate E (after Phase 5): Parity telemetry/docs/regression checks are complete and release-ready.
+- Gate E (after Phase 5): Observability/docs/regression checks are complete and release-ready.
 
 ## Phase 1: Snapshot Contracts and Boundary Foundations
 - Goal: Establish canonical snapshot/projection contracts, versioning fields, and hard boundary rules required by all downstream work.
@@ -108,7 +108,7 @@ Deliver `MER-5304` by implementing canonical snapshot and projection contracts i
   - Tenant/authz scope handling is verified by tests.
   - Consumer integration documentation is updated for downstream tiles/export callers.
 - Gate:
-  - Gate C passes when orchestration behavior is stable and boundary-safe for export/parity integration.
+  - Gate C passes when orchestration behavior is stable and boundary-safe for export integration.
 - Dependencies:
   - Phase 2.
   - External dependency: stable cache facade/coordinator APIs from `data_cache` and `data_coordinator`.
@@ -122,7 +122,7 @@ Deliver `MER-5304` by implementing canonical snapshot and projection contracts i
   - [x] Implement `Oli.InstructorDashboard.DataSnapshot.CsvExport.build_zip/2` and serializer adapters using snapshot/projection inputs only (AC-003).
   - [x] Enforce deterministic dataset inclusion/exclusion rules for partial projection states (AC-004).
   - [x] Enforce deterministic fail-closed behavior with explicit reason codes when required projection data is unavailable (AC-005).
-  - [x] Add parity-fingerprint payload generation hooks for downstream UI/CSV semantic equivalence checks (AC-002).
+  - [x] Ensure UI/CSV semantic equivalence remains covered through shared snapshot/projection contracts and deterministic transform tests (AC-002).
 - Testing Tasks:
   - [x] Add registry mapping tests proving dataset requirements and failure policies are deterministic.
   - [x] Add export tests that assert no independent analytics query path is executed and only transform inputs are consumed (AC-003).
@@ -132,7 +132,7 @@ Deliver `MER-5304` by implementing canonical snapshot and projection contracts i
 - Definition of Done:
   - Dataset registry and CSV export modules are deterministic and transform-only.
   - Partial/failure policies are explicit, test-covered, and consistent with product assumptions.
-  - Parity-fingerprint hooks are available to observability and verification paths.
+  - AC-002 equivalence coverage is present through transform-only export tests and shared contracts.
 - Gate:
   - Gate D passes when export behavior and no-query guarantees are verified.
 - Dependencies:
@@ -140,22 +140,22 @@ Deliver `MER-5304` by implementing canonical snapshot and projection contracts i
 - Parallelizable Work:
   - Dataset registry implementation and serializer adapter development can run in parallel after projection contract signatures are stable.
 
-## Phase 5: Parity Verification, Observability, and Release Readiness
-- Goal: Complete parity checks, telemetry/AppSignal posture, requirements traceability, and final release gates.
+## Phase 5: Observability and Release Readiness
+- Goal: Complete telemetry/AppSignal posture, requirements traceability, and final release gates.
 - Tasks:
-  - [x] Implement/verify parity comparison module usage and attach parity metadata/fingerprints to export manifest and consumer-visible diagnostic paths (AC-002).
-  - [x] Finalize telemetry events for assembly/projection/export/parity outcomes, including status and reason-code dimensions without raw PII.
+  - [x] Remove runtime equivalence-comparison instrumentation from snapshot/export flows and docs while preserving AC-002 contract/test coverage.
+  - [x] Finalize telemetry events for assembly/projection/export outcomes, including status and reason-code dimensions without raw PII.
   - [x] Add AppSignal metric mapping/documentation for snapshot readiness distribution and export failure taxonomy.
   - [x] Confirm no schema migration/backfill work was introduced and record operational rollback checklist.
   - [x] Update feature docs (`prd`/`fdd` decision log only if needed) with final boundary, policy, and rollout decisions.
 - Testing Tasks:
-  - [x] Add telemetry/parity tests for event names, metadata keys, and zero-mismatch parity assertions on representative scoped fixtures.
+  - [x] Update telemetry/export tests for event names and metadata keys after runtime equivalence-comparison removal.
   - [x] Run targeted suite for snapshot/orchestration/export modules and a full backend regression pass.
   - [x] Command(s): `mix test test/oli/dashboard/snapshot test/oli/instructor_dashboard/data_snapshot`
   - [x] Command(s): `mix test`
-  - [x] Pass criteria: targeted and full suites pass; parity checks report zero mismatches for gated metrics.
+  - [x] Pass criteria: targeted and full suites pass; AC-002 equivalence coverage remains green.
 - Definition of Done:
-  - Parity instrumentation and observability are complete and privacy-safe.
+  - Observability is complete and privacy-safe with no runtime equivalence-comparison instrumentation.
   - Documentation and operational readiness notes are synchronized with implementation.
   - Final regression gate is green and release handoff is complete.
 - Gate:
@@ -163,11 +163,11 @@ Deliver `MER-5304` by implementing canonical snapshot and projection contracts i
 - Dependencies:
   - Phase 4.
 - Parallelizable Work:
-  - Telemetry/AppSignal documentation updates can run in parallel with parity test authoring before final regression execution.
+  - Telemetry/AppSignal documentation updates can run in parallel with export telemetry test updates before final regression execution.
 
 ## Parallelisation Notes
 - Phase 1 is the root gate.
 - After Gate A, Phase 2 starts and can split between assembler core and instructor projection module tracks.
 - After Gate B, Phase 3 starts; orchestration wiring and security/tenant test tracks can proceed concurrently.
 - After Gate C, Phase 4 starts; dataset registry and CSV serializer tracks run in parallel and converge for policy tests.
-- Phase 5 starts after Gate D; observability/docs and parity/regression tracks can run in parallel until final gate convergence.
+- Phase 5 starts after Gate D; observability/docs and regression tracks can run in parallel until final gate convergence.

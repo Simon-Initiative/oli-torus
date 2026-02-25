@@ -146,9 +146,10 @@ defmodule Oli.Dashboard.Cache do
   end
 
   @doc """
-  Looks up revisit-eligible oracle keys for explicit-container revisit flows.
+  Looks up revisit-eligible oracle keys for explicit-entry revisit flows.
 
-  Revisit lookups are only eligible on explicit-container entry flows.
+  Revisit lookups are eligible on explicit-entry flows for top-level course scope
+  and explicit container scope.
   When revisit cache is unavailable, this degrades to miss/fallback semantics.
   """
   @spec lookup_revisit(
@@ -613,7 +614,9 @@ defmodule Oli.Dashboard.Cache do
         Keyword.get(opts, :explicit_container_entry, false) or
         Keyword.get(opts, :entry_mode) == :explicit_container
 
-    explicit_entry? and scope.container_type == :container and is_integer(scope.container_id)
+    explicit_entry? and
+      ((scope.container_type == :course and is_nil(scope.container_id)) or
+         (scope.container_type == :container and is_integer(scope.container_id)))
   end
 
   defp ensure_user_matches_context(user_id, context) do

@@ -30,7 +30,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:ok,
      socket
      |> assign(:prototype_dashboard_store, start_inprocess_store())
-     |> assign(:prototype_dashboard_revisit_cache, start_revisit_cache())}
+     |> assign(:prototype_dashboard_revisit_cache, ensure_revisit_cache())
+     |> assign(:prototype_dashboard_revisit_hydrated?, false)}
   end
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
@@ -328,6 +329,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         socket
       ) do
     scope_selector = Map.get(params, "dashboard_scope", "course")
+    use_revisit? = not socket.assigns.prototype_dashboard_revisit_hydrated?
 
     socket =
       socket
@@ -340,7 +342,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       |> assign_new(:containers, fn ->
         Helpers.get_containers(socket.assigns.section)
       end)
-      |> load_prototype_dashboard()
+      |> load_prototype_dashboard(use_revisit?: use_revisit?)
+      |> assign(:prototype_dashboard_revisit_hydrated?, true)
 
     {:noreply, socket}
   end
@@ -858,7 +861,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
               value={@prototype_dashboard_scope}
             >
               <option value="course">Course (all content)</option>
-              <%= for {label, value} <- prototype_dashboard_scope_options(@containers) do %>
+              <%= for {label, value} <-
+                    prototype_dashboard_scope_options(@containers, @section.customizations) do %>
                 <option value={value}>{label}</option>
               <% end %>
             </select>
@@ -1272,7 +1276,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_event("prototype_dashboard_reload", _params, socket) do
-    {:noreply, load_prototype_dashboard(socket)}
+    {:noreply, load_prototype_dashboard(socket, use_revisit?: false)}
   end
 
   @impl Phoenix.LiveView
@@ -1290,32 +1294,73 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     pid
   end
 
-  defp start_revisit_cache do
-    {:ok, pid} = RevisitCache.start_link([])
-    pid
+  defp ensure_revisit_cache do
+    case Process.whereis(RevisitCache) do
+      nil ->
+        case RevisitCache.start_link(name: RevisitCache) do
+          {:ok, _pid} -> RevisitCache
+          {:error, {:already_started, _pid}} -> RevisitCache
+          _ -> nil
+        end
+
+      _pid ->
+        RevisitCache
+    end
   end
 
-  defp prototype_dashboard_scope_options({_, containers}) do
+  defp prototype_dashboard_scope_options({_, containers}, customizations) do
     Enum.map(containers, fn container ->
-      {"#{container.label} - #{container.title}", "container:#{container.id}"}
+      {prototype_dashboard_container_option_label(container, customizations),
+       "container:#{container.id}"}
     end)
   end
 
-  defp prototype_dashboard_scope_options(_), do: []
+  defp prototype_dashboard_scope_options(_, _), do: []
 
-  defp load_prototype_dashboard(socket) do
+  defp prototype_dashboard_container_option_label(container, customizations) do
+    title = Map.get(container, :title, "Container")
+
+    case Map.get(container, :label) do
+      label when is_binary(label) and label != "" ->
+        "#{label} - #{title}"
+
+      _ ->
+        case {Map.get(container, :numbering_level), Map.get(container, :numbering_index)} do
+          {numbering_level, numbering_index}
+          when is_integer(numbering_level) and is_integer(numbering_index) ->
+            label =
+              Sections.get_container_label_and_numbering(
+                numbering_level,
+                numbering_index,
+                customizations
+              )
+
+            "#{label}: #{title}"
+
+          _ ->
+            title
+        end
+    end
+  end
+
+  defp load_prototype_dashboard(socket, opts) do
     scope_selector = Map.get(socket.assigns, :prototype_dashboard_scope, "course")
     scope = parse_prototype_scope(scope_selector)
     context = prototype_dashboard_context(socket, scope)
     cache_opts = prototype_dashboard_cache_opts(socket)
+    use_revisit? = Keyword.get(opts, :use_revisit?, true)
 
     revisit_hydration =
-      hydrate_required_from_revisit_cache(
-        socket.assigns.prototype_dashboard_revisit_cache,
-        context,
-        scope,
-        cache_opts
-      )
+      if use_revisit? do
+        hydrate_required_from_revisit_cache(
+          socket.assigns.prototype_dashboard_revisit_cache,
+          context,
+          scope,
+          cache_opts
+        )
+      else
+        %{source: :skipped, revisit_hits: 0, revisit_misses: 0}
+      end
 
     scope_request = %{
       context: context,
@@ -1339,7 +1384,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           bundle.snapshot.oracles
         )
 
-        assign(socket, :prototype_dashboard, build_prototype_dashboard_payload(bundle, revisit_hydration))
+        assign(
+          socket,
+          :prototype_dashboard,
+          build_prototype_dashboard_payload(bundle, revisit_hydration)
+        )
 
       {:error, reason} ->
         assign(socket, :prototype_dashboard, prototype_dashboard_error_payload(reason))
@@ -1394,7 +1443,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
            ) do
       Enum.each(lookup.hits, fn {oracle_key, payload} ->
         _ =
-          Cache.write_oracle(context, scope, oracle_key, payload, prototype_cache_meta(oracle_key), cache_opts)
+          Cache.write_oracle(
+            context,
+            scope,
+            oracle_key,
+            payload,
+            prototype_cache_meta(oracle_key),
+            cache_opts
+          )
       end)
 
       %{
@@ -1415,12 +1471,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end
   end
 
+  defp persist_revisit_cache(nil, _context, _scope, _oracles), do: :ok
+
   defp persist_revisit_cache(revisit_cache, context, scope, oracles) when is_map(oracles) do
     Enum.each(oracles, fn {oracle_key, payload} ->
       meta = prototype_cache_meta(oracle_key)
 
       with {:ok, revisit_key} <- Key.revisit(context.user_id, context, scope, oracle_key, meta) do
-        _ = RevisitCache.write(revisit_cache, revisit_key, payload)
+        _ =
+          try do
+            RevisitCache.write(revisit_cache, revisit_key, payload)
+          catch
+            :exit, _ -> :ok
+          end
       end
     end)
   end
@@ -1476,14 +1539,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     progress_projection = Map.get(bundle.projections, :progress, %{})
     support_projection = Map.get(bundle.projections, :student_support, %{})
     oracle_sources = prototype_oracle_sources(bundle.snapshot.oracle_statuses)
+    cache_stats = prototype_cache_stats(bundle, oracle_sources, revisit_hydration)
+    projection_statuses = summarize_projection_statuses(bundle.projection_statuses)
 
     status_lines = [
-      "request_token: #{bundle.request_token}",
-      "scope: #{inspect(bundle.scope)}",
-      "cache/revisit pre-hydration: #{inspect(revisit_hydration)}",
-      "oracle sources: #{inspect(oracle_sources)}",
-      "projection_statuses: #{inspect(bundle.projection_statuses)}",
-      "parity fingerprint: #{bundle.parity.fingerprint}"
+      "INPROCESS CACHE",
+      "  hits: #{cache_stats.snapshot_cache_hits}/#{cache_stats.snapshot_total} (#{percent(cache_stats.snapshot_cache_hit_rate)})",
+      "  misses: #{cache_stats.snapshot_cache_misses}/#{cache_stats.snapshot_total} (#{percent(1.0 - cache_stats.snapshot_cache_hit_rate)})",
+      "  runtime loaded from misses: #{cache_stats.runtime_fallbacks}",
+      "  unresolved after runtime: #{cache_stats.unresolved_oracles}",
+      "",
+      "REVISIT CACHE (PRE-HYDRATION)",
+      "  source: #{revisit_hydration.source}",
+      "  hits: #{cache_stats.revisit_hits}/#{cache_stats.revisit_total} (#{percent(cache_stats.revisit_hit_rate)})",
+      "  misses: #{cache_stats.revisit_misses}/#{cache_stats.revisit_total} (#{percent(1.0 - cache_stats.revisit_hit_rate)})",
+      "",
+      "REQUEST",
+      "  token: #{bundle.request_token}",
+      "  scope: #{inspect(bundle.scope)}",
+      "",
+      "PROJECTIONS",
+      "  statuses: #{inspect(projection_statuses)}",
+      "",
+      "ORACLES",
+      "  sources: #{inspect(oracle_sources)}"
     ]
 
     %{
@@ -1492,6 +1571,55 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       student_support_text: inspect(support_projection, pretty: true, limit: :infinity)
     }
   end
+
+  defp prototype_cache_stats(bundle, oracle_sources, revisit_hydration) do
+    expected_oracles =
+      bundle.dependency_profile.required
+      |> Kernel.++(bundle.dependency_profile.optional)
+      |> Enum.uniq()
+      |> length()
+
+    cache_hits = count_oracle_sources(oracle_sources, :cache)
+    runtime_fallbacks = count_oracle_sources(oracle_sources, :runtime)
+    unresolved = max(expected_oracles - cache_hits - runtime_fallbacks, 0)
+
+    revisit_hits = Map.get(revisit_hydration, :revisit_hits, 0)
+    revisit_misses = Map.get(revisit_hydration, :revisit_misses, 0)
+
+    %{
+      snapshot_cache_hits: cache_hits,
+      snapshot_cache_misses: expected_oracles - cache_hits,
+      snapshot_cache_hit_rate: ratio(cache_hits, expected_oracles),
+      runtime_fallbacks: runtime_fallbacks,
+      unresolved_oracles: unresolved,
+      revisit_hits: revisit_hits,
+      revisit_misses: revisit_misses,
+      revisit_total: revisit_hits + revisit_misses,
+      revisit_hit_rate: ratio(revisit_hits, revisit_hits + revisit_misses),
+      snapshot_total: expected_oracles
+    }
+  end
+
+  defp count_oracle_sources(oracle_sources, source) when is_map(oracle_sources) do
+    Enum.count(oracle_sources, fn {_oracle_key, value} -> value == source end)
+  end
+
+  defp count_oracle_sources(_, _), do: 0
+
+  defp ratio(_num, 0), do: 0.0
+  defp ratio(num, den), do: Float.round(num / den, 4)
+
+  defp percent(rate) when is_number(rate) do
+    "#{Float.round(rate * 100.0, 1)}%"
+  end
+
+  defp summarize_projection_statuses(projection_statuses) when is_map(projection_statuses) do
+    Enum.into(projection_statuses, %{}, fn {projection_key, status} ->
+      {projection_key, Map.get(status, :status, :unknown)}
+    end)
+  end
+
+  defp summarize_projection_statuses(_), do: %{}
 
   defp prototype_oracle_sources(oracle_statuses) when is_map(oracle_statuses) do
     Enum.into(oracle_statuses, %{}, fn {oracle_key, status} ->

@@ -43,7 +43,7 @@ defmodule Oli.Dashboard.Cache.RevisitCacheTest do
       scope: scope,
       opts: opts
     } do
-      key = revisit_key(45, 910, 3001, :progress)
+      key = revisit_key(45, 910, %{container_type: :container, container_id: 3001}, :progress)
       assert :ok = RevisitCache.write(revisit_cache, key, %{value: 88})
 
       assert {:ok, result} =
@@ -54,18 +54,44 @@ defmodule Oli.Dashboard.Cache.RevisitCacheTest do
       assert result.source == :mixed
     end
 
-    test "skips revisit lookup for ineligible flow", %{
+    test "hydrates from revisit cache for course scope when explicit-entry eligible", %{
       revisit_cache: revisit_cache,
       context: context,
       opts: opts
     } do
-      key = revisit_key(45, 910, 3001, :progress)
+      key = revisit_key(45, 910, %{container_type: :course, container_id: nil}, :progress)
       assert :ok = RevisitCache.write(revisit_cache, key, %{value: 44})
 
-      ineligible_scope = %{container_type: :course, container_id: nil}
+      assert {:ok, result} =
+               Cache.lookup_revisit(
+                 45,
+                 context,
+                 %{container_type: :course, container_id: nil},
+                 [:progress],
+                 opts
+               )
+
+      assert result.hits == %{progress: %{value: 44}}
+      assert result.misses == []
+      assert result.source == :revisit
+    end
+
+    test "skips revisit lookup when explicit-entry flag is missing", %{
+      revisit_cache: revisit_cache,
+      context: context
+    } do
+      key = revisit_key(45, 910, %{container_type: :container, container_id: 3001}, :progress)
+      assert :ok = RevisitCache.write(revisit_cache, key, %{value: 44})
 
       assert {:ok, result} =
-               Cache.lookup_revisit(45, context, ineligible_scope, [:progress], opts)
+               Cache.lookup_revisit(
+                 45,
+                 context,
+                 %{container_type: :container, container_id: 3001},
+                 [:progress],
+                 key_meta: %{oracle_version: 1, data_version: 1},
+                 revisit_cache: revisit_cache
+               )
 
       assert result.hits == %{}
       assert result.misses == [:progress]
@@ -97,7 +123,7 @@ defmodule Oli.Dashboard.Cache.RevisitCacheTest do
       revisit_cache: revisit_cache,
       clock_ref: clock_ref
     } do
-      key = revisit_key(45, 910, 3001, :objectives)
+      key = revisit_key(45, 910, %{container_type: :container, container_id: 3001}, :objectives)
       assert :ok = RevisitCache.write(revisit_cache, key, %{value: 17})
 
       advance_clock(clock_ref, 101)
@@ -114,12 +140,12 @@ defmodule Oli.Dashboard.Cache.RevisitCacheTest do
     end
   end
 
-  defp revisit_key(user_id, context_id, container_id, oracle_key) do
+  defp revisit_key(user_id, context_id, scope, oracle_key) do
     {:ok, key} =
       Key.revisit(
         user_id,
         %{dashboard_context_id: context_id},
-        %{container_type: :container, container_id: container_id},
+        scope,
         oracle_key,
         %{oracle_version: 1, data_version: 1}
       )
