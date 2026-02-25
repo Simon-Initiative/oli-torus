@@ -37,7 +37,6 @@ defmodule Oli.Dashboard.Snapshot.TelemetryTest do
       refute Map.has_key?(sanitized, :user_id)
       refute Map.has_key?(sanitized, :dashboard_context_id)
     end
-
   end
 
   describe "event emission" do

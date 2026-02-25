@@ -194,6 +194,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.CsvExportTest do
 
       assert_receive {:telemetry_event, @export_stop_event, %{duration_ms: duration_ms},
                       export_metadata}
+
       assert is_integer(duration_ms)
       assert duration_ms >= 0
       assert export_metadata.outcome == :ok
