@@ -1373,6 +1373,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     case DataSnapshot.get_or_build(scope_request,
            consumer_keys: [:progress_summary, :support_summary],
+           cache_module: Cache,
            cache_opts: cache_opts,
            runtime_results_provider: &prototype_runtime_results_provider/4
          ) do
