@@ -1,13 +1,13 @@
 import React from 'react';
+import { Provider } from 'react-redux';
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
 import {
   ActivityContext,
   EvaluationResponse,
   PartActivityResponse,
 } from 'components/activities/DeliveryElement';
+import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
 import { ResponseMultiInputComponent } from 'components/activities/response_multi/ResponseMultiInputDelivery';
 import { ResponseMultiInputSchema } from 'components/activities/response_multi/schema';
 import { makeFeedback, makeHint, makePart, makeResponse } from 'components/activities/types';
@@ -67,7 +67,12 @@ describe('response multi delivery', () => {
       authoring: {
         parts: [
           makePart(
-            [makeResponse(`input_ref_${firstInputId} like {.*} && input_ref_${secondInputId} like {.*}`, 1)],
+            [
+              makeResponse(
+                `input_ref_${firstInputId} like {.*} && input_ref_${secondInputId} like {.*}`,
+                1,
+              ),
+            ],
             [makeHint('')],
             partId,
             [firstInputId, secondInputId],
