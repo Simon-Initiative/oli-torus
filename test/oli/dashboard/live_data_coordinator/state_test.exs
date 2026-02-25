@@ -22,6 +22,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.StateTest do
       refute State.queued?(state)
       assert state.next_request_token == 1
       assert state.timeout_ms == 30_000
+      assert state.retired_retention_ms == 30_000
       assert state.scrub_window_ms == 400
       assert state.scrub_threshold == 3
     end
@@ -29,6 +30,13 @@ defmodule Oli.Dashboard.LiveDataCoordinator.StateTest do
     test "new session accepts explicit timeout override" do
       state = LiveDataCoordinator.new_session(timeout_ms: 12_345)
       assert state.timeout_ms == 12_345
+      assert state.retired_retention_ms == 12_345
+    end
+
+    test "new session accepts explicit retired retention override" do
+      state = LiveDataCoordinator.new_session(timeout_ms: 12_345, retired_retention_ms: 3_210)
+      assert state.timeout_ms == 12_345
+      assert state.retired_retention_ms == 3_210
     end
   end
 
@@ -252,6 +260,95 @@ defmodule Oli.Dashboard.LiveDataCoordinator.StateTest do
                LiveDataCoordinator.handle_oracle_result(promoted, 999, :progress, %{value: 1})
     end
 
+    test "retired tokens age out after stale-retention window and no longer resolve as stale" do
+      clock_ref = start_supervised!({Agent, fn -> 1_000 end})
+
+      state =
+        LiveDataCoordinator.new_session(
+          scrub_threshold: 10_000,
+          retired_retention_ms: 5,
+          clock: fn -> Agent.get(clock_ref, & &1) end
+        )
+
+      {:ok, in_flight, _actions} =
+        LiveDataCoordinator.request_scope_change(
+          state,
+          %{container_type: :container, container_id: 20},
+          %{required: [:progress], optional: []},
+          context: context()
+        )
+
+      {:ok, preempted_once, _actions} =
+        LiveDataCoordinator.request_scope_change(
+          in_flight,
+          %{container_type: :container, container_id: 21},
+          %{required: [:objectives], optional: []},
+          context: context()
+        )
+
+      assert {:ok, ^preempted_once, stale_actions} =
+               LiveDataCoordinator.handle_oracle_result(preempted_once, 1, :progress, %{value: 80})
+
+      assert Enum.any?(stale_actions, fn
+               %{type: :stale_result_suppressed, request_token: 1} -> true
+               _ -> false
+             end)
+
+      advance_clock(clock_ref, 6)
+
+      {:ok, preempted_twice, _actions} =
+        LiveDataCoordinator.request_scope_change(
+          preempted_once,
+          %{container_type: :container, container_id: 22},
+          %{required: [:assessments], optional: []},
+          context: context()
+        )
+
+      refute Map.has_key?(preempted_twice.retired_requests, 1)
+
+      assert {:error, {:invalid_transition, {:unknown_request_token, 1}}, ^preempted_twice,
+              [%{type: :invalid_transition}]} =
+               LiveDataCoordinator.handle_oracle_result(preempted_twice, 1, :progress, %{
+                 value: 81
+               })
+    end
+
+    test "retired request pruning keeps retired map bounded during repeated preemption" do
+      clock_ref = start_supervised!({Agent, fn -> 2_000 end})
+
+      state =
+        LiveDataCoordinator.new_session(
+          scrub_threshold: 10_000,
+          retired_retention_ms: 5,
+          clock: fn -> Agent.get(clock_ref, & &1) end
+        )
+
+      {:ok, in_flight, _actions} =
+        LiveDataCoordinator.request_scope_change(
+          state,
+          %{container_type: :container, container_id: 100},
+          %{required: [:progress], optional: []},
+          context: context()
+        )
+
+      {final_state, _last_container} =
+        Enum.reduce(101..106, {in_flight, nil}, fn container_id, {acc_state, _} ->
+          advance_clock(clock_ref, 6)
+
+          {:ok, next_state, _actions} =
+            LiveDataCoordinator.request_scope_change(
+              acc_state,
+              %{container_type: :container, container_id: container_id},
+              %{required: [:progress], optional: []},
+              context: context()
+            )
+
+          {next_state, container_id}
+        end)
+
+      assert map_size(final_state.retired_requests) <= 1
+    end
+
     test "timeout hooks accept active token and reject unknown tokens" do
       state = LiveDataCoordinator.new_session()
 
@@ -279,5 +376,9 @@ defmodule Oli.Dashboard.LiveDataCoordinator.StateTest do
               [%{type: :invalid_transition}]} =
                LiveDataCoordinator.handle_request_timeout(in_flight, 2)
     end
+  end
+
+  defp advance_clock(clock_ref, delta_ms) do
+    Agent.update(clock_ref, &(&1 + delta_ms))
   end
 end

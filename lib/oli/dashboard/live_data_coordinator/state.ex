@@ -29,7 +29,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
           required(:scope) => Scope.t(),
           required(:dependency_profile) => dependency_profile(),
           required(:pending_required) => [oracle_key()],
-          required(:started_at_ms) => non_neg_integer()
+          required(:started_at_ms) => non_neg_integer(),
+          optional(:retired_at_ms) => non_neg_integer()
         }
 
   @type transition_error ::
@@ -53,6 +54,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
     :retired_requests,
     :next_request_token,
     :timeout_ms,
+    :retired_retention_ms,
+    :clock,
     :scrub_window_ms,
     :scrub_threshold,
     :nav_burst_started_at_ms,
@@ -65,6 +68,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
     :retired_requests,
     :next_request_token,
     :timeout_ms,
+    :retired_retention_ms,
+    :clock,
     :scrub_window_ms,
     :scrub_threshold,
     :nav_burst_started_at_ms,
@@ -78,6 +83,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
           retired_requests: %{optional(request_token()) => request()},
           next_request_token: request_token(),
           timeout_ms: pos_integer(),
+          retired_retention_ms: pos_integer(),
+          clock: (-> integer()),
           scrub_window_ms: pos_integer(),
           scrub_threshold: pos_integer(),
           nav_burst_started_at_ms: non_neg_integer() | nil,
@@ -87,6 +94,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
     timeout_ms = configured_timeout_ms(opts)
+    retired_retention_ms = configured_retired_retention_ms(opts, timeout_ms)
+    clock = configured_clock(opts)
     scrub_window_ms = configured_scrub_window_ms(opts)
     scrub_threshold = configured_scrub_threshold(opts)
 
@@ -97,6 +106,8 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
       retired_requests: %{},
       next_request_token: 1,
       timeout_ms: timeout_ms,
+      retired_retention_ms: retired_retention_ms,
+      clock: clock,
       scrub_window_ms: scrub_window_ms,
       scrub_threshold: scrub_threshold,
       nav_burst_started_at_ms: nil,
@@ -228,7 +239,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
          dependency_profile,
          _scrub_mode?
        ) do
-    request = build_request(state.next_request_token, context, scope, dependency_profile)
+    request = build_request(state, state.next_request_token, context, scope, dependency_profile)
 
     next_state = %{
       state
@@ -252,7 +263,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
          dependency_profile,
          false
        ) do
-    request = build_request(state.next_request_token, context, scope, dependency_profile)
+    request = build_request(state, state.next_request_token, context, scope, dependency_profile)
     replaced_request = state.active_request
 
     next_state = %{
@@ -277,7 +288,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
          dependency_profile,
          true
        ) do
-    request = build_request(state.next_request_token, context, scope, dependency_profile)
+    request = build_request(state, state.next_request_token, context, scope, dependency_profile)
 
     next_state = %{
       state
@@ -295,7 +306,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
          dependency_profile,
          _scrub_mode?
        ) do
-    request = build_request(state.next_request_token, context, scope, dependency_profile)
+    request = build_request(state, state.next_request_token, context, scope, dependency_profile)
 
     next_state = %{
       state
@@ -306,14 +317,14 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
     {:ok, next_state, [Actions.request_queue_replaced(queued_request.request_token, request)]}
   end
 
-  defp build_request(request_token, context, scope, dependency_profile) do
+  defp build_request(state, request_token, context, scope, dependency_profile) do
     %{
       request_token: request_token,
       context: context,
       scope: scope,
       dependency_profile: dependency_profile,
       pending_required: dependency_profile.required,
-      started_at_ms: monotonic_now_ms()
+      started_at_ms: now_ms(state)
     }
   end
 
@@ -413,7 +424,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
          request_token
        ) do
     active_request = state.active_request
-    duration_ms = request_duration_ms(active_request)
+    duration_ms = request_duration_ms(state, active_request)
     state_with_retired = retire_active_request(state)
 
     completion_actions = [
@@ -439,7 +450,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
         {:ok, next_state, completion_actions}
 
       promoted_request ->
-        active_promoted_request = activate_promoted_request(promoted_request)
+        active_promoted_request = activate_promoted_request(promoted_request, state)
 
         next_state = %{
           state_with_retired
@@ -466,7 +477,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
          request_token
        ) do
     active_request = state.active_request
-    duration_ms = request_duration_ms(active_request)
+    duration_ms = request_duration_ms(state, active_request)
     state_with_retired = retire_active_request(state)
 
     completion_actions = [
@@ -490,7 +501,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
         {:ok, next_state, completion_actions}
 
       promoted_request ->
-        active_promoted_request = activate_promoted_request(promoted_request)
+        active_promoted_request = activate_promoted_request(promoted_request, state)
 
         next_state = %{
           state_with_retired
@@ -519,7 +530,26 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
   defp retire_request(state, nil), do: state
 
   defp retire_request(state, request) do
-    %{state | retired_requests: Map.put(state.retired_requests, request.request_token, request)}
+    retired_at_ms = now_ms(state)
+
+    retired_requests =
+      state.retired_requests
+      |> Map.put(request.request_token, Map.put(request, :retired_at_ms, retired_at_ms))
+      |> prune_expired_retired_requests(retired_at_ms, state.retired_retention_ms)
+
+    %{state | retired_requests: retired_requests}
+  end
+
+  defp prune_expired_retired_requests(retired_requests, now_ms, retired_retention_ms) do
+    Enum.reduce(retired_requests, %{}, fn {request_token, request}, acc ->
+      retired_at_ms = Map.get(request, :retired_at_ms, Map.get(request, :started_at_ms, now_ms))
+
+      if now_ms - retired_at_ms <= retired_retention_ms do
+        Map.put(acc, request_token, request)
+      else
+        acc
+      end
+    end)
   end
 
   defp resolve_request_for_token(
@@ -547,12 +577,12 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
     Enum.member?(request.dependency_profile.required, oracle_key)
   end
 
-  defp activate_promoted_request(request) do
-    %{request | started_at_ms: monotonic_now_ms()}
+  defp activate_promoted_request(request, state) do
+    %{request | started_at_ms: now_ms(state)}
   end
 
-  defp request_duration_ms(request) do
-    now = monotonic_now_ms()
+  defp request_duration_ms(state, request) do
+    now = now_ms(state)
     started_at_ms = Map.get(request, :started_at_ms, now)
     max(now - started_at_ms, 0)
   end
@@ -697,6 +727,20 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
     end
   end
 
+  defp configured_retired_retention_ms(opts, timeout_ms) do
+    case Keyword.get(opts, :retired_retention_ms) do
+      value when is_integer(value) and value > 0 -> value
+      _ -> timeout_ms
+    end
+  end
+
+  defp configured_clock(opts) do
+    case Keyword.get(opts, :clock) do
+      clock when is_function(clock, 0) -> clock
+      _ -> fn -> System.monotonic_time(:millisecond) end
+    end
+  end
+
   defp configured_scrub_window_ms(opts) do
     case Keyword.get(opts, :scrub_window_ms) do
       value when is_integer(value) and value > 0 -> value
@@ -712,7 +756,7 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
   end
 
   defp track_navigation_burst(state) do
-    now = monotonic_now_ms()
+    now = now_ms(state)
 
     {started_at_ms, count} =
       case state.nav_burst_started_at_ms do
@@ -761,7 +805,10 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
     {:error, reason, new(), [Actions.invalid_transition(reason)]}
   end
 
-  defp monotonic_now_ms do
-    System.monotonic_time(:millisecond)
+  defp now_ms(state) do
+    case state.clock.() do
+      value when is_integer(value) and value >= 0 -> value
+      _ -> 0
+    end
   end
 end
