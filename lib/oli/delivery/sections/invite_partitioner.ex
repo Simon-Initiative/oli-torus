@@ -39,9 +39,10 @@ defmodule Oli.Delivery.Sections.InvitePartitioner do
       |> MapSet.new()
 
     existing_without_enrollment =
-      existing_users
-      |> MapSet.difference(enrolled_emails)
-      |> MapSet.to_list()
+      candidate_emails
+      |> Enum.filter(
+        &(MapSet.member?(existing_users, &1) and !MapSet.member?(enrolled_emails, &1))
+      )
 
     non_existing_users =
       candidate_emails
