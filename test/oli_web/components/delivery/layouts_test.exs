@@ -158,6 +158,51 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
     end
   end
 
+  describe "flash container z-index layering (MER-3278)" do
+    # Regression test: flash containers must have a lower z-index than headers
+    # so the user account dropdown menu is not covered by flash messages.
+    # All flash containers should use z-40 (below headers at z-50+).
+    #
+    # Each entry: {label, file_path, id of flash container div}
+    # All flash containers now have a unique id attribute for reliable matching.
+    @flash_z_index_layouts [
+      {"live.html.heex (authoring)", "lib/oli_web/templates/layout/live.html.heex",
+       "live_flash_container"},
+      {"student_delivery.html.heex", "lib/oli_web/components/layouts/student_delivery.html.heex",
+       "flash_container"},
+      {"workspace.html.heex", "lib/oli_web/components/layouts/workspace.html.heex",
+       "flash_container"},
+      {"instructor_dashboard.html.heex",
+       "lib/oli_web/components/layouts/instructor_dashboard.html.heex", "flash_container"},
+      {"instructor_dashboard_schedule.html.heex",
+       "lib/oli_web/components/layouts/instructor_dashboard_schedule.html.heex",
+       "flash_container"},
+      {"student_delivery_lesson.html.heex",
+       "lib/oli_web/components/layouts/student_delivery_lesson.html.heex",
+       "live_flash_container"},
+      {"page.html.heex", "lib/oli_web/components/layouts/page.html.heex", "flash_container"}
+    ]
+
+    for {label, path, container_id} <- @flash_z_index_layouts do
+      @tag_label label
+      @tag_path path
+      @tag_container_id container_id
+
+      test "#{label} flash container uses z-40 (below header)" do
+        content = File.read!(Path.join(File.cwd!(), @tag_path))
+
+        # Attribute-order-agnostic: match the div with the given id, then extract z-index class
+        regex = ~r/<div[^>]*id="#{@tag_container_id}"[^>]*class="[^"]*?(z-\[?\d+\]?)[^"]*"/s
+
+        assert [_, z_class] = Regex.run(regex, content),
+               "#{@tag_label}: could not find flash container z-index class (id=#{@tag_container_id})"
+
+        assert z_class == "z-40",
+               "#{@tag_label}: flash container should use z-40, got #{z_class}"
+      end
+    end
+  end
+
   describe "sidebar_nav/1" do
     test "renders mobile menu as a full-screen overlay with settings" do
       assigns = %{
