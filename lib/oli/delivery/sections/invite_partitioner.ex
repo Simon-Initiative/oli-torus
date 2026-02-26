@@ -62,6 +62,7 @@ defmodule Oli.Delivery.Sections.InvitePartitioner do
   def normalize_emails(emails) do
     emails
     |> Enum.map(&normalize_email/1)
+    |> Enum.reject(&(&1 == ""))
     |> Enum.uniq()
   end
 
