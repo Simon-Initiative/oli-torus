@@ -342,7 +342,10 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     is_read_by = effective_settings.scheduling_type == :read_by
 
     if late_submit_disallowed && !is_read_by do
-      case Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, effective_settings) do
+      case Oli.Delivery.Settings.determine_effective_deadline(
+             resource_attempt,
+             effective_settings
+           ) do
         nil ->
           false
 
