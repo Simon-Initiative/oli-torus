@@ -262,7 +262,8 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
         lifecycle_state: :active,
         revision: page_2_revision,
         resource_access: resource_access,
-        inserted_at: DateTime.utc_now() |> DateTime.add(-10, :minute) |> DateTime.truncate(:second)
+        inserted_at:
+          DateTime.utc_now() |> DateTime.add(-10, :minute) |> DateTime.truncate(:second)
       })
 
       conn = prepare_conn(conn, section, page_2_revision)

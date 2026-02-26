@@ -314,5 +314,4 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
       )
     end
   end
-
 end
