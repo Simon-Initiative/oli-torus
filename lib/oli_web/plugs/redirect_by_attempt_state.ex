@@ -44,7 +44,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
 
     with false <- already_been_redirected?(conn),
          {true, current_user_id} <- user_already_authenticated?(conn),
-         {lesson_type, page_type, resource_id, is_attempt_review_path?, _page_revision} <-
+         {lesson_type, page_type, resource_id, is_attempt_review_path?, page_revision} <-
            classify_request(conn),
          latest_resource_attempt <-
            maybe_get_resource_attempt(
@@ -54,6 +54,16 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
              current_user_id,
              section_slug
            ) do
+      attempt_expired? =
+        case {lesson_type, page_type, latest_resource_attempt} do
+          {:graded, :adaptive_chromeless,
+           %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active} = attempt} ->
+            attempt_has_expired?(attempt, conn.assigns.section, page_revision, current_user_id)
+
+          _ ->
+            false
+        end
+
       case {lesson_type, page_type, latest_resource_attempt, is_attempt_review_path?} do
         {:graded, :adaptive_chromeless, _, true} ->
           ensure_path(conn, :review, :adaptive)
@@ -70,6 +80,11 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
 
         {:graded, _, %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: state}, false}
         when state in [:submitted, :evaluated] ->
+          ensure_path(conn, :prologue)
+
+        {:graded, :adaptive_chromeless,
+         %Oli.Delivery.Attempts.Core.ResourceAttempt{lifecycle_state: :active}, false}
+        when attempt_expired? ->
           ensure_path(conn, :prologue)
 
         {:graded, :not_adaptive,
@@ -312,6 +327,30 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
       |> Phoenix.Controller.redirect(
         to: "/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"
       )
+    end
+  end
+
+  defp attempt_has_expired?(resource_attempt, section, page_revision, user_id) do
+    effective_settings =
+      Oli.Delivery.Settings.get_combined_settings(
+        page_revision,
+        section.id,
+        user_id
+      )
+
+    late_submit_disallowed = effective_settings.late_submit == :disallow
+    is_read_by = effective_settings.scheduling_type == :read_by
+
+    if late_submit_disallowed && !is_read_by do
+      case Oli.Delivery.Settings.determine_effective_deadline(resource_attempt, effective_settings) do
+        nil ->
+          false
+
+        deadline ->
+          DateTime.compare(DateTime.utc_now(), deadline) == :gt
+      end
+    else
+      false
     end
   end
 end
