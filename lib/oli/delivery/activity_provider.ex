@@ -242,6 +242,10 @@ defmodule Oli.Delivery.ActivityProvider do
           | fulfillment_state.errors
         ])
 
+      {:error, error} ->
+        fulfillment_state
+        |> Map.put(:errors, ["Selection failed to fulfill: #{error}" | fulfillment_state.errors])
+
       {:ok, %Selection{points_per_activity: points_per_activity}} = result ->
         {:ok, %Selection{id: id} = selection} =
           decrement_for_prototypes(result, fulfillment_state.prototypes_by_selection)

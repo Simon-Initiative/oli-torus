@@ -806,5 +806,53 @@ defmodule Oli.Delivery.ActivityProviderTest do
                }
              ] = model
     end
+
+    test "captures invalid selection parse errors without crashing", %{
+      publication: publication,
+      section: section,
+      user1: user
+    } do
+      content = %{
+        "model" => [
+          %{
+            "type" => "selection",
+            "count" => 1,
+            "purpose" => "none",
+            "logic" => %{
+              "conditions" => %{
+                "fact" => "tags",
+                "operator" => "contains",
+                "value" => "not-a-list"
+              }
+            },
+            "id" => "broken-selection"
+          }
+        ]
+      }
+
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug
+      }
+
+      %Result{
+        errors: errors,
+        prototypes: prototypes,
+        transformed_content: transformed_content
+      } =
+        ActivityProvider.provide(
+          content,
+          source,
+          [],
+          user,
+          section.slug,
+          Oli.Publishing.DeliveryResolver
+        )
+
+      assert errors == ["Selection failed to fulfill: invalid expression"]
+      assert prototypes == []
+      assert transformed_content["model"] == []
+    end
   end
 end
