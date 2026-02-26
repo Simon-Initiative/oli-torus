@@ -5,8 +5,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   require Logger
 
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Sections
   alias Oli.Features
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.ScopedFeatureFlags
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Oli.Delivery.RecommendedActions
@@ -382,25 +384,23 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     socket =
       case maybe_get_tab_from_params(params["active_tab"], :course_content) do
         value when value == :course_content ->
-          socket =
-            assign_new(socket, :hierarchy, fn ->
-              section =
-                socket.assigns.section
-                |> Oli.Repo.preload([:base_project, :root_section_resource])
+          section =
+            socket.assigns.section
+            |> Oli.Repo.preload([:base_project, :root_section_resource])
 
-              hierarchy = %{"children" => Sections.build_hierarchy(section).children}
-              OliWeb.Components.Delivery.CourseContent.adjust_hierarchy_for_only_pages(hierarchy)
-            end)
+          hierarchy = build_course_content_hierarchy(section)
 
           socket
           |> assign(
+            section: section,
+            hierarchy: hierarchy,
             params: params,
             view: :overview,
             active_tab: :course_content,
             current_position: 0,
             current_level: 0,
             breadcrumbs_tree: [{0, 0, "Curriculum"}],
-            current_level_nodes: socket.assigns.hierarchy["children"]
+            current_level_nodes: hierarchy["children"]
           )
 
         tab ->
@@ -461,6 +461,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
          )}
       end
     end
+  end
+
+  defp build_course_content_hierarchy(section) do
+    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    previous_next_index = Hierarchy.build_navigation_link_map(hierarchy)
+
+    top_level_resource_ids =
+      Enum.map(hierarchy.children, fn child -> Integer.to_string(child.resource_id) end)
+
+    %{
+      "children" =>
+        Sections.build_hierarchy_from_top_level(top_level_resource_ids, previous_next_index)
+    }
+    |> OliWeb.Components.Delivery.CourseContent.adjust_hierarchy_for_only_pages()
   end
 
   defp path_for(view, tab, section_slug, true = _preview_mode) do

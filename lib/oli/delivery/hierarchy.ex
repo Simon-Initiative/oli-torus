@@ -681,7 +681,11 @@ defmodule Oli.Delivery.Hierarchy do
           "index" => Integer.to_string(node.numbering.index),
           "level" => Integer.to_string(node.numbering.level),
           "slug" => node.revision.slug,
-          "title" => node.revision.title,
+          "title" =>
+            case node.section_resource do
+              %{title: title} when title not in [nil, ""] -> title
+              _ -> node.revision.title
+            end,
           "prev" =>
             case previous do
               nil -> nil
