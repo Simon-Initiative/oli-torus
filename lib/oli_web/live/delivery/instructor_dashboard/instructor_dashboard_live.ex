@@ -7,8 +7,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Features
-  alias Oli.Publishing.DeliveryResolver
   alias Oli.ScopedFeatureFlags
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Oli.Delivery.RecommendedActions
@@ -384,24 +384,32 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     socket =
       case maybe_get_tab_from_params(params["active_tab"], :course_content) do
         value when value == :course_content ->
-          section =
+          socket
+          |> assign_new(:course_content_section, fn ->
             socket.assigns.section
             |> Oli.Repo.preload([:base_project, :root_section_resource])
-
-          hierarchy = build_course_content_hierarchy(section)
-
-          socket
-          |> assign(
-            section: section,
-            hierarchy: hierarchy,
-            params: params,
-            view: :overview,
-            active_tab: :course_content,
-            current_position: 0,
-            current_level: 0,
-            breadcrumbs_tree: [{0, 0, "Curriculum"}],
-            current_level_nodes: hierarchy["children"]
-          )
+          end)
+          |> then(fn socket ->
+            assign(socket,
+              section: socket.assigns.course_content_section,
+              params: params,
+              view: :overview,
+              active_tab: :course_content
+            )
+          end)
+          |> then(fn socket ->
+            assign_new(socket, :hierarchy, fn ->
+              build_course_content_hierarchy(socket.assigns.section)
+            end)
+          end)
+          |> then(fn socket ->
+            assign(socket,
+              current_position: 0,
+              current_level: 0,
+              breadcrumbs_tree: [{0, 0, "Curriculum"}],
+              current_level_nodes: socket.assigns.hierarchy["children"]
+            )
+          end)
 
         tab ->
           socket
@@ -464,7 +472,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   defp build_course_content_hierarchy(section) do
-    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    hierarchy = SectionResourceDepot.get_delivery_resolver_full_hierarchy(section)
     previous_next_index = Hierarchy.build_navigation_link_map(hierarchy)
 
     top_level_resource_ids =
