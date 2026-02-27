@@ -30999,6 +30999,10 @@ Not supports in Firefox and IE */
     align-items: flex-start;
   }
 
+  .md\:items-end {
+    align-items: flex-end;
+  }
+
   .md\:items-center {
     align-items: center;
   }
