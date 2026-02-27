@@ -13,6 +13,7 @@
 - Capture unknowns as clarifications with default assumptions.
 - Identify dependency order and safe parallel work.
 - Include non-functional guardrails and rollout assumptions.
-- Include non-functional threads in phase tasks: security/authz, tenancy, migrations/backfills, caching/invalidation, observability, performance verification, docs.
+- Include non-functional threads in phase tasks: security/authz, tenancy, migrations/backfills, caching/invalidation, observability, telemetry/AppSignal performance posture, docs.
 - Do not include dedicated traffic-simulation test planning.
+- Do not include dedicated performance/load/benchmark test planning.
 - Remove unresolved `TODO`/`TBD`/`FIXME` markers.

@@ -7,7 +7,7 @@ Primary Jira: `MER-5301`
 
 ## 1. Executive Summary
 
-This design introduces the contract foundation for Intelligent Dashboard data access and makes oracle modules the only sanctioned query boundary for dashboard consumers. It defines reusable shared interfaces in `Oli.Dashboard.*` and separates product-specific dependency composition into `Oli.InstructorDashboard.*`. The shared layer standardizes scope normalization, oracle request context, oracle behavior callbacks, and registry behavior. The instructor layer provides capability-oriented dependency profiles and binding scaffolds, while exact concrete instructor oracle modules/keys remain tile-driven and are finalized in tile implementation stories. The immediate objective is to eliminate tile-local and LiveView-local analytics query patterns for covered domains. This design intentionally keeps coordinator, cache, and snapshot responsibilities out of this slice so downstream stories can build on stable contracts without redefinition. Runtime behavior is deterministic through typed validation errors for invalid consumer keys and missing oracle mappings. The performance posture treats registry operations as in-memory lookups with strict latency budgets. The main risk is partial adoption that leaves direct query bypasses, so migration checks and integration tests are first-class outputs of this design.
+This design introduces the contract foundation for Intelligent Dashboard data access and makes oracle modules the only sanctioned query boundary for dashboard consumers. It defines reusable shared interfaces in `Oli.Dashboard.*` and separates product-specific dependency composition into `Oli.InstructorDashboard.*`. The shared layer standardizes scope normalization, oracle request context, oracle behavior callbacks, and registry behavior. The instructor layer provides capability-oriented dependency profiles and binding scaffolds, while exact concrete instructor oracle modules/keys remain tile-driven and are finalized in tile implementation stories. The immediate objective is to eliminate tile-local and LiveView-local analytics query patterns for covered domains. This design intentionally keeps coordinator, cache, and snapshot responsibilities out of this slice so downstream stories can build on stable contracts without redefinition. Runtime behavior is deterministic through typed validation errors for invalid consumer keys and missing oracle mappings. The main risk is partial adoption that leaves direct query bypasses, so migration checks and integration tests are first-class outputs of this design.
 
 ## 2. Requirements & Assumptions
 
@@ -20,9 +20,7 @@ Functional requirements (mapped to PRD):
 - FR-013: extensive unit testing requirement, including mocked/stubbed concrete-oracle test doubles for boundary interaction coverage.
 
 Non-functional targets:
-- Registry dependency resolution p95 <= 10ms, p99 <= 20ms.
-- Registry oracle-module lookup p95 <= 2ms, p99 <= 5ms.
-- Validation overhead p95 <= 2ms.
+- Performance benchmarking and latency-threshold test coverage are out of scope for `MER-5301` and are handled by downstream tickets.
 - Deterministic typed errors for declaration and lookup failures.
 
 Explicit assumptions:
@@ -222,7 +220,7 @@ sequenceDiagram
 - No new schemas or migrations.
 - Oracle modules may query existing delivery/analytics structures (Postgres and ClickHouse) but storage ownership remains unchanged in this feature.
 
-### 6.2 Query Performance
+### 6.2 Query Guardrails
 
 `MER-5301` does not implement query execution itself, but it sets guardrails:
 - Oracle load is the only approved query boundary for covered domains.
@@ -253,13 +251,11 @@ Representative profile shape:
   - canonical scope/context metadata for key composition
 - Cache policy (TTL, revisit flow, LRU, miss coalescing) remains in `MER-5303`.
 
-## 9. Performance and Scalability Plan
+## 9. Scalability Considerations
 
-### 9.1 Budgets
+### 9.1 Deferred Performance Work
 
-- Dependency resolution p95 <= 10ms, p99 <= 20ms.
-- Oracle module lookup p95 <= 2ms, p99 <= 5ms.
-- Startup/profile validation duration p95 <= 50ms per registry module.
+- Performance benchmarking and latency-budget validation are intentionally deferred to downstream data-infra and epic hardening tickets.
 
 ### 9.2 Hotspots & Mitigations
 
@@ -283,21 +279,30 @@ Representative profile shape:
 
 ## 11. Observability
 
-Telemetry events (proposed):
+Telemetry emission is implemented via `Oli.Dashboard.OracleTelemetry` and instrumented at:
+- `Oli.Dashboard.OracleRegistry` (resolve/lookup stop events)
+- `Oli.Dashboard.OracleRegistry.Validator` (validation error event)
+- `Oli.Dashboard.Oracle.Result.error/3` (contract error event)
+
+Telemetry events:
 - `[:oli, :dashboard, :oracles, :registry, :resolve, :stop]`
 - `[:oli, :dashboard, :oracles, :registry, :lookup, :stop]`
 - `[:oli, :dashboard, :oracles, :registry, :validation, :error]`
 - `[:oli, :dashboard, :oracles, :contract, :error]`
 
-Event metadata:
+PII-safe event metadata contract:
 - `dashboard_product` (`:instructor_dashboard` for this slice)
 - `consumer_key`
 - `oracle_key` (when applicable)
-- `outcome` (`:ok` or error type atom)
+- `outcome` (`:ok` or typed error atom)
+- `error_type` (typed, normalized)
+- `event` (`resolve`, `lookup`, `validation`, `contract`)
 
-AppSignal metric mapping (notional):
-- `oli.dashboard.oracles.registry.resolve_ms` distribution
-- `oli.dashboard.oracles.registry.lookup_ms` distribution
+AppSignal metric mapping:
+- `oli.dashboard.oracles.registry.resolve.duration_ms` distribution
+- `oli.dashboard.oracles.registry.lookup.duration_ms` distribution
+- `oli.dashboard.oracles.registry.resolve` counter
+- `oli.dashboard.oracles.registry.lookup` counter
 - `oli.dashboard.oracles.registry.error` counter
 - `oli.dashboard.oracles.contract.error` counter
 
@@ -329,6 +334,18 @@ Integration tests:
 - Prerequisite scenario (`oracle_capability_a` -> `oracle_capability_b` + `oracle_capability_c`) loads prerequisite once, injects payload into both dependents, and hydrates deterministically.
 - Migration checks ensure covered flows no longer use direct analytics query helpers.
 
+### 13.1 Acceptance Criteria Traceability
+
+- AC-001: Instructor consumer dependency resolution tests assert deterministic required/optional oracle keys.
+- AC-002: Registry tests assert deterministic unknown-consumer validation errors.
+- AC-003: Registry lookup tests assert exactly one module is returned for valid oracle keys.
+- AC-004: Oracle contract tests assert canonical `OracleContext` usage and envelope-compliant success/error responses.
+- AC-005: Integration migration tests assert covered dashboard consumers do not use direct analytics query paths.
+- AC-006: Extension workflow tests assert adding one oracle mapping does not mutate unrelated consumer profiles.
+- AC-007: Shared behavior/registry contract tests assert non-instructor product registries can implement without signature changes.
+- AC-008: Planner/runtime interaction tests assert shared prerequisites are loaded once and injected into dependents.
+- AC-009: Unit/integration boundary tests use mocked or stubbed concrete oracle modules where needed.
+
 ## 14. Backwards Compatibility
 
 - Additive infrastructure.
@@ -352,7 +369,7 @@ Integration tests:
 - Exact concrete instructor oracle key/module set is tile-driven and finalized during tile implementation stories.
 - Should registry declarations support composition primitives (profile includes profile) in v1?
   - Recommended default: no, keep declarations explicit in v1 for simpler validation.
-- Follow-up: align this contract with `MER-5302` runtime API final signatures before implementation starts.
+- Follow-up status: shared contract signatures and telemetry metadata are aligned for `MER-5302` runtime integration.
 
 ## 17. Decision Log
 
@@ -361,6 +378,13 @@ Integration tests:
 - Reason: Prototype showed consistent dependency introspection and conflict handling through slot maps merged by oracle key.
 - Evidence: `lib/oli/instructor_dashboard/prototype/tile.ex`, `lib/oli/instructor_dashboard/prototype/tile_registry.ex`
 - Impact: Clarifies `FR-005`/`FR-011` implementation boundaries and reduces ambiguity in registry-to-runtime contracts.
+- IMPORTANT: Do NOT update or extend the prototype in `lib/oli/instructor_dashboard/prototype` during development
+
+### 2026-02-23 - Finalize Observability and Oracle Migration Guardrails
+- Change: Implemented `Oli.Dashboard.OracleTelemetry` with AppSignal mappings and instrumented registry/validator/contract error paths; migrated covered instructor analytics call sites to `Oli.InstructorDashboard.Oracles.SectionAnalytics`.
+- Reason: Phase 5 required deterministic typed-error observability and no-bypass enforcement for covered instructor dashboard consumers.
+- Evidence: `lib/oli/dashboard/oracle_telemetry.ex`, `lib/oli/dashboard/oracle_registry.ex`, `lib/oli/dashboard/oracle_registry/validator.ex`, `lib/oli/dashboard/oracle/result.ex`, `lib/oli/instructor_dashboard/oracles/section_analytics.ex`, `test/oli/dashboard/oracle_observability_test.exs`, `test/oli/instructor_dashboard/oracle_migration_test.exs`
+- Impact: Completes Gate E observability requirements with privacy-safe telemetry and codifies operational no-bypass guardrails for covered paths.
 
 ## 18. References
 

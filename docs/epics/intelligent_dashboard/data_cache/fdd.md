@@ -1,13 +1,13 @@
 # Data Cache FDD
 
-Last updated: 2026-02-17
+Last updated: 2026-02-25
 Feature: `data_cache`
 Epic: `MER-5198`
 Primary Jira: `MER-5303`
 
 ## 1. Executive Summary
 
-This feature implements the storage and caching policy layer for Intelligent Dashboard oracle payloads. It provides two cache tiers: in-process session cache for rapid scope interaction and node-wide revisit cache for short-lived return flows. The design uses deterministic oracle-level keys that include context, container, oracle identity, and version metadata. It enforces TTL freshness and enrollment-tiered container LRU capacity bounds to keep memory predictable. It supports partial container completeness so callers can hydrate cached required payloads while loading only missing dependencies. It supports late oracle writes so previous container payloads can become complete even after user navigation moves to another container. It provides miss coalescing for identical keys to reduce duplicate build work under concurrent demand. The cache layer exposes a stable API consumed by coordinator/read-through orchestration. It explicitly does not implement queue/token stale suppression policy, which remains coordinator-owned.
+This feature implements the storage and caching policy layer for Intelligent Dashboard oracle payloads. It provides two cache tiers: in-process session cache for rapid scope interaction and node-wide revisit cache for short-lived return flows. The design uses deterministic oracle-level keys that include context, container, oracle identity, and version metadata. It enforces TTL freshness and enrollment-tiered container LRU capacity bounds to keep memory predictable, and adds bounded revisit retention through write-time pruning and global entry-cap eviction for long-lived node processes. It supports partial container completeness so callers can hydrate cached required payloads while loading only missing dependencies. It supports late oracle writes so previous container payloads can become complete even after user navigation moves to another container. It provides miss coalescing for identical keys to reduce duplicate build work under concurrent demand. The cache layer exposes a stable API consumed by coordinator and synchronous snapshot read-through orchestration. It explicitly does not implement queue/token stale suppression policy, which remains coordinator-owned where applicable.
 
 ## 2. Requirements & Assumptions
 
@@ -16,13 +16,14 @@ Functional requirements (PRD mapping):
 - FR-003, FR-004: TTL and enrollment-tiered capacity/LRU policy.
 - FR-005, FR-006: oracle-granular writes and partial-hit semantics.
 - FR-007: per-key miss coalescing.
-- FR-008: strict revisit eligibility on explicit-container return flows.
-- FR-009, FR-010: clear boundary where cache is used by coordinator but does not own queue/token policy.
+- FR-008: strict revisit eligibility on explicit-entry flows for top-level course scope and explicit container scope.
+- FR-009, FR-010: clear boundary where cache is used by coordinator/snapshot callers but does not own queue/token policy.
 - FR-011: extensive unit testing with mocked/stubbed concrete dependencies for cache boundary interaction coverage.
+- FR-012: bounded revisit retention via configurable max entries plus write-time pruning/eviction.
 
 Non-functional targets:
-- Per-key lookup p95 <= 5ms.
-- Required-set lookup p95 <= 20ms.
+- No performance testing will be done in `MER-5303`.
+- Performance benchmark and latency-threshold validation are deferred to separate tickets.
 - No cross-user revisit leakage.
 
 Explicit assumptions:
@@ -38,7 +39,7 @@ Assumption risks:
 
 What we know:
 - `docs/epics/intelligent_dashboard/data_cache/prd.md` defines key shapes, TTL defaults, tiered capacity env vars, late-write requirements, and strict revisit policy.
-- `docs/epics/intelligent_dashboard/edd.md` positions cache as reusable `Oli.Dashboard.*` infrastructure consumed by coordinator/runtime flows.
+- `docs/epics/intelligent_dashboard/edd.md` positions cache as reusable `Oli.Dashboard.*` infrastructure consumed by coordinator/runtime/snapshot flows.
 - Existing Torus system includes cache/depot patterns and telemetry conventions that fit this design.
 - Prototype validates a minimal, effective in-process cache shape:
   - key by normalized scope fields + oracle key (`lib/oli/instructor_dashboard/prototype/in_process_cache.ex`).
@@ -63,6 +64,7 @@ Core components:
   - Tracks container recency for LRU.
 - `Oli.Dashboard.RevisitCache`
   - Node-wide per-user short-lived store for eligible return flows.
+  - Applies periodic write-time expiry pruning and global entry-cap LRU eviction.
 - `Oli.Dashboard.Cache.MissCoalescer`
   - Producer/waiter coordination for identical missing keys.
 - `Oli.Dashboard.Cache.Policy`
@@ -75,7 +77,7 @@ Boundary rule:
 
 ### 4.2 State & Message Flow
 
-Read-through behavior with strict revisit policy:
+Read-through behavior with strict explicit-entry revisit policy:
 
 ```mermaid
 sequenceDiagram
@@ -92,7 +94,7 @@ sequenceDiagram
 
     alt misses empty
         CACHE-->>LDC: full_hit(hits)
-    else misses present and revisit_eligible
+    else misses present and explicit-entry revisit eligible (course or container)
         CACHE->>RC: fetch(user_id, context, container, misses)
         RC-->>CACHE: revisit_hits + revisit_misses
         CACHE-->>LDC: partial_hit(hits + revisit_hits, revisit_misses)
@@ -145,9 +147,9 @@ sequenceDiagram
 ### 4.3 Supervision & Lifecycle
 
 - In-process cache lifecycle is tied to LiveView/session lifecycle.
-- Revisit cache is node-scoped and supervised as shared process/storage service.
+- Revisit cache is node-scoped and supervised as shared application-level process/storage service.
 - Miss coalescer lifecycle follows cache process lifecycle.
-- Cache failures degrade to load path (coordinator/runtime) rather than session crash.
+- Cache failures degrade to caller/runtime load paths rather than session crash.
 
 ### 4.4 Alternatives Considered
 
@@ -203,11 +205,11 @@ Required metadata in `meta`:
 
 None.
 
-### 6.2 Query Performance
+### 6.2 Query Guardrails
 
 Cache layer does not execute analytics queries.
 
-Performance-sensitive operations:
+Operationally sensitive operations:
 - key construction/parsing,
 - lookup and TTL checks,
 - LRU recency updates,
@@ -230,10 +232,14 @@ Key strategy:
 Freshness and capacity:
 - `INSTRUCTOR_DASHBOARD_INPROCESS_CACHE_TTL_MINUTES` (default `15`).
 - `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_TTL_MINUTES` (default `5`).
+- `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_MAX_ENTRIES` (default `10000`).
+- `INSTRUCTOR_DASHBOARD_REVISIT_CACHE_WRITE_SWEEP_INTERVAL` (default `100` writes).
 - Enrollment-tiered max containers with container-scoped LRU eviction:
-  - small threshold and max
-  - normal threshold and max
-  - large max
+  - `INSTRUCTOR_DASHBOARD_CACHE_SMALL_ENROLLMENT_THRESHOLD` (default `20`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_NORMAL_ENROLLMENT_THRESHOLD` (default `200`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_SMALL_MAX_CONTAINERS` (default `12`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_NORMAL_MAX_CONTAINERS` (default `24`)
+  - `INSTRUCTOR_DASHBOARD_CACHE_LARGE_MAX_CONTAINERS` (default `36`)
 
 Lookup order:
 - Normal flow: `InProcess -> build/load`.
@@ -243,13 +249,12 @@ Prototype alignment notes:
 - Scope filters are part of cache identity in prototype and should remain part of canonical scope key semantics.
 - TTL/LRU/revisit/coalescing are production additions beyond prototype and should be implemented in cache layer without moving orchestration into coordinator.
 
-## 9. Performance and Scalability Plan
+## 9. Scalability Considerations
 
-### 9.1 Budgets
+### 9.1 Deferred Performance Testing
 
-- Single-key lookup p95 <= 5ms, p99 <= 10ms.
-- Required-set lookup p95 <= 20ms.
-- Eviction operation p95 <= 10ms per container eviction event.
+- No performance testing is included in this feature.
+- Any benchmark, load, or latency-threshold validation is deferred to separate tickets.
 
 ### 9.2 Hotspots & Mitigations
 
@@ -258,7 +263,17 @@ Prototype alignment notes:
 - Hotspot: repeated concurrent misses for same oracle key.
   - Mitigation: miss coalescing producer/waiter model.
 - Hotspot: revisit overuse causing stale perception.
-  - Mitigation: short revisit TTL + strict eligibility rules.
+  - Mitigation: short revisit TTL + explicit-entry eligibility rules for course/container scope.
+- Hotspot: long-lived revisit process memory growth from one-time keys.
+  - Mitigation: periodic write-time pruning + global revisit entry-cap LRU eviction.
+
+## 18. Decision Log
+
+### 2026-02-25 - Align Revisit Eligibility and Lifecycle With Implemented Dashboard Behavior
+- Change: Updated revisit eligibility language to explicit-entry course-or-container semantics and clarified revisit store lifecycle as app-supervised node-local process.
+- Reason: Implemented cache/revisit flow now supports course scope revisit hits and persists across LiveView teardown/remount within node TTL window.
+- Evidence: `lib/oli/dashboard/cache.ex`, `lib/oli/application.ex`, `lib/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live.ex`, `test/oli/dashboard/cache/revisit_cache_test.exs`
+- Impact: Synchronizes FR-008-aligned design details and integration expectations for dashboard revisit behavior.
 
 ## 10. Failure Modes & Resilience
 
@@ -266,25 +281,26 @@ Prototype alignment notes:
 |---|---|---|
 | In-process cache unavailable | facade error | return miss/fallback signal to caller |
 | Revisit cache unavailable | revisit read error | continue with in-process + load path |
+| Revisit cache cap exceeded | write-time cap check | evict least-recently-used revisit entries deterministically |
 | TTL expired entry | lookup expiry check | treat as miss and rebuild |
 | Identity mismatch on write | guard validation failure | reject write and emit telemetry |
 | Coalescing failure | claim/publish error | degrade to non-coalesced build path with telemetry |
 
 ## 11. Observability
 
-Telemetry events (proposed):
+Telemetry events:
 - `[:oli, :dashboard, :cache, :lookup, :stop]`
-- `[:oli, :dashboard, :cache, :revisit_lookup, :stop]`
 - `[:oli, :dashboard, :cache, :write, :stop]`
-- `[:oli, :dashboard, :cache, :eviction, :container]`
-- `[:oli, :dashboard, :cache, :ttl_expired]`
 - `[:oli, :dashboard, :cache, :coalescing, :claim]`
 
 Metadata:
-- `cache_tier` (`inprocess`, `revisit`)
+- `cache_tier` (`inprocess`, `revisit`, `mixed`, `unknown`)
 - `oracle_key`
 - `container_type`
-- `outcome` (`hit`, `miss`, `error`, `expired`, `coalesced_waiter`, `coalesced_producer`)
+- `outcome` (`hit`, `miss`, `partial`, `error`, `skipped`, `accepted`, `rejected`, `coalesced_waiter`, `coalesced_producer`, `coalescer_fallback`)
+- `miss_count`, `expired_count`, `oracle_key_count`
+- `pruned_expired_count`, `evicted_count`, `entry_count` (revisit write behavior)
+- `write_mode` (`active`, `late`)
 
 ## 12. Security & Privacy
 
@@ -300,6 +316,7 @@ Unit tests:
 - TTL behavior and expiry handling
 - tier capacity computation and LRU eviction correctness
 - revisit eligibility checks
+- revisit write-time pruning and global cap eviction behavior
 - mocked/stubbed oracle payload producers/coalescing participants where needed to exercise end-to-end cache component interactions at boundaries
 
 Integration tests:
@@ -310,6 +327,22 @@ Integration tests:
 Concurrency tests:
 - miss coalescing producer/waiter correctness
 - fallback behavior when coalescer path fails
+
+Performance test scope:
+- no load, benchmark, or latency-threshold tests are included in this feature
+
+### 13.1 Acceptance Criteria Traceability
+
+- AC-001: In-process warm-hit tests assert repeated lookup returns cached payload within TTL.
+- AC-002: Required-lookup tests assert deterministic `hits` and `misses` output with only misses built.
+- AC-003: Eviction tests assert tier-cap breach removes least-recently-used container entries as a group.
+- AC-004: Write-path tests assert identity-guarded late writes for prior containers are accepted without direct UI coupling.
+- AC-005: Revisit-eligible flow tests assert explicit-container entries can hydrate from revisit cache before build.
+- AC-006: Revisit-ineligible flow tests assert revisit lookup is skipped for base-mount/no-explicit-container flows.
+- AC-007: Coalescing concurrency tests assert one producer and shared waiter result for identical missing keys.
+- AC-008: Boundary tests assert cache modules contain no request queue/token orchestration behavior.
+- AC-009: Unit/integration boundary tests use mocked/stubbed producers/waiters and payload sources where needed.
+- AC-010: Revisit write-path tests assert periodic expiry pruning and deterministic global-cap LRU eviction.
 
 ## 14. Backwards Compatibility
 
@@ -338,6 +371,24 @@ Concurrency tests:
 - Reason: Prototype proved read-through value with minimal cache APIs and clear controller/cache responsibility boundaries.
 - Evidence: `lib/oli/instructor_dashboard/prototype/in_process_cache.ex`, `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`
 - Impact: Clarifies `FR-001`/`FR-006`/`FR-010` implementation boundaries and prevents policy leakage into coordinator.
+
+### 2026-02-24 - Finalize Phase 5 Integration/Operational Contracts
+- Change: Documented implemented cache configuration knobs, finalized telemetry events/metadata, and codified fallback/rollback posture with coordinator-facing read-through integration proof tests.
+- Reason: Phase 5 requires operational readiness evidence and explicit documentation of production knobs/telemetry contracts.
+- Evidence: `lib/oli/dashboard/cache.ex`, `lib/oli/dashboard/cache/policy.ex`, `lib/oli/dashboard/cache/telemetry.ex`, `test/oli/dashboard/live_data_coordinator/cache_read_through_test.exs`
+- Impact: Aligns docs to implementation, clarifies runtime tuning controls, and confirms code-only rollback with no schema/backfill dependency.
+
+### 2026-02-25 - Clarify Snapshot Synchronous Read-Through Consumption of Cache Facade
+- Change: Updated cache FDD wording to explicitly include synchronous `DataSnapshot.get_or_build/2` read-through as a cache facade consumer without coordinator action-replay dependence.
+- Reason: Snapshot implementation now performs direct read-through orchestration for default build mode while preserving coordinator ownership of queue/token semantics in coordinator-managed paths.
+- Evidence: `lib/oli/instructor_dashboard/data_snapshot.ex`, `lib/oli/dashboard/cache.ex`, `test/oli/instructor_dashboard/data_snapshot/data_snapshot_test.exs`
+- Impact: Keeps cache boundary and failure-mode responsibilities stable while reducing coupling assumptions to coordinator internals.
+
+### 2026-02-26 - Add Bounded Revisit Retention for Long-Lived Node Process
+- Change: Added revisit write-time expiry pruning cadence and configurable global max-entry LRU eviction.
+- Reason: Revisit cache is app-supervised and long-lived; lookup-only expiry left a memory-growth path for never-looked-up keys.
+- Evidence: `lib/oli/dashboard/revisit_cache.ex`, `lib/oli/dashboard/cache/policy.ex`, `test/oli/dashboard/cache/revisit_cache_test.exs`
+- Impact: Preserves revisit UX and isolation while bounding node memory usage.
 
 ## 18. References
 

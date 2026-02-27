@@ -15,11 +15,12 @@ Apply these considerations when drafting `plan.md`:
   - Define commands and pass criteria to advance.
 - Non-functional threads:
   - Security/authz, multi-tenant isolation, migration/backfill safety, cache invalidation, observability instrumentation, and documentation updates.
-  - Include performance verification work tied to NFR targets.
+  - Express performance expectations via telemetry/AppSignal instrumentation, dashboards, and alerts.
+  - Do not include dedicated performance/load/benchmark test tasks.
 - Rollout and operations:
   - Include feature flag posture when applicable, rollout/rollback checkpoints, and operational readiness checks.
 - Clarity:
   - Convert unknowns into explicit clarifications with default assumptions.
   - Remove ambiguity and ensure every phase has a concrete gate.
 
-Do not include dedicated traffic-simulation test planning in this skill.
+Do not include dedicated traffic-simulation or performance/load/benchmark test planning in this skill.

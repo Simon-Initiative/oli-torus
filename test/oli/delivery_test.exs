@@ -53,9 +53,11 @@ defmodule Oli.DeliveryTest do
     # Note: Activity X does not have objectives
     setup do
       map = create_full_project_with_objectives()
+      %{authors: [project_author | _]} = Oli.Repo.preload(map.project, :authors)
 
       # Publish the publication so it can be found by get_latest_published_publication_by_slug
-      {:ok, _published} = Oli.Publishing.publish_project(map.project, "ensure published", 1)
+      {:ok, _published} =
+        Oli.Publishing.publish_project(map.project, "ensure published", project_author.id)
 
       institution = insert(:institution)
       user = insert(:user, independent_learner: false)

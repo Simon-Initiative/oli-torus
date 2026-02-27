@@ -13,6 +13,7 @@ The Google Docs Page Import feature lets Torus administrators convert a Google D
   - Warning logging, metadata persistence, and telemetry emission (FR-009–FR-011).
 - **Non-Functional Requirements**
   - p50 import latency ≤ 6 s, p95 ≤ 12 s for Markdown ≤ 3 MB; hard fail at 10 MB download payload.
+  - Performance posture is validated through telemetry/AppSignal dashboards and alerts; no dedicated performance/load/benchmark tests are required.
   - ≤ 1 % error rate across rolling 30 days; retries on transient 5xx only.
   - Admin-only access, tenant-aware scoping, and WCAG-compliant UI.
 - **Explicit Assumptions**
@@ -143,7 +144,7 @@ The Google Docs Page Import feature lets Torus administrators convert a Google D
 - **Unit Tests**: FILE_ID validation; Markdown parser element coverage; CustomElement conversions; media ingestion (base64 decode, hash dedupe, upload success/failure); warning aggregation.
 - **Integration Tests**: Import success with mixed content; invalid FILE_ID; doc with MCQ + YouTube; media failure fallback; audit + telemetry assertions.
 - **LiveView Tests**: Button visibility (admin vs non-admin); modal validation; success and error flows; warning render.
-- **Manual QA**: Keyboard-only and screen-reader passes for modal; large doc (8 MB) performance; media-heavy doc to validate uploads; regression check for existing curriculum functions.
+- **Manual QA**: Keyboard-only and screen-reader passes for modal; media-heavy doc to validate uploads; regression check for existing curriculum functions; AppSignal dashboard and alert verification for import latency/error-rate posture.
 
 ## 15. Risks & Mitigations
 - Markdown schema drift → maintain fixture suite and emit warnings for unknown patterns.

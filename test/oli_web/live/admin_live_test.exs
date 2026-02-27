@@ -813,34 +813,50 @@ defmodule OliWeb.AdminLiveTest do
     end
 
     test "applies sorting", %{conn: conn} do
+      low_name = %{given_name: "AAAAA", family_name: "AAAAA"}
+      high_name = %{given_name: "zzzzz", family_name: "zzzzz"}
+
+      insert(:author, low_name)
+      insert(:author, high_name)
+
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
-      assert view
-             |> element("tr:first-child > td:first-child")
-             |> render() =~
-               "Administrator"
+      first_row_before =
+        view
+        |> element("tr:first-child > td:first-child")
+        |> render()
 
       view
       |> element("th[phx-click='paged_table_sort']:first-of-type")
       |> render_click(%{sort_by: "name"})
 
-      refute view
-             |> element("tr:first-child > td:first-child")
-             |> render() =~
-               "Administrator"
+      first_row_after_first_sort =
+        view
+        |> element("tr:first-child > td:first-child")
+        |> render()
 
-      assert view
-             |> element("tr:last-child > td:first-child")
-             |> render() =~
-               "Administrator"
+      view
+      |> element("th[phx-click='paged_table_sort']:first-of-type")
+      |> render_click(%{sort_by: "name"})
+
+      first_row_after_second_sort =
+        view
+        |> element("tr:first-child > td:first-child")
+        |> render()
+
+      assert render(view) =~ "AAAAA, AAAAA"
+      assert render(view) =~ "zzzzz, zzzzz"
+      assert first_row_before != first_row_after_first_sort
+      assert first_row_before == first_row_after_second_sort
     end
 
     test "applies paging", %{conn: conn} do
-      [first_author | _tail] = insert_list(24, :author) |> Enum.sort_by(& &1.given_name)
+      [first_author | _tail] = insert_list(26, :author) |> Enum.sort_by(& &1.given_name)
 
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
       assert render(view) =~ first_author.given_name
+      assert has_element?(view, "#header_paging button[phx-click='paged_table_page_change']", "2")
 
       view
       |> element("#header_paging button[phx-click='paged_table_page_change']", "2")

@@ -35,7 +35,7 @@ Links: `docs/epics/intelligent_dashboard/overview.md`, `docs/epics/intelligent_d
   - Progress tile fetches per-container progress histograms for a unit scope.
   - Proficiency tile fetches per-student progress/proficiency tuples for a scope and bins them client-side for a pie chart.
   - Instructor clicks a proficiency slice to view enrolled student lists with identity details.
-  - Assessments tile requests graded page scores for the selected scope.
+  - Assessments tile requests graded-page aggregate statistics, histogram distributions, and schedule metadata for the selected scope.
   - Challenging Objectives tile loads objective proficiency distributions limited to the selected scope.
 
 ## 5. UX / UI Requirements
@@ -55,28 +55,30 @@ Links: `docs/epics/intelligent_dashboard/overview.md`, `docs/epics/intelligent_d
 |---|---|---|---|
 | FR-001 | Define `ProgressBinsOracle` that returns per-container histogram counts in fixed 10% bins (0..100) for the selected scope and direct child containers. | P0 | Data |
 | FR-002 | Define `ProgressProficiencyOracle` that returns per-student tuples `{student_id, progress_pct, proficiency_pct}` for the selected scope (no per-container breakdown). | P0 | Data |
-| FR-003 | Define `StudentInfoOracle` that returns enrolled student identifiers and display fields for drilldown lists. | P0 | Data |
+| FR-003 | Define `StudentInfoOracle` that returns enrolled student identifiers, display fields, and `last_interaction_at` for drilldown lists. | P0 | Data |
 | FR-004 | Define `ScopeResourcesOracle` that returns the course title and direct children of the current scope (resource id, type, title) using in-memory depot data. | P1 | Data |
-| FR-005 | Define `GradesOracle` that returns graded page ids within scope and per-student grade tuples, filling missing attempts. | P1 | Data |
+| FR-005 | Define `GradesOracle` that returns graded pages within scope and per-page aggregate assessment statistics (minimum, median, mean, maximum, standard deviation) plus 10% histogram bucket counts (`0-10` through `90-100`) and per-page scheduling metadata (`available_at`, `due_at`) sourced from `SectionResourceDepot`, without per-student raw rows. | P1 | Data |
 | FR-006 | Define `ObjectivesProficiencyOracle` that returns objective proficiency distributions for objectives contained within the selected scope. | P0 | Data |
 | FR-007 | All oracles must filter to enrolled learners only, excluding instructors and non-enrolled users. | P0 | Data |
 | FR-008 | Oracles must accept scope inputs `(section_id, container_type, container_id)` and be deterministic for identical inputs. | P0 | Data |
 | FR-009 | Oracles must normalize outputs into stable payload shapes consumable by snapshots and projections. | P0 | Data |
 | FR-010 | Oracles must respect existing progress/proficiency formulas and thresholds (progress as average page progress, proficiency as resource_summary formula with minimum-attempt gating). | P0 | Data |
+| FR-011 | `GradesOracle` must provide a direct read-through function that accepts `(section_id, resource_id)` and returns emails for enrolled learners with no attempt on that graded page, for instructor email actions. | P1 | Data |
 
 ## 7. Acceptance Criteria
 - AC-001 (FR-001) — Given a unit scope and its module ids, when `ProgressBinsOracle` executes, then it returns 0..100 bin counts per module with all enrolled students represented (including 0% progress).
 - AC-002 (FR-002) — Given a container scope, when `ProgressProficiencyOracle` executes, then it returns one row per enrolled student with `progress_pct` defaulting to 0.0 if missing and `proficiency_pct` set to nil when attempt thresholds are not met.
-- AC-003 (FR-003) — Given a section, when `StudentInfoOracle` executes, then it returns unique enrolled student ids with email and names and excludes instructor accounts.
+- AC-003 (FR-003) — Given a section, when `StudentInfoOracle` executes, then it returns unique enrolled student ids with email, names, and `last_interaction_at`, excludes instructor accounts, and sources `last_interaction_at` from `Oli.Delivery.Sections.Enrollment.updated_at` for each student enrollment in that section.
 - AC-004 (FR-004) — Given a scope, when `ScopeResourcesOracle` executes, then it returns the course title and direct child items with id, type, and title sourced from the section resource depot.
-- AC-005 (FR-005) — Given a scope, when `GradesOracle` executes, then it returns graded page ids within scope and grade tuples for enrolled students, including entries for missing attempts.
+- AC-005 (FR-005) — Given a scope, when `GradesOracle` executes, then it returns one aggregate record per graded page in scope containing score stats (`minimum`, `median`, `mean`, `maximum`, `standard_deviation`), histogram counts for fixed percentage buckets `0-10, 10-20, ... 90-100`, and scheduling metadata (`available_at`, `due_at`) sourced from `SectionResourceDepot`, and does not include per-student raw grade rows.
 - AC-006 (FR-006) — Given a scope, when `ObjectivesProficiencyOracle` executes, then it returns objective proficiency distributions for objectives contained within that scope using `contained_objectives` mappings.
 - AC-007 (FR-007, FR-008) — Given identical scope inputs and enrollments, when any oracle executes repeatedly, then the payload shapes and values are deterministic and scoped only to enrolled learners.
+- AC-008 (FR-011) — Given a section and graded page id, when `GradesOracle.students_without_attempt_emails/2` executes, then it returns only enrolled learner emails for students with no attempt on that page and excludes instructors/non-learners.
 
 ## 8. Non-Functional Requirements
 - Performance & Scale: Oracles should meet p95 <= 300ms (Normal 200 learners) and p95 <= 700ms (Large 2,000 learners) for single-scope execution when uncached; queries must avoid unbounded fan-out.
 - Reliability: Oracle execution failures must surface as explicit errors in the oracle result envelope without corrupting cache or snapshot state.
-- Security & Privacy: All results must be scoped to the section; only enrolled learners are included; user PII fields are restricted to id, email, and names.
+- Security & Privacy: All results must be scoped to the section; only enrolled learners are included; user PII fields are restricted to id, email, names, and enrollment-level `last_interaction_at`.
 - Compliance: No new accessibility or retention requirements; data handling must align with existing privacy policies.
 - Observability: Emit telemetry per oracle execution (duration, row counts, cache hit/miss) for AppSignal dashboards.
 
@@ -90,9 +92,10 @@ Links: `docs/epics/intelligent_dashboard/overview.md`, `docs/epics/intelligent_d
   - Oracle outputs:
     - `ProgressBinsOracle`: `%{bin_size: 10, by_container_bins: %{container_id => %{0 => count, 10 => count, ...}}, total_students: integer}`.
     - `ProgressProficiencyOracle`: `[%{student_id, progress_pct, proficiency_pct}]`.
-    - `StudentInfoOracle`: `[%{student_id, email, given_name, family_name}]`.
+    - `StudentInfoOracle`: `[%{student_id, email, given_name, family_name, last_interaction_at}]`.
     - `ScopeResourcesOracle`: `%{course_title, items: [%{resource_id, resource_type_id, title}]}`.
-    - `GradesOracle`: `%{page_ids, grades: [%{student_id, page_id, score, out_of}]}`.
+    - `GradesOracle`: `%{grades: [%{page_id, minimum, median, mean, maximum, standard_deviation, histogram: %{"0-10" => count, "10-20" => count, ..., "90-100" => count}, available_at, due_at}]}`.
+    - `GradesOracle.students_without_attempt_emails/2`: `{:ok, [email]} | {:error, reason}`.
     - `ObjectivesProficiencyOracle`: `[%{objective_id, title, proficiency_distribution}]`.
 - Permissions Matrix:
 
@@ -105,7 +108,7 @@ Links: `docs/epics/intelligent_dashboard/overview.md`, `docs/epics/intelligent_d
 ## 10. Integrations & Platform Considerations
 - LTI 1.3: Use LTI role mappings to filter enrolled learners; no new LTI flows.
 - GenAI (if applicable): N/A.
-- External services: ClickHouse use is optional for future optimization; baseline uses Postgres + in-memory depot.
+- External services: Initial delivery is Postgres + in-memory depot only; ClickHouse optimization is deferred to a post-epic follow-up.
 - Caching/Perf: Oracles participate in dashboard cache layers; avoid per-tile query logic.
 - Multi-tenancy: Scope all queries by `section_id` and institution boundaries via standard auth.
 
@@ -128,8 +131,10 @@ No feature flags present in this feature
 ## 14. Open Questions & Assumptions
 - Assumptions:
   - Progress histogram bins are fixed at 10% increments with explicit `0, 10, 20, ... 100` buckets.
+  - Grade histogram buckets are fixed percentage ranges `0-10, 10-20, ... 90-100`.
   - Missing-student progress is injected as `0%` via a lightweight post-processing step when SQL cross-joins are undesirable.
-  - No ClickHouse dependency is required for these concrete oracles.
+  - Grades tile payloads are aggregate-only and do not include per-student raw grade rows.
+  - No ClickHouse dependency is required for these concrete oracles in the initial delivery pass.
   - `contained_objectives` is maintained and current for section scope filtering.
   - The FDD for this feature should primarily transpose the guidance in `docs/epics/intelligent_dashboard/concrete_oracles/README.md` into the FDD template slots.
 - Open Questions:
