@@ -1,3 +1,23 @@
+// Authoring stack layout: single border, no per-activity borders, tight spacing between screens
+.activity-stack-container {
+  border: 1px solid #ccc;
+
+  .activity-content {
+    border: none !important;
+  }
+
+  .advance-authoring-responsive-layout {
+    min-height: 0;
+  }
+
+  > *:not(:last-child) .advance-authoring-responsive-layout {
+    padding-bottom: 0 !important;
+  }
+  > *:not(:first-child) .advance-authoring-responsive-layout {
+    padding-top: 0 !important;
+  }
+}
+
 .advance-authoring-responsive-layout {
   display: block;
   width: 100%;
@@ -245,6 +265,22 @@
 
 .responsive-layout-section .content {
   box-sizing: border-box;
+}
+
+// Delivery stack layout: size to content and tight spacing between parent and child screens
+.responsive-layout-section .content.activity-tree-stack {
+  > * {
+    min-height: 0;
+  }
+  .advance-authoring-responsive-layout {
+    min-height: 0;
+  }
+  > *:not(:last-child) .advance-authoring-responsive-layout {
+    padding-bottom: 0 !important;
+  }
+  > *:not(:first-child) .advance-authoring-responsive-layout {
+    padding-top: 0 !important;
+  }
 }
 
 // Ensure the responsive layout container uses box-sizing

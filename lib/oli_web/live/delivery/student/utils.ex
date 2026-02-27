@@ -34,7 +34,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             <div class="grow shrink basis-0 self-stretch justify-start items-center gap-3 flex">
               <div
                 role="container label"
-                class="text-Text-text-low text-sm font-bold uppercase tracking-wider opacity-75"
+                class="text-Text-text-high text-sm font-bold uppercase tracking-wider"
               >
                 {@container_label}
               </div>
@@ -118,12 +118,12 @@ defmodule OliWeb.Delivery.Student.Utils do
           <div
             :if={@page_context.effective_settings.end_date}
             role="page schedule"
-            class="justify-start items-start gap-1 flex opacity-75"
+            class="justify-start items-start gap-1 flex"
           >
-            <div class="text-Text-text-low text-xs font-semibold">
+            <div class="text-Text-text-high text-xs font-semibold">
               {label_for_scheduling_type(@page_context.effective_settings.scheduling_type)}
             </div>
-            <div class="text-Text-text-low text-xs font-semibold">
+            <div class="text-Text-text-high text-xs font-semibold">
               {FormatDateTime.to_formatted_datetime(
                 @page_context.effective_settings.end_date,
                 @ctx,

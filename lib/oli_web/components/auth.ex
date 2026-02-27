@@ -567,7 +567,7 @@ defmodule OliWeb.Components.Auth do
           </path>
         </svg>
       </div>
-      <span class="text-base leading-6 text-Text-text-low-alpha">
+      <span class="text-base leading-6 text-Text-text-low">
         {render_slot(@inner_block)}
       </span>
     </.link>

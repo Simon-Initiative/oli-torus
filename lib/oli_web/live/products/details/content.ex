@@ -12,9 +12,11 @@ defmodule OliWeb.Products.Details.Content do
     ~H"""
     <div>
       <div>
-        <p :if={Enum.count(@updates) == 0}>There are <b>no updates</b> available for this product.</p>
+        <p :if={Enum.count(@updates) == 0}>
+          There are <b>no updates</b> available for this template.
+        </p>
         <div :if={Enum.count(@updates) == 1}>
-          <p>There is <b>one</b> update available for this product.</p>
+          <p>There is <b>one</b> update available for this template.</p>
           <.link href={
             Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
           }>
@@ -22,7 +24,7 @@ defmodule OliWeb.Products.Details.Content do
           </.link>
         </div>
         <div :if={Enum.count(@updates) not in [0, 1]}>
-          <p>There are <b>{Enum.count(@updates)}</b> updates available for this product.</p>
+          <p>There are <b>{Enum.count(@updates)}</b> updates available for this template.</p>
           <.link href={
             Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
           }>
@@ -72,7 +74,7 @@ defmodule OliWeb.Products.Details.Content do
                       label="Apply major updates to course sections"
                     />
                     <p class="text-muted">
-                      Allow major project publications to be applied to course sections created from this product
+                      Allow major project publications to be applied to course sections created from this template
                     </p>
                   </div>
                 </div>

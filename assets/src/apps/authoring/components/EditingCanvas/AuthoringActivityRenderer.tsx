@@ -10,6 +10,7 @@ interface AuthoringActivityRendererProps {
   editMode: boolean;
   configEditorId: string;
   responsiveLayout?: boolean;
+  stackLayout?: boolean;
   onSelectPart?: (partId: string) => Promise<any>;
   onCopyPart?: (part: any) => Promise<any>;
   onConfigurePart?: (part: any, context: any) => Promise<any>;
@@ -26,6 +27,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   editMode,
   configEditorId,
   responsiveLayout,
+  stackLayout,
   onSelectPart,
   onCopyPart,
   onConfigurePart,
@@ -47,14 +49,20 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     model: JSON.stringify(activityModel),
     editMode,
     responsiveLayout,
-    style: {
-      position: 'absolute',
-      top: '65px',
-      left: '300px',
-      paddingRight: '300px',
-      paddingBottom: '300px',
-      pointerEvents: `${editMode ? 'auto' : 'none'}`,
-    },
+    style: stackLayout
+      ? {
+          position: 'relative' as const,
+          width: '100%',
+          pointerEvents: `${editMode ? 'auto' : 'none'}`,
+        }
+      : {
+          position: 'absolute' as const,
+          top: '65px',
+          left: '300px',
+          paddingRight: '300px',
+          paddingBottom: '300px',
+          pointerEvents: `${editMode ? 'auto' : 'none'}`,
+        },
     authoringContext: JSON.stringify({
       selectedPartId,
       configurePortalId: configEditorId,

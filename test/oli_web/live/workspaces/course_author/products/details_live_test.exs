@@ -77,7 +77,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert live
              |> element("#header_id")
              |> render() =~
-               "Product Overview"
+               "Template Overview"
     end
   end
 

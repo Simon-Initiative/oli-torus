@@ -202,28 +202,52 @@ const EditingCanvas: React.FC = () => {
   );
 
   const configEditorId = `config-editor-${currentActivityId}`;
+  const stackLayout =
+    (currentActivityTree?.length ?? 0) > 1 && _currentLessonCustom?.responsiveLayout === true;
+
+  const activityRenderers =
+    currentActivityTree &&
+    currentActivityTree.map((activity) => (
+      <AuthoringActivityRenderer
+        key={activity.id}
+        activityModel={activity as any}
+        editMode={activity.id === currentActivityId}
+        configEditorId={configEditorId}
+        responsiveLayout={_currentLessonCustom?.responsiveLayout || false}
+        stackLayout={stackLayout}
+        onSelectPart={handlePartSelect}
+        onCopyPart={handlePartCopy}
+        onConfigurePart={handlePartConfigure}
+        onCancelConfigurePart={handlePartCancelConfigure}
+        onSaveConfigurePart={handlePartSaveConfigure}
+        onPartChangePosition={handlePositionChanged}
+        notificationStream={notificationStream}
+      />
+    ));
 
   return (
     <React.Fragment>
       <section className={`aa-stage mt-8 ${customInterfaceSettings}`} onClick={handleStageClick}>
         <StagePan>
-          {currentActivityTree &&
-            currentActivityTree.map((activity) => (
-              <AuthoringActivityRenderer
-                key={activity.id}
-                activityModel={activity as any}
-                editMode={activity.id === currentActivityId}
-                configEditorId={configEditorId}
-                responsiveLayout={_currentLessonCustom?.responsiveLayout || false}
-                onSelectPart={handlePartSelect}
-                onCopyPart={handlePartCopy}
-                onConfigurePart={handlePartConfigure}
-                onCancelConfigurePart={handlePartCancelConfigure}
-                onSaveConfigurePart={handlePartSaveConfigure}
-                onPartChangePosition={handlePositionChanged}
-                notificationStream={notificationStream}
-              />
-            ))}
+          {stackLayout ? (
+            <div
+              className="activity-stack-container"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'stretch',
+                position: 'absolute',
+                top: '65px',
+                left: '300px',
+                paddingRight: '300px',
+                paddingBottom: '300px',
+              }}
+            >
+              {activityRenderers}
+            </div>
+          ) : (
+            activityRenderers
+          )}
         </StagePan>
       </section>
       <ConfigurationModal
