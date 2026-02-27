@@ -1075,20 +1075,22 @@ defmodule Oli.Delivery.Hierarchy do
       node_title_matches_search? = title_matches_search.(node)
       container_matches_search? = is_container.(node) and node_title_matches_search?
       preserve_full_subtree? = keep_full_subtree? or container_matches_search?
+      children = node["children"] || []
 
       {children_acc, child_matches} =
         if preserve_full_subtree? do
-          Enum.reduce(node["children"] || [], {[], false}, fn child, {acc, any_child_matches?} ->
-            {filtered_child, child_matches_or_has_descendant?} =
-              filter_fn.(child, filter_fn, preserve_full_subtree?)
+          Enum.map_reduce(children, false, fn child, any_child_matches? ->
+            if is_container.(child) do
+              {filtered_child, child_matches_or_has_descendant?} =
+                filter_fn.(child, filter_fn, preserve_full_subtree?)
 
-            {
-              [filtered_child | acc],
-              any_child_matches? or child_matches_or_has_descendant?
-            }
+              {filtered_child, any_child_matches? or child_matches_or_has_descendant?}
+            else
+              {child, any_child_matches? or title_matches_search.(child)}
+            end
           end)
         else
-          Enum.reduce(node["children"] || [], {[], false}, fn child, {acc, any_child_matches?} ->
+          Enum.reduce(children, {[], false}, fn child, {acc, any_child_matches?} ->
             {filtered_child, child_matches_or_has_descendant?} =
               filter_fn.(child, filter_fn, preserve_full_subtree?)
 
@@ -1106,7 +1108,12 @@ defmodule Oli.Delivery.Hierarchy do
           end)
         end
 
-      children = Enum.reverse(children_acc)
+      children =
+        if preserve_full_subtree? do
+          children_acc
+        else
+          Enum.reverse(children_acc)
+        end
 
       {
         node
