@@ -1076,32 +1076,37 @@ defmodule Oli.Delivery.Hierarchy do
       container_matches_search? = is_container.(node) and node_title_matches_search?
       preserve_full_subtree? = keep_full_subtree? or container_matches_search?
 
-      {all_children, matching_children, child_matches} =
-        (node["children"] || [])
-        |> Enum.reduce({[], [], false}, fn child, {all_acc, matching_acc, any_child_matches?} ->
-          {filtered_child, child_matches_or_has_descendant?} =
-            filter_fn.(child, filter_fn, preserve_full_subtree?)
-
-          matching_acc =
-            if child_matches_or_has_descendant? do
-              [filtered_child | matching_acc]
-            else
-              matching_acc
-            end
-
-          {
-            [filtered_child | all_acc],
-            matching_acc,
-            any_child_matches? or child_matches_or_has_descendant?
-          }
-        end)
-
-      children =
+      {children_acc, child_matches} =
         if preserve_full_subtree? do
-          Enum.reverse(all_children)
+          Enum.reduce(node["children"] || [], {[], false}, fn child, {acc, any_child_matches?} ->
+            {filtered_child, child_matches_or_has_descendant?} =
+              filter_fn.(child, filter_fn, preserve_full_subtree?)
+
+            {
+              [filtered_child | acc],
+              any_child_matches? or child_matches_or_has_descendant?
+            }
+          end)
         else
-          Enum.reverse(matching_children)
+          Enum.reduce(node["children"] || [], {[], false}, fn child, {acc, any_child_matches?} ->
+            {filtered_child, child_matches_or_has_descendant?} =
+              filter_fn.(child, filter_fn, preserve_full_subtree?)
+
+            new_acc =
+              if child_matches_or_has_descendant? do
+                [filtered_child | acc]
+              else
+                acc
+              end
+
+            {
+              new_acc,
+              any_child_matches? or child_matches_or_has_descendant?
+            }
+          end)
         end
+
+      children = Enum.reverse(children_acc)
 
       {
         node
