@@ -1068,36 +1068,53 @@ defmodule Oli.Delivery.Hierarchy do
       String.contains?(String.downcase(title), search_term)
     end
 
-    node_matches_or_has_matching_descendant = fn node ->
-      title_matches_search.(node) or Map.get(node, "child_matches_search_term", false)
-    end
-
     # Recursively filter hierarchy and add child_matches_search_term
-    # to flag containers that contain a matching descendant
-    filter_node = fn node, filter_fn ->
-      container_matches_search? = is_container.(node) and title_matches_search.(node)
+    # to flag containers that contain a matching descendant.
+    # When a container (or one of its ancestors) matches, preserve its full subtree.
+    filter_node = fn node, filter_fn, keep_full_subtree? ->
+      node_title_matches_search? = title_matches_search.(node)
+      container_matches_search? = is_container.(node) and node_title_matches_search?
+      preserve_full_subtree? = keep_full_subtree? or container_matches_search?
 
-      all_children =
+      {all_children, matching_children, child_matches} =
         (node["children"] || [])
-        |> Enum.map(&filter_fn.(&1, filter_fn))
+        |> Enum.reduce({[], [], false}, fn child, {all_acc, matching_acc, any_child_matches?} ->
+          {filtered_child, child_matches_or_has_descendant?} =
+            filter_fn.(child, filter_fn, preserve_full_subtree?)
+
+          matching_acc =
+            if child_matches_or_has_descendant? do
+              [filtered_child | matching_acc]
+            else
+              matching_acc
+            end
+
+          {
+            [filtered_child | all_acc],
+            matching_acc,
+            any_child_matches? or child_matches_or_has_descendant?
+          }
+        end)
 
       children =
-        if container_matches_search? do
-          # If it's a container that matches the search, keep all children,
-          # but preserve recursively computed descendant match flags.
-          all_children
+        if preserve_full_subtree? do
+          Enum.reverse(all_children)
         else
-          Enum.filter(all_children, node_matches_or_has_matching_descendant)
+          Enum.reverse(matching_children)
         end
 
-      node = Map.put(node, "children", children)
-
-      child_matches = Enum.any?(children, node_matches_or_has_matching_descendant)
-
-      Map.put(node, "child_matches_search_term", child_matches)
+      {
+        node
+        |> Map.put("children", children)
+        |> Map.put("child_matches_search_term", child_matches),
+        node_title_matches_search? or child_matches
+      }
     end
 
-    filter_node.(hierarchy, filter_node)
+    {hierarchy, _matches_or_has_matching_descendant?} =
+      filter_node.(hierarchy, filter_node, false)
+
+    hierarchy
   end
 
   @container_resource_type_id Oli.Resources.ResourceType.id_for_container()
