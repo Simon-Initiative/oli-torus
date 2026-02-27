@@ -1068,10 +1068,8 @@ defmodule Oli.Delivery.Hierarchy do
       String.contains?(String.downcase(title), search_term)
     end
 
-    matches_or_has_matching_descendant = fn node, check_fn ->
-      title_matches_search.(node) or
-        (node["children"] || [])
-        |> Enum.any?(&check_fn.(&1, check_fn))
+    node_matches_or_has_matching_descendant = fn node ->
+      title_matches_search.(node) or Map.get(node, "child_matches_search_term", false)
     end
 
     # Recursively filter hierarchy and add child_matches_search_term
@@ -1089,17 +1087,12 @@ defmodule Oli.Delivery.Hierarchy do
           # but preserve recursively computed descendant match flags.
           all_children
         else
-          Enum.filter(all_children, fn child ->
-            matches_or_has_matching_descendant.(child, matches_or_has_matching_descendant)
-          end)
+          Enum.filter(all_children, node_matches_or_has_matching_descendant)
         end
 
       node = Map.put(node, "children", children)
 
-      child_matches =
-        Enum.any?(children, fn child ->
-          title_matches_search.(child) or child["child_matches_search_term"]
-        end)
+      child_matches = Enum.any?(children, node_matches_or_has_matching_descendant)
 
       Map.put(node, "child_matches_search_term", child_matches)
     end
