@@ -1077,23 +1077,21 @@ defmodule Oli.Delivery.Hierarchy do
     # Recursively filter hierarchy and add child_matches_search_term
     # to flag containers that contain a matching descendant
     filter_node = fn node, filter_fn ->
+      container_matches_search? = is_container.(node) and title_matches_search.(node)
+
       all_children =
         (node["children"] || [])
         |> Enum.map(&filter_fn.(&1, filter_fn))
 
-      filtered_children =
-        all_children
-        |> Enum.filter(fn child ->
-          matches_or_has_matching_descendant.(child, matches_or_has_matching_descendant)
-        end)
-
       children =
-        if is_container.(node) and title_matches_search.(node) do
+        if container_matches_search? do
           # If it's a container that matches the search, keep all children,
           # but preserve recursively computed descendant match flags.
           all_children
         else
-          filtered_children
+          Enum.filter(all_children, fn child ->
+            matches_or_has_matching_descendant.(child, matches_or_has_matching_descendant)
+          end)
         end
 
       node = Map.put(node, "children", children)
