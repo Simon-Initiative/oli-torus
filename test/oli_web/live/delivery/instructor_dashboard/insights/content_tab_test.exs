@@ -1099,7 +1099,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
         section.id,
         page_3.published_resource.resource_id,
         suspended_student.id,
-        1.0,
+        0.0,
         page_3.revision
       )
 
