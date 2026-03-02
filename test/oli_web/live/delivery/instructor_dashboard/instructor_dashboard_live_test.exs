@@ -140,6 +140,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       refute has_element?(view, "a.active", "Surveys")
     end
 
+    test "if enrolled, can access the insights dashboard tab", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(
+            OliWeb.Endpoint,
+            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+            section.slug,
+            :insights,
+            :dashboard
+          )
+        )
+
+      assert has_element?(view, "a.active", "Dashboard")
+      assert has_element?(view, "label[for='prototype_dashboard_scope']", "Scope")
+      assert has_element?(view, "option[value='course']", "Course (all content)")
+    end
+
     test "if enrolled, can access the mange page", %{
       instructor: instructor,
       section: section,

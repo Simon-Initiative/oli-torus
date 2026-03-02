@@ -53,9 +53,9 @@
 ## 8. Caching Strategy
 <cache ownership/invalidations>
 
-## 9. Performance and Scalability Plan
+## 9. Performance and Scalability Posture (Telemetry/AppSignal Only)
 ### 9.1 Budgets
-<latency, throughput, memory budgets>
+<latency, throughput, memory budgets monitored by telemetry/AppSignal; no dedicated performance/load/benchmark tests>
 
 ### 9.3 Hotspots & Mitigations
 <risk items>
@@ -70,7 +70,7 @@
 <authz, tenancy, data handling>
 
 ## 13. Testing Strategy
-<unit/integration/liveview/manual/>
+<unit/integration/liveview/manual; exclude dedicated performance/load/benchmark tests>
 
 ## 14. Backwards Compatibility
 <compatibility strategy or `N/A`>

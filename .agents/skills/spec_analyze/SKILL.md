@@ -36,10 +36,14 @@ Always load these files before drafting:
 3. Restate the feature in product terms: user value, scope, role impacts, constraints, and measurable success signals.
 4. Copy the exact section blocks from `assets/templates/prd_template.md`.
 5. Fill each section using `references/considerations.md` and `references/output_requirements.md`, keeping requirements concrete and testable.
+   - Favor simplicity and clarity over verbosity across the entire PRD.
+   - Write requirements and acceptance criteria in plain language that is understandable by engineers, product, QA, and non-technical stakeholders.
+   - Avoid unnecessary jargon, dense phrasing, and implementation-detail noise in PRD narrative sections.
    - In `## 6. Functional Requirements`, include exactly: `Requirements are found in requirements.yml`
    - In `## 7. Acceptance Criteria`, include exactly: `Requirements are found in requirements.yml`
    - Do not include `FR-###`/`AC-###` entries in `prd.md`; `requirements.yml` is the source of truth.
-   - In `## 16. QA Plan`, do not introduce load-testing or performance-testing requirements.
+   - In `## 16. QA Plan`, do not introduce load-testing, benchmark-testing, or performance-testing requirements.
+   - Capture performance expectations through telemetry/AppSignal metrics, dashboards, and alerts only.
    - In `## 16. QA Plan`, identify risky or hard-to-automate areas and make those the explicit focus of manual testing.
    - In `## 16. QA Plan`, include an `Oli.Scenarios Recommendation` (`Required`, `Suggested`, or `Not applicable`).
    - To determine the `Oli.Scenarios Recommendation`, inspect the feature's touched subsystem areas for existing `Oli.Scenarios` YAML-driven coverage. Existing coverage is a strong signal that additional scenario coverage should be required or suggested.
@@ -51,6 +55,7 @@ Always load these files before drafting:
 10. If validation cannot be run, instruct the user to run it and do not claim the PRD is complete.
 11. REQUIREMENTS CAPTURE (required):
    - Build a bulk FR/AC payload from the authored feature requirements (do not duplicate FR/AC content in `prd.md`).
+   - Ensure FR/AC entries in the bulk payload use plain, concise, unambiguous language that remains understandable to engineers, product, QA, and lay readers.
    - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action capture --bulk-file <bulk_payload_path>`.
    - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action validate_structure`.
    - Ensure `<feature_dir>/requirements.yml` exists and is committed with the PRD update.

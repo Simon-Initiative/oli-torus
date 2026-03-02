@@ -8,8 +8,11 @@
 - Specify module boundaries and interface contracts.
 - Include migration and rollback considerations for schema changes.
 - Include observability, security/privacy, and performance/scalability sections.
+- If runtime/message flow complexity is non-trivial, include Mermaid sequence diagram(s) and verify they match the described flow.
+- Ensure performance/scalability guidance is telemetry/AppSignal based and does not require performance/load/benchmark tests.
 - Document feature flags/config toggles and rollout/rollback posture (or explicitly state none).
 - Include concrete testing strategy and failure-mode handling.
 - Include references for external research when used (`Title | URL | Accessed YYYY-MM-DD`).
 - Do not include dedicated traffic-simulation test plans or tooling scenarios.
+- Do not include dedicated performance/load/benchmark test plans.
 - Remove unresolved `TODO`/`TBD`/`FIXME` markers.

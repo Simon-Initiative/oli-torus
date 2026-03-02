@@ -98,6 +98,7 @@ defmodule Oli.Publishing.UniqueIdsTest do
     setup [:setup_publication]
 
     test "adds unique ids to content revisions in which id's have not already been added to", %{
+      author: author,
       project: project,
       unscored_page1: unscored_page1,
       unscored_page1_activity: unscored_page1_activity,
@@ -122,7 +123,7 @@ defmodule Oli.Publishing.UniqueIdsTest do
                Resources.get_revision!(scored_page2_activity.id)
 
       # publish the project
-      {:ok, published} = Oli.Publishing.publish_project(project, "initial publish", 1)
+      {:ok, published} = Oli.Publishing.publish_project(project, "initial publish", author.id)
 
       # verify that the ids_added field is set to true for the revisions
       assert %Oli.Publishing.PublishedResource{

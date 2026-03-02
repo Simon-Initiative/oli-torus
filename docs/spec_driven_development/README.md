@@ -205,6 +205,12 @@ For Non-Feature Tickets:
 
 Starting with Version 33, SDD is our required development model.
 
+## External Dependencies
+
+- Install the JIRA CLI using the official project instructions: <https://github.com/ankitpokhrel/jira-cli>.
+- Install the `jira` skill from: <https://github.com/softaworks/agent-toolkit/blob/main/skills/jira>.
+- Install the `jira` skill in your user home Codex skills directory (for example `~/.codex/skills`), not in the Torus codebase (`.agents/skills`).
+
 ## Why This Matters
 
 SDD provides:

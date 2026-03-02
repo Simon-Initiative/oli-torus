@@ -1,29 +1,29 @@
 # Data Coordinator FDD
 
-Last updated: 2026-02-17
+Last updated: 2026-02-25
 Feature: `data_coordinator`
 Epic: `MER-5198`
 Primary Jira: `MER-5302`
 
 ## 1. Executive Summary
 
-This feature implements the runtime orchestration layer that controls scoped dashboard loads for a single LiveView session. The coordinator enforces one active request plus one replaceable queued request to bound backend work during rapid scope changes. It preserves latest-intent behavior and prevents stale results from mutating UI state through mandatory token guards. It emits incremental readiness and failure events so tiles can hydrate without waiting for global completion. The coordinator integrates cache-aware read-through behavior, but only through a stable cache API boundary. Cache keying, TTL, eviction, revisit retention, and coalescing policy stay outside coordinator scope. The design explicitly allows stale completions to warm cache for earlier containers while still suppressing stale UI mutation. State transitions are deterministic and testable with pure transition functions and action outputs. Operationally, the design emphasizes telemetry around queue behavior, stale discards, cache consult outcomes, and request latency.
+This feature implements the runtime orchestration layer that controls scoped dashboard loads for a single LiveView session. The coordinator now uses a hybrid policy: latest-wins immediate preemption in normal navigation, plus scrub-mode burst gating that retains at most one replaceable queued request under rapid cycling. It prevents stale results from mutating UI state through mandatory token guards. It emits incremental readiness and failure events so tiles can hydrate without waiting for global completion. The coordinator integrates cache-aware read-through behavior, but only through a stable cache API boundary. Cache keying, TTL, eviction, revisit retention, and coalescing policy stay outside coordinator scope. The design explicitly allows stale completions to warm cache for earlier containers while still suppressing stale UI mutation. State transitions are deterministic and testable with pure transition functions and action outputs. Operationally, the design emphasizes telemetry around queue behavior, stale discards, cache consult outcomes, and request latency.
 
 ## 2. Requirements & Assumptions
 
 Functional requirements (PRD mapping):
-- FR-001, FR-002: one in-flight + one replaceable queued request.
+- FR-001, FR-002, FR-003: latest-wins immediate preemption in normal navigation; one replaceable queued request only while scrub-mode is active.
 - FR-003: tokenized stale-result suppression at UI apply boundaries.
 - FR-004: incremental readiness/failure emissions.
 - FR-005, FR-006: cache consult-first and cache-write-on-completion integration.
 - FR-007, FR-010: strict boundary where coordinator uses cache API and avoids cache policy internals.
 - FR-008, FR-009: observability and deterministic transition semantics.
 - FR-011: extensive unit testing with mocked/stubbed dependencies for coordinator boundary interactions.
-- FR-012: configurable hard timeout with deterministic timeout fallback handling and continued request responsiveness.
+- FR-013: configurable hard timeout with deterministic timeout fallback handling and continued request responsiveness.
 
 Non-functional targets:
-- LiveView scope-change transition handling p95 <= 100ms.
-- Coordinator transition overhead p95 <= 25ms.
+- No performance testing will be done in `MER-5302`.
+- Performance benchmark and latency-threshold validation are deferred to separate tickets.
 - Zero stale UI updates in regression suites.
 
 Explicit assumptions:
@@ -33,7 +33,7 @@ Explicit assumptions:
 
 Assumption risks:
 - If cache API contracts drift, coordinator action model may need refactoring.
-- If request volume exceeds one-queue design assumptions, starvation tuning may be needed.
+- If scrub thresholds are mis-tuned, either excessive preemption or excessive queueing can occur.
 
 ## 3. Torus Context Summary
 
@@ -47,7 +47,7 @@ What we know:
   - expose per-oracle source metadata (`:cache`, `:loaded`, `:skipped_optional`) to support observability and incremental UX.
 
 Unknowns to confirm:
-- Final action/event naming conventions shared with `MER-5304` snapshot assembly integration.
+- Final action/event naming conventions for coordinator-owned apply/event paths that still consume coordinator outputs.
 - Whether cooperative cancellation should be introduced in the same milestone or follow-up.
 
 ## 4. Proposed Design
@@ -71,7 +71,8 @@ Boundary contract:
 - Coordinator depends on cache facade and runtime facade only.
 - Coordinator does not build cache keys or implement TTL/LRU/revisit/coalescing policy.
 - Cache does not own coordinator queue/token state.
-- Prototype-validated baseline orchestration order: `resolve_oracles -> cache lookup -> load misses -> cache write -> snapshot.project`.
+- Prototype-validated orchestration order remains a reference implementation for coordinator-owned paths: `resolve_oracles -> cache lookup -> load misses -> cache write -> snapshot.project`.
+- `Oli.InstructorDashboard.DataSnapshot.get_or_build/2` default mode now performs the same read-through pattern synchronously without coordinator action replay parsing.
 
 ### 4.2 State & Message Flow
 
@@ -81,7 +82,8 @@ Coordinator state machine:
 stateDiagram-v2
   [*] --> idle
   idle --> in_flight: request(scope_s1, token_t1)
-  in_flight --> in_flight_queued: request(scope_s2, token_t2)
+  in_flight --> in_flight: request(scope_s2, token_t2) / preempt active (normal mode)
+  in_flight --> in_flight_queued: request(scope_s2, token_t2) / scrub mode
   in_flight_queued --> in_flight_queued: request(scope_s3, token_t3) / replace queued
   in_flight --> idle: complete(active token)
   in_flight_queued --> in_flight: complete(active token) / promote queued
@@ -208,11 +210,11 @@ Required cache facade calls (coordinator dependency only):
 
 None.
 
-### 6.2 Query Performance
+### 6.2 Query Guardrails
 
 Coordinator performs no direct analytics queries.
 
-Performance impact is orchestration-only:
+Operational impact is orchestration-only:
 - transition logic,
 - cache API call dispatch,
 - runtime job scheduling,
@@ -240,18 +242,17 @@ Coordinator exclusions:
 - no revisit retention decisions
 - no miss coalescing algorithm ownership
 
-## 9. Performance and Scalability Plan
+## 9. Scalability Considerations
 
-### 9.1 Budgets
+### 9.1 Deferred Performance Testing
 
-- LiveView scope-change transition handling p95 <= 100ms, p99 <= 150ms.
-- Coordinator transition logic p95 <= 25ms.
-- Time-to-first-required-ready (warm path) p95 <= 150ms.
+- No performance testing is included in this feature.
+- Any benchmark, load, or latency-threshold validation is deferred to separate tickets.
 
 ### 9.2 Hotspots & Mitigations
 
-- Hotspot: rapid scope thrash causes queue replacement churn.
-  - Mitigation: one active + one queued with replacement-only semantics.
+- Hotspot: rapid scope thrash causes repeated preemption or queue replacement churn.
+  - Mitigation: scrub-mode window/threshold gates queue behavior while normal mode keeps latest click immediate.
 - Hotspot: stale completion storms.
   - Mitigation: constant-time token mismatch discard path for UI apply.
 - Hotspot: repeated partial misses for same keys.
@@ -270,7 +271,7 @@ Coordinator exclusions:
 
 ## 11. Observability
 
-Telemetry events (proposed):
+Telemetry events (implemented):
 - `[:oli, :dashboard, :coordinator, :request, :started]`
 - `[:oli, :dashboard, :coordinator, :request, :queued]`
 - `[:oli, :dashboard, :coordinator, :request, :queue_replaced]`
@@ -279,10 +280,12 @@ Telemetry events (proposed):
 - `[:oli, :dashboard, :coordinator, :cache, :consult]`
 - `[:oli, :dashboard, :coordinator, :request, :completed]`
 
-Key metadata:
+PII-safe metadata (implemented):
 - `dashboard_product`, `dashboard_context_type`, `scope_container_type`
 - `token_state` (`active`, `queued`, `stale`)
 - `cache_outcome` (`full_hit`, `partial_hit`, `miss`, `error`)
+- `completion_outcome` (`success`, `timeout`) and `duration_ms` for completion/timeout timing visibility
+- Explicitly excluded: `user_id`, `dashboard_context_id`, `container_id`, and payload/hit bodies
 
 ## 12. Security & Privacy
 
@@ -308,11 +311,27 @@ LiveView tests:
 - incremental hydration ordering
 - no stale assigns mutation across concurrent completions
 
+Performance test scope:
+- no load, benchmark, or latency-threshold tests are included in this feature
+
+### 13.1 Acceptance Criteria Traceability
+
+- AC-001: Immediate-navigation tests assert latest scope preempts active request and starts immediately outside scrub-mode.
+- AC-002: Scrub-mode tests assert one active + one replaceable queued request during rapid cycling once burst threshold is met.
+- AC-003: Stale-token tests assert stale completions never emit UI apply actions.
+- AC-004: Cache consult tests assert partial-hit read-through applies hits and loads only misses.
+- AC-005: Completion tests assert stale-but-identity-valid completions warm cache without UI mutation.
+- AC-006: Boundary tests assert coordinator modules do not implement cache policy logic.
+- AC-007: Observability tests assert queue/stale/cache/timing telemetry events and metadata are emitted.
+- AC-008: Coordinator unit/integration boundary tests use mocked/stubbed cache/runtime participants where needed.
+- AC-009: Timeout tests assert deterministic timeout fallback and preserved next-request responsiveness.
+
 ## 14. Backwards Compatibility
 
 - Additive orchestration layer.
 - Existing async paths can be migrated incrementally to coordinator action model.
 - No schema/API break for end users.
+- No schema migration or backfill is required for coordinator rollout.
 
 ## 15. Risks & Mitigations
 
@@ -320,13 +339,14 @@ LiveView tests:
   - Mitigation: centralize apply helper and cover with integration tests.
 - Risk: coordinator absorbs cache policy logic over time.
   - Mitigation: enforce boundary in docs, code review checklist, and API contracts.
-- Risk: queue policy negatively impacts perceived responsiveness for intermediate selections.
-  - Mitigation: latest-intent is explicit product policy; monitor and tune if needed.
+- Risk: scrub thresholds may underfit or overfit real navigation behavior.
+  - Mitigation: tune `scrub_window_ms` and `scrub_threshold` with telemetry-backed calibration.
 
 ## 16. Open Questions & Follow-ups
 
 - Should cooperative cancellation be enabled after baseline stability (to reduce wasted runtime work)?
-- Should optional short debounce be introduced only when queue replacement rate exceeds threshold?
+- Should scrub-mode include adaptive thresholds per course size or user behavior patterns?
+- Should timeout default be tuned from initial `30_000ms` once coordinator timeout metrics stabilize in production-like traffic?
 
 ## 17. Decision Log
 
@@ -335,6 +355,24 @@ LiveView tests:
 - Reason: Prototype validated that read-through orchestration and source tagging are central to incremental hydration and cache observability.
 - Evidence: `lib/oli/instructor_dashboard/prototype/live_data_controller.ex`, `lib/oli/instructor_dashboard/prototype/snapshot.ex`
 - Impact: Tightens `FR-004`/`FR-005`/`FR-008` implementation details without changing queue/token acceptance outcomes.
+
+### 2026-02-24 - Finalize Timeout + Observability Contract
+- Change: Finalized timeout completion semantics (`request_timeout` with deterministic fallback and queued promotion) and implemented coordinator telemetry event set with PII-safe normalization.
+- Reason: Phase 4/5 delivery required deterministic timeout resilience plus AC-006 operational visibility without exposing sensitive identifiers or payloads.
+- Evidence: `lib/oli/dashboard/live_data_coordinator.ex`, `lib/oli/dashboard/live_data_coordinator/state.ex`, `lib/oli/dashboard/live_data_coordinator/telemetry.ex`, `test/oli/dashboard/live_data_coordinator/{timeout_test,liveview_integration_test,observability_test}.exs`
+- Impact: Closes AC-006/AC-008 behavior and leaves queue-churn debounce + timeout-threshold calibration as explicit post-baseline tuning follow-ups.
+
+### 2026-02-25 - Implement Hybrid Latest-Wins and Scrub-Mode Queue Control
+- Change: Updated coordinator transition model to preempt active request immediately in non-scrub navigation and use one replaceable queued request only during scrub-mode bursts.
+- Reason: Deliver immediate perceived responsiveness for single-step navigation while reducing unnecessary intermediate-load starts during rapid unit cycling.
+- Evidence: `lib/oli/dashboard/live_data_coordinator/state.ex`, `test/oli/dashboard/live_data_coordinator/{state_test,request_scope_change_test,result_handling_test,stale_suppression_test,observability_test,timeout_test,liveview_integration_test}.exs`
+- Impact: Reconciles implementation behavior with product intent and clarifies tuning surface (`scrub_window_ms`, `scrub_threshold`) for follow-up calibration.
+
+### 2026-02-25 - Document Snapshot Direct Read-Through Boundary
+- Change: Added explicit boundary note that `DataSnapshot.get_or_build/2` no longer depends on coordinator action replay while retaining coordinator semantics for coordinator-owned request-control flows.
+- Reason: Implementation simplified snapshot orchestration by using direct synchronous cache/runtime read-through for this call mode.
+- Evidence: `lib/oli/instructor_dashboard/data_snapshot.ex`, `test/oli/instructor_dashboard/data_snapshot/data_snapshot_test.exs`
+- Impact: Keeps coordinator FR/NFR ownership clear and prevents future coupling assumptions between snapshot call mode and coordinator session mechanics.
 
 ## 18. References
 

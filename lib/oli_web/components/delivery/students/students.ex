@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.Students do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.{Author, User}
   alias Oli.Delivery.{Metrics, GrantedCertificates}
+  alias Oli.Delivery.Sections.InvitePartitioner
   alias OliWeb.Common.{SearchInput, Params, StripedPagedTable, Utils}
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
@@ -1060,37 +1061,11 @@ defmodule OliWeb.Components.Delivery.Students do
   end
 
   def handle_event("add_enrollments_go_to_step_2", _, socket) do
-    all_required_enrollments = socket.assigns.add_enrollments_emails
-
-    # we need to distinguish all required enrollments between existing users and non existing users
-    existing_users =
-      Oli.Accounts.get_users_by_email(all_required_enrollments) |> Enum.map(& &1.email)
-
-    non_existing_users = all_required_enrollments -- existing_users
-
-    # From the existing users we need to distinguish wich have already an enrollment in the current course
-    enrollments_by_emails =
-      Oli.Delivery.Sections.get_independent_enrollments_by_emails(
-        socket.assigns.section_slug,
-        existing_users
-      )
-
-    enrolled_emails = Enum.map(enrollments_by_emails, & &1.user.email)
-
-    existing_users_with_an_enrollment =
-      Enum.filter(existing_users, fn email -> email in enrolled_emails end)
-
-    not_enrolled_users = existing_users -- existing_users_with_an_enrollment
-
-    # we finally group all the required enrollments by status
+    all_required_enrollments =
+      InvitePartitioner.normalize_emails(socket.assigns.add_enrollments_emails)
 
     add_enrollments_grouped_by_status =
-      enrollments_by_emails
-      |> Enum.group_by(& &1.status, fn enrollment -> enrollment.user.email end)
-      |> Map.merge(%{
-        non_existing_users: non_existing_users,
-        not_enrolled_users: not_enrolled_users
-      })
+      InvitePartitioner.partition(socket.assigns.section_slug, all_required_enrollments)
 
     if add_enrollment_warning_step_required?(
          add_enrollments_grouped_by_status,

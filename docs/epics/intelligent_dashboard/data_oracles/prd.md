@@ -91,10 +91,8 @@ Developer UX requirements:
 ## 8. Non-Functional Requirements
 
 Performance:
-- NFR-PERF-001: Registry dependency resolution p95 <= 10ms, p99 <= 20ms per request.
-- NFR-PERF-002: Registry oracle-module lookup p95 <= 2ms, p99 <= 5ms.
-- NFR-PERF-003: Contract-layer validation overhead p95 <= 2ms per call site.
-- NFR-PERF-004: Oracle prerequisite plan construction and validation (acyclic ordering) p95 <= 3ms, p99 <= 8ms.
+- Performance benchmarking and latency-threshold test coverage are out of scope for `MER-5301`.
+- Performance validation is handled in downstream data-infra tickets and epic hardening work.
 
 Reliability:
 - NFR-REL-001: Invalid declarations fail deterministically with typed errors.
@@ -176,7 +174,6 @@ Notional instructor specialization modules:
 
 ## 12. Analytics & Success Metrics
 
-- Registry resolution latency (`p50`, `p95`, `p99`).
 - Registry validation error count (unknown consumer, unknown oracle, invalid declaration).
 - Oracle contract execution count by `oracle_key` and `dashboard_context_type`.
 - Dashboard consumer adoption coverage (`oracle-path requests / total requests`) with target `100%` for in-scope instructor surfaces.
@@ -245,3 +242,4 @@ Prototype references:
 - Reason: Prototype implementation validated this pattern as the most consistent dependency contract for tile-driven composition.
 - Evidence: `lib/oli/instructor_dashboard/prototype/tile.ex`, `lib/oli/instructor_dashboard/prototype/tile_registry.ex`, `lib/oli/instructor_dashboard/prototype/oracle.ex`
 - Impact: Tightens interpretation of FR-005/FR-012 without changing feature scope.
+- IMPORTANT: Do NOT update or extend the prototype in `lib/oli/instructor_dashboard/prototype` during development
