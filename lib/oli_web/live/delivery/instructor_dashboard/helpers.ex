@@ -7,16 +7,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     case Sections.get_units_and_modules_containers(section.slug) do
       {0, pages} ->
         page_ids = Enum.map(pages, & &1.id)
-
-        students =
-          Sections.enrolled_students(section.slug)
-          |> Enum.reject(fn user -> user.user_role_id != 4 end)
+        student_ids = Sections.enrolled_student_ids(section.slug)
 
         student_progress =
           Metrics.progress_across_for_pages(
             section.id,
             page_ids,
-            Enum.map(students, & &1.id)
+            student_ids
           )
 
         proficiency_per_page = Metrics.proficiency_per_page(section, page_ids)
