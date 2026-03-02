@@ -1035,6 +1035,67 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert progress == ["100%", "0%", "0%"]
     end
 
+    test "administrator with learner role is excluded from class progress denominator", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{
+        section: section,
+        mod1_pages: mod1_pages
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, page_3] = mod1_pages
+
+      student = insert(:user, %{given_name: "Test", family_name: "Student"})
+      admin_and_learner = insert(:user, %{given_name: "Dual", family_name: "Role"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.enroll(admin_and_learner.id, section.id, [
+        ContextRoles.get_role(:context_administrator),
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_3.revision
+      )
+
+      params = %{container_filter_by: :modules}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      progress =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
+
+      assert progress == ["100%", "0%", "0%"]
+    end
+
     test "suspended learners do not affect class progress calculation", %{
       conn: conn,
       instructor: instructor

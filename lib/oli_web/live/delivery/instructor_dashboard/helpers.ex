@@ -36,7 +36,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
             section.id,
             Enum.map(containers, & &1.id),
             excluded_user_ids,
-            Sections.count_enrollments(section.slug)
+            Sections.count_progress_users(section.id)
           )
 
         proficiency_per_container =

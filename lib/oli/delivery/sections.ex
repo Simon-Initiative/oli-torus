@@ -200,6 +200,34 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns the count of active learner users included in instructor-dashboard
+  progress aggregation.
+
+  Included users are enrolled learners that do not also carry non-learner
+  context roles (`context_instructor`, `context_content_developer`,
+  `context_administrator`) in the section.
+  """
+  def count_progress_users(section_id) do
+    non_learner_role_ids = @instructor_role_ids ++ [@context_administrator_role_id]
+
+    from(e in Enrollment,
+      join: learner_role in EnrollmentContextRole,
+      on:
+        learner_role.enrollment_id == e.id and
+          learner_role.context_role_id == ^@student_role_id,
+      left_join: non_learner_role in EnrollmentContextRole,
+      on:
+        non_learner_role.enrollment_id == e.id and
+          non_learner_role.context_role_id in ^non_learner_role_ids,
+      where:
+        e.section_id == ^section_id and e.status == :enrolled and
+          is_nil(non_learner_role.context_role_id),
+      select: count(e.user_id, :distinct)
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Returns the enrollments for a given section and list of emails,
   limited to independent learner users.
   """
