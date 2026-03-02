@@ -71,6 +71,7 @@ defmodule Oli.Delivery.Sections do
   ]
 
   @instructor_role_ids Enum.map(@instructor_roles, & &1.id)
+  @context_administrator_role_id ContextRoles.get_role(:context_administrator).id
   @doc """
   Fetches the hidden instructor for a given section. If no hidden instructor exists,
   it creates one.  The "hidden" instructor is a special user account that is used to
@@ -172,6 +173,29 @@ defmodule Oli.Delivery.Sections do
       join: u in assoc(e, :user),
       where: s.slug == ^section_slug and e.status == :enrolled and ecr.id == @student_role_id,
       select: u.id
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns user IDs that should be excluded from instructor-dashboard progress aggregation.
+
+  Excluded users are:
+  - non-learner context roles (`context_instructor`, `context_content_developer`, `context_administrator`)
+  - learners whose enrollment status is not `:enrolled` (e.g. suspended)
+  """
+  def excluded_progress_user_ids(section_slug) do
+    non_learner_role_ids = @instructor_role_ids ++ [@context_administrator_role_id]
+
+    from(e in Enrollment,
+      join: s in assoc(e, :section),
+      join: ecr in assoc(e, :context_roles),
+      where: s.slug == ^section_slug,
+      where:
+        ecr.id in ^non_learner_role_ids or
+          (ecr.id == ^@student_role_id and e.status != :enrolled),
+      select: e.user_id,
+      distinct: e.user_id
     )
     |> Repo.all()
   end
