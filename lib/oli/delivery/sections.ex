@@ -184,13 +184,12 @@ defmodule Oli.Delivery.Sections do
   - non-learner context roles (`context_instructor`, `context_content_developer`, `context_administrator`)
   - learners whose enrollment status is not `:enrolled` (e.g. suspended)
   """
-  def excluded_progress_user_ids(section_slug) do
+  def excluded_progress_user_ids(section_id) do
     non_learner_role_ids = @instructor_role_ids ++ [@context_administrator_role_id]
 
     from(e in Enrollment,
-      join: s in assoc(e, :section),
       join: ecr in assoc(e, :context_roles),
-      where: s.slug == ^section_slug,
+      where: e.section_id == ^section_id,
       where:
         ecr.id in ^non_learner_role_ids or
           (ecr.id == ^@student_role_id and e.status != :enrolled),

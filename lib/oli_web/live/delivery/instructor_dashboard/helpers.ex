@@ -29,7 +29,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
-        excluded_user_ids = Sections.excluded_progress_user_ids(section.slug)
+        excluded_user_ids = Sections.excluded_progress_user_ids(section.id)
 
         student_progress =
           Metrics.progress_across(
