@@ -247,15 +247,15 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           <.link
             href={if(is_independent_instructor?(@current_user), do: ~p"/sections/new")}
             class={[
-              "px-4 py-2 max-w-[220px] hover:no-underline rounded-md justify-center items-center gap-2 inline-flex",
-              "text-Text-text-white hover:text-Text-text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap",
+              "px-3 py-1.5 max-w-[180px] hover:no-underline rounded-md justify-center items-center gap-1.5 inline-flex",
+              "text-Text-text-white hover:text-Text-text-white text-sm font-semibold font-['Inter'] leading-normal whitespace-nowrap",
               if(is_independent_instructor?(@current_user),
-                do: "bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover",
-                else: "bg-zinc-600 cursor-not-allowed"
+                do: "bg-gray-500 hover:bg-gray-600",
+                else: "bg-gray-400 cursor-not-allowed"
               )
             ]}
           >
-            <Icons.plus class="w-5 h-5" path_class="stroke-white" /> Create New Section
+            <Icons.plus class="w-4 h-4" path_class="stroke-white" /> Create New Section
           </.link>
           <.form for={%{}} phx-change="search_section" class="w-full max-w-[400px]">
             <SearchInput.render
@@ -351,7 +351,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         </div>
         <div class="self-stretch justify-end items-start gap-4 inline-flex">
           <.link
-            navigate={~p"/sections/#{@section.slug}/instructor_dashboard/insights/content"}
+            navigate={~p"/sections/#{@section.slug}/instructor_dashboard/insights/dashboard"}
             class="px-5 py-3 bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF] hover:no-underline rounded-md justify-center items-center gap-2 flex text-white text-base font-normal leading-normal"
           >
             <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
