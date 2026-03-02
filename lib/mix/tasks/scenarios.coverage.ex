@@ -39,6 +39,7 @@ defmodule Mix.Tasks.Scenarios.Coverage do
         Mix.shell().error(
           "Invalid options: #{Enum.map_join(invalid, ", ", fn {k, _} -> "--#{k}" end)}"
         )
+
         Mix.shell().info("Usage: mix scenarios.coverage [--html | --detail | --xml]")
         exit({:shutdown, 1})
     end
