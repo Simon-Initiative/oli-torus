@@ -200,6 +200,20 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns user IDs included in instructor-dashboard progress aggregation.
+
+  Included users are enrolled learners that do not also carry non-learner
+  context roles (`context_instructor`, `context_content_developer`,
+  `context_administrator`) in the section.
+  """
+  def progress_user_ids(section_id) do
+    progress_users_query(section_id)
+    |> select([e, _, _], e.user_id)
+    |> distinct(true)
+    |> Repo.all()
+  end
+
+  @doc """
   Returns the count of active learner users included in instructor-dashboard
   progress aggregation.
 
@@ -208,6 +222,12 @@ defmodule Oli.Delivery.Sections do
   `context_administrator`) in the section.
   """
   def count_progress_users(section_id) do
+    progress_users_query(section_id)
+    |> select([e, _, _], count(e.user_id, :distinct))
+    |> Repo.one()
+  end
+
+  defp progress_users_query(section_id) do
     non_learner_role_ids = @instructor_role_ids ++ [@context_administrator_role_id]
 
     from(e in Enrollment,
@@ -221,10 +241,8 @@ defmodule Oli.Delivery.Sections do
           non_learner_role.context_role_id in ^non_learner_role_ids,
       where:
         e.section_id == ^section_id and e.status == :enrolled and
-          is_nil(non_learner_role.context_role_id),
-      select: count(e.user_id, :distinct)
+          is_nil(non_learner_role.context_role_id)
     )
-    |> Repo.one()
   end
 
   @doc """

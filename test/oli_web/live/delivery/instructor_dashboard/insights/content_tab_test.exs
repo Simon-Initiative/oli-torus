@@ -622,6 +622,40 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert has_element?(view, "p", "None exist")
     end
 
+    test "flat-course progress excludes dual-role administrator learners", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{section: section, pages: pages} = create_project_with_n_scored_pages(conn, 3)
+      [page_1, page_2, page_3] = pages
+
+      learner = insert(:user, %{given_name: "Active", family_name: "Learner"})
+      admin_and_learner = insert(:user, %{given_name: "Dual", family_name: "Role"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(learner.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.enroll(admin_and_learner.id, section.id, [
+        ContextRoles.get_role(:context_administrator),
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      set_progress(section.id, page_1.resource_id, learner.id, 1.0, page_1)
+      set_progress(section.id, page_2.resource_id, learner.id, 1.0, page_2)
+      set_progress(section.id, page_3.resource_id, learner.id, 1.0, page_3)
+
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
+
+      progress =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
+
+      assert progress == ["100%", "100%", "100%"]
+    end
+
     test "cards to filter works correctly combined with input search", %{
       conn: conn,
       instructor: instructor
