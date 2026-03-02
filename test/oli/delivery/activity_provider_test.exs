@@ -764,6 +764,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
                Enum.at(errors, 0),
                "failed to fulfill completely with 1 missing activities"
              )
+
       assert String.contains?(Enum.at(errors, 0), "requested 2, obtained 1")
 
       assert length(prototypes) == 3
