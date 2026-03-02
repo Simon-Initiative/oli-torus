@@ -21,6 +21,7 @@ Always load before coding:
 - `references/torus_spec.md`
 - `references/approach.md`
 - `references/coding_guidelines.md`
+- `references/liveview_boundaries.md`
 - `references/output_requirements.md`
 - `references/development_checklist.md`
 - `references/elixir_best_practices.md`
@@ -37,23 +38,39 @@ Always load before coding:
 2. Determine scope from inputs:
    - `$1`: required feature directory (`docs/features/<feature_slug>` or `docs/epics/<epic_slug>/<feature_slug>`).
    - `$2`: optional phase selector; when present, implement only that phase.
-3. Preflight gate: run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all` before coding.
-4. Hard gate: if preflight validation fails, stop implementation, fix spec docs, and re-run until it passes.
-5. Use `assets/templates/phase_execution_record_template.md` as a tracking block while implementing.
-6. Implement phase-scoped tasks only; add/update tests with code changes.
+3. Read scenario testing contract from PRD/FDD/plan:
+   - If status is `Required`, scenario tasks are mandatory for relevant AC/workflow changes in the phase.
+   - If status is `Suggested`, implement planned scenario tasks unless phase scope explicitly defers them with rationale.
+   - If status is `Not applicable`, do not add scenario tasks unless scope changed and specs are updated accordingly.
+   - If contract indicates `Unsupported` infrastructure with expansion required, first execute the plan task using `$spec_scenario_expand`, then execute scenario authoring with `$spec_scenario`.
+4. Read LiveView testing contract from PRD/FDD/plan:
+   - If status is `Required`, LiveView test changes are mandatory for relevant UI changes in the phase.
+   - If status is `Suggested`, implement planned LiveView tests unless phase scope explicitly defers with rationale.
+   - If status is `Not applicable`, do not add LiveView tests unless scope changed and specs are updated accordingly.
+5. Preflight gate: run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all` before coding.
+6. Hard gate: if preflight validation fails, stop implementation, fix spec docs, and re-run until it passes.
+7. Use `assets/templates/phase_execution_record_template.md` as a tracking block while implementing.
+8. Implement phase-scoped tasks only; add/update tests with code changes.
    - Do not add dedicated performance/load/benchmark tests.
    - Address performance requirements through telemetry/AppSignal instrumentation and reporting hooks only.
-7. End-of-phase technical gate (required):
+9. Scenario integration gate (required when status is `Required` or `Suggested`):
+   - Use `$spec_scenario` to author/update planned scenario artifacts.
+   - Follow the `spec_scenario` incremental validation loop (schema validation after meaningful edits + parser/test checks).
+10. LiveView integration gate (required when LiveView status is `Required` or `Suggested`):
+   - Add/update targeted LiveView tests for the changed UI events/states.
+   - Ensure tests focus on UI behavior/state transitions and wiring, not domain business logic implementation.
+   - Keep business logic in contexts/services and exercise it through unit/integration tests outside LiveView modules.
+11. End-of-phase technical gate (required):
    - Run `mix compile` and fix all warnings.
    - Run new/affected tests and ensure they pass.
-8. End-of-phase review gate (required):
+12. End-of-phase review gate (required):
    - Run at least one `spec_review` round after compile/tests pass for that phase.
    - Fix high/medium findings before marking phase complete.
-9. Sync spec docs when implementation diverges.
-10. Postflight gate: run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all` after implementation and doc updates.
-11. Hard gate: if postflight validation fails, the run is not complete; fix docs and re-run until it passes.
-12. If validation cannot run, instruct the user to run it and report blockers.
-13. REQUIREMENTS TRACEABILITY (required, final-phase-only):
+13. Sync spec docs when implementation diverges.
+14. Postflight gate: run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check all` after implementation and doc updates.
+15. Hard gate: if postflight validation fails, the run is not complete; fix docs and re-run until it passes.
+16. If validation cannot run, instruct the user to run it and report blockers.
+17. REQUIREMENTS TRACEABILITY (required, final-phase-only):
    - Run requirements traceability commands **only after ALL phases in `<feature_dir>/plan.md` are implemented**.
    - Do **not** run requirements traceability during intermediate single-phase execution runs.
    - Final completion gate commands:

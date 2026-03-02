@@ -47,6 +47,22 @@ Always load these files before drafting:
    - In `## 16. QA Plan`, identify risky or hard-to-automate areas and make those the explicit focus of manual testing.
    - In `## 16. QA Plan`, include an `Oli.Scenarios Recommendation` (`Required`, `Suggested`, or `Not applicable`).
    - To determine the `Oli.Scenarios Recommendation`, inspect the feature's touched subsystem areas for existing `Oli.Scenarios` YAML-driven coverage. Existing coverage is a strong signal that additional scenario coverage should be required or suggested.
+   - In `## 16. QA Plan`, treat `Oli.Scenarios Recommendation` as a contract block, not a note. It must include: `Status`, `Rationale`, `Existing Coverage Signal`, `Required Scope (AC/workflows)`, `Planned Artifacts`, and `Validation Commands`.
+   - Decision rubric for `Status`:
+     - `Required`: authoring/instructor/student non-UI workflow behavior, or touched areas already covered by existing scenario YAML tests.
+     - `Suggested`: behavior could reasonably be scenario-tested but risk/scope may allow partial or deferred coverage.
+     - `Not applicable`: work is primarily admin-only UI/configuration or otherwise not representable in `Oli.Scenarios` directives.
+   - Scope granularity rule for scenario decisions:
+     - Scenario coverage is for high-level workflow capabilities (for example: create/edit/publish project, create/update section, enroll users, learner attempt/progress, instructor analytics).
+     - Do not require new scenario directives for narrow one-off UI details or deeply granular feature toggles within an already-covered workflow; use unit/LiveView/integration tests for those.
+   - If status is `Required` or `Suggested`, pre-identify candidate scenario files and runner modules so downstream skills can plan and implement deterministically.
+   - Add `Infrastructure Support Status` (`Supported` or `Unsupported`) and `Scenario Infrastructure Expansion Required` (`Yes` or `No`) to the scenario contract block.
+   - If scenario `Status` is `Required` and support status is `Unsupported`, include an explicit planning handoff line: `spec_plan must schedule $spec_scenario_expand before $spec_scenario`.
+   - In `## 16. QA Plan`, include a `LiveView Testing Recommendation` contract with: `Status`, `Rationale`, `Affected UI Surface`, `Required Scope (events/states)`, `Planned Artifacts`, and `Validation Commands`.
+   - Decision rubric for LiveView testing status:
+     - `Required`: feature materially changes an existing LiveView/LiveComponent/function component or introduces a new LiveView/LiveComponent/function component.
+     - `Suggested`: UI-affecting change is small but still benefits from targeted LiveView regression coverage.
+     - `Not applicable`: no LiveView surface is introduced or materially changed.
 6. For `## 11. Feature Flagging, Rollout & Migration`, include feature-flag requirements only when the informal description explicitly asks for feature flags or flag-driven rollout. Otherwise include exactly: `No feature flags present in this feature`.
    - When feature flags are not required, do not add canary rollout, phased rollout, rollout runbook, or rollback-operational requirements.
 7. Apply `references/prd_checklist.md` and `references/definition_of_done.md` as hard gates.

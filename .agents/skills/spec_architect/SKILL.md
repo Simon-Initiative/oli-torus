@@ -43,6 +43,12 @@ Always load before writing:
 9. Fill each block using `references/focus_areas.md` and `references/output_requirements.md`, including concrete module boundaries, contracts, rollout/rollback, observability, security, and testing.
    - Do not design dedicated performance/load/benchmark tests.
    - Address performance requirements via telemetry/AppSignal instrumentation, dashboards, and alert posture.
+   - Read and propagate the PRD `Oli.Scenarios Recommendation` contract into the FDD testing strategy.
+   - If PRD status is `Required` or `Suggested`, include an explicit scenario coverage plan: mapped AC/workflows, target scenario artifacts, and validation commands.
+   - If PRD status is `Not applicable`, preserve that decision and document why scenario tests are not a fit for this feature.
+   - Read and propagate the PRD `LiveView Testing Recommendation` contract into the FDD testing strategy.
+   - If LiveView status is `Required` or `Suggested`, include explicit LiveView coverage plan (UI events/states, artifacts, commands).
+   - If LiveView status is `Not applicable`, preserve that decision and document why.
 10. Apply `references/fdd_checklist.md` and `references/definition_of_done.md` before finalizing.
 11. Run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check fdd` immediately after updating `fdd.md`.
 12. Hard gate: if validation fails, fix `fdd.md` and re-run until it passes before proceeding.

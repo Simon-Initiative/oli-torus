@@ -40,6 +40,10 @@ Always load before running:
    - Very brief technical approach (2-4 sentences + short bullet list).
    - Very brief implementation plan (3-6 numbered steps).
    - Scope boundaries, assumptions, risks, and test strategy.
+   - Scenario testing decision:
+     - Assess whether scenario coverage should be added for this ticket.
+     - If scenario coverage is needed, assess whether existing scenario infrastructure already supports the workflow.
+     - If unsupported, explicitly plan to run `$spec_scenario_expand` before `$spec_scenario`.
 7. Pause for user review:
    - If user requests changes, revise and re-present Phase 1 output.
    - If user gives any positive approval response, transition to Phase 2.
@@ -48,15 +52,18 @@ Always load before running:
 1. Before coding, load required implementation references listed above from `.agents/skills/spec_develop/references/`.
 2. Implement approved scope only, with minimal changes and Torus best practices.
 3. Add/update all new or affected automated tests.
-4. Run `spec_review` after tests pass:
+4. Scenario lane (when applicable):
+   - If scenario coverage is planned and infrastructure exists, run `$spec_scenario` to add/update scenario tests.
+   - If scenario coverage is planned but infrastructure is missing, run `$spec_scenario_expand` first, then `$spec_scenario`.
+5. Run `spec_review` after tests pass:
    - Execute at least one review round.
    - Address findings and re-run review up to 3 rounds total.
    - Resolve all high/medium findings before completion.
-5. Run formatting and verification gates before final response:
+6. Run formatting and verification gates before final response:
    - `mix format`
    - `mix compile`
    - all new or affected tests
-6. Report implementation summary, files changed, commands run, outcomes, and residual risks.
+7. Report implementation summary, files changed, commands run, outcomes, and residual risks.
 
 ## Output Contract
 - Do not create permanent enhancement spec files under `docs/` or elsewhere.

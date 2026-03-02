@@ -49,6 +49,10 @@
 - Use `phx-update="ignore"` when a JS hook owns its DOM subtree.
 - Do not place inline `<script>` in HEEx; keep JS in `assets/js`.
 - Follow stream semantics correctly (`phx-update="stream"` and `@streams.*` patterns).
+- Keep LiveView logic focused on UI orchestration (events, assigns, rendering state).
+- Do not implement core business/domain logic directly inside LiveView modules; delegate to contexts/services.
+- LiveView tests should verify UI behavior and state transitions, while business logic should be verified in context/service tests.
+- Apply `references/liveview_boundaries.md` as a hard boundary contract for all LiveView changes.
 
 ## Ecto
 

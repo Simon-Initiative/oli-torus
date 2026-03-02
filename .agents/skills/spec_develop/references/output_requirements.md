@@ -5,6 +5,8 @@ At completion, report:
 - Implemented feature path and phase(s) executed.
 - Key files changed.
 - Commands run (`mix compile`, tests, validation) and outcomes.
+- Scenario artifacts added/updated and schema/parser validation commands run (when scenario status is `Required` or `Suggested`).
+- LiveView test artifacts added/updated and targeted test commands run (when LiveView status is `Required` or `Suggested`).
 - Self-review rounds completed and findings resolved.
 - Any spec-sync updates made to `prd.md`, `fdd.md`, or `plan.md`.
 - Telemetry/AppSignal instrumentation updates made for performance posture (when applicable).

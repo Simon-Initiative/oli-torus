@@ -11,3 +11,6 @@ Also include:
 
 - Ticket identifier used.
 - Confirmation that test failed before fix and passes after fix.
+- Scenario applicability decision (`yes`/`no`) with one-line rationale.
+- If `yes`, list scenario files/tests added or updated.
+- Explicit confirmation that `$spec_scenario_expand` was not invoked in this run.

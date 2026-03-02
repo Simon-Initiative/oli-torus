@@ -37,6 +37,14 @@ Source Specs:
   - <tests>
 - Integration tests:
   - <tests>
+- Scenario tests:
+  - Status: <Required | Suggested | Not applicable>
+  - Artifacts: <`.scenario.yaml` + runner module(s), or `N/A`>
+  - Validation commands: <schema + parser/test commands, or `N/A`>
+- LiveView tests:
+  - Status: <Required | Suggested | Not applicable>
+  - Artifacts: <LiveView test module(s), or `N/A`>
+  - Validation commands: <targeted `mix test ...`, or `N/A`>
 - Negative/failure-path tests:
   - <tests>
 

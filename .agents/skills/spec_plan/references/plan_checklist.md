@@ -8,6 +8,14 @@
   - Definition of Done
   - Gate
 - Confirm `prd.md` and `fdd.md` both exist and are referenced.
+- Include scenario testing contract derived from PRD/FDD (status, scope, artifacts, validation commands).
+- Include scenario support status and expansion requirement in the scenario contract.
+- If scenario status is `Required`, ensure relevant phases include concrete scenario authoring + validation tasks.
+- If scenario status is `Suggested`, include scenario tasks or explicit defer rationale in plan text.
+- If scenario status is `Required` and support is `Unsupported`, ensure phase tasks explicitly say `Use $spec_scenario_expand` followed by `Use $spec_scenario`.
+- Include LiveView testing contract derived from PRD/FDD (status, scope, artifacts, validation commands).
+- If LiveView status is `Required`, ensure relevant phases include concrete LiveView test authoring + validation tasks.
+- If LiveView status is `Suggested`, include LiveView test tasks or explicit defer rationale in plan text.
 - Use dependency-ordered phases (topological order).
 - Explicitly call out which tasks/phases can run in parallel.
 - Capture unknowns as clarifications with default assumptions.
