@@ -1086,7 +1086,12 @@ defmodule Oli.Delivery.Hierarchy do
 
               {filtered_child, any_child_matches? or child_matches_or_has_descendant?}
             else
-              {child, any_child_matches? or title_matches_search.(child)}
+              leaf_matches? = title_matches_search.(child)
+
+              {
+                Map.put(child, "child_matches_search_term", false),
+                any_child_matches? or leaf_matches?
+              }
             end
           end)
         else

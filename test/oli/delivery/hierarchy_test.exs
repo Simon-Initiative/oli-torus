@@ -822,13 +822,13 @@ defmodule Oli.Delivery.HierarchyTest do
       assert length(matching_module["children"]) == 2
 
       assert matching_page["title"] == "Atom checkpoint"
-      refute matching_page["child_matches_search_term"]
+      assert matching_page["child_matches_search_term"] == false
 
       assert non_matching_page["title"] == "Periodic trends"
-      refute non_matching_page["child_matches_search_term"]
+      assert non_matching_page["child_matches_search_term"] == false
 
       assert non_matching_module["title"] == "Stoichiometry"
-      refute non_matching_module["child_matches_search_term"]
+      assert non_matching_module["child_matches_search_term"] == false
     end
   end
 
