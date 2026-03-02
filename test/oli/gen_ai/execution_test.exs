@@ -174,6 +174,51 @@ defmodule Oli.GenAI.ExecutionTest do
            end)
   end
 
+  test "kill switch always uses primary and bypasses admission controls" do
+    Process.put(:execution_test_pid, self())
+
+    with_env("GENAI_ROUTING_PRIMARY_ONLY", "true", fn ->
+      service_config =
+        build_service_config(7,
+          primary_model: %RegisteredModel{
+            id: 71,
+            name: "Primary",
+            provider: :null,
+            max_concurrent: 0
+          },
+          secondary_model: nil,
+          backup_model: nil
+        )
+
+      request_ctx = %{request_type: :generate}
+      AdmissionControl.put_breaker_snapshot(service_config.primary_model.id, %{state: :open})
+
+      assert {:ok, _} =
+               Execution.generate(
+                 request_ctx,
+                 [],
+                 [],
+                 service_config,
+                 completions_mod: __MODULE__.AlwaysOkCompletions
+               )
+
+      assert {:ok, _} =
+               Execution.generate(
+                 request_ctx,
+                 [],
+                 [],
+                 service_config,
+                 completions_mod: __MODULE__.AlwaysOkCompletions
+               )
+
+      primary_id = service_config.primary_model.id
+      assert_received {:generate_called, ^primary_id}
+      assert_received {:generate_called, ^primary_id}
+      assert AdmissionControl.model_count(primary_id) == 0
+      assert AdmissionControl.pool_count(:genai_slow_pool) == 0
+    end)
+  end
+
   defp build_service_config(id, overrides \\ %{}) do
     primary = %RegisteredModel{id: id * 10 + 1, name: "Primary", provider: :null}
     secondary = %RegisteredModel{id: id * 10 + 2, name: "Secondary", provider: :null}
@@ -248,6 +293,20 @@ defmodule Oli.GenAI.ExecutionTest do
       _pid -> :ok
     end
   end
+
+  defp with_env(key, value, fun) when is_function(fun, 0) do
+    previous = System.get_env(key)
+    System.put_env(key, value)
+
+    try do
+      fun.()
+    after
+      restore_env(key, previous)
+    end
+  end
+
+  defp restore_env(key, nil), do: System.delete_env(key)
+  defp restore_env(key, value), do: System.put_env(key, value)
 
   defp clear_tables do
     if :ets.whereis(:genai_counters) != :undefined do
