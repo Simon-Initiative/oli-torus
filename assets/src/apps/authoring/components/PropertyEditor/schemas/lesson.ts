@@ -70,6 +70,11 @@ const lessonSchema: JSONSchema7 = {
               title: 'Enable Dark Mode',
               default: 'false',
             },
+            aiEnabled: {
+              type: 'boolean',
+              title: 'Enable AI Assistant (DOT)',
+              default: true,
+            },
           },
         },
         FinishPanel: {
@@ -185,6 +190,11 @@ export const simpleLessonSchema: JSONSchema7 = {
               type: 'boolean',
               title: 'Enable Dark Mode',
               default: 'false',
+            },
+            aiEnabled: {
+              type: 'boolean',
+              title: 'Enable AI Assistant (DOT)',
+              default: true,
             },
           },
         },
@@ -321,6 +331,7 @@ export const transformModelToSchema = (model: any) => {
         backgroundImageScaleContent: model.custom.backgroundImageScaleContent,
         displayApplicationChrome: model.displayApplicationChrome,
         darkModeSetting: model.custom.darkModeSetting || false,
+        aiEnabled: model.ai_enabled ?? !model.graded,
         responsiveLayout: model.custom.responsiveLayout || false,
       },
       FinishPanel: {
@@ -385,6 +396,7 @@ export const transformSchemaToModel = (schema: any) => {
       columnGuides: schema.Properties.InterfaceSettings.columnGuides,
       rowGuides: schema.Properties.InterfaceSettings.rowGuides,
     },
+    ai_enabled: schema.Properties.Appearance.aiEnabled,
     displayApplicationChrome: schema.Properties.Appearance.displayApplicationChrome,
     additionalStylesheets,
     title: schema.Properties.title,

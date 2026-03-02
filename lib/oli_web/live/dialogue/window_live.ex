@@ -87,10 +87,23 @@ defmodule OliWeb.Dialogue.WindowLive do
       ) do
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
     resource_id = session["resource_id"]
+    revision_id = session["revision_id"]
 
     PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
 
-    if Sections.assistant_enabled?(section) do
+    page_enabled? =
+      case revision_id do
+        nil ->
+          true
+
+        _ ->
+          case Oli.Repo.get(Oli.Resources.Revision, revision_id) do
+            nil -> false
+            page -> Sections.page_ai_enabled?(page)
+          end
+      end
+
+    if Sections.assistant_enabled?(section) and page_enabled? do
       project = Oli.Authoring.Course.get_project!(section.base_project_id)
 
       case init_dialogue_server(section, project, session["revision_id"], current_user_id) do

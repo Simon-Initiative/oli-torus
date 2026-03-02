@@ -271,6 +271,11 @@ defmodule Oli.Interop.Export do
         content: rewire(r.content, project),
         objectives: Map.get(r.objectives, "attached", []) |> Enum.map(fn id -> "#{id}" end),
         isGraded: r.graded,
+        aiEnabled:
+          case r.ai_enabled do
+            nil -> !r.graded
+            value -> value
+          end,
         purpose: r.purpose,
         relatesTo: r.relates_to |> Enum.map(fn id -> "#{id}" end),
         collabSpace: r.collab_space_config,

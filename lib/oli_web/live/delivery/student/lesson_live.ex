@@ -2055,14 +2055,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   defp possibly_fire_page_trigger(section, page) do
-    case {section.assistant_enabled, page} do
-      {true, %{content: %{"trigger" => %{"trigger_type" => "page"} = trigger}}} ->
-        trigger = Map.put(trigger, "resource_id", page.resource_id)
+    case page do
+      %{content: %{"trigger" => %{"trigger_type" => "page"} = trigger}} ->
+        if Sections.assistant_enabled_for_page?(section, page) do
+          trigger = Map.put(trigger, "resource_id", page.resource_id)
 
-        pid = self()
+          pid = self()
 
-        # wait 2 seconds before firing the trigger
-        Process.send_after(pid, {:fire_trigger, section.slug, trigger}, 2000)
+          # wait 2 seconds before firing the trigger
+          Process.send_after(pid, {:fire_trigger, section.slug, trigger}, 2000)
+        end
 
         :ok
 

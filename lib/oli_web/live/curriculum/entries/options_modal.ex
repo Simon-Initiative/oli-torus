@@ -369,6 +369,19 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               </div>
 
               <div class="form-group">
+                <.input
+                  type="checkbox"
+                  field={@form[:ai_enabled]}
+                  checked={ai_enabled_checked(@form, @revision)}
+                  class="h-4 w-4"
+                  label="Enable AI Assistant (DOT)"
+                />
+                <small id="ai_enabled_description" class="form-text text-muted">
+                  Determines whether Dot is available on this page when section-level assistant is enabled.
+                </small>
+              </div>
+
+              <div class="form-group">
                 <label for="scoring_type">Scoring Policy</label>
                 <.input
                   type="select"
@@ -1037,6 +1050,26 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       !form.source.changes[:graded]
     else
       !revision.graded
+    end
+  end
+
+  defp ai_enabled_checked(form, revision) do
+    graded =
+      if !is_nil(form.source.changes[:graded]) do
+        form.source.changes[:graded]
+      else
+        revision.graded
+      end
+
+    case form.source.changes[:ai_enabled] do
+      nil ->
+        case revision.ai_enabled do
+          nil -> !graded
+          value -> value
+        end
+
+      value ->
+        value
     end
   end
 

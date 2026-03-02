@@ -7,6 +7,7 @@ export type ResourceUpdate = {
   objectives: AttachedObjectives;
   content: PageContent;
   releaseLock: boolean;
+  ai_enabled?: boolean;
 };
 
 // TODO: server responding with revision_slug instead of revisionSlug as expected

@@ -286,6 +286,7 @@ defmodule Oli.Delivery.Sections.Updates do
           inserted_at: {:placeholder, :timestamp},
           updated_at: {:placeholder, :timestamp},
           collab_space_config: r.collab_space_config,
+          ai_enabled: r.ai_enabled,
           batch_scoring: r.batch_scoring,
           replacement_strategy: r.replacement_strategy,
           max_attempts:

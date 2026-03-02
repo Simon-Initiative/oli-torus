@@ -168,6 +168,17 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
               "Unscored" -> false
             end
         end,
+      ai_enabled:
+        case type do
+          "Container" ->
+            nil
+
+          _ ->
+            case scored do
+              "Scored" -> false
+              "Unscored" -> true
+            end
+        end,
       max_attempts:
         case type do
           "Container" ->

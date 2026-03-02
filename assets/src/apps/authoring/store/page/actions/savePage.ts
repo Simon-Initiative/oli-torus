@@ -46,6 +46,10 @@ export const savePage = createAsyncThunk(
       payload.displayApplicationChrome !== undefined
         ? payload.displayApplicationChrome
         : currentPage.displayApplicationChrome;
+    const ai_enabled =
+      payload.ai_enabled !== undefined
+        ? payload.ai_enabled
+        : currentPage.ai_enabled ?? !currentPage.graded;
 
     // the API expects to overwrite all the properties every time
 
@@ -85,6 +89,7 @@ export const savePage = createAsyncThunk(
     const update: ResourceUpdate = {
       title: payload.title || currentPage.title,
       objectives: payload.objectives || currentPage.objectives,
+      ai_enabled,
       content: {
         model: updatedModel as ResourceContent[],
         advancedAuthoring,
@@ -98,7 +103,7 @@ export const savePage = createAsyncThunk(
       releaseLock: false,
     };
 
-    dispatch(updatePage(update.content));
+    dispatch(updatePage({ ...update.content, ai_enabled }));
 
     if (undoable) {
       dispatch(
