@@ -32,13 +32,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
-        excluded_user_ids =
+        non_learner_user_ids =
           Sections.enrolled_students(section.slug, [
             :context_instructor,
             :context_content_developer,
             :context_administrator
           ])
           |> Enum.map(& &1.id)
+
+        non_enrolled_learner_ids =
+          Sections.enrolled_students(section.slug, [:context_learner])
+          |> Enum.reject(&(&1.enrollment_status == :enrolled))
+          |> Enum.map(& &1.id)
+
+        excluded_user_ids =
+          (non_learner_user_ids ++ non_enrolled_learner_ids)
           |> Enum.uniq()
 
         student_progress =
