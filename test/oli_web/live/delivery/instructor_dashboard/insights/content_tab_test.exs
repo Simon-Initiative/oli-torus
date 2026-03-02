@@ -953,6 +953,87 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       # Module 2 and 3 should show 0% (no student progress)
       assert progress == ["100%", "0%", "0%"]
     end
+
+    test "administrator progress submissions do not affect class progress calculation", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{
+        section: section,
+        mod1_pages: mod1_pages
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, page_3] = mod1_pages
+
+      student = insert(:user, %{given_name: "Test", family_name: "Student"})
+      admin = insert(:user, %{given_name: "Test", family_name: "Admin"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(admin.id, section.id, [ContextRoles.get_role(:context_administrator)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_3.revision
+      )
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        admin.id,
+        1.0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        admin.id,
+        1.0,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        admin.id,
+        1.0,
+        page_3.revision
+      )
+
+      params = %{container_filter_by: :modules}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      progress =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
+
+      assert progress == ["100%", "0%", "0%"]
+    end
   end
 
   defp set_progress(section_id, resource_id, user_id, progress, revision) do

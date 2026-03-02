@@ -32,13 +32,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
-        instructor_ids = Sections.get_instructors_for_section(section.id, ids_only: true)
+        excluded_user_ids =
+          Sections.enrolled_students(section.slug, [
+            :context_instructor,
+            :context_content_developer,
+            :context_administrator
+          ])
+          |> Enum.map(& &1.id)
+          |> Enum.uniq()
 
         student_progress =
           Metrics.progress_across(
             section.id,
             Enum.map(containers, & &1.id),
-            instructor_ids,
+            excluded_user_ids,
             Sections.count_enrollments(section.slug)
           )
 
