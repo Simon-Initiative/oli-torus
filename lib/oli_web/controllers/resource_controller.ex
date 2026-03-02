@@ -175,6 +175,7 @@ defmodule OliWeb.ResourceController do
       revision ->
         %Oli.Delivery.ActivityProvider.Result{
           prototypes: prototypes,
+          errors: selection_errors,
           bib_revisions: bib_references,
           transformed_content: transformed_content
         } =
@@ -219,6 +220,7 @@ defmodule OliWeb.ResourceController do
                   bib_app_params: bib_references
                 ),
               context: context,
+              selection_errors: selection_errors,
               bib_app_params: %{
                 bibReferences: bib_references
               },

@@ -762,8 +762,122 @@ defmodule Oli.Delivery.ActivityProviderTest do
 
       assert String.contains?(
                Enum.at(errors, 0),
-               "Selection failed to fulfill completely with 1 missing activities"
+               "failed to fulfill completely with 1 missing activities"
              )
+      assert String.contains?(Enum.at(errors, 0), "requested 2, obtained 1")
+
+      assert length(prototypes) == 3
+
+      activities = [
+        activity1.revision.resource_id,
+        activity2.revision.resource_id,
+        activity3.revision.resource_id
+      ]
+
+      index1 = index_of(prototypes, activities)
+
+      activities =
+        Enum.filter(activities, fn a -> Enum.at(prototypes, index1).revision.resource_id != a end)
+
+      index2 = index_of(prototypes, activities)
+
+      activities =
+        Enum.filter(activities, fn a -> Enum.at(prototypes, index2).revision.resource_id != a end)
+
+      index3 = index_of(prototypes, activities)
+
+      refute is_nil(index1)
+      refute is_nil(index2)
+      refute is_nil(index3)
+
+      assert MapSet.new([index1, index2, index3]) |> MapSet.size() == 3
+
+      model = Map.get(transformed_content, "model")
+      assert length(model) == 3
+
+      assert [
+               %{
+                 "type" => "activity-reference"
+               },
+               %{
+                 "type" => "activity-reference"
+               },
+               %{
+                 "type" => "activity-reference"
+               }
+             ] = model
+    end
+
+    test "triggers a distinct error when a selection obtains zero activities", %{
+      activity1: activity1,
+      activity2: activity2,
+      activity3: activity3,
+      publication: publication,
+      section: section,
+      o1: o1,
+      user1: user
+    } do
+      content = %{
+        "model" => [
+          %{
+            "type" => "selection",
+            # consumes all matching activities
+            "count" => 3,
+            "purpose" => "none",
+            "logic" => %{
+              "conditions" => %{
+                "fact" => "objectives",
+                "operator" => "contains",
+                "value" => [o1.revision.resource_id]
+              }
+            },
+            "id" => "first-selection"
+          },
+          %{
+            "type" => "selection",
+            # this draw has no remaining matches
+            "count" => 1,
+            "purpose" => "none",
+            "logic" => %{
+              "conditions" => %{
+                "fact" => "objectives",
+                "operator" => "contains",
+                "value" => [o1.revision.resource_id]
+              }
+            },
+            "id" => "second-selection"
+          }
+        ]
+      }
+
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug
+      }
+
+      %Result{
+        errors: errors,
+        prototypes: prototypes,
+        transformed_content: transformed_content
+      } =
+        ActivityProvider.provide(
+          content,
+          source,
+          [],
+          user,
+          section.slug,
+          Oli.Publishing.DeliveryResolver
+        )
+
+      assert length(errors) == 1
+
+      assert String.contains?(
+               Enum.at(errors, 0),
+               "failed to fulfill completely with 1 missing activities"
+             )
+
+      assert String.contains?(Enum.at(errors, 0), "requested 1, obtained 0")
 
       assert length(prototypes) == 3
 
@@ -850,7 +964,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
           Oli.Publishing.DeliveryResolver
         )
 
-      assert errors == ["Selection failed to fulfill: invalid expression"]
+      assert errors == ["Selection #1 failed to fulfill: invalid expression"]
       assert prototypes == []
       assert transformed_content["model"] == []
     end
