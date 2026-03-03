@@ -1,4 +1,6 @@
 defmodule Oli.Ingest.RewireLinks do
+  require Logger
+
   # Any internal hyperlinks have to be rewired to point to the new resource_id of the
   # page being linked to.  This function takes all pages and rewires
   # all links that it finds in their contents, only saving new revisions for those that
@@ -66,8 +68,19 @@ defmodule Oli.Ingest.RewireLinks do
      |> putIfNotNil.("anchor", anchor)}
   end
 
+  def rewire(%{"tag" => "a", "idref" => idref} = link, link_builder, _page_map) do
+    {true, link |> Map.put("href", link_builder.(idref)) |> Map.delete("idref")}
+  end
+
   def rewire(%{"type" => "page_link", "idref" => idref} = other, _link_builder, page_map) do
-    {true, Map.put(other, "idref", Map.get(page_map, idref).resource_id)}
+    case Map.get(page_map, idref) do
+      %{resource_id: resource_id} ->
+        {true, Map.put(other, "idref", resource_id)}
+
+      nil ->
+        Logger.warning("Skipping page_link rewiring, missing idref mapping for #{inspect(idref)}")
+        {false, other}
+    end
   end
 
   def rewire(%{"model" => model} = item, link_builder, page_map) do
@@ -145,7 +158,19 @@ defmodule Oli.Ingest.RewireLinks do
                           {Enum.any?(results), Map.put(part, "responses", responses)}
                       end
 
-                    {exp_result || hint_result || resp_result, part}
+                    {custom_result, part} =
+                      case Map.get(part, "custom") do
+                        %{"nodes" => nodes} = custom when is_list(nodes) ->
+                          {custom_result, nodes} = rewire(nodes, link_builder, page_map)
+
+                          {custom_result,
+                           Map.put(part, "custom", Map.put(custom, "nodes", nodes))}
+
+                        _ ->
+                          {false, part}
+                      end
+
+                    {exp_result || hint_result || resp_result || custom_result, part}
                   end)
                   |> Enum.unzip()
 

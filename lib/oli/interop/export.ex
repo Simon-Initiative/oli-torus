@@ -1,4 +1,6 @@
 defmodule Oli.Interop.Export do
+  require Logger
+
   alias Oli.Publishing
   alias Oli.Resources.ResourceType
   alias Oli.Activities
@@ -133,32 +135,49 @@ defmodule Oli.Interop.Export do
     Oli.Resources.PageContent.visit_children(content, {:ok, []}, fn c,
                                                                     {status, []},
                                                                     _tr_context ->
-      case Map.get(c, "type") do
-        "cite" ->
+      case {Map.get(c, "type"), Map.get(c, "tag")} do
+        {"cite", _} ->
           {Map.put(c, "bibref", "#{Map.get(c, "bibref")}"), {status, []}}
 
-        "page_link" ->
+        {"page_link", _} ->
           {Map.put(c, "idref", "#{Map.get(c, "idref")}"), {status, []}}
 
-        "a" ->
-          case Map.get(c, "href") do
-            "/course/link/" <> slug ->
-              case Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, slug) do
-                nil ->
-                  {c, {status, []}}
+        {"a", _} ->
+          {rewire_internal_anchor(c, project), {status, []}}
 
-                %Oli.Resources.Revision{resource_id: resource_id} ->
-                  {Map.put(c, "idref", "#{resource_id}"), {status, []}}
-              end
-
-            _ ->
-              {c, {status, []}}
-          end
+        {_, "a"} ->
+          {rewire_internal_anchor(c, project), {status, []}}
 
         _ ->
           {c, {status, []}}
       end
     end)
+  end
+
+  defp rewire_internal_anchor(node, project) do
+    cond do
+      Map.has_key?(node, "idref") ->
+        Map.put(node, "idref", "#{Map.get(node, "idref")}")
+
+      true ->
+        case Map.get(node, "href") do
+          "/course/link/" <> slug ->
+            case Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, slug) do
+              nil ->
+                Logger.warning(
+                  "Skipping adaptive link export rewiring, unknown slug #{inspect(slug)}"
+                )
+
+                node
+
+              %Oli.Resources.Revision{resource_id: resource_id} ->
+                Map.put(node, "idref", "#{resource_id}")
+            end
+
+          _ ->
+            node
+        end
+    end
   end
 
   # For an activity, rewire all of the standard "content" locations:
@@ -206,6 +225,17 @@ defmodule Oli.Interop.Export do
               Map.put(part, "hints", hints)
             else
               part
+            end
+
+          part =
+            case Map.get(part, "custom") do
+              %{"nodes" => nodes} = custom when is_list(nodes) ->
+                adjusted_content = %{"type" => "content", "children" => nodes}
+                {results, _} = rewire_elements(adjusted_content, project)
+                Map.put(part, "custom", Map.put(custom, "nodes", results["children"]))
+
+              _ ->
+                part
             end
 
           if Map.has_key?(part, "responses") and Map.get(part, "responses") != nil do

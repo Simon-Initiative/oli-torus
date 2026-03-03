@@ -98,5 +98,50 @@ defmodule Oli.Interop.RewireLinksTest do
                "caption" => [%{"type" => "a", "children" => [], "href" => "rewritten:id1"}]
              } == rewritten
     end
+
+    test "rewire/3 rewrites adaptive text node links with idref" do
+      link = %{"tag" => "a", "idref" => "id1", "children" => [%{"text" => "My link"}]}
+      {true, rewritten} = RewireLinks.rewire(link, &fake_link_builder/1, %{})
+
+      assert %{
+               "tag" => "a",
+               "href" => "rewritten:id1",
+               "children" => [%{"text" => "My link"}]
+             } == rewritten
+
+      refute Map.has_key?(rewritten, "idref")
+    end
+
+    test "rewire/3 rewrites nested adaptive internal links and leaves external links unchanged" do
+      adaptive_nodes = %{
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "custom" => %{
+                "nodes" => [
+                  %{"tag" => "a", "idref" => "id1", "children" => [%{"text" => "Internal"}]},
+                  %{
+                    "tag" => "a",
+                    "href" => "https://example.org",
+                    "children" => [%{"text" => "External"}]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "stem" => []
+      }
+
+      {true, rewritten} = RewireLinks.rewire(adaptive_nodes, &fake_link_builder/1, %{})
+
+      [part] = rewritten["authoring"]["parts"]
+      [internal, external] = part["custom"]["nodes"]
+
+      assert internal["href"] == "rewritten:id1"
+      refute Map.has_key?(internal, "idref")
+      assert external["href"] == "https://example.org"
+    end
   end
 end

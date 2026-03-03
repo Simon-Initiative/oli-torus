@@ -14,11 +14,13 @@ defmodule Oli.Publishing.AuthoringResolver do
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course
   alias Oli.Branding.CustomLabels
+  alias Oli.Activities.ActivityRegistration
 
   @behaviour Resolver
 
   @page_id Oli.Resources.ResourceType.id_for_page()
   @container_id Oli.Resources.ResourceType.id_for_container()
+  @activity_id Oli.Resources.ResourceType.id_for_activity()
 
   @impl Resolver
   def from_resource_id(project_slug, resource_ids) when is_list(resource_ids) do
@@ -411,9 +413,9 @@ defmodule Oli.Publishing.AuthoringResolver do
           %{title: String.t(), slug: String.t()}
         ]
   def find_hyperlink_references(project_slug, page_slug) do
-    project_slug
-    |> find_raw_references()
+    (find_raw_references(project_slug) ++ find_raw_adaptive_references(project_slug))
     |> process_and_filter_references(project_slug, page_slug)
+    |> Enum.uniq_by(& &1.slug)
   end
 
   defp find_raw_references(project_slug) do
@@ -427,23 +429,171 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> Repo.all()
   end
 
+  defp find_raw_adaptive_references(project_slug) do
+    adaptive_activity_refs =
+      fetch_adaptive_activity_revisions(project_slug)
+      |> Enum.map(fn %{resource_id: resource_id, content: content} ->
+        {resource_id, adaptive_hyperlink_refs(content)}
+      end)
+      |> Enum.reject(fn {_resource_id, refs} -> refs == [] end)
+
+    adaptive_activity_resource_ids = Enum.map(adaptive_activity_refs, &elem(&1, 0))
+
+    activity_to_pages =
+      pages_grouped_by_related_activity(project_slug, adaptive_activity_resource_ids)
+
+    Enum.flat_map(adaptive_activity_refs, fn {activity_resource_id, refs} ->
+      activity_to_pages
+      |> Map.get(activity_resource_id, [])
+      |> Enum.map(fn %{slug: slug, title: title} ->
+        %{slug: slug, title: title, refs: refs}
+      end)
+    end)
+  end
+
+  defp fetch_adaptive_activity_revisions(project_slug) do
+    PublishedResource
+    |> join(:inner, [pr], r in Revision, on: r.id == pr.revision_id)
+    |> join(:inner, [_pr, r], ar in ActivityRegistration, on: ar.id == r.activity_type_id)
+    |> where(
+      [pr, _r, _ar],
+      pr.publication_id in subquery(project_working_publication(project_slug))
+    )
+    |> where([_pr, r, _ar], r.resource_type_id == @activity_id and r.deleted == false)
+    |> where([_pr, _r, ar], ar.slug == "oli_adaptive")
+    |> select([_pr, r, _ar], %{resource_id: r.resource_id, content: r.content})
+    |> Repo.all()
+  end
+
+  defp pages_grouped_by_related_activity(_project_slug, []), do: %{}
+
+  defp pages_grouped_by_related_activity(project_slug, activity_resource_ids) do
+    activity_resource_ids_set = MapSet.new(activity_resource_ids)
+
+    from(pr in PublishedResource,
+      join: rev in Revision,
+      on: rev.id == pr.revision_id,
+      where:
+        pr.publication_id in subquery(project_working_publication(project_slug)) and
+          rev.resource_type_id == @page_id and rev.deleted == false and
+          fragment("? && ?", rev.relates_to, ^activity_resource_ids),
+      select: %{slug: rev.slug, title: rev.title, relates_to: rev.relates_to}
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn page, acc ->
+      Enum.reduce(page.relates_to || [], acc, fn related_resource_id, acc2 ->
+        if MapSet.member?(activity_resource_ids_set, related_resource_id) do
+          Map.update(
+            acc2,
+            related_resource_id,
+            [%{slug: page.slug, title: page.title}],
+            fn pages ->
+              [%{slug: page.slug, title: page.title} | pages]
+            end
+          )
+        else
+          acc2
+        end
+      end)
+    end)
+    |> Map.new(fn {resource_id, pages} ->
+      {resource_id, Enum.uniq_by(pages, & &1.slug)}
+    end)
+  end
+
+  defp adaptive_hyperlink_refs(content) when is_map(content) do
+    content
+    |> get_in(["authoring", "parts"])
+    |> List.wrap()
+    |> Enum.flat_map(&adaptive_hyperlink_refs_for_part/1)
+  end
+
+  defp adaptive_hyperlink_refs(_), do: []
+
+  defp adaptive_hyperlink_refs_for_part(%{"type" => "janus-text-flow"} = part) do
+    part
+    |> get_in(["custom", "nodes"])
+    |> List.wrap()
+    |> Enum.flat_map(&adaptive_hyperlink_refs_for_node/1)
+  end
+
+  defp adaptive_hyperlink_refs_for_part(_), do: []
+
+  defp adaptive_hyperlink_refs_for_node(%{"tag" => "a"} = node) do
+    idref =
+      (Map.get(node, "idref") || Map.get(node, "resource_id"))
+      |> to_integer_or_nil()
+
+    href = Map.get(node, "href") |> internal_page_slug_from_href()
+
+    current_refs =
+      if is_nil(idref) and is_nil(href) do
+        []
+      else
+        [%{"idref" => idref, "href" => href}]
+      end
+
+    current_refs ++ adaptive_hyperlink_refs_for_children(node)
+  end
+
+  defp adaptive_hyperlink_refs_for_node(node) when is_map(node) do
+    adaptive_hyperlink_refs_for_children(node)
+  end
+
+  defp adaptive_hyperlink_refs_for_node(_), do: []
+
+  defp adaptive_hyperlink_refs_for_children(node) do
+    node
+    |> Map.get("children", [])
+    |> List.wrap()
+    |> Enum.flat_map(&adaptive_hyperlink_refs_for_node/1)
+  end
+
+  defp internal_page_slug_from_href("/course/link/" <> rest) do
+    case String.split(rest, ["?", "#"], parts: 2) do
+      [slug | _] when slug != "" -> slug
+      _ -> nil
+    end
+  end
+
+  defp internal_page_slug_from_href(_), do: nil
+
+  defp to_integer_or_nil(resource_id) when is_integer(resource_id), do: resource_id
+
+  defp to_integer_or_nil(resource_id) when is_binary(resource_id) do
+    case Integer.parse(resource_id) do
+      {value, ""} -> value
+      _ -> nil
+    end
+  end
+
+  defp to_integer_or_nil(_), do: nil
+
   # Function that processes the given references to return only the ones pointing to the specified page slug.
   defp process_and_filter_references(raw_references_data, project_slug, page_slug) do
     # Collect the resource_ids and transform the refs from a map to a list
     # For instance, %{refs: [%{"href" => nil, "idref" => 1}, %{"href" => "some_slug", "idref" => nil}]}
     # will be transformed to [1, "some_slug"]
     {resource_ids, data_with_refs_as_list} =
-      Enum.reduce(raw_references_data, {[], []}, fn
-        %{refs: refs} = data, acc ->
-          {hrefs, idrefs} =
-            Enum.reduce(refs, {[], []}, fn
-              %{"href" => nil, "idref" => idref}, acc2 -> {elem(acc2, 0), [idref | elem(acc2, 1)]}
-              %{"href" => href, "idref" => nil}, acc2 -> {[href | elem(acc2, 0)], elem(acc2, 1)}
-            end)
+      Enum.reduce(raw_references_data, {[], []}, fn %{refs: refs} = data, acc ->
+        {hrefs, idrefs} =
+          Enum.reduce(refs || [], {[], []}, fn ref, {href_acc, idref_acc} ->
+            href_acc =
+              case Map.get(ref, "href") do
+                href when is_binary(href) and href != "" -> [href | href_acc]
+                _ -> href_acc
+              end
 
-          resource_ids = idrefs ++ elem(acc, 0)
-          references_list = [%{data | refs: hrefs ++ idrefs} | elem(acc, 1)]
-          {resource_ids, references_list}
+            idref_acc =
+              case Map.get(ref, "idref") do
+                idref when is_integer(idref) -> [idref | idref_acc]
+                _ -> idref_acc
+              end
+
+            {href_acc, idref_acc}
+          end)
+
+        {idrefs ++ elem(acc, 0), [%{data | refs: hrefs ++ idrefs} | elem(acc, 1)]}
       end)
 
     res_id_to_rev_slug_map = map_resource_id_to_rev_slug(project_slug, resource_ids)

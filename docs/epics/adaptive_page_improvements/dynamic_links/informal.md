@@ -72,3 +72,102 @@ Then on delivery when we render a page and give it activity (screen) content (th
 ## Note to Developer
 
 Find examples in JSON of actual regular hyperlinks in adaptive activity JSON (make one if you need to) so that you understand that structure and can plan out the two new link types. Review also the current BASIC page link structure for page to page links. Give all of that (plus your new link structures) to spec_analyze as part of this informal description.
+
+## Review of Basic page link structure for page to page links
+
+Findings
+
+  1. High: Markdown rendering uses an outdated internal page URL shape (/sections/:section_slug/page/:revision_slug) instead of lesson route (/sections/:section_slug/
+     lesson/:revision_slug), so markdown-rendered internal links can be wrong.
+     markdown.ex:487
+     router.ex:1345
+  2. Medium: Inline internal links preserve target/anchor during rewiring, but the HTML/TS renderers ignore those attributes for <a> links, so authored metadata is dropped at
+     render time.
+     rewire_links.ex:45
+     rewire_links_test.exs:22
+     html.ex:829
+     html.tsx:588
+  3. Low (design risk): Basic pages currently use two page-to-page link representations:
+
+  - inline links: type: "a" with href: "/course/link/<revision_slug>"
+  - block links: type: "page_link" with idref: <resource_id>
+    This dual model works today, but increases rewrite/interop complexity and can cause confusion when extending to adaptive pages.
+    LinkModal.tsx:115
+    utils.ts:28
+    types.ts:436
+    html.ex:880
+    sections.ex:1692
+
+  Current Basic Page Link Structure (as implemented)
+
+  - Authoring inline “link to page” stores /course/link/<revision_slug>.
+  - Authoring block “Page Link” stores idref (resource_id).
+  - Delivery rewrites internal /course/link/... to /sections/<section_slug>/lesson/<revision_slug>?....
+  - Export rewires internal <a href="/course/link/..."> into idref for package portability; import rewires back to href.
+    export.ex:143
+    rewire_links.ex:47
+
+  Assumption
+
+  - This review was static code inspection only (no runtime test execution).
+
+## Example JSON paragraph with hyperlink in adaptive activity JSON
+
+{
+      "id": "paragraph-013718927596",
+      "type": "janus-text-flow",
+      "custom": {
+        "x": 165,
+        "y": 156,
+        "z": 0,
+        "nodes": [
+          {
+            "tag": "p",
+            "style": {},
+            "children": [
+              {
+                "tag": "a",
+                "href": "https://oli.cmu.edu",
+                "style": {},
+                "children": [
+                  {
+                    "tag": "text",
+                    "text": "Lorem ipsum",
+                    "style": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "tag": "span",
+                "style": {},
+                "children": [
+                  {
+                    "tag": "text",
+                    "text": " dolor sit amet consectetur. Non feugiat tincidunt ante arcu urna sed consectetur. Nulla id quam mattis sed blandit.",
+                    "style": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "width": 613,
+        "height": 41,
+        "palette": {
+          "borderColor": "transparent",
+          "borderStyle": "none",
+          "borderWidth": 0,
+          "borderRadius": 0,
+          "useHtmlProps": true,
+          "backgroundColor": "transparent"
+        },
+        "visible": true,
+        "maxScore": 1,
+        "overrideWidth": true,
+        "customCssClass": "",
+        "overrideHeight": false,
+        "requiresManualGrading": false
+      }
+    }
