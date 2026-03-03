@@ -295,7 +295,10 @@ export const convertQuillToJanus = (delta: Delta) => {
         if (op.attributes?.link) {
           child.tag = 'a';
           child.href = op.attributes.link;
-          if (typeof op.attributes.link === 'string' && op.attributes.link.startsWith('/course/link/')) {
+          if (
+            typeof op.attributes.link === 'string' &&
+            op.attributes.link.startsWith('/course/link/')
+          ) {
             child.linkType = 'page';
           }
         }
