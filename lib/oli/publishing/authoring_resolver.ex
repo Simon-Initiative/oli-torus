@@ -422,10 +422,20 @@ defmodule Oli.Publishing.AuthoringResolver do
     rows
     |> Enum.reduce(%{}, fn %{slug: slug, title: title, refs: refs}, acc ->
       key = {slug, title}
-      merged_refs = Map.get(acc, key, []) ++ List.wrap(refs)
-      Map.put(acc, key, %{slug: slug, title: title, refs: merged_refs})
+
+      Map.update(
+        acc,
+        key,
+        %{slug: slug, title: title, refs: [List.wrap(refs)]},
+        fn row ->
+          %{row | refs: [List.wrap(refs) | row.refs]}
+        end
+      )
     end)
     |> Map.values()
+    |> Enum.map(fn row ->
+      %{row | refs: row.refs |> Enum.reverse() |> Enum.flat_map(& &1)}
+    end)
   end
 
   defp find_raw_references(project_slug) do

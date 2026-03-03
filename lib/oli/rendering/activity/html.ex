@@ -242,9 +242,17 @@ defmodule Oli.Rendering.Activity.Html do
   defp resolve_adaptive_dynamic_links(model_json, tag, %Context{} = context) do
     if is_adaptive?(tag) and dynamic_link_markers_present?(model_json) do
       with {:ok, decoded_model} <- decode_activity_model(model_json),
-           {rewired_model, _cache} <- rewrite_adaptive_internal_links(decoded_model, context, %{}),
-           {:ok, encoded_model} <- Jason.encode(rewired_model) do
-        ActivityContext.encode(encoded_model)
+           {rewired_model, _cache, changed?} <-
+             rewrite_adaptive_internal_links(decoded_model, context, %{}) do
+        if changed? do
+          with {:ok, encoded_model} <- Jason.encode(rewired_model) do
+            ActivityContext.encode(encoded_model)
+          else
+            _ -> model_json
+          end
+        else
+          model_json
+        end
       else
         _ -> model_json
       end
@@ -268,35 +276,56 @@ defmodule Oli.Rendering.Activity.Html do
   end
 
   defp rewrite_adaptive_internal_links(value, _context, cache) when is_binary(value),
-    do: {value, cache}
+    do: {value, cache, false}
 
   defp rewrite_adaptive_internal_links(value, _context, cache) when is_number(value),
-    do: {value, cache}
+    do: {value, cache, false}
 
   defp rewrite_adaptive_internal_links(value, _context, cache) when is_boolean(value),
-    do: {value, cache}
+    do: {value, cache, false}
 
-  defp rewrite_adaptive_internal_links(nil, _context, cache), do: {nil, cache}
+  defp rewrite_adaptive_internal_links(nil, _context, cache), do: {nil, cache, false}
 
   defp rewrite_adaptive_internal_links(items, context, cache) when is_list(items) do
-    Enum.reduce(items, {[], cache}, fn item, {acc, cache} ->
-      {item, cache} = rewrite_adaptive_internal_links(item, context, cache)
-      {[item | acc], cache}
-    end)
-    |> then(fn {items, cache} -> {Enum.reverse(items), cache} end)
+    {rewritten_items, cache, changed?} =
+      Enum.reduce(items, {[], cache, false}, fn item, {acc, cache, changed?} ->
+        {rewritten_item, cache, item_changed?} =
+          rewrite_adaptive_internal_links(item, context, cache)
+
+        {[rewritten_item | acc], cache, changed? || item_changed?}
+      end)
+
+    if changed? do
+      {Enum.reverse(rewritten_items), cache, true}
+    else
+      {items, cache, false}
+    end
   end
 
   defp rewrite_adaptive_internal_links(item, context, cache) when is_map(item) do
-    {item, cache} =
-      Enum.reduce(item, {%{}, cache}, fn {key, value}, {acc, cache} ->
-        {rewired_value, cache} = rewrite_adaptive_internal_links(value, context, cache)
-        {Map.put(acc, key, rewired_value), cache}
+    {rewritten_item, cache, children_changed?} =
+      Enum.reduce(item, {item, cache, false}, fn {key, value}, {acc, cache, changed?} ->
+        if is_map(value) or is_list(value) do
+          {rewired_value, cache, value_changed?} =
+            rewrite_adaptive_internal_links(value, context, cache)
+
+          if value_changed? do
+            {Map.put(acc, key, rewired_value), cache, true}
+          else
+            {acc, cache, changed?}
+          end
+        else
+          {acc, cache, changed?}
+        end
       end)
 
-    maybe_rewrite_adaptive_anchor(item, context, cache)
+    {rewritten_item, cache, anchor_changed?} =
+      maybe_rewrite_adaptive_anchor(rewritten_item, context, cache)
+
+    {rewritten_item, cache, children_changed? || anchor_changed?}
   end
 
-  defp rewrite_adaptive_internal_links(value, _context, cache), do: {value, cache}
+  defp rewrite_adaptive_internal_links(value, _context, cache), do: {value, cache, false}
 
   defp maybe_rewrite_adaptive_anchor(%{"tag" => "a"} = item, %Context{} = context, cache) do
     idref = Map.get(item, "idref") || Map.get(item, "resource_id")
@@ -319,7 +348,7 @@ defmodule Oli.Rendering.Activity.Html do
           {item
            |> Map.put("href", internal_href(context, slug))
            |> Map.put("target", "_blank")
-           |> Map.put("rel", "noopener noreferrer"), cache}
+           |> Map.put("rel", "noopener noreferrer"), cache, true}
         else
           {:error, cache} ->
             emit_resolution_failure_telemetry(context, idref, "resource_not_found")
@@ -328,7 +357,7 @@ defmodule Oli.Rendering.Activity.Html do
               "Unable to resolve adaptive dynamic link idref #{inspect(idref)}; using fallback"
             )
 
-            {fallback_adaptive_anchor(item, context), cache}
+            {fallback_adaptive_anchor(item, context), cache, true}
 
           _ ->
             emit_resolution_failure_telemetry(context, idref, "invalid_resource_id")
@@ -337,7 +366,7 @@ defmodule Oli.Rendering.Activity.Html do
               "Unable to resolve adaptive dynamic link idref #{inspect(idref)}; using fallback"
             )
 
-            {fallback_adaptive_anchor(item, context), cache}
+            {fallback_adaptive_anchor(item, context), cache, true}
         end
 
       internal_course_link?(href) ->
@@ -346,14 +375,14 @@ defmodule Oli.Rendering.Activity.Html do
         {item
          |> Map.put("href", internal_href(context, slug))
          |> Map.put("target", "_blank")
-         |> Map.put("rel", "noopener noreferrer"), cache}
+         |> Map.put("rel", "noopener noreferrer"), cache, true}
 
       true ->
-        {item, cache}
+        {item, cache, false}
     end
   end
 
-  defp maybe_rewrite_adaptive_anchor(item, _context, cache), do: {item, cache}
+  defp maybe_rewrite_adaptive_anchor(item, _context, cache), do: {item, cache, false}
 
   defp normalize_resource_id(resource_id) when is_integer(resource_id), do: {:ok, resource_id}
 
