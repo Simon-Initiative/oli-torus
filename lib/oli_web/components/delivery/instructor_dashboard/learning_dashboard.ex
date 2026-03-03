@@ -1,8 +1,8 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard.LearningDashboard do
   use OliWeb, :live_component
 
-  alias Oli.Delivery.Sections
-  alias Phoenix.HTML.Form
+  alias OliWeb.Components.Delivery.ListNavigator
+  alias OliWeb.Delivery.InstructorDashboard.DashboardTab
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -10,22 +10,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.LearningDashboard do
     <div id="learning-dashboard" class="container mx-auto mb-10">
       <div class="mb-4 p-4 bg-white dark:bg-gray-800 shadow-sm">
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-          <form phx-change="dashboard_scope_changed" phx-target={@myself}>
-            <label for="dashboard_scope" class="block text-sm font-semibold mb-1">
-              Scope
-            </label>
-            <select
-              id="dashboard_scope"
-              name="scope"
-              class="form-select"
-            >
-              {Form.options_for_select(
-                [{"Course (all content)", "course"}] ++
-                  dashboard_scope_options(@containers, @section.customizations),
-                @dashboard_scope
-              )}
-            </select>
-          </form>
+          <.live_component
+            id="learning_dashboard_scope_navigator"
+            module={ListNavigator}
+            items={navigator_items(@containers)}
+            current_item_resource_id={current_dashboard_item_resource_id(@dashboard_scope)}
+            navigation_type={:patch}
+            path_builder_fn={fn item -> dashboard_path(@section.slug, item.resource_id) end}
+          />
 
           <button class="btn btn-secondary" phx-click="dashboard_reload" phx-target={@myself}>
             Reload Snapshot
@@ -55,12 +47,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.LearningDashboard do
   end
 
   @impl Phoenix.LiveComponent
-  def handle_event("dashboard_scope_changed", %{"scope" => scope}, socket) do
-    send(self(), {:dashboard_scope_changed, scope})
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveComponent
   def handle_event("dashboard_reload", _params, socket) do
     # Prototype-only refresh control. The production dashboard flow is expected to
     # rely on scope-driven hydration via `Oli.Dashboard.LiveDataCoordinator`
@@ -69,37 +55,24 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.LearningDashboard do
     {:noreply, socket}
   end
 
-  defp dashboard_scope_options({_, containers}, customizations) do
-    Enum.map(containers, fn container ->
-      {dashboard_container_option_label(container, customizations), "container:#{container.id}"}
-    end)
-  end
+  defp current_dashboard_item_resource_id("course"), do: "course"
 
-  defp dashboard_scope_options(_, _), do: []
-
-  defp dashboard_container_option_label(container, customizations) do
-    title = Map.get(container, :title, "Container")
-
-    case Map.get(container, :label) do
-      label when is_binary(label) and label != "" ->
-        "#{label} - #{title}"
-
-      _ ->
-        case {Map.get(container, :numbering_level), Map.get(container, :numbering_index)} do
-          {numbering_level, numbering_index}
-          when is_integer(numbering_level) and is_integer(numbering_index) ->
-            label =
-              Sections.get_container_label_and_numbering(
-                numbering_level,
-                numbering_index,
-                customizations
-              )
-
-            "#{label}: #{title}"
-
-          _ ->
-            title
-        end
+  defp current_dashboard_item_resource_id("container:" <> id) do
+    case Integer.parse(id) do
+      {parsed, ""} when parsed > 0 -> parsed
+      _ -> "course"
     end
   end
+
+  defp current_dashboard_item_resource_id(_), do: "course"
+
+  defp navigator_items({_count, items}) when is_list(items), do: items
+  defp navigator_items(items) when is_list(items), do: items
+  defp navigator_items(_), do: []
+
+  defp dashboard_path(section_slug, "course"),
+    do: DashboardTab.path_for_section(section_slug, "course")
+
+  defp dashboard_path(section_slug, resource_id),
+    do: DashboardTab.path_for_section(section_slug, "container:#{resource_id}")
 end

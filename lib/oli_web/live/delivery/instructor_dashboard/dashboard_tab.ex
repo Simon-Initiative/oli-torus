@@ -22,6 +22,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTab do
   @type scope ::
           %{container_type: :course}
           | %{container_type: :container, container_id: pos_integer()}
+  @type navigator_item :: %{
+          required(:id) => pos_integer() | String.t(),
+          required(:resource_id) => pos_integer() | String.t(),
+          required(:title) => String.t(),
+          required(:resource_type_id) => pos_integer(),
+          required(:numbering_level) => integer(),
+          required(:numbering_index) => integer()
+        }
+  @dashboard_container_levels [1, 2, 3]
 
   @doc """
   Lazily initializes dashboard-tab-specific assigns for the current LiveView session.
@@ -46,7 +55,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTab do
     # Reuse assigned dashboard containers when the tab is already loaded.
     # Entry/canonicalization paths may not have `:containers` yet, so validation
     # falls back to fetching the current section containers.
-    containers = socket.assigns[:containers]
+    containers = socket.assigns[:dashboard_navigator_items]
 
     scope_selector =
       resolve_scope(
@@ -64,7 +73,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTab do
   """
   @spec path(socket(), scope_selector()) :: String.t()
   def path(socket, scope_selector) do
-    "/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=#{URI.encode_www_form(scope_selector)}"
+    path_for_section(socket.assigns.section.slug, scope_selector)
+  end
+
+  @doc """
+  Builds the canonical dashboard path for a given section slug and scope selector.
+  """
+  @spec path_for_section(String.t(), scope_selector()) :: String.t()
+  def path_for_section(section_slug, scope_selector) do
+    "/sections/#{section_slug}/instructor_dashboard/insights/dashboard?dashboard_scope=#{URI.encode_www_form(scope_selector)}"
   end
 
   @doc """
@@ -107,6 +124,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTab do
     do: "container:#{container_id}"
 
   def scope_selector(_), do: "course"
+
+  @doc """
+  Builds the ordered navigator items for the dashboard scope control.
+
+  The synthetic `"Entire Course"` item is always first, followed by container items
+  in curriculum order through section level.
+  """
+  @spec navigator_items(map()) :: {non_neg_integer(), [navigator_item()]}
+  def navigator_items(section) do
+    course_item = entire_course_item()
+
+    items =
+      section
+      |> fetch_dashboard_containers()
+      |> flatten_dashboard_containers()
+
+    {length(items), [course_item | items]}
+  end
 
   @doc """
   Normalizes a scope selector against the section's current containers.
@@ -198,14 +233,72 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTab do
   end
 
   defp valid_container_id?(_section, {_, containers}, container_id) when is_list(containers) do
-    Enum.any?(containers, &(&1.id == container_id))
+    Enum.any?(containers, fn container ->
+      Map.get(container, :id) == container_id or Map.get(container, :resource_id) == container_id
+    end)
   end
 
   defp valid_container_id?(%{id: section_id}, _containers, container_id)
        when is_integer(section_id) do
-    SectionResourceDepot.containers(section_id, numbering_level: {:in, [1, 2]})
-    |> Enum.any?(&(&1.resource_id == container_id))
+    navigator_items(%{id: section_id})
+    |> elem(1)
+    |> Enum.any?(&(Map.get(&1, :resource_id) == container_id))
   end
 
   defp valid_container_id?(_, _, _), do: false
+
+  defp entire_course_item do
+    %{
+      id: "course",
+      resource_id: "course",
+      title: "Entire Course",
+      resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+      numbering_level: 0,
+      numbering_index: -1
+    }
+  end
+
+  defp fetch_dashboard_containers(%{id: section_id}) when is_integer(section_id) do
+    SectionResourceDepot.containers(section_id,
+      numbering_level: {:in, @dashboard_container_levels}
+    )
+  end
+
+  defp fetch_dashboard_containers(_), do: []
+
+  defp flatten_dashboard_containers(containers) do
+    containers_by_id = Map.new(containers, &{&1.id, &1})
+
+    child_container_ids =
+      containers
+      |> Enum.flat_map(&Map.get(&1, :children, []))
+      |> MapSet.new()
+
+    containers
+    |> Enum.reject(&MapSet.member?(child_container_ids, &1.id))
+    |> Enum.sort_by(& &1.numbering_index)
+    |> Enum.flat_map(&flatten_dashboard_container(&1, containers_by_id))
+  end
+
+  defp flatten_dashboard_container(container, containers_by_id) do
+    children =
+      container
+      |> Map.get(:children, [])
+      |> Enum.map(&Map.get(containers_by_id, &1))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.flat_map(&flatten_dashboard_container(&1, containers_by_id))
+
+    [navigator_item(container) | children]
+  end
+
+  defp navigator_item(container) do
+    %{
+      id: container.resource_id,
+      resource_id: container.resource_id,
+      title: container.title,
+      resource_type_id: container.resource_type_id,
+      numbering_level: container.numbering_level,
+      numbering_index: container.numbering_index
+    }
+  end
 end

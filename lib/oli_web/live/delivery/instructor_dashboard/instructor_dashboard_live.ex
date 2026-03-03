@@ -336,6 +336,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
 
       ^scope_selector ->
+        DashboardTab.persist_scope(socket.assigns[:instructor_enrollment], scope_selector)
         {:noreply, assign_dashboard_tab(socket, params)}
 
       _invalid_or_stale_scope ->
@@ -883,7 +884,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     <.live_component
       module={LearningDashboard}
       id="learning_dashboard"
-      containers={@containers}
+      containers={@dashboard_navigator_items}
       dashboard={@dashboard}
       dashboard_scope={@dashboard_scope}
       section={@section}
@@ -1260,7 +1261,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   def handle_info({:dashboard_scope_changed, scope}, socket) do
     case DashboardTab.validate_scope_selector(
            socket.assigns.section,
-           socket.assigns[:containers],
+           socket.assigns[:dashboard_navigator_items],
            scope
          ) do
       {:ok, scope_selector} ->
@@ -1359,11 +1360,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       view: :insights,
       active_tab: :dashboard,
       dashboard_scope: scope_selector,
-      instructor_enrollment: socket.assigns.instructor_enrollment
+      instructor_enrollment: socket.assigns.instructor_enrollment,
+      dashboard_navigator_items: DashboardTab.navigator_items(socket.assigns.section)
     )
-    |> assign_new(:containers, fn ->
-      Helpers.get_containers(socket.assigns.section)
-    end)
     |> load_dashboard(use_revisit?: use_revisit?)
     |> assign(:dashboard_revisit_hydrated?, true)
   end
