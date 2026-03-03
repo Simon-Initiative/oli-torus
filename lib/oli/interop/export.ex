@@ -11,12 +11,15 @@ defmodule Oli.Interop.Export do
   alias Oli.Delivery.Sections.BlueprintBrowseOptions
   alias Oli.Repo
 
+  @page_resource_type_id ResourceType.id_for_page()
+
   @doc """
   Generates a course digest for an existing course project.
   """
   def export(project) do
     publication = Publishing.project_working_publication(project.slug)
     resources = fetch_all_resources(publication)
+    page_slug_to_resource_id = page_slug_to_resource_id(resources)
 
     ([
        create_project_file(project),
@@ -25,10 +28,10 @@ defmodule Oli.Interop.Export do
      ] ++
        tags(resources) ++
        objectives(resources) ++
-       activities(resources, project) ++
+       activities(resources, project, page_slug_to_resource_id) ++
        bib_entries(resources) ++
        alternatives(resources) ++
-       pages(resources, project) ++
+       pages(resources, project, page_slug_to_resource_id) ++
        products(project))
     |> Utils.zip("export.zip")
   end
@@ -75,7 +78,7 @@ defmodule Oli.Interop.Export do
   end
 
   # create entries for all activities
-  defp activities(resources, project) do
+  defp activities(resources, project, page_slug_to_resource_id) do
     registrations =
       Activities.list_activity_registrations()
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
@@ -92,7 +95,7 @@ defmodule Oli.Interop.Export do
         tags: transform_tags(r),
         unresolvedReferences: [],
         scope: r.scope,
-        content: rewire_activity_content(r.content, project),
+        content: rewire_activity_content(r.content, project, page_slug_to_resource_id),
         objectives: to_string_ids(r.objectives),
         subType: Map.get(registrations, r.activity_type_id).slug
       }
@@ -108,19 +111,20 @@ defmodule Oli.Interop.Export do
     end)
   end
 
-  defp rewire_activity_elements(nil, _), do: nil
+  defp rewire_activity_elements(nil, _, _), do: nil
 
-  defp rewire_activity_elements(content_as_list, project) when is_map(content_as_list) do
+  defp rewire_activity_elements(content_as_list, project, page_slug_to_resource_id)
+       when is_map(content_as_list) do
     case Map.get(content_as_list, "content") do
       list when is_list(list) ->
         adjusted_content = %{"type" => "content", "children" => list}
-        {results, _} = rewire_elements(adjusted_content, project)
+        {results, _} = rewire_elements(adjusted_content, project, page_slug_to_resource_id)
         Map.put(content_as_list, "content", results["children"])
 
       map when is_map(map) ->
         list = map["model"]
         adjusted_content = %{"type" => "content", "children" => list}
-        {results, _} = rewire_elements(adjusted_content, project)
+        {results, _} = rewire_elements(adjusted_content, project, page_slug_to_resource_id)
         content = Map.put(map, "model", results["children"])
         Map.put(content_as_list, "content", content)
 
@@ -129,9 +133,9 @@ defmodule Oli.Interop.Export do
     end
   end
 
-  defp rewire_activity_elements(other, _), do: other
+  defp rewire_activity_elements(other, _, _), do: other
 
-  defp rewire_elements(content, project) do
+  defp rewire_elements(content, project, page_slug_to_resource_id) do
     Oli.Resources.PageContent.visit_children(content, {:ok, []}, fn c,
                                                                     {status, []},
                                                                     _tr_context ->
@@ -143,10 +147,10 @@ defmodule Oli.Interop.Export do
           {Map.put(c, "idref", "#{Map.get(c, "idref")}"), {status, []}}
 
         {"a", _} ->
-          {rewire_internal_anchor(c, project), {status, []}}
+          {rewire_internal_anchor(c, project, page_slug_to_resource_id), {status, []}}
 
         {_, "a"} ->
-          {rewire_internal_anchor(c, project), {status, []}}
+          {rewire_internal_anchor(c, project, page_slug_to_resource_id), {status, []}}
 
         _ ->
           {c, {status, []}}
@@ -154,40 +158,79 @@ defmodule Oli.Interop.Export do
     end)
   end
 
-  defp rewire_internal_anchor(node, project) do
+  defp rewire_internal_anchor(node, _project, page_slug_to_resource_id) do
     cond do
       Map.has_key?(node, "idref") ->
-        Map.put(node, "idref", "#{Map.get(node, "idref")}")
+        idref = "#{Map.get(node, "idref")}"
+
+        node
+        |> Map.put("idref", idref)
+        |> Map.put("resource_id", idref)
+        |> maybe_mark_internal_link()
 
       true ->
-        case Map.get(node, "href") do
-          "/course/link/" <> slug ->
-            case Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, slug) do
+        case page_slug_from_internal_href(Map.get(node, "href")) do
+          {:ok, slug} ->
+            case resolve_page_resource_id(slug, page_slug_to_resource_id) do
+              {:ok, resource_id} ->
+                idref = "#{resource_id}"
+
+                node
+                |> Map.put("idref", idref)
+                |> Map.put("resource_id", idref)
+                |> maybe_mark_internal_link()
+
               nil ->
                 Logger.warning(
                   "Skipping adaptive link export rewiring, unknown slug #{inspect(slug)}"
                 )
 
                 node
-
-              %Oli.Resources.Revision{resource_id: resource_id} ->
-                Map.put(node, "idref", "#{resource_id}")
             end
 
-          _ ->
+          :ignore ->
             node
         end
+    end
+  end
+
+  defp maybe_mark_internal_link(%{"tag" => "a"} = node), do: Map.put_new(node, "linkType", "page")
+  defp maybe_mark_internal_link(node), do: node
+
+  defp page_slug_from_internal_href("/course/link/" <> rest) do
+    case String.split(rest, ["?", "#"], parts: 2) do
+      [slug | _] when slug != "" -> {:ok, slug}
+      _ -> :ignore
+    end
+  end
+
+  defp page_slug_from_internal_href(_), do: :ignore
+
+  defp resolve_page_resource_id(revision_slug, page_slug_to_resource_id) do
+    case Map.get(page_slug_to_resource_id, revision_slug) do
+      resource_id when is_integer(resource_id) ->
+        {:ok, resource_id}
+
+      _ ->
+        nil
     end
   end
 
   # For an activity, rewire all of the standard "content" locations:
   # stem, choices, explanation, hints, feedback.  This will take care of
   # re-wiring all of the links to pages and any bib citations.
-  defp rewire_activity_content(content, project) do
+  defp rewire_activity_content(content, project, page_slug_to_resource_id) do
     content =
       case Map.get(content, "stem") do
-        nil -> content
-        stem -> Map.put(content, "stem", rewire_activity_elements(stem, project))
+        nil ->
+          content
+
+        stem ->
+          Map.put(
+            content,
+            "stem",
+            rewire_activity_elements(stem, project, page_slug_to_resource_id)
+          )
       end
 
     content =
@@ -198,78 +241,119 @@ defmodule Oli.Interop.Export do
         choices ->
           choices =
             Enum.map(choices, fn choice ->
-              rewire_activity_elements(choice, project)
+              rewire_activity_elements(choice, project, page_slug_to_resource_id)
             end)
 
           Map.put(content, "choices", choices)
       end
 
-    if Map.has_key?(content, "authoring") and Map.has_key?(Map.get(content, "authoring"), "parts") do
-      parts =
-        content["authoring"]["parts"]
-        |> Enum.map(fn part ->
-          part =
-            if Map.has_key?(part, "explanation") do
-              Map.put(part, "explanation", rewire_activity_elements(part["explanation"], project))
-            else
-              part
-            end
+    content =
+      if Map.has_key?(content, "authoring") and
+           Map.has_key?(Map.get(content, "authoring"), "parts") do
+        parts =
+          content["authoring"]["parts"]
+          |> Enum.map(fn part ->
+            part =
+              if Map.has_key?(part, "explanation") do
+                Map.put(
+                  part,
+                  "explanation",
+                  rewire_activity_elements(part["explanation"], project, page_slug_to_resource_id)
+                )
+              else
+                part
+              end
 
-          part =
-            if Map.has_key?(part, "hints") and Map.get(part, "hints") != nil do
-              hints =
-                Enum.map(part["hints"], fn hint ->
-                  rewire_activity_elements(hint, project)
+            part =
+              if Map.has_key?(part, "hints") and Map.get(part, "hints") != nil do
+                hints =
+                  Enum.map(part["hints"], fn hint ->
+                    rewire_activity_elements(hint, project, page_slug_to_resource_id)
+                  end)
+
+                Map.put(part, "hints", hints)
+              else
+                part
+              end
+
+            part =
+              case Map.get(part, "custom") do
+                %{"nodes" => nodes} = custom when is_list(nodes) ->
+                  adjusted_content = %{"type" => "content", "children" => nodes}
+
+                  {results, _} =
+                    rewire_elements(adjusted_content, project, page_slug_to_resource_id)
+
+                  Map.put(part, "custom", Map.put(custom, "nodes", results["children"]))
+
+                _ ->
+                  part
+              end
+
+            if Map.has_key?(part, "responses") and Map.get(part, "responses") != nil do
+              responses =
+                Enum.map(part["responses"], fn response ->
+                  if Map.has_key?(response, "feedback") do
+                    Map.put(
+                      response,
+                      "feedback",
+                      rewire_activity_elements(
+                        response["feedback"],
+                        project,
+                        page_slug_to_resource_id
+                      )
+                    )
+                  else
+                    response
+                  end
                 end)
 
-              Map.put(part, "hints", hints)
+              Map.put(part, "responses", responses)
             else
               part
             end
+          end)
 
-          part =
-            case Map.get(part, "custom") do
-              %{"nodes" => nodes} = custom when is_list(nodes) ->
-                adjusted_content = %{"type" => "content", "children" => nodes}
-                {results, _} = rewire_elements(adjusted_content, project)
-                Map.put(part, "custom", Map.put(custom, "nodes", results["children"]))
+        Map.put(content, "authoring", Map.put(content["authoring"], "parts", parts))
+      else
+        content
+      end
 
-              _ ->
-                part
-            end
+    # Defensive full-tree pass so adaptive links in non-standard locations
+    # (for example legacy "model" payloads) are still rewired before export.
+    deep_rewire_internal_anchors(content, project, page_slug_to_resource_id)
+  end
 
-          if Map.has_key?(part, "responses") and Map.get(part, "responses") != nil do
-            responses =
-              Enum.map(part["responses"], fn response ->
-                if Map.has_key?(response, "feedback") do
-                  Map.put(
-                    response,
-                    "feedback",
-                    rewire_activity_elements(response["feedback"], project)
-                  )
-                else
-                  response
-                end
-              end)
+  defp deep_rewire_internal_anchors(value, _project, _page_slug_to_resource_id)
+       when is_binary(value) or is_number(value) or is_boolean(value) or is_nil(value),
+       do: value
 
-            Map.put(part, "responses", responses)
-          else
-            part
-          end
-        end)
+  defp deep_rewire_internal_anchors(items, project, page_slug_to_resource_id)
+       when is_list(items) do
+    Enum.map(items, &deep_rewire_internal_anchors(&1, project, page_slug_to_resource_id))
+  end
 
-      Map.put(content, "authoring", Map.put(content["authoring"], "parts", parts))
-    else
-      content
+  defp deep_rewire_internal_anchors(map, project, page_slug_to_resource_id) when is_map(map) do
+    rewired =
+      Enum.reduce(map, %{}, fn {key, value}, acc ->
+        Map.put(acc, key, deep_rewire_internal_anchors(value, project, page_slug_to_resource_id))
+      end)
+
+    case {Map.get(rewired, "type"), Map.get(rewired, "tag")} do
+      {"a", _} -> rewire_internal_anchor(rewired, project, page_slug_to_resource_id)
+      {_, "a"} -> rewire_internal_anchor(rewired, project, page_slug_to_resource_id)
+      _ -> rewired
     end
   end
 
-  def rewire(content, project) do
+  defp deep_rewire_internal_anchors(value, _project, _page_slug_to_resource_id), do: value
+
+  def rewire(content, project, page_slug_to_resource_id) do
     {content, _} =
       Oli.Resources.PageContent.map_reduce(content, {:ok, []}, fn e, {status, []}, _tr_context ->
         case e do
           %{"type" => "content"} = ref ->
-            rewire_elements(ref, project)
+            rewire_elements(ref, project, page_slug_to_resource_id)
 
           %{"type" => "alternatives"} = ref ->
             {Map.put(ref, "group", "#{Map.get(ref, "alternatives_id")}"), {status, []}}
@@ -286,7 +370,7 @@ defmodule Oli.Interop.Export do
   end
 
   # create entries for all pages
-  defp pages(resources, project) do
+  defp pages(resources, project, page_slug_to_resource_id) do
     Enum.filter(resources, fn r ->
       r.resource_type_id == ResourceType.id_for_page()
     end)
@@ -298,7 +382,7 @@ defmodule Oli.Interop.Export do
         title: r.title,
         tags: transform_tags(r),
         unresolvedReferences: [],
-        content: rewire(r.content, project),
+        content: rewire(r.content, project, page_slug_to_resource_id),
         objectives: Map.get(r.objectives, "attached", []) |> Enum.map(fn id -> "#{id}" end),
         isGraded: r.graded,
         purpose: r.purpose,
@@ -317,6 +401,17 @@ defmodule Oli.Interop.Export do
         assessmentMode: r.assessment_mode
       }
       |> entry("#{r.resource_id}.json")
+    end)
+  end
+
+  defp page_slug_to_resource_id(resources) do
+    resources
+    |> Enum.reduce(%{}, fn revision, acc ->
+      if revision.resource_type_id == @page_resource_type_id and is_binary(revision.slug) do
+        Map.put(acc, revision.slug, revision.resource_id)
+      else
+        acc
+      end
     end)
   end
 

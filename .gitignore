@@ -132,3 +132,5 @@ devops/.env
 # Python cache files
 ./**/*.pyc
 test/support/dataset/python/dataset/__pycache__
+
+/oli_project_exports

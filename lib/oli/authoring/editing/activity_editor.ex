@@ -911,6 +911,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         node
         |> Map.put("idref", ref)
         |> Map.put("resource_id", ref)
+        |> Map.put("linkType", "page")
 
       :ignore ->
         node

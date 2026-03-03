@@ -136,13 +136,14 @@ const Markup: React.FC<any> = ({
     }
 
     const path = window.location.pathname;
-    if (path.includes('/preview/')) {
-      return linkHref;
-    }
-
     const sectionMatch = path.match(/\/sections\/([^/]+)/);
+    const authorPreviewMatch = path.match(/\/authoring\/project\/([^/]+)\/preview\/[^/]+/);
+    const instructorPreviewMatch = path.match(/\/sections\/([^/]+)\/preview\/page\/[^/]+/);
+
     if (!sectionMatch?.[1]) {
-      return linkHref;
+      if (!authorPreviewMatch?.[1] && !instructorPreviewMatch?.[1]) {
+        return linkHref;
+      }
     }
 
     const pageSlug = linkHref.replace('/course/link/', '').split(/[?#]/)[0];
@@ -150,7 +151,20 @@ const Markup: React.FC<any> = ({
       return linkHref;
     }
 
-    return `/sections/${sectionMatch[1]}/lesson/${pageSlug}`;
+    if (authorPreviewMatch?.[1]) {
+      return `/authoring/project/${authorPreviewMatch[1]}/preview/${pageSlug}`;
+    }
+
+    if (instructorPreviewMatch?.[1]) {
+      return `/sections/${instructorPreviewMatch[1]}/preview/page/${pageSlug}`;
+    }
+
+    const sectionSlug = sectionMatch?.[1];
+    if (!sectionSlug) {
+      return linkHref;
+    }
+
+    return `/sections/${sectionSlug}/lesson/${pageSlug}`;
   };
 
   switch (renderTag) {

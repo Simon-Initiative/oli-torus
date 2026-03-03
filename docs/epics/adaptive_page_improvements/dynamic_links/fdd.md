@@ -58,15 +58,20 @@ This design adds dynamic internal linking support for adaptive page text so auth
   - Reuses the basic-page modal interaction pattern: a single link modal for both new links and existing-link edits, including page dropdown selection for in-course links.
   - Page-target selector must always render in “Link to page in course” mode with explicit loading/error/empty states; when data loads it is populated from in-project pages.
   - Project scoping for page lookup is sourced from adaptive authoring runtime context (`projectSlug`) passed from activity renderer -> adaptive layout editor -> part editors as explicit part props/state, not inferred solely from window URL.
-  - In author preview mode, clicking adaptive internal links (`/course/link/:slug`) is intercepted client-side, navigation is blocked, and a short inline notice explains that section lesson routes are unavailable from preview.
+  - In preview contexts, adaptive internal links (`/course/link/:slug`) are rewritten client-side to the matching preview route (`/authoring/project/:project_slug/preview/:slug` or `/sections/:section_slug/preview/page/:slug`) to match basic-page preview navigation behavior.
   - Distinguishes internal vs external links.
   - Internal links persist `idref`/`resource_id`; external links persist literal `href`.
 - Adaptive serialization layer:
   - Enforces canonical link node contract when saving activity content.
+  - Internal adaptive anchors persist `idref`, `resource_id`, and `linkType: "page"` when targeting in-course pages.
   - Rejects slug-as-source internal persistence.
 - Interop export/import rewiring:
   - Export converts internal lesson URL forms to portable idref structure when needed.
-  - Import rewires idref/resource references to destination project resource IDs.
+  - For adaptive tag-based anchors, export normalization writes both `idref` and `resource_id` (string form) and marks `linkType: "page"` for internal course links to align with basic-page rewiring expectations.
+  - Export page-target resolution is constrained to page resources using the export payload's page slug map to avoid slug-collision ambiguity with non-page resources.
+  - Export applies a defensive recursive pass over activity JSON so adaptive anchors in legacy/non-standard payload locations (for example part-level `model` arrays) are still located and rewritten.
+  - Import rewires idref/resource references to destination project resource IDs and now performs recursive map/list traversal so adaptive anchors are rewritten regardless of nesting shape (including `partsLayout.custom.nodes`, part-level `model` arrays, and other legacy payload layouts).
+  - Post-import hyperlink rewrite must resolve targets across mixed key spaces (legacy id keys and destination `resource_id` keys) to prevent all unresolved links collapsing to a single project-level fallback URL.
 - Delivery rendering/rewrite:
   - Detects internal adaptive link metadata.
   - Resolves resource -> section-visible revision slug.

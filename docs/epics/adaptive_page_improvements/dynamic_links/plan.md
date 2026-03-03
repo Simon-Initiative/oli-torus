@@ -40,6 +40,7 @@ Deliver MER-5211 dynamic links for adaptive pages: authoring-side internal link 
 - Goal: Define and enforce adaptive internal/external link JSON contract so downstream rewiring and delivery logic can rely on stable data.
 - Tasks:
   - [x] Finalize canonical adaptive internal link node shape (`idref`/`resource_id`) and external link shape (`href`).
+  - [x] Persist `linkType: "page"` on adaptive internal anchors during authoring normalization to align adaptive link metadata with basic-page semantics.
   - [x] Implement serializer/deserializer updates in adaptive authoring save path.
   - [x] Add validation preventing slug-as-source persistence for internal links.
   - [x] Add authorization filtering contract for eligible link picker resources in authoring APIs.
@@ -64,8 +65,13 @@ Deliver MER-5211 dynamic links for adaptive pages: authoring-side internal link 
 - Goal: Ensure adaptive internal links survive content export/import through deterministic resource-id rewiring.
 - Tasks:
   - [x] Extend export rewiring to preserve/normalize adaptive internal link references into portable idref form.
+  - [x] Normalize adaptive exported anchor nodes to include `idref` + `resource_id` string fields for internal course links (and mark `linkType: "page"` on tag-based adaptive anchors) so ingest rewiring has deterministic identifiers.
+  - [x] Resolve export link targets from the export payload's page slug map (not generic slug lookups) so slug collisions do not suppress adaptive `idref` emission.
+  - [x] Add a defensive recursive export traversal pass so adaptive anchors in non-standard/legacy activity JSON locations are still rewired.
+  - [x] Replace import hyperlink rewiring path assumptions with recursive map/list traversal so nested adaptive anchors are converted from idref to href across non-standard shapes (for example `content.partsLayout[].custom.nodes` and `authoring.parts[].model`).
   - [x] Extend ingest/import rewiring traversal to map adaptive link references to destination resource IDs.
   - [x] Add idempotency protections so rewiring is deterministic for repeated runs.
+  - [x] Ensure post-import hyperlink rewriting resolves link targets by both legacy IDs and destination resource IDs so mixed-key rewiring does not collapse links to a shared fallback URL.
   - [x] Add warning/telemetry hooks for remap misses.
 - Testing Tasks:
   - [x] Add interop tests that import adaptive content with internal links and verify remapped IDs.
@@ -113,12 +119,12 @@ Deliver MER-5211 dynamic links for adaptive pages: authoring-side internal link 
   - [ ] Ensure keyboard navigation, focus handling, and i18n string wiring for picker/fallback/deletion warnings.
   - [x] Ensure page-link picker renders a page selector in all states (loading/error/empty/success) and populates from in-course pages when available.
   - [x] Wire adaptive part authoring context project slug into text-flow link picker page lookup.
-  - [x] In author preview, intercept `/course/link/:slug` clicks in adaptive text flow and show an explanatory inline notice instead of attempting navigation.
+  - [x] In preview contexts, rewrite adaptive `/course/link/:slug` anchors to equivalent preview routes so navigation behavior matches basic-page preview.
   - [x] Implement inbound adaptive-link detection for target-resource deletion attempts.
   - [x] Show warning modal/state with source-context before deletion confirmation.
 - Testing Tasks:
   - [ ] Add UI/integration tests for picker flows (create/edit/remove).
-  - [ ] Add UI test for author-preview internal-link interception notice behavior.
+  - [ ] Add UI test for adaptive preview-route rewrite behavior parity with basic-page preview.
   - [x] Add tests for deletion warning trigger and source-context display.
   - [ ] Add accessibility assertions for keyboard and screen-reader labels in new UI states.
   - Command(s): `mix test test/oli_web/live/workspaces/course_author/*.exs`

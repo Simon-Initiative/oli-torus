@@ -119,7 +119,7 @@ No feature flags present in this feature
 
 ## 13. Risks & Mitigations
 - Divergent link structures between basic and adaptive content increase maintenance risk -> define one canonical adaptive internal-link representation with `resource_id` and document serializer/rewriter responsibilities.
-- Import rewiring misses adaptive nested link nodes -> make rewiring traversal reusable/parameterizable for adaptive content structures and add regression coverage.
+- Import/export rewiring misses adaptive nested link nodes in non-standard JSON shapes -> use recursive map/list traversal and add regression coverage for `partsLayout.custom.nodes` and part-level `model` payloads.
 - Delivery rewrite regressions create dead links -> add resolution-failure telemetry and user-safe fallback messaging.
 - Author confusion when targets are deleted -> show clear inbound-link warning with source context before deletion confirmation.
 

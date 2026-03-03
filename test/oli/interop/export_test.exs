@@ -4,6 +4,8 @@ defmodule Oli.Interop.ExportTest do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Certificate
   alias Oli.Interop.Export
+  alias Oli.Authoring.Editing.ActivityEditor
+  alias Oli.Authoring.Editing.PageEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
 
@@ -570,6 +572,175 @@ defmodule Oli.Interop.ExportTest do
       assert imported_objective1_id in imported_objective_resource_ids
       assert imported_objective2_id in imported_objective_resource_ids
       assert imported_objective1_id != imported_objective2_id
+    end
+
+    test "adaptive activity export rewires internal page href to idref/resource_id", %{
+      project: project,
+      author: author
+    } do
+      publication = Oli.Publishing.project_working_publication(project.slug)
+
+      target_page =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          slug: "adaptive_link_target_page"
+        })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: target_page.resource.id
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: target_page.resource,
+        revision: target_page,
+        author: author
+      })
+
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow",
+                "custom" => %{
+                  "nodes" => [
+                    %{
+                      "tag" => "p",
+                      "children" => [
+                        %{
+                          "tag" => "a",
+                          "href" => "/course/link/#{target_page.slug}",
+                          "children" => [
+                            %{"tag" => "text", "text" => "next", "children" => []}
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, target_page.slug, author.email)
+
+      assert {:ok, _updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 target_page.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+
+      colliding_activity =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_activity(),
+          activity_type_id: Oli.Activities.get_registration_by_slug("oli_multiple_choice").id,
+          slug: target_page.slug
+        })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: colliding_activity.resource.id
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: colliding_activity.resource,
+        revision: colliding_activity,
+        author: author
+      })
+
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      {:ok, activity_json} =
+        Jason.decode(Map.get(export, String.to_charlist("#{activity_resource_id}.json")))
+
+      [part] = get_in(activity_json, ["content", "authoring", "parts"])
+      [paragraph] = get_in(part, ["custom", "nodes"])
+      [link] = paragraph["children"]
+
+      assert link["idref"] == "#{target_page.resource_id}"
+      assert link["resource_id"] == "#{target_page.resource_id}"
+      assert link["linkType"] == "page"
+      assert link["href"] == "/course/link/#{target_page.slug}"
+    end
+
+    test "adaptive activity export rewires internal links stored in part model payloads", %{
+      project: project,
+      author: author
+    } do
+      publication = Oli.Publishing.project_working_publication(project.slug)
+
+      target_page =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          slug: "adaptive_model_link_target_page"
+        })
+
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: target_page.resource.id
+      })
+
+      insert(:published_resource, %{
+        publication: publication,
+        resource: target_page.resource,
+        revision: target_page,
+        author: author
+      })
+
+      {:ok, {%{resource_id: activity_resource_id} = activity_revision, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      legacy_model_content =
+        activity_revision.content
+        |> Map.put("authoring", %{
+          "parts" => [
+            %{
+              "id" => "part-model-1",
+              "type" => "janus-text-flow",
+              "model" => [
+                %{
+                  "tag" => "a",
+                  "href" => "/course/link/#{target_page.slug}",
+                  "children" => [%{"tag" => "text", "text" => "next", "children" => []}]
+                }
+              ]
+            }
+          ]
+        })
+
+      assert {:ok, _} =
+               Resources.update_revision(activity_revision, %{content: legacy_model_content})
+
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      {:ok, activity_json} =
+        Jason.decode(Map.get(export, String.to_charlist("#{activity_resource_id}.json")))
+
+      [part] = get_in(activity_json, ["content", "authoring", "parts"])
+      [link] = part["model"]
+
+      assert link["idref"] == "#{target_page.resource_id}"
+      assert link["resource_id"] == "#{target_page.resource_id}"
+      assert link["linkType"] == "page"
+      assert link["href"] == "/course/link/#{target_page.slug}"
     end
   end
 

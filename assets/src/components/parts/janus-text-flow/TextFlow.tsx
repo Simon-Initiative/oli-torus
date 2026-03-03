@@ -95,26 +95,14 @@ export const renderFlow = (
   );
 };
 
-const isInternalCourseLink = (href: string | null) => !!href && href.startsWith('/course/link/');
-
-const isAuthorPreviewLocation = () => {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  return /\/authoring\/project\/[^/]+\/preview\/[^/]+/.test(window.location.pathname);
-};
-
 const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   const [state, setState] = useState<any>({});
   const [model, _setModel] = useState<any>(props.model);
   const [ready, setReady] = useState<boolean>(false);
   const [scriptEnv, setScriptEnv] = useState<any>();
-  const [previewLinkNotice, setPreviewLinkNotice] = useState<string>('');
   const [textVisible, setTextVisible] = useState<boolean>(
     props.model.visible === undefined ? true : props.model.visible,
   );
-  const isAuthorPreview = isAuthorPreviewLocation();
   const id: string = props.id;
 
   const handleStylingChanges = () => {
@@ -294,52 +282,8 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
     styleOverrides.fontSize = `${fontSize}px`;
   }
 
-  const onLinkClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!isAuthorPreview) {
-      return;
-    }
-
-    const target = event.target as HTMLElement | null;
-    const anchor = target?.closest('a');
-    if (!anchor || !isInternalCourseLink(anchor.getAttribute('href'))) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    setPreviewLinkNotice(
-      'This link targets a course lesson route and cannot open from author preview. Publish or open the lesson in a section to test navigation.',
-    );
-  };
-
-  useEffect(() => {
-    if (!previewLinkNotice) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => setPreviewLinkNotice(''), 5000);
-    return () => window.clearTimeout(timer);
-  }, [previewLinkNotice]);
-
   return ready ? (
-    <div data-janus-type={tagName} style={styles} onClickCapture={onLinkClickCapture}>
-      {previewLinkNotice && (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            marginBottom: '8px',
-            padding: '8px 10px',
-            borderRadius: '4px',
-            border: '1px solid #b5d6f6',
-            backgroundColor: '#eef7ff',
-            color: '#1f4f82',
-            fontSize: '12px',
-          }}
-        >
-          {previewLinkNotice}
-        </div>
-      )}
+    <div data-janus-type={tagName} style={styles}>
       {tree?.map((subtree: MarkupTree) =>
         renderFlow(
           `textflow-${guid()}`,
