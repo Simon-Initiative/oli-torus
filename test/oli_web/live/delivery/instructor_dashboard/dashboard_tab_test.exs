@@ -43,4 +43,43 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTabTest do
                "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A151334"
     end
   end
+
+  describe "validate_scope_selector/3" do
+    test "accepts course scope" do
+      assert DashboardTab.validate_scope_selector(%{}, nil, "course") == {:ok, "course"}
+    end
+
+    test "accepts a valid container from assigned containers" do
+      section = %{slug: "example-section"}
+      containers = {1, [%{id: 123}]}
+
+      assert DashboardTab.validate_scope_selector(section, containers, "container:123") ==
+               {:ok, "container:123"}
+    end
+
+    test "rejects an invalid container from assigned containers" do
+      section = %{slug: "example-section"}
+      containers = {1, [%{id: 123}]}
+
+      assert DashboardTab.validate_scope_selector(section, containers, "container:999") == :error
+    end
+  end
+
+  describe "normalize_scope_selector/3" do
+    test "falls back to course for an invalid container" do
+      section = %{slug: "example-section"}
+      containers = {1, [%{id: 123}]}
+
+      assert DashboardTab.normalize_scope_selector(section, containers, "container:999") ==
+               "course"
+    end
+
+    test "returns the canonical selector for a valid container" do
+      section = %{slug: "example-section"}
+      containers = {1, [%{id: 123}]}
+
+      assert DashboardTab.normalize_scope_selector(section, containers, "container:123") ==
+               "container:123"
+    end
+  end
 end

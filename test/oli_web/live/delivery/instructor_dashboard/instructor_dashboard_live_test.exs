@@ -245,6 +245,53 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       assert has_element?(view, "#dashboard_scope option[selected][value='course']")
     end
 
+    test "dashboard entry with an invalid persisted scope falls back to the default course scope",
+         %{
+           instructor: instructor,
+           section: section,
+           conn: conn
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      enrollment = Sections.get_enrollment(section.slug, instructor.id, filter_by_status: false)
+
+      {:ok, _state} =
+        InstructorDashboard.upsert_state(enrollment.id, %{
+          last_viewed_scope: "container:999999"
+        })
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      assert redirected_path ==
+               "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
+    end
+
+    test "dashboard entry with an invalid url scope canonicalizes to the default course scope", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      invalid_dashboard_path =
+        ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=inexistente"
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, invalid_dashboard_path)
+
+      assert redirected_path ==
+               "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
+    end
+
     test "root instructor dashboard route redirects to insights dashboard", %{
       instructor: instructor,
       section: section,
@@ -354,6 +401,48 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
                "course"
+    end
+
+    test "invalid scope changes fall back to course without overwriting persisted state", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      enrollment = Sections.get_enrollment(section.slug, instructor.id, filter_by_status: false)
+      {_, containers} = Helpers.get_containers(section)
+      container = hd(containers)
+
+      {:ok, _state} =
+        InstructorDashboard.upsert_state(enrollment.id, %{
+          last_viewed_scope: "container:#{container.id}"
+        })
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      view
+      |> form("form[phx-change=dashboard_scope_changed]")
+      |> render_change(%{scope: "container:999999"})
+
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
+      )
+
+      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
+               "container:#{container.id}"
     end
   end
 end

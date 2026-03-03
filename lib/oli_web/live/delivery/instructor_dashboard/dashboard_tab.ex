@@ -8,6 +8,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTab do
   """
 
   alias Oli.InstructorDashboard, as: InstructorDashboardStateContext
+  alias Oli.InstructorDashboard.InstructorDashboardState
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
   import Phoenix.Component, only: [assign_new: 3]
@@ -34,11 +36,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTab do
 
   @doc """
   Ensures the instructor enrollment assign exists and resolves the effective dashboard scope.
+
+  The resolved selector is validated against the section's current dashboard containers so
+  stale or tampered container selectors fall back to `"course"`.
   """
   @spec resolve_scope_context(socket(), map()) :: {socket(), scope_selector()}
   def resolve_scope_context(socket, params) do
     socket = ensure_instructor_enrollment(socket)
-    scope_selector = resolve_scope(params, socket.assigns.instructor_enrollment)
+    # Reuse assigned dashboard containers when the tab is already loaded.
+    # Entry/canonicalization paths may not have `:containers` yet, so validation
+    # falls back to fetching the current section containers.
+    containers = socket.assigns[:containers]
+
+    scope_selector =
+      resolve_scope(
+        socket.assigns.section,
+        containers,
+        params,
+        socket.assigns.instructor_enrollment
+      )
 
     {socket, scope_selector}
   end
@@ -68,8 +84,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTab do
 
   @doc """
   Persists the selected dashboard scope for the instructor enrollment.
+
+  Callers are expected to validate untrusted selectors against the section before persisting.
   """
-  @spec persist_scope(map() | nil, scope_selector()) :: :ok | {:error, Ecto.Changeset.t()}
+  @spec persist_scope(map() | nil, scope_selector()) ::
+          :ok
+          | {:ok, InstructorDashboardState.t()}
+          | {:error, Ecto.Changeset.t()}
   def persist_scope(nil, _scope_selector), do: :ok
 
   def persist_scope(%{id: enrollment_id}, scope_selector) do
@@ -87,25 +108,65 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTab do
 
   def scope_selector(_), do: "course"
 
+  @doc """
+  Normalizes a scope selector against the section's current containers.
+
+  Invalid, unauthorized, or no-longer-present container selectors fall back to `"course"`.
+  """
+  @spec normalize_scope_selector(map(), scope_selector() | nil) :: scope_selector()
+  def normalize_scope_selector(section, scope_selector) do
+    normalize_scope_selector(section, nil, scope_selector)
+  end
+
+  @spec normalize_scope_selector(map(), {non_neg_integer(), list()} | nil, scope_selector() | nil) ::
+          scope_selector()
+  def normalize_scope_selector(section, containers, scope_selector) do
+    case validate_scope_selector(section, containers, scope_selector) do
+      {:ok, normalized_scope_selector} -> normalized_scope_selector
+      :error -> "course"
+    end
+  end
+
+  @doc """
+  Validates a scope selector against the section's current containers and returns
+  the canonical selector when valid.
+
+  This rejects both unauthorized container ids and persisted selectors for containers that
+  no longer exist in the remixed section.
+  """
+  @spec validate_scope_selector(map(), scope_selector() | nil) ::
+          {:ok, scope_selector()} | :error
+  def validate_scope_selector(section, scope_selector) do
+    validate_scope_selector(section, nil, scope_selector)
+  end
+
+  @spec validate_scope_selector(map(), {non_neg_integer(), list()} | nil, scope_selector() | nil) ::
+          {:ok, scope_selector()} | :error
+  def validate_scope_selector(section, containers, scope_selector) do
+    case parse_scope(scope_selector) do
+      %{container_type: :course} ->
+        {:ok, "course"}
+
+      %{container_type: :container, container_id: container_id} ->
+        if valid_container_id?(section, containers, container_id) do
+          {:ok, scope_selector(%{container_type: :container, container_id: container_id})}
+        else
+          :error
+        end
+    end
+  end
+
   defp ensure_instructor_enrollment(socket) do
     assign_new(socket, :instructor_enrollment, fn ->
       Helpers.get_instructor_enrollment(socket.assigns.section, socket.assigns.current_user)
     end)
   end
 
-  defp resolve_scope(params, enrollment) do
+  defp resolve_scope(section, containers, params, enrollment) do
     case params["dashboard_scope"] do
-      nil -> enrollment |> last_viewed_scope() |> normalize_scope_selector()
-      scope_selector -> normalize_scope_selector(scope_selector)
+      nil -> normalize_scope_selector(section, containers, last_viewed_scope(enrollment))
+      scope_selector -> normalize_scope_selector(section, containers, scope_selector)
     end
-  end
-
-  defp normalize_scope_selector(nil), do: "course"
-
-  defp normalize_scope_selector(scope_selector) do
-    scope_selector
-    |> parse_scope()
-    |> scope_selector()
   end
 
   defp last_viewed_scope(nil), do: nil
@@ -135,4 +196,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.DashboardTab do
         RevisitCache
     end
   end
+
+  defp valid_container_id?(_section, {_, containers}, container_id) when is_list(containers) do
+    Enum.any?(containers, &(&1.id == container_id))
+  end
+
+  defp valid_container_id?(%{id: section_id}, _containers, container_id)
+       when is_integer(section_id) do
+    SectionResourceDepot.containers(section_id, numbering_level: {:in, [1, 2]})
+    |> Enum.any?(&(&1.resource_id == container_id))
+  end
+
+  defp valid_container_id?(_, _, _), do: false
 end

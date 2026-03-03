@@ -326,17 +326,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         _,
         socket
       ) do
+    {socket, scope_selector} = DashboardTab.resolve_scope_context(socket, params)
+
     case params["dashboard_scope"] do
       nil ->
         # Entering Dashboard without `dashboard_scope` should restore the
         # persisted scope when available, otherwise fall back to "course",
         # then patch to the canonical scoped dashboard URL.
-        {socket, scope_selector} = DashboardTab.resolve_scope_context(socket, params)
-
         {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
 
-      _ ->
+      ^scope_selector ->
         {:noreply, assign_dashboard_tab(socket, params)}
+
+      _invalid_or_stale_scope ->
+        # Invalid or stale selectors should canonicalize back to the validated scope
+        # reflected by the current section, rather than leaving an untrusted URL in place.
+        {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
     end
   end
 
@@ -1253,8 +1258,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def handle_info({:dashboard_scope_changed, scope}, socket) do
-    DashboardTab.persist_scope(socket.assigns[:instructor_enrollment], scope)
-    {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope))}
+    case DashboardTab.validate_scope_selector(
+           socket.assigns.section,
+           socket.assigns[:containers],
+           scope
+         ) do
+      {:ok, scope_selector} ->
+        DashboardTab.persist_scope(socket.assigns[:instructor_enrollment], scope_selector)
+        {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
+
+      :error ->
+        {:noreply, push_patch(socket, to: DashboardTab.path(socket, "course"))}
+    end
   end
 
   @impl Phoenix.LiveView
