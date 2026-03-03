@@ -1,0 +1,49 @@
+# Scenario template for authoring -> delivery -> learner verification.
+# Keep only directives needed for the behavior under test.
+
+- project:
+    name: "project_under_test"
+    title: "Project Under Test"
+    root:
+      children:
+        - page: "Intro"
+
+- edit_page:
+    project: "project_under_test"
+    page: "Intro"
+    content: |
+      title: "Intro"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Scenario-driven coverage"
+
+- publish:
+    to: "project_under_test"
+    description: "Initial publish for scenario test"
+
+- section:
+    name: "section_under_test"
+    title: "Section Under Test"
+    from: "project_under_test"
+
+- user:
+    name: "student_1"
+    type: student
+
+- enroll:
+    user: "student_1"
+    section: "section_under_test"
+    role: student
+
+- view_practice_page:
+    student: "student_1"
+    section: "section_under_test"
+    page: "Intro"
+
+- assert:
+    structure:
+      to: "section_under_test"
+      root:
+        children:
+          - page: "Intro"
