@@ -1273,11 +1273,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end
   end
 
-  @impl Phoenix.LiveView
-  def handle_info(:dashboard_reload, socket) do
-    {:noreply, load_dashboard(socket, use_revisit?: false)}
-  end
-
   def handle_info(_any, socket) do
     {:noreply, socket}
   end

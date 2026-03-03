@@ -8,8 +8,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.LearningDashboard do
   def render(assigns) do
     ~H"""
     <div id="learning-dashboard" class="container mx-auto mb-10">
-      <div class="mb-4 p-4 bg-white dark:bg-gray-800 shadow-sm">
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+      <div class="mb-4">
+        <div class="flex flex-col items-center gap-3">
           <.live_component
             id="learning_dashboard_scope_navigator"
             module={ListNavigator}
@@ -18,10 +18,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.LearningDashboard do
             navigation_type={:patch}
             path_builder_fn={fn item -> dashboard_path(@section.slug, item.resource_id) end}
           />
-
-          <button class="btn btn-secondary" phx-click="dashboard_reload" phx-target={@myself}>
-            Reload Snapshot
-          </button>
         </div>
       </div>
 
@@ -44,15 +40,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.LearningDashboard do
       </div>
     </div>
     """
-  end
-
-  @impl Phoenix.LiveComponent
-  def handle_event("dashboard_reload", _params, socket) do
-    # Prototype-only refresh control. The production dashboard flow is expected to
-    # rely on scope-driven hydration via `Oli.Dashboard.LiveDataCoordinator`
-    # instead of a manual reload action.
-    send(self(), :dashboard_reload)
-    {:noreply, socket}
   end
 
   defp current_dashboard_item_resource_id("course"), do: "course"
