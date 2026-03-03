@@ -29,14 +29,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
-        excluded_user_ids = Sections.excluded_progress_user_ids(section.id)
+        %{
+          excluded_user_ids: excluded_user_ids,
+          included_user_count: included_user_count
+        } = Sections.progress_aggregation_inputs(section.id)
 
         student_progress =
           Metrics.progress_across(
             section.id,
             Enum.map(containers, & &1.id),
             excluded_user_ids,
-            Sections.count_progress_users(section.id)
+            included_user_count
           )
 
         proficiency_per_container =

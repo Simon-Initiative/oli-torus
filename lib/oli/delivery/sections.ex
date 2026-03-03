@@ -185,18 +185,8 @@ defmodule Oli.Delivery.Sections do
   - learners whose enrollment status is not `:enrolled` (e.g. suspended)
   """
   def excluded_progress_user_ids(section_id) do
-    non_learner_role_ids = @instructor_role_ids ++ [@context_administrator_role_id]
-
-    from(e in Enrollment,
-      join: ecr in assoc(e, :context_roles),
-      where: e.section_id == ^section_id,
-      where:
-        ecr.id in ^non_learner_role_ids or
-          (ecr.id == ^@student_role_id and e.status != :enrolled),
-      select: e.user_id,
-      distinct: e.user_id
-    )
-    |> Repo.all()
+    %{excluded_user_ids: excluded_user_ids} = progress_aggregation_inputs(section_id)
+    excluded_user_ids
   end
 
   @doc """
@@ -207,10 +197,8 @@ defmodule Oli.Delivery.Sections do
   `context_administrator`) in the section.
   """
   def progress_user_ids(section_id) do
-    progress_users_query(section_id)
-    |> select([e, _, _], e.user_id)
-    |> distinct(true)
-    |> Repo.all()
+    %{included_user_ids: included_user_ids} = progress_aggregation_inputs(section_id)
+    included_user_ids
   end
 
   @doc """
@@ -222,26 +210,61 @@ defmodule Oli.Delivery.Sections do
   `context_administrator`) in the section.
   """
   def count_progress_users(section_id) do
-    progress_users_query(section_id)
-    |> select([e, _, _], count(e.user_id, :distinct))
-    |> Repo.one()
+    %{included_user_count: included_user_count} = progress_aggregation_inputs(section_id)
+    included_user_count
   end
 
-  defp progress_users_query(section_id) do
+  @doc """
+  Returns inputs used by instructor-dashboard progress aggregation using a single
+  enrollment-role query.
+  """
+  def progress_aggregation_inputs(section_id) do
     non_learner_role_ids = @instructor_role_ids ++ [@context_administrator_role_id]
 
-    from(e in Enrollment,
-      join: learner_role in EnrollmentContextRole,
-      on:
-        learner_role.enrollment_id == e.id and
-          learner_role.context_role_id == ^@student_role_id,
-      left_join: non_learner_role in EnrollmentContextRole,
-      on:
-        non_learner_role.enrollment_id == e.id and
-          non_learner_role.context_role_id in ^non_learner_role_ids,
-      where:
-        e.section_id == ^section_id and e.status == :enrolled and
-          is_nil(non_learner_role.context_role_id)
+    rows =
+      from(e in Enrollment,
+        join: learner_role in EnrollmentContextRole,
+        on: learner_role.enrollment_id == e.id,
+        where: e.section_id == ^section_id,
+        group_by: [e.user_id, e.status],
+        select: %{
+          user_id: e.user_id,
+          enrollment_status: e.status,
+          has_learner_role:
+            fragment("bool_or(? = ?)", learner_role.context_role_id, ^@student_role_id),
+          has_non_learner_role:
+            fragment("bool_or(? = ANY(?))", learner_role.context_role_id, ^non_learner_role_ids)
+        }
+      )
+      |> Repo.all()
+
+    Enum.reduce(
+      rows,
+      %{excluded_user_ids: [], included_user_ids: [], included_user_count: 0},
+      fn row, acc ->
+        included? =
+          row.enrollment_status == :enrolled and row.has_learner_role and
+            not row.has_non_learner_role
+
+        excluded? =
+          row.has_non_learner_role or
+            (row.has_learner_role and row.enrollment_status != :enrolled)
+
+        acc =
+          if included? do
+            %{
+              acc
+              | included_user_ids: [row.user_id | acc.included_user_ids],
+                included_user_count: acc.included_user_count + 1
+            }
+          else
+            acc
+          end
+
+        if excluded?,
+          do: %{acc | excluded_user_ids: [row.user_id | acc.excluded_user_ids]},
+          else: acc
+      end
     )
   end
 
