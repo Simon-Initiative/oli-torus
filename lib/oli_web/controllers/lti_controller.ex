@@ -19,6 +19,7 @@ defmodule OliWeb.LtiController do
   alias Oli.Lti.PlatformInstances
   alias Oli.Lti.Tokens
   alias Oli.Lti.PlatformExternalTools
+  alias Oli.Lti.LoginHints, as: OliLoginHints
   alias Lti_1p3.Roles.ContextRoles
   alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
@@ -336,6 +337,8 @@ defmodule OliWeb.LtiController do
                    claims
                  ) do
               {:ok, redirect_uri, state, id_token} ->
+                OliLoginHints.consume(params["login_hint"])
+
                 conn
                 |> put_view(OliWeb.LtiHTML)
                 |> put_root_layout({OliWeb.LayoutView, :lti_redirect})

@@ -460,6 +460,7 @@ defmodule OliWeb.LtiControllerTest do
       refute html_response(conn, 200) =~ "phx-"
       refute html_response(conn, 200) =~ "/live"
       refute html_response(conn, 200) =~ "/js/app.js"
+      assert nil == LoginHints.get_login_hint_by_value(login_hint)
     end
 
     test "authorize_redirect get successful for user without authenticated session", %{conn: conn} do
@@ -506,6 +507,7 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~ "You are being redirected..."
       refute html_response(conn, 200) =~ "Could not identify the launching user"
+      assert nil == LoginHints.get_login_hint_by_value(login_hint)
     end
 
     test "authorize_redirect get successful for author", %{conn: conn} do
@@ -560,6 +562,7 @@ defmodule OliWeb.LtiControllerTest do
       refute html_response(conn, 200) =~ "phx-"
       refute html_response(conn, 200) =~ "/live"
       refute html_response(conn, 200) =~ "/js/app.js"
+      assert nil == LoginHints.get_login_hint_by_value(login_hint)
     end
 
     test "show_registration_form displays registration page with params from session", %{
