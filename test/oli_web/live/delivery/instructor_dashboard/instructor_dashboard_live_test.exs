@@ -124,6 +124,150 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       refute has_element?(view, "a.active", "Recommended Actions")
     end
 
+    test "if enrolled, can access the mange page", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/manage")
+
+      assert has_element?(view, "div", "Overview of course section details")
+    end
+
+    test "if enrolled, can access the discussion activity page", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :discussions))
+
+      assert has_element?(view, "h4", "Discussion Activity")
+    end
+
+    test "user is sent to the dashboard tab if an invalid tab is provided in the url param",
+         %{
+           conn: conn,
+           instructor: instructor,
+           section: section
+         } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      invalid_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          "invalid_tab",
+          %{}
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, invalid_path)
+
+      assert redirected_path ==
+               "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      assert has_element?(view, "a.active", "Dashboard")
+    end
+
+    test "restores and persists the last viewed dashboard scope for the instructor enrollment", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      enrollment = Sections.get_enrollment(section.slug, instructor.id, filter_by_status: false)
+      {_, containers} = Helpers.get_containers(section)
+      container = hd(containers)
+
+      {:ok, _state} =
+        InstructorDashboard.upsert_state(enrollment.id, %{
+          last_viewed_scope: "container:#{container.id}"
+        })
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      assert redirected_path ==
+               "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A#{container.id}"
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      assert has_element?(
+               view,
+               "#dashboard_scope option[selected][value='container:#{container.id}']"
+             )
+
+      view
+      |> form("form[phx-change=dashboard_scope_changed]")
+      |> render_change(%{scope: "course"})
+
+      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
+               "course"
+    end
+
+    test "invalid scope changes fall back to course without overwriting persisted state", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      enrollment = Sections.get_enrollment(section.slug, instructor.id, filter_by_status: false)
+      {_, containers} = Helpers.get_containers(section)
+      container = hd(containers)
+
+      {:ok, _state} =
+        InstructorDashboard.upsert_state(enrollment.id, %{
+          last_viewed_scope: "container:#{container.id}"
+        })
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      view
+      |> form("form[phx-change=dashboard_scope_changed]")
+      |> render_change(%{scope: "container:999999"})
+
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
+      )
+
+      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
+               "container:#{container.id}"
+    end
+  end
+
+  describe "instructor: insights > dashboard tab" do
+    setup [:instructor_conn, :section_with_assessment]
+
     test "if enrolled, can access the insights page with the dashboard tab as the default tab", %{
       instructor: instructor,
       section: section,
@@ -303,30 +447,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       assert redirected_to(conn) ==
                "/sections/#{section.slug}/instructor_dashboard/insights/dashboard"
-    end
-
-    test "if enrolled, can access the mange page", %{
-      instructor: instructor,
-      section: section,
-      conn: conn
-    } do
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/manage")
-
-      assert has_element?(view, "div", "Overview of course section details")
-    end
-
-    test "if enrolled, can access the discussion activity page", %{
-      instructor: instructor,
-      section: section,
-      conn: conn
-    } do
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :discussions))
-
-      assert has_element?(view, "h4", "Discussion Activity")
     end
 
     test "user is sent to the dashboard tab if an invalid tab is provided in the url param",
