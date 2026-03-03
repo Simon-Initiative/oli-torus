@@ -364,54 +364,109 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp process_with_new_revision(updates, publication, author, project) do
-    project_page_targets = project_page_targets(project.id)
+    with {:ok, update_resource_map} <- fetch_update_resource_map(updates) do
+      project_page_targets = project_page_targets(project.id)
 
-    Enum.reduce_while(updates, {:ok, []}, fn update, {:ok, revisions} ->
-      case Resources.get_resource(Map.get(update, "resource_id")) do
-        nil ->
-          {:halt, {:error, {:not_found}}}
+      Enum.reduce_while(updates, {:ok, []}, fn update, {:ok, revisions} ->
+        case get_update_resource(update_resource_map, update) do
+          nil ->
+            {:halt, {:error, {:not_found}}}
 
-        activity ->
-          revision =
-            get_latest_revision(publication.id, activity.id)
-            |> create_new_revision(publication, activity, author.id)
+          activity ->
+            revision =
+              get_latest_revision(publication.id, activity.id)
+              |> create_new_revision(publication, activity, author.id)
 
-          case update_revision(revision, update, project.id, project_page_targets) do
-            {:ok, updated} -> {:cont, {:ok, [updated | revisions]}}
-            {:error, reason} -> {:halt, {:error, reason}}
-          end
+            case update_revision(revision, update, project.id, project_page_targets) do
+              {:ok, updated} -> {:cont, {:ok, [updated | revisions]}}
+              {:error, reason} -> {:halt, {:error, reason}}
+            end
+        end
+      end)
+      |> case do
+        {:ok, revisions} -> {:ok, Enum.reverse(revisions)}
+        error -> error
       end
-    end)
-    |> case do
-      {:ok, revisions} -> {:ok, Enum.reverse(revisions)}
-      error -> error
     end
   end
 
   defp process_with_maybe_new_revision(updates, publication, author, project) do
-    project_page_targets = project_page_targets(project.id)
+    with {:ok, update_resource_map} <- fetch_update_resource_map(updates) do
+      project_page_targets = project_page_targets(project.id)
 
-    Enum.reduce_while(updates, {:ok, []}, fn update, {:ok, revisions} ->
-      case Resources.get_resource(Map.get(update, "resource_id")) do
-        nil ->
-          {:halt, {:error, {:not_found}}}
+      Enum.reduce_while(updates, {:ok, []}, fn update, {:ok, revisions} ->
+        case get_update_resource(update_resource_map, update) do
+          nil ->
+            {:halt, {:error, {:not_found}}}
 
-        activity ->
-          revision =
-            get_latest_revision(publication.id, activity.id)
-            |> maybe_create_new_revision(publication, project, activity, author.id, update)
+          activity ->
+            revision =
+              get_latest_revision(publication.id, activity.id)
+              |> maybe_create_new_revision(publication, project, activity, author.id, update)
 
-          case update_revision(revision, update, project.id, project_page_targets) do
-            {:ok, updated} -> {:cont, {:ok, [updated | revisions]}}
-            {:error, reason} -> {:halt, {:error, reason}}
-          end
+            case update_revision(revision, update, project.id, project_page_targets) do
+              {:ok, updated} -> {:cont, {:ok, [updated | revisions]}}
+              {:error, reason} -> {:halt, {:error, reason}}
+            end
+        end
+      end)
+      |> case do
+        {:ok, revisions} -> {:ok, Enum.reverse(revisions)}
+        error -> error
+      end
+    end
+  end
+
+  defp fetch_update_resource_map(updates) when is_list(updates) do
+    with {:ok, resource_ids} <- extract_update_resource_ids(updates) do
+      resources =
+        from(r in Oli.Resources.Resource,
+          where: r.id in ^resource_ids
+        )
+        |> Repo.all()
+
+      resource_map = Map.new(resources, fn resource -> {resource.id, resource} end)
+
+      if map_size(resource_map) == length(resource_ids) do
+        {:ok, resource_map}
+      else
+        {:error, {:not_found}}
+      end
+    end
+  end
+
+  defp extract_update_resource_ids(updates) do
+    updates
+    |> Enum.reduce_while({:ok, MapSet.new()}, fn update, {:ok, ids} ->
+      case normalize_update_resource_id(Map.get(update, "resource_id")) do
+        {:ok, resource_id} -> {:cont, {:ok, MapSet.put(ids, resource_id)}}
+        :error -> {:halt, {:error, {:not_found}}}
       end
     end)
     |> case do
-      {:ok, revisions} -> {:ok, Enum.reverse(revisions)}
+      {:ok, ids} -> {:ok, MapSet.to_list(ids)}
       error -> error
     end
   end
+
+  defp get_update_resource(update_resource_map, update) do
+    case normalize_update_resource_id(Map.get(update, "resource_id")) do
+      {:ok, resource_id} -> Map.get(update_resource_map, resource_id)
+      :error -> nil
+    end
+  end
+
+  defp normalize_update_resource_id(resource_id) when is_integer(resource_id),
+    do: {:ok, resource_id}
+
+  defp normalize_update_resource_id(resource_id) when is_binary(resource_id) do
+    case Integer.parse(resource_id) do
+      {parsed, ""} -> {:ok, parsed}
+      _ -> :error
+    end
+  end
+
+  defp normalize_update_resource_id(_), do: :error
 
   @doc """
   Attempts to process an edit for an activity specified by a given
@@ -616,7 +671,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           Map.put(update, "content", Map.put(content, "authoring", authoring))
       end
 
-    parts = get_in(update, ["content", "authoring", "parts"]) || []
+    parts =
+      get_in(update, ["content", "authoring", "parts"]) ||
+        get_in(revision.content, ["authoring", "parts"])
 
     with :ok <-
            validate_adaptive_dynamic_links(revision, update, project_id, project_page_targets) do
