@@ -209,14 +209,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       {:ok, view, _html} = live(conn, redirected_path)
 
-      assert has_element?(
-               view,
-               "#dashboard_scope option[selected][value='container:#{container.id}']"
-             )
+      assert has_element?(view, "button", container.title)
 
-      view
-      |> form("form[phx-change=dashboard_scope_changed]")
-      |> render_change(%{scope: "course"})
+      {:ok, _course_view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
+        )
 
       assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
                "course"
@@ -251,9 +250,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       {:ok, view, _html} = live(conn, redirected_path)
 
-      view
-      |> form("form[phx-change=dashboard_scope_changed]")
-      |> render_change(%{scope: "container:999999"})
+      send(view.pid, {:dashboard_scope_changed, "container:999999"})
 
       assert_patch(
         view,
@@ -261,7 +258,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       )
 
       assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
-               "container:#{container.id}"
+               "course"
     end
   end
 
@@ -324,10 +321,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       {:ok, view, _html} = live(conn, redirected_path)
 
-      assert has_element?(
-               view,
-               "#dashboard_scope option[selected][value='container:#{container.id}']"
-             )
+      assert has_element?(view, "button", container.title)
     end
 
     test "if enrolled, can access the insights dashboard tab", %{
@@ -353,13 +347,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       assert has_element?(view, "a.active", "Dashboard")
       assert has_element?(view, "#learning-dashboard-runtime-status")
-      assert has_element?(view, "label[for='dashboard_scope']", "Scope")
-
-      assert has_element?(
-               view,
-               "#dashboard_scope option[selected][value='course']",
-               "Course (all content)"
-             )
+      assert has_element?(view, "button", "Entire Course")
     end
 
     test "dashboard entry without persisted scope patches to the default course scope", %{
@@ -386,7 +374,35 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       {:ok, view, _html} = live(conn, redirected_path)
 
-      assert has_element?(view, "#dashboard_scope option[selected][value='course']")
+      assert has_element?(view, "button", "Entire Course")
+    end
+
+    test "courses with only pages render a non-interactive Entire Course navigator", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{section: section} = Oli.Seeder.base_project_with_pages()
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      assert render(view) =~ "Entire Course"
+      refute has_element?(view, "button", "Entire Course")
+      refute has_element?(view, "#search_input")
+      refute has_element?(view, "a[role='previous item link']")
+      refute has_element?(view, "a[role='next item link']")
     end
 
     test "dashboard entry with an invalid persisted scope falls back to the default course scope",
@@ -510,14 +526,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       {:ok, view, _html} = live(conn, redirected_path)
 
-      assert has_element?(
-               view,
-               "#dashboard_scope option[selected][value='container:#{container.id}']"
-             )
+      assert has_element?(view, "button", container.title)
 
-      view
-      |> form("form[phx-change=dashboard_scope_changed]")
-      |> render_change(%{scope: "course"})
+      {:ok, _course_view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
+        )
 
       assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
                "course"
@@ -552,9 +567,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       {:ok, view, _html} = live(conn, redirected_path)
 
-      view
-      |> form("form[phx-change=dashboard_scope_changed]")
-      |> render_change(%{scope: "container:999999"})
+      send(view.pid, {:dashboard_scope_changed, "container:999999"})
 
       assert_patch(
         view,
@@ -562,7 +575,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       )
 
       assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
-               "container:#{container.id}"
+               "course"
     end
   end
 end
