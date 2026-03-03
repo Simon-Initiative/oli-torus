@@ -81,16 +81,39 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
   end
 
   attr(:items, :list, required: true)
-  attr(:current_item_resource_id, :integer, required: true)
+  attr(:current_item_resource_id, :any, required: true)
   attr(:path_builder_fn, :fun, required: true)
+  attr(:navigation_type, :atom, default: :navigate, values: [:navigate, :patch])
+
+  # A single-item navigator is intentionally non-interactive: there is no alternate
+  # selection to choose, so we render the current label without dropdown or arrows.
+  def render(%{all_items: [_single_item]} = assigns) do
+    ~H"""
+    <div class="inline-flex justify-start items-center">
+      <div class="max-w-96 border-b-2 border-Fill-Buttons-fill-primary flex flex-col relative">
+        <div class="w-[465px] px-2 py-1 rounded-md inline-flex flex-row justify-center items-center">
+          <div
+            class="w-full text-center justify-center items-center text-Text-text-high text-2xl font-bold truncate"
+            title={if @current_item, do: @current_item.title, else: ""}
+          >
+            {if @current_item,
+              do: item_title(@current_item_label, @current_item),
+              else: "No item selected"}
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
 
   def render(assigns) do
     ~H"""
     <div class="inline-flex justify-start items-center">
       <%= if @previous_item do %>
-        <.link
+        <.nav_link
           role="previous item link"
-          navigate={@path_builder_fn.(@previous_item)}
+          destination={@path_builder_fn.(@previous_item)}
+          navigation_type={@navigation_type}
           class="px-4 py-2 rounded-md flex justify-center items-center gap-2"
         >
           <div class="pr-2 flex justify-end items-center gap-2 text-Text-text-button opacity-90">
@@ -99,7 +122,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
               Previous {resource_label(@previous_item)}
             </div>
           </div>
-        </.link>
+        </.nav_link>
       <% else %>
         <div
           role="previous item link disabled"
@@ -145,11 +168,13 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           path_builder_fn={@path_builder_fn}
           search_query={@search_query}
           target={@myself}
+          navigation_type={@navigation_type}
         />
       </div>
       <%= if @next_item do %>
-        <.link
-          navigate={@path_builder_fn.(@next_item)}
+        <.nav_link
+          destination={@path_builder_fn.(@next_item)}
+          navigation_type={@navigation_type}
           role="next item link"
           class="px-4 py-2 rounded-md flex justify-center items-center gap-2"
         >
@@ -159,7 +184,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
             </div>
             <Icons.chevron_right width="24" height="24" />
           </div>
-        </.link>
+        </.nav_link>
       <% else %>
         <div
           role="next item link disabled"
@@ -209,7 +234,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         <% else %>
           <button
             :for={item <- @filtered_items}
-            phx-click={JS.navigate(@path_builder_fn.(item))}
+            phx-click={navigation_action(@navigation_type, @path_builder_fn.(item))}
             class={[
               "w-full cursor-pointer self-stretch px-2 py-1.5 inline-flex justify-between items-center",
               if(item.resource_id == @current_item_resource_id,
@@ -254,6 +279,31 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     </div>
     """
   end
+
+  attr(:destination, :string, required: true)
+  attr(:navigation_type, :atom, required: true, values: [:navigate, :patch])
+  attr(:role, :string, default: nil)
+  attr(:class, :string, default: nil)
+  slot(:inner_block, required: true)
+
+  defp nav_link(%{navigation_type: :navigate} = assigns) do
+    ~H"""
+    <.link navigate={@destination} role={@role} class={@class}>
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  defp nav_link(assigns) do
+    ~H"""
+    <.link patch={@destination} role={@role} class={@class}>
+      {render_slot(@inner_block)}
+    </.link>
+    """
+  end
+
+  defp navigation_action(:patch, destination), do: JS.patch(destination)
+  defp navigation_action(:navigate, destination), do: JS.navigate(destination)
 
   defp resource_label(resource) do
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
