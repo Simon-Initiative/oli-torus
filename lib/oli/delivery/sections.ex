@@ -5387,22 +5387,29 @@ defmodule Oli.Delivery.Sections do
                 proficiency
               end)
 
-            proficiency_mode =
-              proficiency_dist
-              |> Enum.map(fn {key, value} ->
-                ordinal =
-                  case String.downcase(key) do
-                    "low" -> 0
-                    "medium" -> 1
-                    "high" -> 2
-                    _ -> 3
-                  end
+            {proficiency_mode, proficiency_dist} =
+              if map_size(proficiency_dist) == 0 do
+                {"Not enough data", %{"Not enough data" => length(student_ids)}}
+              else
+                proficiency_mode =
+                  proficiency_dist
+                  |> Enum.map(fn {key, value} ->
+                    ordinal =
+                      case String.downcase(key) do
+                        "low" -> 0
+                        "medium" -> 1
+                        "high" -> 2
+                        _ -> 3
+                      end
 
-                {key, value, ordinal}
-              end)
-              |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
-              |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
-              |> elem(0)
+                    {key, value, ordinal}
+                  end)
+                  |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
+                  |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
+                  |> elem(0)
+
+                {proficiency_mode, proficiency_dist}
+              end
 
             Map.put(acc, objective_id,
               proficiency_dist: proficiency_dist,
