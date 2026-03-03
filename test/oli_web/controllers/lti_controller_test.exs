@@ -414,6 +414,7 @@ defmodule OliWeb.LtiControllerTest do
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
+          "user_type" => "user",
           "section" => section.slug,
           "resource_id" => 1
         })
@@ -469,6 +470,7 @@ defmodule OliWeb.LtiControllerTest do
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
+          "user_type" => "user",
           "section" => section.slug,
           "resource_id" => 1
         })
@@ -516,6 +518,7 @@ defmodule OliWeb.LtiControllerTest do
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(author.id, %{
+          "user_type" => "author",
           "project" => project.slug,
           "resource_id" => "some_resource_id"
         })

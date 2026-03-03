@@ -243,44 +243,52 @@ defmodule OliWeb.LtiController do
           PlatformInstances.get_platform_instance_by_client_id(client_id)
 
         authorization_result =
-          case context do
-            %{"project" => project_slug, "resource_id" => activity_resource_id} ->
-              build_authorization_for(
-                :authoring,
-                conn,
-                platform_instance,
-                project_slug,
-                activity_resource_id,
-                session_user_id
-              )
+          with {:ok, user_type} <- user_type_from_context(context) do
+            case context do
+              %{"project" => project_slug, "resource_id" => activity_resource_id} ->
+                build_authorization_for(
+                  :authoring,
+                  conn,
+                  platform_instance,
+                  project_slug,
+                  activity_resource_id,
+                  session_user_id,
+                  user_type
+                )
 
-            %{
-              "section" => section_slug,
-              "resource_id" => activity_resource_id,
-              "configure_deep_linking" => "true"
-            } ->
-              build_authorization_for(
-                :configure_deep_linking,
-                conn,
-                platform_instance,
-                section_slug,
-                activity_resource_id,
-                session_user_id
-              )
+              %{
+                "section" => section_slug,
+                "resource_id" => activity_resource_id,
+                "configure_deep_linking" => "true"
+              } ->
+                build_authorization_for(
+                  :configure_deep_linking,
+                  conn,
+                  platform_instance,
+                  section_slug,
+                  activity_resource_id,
+                  session_user_id,
+                  user_type
+                )
 
-            %{"section" => section_slug, "resource_id" => activity_resource_id} ->
-              build_authorization_for(
-                :delivery,
-                conn,
-                platform_instance,
-                section_slug,
-                activity_resource_id,
-                session_user_id
-              )
+              %{"section" => section_slug, "resource_id" => activity_resource_id} ->
+                build_authorization_for(
+                  :delivery,
+                  conn,
+                  platform_instance,
+                  section_slug,
+                  activity_resource_id,
+                  session_user_id,
+                  user_type
+                )
 
-            _ ->
-              Logger.error("Unsupported context value in login hint: #{Kernel.inspect(context)}")
-              {:error, "Unsupported context value in login hint"}
+              _ ->
+                Logger.error(
+                  "Unsupported context value in login hint: #{Kernel.inspect(context)}"
+                )
+
+                {:error, "Unsupported context value in login hint"}
+            end
           end
 
         case authorization_result do
@@ -364,9 +372,10 @@ defmodule OliWeb.LtiController do
          platform_instance,
          project_slug,
          activity_resource_id,
-         session_user_id
+         session_user_id,
+         user_type
        ) do
-    author = conn.assigns[:current_author] || Accounts.get_author(session_user_id)
+    author = resolve_author(conn, session_user_id, user_type)
 
     case author do
       nil ->
@@ -415,10 +424,11 @@ defmodule OliWeb.LtiController do
          platform_instance,
          section_slug,
          activity_resource_id,
-         session_user_id
+         session_user_id,
+         user_type
        ) do
-    user = conn.assigns[:current_user] || Accounts.get_user_with_roles(session_user_id)
-    author = conn.assigns[:current_author]
+    user = resolve_user(conn, session_user_id, user_type)
+    maybe_admin = resolve_author(conn, session_user_id, user_type)
     section = Sections.get_section_by_slug(section_slug)
 
     case {user, section} do
@@ -438,7 +448,7 @@ defmodule OliWeb.LtiController do
         roles =
           context_roles ++
             platform_roles ++
-            if Oli.Accounts.is_admin?(author) do
+            if Oli.Accounts.is_admin?(maybe_admin) do
               [
                 Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
                 Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator)
@@ -513,10 +523,11 @@ defmodule OliWeb.LtiController do
          platform_instance,
          section_slug,
          activity_resource_id,
-         session_user_id
+         session_user_id,
+         user_type
        ) do
-    user = conn.assigns[:current_user] || Accounts.get_user_with_roles(session_user_id)
-    author = conn.assigns[:current_author]
+    user = resolve_user(conn, session_user_id, user_type)
+    maybe_admin = resolve_author(conn, session_user_id, user_type)
     section = Sections.get_section_by_slug(section_slug)
 
     case {user, section} do
@@ -536,7 +547,7 @@ defmodule OliWeb.LtiController do
         roles =
           context_roles ++
             platform_roles ++
-            if Oli.Accounts.is_admin?(author) do
+            if Oli.Accounts.is_admin?(maybe_admin) do
               [
                 Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
                 Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator)
@@ -574,6 +585,26 @@ defmodule OliWeb.LtiController do
     do: [
       Lti_1p3.Claims.Custom.custom(custom)
     ]
+
+  defp user_type_from_context(%{"user_type" => "user"}), do: {:ok, :user}
+  defp user_type_from_context(%{"user_type" => "author"}), do: {:ok, :author}
+
+  defp user_type_from_context(context) do
+    Logger.error("Missing or invalid user_type in login hint context: #{inspect(context)}")
+    {:error, "Invalid login hint user type"}
+  end
+
+  defp resolve_user(conn, session_user_id, :user) do
+    conn.assigns[:current_user] || Accounts.get_user_with_roles(session_user_id)
+  end
+
+  defp resolve_user(_conn, _session_user_id, :author), do: nil
+
+  defp resolve_author(conn, session_user_id, :author) do
+    conn.assigns[:current_author] || Accounts.get_author(session_user_id)
+  end
+
+  defp resolve_author(_conn, _session_user_id, :user), do: nil
 
   @doc """
   Handles the Deep Linking response from the LTI tool.

@@ -42,6 +42,7 @@ defmodule OliWeb.Api.LtiController do
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
+          "user_type" => "user",
           "section" => section_slug,
           "resource_id" => activity_id
         })
@@ -90,6 +91,7 @@ defmodule OliWeb.Api.LtiController do
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(author.id, %{
+          "user_type" => "author",
           "project" => project_slug,
           "resource_id" => activity_id
         })
@@ -130,6 +132,7 @@ defmodule OliWeb.Api.LtiController do
 
       {:ok, %LoginHint{value: login_hint}} =
         LoginHints.create_login_hint(user.id, %{
+          "user_type" => "user",
           "section" => section_slug,
           "resource_id" => activity_id,
           "configure_deep_linking" => "true"
