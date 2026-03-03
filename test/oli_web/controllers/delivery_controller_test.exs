@@ -210,12 +210,14 @@ defmodule OliWeb.DeliveryControllerTest do
           )
         )
 
-      Enum.any?(conn.resp_headers, fn h ->
-        h ==
-          {"content-disposition", "attachment; filename=\"#{section.slug}_course_content.csv\""}
-      end)
+      assert get_resp_header(conn, "content-disposition") == [
+               "attachment; filename=\"#{section.slug}_course_content.csv\""
+             ]
 
-      Enum.any?(conn.resp_headers, fn h -> h == {"content-type", "text/csv"} end)
+      assert Enum.any?(
+               get_resp_header(conn, "content-type"),
+               &String.starts_with?(&1, "text/csv")
+             )
 
       assert conn.resp_body =~ "Unit Container"
       refute conn.resp_body =~ "Module Container"
@@ -272,6 +274,15 @@ defmodule OliWeb.DeliveryControllerTest do
             container_filter_by: :modules
           )
         )
+
+      assert get_resp_header(conn, "content-disposition") == [
+               "attachment; filename=\"#{section.slug}_course_content.csv\""
+             ]
+
+      assert Enum.any?(
+               get_resp_header(conn, "content-type"),
+               &String.starts_with?(&1, "text/csv")
+             )
 
       refute conn.resp_body =~ "Unit Container"
       assert conn.resp_body =~ "Module Container"
