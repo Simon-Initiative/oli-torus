@@ -240,7 +240,7 @@ defmodule Oli.Rendering.Activity.Html do
   end
 
   defp resolve_adaptive_dynamic_links(model_json, tag, %Context{} = context) do
-    if is_adaptive?(tag) do
+    if is_adaptive?(tag) and dynamic_link_markers_present?(model_json) do
       with {:ok, decoded_model} <- decode_activity_model(model_json),
            {rewired_model, _cache} <- rewrite_adaptive_internal_links(decoded_model, context, %{}),
            {:ok, encoded_model} <- Jason.encode(rewired_model) do
@@ -252,6 +252,14 @@ defmodule Oli.Rendering.Activity.Html do
       model_json
     end
   end
+
+  defp dynamic_link_markers_present?(model_json) when is_binary(model_json) do
+    String.contains?(model_json, "idref") or
+      String.contains?(model_json, "resource_id") or
+      String.contains?(model_json, "/course/link/")
+  end
+
+  defp dynamic_link_markers_present?(_), do: false
 
   defp decode_activity_model(model_json) when is_binary(model_json) do
     model_json
@@ -308,8 +316,10 @@ defmodule Oli.Rendering.Activity.Html do
             )
           )
 
-          {Map.put(item, "href", internal_href(context, slug)) |> Map.put("target", "_blank"),
-           cache}
+          {item
+           |> Map.put("href", internal_href(context, slug))
+           |> Map.put("target", "_blank")
+           |> Map.put("rel", "noopener noreferrer"), cache}
         else
           {:error, cache} ->
             emit_resolution_failure_telemetry(context, idref, "resource_not_found")
@@ -333,8 +343,10 @@ defmodule Oli.Rendering.Activity.Html do
       internal_course_link?(href) ->
         slug = String.replace_prefix(href, "/course/link/", "")
 
-        {Map.put(item, "href", internal_href(context, slug)) |> Map.put("target", "_blank"),
-         cache}
+        {item
+         |> Map.put("href", internal_href(context, slug))
+         |> Map.put("target", "_blank")
+         |> Map.put("rel", "noopener noreferrer"), cache}
 
       true ->
         {item, cache}

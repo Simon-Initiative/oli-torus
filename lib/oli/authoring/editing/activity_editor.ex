@@ -364,6 +364,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp process_with_new_revision(updates, publication, author, project) do
+    project_page_targets = project_page_targets(project.id)
+
     Enum.reduce_while(updates, {:ok, []}, fn update, {:ok, revisions} ->
       case Resources.get_resource(Map.get(update, "resource_id")) do
         nil ->
@@ -374,7 +376,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
             get_latest_revision(publication.id, activity.id)
             |> create_new_revision(publication, activity, author.id)
 
-          case update_revision(revision, update, project.id) do
+          case update_revision(revision, update, project.id, project_page_targets) do
             {:ok, updated} -> {:cont, {:ok, [updated | revisions]}}
             {:error, reason} -> {:halt, {:error, reason}}
           end
@@ -387,6 +389,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp process_with_maybe_new_revision(updates, publication, author, project) do
+    project_page_targets = project_page_targets(project.id)
+
     Enum.reduce_while(updates, {:ok, []}, fn update, {:ok, revisions} ->
       case Resources.get_resource(Map.get(update, "resource_id")) do
         nil ->
@@ -397,7 +401,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
             get_latest_revision(publication.id, activity.id)
             |> maybe_create_new_revision(publication, project, activity, author.id, update)
 
-          case update_revision(revision, update, project.id) do
+          case update_revision(revision, update, project.id, project_page_targets) do
             {:ok, updated} -> {:cont, {:ok, [updated | revisions]}}
             {:error, reason} -> {:halt, {:error, reason}}
           end
@@ -445,6 +449,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
            {:ok, publication} <-
              Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource(lock_id) |> trap_nil() do
+        project_page_targets = project_page_targets(project.id)
+
         Repo.transaction(fn ->
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
             # If we acquired the lock, we must first create a new revision
@@ -452,7 +458,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
               updated =
                 get_latest_revision(publication.id, activity.id)
                 |> create_new_revision(publication, activity, author.id)
-                |> update_revision(update, project.id)
+                |> update_revision(update, project.id, project_page_targets)
 
               case updated do
                 {:ok, revision} ->
@@ -471,7 +477,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
               updated =
                 get_latest_revision(publication.id, activity.id)
                 |> maybe_create_new_revision(publication, project, activity, author.id, update)
-                |> update_revision(update, project.id)
+                |> update_revision(update, project.id, project_page_targets)
 
               case updated do
                 {:ok, revision} ->
@@ -575,7 +581,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   # Applies the update to the revision, converting any objective slugs back to ids
-  defp update_revision(revision, update, project_id) do
+  defp update_revision(revision, update, project_id, project_page_targets \\ nil) do
     objectives =
       if Map.has_key?(update, "objectives"),
         do: Map.get(update, "objectives"),
@@ -610,10 +616,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           Map.put(update, "content", Map.put(content, "authoring", authoring))
       end
 
-    parts = update["content"]["authoring"]["parts"]
+    parts = get_in(update, ["content", "authoring", "parts"]) || []
 
-    with :ok <- validate_adaptive_dynamic_links(revision, update, project_id) do
-      update = normalize_adaptive_dynamic_links(revision, update, project_id)
+    with :ok <-
+           validate_adaptive_dynamic_links(revision, update, project_id, project_page_targets) do
+      update =
+        normalize_adaptive_dynamic_links(revision, update, project_id, project_page_targets)
 
       update =
         objectives
@@ -684,10 +692,15 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
-  defp validate_adaptive_dynamic_links(%Revision{} = revision, update, project_id) do
+  defp validate_adaptive_dynamic_links(
+         %Revision{} = revision,
+         update,
+         project_id,
+         project_page_targets
+       ) do
     if adaptive_activity?(revision) do
       authoring = authoring_from_update(update)
-      validate_authoring_dynamic_links(authoring, project_id)
+      validate_authoring_dynamic_links(authoring, project_id, project_page_targets)
     else
       :ok
     end
@@ -710,11 +723,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp authoring_from_update(_), do: nil
 
-  defp validate_authoring_dynamic_links(nil, _project_id), do: :ok
+  defp validate_authoring_dynamic_links(nil, _project_id, _project_page_targets), do: :ok
 
-  defp validate_authoring_dynamic_links(authoring, project_id) when is_map(authoring) do
+  defp validate_authoring_dynamic_links(authoring, project_id, project_page_targets)
+       when is_map(authoring) do
     {allowed_resource_ids, allowed_page_slugs, _slug_to_resource_id} =
-      project_page_targets(project_id)
+      resolve_project_page_targets(project_id, project_page_targets)
 
     case Map.get(authoring, "parts", []) do
       parts when is_list(parts) ->
@@ -833,15 +847,21 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     validate_request(update)
   end
 
-  defp normalize_adaptive_dynamic_links(%Revision{} = revision, update, project_id) do
+  defp normalize_adaptive_dynamic_links(
+         %Revision{} = revision,
+         update,
+         project_id,
+         project_page_targets
+       ) do
     if adaptive_activity?(revision) do
-      {_, _, page_slug_to_resource_id} = project_page_targets(project_id)
-
       case authoring_from_update(update) do
         nil ->
           update
 
         authoring when is_map(authoring) ->
+          {_, _, page_slug_to_resource_id} =
+            resolve_project_page_targets(project_id, project_page_targets)
+
           normalized_authoring =
             normalize_authoring_dynamic_links(authoring, page_slug_to_resource_id)
 
@@ -942,6 +962,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp normalize_node_link_ref(_, _page_slug_to_resource_id), do: :ignore
+
+  defp resolve_project_page_targets(_project_id, {ids, slugs, slug_to_resource_id})
+       when is_struct(ids, MapSet) and is_struct(slugs, MapSet) and is_map(slug_to_resource_id),
+       do: {ids, slugs, slug_to_resource_id}
+
+  defp resolve_project_page_targets(project_id, _), do: project_page_targets(project_id)
 
   defp project_page_targets(project_id) do
     page_id = Oli.Resources.ResourceType.id_for_page()

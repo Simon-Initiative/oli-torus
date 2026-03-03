@@ -111,30 +111,6 @@ defmodule Oli.Interop.Export do
     end)
   end
 
-  defp rewire_activity_elements(nil, _, _), do: nil
-
-  defp rewire_activity_elements(content_as_list, project, page_slug_to_resource_id)
-       when is_map(content_as_list) do
-    case Map.get(content_as_list, "content") do
-      list when is_list(list) ->
-        adjusted_content = %{"type" => "content", "children" => list}
-        {results, _} = rewire_elements(adjusted_content, project, page_slug_to_resource_id)
-        Map.put(content_as_list, "content", results["children"])
-
-      map when is_map(map) ->
-        list = map["model"]
-        adjusted_content = %{"type" => "content", "children" => list}
-        {results, _} = rewire_elements(adjusted_content, project, page_slug_to_resource_id)
-        content = Map.put(map, "model", results["children"])
-        Map.put(content_as_list, "content", content)
-
-      nil ->
-        content_as_list
-    end
-  end
-
-  defp rewire_activity_elements(other, _, _), do: other
-
   defp rewire_elements(content, project, page_slug_to_resource_id) do
     Oli.Resources.PageContent.visit_children(content, {:ok, []}, fn c,
                                                                     {status, []},
@@ -216,137 +192,49 @@ defmodule Oli.Interop.Export do
     end
   end
 
-  # For an activity, rewire all of the standard "content" locations:
-  # stem, choices, explanation, hints, feedback.  This will take care of
-  # re-wiring all of the links to pages and any bib citations.
+  # For activity payloads, perform one defensive full-tree traversal so links in both
+  # standard and legacy/non-standard locations are normalized in a single pass.
   defp rewire_activity_content(content, project, page_slug_to_resource_id) do
-    content =
-      case Map.get(content, "stem") do
-        nil ->
-          content
-
-        stem ->
-          Map.put(
-            content,
-            "stem",
-            rewire_activity_elements(stem, project, page_slug_to_resource_id)
-          )
-      end
-
-    content =
-      case Map.get(content, "choices") do
-        nil ->
-          content
-
-        choices ->
-          choices =
-            Enum.map(choices, fn choice ->
-              rewire_activity_elements(choice, project, page_slug_to_resource_id)
-            end)
-
-          Map.put(content, "choices", choices)
-      end
-
-    content =
-      if Map.has_key?(content, "authoring") and
-           Map.has_key?(Map.get(content, "authoring"), "parts") do
-        parts =
-          content["authoring"]["parts"]
-          |> Enum.map(fn part ->
-            part =
-              if Map.has_key?(part, "explanation") do
-                Map.put(
-                  part,
-                  "explanation",
-                  rewire_activity_elements(part["explanation"], project, page_slug_to_resource_id)
-                )
-              else
-                part
-              end
-
-            part =
-              if Map.has_key?(part, "hints") and Map.get(part, "hints") != nil do
-                hints =
-                  Enum.map(part["hints"], fn hint ->
-                    rewire_activity_elements(hint, project, page_slug_to_resource_id)
-                  end)
-
-                Map.put(part, "hints", hints)
-              else
-                part
-              end
-
-            part =
-              case Map.get(part, "custom") do
-                %{"nodes" => nodes} = custom when is_list(nodes) ->
-                  adjusted_content = %{"type" => "content", "children" => nodes}
-
-                  {results, _} =
-                    rewire_elements(adjusted_content, project, page_slug_to_resource_id)
-
-                  Map.put(part, "custom", Map.put(custom, "nodes", results["children"]))
-
-                _ ->
-                  part
-              end
-
-            if Map.has_key?(part, "responses") and Map.get(part, "responses") != nil do
-              responses =
-                Enum.map(part["responses"], fn response ->
-                  if Map.has_key?(response, "feedback") do
-                    Map.put(
-                      response,
-                      "feedback",
-                      rewire_activity_elements(
-                        response["feedback"],
-                        project,
-                        page_slug_to_resource_id
-                      )
-                    )
-                  else
-                    response
-                  end
-                end)
-
-              Map.put(part, "responses", responses)
-            else
-              part
-            end
-          end)
-
-        Map.put(content, "authoring", Map.put(content["authoring"], "parts", parts))
-      else
-        content
-      end
-
-    # Defensive full-tree pass so adaptive links in non-standard locations
-    # (for example legacy "model" payloads) are still rewired before export.
-    deep_rewire_internal_anchors(content, project, page_slug_to_resource_id)
+    deep_rewire_activity_nodes(content, project, page_slug_to_resource_id)
   end
 
-  defp deep_rewire_internal_anchors(value, _project, _page_slug_to_resource_id)
+  defp deep_rewire_activity_nodes(value, _project, _page_slug_to_resource_id)
        when is_binary(value) or is_number(value) or is_boolean(value) or is_nil(value),
        do: value
 
-  defp deep_rewire_internal_anchors(items, project, page_slug_to_resource_id)
+  defp deep_rewire_activity_nodes(items, project, page_slug_to_resource_id)
        when is_list(items) do
-    Enum.map(items, &deep_rewire_internal_anchors(&1, project, page_slug_to_resource_id))
+    Enum.map(items, &deep_rewire_activity_nodes(&1, project, page_slug_to_resource_id))
   end
 
-  defp deep_rewire_internal_anchors(map, project, page_slug_to_resource_id) when is_map(map) do
+  defp deep_rewire_activity_nodes(map, project, page_slug_to_resource_id) when is_map(map) do
     rewired =
       Enum.reduce(map, %{}, fn {key, value}, acc ->
-        Map.put(acc, key, deep_rewire_internal_anchors(value, project, page_slug_to_resource_id))
+        Map.put(acc, key, deep_rewire_activity_nodes(value, project, page_slug_to_resource_id))
       end)
 
-    case {Map.get(rewired, "type"), Map.get(rewired, "tag")} do
-      {"a", _} -> rewire_internal_anchor(rewired, project, page_slug_to_resource_id)
-      {_, "a"} -> rewire_internal_anchor(rewired, project, page_slug_to_resource_id)
-      _ -> rewired
-    end
+    rewrite_activity_node(rewired, project, page_slug_to_resource_id)
   end
 
-  defp deep_rewire_internal_anchors(value, _project, _page_slug_to_resource_id), do: value
+  defp deep_rewire_activity_nodes(value, _project, _page_slug_to_resource_id), do: value
+
+  defp rewrite_activity_node(%{"type" => "cite"} = node, _project, _page_slug_to_resource_id),
+    do: Map.put(node, "bibref", "#{Map.get(node, "bibref")}")
+
+  defp rewrite_activity_node(
+         %{"type" => "page_link"} = node,
+         _project,
+         _page_slug_to_resource_id
+       ),
+       do: Map.put(node, "idref", "#{Map.get(node, "idref")}")
+
+  defp rewrite_activity_node(%{"type" => "a"} = node, project, page_slug_to_resource_id),
+    do: rewire_internal_anchor(node, project, page_slug_to_resource_id)
+
+  defp rewrite_activity_node(%{"tag" => "a"} = node, project, page_slug_to_resource_id),
+    do: rewire_internal_anchor(node, project, page_slug_to_resource_id)
+
+  defp rewrite_activity_node(node, _project, _page_slug_to_resource_id), do: node
 
   def rewire(content, project, page_slug_to_resource_id) do
     {content, _} =

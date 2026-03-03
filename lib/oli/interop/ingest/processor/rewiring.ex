@@ -212,21 +212,21 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
   @spec rewire_adaptive_link_references(map(), any()) :: map()
   def rewire_adaptive_link_references(content, legacy_to_resource_id_map) do
     {mapped, _} =
-      PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
+      PageContent.map_reduce(content, :ok, fn e, status, _tr_context ->
         case e do
           %{"type" => "content"} = ref ->
-            rewire_adaptive_link_nodes(ref, legacy_to_resource_id_map, status, invalid_refs)
+            rewire_adaptive_link_nodes(ref, legacy_to_resource_id_map, status)
 
           other ->
-            {other, {status, invalid_refs}}
+            {other, status}
         end
       end)
 
     mapped
   end
 
-  defp rewire_adaptive_link_nodes(content, legacy_to_resource_id_map, status, invalid_refs) do
-    PageContent.visit_children(content, {status, invalid_refs}, fn i, {status, invalid_refs}, _ ->
+  defp rewire_adaptive_link_nodes(content, legacy_to_resource_id_map, status) do
+    PageContent.visit_children(content, status, fn i, status, _ ->
       case i do
         %{"tag" => "a", "idref" => original} = ref ->
           case retrieve(legacy_to_resource_id_map, original) do
@@ -235,14 +235,14 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                 "Skipping adaptive link rewiring, missing idref mapping for #{inspect(original)}"
               )
 
-              {ref, {status, [original | invalid_refs]}}
+              {ref, status}
 
             retrieved ->
-              {Map.put(ref, "idref", retrieved), {status, invalid_refs}}
+              {Map.put(ref, "idref", retrieved), status}
           end
 
         other ->
-          {other, {status, invalid_refs}}
+          {other, status}
       end
     end)
   end

@@ -414,8 +414,18 @@ defmodule Oli.Publishing.AuthoringResolver do
         ]
   def find_hyperlink_references(project_slug, page_slug) do
     (find_raw_references(project_slug) ++ find_raw_adaptive_references(project_slug))
+    |> merge_reference_rows_by_page()
     |> process_and_filter_references(project_slug, page_slug)
-    |> Enum.uniq_by(& &1.slug)
+  end
+
+  defp merge_reference_rows_by_page(rows) when is_list(rows) do
+    rows
+    |> Enum.reduce(%{}, fn %{slug: slug, title: title, refs: refs}, acc ->
+      key = {slug, title}
+      merged_refs = Map.get(acc, key, []) ++ List.wrap(refs)
+      Map.put(acc, key, %{slug: slug, title: title, refs: merged_refs})
+    end)
+    |> Map.values()
   end
 
   defp find_raw_references(project_slug) do
