@@ -78,6 +78,16 @@ Diagram requirements (global):
 13. Testing Strategy
 - Unit/integration/system coverage, race/concurrency cases, migration/backfill verification.
 - Exclude dedicated performance/load/benchmark tests; use telemetry/AppSignal coverage and alerting checks for performance posture.
+- Include a Scenario Coverage Plan subsection that mirrors PRD `Oli.Scenarios Recommendation` contract:
+  - PRD status (`Required`/`Suggested`/`Not applicable`)
+  - AC/workflow mapping
+  - planned scenario artifacts
+  - validation loop commands
+- Include a LiveView Coverage Plan subsection that mirrors PRD `LiveView Testing Recommendation` contract:
+  - PRD status (`Required`/`Suggested`/`Not applicable`)
+  - UI event/state mapping
+  - planned LiveView test artifacts
+  - validation commands
 
 14. Backwards Compatibility
 - Compatibility and migration posture for existing content, activities, and APIs.

@@ -107,6 +107,19 @@ Requirements are found in requirements.yml
   - Status: <Required | Suggested | Not applicable>
   - Rationale: <why this feature should or should not include Oli.Scenarios coverage>
   - Existing Coverage Signal: <what existing Oli.Scenarios YAML coverage exists in touched areas, or `None found`>
+  - Infrastructure Support Status: <Supported | Unsupported>
+  - Scenario Infrastructure Expansion Required: <Yes | No>
+  - Required Scope (AC/workflows): <high-level workflows/capabilities to cover; avoid narrow one-off feature details>
+  - Planned Artifacts: <target `.scenario.yaml` files and runner modules, or `N/A`>
+  - Validation Commands: <schema + parser/test commands that will be required during implementation, or `N/A`>
+  - Planning Handoff: <if `Unsupported` and status is `Required`, include exact directive: `spec_plan must schedule $spec_scenario_expand before $spec_scenario`>
+- LiveView Testing Recommendation:
+  - Status: <Required | Suggested | Not applicable>
+  - Rationale: <why LiveView tests should or should not be added/updated>
+  - Affected UI Surface: <LiveView(s), LiveComponent(s), function component(s), or `None`>
+  - Required Scope (events/states): <UI behaviors and states to cover, or `N/A`>
+  - Planned Artifacts: <LiveView test module(s), or `N/A`>
+  - Validation Commands: <targeted `mix test ...` commands, or `N/A`>
 
 ## 17. Definition of Done
 - [ ] All FRs mapped to ACs

@@ -34,6 +34,7 @@ Always load before fixing:
 
 ## Outputs (files changed/created)
 - New or updated failing-then-passing ExUnit regression test
+- New or updated scenario regression test when the bug is in an area already supported by existing `Oli.Scenarios` infrastructure
 - Minimal production code fix
 - Optional docs updates if behavior contract changed
 
@@ -44,11 +45,16 @@ Always load before fixing:
    - Actual behavior
 2. Follow `references/approach.md` and keep changes aligned with `references/considerations.md`.
 3. Reproduce the bug locally where possible.
-4. Write a failing ExUnit test that captures the bug.
-5. Implement the minimal fix to make the test pass.
-6. Run relevant tests (at least the new regression test and affected suite) until green.
-7. Verify no unnecessary scope expansion occurred.
-8. Prepare a PR-ready summary using `references/output_requirements.md`.
+4. Assess scenario applicability:
+   - Determine whether the bug is in a workflow already covered by existing `Oli.Scenarios` directives/infrastructure.
+   - If yes, plan a scenario regression test update/addition.
+   - If no, do not expand scenario infrastructure in this skill.
+5. Write a failing ExUnit test that captures the bug.
+6. Implement the minimal fix to make the test pass.
+7. If scenario applicability is `yes`, add/update a scenario regression test to demonstrate the bug path end-to-end.
+8. Run relevant tests (at least the new regression test and affected suite) until green.
+9. Verify no unnecessary scope expansion occurred.
+10. Prepare a PR-ready summary using `references/output_requirements.md`.
 
 ## Quality bar / guardrails
 - Trigger policy: run only with JIRA ticket context or explicit `$spec_fixbug`.
@@ -56,6 +62,9 @@ Always load before fixing:
 - Keep fixes minimal and localized; avoid opportunistic refactors.
 - Preserve Elixir/Phoenix best practices and production safety.
 - Include regression coverage for the reported behavior.
+- Scenario decision is mandatory: explicitly assess whether existing `Oli.Scenarios` support can expose the bug.
+- If scenario support already exists for the touched workflow, add/update a scenario regression test.
+- Do not invoke `$spec_scenario_expand` from `$spec_fixbug`; if scenario support is missing, proceed with ExUnit-driven bug fix only.
 
 ## Final response format (brief)
 - `PR title suggestion: <title>`

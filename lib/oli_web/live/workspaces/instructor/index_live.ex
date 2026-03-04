@@ -351,7 +351,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         </div>
         <div class="self-stretch justify-end items-start gap-4 inline-flex">
           <.link
-            navigate={~p"/sections/#{@section.slug}/instructor_dashboard/insights/content"}
+            navigate={~p"/sections/#{@section.slug}/instructor_dashboard/insights/dashboard"}
             class="px-5 py-3 bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF] hover:no-underline rounded-md justify-center items-center gap-2 flex text-white text-base font-normal leading-normal"
           >
             <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">

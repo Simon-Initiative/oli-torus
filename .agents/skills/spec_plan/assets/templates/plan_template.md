@@ -7,6 +7,21 @@ Scope and guardrails reference:
 ## Scope
 <concise delivery scope>
 
+## Scenario Testing Contract
+- Status: <Required | Suggested | Not applicable>
+- Infrastructure Support Status: <Supported | Unsupported>
+- Scenario Infrastructure Expansion Required: <Yes | No>
+- Scope (AC/workflows): <what scenario tests must/should cover, or `N/A`>
+- Planned Artifacts: <`.scenario.yaml` files and runner modules, or `N/A`>
+- Validation Commands: <schema + parser/test commands, or `N/A`>
+- Skill Handoff: <if expansion required: `Use $spec_scenario_expand first, then $spec_scenario`>
+
+## LiveView Testing Contract
+- Status: <Required | Suggested | Not applicable>
+- Scope (events/states): <what LiveView tests must/should cover, or `N/A`>
+- Planned Artifacts: <LiveView test module(s), or `N/A`>
+- Validation Commands: <targeted `mix test ...`, or `N/A`>
+
 ## Non-Functional Guardrails
 - <budget/constraint>
 
@@ -20,6 +35,8 @@ Scope and guardrails reference:
 - Testing Tasks:
   - [ ] <tests to write/run>
   - Command(s): `<mix test ...>`
+  - [ ] <scenario authoring/validation tasks when contract is Required or Suggested>
+  - [ ] <LiveView test authoring/validation tasks when contract is Required or Suggested>
 - Definition of Done:
   - <phase completion conditions>
 - Gate:
@@ -36,6 +53,8 @@ Scope and guardrails reference:
 - Testing Tasks:
   - [ ] <tests to write/run>
   - Command(s): `<mix test ...>`
+  - [ ] <scenario authoring/validation tasks when contract is Required or Suggested>
+  - [ ] <LiveView test authoring/validation tasks when contract is Required or Suggested>
 - Definition of Done:
   - <phase completion conditions>
 - Gate:

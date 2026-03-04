@@ -19,6 +19,7 @@ import { SliderOptionsTextEditor } from './custom/SliderOptionsTextEditor';
 import { SpokeCompletedOption } from './custom/SpokeCompletedOption';
 import { SpokeCustomErrorFeedbackAuthoring } from './custom/SpokeCustomErrorFeedbackAuthoring';
 import { SpokeOptionsEditor } from './custom/SpokeOptionsEditor';
+import ThemeSelectorWidget from './custom/ThemeSelectorWidget';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
@@ -51,6 +52,7 @@ const widgets: any = {
   DropdownOptionsEditor: DropdownOptionsEditor,
   MCQCustomErrorFeedbackAuthoring: MCQCustomErrorFeedbackAuthoring,
   SliderOptionsTextEditor: SliderOptionsTextEditor,
+  ThemeSelectorWidget: ThemeSelectorWidget,
   PopupIconSelector: PopupIconSelector,
 };
 
@@ -266,6 +268,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
       <Form
         schema={schema}
         formData={formData}
+        formContext={{ formData }}
         onChange={(e) => {
           const updatedData = e.formData;
           const changedProp = diff(formData, updatedData);
