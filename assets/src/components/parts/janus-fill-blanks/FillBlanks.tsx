@@ -989,6 +989,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
       aria-label="Fill in the blanks"
     >
       <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>
+      <style type="text/css">{`:host:has(.select2-container--open) { z-index: 9999 !important; }`}</style>
       <style type="text/css">{`${customCss}`};</style>
       {/* Live region for screen reader announcements */}
       <div
