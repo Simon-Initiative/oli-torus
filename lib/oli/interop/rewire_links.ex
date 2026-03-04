@@ -44,7 +44,7 @@ defmodule Oli.Ingest.RewireLinks do
     end
 
     try do
-      case rewire(revision.content, link_builder, page_map) do
+      case rewire(revision.content, link_builder, page_map, resource_id_lookup) do
         {true, content} ->
           Oli.Resources.update_revision(revision, %{content: content})
 
@@ -90,10 +90,26 @@ defmodule Oli.Ingest.RewireLinks do
   defp normalize_key(key), do: key
 
   def rewire(items, link_builder, page_map) when is_list(items) do
+    resource_id_lookup = build_resource_id_lookup(page_map)
+    rewire(items, link_builder, page_map, resource_id_lookup)
+  end
+
+  def rewire(item, link_builder, page_map) when is_map(item) do
+    resource_id_lookup = build_resource_id_lookup(page_map)
+    rewire(item, link_builder, page_map, resource_id_lookup)
+  end
+
+  def rewire(value, _link_builder, _page_map)
+      when is_binary(value) or is_number(value) or is_boolean(value) or is_nil(value),
+      do: {false, value}
+
+  def rewire(value, _link_builder, _page_map), do: {false, value}
+
+  defp rewire(items, link_builder, page_map, resource_id_lookup) when is_list(items) do
     {rewritten, changed?} =
       Enum.reduce(items, {[], false}, fn item, {acc, changed?} ->
         if maybe_link_payload?(item) do
-          {item_changed?, rewired_item} = rewire(item, link_builder, page_map)
+          {item_changed?, rewired_item} = rewire(item, link_builder, page_map, resource_id_lookup)
           {[rewired_item | acc], changed? || item_changed?}
         else
           {[item | acc], changed?}
@@ -107,11 +123,12 @@ defmodule Oli.Ingest.RewireLinks do
     end
   end
 
-  def rewire(
-        %{"type" => "a", "idref" => idref, "children" => children} = link,
-        link_builder,
-        _page_map
-      ) do
+  defp rewire(
+         %{"type" => "a", "idref" => idref, "children" => children} = link,
+         link_builder,
+         _page_map,
+         _resource_id_lookup
+       ) do
     target = Map.get(link, "target")
     anchor = Map.get(link, "anchor")
 
@@ -129,13 +146,21 @@ defmodule Oli.Ingest.RewireLinks do
      |> putIfNotNil.("anchor", anchor)}
   end
 
-  def rewire(%{"tag" => "a", "idref" => idref} = link, link_builder, _page_map) do
+  defp rewire(
+         %{"tag" => "a", "idref" => idref} = link,
+         link_builder,
+         _page_map,
+         _resource_id_lookup
+       ) do
     {true, link |> Map.put("href", link_builder.(idref)) |> Map.delete("idref")}
   end
 
-  def rewire(%{"type" => "page_link", "idref" => idref} = other, _link_builder, page_map) do
-    resource_id_lookup = build_resource_id_lookup(page_map)
-
+  defp rewire(
+         %{"type" => "page_link", "idref" => idref} = other,
+         _link_builder,
+         page_map,
+         resource_id_lookup
+       ) do
     case lookup_revision(page_map, resource_id_lookup, idref) do
       %{resource_id: resource_id} ->
         {true, Map.put(other, "idref", resource_id)}
@@ -146,13 +171,14 @@ defmodule Oli.Ingest.RewireLinks do
     end
   end
 
-  def rewire(item, link_builder, page_map) when is_map(item) do
+  defp rewire(item, link_builder, page_map, resource_id_lookup) when is_map(item) do
     if maybe_link_payload?(item) do
       Enum.reduce(item, {false, item}, fn {key, value}, {changed?, acc} ->
         case value do
           value when is_list(value) or is_map(value) ->
             if maybe_link_payload?(value) do
-              {value_changed?, rewired_value} = rewire(value, link_builder, page_map)
+              {value_changed?, rewired_value} =
+                rewire(value, link_builder, page_map, resource_id_lookup)
 
               if value_changed? do
                 {true, Map.put(acc, key, rewired_value)}
@@ -171,12 +197,6 @@ defmodule Oli.Ingest.RewireLinks do
       {false, item}
     end
   end
-
-  def rewire(value, _link_builder, _page_map)
-      when is_binary(value) or is_number(value) or is_boolean(value) or is_nil(value),
-      do: {false, value}
-
-  def rewire(value, _link_builder, _page_map), do: {false, value}
 
   defp maybe_link_payload?(%{} = item) do
     direct_link_node? =

@@ -195,10 +195,14 @@ defmodule Oli.Interop.Export do
   # For activity payloads, perform one defensive full-tree traversal so links in both
   # standard and legacy/non-standard locations are normalized in a single pass.
   defp rewire_activity_content(content, project, page_slug_to_resource_id) do
-    {rewired, _changed?} =
-      deep_rewire_activity_nodes_tracked(content, project, page_slug_to_resource_id)
+    if maybe_export_link_subtree?(content) do
+      {rewired, _changed?} =
+        deep_rewire_activity_nodes_tracked(content, project, page_slug_to_resource_id)
 
-    rewired
+      rewired
+    else
+      content
+    end
   end
 
   defp deep_rewire_activity_nodes_tracked(value, _project, _page_slug_to_resource_id)
@@ -207,47 +211,63 @@ defmodule Oli.Interop.Export do
 
   defp deep_rewire_activity_nodes_tracked(items, project, page_slug_to_resource_id)
        when is_list(items) do
-    {rewritten_items, changed?} =
-      Enum.reduce(items, {[], false}, fn item, {acc, changed?} ->
-        {rewritten_item, item_changed?} =
-          deep_rewire_activity_nodes_tracked(item, project, page_slug_to_resource_id)
-
-        {[rewritten_item | acc], changed? || item_changed?}
-      end)
-
-    if changed? do
-      {Enum.reverse(rewritten_items), true}
-    else
+    if not maybe_export_link_subtree?(items) do
       {items, false}
+    else
+      {rewritten_items, changed?} =
+        Enum.reduce(items, {[], false}, fn item, {acc, changed?} ->
+          if maybe_export_link_subtree?(item) do
+            {rewritten_item, item_changed?} =
+              deep_rewire_activity_nodes_tracked(item, project, page_slug_to_resource_id)
+
+            {[rewritten_item | acc], changed? || item_changed?}
+          else
+            {[item | acc], changed?}
+          end
+        end)
+
+      if changed? do
+        {Enum.reverse(rewritten_items), true}
+      else
+        {items, false}
+      end
     end
   end
 
   defp deep_rewire_activity_nodes_tracked(map, project, page_slug_to_resource_id)
        when is_map(map) do
-    {rewritten_children, children_changed?} =
-      Enum.reduce(map, {nil, false}, fn {key, value}, {acc, changed?} ->
-        {rewritten_value, value_changed?} =
-          deep_rewire_activity_nodes_tracked(value, project, page_slug_to_resource_id)
+    if not maybe_export_link_subtree?(map) do
+      {map, false}
+    else
+      {rewritten_children, children_changed?} =
+        Enum.reduce(map, {nil, false}, fn {key, value}, {acc, changed?} ->
+          if maybe_export_link_subtree?(value) do
+            {rewritten_value, value_changed?} =
+              deep_rewire_activity_nodes_tracked(value, project, page_slug_to_resource_id)
 
-        cond do
-          value_changed? ->
-            target = if is_nil(acc), do: map, else: acc
-            {Map.put(target, key, rewritten_value), true}
+            cond do
+              value_changed? ->
+                target = if is_nil(acc), do: map, else: acc
+                {Map.put(target, key, rewritten_value), true}
 
-          changed? ->
-            {acc, true}
+              changed? ->
+                {acc, true}
 
-          true ->
-            {acc, false}
-        end
-      end)
+              true ->
+                {acc, false}
+            end
+          else
+            {acc, changed?}
+          end
+        end)
 
-    base = if children_changed?, do: rewritten_children, else: map
+      base = if children_changed?, do: rewritten_children, else: map
 
-    {rewritten_node, node_changed?} =
-      rewrite_activity_node_tracked(base, project, page_slug_to_resource_id)
+      {rewritten_node, node_changed?} =
+        rewrite_activity_node_tracked(base, project, page_slug_to_resource_id)
 
-    {rewritten_node, children_changed? || node_changed?}
+      {rewritten_node, children_changed? || node_changed?}
+    end
   end
 
   defp deep_rewire_activity_nodes_tracked(value, _project, _page_slug_to_resource_id),
@@ -282,6 +302,47 @@ defmodule Oli.Interop.Export do
   end
 
   defp rewrite_activity_node_tracked(node, _project, _page_slug_to_resource_id), do: {node, false}
+
+  @activity_link_container_keys ~w[
+    children
+    content
+    model
+    stem
+    choices
+    authoring
+    parts
+    responses
+    feedback
+    hints
+    custom
+    nodes
+    partsLayout
+    caption
+    pronunciation
+    translations
+  ]
+
+  defp maybe_export_link_subtree?(%{} = node) do
+    direct_link_node? =
+      Map.has_key?(node, "idref") or
+        Map.get(node, "type") in ["a", "page_link", "cite"] or
+        Map.get(node, "tag") == "a" or
+        page_slug_from_internal_href(Map.get(node, "href")) != :ignore
+
+    has_known_link_container? =
+      Enum.any?(node, fn {key, _value} -> key in @activity_link_container_keys end)
+
+    has_nested_structures? =
+      Enum.any?(node, fn {_key, value} -> is_map(value) or is_list(value) end)
+
+    direct_link_node? or has_known_link_container? or has_nested_structures?
+  end
+
+  defp maybe_export_link_subtree?(items) when is_list(items) do
+    Enum.any?(items, fn item -> is_map(item) or is_list(item) end)
+  end
+
+  defp maybe_export_link_subtree?(_), do: false
 
   def rewire(content, project, page_slug_to_resource_id) do
     {content, _} =
