@@ -134,7 +134,9 @@ defmodule Oli.Ingest.RewireLinks do
   end
 
   def rewire(%{"type" => "page_link", "idref" => idref} = other, _link_builder, page_map) do
-    case Map.get(page_map, idref) do
+    resource_id_lookup = build_resource_id_lookup(page_map)
+
+    case lookup_revision(page_map, resource_id_lookup, idref) do
       %{resource_id: resource_id} ->
         {true, Map.put(other, "idref", resource_id)}
 

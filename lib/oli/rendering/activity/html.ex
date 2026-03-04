@@ -14,6 +14,8 @@ defmodule Oli.Rendering.Activity.Html do
 
   require Logger
 
+  @unresolved_link_warning_cache_key :adaptive_unresolved_link_warning_ids
+
   @behaviour Oli.Rendering.Activity
 
   defp get_activity_model("oli-adaptive-delivery", nil, _, _, model) do
@@ -396,19 +398,13 @@ defmodule Oli.Rendering.Activity.Html do
         else
           {:error, cache} ->
             emit_resolution_failure_telemetry(context, idref, "resource_not_found")
-
-            Logger.warning(
-              "Unable to resolve adaptive dynamic link idref #{inspect(idref)}; using fallback"
-            )
+            cache = maybe_log_unresolved_dynamic_link_warning(cache, idref)
 
             {fallback_adaptive_anchor(item, context), cache, true}
 
           _ ->
             emit_resolution_failure_telemetry(context, idref, "invalid_resource_id")
-
-            Logger.warning(
-              "Unable to resolve adaptive dynamic link idref #{inspect(idref)}; using fallback"
-            )
+            cache = maybe_log_unresolved_dynamic_link_warning(cache, idref)
 
             {fallback_adaptive_anchor(item, context), cache, true}
         end
@@ -428,6 +424,20 @@ defmodule Oli.Rendering.Activity.Html do
   end
 
   defp maybe_rewrite_adaptive_anchor(item, _context, cache), do: {item, cache, false}
+
+  defp maybe_log_unresolved_dynamic_link_warning(cache, idref) do
+    warned_ids = Map.get(cache, @unresolved_link_warning_cache_key, MapSet.new())
+
+    if MapSet.member?(warned_ids, idref) do
+      cache
+    else
+      Logger.warning(
+        "Unable to resolve adaptive dynamic link idref #{inspect(idref)}; using fallback"
+      )
+
+      Map.put(cache, @unresolved_link_warning_cache_key, MapSet.put(warned_ids, idref))
+    end
+  end
 
   defp rewrite_adaptive_anchor(item, href) do
     item

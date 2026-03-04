@@ -132,6 +132,14 @@ defmodule Oli.Interop.RewireLinksTest do
       refute Map.has_key?(rewritten, "idref")
     end
 
+    test "rewire/3 rewrites page_link using mixed key lookup forms" do
+      page_map = %{"10" => %{resource_id: 42, slug: "target-page"}}
+      link = %{"type" => "page_link", "idref" => 42}
+
+      {true, rewritten} = RewireLinks.rewire(link, &fake_link_builder/1, page_map)
+      assert rewritten["idref"] == 42
+    end
+
     test "rewire/3 rewrites nested adaptive internal links and leaves external links unchanged" do
       adaptive_nodes = %{
         "authoring" => %{

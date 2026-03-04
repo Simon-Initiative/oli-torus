@@ -136,7 +136,7 @@ defmodule Oli.Interop.Export do
 
   defp rewire_internal_anchor(node, _project, page_slug_to_resource_id) do
     cond do
-      Map.has_key?(node, "idref") ->
+      not is_nil(Map.get(node, "idref")) ->
         idref = "#{Map.get(node, "idref")}"
 
         node

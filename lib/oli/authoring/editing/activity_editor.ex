@@ -893,8 +893,14 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp internal_slug(href) when is_binary(href) do
     case String.split(href, "/course/link/", parts: 2) do
-      [_, slug] when slug != "" -> {:ok, slug}
-      _ -> :error
+      [_, slug_and_suffix] ->
+        case String.split(slug_and_suffix, ["?", "#"], parts: 2) do
+          [slug | _] when slug != "" -> {:ok, slug}
+          _ -> :error
+        end
+
+      _ ->
+        :error
     end
   end
 

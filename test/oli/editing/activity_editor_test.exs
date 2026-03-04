@@ -683,6 +683,63 @@ defmodule Oli.ActivityEditingTest do
       assert link["linkType"] == "page"
     end
 
+    test "edit/5 normalizes adaptive internal href links with query/fragment", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow",
+                "custom" => %{
+                  "nodes" => [
+                    %{
+                      "tag" => "p",
+                      "children" => [
+                        %{
+                          "tag" => "a",
+                          "href" => "/course/link/#{revision.slug}?x=1#y",
+                          "children" => [
+                            %{"tag" => "text", "text" => "next", "children" => []}
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+
+      [part] = get_in(updated_revision.content, ["authoring", "parts"])
+      [paragraph] = get_in(part, ["custom", "nodes"])
+      [link] = paragraph["children"]
+
+      assert link["idref"] == revision.resource_id
+      assert link["resource_id"] == revision.resource_id
+      assert link["linkType"] == "page"
+    end
+
     test "edit/5 tolerates janus-text-flow parts without custom nodes during adaptive normalization",
          %{
            author: author,

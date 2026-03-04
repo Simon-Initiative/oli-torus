@@ -742,6 +742,51 @@ defmodule Oli.Interop.ExportTest do
       assert link["linkType"] == "page"
       assert link["href"] == "/course/link/#{target_page.slug}"
     end
+
+    test "adaptive activity export does not stringify nil idref to \"nil\"", %{
+      project: project,
+      author: author
+    } do
+      {:ok, {%{resource_id: activity_resource_id} = activity_revision, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      legacy_model_content =
+        activity_revision.content
+        |> Map.put("authoring", %{
+          "parts" => [
+            %{
+              "id" => "part-model-1",
+              "type" => "janus-text-flow",
+              "model" => [
+                %{
+                  "tag" => "a",
+                  "idref" => nil,
+                  "href" => "https://example.org",
+                  "children" => [%{"tag" => "text", "text" => "external", "children" => []}]
+                }
+              ]
+            }
+          ]
+        })
+
+      assert {:ok, _} =
+               Resources.update_revision(activity_revision, %{content: legacy_model_content})
+
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      {:ok, activity_json} =
+        Jason.decode(Map.get(export, String.to_charlist("#{activity_resource_id}.json")))
+
+      [part] = get_in(activity_json, ["content", "authoring", "parts"])
+      [link] = part["model"]
+
+      assert link["idref"] == nil
+      assert link["href"] == "https://example.org"
+      refute link["resource_id"] == "nil"
+    end
   end
 
   describe "export handles nil" do
