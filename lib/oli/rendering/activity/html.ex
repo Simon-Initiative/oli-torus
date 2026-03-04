@@ -293,25 +293,33 @@ defmodule Oli.Rendering.Activity.Html do
   defp rewrite_adaptive_internal_links(nil, _context, cache), do: {nil, cache, false}
 
   defp rewrite_adaptive_internal_links(items, context, cache) when is_list(items) do
-    {rewritten_items, cache, changed?} =
-      Enum.reduce(items, {[], cache, false}, fn item, {acc, cache, changed?} ->
-        {rewritten_item, cache, item_changed?} =
-          rewrite_adaptive_internal_links(item, context, cache)
-
-        {[rewritten_item | acc], cache, changed? || item_changed?}
-      end)
-
-    if changed? do
-      {Enum.reverse(rewritten_items), cache, true}
-    else
+    if not maybe_adaptive_link_subtree?(items) do
       {items, cache, false}
+    else
+      {rewritten_items, cache, changed?} =
+        Enum.reduce(items, {[], cache, false}, fn item, {acc, cache, changed?} ->
+          if maybe_adaptive_link_subtree?(item) do
+            {rewritten_item, cache, item_changed?} =
+              rewrite_adaptive_internal_links(item, context, cache)
+
+            {[rewritten_item | acc], cache, changed? || item_changed?}
+          else
+            {[item | acc], cache, changed?}
+          end
+        end)
+
+      if changed? do
+        {Enum.reverse(rewritten_items), cache, true}
+      else
+        {items, cache, false}
+      end
     end
   end
 
   defp rewrite_adaptive_internal_links(item, context, cache) when is_map(item) do
     {rewritten_item, cache, children_changed?} =
       Enum.reduce(item, {item, cache, false}, fn {key, value}, {acc, cache, changed?} ->
-        if is_map(value) or is_list(value) do
+        if (is_map(value) or is_list(value)) and maybe_adaptive_link_subtree?(value) do
           {rewired_value, cache, value_changed?} =
             rewrite_adaptive_internal_links(value, context, cache)
 
@@ -332,6 +340,39 @@ defmodule Oli.Rendering.Activity.Html do
   end
 
   defp rewrite_adaptive_internal_links(value, _context, cache), do: {value, cache, false}
+
+  @adaptive_link_container_keys MapSet.new([
+                                  "partsLayout",
+                                  "authoring",
+                                  "parts",
+                                  "custom",
+                                  "nodes",
+                                  "children",
+                                  "model",
+                                  "content",
+                                  "stem",
+                                  "choices",
+                                  "responses",
+                                  "feedback",
+                                  "hints"
+                                ])
+
+  defp maybe_adaptive_link_subtree?(%{} = node) do
+    direct_link_node? =
+      Map.get(node, "tag") == "a" or
+        Map.has_key?(node, "idref") or
+        Map.has_key?(node, "resource_id") or
+        internal_course_link?(Map.get(node, "href"))
+
+    direct_link_node? or
+      Enum.any?(node, fn {key, _value} -> MapSet.member?(@adaptive_link_container_keys, key) end)
+  end
+
+  defp maybe_adaptive_link_subtree?(list) when is_list(list) do
+    Enum.any?(list, &maybe_adaptive_link_subtree?/1)
+  end
+
+  defp maybe_adaptive_link_subtree?(_), do: false
 
   defp maybe_rewrite_adaptive_anchor(%{"tag" => "a"} = item, %Context{} = context, cache) do
     idref = Map.get(item, "idref") || Map.get(item, "resource_id")

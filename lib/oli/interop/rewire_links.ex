@@ -183,7 +183,7 @@ defmodule Oli.Ingest.RewireLinks do
         Map.get(item, "tag") == "a"
 
     direct_link_node? or
-      Enum.any?(Map.keys(item), &(&1 in @link_container_keys))
+      Enum.any?(item, fn {key, _value} -> key in @link_container_keys end)
   end
 
   defp maybe_link_payload?(items) when is_list(items) do
