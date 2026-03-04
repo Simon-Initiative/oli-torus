@@ -1,6 +1,25 @@
 defmodule Oli.Ingest.RewireLinks do
   require Logger
 
+  @link_container_keys ~w[
+    children
+    content
+    model
+    stem
+    choices
+    authoring
+    parts
+    responses
+    feedback
+    hints
+    custom
+    nodes
+    partsLayout
+    caption
+    pronunciation
+    translations
+  ]
+
   # Any internal hyperlinks have to be rewired to point to the new resource_id of the
   # page being linked to.  This function takes all pages and rewires
   # all links that it finds in their contents, only saving new revisions for those that
@@ -71,14 +90,21 @@ defmodule Oli.Ingest.RewireLinks do
   defp normalize_key(key), do: key
 
   def rewire(items, link_builder, page_map) when is_list(items) do
-    results = Enum.map(items, fn i -> rewire(i, link_builder, page_map) end)
+    {rewritten, changed?} =
+      Enum.reduce(items, {[], false}, fn item, {acc, changed?} ->
+        if maybe_link_payload?(item) do
+          {item_changed?, rewired_item} = rewire(item, link_builder, page_map)
+          {[rewired_item | acc], changed? || item_changed?}
+        else
+          {[item | acc], changed?}
+        end
+      end)
 
-    children = Enum.map(results, fn {_, c} -> c end)
-
-    changed =
-      Enum.map(results, fn {changed, _} -> changed end) |> Enum.any?(fn c -> c == true end)
-
-    {changed, children}
+    if changed? do
+      {true, Enum.reverse(rewritten)}
+    else
+      {false, items}
+    end
   end
 
   def rewire(
@@ -119,16 +145,29 @@ defmodule Oli.Ingest.RewireLinks do
   end
 
   def rewire(item, link_builder, page_map) when is_map(item) do
-    Enum.reduce(item, {false, %{}}, fn {key, value}, {changed, acc} ->
-      case value do
-        value when is_list(value) or is_map(value) ->
-          {value_changed, rewired_value} = rewire(value, link_builder, page_map)
-          {changed || value_changed, Map.put(acc, key, rewired_value)}
+    if maybe_link_payload?(item) do
+      Enum.reduce(item, {false, item}, fn {key, value}, {changed?, acc} ->
+        case value do
+          value when is_list(value) or is_map(value) ->
+            if maybe_link_payload?(value) do
+              {value_changed?, rewired_value} = rewire(value, link_builder, page_map)
 
-        _ ->
-          {changed, Map.put(acc, key, value)}
-      end
-    end)
+              if value_changed? do
+                {true, Map.put(acc, key, rewired_value)}
+              else
+                {changed?, acc}
+              end
+            else
+              {changed?, acc}
+            end
+
+          _ ->
+            {changed?, acc}
+        end
+      end)
+    else
+      {false, item}
+    end
   end
 
   def rewire(value, _link_builder, _page_map)
@@ -136,4 +175,20 @@ defmodule Oli.Ingest.RewireLinks do
       do: {false, value}
 
   def rewire(value, _link_builder, _page_map), do: {false, value}
+
+  defp maybe_link_payload?(%{} = item) do
+    direct_link_node? =
+      Map.has_key?(item, "idref") or
+        Map.get(item, "type") in ["a", "page_link"] or
+        Map.get(item, "tag") == "a"
+
+    direct_link_node? or
+      Enum.any?(Map.keys(item), &(&1 in @link_container_keys))
+  end
+
+  defp maybe_link_payload?(items) when is_list(items) do
+    Enum.any?(items, &maybe_link_payload?/1)
+  end
+
+  defp maybe_link_payload?(_), do: false
 end

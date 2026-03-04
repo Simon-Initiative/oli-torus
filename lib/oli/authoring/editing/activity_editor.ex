@@ -689,9 +689,14 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       # present in bulk update situations so that the server knows which resource we are editing
       update = Map.delete(update, "resource_id")
 
-      {:ok, updated} = Resources.update_revision(revision, update)
-      maybe_emit_authoring_dynamic_link_telemetry(revision, updated, project_id)
-      {:ok, updated}
+      case Resources.update_revision(revision, update) do
+        {:ok, updated} ->
+          maybe_emit_authoring_dynamic_link_telemetry(revision, updated, project_id)
+          {:ok, updated}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
     else
       {:error, reason} -> {:error, reason}
     end

@@ -196,6 +196,12 @@ defmodule Oli.Rendering.Activity.Html do
          model_json,
          resource_id
        ) do
+    page_link_params =
+      cond do
+        is_nil(context.page_link_params) -> %{}
+        true -> Enum.into(context.page_link_params, %{})
+      end
+
     activity_context =
       %{
         resourceId: resource_id,
@@ -223,7 +229,7 @@ defmodule Oli.Rendering.Activity.Html do
         renderPointMarkers: render_opts.render_point_markers,
         isAnnotationLevel: true,
         variables: variables,
-        pageLinkParams: Enum.into(context.page_link_params, %{}),
+        pageLinkParams: page_link_params,
         allowHints: effective_settings && effective_settings.allow_hints
       }
       |> Poison.encode!()
@@ -345,10 +351,7 @@ defmodule Oli.Rendering.Activity.Html do
             )
           )
 
-          {item
-           |> Map.put("href", internal_href(context, slug))
-           |> Map.put("target", "_blank")
-           |> Map.put("rel", "noopener noreferrer"), cache, true}
+          {rewrite_adaptive_anchor(item, internal_href(context, slug)), cache, true}
         else
           {:error, cache} ->
             emit_resolution_failure_telemetry(context, idref, "resource_not_found")
@@ -370,12 +373,13 @@ defmodule Oli.Rendering.Activity.Html do
         end
 
       internal_course_link?(href) ->
-        slug = String.replace_prefix(href, "/course/link/", "")
+        case internal_slug_from_href(href) do
+          {:ok, slug} ->
+            {rewrite_adaptive_anchor(item, internal_href(context, slug)), cache, true}
 
-        {item
-         |> Map.put("href", internal_href(context, slug))
-         |> Map.put("target", "_blank")
-         |> Map.put("rel", "noopener noreferrer"), cache, true}
+          :error ->
+            {item, cache, false}
+        end
 
       true ->
         {item, cache, false}
@@ -383,6 +387,15 @@ defmodule Oli.Rendering.Activity.Html do
   end
 
   defp maybe_rewrite_adaptive_anchor(item, _context, cache), do: {item, cache, false}
+
+  defp rewrite_adaptive_anchor(item, href) do
+    item
+    |> Map.put("href", href)
+    |> Map.put("target", "_blank")
+    |> Map.put("rel", "noopener noreferrer")
+    |> Map.delete("idref")
+    |> Map.delete("resource_id")
+  end
 
   defp normalize_resource_id(resource_id) when is_integer(resource_id), do: {:ok, resource_id}
 
@@ -399,6 +412,15 @@ defmodule Oli.Rendering.Activity.Html do
     do: String.starts_with?(href, "/course/link/")
 
   defp internal_course_link?(_), do: false
+
+  defp internal_slug_from_href("/course/link/" <> rest) do
+    case String.split(rest, ["?", "#"], parts: 2) do
+      [slug | _] when slug != "" -> {:ok, slug}
+      _ -> :error
+    end
+  end
+
+  defp internal_slug_from_href(_), do: :error
 
   defp resolve_revision_slug(resource_id, %Context{} = context, cache) do
     case Map.get(cache, resource_id) do
@@ -439,7 +461,13 @@ defmodule Oli.Rendering.Activity.Html do
          revision_slug
        )
        when is_binary(section_slug) do
-    query = URI.encode_query(page_link_params)
+    params =
+      cond do
+        is_nil(page_link_params) -> %{}
+        true -> page_link_params
+      end
+
+    query = URI.encode_query(params)
 
     if query == "" do
       "/sections/#{section_slug}/lesson/#{revision_slug}"

@@ -195,46 +195,93 @@ defmodule Oli.Interop.Export do
   # For activity payloads, perform one defensive full-tree traversal so links in both
   # standard and legacy/non-standard locations are normalized in a single pass.
   defp rewire_activity_content(content, project, page_slug_to_resource_id) do
-    deep_rewire_activity_nodes(content, project, page_slug_to_resource_id)
+    {rewired, _changed?} =
+      deep_rewire_activity_nodes_tracked(content, project, page_slug_to_resource_id)
+
+    rewired
   end
 
-  defp deep_rewire_activity_nodes(value, _project, _page_slug_to_resource_id)
+  defp deep_rewire_activity_nodes_tracked(value, _project, _page_slug_to_resource_id)
        when is_binary(value) or is_number(value) or is_boolean(value) or is_nil(value),
-       do: value
+       do: {value, false}
 
-  defp deep_rewire_activity_nodes(items, project, page_slug_to_resource_id)
+  defp deep_rewire_activity_nodes_tracked(items, project, page_slug_to_resource_id)
        when is_list(items) do
-    Enum.map(items, &deep_rewire_activity_nodes(&1, project, page_slug_to_resource_id))
-  end
+    {rewritten_items, changed?} =
+      Enum.reduce(items, {[], false}, fn item, {acc, changed?} ->
+        {rewritten_item, item_changed?} =
+          deep_rewire_activity_nodes_tracked(item, project, page_slug_to_resource_id)
 
-  defp deep_rewire_activity_nodes(map, project, page_slug_to_resource_id) when is_map(map) do
-    rewired =
-      Enum.reduce(map, %{}, fn {key, value}, acc ->
-        Map.put(acc, key, deep_rewire_activity_nodes(value, project, page_slug_to_resource_id))
+        {[rewritten_item | acc], changed? || item_changed?}
       end)
 
-    rewrite_activity_node(rewired, project, page_slug_to_resource_id)
+    if changed? do
+      {Enum.reverse(rewritten_items), true}
+    else
+      {items, false}
+    end
   end
 
-  defp deep_rewire_activity_nodes(value, _project, _page_slug_to_resource_id), do: value
+  defp deep_rewire_activity_nodes_tracked(map, project, page_slug_to_resource_id)
+       when is_map(map) do
+    {rewritten_children, children_changed?} =
+      Enum.reduce(map, {nil, false}, fn {key, value}, {acc, changed?} ->
+        {rewritten_value, value_changed?} =
+          deep_rewire_activity_nodes_tracked(value, project, page_slug_to_resource_id)
 
-  defp rewrite_activity_node(%{"type" => "cite"} = node, _project, _page_slug_to_resource_id),
-    do: Map.put(node, "bibref", "#{Map.get(node, "bibref")}")
+        cond do
+          value_changed? ->
+            target = if is_nil(acc), do: map, else: acc
+            {Map.put(target, key, rewritten_value), true}
 
-  defp rewrite_activity_node(
+          changed? ->
+            {acc, true}
+
+          true ->
+            {acc, false}
+        end
+      end)
+
+    base = if children_changed?, do: rewritten_children, else: map
+
+    {rewritten_node, node_changed?} =
+      rewrite_activity_node_tracked(base, project, page_slug_to_resource_id)
+
+    {rewritten_node, children_changed? || node_changed?}
+  end
+
+  defp deep_rewire_activity_nodes_tracked(value, _project, _page_slug_to_resource_id),
+    do: {value, false}
+
+  defp rewrite_activity_node_tracked(
+         %{"type" => "cite"} = node,
+         _project,
+         _page_slug_to_resource_id
+       ) do
+    rewritten = Map.put(node, "bibref", "#{Map.get(node, "bibref")}")
+    {rewritten, rewritten != node}
+  end
+
+  defp rewrite_activity_node_tracked(
          %{"type" => "page_link"} = node,
          _project,
          _page_slug_to_resource_id
-       ),
-       do: Map.put(node, "idref", "#{Map.get(node, "idref")}")
+       ) do
+    rewritten = Map.put(node, "idref", "#{Map.get(node, "idref")}")
+    {rewritten, rewritten != node}
+  end
 
-  defp rewrite_activity_node(%{"type" => "a"} = node, project, page_slug_to_resource_id),
-    do: rewire_internal_anchor(node, project, page_slug_to_resource_id)
+  defp rewrite_activity_node_tracked(%{"type" => "a"} = node, project, page_slug_to_resource_id) do
+    rewritten = rewire_internal_anchor(node, project, page_slug_to_resource_id)
+    {rewritten, rewritten != node}
+  end
 
-  defp rewrite_activity_node(%{"tag" => "a"} = node, project, page_slug_to_resource_id),
-    do: rewire_internal_anchor(node, project, page_slug_to_resource_id)
+  defp rewrite_activity_node_tracked(%{"tag" => "a"} = node, project, page_slug_to_resource_id) do
+    rewritten = rewire_internal_anchor(node, project, page_slug_to_resource_id)
+    {rewritten, rewritten != node}
+  end
 
-  defp rewrite_activity_node(node, _project, _page_slug_to_resource_id), do: node
+  defp rewrite_activity_node_tracked(node, _project, _page_slug_to_resource_id), do: {node, false}
 
   def rewire(content, project, page_slug_to_resource_id) do
     {content, _} =
