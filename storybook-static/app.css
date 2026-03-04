@@ -15894,10 +15894,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 20px;
 }
 
-.h-\[20rem\] {
-  height: 20rem;
-}
-
 .h-\[220px\] {
   height: 220px;
 }
@@ -16181,6 +16177,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[150px\] {
   min-height: 150px;
+}
+
+.min-h-\[20rem\] {
+  min-height: 20rem;
 }
 
 .min-h-\[300px\] {
@@ -30883,10 +30883,6 @@ Not supports in Firefox and IE */
     display: none;
   }
 
-  .md\:h-72 {
-    height: 18rem;
-  }
-
   .md\:h-\[247px\] {
     height: 247px;
   }
@@ -31145,6 +31141,11 @@ Not supports in Firefox and IE */
   .md\:py-24 {
     padding-top: 6rem;
     padding-bottom: 6rem;
+  }
+
+  .md\:py-8 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
   }
 
   .md\:py-\[60px\] {
