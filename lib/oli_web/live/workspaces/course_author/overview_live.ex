@@ -181,7 +181,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                 variant={:form}
               />
             <% else %>
-              <.read_only_tags tags={@project.tags} />
+              <TagsComponent.read_only_tags tags={@project.tags} />
             <% end %>
           </div>
           <% welcome_title =
@@ -212,30 +212,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             <Common.label class="control-label">Communities</Common.label>
             <p class="text-secondary">
               <span :if={Enum.empty?(@project.communities)}>None</span>
-              <span :for={{community, index} <- Enum.with_index(@project.communities)}>
+              <.intersperse :let={community} enum={@project.communities}>
+                <:separator>, </:separator>
                 <.link
                   href={~p"/authoring/communities/#{community.id}"}
                   class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
                 >
                   {community.name}
                 </.link>
-                <span :if={index < length(@project.communities) - 1}>, </span>
-              </span>
+              </.intersperse>
             </p>
           </div>
           <div class="form-label-group mb-3">
             <Common.label class="control-label">Institutions</Common.label>
             <p class="text-secondary">
               <span :if={Enum.empty?(@visibility_institutions)}>None</span>
-              <span :for={{institution, index} <- Enum.with_index(@visibility_institutions)}>
+              <.intersperse :let={institution} enum={@visibility_institutions}>
+                <:separator>, </:separator>
                 <.link
                   href={~p"/admin/institutions/#{institution.id}"}
                   class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
                 >
                   {institution.name}
                 </.link>
-                <span :if={index < length(@visibility_institutions) - 1}>, </span>
-              </span>
+              </.intersperse>
             </p>
           </div>
           <div class="form-label-group mb-3">
@@ -1068,26 +1068,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           </div>
         </div>
       </div>
-    </div>
-    """
-  end
-
-  # Read-only tags display for non-admin users
-  # Shows tag pills without any edit functionality
-  attr :tags, :list, required: true
-
-  defp read_only_tags(assigns) do
-    ~H"""
-    <div class="min-h-[40px] w-full rounded border border-Border-border-default bg-Fill-fill-form-field px-3 py-2 flex items-center">
-      <span :if={@tags == []} class="text-Text-text-tertiary">{gettext("None")}</span>
-      <ul :if={@tags != []} class="list-none m-0 p-0 flex flex-wrap gap-1">
-        <li
-          :for={tag <- @tags}
-          class={"px-2 py-1 rounded-full text-sm leading-4 font-semibold #{TagsComponent.get_tag_pill_classes(tag.name)}"}
-        >
-          {tag.name}
-        </li>
-      </ul>
     </div>
     """
   end
