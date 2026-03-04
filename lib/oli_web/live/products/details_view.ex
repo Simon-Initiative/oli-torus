@@ -2,12 +2,16 @@ defmodule OliWeb.Products.DetailsView do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias Oli.{Accounts, Branding, Inventories}
+  import Ecto.Query, only: [from: 2]
+
+  alias Oli.{Accounts, Branding, Inventories, Repo}
   alias Oli.Authoring.Course
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.{Blueprint, Section}
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.{Breadcrumb, Confirm}
+  alias OliWeb.Components.{Common, Overview}
+  alias OliWeb.Live.Components.Tags.TagsComponent
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Router.Helpers, as: Routes
@@ -38,6 +42,15 @@ defmodule OliWeb.Products.DetailsView do
       {_, _, product} ->
         author = socket.assigns.current_author
 
+        product =
+          Repo.preload(product, [
+            :communities,
+            :institution,
+            tags: from(t in Oli.Tags.Tag, order_by: t.name)
+          ])
+
+        is_admin? = Accounts.has_admin_role?(author, :content_admin)
+
         base_project = Course.get_project!(product.base_project_id)
 
         available_brands =
@@ -53,7 +66,7 @@ defmodule OliWeb.Products.DetailsView do
            updates: Sections.check_for_available_publication_updates(product),
            author: author,
            product: product,
-           is_admin: Accounts.has_admin_role?(author, :content_admin),
+           is_admin: is_admin?,
            changeset: Section.changeset(product, %{}),
            title: "Edit Template",
            show_confirm: false,
@@ -73,71 +86,114 @@ defmodule OliWeb.Products.DetailsView do
     ~H"""
     {render_modal(assigns)}
     <div class="overview container">
-      <div class="grid grid-cols-12 py-5 border-b">
-        <div class="md:col-span-4">
-          <h4>Details</h4>
-          <div class="text-muted">
-            The template title and description will be shown
-            to instructors when they create their course section.
-          </div>
+      <Overview.section
+        title="Details"
+        description="The template title and description will be shown to instructors when they create their course section."
+      >
+        <Edit.render
+          product={@product}
+          project_slug={@base_project.slug}
+          changeset={@changeset}
+          available_brands={@available_brands}
+          publishers={@publishers}
+          is_admin={@is_admin}
+          ctx={@ctx}
+        />
+        <div class="form-label-group mb-3 mt-3">
+          <Common.label class="control-label">Tags</Common.label>
+          <%= if @is_admin do %>
+            <.live_component
+              module={TagsComponent}
+              id={"product-tags-#{@product.id}"}
+              entity_type={:section}
+              entity_id={@product.id}
+              current_tags={@product.tags}
+              current_author={@author}
+              variant={:form}
+            />
+          <% else %>
+            <TagsComponent.read_only_tags tags={@product.tags} />
+          <% end %>
         </div>
-        <div class="md:col-span-8">
-          <Edit.render
-            product={@product}
-            project_slug={@base_project.slug}
-            changeset={@changeset}
-            available_brands={@available_brands}
-            publishers={@publishers}
-            is_admin={@is_admin}
-            ctx={@ctx}
-          />
+        <div class="form-label-group mb-3">
+          <Common.label class="control-label">Communities</Common.label>
+          <p class="text-secondary">
+            <span :if={Enum.empty?(@product.communities)}>{gettext("None")}</span>
+            <.intersperse :let={community} enum={@product.communities}>
+              <:separator>, </:separator>
+              <.link
+                href={~p"/authoring/communities/#{community.id}"}
+                class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
+              >
+                {community.name}
+              </.link>
+            </.intersperse>
+          </p>
         </div>
-      </div>
-      <div class="grid grid-cols-12 py-5 border-b">
-        <div class="md:col-span-4">
-          <h4>Content</h4>
-          <div class="text-muted">
-            Manage and customize the presentation of content in this template.
-          </div>
+        <div class="form-label-group mb-3">
+          <Common.label class="control-label">Institution</Common.label>
+          <p class="text-secondary">
+            <%= if @product.institution do %>
+              <.link
+                href={~p"/admin/institutions/#{@product.institution.id}"}
+                class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
+              >
+                {@product.institution.name}
+              </.link>
+            <% else %>
+              {gettext("None")}
+            <% end %>
+          </p>
         </div>
-        <div class="md:col-span-8">
-          <Content.render
-            product={@product}
-            changeset={to_form(@changeset)}
-            save="save"
-            updates={@updates}
-          />
-        </div>
-      </div>
+      </Overview.section>
 
-      <div class="grid grid-cols-12 py-5 border-b">
-        <div class="md:col-span-4">
-          <h4>Cover Image</h4>
-          <div class="text-muted">
-            Manage the cover image for this template. Max file size is 5 MB.
-          </div>
-        </div>
-        <div class="md:col-span-8">
-          <ImageUpload.render
-            product={@product}
-            uploads={@uploads}
-            changeset={to_form(@changeset)}
-            upload_event="update_image"
-            change="change"
-            cancel_upload="cancel_upload"
-            updates={@updates}
-          />
-        </div>
-      </div>
+      <Overview.section
+        title="Paywall Settings"
+        description="Manage payment requirements for this template."
+      >
+        <p class="text-secondary">
+          For information regarding paywall settings,
+          <.tech_support_link
+            id="tech_support_paywall_settings"
+            class="text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold cursor-pointer"
+          >
+            contact our support team.
+          </.tech_support_link>
+        </p>
+      </Overview.section>
 
-      <div class="grid grid-cols-12 py-5 border-b">
-        <div class="md:col-span-4">
-          <h4>Certificate Settings</h4>
-          <div class="max-w-[30rem] text-muted">
-            Design and deliver digital credentials to students that complete this course.
-          </div>
-        </div>
-        <div class="flex flex-col md:col-span-8 gap-2">
+      <Overview.section
+        title="Content"
+        description="Manage and customize the presentation of content in this template."
+      >
+        <Content.render
+          product={@product}
+          changeset={to_form(@changeset)}
+          save="save"
+          updates={@updates}
+        />
+      </Overview.section>
+
+      <Overview.section
+        title="Cover Image"
+        description="Manage the cover image for this template. Max file size is 5 MB."
+      >
+        <ImageUpload.render
+          product={@product}
+          uploads={@uploads}
+          changeset={to_form(@changeset)}
+          upload_event="update_image"
+          change="change"
+          cancel_upload="cancel_upload"
+          updates={@updates}
+        />
+      </Overview.section>
+
+      <Overview.section
+        title="Certificate Settings"
+        description="Design and deliver digital credentials to students that complete this course."
+      >
+        <div class="flex flex-col gap-2">
           <div>
             This template <b>does {unless @product.certificate_enabled, do: "not"}</b>
             currently produce a certificate.
@@ -148,44 +204,35 @@ defmodule OliWeb.Products.DetailsView do
             </a>
           </div>
         </div>
-      </div>
+      </Overview.section>
 
       <%= if @is_admin do %>
-        <div class="grid grid-cols-12 py-5 border-b">
-          <div class="md:col-span-4">
-            <h4>Feature Flags</h4>
-            <div class="text-muted">
-              Manage scoped feature flags for this section.
-            </div>
-          </div>
-          <div class="md:col-span-8">
-            <.live_component
-              module={OliWeb.Components.ScopedFeatureToggleComponent}
-              id="section_scoped_features"
-              scopes={[:delivery, :both]}
-              source_id={@product.id}
-              source_type={:section}
-              source={@product}
-              current_author={@author}
-              title="Section Features"
-            />
-          </div>
-        </div>
+        <Overview.section
+          title="Feature Flags"
+          description="Manage scoped feature flags for this section."
+        >
+          <.live_component
+            module={OliWeb.Components.ScopedFeatureToggleComponent}
+            id="section_scoped_features"
+            scopes={[:delivery, :both]}
+            source_id={@product.id}
+            source_type={:section}
+            source={@product}
+            current_author={@author}
+            title="Section Features"
+          />
+        </Overview.section>
       <% end %>
 
-      <div class="grid grid-cols-12 py-5">
-        <div class="md:col-span-4">
-          <h4>Actions</h4>
-        </div>
-        <div class="md:col-span-8">
-          <Actions.render
-            product={@product}
-            is_admin={@is_admin}
-            base_project={@base_project}
-            has_payment_codes={Paywall.has_payment_codes?(@product.id)}
-          />
-        </div>
-      </div>
+      <Overview.section title="Actions" is_last={true}>
+        <Actions.render
+          product={@product}
+          is_admin={@is_admin}
+          base_project={@base_project}
+          has_payment_codes={Paywall.has_payment_codes?(@product.id)}
+        />
+      </Overview.section>
+
       <%= if @show_confirm do %>
         <Confirm.render title="Confirm Duplication" id="dialog" ok="duplicate" cancel="cancel_modal">
           Are you sure that you wish to duplicate this template?
