@@ -120,7 +120,7 @@ defmodule OliWeb.Products.DetailsView do
           <p class="text-secondary">
             <span :if={Enum.empty?(@product.communities)}>{gettext("None")}</span>
             <.intersperse :let={community} enum={@product.communities}>
-              <:separator>, </:separator>
+              <:separator>,</:separator>
               <.link
                 href={~p"/authoring/communities/#{community.id}"}
                 class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"

@@ -213,7 +213,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             <p class="text-secondary">
               <span :if={Enum.empty?(@project.communities)}>None</span>
               <.intersperse :let={community} enum={@project.communities}>
-                <:separator>, </:separator>
+                <:separator>,</:separator>
                 <.link
                   href={~p"/authoring/communities/#{community.id}"}
                   class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
@@ -228,7 +228,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             <p class="text-secondary">
               <span :if={Enum.empty?(@visibility_institutions)}>None</span>
               <.intersperse :let={institution} enum={@visibility_institutions}>
-                <:separator>, </:separator>
+                <:separator>,</:separator>
                 <.link
                   href={~p"/admin/institutions/#{institution.id}"}
                   class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
