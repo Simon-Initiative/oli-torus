@@ -955,16 +955,22 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          %{"type" => "janus-text-flow"} = part,
          page_slug_to_resource_id
        ) do
-    nodes =
-      case get_in(part, ["custom", "nodes"]) do
-        list when is_list(list) ->
-          Enum.map(list, &normalize_node_dynamic_links(&1, page_slug_to_resource_id))
+    case Map.get(part, "custom") do
+      %{} = custom ->
+        case Map.get(custom, "nodes") do
+          list when is_list(list) ->
+            normalized_nodes =
+              Enum.map(list, &normalize_node_dynamic_links(&1, page_slug_to_resource_id))
 
-        other ->
-          other
-      end
+            Map.put(part, "custom", Map.put(custom, "nodes", normalized_nodes))
 
-    put_in(part, ["custom", "nodes"], nodes)
+          _ ->
+            part
+        end
+
+      _ ->
+        part
+    end
   end
 
   defp normalize_part_dynamic_links(part, _page_slug_to_resource_id), do: part

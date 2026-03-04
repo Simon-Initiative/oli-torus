@@ -683,6 +683,45 @@ defmodule Oli.ActivityEditingTest do
       assert link["linkType"] == "page"
     end
 
+    test "edit/5 tolerates janus-text-flow parts without custom nodes during adaptive normalization",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+
+      [part] = get_in(updated_revision.content, ["authoring", "parts"])
+      assert part["id"] == "part-1"
+      assert part["type"] == "janus-text-flow"
+      refute Map.has_key?(part, "custom")
+    end
+
     test "edit/5 emits adaptive dynamic-link authoring telemetry for creation",
          %{
            author: author,
