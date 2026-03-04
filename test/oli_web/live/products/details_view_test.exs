@@ -114,7 +114,6 @@ defmodule OliWeb.Products.DetailsViewTest do
       {:ok, view, _html} = live(conn, product_route(product.slug))
 
       assert has_element?(view, "label", "Communities")
-
       # Scope "None" to the Communities container to avoid matching other sections
       communities_html = view |> element("#communities-section") |> render()
       assert communities_html =~ "None"

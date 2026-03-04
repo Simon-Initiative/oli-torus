@@ -175,7 +175,6 @@ defmodule OliWeb.Products.DetailsView do
           updates={@updates}
         />
       </Overview.section>
-
       <Overview.section
         title="Cover Image"
         description="Manage the cover image for this template. Max file size is 5 MB."
