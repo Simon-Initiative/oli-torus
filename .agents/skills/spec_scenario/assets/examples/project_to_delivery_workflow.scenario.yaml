@@ -1,0 +1,69 @@
+# Example full-stack non-UI workflow using real domain operations.
+# This is intentionally concise; tailor names/assertions per feature under test.
+
+- project:
+    name: "bio_course"
+    title: "Biology 101"
+    root:
+      children:
+        - page: "Welcome"
+        - page: "Practice Quiz"
+
+- edit_page:
+    project: "bio_course"
+    page: "Practice Quiz"
+    content: |
+      title: "Practice Quiz"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Answer the question below."
+        - type: activity
+          virtual_id: "quiz_q1"
+          activity:
+            type: oli_multiple_choice
+            stem_md: "Which cell organelle contains genetic material?"
+            choices:
+              - id: "a"
+                body_md: "Nucleus"
+                score: 1
+              - id: "b"
+                body_md: "Ribosome"
+                score: 0
+
+- publish:
+    to: "bio_course"
+    description: "Initial publication"
+
+- section:
+    name: "bio_fall"
+    title: "Biology 101 - Fall"
+    from: "bio_course"
+
+- user:
+    name: "sam_student"
+    type: student
+
+- enroll:
+    user: "sam_student"
+    section: "bio_fall"
+    role: student
+
+- view_practice_page:
+    student: "sam_student"
+    section: "bio_fall"
+    page: "Practice Quiz"
+
+- answer_question:
+    student: "sam_student"
+    section: "bio_fall"
+    page: "Practice Quiz"
+    activity_virtual_id: "quiz_q1"
+    response: "a"
+
+- assert:
+    progress:
+      section: "bio_fall"
+      student: "sam_student"
+      page: "Practice Quiz"
+      progress: 1.0

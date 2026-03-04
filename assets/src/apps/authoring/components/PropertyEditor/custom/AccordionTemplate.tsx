@@ -1,14 +1,9 @@
 import React from 'react';
 import { Accordion } from 'react-bootstrap';
+import { ObjectFieldTemplateProps } from '@rjsf/core';
 import ContextAwareToggle from '../../Accordion/ContextAwareToggle';
 
-interface AccordionProps {
-  key: string;
-  title: string;
-  properties: any;
-}
-
-const AccordionTemplate: React.FC<AccordionProps> = (props) => {
+const AccordionTemplate: React.FC<ObjectFieldTemplateProps> = (props) => {
   return (
     <Accordion className="aa-properties-editor" defaultActiveKey="0">
       <div className="aa-panel-section-title-bar">
@@ -19,6 +14,14 @@ const AccordionTemplate: React.FC<AccordionProps> = (props) => {
       </div>
       <Accordion.Collapse eventKey="0">
         <div className="grid grid-cols-12 mx-4">
+          {props.description && props.DescriptionField && (
+            <div className="col-span-12 mb-2">
+              <props.DescriptionField
+                id={`${props.idSchema.$id}-description`}
+                description={props.description}
+              />
+            </div>
+          )}
           {props.properties.map((element: any) => (
             <div
               key={element.content.key}

@@ -2,6 +2,7 @@ defmodule Oli.GenAI.RouterTest do
   use ExUnit.Case, async: false
 
   alias Oli.GenAI.AdmissionControl
+  alias Oli.GenAI.HackneyPool
   alias Oli.GenAI.Router
   alias Oli.GenAI.Completions.{RegisteredModel, ServiceConfig}
 
@@ -148,6 +149,66 @@ defmodule Oli.GenAI.RouterTest do
     assert {:error, :backup_breaker_open} = Router.route(request_ctx, service_config)
   end
 
+  test "ignores breaker and model limit when all breaker thresholds are zero, but still enforces pool size" do
+    ensure_hackney_started()
+    previous_pool_size = HackneyPool.max_connections(:slow)
+    on_exit(fn -> HackneyPool.set_max_connections(:slow, previous_pool_size) end)
+    HackneyPool.set_max_connections(:slow, 1)
+
+    service_config =
+      build_service_config(11,
+        primary_model: %RegisteredModel{
+          id: 111,
+          name: "Primary",
+          provider: :null,
+          max_concurrent: 0,
+          routing_breaker_error_rate_threshold: 0.0,
+          routing_breaker_429_threshold: 0.0,
+          routing_breaker_latency_p95_ms: 0
+        },
+        secondary_model: nil,
+        backup_model: nil
+      )
+
+    request_ctx = %{request_type: :generate}
+    AdmissionControl.put_breaker_snapshot(service_config.primary_model.id, %{state: :open})
+
+    assert {:ok, plan} = Router.route(request_ctx, service_config)
+    assert plan.selected_model.id == service_config.primary_model.id
+    assert AdmissionControl.model_count(service_config.primary_model.id) == 0
+    assert {:error, :over_capacity} = Router.route(request_ctx, service_config)
+  end
+
+  test "kill switch always routes to primary and bypasses breaker and admission controls" do
+    with_env("GENAI_ROUTING_PRIMARY_ONLY", "true", fn ->
+      service_config =
+        build_service_config(12,
+          primary_model: %RegisteredModel{
+            id: 121,
+            name: "Primary",
+            provider: :null,
+            max_concurrent: 0
+          }
+        )
+
+      request_ctx = %{request_type: :generate}
+
+      AdmissionControl.put_breaker_snapshot(service_config.primary_model.id, %{state: :open})
+      AdmissionControl.put_breaker_snapshot(service_config.secondary_model.id, %{state: :open})
+      AdmissionControl.put_breaker_snapshot(service_config.backup_model.id, %{state: :open})
+
+      assert {:ok, plan_one} = Router.route(request_ctx, service_config)
+      assert plan_one.selected_model.id == service_config.primary_model.id
+      assert plan_one.reason == :kill_switch_primary_only
+      assert plan_one.admission == :bypass
+
+      assert {:ok, plan_two} = Router.route(request_ctx, service_config)
+      assert plan_two.selected_model.id == service_config.primary_model.id
+      assert AdmissionControl.model_count(service_config.primary_model.id) == 0
+      assert AdmissionControl.pool_count(:genai_slow_pool) == 0
+    end)
+  end
+
   defp build_service_config(id, overrides \\ %{}) do
     primary = %RegisteredModel{id: id * 10 + 1, name: "Primary", provider: :null}
     secondary = %RegisteredModel{id: id * 10 + 2, name: "Secondary", provider: :null}
@@ -177,6 +238,20 @@ defmodule Oli.GenAI.RouterTest do
       _pid -> :ok
     end
   end
+
+  defp with_env(key, value, fun) when is_function(fun, 0) do
+    previous = System.get_env(key)
+    System.put_env(key, value)
+
+    try do
+      fun.()
+    after
+      restore_env(key, previous)
+    end
+  end
+
+  defp restore_env(key, nil), do: System.delete_env(key)
+  defp restore_env(key, value), do: System.put_env(key, value)
 
   defp clear_tables do
     if :ets.whereis(:genai_counters) != :undefined do

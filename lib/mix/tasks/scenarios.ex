@@ -7,6 +7,8 @@ defmodule Mix.Tasks.Scenarios do
   Run all scenarios:
       mix scenarios
 
+  Note: `mix run scenarios` is not supported. Use `mix scenarios`.
+
   Run a specific scenario file:
       mix scenarios path/to/scenario.yaml
       mix scenarios core/simple_project.scenario.yaml

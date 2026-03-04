@@ -12,6 +12,12 @@
 - Ensure performance/scalability guidance is telemetry/AppSignal based and does not require performance/load/benchmark tests.
 - Document feature flags/config toggles and rollout/rollback posture (or explicitly state none).
 - Include concrete testing strategy and failure-mode handling.
+- Ensure FDD testing strategy propagates PRD `Oli.Scenarios Recommendation` contract.
+- If PRD status is `Required` or `Suggested`, include explicit scenario coverage plan (AC/workflow mapping, artifacts, validation commands).
+- If PRD status is `Not applicable`, state why scenario tests are not appropriate for this feature.
+- Ensure FDD testing strategy propagates PRD `LiveView Testing Recommendation` contract.
+- If PRD LiveView status is `Required` or `Suggested`, include explicit LiveView event/state coverage plan and test artifacts.
+- If PRD LiveView status is `Not applicable`, state why LiveView testing is not applicable.
 - Include references for external research when used (`Title | URL | Accessed YYYY-MM-DD`).
 - Do not include dedicated traffic-simulation test plans or tooling scenarios.
 - Do not include dedicated performance/load/benchmark test plans.

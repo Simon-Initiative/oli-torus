@@ -43,8 +43,28 @@ Produce only the PRD body in markdown with these headings in this exact order:
   - Do not include performance/load/benchmark test requirements.
   - Validate performance posture via telemetry/AppSignal instrumentation and reporting expectations.
   - Include explicit manual-testing focus areas for risky or hard-to-automate behavior.
-  - Include an `Oli.Scenarios Recommendation` with one of: `Required`, `Suggested`, or `Not applicable`.
-  - For the `Oli.Scenarios Recommendation`, state whether related subsystem areas already have YAML-driven `Oli.Scenarios` coverage and use that as a strong signal for whether additional scenario coverage is needed.
+  - Include an `Oli.Scenarios Recommendation` contract with one of: `Required`, `Suggested`, or `Not applicable`.
+  - The contract must include:
+    - `Status`
+    - `Rationale`
+    - `Existing Coverage Signal`
+    - `Infrastructure Support Status`
+    - `Scenario Infrastructure Expansion Required`
+    - `Required Scope (AC/workflows)`
+    - `Planned Artifacts`
+    - `Validation Commands`
+    - `Planning Handoff`
+  - For the recommendation, state whether related subsystem areas already have YAML-driven `Oli.Scenarios` coverage and use that as a strong signal for whether additional scenario coverage is needed.
+  - Keep scenario scope at high-level workflows/capabilities; do not turn scenario requirements into highly granular one-off feature checks.
+  - If `Status` is `Required` and infrastructure support is `Unsupported`, `Planning Handoff` must explicitly say: `spec_plan must schedule $spec_scenario_expand before $spec_scenario`.
+  - Include a `LiveView Testing Recommendation` contract with one of: `Required`, `Suggested`, or `Not applicable`.
+  - The LiveView contract must include:
+    - `Status`
+    - `Rationale`
+    - `Affected UI Surface`
+    - `Required Scope (events/states)`
+    - `Planned Artifacts`
+    - `Validation Commands`
 
 ## Generation Rules
 

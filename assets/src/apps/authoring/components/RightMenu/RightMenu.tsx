@@ -268,7 +268,7 @@ const RightMenu: React.FC<any> = () => {
             schema={flowchartMode ? simpleLessonSchema : getLessonSchema(responsiveLayout)}
             uiSchema={flowchartMode ? simpleLessonUiSchema : getLessonUiSchema(responsiveLayout)}
             value={lessonData}
-            triggerOnChange={['CustomLogic']}
+            triggerOnChange={['Advanced']}
             onChangeHandler={lessonPropertyChangeHandler}
             onfocusHandler={onfocusHandler}
           />

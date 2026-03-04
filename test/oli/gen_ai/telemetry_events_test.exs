@@ -120,7 +120,7 @@ defmodule Oli.GenAI.TelemetryEventsTest do
     model_id = 10
 
     thresholds =
-      thresholds(error_rate_threshold: 0.0, open_cooldown_ms: 10, half_open_probe_count: 1)
+      thresholds(error_rate_threshold: 0.5, open_cooldown_ms: 10, half_open_probe_count: 1)
 
     Breaker.report(model_id, report(:error, thresholds))
 

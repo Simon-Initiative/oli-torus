@@ -7,6 +7,9 @@ After approval, implement directly with strict scope control.
 - Follow Torus and Elixir/Phoenix best practices (authz, tenancy, reliability).
 - Preserve backwards compatibility unless ticket explicitly requires breaking behavior.
 - Add or update tests for changed behavior.
+- If scenario testing is appropriate for the changed workflow, do not skip it:
+  - use `$spec_scenario` when existing infrastructure supports it
+  - use `$spec_scenario_expand` then `$spec_scenario` when infrastructure support is missing
 - Run compile and affected tests before completion.
 - Report residual risk and follow-up items clearly.
 
