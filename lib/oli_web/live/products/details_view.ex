@@ -43,10 +43,10 @@ defmodule OliWeb.Products.DetailsView do
         author = socket.assigns.current_author
 
         product =
-          Repo.preload(product, [
+          Repo.preload(product,
             communities: :institutions,
             tags: from(t in Oli.Tags.Tag, order_by: t.name)
-          ])
+          )
 
         is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
@@ -135,7 +135,7 @@ defmodule OliWeb.Products.DetailsView do
           <p class="text-secondary">
             <span :if={Enum.empty?(@access_institutions)}>{gettext("None")}</span>
             <.intersperse :let={institution} enum={@access_institutions}>
-              <:separator>, </:separator>
+              <:separator>,</:separator>
               <.link
                 href={~p"/admin/institutions/#{institution.id}"}
                 class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
