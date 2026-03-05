@@ -27,6 +27,8 @@ defmodule Oli.Grading do
   alias Oli.Activities.Realizer.Selection
   alias Oli.Analytics.DataTables.DataTable
   alias Lti_1p3.Tool.Services.AGS
+  alias Lti_1p3.Tool.Services.AGS.Endpoint
+  alias Lti_1p3.Tool.Services.AGS.LineItem
   alias Lti_1p3.Tool.Services.AGS.Score
   alias Oli.Resources.Revision
   alias OliWeb.Common.Utils
@@ -56,41 +58,76 @@ defmodule Oli.Grading do
   end
 
   def ags_scopes() do
-    [
-      "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
-      "https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly",
-      "https://purl.imsglobal.org/spec/lti-ags/scope/score",
-      "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly"
-    ]
+    (AGS.required_scopes(:all) ++
+       ["https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly"])
+    |> Enum.uniq()
   end
 
   defp send_score(section, user, %ResourceAccess{} = resource_access, token) do
     revision = DeliveryResolver.from_resource_id(section.slug, resource_access.resource_id)
 
-    out_of_provider = fn -> determine_page_out_of(section.slug, revision) end
-
-    # Next, fetch (and possibly create) the line item associated with this resource
-    case AGS.fetch_or_create_line_item(
-           section.line_items_service_url,
-           resource_access.resource_id,
-           out_of_provider,
-           revision.title,
-           token
-         ) do
-      # Finally, post the score for this line item
-      {:ok, line_item} ->
-        case to_score(user.sub, resource_access)
-             |> AGS.post_score(line_item, token) do
-          {:ok, _} -> {:ok, :synced}
-          e -> e
-        end
-
+    with {:ok, endpoint} <- build_ags_endpoint(section.line_items_service_url, token),
+         {:ok, line_item} <-
+           fetch_or_create_line_item(endpoint, token, section, resource_access, revision),
+         {:ok, line_item_url} <- line_item_url(line_item),
+         :ok <-
+           AGS.post_score(line_item_url, endpoint, token, to_score(user.sub, resource_access)) do
+      {:ok, :synced}
+    else
       {:error, e} ->
-        {_id, msg} = log_error("Failed to fetch or create LMS line item", e)
-
+        {_id, msg} = log_error("Failed to sync LMS score", e)
         {:error, msg}
     end
   end
+
+  defp fetch_or_create_line_item(endpoint, token, section, resource_access, revision) do
+    resource_id = LineItem.to_resource_id(resource_access.resource_id)
+
+    with {:ok, page} <-
+           AGS.list_line_items(endpoint, token, resource_id: resource_id, limit: 1000) do
+      case Enum.find(page.items, fn line_item ->
+             to_string(line_item.resourceId) == resource_id
+           end) do
+        nil ->
+          out_of = determine_page_out_of(section.slug, revision)
+
+          AGS.create_line_item(endpoint, token, %{
+            resourceId: resource_id,
+            scoreMaximum: out_of,
+            label: revision.title
+          })
+
+        line_item ->
+          {:ok, line_item}
+      end
+    end
+  end
+
+  defp build_ags_endpoint(nil, _token), do: {:error, "Missing AGS line items service URL"}
+
+  defp build_ags_endpoint(line_items_url, token) when is_binary(line_items_url) do
+    {:ok,
+     %Endpoint{
+       line_items_url: line_items_url,
+       line_item_url: nil,
+       scopes: parse_scope_string(token.scope),
+       service_versions: []
+     }}
+  end
+
+  defp build_ags_endpoint(_, _token), do: {:error, "Invalid AGS line items service URL"}
+
+  defp parse_scope_string(nil), do: []
+  defp parse_scope_string(""), do: []
+
+  defp parse_scope_string(scope_string) when is_binary(scope_string) do
+    scope_string
+    |> String.split(" ", trim: true)
+    |> Enum.uniq()
+  end
+
+  defp line_item_url(%LineItem{id: id}) when is_binary(id), do: {:ok, id}
+  defp line_item_url(_), do: {:error, "Unable to identify LMS line item URL"}
 
   # helper to create an LTI AGS 2.0 compliant score from our launch params and
   # our resource access

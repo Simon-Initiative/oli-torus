@@ -25,7 +25,7 @@ defmodule OliWeb.Grades.TestConnection do
               are present in your LMS configuration:</p>
 
             <ul>
-              <%= for scope <- Lti_1p3.Tool.Services.AGS.required_scopes() do %>
+              <%= for scope <- Lti_1p3.Tool.Services.AGS.required_scopes(:all) do %>
                 <li><code>{scope}</code></li>
               <% end %>
             </ul>

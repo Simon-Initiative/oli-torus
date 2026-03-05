@@ -69,22 +69,24 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
         %SectionSpecification.Lti{
           lti_params: lti_params,
           institution: institution,
-          registration: registration,
+          registration: _registration,
           deployment: deployment
         }
-      ),
-      do:
-        section_params
-        |> Map.merge(%{
-          open_and_free: false,
-          context_id: lti_params[@context_claims]["id"],
-          institution_id: institution.id,
-          lti_1p3_deployment_id: deployment.id,
-          grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-          line_items_service_url: AGS.get_line_items_url(lti_params, registration),
-          nrps_enabled: NRPS.nrps_enabled?(lti_params),
-          nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
-        })
+      ) do
+    ags_settings = ags_settings_from_lti_params(lti_params)
+
+    section_params
+    |> Map.merge(%{
+      open_and_free: false,
+      context_id: lti_params[@context_claims]["id"],
+      institution_id: institution.id,
+      lti_1p3_deployment_id: deployment.id,
+      grade_passback_enabled: ags_settings.grade_passback_enabled,
+      line_items_service_url: ags_settings.line_items_service_url,
+      nrps_enabled: NRPS.nrps_enabled?(lti_params),
+      nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
+    })
+  end
 
   def apply(section_params, %SectionSpecification.Direct{}),
     do:
@@ -98,4 +100,30 @@ defmodule Oli.Delivery.Sections.SectionSpecification do
     do: institution
 
   def get_institution(_section_spec), do: nil
+
+  defp ags_settings_from_lti_params(lti_params) do
+    case AGS.from_launch_claim(lti_params) do
+      {:ok, endpoint} ->
+        %{
+          grade_passback_enabled: ags_grade_passback_enabled?(endpoint),
+          line_items_service_url: endpoint.line_items_url
+        }
+
+      _ ->
+        %{
+          grade_passback_enabled: false,
+          line_items_service_url: nil
+        }
+    end
+  end
+
+  defp ags_grade_passback_enabled?(endpoint) do
+    has_line_items_url? = is_binary(endpoint.line_items_url) and endpoint.line_items_url != ""
+    scopes = endpoint.scopes || []
+
+    has_line_item_scope? = Enum.any?(AGS.required_scopes(:create_line_item), &(&1 in scopes))
+    has_score_scope? = Enum.any?(AGS.required_scopes(:post_score), &(&1 in scopes))
+
+    has_line_items_url? and has_line_item_scope? and has_score_scope?
+  end
 end

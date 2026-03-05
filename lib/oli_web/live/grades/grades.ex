@@ -3,6 +3,7 @@ defmodule OliWeb.Grades.GradesLive do
 
   alias Oli.Grading
   alias Lti_1p3.Tool.Services.AGS
+  alias Lti_1p3.Tool.Services.AGS.Endpoint
   alias Lti_1p3.Tool.Services.AGS.LineItem
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Sections
@@ -52,6 +53,7 @@ defmodule OliWeb.Grades.GradesLive do
            graded_pages: graded_pages,
            selected_page: selected_page,
            line_items_url: line_items_url,
+           ags_endpoint: nil,
            access_token: nil,
            task_queue: [],
            progress_current: 0,
@@ -151,11 +153,13 @@ defmodule OliWeb.Grades.GradesLive do
           out_of = Oli.Grading.determine_page_out_of(section.slug, p)
 
           AGS.create_line_item(
-            assigns.line_items_url,
-            p.resource_id,
-            out_of,
-            p.title,
-            assigns.access_token
+            assigns.ags_endpoint,
+            assigns.access_token,
+            %{
+              scoreMaximum: out_of,
+              label: p.title,
+              resourceId: LineItem.to_resource_id(p.resource_id)
+            }
           )
         end
       end)
@@ -163,13 +167,28 @@ defmodule OliWeb.Grades.GradesLive do
     # tasks to update the labels of line items whose corresponding graded page's title has changed
     update_tasks =
       Enum.filter(graded_pages, fn p ->
-        Map.has_key?(line_item_map, LineItem.to_resource_id(p.resource_id)) and
-          Map.get(line_item_map, LineItem.to_resource_id(p.resource_id)).label != p.title
+        with %LineItem{id: id, label: label} <-
+               Map.get(line_item_map, LineItem.to_resource_id(p.resource_id)) do
+          is_binary(id) and label != p.title
+        else
+          _ -> false
+        end
       end)
       |> Enum.map(fn p ->
         fn assigns ->
           line_item = Map.get(line_item_map, LineItem.to_resource_id(p.resource_id))
-          AGS.update_line_item(line_item, %{label: p.title}, assigns.access_token)
+
+          AGS.update_line_item(
+            line_item.id,
+            assigns.ags_endpoint,
+            assigns.access_token,
+            %{
+              scoreMaximum:
+                line_item.scoreMaximum || Oli.Grading.determine_page_out_of(section.slug, p),
+              label: p.title,
+              resourceId: line_item.resourceId || LineItem.to_resource_id(p.resource_id)
+            }
+          )
         end
       end)
 
@@ -264,7 +283,7 @@ defmodule OliWeb.Grades.GradesLive do
     section = socket.assigns.section
 
     case fetch_line_items(registration, socket.assigns.line_items_url) do
-      {:ok, line_items, access_token} ->
+      {:ok, line_items, access_token, ags_endpoint} ->
         graded_pages = Sections.fetch_scored_pages(section.slug)
 
         # sort by hierarchical order
@@ -283,6 +302,7 @@ defmodule OliWeb.Grades.GradesLive do
             {:noreply,
              assign(socket,
                access_token: access_token,
+               ags_endpoint: ags_endpoint,
                task_queue: task_queue,
                progress_max: length(task_queue),
                progress_current: 0
@@ -321,13 +341,14 @@ defmodule OliWeb.Grades.GradesLive do
             emit_status(pid, "Received access token", :normal, false)
             emit_status(pid, "Requesting line items...", :normal, false)
 
-            case AGS.fetch_line_items(socket.assigns.line_items_url, access_token) do
-              {:ok, _} ->
-                emit_status(pid, "Received line items", :normal, false)
-                emit_status(pid, "Success!", :success, true)
-
+            with {:ok, endpoint} <-
+                   build_ags_endpoint(socket.assigns.line_items_url, access_token),
+                 {:ok, _page} <- AGS.list_line_items(endpoint, access_token, limit: 1) do
+              emit_status(pid, "Received line items", :normal, false)
+              emit_status(pid, "Success!", :success, true)
+            else
               {:error, e} ->
-                emit_status(pid, e, :failure, true)
+                emit_status(pid, format_ags_error(e), :failure, true)
             end
 
           {:error, e} ->
@@ -389,8 +410,10 @@ defmodule OliWeb.Grades.GradesLive do
   defp fetch_line_items(registration, line_items_url) do
     case access_token_provider(registration) do
       {:ok, access_token} ->
-        case AGS.fetch_line_items(line_items_url, access_token) do
-          {:ok, line_items} -> {:ok, line_items, access_token}
+        with {:ok, endpoint} <- build_ags_endpoint(line_items_url, access_token),
+             {:ok, page} <- AGS.list_line_items(endpoint, access_token, limit: 1000) do
+          {:ok, page.items, access_token, endpoint}
+        else
           _ -> {:error, dgettext("grades", "Error accessing LMS line items")}
         end
 
@@ -398,6 +421,33 @@ defmodule OliWeb.Grades.GradesLive do
         {:error, dgettext("grades", "Error getting LMS access token")}
     end
   end
+
+  defp build_ags_endpoint(nil, _access_token), do: {:error, :missing_line_items_url}
+
+  defp build_ags_endpoint(line_items_url, access_token) when is_binary(line_items_url) do
+    {:ok,
+     %Endpoint{
+       line_items_url: line_items_url,
+       line_item_url: nil,
+       scopes: parse_scope_string(access_token.scope),
+       service_versions: []
+     }}
+  end
+
+  defp build_ags_endpoint(_, _access_token), do: {:error, :invalid_line_items_url}
+
+  defp parse_scope_string(nil), do: []
+  defp parse_scope_string(""), do: []
+
+  defp parse_scope_string(scope_string) when is_binary(scope_string) do
+    scope_string
+    |> String.split(" ", trim: true)
+    |> Enum.uniq()
+  end
+
+  defp format_ags_error(%{msg: msg}) when is_binary(msg), do: msg
+  defp format_ags_error(error) when is_binary(error), do: error
+  defp format_ags_error(error), do: inspect(error)
 
   defp fetch_graded_pages(section) do
     graded_pages = Sections.fetch_scored_pages(section.slug, :numbering_index)

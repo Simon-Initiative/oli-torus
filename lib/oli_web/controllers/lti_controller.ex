@@ -28,20 +28,17 @@ defmodule OliWeb.LtiController do
 
   ## LTI 1.3
   def login(conn, params) do
-    case Lti_1p3.Tool.OidcLogin.oidc_login_redirect_url(params) do
-      {:ok, state, redirect_url} ->
+    case Lti_1p3.Tool.login_redirect(params) do
+      {:ok, %{state: state, redirect_url: redirect_url}} ->
         conn
         |> put_session("state", state)
         |> redirect(external: redirect_url)
 
-      {:error,
-       %{
-         reason: :invalid_registration,
-         msg: _msg,
-         issuer: issuer,
-         client_id: client_id,
-         lti_deployment_id: lti_deployment_id
-       }} ->
+      {:error, %{reason: :invalid_registration} = error} ->
+        issuer = error_detail(error, :issuer)
+        client_id = error_detail(error, :client_id)
+        lti_deployment_id = error_detail(error, :lti_deployment_id)
+
         handle_invalid_registration(conn, issuer, client_id, lti_deployment_id)
 
       {:error, reason} ->
@@ -52,9 +49,9 @@ defmodule OliWeb.LtiController do
   def launch(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
 
-    case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
-      {:ok, lti_params} ->
-        case handle_valid_lti_1p3_launch(lti_params) do
+    case Lti_1p3.Tool.validate_launch(params, session_state) do
+      {:ok, launch} ->
+        case handle_valid_lti_1p3_launch(launch) do
           {:ok, user} ->
             # sign in LTI user and redirect to appropriate route
             conn
@@ -77,16 +74,14 @@ defmodule OliWeb.LtiController do
             |> render("lti_error.html", reason: "Failed to handle valid LTI 1.3 launch")
         end
 
-      {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
+      {:error, %{reason: :invalid_registration} = error} ->
+        issuer = error_detail(error, :issuer)
+        client_id = error_detail(error, :client_id)
         handle_invalid_registration(conn, issuer, client_id)
 
-      {:error,
-       %{
-         reason: :invalid_deployment,
-         msg: _msg,
-         registration_id: registration_id,
-         deployment_id: deployment_id
-       }} ->
+      {:error, %{reason: :invalid_deployment} = error} ->
+        registration_id = error_detail(error, :registration_id)
+        deployment_id = error_detail(error, :deployment_id)
         handle_invalid_deployment(conn, params, registration_id, deployment_id)
 
       {:error, %{reason: _reason, msg: msg}} ->
@@ -94,7 +89,8 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp handle_valid_lti_1p3_launch(lti_params) do
+  defp handle_valid_lti_1p3_launch(launch_or_claims) do
+    lti_params = launch_claims(launch_or_claims)
     issuer = lti_params["iss"]
     client_id = LtiParams.peek_client_id(lti_params)
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
@@ -132,15 +128,17 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp get_and_update_lti_section_details(lti_params, registration) do
+  defp get_and_update_lti_section_details(lti_params, _registration) do
     case Sections.get_section_from_lti_params(lti_params) do
       nil ->
         {:ok, nil}
 
       section ->
+        ags_settings = ags_settings_from_lti_params(lti_params)
+
         Sections.update_section(section, %{
-          grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-          line_items_service_url: AGS.get_line_items_url(lti_params, registration),
+          grade_passback_enabled: ags_settings.grade_passback_enabled,
+          line_items_service_url: ags_settings.line_items_service_url,
           nrps_enabled: NRPS.nrps_enabled?(lti_params),
           nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
         })
@@ -216,11 +214,45 @@ defmodule OliWeb.LtiController do
     end
   end
 
+  defp ags_settings_from_lti_params(lti_params) do
+    case AGS.from_launch_claim(lti_params) do
+      {:ok, endpoint} ->
+        %{
+          grade_passback_enabled: ags_grade_passback_enabled?(endpoint),
+          line_items_service_url: endpoint.line_items_url
+        }
+
+      _ ->
+        %{
+          grade_passback_enabled: false,
+          line_items_service_url: nil
+        }
+    end
+  end
+
+  defp ags_grade_passback_enabled?(endpoint) do
+    has_line_items_url? = is_binary(endpoint.line_items_url) and endpoint.line_items_url != ""
+    scopes = endpoint.scopes || []
+
+    has_line_item_scope? = Enum.any?(AGS.required_scopes(:create_line_item), &(&1 in scopes))
+    has_score_scope? = Enum.any?(AGS.required_scopes(:post_score), &(&1 in scopes))
+
+    has_line_items_url? and has_line_item_scope? and has_score_scope?
+  end
+
+  defp launch_claims(%Lti_1p3.Tool.Launch{claims: claims}), do: claims
+  defp launch_claims(claims) when is_map(claims), do: claims
+
+  defp error_detail(error, key) do
+    get_in(error, [:details, key]) || Map.get(error, key)
+  end
+
   def test(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
 
-    case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
-      {:ok, lti_params} ->
+    case Lti_1p3.Tool.validate_launch(params, session_state) do
+      {:ok, launch} ->
+        lti_params = launch_claims(launch)
         render(conn, "lti_test.html", lti_params: lti_params)
 
       {:error, %{reason: _reason, msg: msg}} ->

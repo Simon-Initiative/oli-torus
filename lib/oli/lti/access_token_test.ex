@@ -23,7 +23,7 @@ defmodule Oli.Lti.AccessTokenTest do
        access_token: "access_token",
        token_type: "token_type",
        expires_in: "expires_in",
-       scope: "scope"
+       scope: Enum.join(Lti_1p3.Tool.Services.AGS.required_scopes(:all), " ")
      }}
   end
 end
