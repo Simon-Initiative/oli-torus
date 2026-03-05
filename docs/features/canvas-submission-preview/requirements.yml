@@ -1,0 +1,102 @@
+version: 1
+feature: canvas-submission-preview
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: System SHALL apply Canvas-specific AGS line item extension fields only when
+    the section is linked to a Canvas platform instance.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-001
+    title: Given a Canvas-linked section, when Torus creates or updates a line item,
+      then the outgoing payload includes required Canvas extension fields for submission
+      preview support.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-002
+    title: Given a non-Canvas LMS section, when Torus creates or updates a line item,
+      then Canvas extension fields are not included in the payload.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-002
+  title: System SHALL include Canvas submission preview metadata in AGS score payloads
+    for Canvas-linked sections.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-003
+    title: Given a Canvas-linked section and a grade passback event, when Torus posts
+      an AGS score, then the payload includes Canvas submission metadata with a preview
+      destination tied to the selected attempt.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: System SHALL resolve a canonical Torus review URL for the attempt associated
+    with the posted score.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-004
+    title: Given a scored resource access with multiple attempts, when Torus resolves
+      the preview URL, then it selects the configured canonical attempt deterministically
+      and produces a section-scoped review path.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-004
+  title: System SHALL preserve existing role-based review authorization behavior when
+    preview links are opened.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: Given a student opening a preview link for their own attempt, when the
+      review page loads, then access is allowed only if existing attempt-access checks
+      pass.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-006
+    title: Given an instructor or admin opening a learner preview link, when the review
+      page loads, then instructor/admin review access behavior matches existing Torus
+      rules.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-007
+    title: Given an unauthorized user opening a preview link, when the review page
+      loads, then Torus denies access using current not-authorized behavior.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-005
+  title: System SHALL degrade safely to standards-only AGS posting when Canvas extension
+    metadata cannot be applied.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: Given a Canvas-linked section and extension payload-generation failure,
+      when Torus posts a score, then Torus still attempts standards-compliant AGS
+      score posting and records degraded behavior telemetry.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-006
+  title: System SHALL emit observability events for Canvas extension application and
+    preview URL resolution outcomes.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-009
+    title: Given a Canvas-linked grade passback execution, when extension logic runs,
+      then telemetry records whether extension was applied or skipped with a reason
+      code.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-010
+    title: Given preview URL resolution succeeds or fails, when score payload is built,
+      then telemetry records the outcome with section and platform dimensions and
+      without sensitive payload data.
+    status: proposed
+    verification_method: automated
+    proofs: []
