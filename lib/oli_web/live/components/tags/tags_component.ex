@@ -413,11 +413,7 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
   """
   attr :tags, :list, required: true
 
-  def read_only_tags(%{tags: %Ecto.Association.NotLoaded{}} = assigns) do
-    read_only_tags(assign(assigns, :tags, []))
-  end
-
-  def read_only_tags(assigns) do
+  def read_only_tags(%{tags: tags} = assigns) when is_list(tags) do
     ~H"""
     <div class="min-h-[40px] w-full rounded border border-Border-border-default bg-Fill-fill-form-field px-3 py-2 flex items-center">
       <span :if={@tags == []} class="text-Text-text-tertiary">{gettext("None")}</span>
