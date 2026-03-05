@@ -118,31 +118,21 @@ defmodule OliWeb.Products.DetailsView do
         <div class="form-label-group mb-3">
           <Common.label class="control-label">Communities</Common.label>
           <p class="text-secondary">
-            <span :if={Enum.empty?(@product.communities)}>{gettext("None")}</span>
-            <.intersperse :let={community} enum={@product.communities}>
-              <:separator>,</:separator>
-              <.link
-                href={~p"/authoring/communities/#{community.id}"}
-                class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
-              >
-                {community.name}
-              </.link>
-            </.intersperse>
+            <Common.comma_separated_links items={
+              Enum.map(@product.communities, fn c ->
+                %{name: c.name, href: ~p"/authoring/communities/#{c.id}"}
+              end)
+            } />
           </p>
         </div>
         <div class="form-label-group mb-3">
           <Common.label class="control-label">Institutions</Common.label>
           <p class="text-secondary">
-            <span :if={Enum.empty?(@access_institutions)}>{gettext("None")}</span>
-            <.intersperse :let={institution} enum={@access_institutions}>
-              <:separator>,</:separator>
-              <.link
-                href={~p"/admin/institutions/#{institution.id}"}
-                class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
-              >
-                {institution.name}
-              </.link>
-            </.intersperse>
+            <Common.comma_separated_links items={
+              Enum.map(@access_institutions, fn i ->
+                %{name: i.name, href: ~p"/admin/institutions/#{i.id}"}
+              end)
+            } />
           </p>
         </div>
       </Overview.section>
