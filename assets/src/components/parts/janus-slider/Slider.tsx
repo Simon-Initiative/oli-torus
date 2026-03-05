@@ -211,9 +211,10 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
 
     props.onResize({ id: `${id}`, settings: styleChanges });
   }, [width, height]);
+  const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
   const styles: CSSProperties = {
     width: '100%',
-    flexDirection: model.showLabel ? 'column' : 'row',
+    flexDirection: isResponsiveLayout || model.showLabel ? 'column' : 'row',
   };
   const inputStyles: CSSProperties = {
     width: '100%',
