@@ -115,24 +115,11 @@ defmodule OliWeb.Products.DetailsView do
         <div id="communities-section" class="form-label-group mb-3">
           <Common.label class="control-label">Communities</Common.label>
           <p class="text-secondary">
-<<<<<<< HEAD
             <Common.comma_separated_links items={
               Enum.map(@product.communities, fn c ->
                 %{name: c.name, href: ~p"/authoring/communities/#{c.id}"}
               end)
             } />
-=======
-            <span :if={Enum.empty?(@product.communities)}>{gettext("None")}</span>
-            <.intersperse :let={community} enum={@product.communities}>
-              <:separator>,</:separator>
-              <.link
-                href={~p"/authoring/communities/#{community.id}"}
-                class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
-              >
-                {community.name}
-              </.link>
-            </.intersperse>
->>>>>>> f3ffa3f77a (Auto format)
           </p>
         </div>
         <div id="institutions-section" class="form-label-group mb-3">
