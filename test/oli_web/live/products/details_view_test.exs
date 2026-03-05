@@ -159,36 +159,82 @@ defmodule OliWeb.Products.DetailsViewTest do
     end
   end
 
-  describe "product details page - institution" do
+  describe "product details page - institutions with access" do
     setup [:setup_admin_conn, :create_product]
 
-    test "displays Institution section with 'None' when no institution", %{
+    test "displays Institutions section with 'None' when no institutions have access", %{
       conn: conn,
       product: product
     } do
       {:ok, view, _html} = live(conn, product_route(product.slug))
 
-      assert has_element?(view, "label", "Institution")
-      assert has_element?(view, "p", "None")
+      assert has_element?(view, "label", "Institutions")
+      assert has_element?(view, "span", "None")
     end
 
-    test "displays institution as a link when product has institution", %{
+    test "displays institution from base project's publishing visibility (Path A)", %{
       conn: conn,
-      product: product
+      product: product,
+      project: project
     } do
-      institution = insert(:institution, name: "Test University")
+      institution = insert(:institution, name: "Visibility University")
 
-      Oli.Delivery.Sections.update_section(product, %{institution_id: institution.id})
+      insert(:project_institution_visibility,
+        project_id: project.id,
+        institution_id: institution.id
+      )
 
       {:ok, view, _html} = live(conn, product_route(product.slug))
 
-      assert has_element?(view, "label", "Institution")
+      assert has_element?(view, "label", "Institutions")
 
       assert has_element?(
                view,
                "a[href='/admin/institutions/#{institution.id}']",
-               "Test University"
+               "Visibility University"
              )
+    end
+
+    test "displays institution from shared community membership (Path B)", %{
+      conn: conn,
+      product: product
+    } do
+      institution = insert(:institution, name: "Community University")
+      community = insert(:community, name: "Shared Community")
+      insert(:community_product_visibility, community: community, section: product)
+      insert(:community_institution, community: community, institution: institution)
+
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      assert has_element?(
+               view,
+               "a[href='/admin/institutions/#{institution.id}']",
+               "Community University"
+             )
+    end
+
+    test "deduplicates institutions visible through both paths", %{
+      conn: conn,
+      product: product,
+      project: project
+    } do
+      institution = insert(:institution, name: "Dual Access University")
+
+      # Path A: publishing visibility
+      insert(:project_institution_visibility,
+        project_id: project.id,
+        institution_id: institution.id
+      )
+
+      # Path B: community membership
+      community = insert(:community, name: "Overlap Community")
+      insert(:community_product_visibility, community: community, section: product)
+      insert(:community_institution, community: community, institution: institution)
+
+      {:ok, _view, html} = live(conn, product_route(product.slug))
+
+      # Institution should appear exactly once
+      assert length(Regex.scan(~r/Dual Access University/, html)) == 1
     end
   end
 

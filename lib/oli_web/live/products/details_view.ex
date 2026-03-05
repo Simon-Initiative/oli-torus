@@ -4,7 +4,7 @@ defmodule OliWeb.Products.DetailsView do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Oli.{Accounts, Branding, Inventories, Repo}
+  alias Oli.{Accounts, Branding, Inventories, Publishing, Repo}
   alias Oli.Authoring.Course
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.{Blueprint, Section}
@@ -44,14 +44,15 @@ defmodule OliWeb.Products.DetailsView do
 
         product =
           Repo.preload(product, [
-            :communities,
-            :institution,
+            communities: :institutions,
             tags: from(t in Oli.Tags.Tag, order_by: t.name)
           ])
 
         is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
         base_project = Course.get_project!(product.base_project_id)
+
+        access_institutions = Publishing.get_institutions_with_access(product)
 
         available_brands =
           Branding.list_brands()
@@ -67,6 +68,7 @@ defmodule OliWeb.Products.DetailsView do
            author: author,
            product: product,
            is_admin: is_admin?,
+           access_institutions: access_institutions,
            changeset: Section.changeset(product, %{}),
            title: "Edit Template",
            show_confirm: false,
@@ -101,19 +103,17 @@ defmodule OliWeb.Products.DetailsView do
         />
         <div class="form-label-group mb-3 mt-3">
           <Common.label class="control-label">Tags</Common.label>
-          <%= if @is_admin do %>
-            <.live_component
-              module={TagsComponent}
-              id={"product-tags-#{@product.id}"}
-              entity_type={:section}
-              entity_id={@product.id}
-              current_tags={@product.tags}
-              current_author={@author}
-              variant={:form}
-            />
-          <% else %>
-            <TagsComponent.read_only_tags tags={@product.tags} />
-          <% end %>
+          <.live_component
+            :if={@is_admin}
+            module={TagsComponent}
+            id={"product-tags-#{@product.id}"}
+            entity_type={:section}
+            entity_id={@product.id}
+            current_tags={@product.tags}
+            current_author={@author}
+            variant={:form}
+          />
+          <TagsComponent.read_only_tags :if={!@is_admin} tags={@product.tags} />
         </div>
         <div class="form-label-group mb-3">
           <Common.label class="control-label">Communities</Common.label>
@@ -131,18 +131,18 @@ defmodule OliWeb.Products.DetailsView do
           </p>
         </div>
         <div class="form-label-group mb-3">
-          <Common.label class="control-label">Institution</Common.label>
+          <Common.label class="control-label">Institutions</Common.label>
           <p class="text-secondary">
-            <%= if @product.institution do %>
+            <span :if={Enum.empty?(@access_institutions)}>{gettext("None")}</span>
+            <.intersperse :let={institution} enum={@access_institutions}>
+              <:separator>, </:separator>
               <.link
-                href={~p"/admin/institutions/#{@product.institution.id}"}
+                href={~p"/admin/institutions/#{institution.id}"}
                 class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
               >
-                {@product.institution.name}
+                {institution.name}
               </.link>
-            <% else %>
-              {gettext("None")}
-            <% end %>
+            </.intersperse>
           </p>
         </div>
       </Overview.section>
@@ -206,23 +206,22 @@ defmodule OliWeb.Products.DetailsView do
         </div>
       </Overview.section>
 
-      <%= if @is_admin do %>
-        <Overview.section
-          title="Feature Flags"
-          description="Manage scoped feature flags for this section."
-        >
-          <.live_component
-            module={OliWeb.Components.ScopedFeatureToggleComponent}
-            id="section_scoped_features"
-            scopes={[:delivery, :both]}
-            source_id={@product.id}
-            source_type={:section}
-            source={@product}
-            current_author={@author}
-            title="Section Features"
-          />
-        </Overview.section>
-      <% end %>
+      <Overview.section
+        :if={@is_admin}
+        title="Feature Flags"
+        description="Manage scoped feature flags for this section."
+      >
+        <.live_component
+          module={OliWeb.Components.ScopedFeatureToggleComponent}
+          id="section_scoped_features"
+          scopes={[:delivery, :both]}
+          source_id={@product.id}
+          source_type={:section}
+          source={@product}
+          current_author={@author}
+          title="Section Features"
+        />
+      </Overview.section>
 
       <Overview.section title="Actions" is_last={true}>
         <Actions.render
@@ -233,11 +232,15 @@ defmodule OliWeb.Products.DetailsView do
         />
       </Overview.section>
 
-      <%= if @show_confirm do %>
-        <Confirm.render title="Confirm Duplication" id="dialog" ok="duplicate" cancel="cancel_modal">
-          Are you sure that you wish to duplicate this template?
-        </Confirm.render>
-      <% end %>
+      <Confirm.render
+        :if={@show_confirm}
+        title="Confirm Duplication"
+        id="dialog"
+        ok="duplicate"
+        cancel="cancel_modal"
+      >
+        Are you sure that you wish to duplicate this template?
+      </Confirm.render>
     </div>
     """
   end
