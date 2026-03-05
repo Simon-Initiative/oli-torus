@@ -409,16 +409,11 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
   Used by both project and product overview pages when the current user
   does not have admin permissions to edit tags.
 
-  Safely handles `%Ecto.Association.NotLoaded{}` by rendering "None"
-  instead of crashing, in case the caller forgot to preload tags.
+  Expects `tags` to be a preloaded list. Raises `FunctionClauseError` if tags are not preloaded.
   """
   attr :tags, :list, required: true
 
-  def read_only_tags(%{tags: %Ecto.Association.NotLoaded{}} = assigns) do
-    read_only_tags(assign(assigns, :tags, []))
-  end
-
-  def read_only_tags(assigns) do
+  def read_only_tags(%{tags: tags} = assigns) when is_list(tags) do
     ~H"""
     <div class="min-h-[40px] w-full rounded border border-Border-border-default bg-Fill-fill-form-field px-3 py-2 flex items-center">
       <span :if={@tags == []} class="text-Text-text-tertiary">{gettext("None")}</span>

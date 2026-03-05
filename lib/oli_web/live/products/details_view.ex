@@ -2,9 +2,7 @@ defmodule OliWeb.Products.DetailsView do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  import Ecto.Query, only: [from: 2]
-
-  alias Oli.{Accounts, Branding, Inventories, Publishing, Repo}
+  alias Oli.{Accounts, Branding, Inventories, Publishing, Repo, Tags}
   alias Oli.Authoring.Course
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.{Blueprint, Section}
@@ -42,11 +40,8 @@ defmodule OliWeb.Products.DetailsView do
       {_, _, product} ->
         author = socket.assigns.current_author
 
-        product =
-          Repo.preload(product,
-            communities: :institutions,
-            tags: from(t in Oli.Tags.Tag, order_by: t.name)
-          )
+        product = Repo.preload(product, communities: :institutions)
+        tags = Tags.get_section_tags(product)
 
         is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
@@ -67,6 +62,7 @@ defmodule OliWeb.Products.DetailsView do
            updates: Sections.check_for_available_publication_updates(product),
            author: author,
            product: product,
+           tags: tags,
            is_admin: is_admin?,
            access_institutions: access_institutions,
            changeset: Section.changeset(product, %{}),
@@ -109,11 +105,11 @@ defmodule OliWeb.Products.DetailsView do
             id={"product-tags-#{@product.id}"}
             entity_type={:section}
             entity_id={@product.id}
-            current_tags={@product.tags}
+            current_tags={@tags}
             current_author={@author}
             variant={:form}
           />
-          <TagsComponent.read_only_tags :if={!@is_admin} tags={@product.tags} />
+          <TagsComponent.read_only_tags :if={!@is_admin} tags={@tags} />
         </div>
         <div class="form-label-group mb-3">
           <Common.label class="control-label">Communities</Common.label>

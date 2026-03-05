@@ -4,9 +4,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   import Phoenix.Component
   import OliWeb.Components.Common
 
-  import Ecto.Query, only: [from: 2]
-
-  alias Oli.{Accounts, Activities, Inventories, Publishing, Repo}
+  alias Oli.{Accounts, Activities, Inventories, Publishing, Repo, Tags}
   alias Oli.Authoring.{Broadcaster, Course, ProjectExportWorker}
   alias Oli.Delivery.Sections.Browse
   alias Oli.Repo.{Paging, Sorting}
@@ -32,8 +30,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   def mount(_params, _session, socket) do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns
 
-    project =
-      Repo.preload(project, [:communities, tags: from(t in Oli.Tags.Tag, order_by: t.name)])
+    project = Repo.preload(project, [:communities])
+    tags = Tags.get_project_tags(project)
 
     # Get institutions with visibility access to this project
     visibility_institutions =
@@ -73,6 +71,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       |> assign(
         ctx: ctx,
         project: project,
+        tags: tags,
         collaborators:
           Accounts.authors_projects(project)
           |> Enum.group_by(& &1.author_project_status),
@@ -176,12 +175,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
                 id={"project-tags-#{@project.id}"}
                 entity_type={:project}
                 entity_id={@project.id}
-                current_tags={@project.tags}
+                current_tags={@tags}
                 current_author={@current_author}
                 variant={:form}
               />
             <% else %>
-              <TagsComponent.read_only_tags tags={@project.tags} />
+              <TagsComponent.read_only_tags tags={@tags} />
             <% end %>
           </div>
           <% welcome_title =
