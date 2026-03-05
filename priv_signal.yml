@@ -182,6 +182,13 @@ prd_nodes:
     scope:
       module: Oli.Accounts.UserToken
       field: user_id
+  - key: vr_user_agent_user_agent
+    label: VR User Agent
+    class: behavioral_signal
+    sensitive: true
+    scope:
+      module: Oli.Accounts.VrUserAgent
+      field: user_agent
   - key: author_identity_provider
     label: Author Identity Provider
     class: persistent_pseudonymous_identifier
@@ -234,7 +241,7 @@ prd_nodes:
   - key: audit_log_details
     label: Audit Log Details
     class: behavioral_signal
-    sensitive: false
+    sensitive: true
     scope:
       module: Oli.Auditing.LogEvent
       field: details
@@ -251,27 +258,6 @@ prd_nodes:
     sensitive: false
     scope:
       module: Oli.Auditing.LogEvent
-      field: user_id
-  - key: conversation_message_content
-    label: Conversation Message Content
-    class: behavioral_signal
-    sensitive: true
-    scope:
-      module: Oli.Conversation.ConversationMessage
-      field: content
-  - key: conversation_message_name
-    label: Conversation Message Name
-    class: behavioral_signal
-    sensitive: false
-    scope:
-      module: Oli.Conversation.ConversationMessage
-      field: name
-  - key: conversation_message_user_id
-    label: Conversation Message User ID
-    class: persistent_pseudonymous_identifier
-    sensitive: false
-    scope:
-      module: Oli.Conversation.ConversationMessage
       field: user_id
   - key: cookies_consent_name
     label: Cookies Consent Name
@@ -294,13 +280,27 @@ prd_nodes:
     scope:
       module: Oli.Consent.CookiesConsent
       field: value
-  - key: activity_attempt_attempt_guid
-    label: Activity Attempt GUID
+  - key: conversation_message_content
+    label: Conversation Message Content
+    class: behavioral_signal
+    sensitive: true
+    scope:
+      module: Oli.Conversation.ConversationMessage
+      field: content
+  - key: conversation_message_name
+    label: Conversation Message Name
+    class: direct_identifier
+    sensitive: true
+    scope:
+      module: Oli.Conversation.ConversationMessage
+      field: name
+  - key: conversation_message_user_id
+    label: Conversation Message User ID
     class: persistent_pseudonymous_identifier
     sensitive: false
     scope:
-      module: Oli.Delivery.Attempts.Core.ActivityAttempt
-      field: attempt_guid
+      module: Oli.Conversation.ConversationMessage
+      field: user_id
   - key: activity_attempt_aggregate_score
     label: Activity Attempt Aggregate Score
     class: inferred_attribute
@@ -308,6 +308,13 @@ prd_nodes:
     scope:
       module: Oli.Delivery.Attempts.Core.ActivityAttempt
       field: aggregate_score
+  - key: activity_attempt_attempt_guid
+    label: Activity Attempt GUID
+    class: persistent_pseudonymous_identifier
+    sensitive: false
+    scope:
+      module: Oli.Delivery.Attempts.Core.ActivityAttempt
+      field: attempt_guid
   - key: activity_attempt_score
     label: Activity Attempt Score
     class: inferred_attribute
@@ -346,7 +353,7 @@ prd_nodes:
   - key: lms_grade_update_details
     label: LMS Grade Update Details
     class: behavioral_signal
-    sensitive: false
+    sensitive: true
     scope:
       module: Oli.Delivery.Attempts.Core.LMSGradeUpdate
       field: details
@@ -357,6 +364,13 @@ prd_nodes:
     scope:
       module: Oli.Delivery.Attempts.Core.LMSGradeUpdate
       field: score
+  - key: lms_grade_update_user_email
+    label: LMS Grade Update User Email
+    class: direct_identifier
+    sensitive: true
+    scope:
+      module: Oli.Delivery.Attempts.Core.LMSGradeUpdate
+      field: user_email
   - key: part_attempt_attempt_guid
     label: Part Attempt GUID
     class: persistent_pseudonymous_identifier
@@ -532,6 +546,20 @@ prd_nodes:
     scope:
       module: Oli.Delivery.Settings.StudentException
       field: user_id
+  - key: registered_model_api_key
+    label: Registered Model API Key
+    class: sensitive_context_indicator
+    sensitive: true
+    scope:
+      module: Oli.GenAI.Completions.RegisteredModel
+      field: api_key
+  - key: registered_model_secondary_api_key
+    label: Registered Model Secondary API Key
+    class: sensitive_context_indicator
+    sensitive: true
+    scope:
+      module: Oli.GenAI.Completions.RegisteredModel
+      field: secondary_api_key
   - key: help_request_email_address
     label: Help Request Email Address
     class: direct_identifier
@@ -553,6 +581,20 @@ prd_nodes:
     scope:
       module: Oli.Help.HelpRequest
       field: name
+  - key: institution_pending_registration_client_id
+    label: Institution Pending Registration Client ID
+    class: persistent_pseudonymous_identifier
+    sensitive: false
+    scope:
+      module: Oli.Institutions.PendingRegistration
+      field: client_id
+  - key: institution_pending_registration_deployment_id
+    label: Institution Pending Registration Deployment ID
+    class: persistent_pseudonymous_identifier
+    sensitive: false
+    scope:
+      module: Oli.Institutions.PendingRegistration
+      field: deployment_id
   - key: institution_pending_registration_institution_email
     label: Institution Pending Registration Institution Email
     class: direct_identifier
@@ -560,6 +602,13 @@ prd_nodes:
     scope:
       module: Oli.Institutions.PendingRegistration
       field: institution_email
+  - key: institution_pending_registration_issuer
+    label: Institution Pending Registration Issuer
+    class: persistent_pseudonymous_identifier
+    sensitive: false
+    scope:
+      module: Oli.Institutions.PendingRegistration
+      field: issuer
   - key: institutions_sso_jwk_kid
     label: Institutions SSO JWK Key ID
     class: persistent_pseudonymous_identifier
@@ -742,6 +791,27 @@ prd_nodes:
     scope:
       module: Oli.MCP.Auth.BearerTokenUsage
       field: request_id
+  - key: mcp_bearer_token_usage_resource_uri
+    label: MCP Bearer Token Usage Resource URI
+    class: behavioral_signal
+    sensitive: true
+    scope:
+      module: Oli.MCP.Auth.BearerTokenUsage
+      field: resource_uri
+  - key: mcp_bearer_token_usage_status
+    label: MCP Bearer Token Usage Status
+    class: behavioral_signal
+    sensitive: false
+    scope:
+      module: Oli.MCP.Auth.BearerTokenUsage
+      field: status
+  - key: mcp_bearer_token_usage_tool_name
+    label: MCP Bearer Token Usage Tool Name
+    class: behavioral_signal
+    sensitive: false
+    scope:
+      module: Oli.MCP.Auth.BearerTokenUsage
+      field: tool_name
   - key: collaboration_post_anonymous
     label: Collaboration Post Anonymous
     class: behavioral_signal
@@ -784,6 +854,20 @@ prd_nodes:
     scope:
       module: OliWeb.Dialogue.UserInput
       field: content
+matching:
+  aliases:
+    email_address: email
+    institution_email: email
+    invite_token: token
+    learner_id: user_id
+    passcode: password
+    sent_to: email
+    student_id: user_id
+    support_email: email
+    user_email: email
+  split_case: true
+  singularize: true
+  strip_prefixes: []
 scanners:
   logging:
     enabled: true
@@ -803,6 +887,19 @@ scanners:
     enabled: true
     repo_modules:
       - Oli.Repo
+    wrapper_modules:
+      - Oli.Institutions
+      - Oli.MCP.Auth
+      - Oli.Utils.Database
+    wrapper_functions:
+      - batch_insert_all/3
+      - create_token/3
+      - delete_token/1
+      - get_token_by_author_and_project/2
+      - insert_bulk_jwks/1
+      - regenerate_token/3
+      - track_usage/3
+      - track_usage_by_token/3
   liveview:
     enabled: true
     additional_modules: []
