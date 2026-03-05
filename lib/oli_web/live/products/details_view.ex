@@ -111,7 +111,7 @@ defmodule OliWeb.Products.DetailsView do
           />
           <TagsComponent.read_only_tags :if={!@is_admin} tags={@tags} />
         </div>
-        <div class="form-label-group mb-3">
+        <div id="communities-section" class="form-label-group mb-3">
           <Common.label class="control-label">Communities</Common.label>
           <p class="text-secondary">
             <Common.comma_separated_links items={
@@ -121,7 +121,7 @@ defmodule OliWeb.Products.DetailsView do
             } />
           </p>
         </div>
-        <div class="form-label-group mb-3">
+        <div id="institutions-section" class="form-label-group mb-3">
           <Common.label class="control-label">Institutions</Common.label>
           <p class="text-secondary">
             <Common.comma_separated_links items={

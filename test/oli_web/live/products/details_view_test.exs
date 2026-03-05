@@ -113,7 +113,10 @@ defmodule OliWeb.Products.DetailsViewTest do
       {:ok, view, _html} = live(conn, product_route(product.slug))
 
       assert has_element?(view, "label", "Communities")
-      assert has_element?(view, "span", "None")
+
+      # Scope "None" to the Communities container to avoid matching other sections
+      communities_html = view |> element("#communities-section") |> render()
+      assert communities_html =~ "None"
     end
 
     test "displays community as a link when product has community", %{
@@ -169,7 +172,10 @@ defmodule OliWeb.Products.DetailsViewTest do
       {:ok, view, _html} = live(conn, product_route(product.slug))
 
       assert has_element?(view, "label", "Institutions")
-      assert has_element?(view, "span", "None")
+
+      # Scope "None" to the Institutions container to avoid matching other sections
+      institutions_html = view |> element("#institutions-section") |> render()
+      assert institutions_html =~ "None"
     end
 
     test "displays institution from base project's publishing visibility (Path A)", %{

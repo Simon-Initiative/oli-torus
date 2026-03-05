@@ -1654,6 +1654,9 @@ defmodule Oli.Publishing do
 
   Path A: institutions granted access via the base project's ProjectVisibility records.
   Path B: institutions that share a community with the product.
+
+  Expects `product.communities` to be preloaded with `:institutions`
+  (e.g. `Repo.preload(product, communities: :institutions)`).
   """
   def get_institutions_with_access(product) do
     # Path A: institutions from the base project's publishing visibility
