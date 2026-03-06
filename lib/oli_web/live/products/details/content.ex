@@ -17,16 +17,13 @@ defmodule OliWeb.Products.Details.Content do
           There are <b>no updates</b> available for this template.
         </p>
         <div :if={updates_count > 0}>
-          <% badge_text =
-            Gettext.ngettext(OliWeb.Gettext, "1 update", "%{count} updates", updates_count) %>
-          <% updates_text =
-            Gettext.ngettext(
-              OliWeb.Gettext,
+          <p>
+            {ngettext(
               "There is one update available for this template.",
               "There are %{count} updates available for this template.",
               updates_count
-            ) %>
-          <p>{updates_text}</p>
+            )}
+          </p>
           <.link href={
             Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
           }>
@@ -35,7 +32,7 @@ defmodule OliWeb.Products.Details.Content do
               id="manage-source-materials-updates-badge"
               class="ml-2 inline-flex items-center rounded-full bg-Fill-Buttons-fill-primary px-[6px] py-[4px] text-[12px] font-semibold leading-[12px] text-Text-text-white"
             >
-              {badge_text}
+              {ngettext("1 update", "%{count} updates", updates_count)}
             </span>
           </.link>
         </div>
