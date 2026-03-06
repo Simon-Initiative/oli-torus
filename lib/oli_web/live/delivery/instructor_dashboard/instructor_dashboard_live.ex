@@ -1236,11 +1236,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_info({:dashboard_scope_changed, scope}, socket) do
-    IntelligentDashboardTab.handle_dashboard_scope_changed(socket, scope)
-  end
-
-  @impl Phoenix.LiveView
   def handle_info({:dashboard_request_timeout, request_token}, socket) do
     IntelligentDashboardTab.handle_dashboard_request_timeout(socket, request_token)
   end

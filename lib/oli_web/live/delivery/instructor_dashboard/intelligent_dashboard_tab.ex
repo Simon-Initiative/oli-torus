@@ -231,25 +231,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   @doc """
-  Handles scope-change messages emitted by the scope navigator component.
-  """
-  @spec handle_dashboard_scope_changed(socket(), String.t()) :: {:noreply, socket()}
-  def handle_dashboard_scope_changed(socket, scope) do
-    case validate_scope_selector(
-           socket.assigns.section,
-           socket.assigns[:dashboard_navigator_items],
-           scope
-         ) do
-      {:ok, scope_selector} ->
-        persist_scope(socket.assigns[:instructor_enrollment], scope_selector)
-        {:noreply, Phoenix.LiveView.push_patch(socket, to: path(socket, scope_selector))}
-
-      :error ->
-        {:noreply, Phoenix.LiveView.push_patch(socket, to: path(socket, "course"))}
-    end
-  end
-
-  @doc """
   Handles dashboard request timeout messages and applies coordinator timeout actions.
   """
   @spec handle_dashboard_request_timeout(socket(), non_neg_integer()) :: {:noreply, socket()}

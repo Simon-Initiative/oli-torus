@@ -221,45 +221,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                "course"
     end
 
-    test "invalid scope changes fall back to course without overwriting persisted state", %{
-      conn: conn,
-      instructor: instructor,
-      section: section
-    } do
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      enrollment = Sections.get_enrollment(section.slug, instructor.id, filter_by_status: false)
-      {_, containers} = Helpers.get_containers(section)
-      container = hd(containers)
-
-      {:ok, _state} =
-        InstructorDashboard.upsert_state(enrollment.id, %{
-          last_viewed_scope: "container:#{container.id}"
-        })
-
-      dashboard_path =
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :insights,
-          :dashboard
-        )
-
-      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
-               live(conn, dashboard_path)
-
-      {:ok, view, _html} = live(conn, redirected_path)
-
-      send(view.pid, {:dashboard_scope_changed, "container:999999"})
-
-      assert_patch(
-        view,
-        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
-      )
-
-      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
-               "course"
-    end
   end
 
   describe "instructor: insights > dashboard tab" do
@@ -538,44 +499,5 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                "course"
     end
 
-    test "invalid scope changes fall back to course without overwriting persisted state", %{
-      conn: conn,
-      instructor: instructor,
-      section: section
-    } do
-      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-      enrollment = Sections.get_enrollment(section.slug, instructor.id, filter_by_status: false)
-      {_, containers} = Helpers.get_containers(section)
-      container = hd(containers)
-
-      {:ok, _state} =
-        InstructorDashboard.upsert_state(enrollment.id, %{
-          last_viewed_scope: "container:#{container.id}"
-        })
-
-      dashboard_path =
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :insights,
-          :dashboard
-        )
-
-      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
-               live(conn, dashboard_path)
-
-      {:ok, view, _html} = live(conn, redirected_path)
-
-      send(view.pid, {:dashboard_scope_changed, "container:999999"})
-
-      assert_patch(
-        view,
-        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
-      )
-
-      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
-               "course"
-    end
   end
 end
