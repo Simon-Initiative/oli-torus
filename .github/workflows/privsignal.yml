@@ -79,8 +79,15 @@ jobs:
           commit_exit=$?
 
           if [ "$commit_exit" -eq 0 ]; then
-            git push
-            push_exit=$?
+            # Push with a PAT so the new commit triggers required PR workflows.
+            if [ -n "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" ]; then
+              git remote set-url origin "https://x-access-token:${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.repository }}.git"
+              git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+              push_exit=$?
+            else
+              echo "SIMON_BOT_PERSONAL_ACCESS_TOKEN is not set; skipping lockfile push to avoid stalled required checks."
+              push_exit=0
+            fi
           else
             push_exit=0
           fi
