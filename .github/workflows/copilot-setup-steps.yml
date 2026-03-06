@@ -105,5 +105,8 @@ jobs:
 
       - name: Verify Elixir toolchain
         run: |
+          set -a
+          source oli.env
+          MIX_ENV=test mix ecto.reset
           mix --version
           mix test
