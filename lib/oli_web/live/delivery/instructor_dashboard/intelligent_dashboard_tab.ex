@@ -317,6 +317,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       instructor_enrollment: socket.assigns.instructor_enrollment,
       dashboard_navigator_items: dashboard_navigator_items
     )
+    |> assign(:dashboard, dashboard_loading_payload())
     |> load_dashboard(use_revisit?: use_revisit?)
     |> assign(:dashboard_revisit_hydrated?, true)
   end
@@ -937,6 +938,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   defp dashboard_oracle_sources(_), do: %{}
+
+  defp dashboard_loading_payload do
+    %{
+      runtime_status_text: "Loading...",
+      progress_text: "Loading...",
+      student_support_text: "Loading..."
+    }
+  end
 
   defp dashboard_error_payload(reason) do
     %{
