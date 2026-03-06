@@ -156,7 +156,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p tmp/privsignal
-          mix run .github/scripts/priv_signal_ci_report.exs -- \
+          mix run --no-start .github/scripts/priv_signal_ci_report.exs -- \
             tmp/privsignal/ci.score.json \
             tmp/privsignal/ci.diff.json \
             tmp/privsignal/ci.report.md \
