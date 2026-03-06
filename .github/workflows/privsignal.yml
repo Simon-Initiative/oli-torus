@@ -1,0 +1,127 @@
+name: PrivSignal
+
+on:
+  pull_request:
+    branches:
+      - master
+      - hotfix-*
+      - prerelease-*
+      - nextgen-ux
+
+jobs:
+  privsignal:
+    name: PrivSignal (informational)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🧪 Setup Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.19.2
+          otp-version: 28.1.1
+
+      - name: ⬇️ Install dependencies
+        continue-on-error: true
+        run: mix deps.get
+
+      - name: 🔨 Compile PrivSignal dependency
+        continue-on-error: true
+        run: mix deps.compile priv_signal
+
+      - name: 🔎 Run PrivSignal pipeline (never fails build)
+        id: privsignal
+        shell: bash
+        run: |
+          set +e
+
+          mkdir -p tmp/privsignal
+
+          SCAN_PATH="tmp/privsignal/ci.lockfile.json"
+          DIFF_PATH="tmp/privsignal/ci.diff.json"
+          SCORE_PATH="tmp/privsignal/ci.score.json"
+
+          mix priv_signal.scan --quiet --json-path "$SCAN_PATH"
+          scan_exit=$?
+
+          if [ "$scan_exit" -eq 0 ]; then
+            mix priv_signal.diff \
+              --base "${{ github.event.pull_request.base.sha }}" \
+              --candidate-path "$SCAN_PATH" \
+              --format json \
+              --output "$DIFF_PATH"
+            diff_exit=$?
+          else
+            diff_exit=1
+          fi
+
+          if [ "$diff_exit" -eq 0 ]; then
+            mix priv_signal.score --diff "$DIFF_PATH" --output "$SCORE_PATH"
+            score_exit=$?
+          else
+            score_exit=1
+          fi
+
+          if [ -f "$SCORE_PATH" ]; then
+            score=$(jq -r '.score // "ERROR"' "$SCORE_PATH")
+          else
+            score="ERROR"
+          fi
+
+          echo "scan_exit=$scan_exit" >> "$GITHUB_OUTPUT"
+          echo "diff_exit=$diff_exit" >> "$GITHUB_OUTPUT"
+          echo "score_exit=$score_exit" >> "$GITHUB_OUTPUT"
+          echo "score=$score" >> "$GITHUB_OUTPUT"
+
+          # Informational only: never fail the workflow.
+          exit 0
+
+      - name: 🧾 Build PrivSignal report
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p tmp/privsignal
+          mix run .github/scripts/priv_signal_ci_report.exs -- \
+            tmp/privsignal/ci.score.json \
+            tmp/privsignal/ci.diff.json \
+            tmp/privsignal/ci.report.md \
+            tmp/privsignal/ci.report.json \
+            25
+
+      - name: 📌 Publish job summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f tmp/privsignal/ci.report.md ]; then
+            cat tmp/privsignal/ci.report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## PrivSignal (Informational)"
+              echo
+              echo "Unable to generate report."
+              echo
+              echo "- scan exit: ${{ steps.privsignal.outputs.scan_exit }}"
+              echo "- diff exit: ${{ steps.privsignal.outputs.diff_exit }}"
+              echo "- score exit: ${{ steps.privsignal.outputs.score_exit }}"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 📦 Upload PrivSignal artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: privsignal-artifacts-${{ github.event.pull_request.number }}
+          path: |
+            tmp/privsignal/ci.lockfile.json
+            tmp/privsignal/ci.diff.json
+            tmp/privsignal/ci.score.json
+            tmp/privsignal/ci.report.md
+            tmp/privsignal/ci.report.json
+          if-no-files-found: warn
