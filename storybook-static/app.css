@@ -16877,10 +16877,6 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: none;
 }
 
-.max-w-sm {
-  max-width: 24rem;
-}
-
 .max-w-xl {
   max-width: 36rem;
 }
