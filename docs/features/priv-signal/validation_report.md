@@ -4,7 +4,7 @@ Date: 2026-03-05
 Base branch: `privsignal-integration`
 
 ## Run Scope
-This report reflects a full rerun of all 10 staged branches after syncing `priv_signal.yml` across branches and refreshing the baseline lockfile on `privsignal-integration`. For each branch, we regenerated:
+This report reflects a full rerun of the first 10 staged branches after syncing `priv_signal.yml` across branches and refreshing the baseline lockfile on `privsignal-integration`, plus an additional targeted branch-11 run to exercise scanner improvements (fuzzy matching, DB wrappers, HTTP provenance). For each branch, we regenerated:
 - `tmp/privsignal/staged/XX.lockfile.json`
 - `tmp/privsignal/staged/XX.diff.json`
 - `tmp/privsignal/staged/XX.score.json`
@@ -22,18 +22,20 @@ This report reflects a full rerun of all 10 staged branches after syncing `priv_
 | 08 | `ps-torus-08-medium-behavioral-persisted` | `dcc87b6bfe` | `lib/oli/gen_ai/agent/server.ex` | `MEDIUM` | `MEDIUM` | 51 |
 | 09 | `ps-torus-09-high-inferred-attribute-external-transfer` | `f7902538b3` | `lib/oli/gen_ai/completions/open_ai_compliant_provider.ex` | `HIGH` | `HIGH` | 12 |
 | 10 | `ps-torus-10-high-transform-removed` | `b2a430e68d` | `lib/oli/gen_ai/completions/open_ai_compliant_provider.ex` | `HIGH` | `HIGH` | 44 |
+| 11 | `ps-torus-11-high-improvements-coverage` | `77911074a7` | `lib/oli_web/controllers/invite_controller.ex` | `HIGH` | `HIGH` | 89 |
 
 ## Outcome Summary
 - Control branch `01` now resolves to `NONE`.
 - Medium-path branches `03` and `08` resolve to `MEDIUM`.
 - High-path branches `04`, `05`, `06`, `07`, `09`, and `10` resolve to `HIGH`.
 - Branch `02` was revised to an isolated internal sink removal and now resolves to `LOW`.
+- Branch `11` exercises scanner improvements (fuzzy identifier mapping, inherited DB wrapper evidence, HTTP payload provenance) and resolves to `HIGH`.
 
 ## Artifacts
 Artifacts for the rerun are located at:
-- `tmp/privsignal/staged/01.lockfile.json` ... `tmp/privsignal/staged/10.lockfile.json`
-- `tmp/privsignal/staged/01.diff.json` ... `tmp/privsignal/staged/10.diff.json`
-- `tmp/privsignal/staged/01.score.json` ... `tmp/privsignal/staged/10.score.json`
+- `tmp/privsignal/staged/01.lockfile.json` ... `tmp/privsignal/staged/11.lockfile.json`
+- `tmp/privsignal/staged/01.diff.json` ... `tmp/privsignal/staged/11.diff.json`
+- `tmp/privsignal/staged/01.score.json` ... `tmp/privsignal/staged/11.score.json`
 - `tmp/privsignal/staged/rerun_results.tsv`
 
 ## Scanner Limitations That Required Workarounds
