@@ -2,6 +2,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   use OliWeb, :live_component
 
   alias OliWeb.Components.Delivery.ListNavigator
+
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.TileGroups.ContentSection
+
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.TileGroups.EngagementSection
+
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.SummaryTile
   alias OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab
 
   @impl Phoenix.LiveComponent
@@ -23,6 +29,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         </div>
       </div>
 
+      <div id="learning-dashboard-shell" class="space-y-6">
+        <section
+          id="learning-dashboard-summary-region"
+          class="rounded border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+        >
+          <SummaryTile.tile status="Loading summary placeholders" />
+        </section>
+
+        <EngagementSection.section />
+        <ContentSection.section />
+      </div>
+
       <%= if @show_prototype_validation_ui do %>
         <%!--
           TODO(intelligent-dashboard): Remove this prototype validation UI once the
@@ -30,7 +48,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         --%>
         <div
           id="learning-dashboard-runtime-status"
-          class="mb-4 p-4 bg-white dark:bg-gray-800 shadow-sm"
+          class="my-4 p-4 bg-white dark:bg-gray-800 shadow-sm"
         >
           <h3 class="font-semibold mb-2">Lane 1 Runtime Status</h3>
           <pre class="text-xs whitespace-pre-wrap">{@dashboard.runtime_status_text}</pre>
