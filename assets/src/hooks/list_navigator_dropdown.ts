@@ -95,7 +95,9 @@ export const ListNavigatorDropdown = {
   },
 
   getOptions() {
-    return Array.from(this.el.querySelectorAll('[data-list-navigator-option="true"]')) as HTMLElement[];
+    return Array.from(
+      this.el.querySelectorAll('[data-list-navigator-option="true"]'),
+    ) as HTMLElement[];
   },
 
   setInitialHighlightedIndex() {
@@ -118,7 +120,11 @@ export const ListNavigatorDropdown = {
       return;
     }
 
-    if (Number.isInteger(this.highlightedIndex) && this.highlightedIndex >= 0 && this.highlightedIndex < options.length) {
+    if (
+      Number.isInteger(this.highlightedIndex) &&
+      this.highlightedIndex >= 0 &&
+      this.highlightedIndex < options.length
+    ) {
       return;
     }
 
