@@ -30,6 +30,7 @@ import { HighlightCode } from './highlight_code';
 import { HomeMobileTabs } from './home_mobile_tabs';
 import { InputAutoSelect } from './input_auto_select';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
+import { ListNavigatorDropdown } from './list_navigator_dropdown';
 import { LiveModal } from './live_modal';
 import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
@@ -104,6 +105,7 @@ export const Hooks = {
   SubmitForm,
   LoadSurveyScripts,
   LiveModal,
+  ListNavigatorDropdown,
   EmailList,
   ClickOutside,
   ChunkLogsDetails,
