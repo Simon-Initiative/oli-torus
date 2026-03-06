@@ -3416,6 +3416,37 @@ defmodule Oli.Delivery.SectionsTest do
       end)
     end
 
+    test "handles objective proficiency summaries for non-enrolled users without crashing", %{
+      section: section,
+      objectives: %{objective_a: objective_a}
+    } do
+      # Reproduces production issue: summary rows exist, but none belong to enrolled students.
+      assert Sections.enrolled_student_ids(section.slug) == []
+
+      non_enrolled_user = insert(:user)
+      objective_type_id = ResourceType.id_for_objective()
+
+      insert(:resource_summary, %{
+        project_id: -1,
+        section_id: section.id,
+        user_id: non_enrolled_user.id,
+        resource_id: objective_a.resource_id,
+        resource_type_id: objective_type_id,
+        part_id: "unknown",
+        num_correct: 1,
+        num_attempts: 1,
+        num_hints: 0,
+        num_first_attempts: 1,
+        num_first_attempts_correct: 1
+      })
+
+      result = Sections.get_objectives_and_subobjectives(section)
+
+      top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
+      assert top_level_a.student_proficiency_obj == "Not enough data"
+      assert top_level_a.student_proficiency_obj_dist == %{"Not enough data" => 0}
+    end
+
     test "handles section with no objectives", %{section: section} do
       # Create a section with no objectives
       empty_section = insert(:section, base_project: section.base_project)
