@@ -62,6 +62,24 @@ jobs:
           cache: yarn
           cache-dependency-path: assets/yarn.lock
 
+      - name: Restore Elixir build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-test-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-test-
+
+      - name: Restore frontend modules cache
+        uses: actions/cache@v4
+        with:
+          path: assets/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('assets/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
       - name: Install Hex and Rebar
         run: |
           mix local.hex --force
