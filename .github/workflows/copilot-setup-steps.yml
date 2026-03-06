@@ -102,11 +102,3 @@ jobs:
 
       - name: Verify TypeScript toolchain
         run: yarn --cwd assets run check-types
-
-      - name: Verify Elixir toolchain
-        run: |
-          set -a
-          source oli.env
-          MIX_ENV=test mix ecto.reset
-          mix --version
-          mix test
