@@ -14,6 +14,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.DashboardSectionChrome
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.ProgressTile
+
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportTile
 
   attr :progress_status, :string, default: "Waiting for scoped data"

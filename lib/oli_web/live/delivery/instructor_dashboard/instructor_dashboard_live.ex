@@ -1240,6 +1240,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     IntelligentDashboardTab.handle_dashboard_request_timeout(socket, request_token)
   end
 
+  @impl Phoenix.LiveView
+  def handle_info(
+        {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_dashboard_runtime_oracle_result(
+      socket,
+      request_token,
+      context,
+      oracle_key,
+      oracle_result
+    )
+  end
+
   def handle_info(_any, socket) do
     {:noreply, socket}
   end

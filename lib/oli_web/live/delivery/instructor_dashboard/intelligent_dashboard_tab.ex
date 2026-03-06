@@ -236,21 +236,69 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   @spec handle_dashboard_request_timeout(socket(), non_neg_integer()) :: {:noreply, socket()}
   def handle_dashboard_request_timeout(socket, request_token) do
     scope = parse_scope(Map.get(socket.assigns, :dashboard_scope, "course"))
-    context = dashboard_context(socket, scope)
 
-    case LiveDataCoordinator.handle_request_timeout(
-           socket.assigns.dashboard_coordinator_state,
-           request_token,
-           coordinator_opts(context, dashboard_cache_opts(socket))
-         ) do
-      {:ok, coordinator_state, actions} ->
-        {:noreply,
-         socket
-         |> assign(:dashboard_coordinator_state, coordinator_state)
-         |> apply_dashboard_coordinator_actions(actions, context, dashboard_dependency_profile())}
+    with {:ok, context} <- dashboard_context(socket, scope),
+         {:ok, dependency_profile} <- dashboard_dependency_profile() do
+      case LiveDataCoordinator.handle_request_timeout(
+             socket.assigns.dashboard_coordinator_state,
+             request_token,
+             coordinator_opts(context, dashboard_cache_opts(socket))
+           ) do
+        {:ok, coordinator_state, actions} ->
+          {:noreply,
+           socket
+           |> assign(:dashboard_coordinator_state, coordinator_state)
+           |> apply_dashboard_coordinator_actions(actions, context, dependency_profile)}
 
-      {:error, _reason, coordinator_state, _actions} ->
-        {:noreply, assign(socket, :dashboard_coordinator_state, coordinator_state)}
+        {:error, _reason, coordinator_state, _actions} ->
+          {:noreply, assign(socket, :dashboard_coordinator_state, coordinator_state)}
+      end
+    else
+      {:error, reason} ->
+        {:noreply, assign(socket, :dashboard, dashboard_error_payload(reason))}
+    end
+  end
+
+  @doc """
+  Handles async runtime oracle results and applies coordinator actions.
+  """
+  @spec handle_dashboard_runtime_oracle_result(
+          socket(),
+          non_neg_integer(),
+          map(),
+          atom(),
+          map()
+        ) :: {:noreply, socket()}
+  def handle_dashboard_runtime_oracle_result(
+        socket,
+        request_token,
+        context,
+        oracle_key,
+        oracle_result
+      ) do
+    with {:ok, dependency_profile} <- dashboard_dependency_profile() do
+      case LiveDataCoordinator.handle_oracle_result(
+             socket.assigns.dashboard_coordinator_state,
+             request_token,
+             oracle_key,
+             oracle_result,
+             coordinator_opts(context, dashboard_cache_opts(socket))
+           ) do
+        {:ok, coordinator_state, actions} ->
+          {:noreply,
+           socket
+           |> assign(:dashboard_coordinator_state, coordinator_state)
+           |> apply_dashboard_coordinator_actions(actions, context, dependency_profile)}
+
+        {:error, reason, coordinator_state, _actions} ->
+          {:noreply,
+           socket
+           |> assign(:dashboard_coordinator_state, coordinator_state)
+           |> assign(:dashboard, dashboard_error_payload(reason))}
+      end
+    else
+      {:error, reason} ->
+        {:noreply, assign(socket, :dashboard, dashboard_error_payload(reason))}
     end
   end
 
@@ -258,6 +306,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     socket = ensure_initialized(socket)
     {socket, scope_selector} = resolve_scope_context(socket, params)
     use_revisit? = not socket.assigns.dashboard_revisit_hydrated?
+    {socket, dashboard_navigator_items} = ensure_dashboard_navigator_items(socket)
 
     socket
     |> assign(
@@ -266,60 +315,92 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       active_tab: :dashboard,
       dashboard_scope: scope_selector,
       instructor_enrollment: socket.assigns.instructor_enrollment,
-      dashboard_navigator_items: navigator_items(socket.assigns.section)
+      dashboard_navigator_items: dashboard_navigator_items
     )
     |> load_dashboard(use_revisit?: use_revisit?)
     |> assign(:dashboard_revisit_hydrated?, true)
   end
 
+  defp ensure_dashboard_navigator_items(socket) do
+    section_id = socket.assigns.section.id
+
+    # Cache navigator items by section id to avoid re-fetching and flattening
+    # containers on every dashboard scope change or param patch.
+    case {socket.assigns[:dashboard_navigator_section_id],
+          socket.assigns[:dashboard_navigator_items]} do
+      {^section_id, {_count, items} = navigator_items} when is_list(items) ->
+        {socket, navigator_items}
+
+      _ ->
+        dashboard_navigator_items = navigator_items(socket.assigns.section)
+
+        {socket
+         |> assign(:dashboard_navigator_section_id, section_id)
+         |> assign(:dashboard_navigator_items, dashboard_navigator_items),
+         dashboard_navigator_items}
+    end
+  end
+
   defp load_dashboard(socket, opts) do
     scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
     scope = parse_scope(scope_selector)
-    context = dashboard_context(socket, scope)
     cache_opts = dashboard_cache_opts(socket)
     use_revisit? = Keyword.get(opts, :use_revisit?, true)
 
-    revisit_hydration =
-      if use_revisit? do
-        hydrate_required_from_revisit_cache(
-          socket.assigns.dashboard_revisit_cache,
-          context,
-          scope,
-          cache_opts
-        )
-      else
-        %{source: :skipped, revisit_hits: 0, revisit_misses: 0}
+    with {:ok, context} <- dashboard_context(socket, scope),
+         {:ok, dependency_profile} <- dashboard_dependency_profile() do
+      revisit_hydration =
+        case use_revisit? do
+          true ->
+            hydrate_required_from_revisit_cache(
+              socket.assigns.dashboard_revisit_cache,
+              context,
+              scope,
+              cache_opts
+            )
+
+          false ->
+            %{source: :skipped, revisit_hits: 0, revisit_misses: 0}
+        end
+
+      case LiveDataCoordinator.request_scope_change(
+             socket.assigns.dashboard_coordinator_state,
+             scope,
+             dependency_profile,
+             coordinator_opts(context, cache_opts)
+           ) do
+        {:ok, coordinator_state, actions} ->
+          socket
+          |> assign(:dashboard_revisit_hydration, revisit_hydration)
+          |> assign(:dashboard_coordinator_state, coordinator_state)
+          |> assign(:dashboard_oracle_results, %{})
+          |> apply_dashboard_coordinator_actions(actions, context, dependency_profile)
+
+        {:error, reason, coordinator_state, _actions} ->
+          socket
+          |> assign(:dashboard_coordinator_state, coordinator_state)
+          |> assign(:dashboard, dashboard_error_payload(reason))
       end
-
-    dependency_profile = dashboard_dependency_profile()
-
-    case LiveDataCoordinator.request_scope_change(
-           socket.assigns.dashboard_coordinator_state,
-           scope,
-           dependency_profile,
-           coordinator_opts(context, cache_opts)
-         ) do
-      {:ok, coordinator_state, actions} ->
-        socket
-        |> assign(:dashboard_revisit_hydration, revisit_hydration)
-        |> assign(:dashboard_coordinator_state, coordinator_state)
-        |> assign(:dashboard_oracle_results, %{})
-        |> apply_dashboard_coordinator_actions(actions, context, dependency_profile)
-
-      {:error, reason, coordinator_state, _actions} ->
-        socket
-        |> assign(:dashboard_coordinator_state, coordinator_state)
-        |> assign(:dashboard, dashboard_error_payload(reason))
+    else
+      {:error, reason} ->
+        assign(socket, :dashboard, dashboard_error_payload(reason))
     end
   end
 
   defp dashboard_context(socket, scope) do
-    %{
-      dashboard_context_type: :section,
-      dashboard_context_id: socket.assigns.section.id,
-      user_id: dashboard_user_id(socket),
-      scope: scope
-    }
+    case dashboard_user_id(socket) do
+      user_id when is_integer(user_id) ->
+        {:ok,
+         %{
+           dashboard_context_type: :section,
+           dashboard_context_id: socket.assigns.section.id,
+           user_id: user_id,
+           scope: scope
+         }}
+
+      _ ->
+        {:error, :missing_user_id}
+    end
   end
 
   defp dashboard_user_id(socket) do
@@ -331,7 +412,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         socket.assigns.ctx.user_id
 
       true ->
-        1
+        nil
     end
   end
 
@@ -454,6 +535,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          dependency_profile
        ) do
     if active_dashboard_request?(socket, request_token) do
+      # Required-ready is a stable milestone: enough data exists to build a useful
+      # partial dashboard. We intentionally rebuild here to hydrate tiles early.
       oracle_results =
         Enum.reduce(hits, socket.assigns.dashboard_oracle_results, fn {oracle_key, payload},
                                                                       acc ->
@@ -471,11 +554,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp apply_dashboard_coordinator_action(
          socket,
          %{type: :emit_loading, request_token: request_token},
-         context,
-         dependency_profile
+         _context,
+         _dependency_profile
        ) do
     if active_dashboard_request?(socket, request_token) do
-      maybe_assign_dashboard_bundle(socket, request_token, context, dependency_profile)
+      # Loading can fire frequently while oracles trickle in. Rebuilding the entire
+      # snapshot/projection graph here adds churn with little UX value, so we no-op.
+      socket
     else
       socket
     end
@@ -485,27 +570,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          socket,
          %{type: :runtime_start, request_token: request_token, misses: misses},
          context,
-         dependency_profile
+         _dependency_profile
        ) do
-    Enum.reduce(misses, socket, fn oracle_key, acc ->
-      oracle_result = dashboard_runtime_result(oracle_key, context)
-
-      case LiveDataCoordinator.handle_oracle_result(
-             acc.assigns.dashboard_coordinator_state,
-             request_token,
-             oracle_key,
-             oracle_result,
-             coordinator_opts(context, dashboard_cache_opts(acc))
-           ) do
-        {:ok, coordinator_state, actions} ->
-          acc
-          |> assign(:dashboard_coordinator_state, coordinator_state)
-          |> apply_dashboard_coordinator_actions(actions, context, dependency_profile)
-
-        {:error, _reason, coordinator_state, _actions} ->
-          assign(acc, :dashboard_coordinator_state, coordinator_state)
-      end
-    end)
+    start_dashboard_runtime_loads(request_token, misses, context)
+    socket
   end
 
   defp apply_dashboard_coordinator_action(
@@ -514,15 +582,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
            type: :oracle_result_received,
            token_state: :active,
            oracle_key: oracle_key,
-           oracle_result: oracle_result,
-           request_token: request_token
+           oracle_result: oracle_result
          },
-         context,
-         dependency_profile
+         _context,
+         _dependency_profile
        ) do
+    # Oracle results may arrive one-by-one; storing them avoids lost work while
+    # deferring expensive bundle assembly until milestone events.
     socket
     |> update(:dashboard_oracle_results, &Map.put(&1, oracle_key, oracle_result))
-    |> maybe_assign_dashboard_bundle(request_token, context, dependency_profile)
   end
 
   defp apply_dashboard_coordinator_action(
@@ -531,6 +599,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          context,
          dependency_profile
        ) do
+    # Completion is the final milestone for the active request; rebuild once to
+    # publish the fully resolved dashboard payload.
     socket
     |> cancel_dashboard_timeout(request_token)
     |> maybe_assign_dashboard_bundle(request_token, context, dependency_profile)
@@ -559,7 +629,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
              context,
              request_token,
              socket.assigns.dashboard_oracle_results,
-             dependency_profile
+             dependency_profile,
+             dashboard_timezone(socket)
            ) do
         {:ok, bundle} ->
           persist_revisit_cache(
@@ -583,14 +654,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
-  defp build_dashboard_bundle(context, request_token, oracle_results, dependency_profile) do
+  defp build_dashboard_bundle(
+         context,
+         request_token,
+         oracle_results,
+         dependency_profile,
+         timezone
+       ) do
     expected_oracles = dependency_profile.required ++ dependency_profile.optional
 
     with {:ok, snapshot} <-
            Assembler.assemble(context, Integer.to_string(request_token), oracle_results,
              scope: context.scope,
              expected_oracles: expected_oracles,
-             metadata: %{timezone: "Etc/UTC", source: :instructor_insights}
+             metadata: %{timezone: timezone, source: :instructor_insights}
            ),
          {:ok, %{projections: projection_map, statuses: projection_statuses}} <-
            Projections.derive_all(snapshot) do
@@ -622,24 +699,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   defp load_oracle_result(module, oracle_key, context) do
-    oracle_context =
-      case OracleContext.new(context) do
-        {:ok, oracle_context} ->
-          oracle_context
+    case OracleContext.new(context) do
+      {:ok, oracle_context} ->
+        case module.load(oracle_context, []) do
+          {:ok, payload} ->
+            Result.ok(oracle_key, payload,
+              version: oracle_version(module),
+              metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
+            )
 
-        {:error, reason} ->
-          raise ArgumentError, "invalid dashboard oracle context: #{inspect(reason)}"
-      end
-
-    case module.load(oracle_context, []) do
-      {:ok, payload} ->
-        Result.ok(oracle_key, payload,
-          version: oracle_version(module),
-          metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
-        )
+          {:error, reason} ->
+            Result.error(oracle_key, reason,
+              version: oracle_version(module),
+              metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
+            )
+        end
 
       {:error, reason} ->
-        Result.error(oracle_key, reason,
+        Result.error(oracle_key, {:invalid_oracle_context, reason},
           version: oracle_version(module),
           metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
         )
@@ -659,14 +736,56 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     )
   end
 
-  defp dashboard_dependency_profile do
-    {:ok, progress} = OracleRegistry.dependencies_for(:progress_summary)
-    {:ok, support} = OracleRegistry.dependencies_for(:support_summary)
+  defp start_dashboard_runtime_loads(request_token, misses, context) do
+    live_view_pid = self()
 
-    %{
-      required: Enum.uniq(progress.required ++ support.required),
-      optional: Enum.uniq(progress.optional ++ support.optional)
-    }
+    Task.start(fn ->
+      misses
+      |> Task.async_stream(
+        fn oracle_key -> {oracle_key, dashboard_runtime_result(oracle_key, context)} end,
+        max_concurrency: dashboard_runtime_max_concurrency(),
+        ordered: false,
+        timeout: :infinity
+      )
+      |> Enum.each(fn
+        {:ok, {oracle_key, oracle_result}} ->
+          send(
+            live_view_pid,
+            {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result}
+          )
+
+        {:exit, _reason} ->
+          :ok
+      end)
+    end)
+  end
+
+  defp dashboard_runtime_max_concurrency, do: 4
+
+  defp dashboard_dependency_profile do
+    case OracleRegistry.dependencies_for(:progress_summary) do
+      {:ok, progress} ->
+        case OracleRegistry.dependencies_for(:support_summary) do
+          {:ok, support} ->
+            {:ok,
+             %{
+               required: Enum.uniq(progress.required ++ support.required),
+               optional: Enum.uniq(progress.optional ++ support.optional)
+             }}
+
+          {:error, reason} ->
+            {:error, {:dependency_profile_unavailable, :support_summary, reason}}
+
+          other ->
+            {:error, {:dependency_profile_unavailable, :support_summary, other}}
+        end
+
+      {:error, reason} ->
+        {:error, {:dependency_profile_unavailable, :progress_summary, reason}}
+
+      other ->
+        {:error, {:dependency_profile_unavailable, :progress_summary, other}}
+    end
   end
 
   defp coordinator_opts(context, cache_opts) do
@@ -705,6 +824,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       end
 
     %{oracle_version: oracle_version, data_version: 1}
+  end
+
+  defp dashboard_timezone(socket) do
+    case Map.get(socket.assigns, :browser_timezone) do
+      timezone when is_binary(timezone) and timezone != "" -> timezone
+      _ -> "Etc/UTC"
+    end
   end
 
   # TODO(intelligent-dashboard): Prototype-only data-validation payload helpers.

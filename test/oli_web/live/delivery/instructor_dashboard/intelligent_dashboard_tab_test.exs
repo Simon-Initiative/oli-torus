@@ -113,4 +113,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                "container:123"
     end
   end
+
+  describe "handle_dashboard_request_timeout/2" do
+    test "fails closed when no authenticated user id is available" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{__changed__: %{}, section: %{id: 123}, dashboard_scope: "course"}
+      }
+
+      assert {:noreply, updated_socket} =
+               IntelligentDashboardTab.handle_dashboard_request_timeout(socket, 1)
+
+      assert updated_socket.assigns.dashboard.runtime_status_text =~ "missing_user_id"
+    end
+  end
 end

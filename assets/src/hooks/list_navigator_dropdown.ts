@@ -3,14 +3,16 @@ export const ListNavigatorDropdown = {
     this.attachInputListener();
     this.attachPointerListener();
     this.setInitialHighlightedIndex();
-    this.applyHighlight();
+    this.syncExpandedState(this.isOpen());
+    this.applyHighlight(false);
   },
 
   updated() {
     this.attachInputListener();
     this.attachPointerListener();
-    this.setInitialHighlightedIndex();
-    this.applyHighlight();
+    this.syncExpandedState(this.isOpen());
+    this.ensureValidHighlightedIndex();
+    this.applyHighlight(false);
   },
 
   destroyed() {
@@ -59,7 +61,7 @@ export const ListNavigatorDropdown = {
     if (index < 0 || index === this.highlightedIndex) return;
 
     this.highlightedIndex = index;
-    this.applyHighlight();
+    this.applyHighlight(false);
   },
 
   handleKeyDown(event: KeyboardEvent) {
@@ -72,12 +74,12 @@ export const ListNavigatorDropdown = {
       case 'ArrowDown':
         event.preventDefault();
         this.highlightedIndex = (this.highlightedIndex + 1) % options.length;
-        this.applyHighlight();
+        this.applyHighlight(true);
         break;
       case 'ArrowUp':
         event.preventDefault();
         this.highlightedIndex = (this.highlightedIndex - 1 + options.length) % options.length;
-        this.applyHighlight();
+        this.applyHighlight(true);
         break;
       case 'Enter':
         event.preventDefault();
@@ -109,17 +111,57 @@ export const ListNavigatorDropdown = {
     this.highlightedIndex = currentIndex >= 0 ? currentIndex : 0;
   },
 
+  ensureValidHighlightedIndex() {
+    const options = this.getOptions();
+    if (options.length === 0) {
+      this.highlightedIndex = 0;
+      return;
+    }
+
+    if (Number.isInteger(this.highlightedIndex) && this.highlightedIndex >= 0 && this.highlightedIndex < options.length) {
+      return;
+    }
+
+    this.setInitialHighlightedIndex();
+  },
+
   isOpen() {
     return window.getComputedStyle(this.el).display !== 'none';
   },
 
-  closeDropdown() {
-    this.el.style.display = 'none';
-    this.el.classList.remove('inline-flex');
-    this.el.classList.add('hidden');
+  getTriggerElement() {
+    const dropdownId = this.el.getAttribute('id');
+    if (!dropdownId) return null;
+
+    return document.querySelector(`[aria-controls="${dropdownId}"]`) as HTMLElement | null;
   },
 
-  applyHighlight() {
+  syncExpandedState(isExpanded: boolean) {
+    const trigger = this.getTriggerElement();
+    if (trigger) {
+      trigger.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    }
+  },
+
+  closeDropdown() {
+    this.el.style.removeProperty('display');
+    this.el.classList.remove('inline-flex');
+    this.el.classList.add('hidden');
+    this.syncExpandedState(false);
+    this.getTriggerElement()?.focus();
+  },
+
+  isInViewport(element: HTMLElement) {
+    const container = element.parentElement;
+    if (!container) return true;
+
+    const elementRect = element.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    return elementRect.top >= containerRect.top && elementRect.bottom <= containerRect.bottom;
+  },
+
+  applyHighlight(shouldScrollToSelection: boolean) {
     const options = this.getOptions();
     if (options.length === 0) return;
 
@@ -150,7 +192,7 @@ export const ListNavigatorDropdown = {
         option.classList.add('bg-Background-bg-secondary');
       }
 
-      if (isSelected) {
+      if (isSelected && shouldScrollToSelection && !this.isInViewport(option)) {
         option.scrollIntoView({ block: 'nearest' });
       }
     });
