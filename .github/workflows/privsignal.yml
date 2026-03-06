@@ -101,14 +101,30 @@ jobs:
 
           DIFF_PATH="tmp/privsignal/ci.diff.json"
           SCORE_PATH="tmp/privsignal/ci.score.json"
+          BASE_BRANCH_REF="origin/${{ github.base_ref }}"
+          BASE_SHA_REF="${{ github.event.pull_request.base.sha }}"
+          BASE_REF=""
+
+          # Ensure latest target branch state is available locally.
+          git fetch --no-tags origin "${{ github.base_ref }}"
 
           if [ -f "priv_signal.lockfile.json" ]; then
-            mix priv_signal.diff \
-              --base "${{ github.event.pull_request.base.sha }}" \
-              --candidate-path priv_signal.lockfile.json \
-              --format json \
-              --output "$DIFF_PATH"
-            diff_exit=$?
+            if git cat-file -e "${BASE_BRANCH_REF}:priv_signal.lockfile.json" 2>/dev/null; then
+              BASE_REF="$BASE_BRANCH_REF"
+            elif git cat-file -e "${BASE_SHA_REF}:priv_signal.lockfile.json" 2>/dev/null; then
+              BASE_REF="$BASE_SHA_REF"
+            fi
+
+            if [ -n "$BASE_REF" ]; then
+              mix priv_signal.diff \
+                --base "$BASE_REF" \
+                --candidate-path priv_signal.lockfile.json \
+                --format json \
+                --output "$DIFF_PATH"
+              diff_exit=$?
+            else
+              diff_exit=1
+            fi
           else
             diff_exit=1
           fi
@@ -129,6 +145,7 @@ jobs:
           echo "diff_exit=$diff_exit" >> "$GITHUB_OUTPUT"
           echo "score_exit=$score_exit" >> "$GITHUB_OUTPUT"
           echo "score=$score" >> "$GITHUB_OUTPUT"
+          echo "base_ref=$BASE_REF" >> "$GITHUB_OUTPUT"
 
           # Informational only.
           exit 0
@@ -161,6 +178,7 @@ jobs:
               echo "- scan exit: ${{ steps.lockfile.outputs.scan_exit }}"
               echo "- lockfile changed: ${{ steps.lockfile.outputs.lockfile_changed }}"
               echo "- push exit: ${{ steps.lockfile_push.outputs.push_exit }}"
+              echo "- base ref used: ${{ steps.privsignal.outputs.base_ref }}"
               echo "- diff exit: ${{ steps.privsignal.outputs.diff_exit }}"
               echo "- score exit: ${{ steps.privsignal.outputs.score_exit }}"
             } >> "$GITHUB_STEP_SUMMARY"
