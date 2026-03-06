@@ -85,7 +85,7 @@ jobs:
       - name: ▶️ Run unit tests
         run: |
           set -a;source oli.env
-          MIX_ENV=test mix ecto.reset
+          MIX_ENV=test mix ecto.setup
           mix test --trace || if [[ $? = 2  ]]; then mix test --failed; else false; fi # https://angelika.me/2024/01/08/do-not-run-mix-test-failed/
 
       - name: 📦 Install node_module dependencies
