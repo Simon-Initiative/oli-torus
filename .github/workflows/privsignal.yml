@@ -63,40 +63,6 @@ jobs:
           # Informational only.
           exit 0
 
-      - name: ⬆️ Commit lockfile to PR branch (same-repo PRs only)
-        id: lockfile_push
-        if: steps.lockfile.outputs.scan_exit == '0' && steps.lockfile.outputs.lockfile_changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
-        shell: bash
-        run: |
-          set +e
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add priv_signal.lockfile.json
-
-          git commit -m "chore(privsignal): refresh lockfile"
-          commit_exit=$?
-
-          if [ "$commit_exit" -eq 0 ]; then
-            # Push with a PAT so the new commit triggers required PR workflows.
-            if [ -n "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" ]; then
-              git remote set-url origin "https://x-access-token:${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}@github.com/${{ github.repository }}.git"
-              git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
-              push_exit=$?
-            else
-              echo "SIMON_BOT_PERSONAL_ACCESS_TOKEN is not set; skipping lockfile push to avoid stalled required checks."
-              push_exit=0
-            fi
-          else
-            push_exit=0
-          fi
-
-          echo "push_exit=$push_exit" >> "$GITHUB_OUTPUT"
-
-          # Informational only.
-          exit 0
-
       - name: 🔎 Run PrivSignal diff/score (informational)
         id: privsignal
         if: always()
@@ -184,7 +150,6 @@ jobs:
               echo
               echo "- scan exit: ${{ steps.lockfile.outputs.scan_exit }}"
               echo "- lockfile changed: ${{ steps.lockfile.outputs.lockfile_changed }}"
-              echo "- push exit: ${{ steps.lockfile_push.outputs.push_exit }}"
               echo "- base ref used: ${{ steps.privsignal.outputs.base_ref }}"
               echo "- diff exit: ${{ steps.privsignal.outputs.diff_exit }}"
               echo "- score exit: ${{ steps.privsignal.outputs.score_exit }}"
