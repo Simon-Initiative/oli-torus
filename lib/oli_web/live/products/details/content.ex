@@ -11,17 +11,22 @@ defmodule OliWeb.Products.Details.Content do
   def render(assigns) do
     ~H"""
     <% updates_count = Enum.count(@updates) %>
-    <% badge_text = if updates_count == 1, do: "1 update", else: "#{updates_count} updates" %>
     <div>
       <div>
         <p :if={updates_count == 0}>
           There are <b>no updates</b> available for this template.
         </p>
         <div :if={updates_count > 0}>
-          <p :if={updates_count == 1}>There is <b>one</b> update available for this template.</p>
-          <p :if={updates_count > 1}>
-            There are <b>{updates_count}</b> updates available for this template.
-          </p>
+          <% badge_text =
+            Gettext.ngettext(OliWeb.Gettext, "1 update", "%{count} updates", updates_count) %>
+          <% updates_text =
+            Gettext.ngettext(
+              OliWeb.Gettext,
+              "There is one update available for this template.",
+              "There are %{count} updates available for this template.",
+              updates_count
+            ) %>
+          <p>{updates_text}</p>
           <.link href={
             Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
           }>
