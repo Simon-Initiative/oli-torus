@@ -183,6 +183,7 @@ const Adaptive = (
           width={props.model.content?.custom?.width || 1000}
           height={props.model.content?.custom?.height || 500}
           backgroundColor={props.model.content?.custom?.palette.backgroundColor || '#fff'}
+          projectSlug={props.projectSlug}
           selected={selectedPartId}
           parts={parts}
           responsiveLayout={props.responsiveLayout}
