@@ -48,6 +48,7 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         all_items: assigns.items,
         filtered_items: assigns.items,
         path_builder_fn: assigns.path_builder_fn,
+        navigation_type: Map.get(assigns, :navigation_type, :navigate),
         search_query: ""
       })
 
@@ -55,18 +56,11 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
   end
 
   def handle_event("search", %{"value" => query}, socket) do
-    # Filter out the current item from all items first
-    available_items =
-      socket.assigns.all_items
-      |> Enum.reject(fn item ->
-        socket.assigns.current_item && item.resource_id == socket.assigns.current_item.resource_id
-      end)
-
     filtered_items =
       if String.trim(query) == "" do
-        available_items
+        socket.assigns.all_items
       else
-        available_items
+        searchable_items(socket.assigns.all_items, socket.assigns.current_item)
         |> Enum.filter(fn item ->
           String.contains?(String.downcase(item.title), String.downcase(query))
         end)
@@ -78,6 +72,22 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
       |> assign(:search_query, query)
 
     {:noreply, socket}
+  end
+
+  def handle_event("select_item", %{"index" => index}, socket) do
+    case parse_index(index) do
+      {:ok, idx} ->
+        case Enum.at(socket.assigns.filtered_items, idx) do
+          nil ->
+            {:noreply, socket}
+
+          item ->
+            navigate_to_item(socket, item)
+        end
+
+      :error ->
+        {:noreply, socket}
+    end
   end
 
   attr(:items, :list, required: true)
@@ -109,6 +119,12 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
   def render(assigns) do
     ~H"""
     <div class="inline-flex justify-start items-center">
+      <p class="sr-only" role="status" aria-live="polite">
+        {a11y_selection_announcement(@current_item_label, @current_item)}
+      </p>
+      <p class="sr-only" role="status" aria-live="polite">
+        {a11y_dashboard_updated_announcement(@current_item_label, @current_item)}
+      </p>
       <%= if @previous_item do %>
         <.nav_link
           role="previous item link"
@@ -145,8 +161,11 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
               in: {"ease-out duration-300", "opacity-0", "opacity-100"},
               out: {"ease-out duration-200", "opacity-100", "opacity-0"}
             )
+            |> JS.push("search", value: %{value: ""}, target: @myself)
             |> JS.focus(to: "#search_input")
           }
+          aria-haspopup="listbox"
+          aria-controls="searchable_dropdown"
           class="w-[465px] px-2 py-1 rounded-md inline-flex flex-row justify-center items-center"
         >
           <div
@@ -165,10 +184,8 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           filtered_items={@filtered_items}
           current_item_resource_id={if @current_item, do: @current_item.resource_id, else: nil}
           current_item_label={@current_item_label}
-          path_builder_fn={@path_builder_fn}
           search_query={@search_query}
           target={@myself}
-          navigation_type={@navigation_type}
         />
       </div>
       <%= if @next_item do %>
@@ -202,12 +219,20 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     """
   end
 
+  attr(:filtered_items, :list, required: true)
+  attr(:current_item_resource_id, :any, required: true)
+  attr(:current_item_label, :string, required: true)
+  attr(:search_query, :string, required: true)
+  attr(:target, :any, required: true)
+
   def searchable_dropdown(assigns) do
     ~H"""
     <div
       id="searchable_dropdown"
+      role="listbox"
+      phx-hook="ListNavigatorDropdown"
       phx-click-away={JS.hide(transition: {"ease-out duration-200", "opacity-100", "opacity-0"})}
-      class="hidden absolute top-full left-1/2 transform -translate-x-1/2 z-[9999] w-[465px] pb-1.5 bg-Background-bg-secondary rounded shadow-[0px_0px_8px_0px_rgba(0,0,0,0.15)] flex-col justify-center items-start overflow-hidden"
+      class="hidden absolute top-full left-1/2 transform -translate-x-1/2 z-50 w-[465px] pb-1.5 bg-Background-bg-secondary rounded shadow-[0px_0px_8px_0px_rgba(0,0,0,0.15)] flex-col justify-center items-start overflow-hidden"
     >
       <div class="border-b-0.5 border-Border-border-primary/80 self-stretch pl-9 pr-4 py-1.5 mb-3 bg-Background-bg-secondary shadow-[0px_1px_0px_0px_rgba(245,245,245,1.00)] inline-flex justify-start items-center">
         <div class="w-5 h-5 relative">
@@ -216,8 +241,13 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
         <input
           id="search_input"
           type="text"
+          name="list_navigator_search"
           placeholder="Search"
           value={@search_query}
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
           phx-keyup="search"
           phx-debounce="300"
           phx-target={@target}
@@ -233,13 +263,20 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           </div>
         <% else %>
           <button
-            :for={item <- @filtered_items}
-            phx-click={navigation_action(@navigation_type, @path_builder_fn.(item))}
+            :for={{item, index} <- Enum.with_index(@filtered_items)}
+            phx-click={
+              JS.push("select_item", value: %{index: index}, target: @target)
+              |> JS.hide(to: "#searchable_dropdown")
+            }
+            data-list-navigator-option="true"
+            data-list-navigator-current={to_string(item.resource_id == @current_item_resource_id)}
+            role="option"
+            aria-selected="false"
             class={[
               "w-full cursor-pointer self-stretch px-2 py-1.5 inline-flex justify-between items-center",
               if(item.resource_id == @current_item_resource_id,
                 do: "bg-Fill-Buttons-fill-primary text-white",
-                else: "bg-Background-bg-secondary hover:bg-Background-bg-primary"
+                else: "bg-Background-bg-secondary"
               )
             ]}
           >
@@ -302,9 +339,6 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     """
   end
 
-  defp navigation_action(:patch, destination), do: JS.patch(destination)
-  defp navigation_action(:navigate, destination), do: JS.navigate(destination)
-
   defp resource_label(resource) do
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
@@ -328,5 +362,49 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
 
   defp item_title(label, item) do
     "#{item_prefix(label, item)}#{item.title}"
+  end
+
+  defp searchable_items(items, nil), do: items
+
+  defp searchable_items(items, current_item) do
+    Enum.reject(items, fn item -> item.resource_id == current_item.resource_id end)
+  end
+
+  defp close_dropdown(socket) do
+    assign(socket,
+      search_query: "",
+      filtered_items: socket.assigns.all_items
+    )
+  end
+
+  defp parse_index(index) do
+    case Integer.parse(to_string(index)) do
+      {parsed, ""} when parsed >= 0 -> {:ok, parsed}
+      _ -> :error
+    end
+  end
+
+  defp navigate_to_item(socket, item) do
+    destination = socket.assigns.path_builder_fn.(item)
+    socket = close_dropdown(socket)
+
+    case socket.assigns.navigation_type do
+      :patch -> {:noreply, push_patch(socket, to: destination)}
+      :navigate -> {:noreply, push_navigate(socket, to: destination)}
+    end
+  end
+
+  defp a11y_selection_announcement("", _), do: ""
+  defp a11y_selection_announcement(_, nil), do: ""
+
+  defp a11y_selection_announcement(label, item) do
+    "Filtered to #{item_title(label, item)}"
+  end
+
+  defp a11y_dashboard_updated_announcement("", _), do: ""
+  defp a11y_dashboard_updated_announcement(_, nil), do: ""
+
+  defp a11y_dashboard_updated_announcement(label, item) do
+    "Dashboard content updated for #{item_title(label, item)}"
   end
 end
