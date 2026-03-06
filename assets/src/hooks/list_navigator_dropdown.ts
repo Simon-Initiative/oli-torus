@@ -108,7 +108,7 @@ export const ListNavigatorDropdown = {
     }
 
     const currentIndex = options.findIndex(
-      (option) => option.getAttribute('data-list-navigator-current') === 'true',
+      (option: HTMLElement) => option.getAttribute('data-list-navigator-current') === 'true',
     );
     this.highlightedIndex = currentIndex >= 0 ? currentIndex : 0;
   },
@@ -175,7 +175,7 @@ export const ListNavigatorDropdown = {
       this.highlightedIndex = 0;
     }
 
-    options.forEach((option, index) => {
+    options.forEach((option: HTMLElement, index: number) => {
       const isSelected = index === this.highlightedIndex;
       const isCurrent = option.getAttribute('data-list-navigator-current') === 'true';
 
