@@ -447,7 +447,7 @@ export const transformSchemaToModel = (schema: any) => {
       columnGuides: schema.AuthorInterfaceTools?.columnGuides,
       rowGuides: schema.AuthorInterfaceTools?.rowGuides,
     },
-    ai_enabled: schema.Properties.Appearance.aiEnabled,
+    ai_enabled: schema.LessonAppearance?.aiEnabled,
     displayApplicationChrome: schema.NavigationBehavior?.displayApplicationChrome,
     additionalStylesheets,
     title: schema.Properties?.title,
