@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ActivityModelSchema } from 'components/activities/types';
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
+import { selectProjectSlug } from 'apps/authoring/store/app/slice';
 import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
 
@@ -40,6 +41,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   const [isReady, setIsReady] = useState(false);
 
   const selectedPartId = useSelector(selectCurrentSelection);
+  const projectSlug = useSelector(selectProjectSlug);
 
   const ref = useRef<any>(null);
 
@@ -48,6 +50,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     ref,
     model: JSON.stringify(activityModel),
     editMode,
+    projectSlug,
     responsiveLayout,
     style: stackLayout
       ? {
