@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.32.5",
+      version: "0.33.0",
       elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -36,6 +36,7 @@ defmodule Oli.MixProject do
         test: :test,
         "test.ecto.reset": :test,
         scenarios: :test,
+        "scenarios.coverage": :test,
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,

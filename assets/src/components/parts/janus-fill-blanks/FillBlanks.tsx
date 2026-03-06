@@ -31,7 +31,14 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const [localSnapshot, setLocalSnapshot] = useState<any>({});
   const [stateChanged, setStateChanged] = useState<boolean>(false);
   const [mutateState, setMutateState] = useState<any>({});
-  const { width, height, content, elements, alternateCorrectDelimiter } = model;
+  const {
+    width,
+    height,
+    content,
+    elements,
+    alternateCorrectDelimiter,
+    caseSensitiveAnswers = true,
+  } = model;
   const fibContainer = useRef(null);
   // Map to store refs for each text input by element key
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
@@ -76,7 +83,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const wrapperStyles: CSSProperties = {
     height,
     borderRadius: '5px',
-    fontFamily: 'revert',
+    fontSize: '1rem',
+    fontFamily: '"Open Sans", sans-serif',
   };
 
   useEffect(() => {
@@ -365,7 +373,11 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
           : [correct, ...alternateCorrect.split(alternateCorrectDelimiter)]
         : [correct];
 
-    return correctArray.includes(submission);
+    if (caseSensitiveAnswers) {
+      return correctArray.includes(submission);
+    }
+    const submissionNorm = submission.toLowerCase();
+    return correctArray.some((c) => String(c).toLowerCase() === submissionNorm);
   };
 
   const saveElements = useCallback(() => {
@@ -977,6 +989,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
       aria-label="Fill in the blanks"
     >
       <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>
+      <style type="text/css">{`:host:has(.select2-container--open) { z-index: 9999 !important; }`}</style>
       <style type="text/css">{`${customCss}`};</style>
       {/* Live region for screen reader announcements */}
       <div

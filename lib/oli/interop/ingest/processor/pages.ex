@@ -90,6 +90,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
           |> Rewiring.rewire_bank_selections(state.legacy_to_resource_id_map)
           |> Rewiring.rewire_citation_references(state.legacy_to_resource_id_map)
           |> Rewiring.rewire_alternatives_groups(state.legacy_to_resource_id_map)
+          |> Rewiring.rewire_adaptive_link_references(state.legacy_to_resource_id_map)
       end
 
     %{

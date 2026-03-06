@@ -3,20 +3,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources
 
+  def get_instructor_enrollment(section, current_user)
+      when is_map(section) and is_map(current_user) and is_integer(current_user.id) do
+    Sections.get_enrollment(section.slug, current_user.id, filter_by_status: false)
+  end
+
+  def get_instructor_enrollment(_section, _current_user), do: nil
+
   def get_containers(section, opts \\ [async: true]) do
     case Sections.get_units_and_modules_containers(section.slug) do
       {0, pages} ->
         page_ids = Enum.map(pages, & &1.id)
-
-        students =
-          Sections.enrolled_students(section.slug)
-          |> Enum.reject(fn user -> user.user_role_id != 4 end)
+        student_ids = Sections.progress_user_ids(section.id)
 
         student_progress =
           Metrics.progress_across_for_pages(
             section.id,
             page_ids,
-            Enum.map(students, & &1.id)
+            student_ids
           )
 
         proficiency_per_page = Metrics.proficiency_per_page(section, page_ids)
@@ -32,14 +36,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         {0, pages_with_metrics}
 
       {total_count, containers} ->
-        instructor_ids = Sections.get_instructors_for_section(section.id, ids_only: true)
+        %{
+          excluded_user_ids: excluded_user_ids,
+          included_user_count: included_user_count
+        } = Sections.progress_aggregation_inputs(section.id)
 
         student_progress =
           Metrics.progress_across(
             section.id,
             Enum.map(containers, & &1.id),
-            instructor_ids,
-            Sections.count_enrollments(section.slug)
+            excluded_user_ids,
+            included_user_count
           )
 
         proficiency_per_container =

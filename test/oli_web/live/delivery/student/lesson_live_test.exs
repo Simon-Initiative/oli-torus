@@ -1938,6 +1938,48 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute updated_attempt.was_late
     end
 
+    test "expired graded attempts cannot continue in lesson mode after auto-finalization", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, page_3.resource_id)
+      |> Sections.update_section_resource(%{
+        end_date: yesterday(),
+        late_submit: :disallow,
+        late_start: :disallow,
+        scheduling_type: :read_by,
+        time_limit: 20
+      })
+
+      attempt_in_progress =
+        create_attempt(user, section, page_3, %{
+          lifecycle_state: :active,
+          inserted_at: DateTime.add(DateTime.utc_now(), -21, :minute)
+        })
+
+      {:error, {:redirect, %{to: review_redirect_path}}} =
+        live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+
+      assert review_redirect_path =~
+               "/sections/#{section.slug}/lesson/#{page_3.slug}/attempt/#{attempt_in_progress.attempt_guid}/review"
+
+      updated_attempt =
+        Core.get_resource_attempt_by(attempt_guid: attempt_in_progress.attempt_guid)
+
+      assert updated_attempt.lifecycle_state in [:submitted, :evaluated]
+
+      # After finalization, revisiting lesson should not return the learner to an active lesson attempt.
+      {:error, {:redirect, %{to: follow_up_redirect_path}}} =
+        live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+
+      assert follow_up_redirect_path =~ "/sections/#{section.slug}/prologue/#{page_3.slug}"
+    end
+
     test "uses ResourceAccess.out_of instead of ResourceAttempt.out_of for current_out_of display in score-as-you-go assessment",
          %{
            conn: conn,

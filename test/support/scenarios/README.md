@@ -106,6 +106,37 @@ Detailed documentation is organized by topic:
 - **[Users and Organization](docs/users_and_org.md)** - Managing users, institutions, and enrollment
 - **[Hooks and Extensions](docs/hooks.md)** - Custom functions for advanced testing scenarios
 
+## Schema Validation
+
+Oli.Scenarios ships a JSON Schema at:
+
+- `priv/schemas/v0-1-0/scenario.schema.json`
+
+Use it to validate YAML structure (directive names, supported attributes, and
+basic value shapes) before parsing/executing scenarios.
+
+### Validate programmatically
+
+```elixir
+alias Oli.Scenarios
+
+# Validate YAML string
+:ok = Oli.Scenarios.validate_yaml(yaml_content)
+
+# Validate YAML file
+:ok = Oli.Scenarios.validate_file("test/scenarios/core/simple_project.scenario.yaml")
+```
+
+On invalid input, validation returns:
+
+```elixir
+{:error, [%{message: "...", path: "..."}]}
+```
+
+Note: schema validation is structural. Runtime semantics (e.g., missing
+referenced projects/sections/users) are still enforced by parser/engine
+execution.
+
 ## Writing Tests
 
 ### Basic Test Structure

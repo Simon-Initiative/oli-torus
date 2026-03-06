@@ -9,17 +9,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Dashboard.Cache
-  alias Oli.Dashboard.Cache.InProcessStore
   alias Oli.Dashboard.Cache.Key
   alias Oli.Dashboard.Oracle.Result
-  alias Oli.Dashboard.RevisitCache
   alias Oli.Features
   alias Oli.InstructorDashboard.DataSnapshot
   alias Oli.InstructorDashboard.OracleRegistry
   alias Oli.ScopedFeatureFlags
+  alias OliWeb.Delivery.InstructorDashboard.DashboardTab
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Oli.Delivery.RecommendedActions
-  alias OliWeb.Components.Delivery.InstructorDashboard
+  alias OliWeb.Components.Delivery.InstructorDashboard, as: InstructorDashboardComponents
+  alias OliWeb.Components.Delivery.InstructorDashboard.LearningDashboard
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
   alias OliWeb.Components.Delivery.Students
   alias OliWeb.Delivery.InstructorDashboard.Helpers
@@ -29,11 +29,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
-    {:ok,
-     socket
-     |> assign(:prototype_dashboard_store, start_inprocess_store())
-     |> assign(:prototype_dashboard_revisit_cache, ensure_revisit_cache())
-     |> assign(:prototype_dashboard_revisit_hydrated?, false)}
+    {:ok, socket}
   end
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
@@ -330,44 +326,51 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         _,
         socket
       ) do
-    scope_selector = Map.get(params, "dashboard_scope", "course")
-    use_revisit? = not socket.assigns.prototype_dashboard_revisit_hydrated?
+    {socket, scope_selector} = DashboardTab.resolve_scope_context(socket, params)
 
-    socket =
-      socket
-      |> assign(
-        params: params,
-        view: :insights,
-        active_tab: :dashboard,
-        prototype_dashboard_scope: scope_selector
-      )
-      |> assign_new(:containers, fn ->
-        Helpers.get_containers(socket.assigns.section)
-      end)
-      |> load_prototype_dashboard(use_revisit?: use_revisit?)
-      |> assign(:prototype_dashboard_revisit_hydrated?, true)
+    case params["dashboard_scope"] do
+      nil ->
+        # Entering Dashboard without `dashboard_scope` should restore the
+        # persisted scope when available, otherwise fall back to "course",
+        # then patch to the canonical scoped dashboard URL.
+        {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
 
-    {:noreply, socket}
+      ^scope_selector ->
+        {:noreply, assign_dashboard_tab(socket, params)}
+
+      _invalid_or_stale_scope ->
+        # Invalid or stale selectors should canonicalize back to the validated scope
+        # reflected by the current section, rather than leaving an untrusted URL in place.
+        {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
+    end
   end
 
   @impl Phoenix.LiveView
   def handle_params(%{"view" => "insights"} = params, _, socket) do
     active_tab =
       case params["active_tab"] do
-        nil -> :content
-        tab -> maybe_get_tab_from_params(tab, :content)
+        nil -> :dashboard
+        tab -> maybe_get_tab_from_params(tab, :dashboard)
       end
 
-    socket =
-      socket
-      |> assign(params: params, view: :insights, active_tab: active_tab)
-      |> assign_new(:containers, fn ->
-        containers = Helpers.get_containers(socket.assigns.section)
-        async_calculate_proficiency(socket.assigns.section)
-        containers
-      end)
+    if active_tab == :dashboard do
+      # Bare `/insights` should resolve to the canonical Dashboard route so the
+      # active scope is always reflected in the URL before loading the tab.
+      {socket, scope_selector} = DashboardTab.resolve_scope_context(socket, params)
 
-    {:noreply, socket}
+      {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
+    else
+      socket =
+        socket
+        |> assign(params: params, view: :insights, active_tab: active_tab)
+        |> assign_new(:containers, fn ->
+          containers = Helpers.get_containers(socket.assigns.section)
+          async_calculate_proficiency(socket.assigns.section)
+          containers
+        end)
+
+      {:noreply, socket}
+    end
   end
 
   @impl Phoenix.LiveView
@@ -577,16 +580,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     base_tabs = [
       %TabLink{
-        label: "Content",
-        path: path_for(:insights, :content, section_slug, preview_mode),
-        badge: nil,
-        active: is_active_tab?(:content, active_tab)
-      },
-      %TabLink{
         label: "Dashboard",
         path: path_for(:insights, :dashboard, section_slug, preview_mode),
         badge: nil,
         active: is_active_tab?(:dashboard, active_tab)
+      },
+      %TabLink{
+        label: "Content",
+        path: path_for(:insights, :content, section_slug, preview_mode),
+        badge: nil,
+        active: is_active_tab?(:content, active_tab)
       },
       %TabLink{
         label: "Learning Objectives",
@@ -637,7 +640,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   @impl Phoenix.LiveView
   def render(%{view: :overview, active_tab: :students} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={
+      overview_tabs(@section_slug, @preview_mode, @active_tab)
+    } />
 
     <div class="container mx-auto">
       <.live_component
@@ -660,7 +665,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :overview, active_tab: :quiz_scores} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={
+      overview_tabs(@section_slug, @preview_mode, @active_tab)
+    } />
 
     <div class="container mx-auto">
       <.live_component
@@ -677,7 +684,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :overview, active_tab: :recommended_actions} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={
+      overview_tabs(@section_slug, @preview_mode, @active_tab)
+    } />
 
     <div class="container mx-auto mb-10 p-6 bg-white dark:bg-gray-800 shadow-sm">
       <OliWeb.Components.Delivery.RecommendedActions.render
@@ -694,7 +703,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :overview, active_tab: :course_content} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={overview_tabs(@section_slug, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={
+      overview_tabs(@section_slug, @preview_mode, @active_tab)
+    } />
 
     <div class="container mx-auto mb-10 bg-white dark:bg-gray-800 shadow-sm">
       <.live_component
@@ -717,7 +728,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{view: :insights, active_tab: :content, params: %{container_id: _container_id}} = assigns
       ) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -741,7 +752,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :content} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -761,7 +772,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :learning_objectives} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto">
       <.live_component
@@ -783,7 +794,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :scored_pages} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto mb-10">
       <.live_component
@@ -806,7 +817,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :practice_pages} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto mb-10">
       <.live_component
@@ -829,7 +840,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :surveys} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <div class="container mx-auto mb-10">
       <.live_component
@@ -850,7 +861,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :analytics} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <.live_component
       id="section_analytics"
@@ -867,50 +878,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   def render(%{view: :insights, active_tab: :dashboard} = assigns) do
     ~H"""
-    <InstructorDashboard.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
+    <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
-    <div class="container mx-auto mb-10">
-      <div class="mb-4 p-4 bg-white dark:bg-gray-800 shadow-sm">
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-          <form phx-change="prototype_dashboard_scope_changed">
-            <label for="prototype_dashboard_scope" class="block text-sm font-semibold mb-1">
-              Scope
-            </label>
-            <select
-              id="prototype_dashboard_scope"
-              name="scope"
-              class="form-select"
-              value={@prototype_dashboard_scope}
-            >
-              <option value="course">Course (all content)</option>
-              <%= for {label, value} <-
-                    prototype_dashboard_scope_options(@containers, @section.customizations) do %>
-                <option value={value}>{label}</option>
-              <% end %>
-            </select>
-          </form>
-
-          <button class="btn btn-secondary" phx-click="prototype_dashboard_reload">
-            Reload Snapshot
-          </button>
-        </div>
-      </div>
-
-      <div class="mb-4 p-4 bg-white dark:bg-gray-800 shadow-sm">
-        <h3 class="font-semibold mb-2">Lane 1 Runtime Status</h3>
-        <pre class="text-xs whitespace-pre-wrap">{@prototype_dashboard.runtime_status_text}</pre>
-      </div>
-
-      <div class="mb-4 p-4 bg-white dark:bg-gray-800 shadow-sm">
-        <h3 class="font-semibold mb-2">Prototype Tile: Progress</h3>
-        <pre class="text-xs whitespace-pre-wrap">{@prototype_dashboard.progress_text}</pre>
-      </div>
-
-      <div class="p-4 bg-white dark:bg-gray-800 shadow-sm">
-        <h3 class="font-semibold mb-2">Prototype Tile: Progress / Proficiency</h3>
-        <pre class="text-xs whitespace-pre-wrap">{@prototype_dashboard.student_support_text}</pre>
-      </div>
-    </div>
+    <.live_component
+      module={LearningDashboard}
+      id="learning_dashboard"
+      containers={@containers}
+      dashboard={@dashboard}
+      dashboard_scope={@dashboard_scope}
+      section={@section}
+    />
     """
   end
 
@@ -1279,26 +1256,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
+  @impl Phoenix.LiveView
+  def handle_info({:dashboard_scope_changed, scope}, socket) do
+    case DashboardTab.validate_scope_selector(
+           socket.assigns.section,
+           socket.assigns[:containers],
+           scope
+         ) do
+      {:ok, scope_selector} ->
+        DashboardTab.persist_scope(socket.assigns[:instructor_enrollment], scope_selector)
+        {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
+
+      :error ->
+        {:noreply, push_patch(socket, to: DashboardTab.path(socket, "course"))}
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info(:dashboard_reload, socket) do
+    {:noreply, load_dashboard(socket, use_revisit?: false)}
+  end
+
   def handle_info(_any, socket) do
     {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("prototype_dashboard_scope_changed", %{"scope" => scope}, socket) do
-    params =
-      socket.assigns.params
-      |> Map.put("dashboard_scope", scope)
-
-    {:noreply,
-     push_patch(socket,
-       to:
-         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/dashboard?#{params}"
-     )}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_event("prototype_dashboard_reload", _params, socket) do
-    {:noreply, load_prototype_dashboard(socket, use_revisit?: false)}
   end
 
   @impl Phoenix.LiveView
@@ -1311,71 +1291,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply, socket}
   end
 
-  defp start_inprocess_store do
-    {:ok, pid} = InProcessStore.start_link([])
-    pid
-  end
-
-  defp ensure_revisit_cache do
-    case Process.whereis(RevisitCache) do
-      nil ->
-        case RevisitCache.start_link(name: RevisitCache) do
-          {:ok, _pid} -> RevisitCache
-          {:error, {:already_started, _pid}} -> RevisitCache
-          _ -> nil
-        end
-
-      _pid ->
-        RevisitCache
-    end
-  end
-
-  defp prototype_dashboard_scope_options({_, containers}, customizations) do
-    Enum.map(containers, fn container ->
-      {prototype_dashboard_container_option_label(container, customizations),
-       "container:#{container.id}"}
-    end)
-  end
-
-  defp prototype_dashboard_scope_options(_, _), do: []
-
-  defp prototype_dashboard_container_option_label(container, customizations) do
-    title = Map.get(container, :title, "Container")
-
-    case Map.get(container, :label) do
-      label when is_binary(label) and label != "" ->
-        "#{label} - #{title}"
-
-      _ ->
-        case {Map.get(container, :numbering_level), Map.get(container, :numbering_index)} do
-          {numbering_level, numbering_index}
-          when is_integer(numbering_level) and is_integer(numbering_index) ->
-            label =
-              Sections.get_container_label_and_numbering(
-                numbering_level,
-                numbering_index,
-                customizations
-              )
-
-            "#{label}: #{title}"
-
-          _ ->
-            title
-        end
-    end
-  end
-
-  defp load_prototype_dashboard(socket, opts) do
-    scope_selector = Map.get(socket.assigns, :prototype_dashboard_scope, "course")
-    scope = parse_prototype_scope(scope_selector)
-    context = prototype_dashboard_context(socket, scope)
-    cache_opts = prototype_dashboard_cache_opts(socket)
+  # Current dashboard hydration uses direct `DataSnapshot.get_or_build/2` orchestration.
+  # Once `Oli.Dashboard.LiveDataCoordinator` is wired for interactive scope changes,
+  # the runtime/cache transition policy below should move behind coordinator actions
+  # instead of remaining LiveView-local.
+  defp load_dashboard(socket, opts) do
+    scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
+    scope = DashboardTab.parse_scope(scope_selector)
+    context = dashboard_context(socket, scope)
+    cache_opts = dashboard_cache_opts(socket)
     use_revisit? = Keyword.get(opts, :use_revisit?, true)
 
     revisit_hydration =
       if use_revisit? do
         hydrate_required_from_revisit_cache(
-          socket.assigns.prototype_dashboard_revisit_cache,
+          socket.assigns.dashboard_revisit_cache,
           context,
           scope,
           cache_opts
@@ -1389,7 +1319,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       scope: scope,
       metadata: %{
         timezone: socket.assigns.browser_timezone || "Etc/UTC",
-        source: :prototype_instructor_insights
+        source: :instructor_insights
       }
     }
 
@@ -1397,11 +1327,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
            consumer_keys: [:progress_summary, :support_summary],
            cache_module: Cache,
            cache_opts: cache_opts,
-           runtime_results_provider: &prototype_runtime_results_provider/4
+           runtime_results_provider: &dashboard_runtime_results_provider/4
          ) do
       {:ok, bundle} ->
         persist_revisit_cache(
-          socket.assigns.prototype_dashboard_revisit_cache,
+          socket.assigns.dashboard_revisit_cache,
           context,
           scope,
           bundle.snapshot.oracles
@@ -1409,36 +1339,45 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
         assign(
           socket,
-          :prototype_dashboard,
-          build_prototype_dashboard_payload(bundle, revisit_hydration)
+          :dashboard,
+          build_dashboard_payload(bundle, revisit_hydration)
         )
 
       {:error, reason} ->
-        assign(socket, :prototype_dashboard, prototype_dashboard_error_payload(reason))
+        assign(socket, :dashboard, dashboard_error_payload(reason))
     end
   end
 
-  defp parse_prototype_scope("course"), do: %{container_type: :course}
+  defp assign_dashboard_tab(socket, params) do
+    socket = DashboardTab.ensure_initialized(socket)
+    {socket, scope_selector} = DashboardTab.resolve_scope_context(socket, params)
+    use_revisit? = not socket.assigns.dashboard_revisit_hydrated?
 
-  defp parse_prototype_scope("container:" <> id) do
-    case Integer.parse(id) do
-      {parsed, ""} when parsed > 0 -> %{container_type: :container, container_id: parsed}
-      _ -> %{container_type: :course}
-    end
+    socket
+    |> assign(
+      params: params,
+      view: :insights,
+      active_tab: :dashboard,
+      dashboard_scope: scope_selector,
+      instructor_enrollment: socket.assigns.instructor_enrollment
+    )
+    |> assign_new(:containers, fn ->
+      Helpers.get_containers(socket.assigns.section)
+    end)
+    |> load_dashboard(use_revisit?: use_revisit?)
+    |> assign(:dashboard_revisit_hydrated?, true)
   end
 
-  defp parse_prototype_scope(_), do: %{container_type: :course}
-
-  defp prototype_dashboard_context(socket, scope) do
+  defp dashboard_context(socket, scope) do
     %{
       dashboard_context_type: :section,
       dashboard_context_id: socket.assigns.section.id,
-      user_id: prototype_dashboard_user_id(socket),
+      user_id: dashboard_user_id(socket),
       scope: scope
     }
   end
 
-  defp prototype_dashboard_user_id(socket) do
+  defp dashboard_user_id(socket) do
     cond do
       is_map(socket.assigns[:current_user]) and is_integer(socket.assigns.current_user.id) ->
         socket.assigns.current_user.id
@@ -1451,14 +1390,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end
   end
 
-  defp prototype_dashboard_cache_opts(socket) do
+  defp dashboard_cache_opts(socket) do
     [
-      inprocess_store: socket.assigns.prototype_dashboard_store
+      inprocess_store: socket.assigns.dashboard_store
     ]
   end
 
+  # Transitional pre-hydration path for the current synchronous dashboard flow.
+  # Revisit/in-process cache orchestration is expected to come from
+  # `Oli.Dashboard.LiveDataCoordinator` once scope changes move to coordinator-driven loads.
   defp hydrate_required_from_revisit_cache(revisit_cache, context, scope, cache_opts) do
-    with {:ok, required_keys} <- prototype_required_oracle_keys(),
+    with {:ok, required_keys} <- dashboard_required_oracle_keys(),
          {:ok, lookup} <-
            Cache.lookup_revisit(context.user_id, context, scope, required_keys,
              revisit_cache: revisit_cache,
@@ -1471,7 +1413,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
             scope,
             oracle_key,
             payload,
-            prototype_cache_meta(oracle_key),
+            dashboard_cache_meta(oracle_key),
             cache_opts
           )
       end)
@@ -1487,7 +1429,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end
   end
 
-  defp prototype_required_oracle_keys do
+  defp dashboard_required_oracle_keys do
     with {:ok, progress} <- OracleRegistry.dependencies_for(:progress_summary),
          {:ok, support} <- OracleRegistry.dependencies_for(:support_summary) do
       {:ok, Enum.uniq(progress.required ++ support.required)}
@@ -1498,12 +1440,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp persist_revisit_cache(revisit_cache, context, scope, oracles) when is_map(oracles) do
     Enum.each(oracles, fn {oracle_key, payload} ->
-      meta = prototype_cache_meta(oracle_key)
+      meta = dashboard_cache_meta(oracle_key)
 
       with {:ok, revisit_key} <- Key.revisit(context.user_id, context, scope, oracle_key, meta) do
         _ =
           try do
-            RevisitCache.write(revisit_cache, revisit_key, payload)
+            Oli.Dashboard.RevisitCache.write(revisit_cache, revisit_key, payload)
           catch
             :exit, _ -> :ok
           end
@@ -1513,7 +1455,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp persist_revisit_cache(_revisit_cache, _context, _scope, _oracles), do: :ok
 
-  defp prototype_runtime_results_provider(_request_token, misses, context, _scope) do
+  # Temporary runtime fallback used by the direct `DataSnapshot.get_or_build/2` path.
+  # Future token-aware scope transitions should route runtime loading through
+  # `Oli.Dashboard.LiveDataCoordinator` rather than this LiveView helper.
+  defp dashboard_runtime_results_provider(_request_token, misses, context, _scope) do
     Enum.reduce(misses, %{}, fn oracle_key, acc ->
       result =
         case OracleRegistry.oracle_module(oracle_key) do
@@ -1548,7 +1493,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     if function_exported?(module, :version, 0), do: module.version(), else: 1
   end
 
-  defp prototype_cache_meta(oracle_key) do
+  defp dashboard_cache_meta(oracle_key) do
     oracle_version =
       case OracleRegistry.oracle_module(oracle_key) do
         {:ok, module} -> oracle_version(module)
@@ -1558,11 +1503,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     %{oracle_version: oracle_version, data_version: 1}
   end
 
-  defp build_prototype_dashboard_payload(bundle, revisit_hydration) do
+  defp build_dashboard_payload(bundle, revisit_hydration) do
     progress_projection = Map.get(bundle.projections, :progress, %{})
     support_projection = Map.get(bundle.projections, :student_support, %{})
-    oracle_sources = prototype_oracle_sources(bundle.snapshot.oracle_statuses)
-    cache_stats = prototype_cache_stats(bundle, oracle_sources, revisit_hydration)
+    oracle_sources = dashboard_oracle_sources(bundle.snapshot.oracle_statuses)
+    cache_stats = dashboard_cache_stats(bundle, oracle_sources, revisit_hydration)
     projection_statuses = summarize_projection_statuses(bundle.projection_statuses)
 
     status_lines = [
@@ -1595,7 +1540,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     }
   end
 
-  defp prototype_cache_stats(bundle, oracle_sources, revisit_hydration) do
+  defp dashboard_cache_stats(bundle, oracle_sources, revisit_hydration) do
     expected_oracles =
       bundle.dependency_profile.required
       |> Kernel.++(bundle.dependency_profile.optional)
@@ -1644,7 +1589,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp summarize_projection_statuses(_), do: %{}
 
-  defp prototype_oracle_sources(oracle_statuses) when is_map(oracle_statuses) do
+  defp dashboard_oracle_sources(oracle_statuses) when is_map(oracle_statuses) do
     Enum.into(oracle_statuses, %{}, fn {oracle_key, status} ->
       source =
         status
@@ -1655,9 +1600,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     end)
   end
 
-  defp prototype_oracle_sources(_), do: %{}
+  defp dashboard_oracle_sources(_), do: %{}
 
-  defp prototype_dashboard_error_payload(reason) do
+  defp dashboard_error_payload(reason) do
     %{
       runtime_status_text: "snapshot load failed:\n#{inspect(reason, pretty: true)}",
       progress_text: "unavailable",

@@ -295,14 +295,21 @@ defmodule Oli.GenAI.Breaker do
   end
 
   defp latency_spike?(latency_ms, thresholds) do
-    thresholds.latency_p95_ms > 0 and latency_ms >= thresholds.latency_p95_ms
+    threshold_enabled?(thresholds.latency_p95_ms) and latency_ms >= thresholds.latency_p95_ms
   end
 
   defp should_open?(metrics, thresholds) do
-    metrics.error_rate >= thresholds.error_rate_threshold or
-      metrics.rate_limit_rate >= thresholds.rate_limit_threshold or
-      (thresholds.latency_p95_ms > 0 and metrics.latency_p95_ms >= thresholds.latency_p95_ms)
+    threshold_exceeded?(metrics.error_rate, thresholds.error_rate_threshold) or
+      threshold_exceeded?(metrics.rate_limit_rate, thresholds.rate_limit_threshold) or
+      threshold_exceeded?(metrics.latency_p95_ms, thresholds.latency_p95_ms)
   end
+
+  defp threshold_exceeded?(value, threshold) do
+    threshold_enabled?(threshold) and value >= threshold
+  end
+
+  defp threshold_enabled?(threshold) when is_number(threshold), do: threshold > 0
+  defp threshold_enabled?(_), do: false
 
   defp publish_snapshot(state, error_rate, rate_limit_rate, latency_p95_ms) do
     AdmissionControl.put_breaker_snapshot(state.registered_model_id, %{

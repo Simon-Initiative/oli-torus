@@ -22,4 +22,31 @@ Use this checklist before saving `prd.md`:
 - Ensure manual QA calls out focus areas for risky or hard-to-automate behavior.
 - Ensure QA includes an `Oli.Scenarios Recommendation` (`Required`/`Suggested`/`Not applicable`) with rationale.
 - Ensure the `Oli.Scenarios Recommendation` states whether related subsystem areas already have YAML-driven scenario coverage and uses that as decision signal.
+- Ensure `Oli.Scenarios Recommendation` is a complete contract block with:
+  - `Status`
+  - `Rationale`
+  - `Existing Coverage Signal`
+  - `Infrastructure Support Status`
+  - `Scenario Infrastructure Expansion Required`
+  - `Required Scope (AC/workflows)`
+  - `Planned Artifacts`
+  - `Validation Commands`
+  - `Planning Handoff`
+- Ensure `Status` follows rubric:
+  - `Required`: core non-UI learner/instructor/authoring workflow behavior, or touched area already has scenario coverage.
+  - `Suggested`: scenario coverage is beneficial but not mandatory for all ACs.
+  - `Not applicable`: primarily admin-only UI/configuration work not representable in scenario directives.
+- Ensure scenario scope remains high-level workflow oriented; do not require scenario expansion for narrow one-off feature details.
+- If scenario `Status` is `Required` and support status is `Unsupported`, ensure `Planning Handoff` explicitly states: `spec_plan must schedule $spec_scenario_expand before $spec_scenario`.
+- Ensure QA includes a `LiveView Testing Recommendation` contract block with:
+  - `Status`
+  - `Rationale`
+  - `Affected UI Surface`
+  - `Required Scope (events/states)`
+  - `Planned Artifacts`
+  - `Validation Commands`
+- Ensure LiveView `Status` follows rubric:
+  - `Required`: material LiveView/LiveComponent/function-component change or new UI surface.
+  - `Suggested`: limited UI change where regression coverage is still prudent.
+  - `Not applicable`: no material LiveView surface change.
 - Remove unresolved `TODO`/`TBD`/`FIXME` markers.

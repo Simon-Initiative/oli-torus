@@ -71,6 +71,16 @@
 
 ## 13. Testing Strategy
 <unit/integration/liveview/manual; exclude dedicated performance/load/benchmark tests>
+### 13.1 Scenario Coverage Plan
+- PRD Scenario Status: <Required | Suggested | Not applicable>
+- AC/Workflow Mapping: <AC/workflow -> planned scenario coverage, or `N/A`>
+- Planned Scenario Artifacts: <`.scenario.yaml` files + runner modules, or `N/A`>
+- Validation Loop: <schema + parser/test commands, or `N/A`>
+### 13.2 LiveView Coverage Plan
+- PRD LiveView Status: <Required | Suggested | Not applicable>
+- UI Mapping: <event/state -> test coverage, or `N/A`>
+- Planned LiveView Test Artifacts: <test modules, or `N/A`>
+- Validation Commands: <targeted `mix test ...`, or `N/A`>
 
 ## 14. Backwards Compatibility
 <compatibility strategy or `N/A`>

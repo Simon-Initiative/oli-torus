@@ -84,6 +84,25 @@ defmodule Oli.GenAI.BreakerTest do
     assert eventually(fn -> Breaker.status(model_id).breaker_state == :open end)
   end
 
+  test "does not open breaker when all thresholds are disabled with 0 values" do
+    model_id = 6
+
+    thresholds =
+      thresholds(
+        error_rate_threshold: 0.0,
+        rate_limit_threshold: 0.0,
+        latency_p95_ms: 0,
+        open_cooldown_ms: 1_000
+      )
+
+    Enum.each(1..5, fn _ ->
+      Breaker.report(model_id, report(:error, thresholds, %{http_status: 429, latency_ms: 200}))
+    end)
+
+    refute eventually(fn -> Breaker.status(model_id).breaker_state == :open end)
+    assert Breaker.status(model_id).breaker_state == :closed
+  end
+
   defp thresholds(overrides \\ %{}) do
     base = %{
       error_rate_threshold: 0.2,

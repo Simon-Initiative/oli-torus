@@ -616,7 +616,7 @@ defmodule OliWeb.Dialogue.WindowLive do
     message =
       Message.new(
         :assistant,
-        "<span class='text-red-500'>Hmmm, we encountered a problem while processing your last messsage. Maybe try again later.</span>"
+        "<span class='text-red-500'>Hmmm, we encountered a problem while processing your last message. Maybe try again later.</span>"
       )
 
     messages = messages ++ [message]
