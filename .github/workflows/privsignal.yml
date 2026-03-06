@@ -13,13 +13,15 @@ jobs:
     name: PrivSignal (informational)
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
-      - name: 🛎️ Checkout
+      - name: 🛎️ Checkout PR branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: 🧪 Setup Elixir
         uses: erlef/setup-elixir@v1
@@ -35,25 +37,75 @@ jobs:
         continue-on-error: true
         run: mix deps.compile priv_signal
 
-      - name: 🔎 Run PrivSignal pipeline (never fails build)
-        id: privsignal
+      - name: ♻️ Regenerate lockfile (informational)
+        id: lockfile
         shell: bash
         run: |
           set +e
 
           mkdir -p tmp/privsignal
 
-          SCAN_PATH="tmp/privsignal/ci.lockfile.json"
+          mix priv_signal.scan --quiet --json-path priv_signal.lockfile.json
+          scan_exit=$?
+          lockfile_changed=false
+
+          if [ "$scan_exit" -eq 0 ]; then
+            cp priv_signal.lockfile.json tmp/privsignal/ci.lockfile.json
+
+            if ! git diff --quiet -- priv_signal.lockfile.json; then
+              lockfile_changed=true
+            fi
+          fi
+
+          echo "scan_exit=$scan_exit" >> "$GITHUB_OUTPUT"
+          echo "lockfile_changed=$lockfile_changed" >> "$GITHUB_OUTPUT"
+
+          # Informational only.
+          exit 0
+
+      - name: ⬆️ Commit lockfile to PR branch (same-repo PRs only)
+        id: lockfile_push
+        if: steps.lockfile.outputs.scan_exit == '0' && steps.lockfile.outputs.lockfile_changed == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+        shell: bash
+        run: |
+          set +e
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add priv_signal.lockfile.json
+
+          git commit -m "chore(privsignal): refresh lockfile"
+          commit_exit=$?
+
+          if [ "$commit_exit" -eq 0 ]; then
+            git push
+            push_exit=$?
+          else
+            push_exit=0
+          fi
+
+          echo "push_exit=$push_exit" >> "$GITHUB_OUTPUT"
+
+          # Informational only.
+          exit 0
+
+      - name: 🔎 Run PrivSignal diff/score (informational)
+        id: privsignal
+        if: always()
+        shell: bash
+        run: |
+          set +e
+
+          mkdir -p tmp/privsignal
+
           DIFF_PATH="tmp/privsignal/ci.diff.json"
           SCORE_PATH="tmp/privsignal/ci.score.json"
 
-          mix priv_signal.scan --quiet --json-path "$SCAN_PATH"
-          scan_exit=$?
-
-          if [ "$scan_exit" -eq 0 ]; then
+          if [ -f "priv_signal.lockfile.json" ]; then
             mix priv_signal.diff \
               --base "${{ github.event.pull_request.base.sha }}" \
-              --candidate-path "$SCAN_PATH" \
+              --candidate-path priv_signal.lockfile.json \
               --format json \
               --output "$DIFF_PATH"
             diff_exit=$?
@@ -74,12 +126,11 @@ jobs:
             score="ERROR"
           fi
 
-          echo "scan_exit=$scan_exit" >> "$GITHUB_OUTPUT"
           echo "diff_exit=$diff_exit" >> "$GITHUB_OUTPUT"
           echo "score_exit=$score_exit" >> "$GITHUB_OUTPUT"
           echo "score=$score" >> "$GITHUB_OUTPUT"
 
-          # Informational only: never fail the workflow.
+          # Informational only.
           exit 0
 
       - name: 🧾 Build PrivSignal report
@@ -107,7 +158,9 @@ jobs:
               echo
               echo "Unable to generate report."
               echo
-              echo "- scan exit: ${{ steps.privsignal.outputs.scan_exit }}"
+              echo "- scan exit: ${{ steps.lockfile.outputs.scan_exit }}"
+              echo "- lockfile changed: ${{ steps.lockfile.outputs.lockfile_changed }}"
+              echo "- push exit: ${{ steps.lockfile_push.outputs.push_exit }}"
               echo "- diff exit: ${{ steps.privsignal.outputs.diff_exit }}"
               echo "- score exit: ${{ steps.privsignal.outputs.score_exit }}"
             } >> "$GITHUB_STEP_SUMMARY"
@@ -119,6 +172,7 @@ jobs:
         with:
           name: privsignal-artifacts-${{ github.event.pull_request.number }}
           path: |
+            priv_signal.lockfile.json
             tmp/privsignal/ci.lockfile.json
             tmp/privsignal/ci.diff.json
             tmp/privsignal/ci.score.json
