@@ -10,25 +10,39 @@ defmodule OliWeb.Products.Details.Content do
 
   def render(assigns) do
     ~H"""
+    <% updates_count = Enum.count(@updates) %>
+    <% badge_text = if updates_count == 1, do: "1 update", else: "#{updates_count} updates" %>
     <div>
       <div>
-        <p :if={Enum.count(@updates) == 0}>
+        <p :if={updates_count == 0}>
           There are <b>no updates</b> available for this template.
         </p>
-        <div :if={Enum.count(@updates) == 1}>
+        <div :if={updates_count == 1}>
           <p>There is <b>one</b> update available for this template.</p>
           <.link href={
             Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
           }>
             Manage Source Materials
+            <span
+              id="manage-source-materials-updates-badge"
+              class="ml-2 inline-flex items-center rounded-full bg-Fill-Buttons-fill-primary px-[6px] py-[4px] text-[12px] font-semibold leading-[12px] text-Text-text-white"
+            >
+              {badge_text}
+            </span>
           </.link>
         </div>
-        <div :if={Enum.count(@updates) not in [0, 1]}>
-          <p>There are <b>{Enum.count(@updates)}</b> updates available for this template.</p>
+        <div :if={updates_count not in [0, 1]}>
+          <p>There are <b>{updates_count}</b> updates available for this template.</p>
           <.link href={
             Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
           }>
             Manage Source Materials
+            <span
+              id="manage-source-materials-updates-badge"
+              class="ml-2 inline-flex items-center rounded-full bg-Fill-Buttons-fill-primary px-[6px] py-[4px] text-[12px] font-semibold leading-[12px] text-Text-text-white"
+            >
+              {badge_text}
+            </span>
           </.link>
         </div>
         <p>
