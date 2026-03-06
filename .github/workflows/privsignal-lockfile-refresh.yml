@@ -1,0 +1,85 @@
+name: PrivSignal Lockfile Refresh
+
+on:
+  workflow_run:
+    workflows: ["Build & Test PR"]
+    types:
+      - completed
+
+jobs:
+  refresh-lockfile:
+    name: Refresh lockfile after required checks
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Skip if not a PR run
+        if: github.event.workflow_run.event != 'pull_request'
+        run: echo "Not a pull_request-triggered workflow run; skipping."
+
+      - name: Skip fork PRs and lockfile-only commits
+        id: gate
+        if: github.event.workflow_run.event == 'pull_request'
+        shell: bash
+        run: |
+          should_run=true
+
+          if [ "${{ github.event.workflow_run.head_repository.full_name }}" != "${{ github.repository }}" ]; then
+            should_run=false
+          fi
+
+          if [ -z "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" ]; then
+            should_run=false
+          fi
+
+          if [ "${{ github.event.workflow_run.actor.login }}" = "github-actions[bot]" ]; then
+            should_run=false
+          fi
+
+          echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
+
+      - name: 🛎️ Checkout PR branch
+        if: steps.gate.outputs.should_run == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          repository: ${{ github.repository }}
+          ref: ${{ github.event.workflow_run.head_branch }}
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+
+      - name: 🧪 Setup Elixir
+        if: steps.gate.outputs.should_run == 'true'
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.19.2
+          otp-version: 28.1.1
+
+      - name: ⬇️ Install dependencies
+        if: steps.gate.outputs.should_run == 'true'
+        run: mix deps.get
+
+      - name: 🔨 Compile PrivSignal dependency
+        if: steps.gate.outputs.should_run == 'true'
+        run: mix deps.compile priv_signal
+
+      - name: ♻️ Regenerate and push lockfile
+        if: steps.gate.outputs.should_run == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mix priv_signal.scan --quiet --json-path priv_signal.lockfile.json
+
+          if git diff --quiet -- priv_signal.lockfile.json; then
+            echo "No lockfile changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add priv_signal.lockfile.json
+          git commit -m "chore(privsignal): refresh lockfile"
+          git push origin "HEAD:${{ github.event.workflow_run.head_branch }}"

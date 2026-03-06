@@ -151,6 +151,8 @@ defmodule Oli.MixProject do
       {:broadway_dashboard, "~> 0.4.0"},
       {:cachex, "~> 3.5"},
       {:cloak_ecto, "~> 1.2.0"},
+      {:priv_signal,
+       github: "marmot-labs/priv-signal", tag: "v0.2.1", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},
