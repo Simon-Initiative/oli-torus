@@ -3153,6 +3153,7 @@ defmodule Oli.Delivery.Sections do
         numbering_level: level,
         slug: slug,
         collab_space_config: revision.collab_space_config,
+        ai_enabled: revision.ai_enabled,
         max_attempts: revision.max_attempts || 0,
         resource_id: revision.resource_id,
         project_id: publication.project_id,
@@ -4038,6 +4039,7 @@ defmodule Oli.Delivery.Sections do
               # we set children to nil here so that we know it needs to be set in the next step
               children: nil,
               scoring_strategy_id: pr.scoring_strategy_id,
+              ai_enabled: pr.ai_enabled,
               slug: Oli.Utils.Slug.generate("section_resources", pr.title),
               inserted_at: {:placeholder, :timestamp},
               updated_at: {:placeholder, :timestamp}
@@ -4335,6 +4337,7 @@ defmodule Oli.Delivery.Sections do
             section_id: section_id,
             children: Enum.reverse(children_sr_ids),
             collab_space_config: revision.collab_space_config,
+            ai_enabled: revision.ai_enabled,
             max_attempts: revision.max_attempts || 0,
             scoring_strategy_id: revision.scoring_strategy_id,
             retake_mode: revision.retake_mode,
@@ -4422,6 +4425,7 @@ defmodule Oli.Delivery.Sections do
           inserted_at: now,
           updated_at: now,
           collab_space_config: item.collab_space_config,
+          ai_enabled: item.ai_enabled,
           max_attempts:
             if is_nil(item.max_attempts) do
               0
@@ -6105,6 +6109,38 @@ defmodule Oli.Delivery.Sections do
   def assistant_enabled?(%Section{} = section) do
     section.assistant_enabled
   end
+
+  @doc """
+  Returns true if the section has the ai assistant enabled and the page allows it.
+  """
+  def assistant_enabled_for_page?(%Section{} = section, page) do
+    assistant_enabled?(section) and page_ai_enabled?(page)
+  end
+
+  def assistant_enabled_for_page?(_, _), do: false
+
+  @doc """
+  Returns true if ai assistant is enabled for a page.
+  Falls back to the historic behavior when `ai_enabled` is nil:
+  practice pages enabled, scored pages disabled.
+  """
+  def page_ai_enabled?(page) when is_map(page) do
+    ai_enabled = Map.get(page, :ai_enabled, Map.get(page, "ai_enabled"))
+    graded = Map.get(page, :graded, Map.get(page, "graded", false))
+
+    case ai_enabled do
+      nil -> !graded
+      true -> true
+      false -> false
+      "true" -> true
+      "false" -> false
+      1 -> true
+      0 -> false
+      _ -> !graded
+    end
+  end
+
+  def page_ai_enabled?(_), do: false
 
   @doc """
   Returns a map from resource_id to the current revision title for all resources

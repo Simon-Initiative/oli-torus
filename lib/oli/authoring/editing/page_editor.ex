@@ -235,6 +235,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
          allTags: Enum.map(tags, fn t -> %{id: t.resource_id, title: t.title} end),
          title: revision.title,
          graded: revision.graded,
+         ai_enabled:
+           case revision.ai_enabled do
+             nil -> !revision.graded
+             value -> value
+           end,
          content: convert_to_activity_slugs(revision.content, publication.id),
          activities: activities,
          activityContexts:
