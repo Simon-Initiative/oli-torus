@@ -117,6 +117,7 @@ defmodule OliWeb.ProductsControllerTest do
     setup do
       author = insert(:author)
       admin = insert(:author, %{system_role_id: SystemRole.role_id().system_admin})
+      content_admin = insert(:author, %{system_role_id: SystemRole.role_id().content_admin})
       project = insert(:project, authors: [author])
 
       product =
@@ -150,6 +151,7 @@ defmodule OliWeb.ProductsControllerTest do
       %{
         author: author,
         admin: admin,
+        content_admin: content_admin,
         product: product
       }
     end
@@ -172,6 +174,24 @@ defmodule OliWeb.ProductsControllerTest do
       conn =
         conn
         |> log_in_author(admin)
+        |> get(~p"/authoring/products/#{product.slug}/usage/export")
+
+      assert response(conn, 200)
+      csv = response(conn, 200)
+      [header | _] = String.split(csv, "\n", trim: true)
+
+      assert String.contains?(header, "Tags")
+      assert String.contains?(csv, "Usage Section One")
+    end
+
+    test "content admin can export usage csv", %{
+      conn: conn,
+      content_admin: content_admin,
+      product: product
+    } do
+      conn =
+        conn
+        |> log_in_author(content_admin)
         |> get(~p"/authoring/products/#{product.slug}/usage/export")
 
       assert response(conn, 200)

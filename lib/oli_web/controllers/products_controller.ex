@@ -9,7 +9,6 @@ defmodule OliWeb.ProductsController do
   alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Utils.Time
   alias OliWeb.Common.Utils
   alias OliWeb.Admin.BrowseFilters
 
@@ -114,7 +113,7 @@ defmodule OliWeb.ProductsController do
       |> Repo.preload([:base_project, :tags])
 
     csv_content = products_to_csv(products)
-    filename = "products-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
+    filename = "products-#{Date.utc_today() |> Date.to_iso8601()}.csv"
 
     conn
     |> put_resp_header("content-type", "text/csv")
@@ -161,7 +160,7 @@ defmodule OliWeb.ProductsController do
         |> Repo.preload([:tags, :institution, section_project_publications: :publication])
 
       csv_content = sections_to_usage_csv(sections, is_admin)
-      filename = "template-usage-" <> Timex.format!(Time.now(), "{YYYY}-{M}-{D}") <> ".csv"
+      filename = "template-usage-" <> (Date.utc_today() |> Date.to_iso8601()) <> ".csv"
 
       conn
       |> put_resp_header("content-type", "text/csv")
@@ -289,7 +288,7 @@ defmodule OliWeb.ProductsController do
   end
 
   defp authorize_product_usage_export(author, %Section{} = product) do
-    if Accounts.is_admin?(author) or
+    if Accounts.has_admin_role?(author, :content_admin) or
          Blueprint.is_author_of_blueprint?(product.slug, author.id) do
       :ok
     else

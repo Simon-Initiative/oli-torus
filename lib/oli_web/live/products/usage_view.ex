@@ -195,7 +195,6 @@ defmodule OliWeb.Products.UsageView do
         </div>
 
         <a
-          role="button"
           class="group mr-4 inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover"
           href={~p"/authoring/products/#{@product.slug}/usage/export?#{current_params(assigns)}"}
           download={@export_filename}
