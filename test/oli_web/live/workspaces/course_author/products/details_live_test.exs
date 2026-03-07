@@ -79,6 +79,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
              |> render() =~
                "Template Overview"
     end
+
+    test "renders template usage action link", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      assert has_element?(
+               live,
+               "a[href='/workspaces/course_author/#{project.slug}/products/#{product.slug}/usage']",
+               "View Usage"
+             )
+    end
   end
 
   ##### HELPER FUNCTIONS #####

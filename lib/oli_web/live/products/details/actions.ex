@@ -6,6 +6,7 @@ defmodule OliWeb.Products.Details.Actions do
   attr(:is_admin, :boolean, required: true)
   attr(:base_project, :map, required: true)
   attr(:has_payment_codes, :boolean, required: true)
+  attr(:usage_path, :string, required: true)
 
   def render(assigns) do
     ~H"""
@@ -45,13 +46,11 @@ defmodule OliWeb.Products.Details.Actions do
 
       <div class="d-flex align-items-center">
         <div>
-          <button class="btn btn-link action-button">
+          <a class="btn btn-link action-button" href={@usage_path}>
             View Usage
-          </button>
+          </a>
         </div>
         <div>View course section usage.</div>
-
-        <div class="badge badge-info">Coming Soon</div>
       </div>
     </div>
     """
