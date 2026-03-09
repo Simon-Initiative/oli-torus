@@ -323,8 +323,12 @@ defmodule Oli.Delivery.Sections.Updates do
 
   defp create_missing_section_resources(section, project_id, new_publication) do
     existing_resource_ids =
-      Sections.get_section_resources(section.id)
-      |> MapSet.new(& &1.resource_id)
+      from(sr in SectionResource,
+        where: sr.section_id == ^section.id,
+        select: sr.resource_id
+      )
+      |> Repo.all()
+      |> MapSet.new()
 
     revisions_to_create =
       Publishing.get_published_resources_by_publication(new_publication.id, preload: [:revision])
