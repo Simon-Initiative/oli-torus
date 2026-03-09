@@ -126,13 +126,13 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
 
   return (
     <div
-  ref={dialogRef}
-  role="dialog"
-  aria-modal="true"
-  tabIndex={-1}
-  className={`info-icon-popup ${config?.customCssClass ? config.customCssClass : ''}`}
-  style={popupModalStyles}
->
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      tabIndex={-1}
+      className={`info-icon-popup ${config?.customCssClass ? config.customCssClass : ''}`}
+      style={popupModalStyles}
+    >
       <div className="popup-background" style={popupBGStyles}>
         <PartsLayoutRenderer
           onPartInit={handlePartInit}
