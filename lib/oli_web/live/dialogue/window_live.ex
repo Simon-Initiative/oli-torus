@@ -81,16 +81,35 @@ defmodule OliWeb.Dialogue.WindowLive do
     Server.new(configuration)
   end
 
-  defp page_ai_context(_section, _resource_id, nil), do: {true, nil}
+  defp page_ai_context(section, resource_id, nil) do
+    case section_resource_for_context(section, resource_id) do
+      nil ->
+        case resource_id do
+          nil -> {true, nil}
+          _ -> {false, nil}
+        end
+
+      section_resource ->
+        {Sections.page_ai_enabled?(section_resource), section_resource.revision_id}
+    end
+  end
 
   defp page_ai_context(section, resource_id, requested_revision_id) do
-    with resource_id when is_integer(resource_id) <- normalize_integer(resource_id),
-         section_resource when not is_nil(section_resource) <-
-           SectionResourceDepot.get_section_resource(section.id, resource_id),
+    with section_resource when not is_nil(section_resource) <-
+           section_resource_for_context(section, resource_id),
          true <- revision_matches?(section_resource.revision_id, requested_revision_id) do
       {Sections.page_ai_enabled?(section_resource), section_resource.revision_id}
     else
       _ -> {false, nil}
+    end
+  end
+
+  defp section_resource_for_context(section, resource_id) do
+    with normalized_resource_id when is_integer(normalized_resource_id) <-
+           normalize_integer(resource_id) do
+      SectionResourceDepot.get_section_resource(section.id, normalized_resource_id)
+    else
+      _ -> nil
     end
   end
 
