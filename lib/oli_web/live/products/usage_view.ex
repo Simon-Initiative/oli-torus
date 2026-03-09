@@ -29,6 +29,17 @@ defmodule OliWeb.Products.UsageView do
     {:dd, "DD"},
     {:lti, "LTI"}
   ]
+  @sortable_fields %{
+    "title" => :title,
+    "enrollments_count" => :enrollments_count,
+    "requires_payment" => :requires_payment,
+    "start_date" => :start_date,
+    "end_date" => :end_date,
+    "instructor" => :instructor,
+    "institution" => :institution,
+    "type" => :type,
+    "status" => :status
+  }
   @requires_payment_options [
     {true, "Yes"},
     {false, "No"}
@@ -262,7 +273,7 @@ defmodule OliWeb.Products.UsageView do
   def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
     current_sort_by = socket.assigns.table_model.sort_by_spec.name
     current_sort_order = socket.assigns.table_model.sort_order
-    new_sort_by = String.to_existing_atom(sort_by_str)
+    new_sort_by = parse_sort_by(sort_by_str, current_sort_by)
 
     sort_order =
       if new_sort_by == current_sort_by, do: toggle_sort_order(current_sort_order), else: :asc
@@ -337,6 +348,12 @@ defmodule OliWeb.Products.UsageView do
 
   defp toggle_sort_order(:asc), do: :desc
   defp toggle_sort_order(_), do: :asc
+
+  defp parse_sort_by(sort_by, fallback) when is_binary(sort_by) do
+    Map.get(@sortable_fields, sort_by, fallback)
+  end
+
+  defp parse_sort_by(_, fallback), do: fallback
 
   defp determine_total(sections) do
     case sections do
