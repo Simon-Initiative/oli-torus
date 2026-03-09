@@ -9,6 +9,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
 
   const {
     z,
+    width,
     label,
     maximum = 1,
     minimum = 0,
@@ -20,9 +21,10 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
     invertScale,
   } = model;
 
+  const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
   const styles: CSSProperties = {
     width: '100%',
-    flexDirection: showLabel ? 'column' : 'row',
+    flexDirection: isResponsiveLayout || showLabel ? 'column' : 'row',
   };
   const inputStyles: CSSProperties = {
     width: '100%',

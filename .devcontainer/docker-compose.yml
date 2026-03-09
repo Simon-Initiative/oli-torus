@@ -21,7 +21,7 @@ services:
     command: bash -c "sleep infinity"
 
   postgres:
-    image: ankane/pgvector
+    image: pgvector/pgvector:pg18
     restart: always
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata

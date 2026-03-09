@@ -1045,15 +1045,14 @@ defmodule Oli.SectionsTest do
     end
 
     @tag capture_log: true
-    test "apply_publication_update/2 restores a page reintroduced after curriculum-only removal",
-         %{
-           author: author,
-           project: project,
-           page1: page1,
-           page2: page2,
-           revision2: revision2,
-           institution: institution
-         } do
+    test "apply_publication_update/2 reintroduces a previously removed page", %{
+      author: author,
+      project: project,
+      page1: page1,
+      page2: page2,
+      revision2: revision2,
+      institution: institution
+    } do
       {:ok, initial_publication} = Publishing.publish_project(project, "initial", author.id)
 
       {:ok, section} =
@@ -1071,33 +1070,26 @@ defmodule Oli.SectionsTest do
       assert Enum.map(initial_hierarchy.children, & &1.resource_id) == [page1.id, page2.id]
 
       root_container = AuthoringResolver.root_container(project.slug)
-      {:ok, _} = ContainerEditor.move_to(revision2, root_container, nil, author, project)
+      {:ok, _} = ContainerEditor.remove_child(root_container, project, author, revision2.slug)
 
       {:ok, page_removed_publication} =
-        Publishing.publish_project(project, "remove page from curriculum", author.id)
+        Publishing.publish_project(project, "remove page two", author.id)
 
       Oli.Delivery.Sections.Updates.apply_publication_update(section, page_removed_publication.id)
 
       after_removal_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
       assert Enum.map(after_removal_hierarchy.children, & &1.resource_id) == [page1.id]
 
-      section_resources_after_removal =
-        from(sr in SectionResource,
-          where: sr.section_id == ^section.id,
-          select: sr.resource_id
-        )
-        |> Repo.all()
-
-      refute page2.id in section_resources_after_removal
-
+      deleted_page_revision = AuthoringResolver.from_resource_id(project.slug, page2.id)
       root_container = AuthoringResolver.root_container(project.slug)
-      restored_page_revision = AuthoringResolver.from_resource_id(project.slug, page2.id)
 
       {:ok, _} =
-        ContainerEditor.move_to(restored_page_revision, nil, root_container, author, project)
+        ContainerEditor.move_to(deleted_page_revision, nil, root_container, author, project)
+
+      assert AuthoringResolver.from_resource_id(project.slug, page2.id).deleted == false
 
       {:ok, page_reintroduced_publication} =
-        Publishing.publish_project(project, "restore page to curriculum", author.id)
+        Publishing.publish_project(project, "reintroduce page two", author.id)
 
       Oli.Delivery.Sections.Updates.apply_publication_update(
         section,

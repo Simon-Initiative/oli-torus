@@ -60,7 +60,7 @@
     "epoq": "npm:epoq-january-fix",
     "file-loader": "^6.2.0",
     "immer": "^9.0.5",
-    "immutable": "^4.0.0-rc.12",
+    "immutable": "^4.3.8",
     "is-hotkey": "^0.1.6",
     "janus-script": "^1.9.2",
     "jquery": "^3.5.1",
