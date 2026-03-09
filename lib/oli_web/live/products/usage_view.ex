@@ -256,7 +256,7 @@ defmodule OliWeb.Products.UsageView do
   end
 
   def handle_event("text_search_change", %{"section_name" => section_name}, socket) do
-    patch_with(socket, %{text_search: String.trim(section_name)})
+    patch_with(socket, %{text_search: String.trim(section_name), offset: 0})
   end
 
   def handle_event("paged_table_sort", %{"sort_by" => sort_by_str}, socket) do
@@ -275,7 +275,7 @@ defmodule OliWeb.Products.UsageView do
   end
 
   def handle_event("active_today", _params, socket) do
-    patch_with(socket, %{active_today: !socket.assigns.options.active_today})
+    patch_with(socket, %{active_today: !socket.assigns.options.active_today, offset: 0})
   end
 
   def handle_event(
