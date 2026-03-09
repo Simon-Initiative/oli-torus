@@ -330,12 +330,30 @@ defmodule Oli.Delivery.Sections.Updates do
       |> Repo.all()
       |> MapSet.new()
 
+    missing_resource_ids =
+      from(pr in Publishing.PublishedResource,
+        where: pr.publication_id == ^new_publication.id,
+        select: pr.resource_id
+      )
+      |> Repo.all()
+      |> MapSet.new()
+      |> MapSet.difference(existing_resource_ids)
+      |> MapSet.to_list()
+
     revisions_to_create =
-      Publishing.get_published_resources_by_publication(new_publication.id, preload: [:revision])
-      |> Enum.reject(fn published_resource ->
-        MapSet.member?(existing_resource_ids, published_resource.resource_id)
-      end)
-      |> Enum.map(& &1.revision)
+      case missing_resource_ids do
+        [] ->
+          []
+
+        resource_ids ->
+          Publishing.get_published_resources_by_publication(new_publication.id,
+            preload: [:revision]
+          )
+          |> Enum.filter(fn published_resource ->
+            published_resource.resource_id in resource_ids
+          end)
+          |> Enum.map(& &1.revision)
+      end
 
     bulk_create_section_resources(revisions_to_create, section, project_id)
   end
