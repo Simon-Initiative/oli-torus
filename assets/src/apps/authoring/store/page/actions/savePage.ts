@@ -46,10 +46,8 @@ export const savePage = createAsyncThunk(
       payload.displayApplicationChrome !== undefined
         ? payload.displayApplicationChrome
         : currentPage.displayApplicationChrome;
-    const ai_enabled =
-      payload.ai_enabled !== undefined
-        ? payload.ai_enabled
-        : currentPage.ai_enabled ?? !currentPage.graded;
+    const graded = payload.graded ?? currentPage.graded;
+    const ai_enabled = payload.ai_enabled ?? currentPage.ai_enabled ?? !graded;
 
     // the API expects to overwrite all the properties every time
 
