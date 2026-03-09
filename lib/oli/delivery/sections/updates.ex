@@ -321,6 +321,21 @@ defmodule Oli.Delivery.Sections.Updates do
     |> Repo.delete_all()
   end
 
+  defp create_missing_section_resources(section, project_id, new_publication) do
+    existing_resource_ids =
+      Sections.get_section_resources(section.id)
+      |> MapSet.new(& &1.resource_id)
+
+    revisions_to_create =
+      Publishing.get_published_resources_by_publication(new_publication.id, preload: [:revision])
+      |> Enum.reject(fn published_resource ->
+        MapSet.member?(existing_resource_ids, published_resource.resource_id)
+      end)
+      |> Enum.map(& &1.revision)
+
+    bulk_create_section_resources(revisions_to_create, section, project_id)
+  end
+
   # Do a MAJOR update
   # 1. Add / Remove all SR records per the publication diff. This step is different than minor
   #       updates because we add and remove containers as well
@@ -340,7 +355,8 @@ defmodule Oli.Delivery.Sections.Updates do
     add_remove_srs(diff, section, project_id)
     Sections.update_section_project_publication(section, project_id, new_publication.id)
 
-    with {:ok, _} <- update_container_children(section, prev_publication, new_publication),
+    with {:ok, _} <- create_missing_section_resources(section, project_id, new_publication),
+         {:ok, _} <- update_container_children(section, prev_publication, new_publication),
          {:ok, _} <- cull_unreachable_pages(section, diff),
          {:ok, _} <- Oli.Delivery.PreviousNextIndex.rebuild(section),
          {:ok, _} <- Sections.rebuild_contained_pages(section),
