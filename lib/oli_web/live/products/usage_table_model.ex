@@ -92,7 +92,7 @@ defmodule OliWeb.Products.UsageTableModel do
         label: "Instructors",
         td_class: default_td_class,
         th_class: default_th_class,
-        render_fn: &SectionsTableModel.custom_render/3
+        render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :institution,
@@ -156,6 +156,16 @@ defmodule OliWeb.Products.UsageTableModel do
     ~H"""
     <span class="text-Text-text-high text-base font-medium leading-normal">
       {@version}
+    </span>
+    """
+  end
+
+  def custom_render(_assigns, section, %ColumnSpec{name: :instructor}) do
+    assigns = %{instructor_name: Map.get(section, :instructor_name, "")}
+
+    ~H"""
+    <span class="text-Text-text-high text-base font-medium leading-normal">
+      {@instructor_name}
     </span>
     """
   end

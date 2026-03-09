@@ -390,6 +390,6 @@ defmodule OliWeb.Products.UsageView do
 
   defp browse_sections(%Paging{} = paging, %Sorting{} = sorting, %BrowseOptions{} = options) do
     Browse.browse_sections(paging, sorting, options)
-    |> Repo.preload(section_project_publications: :publication)
+    |> Repo.preload([:tags, section_project_publications: :publication])
   end
 end
