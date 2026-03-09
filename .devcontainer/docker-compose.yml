@@ -27,7 +27,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - pg_data:/var/lib/postgresql
 
   minio:
     image: minio/minio
@@ -39,5 +39,5 @@ services:
     command: ["server", "--console-address", ":9001", "/data"]
 
 volumes:
-  postgres_data:
+  pg_data:
   minio_data:
