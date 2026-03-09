@@ -86,7 +86,7 @@ The dashboard UI composes a top summary region plus section-based tiles.
 
 ### Reusable section wrapper
 
-1. `lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/dashboard_section_chrome.ex`
+1. `lib/oli_web/components/delivery/instructor_dashboard/dashboard_section_chrome.ex`
 
 ### Section components (tile groups)
 
@@ -119,6 +119,11 @@ Reusable section-level UI chrome (dashboard-generic):
 - Base section layout container and accessibility semantics
 
 It is intentionally tile-agnostic and does not contain tile-specific eligibility rules.
+
+Placement note:
+
+- This file should live at the `instructor_dashboard` root, not under `intelligent_dashboard`.
+- Rationale: the chrome is reusable across instructor dashboard surfaces, while `intelligent_dashboard` should contain only product-specific shell, tile-group, and tile modules.
 
 ## `tile_groups/engagement_section.ex` (new)
 
