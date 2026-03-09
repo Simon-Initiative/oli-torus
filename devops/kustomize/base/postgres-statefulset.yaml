@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: ankane/pgvector:latest
+          image: pgvector/pgvector:pg18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432

@@ -500,6 +500,23 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       author_id: author.id
     }
 
-    ChangeTracker.track_revision(project_slug, container, append)
+    with {:ok, _} <- ChangeTracker.track_revision(project_slug, container, append),
+         {:ok, restored_revision} <-
+           maybe_restore_deleted_revision(project_slug, revision_to_attach, author) do
+      {:ok, restored_revision}
+    end
+  end
+
+  defp maybe_restore_deleted_revision(project_slug, revision_to_attach, author) do
+    case revision_to_attach.deleted do
+      true ->
+        ChangeTracker.track_revision(project_slug, revision_to_attach, %{
+          deleted: false,
+          author_id: author.id
+        })
+
+      _ ->
+        {:ok, revision_to_attach}
+    end
   end
 end
