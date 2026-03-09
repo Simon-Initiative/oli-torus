@@ -198,11 +198,13 @@
   janus-popup:has(input)[model*='question'],
   .responsive-item .react-draggable janus-popup:has(input) {
     background-size: 20px !important;
-    width: 40px !important;
+    width: fit-content !important;
+    min-width: fit-content;
     height: auto !important;
-    aspect-ratio: 1;
     input {
-      width: 40px !important;
+      width: 32px !important;
+      height: 32px !important;
+      flex-shrink: 0;
     }
   }
   /*------------------------------
