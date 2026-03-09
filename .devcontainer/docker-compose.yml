@@ -24,11 +24,10 @@ services:
     image: pgvector/pgvector:pg18
     restart: always
     environment:
-      PGDATA: /var/lib/postgresql/data/pgdata
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
   minio:
     image: minio/minio

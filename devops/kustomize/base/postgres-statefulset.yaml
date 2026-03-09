@@ -32,11 +32,9 @@ spec:
               value: postgres
             - name: POSTGRES_DB
               value: postgres
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: data
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql
           readinessProbe:
             exec:
               command:

@@ -19,7 +19,7 @@ services:
       - 5432:5432
     env_file: ./postgres.env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
   minio:
     image: minio/minio
