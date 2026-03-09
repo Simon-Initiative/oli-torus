@@ -26,11 +26,14 @@ export const ListNavigatorDropdown = {
   },
 
   attachInputListener() {
-    const input = this.el.querySelector('#search_input') as HTMLInputElement | null;
-    if (!input) return;
-
     if (this.searchInput && this.onKeyDown) {
       this.searchInput.removeEventListener('keydown', this.onKeyDown);
+    }
+
+    const input = this.el.querySelector('#search_input') as HTMLInputElement | null;
+    if (!input) {
+      this.searchInput = null;
+      return;
     }
 
     this.searchInput = input;
@@ -132,7 +135,11 @@ export const ListNavigatorDropdown = {
   },
 
   isOpen() {
-    return window.getComputedStyle(this.el).display !== 'none';
+    if (this.el.style.display) {
+      return this.el.style.display !== 'none';
+    }
+
+    return !this.el.classList.contains('hidden');
   },
 
   getTriggerElement() {

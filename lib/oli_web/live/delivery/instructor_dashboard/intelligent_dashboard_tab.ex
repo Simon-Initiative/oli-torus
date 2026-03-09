@@ -223,7 +223,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
       ^scope_selector ->
         persist_scope(socket.assigns[:instructor_enrollment], scope_selector)
-        {:noreply, assign_dashboard_tab(socket, params)}
+        {:noreply, assign_dashboard_tab(socket, params, scope_selector)}
 
       _invalid_or_stale_scope ->
         {:noreply, Phoenix.LiveView.push_patch(socket, to: path(socket, scope_selector))}
@@ -302,9 +302,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end
   end
 
-  defp assign_dashboard_tab(socket, params) do
+  defp assign_dashboard_tab(socket, params, scope_selector) do
     socket = ensure_initialized(socket)
-    {socket, scope_selector} = resolve_scope_context(socket, params)
     use_revisit? = not socket.assigns.dashboard_revisit_hydrated?
     {socket, dashboard_navigator_items} = ensure_dashboard_navigator_items(socket)
 

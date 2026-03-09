@@ -74,19 +74,15 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
     {:noreply, socket}
   end
 
-  def handle_event("select_item", %{"index" => index}, socket) do
-    case parse_index(index) do
-      {:ok, idx} ->
-        case Enum.at(socket.assigns.filtered_items, idx) do
-          nil ->
-            {:noreply, socket}
-
-          item ->
-            navigate_to_item(socket, item)
-        end
-
-      :error ->
+  def handle_event("select_item", %{"resource_id" => resource_id}, socket) do
+    case Enum.find(socket.assigns.filtered_items, fn item ->
+           to_string(item.resource_id) == to_string(resource_id)
+         end) do
+      nil ->
         {:noreply, socket}
+
+      item ->
+        navigate_to_item(socket, item)
     end
   end
 
@@ -263,9 +259,9 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
           </div>
         <% else %>
           <button
-            :for={{item, index} <- Enum.with_index(@filtered_items)}
+            :for={item <- @filtered_items}
             phx-click={
-              JS.push("select_item", value: %{index: index}, target: @target)
+              JS.push("select_item", value: %{resource_id: item.resource_id}, target: @target)
               |> JS.hide(to: "#searchable_dropdown")
             }
             data-list-navigator-option="true"
@@ -375,13 +371,6 @@ defmodule OliWeb.Components.Delivery.ListNavigator do
       search_query: "",
       filtered_items: socket.assigns.all_items
     )
-  end
-
-  defp parse_index(index) do
-    case Integer.parse(to_string(index)) do
-      {parsed, ""} when parsed >= 0 -> {:ok, parsed}
-      _ -> :error
-    end
   end
 
   defp navigate_to_item(socket, item) do
