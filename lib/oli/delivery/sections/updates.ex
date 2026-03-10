@@ -322,27 +322,15 @@ defmodule Oli.Delivery.Sections.Updates do
   end
 
   defp create_missing_section_resources(section, project_id, new_publication) do
-    missing_resource_ids =
+    revisions_to_create =
       from(pr in Publishing.PublishedResource,
         left_join: sr in SectionResource,
         on: sr.section_id == ^section.id and sr.resource_id == pr.resource_id,
         where: pr.publication_id == ^new_publication.id and is_nil(sr.id),
-        select: pr.resource_id
+        preload: [:revision]
       )
       |> Repo.all()
-
-    revisions_to_create =
-      case missing_resource_ids do
-        [] ->
-          []
-
-        resource_ids ->
-          Publishing.get_published_resources_by_publication(new_publication.id,
-            preload: [:revision],
-            resource_ids: resource_ids
-          )
-          |> Enum.map(& &1.revision)
-      end
+      |> Enum.map(& &1.revision)
 
     bulk_create_section_resources(revisions_to_create, section, project_id)
   end
