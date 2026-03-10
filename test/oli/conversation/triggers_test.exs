@@ -269,4 +269,12 @@ defmodule Oli.Conversation.TriggersTest do
            }) ==
              "Activated an adaptive component trigger (type: janus-image, id: janus-image-1)"
   end
+
+  test "sanitizes adaptive trigger description fields" do
+    assert Triggers.description(:adaptive_component, %{
+             "component_id" => "bad\n<script>alert(1)</script>",
+             "component_type" => "janus-image\n<script>"
+           }) ==
+             "Activated an adaptive component trigger (type: component, id: badscriptalert1script)"
+  end
 end

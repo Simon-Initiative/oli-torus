@@ -43,5 +43,5 @@ export function getInstanceId(): string | null {
     return null;
   }
 
-  return dialogueWindow.getAttribute('data-instance-id') ?? 'dialogue-window';
+  return dialogueWindow.getAttribute('data-instance-id');
 }

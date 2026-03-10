@@ -121,6 +121,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
           session: %{"section_slug" => section.slug, "current_user_id" => user.id}
         )
 
+      assert has_element?(view, "div[id=ai_bot][data-instance-id]")
       assert has_element?(view, "div[id=ai_bot_collapsed]")
       assert has_element?(view, "div[id=ai_bot_conversation].hidden")
     end
@@ -168,6 +169,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
           }
         )
 
+      assert has_element?(view, "div[id=ai_bot][data-instance-id]")
       assert has_element?(view, "div[id=ai_bot_collapsed]")
       assert has_element?(view, "div[id=ai_bot_conversation].hidden")
     end

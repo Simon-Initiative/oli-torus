@@ -31,12 +31,11 @@ defmodule Oli.Conversation.Triggers do
   def description(:page, _), do: "Visited the learning page"
 
   def description(:adaptive_page, data),
-    do:
-      "Viewed an adaptive lesson screen activation point (id: #{data["component_id"] || "unknown"})"
+    do: "Viewed an adaptive lesson screen activation point (id: #{sanitize_component_id(data)})"
 
   def description(:adaptive_component, data),
     do:
-      "Activated an adaptive component trigger (type: #{data["component_type"] || "component"}, id: #{data["component_id"] || "unknown"})"
+      "Activated an adaptive component trigger (type: #{sanitize_component_type(data)}, id: #{sanitize_component_id(data)})"
 
   def description(:content_group, data),
     do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
@@ -62,6 +61,48 @@ defmodule Oli.Conversation.Triggers do
   def description(:targeted_feedback, data),
     do:
       "Received targeted feedback (id: #{data["ref_id"]}) for part #{data["part_id"]} of question #{data["question"]}. The student's response is in: #{data["student_response"]}"
+
+  @adaptive_component_types MapSet.new([
+                              "janus-ai-trigger",
+                              "janus-image",
+                              "janus-navigation-button"
+                            ])
+
+  defp sanitize_component_type(data) when is_map(data) do
+    case Map.get(data, "component_type") do
+      value when is_binary(value) ->
+        case MapSet.member?(@adaptive_component_types, value) do
+          true -> value
+          false -> "component"
+        end
+
+      _ ->
+        "component"
+    end
+  end
+
+  defp sanitize_component_type(_), do: "component"
+
+  defp sanitize_component_id(data) when is_map(data) do
+    data
+    |> Map.get("component_id")
+    |> normalize_component_id("unknown")
+  end
+
+  defp sanitize_component_id(_), do: "unknown"
+
+  defp normalize_component_id(value, fallback) when is_binary(value) do
+    value
+    |> String.replace(~r/[[:cntrl:]]/u, "")
+    |> String.replace(~r/[^A-Za-z0-9:_-]/u, "")
+    |> String.slice(0, 100)
+    |> case do
+      "" -> fallback
+      sanitized -> sanitized
+    end
+  end
+
+  defp normalize_component_id(_, fallback), do: fallback
 
   @doc """
   Verify that the user is enrolled in a section with

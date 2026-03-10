@@ -154,6 +154,7 @@ defmodule OliWeb.Dialogue.WindowLive do
              enabled: true,
              minimized: true,
              dialogue: dialogue_server,
+             dialogue_instance_id: Ecto.UUID.generate(),
              form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
              messages: [],
              streaming: false,
@@ -190,7 +191,9 @@ defmodule OliWeb.Dialogue.WindowLive do
     ~H"""
     <div
       :if={@enabled}
+      id="ai_bot"
       data-dialogue-window
+      data-instance-id={@dialogue_instance_id}
       class={[
         "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
         if(@is_page, do: "bottom-0 sm:bottom-20", else: "bottom-0")
