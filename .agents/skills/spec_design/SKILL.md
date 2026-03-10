@@ -27,6 +27,8 @@ Always load before writing:
 1. Resolve `feature_dir` and read PRD/FDD (and plan if relevant) for the target feature.
    - Supported roots: `docs/features/<feature_slug>` and `docs/epics/<epic_slug>/<feature_slug>`.
    - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
+   - If the slice includes meaningful UI work and a Figma or other external design source, use `$spec_ui_implement` as supporting input.
+   - `spec_design` remains responsible for slice-level technical design; `$spec_ui_implement` is only the visual-system mapping aid.
 2. Copy section blocks from `assets/templates/design_slice_template.md`.
 3. Fill the doc for exactly one slice with AC mapping, signatures, data flow, and tests.
    - Read PRD/FDD scenario status and incorporate scenario-test obligations in the slice test plan.

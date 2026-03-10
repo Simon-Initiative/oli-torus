@@ -34,8 +34,11 @@ Always load these files before drafting:
    - When applicable (i.e., when this is a feature under an epic), consult and read the epic documentation (`prd.md`, `edd.md`, `plan.md`, etc.) for full context of this feature.
 2. Ensure an informal feature description exists. If missing, ask the user to paste or type it before drafting.
 3. Restate the feature in product terms: user value, scope, role impacts, constraints, and measurable success signals.
-4. Copy the exact section blocks from `assets/templates/prd_template.md`.
-5. Fill each section using `references/considerations.md` and `references/output_requirements.md`, keeping requirements concrete and testable.
+4. If the feature has meaningful UI work and a Figma or other external design source, use `$spec_ui_implement` as supporting input before finalizing the PRD.
+   - Use it to identify the visual source of truth, token/icon/component constraints, and open UI questions.
+   - Do not use it for backend-only features.
+5. Copy the exact section blocks from `assets/templates/prd_template.md`.
+6. Fill each section using `references/considerations.md` and `references/output_requirements.md`, keeping requirements concrete and testable.
    - Favor simplicity and clarity over verbosity across the entire PRD.
    - Write requirements and acceptance criteria in plain language that is understandable by engineers, product, QA, and non-technical stakeholders.
    - Avoid unnecessary jargon, dense phrasing, and implementation-detail noise in PRD narrative sections.
@@ -63,13 +66,13 @@ Always load these files before drafting:
      - `Required`: feature materially changes an existing LiveView/LiveComponent/function component or introduces a new LiveView/LiveComponent/function component.
      - `Suggested`: UI-affecting change is small but still benefits from targeted LiveView regression coverage.
      - `Not applicable`: no LiveView surface is introduced or materially changed.
-6. For `## 11. Feature Flagging, Rollout & Migration`, include feature-flag requirements only when the informal description explicitly asks for feature flags or flag-driven rollout. Otherwise include exactly: `No feature flags present in this feature`.
+7. For `## 11. Feature Flagging, Rollout & Migration`, include feature-flag requirements only when the informal description explicitly asks for feature flags or flag-driven rollout. Otherwise include exactly: `No feature flags present in this feature`.
    - When feature flags are not required, do not add canary rollout, phased rollout, rollout runbook, or rollback-operational requirements.
-7. Apply `references/prd_checklist.md` and `references/definition_of_done.md` as hard gates.
-8. Run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check prd` immediately after updating the PRD.
-9. Hard gate: if validation fails, fix `prd.md` and re-run until it passes before proceeding.
-10. If validation cannot be run, instruct the user to run it and do not claim the PRD is complete.
-11. REQUIREMENTS CAPTURE (required):
+8. Apply `references/prd_checklist.md` and `references/definition_of_done.md` as hard gates.
+9. Run `.agents/scripts/spec_validate.sh --feature-dir <feature_dir> --check prd` immediately after updating the PRD.
+10. Hard gate: if validation fails, fix `prd.md` and re-run until it passes before proceeding.
+11. If validation cannot be run, instruct the user to run it and do not claim the PRD is complete.
+12. REQUIREMENTS CAPTURE (required):
    - Build a bulk FR/AC payload from the authored feature requirements (do not duplicate FR/AC content in `prd.md`).
    - Ensure FR/AC entries in the bulk payload use plain, concise, unambiguous language that remains understandable to engineers, product, QA, and lay readers.
    - Run `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py <feature_dir> --action capture --bulk-file <bulk_payload_path>`.

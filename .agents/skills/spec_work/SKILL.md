@@ -36,7 +36,15 @@ Always load before running:
 3. Extract concise requirements from title, description, acceptance text, and engineering clarification comments.
 4. If issue type is bug/regression, stop and route to `$spec_fixbug`.
 5. If ticket is linked to an epic, read epic context docs from `docs/epics/<epic_slug>/` (`overview.md`, `prd.md`, `edd.md`, `plan.md`) when present.
-6. Produce an in-chat review draft:
+6. Perform UI/design-source triage:
+   - Classify the ticket as one of:
+     - `backend-only`
+     - `ui-without-design-source`
+     - `ui-with-design-source`
+   - If the ticket is `ui-with-design-source`, use `$spec_ui_implement` before finalizing the technical approach.
+   - Use the brief from `$spec_ui_implement` to inform token mapping, icon reuse, reusable component decisions, and file targets.
+   - Do not use `$spec_ui_implement` for backend-only tickets.
+7. Produce an in-chat review draft:
    - Very brief technical approach (2-4 sentences + short bullet list).
    - Very brief implementation plan (3-6 numbered steps).
    - Scope boundaries, assumptions, risks, and test strategy.
@@ -44,7 +52,7 @@ Always load before running:
      - Assess whether scenario coverage should be added for this ticket.
      - If scenario coverage is needed, assess whether existing scenario infrastructure already supports the workflow.
      - If unsupported, explicitly plan to run `$spec_scenario_expand` before `$spec_scenario`.
-7. Pause for user review:
+8. Pause for user review:
    - If user requests changes, revise and re-present Phase 1 output.
    - If user gives any positive approval response, transition to Phase 2.
 
