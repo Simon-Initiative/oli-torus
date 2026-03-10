@@ -322,23 +322,14 @@ defmodule Oli.Delivery.Sections.Updates do
   end
 
   defp create_missing_section_resources(section, project_id, new_publication) do
-    existing_resource_ids =
-      from(sr in SectionResource,
-        where: sr.section_id == ^section.id,
-        select: sr.resource_id
-      )
-      |> Repo.all()
-      |> MapSet.new()
-
     missing_resource_ids =
       from(pr in Publishing.PublishedResource,
-        where: pr.publication_id == ^new_publication.id,
+        left_join: sr in SectionResource,
+        on: sr.section_id == ^section.id and sr.resource_id == pr.resource_id,
+        where: pr.publication_id == ^new_publication.id and is_nil(sr.id),
         select: pr.resource_id
       )
       |> Repo.all()
-      |> MapSet.new()
-      |> MapSet.difference(existing_resource_ids)
-      |> MapSet.to_list()
 
     revisions_to_create =
       case missing_resource_ids do
