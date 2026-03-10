@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { AnyPartComponent } from 'components/parts/types/parts';
 import guid from 'utils/guid';
@@ -16,7 +16,15 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
 }) => {
   const paths = { images: '/images' }; // TODO: provide context to authoring
   const imgsPath = paths?.images || '';
-  const availablePartComponents = (window as any)['partComponentTypes'] || []; // TODO: replace with context
+  const allowTriggers = (window as any).allowTriggers === true;
+  const partComponentTypes = (window as any)['partComponentTypes'] || [];
+  const availablePartComponents = useMemo(
+    () =>
+      partComponentTypes.filter(
+        (part: any) => allowTriggers || part.slug !== 'janus_ai_trigger',
+      ),
+    [allowTriggers, partComponentTypes],
+  ); // TODO: replace with context
 
   const [priorityPartComponents, setPriorityPartComponents] = useState<any[]>([]);
   const [otherPartComponents, setOtherPartComponents] = useState<any[]>([]);
@@ -75,7 +83,7 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
       .filter((part: any) => partTypes[0] === '*' || partTypes.includes(part.slug))
       .filter((part: any) => !priorityTypes.includes(part.slug));
     setOtherPartComponents(remainder);
-  }, [availablePartComponents, priorityTypes]);
+  }, [availablePartComponents, partTypes, priorityTypes]);
 
   return (
     <Fragment>

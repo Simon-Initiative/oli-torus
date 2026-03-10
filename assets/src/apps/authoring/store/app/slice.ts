@@ -71,6 +71,7 @@ export interface AppState {
   allObjectives: Objective[];
   copiedPart: any | null;
   copiedPartActivityId: any | null;
+  allowTriggers: boolean;
   readonly: boolean;
   showDiagnosticsWindow: boolean;
   showScoringOverview: boolean;
@@ -100,6 +101,7 @@ const initialState: AppState = {
   allObjectives: [],
   copiedPart: null,
   copiedPartActivityId: null,
+  allowTriggers: false,
   readonly: true,
   showDiagnosticsWindow: false,
   showScoringOverview: false,
@@ -119,6 +121,7 @@ export interface AppConfig {
   allObjectives?: Objective[];
   copiedPart?: any;
   copiedPartActivityId?: any;
+  allowTriggers?: boolean;
   applicationMode: ApplicationMode;
 }
 
@@ -151,8 +154,11 @@ const slice: Slice<AppState> = createSlice({
       state.copiedPart = action.payload.copiedPart || initialState.copiedPart;
       state.copiedPartActivityId =
         action.payload.copiedPartActivityId || initialState.copiedPartActivityId;
+      state.allowTriggers = action.payload.allowTriggers === true;
       state.applicationMode = action.payload.applicationMode || initialState.applicationMode;
       state.editingMode = state.applicationMode === 'flowchart' ? 'flowchart' : 'page'; // Default to the flowchart editor when in flowchart mode.
+
+      (window as any).allowTriggers = state.allowTriggers;
     },
     setPanelState(
       state,
@@ -355,7 +361,10 @@ export const selectHasEditingLock = createSelector(
 
 export const selectPartComponentTypes = createSelector(
   selectState,
-  (state: AppState) => state.partComponentTypes,
+  (state: AppState) =>
+    state.partComponentTypes.filter(
+      (part) => state.allowTriggers || part.slug !== 'janus_ai_trigger',
+    ),
 );
 
 export const selectActivityTypes = createSelector(

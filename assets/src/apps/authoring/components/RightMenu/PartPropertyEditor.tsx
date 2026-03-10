@@ -146,6 +146,7 @@ const getComponentUISchema = (
 const simplifiedLabels: Record<string, string> = {
   'janus-text-flow': 'Text Flow',
   'janus-image': 'Image',
+  'janus-ai-trigger': 'AI Activation Point',
   'janus-video': 'Video',
   'janus-popup': 'Popup Icon',
   'janus-audio': 'Audio',

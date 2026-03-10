@@ -7,8 +7,8 @@ import {
 import ImageAuthor from './ImageAuthor';
 import {
   createSchema,
-  schema,
-  simpleSchema,
+  getSchema,
+  getSimpleSchema,
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,
@@ -29,7 +29,10 @@ register(ImageAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
+    getSchema: (mode: PartAuthoringMode) =>
+      mode === 'simple'
+        ? getSimpleSchema((window as any).allowTriggers === true)
+        : getSchema((window as any).allowTriggers === true),
     getUiSchema: () => uiSchema,
     transformModelToSchema,
     transformSchemaToModel,

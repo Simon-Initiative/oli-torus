@@ -10,6 +10,8 @@ defmodule Oli.Conversation.Triggers do
   # The supported trigger type
   @trigger_types [
     :page,
+    :adaptive_page,
+    :adaptive_component,
     :content_group,
     :content_block,
     :correct_answer,
@@ -27,6 +29,14 @@ defmodule Oli.Conversation.Triggers do
   # Given a trigger type and trigger type specific data, formulate an agent readable description
   # that we will use in creating the entire prompt.
   def description(:page, _), do: "Visited the learning page"
+
+  def description(:adaptive_page, data),
+    do:
+      "Viewed an adaptive lesson screen activation point (id: #{data["component_id"] || "unknown"})"
+
+  def description(:adaptive_component, data),
+    do:
+      "Activated an adaptive component trigger (type: #{data["component_type"] || "component"}, id: #{data["component_id"] || "unknown"})"
 
   def description(:content_group, data),
     do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
@@ -141,7 +151,8 @@ defmodule Oli.Conversation.Triggers do
   defp augment_data_context(trigger) do
     case trigger do
       # No additional data needed for these trigger types
-      %{trigger_type: t} when t in [:page, :content_group, :content_block] ->
+      %{trigger_type: t}
+      when t in [:page, :adaptive_page, :adaptive_component, :content_group, :content_block] ->
         trigger
 
       # For these trigger types, we need to fetch the question model and encode it

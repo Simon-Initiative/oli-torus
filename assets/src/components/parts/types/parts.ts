@@ -34,8 +34,10 @@ export interface CapiVariable {
 export interface PartComponentProps<T extends CustomProperties> {
   id: string;
   type: string;
-  model: T;
-  state: any;
+  model: T | string;
+  state: any | string;
+  sectionSlug?: string;
+  resourceId?: number;
   notify?: any;
   className?: string;
   onInit: (payload: any) => Promise<any>;

@@ -256,4 +256,17 @@ defmodule Oli.Conversation.TriggersTest do
     result = Triggers.verify_access(nil, nil)
     assert result == {:error, :no_access}
   end
+
+  test "describes adaptive page trigger" do
+    assert Triggers.description(:adaptive_page, %{"component_id" => "screen-trigger-1"}) ==
+             "Viewed an adaptive lesson screen activation point (id: screen-trigger-1)"
+  end
+
+  test "describes adaptive component trigger" do
+    assert Triggers.description(:adaptive_component, %{
+             "component_id" => "janus-image-1",
+             "component_type" => "janus-image"
+           }) ==
+             "Activated an adaptive component trigger (type: janus-image, id: janus-image-1)"
+  end
 end

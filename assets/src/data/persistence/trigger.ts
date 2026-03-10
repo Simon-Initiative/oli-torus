@@ -34,15 +34,14 @@ export function invoke(
 }
 
 export function getInstanceId(): string | null {
-  // Fetch the dom element whose id is "ai_bot" and then
-  // return the value of the "data-instance-id" attribute.
+  // Prefer the legacy ai_bot anchor when present, but also support the
+  // current dialogue-window contract used by delivery.
+  const dialogueWindow =
+    document.getElementById('ai_bot') ?? document.querySelector<HTMLElement>('[data-dialogue-window]');
 
-  const ai_bot = document.getElementById('ai_bot');
-
-  // If the element does not exist, return null.
-  if (!ai_bot) {
+  if (!dialogueWindow) {
     return null;
-  } else {
-    return ai_bot.getAttribute('data-instance-id');
   }
+
+  return dialogueWindow.getAttribute('data-instance-id') ?? 'dialogue-window';
 }

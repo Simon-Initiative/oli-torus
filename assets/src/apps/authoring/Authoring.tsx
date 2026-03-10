@@ -193,6 +193,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       isAdmin: props.isAdmin,
       projectSlug: props.projectSlug,
       revisionSlug: props.revisionSlug,
+      allowTriggers: props.content.optionalContentTypes?.triggers === true,
       partComponentTypes: props.partComponentTypes,
       activityTypes: props.activityTypes,
       allObjectives: props.content.allObjectives || [],
@@ -220,6 +221,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
             isAdmin: props.isAdmin,
             projectSlug: props.projectSlug,
             revisionSlug: props.revisionSlug,
+            allowTriggers: props.content.optionalContentTypes?.triggers === true,
             partComponentTypes: props.partComponentTypes,
             activityTypes: props.activityTypes,
           };

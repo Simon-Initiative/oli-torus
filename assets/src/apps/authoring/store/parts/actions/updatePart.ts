@@ -87,7 +87,12 @@ export const updatePart = createAsyncThunk(
           //Ignore
         }
       }
-      if (!authorPart && partDef.type !== 'janus-text-flow' && partDef.type !== 'janus-image') {
+      if (
+        !authorPart &&
+        partDef.type !== 'janus-text-flow' &&
+        partDef.type !== 'janus-image' &&
+        partDef.type !== 'janus-ai-trigger'
+      ) {
         // this shouldn't happen, but maybe it was missing?? add it
         const authorPartConfig = {
           id: payload.changes.id,
@@ -105,7 +110,12 @@ export const updatePart = createAsyncThunk(
       }
 
       // if this item has any children in the sequence, update them too
-      if (sequenceEntry && partDef.type !== 'janus-text-flow' && partDef.type !== 'janus-image') {
+      if (
+        sequenceEntry &&
+        partDef.type !== 'janus-text-flow' &&
+        partDef.type !== 'janus-image' &&
+        partDef.type !== 'janus-ai-trigger'
+      ) {
         const hierarchy = getHierarchy(sequence, activitySequenceId);
         const allInvolved = flattenHierarchy(hierarchy);
         const activitiesToUpdate: IActivity[] = [];

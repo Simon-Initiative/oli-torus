@@ -3,16 +3,16 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
-import NavButtonAuthor from './NavButtonAuthor';
-import { adaptivitySchema, createSchema, getSchema, uiSchema } from './schema';
+import AITriggerAuthor from './AITriggerAuthor';
+import { createSchema, schema, uiSchema } from './schema';
 
-/* eslint-disable @typescript-eslint/no-var-requires */
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
 
-register(NavButtonAuthor, manifest.authoring.element, observedAttributes, {
+register(AITriggerAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
   shadow: false,
   attrs: {
@@ -21,9 +21,8 @@ register(NavButtonAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: () => getSchema((window as any).allowTriggers === true),
+    getSchema: () => schema,
     getUiSchema: () => uiSchema,
     createSchema,
-    getAdaptivitySchema: async () => adaptivitySchema,
   },
 });
