@@ -11,6 +11,9 @@ const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
+type SchemaOptions = {
+  allowAiTriggers?: boolean;
+};
 
 register(NavButtonAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
@@ -21,7 +24,8 @@ register(NavButtonAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: () => getSchema((window as any).allowTriggers === true),
+    getSchema: (_mode?: unknown, options?: SchemaOptions) =>
+      getSchema(options?.allowAiTriggers === true),
     getUiSchema: () => uiSchema,
     createSchema,
     getAdaptivitySchema: async () => adaptivitySchema,

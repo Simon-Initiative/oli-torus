@@ -369,6 +369,11 @@ export const selectActivityTypes = createSelector(
   (state: AppState) => state.activityTypes,
 );
 
+export const selectAllowTriggers = createSelector(
+  selectState,
+  (state: AppState) => state.allowTriggers,
+);
+
 export const selectReadOnly = createSelector(selectState, (state: AppState) => state.readonly);
 
 export const selectShowDiagnosticsWindow = createSelector(

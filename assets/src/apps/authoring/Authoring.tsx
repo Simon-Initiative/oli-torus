@@ -189,16 +189,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [isAppVisible]);
 
   useEffect(() => {
-    (window as any).partComponentTypes = props.partComponentTypes || [];
-    (window as any).allowTriggers = allowTriggers;
-
-    return () => {
-      (window as any).partComponentTypes = [];
-      (window as any).allowTriggers = false;
-    };
-  }, [allowTriggers, props.partComponentTypes]);
-
-  useEffect(() => {
     const appConfig: AppConfig = {
       paths: props.paths,
       isAdmin: props.isAdmin,

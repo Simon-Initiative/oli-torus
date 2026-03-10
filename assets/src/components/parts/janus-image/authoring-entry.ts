@@ -19,6 +19,9 @@ const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents, onSaveConfigure: 'saveconfigure' };
+type SchemaOptions = {
+  allowAiTriggers?: boolean;
+};
 
 register(ImageAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
@@ -29,10 +32,10 @@ register(ImageAuthor, manifest.authoring.element, observedAttributes, {
     },
   },
   customApi: {
-    getSchema: (mode: PartAuthoringMode) =>
+    getSchema: (mode: PartAuthoringMode, options?: SchemaOptions) =>
       mode === 'simple'
-        ? getSimpleSchema((window as any).allowTriggers === true)
-        : getSchema((window as any).allowTriggers === true),
+        ? getSimpleSchema(options?.allowAiTriggers === true)
+        : getSchema(options?.allowAiTriggers === true),
     getUiSchema: () => uiSchema,
     transformModelToSchema,
     transformSchemaToModel,

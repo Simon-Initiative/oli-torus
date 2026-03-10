@@ -519,6 +519,132 @@ defmodule Oli.ActivityEditingTest do
                )
     end
 
+    test "edit/5 rejects adaptive AI trigger parts when project triggers are disabled", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "partsLayout" => [
+            %{
+              "id" => "trigger-1",
+              "type" => "janus-ai-trigger",
+              "custom" => %{
+                "launchMode" => "click",
+                "prompt" => "Ask DOT for help"
+              }
+            }
+          ],
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "trigger-1",
+                "type" => "janus-ai-trigger"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 rejects adaptive image AI trigger configuration when project triggers are disabled",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "partsLayout" => [
+            %{
+              "id" => "image-1",
+              "type" => "janus-image",
+              "custom" => %{
+                "src" => "/images/placeholder-image.svg",
+                "enableAiTrigger" => true,
+                "aiTriggerPrompt" => "Use this image as context"
+              }
+            }
+          ]
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 allows adaptive AI trigger parts when project triggers are enabled", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, _project} = Oli.Authoring.Course.update_project(project, %{allow_triggers: true})
+
+      {:ok, {%{resource_id: resource_id, content: content}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" =>
+          Map.merge(content, %{
+            "partsLayout" => [
+              %{
+                "id" => "trigger-1",
+                "type" => "janus-ai-trigger",
+                "custom" => %{
+                  "launchMode" => "click",
+                  "prompt" => "Ask DOT for help"
+                }
+              }
+            ],
+            "authoring" => %{
+              "parts" => [
+                %{
+                  "id" => "trigger-1",
+                  "type" => "janus-ai-trigger"
+                }
+              ]
+            }
+          })
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, _updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
     test "edit/5 rejects adaptive internal links with href slugs outside the project", %{
       author: author,
       project: project,

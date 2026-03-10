@@ -10,6 +10,7 @@ import { clone } from '../../../../utils/common';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import {
+  selectAllowTriggers,
   selectAppMode,
   setCopiedPart,
   setCopiedPartActivityId,
@@ -78,16 +79,17 @@ const getComponentSchema = (
   instance: any,
   partEditMode: PartAuthoringMode,
   responsiveLayout: boolean,
+  allowTriggers: boolean,
 ): JSONSchema7 => {
   return partEditMode === 'simple'
-    ? getSimplifiedComponentSchema(instance)
-    : getExpertComponentSchema(instance, responsiveLayout);
+    ? getSimplifiedComponentSchema(instance, allowTriggers)
+    : getExpertComponentSchema(instance, responsiveLayout, allowTriggers);
 };
 
 // The "simple" ui with only the common properties sorted in a logical order
-const getSimplifiedComponentSchema = (instance: any): JSONSchema7 => {
+const getSimplifiedComponentSchema = (instance: any, allowTriggers: boolean): JSONSchema7 => {
   if (instance && instance.getSchema) {
-    const customPartSchema = instance.getSchema('simple');
+    const customPartSchema = instance.getSchema('simple', { allowAiTriggers: allowTriggers });
     const newSchema: any = {
       ...simplifiedPartSchema,
       properties: {
@@ -112,10 +114,14 @@ const getSimplifiedComponentSchema = (instance: any): JSONSchema7 => {
   return simplifiedPartSchema; // default schema for components that don't specify.
 };
 
-const getExpertComponentSchema = (instance: any, responsiveLayout: boolean): JSONSchema7 => {
+const getExpertComponentSchema = (
+  instance: any,
+  responsiveLayout: boolean,
+  allowTriggers: boolean,
+): JSONSchema7 => {
   console.log('getExpertComponentSchema', { instance });
   if (instance && instance.getSchema) {
-    const customPartSchema = instance.getSchema('expert');
+    const customPartSchema = instance.getSchema('expert', { allowAiTriggers: allowTriggers });
     const newSchema: any = {
       ...(responsiveLayout ? responsivePartSchema : partSchema),
       properties: {
@@ -213,6 +219,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
   const currentLesson = useSelector(selectPageState);
   const responsiveLayout = currentLesson?.custom?.responsiveLayout || false;
   const appMode = useSelector(selectAppMode);
+  const allowTriggers = useSelector(selectAllowTriggers);
   const partEditMode: PartAuthoringMode = appMode === 'expert' ? 'expert' : 'simple';
 
   const [shouldShowConfirmDelete, , showConfirmDelete, hideConfirmDelete] = useToggle(false);
@@ -235,8 +242,8 @@ export const PartPropertyEditor: React.FC<Props> = ({
   );
 
   const componentSchema = useMemo(
-    () => getComponentSchema(currentPartInstance, partEditMode, responsiveLayout),
-    [currentPartInstance, partEditMode, responsiveLayout],
+    () => getComponentSchema(currentPartInstance, partEditMode, responsiveLayout, allowTriggers),
+    [allowTriggers, currentPartInstance, partEditMode, responsiveLayout],
   );
 
   const componentUiSchema = useMemo(

@@ -28,6 +28,8 @@ interface ScreenAuthorProps {
   screen: any;
   onChange?: (screen: any) => void;
   responsiveLayout?: boolean;
+  allowTriggers?: boolean;
+  partComponentTypes?: any[];
 }
 
 const screenSchema: JSONSchema7 = {
@@ -118,7 +120,13 @@ const screenUiSchema = {
   },
 };
 
-const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange, responsiveLayout }) => {
+const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
+  screen,
+  onChange,
+  responsiveLayout,
+  allowTriggers = false,
+  partComponentTypes = [],
+}) => {
   const pusherContext = useContext(NotificationContext);
   const [pusher, setPusher] = useState(pusherContext || new EventEmitter().setMaxListeners(50));
 
@@ -217,7 +225,9 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange, responsiv
         if (PartClass) {
           const partInstance = new PartClass() as any;
           if (partInstance.getSchema) {
-            const customPartSchema = partInstance.getSchema();
+            const customPartSchema = partInstance.getSchema(undefined, {
+              allowAiTriggers: allowTriggers,
+            });
 
             const mergedPartSchema: JSONSchema7 = {
               ...partSchema,
@@ -382,6 +392,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange, responsiv
             <AddPartToolbar
               partTypes={allowedParts}
               priorityTypes={allowedParts}
+              availablePartComponents={partComponentTypes}
               onAdd={handleAddPart}
             />
           </Col>
