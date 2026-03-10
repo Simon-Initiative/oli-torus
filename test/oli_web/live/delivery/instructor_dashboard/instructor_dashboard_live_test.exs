@@ -442,6 +442,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       refute has_element?(view, "#search_input")
       refute has_element?(view, "a[role='previous item link']")
       refute has_element?(view, "a[role='next item link']")
+      refute has_element?(view, "#learning-dashboard-engagement-group-move")
     end
 
     test "dashboard entry with an invalid persisted scope falls back to the default course scope",
@@ -590,7 +591,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       assert render(view) =~ "Invalid dashboard section order."
 
-      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).section_order == []
+      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).section_order ==
+               []
     end
 
     test "courses without objectives or graded assessments omit the content section", %{

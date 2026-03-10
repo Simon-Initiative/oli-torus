@@ -63,5 +63,28 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChromeT
       refute html =~ ~s(id="learning-dashboard-content-group-content")
       refute html =~ "Hidden content"
     end
+
+    test "omits the move handle when reordering is unavailable" do
+      html =
+        render_component(
+          fn assigns ->
+            ~H"""
+            <DashboardSectionChrome.section
+              id="learning-dashboard-engagement-group"
+              section_id="engagement"
+              title="Engagement"
+              expanded={true}
+              show_move_handle={false}
+            >
+              Inner tile content
+            </DashboardSectionChrome.section>
+            """
+          end,
+          %{}
+        )
+
+      refute html =~ ~s(id="learning-dashboard-engagement-group-move")
+      refute html =~ ~s(data-section-handle)
+    end
   end
 end

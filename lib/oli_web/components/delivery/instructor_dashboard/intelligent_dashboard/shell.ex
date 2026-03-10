@@ -98,11 +98,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   end
 
   defp render_dashboard_section(assigns, %{id: "engagement"} = section) do
-    assigns = assign(assigns, :section, section)
+    assigns =
+      assigns
+      |> assign(:section, section)
+      |> assign(:show_move_handle, length(assigns.dashboard_visible_sections) > 1)
 
     ~H"""
     <EngagementSection.section
       expanded={@section.expanded}
+      show_move_handle={@show_move_handle}
       progress_status={Map.get(@dashboard, :progress_text, "Loading...")}
       student_support_status={Map.get(@dashboard, :student_support_text, "Loading...")}
       show_progress_tile={section_has_tile?(@section, "progress")}
@@ -112,11 +116,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   end
 
   defp render_dashboard_section(assigns, %{id: "content"} = section) do
-    assigns = assign(assigns, :section, section)
+    assigns =
+      assigns
+      |> assign(:section, section)
+      |> assign(:show_move_handle, length(assigns.dashboard_visible_sections) > 1)
 
     ~H"""
     <ContentSection.section
       expanded={@section.expanded}
+      show_move_handle={@show_move_handle}
       objectives_status={tile_status(@dashboard, :objectives_text)}
       assessments_status={tile_status(@dashboard, :assessments_text)}
       show_objectives_tile={section_has_tile?(@section, "objectives")}

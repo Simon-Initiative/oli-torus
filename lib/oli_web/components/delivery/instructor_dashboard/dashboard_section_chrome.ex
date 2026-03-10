@@ -20,6 +20,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChrome 
   attr :toggle_event, :string, default: "dashboard_section_toggled"
   attr :reorder_event, :string, default: "dashboard_sections_reordered"
   attr :move_label, :string, default: nil
+  attr :show_move_handle, :boolean, default: true
   attr :class, :string, default: nil
   slot :inner_block, required: true
 
@@ -71,6 +72,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChrome 
         </div>
 
         <button
+          :if={@show_move_handle}
           id={"#{@id}-move"}
           type="button"
           class="inline-flex h-8 w-8 shrink-0 cursor-move items-center justify-center rounded-md text-Icon-icon-active transition hover:bg-Fill-fill-hover hover:text-Icon-icon-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"

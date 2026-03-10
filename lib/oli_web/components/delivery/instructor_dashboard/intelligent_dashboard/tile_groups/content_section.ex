@@ -24,6 +24,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :target, :any, default: nil
   attr :toggle_event, :string, default: "dashboard_section_toggled"
   attr :reorder_event, :string, default: "dashboard_sections_reordered"
+  attr :show_move_handle, :boolean, default: true
   attr :objectives_status, :string, default: "Waiting for scoped data"
   attr :assessments_status, :string, default: "Waiting for scoped data"
   attr :show_objectives_tile, :boolean, default: true
@@ -41,6 +42,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       target={@target}
       toggle_event={@toggle_event}
       reorder_event={@reorder_event}
+      show_move_handle={@show_move_handle}
     >
       <div
         class={["grid grid-cols-1 gap-4", @tile_count > 1 && "xl:grid-cols-2"]}
