@@ -1,6 +1,7 @@
 import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { AnyPartComponent } from 'components/parts/types/parts';
+import { aiTriggerPartSlug } from 'components/parts/janus-ai-trigger/constants';
 import guid from 'utils/guid';
 
 interface AddPartToolbarProps {
@@ -21,7 +22,7 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
   const availablePartComponents = useMemo(
     () =>
       partComponentTypes.filter(
-        (part: any) => allowTriggers || part.slug !== 'janus_ai_trigger',
+        (part: any) => allowTriggers || part.slug !== aiTriggerPartSlug,
       ),
     [allowTriggers, partComponentTypes],
   ); // TODO: replace with context

@@ -78,4 +78,27 @@ describe('AITrigger', () => {
 
     jest.useRealTimers();
   });
+
+  it('does not replay lifecycle callbacks on rerender with unchanged inputs', async () => {
+    const onInit = jest.fn(() => Promise.resolve({ snapshot: {} }));
+    const onReady = jest.fn(() => Promise.resolve({ type: 'success' }));
+    const props = {
+      ...defaultProps,
+      onInit,
+      onReady,
+      model: JSON.stringify({ launchMode: 'click', prompt: 'Offer a hint' }),
+    };
+
+    const { rerender } = render(<AITrigger {...props} />);
+
+    await screen.findByRole('button', { name: 'Open DOT AI assistant' });
+    expect(onInit).toHaveBeenCalledTimes(1);
+    expect(onReady).toHaveBeenCalledTimes(1);
+
+    rerender(<AITrigger {...props} />);
+    await act(async () => Promise.resolve());
+
+    expect(onInit).toHaveBeenCalledTimes(1);
+    expect(onReady).toHaveBeenCalledTimes(1);
+  });
 });

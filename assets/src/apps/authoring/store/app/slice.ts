@@ -8,6 +8,7 @@ import {
   savePartStateToTree,
 } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { Objective } from '../../../../data/content/objective';
+import { aiTriggerPartSlug } from '../../../../components/parts/janus-ai-trigger/constants';
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { savePage } from '../page/actions/savePage';
 import { AuthoringRootState } from '../rootReducer';
@@ -147,8 +148,6 @@ const slice: Slice<AppState> = createSlice({
       state.partComponentTypes =
         action.payload.partComponentTypes || initialState.partComponentTypes;
       state.allObjectives = action.payload.allObjectives || initialState.allObjectives;
-      // HACK! AddPartToolbar needs partComponentTypes on the window for now
-      (window as any)['partComponentTypes'] = state.partComponentTypes;
 
       state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
       state.copiedPart = action.payload.copiedPart || initialState.copiedPart;
@@ -157,8 +156,6 @@ const slice: Slice<AppState> = createSlice({
       state.allowTriggers = action.payload.allowTriggers === true;
       state.applicationMode = action.payload.applicationMode || initialState.applicationMode;
       state.editingMode = state.applicationMode === 'flowchart' ? 'flowchart' : 'page'; // Default to the flowchart editor when in flowchart mode.
-
-      (window as any).allowTriggers = state.allowTriggers;
     },
     setPanelState(
       state,
@@ -363,7 +360,7 @@ export const selectPartComponentTypes = createSelector(
   selectState,
   (state: AppState) =>
     state.partComponentTypes.filter(
-      (part) => state.allowTriggers || part.slug !== 'janus_ai_trigger',
+      (part) => state.allowTriggers || part.slug !== aiTriggerPartSlug,
     ),
 );
 

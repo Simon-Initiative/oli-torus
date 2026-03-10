@@ -2,6 +2,7 @@ import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { AIIcon } from 'components/misc/AIIcon';
 import { invokeAdaptiveAiTrigger, canInvokeAiTrigger, hasAiTriggerPrompt } from '../aiTrigger';
 import { PartComponentProps } from '../types/parts';
+import { aiTriggerTagName } from './constants';
 import { AITriggerModel } from './schema';
 
 const AUTO_TRIGGER_DELAY_MS = 2000;
@@ -11,18 +12,19 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
   const [ready, setReady] = useState(false);
   const firedAutoTrigger = useRef(false);
   const id = props.id;
+  const { model: modelProp, onInit, onReady, resourceId, sectionSlug } = props;
 
   useEffect(() => {
     let parsedModel: Partial<AITriggerModel> | undefined;
 
-    if (typeof props.model === 'string') {
+    if (typeof modelProp === 'string') {
       try {
-        parsedModel = JSON.parse(props.model);
+        parsedModel = JSON.parse(modelProp);
       } catch (_error) {
         parsedModel = undefined;
       }
     } else {
-      parsedModel = props.model;
+      parsedModel = modelProp;
     }
 
     if (!parsedModel) {
@@ -31,21 +33,19 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
 
     setModel(parsedModel);
 
-    props
-      .onInit({
-        id,
-        responses: [],
-      })
-      .then(() => setReady(true));
-  }, [id, props]);
+    onInit({
+      id,
+      responses: [],
+    }).then(() => setReady(true));
+  }, [id, modelProp, onInit]);
 
   useEffect(() => {
     if (!ready) {
       return;
     }
 
-    props.onReady({ id, responses: [] });
-  }, [id, props, ready]);
+    onReady({ id, responses: [] });
+  }, [id, onReady, ready]);
 
   const {
     width = 56,
@@ -69,8 +69,8 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     const timeout = window.setTimeout(() => {
       firedAutoTrigger.current = true;
       void invokeAdaptiveAiTrigger({
-        sectionSlug: props.sectionSlug,
-        resourceId: props.resourceId,
+        sectionSlug,
+        resourceId,
         prompt,
         triggerType: 'adaptive_page',
         data: {
@@ -80,7 +80,7 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     }, AUTO_TRIGGER_DELAY_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [id, launchMode, prompt, props.resourceId, props.sectionSlug, ready]);
+  }, [id, launchMode, prompt, resourceId, sectionSlug, ready]);
 
   if (
     !ready ||
@@ -107,8 +107,8 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
 
   const handleClick = () =>
     invokeAdaptiveAiTrigger({
-      sectionSlug: props.sectionSlug,
-      resourceId: props.resourceId,
+      sectionSlug,
+      resourceId,
       prompt,
       triggerType: 'adaptive_component',
       data: {
@@ -131,6 +131,6 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
   );
 };
 
-export const tagName = 'janus-ai-trigger';
+export const tagName = aiTriggerTagName;
 
 export default AITrigger;

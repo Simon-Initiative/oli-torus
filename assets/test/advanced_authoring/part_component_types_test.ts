@@ -1,7 +1,8 @@
 import { selectPartComponentTypes } from '../../src/apps/authoring/store/app/slice';
+import { aiTriggerPartSlug } from '../../src/components/parts/janus-ai-trigger/constants';
 
 const imagePart = { slug: 'janus_image' };
-const aiTriggerPart = { slug: 'janus_ai_trigger' };
+const aiTriggerPart = { slug: aiTriggerPartSlug };
 
 describe('selectPartComponentTypes', () => {
   it('hides the adaptive AI trigger part when project triggers are disabled', () => {
