@@ -232,20 +232,21 @@ defmodule Oli.InstructorDashboard do
   end
 
   defp track_save_failure(enrollment_id, attrs) do
-    metadata = %{
+    metadata = [
       enrollment_id: enrollment_id,
       keys: Map.keys(attrs) |> Enum.map(&to_string/1) |> Enum.sort()
-    }
+    ]
 
     Logger.warning("Failed to persist instructor dashboard layout", metadata)
     Appsignal.increment_counter(@save_failure_metric, 1, %{source: "instructor_dashboard"})
   end
 
   defp track_restore_failure(enrollment_id, reason) do
-    Logger.warning("Invalid instructor dashboard layout restore", %{
+    Logger.warning(
+      "Invalid instructor dashboard layout restore",
       enrollment_id: enrollment_id,
       reason: reason
-    })
+    )
 
     Appsignal.increment_counter(@restore_failure_metric, 1, %{reason: to_string(reason)})
   end

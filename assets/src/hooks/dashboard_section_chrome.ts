@@ -1,6 +1,7 @@
 type SectionElement = HTMLElement & {
   dataset: DOMStringMap & {
     dashboardSectionId?: string;
+    sectionTitle?: string;
     reorderEvent?: string;
   };
 };
@@ -34,6 +35,20 @@ function moveSection(sectionIds: string[], sectionId: string, offset: -1 | 1): s
   nextOrder.splice(targetIndex, 0, movedSection);
 
   return nextOrder;
+}
+
+export function buildKeyboardReorderAnnouncement(
+  sectionTitle: string,
+  sectionIds: string[],
+  movedSectionId: string,
+): string {
+  const position = sectionIds.indexOf(movedSectionId);
+
+  if (!sectionTitle || position === -1) {
+    return '';
+  }
+
+  return `Moved ${sectionTitle} to position ${position + 1} of ${sectionIds.length}.`;
 }
 
 export function buildDroppedSectionOrder(
@@ -94,6 +109,7 @@ export const DashboardSectionChrome = {
   mounted() {
     const section = this.el as SectionElement;
     const handle = section.querySelector<HTMLElement>('[data-section-handle]');
+    const liveRegion = section.querySelector<HTMLElement>('[data-section-live-region]');
     const container = section.parentElement as HTMLElement | null;
     const reorderEvent = section.dataset.reorderEvent ?? 'dashboard_sections_reordered';
 
@@ -197,6 +213,16 @@ export const DashboardSectionChrome = {
 
       pendingKeyboardFocusSectionId = sectionId;
       applySectionOrder(container, nextOrder);
+      const announcement = buildKeyboardReorderAnnouncement(
+        section.dataset.sectionTitle ?? '',
+        nextOrder,
+        sectionId,
+      );
+
+      if (liveRegion && announcement) {
+        liveRegion.textContent = announcement;
+      }
+
       handle.focus({ preventScroll: true });
       this.pushEvent(reorderEvent, { section_ids: nextOrder });
     });

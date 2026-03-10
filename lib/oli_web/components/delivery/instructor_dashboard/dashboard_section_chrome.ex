@@ -39,6 +39,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChrome 
       id={@id}
       phx-hook="DashboardSectionChrome"
       data-dashboard-section-id={@section_id}
+      data-section-title={@title}
       data-reorder-event={@reorder_event}
       data-section-expanded={to_string(@expanded)}
       class={[
@@ -86,6 +87,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChrome 
           <Icons.drag_handle_dots class="text-current" />
         </button>
       </header>
+
+      <div
+        class="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        data-section-live-region
+      >
+      </div>
 
       <div
         :if={@expanded}

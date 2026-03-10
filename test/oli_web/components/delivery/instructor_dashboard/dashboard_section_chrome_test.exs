@@ -27,6 +27,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChromeT
 
       assert html =~ ~s(phx-hook="DashboardSectionChrome")
       assert html =~ ~s(data-dashboard-section-id="engagement")
+      assert html =~ ~s(data-section-title="Engagement")
       assert html =~ ~s(data-reorder-event="dashboard_sections_reordered")
       assert html =~ ~s(id="learning-dashboard-engagement-group-toggle")
       assert html =~ ~s(aria-expanded="true")
@@ -37,6 +38,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.DashboardSectionChromeT
       assert html =~ ~s(id="learning-dashboard-engagement-group-move")
       assert html =~ ~s(aria-label="Move")
       assert html =~ ~s(title="Move")
+      assert html =~ ~s(data-section-live-region)
+      assert html =~ ~s(aria-live="polite")
       assert html =~ "Inner tile content"
     end
 
