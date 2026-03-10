@@ -347,11 +347,9 @@ defmodule Oli.Delivery.Sections.Updates do
 
         resource_ids ->
           Publishing.get_published_resources_by_publication(new_publication.id,
-            preload: [:revision]
+            preload: [:revision],
+            resource_ids: resource_ids
           )
-          |> Enum.filter(fn published_resource ->
-            published_resource.resource_id in resource_ids
-          end)
           |> Enum.map(& &1.revision)
       end
 
