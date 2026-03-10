@@ -30,12 +30,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       </div>
 
       <div id="learning-dashboard-shell" class="space-y-6">
-        <section
-          id="learning-dashboard-summary-region"
-          class="rounded border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
-        >
-          <SummaryTile.tile status="Loading summary placeholders" />
-        </section>
+        <SummaryTile.tile status="Loading summary placeholders" />
 
         <div id="learning-dashboard-sections" class="space-y-6">
           <%= for section <- @dashboard_visible_sections do %>

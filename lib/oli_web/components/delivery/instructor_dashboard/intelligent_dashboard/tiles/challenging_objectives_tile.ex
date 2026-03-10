@@ -16,19 +16,26 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     ~H"""
     <article
       id="learning-dashboard-objectives-placeholder"
-      class="rounded border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      class="h-full rounded-xl border border-Border-border-subtle bg-Surface-surface-primary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
     >
-      <div class="mb-3 flex items-center justify-between">
-        <h3 class="font-semibold text-gray-900 dark:text-gray-100">Challenging Objectives</h3>
-        <span class="text-xs text-gray-500 dark:text-gray-400">{@status}</span>
+      <div class="mb-3 flex items-start justify-between gap-3">
+        <h3 class="text-lg font-semibold leading-6 text-Text-text-high">Challenging Objectives</h3>
+        <span class="rounded-md border border-Border-border-default bg-Background-bg-primary px-2 py-1 text-xs font-semibold leading-4 text-Text-text-low-alpha">
+          {@status}
+        </span>
       </div>
-      <p class="mb-4 text-sm text-gray-600 dark:text-gray-300">
+      <p class="mb-4 text-sm leading-6 text-Text-text-low">
         Objective hierarchy, disclosure, and drill-through area.
       </p>
-      <div class="space-y-2">
-        <div class="h-2 rounded bg-gray-100 dark:bg-gray-700"></div>
-        <div class="h-2 w-5/6 rounded bg-gray-100 dark:bg-gray-700"></div>
-        <div class="h-2 w-2/3 rounded bg-gray-100 dark:bg-gray-700"></div>
+      <div class="space-y-2 rounded-lg border border-Border-border-subtle bg-Background-bg-primary p-3">
+        <div class="h-8 rounded-md border border-Border-border-default bg-Surface-surface-primary">
+        </div>
+        <div class="h-14 rounded-md border border-Border-border-default bg-Surface-surface-primary">
+        </div>
+        <div class="h-14 rounded-md border border-Border-border-default bg-Surface-surface-primary">
+        </div>
+        <div class="h-14 rounded-md border border-Border-border-default bg-Surface-surface-primary">
+        </div>
       </div>
     </article>
     """

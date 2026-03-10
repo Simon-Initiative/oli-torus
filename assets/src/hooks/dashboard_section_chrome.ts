@@ -80,7 +80,14 @@ function applySectionOrder(container: HTMLElement, sectionIds: string[]) {
 function clearDragState(container: HTMLElement) {
   container
     .querySelectorAll<HTMLElement>('[data-dashboard-section-id]')
-    .forEach((section) => section.classList.remove('ring-2', 'ring-blue-300', 'ring-offset-2'));
+    .forEach((section) =>
+      section.classList.remove(
+        'border-Border-border-bold-hover',
+        'bg-Surface-surface-secondary',
+        'shadow-[0px_12px_24px_0px_rgba(0,52,99,0.18)]',
+        'scale-[0.995]',
+      ),
+    );
 }
 
 export const DashboardSectionChrome = {
@@ -96,7 +103,12 @@ export const DashboardSectionChrome = {
 
     handle.addEventListener('dragstart', (event: DragEvent) => {
       draggedSectionId = section.dataset.dashboardSectionId ?? null;
-      section.classList.add('opacity-70');
+      section.classList.add(
+        'border-Border-border-bold-hover',
+        'bg-Surface-surface-secondary',
+        'shadow-[0px_12px_24px_0px_rgba(0,52,99,0.18)]',
+        'scale-[0.995]',
+      );
 
       if (event.dataTransfer && draggedSectionId) {
         event.dataTransfer.effectAllowed = 'move';
@@ -125,12 +137,12 @@ export const DashboardSectionChrome = {
 
       event.preventDefault();
       clearDragState(container);
-      section.classList.add('ring-2', 'ring-blue-300', 'ring-offset-2');
+      section.classList.add('border-Border-border-bold-hover', 'bg-Surface-surface-secondary');
     });
 
     section.addEventListener('dragleave', (event: DragEvent) => {
       if (event.currentTarget === event.target) {
-        section.classList.remove('ring-2', 'ring-blue-300', 'ring-offset-2');
+        section.classList.remove('border-Border-border-bold-hover', 'bg-Surface-surface-secondary');
       }
     });
 
