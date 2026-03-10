@@ -26,6 +26,7 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
   const popupModalStyles: CSSProperties = {
     width: config?.width || 300,
   };
+  const dialogRef = useRef<HTMLDivElement>(null);
   if (config?.palette) {
     if (config.palette.useHtmlProps) {
       popupModalStyles.backgroundColor = config.palette.backgroundColor;
@@ -117,37 +118,38 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
 
     return result;
   };
-
-  const closeBtnRef = useRef<HTMLButtonElement>(null);
-
   useEffect(() => {
-    if (closeBtnRef.current) {
-      closeBtnRef.current.focus();
+    if (dialogRef.current) {
+      dialogRef.current.focus();
     }
   }, []);
 
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      tabIndex={-1}
       className={`info-icon-popup ${config?.customCssClass ? config.customCssClass : ''}`}
       style={popupModalStyles}
     >
       <div className="popup-background" style={popupBGStyles}>
-        <button
-          aria-label="Close"
-          className="close"
-          style={popupCloseStyles}
-          onClick={handleCloseIconClick}
-          ref={closeBtnRef}
-        >
-          <span aria-hidden={true} style={closeButtonSpanStyles}>
-            x
-          </span>
-        </button>
         <PartsLayoutRenderer
           onPartInit={handlePartInit}
           parts={parts}
           responsiveLayout={responsiveLayout}
         ></PartsLayoutRenderer>
+
+        <button
+          aria-label="Close"
+          className="close"
+          style={popupCloseStyles}
+          onClick={handleCloseIconClick}
+        >
+          <span aria-hidden={true} style={closeButtonSpanStyles}>
+            x
+          </span>
+        </button>
       </div>
     </div>
   );
