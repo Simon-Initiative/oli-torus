@@ -1,7 +1,7 @@
 ---
 name: extend_scenario
 description: >
-  Extends Oli.Scenarios infrastructure when required feature coverage is not yet supported by current directives. Use for adding new directive capabilities, parser/validator/schema support, handler execution paths, and infrastructure tests so downstream scenario tests can be authored via `spec_scenario`.
+  Extends Oli.Scenarios infrastructure when required feature coverage is not yet supported by current directives. Use for adding new directive capabilities, parser/validator/schema support, handler execution paths, and infrastructure tests so downstream scenario tests can be authored via `build_scenario`.
 ---
 
 ## Purpose

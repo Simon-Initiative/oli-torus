@@ -28,7 +28,7 @@ Add the remaining guides based on the scope of the change:
 - `.review/elixir.md` for backend, Phoenix, LiveView, Ecto, or other Elixir changes
 - `.review/ui.md` for UI, frontend, interaction, accessibility, or visual behavior changes
 - `.review/typescript.md` for TypeScript or React code changes
-- `.review/requirements.md` when a `docs/features/**/prd.md` file is added or changed and the review needs requirements traceability
+- `.review/requirements.md` when a `docs/exec-plans/**/prd.md` file is added or changed and the review needs requirements traceability
 
 ## Expected Review Flow
 

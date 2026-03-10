@@ -137,7 +137,7 @@ Use the appropriate guideline file(s) based on the nature of the changes in the 
 - Always perform a performance review.
 
 For other reviews (Elixir, UI, Requirements), only apply the relevant guideline files if the PR contains those types of changes. The requirements
-review should be run when a `docs/features/**/prd.md` file is added or
+review should be run when a `docs/exec-plans/**/prd.md` file is added or
 changed in the PR.
 
 Example: If a PR does not include any UI changes, skip the UI review.
