@@ -19871,6 +19871,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 63px;
 }
 
+.px-\[6px\] {
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
 .px-\[80px\] {
   padding-left: 80px;
   padding-right: 80px;
@@ -20564,6 +20569,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .leading-9 {
   line-height: 2.25rem;
+}
+
+.leading-\[12px\] {
+  line-height: 12px;
 }
 
 .leading-\[14px\] {
