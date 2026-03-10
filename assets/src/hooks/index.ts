@@ -13,6 +13,7 @@ import { CopyToClipboard } from './copy_to_clipboard';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
+import { DashboardSectionChrome } from './dashboard_section_chrome';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DebouncedTextInputListener } from './debounced_text_input_listener';
 import { DelayedSubmit } from './delayed_submit';
@@ -122,6 +123,7 @@ export const Hooks = {
   CustomFocusWrap,
   Countdown,
   CountdownTimer,
+  DashboardSectionChrome,
   EndDateTimer,
   EvaluateMathJaxExpressions,
   HighlightCode,

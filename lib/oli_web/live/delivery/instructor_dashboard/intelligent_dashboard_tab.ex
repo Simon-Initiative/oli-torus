@@ -15,6 +15,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
   alias Oli.InstructorDashboard, as: InstructorDashboardStateContext
   alias Oli.InstructorDashboard.InstructorDashboardState
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Dashboard.Cache
   alias Oli.Dashboard.Cache.Key
@@ -231,6 +232,77 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   @doc """
+  Applies a section expand/collapse toggle, persists the resulting layout, and rolls back
+  the assigns if persistence fails.
+  """
+  @spec handle_section_toggled(socket(), String.t(), boolean()) ::
+          {:ok, socket()}
+          | {:error, :save_failed, socket()}
+          | {:error, :unknown_section, socket()}
+  def handle_section_toggled(socket, section_id, expanded?) do
+    if section_id in dashboard_section_ids(socket) do
+      previous_sections = socket.assigns.dashboard_visible_sections
+      previous_collapsed_section_ids = socket.assigns.dashboard_collapsed_section_ids
+
+      collapsed_section_ids =
+        socket.assigns.dashboard_collapsed_section_ids
+        |> update_collapsed_sections(section_id, expanded?)
+
+      socket =
+        assign(socket,
+          dashboard_collapsed_section_ids: collapsed_section_ids,
+          dashboard_visible_sections:
+            update_dashboard_section_expansion(previous_sections, section_id, expanded?)
+        )
+
+      case persist_dashboard_layout(socket) do
+        {:ok, socket} ->
+          {:ok, socket}
+
+        {:error, socket} ->
+          {:error, :save_failed,
+           socket
+           |> assign(:dashboard_collapsed_section_ids, previous_collapsed_section_ids)
+           |> assign(:dashboard_visible_sections, previous_sections)}
+      end
+    else
+      {:error, :unknown_section, socket}
+    end
+  end
+
+  @doc """
+  Applies a dashboard section reorder, persists the resulting layout, and rolls back
+  the assigns if persistence fails.
+  """
+  @spec handle_sections_reordered(socket(), [String.t()]) ::
+          {:ok, socket()} | {:error, :invalid_order, socket()} | {:error, :save_failed, socket()}
+  def handle_sections_reordered(socket, section_ids) when is_list(section_ids) do
+    if valid_dashboard_section_order?(socket, section_ids) do
+      previous_sections = socket.assigns.dashboard_visible_sections
+      previous_order = socket.assigns.dashboard_section_order
+
+      socket =
+        assign(socket,
+          dashboard_section_order: section_ids,
+          dashboard_visible_sections: reorder_dashboard_sections(previous_sections, section_ids)
+        )
+
+      case persist_dashboard_layout(socket) do
+        {:ok, socket} ->
+          {:ok, socket}
+
+        {:error, socket} ->
+          {:error, :save_failed,
+           socket
+           |> assign(:dashboard_section_order, previous_order)
+           |> assign(:dashboard_visible_sections, previous_sections)}
+      end
+    else
+      {:error, :invalid_order, socket}
+    end
+  end
+
+  @doc """
   Handles dashboard request timeout messages and applies coordinator timeout actions.
   """
   @spec handle_dashboard_request_timeout(socket(), non_neg_integer()) :: {:noreply, socket()}
@@ -306,6 +378,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     socket = ensure_initialized(socket)
     use_revisit? = not socket.assigns.dashboard_revisit_hydrated?
     {socket, dashboard_navigator_items} = ensure_dashboard_navigator_items(socket)
+    layout_state = current_layout_state(socket)
 
     socket
     |> assign(
@@ -317,6 +390,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       dashboard_navigator_items: dashboard_navigator_items
     )
     |> assign(:dashboard, dashboard_loading_payload())
+    |> assign_dashboard_sections(layout_state)
     |> load_dashboard(use_revisit?: use_revisit?)
     |> assign(:dashboard_revisit_hydrated?, true)
   end
@@ -872,7 +946,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     %{
       runtime_status_text: Enum.join(status_lines, "\n"),
       progress_text: inspect(progress_projection, pretty: true, limit: :infinity),
-      student_support_text: inspect(support_projection, pretty: true, limit: :infinity)
+      student_support_text: inspect(support_projection, pretty: true, limit: :infinity),
+      objectives_text: "Waiting for scoped data",
+      assessments_text: "Waiting for scoped data"
     }
   end
 
@@ -942,7 +1018,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     %{
       runtime_status_text: "Loading...",
       progress_text: "Loading...",
-      student_support_text: "Loading..."
+      student_support_text: "Loading...",
+      objectives_text: "Loading...",
+      assessments_text: "Loading..."
     }
   end
 
@@ -950,8 +1028,90 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     %{
       runtime_status_text: "snapshot load failed:\n#{inspect(reason, pretty: true)}",
       progress_text: "unavailable",
-      student_support_text: "unavailable"
+      student_support_text: "unavailable",
+      objectives_text: "unavailable",
+      assessments_text: "unavailable"
     }
+  end
+
+  defp assign_dashboard_sections(socket, layout_state) do
+    visible_sections = build_dashboard_visible_sections(socket, layout_state)
+
+    socket
+    |> assign(:dashboard_visible_sections, visible_sections)
+    |> assign(:dashboard_section_order, Enum.map(visible_sections, & &1.id))
+    |> assign(
+      :dashboard_collapsed_section_ids,
+      visible_sections
+      |> Enum.reject(& &1.expanded)
+      |> Enum.map(& &1.id)
+    )
+  end
+
+  defp current_layout_state(socket) do
+    case socket.assigns[:instructor_enrollment] do
+      %{id: enrollment_id} ->
+        InstructorDashboardStateContext.get_state_by_enrollment_id(enrollment_id)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp build_dashboard_visible_sections(socket, layout_state) do
+    scope = parse_scope(Map.get(socket.assigns, :dashboard_scope, "course"))
+    default_sections = default_dashboard_sections(socket.assigns.section, scope)
+    default_section_ids = Enum.map(default_sections, & &1.id)
+
+    %{section_order: ordered_ids, collapsed_section_ids: collapsed_ids} =
+      InstructorDashboardStateContext.resolve_section_layout(layout_state, default_section_ids)
+
+    sections_by_id = Map.new(default_sections, &{&1.id, &1})
+
+    Enum.map(ordered_ids, fn section_id ->
+      sections_by_id
+      |> Map.fetch!(section_id)
+      |> Map.put(:expanded, section_id not in collapsed_ids)
+    end)
+  end
+
+  defp default_dashboard_sections(section, scope) do
+    [
+      %{
+        id: "engagement",
+        title: "Engagement",
+        tiles: [%{id: "progress"}, %{id: "student_support"}]
+      },
+      %{
+        id: "content",
+        title: "Content",
+        tiles:
+          [
+            if(has_objectives_tile?(section, scope), do: %{id: "objectives"}),
+            if(has_assessments_tile?(section, scope), do: %{id: "assessments"})
+          ]
+          |> Enum.reject(&is_nil/1)
+      }
+    ]
+    |> Enum.reject(&(Map.get(&1, :tiles, []) == []))
+  end
+
+  defp has_objectives_tile?(section, %{container_type: :course}) do
+    Sections.get_section_contained_objectives(section.id, nil) != []
+  end
+
+  defp has_objectives_tile?(section, %{container_type: :container, container_id: container_id}) do
+    Sections.get_section_contained_objectives(section.id, container_id) != []
+  end
+
+  defp has_assessments_tile?(section, %{container_type: :course}) do
+    SectionResourceDepot.graded_pages(section.id, hidden: false) != []
+  end
+
+  defp has_assessments_tile?(section, %{container_type: :container, container_id: container_id}) do
+    section
+    |> Helpers.get_assessments([])
+    |> Enum.any?(&(Map.get(&1, :container_id) == container_id))
   end
 
   defp ensure_instructor_enrollment(socket) do
@@ -974,6 +1134,50 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       nil -> nil
       state -> state.last_viewed_scope
     end
+  end
+
+  defp persist_dashboard_layout(socket) do
+    case socket.assigns[:instructor_enrollment] do
+      %{id: enrollment_id} ->
+        case InstructorDashboardStateContext.upsert_state(enrollment_id, %{
+               section_order: socket.assigns.dashboard_section_order,
+               collapsed_section_ids: socket.assigns.dashboard_collapsed_section_ids
+             }) do
+          {:ok, _state} -> {:ok, socket}
+          {:error, _changeset} -> {:error, socket}
+        end
+
+      _ ->
+        {:ok, socket}
+    end
+  end
+
+  defp dashboard_section_ids(socket) do
+    Enum.map(socket.assigns.dashboard_visible_sections, & &1.id)
+  end
+
+  defp valid_dashboard_section_order?(socket, section_ids) do
+    existing_ids = dashboard_section_ids(socket)
+    Enum.sort(existing_ids) == Enum.sort(section_ids) and Enum.uniq(section_ids) == section_ids
+  end
+
+  defp reorder_dashboard_sections(sections, ordered_ids) do
+    sections_by_id = Map.new(sections, &{&1.id, &1})
+    Enum.map(ordered_ids, &Map.fetch!(sections_by_id, &1))
+  end
+
+  defp update_dashboard_section_expansion(sections, section_id, expanded?) do
+    Enum.map(sections, fn section ->
+      if section.id == section_id, do: %{section | expanded: expanded?}, else: section
+    end)
+  end
+
+  defp update_collapsed_sections(collapsed_section_ids, section_id, true) do
+    Enum.reject(collapsed_section_ids, &(&1 == section_id))
+  end
+
+  defp update_collapsed_sections(collapsed_section_ids, section_id, false) do
+    Enum.uniq(collapsed_section_ids ++ [section_id])
   end
 
   defp start_inprocess_store do

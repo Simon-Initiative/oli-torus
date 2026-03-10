@@ -37,8 +37,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
           <SummaryTile.tile status="Loading summary placeholders" />
         </section>
 
-        <EngagementSection.section />
-        <ContentSection.section />
+        <div id="learning-dashboard-sections" class="space-y-6">
+          <%= for section <- @dashboard_visible_sections do %>
+            {render_dashboard_section(assigns, section)}
+          <% end %>
+        </div>
       </div>
 
       <%= if @show_prototype_validation_ui do %>
@@ -97,5 +100,41 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
 
   defp show_prototype_validation_ui? do
     Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :dev
+  end
+
+  defp render_dashboard_section(assigns, %{id: "engagement"} = section) do
+    assigns = assign(assigns, :section, section)
+
+    ~H"""
+    <EngagementSection.section
+      expanded={@section.expanded}
+      progress_status={Map.get(@dashboard, :progress_text, "Loading...")}
+      student_support_status={Map.get(@dashboard, :student_support_text, "Loading...")}
+      show_progress_tile={section_has_tile?(@section, "progress")}
+      show_student_support_tile={section_has_tile?(@section, "student_support")}
+    />
+    """
+  end
+
+  defp render_dashboard_section(assigns, %{id: "content"} = section) do
+    assigns = assign(assigns, :section, section)
+
+    ~H"""
+    <ContentSection.section
+      expanded={@section.expanded}
+      objectives_status={tile_status(@dashboard, :objectives_text)}
+      assessments_status={tile_status(@dashboard, :assessments_text)}
+      show_objectives_tile={section_has_tile?(@section, "objectives")}
+      show_assessments_tile={section_has_tile?(@section, "assessments")}
+    />
+    """
+  end
+
+  defp section_has_tile?(section, tile_id) do
+    Enum.any?(Map.get(section, :tiles, []), &(Map.get(&1, :id) == tile_id))
+  end
+
+  defp tile_status(dashboard, key) do
+    Map.get(dashboard, key, "Waiting for scoped data")
   end
 end
