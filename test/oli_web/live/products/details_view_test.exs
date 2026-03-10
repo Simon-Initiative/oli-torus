@@ -5,6 +5,7 @@ defmodule OliWeb.Products.DetailsViewTest do
   import Oli.Factory
   import Oli.TestHelpers
 
+  alias OliWeb.Products.Details.Content
   alias Oli.Tags
 
   defp product_route(product_slug), do: ~p"/authoring/products/#{product_slug}"
@@ -287,6 +288,45 @@ defmodule OliWeb.Products.DetailsViewTest do
       assert has_element?(view, "h4", "Certificate Settings")
       assert has_element?(view, "h4", "Feature Flags")
       assert has_element?(view, "h4", "Actions")
+    end
+  end
+
+  describe "product details content component - source materials badge" do
+    test "shows tokenized badge when updates are available", _ctx do
+      product = build(:section, type: :blueprint)
+      updates = %{123 => %{id: 123}, 456 => %{id: 456}}
+
+      html =
+        render_component(&Content.render/1, %{
+          product: product,
+          updates: updates,
+          changeset:
+            Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
+          save: "save"
+        })
+
+      assert html =~ "Manage Source Materials"
+      assert html =~ ~s(id="manage-source-materials-updates-badge")
+      assert html =~ ~s(bg-Fill-Buttons-fill-primary)
+      assert html =~ ~s(text-Text-text-white)
+      assert html =~ "2 updates"
+    end
+
+    test "does not show badge when no updates are available", _ctx do
+      product = build(:section, type: :blueprint)
+
+      html =
+        render_component(&Content.render/1, %{
+          product: product,
+          updates: %{},
+          changeset:
+            Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
+          save: "save"
+        })
+
+      refute html =~ "Manage Source Materials"
+      refute html =~ ~s(id="manage-source-materials-updates-badge")
+      refute html =~ "updates</span>"
     end
   end
 end
