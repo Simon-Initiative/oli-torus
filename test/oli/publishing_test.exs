@@ -859,20 +859,6 @@ defmodule Oli.PublishingTest do
       refute Enum.all?(mappings, &Ecto.assoc_loaded?(&1.publication))
       refute Enum.all?(mappings, &Ecto.assoc_loaded?(&1.revision))
     end
-
-    test "get_published_resources_by_publication/2 filters by resource_ids",
-         %{publication: publication, revision1: revision1, revision2: revision2} do
-      mappings =
-        Publishing.get_published_resources_by_publication(publication.id,
-          preload: [:revision],
-          resource_ids: [revision1.resource_id, revision2.resource_id]
-        )
-
-      assert Enum.map(mappings, & &1.resource_id) |> Enum.sort() ==
-               Enum.sort([revision1.resource_id, revision2.resource_id])
-
-      assert Enum.all?(mappings, &Ecto.assoc_loaded?(&1.revision))
-    end
   end
 
   describe "determine_parent_pages" do

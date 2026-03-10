@@ -700,11 +700,9 @@ defmodule Oli.Publishing do
   def get_published_resources_by_publication(publication_ids, opts)
       when is_list(publication_ids) do
     preload = Keyword.get(opts, :preload, [:resource, :revision, :publication])
-    resource_ids = Keyword.get(opts, :resource_ids)
 
     PublishedResource
     |> where([pr], pr.publication_id in ^publication_ids)
-    |> maybe_filter_published_resources_by_resource_ids(resource_ids)
     |> Repo.all()
     |> Repo.preload(preload)
   end
@@ -712,13 +710,6 @@ defmodule Oli.Publishing do
   def get_published_resources_by_publication(publication_id, opts) do
     get_published_resources_by_publication([publication_id], opts)
   end
-
-  defp maybe_filter_published_resources_by_resource_ids(query, resource_ids)
-       when is_list(resource_ids) do
-    where(query, [pr], pr.resource_id in ^resource_ids)
-  end
-
-  defp maybe_filter_published_resources_by_resource_ids(query, _resource_ids), do: query
 
   @doc """
   Returns the list of published_resources with the "page" type for a given publication.
