@@ -1048,11 +1048,25 @@ defmodule Oli.SectionsTest do
     test "apply_publication_update/2 reintroduces a previously removed page", %{
       author: author,
       project: project,
+      container: %{resource: container_resource, revision: container_revision},
       page1: page1,
       page2: page2,
       revision2: revision2,
       institution: institution
     } do
+      working_publication = Publishing.project_working_publication(project.slug)
+
+      %{resource: page3, revision: _revision3} =
+        Seeder.create_page("Page three", working_publication, project, author)
+
+      _container_revision =
+        Seeder.attach_pages_to(
+          [page3],
+          container_resource,
+          container_revision,
+          working_publication
+        )
+
       {:ok, initial_publication} = Publishing.publish_project(project, "initial", author.id)
 
       {:ok, section} =
@@ -1067,7 +1081,12 @@ defmodule Oli.SectionsTest do
         |> Sections.create_section_resources(initial_publication)
 
       initial_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
-      assert Enum.map(initial_hierarchy.children, & &1.resource_id) == [page1.id, page2.id]
+
+      assert Enum.map(initial_hierarchy.children, & &1.resource_id) == [
+               page1.id,
+               page2.id,
+               page3.id
+             ]
 
       root_container = AuthoringResolver.root_container(project.slug)
       {:ok, _} = ContainerEditor.move_to(revision2, root_container, nil, author, project)
@@ -1078,7 +1097,7 @@ defmodule Oli.SectionsTest do
       Oli.Delivery.Sections.Updates.apply_publication_update(section, page_removed_publication.id)
 
       after_removal_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
-      assert Enum.map(after_removal_hierarchy.children, & &1.resource_id) == [page1.id]
+      assert Enum.map(after_removal_hierarchy.children, & &1.resource_id) == [page1.id, page3.id]
 
       section_resources_after_removal =
         from(sr in SectionResource,
@@ -1095,6 +1114,18 @@ defmodule Oli.SectionsTest do
       {:ok, _} =
         ContainerEditor.move_to(restored_page_revision, nil, root_container, author, project)
 
+      root_container = AuthoringResolver.root_container(project.slug)
+      restored_page_revision = AuthoringResolver.from_resource_id(project.slug, page2.id)
+
+      {:ok, _} =
+        ContainerEditor.reorder_child(
+          root_container,
+          project,
+          author,
+          restored_page_revision.slug,
+          1
+        )
+
       {:ok, page_reintroduced_publication} =
         Publishing.publish_project(project, "restore page to curriculum", author.id)
 
@@ -1107,7 +1138,8 @@ defmodule Oli.SectionsTest do
 
       assert Enum.map(after_reintroduction_hierarchy.children, & &1.resource_id) == [
                page1.id,
-               page2.id
+               page2.id,
+               page3.id
              ]
     end
 
