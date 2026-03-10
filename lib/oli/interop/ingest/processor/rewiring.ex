@@ -241,11 +241,68 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
               {Map.put(ref, "idref", retrieved), status}
           end
 
+        %{"type" => "janus-capi-iframe"} = part ->
+          rewire_iframe_dynamic_link(part, legacy_to_resource_id_map, status)
+
         other ->
           {other, status}
       end
     end)
   end
+
+  defp rewire_iframe_dynamic_link(part, legacy_to_resource_id_map, status) do
+    case internal_iframe_source?(part) do
+      false ->
+        {part, status}
+
+      true ->
+        case Map.get(part, "idref") || Map.get(part, "resource_id") do
+          nil ->
+            {part, status}
+
+          original ->
+            case retrieve(legacy_to_resource_id_map, original) do
+              nil ->
+                Logger.warning(
+                  "Skipping adaptive iframe rewiring, missing idref mapping for #{inspect(original)}"
+                )
+
+                {part, status}
+
+              retrieved ->
+                rewritten =
+                  part
+                  |> Map.put("idref", retrieved)
+                  |> Map.put("resource_id", retrieved)
+                  |> Map.put("sourceType", "page")
+                  |> Map.put("linkType", "page")
+
+                {rewritten, status}
+            end
+        end
+    end
+  end
+
+  defp internal_iframe_source?(%{"sourceType" => "url"}), do: false
+
+  defp internal_iframe_source?(%{} = part) do
+    source_type = Map.get(part, "sourceType")
+    link_type = Map.get(part, "linkType")
+    src = Map.get(part, "src")
+    idref = Map.get(part, "idref") || Map.get(part, "resource_id")
+
+    source_type == "page" or
+      link_type == "page" or
+      internal_course_link?(src) or
+      not is_nil(idref)
+  end
+
+  defp internal_iframe_source?(_), do: false
+
+  defp internal_course_link?(value) when is_binary(value),
+    do: String.starts_with?(value, "/course/link/")
+
+  defp internal_course_link?(_), do: false
 
   defp prune_nil_nodes(nil), do: nil
 

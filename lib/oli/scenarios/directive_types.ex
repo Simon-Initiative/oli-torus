@@ -100,11 +100,22 @@ defmodule Oli.Scenarios.DirectiveTypes do
     virtual_id: optional scenario-local identifier for the activity
     scope: "embedded" or "banked"
     type: activity type slug (e.g. "oli_multiple_choice")
+    content_format: "torusdoc" (default) or "json"
     content: TorusDoc activity YAML content
     objectives: optional list of objective titles to attach
     tags: optional list of tag titles to attach
     """
-    defstruct [:project, :title, :virtual_id, :scope, :type, :content, :objectives, :tags]
+    defstruct [
+      :project,
+      :title,
+      :virtual_id,
+      :scope,
+      :type,
+      :content_format,
+      :content,
+      :objectives,
+      :tags
+    ]
   end
 
   defmodule EditPageDirective do

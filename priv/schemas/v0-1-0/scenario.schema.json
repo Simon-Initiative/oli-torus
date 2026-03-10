@@ -617,7 +617,16 @@
                   "enum": ["embedded", "banked"]
                 },
                 "type": { "type": "string" },
-                "content": { "type": "string" },
+                "content_format": {
+                  "type": "string",
+                  "enum": ["torusdoc", "json"]
+                },
+                "content": {
+                  "oneOf": [
+                    { "type": "string" },
+                    { "type": "object" }
+                  ]
+                },
                 "objectives": {
                   "type": "array",
                   "items": { "type": "string" }
