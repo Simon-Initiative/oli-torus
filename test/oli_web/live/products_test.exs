@@ -338,12 +338,10 @@ defmodule OliWeb.ProductsLiveTest do
       assert render(view) =~ "Details"
       assert render(view) =~ "The template title and description"
       assert has_element?(view, "input[value=\"#{product.title}\"]")
-      assert has_element?(view, "input[name=\"section[pay_by_institution]\"]")
 
-      assert has_element?(
-               view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts.ProductsIndexView, product.slug)}\"]"
-             )
+      # Paywall settings are now in their own section with a support team link
+      assert has_element?(view, "h4", "Paywall Settings")
+      assert render(view) =~ "contact our support team"
     end
   end
 
