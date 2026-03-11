@@ -50,6 +50,92 @@ const FontSizeAttributor = Quill.import('attributors/style/size');
 FontSizeAttributor.whitelist = ['16px', '14px', '18px', '20px', '24px', '28px', '32px'];
 Quill.register(FontSizeAttributor, true);
 
+const Parchment = Quill.import('parchment');
+const TextStyleAttributor = new Parchment.Attributor.Class('textStyle', 'ql-text-style', {
+  scope: Parchment.Scope.BLOCK,
+});
+Quill.register(TextStyleAttributor, true);
+
+type TextStyleOption = 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'caption';
+
+const STYLE_DIVIDER_VALUE = '__style-divider__';
+const NORMAL_FONT_CODE = getFontName('Open Sans');
+const NORMAL_FONT_SIZE = '16px';
+const textStyleDefaults: Record<
+  Exclude<TextStyleOption, 'normal'>,
+  { font: string; size: string; header: number | false }
+> = {
+  h1: { font: getFontName('Montserrat'), size: '32px', header: 1 },
+  h2: { font: getFontName('Montserrat'), size: '28px', header: 2 },
+  h3: { font: getFontName('Montserrat'), size: '24px', header: 3 },
+  h4: { font: getFontName('Montserrat'), size: '20px', header: 4 },
+  caption: { font: getFontName('Open Sans'), size: '14px', header: false },
+};
+
+const clearLineFontAndSize = (editor: any, range: { index: number; length: number }) => {
+  const lines = editor.getLines(range.index, Math.max(1, range.length));
+  lines.forEach((line: any) => {
+    const lineIndex = editor.getIndex(line);
+    const textLength = Math.max(0, line.length() - 1);
+    if (textLength > 0) {
+      editor.formatText(lineIndex, textLength, 'font', false, 'user');
+      editor.formatText(lineIndex, textLength, 'size', false, 'user');
+    }
+  });
+};
+
+const applyTextStyle = (editor: any, rawStyleValue: string) => {
+  const range = editor.getSelection();
+  if (!range || !rawStyleValue || rawStyleValue === STYLE_DIVIDER_VALUE) {
+    return;
+  }
+
+  const styleValue = rawStyleValue as TextStyleOption;
+  const lineRange = { index: range.index, length: Math.max(1, range.length) };
+
+  clearLineFontAndSize(editor, lineRange);
+  editor.formatLine(lineRange.index, lineRange.length, 'header', false, 'user');
+  editor.formatLine(lineRange.index, lineRange.length, 'textStyle', false, 'user');
+  editor.format('font', false, 'user');
+  editor.format('size', false, 'user');
+
+  if (styleValue === 'normal') {
+    // Apply default normal font/size so the toolbar reflects Open Sans / 16px.
+    const linesForNormal = editor.getLines(lineRange.index, lineRange.length);
+    linesForNormal.forEach((line: any) => {
+      const lineIndex = editor.getIndex(line);
+      const textLength = Math.max(0, line.length() - 1);
+      if (textLength > 0) {
+        editor.formatText(lineIndex, textLength, 'font', NORMAL_FONT_CODE, 'user');
+        editor.formatText(lineIndex, textLength, 'size', NORMAL_FONT_SIZE, 'user');
+      }
+    });
+    editor.format('font', NORMAL_FONT_CODE, 'user');
+    editor.format('size', NORMAL_FONT_SIZE, 'user');
+    editor.formatLine(lineRange.index, lineRange.length, 'textStyle', 'normal', 'user');
+    editor.format('textStyle', 'normal', 'user');
+    return;
+  }
+
+  const defaults = textStyleDefaults[styleValue];
+  editor.formatLine(lineRange.index, lineRange.length, 'header', defaults.header, 'user');
+  editor.formatLine(lineRange.index, lineRange.length, 'textStyle', styleValue, 'user');
+  editor.format('textStyle', styleValue, 'user');
+
+  const lines = editor.getLines(lineRange.index, lineRange.length);
+  lines.forEach((line: any) => {
+    const lineIndex = editor.getIndex(line);
+    const textLength = Math.max(0, line.length() - 1);
+    if (textLength > 0) {
+      editor.formatText(lineIndex, textLength, 'font', defaults.font, 'user');
+      editor.formatText(lineIndex, textLength, 'size', defaults.size, 'user');
+    }
+  });
+
+  editor.format('font', defaults.font, 'user');
+  editor.format('size', defaults.size, 'user');
+};
+
 const BaseImage = Quill.import('formats/image');
 
 class ImageWithAlt extends BaseImage {
@@ -114,7 +200,8 @@ const fontStyles = `${getCssForFonts(supportedFonts)}
   font-family: 'Open Sans';
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="__size-divider__"],
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="__font-divider__"] {
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="__font-divider__"],
+.ql-snow .ql-picker.ql-textStyle .ql-picker-item[data-value="${STYLE_DIVIDER_VALUE}"] {
   display: block;
   width: 100%;
   height: 1px;
@@ -125,8 +212,87 @@ const fontStyles = `${getCssForFonts(supportedFonts)}
   cursor: default;
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="__size-divider__"]::before,
-.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="__font-divider__"]::before {
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="__font-divider__"]::before,
+.ql-snow .ql-picker.ql-textStyle .ql-picker-item[data-value="${STYLE_DIVIDER_VALUE}"]::before {
   content: '';
+}
+.ql-snow .ql-picker.ql-textStyle {
+  width: 116px;
+}
+.ql-snow .ql-picker.ql-textStyle .ql-picker-item::before,
+.ql-snow .ql-picker.ql-textStyle .ql-picker-label::before,
+.ql-snow .ql-picker.ql-textStyle .ql-picker-label[data-value="normal"]::before {
+  content: 'Normal';
+}
+.ql-snow .ql-picker.ql-textStyle .ql-picker-item[data-value="h1"]::before,
+.ql-snow .ql-picker.ql-textStyle .ql-picker-label[data-value="h1"]::before {
+  content: 'Heading 1';
+}
+.ql-snow .ql-picker.ql-textStyle .ql-picker-item[data-value="h2"]::before,
+.ql-snow .ql-picker.ql-textStyle .ql-picker-label[data-value="h2"]::before {
+  content: 'Heading 2';
+}
+.ql-snow .ql-picker.ql-textStyle .ql-picker-item[data-value="h3"]::before,
+.ql-snow .ql-picker.ql-textStyle .ql-picker-label[data-value="h3"]::before {
+  content: 'Heading 3';
+}
+.ql-snow .ql-picker.ql-textStyle .ql-picker-item[data-value="h4"]::before,
+.ql-snow .ql-picker.ql-textStyle .ql-picker-label[data-value="h4"]::before {
+  content: 'Heading 4';
+}
+.ql-snow .ql-picker.ql-textStyle .ql-picker-item[data-value="caption"]::before,
+.ql-snow .ql-picker.ql-textStyle .ql-picker-label[data-value="caption"]::before {
+  content: 'Caption';
+}
+.ql-snow .ql-editor p,
+.ql-snow .ql-editor h1,
+.ql-snow .ql-editor h2,
+.ql-snow .ql-editor h3,
+.ql-snow .ql-editor h4,
+.ql-snow .ql-editor p.caption,
+.ql-snow .ql-editor p.ql-text-style-caption {
+  margin-bottom: 1rem;
+}
+.ql-snow .ql-editor h1,
+.ql-snow .ql-editor h2,
+.ql-snow .ql-editor h3,
+.ql-snow .ql-editor h4 {
+  margin-top: 2rem;
+  font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+}
+.ql-snow .ql-editor > :first-child {
+  margin-top: 0;
+}
+.ql-snow .ql-editor p {
+  font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.25rem;
+}
+.ql-snow .ql-editor h1 {
+  font-size: 2rem;
+  line-height: 2.25rem;
+}
+.ql-snow .ql-editor h2 {
+  font-size: 1.75rem;
+  line-height: 1.875rem;
+}
+.ql-snow .ql-editor h3 {
+  font-size: 1.5rem;
+  line-height: 1.75rem;
+}
+.ql-snow .ql-editor h4 {
+  font-size: 1.25rem;
+  line-height: 1.625rem;
+}
+.ql-snow .ql-editor p.caption,
+.ql-snow .ql-editor p.ql-text-style-caption {
+  font-size: 0.875rem;
+  line-height: 1rem;
+}
+.ql-snow .ql-editor hr {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14px"]::before,
 .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="14px"]::before {
@@ -136,32 +302,32 @@ const fontStyles = `${getCssForFonts(supportedFonts)}
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before,
 .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="16px"]::before {
   content: '16px';
-  font-size: 16px !important;
+  font-size: 14px !important;
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before,
 .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="18px"]::before {
   content: '18px';
-  font-size: 18px !important;
+  font-size: 14px !important;
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="20px"]::before,
 .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="20px"]::before {
   content: '20px';
-  font-size: 20px !important;
+  font-size: 14px !important;
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24px"]::before,
 .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="24px"]::before {
   content: '24px';
-  font-size: 24px !important;
+  font-size: 14px !important;
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="28px"]::before,
 .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="28px"]::before {
   content: '28px';
-  font-size: 28px !important;
+  font-size: 14px !important;
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="32px"]::before,
 .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="32px"]::before {
   content: '32px';
-  font-size: 32px !important;
+  font-size: 14px !important;
 }
 `;
 let localOptions: any = [];
@@ -379,6 +545,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     };
   }, [openLinkDialog]);
   const customHandlers = {
+    textStyle: function (value: string) {
+      applyTextStyle(this.quill, value);
+    },
     adaptivity: function (value: string) {
       const range = this.quill.getSelection();
       let selectionValue = '';
@@ -556,7 +725,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         [{ script: 'sub' }, { script: 'super' }], // superscript/subscript
         [{ indent: '-1' }, { indent: '+1' }], // outdent/indent
 
-        [{ header: [1, 2, 3, 4, 5, 6, false] }],
+        [{ textStyle: ['normal', STYLE_DIVIDER_VALUE, 'h1', 'h2', 'h3', 'h4', 'caption'] }],
         [
           {
             color: [
@@ -679,6 +848,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
             'list',
             'indent',
             'header',
+            'textStyle',
             'color',
             'background',
             'align',
