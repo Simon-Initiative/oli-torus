@@ -12,6 +12,7 @@ defmodule Oli.SectionsTest do
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Remix
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Transfer
   alias Oli.Authoring.Editing.ContainerEditor
@@ -1102,6 +1103,68 @@ defmodule Oli.SectionsTest do
                page1.id,
                page2.id
              ]
+    end
+
+    @tag capture_log: true
+    test "apply_publication_update/2 preserves remix removals while adding unrelated major updates",
+         %{
+           author: author,
+           project: project,
+           container: %{resource: container_resource, revision: container_revision},
+           page1: page1,
+           page2: page2,
+           institution: institution
+         } do
+      {:ok, initial_publication} = Publishing.publish_project(project, "initial", author.id)
+
+      {:ok, section} =
+        Sections.create_section(%{
+          title: "1",
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          institution_id: institution.id,
+          base_project_id: project.id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(initial_publication)
+
+      initial_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+      assert Enum.map(initial_hierarchy.children, & &1.resource_id) == [page1.id, page2.id]
+
+      {:ok, remix_state} = Remix.init(section, author)
+      page1_uuid = Enum.find(remix_state.active.children, &(&1.resource_id == page1.id)).uuid
+      {:ok, remix_state} = Remix.remove(remix_state, page1_uuid)
+      {:ok, _section} = Remix.save(remix_state)
+
+      remixed_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+      assert Enum.map(remixed_hierarchy.children, & &1.resource_id) == [page2.id]
+
+      working_pub = Publishing.project_working_publication(project.slug)
+
+      %{resource: new_page_resource, revision: _new_page_revision} =
+        Seeder.create_page("New Major Update Page", working_pub, project, author)
+
+      _updated_root =
+        Seeder.attach_pages_to(
+          [new_page_resource],
+          container_resource,
+          container_revision,
+          working_pub
+        )
+
+      {:ok, latest_publication} =
+        Publishing.publish_project(project, "add unrelated page", author.id)
+
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
+
+      updated_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      assert Enum.map(updated_hierarchy.children, & &1.resource_id) == [
+               page2.id,
+               new_page_resource.id
+             ]
+
+      refute Enum.any?(updated_hierarchy.children, &(&1.resource_id == page1.id))
     end
 
     @tag capture_log: true
