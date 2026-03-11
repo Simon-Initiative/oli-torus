@@ -865,6 +865,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       containers={@dashboard_navigator_items}
       dashboard={@dashboard}
       dashboard_scope={@dashboard_scope}
+      dashboard_visible_sections={@dashboard_visible_sections}
       section={@section}
     />
     """
@@ -1259,8 +1260,40 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event(
+        "dashboard_section_toggled",
+        %{"section_id" => section_id, "expanded" => expanded},
+        socket
+      ) do
+    expanded? = expanded in [true, "true"]
+
+    case IntelligentDashboardTab.handle_section_toggled(socket, section_id, expanded?) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, :save_failed, socket} ->
+        {:noreply, put_flash(socket, :error, "Could not save dashboard layout.")}
+
+      {:error, :unknown_section, socket} ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("dashboard_sections_reordered", %{"section_ids" => section_ids}, socket)
+      when is_list(section_ids) do
+    case IntelligentDashboardTab.handle_sections_reordered(socket, section_ids) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, :save_failed, socket} ->
+        {:noreply, put_flash(socket, :error, "Could not save dashboard layout.")}
+
+      {:error, :invalid_order, socket} ->
+        {:noreply, put_flash(socket, :error, "Invalid dashboard section order.")}
+    end
+  end
+
   def handle_event(event, params, socket) do
-    # Catch-all for UI-only events from functional components that don't require handling
     Logger.warning(
       "Unhandled event in InstructorDashboardLive: #{inspect(event)}, #{inspect(params)}"
     )

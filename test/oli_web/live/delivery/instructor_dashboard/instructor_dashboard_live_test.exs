@@ -442,6 +442,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       refute has_element?(view, "#search_input")
       refute has_element?(view, "a[role='previous item link']")
       refute has_element?(view, "a[role='next item link']")
+      refute has_element?(view, "#learning-dashboard-engagement-group-move")
     end
 
     test "dashboard entry with an invalid persisted scope falls back to the default course scope",
@@ -489,6 +490,164 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       assert redirected_path ==
                "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course"
+    end
+
+    test "toggle collapse persists and restores section expansion state", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      enrollment = Sections.get_enrollment(section.slug, instructor.id, filter_by_status: false)
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      view
+      |> element("#learning-dashboard-content-group-toggle")
+      |> render_click()
+
+      refute has_element?(view, "#learning-dashboard-content-group-content")
+
+      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).collapsed_section_ids ==
+               ["content"]
+
+      {:ok, restored_view, _html} = live(conn, redirected_path)
+
+      refute has_element?(restored_view, "#learning-dashboard-content-group-content")
+    end
+
+    test "reorder persists the stable section order for the instructor enrollment", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      enrollment = Sections.get_enrollment(section.slug, instructor.id, filter_by_status: false)
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      view
+      |> element("#learning-dashboard-content-group")
+      |> render_hook("dashboard_sections_reordered", %{section_ids: ["content", "engagement"]})
+
+      html = render(view)
+
+      assert html =~
+               ~r/learning-dashboard-content-group.*learning-dashboard-engagement-group/s
+
+      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).section_order ==
+               ["content", "engagement"]
+    end
+
+    test "invalid reorder payload is rejected and keeps the previous stable order", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      enrollment = Sections.get_enrollment(section.slug, instructor.id, filter_by_status: false)
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      view
+      |> element("#learning-dashboard-content-group")
+      |> render_hook("dashboard_sections_reordered", %{section_ids: ["content"]})
+
+      assert render(view) =~ "Invalid dashboard section order."
+
+      assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).section_order ==
+               []
+    end
+
+    test "courses without objectives or graded assessments omit the content section", %{
+      instructor: instructor,
+      conn: conn
+    } do
+      %{section: section} = Oli.Seeder.base_project_with_pages()
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      refute has_element?(view, "#learning-dashboard-content-group")
+      assert has_element?(view, "#learning-dashboard-engagement-group")
+    end
+
+    test "single visible content tile renders the section in single-column layout", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      assert has_element?(
+               view,
+               "#learning-dashboard-content-group [data-section-layout='single']"
+             )
+
+      assert has_element?(view, "#learning-dashboard-assessments-placeholder")
+      refute has_element?(view, "#learning-dashboard-objectives-placeholder")
     end
 
     test "root instructor dashboard route redirects to insights dashboard", %{

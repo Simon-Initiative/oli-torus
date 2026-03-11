@@ -3888,6 +3888,46 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+  @doc """
+  Returns true when the requested section scope contains at least one graded page.
+
+  Passing `nil` checks the entire course scope. Passing a `container_id` checks the
+  selected container subtree using the `contained_pages` relation, so graded pages
+  nested under descendant containers are included in the result.
+  """
+  @spec section_container_has_graded_pages?(integer(), integer() | nil) :: boolean()
+  def section_container_has_graded_pages?(section_id, container_id \\ nil)
+
+  def section_container_has_graded_pages?(section_id, nil) when is_integer(section_id) do
+    page_type_id = ResourceType.id_for_page()
+
+    from(sr in SectionResource,
+      where:
+        sr.section_id == ^section_id and
+          sr.graded == true and
+          sr.resource_type_id == ^page_type_id
+    )
+    |> Repo.exists?()
+  end
+
+  def section_container_has_graded_pages?(section_id, container_id)
+      when is_integer(section_id) and is_integer(container_id) do
+    page_type_id = ResourceType.id_for_page()
+
+    from(cp in ContainedPage,
+      join: sr in SectionResource,
+      on: sr.resource_id == cp.page_id and sr.section_id == cp.section_id,
+      where:
+        cp.section_id == ^section_id and
+          cp.container_id == ^container_id and
+          sr.graded == true and
+          sr.resource_type_id == ^page_type_id
+    )
+    |> Repo.exists?()
+  end
+
+  def section_container_has_graded_pages?(_, _), do: false
+
   def get_learning_objectives_for_container_id(section_id, container_id) do
     from(
       rev in Revision,

@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     ~H"""
     <article
       id="learning-dashboard-summary-tile"
-      class="rounded border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      class="h-full rounded-xl border border-Border-border-subtle bg-Surface-surface-primary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
     >
       <div class="mb-3 flex items-center justify-between">
         <h3 class="font-semibold text-gray-900 dark:text-gray-100">Summary</h3>
