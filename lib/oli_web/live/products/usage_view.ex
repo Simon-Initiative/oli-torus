@@ -57,7 +57,7 @@ defmodule OliWeb.Products.UsageView do
 
       {_, _, product} ->
         author = socket.assigns.current_author
-        is_admin = Accounts.has_admin_role?(author, :content_admin)
+        is_admin = Accounts.at_least_content_admin?(author)
         filters = BrowseFilters.default()
         institutions = Institutions.list_institutions()
         options = with_blueprint_id(default_options(), product.id)

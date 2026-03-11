@@ -43,7 +43,7 @@ defmodule OliWeb.Products.DetailsView do
         product = Repo.preload(product, communities: :institutions)
         tags = Tags.get_section_tags(product)
 
-        is_admin? = Accounts.has_admin_role?(author, :content_admin)
+        is_admin? = Accounts.at_least_content_admin?(author)
 
         base_project = Course.get_project!(product.base_project_id)
 

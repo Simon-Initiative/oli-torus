@@ -122,7 +122,7 @@ defmodule OliWeb.ProductsController do
 
   def export_usage_csv(conn, %{"product_id" => product_slug} = params) do
     author = conn.assigns.current_author
-    is_admin = Accounts.has_admin_role?(author, :content_admin)
+    is_admin = Accounts.at_least_content_admin?(author)
 
     with {:ok, product} <- fetch_product(product_slug),
          :ok <- authorize_product_usage_export(author, product) do
@@ -288,7 +288,7 @@ defmodule OliWeb.ProductsController do
   end
 
   defp authorize_product_usage_export(author, %Section{} = product) do
-    if Accounts.has_admin_role?(author, :content_admin) or
+    if Accounts.at_least_content_admin?(author) or
          Blueprint.is_author_of_blueprint?(product.slug, author.id) do
       :ok
     else
