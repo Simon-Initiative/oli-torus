@@ -13,7 +13,8 @@ jobs:
     name: PrivSignal (informational)
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+      issues: write
 
     steps:
       - name: 🛎️ Checkout PR branch
@@ -136,12 +137,104 @@ jobs:
             tmp/privsignal/ci.report.json \
             25
 
+      - name: 🏷️ Sync privacy label
+        if: always()
+        id: privacy-label
+        uses: actions/github-script@v7
+        env:
+          PRIVSIGNAL_SCORE: ${{ steps.privsignal.outputs.score }}
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+
+            if (!pr) {
+              core.info("No pull_request context found; skipping privacy label sync.");
+              core.setOutput("privacy_tier", "skipped");
+              core.setOutput("privacy_label", "");
+              return;
+            }
+
+            const score = String(process.env.PRIVSIGNAL_SCORE || "").trim().toLowerCase();
+            const validTiers = new Set(["none", "low", "medium", "high"]);
+            const managedLabels = [...validTiers].map((tier) => `privacy-${tier}`);
+
+            if (!validTiers.has(score)) {
+              core.warning(`PrivSignal score '${score || "missing"}' is not a recognized tier; leaving privacy labels unchanged.`);
+              core.setOutput("privacy_tier", "unavailable");
+              core.setOutput("privacy_label", "");
+              return;
+            }
+
+            const desiredLabel = `privacy-${score}`;
+            const { owner, repo } = context.repo;
+            const issue_number = pr.number;
+            const labelColors = {
+              none: "2da44e",
+              low: "1f6feb",
+              medium: "d4a72c",
+              high: "cf222e",
+            };
+
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: desiredLabel });
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+
+              await github.rest.issues.createLabel({
+                owner,
+                repo,
+                name: desiredLabel,
+                color: labelColors[score],
+                description: `PrivSignal privacy score: ${score}`,
+              });
+            }
+
+            const existing = await github.paginate(github.rest.issues.listLabelsOnIssue, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            for (const label of existing) {
+              if (managedLabels.includes(label.name) && label.name !== desiredLabel) {
+                core.info(`Removing stale privacy label '${label.name}' from PR #${issue_number}`);
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number,
+                  name: label.name,
+                });
+              }
+            }
+
+            if (!existing.some((label) => label.name === desiredLabel)) {
+              core.info(`Adding privacy label '${desiredLabel}' to PR #${issue_number}`);
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: [desiredLabel],
+              });
+            }
+
+            core.setOutput("privacy_tier", score);
+            core.setOutput("privacy_label", desiredLabel);
+
       - name: 📌 Publish job summary
         if: always()
         shell: bash
         run: |
           if [ -f tmp/privsignal/ci.report.md ]; then
             cat tmp/privsignal/ci.report.md >> "$GITHUB_STEP_SUMMARY"
+            if [ -n "${{ steps.privacy-label.outputs.privacy_label }}" ]; then
+              {
+                echo
+                echo "Applied PR label: \`${{ steps.privacy-label.outputs.privacy_label }}\`"
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
           else
             {
               echo "## PrivSignal (Informational)"
@@ -153,11 +246,13 @@ jobs:
               echo "- base ref used: ${{ steps.privsignal.outputs.base_ref }}"
               echo "- diff exit: ${{ steps.privsignal.outputs.diff_exit }}"
               echo "- score exit: ${{ steps.privsignal.outputs.score_exit }}"
+              echo "- privacy label: ${{ steps.privacy-label.outputs.privacy_label }}"
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: 📦 Upload PrivSignal artifacts
         if: always()
+        id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
           name: privsignal-artifacts-${{ github.event.pull_request.number }}
@@ -169,3 +264,164 @@ jobs:
             tmp/privsignal/ci.report.md
             tmp/privsignal/ci.report.json
           if-no-files-found: warn
+
+      - name: 🔗 Publish artifact link
+        if: always() && steps.upload-artifact.outputs.artifact-url != ''
+        shell: bash
+        run: |
+          {
+            echo
+            echo "Artifact bundle: [privsignal-artifacts-${{ github.event.pull_request.number }}](${{ steps.upload-artifact.outputs.artifact-url }})"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 💬 Upsert PR comment
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          PRIVSIGNAL_SCORE: ${{ steps.privsignal.outputs.score }}
+          PRIVSIGNAL_BASE_REF: ${{ steps.privsignal.outputs.base_ref }}
+          PRIVSIGNAL_DIFF_EXIT: ${{ steps.privsignal.outputs.diff_exit }}
+          PRIVSIGNAL_SCORE_EXIT: ${{ steps.privsignal.outputs.score_exit }}
+          PRIVSIGNAL_SCAN_EXIT: ${{ steps.lockfile.outputs.scan_exit }}
+          PRIVSIGNAL_LOCKFILE_CHANGED: ${{ steps.lockfile.outputs.lockfile_changed }}
+          PRIVSIGNAL_LABEL: ${{ steps.privacy-label.outputs.privacy_label }}
+          PRIVSIGNAL_ARTIFACT_URL: ${{ steps.upload-artifact.outputs.artifact-url }}
+        with:
+          script: |
+            const fs = require("node:fs");
+
+            const marker = "<!-- privsignal-report -->";
+            const pr = context.payload.pull_request;
+
+            if (!pr) {
+              core.info("No pull_request context found; skipping PrivSignal PR comment.");
+              return;
+            }
+
+            const readJson = (path) => {
+              try {
+                return JSON.parse(fs.readFileSync(path, "utf8"));
+              } catch (_error) {
+                return null;
+              }
+            };
+
+            const report = readJson("tmp/privsignal/ci.report.json");
+            const esc = (value) =>
+              String(value ?? "n/a")
+                .replace(/\|/g, "\\|")
+                .replace(/\n/g, " ");
+
+            const renderTable = (rows) => {
+              if (!rows.length) {
+                return "_None_";
+              }
+
+              const header = [
+                "| Rule | Type | Class | Source | Sink | Location |",
+                "|---|---|---|---|---|---|",
+              ];
+
+              const body = rows.map((row) =>
+                `| ${esc(row.rule_id)} | ${esc(row.event_type)} | ${esc(row.event_class)} | ${esc(row.source)} | ${esc(row.sink)} | ${esc(row.location)} |`
+              );
+
+              return [...header, ...body].join("\n");
+            };
+
+            const score = process.env.PRIVSIGNAL_SCORE || "ERROR";
+            const summary = report?.summary || {};
+            const reasons = Array.isArray(report?.reason_details) ? report.reason_details : [];
+            const samples = Array.isArray(report?.events_sample) ? report.events_sample : [];
+            const artifactUrl = process.env.PRIVSIGNAL_ARTIFACT_URL || "";
+            const privacyLabel = process.env.PRIVSIGNAL_LABEL || "";
+
+            const links = artifactUrl
+              ? [`[artifact bundle](${artifactUrl})`]
+              : [];
+
+            const lines = [
+              marker,
+              "## PrivSignal Report",
+              "",
+              `Top-level result: \`${esc(score)}\`${privacyLabel ? ` with PR label \`${esc(privacyLabel)}\`` : ""}`,
+              "",
+              "| Score | High | Medium | Low | Total |",
+              "|---|---:|---:|---:|---:|",
+              `| \`${esc(score)}\` | ${esc(summary.events_high || 0)} | ${esc(summary.events_medium || 0)} | ${esc(summary.events_low || 0)} | ${esc(summary.events_total || 0)} |`,
+              "",
+            ];
+
+            if (links.length) {
+              lines.push(`Links: ${links.join(" | ")}`);
+              lines.push("");
+            }
+
+            lines.push("| Detail | Value |");
+            lines.push("|---|---|");
+            lines.push(`| Base ref used | \`${esc(process.env.PRIVSIGNAL_BASE_REF || "n/a")}\` |`);
+            lines.push(`| Scan exit | \`${esc(process.env.PRIVSIGNAL_SCAN_EXIT || "n/a")}\` |`);
+            lines.push(`| Diff exit | \`${esc(process.env.PRIVSIGNAL_DIFF_EXIT || "n/a")}\` |`);
+            lines.push(`| Score exit | \`${esc(process.env.PRIVSIGNAL_SCORE_EXIT || "n/a")}\` |`);
+            lines.push(`| Lockfile changed | \`${esc(process.env.PRIVSIGNAL_LOCKFILE_CHANGED || "n/a")}\` |`);
+            lines.push(`| Reason events | \`${reasons.length}\` |`);
+            lines.push(`| Sample events shown | \`${samples.length}\` |`);
+            lines.push("");
+            lines.push("### Reason Events");
+            lines.push("");
+            lines.push(renderTable(reasons));
+            lines.push("");
+            lines.push("### Sample Of All Events");
+            lines.push("");
+            lines.push(renderTable(samples));
+
+            if (!report) {
+              lines.splice(
+                2,
+                lines.length - 2,
+                "",
+                "Unable to load `tmp/privsignal/ci.report.json` for this run.",
+                "",
+                "| Detail | Value |",
+                "|---|---|",
+                `| Score output | \`${esc(score)}\` |`,
+                `| Base ref used | \`${esc(process.env.PRIVSIGNAL_BASE_REF || "n/a")}\` |`,
+                `| Scan exit | \`${esc(process.env.PRIVSIGNAL_SCAN_EXIT || "n/a")}\` |`,
+                `| Diff exit | \`${esc(process.env.PRIVSIGNAL_DIFF_EXIT || "n/a")}\` |`,
+                `| Score exit | \`${esc(process.env.PRIVSIGNAL_SCORE_EXIT || "n/a")}\` |`,
+                `| Lockfile changed | \`${esc(process.env.PRIVSIGNAL_LOCKFILE_CHANGED || "n/a")}\` |`
+              );
+
+              if (links.length) {
+                lines.push("");
+                lines.push(`Links: ${links.join(" | ")}`);
+              }
+            }
+
+            const body = lines.join("\n");
+            const { owner, repo } = context.repo;
+            const issue_number = pr.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find((comment) => comment.body && comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
