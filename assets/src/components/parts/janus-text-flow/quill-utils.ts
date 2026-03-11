@@ -20,6 +20,13 @@ const appendToStringProperty = (append: string, str?: string) => {
   return `${str} ${append}`;
 };
 
+const hasCustomCssClass = (classes: string | undefined, className: string) => {
+  if (!classes) {
+    return false;
+  }
+  return classes.split(' ').includes(className);
+};
+
 // Shared font mapping: maps font codes (lowercase with hyphens) to CSS font-family values with fallbacks
 // This ensures fonts render correctly in both authoring (via CSS classes) and delivery (via inline styles)
 export const fontFamilyMapping: Record<string, string> = {
@@ -214,7 +221,12 @@ export const convertQuillToJanus = (delta: Delta) => {
       node.tag = 'blockquote';
     }
 
-    if (attrs.header) {
+    if (attrs.textStyle === 'caption') {
+      node.tag = 'p';
+      node.customCssClass = appendToStringProperty('caption', node.customCssClass);
+    } else if (attrs.textStyle && ['h1', 'h2', 'h3', 'h4'].includes(attrs.textStyle)) {
+      node.tag = attrs.textStyle;
+    } else if (attrs.header) {
       node.tag = `h${attrs.header}`;
     }
 
@@ -395,6 +407,12 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
           const lineAttrs: any = {};
           if (child.tag.startsWith('h')) {
             lineAttrs.header = parseInt(child.tag.substring(1), 10);
+            if (['h1', 'h2', 'h3', 'h4'].includes(child.tag)) {
+              lineAttrs.textStyle = child.tag;
+            }
+          }
+          if (child.tag === 'p' && hasCustomCssClass(child.customCssClass, 'caption')) {
+            lineAttrs.textStyle = 'caption';
           }
           if (child.tag === 'blockquote') {
             lineAttrs.blockquote = true;
@@ -439,6 +457,12 @@ export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
         const attrs: any = {};
         if (node.tag.startsWith('h')) {
           attrs.header = parseInt(node.tag.substring(1), 10);
+          if (['h1', 'h2', 'h3', 'h4'].includes(node.tag)) {
+            attrs.textStyle = node.tag;
+          }
+        }
+        if (node.tag === 'p' && hasCustomCssClass(node.customCssClass, 'caption')) {
+          attrs.textStyle = 'caption';
         }
         if (node.tag === 'blockquote') {
           attrs.blockquote = true;
