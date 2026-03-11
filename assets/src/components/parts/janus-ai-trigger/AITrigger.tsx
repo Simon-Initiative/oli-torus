@@ -6,6 +6,32 @@ import { aiTriggerTagName } from './constants';
 import { AITriggerModel } from './schema';
 
 const AUTO_TRIGGER_DELAY_MS = 2000;
+const AUTO_TRIGGER_SESSION_KEY_PREFIX = 'adaptive-ai-trigger:auto';
+
+const buildAutoTriggerSessionKey = (
+  sectionSlug?: string,
+  resourceId?: number,
+  componentId?: string,
+) =>
+  [AUTO_TRIGGER_SESSION_KEY_PREFIX, sectionSlug ?? 'unknown', resourceId ?? 'unknown', componentId]
+    .join(':')
+    .trim();
+
+const hasAutoTriggerFiredInSession = (key: string) => {
+  try {
+    return window.sessionStorage.getItem(key) === 'true';
+  } catch (_error) {
+    return false;
+  }
+};
+
+const markAutoTriggerFiredInSession = (key: string) => {
+  try {
+    window.sessionStorage.setItem(key, 'true');
+  } catch (_error) {
+    // Ignore storage failures and fall back to the in-memory guard.
+  }
+};
 
 const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
   const [model, setModel] = useState<Partial<AITriggerModel>>({});
@@ -62,7 +88,7 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     const observer = new MutationObserver(refreshTriggerAvailability);
     observer.observe(document.body, {
       attributes: true,
-      attributeFilter: ['data-dialogue-window', 'data-instance-id', 'id'],
+      attributeFilter: ['id'],
       childList: true,
       subtree: true,
     });
@@ -77,6 +103,7 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     prompt,
     ariaLabel = 'Open DOT AI assistant',
   } = model;
+  const autoTriggerSessionKey = buildAutoTriggerSessionKey(sectionSlug, resourceId, id);
 
   useEffect(() => {
     if (
@@ -84,26 +111,37 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
       firedAutoTrigger.current ||
       launchMode !== 'auto' ||
       !hasAiTriggerPrompt(prompt) ||
-      !triggerAvailable
+      !triggerAvailable ||
+      hasAutoTriggerFiredInSession(autoTriggerSessionKey)
     ) {
       return;
     }
 
     const timeout = window.setTimeout(() => {
       firedAutoTrigger.current = true;
+      markAutoTriggerFiredInSession(autoTriggerSessionKey);
       void invokeAdaptiveAiTrigger({
         sectionSlug,
         resourceId,
-        prompt,
         triggerType: 'adaptive_page',
         data: {
           component_id: id,
+          component_type: tagName,
         },
       });
     }, AUTO_TRIGGER_DELAY_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [id, launchMode, prompt, resourceId, sectionSlug, ready, triggerAvailable]);
+  }, [
+    autoTriggerSessionKey,
+    id,
+    launchMode,
+    prompt,
+    resourceId,
+    sectionSlug,
+    ready,
+    triggerAvailable,
+  ]);
 
   if (
     !ready ||
@@ -132,7 +170,6 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     invokeAdaptiveAiTrigger({
       sectionSlug,
       resourceId,
-      prompt,
       triggerType: 'adaptive_component',
       data: {
         component_id: id,

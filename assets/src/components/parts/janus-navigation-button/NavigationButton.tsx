@@ -436,7 +436,6 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       void invokeAdaptiveAiTrigger({
         sectionSlug: props.sectionSlug,
         resourceId: props.resourceId,
-        prompt: model.aiTriggerPrompt,
         triggerType: 'adaptive_component',
         data: {
           component_id: id,

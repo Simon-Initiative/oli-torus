@@ -162,7 +162,6 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     invokeAdaptiveAiTrigger({
       sectionSlug: props.sectionSlug,
       resourceId: props.resourceId,
-      prompt: model.aiTriggerPrompt,
       triggerType: 'adaptive_component',
       data: {
         component_id: id,

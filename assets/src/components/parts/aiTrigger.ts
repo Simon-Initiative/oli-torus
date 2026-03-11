@@ -6,7 +6,6 @@ export type AdaptiveAiTriggerType = 'adaptive_page' | 'adaptive_component';
 export interface AdaptiveAiTriggerConfig {
   sectionSlug?: SectionSlug;
   resourceId?: number;
-  prompt?: string | null;
   triggerType: AdaptiveAiTriggerType;
   data?: Record<string, unknown>;
 }
@@ -14,15 +13,14 @@ export interface AdaptiveAiTriggerConfig {
 export const hasAiTriggerPrompt = (prompt?: string | null): prompt is string =>
   Boolean(prompt?.trim());
 
-export const canInvokeAiTrigger = () => Boolean(Trigger.getInstanceId());
+export const canInvokeAiTrigger = () => Trigger.hasDialogueWindow();
 
 export const buildAdaptiveAiTriggerPayload = ({
   resourceId,
-  prompt,
   triggerType,
   data = {},
 }: Omit<AdaptiveAiTriggerConfig, 'sectionSlug'>): Trigger.TriggerPayload | null => {
-  if (resourceId == null || !hasAiTriggerPrompt(prompt)) {
+  if (resourceId == null) {
     return null;
   }
 
@@ -30,7 +28,6 @@ export const buildAdaptiveAiTriggerPayload = ({
     trigger_type: triggerType,
     resource_id: resourceId,
     data,
-    prompt: prompt.trim(),
   };
 };
 

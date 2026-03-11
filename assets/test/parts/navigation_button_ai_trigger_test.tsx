@@ -5,7 +5,7 @@ import NavigationButton from '../../src/components/parts/janus-navigation-button
 
 jest.mock('../../src/data/persistence/trigger', () => ({
   invoke: jest.fn(() => Promise.resolve({ type: 'submitted' })),
-  getInstanceId: jest.fn(() => 'ai-instance'),
+  hasDialogueWindow: jest.fn(() => true),
 }));
 
 const triggerPersistence = jest.requireMock('../../src/data/persistence/trigger');
@@ -13,7 +13,7 @@ const triggerPersistence = jest.requireMock('../../src/data/persistence/trigger'
 describe('NavigationButton AI trigger', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    triggerPersistence.getInstanceId.mockReturnValue('ai-instance');
+    triggerPersistence.hasDialogueWindow.mockReturnValue(true);
   });
 
   it('emits the AI trigger alongside the existing button submit behavior', async () => {
@@ -71,7 +71,6 @@ describe('NavigationButton AI trigger', () => {
         component_id: 'nav-button-1',
         component_type: 'janus-navigation-button',
       },
-      prompt: 'Ask DOT for help before moving on',
     });
   });
 });

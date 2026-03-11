@@ -4,7 +4,7 @@ import AITrigger from '../../src/components/parts/janus-ai-trigger/AITrigger';
 
 jest.mock('../../src/data/persistence/trigger', () => ({
   invoke: jest.fn(() => Promise.resolve({ type: 'submitted' })),
-  getInstanceId: jest.fn(() => 'ai-instance'),
+  hasDialogueWindow: jest.fn(() => true),
 }));
 
 const triggerPersistence = jest.requireMock('../../src/data/persistence/trigger');
@@ -25,7 +25,8 @@ const defaultProps = {
 describe('AITrigger', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    triggerPersistence.getInstanceId.mockReturnValue('ai-instance');
+    window.sessionStorage.clear();
+    triggerPersistence.hasDialogueWindow.mockReturnValue(true);
   });
 
   it('renders a click trigger button and invokes DOT on click', async () => {
@@ -46,7 +47,6 @@ describe('AITrigger', () => {
         component_id: 'ai-trigger-1',
         component_type: 'janus-ai-trigger',
       },
-      prompt: 'Offer a hint',
     });
   });
 
@@ -72,15 +72,45 @@ describe('AITrigger', () => {
       resource_id: 101,
       data: {
         component_id: 'ai-trigger-1',
+        component_type: 'janus-ai-trigger',
       },
-      prompt: 'Greet the learner',
     });
 
     jest.useRealTimers();
   });
 
+  it('fires an auto trigger only once per browser session', async () => {
+    jest.useFakeTimers();
+
+    const props = {
+      ...defaultProps,
+      model: JSON.stringify({ launchMode: 'auto', prompt: 'Greet the learner' }),
+    };
+
+    const { unmount } = render(<AITrigger {...props} />);
+    await act(async () => Promise.resolve());
+
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    expect(triggerPersistence.invoke).toHaveBeenCalledTimes(1);
+
+    unmount();
+    render(<AITrigger {...props} />);
+    await act(async () => Promise.resolve());
+
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    expect(triggerPersistence.invoke).toHaveBeenCalledTimes(1);
+
+    jest.useRealTimers();
+  });
+
   it('becomes available when the dialogue window appears after mount', async () => {
-    triggerPersistence.getInstanceId.mockReturnValue(null);
+    triggerPersistence.hasDialogueWindow.mockReturnValue(false);
     const dialogueWindow = document.createElement('div');
 
     render(
@@ -93,11 +123,10 @@ describe('AITrigger', () => {
     await act(async () => Promise.resolve());
     expect(screen.queryByRole('button', { name: 'Open DOT AI assistant' })).toBeNull();
 
-    triggerPersistence.getInstanceId.mockReturnValue('ai-instance');
+    triggerPersistence.hasDialogueWindow.mockReturnValue(true);
 
     await act(async () => {
-      dialogueWindow.setAttribute('data-dialogue-window', 'true');
-      dialogueWindow.setAttribute('data-instance-id', 'ai-instance');
+      dialogueWindow.id = 'ai_bot';
       document.body.appendChild(dialogueWindow);
     });
 

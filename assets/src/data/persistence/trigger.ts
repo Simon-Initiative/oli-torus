@@ -5,7 +5,7 @@ export type TriggerPayload = {
   trigger_type: string;
   resource_id: number;
   data: any;
-  prompt: string;
+  prompt?: string;
 };
 
 export type InvocationResult = Submitted | Failed | ServerError;
@@ -33,15 +33,6 @@ export function invoke(
   return makeRequest<InvocationResult>(params);
 }
 
-export function getInstanceId(): string | null {
-  // Prefer the legacy ai_bot anchor when present, but also support the
-  // current dialogue-window contract used by delivery.
-  const dialogueWindow =
-    document.getElementById('ai_bot') ?? document.querySelector<HTMLElement>('[data-dialogue-window]');
-
-  if (!dialogueWindow) {
-    return null;
-  }
-
-  return dialogueWindow.getAttribute('data-instance-id');
+export function hasDialogueWindow(): boolean {
+  return document.getElementById('ai_bot') !== null;
 }

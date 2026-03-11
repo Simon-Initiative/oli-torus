@@ -4,7 +4,7 @@ import Image from '../../src/components/parts/janus-image/Image';
 
 jest.mock('../../src/data/persistence/trigger', () => ({
   invoke: jest.fn(() => Promise.resolve({ type: 'submitted' })),
-  getInstanceId: jest.fn(() => 'ai-instance'),
+  hasDialogueWindow: jest.fn(() => true),
 }));
 
 const triggerPersistence = jest.requireMock('../../src/data/persistence/trigger');
@@ -12,7 +12,7 @@ const triggerPersistence = jest.requireMock('../../src/data/persistence/trigger'
 describe('Image AI trigger', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    triggerPersistence.getInstanceId.mockReturnValue('ai-instance');
+    triggerPersistence.hasDialogueWindow.mockReturnValue(true);
   });
 
   it('invokes DOT when an AI-enabled adaptive image is clicked', async () => {
@@ -49,7 +49,6 @@ describe('Image AI trigger', () => {
         component_id: 'image-1',
         component_type: 'janus-image',
       },
-      prompt: 'Use this image as context',
     });
   });
 });

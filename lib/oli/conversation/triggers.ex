@@ -3,8 +3,10 @@ defmodule Oli.Conversation.Triggers do
   import Ecto.Query
   alias Oli.Repo
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
+  alias Oli.Delivery.Sections
   alias Phoenix.PubSub
   alias Oli.Conversation.Trigger
+  alias Oli.Conversation.AdaptiveTriggerInvocationCache
   alias Oli.Activities.Model.{Part}
 
   # The supported trigger type
@@ -67,6 +69,9 @@ defmodule Oli.Conversation.Triggers do
                               "janus-image",
                               "janus-navigation-button"
                             ])
+  @adaptive_page_component_type "janus-ai-trigger"
+  @adaptive_trigger_cooldown_ms :timer.seconds(30)
+  @adaptive_prompt_max_length 2_000
 
   defp sanitize_component_type(data) when is_map(data) do
     case Map.get(data, "component_type") do
@@ -131,20 +136,54 @@ defmodule Oli.Conversation.Triggers do
   end
 
   @doc """
+  Parse and validate a client-provided trigger payload.
+  """
+  def resolve_client_trigger(section_slug, section_id, user_id, params) when is_map(params) do
+    trigger = Trigger.parse(params, section_id, user_id)
+
+    case trigger.trigger_type do
+      type when type in [:adaptive_page, :adaptive_component] ->
+        resolve_adaptive_client_trigger(section_slug, trigger)
+
+      _ ->
+        {:ok, trigger}
+    end
+  rescue
+    ArgumentError -> {:error, :invalid_trigger}
+  end
+
+  @doc """
   Invoke a trigger point for a given section id and user id.  This will broadcast
   the trigger to the PubSub system - which will be picked up by the AI agent window process
   and displayed to the user.
   """
   def invoke(section_id, current_user_id, trigger) do
-    topic = "trigger:#{current_user_id}:#{section_id}:#{trigger.resource_id}"
+    case maybe_admit_adaptive_trigger(trigger) do
+      :ok ->
+        topic = "trigger:#{current_user_id}:#{section_id}:#{trigger.resource_id}"
 
-    Logger.info("Invoking trigger for topic: #{topic}")
+        Logger.info("Invoking trigger for topic: #{topic}")
 
-    PubSub.broadcast(
-      Oli.PubSub,
-      topic,
-      {:trigger, trigger}
-    )
+        PubSub.broadcast(
+          Oli.PubSub,
+          topic,
+          {:trigger, trigger}
+        )
+
+      :duplicate ->
+        Logger.info(
+          "Suppressing duplicate adaptive trigger for section=#{section_id} user=#{current_user_id} resource=#{trigger.resource_id}"
+        )
+
+        :ok
+
+      {:error, reason} = error ->
+        Logger.error(
+          "Unable to admit adaptive trigger for section=#{section_id} user=#{current_user_id} resource=#{trigger.resource_id}, reason=#{inspect(reason)}"
+        )
+
+        error
+    end
   end
 
   @doc """
@@ -220,6 +259,179 @@ defmodule Oli.Conversation.Triggers do
         %{trigger | data: data}
     end
   end
+
+  defp resolve_adaptive_client_trigger(section_slug, trigger) do
+    with {:ok, resource_id} <- normalize_adaptive_resource_id(trigger.resource_id),
+         revision when not is_nil(revision) <-
+           Sections.get_section_revision_for_resource(section_slug, resource_id),
+         {:ok, part} <- find_adaptive_trigger_part(revision.content, trigger.data),
+         {:ok, prompt} <- resolve_adaptive_prompt(trigger.trigger_type, part),
+         {:ok, prompt} <- validate_adaptive_prompt(prompt) do
+      {:ok,
+       %{
+         trigger
+         | resource_id: resource_id,
+           prompt: prompt,
+           data: %{
+             "component_id" => normalize_component_id(part_id(part), "unknown"),
+             "component_type" => normalize_component_type(part_type(part), "component")
+           }
+       }}
+    else
+      nil -> {:error, :invalid_trigger}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp normalize_adaptive_resource_id(resource_id) when is_integer(resource_id),
+    do: {:ok, resource_id}
+
+  defp normalize_adaptive_resource_id(resource_id) when is_binary(resource_id) do
+    case Integer.parse(resource_id) do
+      {value, ""} -> {:ok, value}
+      _ -> {:error, :invalid_trigger}
+    end
+  end
+
+  defp normalize_adaptive_resource_id(_), do: {:error, :invalid_trigger}
+
+  defp find_adaptive_trigger_part(content, data) when is_map(content) and is_map(data) do
+    component_id =
+      data
+      |> Map.get("component_id")
+      |> normalize_component_id(nil)
+
+    parts_layout = map_value(content, "partsLayout") || []
+
+    case component_id do
+      nil ->
+        {:error, :invalid_trigger}
+
+      _ ->
+        case Enum.find(parts_layout, fn part -> part_id(part) == component_id end) do
+          nil -> {:error, :invalid_trigger}
+          part -> {:ok, part}
+        end
+    end
+  end
+
+  defp find_adaptive_trigger_part(_, _), do: {:error, :invalid_trigger}
+
+  defp resolve_adaptive_prompt(:adaptive_page, part) do
+    case {part_type(part), map_value(part_custom(part), "launchMode")} do
+      {@adaptive_page_component_type, "auto"} ->
+        {:ok, map_value(part_custom(part), "prompt")}
+
+      _ ->
+        {:error, :invalid_trigger}
+    end
+  end
+
+  defp resolve_adaptive_prompt(:adaptive_component, part) do
+    case part_type(part) do
+      @adaptive_page_component_type ->
+        case map_value(part_custom(part), "launchMode") do
+          "click" -> {:ok, map_value(part_custom(part), "prompt")}
+          _ -> {:error, :invalid_trigger}
+        end
+
+      "janus-image" ->
+        case map_value(part_custom(part), "enableAiTrigger") do
+          true -> {:ok, map_value(part_custom(part), "aiTriggerPrompt")}
+          _ -> {:error, :invalid_trigger}
+        end
+
+      "janus-navigation-button" ->
+        case map_value(part_custom(part), "enableAiTrigger") do
+          true -> {:ok, map_value(part_custom(part), "aiTriggerPrompt")}
+          _ -> {:error, :invalid_trigger}
+        end
+
+      _ ->
+        {:error, :invalid_trigger}
+    end
+  end
+
+  defp validate_adaptive_prompt(prompt) when is_binary(prompt) do
+    trimmed = String.trim(prompt)
+
+    cond do
+      trimmed == "" ->
+        {:error, :invalid_trigger}
+
+      String.length(trimmed) > @adaptive_prompt_max_length ->
+        {:error, :invalid_trigger}
+
+      true ->
+        {:ok, trimmed}
+    end
+  end
+
+  defp validate_adaptive_prompt(_), do: {:error, :invalid_trigger}
+
+  defp maybe_admit_adaptive_trigger(%Trigger{trigger_type: type} = trigger)
+       when type in [:adaptive_page, :adaptive_component] do
+    trigger
+    |> adaptive_trigger_cache_key()
+    |> AdaptiveTriggerInvocationCache.register_once(@adaptive_trigger_cooldown_ms)
+    |> case do
+      :accepted -> :ok
+      :duplicate -> :duplicate
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp maybe_admit_adaptive_trigger(_trigger), do: :ok
+
+  defp adaptive_trigger_cache_key(%Trigger{} = trigger) do
+    {
+      trigger.section_id,
+      trigger.user_id,
+      trigger.resource_id,
+      trigger.trigger_type,
+      sanitize_component_id(trigger.data),
+      sanitize_component_type(trigger.data)
+    }
+  end
+
+  @adaptive_map_atom_keys %{
+    "aiTriggerPrompt" => :aiTriggerPrompt,
+    "custom" => :custom,
+    "enableAiTrigger" => :enableAiTrigger,
+    "id" => :id,
+    "launchMode" => :launchMode,
+    "partsLayout" => :partsLayout,
+    "prompt" => :prompt,
+    "type" => :type
+  }
+
+  defp map_value(map, key) when is_map(map) and is_binary(key) do
+    case Map.get(map, key) do
+      nil ->
+        case Map.get(@adaptive_map_atom_keys, key) do
+          nil -> nil
+          atom_key -> Map.get(map, atom_key)
+        end
+
+      value ->
+        value
+    end
+  end
+
+  defp map_value(_, _), do: nil
+
+  defp part_id(part), do: map_value(part, "id")
+  defp part_type(part), do: map_value(part, "type")
+  defp part_custom(part), do: map_value(part, "custom") || %{}
+
+  defp normalize_component_type(value, fallback) when is_binary(value) do
+    case MapSet.member?(@adaptive_component_types, value) do
+      true -> value
+      false -> fallback
+    end
+  end
+
+  defp normalize_component_type(_, fallback), do: fallback
 
   @doc """
   Check for a hint trigger based on the activity attempt, part attempt, model, and hint.
