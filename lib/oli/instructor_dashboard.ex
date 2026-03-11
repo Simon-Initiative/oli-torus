@@ -9,10 +9,13 @@ defmodule Oli.InstructorDashboard do
   """
 
   require Logger
+  import Ecto.Query, warn: false
 
-  alias Ecto.Changeset
+  alias Oli.Delivery.Sections.ContainedPage
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.InstructorDashboard.InstructorDashboardState
   alias Oli.Repo
+  alias Oli.Resources.ResourceType
   alias Appsignal
 
   @type state_attrs ::
@@ -55,32 +58,19 @@ defmodule Oli.InstructorDashboard do
   @spec upsert_state(integer(), state_attrs()) ::
           {:ok, InstructorDashboardState.t()} | {:error, Ecto.Changeset.t()}
   def upsert_state(enrollment_id, attrs) when is_integer(enrollment_id) and is_map(attrs) do
-    do_upsert_state(enrollment_id, attrs, get_state_by_enrollment_id(enrollment_id))
-  end
-
-  defp do_upsert_state(enrollment_id, attrs, current_state) do
-    state =
-      case current_state do
-        %InstructorDashboardState{} = state -> state
-        nil -> %InstructorDashboardState{enrollment_id: enrollment_id}
-      end
-
-    attrs =
-      normalized_state_attrs(enrollment_id, attrs, current_state)
-      |> Map.put(:enrollment_id, enrollment_id)
+    timestamp = DateTime.utc_now() |> DateTime.truncate(:second)
 
     result =
-      state
-      |> InstructorDashboardState.changeset(attrs)
-      |> Repo.insert_or_update()
+      %InstructorDashboardState{}
+      |> InstructorDashboardState.changeset(normalized_insert_state_attrs(enrollment_id, attrs))
+      |> Repo.insert(
+        conflict_target: [:enrollment_id],
+        on_conflict: [set: upsert_conflict_updates(attrs, timestamp)],
+        returning: true
+      )
+      |> maybe_track_save_failure(enrollment_id, attrs)
 
-    case result do
-      {:error, %Changeset{} = changeset} ->
-        maybe_retry_conflicted_insert(changeset, enrollment_id, attrs, current_state)
-
-      _ ->
-        maybe_track_save_failure(result, enrollment_id, attrs)
-    end
+    result
   end
 
   @doc """
@@ -125,22 +115,51 @@ defmodule Oli.InstructorDashboard do
     }
   end
 
-  defp normalized_state_attrs(enrollment_id, attrs, current_state) do
+  @doc """
+  Returns true when the selected dashboard scope contains at least one graded page.
+
+  Passing `nil` checks the entire course scope; passing a `container_id` checks the
+  selected container scope using `contained_pages` subtree semantics.
+  """
+  @spec has_graded_pages_in_scope?(integer(), integer() | nil) :: boolean()
+  def has_graded_pages_in_scope?(section_id, container_id \\ nil)
+
+  def has_graded_pages_in_scope?(section_id, nil) when is_integer(section_id) do
+    page_type_id = ResourceType.id_for_page()
+
+    from(sr in SectionResource,
+      where:
+        sr.section_id == ^section_id and
+          sr.graded == true and
+          sr.resource_type_id == ^page_type_id
+    )
+    |> Repo.exists?()
+  end
+
+  def has_graded_pages_in_scope?(section_id, container_id)
+      when is_integer(section_id) and is_integer(container_id) do
+    page_type_id = ResourceType.id_for_page()
+
+    from(cp in ContainedPage,
+      join: sr in SectionResource,
+      on: sr.resource_id == cp.page_id and sr.section_id == cp.section_id,
+      where:
+        cp.section_id == ^section_id and
+          cp.container_id == ^container_id and
+          sr.graded == true and
+          sr.resource_type_id == ^page_type_id
+    )
+    |> Repo.exists?()
+  end
+
+  def has_graded_pages_in_scope?(_, _), do: false
+
+  defp normalized_insert_state_attrs(enrollment_id, attrs) do
     normalized_attrs = %{
-      last_viewed_scope:
-        layout_attr(attrs, :last_viewed_scope) ||
-          current_value(current_state, :last_viewed_scope) ||
-          @default_last_viewed_scope,
-      section_order:
-        normalize_string_list(
-          layout_attr(attrs, :section_order),
-          current_value(current_state, :section_order, [])
-        ),
-      collapsed_section_ids:
-        normalize_string_list(
-          layout_attr(attrs, :collapsed_section_ids),
-          current_value(current_state, :collapsed_section_ids, [])
-        )
+      enrollment_id: enrollment_id,
+      last_viewed_scope: layout_attr(attrs, :last_viewed_scope) || @default_last_viewed_scope,
+      section_order: normalize_string_list(layout_attr(attrs, :section_order), []),
+      collapsed_section_ids: normalize_string_list(layout_attr(attrs, :collapsed_section_ids), [])
     }
 
     if malformed_layout_attrs?(attrs) do
@@ -152,11 +171,21 @@ defmodule Oli.InstructorDashboard do
 
   defp layout_attr(attrs, key), do: Map.get(attrs, key) || Map.get(attrs, Atom.to_string(key))
 
-  defp current_value(nil, _field), do: nil
-  defp current_value(state, field), do: Map.get(state, field)
+  defp upsert_conflict_updates(attrs, timestamp) do
+    [updated_at: timestamp]
+    |> maybe_put_conflict_update(:last_viewed_scope, layout_attr(attrs, :last_viewed_scope))
+    |> maybe_put_conflict_update(
+      :section_order,
+      normalize_update_string_list(layout_attr(attrs, :section_order))
+    )
+    |> maybe_put_conflict_update(
+      :collapsed_section_ids,
+      normalize_update_string_list(layout_attr(attrs, :collapsed_section_ids))
+    )
+  end
 
-  defp current_value(nil, _field, default), do: default
-  defp current_value(state, field, _default), do: Map.get(state, field)
+  defp maybe_put_conflict_update(updates, _field, nil), do: updates
+  defp maybe_put_conflict_update(updates, field, value), do: [{field, value} | updates]
 
   defp normalize_string_list(nil, fallback), do: fallback
 
@@ -170,13 +199,12 @@ defmodule Oli.InstructorDashboard do
 
   defp normalize_string_list(_value, fallback), do: fallback
 
-  defp maybe_retry_conflicted_insert(changeset, enrollment_id, attrs, current_state) do
-    if is_nil(current_state) and enrollment_unique_conflict?(changeset) do
-      do_upsert_state(enrollment_id, attrs, get_state_by_enrollment_id(enrollment_id))
-    else
-      maybe_track_save_failure({:error, changeset}, enrollment_id, attrs)
-    end
-  end
+  defp normalize_update_string_list(nil), do: nil
+
+  defp normalize_update_string_list(value) when is_list(value),
+    do: normalize_string_list(value, nil)
+
+  defp normalize_update_string_list(_value), do: nil
 
   defp maybe_track_save_failure({:error, _} = result, enrollment_id, attrs) do
     track_save_failure(enrollment_id, attrs)
@@ -210,13 +238,6 @@ defmodule Oli.InstructorDashboard do
 
   defp duplicate_ids?(value) when is_list(value), do: Enum.uniq(value) != value
   defp duplicate_ids?(_value), do: false
-
-  defp enrollment_unique_conflict?(%Changeset{errors: errors}) do
-    Enum.any?(errors, fn
-      {:enrollment_id, {_message, details}} -> details[:constraint] == :unique
-      _ -> false
-    end)
-  end
 
   defp layout_value(nil, _field), do: []
 
