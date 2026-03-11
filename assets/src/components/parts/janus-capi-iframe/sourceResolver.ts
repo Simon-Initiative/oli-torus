@@ -71,3 +71,25 @@ export const resolveAdaptiveIframeSource = (href?: string, pathname?: string): s
 
   return href;
 };
+
+export const sanitizeAdaptiveIframeFallbackHref = (href?: string): string => {
+  if (typeof href !== 'string') {
+    return '#';
+  }
+
+  const trimmed = href.trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) {
+    return '#';
+  }
+
+  const containsControlCharacter = [...trimmed].some((char) => {
+    const code = char.charCodeAt(0);
+    return code < 32 || code === 127;
+  });
+
+  if (trimmed.includes('\\') || containsControlCharacter) {
+    return '#';
+  }
+
+  return trimmed;
+};

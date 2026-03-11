@@ -1,4 +1,7 @@
-import { resolveAdaptiveIframeSource } from 'components/parts/janus-capi-iframe/sourceResolver';
+import {
+  resolveAdaptiveIframeSource,
+  sanitizeAdaptiveIframeFallbackHref,
+} from 'components/parts/janus-capi-iframe/sourceResolver';
 
 describe('resolveAdaptiveIframeSource', () => {
   it('rewrites internal course links for authoring preview routes', () => {
@@ -53,5 +56,25 @@ describe('resolveAdaptiveIframeSource', () => {
     );
 
     expect(resolved).toBe('https://example.org/embed');
+  });
+});
+
+describe('sanitizeAdaptiveIframeFallbackHref', () => {
+  it('allows same-origin relative hrefs', () => {
+    expect(sanitizeAdaptiveIframeFallbackHref('/sections/demo/lesson/page?x=1#y')).toBe(
+      '/sections/demo/lesson/page?x=1#y',
+    );
+  });
+
+  it('blocks javascript scheme hrefs', () => {
+    expect(sanitizeAdaptiveIframeFallbackHref('javascript:alert(1)')).toBe('#');
+  });
+
+  it('blocks absolute external hrefs', () => {
+    expect(sanitizeAdaptiveIframeFallbackHref('https://evil.test/path')).toBe('#');
+  });
+
+  it('blocks protocol-relative hrefs', () => {
+    expect(sanitizeAdaptiveIframeFallbackHref('//evil.test/path')).toBe('#');
   });
 });

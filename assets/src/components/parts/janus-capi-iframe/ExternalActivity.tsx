@@ -13,7 +13,7 @@ import { clone, parseBool, parseBoolean, parseNumString } from '../../../utils/c
 import { PartComponentProps } from '../types/parts';
 import { JanusCAPIRequestTypes, getJanusCAPIRequestTypeString } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
-import { resolveAdaptiveIframeSource } from './sourceResolver';
+import { resolveAdaptiveIframeSource, sanitizeAdaptiveIframeFallbackHref } from './sourceResolver';
 
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
@@ -53,10 +53,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     typeof iframeFallback?.message === 'string' && iframeFallback.message.length > 0
       ? iframeFallback.message
       : 'This embedded page is unavailable.';
-  const fallbackHref =
-    typeof iframeFallback?.href === 'string' && iframeFallback.href.length > 0
-      ? iframeFallback.href
-      : '#';
+  const fallbackHref = sanitizeAdaptiveIframeFallbackHref(iframeFallback?.href);
   const getInterestedVariable = (StateSnapshot: Record<string, any>, domain: string) => {
     return Object.keys(StateSnapshot).reduce((collect: Record<string, any>, key) => {
       if (key.indexOf(`${domain}.${id}.`) === 0) {
