@@ -468,8 +468,8 @@ defmodule Oli.Content.Activity.HtmlTest do
 
     # @ac "AC-004"
     test "rewrites adaptive internal iframe idref sources to section lesson urls", %{
-           author: author
-         } do
+      author: author
+    } do
       adaptive_model = %{
         "partsLayout" => [
           %{
