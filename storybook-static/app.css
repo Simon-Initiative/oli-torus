@@ -1574,6 +1574,10 @@ select {
   box-shadow: 0 0 0 4px #2C2D40;
 }
 
+.bg-Fill-fill-hover {
+  background-color: #0000001A;
+}
+
 .dark .bg-Fill-fill-hover {
   background-color: #FFFFFF1A;
 }
@@ -14991,6 +14995,10 @@ table.table-striped tbody tr:nth-child(even) {
   z-index: 60;
 }
 
+.z-\[80\] {
+  z-index: 80;
+}
+
 .z-\[90\] {
   z-index: 90;
 }
@@ -26414,14 +26422,6 @@ Not supports in Firefox and IE */
   background-color: #201D21;
 }
 
-.hover\:bg-Background-bg-primary:hover {
-  background-color: #F3F4F8;
-}
-
-.dark .hover\:bg-Background-bg-primary:hover {
-  background-color: #0D0C0F;
-}
-
 .hover\:bg-Surface-surface-secondary-muted:hover {
   background-color: #F3F4F8;
 }
@@ -26740,6 +26740,14 @@ Not supports in Firefox and IE */
 
 .dark .group.past-start .group-\[\.past-start\]\:text-Text-text-low {
   color: #BAB8BF;
+}
+
+.dark .dark\:bg-Fill-fill-selection-active {
+  background-color: #353740;
+}
+
+.dark .dark .dark\:bg-Fill-fill-selection-active {
+  background-color: #2C2D40;
 }
 
 .dark .dark\:stroke-Icon-icon-default {
@@ -31000,10 +31008,6 @@ Not supports in Firefox and IE */
     align-items: flex-start;
   }
 
-  .md\:items-end {
-    align-items: flex-end;
-  }
-
   .md\:items-center {
     align-items: center;
   }
@@ -31781,6 +31785,10 @@ Not supports in Firefox and IE */
 
   .xl\:w-48 {
     width: 12rem;
+  }
+
+  .xl\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .xl\:flex-row {
