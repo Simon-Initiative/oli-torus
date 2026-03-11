@@ -1,10 +1,10 @@
 ---
-name: spec_ui_implement
+name: implement_ui
 description: Convert a provided UI design source into an implementation-ready design brief that maps visual intent to Torus design tokens, icons, reusable components, and code targets. Use when a Jira ticket or developer provides Figma or another design reference and the team needs governed implementation guidance before coding. Supports full feature-spec mode and lightweight `spec_work` mode.
 examples:
-  - "$spec_ui_implement docs/epics/intelligent_dashboard/tile_chrome slice=section-chrome figma=https://figma.com/..."
-  - "Use spec_ui_implement for MER-5258; the Jira ticket has the Figma links"
-  - "Before implementing this UI tweak with spec_work, run spec_ui_implement against this Figma link"
+  - "$implement_ui docs/exec-plans/current/epics/intelligent_dashboard/tile_chrome slice=section-chrome figma=https://figma.com/..."
+  - "Use implement_ui for MER-5258; the Jira ticket has the Figma links"
+  - "Before implementing this UI tweak with spec_work, run implement_ui against this Figma link"
 when_to_use:
   - "A feature or ticket has meaningful UI work and the visual source of truth is Figma or another design reference."
   - "The team needs to map design intent to existing tokens, icons, reusable components, and repo conventions before implementation."
@@ -32,7 +32,7 @@ When running in feature mode, also read:
 - `<feature_dir>/fdd.md` when present
 - `<feature_dir>/plan.md` when present
 
-When the feature lives under an epic, also consult relevant epic docs under `docs/epics/<epic_slug>/`.
+When the feature lives under an epic, also consult relevant epic docs under `docs/exec-plans/current/epics/<epic_slug>/`.
 
 ## Mission
 

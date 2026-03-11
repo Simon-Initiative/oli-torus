@@ -8,10 +8,11 @@ Before using this workflow in Torus, install the shared Harness and its reusable
 - Install the Harness skills into your user-level agent skills directory, not into this repository.
 - After installing the Harness, use the Torus repository as the target repo where the Harness contract and work artifacts live.
 
-Only two Torus-specific skills remain installed in this repository under `.agents/skills`:
+Only three Torus-specific skills remain installed in this repository under `.agents/skills`:
 
 - `build_scenario`
 - `extend_scenario`
+- `implement_ui`
 
 Everything else in the workflow should come from the shared Harness installation.
 
@@ -176,8 +177,11 @@ Torus-specific repo-local skills:
 
 - `build_scenario` -- Creates `Oli.Scenarios` integration coverage for Torus workflows.
 - `extend_scenario` -- Extends the Torus scenario infrastructure when new directives or infrastructure support are needed.
+- `implement_ui` -- Converts Figma-driven UI requirements into a Torus-specific implementation brief covering tokens, icons, reusable components, and file targets before coding.
 
-Skills are reusable, version-controlled capabilities. The Harness provides the shared workflow skills from the external Harness repository, while Torus keeps only the scenario-specific skills that are tightly coupled to this codebase.
+Skills are reusable, version-controlled capabilities. The Harness provides the shared workflow skills from the external Harness repository, while Torus keeps only the repo-local skills that are tightly coupled to this codebase, including scenario infrastructure and Figma-to-implementation UI alignment.
+
+When a ticket already includes Figma links or another concrete UI design source, consider `implement_ui` during spec creation as well as before implementation.
 
 ## Ticket Classification
 
