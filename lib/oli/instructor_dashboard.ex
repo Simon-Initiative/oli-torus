@@ -11,11 +11,8 @@ defmodule Oli.InstructorDashboard do
   require Logger
   import Ecto.Query, warn: false
 
-  alias Oli.Delivery.Sections.ContainedPage
-  alias Oli.Delivery.Sections.SectionResource
   alias Oli.InstructorDashboard.InstructorDashboardState
   alias Oli.Repo
-  alias Oli.Resources.ResourceType
   alias Appsignal
 
   @type state_attrs ::
@@ -114,45 +111,6 @@ defmodule Oli.InstructorDashboard do
       collapsed_section_ids: []
     }
   end
-
-  @doc """
-  Returns true when the selected dashboard scope contains at least one graded page.
-
-  Passing `nil` checks the entire course scope; passing a `container_id` checks the
-  selected container scope using `contained_pages` subtree semantics.
-  """
-  @spec has_graded_pages_in_scope?(integer(), integer() | nil) :: boolean()
-  def has_graded_pages_in_scope?(section_id, container_id \\ nil)
-
-  def has_graded_pages_in_scope?(section_id, nil) when is_integer(section_id) do
-    page_type_id = ResourceType.id_for_page()
-
-    from(sr in SectionResource,
-      where:
-        sr.section_id == ^section_id and
-          sr.graded == true and
-          sr.resource_type_id == ^page_type_id
-    )
-    |> Repo.exists?()
-  end
-
-  def has_graded_pages_in_scope?(section_id, container_id)
-      when is_integer(section_id) and is_integer(container_id) do
-    page_type_id = ResourceType.id_for_page()
-
-    from(cp in ContainedPage,
-      join: sr in SectionResource,
-      on: sr.resource_id == cp.page_id and sr.section_id == cp.section_id,
-      where:
-        cp.section_id == ^section_id and
-          cp.container_id == ^container_id and
-          sr.graded == true and
-          sr.resource_type_id == ^page_type_id
-    )
-    |> Repo.exists?()
-  end
-
-  def has_graded_pages_in_scope?(_, _), do: false
 
   defp normalized_insert_state_attrs(enrollment_id, attrs) do
     normalized_attrs = %{

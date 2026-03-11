@@ -150,15 +150,6 @@ defmodule Oli.InstructorDashboardTest do
     end
   end
 
-  describe "has_graded_pages_in_scope?/2" do
-    test "returns false when the scope has no graded pages" do
-      enrollment = instructor_enrollment_fixture()
-
-      refute InstructorDashboard.has_graded_pages_in_scope?(enrollment.section_id)
-      refute InstructorDashboard.has_graded_pages_in_scope?(enrollment.section_id, 999_999)
-    end
-  end
-
   defp instructor_enrollment_fixture do
     user = insert(:user)
     section = insert(:section)

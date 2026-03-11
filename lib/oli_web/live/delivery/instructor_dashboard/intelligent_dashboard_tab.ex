@@ -1105,11 +1105,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   defp has_assessments_tile?(section, %{container_type: :course}) do
-    InstructorDashboardStateContext.has_graded_pages_in_scope?(section.id)
+    Sections.section_container_has_graded_pages?(section.id)
   end
 
   defp has_assessments_tile?(section, %{container_type: :container, container_id: container_id}) do
-    InstructorDashboardStateContext.has_graded_pages_in_scope?(section.id, container_id)
+    Sections.section_container_has_graded_pages?(section.id, container_id)
   end
 
   defp ensure_instructor_enrollment(socket) do
