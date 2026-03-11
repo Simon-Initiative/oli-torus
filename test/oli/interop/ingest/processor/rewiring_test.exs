@@ -208,4 +208,54 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
       assert result["group"] == missing_group
     end
   end
+
+  describe "rewire_adaptive_link_references/2" do
+    test "rewires adaptive tag a idref references" do
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [
+              %{"tag" => "a", "idref" => "10", "children" => [%{"text" => "Go"}]},
+              %{"tag" => "a", "href" => "https://example.org", "children" => [%{"text" => "Out"}]}
+            ]
+          }
+        ]
+      }
+
+      result = Rewiring.rewire_adaptive_link_references(content, %{10 => 200})
+      [container] = result["model"]
+      [internal, external] = container["children"]
+
+      assert internal["idref"] == 200
+      assert external["href"] == "https://example.org"
+    end
+
+    test "is idempotent for already rewired adaptive idrefs" do
+      content = %{
+        "type" => "content",
+        "children" => [
+          %{"tag" => "a", "idref" => 200, "children" => [%{"text" => "Go"}]}
+        ]
+      }
+
+      once = Rewiring.rewire_adaptive_link_references(content, %{200 => 200})
+      twice = Rewiring.rewire_adaptive_link_references(once, %{200 => 200})
+
+      assert once == twice
+    end
+
+    test "leaves unmapped adaptive idrefs unchanged" do
+      content = %{
+        "type" => "content",
+        "children" => [
+          %{"tag" => "a", "idref" => "missing", "children" => [%{"text" => "Go"}]}
+        ]
+      }
+
+      result = Rewiring.rewire_adaptive_link_references(content, %{})
+      [link] = result["children"]
+      assert link["idref"] == "missing"
+    end
+  end
 end

@@ -1304,4 +1304,32 @@ defmodule OliWeb.Components.Common do
     </span>
     """
   end
+
+  @doc """
+  Renders a comma-separated list of links. Shows "None" when the list is empty.
+
+  Each item must be a map with `:name` and `:href` keys.
+
+  ## Examples
+
+      <Common.comma_separated_links items={Enum.map(@communities, fn c ->
+        %{name: c.name, href: ~p"/authoring/communities/\#{c.id}"}
+      end)} />
+  """
+  attr :items, :list, required: true
+
+  def comma_separated_links(assigns) do
+    ~H"""
+    <span :if={Enum.empty?(@items)}>{gettext("None")}</span>
+    <span :for={{item, idx} <- Enum.with_index(@items)}>
+      <span :if={idx > 0}>, </span>
+      <.link
+        href={item.href}
+        class="text-Text-text-button hover:text-Text-text-button-hover hover:underline"
+      >
+        {item.name}
+      </.link>
+    </span>
+    """
+  end
 end

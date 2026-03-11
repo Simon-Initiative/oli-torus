@@ -4,6 +4,7 @@ import Delta from 'quill-delta';
 interface JanusMarkupNode {
   tag: string;
   href?: string;
+  linkType?: string;
   style: CSSProperties;
   children: JanusMarkupNode[];
   text?: string;
@@ -294,6 +295,12 @@ export const convertQuillToJanus = (delta: Delta) => {
         if (op.attributes?.link) {
           child.tag = 'a';
           child.href = op.attributes.link;
+          if (
+            typeof op.attributes.link === 'string' &&
+            op.attributes.link.startsWith('/course/link/')
+          ) {
+            child.linkType = 'page';
+          }
         }
         node.children.push(child);
       }

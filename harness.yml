@@ -1,0 +1,31 @@
+version: 1
+
+capabilities:
+  feature_flags:
+    adoption: enabled
+    default: exclude
+    details_file: docs/OPERATIONS.md
+  telemetry:
+    adoption: enabled
+    default: include
+    details_file: docs/OPERATIONS.md
+  performance_requirements:
+    adoption: enabled
+    default: exclude
+    details_file: docs/OPERATIONS.md
+  code_review:
+    adoption: enabled
+    default: include
+    details_file: docs/CODEREVIEW.md
+  issue_tracking:
+    adoption: enabled
+    default: include
+    details_file: docs/ISSUE_TRACKING.md
+
+providers:
+  observability:
+    name: none
+  issue_tracker:
+    name: none
+
+links: {}

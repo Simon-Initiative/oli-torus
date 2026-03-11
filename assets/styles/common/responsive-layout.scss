@@ -125,6 +125,17 @@
     min-height: fit-content;
   }
 
+  // Dropdown: full width of container in responsive layout (overrides inline width: auto)
+  janus-dropdown {
+    width: 100% !important;
+    display: block !important;
+
+    .dropdown-input {
+      width: 100% !important;
+      display: flex !important;
+    }
+  }
+
   /*------------------------------
       Answerable Components
   ------------------------------*/
@@ -139,6 +150,15 @@
   janus-text-flow {
     height: fit-content !important;
   }
+
+  // Sliders: full width so they fill container when label is hidden
+  janus-slider,
+  janus-text-slider,
+  janus-number-slider {
+    width: 100% !important;
+    display: block !important;
+  }
+
   /*------------------------------
       Non-Answerable Components
   ------------------------------*/
@@ -175,14 +195,16 @@
     padding-bottom: 20px;
   }
 
-  janus-popup:has(input)[model*='question'],
+ janus-popup:has(input)[model*='question'],
   .responsive-item .react-draggable janus-popup:has(input) {
     background-size: 20px !important;
-    width: 40px !important;
+    width: fit-content !important;
+    min-width: fit-content;
     height: auto !important;
-    aspect-ratio: 1;
     input {
-      width: 40px !important;
+      width: 32px !important;
+      height: 32px !important;
+      flex-shrink: 0;
     }
   }
   /*------------------------------

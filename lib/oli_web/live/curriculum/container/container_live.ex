@@ -40,6 +40,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
+  alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -343,6 +344,14 @@ defmodule OliWeb.Curriculum.ContainerLive do
             proceed_with_deletion_warning(socket, container, project, author, item)
 
           references ->
+            DynamicLinksTelemetry.delete_blocked(%{
+              project_id: project.id,
+              project_slug: project.slug,
+              target_resource_id: item.resource_id,
+              reason: "inbound_links_present",
+              source: "curriculum_delete_modal"
+            })
+
             show_hyperlink_dependency_modal(socket, container, project, references, item)
         end
 
