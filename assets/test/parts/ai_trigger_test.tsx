@@ -79,6 +79,32 @@ describe('AITrigger', () => {
     jest.useRealTimers();
   });
 
+  it('becomes available when the dialogue window appears after mount', async () => {
+    triggerPersistence.getInstanceId.mockReturnValue(null);
+    const dialogueWindow = document.createElement('div');
+
+    render(
+      <AITrigger
+        {...defaultProps}
+        model={JSON.stringify({ launchMode: 'click', prompt: 'Offer a hint' })}
+      />,
+    );
+
+    await act(async () => Promise.resolve());
+    expect(screen.queryByRole('button', { name: 'Open DOT AI assistant' })).toBeNull();
+
+    triggerPersistence.getInstanceId.mockReturnValue('ai-instance');
+
+    await act(async () => {
+      dialogueWindow.setAttribute('data-dialogue-window', 'true');
+      dialogueWindow.setAttribute('data-instance-id', 'ai-instance');
+      document.body.appendChild(dialogueWindow);
+    });
+
+    expect(await screen.findByRole('button', { name: 'Open DOT AI assistant' })).toBeVisible();
+    dialogueWindow.remove();
+  });
+
   it('does not replay lifecycle callbacks on rerender with unchanged inputs', async () => {
     const onInit = jest.fn(() => Promise.resolve({ snapshot: {} }));
     const onReady = jest.fn(() => Promise.resolve({ type: 'success' }));

@@ -10,6 +10,7 @@ const AUTO_TRIGGER_DELAY_MS = 2000;
 const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
   const [model, setModel] = useState<Partial<AITriggerModel>>({});
   const [ready, setReady] = useState(false);
+  const [triggerAvailable, setTriggerAvailable] = useState(() => canInvokeAiTrigger());
   const firedAutoTrigger = useRef(false);
   const id = props.id;
   const { model: modelProp, onInit, onReady, resourceId, sectionSlug } = props;
@@ -47,6 +48,28 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     onReady({ id, responses: [] });
   }, [id, onReady, ready]);
 
+  useEffect(() => {
+    const refreshTriggerAvailability = () => {
+      setTriggerAvailable(canInvokeAiTrigger());
+    };
+
+    refreshTriggerAvailability();
+
+    if (typeof MutationObserver === 'undefined' || !document.body) {
+      return;
+    }
+
+    const observer = new MutationObserver(refreshTriggerAvailability);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-dialogue-window', 'data-instance-id', 'id'],
+      childList: true,
+      subtree: true,
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const {
     width = 56,
     height = 56,
@@ -61,7 +84,7 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
       firedAutoTrigger.current ||
       launchMode !== 'auto' ||
       !hasAiTriggerPrompt(prompt) ||
-      !canInvokeAiTrigger()
+      !triggerAvailable
     ) {
       return;
     }
@@ -80,13 +103,13 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     }, AUTO_TRIGGER_DELAY_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [id, launchMode, prompt, resourceId, sectionSlug, ready]);
+  }, [id, launchMode, prompt, resourceId, sectionSlug, ready, triggerAvailable]);
 
   if (
     !ready ||
     launchMode !== 'click' ||
     !hasAiTriggerPrompt(prompt) ||
-    !canInvokeAiTrigger()
+    !triggerAvailable
   ) {
     return null;
   }

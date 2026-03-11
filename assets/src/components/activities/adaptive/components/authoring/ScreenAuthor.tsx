@@ -269,7 +269,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({
         }
       }
     }
-  }, [selectedPartId, currentScreenData, partsList]);
+  }, [allowTriggers, selectedPartId, currentScreenData, partsList]);
 
   const handleEditorChange = useCallback(
     (parts: any[]) => {
