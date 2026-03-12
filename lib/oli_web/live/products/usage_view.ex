@@ -168,8 +168,8 @@ defmodule OliWeb.Products.UsageView do
         {@product.title} Usage
       </h2>
 
-      <div class="flex justify-between">
-        <div class="flex w-fit gap-4 p-2 pr-8 mx-4 mt-3 mb-2 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
+      <div class="flex flex-col gap-3 px-4 mt-3 mb-2 md:flex-row md:items-start md:justify-between">
+        <div class="flex flex-wrap gap-4 p-2 pr-8 shadow-[0px_2px_6.099999904632568px_0px_rgba(0,0,0,0.10)] border border-Border-border-default bg-Background-bg-secondary">
           <.form for={%{}} phx-change="text_search_change" class="w-56">
             <SearchInput.render
               id="text-search"
@@ -205,7 +205,7 @@ defmodule OliWeb.Products.UsageView do
         </div>
 
         <a
-          class="group mr-4 inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover"
+          class="group inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover md:self-start"
           href={export_path(assigns)}
           download={@export_filename}
         >
