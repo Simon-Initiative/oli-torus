@@ -3,7 +3,7 @@
 ## 1. Overview
 Feature Name: `adaptive_triggers`
 
-Summary: Add screen-level AI activation points to adaptive pages and extend adaptive images and navigation buttons so they can optionally invoke DOT on click. The feature is gated by the existing project trigger capability in authoring and reuses the existing client-side trigger API and section-level assistant availability in delivery.
+Summary: Add screen-level AI activation points to adaptive pages and extend adaptive images and navigation buttons so they can optionally invoke DOT on click. The feature is gated by the existing project trigger capability in authoring, reuses the existing trigger API in delivery, and resolves authored adaptive prompts server-side from delivered content instead of trusting client-supplied prompt text.
 
 Links:
 - `docs/epics/adaptive_page_improvements/adaptive_triggers/informal.md`
@@ -73,12 +73,17 @@ Requirements are found in requirements.yml
 ## 8. Non-Functional Requirements
 - Performance & Scale:
   - No dedicated performance/load/benchmark scope is added.
-  - Trigger invocation should remain an O(1) client-side call using already available section and resource context.
+  - Client invocation remains lightweight and reuses existing section/resource context.
+  - Server-side adaptive trigger resolution should use cached section-resource data when available, with a delivery-resolver fallback for adaptive activity resources.
 - Reliability:
   - Missing prompts or missing trigger context must fail closed and avoid emitting malformed trigger requests.
+  - Auto-mode adaptive triggers must not consume their once-per-session guard until required section/resource context exists.
+  - Image and click-mode trigger controls must remain usable when the DOT dialogue root mounts after the adaptive part renders.
   - Existing adaptive image and navigation button behavior must continue when AI activation is disabled.
 - Security & Privacy:
   - Delivery continues to rely on existing section-level assistant availability and trigger authorization behavior.
+  - Adaptive trigger client payloads must not include authored prompt text; the backend resolves and validates adaptive prompts from delivered content.
+  - Automatic adaptive trigger firing is deduplicated with client-side session guards and backend cooldown admission.
   - No additional learner data is persisted by this feature.
 - Compliance:
   - Clickable activation controls must remain keyboard accessible.
@@ -100,7 +105,7 @@ Requirements are found in requirements.yml
   - Existing trigger client payload is reused with new `trigger_type` values:
     - `adaptive_page`
     - `adaptive_component`
-  - Adaptive trigger payloads continue to send `resource_id`, `prompt`, and contextual `data`.
+  - Adaptive trigger payloads send `resource_id` plus contextual `data`; authored prompt text is resolved server-side from the delivered adaptive revision.
 - Permissions Matrix:
 
 | Role | Allowed Actions | Notes |
@@ -117,7 +122,8 @@ Requirements are found in requirements.yml
 - External services:
   - None.
 - Caching/Perf:
-  - No new caching layer.
+  - Adaptive trigger resolution uses `SectionResourceDepot` when the target resource is cached there and falls back to the delivery resolver for adaptive activity resources.
+  - Adaptive auto triggers use a backend cooldown cache to suppress repeated submissions inside the configured window.
 - Multi-tenancy:
   - Existing section/resource context and trigger API boundaries remain in force.
 
@@ -135,6 +141,7 @@ Existing authoring capability gating is reused:
   - AI-enabled adaptive navigation buttons preserve original submit behavior while also invoking DOT.
 - Events / Operational Signals:
   - Existing trigger invocation flow now includes `adaptive_page` and `adaptive_component` trigger types.
+  - Duplicate adaptive auto-trigger submissions within the cooldown window are intentionally suppressed.
 
 ## 13. Risks & Mitigations
 - Adaptive and basic trigger payloads could diverge.
@@ -160,9 +167,11 @@ Existing authoring capability gating is reused:
 ## 16. QA Plan
 - Automated:
   - Jest tests for click-mode and auto-mode AI trigger part delivery.
+  - Jest regression for auto-mode waiting until `resourceId` is available before consuming its session guard.
   - Jest tests for image and navigation button trigger behavior.
+  - Jest regression for image trigger invocation when the dialogue root becomes available after render.
   - Jest test for authoring trigger-part availability gating.
-  - ExUnit tests for backend adaptive trigger descriptions.
+  - ExUnit tests for backend adaptive trigger descriptions, prompt resolution, and duplicate suppression.
 - Performance Validation:
   - Confirm no new hot path beyond existing trigger invoke calls.
 - Manual:
@@ -183,3 +192,9 @@ Existing authoring capability gating is reused:
 - Reason: The code was implemented before the feature pack existed, so the authored scope needed to match the actual delivered behavior rather than only the informal ticket summary.
 - Evidence: `assets/src/components/parts/janus-ai-trigger/*`, `assets/src/components/parts/aiTrigger.ts`, `assets/src/components/parts/janus-image/*`, `assets/src/components/parts/janus-navigation-button/*`, `lib/oli/conversation/triggers.ex`
 - Impact: Establishes the authoritative scope and AC source for FDD/plan/requirements traceability.
+
+### 2026-03-12 - Sync security and performance hardening decisions
+- Change: Updated the PRD to reflect server-side adaptive prompt resolution, canonical DOT-root availability gating, client/backend auto-trigger deduplication, and the cached lookup path used during adaptive trigger resolution.
+- Reason: Follow-up implementation work changed the trust boundary and hot-path behavior beyond the initial feature pack wording.
+- Evidence: `assets/src/components/parts/aiTrigger.ts`, `assets/src/components/parts/janus-ai-trigger/AITrigger.tsx`, `assets/src/components/parts/janus-image/Image.tsx`, `assets/src/data/persistence/trigger.ts`, `lib/oli/conversation/triggers.ex`, `lib/oli/authoring/editing/activity_editor.ex`, `test/oli_web/controllers/api/trigger_point_controller_test.exs`
+- Impact: Clarifies the accepted adaptive trigger contract and the non-functional controls that Phase 2 through Phase 4 must preserve.

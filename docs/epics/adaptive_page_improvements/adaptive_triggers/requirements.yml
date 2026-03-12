@@ -47,7 +47,7 @@ requirements:
   - id: AC-004
     title: Given a learner views a click-mode adaptive AI Activation Point and DOT
       is available, when they activate it, then an adaptive_component trigger is sent
-      with resource, prompt, and component metadata.
+      with resource and component metadata, and the authored prompt is resolved server-side.
     status: verified_plan
     verification_method: automated
     proofs:
@@ -57,8 +57,9 @@ requirements:
       ref: plan.md:26
   - id: AC-005
     title: Given a learner views an auto-mode adaptive AI Activation Point and DOT
-      is available, when the part becomes ready, then an adaptive_page trigger is
-      sent without rendering a click control.
+      is available, when the part becomes ready with valid section/resource context,
+      then an adaptive_page trigger is sent using the authored prompt resolved server-side
+      without rendering a click control.
     status: verified_plan
     verification_method: automated
     proofs:
@@ -95,7 +96,7 @@ requirements:
       ref: plan.md:27
 - id: FR-004
   title: Adaptive trigger delivery shall fail closed when trigger context is incomplete
-    or unavailable.
+    or unavailable, without prematurely consuming auto-trigger state.
   status: verified_plan
   acceptance_criteria:
   - id: AC-008
