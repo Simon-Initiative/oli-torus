@@ -10,8 +10,17 @@ defmodule OliWeb.Products.Details.Actions do
 
   def render(assigns) do
     ~H"""
-    <div>
-      <div class="d-flex align-items-center">
+    <div class="flex flex-col gap-2">
+      <div class="flex items-center gap-3">
+        <div>
+          <a class="btn btn-link action-button" href={@usage_path}>
+            View Usage
+          </a>
+        </div>
+        <div>View course section usage.</div>
+      </div>
+
+      <div class="flex items-center gap-3">
         <div>
           <button class="btn btn-link action-button" phx-click="request_duplicate">
             Duplicate
@@ -20,7 +29,7 @@ defmodule OliWeb.Products.Details.Actions do
         <div>Create a complete copy of this template.</div>
       </div>
 
-      <div :if={@is_admin} class="d-flex align-items-center">
+      <div :if={@is_admin} class="flex items-center gap-3">
         <div>
           <a
             class="btn btn-link action-button"
@@ -34,7 +43,7 @@ defmodule OliWeb.Products.Details.Actions do
 
       <div
         :if={@base_project.allow_transfer_payment_codes && @has_payment_codes}
-        class="d-flex align-items-center"
+        class="flex items-center gap-3"
       >
         <div>
           <button class="btn btn-link action-button" phx-click="show_products_to_transfer">
@@ -42,15 +51,6 @@ defmodule OliWeb.Products.Details.Actions do
           </button>
         </div>
         <div>Allow transfer of payment codes to another template.</div>
-      </div>
-
-      <div class="d-flex align-items-center">
-        <div>
-          <a class="btn btn-link action-button" href={@usage_path}>
-            View Usage
-          </a>
-        </div>
-        <div>View course section usage.</div>
       </div>
     </div>
     """
