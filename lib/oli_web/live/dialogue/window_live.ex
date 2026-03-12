@@ -140,38 +140,41 @@ defmodule OliWeb.Dialogue.WindowLive do
     resource_id = session["resource_id"]
     requested_revision_id = session["revision_id"]
 
-    PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
+    if Sections.assistant_enabled?(section) do
+      PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
+      {page_enabled?, revision_id} = page_ai_context(section, resource_id, requested_revision_id)
 
-    {page_enabled?, revision_id} = page_ai_context(section, resource_id, requested_revision_id)
+      if page_enabled? do
+        project = Oli.Authoring.Course.get_project!(section.base_project_id)
 
-    if Sections.assistant_enabled?(section) and page_enabled? do
-      project = Oli.Authoring.Course.get_project!(section.base_project_id)
+        case init_dialogue_server(section, project, revision_id, current_user_id) do
+          {:ok, dialogue_server} ->
+            {:ok,
+             assign(socket,
+               enabled: true,
+               minimized: true,
+               dialogue: dialogue_server,
+               form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
+               messages: [],
+               streaming: false,
+               allow_submission?: true,
+               trigger_queue: [],
+               active_message: nil,
+               title: "Dot",
+               current_user: Oli.Accounts.get_user!(current_user_id),
+               height: 500,
+               width: 400,
+               section: section,
+               resource_id: session["resource_id"],
+               is_page: session["is_page"] == true
+             )}
 
-      case init_dialogue_server(section, project, revision_id, current_user_id) do
-        {:ok, dialogue_server} ->
-          {:ok,
-           assign(socket,
-             enabled: true,
-             minimized: true,
-             dialogue: dialogue_server,
-             form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
-             messages: [],
-             streaming: false,
-             allow_submission?: true,
-             trigger_queue: [],
-             active_message: nil,
-             title: "Dot",
-             current_user: Oli.Accounts.get_user!(current_user_id),
-             height: 500,
-             width: 400,
-             section: section,
-             resource_id: session["resource_id"],
-             is_page: session["is_page"] == true
-           )}
-
-        {:error, reason} ->
-          Logger.error("Failed to initialize dialogue server: #{inspect(reason)}")
-          {:ok, assign(socket, enabled: false)}
+          {:error, reason} ->
+            Logger.error("Failed to initialize dialogue server: #{inspect(reason)}")
+            {:ok, assign(socket, enabled: false)}
+        end
+      else
+        {:ok, assign(socket, enabled: false)}
       end
     else
       {:ok, assign(socket, enabled: false)}

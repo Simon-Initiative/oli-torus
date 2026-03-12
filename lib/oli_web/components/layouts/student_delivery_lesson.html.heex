@@ -133,12 +133,7 @@
 
           <div class={[
             "mb-20 px-4 mt-auto relative",
-            if(
-              @section && assigns[:page_context] &&
-                Oli.Delivery.Sections.assistant_enabled_for_page?(@section, @page_context.page),
-              do: "mr-10 lg:mr-28",
-              else: ""
-            )
+            if(@assistant_available?, do: "mr-10 lg:mr-28", else: "")
           ]}>
             <div id="tech-support-wrapper" phx-hook="StickyTechSupportButton">
               <OliWeb.Components.Common.tech_support_button
@@ -197,8 +192,7 @@
             />
           </div>
         </div>
-        <%= if @section && assigns[:page_context] &&
-               Oli.Delivery.Sections.assistant_enabled_for_page?(@section, @page_context.page) do %>
+        <%= if @assistant_available? do %>
           <div class={
             [
               "z-[1001]",
