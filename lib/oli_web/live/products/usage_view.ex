@@ -10,7 +10,7 @@ defmodule OliWeb.Products.UsageView do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Admin.BrowseFilters
-  alias OliWeb.Common.{Check, Params, PagingParams, SearchInput, StripedPagedTable}
+  alias OliWeb.Common.{Breadcrumb, Check, Params, PagingParams, SearchInput, StripedPagedTable}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Components.FilterPanel
   alias OliWeb.Icons
@@ -49,6 +49,7 @@ defmodule OliWeb.Products.UsageView do
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
+  on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
   def mount(%{"product_id" => product_slug}, _session, socket) do
     case Mount.for(product_slug, socket) do
@@ -82,11 +83,12 @@ defmodule OliWeb.Products.UsageView do
             current_author: author
           )
 
-        {:ok,
+         {:ok,
          assign(socket,
            author: author,
            is_admin: is_admin,
            product: product,
+           project_slug: project_slug(socket),
            total_count: total_count,
            table_model: table_model,
            export_filename: export_filename,
@@ -155,6 +157,7 @@ defmodule OliWeb.Products.UsageView do
 
     {:noreply,
      assign(socket,
+       breadcrumbs: breadcrumbs(socket.assigns.product, socket.assigns.route_name, socket.assigns),
        offset: offset,
        table_model: table_model,
        total_count: total_count,
@@ -205,7 +208,7 @@ defmodule OliWeb.Products.UsageView do
 
         <a
           class="group mr-4 inline-flex items-center gap-1 text-sm text-Text-text-button font-bold leading-none hover:text-Text-text-button-hover"
-          href={~p"/authoring/products/#{@product.slug}/usage/export?#{current_params(assigns)}"}
+          href={export_path(assigns)}
           download={@export_filename}
         >
           Download CSV
@@ -237,13 +240,7 @@ defmodule OliWeb.Products.UsageView do
 
     {:noreply,
      push_patch(socket,
-       to:
-         Routes.live_path(
-           socket,
-           __MODULE__,
-           socket.assigns.product.slug,
-           Map.merge(base_params, Map.merge(filter_params, %{offset: 0}))
-         ),
+       to: live_path(socket, Map.merge(base_params, Map.merge(filter_params, %{offset: 0}))),
        replace: true
      )}
   end
@@ -254,12 +251,13 @@ defmodule OliWeb.Products.UsageView do
       sort_order: socket.assigns.table_model.sort_order,
       offset: 0,
       limit: socket.assigns.limit,
-      text_search: socket.assigns.text_search_input
+      text_search: socket.assigns.text_search_input,
+      active_today: socket.assigns.options.active_today
     }
 
     {:noreply,
      push_patch(socket,
-       to: Routes.live_path(socket, __MODULE__, socket.assigns.product.slug, params),
+       to: live_path(socket, params),
        replace: true
      )}
   end
@@ -312,13 +310,7 @@ defmodule OliWeb.Products.UsageView do
   def patch_with(socket, changes) do
     {:noreply,
      push_patch(socket,
-       to:
-         Routes.live_path(
-           socket,
-           __MODULE__,
-           socket.assigns.product.slug,
-           Map.merge(current_params(socket), changes)
-         ),
+       to: live_path(socket, Map.merge(current_params(socket), changes)),
        replace: true
      )}
   end
@@ -386,6 +378,70 @@ defmodule OliWeb.Products.UsageView do
 
   defp with_blueprint_id(options, blueprint_id) do
     %{options | blueprint_id: blueprint_id}
+  end
+
+  defp breadcrumbs(product, :authoring, _assigns) do
+    [
+      Breadcrumb.new(%{
+        full_title: product.title,
+        link: ~p"/authoring/products/#{product.slug}"
+      }),
+      Breadcrumb.new(%{full_title: "Template Usage"})
+    ]
+  end
+
+  defp breadcrumbs(product, :workspaces, %{project: project}) do
+    [
+      Breadcrumb.new(%{
+        full_title: product.title,
+        link: ~p"/workspaces/course_author/#{project.slug}/products/#{product.slug}"
+      }),
+      Breadcrumb.new(%{full_title: "Template Usage"})
+    ]
+  end
+
+  defp breadcrumbs(product, _route_name, _assigns) do
+    [
+      Breadcrumb.new(%{
+        full_title: product.title,
+        link: ~p"/authoring/products/#{product.slug}"
+      }),
+      Breadcrumb.new(%{full_title: "Template Usage"})
+    ]
+  end
+
+  defp export_path(%{route_name: :authoring, product: product} = assigns) do
+    ~p"/authoring/products/#{product.slug}/usage/export?#{current_params(assigns)}"
+  end
+
+  defp export_path(%{route_name: :workspaces, product: product} = assigns) do
+    ~p"/authoring/products/#{product.slug}/usage/export?#{current_params(assigns)}"
+  end
+
+  defp live_path(socket, params) do
+    case socket.assigns[:route_name] do
+      :authoring ->
+        Routes.live_path(socket, __MODULE__, socket.assigns.product.slug, params)
+
+      :workspaces ->
+        Routes.live_path(
+          socket,
+          __MODULE__,
+          socket.assigns.project.slug,
+          socket.assigns.product.slug,
+          params
+        )
+
+      _ ->
+        Routes.live_path(socket, __MODULE__, socket.assigns.product.slug, params)
+    end
+  end
+
+  defp project_slug(socket) do
+    case socket.assigns[:project] do
+      %{slug: slug} -> slug
+      _ -> nil
+    end
   end
 
   defp browse_sections(%Paging{} = paging, %Sorting{} = sorting, %BrowseOptions{} = options) do

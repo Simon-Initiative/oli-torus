@@ -474,7 +474,9 @@ defmodule OliWeb.Router do
     get("/products/export", ProductsController, :export_csv)
     get("/products/:product_id/usage/export", ProductsController, :export_usage_csv)
     live("/products/:product_id", Products.DetailsView)
-    live("/products/:product_id/usage", Products.UsageView)
+    live("/products/:product_id/usage", Products.UsageView,
+      metadata: %{route_name: :authoring}
+    )
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
 
@@ -1006,7 +1008,9 @@ defmodule OliWeb.Router do
           live("/:product_id", Products.DetailsLive)
 
           scope "/", alias: false do
-            live("/:product_id/usage", OliWeb.Products.UsageView)
+            live("/:product_id/usage", OliWeb.Products.UsageView,
+              metadata: %{route_name: :workspaces}
+            )
           end
 
           scope "/", alias: false do
