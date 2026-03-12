@@ -30,7 +30,7 @@ defmodule OliWeb.Products.UsageTableModel do
     search_term = Keyword.get(opts, :search_term, "")
     is_admin = Keyword.get(opts, :is_admin, false)
     current_author = Keyword.get(opts, :current_author)
-    can_link? = Accounts.is_admin?(current_author)
+    can_link? = Accounts.at_least_content_admin?(current_author)
 
     base_columns = [
       %ColumnSpec{
