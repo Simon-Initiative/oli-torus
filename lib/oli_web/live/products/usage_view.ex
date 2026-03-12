@@ -83,7 +83,7 @@ defmodule OliWeb.Products.UsageView do
             current_author: author
           )
 
-         {:ok,
+        {:ok,
          assign(socket,
            author: author,
            is_admin: is_admin,
@@ -157,7 +157,8 @@ defmodule OliWeb.Products.UsageView do
 
     {:noreply,
      assign(socket,
-       breadcrumbs: breadcrumbs(socket.assigns.product, socket.assigns.route_name, socket.assigns),
+       breadcrumbs:
+         breadcrumbs(socket.assigns.product, socket.assigns.route_name, socket.assigns),
        offset: offset,
        table_model: table_model,
        total_count: total_count,
