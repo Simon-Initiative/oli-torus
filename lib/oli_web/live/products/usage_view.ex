@@ -62,19 +62,10 @@ defmodule OliWeb.Products.UsageView do
         filters = BrowseFilters.default()
         institutions = Institutions.list_institutions()
         options = with_blueprint_id(default_options(), product.id)
-
-        sections =
-          browse_sections(
-            %Paging{offset: 0, limit: @limit},
-            %Sorting{direction: :desc, field: :start_date},
-            options
-          )
-
-        total_count = determine_total(sections)
         export_filename = "template-usage-" <> Date.to_iso8601(Date.utc_today()) <> ".csv"
 
         {:ok, table_model} =
-          UsageTableModel.new(socket.assigns.ctx, sections,
+          UsageTableModel.new(socket.assigns.ctx, [],
             render_date: :full,
             sort_by_spec: :start_date,
             sort_order: :desc,
@@ -89,7 +80,7 @@ defmodule OliWeb.Products.UsageView do
            is_admin: is_admin,
            product: product,
            project_slug: project_slug(socket),
-           total_count: total_count,
+           total_count: 0,
            table_model: table_model,
            export_filename: export_filename,
            options: options,

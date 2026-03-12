@@ -1,6 +1,7 @@
 defmodule OliWeb.Products.UsageTableModel do
   use Phoenix.Component
 
+  alias Oli.Accounts
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Publishing.Publications.Publication
   alias OliWeb.Common.SessionContext
@@ -36,7 +37,7 @@ defmodule OliWeb.Products.UsageTableModel do
         label: "Title",
         th_class: "!sticky left-0 z-[60] " <> default_th_class,
         td_class: "!sticky left-0 z-[1] bg-inherit " <> default_td_class,
-        render_fn: &SectionsTableModel.custom_render/3
+        render_fn: &custom_render/3
       }
     ]
 
@@ -99,7 +100,7 @@ defmodule OliWeb.Products.UsageTableModel do
         label: "Institution",
         td_class: default_td_class,
         th_class: default_th_class,
-        render_fn: &SectionsTableModel.custom_render/3
+        render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :type,
@@ -176,6 +177,64 @@ defmodule OliWeb.Products.UsageTableModel do
   def custom_render(assigns, section, %ColumnSpec{name: :end_date}),
     do: Common.render_date(assigns, section, %ColumnSpec{name: :end_date})
 
+  def custom_render(assigns, section, %ColumnSpec{name: :title}) do
+    search_term = Map.get(assigns, :search_term, "")
+    current_author = Map.get(assigns, :current_author)
+
+    assigns = %{
+      section: section,
+      search_term: search_term,
+      can_link?: Accounts.is_admin?(current_author)
+    }
+
+    ~H"""
+    <div class="flex flex-col">
+      <%= if @can_link? do %>
+        <a
+          href={"/sections/#{@section.slug}/manage"}
+          class="text-Text-text-link text-base font-medium leading-normal"
+        >
+          {highlight_search_term(@section.title, @search_term)}
+        </a>
+      <% else %>
+        <span class="text-Text-text-high text-base font-medium leading-normal">
+          {highlight_search_term(@section.title, @search_term)}
+        </span>
+      <% end %>
+      <span class="text-Text-text-low text-sm font-normal leading-tight">
+        ID: {highlight_search_term(@section.slug, @search_term)}
+      </span>
+    </div>
+    """
+  end
+
+  def custom_render(assigns, section, %ColumnSpec{name: :institution}) do
+    search_term = Map.get(assigns, :search_term, "")
+    current_author = Map.get(assigns, :current_author)
+
+    assigns =
+      %{section: section, search_term: search_term, can_link?: Accounts.is_admin?(current_author)}
+
+    ~H"""
+    <div class="flex space-x-2 items-center">
+      <span class="text-Text-text-high text-base font-medium">
+        <%= if @section.institution do %>
+          <%= if @can_link? do %>
+            <a
+              href={"/admin/institutions/#{@section.institution.id}"}
+              class="text-Text-text-link text-base font-medium leading-normal"
+            >
+              {highlight_search_term(@section.institution.name, @search_term)}
+            </a>
+          <% else %>
+            {highlight_search_term(@section.institution.name, @search_term)}
+          <% end %>
+        <% end %>
+      </span>
+    </div>
+    """
+  end
+
   defp project_publication(section) do
     section
     |> Map.get(:section_project_publications, [])
@@ -196,4 +255,15 @@ defmodule OliWeb.Products.UsageTableModel do
     do: Utils.render_version(publication.edition, publication.major, publication.minor)
 
   defp render_version(_), do: "N/A"
+
+  defp highlight_search_term(text, search_term),
+    do:
+      Phoenix.HTML.raw(
+        Utils.multi_highlight_search_term(
+          text || "",
+          search_term,
+          "span class=\"search-highlight\"",
+          "span"
+        )
+      )
 end
