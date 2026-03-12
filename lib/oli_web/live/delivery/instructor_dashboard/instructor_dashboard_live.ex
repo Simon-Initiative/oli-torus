@@ -8,18 +8,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Dashboard.Cache
-  alias Oli.Dashboard.Cache.Key
-  alias Oli.Dashboard.Oracle.Result
   alias Oli.Features
-  alias Oli.InstructorDashboard.DataSnapshot
-  alias Oli.InstructorDashboard.OracleRegistry
   alias Oli.ScopedFeatureFlags
-  alias OliWeb.Delivery.InstructorDashboard.DashboardTab
+  alias OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Oli.Delivery.RecommendedActions
   alias OliWeb.Components.Delivery.InstructorDashboard, as: InstructorDashboardComponents
-  alias OliWeb.Components.Delivery.InstructorDashboard.LearningDashboard
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Shell
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
   alias OliWeb.Components.Delivery.Students
   alias OliWeb.Delivery.InstructorDashboard.Helpers
@@ -326,23 +321,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         _,
         socket
       ) do
-    {socket, scope_selector} = DashboardTab.resolve_scope_context(socket, params)
-
-    case params["dashboard_scope"] do
-      nil ->
-        # Entering Dashboard without `dashboard_scope` should restore the
-        # persisted scope when available, otherwise fall back to "course",
-        # then patch to the canonical scoped dashboard URL.
-        {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
-
-      ^scope_selector ->
-        {:noreply, assign_dashboard_tab(socket, params)}
-
-      _invalid_or_stale_scope ->
-        # Invalid or stale selectors should canonicalize back to the validated scope
-        # reflected by the current section, rather than leaving an untrusted URL in place.
-        {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
-    end
+    IntelligentDashboardTab.handle_dashboard_params(socket, params)
   end
 
   @impl Phoenix.LiveView
@@ -356,9 +335,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     if active_tab == :dashboard do
       # Bare `/insights` should resolve to the canonical Dashboard route so the
       # active scope is always reflected in the URL before loading the tab.
-      {socket, scope_selector} = DashboardTab.resolve_scope_context(socket, params)
+      {socket, scope_selector} = IntelligentDashboardTab.resolve_scope_context(socket, params)
 
-      {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
+      {:noreply, push_patch(socket, to: IntelligentDashboardTab.path(socket, scope_selector))}
     else
       socket =
         socket
@@ -881,11 +860,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     <InstructorDashboardComponents.tabs tabs={insights_tabs(@section, @preview_mode, @active_tab)} />
 
     <.live_component
-      module={LearningDashboard}
+      module={Shell}
       id="learning_dashboard"
-      containers={@containers}
+      containers={@dashboard_navigator_items}
       dashboard={@dashboard}
       dashboard_scope={@dashboard_scope}
+      dashboard_visible_sections={@dashboard_visible_sections}
       section={@section}
     />
     """
@@ -1257,24 +1237,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_info({:dashboard_scope_changed, scope}, socket) do
-    case DashboardTab.validate_scope_selector(
-           socket.assigns.section,
-           socket.assigns[:containers],
-           scope
-         ) do
-      {:ok, scope_selector} ->
-        DashboardTab.persist_scope(socket.assigns[:instructor_enrollment], scope_selector)
-        {:noreply, push_patch(socket, to: DashboardTab.path(socket, scope_selector))}
-
-      :error ->
-        {:noreply, push_patch(socket, to: DashboardTab.path(socket, "course"))}
-    end
+  def handle_info({:dashboard_request_timeout, request_token}, socket) do
+    IntelligentDashboardTab.handle_dashboard_request_timeout(socket, request_token)
   end
 
   @impl Phoenix.LiveView
-  def handle_info(:dashboard_reload, socket) do
-    {:noreply, load_dashboard(socket, use_revisit?: false)}
+  def handle_info(
+        {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result},
+        socket
+      ) do
+    IntelligentDashboardTab.handle_dashboard_runtime_oracle_result(
+      socket,
+      request_token,
+      context,
+      oracle_key,
+      oracle_result
+    )
   end
 
   def handle_info(_any, socket) do
@@ -1282,331 +1260,44 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event(
+        "dashboard_section_toggled",
+        %{"section_id" => section_id, "expanded" => expanded},
+        socket
+      ) do
+    expanded? = expanded in [true, "true"]
+
+    case IntelligentDashboardTab.handle_section_toggled(socket, section_id, expanded?) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, :save_failed, socket} ->
+        {:noreply, put_flash(socket, :error, "Could not save dashboard layout.")}
+
+      {:error, :unknown_section, socket} ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("dashboard_sections_reordered", %{"section_ids" => section_ids}, socket)
+      when is_list(section_ids) do
+    case IntelligentDashboardTab.handle_sections_reordered(socket, section_ids) do
+      {:ok, socket} ->
+        {:noreply, socket}
+
+      {:error, :save_failed, socket} ->
+        {:noreply, put_flash(socket, :error, "Could not save dashboard layout.")}
+
+      {:error, :invalid_order, socket} ->
+        {:noreply, put_flash(socket, :error, "Invalid dashboard section order.")}
+    end
+  end
+
   def handle_event(event, params, socket) do
-    # Catch-all for UI-only events from functional components that don't require handling
     Logger.warning(
       "Unhandled event in InstructorDashboardLive: #{inspect(event)}, #{inspect(params)}"
     )
 
     {:noreply, socket}
-  end
-
-  # Current dashboard hydration uses direct `DataSnapshot.get_or_build/2` orchestration.
-  # Once `Oli.Dashboard.LiveDataCoordinator` is wired for interactive scope changes,
-  # the runtime/cache transition policy below should move behind coordinator actions
-  # instead of remaining LiveView-local.
-  defp load_dashboard(socket, opts) do
-    scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
-    scope = DashboardTab.parse_scope(scope_selector)
-    context = dashboard_context(socket, scope)
-    cache_opts = dashboard_cache_opts(socket)
-    use_revisit? = Keyword.get(opts, :use_revisit?, true)
-
-    revisit_hydration =
-      if use_revisit? do
-        hydrate_required_from_revisit_cache(
-          socket.assigns.dashboard_revisit_cache,
-          context,
-          scope,
-          cache_opts
-        )
-      else
-        %{source: :skipped, revisit_hits: 0, revisit_misses: 0}
-      end
-
-    scope_request = %{
-      context: context,
-      scope: scope,
-      metadata: %{
-        timezone: socket.assigns.browser_timezone || "Etc/UTC",
-        source: :instructor_insights
-      }
-    }
-
-    case DataSnapshot.get_or_build(scope_request,
-           consumer_keys: [:progress_summary, :support_summary],
-           cache_module: Cache,
-           cache_opts: cache_opts,
-           runtime_results_provider: &dashboard_runtime_results_provider/4
-         ) do
-      {:ok, bundle} ->
-        persist_revisit_cache(
-          socket.assigns.dashboard_revisit_cache,
-          context,
-          scope,
-          bundle.snapshot.oracles
-        )
-
-        assign(
-          socket,
-          :dashboard,
-          build_dashboard_payload(bundle, revisit_hydration)
-        )
-
-      {:error, reason} ->
-        assign(socket, :dashboard, dashboard_error_payload(reason))
-    end
-  end
-
-  defp assign_dashboard_tab(socket, params) do
-    socket = DashboardTab.ensure_initialized(socket)
-    {socket, scope_selector} = DashboardTab.resolve_scope_context(socket, params)
-    use_revisit? = not socket.assigns.dashboard_revisit_hydrated?
-
-    socket
-    |> assign(
-      params: params,
-      view: :insights,
-      active_tab: :dashboard,
-      dashboard_scope: scope_selector,
-      instructor_enrollment: socket.assigns.instructor_enrollment
-    )
-    |> assign_new(:containers, fn ->
-      Helpers.get_containers(socket.assigns.section)
-    end)
-    |> load_dashboard(use_revisit?: use_revisit?)
-    |> assign(:dashboard_revisit_hydrated?, true)
-  end
-
-  defp dashboard_context(socket, scope) do
-    %{
-      dashboard_context_type: :section,
-      dashboard_context_id: socket.assigns.section.id,
-      user_id: dashboard_user_id(socket),
-      scope: scope
-    }
-  end
-
-  defp dashboard_user_id(socket) do
-    cond do
-      is_map(socket.assigns[:current_user]) and is_integer(socket.assigns.current_user.id) ->
-        socket.assigns.current_user.id
-
-      is_map(socket.assigns[:ctx]) and is_integer(socket.assigns.ctx.user_id) ->
-        socket.assigns.ctx.user_id
-
-      true ->
-        1
-    end
-  end
-
-  defp dashboard_cache_opts(socket) do
-    [
-      inprocess_store: socket.assigns.dashboard_store
-    ]
-  end
-
-  # Transitional pre-hydration path for the current synchronous dashboard flow.
-  # Revisit/in-process cache orchestration is expected to come from
-  # `Oli.Dashboard.LiveDataCoordinator` once scope changes move to coordinator-driven loads.
-  defp hydrate_required_from_revisit_cache(revisit_cache, context, scope, cache_opts) do
-    with {:ok, required_keys} <- dashboard_required_oracle_keys(),
-         {:ok, lookup} <-
-           Cache.lookup_revisit(context.user_id, context, scope, required_keys,
-             revisit_cache: revisit_cache,
-             revisit_eligible: true
-           ) do
-      Enum.each(lookup.hits, fn {oracle_key, payload} ->
-        _ =
-          Cache.write_oracle(
-            context,
-            scope,
-            oracle_key,
-            payload,
-            dashboard_cache_meta(oracle_key),
-            cache_opts
-          )
-      end)
-
-      %{
-        source: lookup.source,
-        revisit_hits: map_size(lookup.hits),
-        revisit_misses: length(lookup.misses)
-      }
-    else
-      _ ->
-        %{source: :none, revisit_hits: 0, revisit_misses: 0}
-    end
-  end
-
-  defp dashboard_required_oracle_keys do
-    with {:ok, progress} <- OracleRegistry.dependencies_for(:progress_summary),
-         {:ok, support} <- OracleRegistry.dependencies_for(:support_summary) do
-      {:ok, Enum.uniq(progress.required ++ support.required)}
-    end
-  end
-
-  defp persist_revisit_cache(nil, _context, _scope, _oracles), do: :ok
-
-  defp persist_revisit_cache(revisit_cache, context, scope, oracles) when is_map(oracles) do
-    Enum.each(oracles, fn {oracle_key, payload} ->
-      meta = dashboard_cache_meta(oracle_key)
-
-      with {:ok, revisit_key} <- Key.revisit(context.user_id, context, scope, oracle_key, meta) do
-        _ =
-          try do
-            Oli.Dashboard.RevisitCache.write(revisit_cache, revisit_key, payload)
-          catch
-            :exit, _ -> :ok
-          end
-      end
-    end)
-  end
-
-  defp persist_revisit_cache(_revisit_cache, _context, _scope, _oracles), do: :ok
-
-  # Temporary runtime fallback used by the direct `DataSnapshot.get_or_build/2` path.
-  # Future token-aware scope transitions should route runtime loading through
-  # `Oli.Dashboard.LiveDataCoordinator` rather than this LiveView helper.
-  defp dashboard_runtime_results_provider(_request_token, misses, context, _scope) do
-    Enum.reduce(misses, %{}, fn oracle_key, acc ->
-      result =
-        case OracleRegistry.oracle_module(oracle_key) do
-          {:ok, module} ->
-            load_oracle_result(module, oracle_key, context)
-
-          {:error, reason} ->
-            Result.error(oracle_key, reason)
-        end
-
-      Map.put(acc, oracle_key, result)
-    end)
-  end
-
-  defp load_oracle_result(module, oracle_key, context) do
-    case module.load(context, []) do
-      {:ok, payload} ->
-        Result.ok(oracle_key, payload,
-          version: oracle_version(module),
-          metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
-        )
-
-      {:error, reason} ->
-        Result.error(oracle_key, reason,
-          version: oracle_version(module),
-          metadata: %{source: :runtime, dashboard_product: :instructor_dashboard}
-        )
-    end
-  end
-
-  defp oracle_version(module) do
-    if function_exported?(module, :version, 0), do: module.version(), else: 1
-  end
-
-  defp dashboard_cache_meta(oracle_key) do
-    oracle_version =
-      case OracleRegistry.oracle_module(oracle_key) do
-        {:ok, module} -> oracle_version(module)
-        _ -> 1
-      end
-
-    %{oracle_version: oracle_version, data_version: 1}
-  end
-
-  defp build_dashboard_payload(bundle, revisit_hydration) do
-    progress_projection = Map.get(bundle.projections, :progress, %{})
-    support_projection = Map.get(bundle.projections, :student_support, %{})
-    oracle_sources = dashboard_oracle_sources(bundle.snapshot.oracle_statuses)
-    cache_stats = dashboard_cache_stats(bundle, oracle_sources, revisit_hydration)
-    projection_statuses = summarize_projection_statuses(bundle.projection_statuses)
-
-    status_lines = [
-      "INPROCESS CACHE",
-      "  hits: #{cache_stats.snapshot_cache_hits}/#{cache_stats.snapshot_total} (#{percent(cache_stats.snapshot_cache_hit_rate)})",
-      "  misses: #{cache_stats.snapshot_cache_misses}/#{cache_stats.snapshot_total} (#{percent(1.0 - cache_stats.snapshot_cache_hit_rate)})",
-      "  runtime loaded from misses: #{cache_stats.runtime_fallbacks}",
-      "  unresolved after runtime: #{cache_stats.unresolved_oracles}",
-      "",
-      "REVISIT CACHE (PRE-HYDRATION)",
-      "  source: #{revisit_hydration.source}",
-      "  hits: #{cache_stats.revisit_hits}/#{cache_stats.revisit_total} (#{percent(cache_stats.revisit_hit_rate)})",
-      "  misses: #{cache_stats.revisit_misses}/#{cache_stats.revisit_total} (#{percent(1.0 - cache_stats.revisit_hit_rate)})",
-      "",
-      "REQUEST",
-      "  token: #{bundle.request_token}",
-      "  scope: #{inspect(bundle.scope)}",
-      "",
-      "PROJECTIONS",
-      "  statuses: #{inspect(projection_statuses)}",
-      "",
-      "ORACLES",
-      "  sources: #{inspect(oracle_sources)}"
-    ]
-
-    %{
-      runtime_status_text: Enum.join(status_lines, "\n"),
-      progress_text: inspect(progress_projection, pretty: true, limit: :infinity),
-      student_support_text: inspect(support_projection, pretty: true, limit: :infinity)
-    }
-  end
-
-  defp dashboard_cache_stats(bundle, oracle_sources, revisit_hydration) do
-    expected_oracles =
-      bundle.dependency_profile.required
-      |> Kernel.++(bundle.dependency_profile.optional)
-      |> Enum.uniq()
-      |> length()
-
-    cache_hits = count_oracle_sources(oracle_sources, :cache)
-    runtime_fallbacks = count_oracle_sources(oracle_sources, :runtime)
-    unresolved = max(expected_oracles - cache_hits - runtime_fallbacks, 0)
-
-    revisit_hits = Map.get(revisit_hydration, :revisit_hits, 0)
-    revisit_misses = Map.get(revisit_hydration, :revisit_misses, 0)
-
-    %{
-      snapshot_cache_hits: cache_hits,
-      snapshot_cache_misses: expected_oracles - cache_hits,
-      snapshot_cache_hit_rate: ratio(cache_hits, expected_oracles),
-      runtime_fallbacks: runtime_fallbacks,
-      unresolved_oracles: unresolved,
-      revisit_hits: revisit_hits,
-      revisit_misses: revisit_misses,
-      revisit_total: revisit_hits + revisit_misses,
-      revisit_hit_rate: ratio(revisit_hits, revisit_hits + revisit_misses),
-      snapshot_total: expected_oracles
-    }
-  end
-
-  defp count_oracle_sources(oracle_sources, source) when is_map(oracle_sources) do
-    Enum.count(oracle_sources, fn {_oracle_key, value} -> value == source end)
-  end
-
-  defp count_oracle_sources(_, _), do: 0
-
-  defp ratio(_num, 0), do: 0.0
-  defp ratio(num, den), do: Float.round(num / den, 4)
-
-  defp percent(rate) when is_number(rate) do
-    "#{Float.round(rate * 100.0, 1)}%"
-  end
-
-  defp summarize_projection_statuses(projection_statuses) when is_map(projection_statuses) do
-    Enum.into(projection_statuses, %{}, fn {projection_key, status} ->
-      {projection_key, Map.get(status, :status, :unknown)}
-    end)
-  end
-
-  defp summarize_projection_statuses(_), do: %{}
-
-  defp dashboard_oracle_sources(oracle_statuses) when is_map(oracle_statuses) do
-    Enum.into(oracle_statuses, %{}, fn {oracle_key, status} ->
-      source =
-        status
-        |> Map.get(:metadata, %{})
-        |> Map.get(:source, :unknown)
-
-      {oracle_key, source}
-    end)
-  end
-
-  defp dashboard_oracle_sources(_), do: %{}
-
-  defp dashboard_error_payload(reason) do
-    %{
-      runtime_status_text: "snapshot load failed:\n#{inspect(reason, pretty: true)}",
-      progress_text: "unavailable",
-      student_support_text: "unavailable"
-    }
   end
 end

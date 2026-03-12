@@ -26,7 +26,7 @@ on:
 jobs:
   deployment:
     runs-on: ubuntu-latest
-    if: -n "${{github.event.inputs.deploy_target}}"
+    if: ${{ github.event.inputs.deploy_target != '' }}
 
     environment:
       name: ${{ github.event.inputs.deploy_target }}

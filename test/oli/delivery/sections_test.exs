@@ -693,6 +693,27 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "section_container_has_graded_pages?/2" do
+    test "returns false when the scope has no graded pages" do
+      section = insert(:section)
+
+      refute Sections.section_container_has_graded_pages?(section.id)
+      refute Sections.section_container_has_graded_pages?(section.id, 999_999)
+    end
+
+    test "returns true for course scope when the section has a graded page" do
+      section = insert(:section)
+
+      insert(:section_resource,
+        section: section,
+        resource_type_id: ResourceType.id_for_page(),
+        graded: true
+      )
+
+      assert Sections.section_container_has_graded_pages?(section.id)
+    end
+  end
+
   describe "build_page_link_map/1" do
     setup(_) do
       %{}
