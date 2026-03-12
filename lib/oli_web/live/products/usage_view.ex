@@ -116,10 +116,10 @@ defmodule OliWeb.Products.UsageView do
           text_search: applied_search,
           active_today: get_boolean_param(params, "active_today", false),
           filter_status:
-            get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil) ||
+            get_safe_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil) ||
               course_filters.status,
           filter_type:
-            get_atom_param(params, "filter_type", @type_opts, nil) || course_filters.delivery,
+            get_safe_atom_param(params, "filter_type", @type_opts, nil) || course_filters.delivery,
           institution_id: course_filters.institution_id,
           blueprint_id: nil,
           filter_requires_payment: course_filters.requires_payment,
@@ -336,6 +336,20 @@ defmodule OliWeb.Products.UsageView do
 
   defp toggle_sort_order(:asc), do: :desc
   defp toggle_sort_order(_), do: :asc
+
+  defp get_safe_atom_param(params, name, valid, default_value)
+       when is_list(valid) and is_binary(name) do
+    case params[name] do
+      nil ->
+        default_value
+
+      value when is_binary(value) ->
+        Enum.find(valid, default_value, &(Atom.to_string(&1) == value))
+
+      _ ->
+        default_value
+    end
+  end
 
   defp parse_sort_by(sort_by, fallback) when is_binary(sort_by) do
     Map.get(@sortable_fields, sort_by, fallback)

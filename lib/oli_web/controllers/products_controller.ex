@@ -141,10 +141,11 @@ defmodule OliWeb.ProductsController do
         text_search: text_search,
         active_today: get_boolean_param(params, "active_today", false),
         filter_status:
-          get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil) ||
+          get_safe_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil) ||
             course_filters.status,
         filter_type:
-          get_atom_param(params, "filter_type", [:open, :lms], nil) || course_filters.delivery,
+          get_safe_atom_param(params, "filter_type", [:open, :lms], nil) ||
+            course_filters.delivery,
         institution_id: course_filters.institution_id,
         filter_requires_payment: course_filters.requires_payment,
         filter_tag_ids: course_filters.tag_ids,
@@ -356,6 +357,20 @@ defmodule OliWeb.ProductsController do
 
   defp parse_usage_sort_order("desc"), do: :desc
   defp parse_usage_sort_order(_), do: :asc
+
+  defp get_safe_atom_param(params, name, valid, default_value)
+       when is_list(valid) and is_binary(name) do
+    case params[name] do
+      nil ->
+        default_value
+
+      value when is_binary(value) ->
+        Enum.find(valid, default_value, &(Atom.to_string(&1) == value))
+
+      _ ->
+        default_value
+    end
+  end
 
   defp usage_export_preloads(true),
     do: [:tags, :institution, section_project_publications: :publication]
