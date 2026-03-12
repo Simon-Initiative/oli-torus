@@ -3,11 +3,13 @@ defmodule Oli.Conversation.Triggers do
   import Ecto.Query
   alias Oli.Repo
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Phoenix.PubSub
   alias Oli.Conversation.Trigger
   alias Oli.Conversation.AdaptiveTriggerInvocationCache
   alias Oli.Activities.Model.{Part}
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.Revision
 
   # The supported trigger type
   @trigger_types [
@@ -143,7 +145,7 @@ defmodule Oli.Conversation.Triggers do
 
     case trigger.trigger_type do
       type when type in [:adaptive_page, :adaptive_component] ->
-        resolve_adaptive_client_trigger(section_slug, trigger)
+        resolve_adaptive_client_trigger(section_slug, section_id, trigger)
 
       _ ->
         {:ok, trigger}
@@ -260,11 +262,11 @@ defmodule Oli.Conversation.Triggers do
     end
   end
 
-  defp resolve_adaptive_client_trigger(section_slug, trigger) do
+  defp resolve_adaptive_client_trigger(section_slug, section_id, trigger) do
     with {:ok, resource_id} <- normalize_adaptive_resource_id(trigger.resource_id),
-         revision when not is_nil(revision) <-
-           Sections.get_section_revision_for_resource(section_slug, resource_id),
-         {:ok, part} <- find_adaptive_trigger_part(revision.content, trigger.data),
+         revision_content when not is_nil(revision_content) <-
+           get_adaptive_revision_content(section_slug, section_id, resource_id),
+         {:ok, part} <- find_adaptive_trigger_part(revision_content, trigger.data),
          {:ok, prompt} <- resolve_adaptive_prompt(trigger.trigger_type, part),
          {:ok, prompt} <- validate_adaptive_prompt(prompt) do
       {:ok,
@@ -294,6 +296,22 @@ defmodule Oli.Conversation.Triggers do
   end
 
   defp normalize_adaptive_resource_id(_), do: {:error, :invalid_trigger}
+
+  defp get_adaptive_revision_content(section_slug, section_id, resource_id) do
+    case SectionResourceDepot.get_section_resource(section_id, resource_id) do
+      %{revision_id: revision_id} ->
+        Repo.one(from(r in Revision, where: r.id == ^revision_id, select: r.content))
+
+      _ ->
+        Repo.one(
+          from(
+            [_sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+            where: rev.resource_id == ^resource_id,
+            select: rev.content
+          )
+        )
+    end
+  end
 
   defp find_adaptive_trigger_part(content, data) when is_map(content) and is_map(data) do
     component_id =

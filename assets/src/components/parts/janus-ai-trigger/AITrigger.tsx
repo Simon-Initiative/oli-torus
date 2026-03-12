@@ -1,6 +1,11 @@
 import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { AIIcon } from 'components/misc/AIIcon';
-import { invokeAdaptiveAiTrigger, canInvokeAiTrigger, hasAiTriggerPrompt } from '../aiTrigger';
+import {
+  buildAdaptiveAiTriggerPayload,
+  invokeAdaptiveAiTrigger,
+  canInvokeAiTrigger,
+  hasAiTriggerPrompt,
+} from '../aiTrigger';
 import { PartComponentProps } from '../types/parts';
 import { aiTriggerTagName } from './constants';
 import { AITriggerModel } from './schema';
@@ -111,6 +116,8 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
       firedAutoTrigger.current ||
       launchMode !== 'auto' ||
       !hasAiTriggerPrompt(prompt) ||
+      resourceId == null ||
+      !sectionSlug ||
       !triggerAvailable ||
       hasAutoTriggerFiredInSession(autoTriggerSessionKey)
     ) {
@@ -118,6 +125,19 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     }
 
     const timeout = window.setTimeout(() => {
+      const payload = buildAdaptiveAiTriggerPayload({
+        resourceId,
+        triggerType: 'adaptive_page',
+        data: {
+          component_id: id,
+          component_type: tagName,
+        },
+      });
+
+      if (!payload || !canInvokeAiTrigger()) {
+        return;
+      }
+
       firedAutoTrigger.current = true;
       markAutoTriggerFiredInSession(autoTriggerSessionKey);
       void invokeAdaptiveAiTrigger({

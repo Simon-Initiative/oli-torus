@@ -79,6 +79,39 @@ describe('AITrigger', () => {
     jest.useRealTimers();
   });
 
+  it('waits for a resource id before consuming the auto-trigger session guard', async () => {
+    jest.useFakeTimers();
+
+    const model = JSON.stringify({ launchMode: 'auto', prompt: 'Greet the learner' });
+    const { rerender } = render(<AITrigger {...defaultProps} resourceId={undefined} model={model} />);
+
+    await act(async () => Promise.resolve());
+
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    expect(triggerPersistence.invoke).not.toHaveBeenCalled();
+
+    rerender(<AITrigger {...defaultProps} model={model} />);
+    await act(async () => Promise.resolve());
+
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    expect(triggerPersistence.invoke).toHaveBeenCalledWith('section-1', {
+      trigger_type: 'adaptive_page',
+      resource_id: 101,
+      data: {
+        component_id: 'ai-trigger-1',
+        component_type: 'janus-ai-trigger',
+      },
+    });
+
+    jest.useRealTimers();
+  });
+
   it('fires an auto trigger only once per browser session', async () => {
     jest.useFakeTimers();
 

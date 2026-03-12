@@ -803,10 +803,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp project_allows_triggers?(project_id) do
-    case Repo.get(Oli.Authoring.Course.Project, project_id) do
-      %{allow_triggers: true} -> true
-      _ -> false
-    end
+    from(p in Course.Project, where: p.id == ^project_id, select: p.allow_triggers)
+    |> Repo.one()
+    |> Kernel.==(true)
   end
 
   defp invalid_adaptive_trigger_content?(content) when is_map(content) do

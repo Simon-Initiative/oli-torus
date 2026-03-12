@@ -4,7 +4,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { invokeAdaptiveAiTrigger, canInvokeAiTrigger, hasAiTriggerPrompt } from '../aiTrigger';
+import { invokeAdaptiveAiTrigger, hasAiTriggerPrompt } from '../aiTrigger';
 import { PartComponentProps } from '../types/parts';
 import { ImageModel } from './schema';
 
@@ -101,9 +101,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
 
   const { width, height, src, imageSrc, defaultSrc, alt, lockAspectRatio, scaleContent } = model;
   const aiTriggerAvailable =
-    model.enableAiTrigger === true &&
-    hasAiTriggerPrompt(model.aiTriggerPrompt) &&
-    canInvokeAiTrigger();
+    model.enableAiTrigger === true && hasAiTriggerPrompt(model.aiTriggerPrompt);
 
   // Detect responsive layout mode (when width is '100%')
   const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
