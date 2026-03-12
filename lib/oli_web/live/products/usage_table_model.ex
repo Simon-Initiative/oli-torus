@@ -30,6 +30,7 @@ defmodule OliWeb.Products.UsageTableModel do
     search_term = Keyword.get(opts, :search_term, "")
     is_admin = Keyword.get(opts, :is_admin, false)
     current_author = Keyword.get(opts, :current_author)
+    can_link? = Accounts.is_admin?(current_author)
 
     base_columns = [
       %ColumnSpec{
@@ -141,7 +142,8 @@ defmodule OliWeb.Products.UsageTableModel do
         fade_data: true,
         render_institution_action: false,
         search_term: search_term,
-        current_author: current_author
+        current_author: current_author,
+        can_link?: can_link?
       }
     )
   end
@@ -179,12 +181,12 @@ defmodule OliWeb.Products.UsageTableModel do
 
   def custom_render(assigns, section, %ColumnSpec{name: :title}) do
     search_term = Map.get(assigns, :search_term, "")
-    current_author = Map.get(assigns, :current_author)
+    can_link? = Map.get(assigns, :can_link?, false)
 
     assigns = %{
       section: section,
       search_term: search_term,
-      can_link?: Accounts.is_admin?(current_author)
+      can_link?: can_link?
     }
 
     ~H"""
@@ -210,10 +212,10 @@ defmodule OliWeb.Products.UsageTableModel do
 
   def custom_render(assigns, section, %ColumnSpec{name: :institution}) do
     search_term = Map.get(assigns, :search_term, "")
-    current_author = Map.get(assigns, :current_author)
+    can_link? = Map.get(assigns, :can_link?, false)
 
     assigns =
-      %{section: section, search_term: search_term, can_link?: Accounts.is_admin?(current_author)}
+      %{section: section, search_term: search_term, can_link?: can_link?}
 
     ~H"""
     <div class="flex space-x-2 items-center">
