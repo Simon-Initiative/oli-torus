@@ -136,7 +136,8 @@ defmodule OliWeb.Products.UsageView do
       browse_sections(
         %Paging{offset: offset, limit: limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        options
+        options,
+        socket.assigns.is_admin
       )
 
     table_model =
@@ -436,8 +437,20 @@ defmodule OliWeb.Products.UsageView do
     end
   end
 
-  defp browse_sections(%Paging{} = paging, %Sorting{} = sorting, %BrowseOptions{} = options) do
+  defp browse_sections(
+         %Paging{} = paging,
+         %Sorting{} = sorting,
+         %BrowseOptions{} = options,
+         is_admin
+       ) do
+    preloads =
+      if is_admin do
+        [:tags, :institution, section_project_publications: :publication]
+      else
+        [:institution, section_project_publications: :publication]
+      end
+
     Browse.browse_sections(paging, sorting, options)
-    |> Repo.preload([:tags, section_project_publications: :publication])
+    |> Repo.preload(preloads)
   end
 end

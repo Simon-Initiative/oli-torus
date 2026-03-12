@@ -157,7 +157,7 @@ defmodule OliWeb.ProductsController do
 
       sections =
         Browse.browse_sections_for_export(sorting, options, @max_export_limit)
-        |> Repo.preload([:tags, :institution, section_project_publications: :publication])
+        |> Repo.preload(usage_export_preloads(is_admin))
 
       csv_content = sections_to_usage_csv(sections, is_admin)
       filename = "template-usage-" <> (Date.utc_today() |> Date.to_iso8601()) <> ".csv"
@@ -356,6 +356,12 @@ defmodule OliWeb.ProductsController do
 
   defp parse_usage_sort_order("desc"), do: :desc
   defp parse_usage_sort_order(_), do: :asc
+
+  defp usage_export_preloads(true),
+    do: [:tags, :institution, section_project_publications: :publication]
+
+  defp usage_export_preloads(false),
+    do: [:institution, section_project_publications: :publication]
 
   defp format_enrollments(section), do: section.enrollments_count || 0
 
