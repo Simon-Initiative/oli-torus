@@ -21,6 +21,7 @@ import { SpokeCustomErrorFeedbackAuthoring } from './custom/SpokeCustomErrorFeed
 import { SpokeOptionsEditor } from './custom/SpokeOptionsEditor';
 import ThemeSelectorWidget from './custom/ThemeSelectorWidget';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
+import { TorusCaptionBrowser } from './custom/TorusCaptionBrowser';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
 
@@ -41,6 +42,7 @@ const widgets: any = {
   ScreenDropdownTemplate: ScreenDropdownTemplate,
   TorusImageBrowser: TorusImageBrowser,
   TorusAudioBrowser: TorusAudioBrowser,
+  TorusCaptionBrowser: TorusCaptionBrowser,
   TorusVideoBrowser: TorusVideoBrowser,
   OptionsCorrectPicker: OptionsCorrectPicker,
   OptionsCustomErrorFeedbackAuthoring: OptionsCustomErrorFeedbackAuthoring,

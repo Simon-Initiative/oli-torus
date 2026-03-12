@@ -11,7 +11,7 @@ export interface VideoModel extends JanusAbsolutePositioned, JanusCustomCss {
   startTime: number;
   endTime: number;
   enableReplay: boolean;
-  subtitles: { default: boolean; language: string; src: string };
+  subtitles: Array<{ default?: boolean; language: string; src: string }>;
 }
 
 export const schema: JSONSchema7Object = {
@@ -59,13 +59,16 @@ export const schema: JSONSchema7Object = {
   },
   subtitles: {
     title: 'Subtitles',
-    type: 'object',
-    properties: {
-      default: { type: 'boolean', title: 'Default' },
-      language: { type: 'string', title: 'Language' },
-      src: { type: 'string', title: 'Source' },
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        default: { type: 'boolean', title: 'Default' },
+        language: { type: 'string', title: 'Language' },
+        src: { type: 'string', title: 'Source' },
+      },
+      required: ['src', 'language'],
     },
-    required: ['src', 'language'],
   },
 };
 
@@ -104,13 +107,16 @@ export const simpleSchema: JSONSchema7Object = {
   },
   subtitles: {
     title: 'Subtitles',
-    type: 'object',
-    properties: {
-      default: { type: 'boolean', title: 'Default' },
-      language: { type: 'string', title: 'Language' },
-      src: { type: 'string', title: 'Source' },
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        default: { type: 'boolean', title: 'Default' },
+        language: { type: 'string', title: 'Language' },
+        src: { type: 'string', title: 'Source' },
+      },
+      required: ['src', 'language'],
     },
-    required: ['src', 'language'],
   },
 };
 
@@ -118,7 +124,11 @@ export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
   subtitles: {
     'ui:title': 'Subtitles',
-    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    items: {
+      src: {
+        'ui:widget': 'TorusCaptionBrowser',
+      },
+    },
   },
   src: {
     'ui:widget': 'TorusVideoBrowser',
@@ -130,7 +140,11 @@ export const simpleUISchema = {
 export const uiSchema = {
   subtitles: {
     'ui:title': 'Subtitles',
-    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    items: {
+      src: {
+        'ui:widget': 'TorusCaptionBrowser',
+      },
+    },
   },
   src: {
     'ui:widget': 'TorusVideoBrowser',
@@ -162,4 +176,5 @@ export const createSchema = (): Partial<VideoModel> => ({
   alt: '',
   customCssClass: '',
   triggerCheck: false,
+  subtitles: [],
 });
