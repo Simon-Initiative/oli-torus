@@ -93,7 +93,7 @@ defmodule OliWeb.CommunityLive.ShowView do
           placeholder="admin@example.edu"
           button_text="Add"
           collaborators={@community_admins}
-          allow_removal={Accounts.has_admin_role?(@current_author, :content_admin)}
+          allow_removal={Accounts.at_least_content_admin?(@current_author)}
         />
       </ShowSection.render>
 
@@ -250,7 +250,7 @@ defmodule OliWeb.CommunityLive.ShowView do
 
     attrs = %{
       community_id: socket.assigns.community.id,
-      is_admin: Accounts.has_admin_role?(current_author, :account_admin)
+      is_admin: Accounts.at_least_account_admin?(current_author)
     }
 
     emails =
