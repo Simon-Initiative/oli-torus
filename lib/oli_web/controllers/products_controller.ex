@@ -288,6 +288,8 @@ defmodule OliWeb.ProductsController do
     end
   end
 
+  defp authorize_product_usage_export(nil, _product), do: {:error, :unauthorized}
+
   defp authorize_product_usage_export(author, %Section{} = product) do
     if Accounts.at_least_content_admin?(author) or
          Blueprint.is_author_of_blueprint?(product.slug, author.id) do
