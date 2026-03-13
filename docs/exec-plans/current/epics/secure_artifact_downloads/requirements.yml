@@ -1,0 +1,85 @@
+version: 1
+feature: secure_artifact_downloads
+generated_from: prd.md
+requirements:
+  - id: FR-001
+    title: Introduce an explicit artifact visibility model that distinguishes intentionally public assets from private downloadable artifacts.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-001
+        title: (FR-001) Given a storage-backed feature is classified, when it is marked as private artifact, then its upload and download path does not rely on public object readability.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-002
+    title: Store new private artifacts without public-read ACL semantics and with enough object-reference metadata to retrieve them later.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-002
+        title: (FR-002) Given a project export or learner artifact is uploaded under the new path, when storage write completes, then the object is private and retrievable through its stored reference.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-003
+    title: Provide a provider-neutral private-download service that can generate short-lived signed redirect URLs for AWS S3 and S3-compatible providers such as MinIO.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-003
+        title: (FR-003) Given valid provider configuration for AWS S3 or MinIO, when a private artifact download is requested, then the service returns a working short-lived redirect target without AWS-specific hard-coding.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-004
+    title: Authorize private artifact access through Torus before redirecting or streaming object contents to the requester.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-004
+        title: (FR-004) Given a user lacks access to the owning project, section, or attempt, when the private artifact route is requested, then Torus denies the download without exposing provider access.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-005
+    title: Migrate project export downloads and generated dataset download artifacts from persisted direct object URLs to persisted object references plus on-demand secure download resolution.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-005
+        title: (FR-005) Given a project export or generated dataset artifact exists, when an authorized author requests it, then Torus serves it through the secure private-download flow instead of a stored public URL.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-006
+    title: Migrate learner file-upload artifacts to a durable application-owned download contract that remains valid even though underlying signed URLs expire.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-006
+        title: (FR-006) Given a learner revisits a previously uploaded file later, when the UI renders the saved artifact entry, then the file remains downloadable through a stable Torus-managed URL or reference.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-006A
+    title: Provide support screenshot links through Torus-authenticated routes for both email-based and Freshdesk-based help dispatch.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-006A
+        title: (FR-006A) Given a help request includes screenshots, when Torus dispatches the request to email or Freshdesk, then the support payload contains Torus-managed links rather than public object URLs.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-007
+    title: Preserve current intentionally public media flows without forcing them through the private artifact path.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-007
+        title: (FR-007) Given an existing public-media workflow such as media library, branding, or intro-video browsing, when the secure artifact feature ships, then those public URLs and list behavior continue to work unchanged.
+        status: proposed
+        verification_method: automated
+        proofs: []
+  - id: FR-008
+    title: Provide observability for private artifact uploads and downloads, including provider-specific signing failures and authorization denials.
+    status: proposed
+    acceptance_criteria:
+      - id: AC-008
+        title: (FR-008) Given a private artifact upload or download succeeds or fails, when the operation completes, then telemetry/logging includes artifact type, provider mode, and outcome without leaking secret material.
+        status: proposed
+        verification_method: automated
+        proofs: []
