@@ -1,5 +1,5 @@
 defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
-  alias OpenAI.{Config, Stream}
+  alias OpenAI.Config
   require Logger
 
   @moduledoc """
@@ -224,7 +224,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
 
     case params |> Keyword.get(:stream, false) do
       true ->
-        Stream.new(fn ->
+        stream_response(fn ->
           url
           |> post(body, request_headers(config), stream_request_options(config))
         end)
@@ -335,4 +335,136 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   end
 
   defp decode_response(response), do: response
+
+  @doc false
+  def decode_stream_chunk(buffer, chunk) do
+    {events, rest} =
+      buffer
+      |> Kernel.<>(chunk)
+      |> String.replace("\r\n", "\n")
+      |> split_sse_events()
+
+    data =
+      events
+      |> Enum.flat_map(&decode_sse_event/1)
+
+    {data, rest}
+  end
+
+  defp stream_response(start_fun) do
+    Stream.resource(
+      start_fun,
+      fn
+        {:error, %HTTPoison.Error{} = error} ->
+          {
+            [
+              %{
+                "status" => :error,
+                "reason" => error.reason
+              }
+            ],
+            error
+          }
+
+        %HTTPoison.Error{} = error ->
+          {:halt, error}
+
+        {:ok, res = %HTTPoison.AsyncResponse{id: id}} ->
+          handle_stream_event(%{response: res, id: id, buffer: ""})
+
+        res = %HTTPoison.AsyncResponse{id: id} ->
+          handle_stream_event(%{response: res, id: id, buffer: ""})
+
+        %{response: %HTTPoison.AsyncResponse{}, id: _id, buffer: _buffer} = state ->
+          handle_stream_event(state)
+      end,
+      fn
+        %{id: id} ->
+          :hackney.stop_async(id)
+
+          :ok
+
+        _ ->
+          :ok
+      end
+    )
+  end
+
+  defp handle_stream_event(%{response: res, id: id, buffer: buffer} = state) do
+    receive do
+      %HTTPoison.AsyncStatus{id: ^id, code: code} ->
+        HTTPoison.stream_next(res)
+
+        case code do
+          200 ->
+            {[], state}
+
+          _ ->
+            {
+              [
+                %{
+                  "status" => :error,
+                  "code" => code,
+                  "choices" => []
+                }
+              ],
+              state
+            }
+        end
+
+      %HTTPoison.AsyncHeaders{id: ^id, headers: _headers} ->
+        HTTPoison.stream_next(res)
+        {[], state}
+
+      %HTTPoison.AsyncChunk{id: ^id, chunk: chunk} ->
+        {data, next_buffer} = decode_stream_chunk(buffer, chunk)
+
+        HTTPoison.stream_next(res)
+        {data, %{state | buffer: next_buffer}}
+
+      %HTTPoison.AsyncEnd{id: ^id} ->
+        {:halt, state}
+    end
+  end
+
+  defp split_sse_events(data) do
+    parts = String.split(data, "\n\n")
+
+    case {parts, String.ends_with?(data, "\n\n")} do
+      {[_], false} ->
+        {[], data}
+
+      {parts, true} ->
+        {Enum.reject(parts, &(&1 == "")), ""}
+
+      {parts, false} ->
+        {complete, [rest]} = Enum.split(parts, length(parts) - 1)
+        {Enum.reject(complete, &(&1 == "")), rest}
+    end
+  end
+
+  defp decode_sse_event(event) do
+    event
+    |> String.split("\n")
+    |> Enum.filter(&String.starts_with?(&1, "data: "))
+    |> Enum.map(&String.replace_prefix(&1, "data: ", ""))
+    |> case do
+      [] ->
+        []
+
+      ["[DONE]"] ->
+        []
+
+      payload_lines ->
+        payload = Enum.join(payload_lines, "\n")
+
+        try do
+          [Jason.decode!(payload)]
+        rescue
+          error in Jason.DecodeError ->
+            Logger.error("GenAI raw stream payload decode failure: #{inspect(payload)}")
+            reraise error, __STACKTRACE__
+        end
+    end
+  end
 end
