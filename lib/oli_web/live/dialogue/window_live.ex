@@ -23,6 +23,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias OliWeb.Dialogue.UserInput
 
   @adaptive_runtime_update_name "adaptive_runtime_update"
+  @activity_attempt_guid_pattern ~r/\A[a-zA-Z0-9_-]+\z/
 
   defp realize_prompt_template(nil, _), do: ""
 
@@ -856,8 +857,14 @@ defmodule OliWeb.Dialogue.WindowLive do
   defp normalize_activity_attempt_guid(activity_attempt_guid)
        when is_binary(activity_attempt_guid) do
     case String.trim(activity_attempt_guid) do
-      "" -> {:error, :invalid_activity_attempt_guid}
-      guid -> {:ok, guid}
+      "" ->
+        {:error, :invalid_activity_attempt_guid}
+
+      guid ->
+        case Regex.match?(@activity_attempt_guid_pattern, guid) do
+          true -> {:ok, guid}
+          false -> {:error, :invalid_activity_attempt_guid}
+        end
     end
   end
 

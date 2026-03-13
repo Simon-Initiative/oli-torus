@@ -13,11 +13,17 @@ export const AdaptiveDialogueSync = {
       });
     };
 
+    this.requestAdaptiveScreenSync = () => {
+      window.dispatchEvent(new CustomEvent('oli:adaptive-screen-sync-request'));
+    };
+
     window.addEventListener('oli:adaptive-screen-changed', this.handleAdaptiveScreenChanged);
-    window.dispatchEvent(new CustomEvent('oli:adaptive-screen-sync-request'));
+    window.addEventListener('oli:adaptive-screen-ready', this.requestAdaptiveScreenSync);
+    this.requestAdaptiveScreenSync();
   },
 
   destroyed() {
     window.removeEventListener('oli:adaptive-screen-changed', this.handleAdaptiveScreenChanged);
+    window.removeEventListener('oli:adaptive-screen-ready', this.requestAdaptiveScreenSync);
   },
 };

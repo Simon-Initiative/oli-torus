@@ -39,4 +39,16 @@ defmodule Oli.GenAI.Completions.FunctionTest do
     assert {:error, :invalid_function_name} =
              Function.call(available_functions, "echo_arguments", %{})
   end
+
+  test "non-map arguments return invalid_arguments instead of raising" do
+    available_functions = [
+      %{
+        name: "echo_arguments",
+        full_name: "Elixir.Oli.GenAI.Completions.FunctionTest.echo_arguments"
+      }
+    ]
+
+    assert {:error, :invalid_arguments} =
+             Function.call(available_functions, "echo_arguments", ["not-a-map"])
+  end
 end

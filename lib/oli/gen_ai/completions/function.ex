@@ -24,19 +24,22 @@ defmodule Oli.GenAI.Completions.Function do
   tuple `{:ok, result}` or an error tuple `{:error, reason}` if the function name is invalid.
   """
   def call(available_functions, name, arguments_as_map) do
-    case verify_module_and_function(available_functions, name) do
-      {:ok, function, module, function_name} ->
-        case apply(module, function_name, [merge_trusted_arguments(function, arguments_as_map)]) do
-          result when is_binary(result) -> {:ok, result}
-          result when is_map(result) -> {:ok, Jason.encode!(result)}
-          result when is_list(result) -> {:ok, Jason.encode!(%{result: result})}
-          result -> {:ok, Kernel.to_string(result)}
-        end
-
-      e ->
-        e
+    with {:ok, arguments_as_map} <- validate_arguments(arguments_as_map),
+         {:ok, function, module, function_name} <-
+           verify_module_and_function(available_functions, name) do
+      case apply(module, function_name, [merge_trusted_arguments(function, arguments_as_map)]) do
+        result when is_binary(result) -> {:ok, result}
+        result when is_map(result) -> {:ok, Jason.encode!(result)}
+        result when is_list(result) -> {:ok, Jason.encode!(%{result: result})}
+        result -> {:ok, Kernel.to_string(result)}
+      end
     end
   end
+
+  defp validate_arguments(arguments_as_map) when is_map(arguments_as_map),
+    do: {:ok, arguments_as_map}
+
+  defp validate_arguments(_), do: {:error, :invalid_arguments}
 
   # Looks up the module for a given function name in the available functions
   defp verify_module_and_function(available_functions, name) do

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface AdaptiveDialogueBridgeProps {
   activityAttemptGuid?: string;
@@ -9,6 +9,8 @@ export const AdaptiveDialogueBridge: React.FC<AdaptiveDialogueBridgeProps> = ({
   activityAttemptGuid,
   enabled,
 }) => {
+  const previousActivityAttemptGuid = useRef<string | undefined>(undefined);
+
   useEffect(() => {
     const handleAdaptiveScreenSyncRequest = () => {
       if (!enabled || !activityAttemptGuid) {
@@ -34,14 +36,24 @@ export const AdaptiveDialogueBridge: React.FC<AdaptiveDialogueBridgeProps> = ({
 
   useEffect(() => {
     if (!enabled || !activityAttemptGuid) {
+      previousActivityAttemptGuid.current = undefined;
       return;
     }
 
-    window.dispatchEvent(
-      new CustomEvent('oli:adaptive-screen-changed', {
-        detail: { activityAttemptGuid },
-      }),
-    );
+    if (!previousActivityAttemptGuid.current) {
+      previousActivityAttemptGuid.current = activityAttemptGuid;
+      window.dispatchEvent(new CustomEvent('oli:adaptive-screen-ready'));
+      return;
+    }
+
+    if (previousActivityAttemptGuid.current !== activityAttemptGuid) {
+      previousActivityAttemptGuid.current = activityAttemptGuid;
+      window.dispatchEvent(
+        new CustomEvent('oli:adaptive-screen-changed', {
+          detail: { activityAttemptGuid },
+        }),
+      );
+    }
   }, [activityAttemptGuid, enabled]);
 
   return null;
