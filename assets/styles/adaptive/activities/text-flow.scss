@@ -137,9 +137,8 @@ janus-text-flow blockquote {
 janus-text-flow p.caption,
 janus-text-flow .caption span {
   font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 0.875rem !important;
+  font-size: 0.875rem;
   line-height: 1rem;
-  color: var(--grayDark60);
 }
 
 janus-text-flow hr {
