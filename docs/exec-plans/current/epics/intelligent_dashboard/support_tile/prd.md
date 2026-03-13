@@ -33,7 +33,7 @@ Links: `docs/epics/intelligent_dashboard/support_tile/informal.md`, `docs/epics/
 - Primary Users / Roles:
   - Instructor in section dashboard.
 - Use Cases:
-  - Instructor starts in struggling bucket, identifies inactive students, and selects recipients for outreach.
+  - Instructor starts in the default actionable bucket (preferring struggling, otherwise first non-empty bucket), identifies inactive students, and selects recipients for outreach.
   - Instructor switches to other categories and loads more students while maintaining scroll context.
   - Instructor uses search to find a student within selected bucket.
 
@@ -147,7 +147,7 @@ No feature flags present in this feature
   - Component tests for donut-legend-list interaction sync.
   - Tests for load-more behavior, selection constraints, and email button enablement.
 - Manual:
-  - Validate no-data state and default struggling selection.
+  - Validate no-data state and default bucket fallback behavior when `struggling` is empty.
   - Validate implemented default, hover, and no-inactive visual states against the Jira-linked Figma references.
   - Validate keyboard navigation across chart/list controls.
 - Performance Verification: Not required for this phase.
