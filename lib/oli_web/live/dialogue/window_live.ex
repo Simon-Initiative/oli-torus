@@ -141,7 +141,6 @@ defmodule OliWeb.Dialogue.WindowLive do
     requested_revision_id = session["revision_id"]
 
     if Sections.assistant_enabled?(section) do
-      PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
       {page_enabled?, revision_id} = page_ai_context(section, resource_id, requested_revision_id)
 
       if page_enabled? do
@@ -149,6 +148,11 @@ defmodule OliWeb.Dialogue.WindowLive do
 
         case init_dialogue_server(section, project, revision_id, current_user_id) do
           {:ok, dialogue_server} ->
+            PubSub.subscribe(
+              Oli.PubSub,
+              "trigger:#{current_user_id}:#{section.id}:#{resource_id}"
+            )
+
             {:ok,
              assign(socket,
                enabled: true,
