@@ -5,7 +5,7 @@ Feature Name: Student Support Tile
 
 Summary: Build a Student Support tile that groups students by progress/proficiency-derived support categories and enables instructor action through filtering, list management, and email initiation. The feature combines donut visualization and student list interactions backed by non-UI projection logic.
 
-Links: `docs/epics/intelligent_dashboard/support_tile/informal.md`, `docs/epics/intelligent_dashboard/concrete_oracles/prd.md`, `https://eliterate.atlassian.net/browse/MER-5252`
+Links: `docs/epics/intelligent_dashboard/support_tile/informal.md`, `docs/epics/intelligent_dashboard/concrete_oracles/prd.md`, `https://eliterate.atlassian.net/browse/MER-5252`, `https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=500-25180&t=zmghAyRNgOHMS9vg-1`, `https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=1074-26453&t=zmghAyRNgOHMS9vg-1`, `https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=500-25180&t=9t7uNPSLEgH96zEl-1`
 
 ## 2. Background & Problem Statement
 - Current behavior / limitations:
@@ -23,6 +23,7 @@ Links: `docs/epics/intelligent_dashboard/support_tile/informal.md`, `docs/epics/
   - Provide searchable, paged student list tied to selected category.
   - Support active/inactive filtering and multi-select for email launch.
   - Keep bucketing and inactivity logic in non-UI projection modules.
+  - Preserve clear implementation boundaries so technical design can decompose projection, visualization, and list behavior without duplicating business rules in UI code.
 - Non-Goals:
   - Customizable support thresholds/inactivity definitions (covered by separate feature).
   - Full email composition/send workflow implementation.
@@ -41,6 +42,7 @@ Links: `docs/epics/intelligent_dashboard/support_tile/informal.md`, `docs/epics/
   - Donut chart and legend for support categories.
   - Student list with search, active/inactive filters, selection checkboxes.
   - Empty/no-activity informational state.
+  - Design source includes explicit states for default, no-inactive-students, and donut hover interaction.
 - Navigation & Entry Points:
   - `View Student Overview` navigates to `Overview -> Students`.
   - `Email` opens email modal with selected recipients.
@@ -51,7 +53,10 @@ Links: `docs/epics/intelligent_dashboard/support_tile/informal.md`, `docs/epics/
 - Internationalization:
   - Labels, bucket descriptions, and empty-state messaging externalized.
 - Screenshots/Mocks:
-  - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/support_tile/informal.md`.
+  - `Component / Default / Hover`: `https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=500-25180&t=zmghAyRNgOHMS9vg-1`
+  - `No Inactive Students`: `https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=1074-26453&t=zmghAyRNgOHMS9vg-1`
+  - `Donut Hover Recording`: `https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=500-25180&t=9t7uNPSLEgH96zEl-1`
+  - Before implementation, run the local `implement_ui` skill against the Jira/Figma sources to map these states onto Torus tokens, icons, reusable components, and target files.
 
 ## 6. Functional Requirements
 Requirements are found in requirements.yml
@@ -63,6 +68,7 @@ Requirements are found in requirements.yml
 - Performance & Scale: No load or performance testing requirements for this phase.
 - Reliability:
   - Rapid bucket/filter/search toggling never produces stale or cross-category list rows.
+  - Donut selection, legend selection, and displayed list must remain synchronized under all supported interactions.
 - Security & Privacy:
   - Student list visibility restricted to authorized instructor contexts.
   - PII shown only as needed for instructor workflow.
@@ -75,11 +81,13 @@ Requirements are found in requirements.yml
 - Ecto Schemas & Migrations:
   - None.
 - Context Boundaries:
-  - Non-UI support projection module(s).
-  - UI component tree for donut, legend, list, and selection controls.
+  - Non-UI support projection module(s) own performance bucket assignment and active/inactive derivation.
+  - UI component tree owns presentation and client interaction state for donut, legend, list, search, paging, and row selection.
+  - Visualization and student-list rendering should be decomposed into separate UI units under the overall support-tile surface.
 - APIs / Contracts:
-  - Input contracts: progress-proficiency tuples, student roster info with `last_interaction_at`, selected bucket/filter/search/pagination state.
-  - Output contracts: bucket summary metrics and paged student rows with inactivity flags.
+  - Input contracts: progress-proficiency tuples from the 2D progress/proficiency oracle, student roster info from the student roster oracle including `last_interaction_at`, and UI state for selected bucket/filter/search/pagination.
+  - Output contracts: deterministic bucket summary metrics, chart-ready segment data, and paged student rows with inactivity flags already derived outside the UI.
+  - Interaction contract: clicking a donut segment or legend item changes the selected bucket and immediately updates the visible student list to the same bucket.
 - Permissions Matrix:
 
 | Role | Allowed Actions | Notes |
@@ -94,7 +102,7 @@ Requirements are found in requirements.yml
 - GenAI (if applicable):
   - Integrates with email modal entrypoint only; no direct AI generation in this tile.
 - External services:
-  - None directly.
+  - Vega-Lite is the expected visualization runtime for the donut/pie chart interaction surface.
 - Caching/Perf:
   - Tile consumes oracle outputs and internal projection; no ad-hoc direct queries in UI.
 - Multi-tenancy:
@@ -113,18 +121,22 @@ No feature flags present in this feature
 
 ## 13. Risks & Mitigations
 - Complex category logic drift -> centralize projection rules and add exhaustive unit tests for boundary conditions.
+- Projection/UI boundary drift -> keep inactivity and support-bucket derivation in projection space, with UI consuming already-derived fields instead of recomputing them.
 - UI state desync between donut and list -> single source-of-truth selected bucket state.
+- Figma-state drift during implementation -> require `implement_ui` design brief before coding to pin token/icon/component mappings for default, hover, and no-inactive states.
 - Large rosters impacting list responsiveness -> incremental paging and scoped filtering with efficient projection structures.
 
 ## 14. Open Questions & Assumptions
 - Assumptions:
   - Inactivity is fixed at 7 days in this feature and becomes configurable in `customize_parameters`.
+  - Darren Siegel's Jira comment is authoritative for this feature's technical constraints: 2D progress/proficiency + roster oracle inputs, Vega-Lite visualization, projection-owned inactivity derivation via `last_interaction_at`, and separation between chart and list UI units.
   - Vega-Lite is acceptable for donut interaction requirements in this story.
 - Open Questions:
   - None.
 
 ## 15. Timeline & Milestones (Draft)
 - Implement support projection and deterministic bucketing.
+- Produce design-mapping brief with `implement_ui` using the three Jira-linked Figma states before UI implementation begins.
 - Implement donut + legend interactions.
 - Implement list search/filter/pagination/selection.
 - Integrate email modal launch and complete QA.
@@ -136,6 +148,7 @@ No feature flags present in this feature
   - Tests for load-more behavior, selection constraints, and email button enablement.
 - Manual:
   - Validate no-data state and default struggling selection.
+  - Validate implemented default, hover, and no-inactive visual states against the Jira-linked Figma references.
   - Validate keyboard navigation across chart/list controls.
 - Performance Verification: Not required for this phase.
 
