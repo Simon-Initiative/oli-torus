@@ -517,7 +517,7 @@ defmodule OliWeb.PublishLiveTest do
         "publication" => %{"auto_push_update" => "true", "description" => "some description"}
       })
 
-      assert has_element?(view, "li", "#{push_affected.product_count} product(s)")
+      assert has_element?(view, "li", "#{push_affected.product_count} template(s)")
       assert has_element?(view, "li", "#{push_affected.section_count} course section(s)")
     end
 
@@ -539,7 +539,7 @@ defmodule OliWeb.PublishLiveTest do
       assert view
              |> element("div.alert.alert-warning")
              |> render() =~
-               "This force push update will not affect any product or course section."
+               "This force push update will not affect any template or course section."
     end
 
     test "shows active course sections information", %{

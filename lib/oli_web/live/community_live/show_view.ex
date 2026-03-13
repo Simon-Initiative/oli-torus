@@ -121,8 +121,8 @@ defmodule OliWeb.CommunityLive.ShowView do
       </ShowSection.render>
 
       <ShowSection.render
-        section_title="Projects and Products"
-        section_description="Make selected Projects and Products available to members of this Community."
+        section_title="Projects and Templates"
+        section_description="Make selected Projects and Templates available to members of this Community."
       >
         <.link class="btn btn-link" href={Routes.live_path(@socket, IndexAssociated, @community_id)}>
           See associated
