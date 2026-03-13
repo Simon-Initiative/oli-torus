@@ -74,6 +74,10 @@ defmodule Oli.GenAI.Dialogue.Server do
     GenServer.cast(server, {:engage, message})
   end
 
+  def remember(server, %Message{} = message) when is_pid(server) do
+    GenServer.cast(server, {:remember, message})
+  end
+
   def init(%Configuration{} = static_configuration) do
     Logger.debug(
       "Starting dialogue server for client process #{inspect(static_configuration.reply_to_pid)}"
@@ -99,6 +103,10 @@ defmodule Oli.GenAI.Dialogue.Server do
     )
 
     {:noreply, %State{state | messages: messages ++ [message]}}
+  end
+
+  def handle_cast({:remember, message}, %State{} = state) do
+    {:noreply, %State{state | messages: state.messages ++ [message]}}
   end
 
   defp build_notify_fns(server_pid, %State{

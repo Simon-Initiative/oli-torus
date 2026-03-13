@@ -807,6 +807,20 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   @doc """
+  Gets activity attempts for a resource attempt in creation order, preloading the
+  revision and part attempts needed for adaptive-context assembly.
+  """
+  def get_ordered_activity_attempts(resource_attempt_id) do
+    Repo.all(
+      from(activity_attempt in ActivityAttempt,
+        where: activity_attempt.resource_attempt_id == ^resource_attempt_id,
+        order_by: [asc: activity_attempt.inserted_at, asc: activity_attempt.id],
+        preload: [:part_attempts, revision: [:activity_type]]
+      )
+    )
+  end
+
+  @doc """
   Gets an activity attempt by a clause.
   ## Examples
       iex> get_activity_attempt_by(attempt_guid: "123")

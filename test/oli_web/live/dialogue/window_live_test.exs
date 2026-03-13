@@ -8,6 +8,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Sections
+  alias Oli.GenAI.Completions.ServiceConfig
 
   defp create_project(_) do
     author = insert(:author)
@@ -117,7 +118,11 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
         live_isolated(
           conn,
           OliWeb.Dialogue.WindowLive,
-          session: %{"section_slug" => section.slug, "current_user_id" => user.id}
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "service_config" => stub_service_config()
+          }
         )
 
       assert has_element?(view, "div[id=ai_bot_collapsed]")
@@ -139,7 +144,8 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
           session: %{
             "section_slug" => section.slug,
             "current_user_id" => user.id,
-            "revision_id" => page_1_revision.id
+            "revision_id" => page_1_revision.id,
+            "service_config" => stub_service_config()
           }
         )
 
@@ -158,10 +164,112 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
         live_isolated(
           conn,
           OliWeb.Dialogue.WindowLive,
-          session: %{"section_slug" => section.slug, "current_user_id" => user.id}
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "service_config" => stub_service_config()
+          }
         )
 
       assert has_element?(view, "img[alt='Dot AI icon']")
     end
+
+    test "adaptive sessions expose the adaptive page context tool only in supported mode", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, adaptive_view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "adaptive_delivery_view" => "adaptive_with_chrome",
+            "service_config" => stub_service_config()
+          }
+        )
+
+      assert function_names(adaptive_view) |> Enum.member?("adaptive_page_context")
+
+      {:ok, standard_view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "service_config" => stub_service_config()
+          }
+        )
+
+      refute function_names(standard_view) |> Enum.member?("adaptive_page_context")
+    end
+
+    test "assistant disabled keeps the dialogue hidden", %{conn: conn, user: user} do
+      section = insert(:section, assistant_enabled: false)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{"section_slug" => section.slug, "current_user_id" => user.id}
+        )
+
+      refute has_element?(view, "div[data-dialogue-window]")
+    end
+
+    test "adaptive screen change events update the current activity attempt guid and dialogue state",
+         %{
+           conn: conn,
+           user: user,
+           section: section
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "adaptive_delivery_view" => "adaptive_with_chrome",
+            "service_config" => stub_service_config()
+          }
+        )
+
+      render_hook(view, "adaptive_screen_changed", %{"activity_attempt_guid" => "attempt-guid-1"})
+
+      assert socket_assigns(view).current_activity_attempt_guid == "attempt-guid-1"
+
+      remembered_message = dialogue_state(view).messages |> List.last()
+
+      assert remembered_message.role == :system
+      assert remembered_message.content =~ "attempt-guid-1"
+      assert remembered_message.content =~ "adaptive_page_context"
+    end
+  end
+
+  defp function_names(view) do
+    dialogue_state(view).configuration.functions
+    |> Enum.map(& &1.name)
+  end
+
+  defp dialogue_state(view) do
+    dialogue_pid = socket_assigns(view).dialogue
+    :sys.get_state(dialogue_pid)
+  end
+
+  defp socket_assigns(view) do
+    :sys.get_state(view.pid).socket.assigns
+  end
+
+  defp stub_service_config do
+    %ServiceConfig{id: 1, name: "test-service-config", primary_model: %{id: 1}}
   end
 end
