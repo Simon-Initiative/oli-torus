@@ -24,7 +24,8 @@ defmodule Oli.GenAI.Dialogue.State do
   def new(%Configuration{messages: messages, service_config: service_config} = configuration) do
     %__MODULE__{
       configuration: configuration,
-      messages: messages,
+      # Keep newest messages at the head so appends/replacements stay O(1).
+      messages: Enum.reverse(messages),
       registered_model: service_config.primary_model,
       function_name: nil,
       function_args: nil,

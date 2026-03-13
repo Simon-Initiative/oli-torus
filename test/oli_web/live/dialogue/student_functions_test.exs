@@ -15,8 +15,20 @@ defmodule OliWeb.Dialogue.StudentFunctionsTest do
     test "exposes the adaptive tool only when adaptive session context is complete" do
       handler = attach_telemetry([@tool_exposed_event])
 
-      assert function_names(%{adaptive?: true, current_user_id: 12, section_id: 34})
-             |> Enum.member?("adaptive_page_context")
+      functions =
+        StudentFunctions.functions_for_session(%{
+          adaptive?: true,
+          current_user_id: 12,
+          section_id: 34
+        })
+
+      assert Enum.map(functions, & &1.name) |> Enum.member?("adaptive_page_context")
+
+      adaptive_function = Enum.find(functions, &(&1.name == "adaptive_page_context"))
+
+      assert adaptive_function.parameters.required == ["activity_attempt_guid"]
+      assert Map.keys(adaptive_function.parameters.properties) == [:activity_attempt_guid]
+      assert adaptive_function.trusted_arguments == %{"current_user_id" => 12, "section_id" => 34}
 
       assert_receive {:telemetry_event, @tool_exposed_event, %{count: 1}, metadata}
       assert metadata.section_id == 34

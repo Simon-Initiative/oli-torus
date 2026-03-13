@@ -247,11 +247,43 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
 
       assert socket_assigns(view).current_activity_attempt_guid == "attempt-guid-1"
 
-      remembered_message = dialogue_state(view).messages |> List.last()
+      remembered_message =
+        dialogue_state(view).messages
+        |> Enum.find(&(&1.name == "adaptive_runtime_update"))
 
       assert remembered_message.role == :system
       assert remembered_message.content =~ "attempt-guid-1"
       assert remembered_message.content =~ "adaptive_page_context"
+    end
+
+    test "adaptive screen change keeps only the latest runtime update in dialogue state", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "adaptive_delivery_view" => "adaptive_with_chrome",
+            "service_config" => stub_service_config()
+          }
+        )
+
+      render_hook(view, "adaptive_screen_changed", %{"activity_attempt_guid" => "attempt-guid-1"})
+      render_hook(view, "adaptive_screen_changed", %{"activity_attempt_guid" => "attempt-guid-2"})
+
+      runtime_updates =
+        dialogue_state(view).messages
+        |> Enum.filter(&(&1.name == "adaptive_runtime_update"))
+
+      assert length(runtime_updates) == 1
+      assert hd(runtime_updates).content =~ "attempt-guid-2"
     end
   end
 

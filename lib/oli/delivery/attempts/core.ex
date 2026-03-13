@@ -815,7 +815,7 @@ defmodule Oli.Delivery.Attempts.Core do
       from(activity_attempt in ActivityAttempt,
         where: activity_attempt.resource_attempt_id == ^resource_attempt_id,
         order_by: [asc: activity_attempt.inserted_at, asc: activity_attempt.id],
-        preload: [:part_attempts, revision: [:activity_type]]
+        preload: [:part_attempts, :revision]
       )
     )
   end

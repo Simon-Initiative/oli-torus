@@ -127,10 +127,13 @@ defmodule Oli.Conversation.AdaptivePageContextBuilder do
           activity_resource_id: activity_resource_id,
           position: index,
           sequence_id: Map.get(custom, "sequenceId", "screen-#{index}"),
-          sequence_name: Map.get(custom, "sequenceName")
+          sequence_name: sequence_name(Map.get(custom, "sequenceName"), index)
         }
     end
   end
+
+  defp sequence_name(name, _index) when is_binary(name) and name != "", do: name
+  defp sequence_name(_, index), do: "Screen #{index}"
 
   defp build_screen_visits(resource_attempt_id, sequence_entries, current_attempt_guid) do
     sequence_by_resource_id = Map.new(sequence_entries, &{&1.activity_resource_id, &1})

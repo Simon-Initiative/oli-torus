@@ -119,17 +119,9 @@ defmodule OliWeb.Dialogue.StudentFunctions do
           type: "string",
           description:
             "The current adaptive screen activity attempt guid from the latest runtime update"
-        },
-        current_user_id: %{
-          type: "integer",
-          description: "The current student's user id"
-        },
-        section_id: %{
-          type: "integer",
-          description: "The current course section's id"
         }
       },
-      required: ["activity_attempt_guid", "current_user_id", "section_id"]
+      required: ["activity_attempt_guid"]
     }
   }
 
@@ -139,7 +131,7 @@ defmodule OliWeb.Dialogue.StudentFunctions do
     case adaptive_context_enabled?(session_context) do
       true ->
         AdaptiveContextTelemetry.tool_exposed(%{section_id: session_context.section_id})
-        @base_functions ++ [@adaptive_page_context_function]
+        @base_functions ++ [adaptive_page_context_function(session_context)]
 
       false ->
         @base_functions
@@ -305,6 +297,16 @@ defmodule OliWeb.Dialogue.StudentFunctions do
        do: true
 
   defp adaptive_context_enabled?(_), do: false
+
+  defp adaptive_page_context_function(%{
+         current_user_id: current_user_id,
+         section_id: section_id
+       }) do
+    Map.put(@adaptive_page_context_function, :trusted_arguments, %{
+      "current_user_id" => current_user_id,
+      "section_id" => section_id
+    })
+  end
 
   defp fetch_guid(%{"activity_attempt_guid" => guid}) when is_binary(guid) do
     case String.trim(guid) do

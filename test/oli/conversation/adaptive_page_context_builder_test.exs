@@ -112,11 +112,27 @@ defmodule Oli.Conversation.AdaptivePageContextBuilderTest do
       assert markdown =~ "- Screen 3"
       refute markdown =~ "Future screen prompt"
     end
+
+    test "defaults unvisited screen labels when sequence names are missing" do
+      %{
+        section: section,
+        user: user,
+        current_attempt: current_attempt
+      } = adaptive_page_fixture(missing_sequence_names?: true)
+
+      assert {:ok, markdown} =
+               AdaptivePageContextBuilder.build(current_attempt.attempt_guid, section.id, user.id)
+
+      assert markdown =~ "## Not yet visited screens"
+      assert markdown =~ "- Screen 3"
+      refute markdown =~ ~r/^- $/m
+    end
   end
 
   defp adaptive_page_fixture(opts \\ []) do
     revisit_current_screen? = Keyword.get(opts, :revisit_current_screen?, false)
     adaptive_page? = Keyword.get(opts, :adaptive_page?, true)
+    missing_sequence_names? = Keyword.get(opts, :missing_sequence_names?, false)
 
     section = insert(:section)
     user = insert(:user)
@@ -152,9 +168,21 @@ defmodule Oli.Conversation.AdaptivePageContextBuilderTest do
         content:
           page_content(
             [
-              %{revision: screen_1_revision, sequence_id: "screen-1", sequence_name: "Screen 1"},
-              %{revision: screen_2_revision, sequence_id: "screen-2", sequence_name: "Screen 2"},
-              %{revision: screen_3_revision, sequence_id: "screen-3", sequence_name: "Screen 3"}
+              %{
+                revision: screen_1_revision,
+                sequence_id: "screen-1",
+                sequence_name: if(missing_sequence_names?, do: nil, else: "Screen 1")
+              },
+              %{
+                revision: screen_2_revision,
+                sequence_id: "screen-2",
+                sequence_name: if(missing_sequence_names?, do: nil, else: "Screen 2")
+              },
+              %{
+                revision: screen_3_revision,
+                sequence_id: "screen-3",
+                sequence_name: if(missing_sequence_names?, do: nil, else: "Screen 3")
+              }
             ],
             adaptive_page?
           )

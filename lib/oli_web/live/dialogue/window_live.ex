@@ -21,6 +21,8 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias OliWeb.Components
   alias OliWeb.Dialogue.UserInput
 
+  @adaptive_runtime_update_name "adaptive_runtime_update"
+
   defp realize_prompt_template(nil, _), do: ""
 
   defp realize_prompt_template(template, bindings) do
@@ -768,11 +770,7 @@ defmodule OliWeb.Dialogue.WindowLive do
        )
        when current_guid != guid do
     runtime_message =
-      adaptive_runtime_update_message(
-        guid,
-        socket.assigns.current_user.id,
-        socket.assigns.section.id
-      )
+      adaptive_runtime_update_message(guid)
 
     Server.remember(socket.assigns.dialogue, runtime_message)
 
@@ -781,16 +779,15 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   defp maybe_remember_adaptive_runtime_update(socket, _guid), do: socket
 
-  defp adaptive_runtime_update_message(activity_attempt_guid, current_user_id, section_id) do
+  defp adaptive_runtime_update_message(activity_attempt_guid) do
     Message.new(
       :system,
       """
       Adaptive runtime update: the learner's current adaptive screen activity_attempt_guid is #{activity_attempt_guid}.
       When calling `adaptive_page_context`, use:
       - activity_attempt_guid=#{activity_attempt_guid}
-      - current_user_id=#{current_user_id}
-      - section_id=#{section_id}
-      """
+      """,
+      @adaptive_runtime_update_name
     )
   end
 
