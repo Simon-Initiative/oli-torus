@@ -23,7 +23,8 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
 
     page_2_revision =
       insert(:revision,
-        resource_type_id: ResourceType.get_id_by_type("page")
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        ai_enabled: false
       )
 
     ## modules...
@@ -129,6 +130,29 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
       assert has_element?(view, "div[id=ai_bot_conversation].hidden")
     end
 
+    test "does not render when no revision_id is provided and page has ai disabled", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "resource_id" => page_2_revision.resource_id
+          }
+        )
+
+      refute has_element?(view, "div[id=ai_bot_collapsed]")
+      refute has_element?(view, "div[id=ai_bot_conversation]")
+    end
+
     test "gets rendered correctly when a revision_id is provided", %{
       conn: conn,
       user: user,
@@ -144,6 +168,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
           session: %{
             "section_slug" => section.slug,
             "current_user_id" => user.id,
+            "resource_id" => page_1_revision.resource_id,
             "revision_id" => page_1_revision.id,
             "service_config" => stub_service_config()
           }
@@ -151,6 +176,31 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
 
       assert has_element?(view, "div[id=ai_bot_collapsed]")
       assert has_element?(view, "div[id=ai_bot_conversation].hidden")
+    end
+
+    test "does not render when revision_id does not match the section resource", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1_revision,
+      page_2: page_2_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} =
+        live_isolated(
+          conn,
+          OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => section.slug,
+            "current_user_id" => user.id,
+            "resource_id" => page_1_revision.resource_id,
+            "revision_id" => page_2_revision.id
+          }
+        )
+
+      refute has_element?(view, "div[id=ai_bot_collapsed]")
+      refute has_element?(view, "div[id=ai_bot_conversation]")
     end
 
     test "collapsed button includes descriptive alt text", %{

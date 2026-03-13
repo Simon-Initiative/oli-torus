@@ -2,6 +2,7 @@ defmodule Oli.Authoring.Editing.ResourceContext do
   @derive {Jason.Encoder, except: [:project, :previous_page, :next_page]}
   defstruct [
     :graded,
+    :ai_enabled,
     :authorEmail,
     :projectSlug,
     :resourceSlug,

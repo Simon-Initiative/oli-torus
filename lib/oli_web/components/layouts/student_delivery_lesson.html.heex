@@ -133,7 +133,7 @@
 
           <div class={[
             "mb-20 px-4 mt-auto relative",
-            if(@section && @section.assistant_enabled, do: "mr-10 lg:mr-28", else: "")
+            if(assistant_available?(assigns), do: "mr-10 lg:mr-28", else: "")
           ]}>
             <div id="tech-support-wrapper" phx-hook="StickyTechSupportButton">
               <OliWeb.Components.Common.tech_support_button
@@ -192,32 +192,28 @@
             />
           </div>
         </div>
-        <%= if @section && assigns[:page_context] do %>
-          <% adaptive_view? =
-            assigns[:view] == :adaptive_chromeless or assigns[:view] == :adaptive_with_chrome %>
-          <%= if !@page_context.page.graded or adaptive_view? do %>
-            <div class={
-              [
-                "z-[1001]",
-                # Desktop: always visible, Mobile: only visible when "Notes" or "Course Content" are not open
-                if(assigns[:active_sidebar_panel] in [:notes, :outline],
-                  do: "hidden sm:block",
-                  else: "block sm:block"
-                )
-              ]
-            }>
-              {live_render(@socket, OliWeb.Dialogue.WindowLive,
-                session: %{
-                  "section_slug" => @section.slug,
-                  "resource_id" => @page_context.page.resource_id,
-                  "revision_id" => @page_context.page.id,
-                  "is_page" => true,
-                  "adaptive_delivery_view" => to_string(assigns[:view])
-                },
-                id: "dialogue-window"
-              )}
-            </div>
-          <% end %>
+        <%= if assistant_available?(assigns) do %>
+          <div class={
+            [
+              "z-[1001]",
+              # Desktop: always visible, Mobile: only visible when "Notes" or "Course Content" are not open
+              if(assigns[:active_sidebar_panel] in [:notes, :outline],
+                do: "hidden sm:block",
+                else: "block sm:block"
+              )
+            ]
+          }>
+            {live_render(@socket, OliWeb.Dialogue.WindowLive,
+              session: %{
+                "section_slug" => @section.slug,
+                "resource_id" => @page_context.page.resource_id,
+                "revision_id" => @page_context.page.id,
+                "is_page" => true,
+                "adaptive_delivery_view" => to_string(assigns[:view])
+              },
+              id: "dialogue-window"
+            )}
+          </div>
         <% end %>
       </div>
     </div>

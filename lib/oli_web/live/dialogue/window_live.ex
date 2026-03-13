@@ -13,6 +13,7 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias Phoenix.LiveView.JS
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Conversation.Triggers
   alias Oli.Conversation
   alias Oli.GenAI.Dialogue.{Server, Configuration}
@@ -89,6 +90,56 @@ defmodule OliWeb.Dialogue.WindowLive do
     Server.new(configuration)
   end
 
+  defp page_ai_context(section, resource_id, nil) do
+    case section_resource_for_context(section, resource_id) do
+      nil ->
+        case resource_id do
+          nil -> {true, nil}
+          _ -> {false, nil}
+        end
+
+      section_resource ->
+        {Sections.page_ai_enabled?(section_resource), section_resource.revision_id}
+    end
+  end
+
+  defp page_ai_context(section, resource_id, requested_revision_id) do
+    with section_resource when not is_nil(section_resource) <-
+           section_resource_for_context(section, resource_id),
+         true <- revision_matches?(section_resource.revision_id, requested_revision_id) do
+      {Sections.page_ai_enabled?(section_resource), section_resource.revision_id}
+    else
+      _ -> {false, nil}
+    end
+  end
+
+  defp section_resource_for_context(section, resource_id) do
+    with normalized_resource_id when is_integer(normalized_resource_id) <-
+           normalize_integer(resource_id) do
+      SectionResourceDepot.get_section_resource(section.id, normalized_resource_id)
+    else
+      _ -> nil
+    end
+  end
+
+  defp revision_matches?(section_revision_id, requested_revision_id) do
+    case normalize_integer(requested_revision_id) do
+      nil -> false
+      normalized_revision_id -> normalized_revision_id == section_revision_id
+    end
+  end
+
+  defp normalize_integer(value) when is_integer(value), do: value
+
+  defp normalize_integer(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {normalized_value, ""} -> normalized_value
+      _ -> nil
+    end
+  end
+
+  defp normalize_integer(_), do: nil
+
   def mount(
         _params,
         %{"current_user_id" => current_user_id, "section_slug" => section_slug} = session,
@@ -101,51 +152,62 @@ defmodule OliWeb.Dialogue.WindowLive do
     dialogue_session_context =
       dialogue_session_context(adaptive_supported?, section, current_user_id)
 
-    PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
+    requested_revision_id = session["revision_id"]
 
     if Sections.assistant_enabled?(section) do
-      project = Oli.Authoring.Course.get_project!(section.base_project_id)
+      {page_enabled?, revision_id} = page_ai_context(section, resource_id, requested_revision_id)
 
-      service_config =
-        case Map.fetch(session, "service_config") do
-          {:ok, config} -> config
-          :error -> FeatureConfig.load_for(section.id, :student_dialogue)
+      if page_enabled? do
+        project = Oli.Authoring.Course.get_project!(section.base_project_id)
+
+        service_config =
+          case Map.fetch(session, "service_config") do
+            {:ok, config} -> config
+            :error -> FeatureConfig.load_for(section.id, :student_dialogue)
+          end
+
+        case init_dialogue_server(
+               section,
+               project,
+               revision_id,
+               current_user_id,
+               dialogue_session_context,
+               service_config
+             ) do
+          {:ok, dialogue_server} ->
+            PubSub.subscribe(
+              Oli.PubSub,
+              "trigger:#{current_user_id}:#{section.id}:#{resource_id}"
+            )
+
+            {:ok,
+             assign(socket,
+               enabled: true,
+               minimized: true,
+               dialogue: dialogue_server,
+               form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
+               messages: [],
+               streaming: false,
+               allow_submission?: true,
+               trigger_queue: [],
+               active_message: nil,
+               title: "Dot",
+               current_user: Oli.Accounts.get_user!(current_user_id),
+               height: 500,
+               width: 400,
+               section: section,
+               resource_id: session["resource_id"],
+               is_page: session["is_page"] == true,
+               adaptive_supported?: adaptive_supported?,
+               current_activity_attempt_guid: nil
+             )}
+
+          {:error, reason} ->
+            Logger.error("Failed to initialize dialogue server: #{inspect(reason)}")
+            {:ok, assign(socket, enabled: false)}
         end
-
-      case init_dialogue_server(
-             section,
-             project,
-             session["revision_id"],
-             current_user_id,
-             dialogue_session_context,
-             service_config
-           ) do
-        {:ok, dialogue_server} ->
-          {:ok,
-           assign(socket,
-             enabled: true,
-             minimized: true,
-             dialogue: dialogue_server,
-             form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
-             messages: [],
-             streaming: false,
-             allow_submission?: true,
-             trigger_queue: [],
-             active_message: nil,
-             title: "Dot",
-             current_user: Oli.Accounts.get_user!(current_user_id),
-             height: 500,
-             width: 400,
-             section: section,
-             resource_id: session["resource_id"],
-             is_page: session["is_page"] == true,
-             adaptive_supported?: adaptive_supported?,
-             current_activity_attempt_guid: nil
-           )}
-
-        {:error, reason} ->
-          Logger.error("Failed to initialize dialogue server: #{inspect(reason)}")
-          {:ok, assign(socket, enabled: false)}
+      else
+        {:ok, assign(socket, enabled: false)}
       end
     else
       {:ok, assign(socket, enabled: false)}
