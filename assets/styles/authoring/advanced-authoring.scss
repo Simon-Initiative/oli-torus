@@ -12,6 +12,9 @@ $panel-section-title-bar-color: #e8ebed;
 $workspace-bg: var(--color-body);
 $font-family-sans-serif: var(--font-sans);
 
+// Keep authoring text-flow typography consistent with delivery by loading
+@import '../adaptive/misc/font-families';
+
 #aa-loading {
   transition-timing-function: ease-in-out;
   transition-duration: 0.3s;
