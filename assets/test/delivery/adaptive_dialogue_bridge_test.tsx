@@ -42,4 +42,20 @@ describe('AdaptiveDialogueBridge', () => {
     rerender(<AdaptiveDialogueBridge activityAttemptGuid="attempt-guid-2" enabled={true} />);
     expect(dispatchEvent).toHaveBeenCalledTimes(2);
   });
+
+  it('responds to an adaptive screen sync request with the latest guid', () => {
+    const dispatchEvent = jest.spyOn(window, 'dispatchEvent');
+
+    render(<AdaptiveDialogueBridge activityAttemptGuid="attempt-guid-1" enabled={true} />);
+    dispatchEvent.mockClear();
+
+    window.dispatchEvent(new CustomEvent('oli:adaptive-screen-sync-request'));
+
+    expect(dispatchEvent).toHaveBeenCalledTimes(2);
+
+    const dispatchedEvent = dispatchEvent.mock.calls[1][0] as CustomEvent;
+
+    expect(dispatchedEvent.type).toBe('oli:adaptive-screen-changed');
+    expect(dispatchedEvent.detail).toEqual({ activityAttemptGuid: 'attempt-guid-1' });
+  });
 });

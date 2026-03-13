@@ -14,6 +14,7 @@ export const AdaptiveDialogueSync = {
     };
 
     window.addEventListener('oli:adaptive-screen-changed', this.handleAdaptiveScreenChanged);
+    window.dispatchEvent(new CustomEvent('oli:adaptive-screen-sync-request'));
   },
 
   destroyed() {

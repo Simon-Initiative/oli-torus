@@ -61,26 +61,31 @@ defmodule Oli.GenAI.Completions.Function do
   defp verify_full_name(%{full_name: full_name} = function) do
     case String.split(full_name, ".") do
       parts when is_list(parts) ->
-        module_parts = Enum.take(parts, Enum.count(parts) - 1)
-        name = Enum.at(parts, -1) |> String.to_existing_atom()
-
-        # Join the module parts and convert to an atom
-        module =
-          Enum.join(module_parts, ".")
-          |> String.to_existing_atom()
-
-        # ensure that it is a valid module that is loaded
-        if Code.ensure_loaded?(module) do
-          {:ok, function, module, name}
-        else
-          {:error, :invalid_function_name}
-        end
-
-      nil ->
-        {:error, :invalid_function_name}
+        parse_full_name(function, parts)
 
       _ ->
         {:error, :invalid_function_name}
+    end
+  end
+
+  defp parse_full_name(function, parts) do
+    with true <- Enum.count(parts) >= 2,
+         true <- Enum.all?(parts, &(&1 != "")),
+         module_name <- parts |> Enum.drop(-1) |> Enum.join("."),
+         {:ok, module} <- safe_to_existing_atom(module_name),
+         {:ok, name} <- safe_to_existing_atom(List.last(parts)),
+         true <- Code.ensure_loaded?(module) do
+      {:ok, function, module, name}
+    else
+      _ -> {:error, :invalid_function_name}
+    end
+  end
+
+  defp safe_to_existing_atom(value) when is_binary(value) do
+    try do
+      {:ok, String.to_existing_atom(value)}
+    rescue
+      ArgumentError -> {:error, :invalid_function_name}
     end
   end
 

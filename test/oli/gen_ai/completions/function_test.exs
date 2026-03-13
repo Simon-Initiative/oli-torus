@@ -27,4 +27,16 @@ defmodule Oli.GenAI.Completions.FunctionTest do
              "activity_attempt_guid" => "attempt-guid-1"
            }
   end
+
+  test "malformed full_name returns invalid_function_name instead of raising" do
+    available_functions = [
+      %{
+        name: "echo_arguments",
+        full_name: "Elixir..echo_arguments"
+      }
+    ]
+
+    assert {:error, :invalid_function_name} =
+             Function.call(available_functions, "echo_arguments", %{})
+  end
 end
