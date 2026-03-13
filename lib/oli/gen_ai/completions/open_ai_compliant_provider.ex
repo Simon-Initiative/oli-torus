@@ -76,8 +76,10 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
       [%{"finish_reason" => "tool_calls"}] ->
         {:function_call_finished}
 
-      [%{"delta" => %{"tool_calls" => [tool_call | _]}}] ->
-        decode_tool_call_delta(tool_call)
+      [%{"delta" => %{"tool_calls" => tool_calls}}] when is_list(tool_calls) ->
+        tool_calls
+        |> Enum.map(&decode_tool_call_delta/1)
+        |> Enum.reject(&(&1 == :ignore))
 
       [%{"delta" => %{"content" => content}}] ->
         {:tokens_received, content}
@@ -102,7 +104,8 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
           base
 
         _ ->
-          base ++ [tools: encode_tools(functions)]
+          # Force one tool call at a time; dialogue flow assumes serial function execution.
+          base ++ [tools: encode_tools(functions), parallel_tool_calls: false]
       end
 
     case Keyword.get(opts, :stream, false) do
@@ -379,13 +382,34 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
     end)
   end
 
-  defp decode_tool_call_delta(%{"function" => function} = tool_call) do
-    content =
-      function
-      |> Map.put("id", Map.get(tool_call, "id", new_tool_call_id()))
-
-    {:function_call, content}
+  defp decode_tool_call_delta(
+         %{"function" => %{"name" => name, "arguments" => arguments}} = tool_call
+       )
+       when is_binary(name) and is_binary(arguments) do
+    {:function_call,
+     %{
+       "id" => Map.get(tool_call, "id", new_tool_call_id()),
+       "name" => name,
+       "arguments" => arguments
+     }}
   end
+
+  defp decode_tool_call_delta(%{"function" => %{"arguments" => arguments}})
+       when is_binary(arguments) do
+    {:function_call, %{"arguments" => arguments}}
+  end
+
+  defp decode_tool_call_delta(%{"function" => %{"name" => name}} = tool_call)
+       when is_binary(name) do
+    {:function_call,
+     %{
+       "id" => Map.get(tool_call, "id", new_tool_call_id()),
+       "name" => name,
+       "arguments" => ""
+     }}
+  end
+
+  defp decode_tool_call_delta(_), do: :ignore
 
   # Some OpenAI-compatible providers cap tool_call IDs at 40 chars.
   # "call" (4) + UUID (36) = 40.

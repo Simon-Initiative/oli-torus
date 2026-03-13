@@ -134,6 +134,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProviderTest do
 
       assert Keyword.has_key?(params, :tools)
       refute Keyword.has_key?(params, :functions)
+      assert Keyword.get(params, :parallel_tool_calls) == false
     end
 
     test "encodes tools in chat-completions schema format" do
@@ -246,18 +247,65 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProviderTest do
       }
 
       assert OpenAICompliantProvider.process_stream_chunk(chunk) ==
-               {:function_call,
-                %{
-                  "id" => "call_test123",
-                  "name" => "up_next",
-                  "arguments" => "{\"section_id\":1}"
-                }}
+               [
+                 {:function_call,
+                  %{
+                    "id" => "call_test123",
+                    "name" => "up_next",
+                    "arguments" => "{\"section_id\":1}"
+                  }}
+               ]
     end
 
     test "treats tool_calls finish reasons as function completion" do
       chunk = %{"choices" => [%{"finish_reason" => "tool_calls"}]}
 
       assert OpenAICompliantProvider.process_stream_chunk(chunk) == {:function_call_finished}
+    end
+
+    test "decodes multiple tool calls in one delta" do
+      chunk = %{
+        "choices" => [
+          %{
+            "delta" => %{
+              "tool_calls" => [
+                %{
+                  "id" => "call_1",
+                  "function" => %{"name" => "f1", "arguments" => "{\"a\":1}"}
+                },
+                %{
+                  "id" => "call_2",
+                  "function" => %{"name" => "f2", "arguments" => "{\"b\":2}"}
+                }
+              ]
+            }
+          }
+        ]
+      }
+
+      assert OpenAICompliantProvider.process_stream_chunk(chunk) == [
+               {:function_call, %{"id" => "call_1", "name" => "f1", "arguments" => "{\"a\":1}"}},
+               {:function_call, %{"id" => "call_2", "name" => "f2", "arguments" => "{\"b\":2}"}}
+             ]
+    end
+
+    test "ignores incomplete tool-call fragments instead of crashing" do
+      chunk = %{
+        "choices" => [
+          %{
+            "delta" => %{
+              "tool_calls" => [
+                %{"id" => "call_only_id", "type" => "function"},
+                %{"function" => %{"arguments" => "{\"partial\":true}"}}
+              ]
+            }
+          }
+        ]
+      }
+
+      assert OpenAICompliantProvider.process_stream_chunk(chunk) == [
+               {:function_call, %{"arguments" => "{\"partial\":true}"}}
+             ]
     end
 
     test "treats legacy function_call deltas as errors" do
