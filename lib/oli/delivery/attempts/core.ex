@@ -811,11 +811,26 @@ defmodule Oli.Delivery.Attempts.Core do
   revision and part attempts needed for adaptive-context assembly.
   """
   def get_ordered_activity_attempts(resource_attempt_id) do
+    latest_part_attempts_query =
+      from(pa1 in PartAttempt,
+        left_join: pa2 in PartAttempt,
+        on:
+          pa1.activity_attempt_id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and
+            pa1.id < pa2.id,
+        where: is_nil(pa2),
+        select: struct(pa1, [:id, :activity_attempt_id, :part_id, :attempt_number, :response])
+      )
+
+    revision_preload_query =
+      from(revision in Revision,
+        select: struct(revision, [:id, :title, :content])
+      )
+
     Repo.all(
       from(activity_attempt in ActivityAttempt,
         where: activity_attempt.resource_attempt_id == ^resource_attempt_id,
         order_by: [asc: activity_attempt.inserted_at, asc: activity_attempt.id],
-        preload: [:part_attempts, :revision]
+        preload: [part_attempts: ^latest_part_attempts_query, revision: ^revision_preload_query]
       )
     )
   end

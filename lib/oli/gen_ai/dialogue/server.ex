@@ -107,7 +107,7 @@ defmodule Oli.GenAI.Dialogue.Server do
   end
 
   def handle_cast({:remember, message}, %State{} = state) do
-    {:noreply, %State{state | messages: remember_message(state.messages, message)}}
+    {:noreply, remember_message(state, message)}
   end
 
   defp build_notify_fns(server_pid, %State{
@@ -168,7 +168,7 @@ defmodule Oli.GenAI.Dialogue.Server do
 
     case Execution.stream(
            request_ctx,
-           messages_for_execution(state.messages, message),
+           messages_for_execution(state.messages, state.adaptive_runtime_message, message),
            configuration.functions,
            configuration.service_config,
            response_handler_fn
@@ -305,15 +305,19 @@ defmodule Oli.GenAI.Dialogue.Server do
     end
   end
 
-  defp messages_for_execution(messages, message) do
+  defp messages_for_execution(messages, nil, message) do
     Enum.reverse(messages, [message])
   end
 
-  defp remember_message(messages, %Message{name: @adaptive_runtime_update_name} = message) do
-    [message | Enum.reject(messages, &(&1.name == @adaptive_runtime_update_name))]
+  defp messages_for_execution(messages, adaptive_runtime_message, message) do
+    Enum.reverse(messages, [adaptive_runtime_message, message])
   end
 
-  defp remember_message(messages, message) do
-    [message | messages]
+  defp remember_message(%State{} = state, %Message{name: @adaptive_runtime_update_name} = message) do
+    %State{state | adaptive_runtime_message: message}
+  end
+
+  defp remember_message(%State{} = state, message) do
+    %State{state | messages: [message | state.messages]}
   end
 end

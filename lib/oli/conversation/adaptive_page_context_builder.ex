@@ -136,13 +136,23 @@ defmodule Oli.Conversation.AdaptivePageContextBuilder do
   defp sequence_name(_, index), do: "Screen #{index}"
 
   defp build_screen_visits(resource_attempt_id, sequence_entries, current_attempt_guid) do
-    sequence_by_resource_id = Map.new(sequence_entries, &{&1.activity_resource_id, &1})
+    sequence_entries_by_resource_id = sequence_entries_by_resource_id(sequence_entries)
 
-    screen_visits =
+    {screen_visits, _remaining_sequence_entries} =
       resource_attempt_id
       |> Core.get_ordered_activity_attempts()
-      |> Enum.map(&screen_visit(&1, sequence_by_resource_id))
-      |> Enum.reject(&is_nil/1)
+      |> Enum.reduce({[], sequence_entries_by_resource_id}, fn activity_attempt,
+                                                               {screen_visits, remaining_entries} ->
+        case screen_visit(activity_attempt, remaining_entries) do
+          {nil, updated_remaining_entries} ->
+            {screen_visits, updated_remaining_entries}
+
+          {screen_visit, updated_remaining_entries} ->
+            {[screen_visit | screen_visits], updated_remaining_entries}
+        end
+      end)
+
+    screen_visits = Enum.reverse(screen_visits)
 
     case Enum.find(screen_visits, &(&1.activity_attempt_guid == current_attempt_guid)) do
       nil -> {:error, :current_screen_not_found}
@@ -150,18 +160,55 @@ defmodule Oli.Conversation.AdaptivePageContextBuilder do
     end
   end
 
-  defp screen_visit(activity_attempt, sequence_by_resource_id) do
-    case Map.get(sequence_by_resource_id, activity_attempt.resource_id) do
-      nil ->
-        nil
+  defp sequence_entries_by_resource_id(sequence_entries) do
+    sequence_entries
+    |> Enum.reduce(%{}, fn sequence_entry, acc ->
+      Map.update(
+        acc,
+        sequence_entry.activity_resource_id,
+        [sequence_entry],
+        &[sequence_entry | &1]
+      )
+    end)
+    |> Map.new(fn {activity_resource_id, entries} ->
+      {activity_resource_id, Enum.reverse(entries)}
+    end)
+  end
 
-      sequence_entry ->
-        %{
-          activity_attempt_guid: activity_attempt.attempt_guid,
-          content: screen_content(activity_attempt),
-          responses: response_state(activity_attempt),
-          sequence_id: sequence_entry.sequence_id,
-          sequence_name: resolve_sequence_name(sequence_entry, activity_attempt)
+  defp screen_visit(activity_attempt, sequence_entries_by_resource_id) do
+    case Map.get(sequence_entries_by_resource_id, activity_attempt.resource_id) do
+      nil ->
+        {nil, sequence_entries_by_resource_id}
+
+      [sequence_entry] ->
+        {
+          %{
+            activity_attempt_guid: activity_attempt.attempt_guid,
+            content: screen_content(activity_attempt),
+            responses: response_state(activity_attempt),
+            sequence_id: sequence_entry.sequence_id,
+            sequence_name: resolve_sequence_name(sequence_entry, activity_attempt)
+          },
+          sequence_entries_by_resource_id
+        }
+
+      [sequence_entry | remaining_entries] ->
+        updated_sequence_entries =
+          Map.put(
+            sequence_entries_by_resource_id,
+            activity_attempt.resource_id,
+            remaining_entries
+          )
+
+        {
+          %{
+            activity_attempt_guid: activity_attempt.attempt_guid,
+            content: screen_content(activity_attempt),
+            responses: response_state(activity_attempt),
+            sequence_id: sequence_entry.sequence_id,
+            sequence_name: resolve_sequence_name(sequence_entry, activity_attempt)
+          },
+          updated_sequence_entries
         }
     end
   end

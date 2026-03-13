@@ -297,9 +297,7 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
 
       assert socket_assigns(view).current_activity_attempt_guid == "attempt-guid-1"
 
-      remembered_message =
-        dialogue_state(view).messages
-        |> Enum.find(&(&1.name == "adaptive_runtime_update"))
+      remembered_message = dialogue_state(view).adaptive_runtime_message
 
       assert remembered_message.role == :system
       assert remembered_message.content =~ "attempt-guid-1"
@@ -328,12 +326,9 @@ defmodule OliWeb.Dialogue.WindowLiveTest do
       render_hook(view, "adaptive_screen_changed", %{"activity_attempt_guid" => "attempt-guid-1"})
       render_hook(view, "adaptive_screen_changed", %{"activity_attempt_guid" => "attempt-guid-2"})
 
-      runtime_updates =
-        dialogue_state(view).messages
-        |> Enum.filter(&(&1.name == "adaptive_runtime_update"))
+      runtime_update = dialogue_state(view).adaptive_runtime_message
 
-      assert length(runtime_updates) == 1
-      assert hd(runtime_updates).content =~ "attempt-guid-2"
+      assert runtime_update.content =~ "attempt-guid-2"
     end
   end
 

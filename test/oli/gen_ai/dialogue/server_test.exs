@@ -20,8 +20,9 @@ defmodule Oli.GenAI.Dialogue.ServerTest do
 
     state = :sys.get_state(server)
 
-    assert Enum.map(state.messages, & &1.content) == ["runtime 2", "hello", "base system prompt"]
+    assert Enum.map(state.messages, & &1.content) == ["hello", "base system prompt"]
+    assert state.adaptive_runtime_message.content == "runtime 2"
 
-    assert Enum.count(state.messages, &(&1.name == "adaptive_runtime_update")) == 1
+    assert state.adaptive_runtime_message.name == "adaptive_runtime_update"
   end
 end

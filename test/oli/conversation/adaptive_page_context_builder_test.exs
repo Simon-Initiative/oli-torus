@@ -127,12 +127,32 @@ defmodule Oli.Conversation.AdaptivePageContextBuilderTest do
       assert markdown =~ "- Screen 3"
       refute markdown =~ ~r/^- $/m
     end
+
+    test "maps duplicate activity references by occurrence order" do
+      %{
+        section: section,
+        user: user,
+        current_attempt: current_attempt
+      } = adaptive_page_fixture(duplicate_activity_reference?: true)
+
+      assert {:ok, markdown} =
+               AdaptivePageContextBuilder.build(current_attempt.attempt_guid, section.id, user.id)
+
+      assert markdown =~ ~r/## Current screen\n### Screen 3/s
+
+      assert markdown =~
+               ~r/## Previously visited screens\n### Screen 1.*### Screen 2/s
+
+      assert length(Regex.scan(~r/^### Screen 1$/m, markdown)) == 1
+      assert length(Regex.scan(~r/^### Screen 3$/m, markdown)) == 1
+    end
   end
 
   defp adaptive_page_fixture(opts \\ []) do
     revisit_current_screen? = Keyword.get(opts, :revisit_current_screen?, false)
     adaptive_page? = Keyword.get(opts, :adaptive_page?, true)
     missing_sequence_names? = Keyword.get(opts, :missing_sequence_names?, false)
+    duplicate_activity_reference? = Keyword.get(opts, :duplicate_activity_reference?, false)
 
     section = insert(:section)
     user = insert(:user)
@@ -160,6 +180,9 @@ defmodule Oli.Conversation.AdaptivePageContextBuilderTest do
         content: screen_content("Future screen prompt")
       )
 
+    screen_3_activity_revision =
+      if duplicate_activity_reference?, do: screen_1_revision, else: screen_3_revision
+
     page_revision =
       insert(:revision,
         resource: page_resource,
@@ -179,7 +202,7 @@ defmodule Oli.Conversation.AdaptivePageContextBuilderTest do
                 sequence_name: if(missing_sequence_names?, do: nil, else: "Screen 2")
               },
               %{
-                revision: screen_3_revision,
+                revision: screen_3_activity_revision,
                 sequence_id: "screen-3",
                 sequence_name: if(missing_sequence_names?, do: nil, else: "Screen 3")
               }
@@ -209,7 +232,11 @@ defmodule Oli.Conversation.AdaptivePageContextBuilderTest do
                 visit_count: if(revisit_current_screen?, do: 2, else: 1)
               },
               %{sequence_id: "screen-2", visit_count: 1}
-            ]
+            ] ++
+              if(duplicate_activity_reference?,
+                do: [%{sequence_id: "screen-3", visit_count: 1}],
+                else: []
+              )
           )
       )
 
@@ -264,7 +291,26 @@ defmodule Oli.Conversation.AdaptivePageContextBuilderTest do
           revisited_attempt
 
         false ->
-          screen_2_attempt
+          if duplicate_activity_reference? do
+            duplicate_screen_attempt =
+              insert(:activity_attempt,
+                resource_attempt: resource_attempt,
+                revision: screen_1_revision,
+                resource: screen_1_revision.resource,
+                attempt_number: 2
+              )
+
+            insert(:part_attempt,
+              activity_attempt: duplicate_screen_attempt,
+              part_id: "part_duplicate",
+              attempt_number: 1,
+              response: %{"input" => "duplicate screen response"}
+            )
+
+            duplicate_screen_attempt
+          else
+            screen_2_attempt
+          end
       end
 
     %{
