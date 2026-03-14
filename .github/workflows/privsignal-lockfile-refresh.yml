@@ -32,6 +32,7 @@ jobs:
         shell: bash
         run: |
           should_run=true
+          actor="${{ github.actor }}"
 
           if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
             should_run=false
@@ -41,9 +42,11 @@ jobs:
             should_run=false
           fi
 
-          if [ "${{ github.actor }}" = "github-actions[bot]" ]; then
-            should_run=false
-          fi
+          case "$actor" in
+            *"[bot]" | "simon-bot")
+              should_run=false
+              ;;
+          esac
 
           echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
 
@@ -63,12 +66,21 @@ jobs:
         run: |
           should_continue=true
           last_subject="$(git log -1 --pretty=%s)"
-          last_author_email="$(git log -1 --pretty=%ae)"
+          changed_files="$(git show --pretty='' --name-only HEAD | sed '/^$/d')"
+          non_lockfile_count=0
 
-          if [ "$last_subject" = "chore(privsignal): refresh lockfile" ] && \
-             [ "$last_author_email" = "41898282+github-actions[bot]@users.noreply.github.com" ]; then
+          while IFS= read -r file; do
+            if [ "$file" != "priv_signal.lockfile.json" ]; then
+              non_lockfile_count=$((non_lockfile_count + 1))
+            fi
+          done <<< "$changed_files"
+
+          if [ "$last_subject" = "chore(privsignal): refresh lockfile" ]; then
             should_continue=false
-            echo "Skipping: latest commit is bot-generated lockfile refresh."
+            echo "Skipping: latest commit is lockfile refresh."
+          elif [ -n "$changed_files" ] && [ "$non_lockfile_count" = "0" ]; then
+            should_continue=false
+            echo "Skipping: latest commit only touched priv_signal.lockfile.json."
           fi
 
           echo "should_continue=$should_continue" >> "$GITHUB_OUTPUT"

@@ -148,7 +148,7 @@ jobs:
     name: Auto format and lint
     runs-on: ubuntu-latest
     needs: check-simon-token
-    if: needs.check-simon-token.outputs.available == 'true'
+    if: needs.check-simon-token.outputs.available == 'true' && !endsWith(github.actor, '[bot]') && github.actor != 'simon-bot'
 
     steps:
       - name: 🛎️ Checkout
