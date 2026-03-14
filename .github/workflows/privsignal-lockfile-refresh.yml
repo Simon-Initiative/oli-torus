@@ -50,28 +50,50 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
-      - name: 🧪 Setup Elixir
+      - name: 🔁 Stop self-triggered lockfile loops
         if: steps.gate.outputs.should_run == 'true'
+        id: self-loop
+        shell: bash
+        run: |
+          should_continue=true
+          last_subject="$(git log -1 --pretty=%s)"
+          last_author_email="$(git log -1 --pretty=%ae)"
+
+          if [ "$last_subject" = "chore(privsignal): refresh lockfile" ] && \
+             [ "$last_author_email" = "41898282+github-actions[bot]@users.noreply.github.com" ]; then
+            should_continue=false
+            echo "Skipping: latest commit is bot-generated lockfile refresh."
+          fi
+
+          echo "should_continue=$should_continue" >> "$GITHUB_OUTPUT"
+
+      - name: 🧪 Setup Elixir
+        if: steps.gate.outputs.should_run == 'true' && steps.self-loop.outputs.should_continue == 'true'
         uses: erlef/setup-elixir@v1
         with:
           elixir-version: 1.19.2
           otp-version: 28.1.1
 
       - name: ⬇️ Install dependencies
-        if: steps.gate.outputs.should_run == 'true'
+        if: steps.gate.outputs.should_run == 'true' && steps.self-loop.outputs.should_continue == 'true'
         run: mix deps.get
 
       - name: 🔨 Compile PrivSignal dependency
-        if: steps.gate.outputs.should_run == 'true'
+        if: steps.gate.outputs.should_run == 'true' && steps.self-loop.outputs.should_continue == 'true'
         run: mix deps.compile priv_signal
 
       - name: ♻️ Regenerate and push lockfile
-        if: steps.gate.outputs.should_run == 'true'
+        if: steps.gate.outputs.should_run == 'true' && steps.self-loop.outputs.should_continue == 'true'
         shell: bash
         run: |
           set -euo pipefail
 
           mix priv_signal.scan --quiet --json-path priv_signal.lockfile.json
+
+          # Canonicalize JSON key ordering to avoid churn-only commits.
+          tmp_file="$(mktemp)"
+          jq -S . priv_signal.lockfile.json > "$tmp_file"
+          mv "$tmp_file" priv_signal.lockfile.json
 
           if git diff --quiet -- priv_signal.lockfile.json; then
             echo "No lockfile changes."
