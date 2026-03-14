@@ -19,7 +19,7 @@ defmodule Oli.MixProject do
       name: "OLI Torus",
       source_url: "https://github.com/Simon-Initiative/oli-torus",
       homepage_url: "http://oli.cmu.edu",
-n      docs: docs(),
+      docs: docs(),
       releases: [
         oli: [
           include_executables_for: [:unix],
