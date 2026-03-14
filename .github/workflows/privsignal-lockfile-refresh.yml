@@ -75,13 +75,18 @@ jobs:
             fi
           done <<< "$changed_files"
 
-          if [ "$last_subject" = "chore(privsignal): refresh lockfile" ]; then
-            should_continue=false
-            echo "Skipping: latest commit is lockfile refresh."
-          elif [ -n "$changed_files" ] && [ "$non_lockfile_count" = "0" ]; then
-            should_continue=false
-            echo "Skipping: latest commit only touched priv_signal.lockfile.json."
-          fi
+          case "$last_subject" in
+            "chore(privsignal): refresh lockfile"*)
+              should_continue=false
+              echo "Skipping: latest commit is lockfile refresh."
+              ;;
+            *)
+              if [ -n "$changed_files" ] && [ "$non_lockfile_count" = "0" ]; then
+                should_continue=false
+                echo "Skipping: latest commit only touched priv_signal.lockfile.json."
+              fi
+              ;;
+          esac
 
           echo "should_continue=$should_continue" >> "$GITHUB_OUTPUT"
 
@@ -142,5 +147,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add priv_signal.lockfile.json
-          git commit -m "chore(privsignal): refresh lockfile"
+          git commit -m "chore(privsignal): refresh lockfile [skip ci]"
           git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
