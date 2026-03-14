@@ -9,9 +9,29 @@ on:
       - nextgen-ux
 
 jobs:
+  lockfile-refresh-gate:
+    name: Detect lockfile refresh head commit
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.detect.outputs.skip }}
+      reason: ${{ steps.detect.outputs.reason }}
+    steps:
+      - name: 🛎️ Checkout head commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          ref: ${{ format('refs/pull/{0}/head', github.event.pull_request.number) }}
+
+      - name: 🔍 Detect lockfile-refresh-only head commit
+        id: detect
+        shell: bash
+        run: bash .github/scripts/should_skip_for_lockfile_refresh.sh
+
   elixir-build-test:
     name: Elixir build and test
     runs-on: ubuntu-latest
+    needs: [lockfile-refresh-gate]
+    if: needs.lockfile-refresh-gate.outputs.skip != 'true'
     services:
       postgres:
         image: pgvector/pgvector:pg18
@@ -51,7 +71,13 @@ jobs:
           fi
 
           if [ -n "$changed_files" ]; then
-            non_lockfile_count="$(echo "$changed_files" | grep -v '^priv_signal.lockfile.json$' | wc -l | tr -d ' ')"
+            non_lockfile_count=0
+            while IFS= read -r file; do
+              if [ "$file" != "priv_signal.lockfile.json" ]; then
+                non_lockfile_count=$((non_lockfile_count + 1))
+              fi
+            done <<< "$changed_files"
+
             if [ "$non_lockfile_count" = "0" ]; then
               lockfile_only=true
             fi
@@ -131,6 +157,8 @@ jobs:
   check-simon-token:
     name: Check simon-bot access token
     runs-on: ubuntu-latest
+    needs: [lockfile-refresh-gate]
+    if: needs.lockfile-refresh-gate.outputs.skip != 'true'
     outputs:
       available: ${{ steps.check_token.outputs.available }}
     steps:
@@ -141,8 +169,8 @@ jobs:
   auto-format:
     name: Auto format and lint
     runs-on: ubuntu-latest
-    needs: check-simon-token
-    if: needs.check-simon-token.outputs.available == 'true'
+    needs: [lockfile-refresh-gate, check-simon-token]
+    if: needs.lockfile-refresh-gate.outputs.skip != 'true' && needs.check-simon-token.outputs.available == 'true' && !endsWith(github.actor, '[bot]') && github.actor != 'simon-bot'
 
     steps:
       - name: 🛎️ Checkout
@@ -185,6 +213,8 @@ jobs:
   ts-build-test:
     name: TypeScript build and test
     runs-on: ubuntu-latest
+    needs: [lockfile-refresh-gate]
+    if: needs.lockfile-refresh-gate.outputs.skip != 'true'
 
     steps:
       - name: 🛎️ Checkout
@@ -207,7 +237,13 @@ jobs:
           fi
 
           if [ -n "$changed_files" ]; then
-            non_lockfile_count="$(echo "$changed_files" | grep -v '^priv_signal.lockfile.json$' | wc -l | tr -d ' ')"
+            non_lockfile_count=0
+            while IFS= read -r file; do
+              if [ "$file" != "priv_signal.lockfile.json" ]; then
+                non_lockfile_count=$((non_lockfile_count + 1))
+              fi
+            done <<< "$changed_files"
+
             if [ "$non_lockfile_count" = "0" ]; then
               lockfile_only=true
             fi
