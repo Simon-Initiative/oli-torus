@@ -12,6 +12,12 @@ on:
       - hotfix-*
       - prerelease-*
       - nextgen-ux
+    paths-ignore:
+      - priv_signal.lockfile.json
+
+concurrency:
+  group: privsignal-lockfile-refresh-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   refresh-lockfile:
@@ -88,12 +94,32 @@ jobs:
         run: |
           set -euo pipefail
 
+          mkdir -p tmp/privsignal
+          had_previous_lockfile=false
+          if [ -f priv_signal.lockfile.json ]; then
+            had_previous_lockfile=true
+            cp priv_signal.lockfile.json tmp/privsignal/previous.lockfile.json
+          fi
+
           mix priv_signal.scan --quiet --json-path priv_signal.lockfile.json
 
           # Canonicalize JSON key ordering to avoid churn-only commits.
           tmp_file="$(mktemp)"
           jq -S . priv_signal.lockfile.json > "$tmp_file"
           mv "$tmp_file" priv_signal.lockfile.json
+
+          # Ignore volatile scanner metadata when deciding whether to commit.
+          if [ "$had_previous_lockfile" = "true" ]; then
+            previous_normalized="$(mktemp)"
+            current_normalized="$(mktemp)"
+            jq -S 'del(.git.commit, .summary.scan_duration_ms)' tmp/privsignal/previous.lockfile.json > "$previous_normalized"
+            jq -S 'del(.git.commit, .summary.scan_duration_ms)' priv_signal.lockfile.json > "$current_normalized"
+
+            if diff -q "$previous_normalized" "$current_normalized" >/dev/null; then
+              echo "No semantic lockfile changes (only volatile metadata changed)."
+              exit 0
+            fi
+          fi
 
           if git diff --quiet -- priv_signal.lockfile.json; then
             echo "No lockfile changes."
