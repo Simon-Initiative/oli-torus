@@ -51,7 +51,13 @@ jobs:
           fi
 
           if [ -n "$changed_files" ]; then
-            non_lockfile_count="$(echo "$changed_files" | grep -v '^priv_signal.lockfile.json$' | wc -l | tr -d ' ')"
+            non_lockfile_count=0
+            while IFS= read -r file; do
+              if [ "$file" != "priv_signal.lockfile.json" ]; then
+                non_lockfile_count=$((non_lockfile_count + 1))
+              fi
+            done <<< "$changed_files"
+
             if [ "$non_lockfile_count" = "0" ]; then
               lockfile_only=true
             fi
@@ -207,7 +213,13 @@ jobs:
           fi
 
           if [ -n "$changed_files" ]; then
-            non_lockfile_count="$(echo "$changed_files" | grep -v '^priv_signal.lockfile.json$' | wc -l | tr -d ' ')"
+            non_lockfile_count=0
+            while IFS= read -r file; do
+              if [ "$file" != "priv_signal.lockfile.json" ]; then
+                non_lockfile_count=$((non_lockfile_count + 1))
+              fi
+            done <<< "$changed_files"
+
             if [ "$non_lockfile_count" = "0" ]; then
               lockfile_only=true
             fi
