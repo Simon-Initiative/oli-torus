@@ -197,7 +197,7 @@ defmodule OliWeb.Dialogue.WindowLive do
     ~H"""
     <div
       :if={@enabled}
-      data-dialogue-window
+      id="ai_bot"
       class={[
         "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
         if(@is_page, do: "bottom-0 sm:bottom-20", else: "bottom-0")

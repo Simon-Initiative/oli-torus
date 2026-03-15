@@ -1,0 +1,127 @@
+version: 1
+feature: adaptive_triggers
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Adaptive authoring shall expose the standalone AI Activation Point only when
+    project trigger capability is enabled.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-001
+    title: Given project triggers are enabled, when an author edits an adaptive screen,
+      then they can add a component called AI Activation Point.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:17
+    - type: plan
+      ref: plan.md:25
+  - id: AC-002
+    title: Given project triggers are disabled, when an author edits an adaptive screen,
+      then the AI Activation Point component and related image/button AI fields are
+      not available.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:17
+    - type: plan
+      ref: plan.md:25
+- id: FR-002
+  title: The standalone adaptive AI Activation Point shall support launch mode and
+    prompt configuration and emit the existing trigger payload contract.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-003
+    title: Given an author configures the adaptive AI Activation Point, when they
+      edit its properties, then they can set launch mode to auto or click and provide
+      an AI activation prompt.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:18
+    - type: plan
+      ref: plan.md:26
+  - id: AC-004
+    title: Given a learner views a click-mode adaptive AI Activation Point and DOT
+      is available, when they activate it, then an adaptive_component trigger is sent
+      with resource and component metadata, and the authored prompt is resolved server-side.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:18
+    - type: plan
+      ref: plan.md:26
+  - id: AC-005
+    title: Given a learner views an auto-mode adaptive AI Activation Point and DOT
+      is available, when the part becomes ready with valid section/resource context,
+      then an adaptive_page trigger is sent using the authored prompt resolved server-side
+      without rendering a click control.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:18
+    - type: plan
+      ref: plan.md:26
+- id: FR-003
+  title: Adaptive images and navigation buttons shall optionally emit AI activation
+    on learner click.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-006
+    title: Given an adaptive image has AI activation enabled with a prompt, when the
+      learner clicks it, then an adaptive_component trigger is sent with image component
+      metadata.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:19
+    - type: plan
+      ref: plan.md:27
+  - id: AC-007
+    title: Given an adaptive navigation button has AI activation enabled with a prompt,
+      when the learner clicks it, then the button keeps its normal submit behavior
+      and also sends an adaptive_component trigger.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:19
+    - type: plan
+      ref: plan.md:27
+- id: FR-004
+  title: Adaptive trigger delivery shall fail closed when trigger context is incomplete
+    or unavailable, without prematurely consuming auto-trigger state.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-008
+    title: Given prompt text, section context, resource context, or DOT instance availability
+      is missing, when adaptive trigger logic evaluates, then no adaptive trigger
+      request is emitted.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:20
+    - type: plan
+      ref: plan.md:28
+- id: FR-005
+  title: Backend conversation trigger handling shall recognize adaptive trigger types.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-009
+    title: Given adaptive trigger events are described for conversation context, when
+      the backend processes adaptive_page or adaptive_component triggers, then both
+      trigger types are recognized and described.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:21
+    - type: plan
+      ref: plan.md:29
