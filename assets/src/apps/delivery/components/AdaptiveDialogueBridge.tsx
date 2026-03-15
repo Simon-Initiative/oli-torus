@@ -11,23 +11,49 @@ export const AdaptiveDialogueBridge: React.FC<AdaptiveDialogueBridgeProps> = ({
 }) => {
   const previousActivityAttemptGuid = useRef<string | undefined>(undefined);
 
+  const getEventTargets = () => {
+    const targets: Window[] = [window];
+
+    try {
+      if (window.parent && window.parent !== window) {
+        targets.push(window.parent);
+      }
+    } catch {
+      // Ignore parent-window access if the browser treats it as cross-origin.
+    }
+
+    return targets;
+  };
+
+  const dispatchAdaptiveEvent = (event: CustomEvent) => {
+    getEventTargets().forEach((target) => target.dispatchEvent(event));
+  };
+
+  const addAdaptiveEventListener = (eventName: string, listener: EventListener) => {
+    getEventTargets().forEach((target) => target.addEventListener(eventName, listener));
+  };
+
+  const removeAdaptiveEventListener = (eventName: string, listener: EventListener) => {
+    getEventTargets().forEach((target) => target.removeEventListener(eventName, listener));
+  };
+
   useEffect(() => {
     const handleAdaptiveScreenSyncRequest = () => {
       if (!enabled || !activityAttemptGuid) {
         return;
       }
 
-      window.dispatchEvent(
+      dispatchAdaptiveEvent(
         new CustomEvent('oli:adaptive-screen-changed', {
           detail: { activityAttemptGuid },
         }),
       );
     };
 
-    window.addEventListener('oli:adaptive-screen-sync-request', handleAdaptiveScreenSyncRequest);
+    addAdaptiveEventListener('oli:adaptive-screen-sync-request', handleAdaptiveScreenSyncRequest);
 
     return () => {
-      window.removeEventListener(
+      removeAdaptiveEventListener(
         'oli:adaptive-screen-sync-request',
         handleAdaptiveScreenSyncRequest,
       );
@@ -42,13 +68,13 @@ export const AdaptiveDialogueBridge: React.FC<AdaptiveDialogueBridgeProps> = ({
 
     if (!previousActivityAttemptGuid.current) {
       previousActivityAttemptGuid.current = activityAttemptGuid;
-      window.dispatchEvent(new CustomEvent('oli:adaptive-screen-ready'));
+      dispatchAdaptiveEvent(new CustomEvent('oli:adaptive-screen-ready'));
       return;
     }
 
     if (previousActivityAttemptGuid.current !== activityAttemptGuid) {
       previousActivityAttemptGuid.current = activityAttemptGuid;
-      window.dispatchEvent(
+      dispatchAdaptiveEvent(
         new CustomEvent('oli:adaptive-screen-changed', {
           detail: { activityAttemptGuid },
         }),

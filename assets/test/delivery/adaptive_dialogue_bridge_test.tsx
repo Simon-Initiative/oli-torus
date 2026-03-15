@@ -65,4 +65,36 @@ describe('AdaptiveDialogueBridge', () => {
     expect(dispatchedEvent.type).toBe('oli:adaptive-screen-changed');
     expect(dispatchedEvent.detail).toEqual({ activityAttemptGuid: 'attempt-guid-1' });
   });
+
+  it('mirrors adaptive sync events onto the parent window when embedded in an iframe', () => {
+    const parentWindow = {
+      addEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+      removeEventListener: jest.fn(),
+    };
+
+    jest.spyOn(window, 'parent', 'get').mockReturnValue(parentWindow as unknown as Window);
+
+    render(<AdaptiveDialogueBridge activityAttemptGuid="attempt-guid-1" enabled={true} />);
+
+    expect(parentWindow.dispatchEvent).toHaveBeenCalledTimes(1);
+    expect((parentWindow.dispatchEvent as jest.Mock).mock.calls[0][0].type).toBe(
+      'oli:adaptive-screen-ready',
+    );
+
+    const syncRequestHandler = (parentWindow.addEventListener as jest.Mock).mock.calls.find(
+      ([eventName]) => eventName === 'oli:adaptive-screen-sync-request',
+    )?.[1];
+
+    expect(syncRequestHandler).toBeDefined();
+
+    syncRequestHandler(new CustomEvent('oli:adaptive-screen-sync-request'));
+
+    const changedEvents = (parentWindow.dispatchEvent as jest.Mock).mock.calls
+      .map(([event]) => event as CustomEvent)
+      .filter((event) => event.type === 'oli:adaptive-screen-changed');
+
+    expect(changedEvents).toHaveLength(1);
+    expect(changedEvents[0].detail).toEqual({ activityAttemptGuid: 'attempt-guid-1' });
+  });
 });

@@ -68,6 +68,9 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
               response_handler_fn.({:error})
               {:halt, {:error}}
 
+            :ignore ->
+              {[], :ok}
+
             other ->
               response_handler_fn.(other)
               {[], :ok}
@@ -95,8 +98,14 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
 
         {:function_call, content}
 
+      [%{"delta" => %{"role" => _role}}] ->
+        :ignore
+
       [%{"delta" => %{"content" => content}}] ->
         {:tokens_received, content}
+
+      [%{"delta" => delta}] when map_size(delta) == 0 ->
+        :ignore
 
       _ ->
         {:error}
