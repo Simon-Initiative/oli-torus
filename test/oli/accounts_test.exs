@@ -11,7 +11,6 @@ defmodule Oli.AccountsTest do
   alias Oli.Delivery.Sections
   alias Lti_1p3.Roles.ContextRoles
   alias Lti_1p3.Roles.PlatformRoles
-  alias Oli.Accounts.SystemRole
 
   describe "authors" do
     test "system role defaults to author", %{} do
@@ -36,16 +35,13 @@ defmodule Oli.AccountsTest do
       assert author.system_role_id == Accounts.SystemRole.role_id().system_admin
     end
 
-    test "Accounts.is_admin? returns true when the author has and admin role and has_admin_role?/2 returns true when the author has the matching role or system_admin role" do
+    test "admin helper hierarchy matches the system role levels" do
       author = author_fixture()
 
       assert Accounts.is_admin?(author) == false
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) == false
-      assert Accounts.has_admin_role?(author, :system_admin) == false
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().content_admin) == false
-      assert Accounts.has_admin_role?(author, :content_admin) == false
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().account_admin) == false
-      assert Accounts.has_admin_role?(author, :account_admin) == false
+      assert Accounts.at_least_content_admin?(author) == false
+      assert Accounts.at_least_account_admin?(author) == false
+      assert Accounts.is_system_admin?(author) == false
 
       {:ok, author} =
         Accounts.insert_or_update_author(%{
@@ -55,12 +51,9 @@ defmodule Oli.AccountsTest do
 
       assert author.system_role_id == Accounts.SystemRole.role_id().system_admin
       assert Accounts.is_admin?(author) == true
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) == true
-      assert Accounts.has_admin_role?(author, :system_admin) == true
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().content_admin) == true
-      assert Accounts.has_admin_role?(author, :content_admin) == true
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().account_admin) == true
-      assert Accounts.has_admin_role?(author, :account_admin) == true
+      assert Accounts.at_least_content_admin?(author) == true
+      assert Accounts.at_least_account_admin?(author) == true
+      assert Accounts.is_system_admin?(author) == true
 
       {:ok, author} =
         Accounts.insert_or_update_author(%{
@@ -70,12 +63,9 @@ defmodule Oli.AccountsTest do
 
       assert author.system_role_id == Accounts.SystemRole.role_id().account_admin
       assert Accounts.is_admin?(author) == true
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) == false
-      assert Accounts.has_admin_role?(author, :system_admin) == false
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().content_admin) == false
-      assert Accounts.has_admin_role?(author, :content_admin) == false
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().account_admin) == true
-      assert Accounts.has_admin_role?(author, :account_admin) == true
+      assert Accounts.at_least_content_admin?(author) == true
+      assert Accounts.at_least_account_admin?(author) == true
+      assert Accounts.is_system_admin?(author) == false
 
       {:ok, author} =
         Accounts.insert_or_update_author(%{
@@ -85,12 +75,9 @@ defmodule Oli.AccountsTest do
 
       assert author.system_role_id == Accounts.SystemRole.role_id().content_admin
       assert Accounts.is_admin?(author) == true
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) == false
-      assert Accounts.has_admin_role?(author, :system_admin) == false
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().content_admin) == true
-      assert Accounts.has_admin_role?(author, :content_admin) == true
-      assert Accounts.has_admin_role?(author, SystemRole.role_id().account_admin) == false
-      assert Accounts.has_admin_role?(author, :account_admin) == false
+      assert Accounts.at_least_content_admin?(author) == true
+      assert Accounts.at_least_account_admin?(author) == false
+      assert Accounts.is_system_admin?(author) == false
     end
 
     test "search_authors_matching/1 returns authors matching the input exactly" do
@@ -1409,6 +1396,15 @@ defmodule Oli.AccountsTest do
     } do
       assert Accounts.can_access?(content_admin, project1)
       assert Accounts.can_access?(content_admin, project2)
+    end
+
+    test "account admin can access all projects by slug", %{
+      account_admin: account_admin,
+      project1: project1,
+      project2: project2
+    } do
+      assert Accounts.can_access_via_slug?(account_admin, project1.slug)
+      assert Accounts.can_access_via_slug?(account_admin, project2.slug)
     end
   end
 end
