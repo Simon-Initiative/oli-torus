@@ -1,32 +1,40 @@
 name: PrivSignal Lockfile Refresh
 
 on:
-  workflow_run:
-    workflows: ["Build & Test PR"]
+  pull_request:
     types:
-      - completed
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    branches:
+      - master
+      - hotfix-*
+      - prerelease-*
+      - nextgen-ux
+    paths-ignore:
+      - priv_signal.lockfile.json
+
+concurrency:
+  group: privsignal-lockfile-refresh-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   refresh-lockfile:
-    name: Refresh lockfile after required checks
-    if: github.event.workflow_run.conclusion == 'success'
+    name: Refresh lockfile before merge
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Skip if not a PR run
-        if: github.event.workflow_run.event != 'pull_request'
-        run: echo "Not a pull_request-triggered workflow run; skipping."
-
-      - name: Skip fork PRs and lockfile-only commits
+      - name: Skip fork PRs and bot-triggered reruns
         id: gate
-        if: github.event.workflow_run.event == 'pull_request'
         shell: bash
         run: |
           should_run=true
+          actor="${{ github.actor }}"
 
-          if [ "${{ github.event.workflow_run.head_repository.full_name }}" != "${{ github.repository }}" ]; then
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
             should_run=false
           fi
 
@@ -34,9 +42,11 @@ jobs:
             should_run=false
           fi
 
-          if [ "${{ github.event.workflow_run.actor.login }}" = "github-actions[bot]" ]; then
-            should_run=false
-          fi
+          case "$actor" in
+            *"[bot]" | "simon-bot")
+              should_run=false
+              ;;
+          esac
 
           echo "should_run=$should_run" >> "$GITHUB_OUTPUT"
 
@@ -45,32 +55,88 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          repository: ${{ github.repository }}
-          ref: ${{ github.event.workflow_run.head_branch }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
-      - name: 🧪 Setup Elixir
+      - name: 🔁 Stop self-triggered lockfile loops
         if: steps.gate.outputs.should_run == 'true'
+        id: self-loop
+        shell: bash
+        run: |
+          should_continue=true
+          last_subject="$(git log -1 --pretty=%s)"
+          changed_files="$(git show --pretty='' --name-only HEAD | sed '/^$/d')"
+          non_lockfile_count=0
+
+          while IFS= read -r file; do
+            if [ "$file" != "priv_signal.lockfile.json" ]; then
+              non_lockfile_count=$((non_lockfile_count + 1))
+            fi
+          done <<< "$changed_files"
+
+          case "$last_subject" in
+            "chore(privsignal): refresh lockfile"*)
+              should_continue=false
+              echo "Skipping: latest commit is lockfile refresh."
+              ;;
+            *)
+              if [ -n "$changed_files" ] && [ "$non_lockfile_count" = "0" ]; then
+                should_continue=false
+                echo "Skipping: latest commit only touched priv_signal.lockfile.json."
+              fi
+              ;;
+          esac
+
+          echo "should_continue=$should_continue" >> "$GITHUB_OUTPUT"
+
+      - name: 🧪 Setup Elixir
+        if: steps.gate.outputs.should_run == 'true' && steps.self-loop.outputs.should_continue == 'true'
         uses: erlef/setup-elixir@v1
         with:
           elixir-version: 1.19.2
           otp-version: 28.1.1
 
       - name: ⬇️ Install dependencies
-        if: steps.gate.outputs.should_run == 'true'
+        if: steps.gate.outputs.should_run == 'true' && steps.self-loop.outputs.should_continue == 'true'
         run: mix deps.get
 
       - name: 🔨 Compile PrivSignal dependency
-        if: steps.gate.outputs.should_run == 'true'
+        if: steps.gate.outputs.should_run == 'true' && steps.self-loop.outputs.should_continue == 'true'
         run: mix deps.compile priv_signal
 
       - name: ♻️ Regenerate and push lockfile
-        if: steps.gate.outputs.should_run == 'true'
+        if: steps.gate.outputs.should_run == 'true' && steps.self-loop.outputs.should_continue == 'true'
         shell: bash
         run: |
           set -euo pipefail
 
+          mkdir -p tmp/privsignal
+          had_previous_lockfile=false
+          if [ -f priv_signal.lockfile.json ]; then
+            had_previous_lockfile=true
+            cp priv_signal.lockfile.json tmp/privsignal/previous.lockfile.json
+          fi
+
           mix priv_signal.scan --quiet --json-path priv_signal.lockfile.json
+
+          # Canonicalize JSON key ordering to avoid churn-only commits.
+          tmp_file="$(mktemp)"
+          jq -S . priv_signal.lockfile.json > "$tmp_file"
+          mv "$tmp_file" priv_signal.lockfile.json
+
+          # Ignore volatile scanner metadata when deciding whether to commit.
+          if [ "$had_previous_lockfile" = "true" ]; then
+            previous_normalized="$(mktemp)"
+            current_normalized="$(mktemp)"
+            jq -S 'del(.git.commit, .summary.scan_duration_ms)' tmp/privsignal/previous.lockfile.json > "$previous_normalized"
+            jq -S 'del(.git.commit, .summary.scan_duration_ms)' priv_signal.lockfile.json > "$current_normalized"
+
+            if diff -q "$previous_normalized" "$current_normalized" >/dev/null; then
+              echo "No semantic lockfile changes (only volatile metadata changed)."
+              exit 0
+            fi
+          fi
 
           if git diff --quiet -- priv_signal.lockfile.json; then
             echo "No lockfile changes."
@@ -81,5 +147,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add priv_signal.lockfile.json
-          git commit -m "chore(privsignal): refresh lockfile"
-          git push origin "HEAD:${{ github.event.workflow_run.head_branch }}"
+          git commit -m "chore(privsignal): refresh lockfile [skip ci]"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
