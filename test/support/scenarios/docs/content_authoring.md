@@ -33,7 +33,8 @@ Creates a standalone activity that can be referenced in pages.
 - `virtual_id`: Scenario-local identifier for the activity (optional)
 - `scope`: "embedded" or "banked" (default: "embedded")
 - `type`: Activity type slug (e.g., "oli_multiple_choice")
-- `content`: TorusDoc YAML content defining the activity
+- `content_format`: "torusdoc" (default) or "json"
+- `content`: TorusDoc YAML content (for `content_format: torusdoc`) or JSON object/string (for `content_format: json`)
 - `objectives`: List of learning objective titles to attach (optional)
 - `tags`: List of tag titles to attach (optional)
 
@@ -119,6 +120,31 @@ Creates a standalone activity that can be referenced in pages.
 ```
 
 **Note**: Objectives are attached by title. The project must have these objectives defined before activities can reference them.
+
+#### Adaptive Activity Using JSON Content
+```yaml
+- create_activity:
+    project: "my_project"
+    title: "Adaptive Internal Iframe"
+    type: "oli_adaptive"
+    content_format: "json"
+    content:
+      authoring:
+        parts:
+          - id: "iframe_1"
+            type: "janus-capi-iframe"
+            src: "/course/link/page_two"
+            sourceType: "page"
+            linkType: "page"
+            idref: 123
+      partsLayout:
+        - id: "iframe_1"
+          type: "janus-capi-iframe"
+          src: "/course/link/page_two"
+          sourceType: "page"
+          linkType: "page"
+          idref: 123
+```
 
 #### Activity with Tags
 ```yaml
