@@ -51,7 +51,13 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
 
     test "derives affected capabilities from projection dependency metadata" do
       assert Enum.sort(InstructorProjections.affected_capabilities(:oracle_instructor_progress)) ==
-               Enum.sort([:progress, :summary, :challenging_objectives, :assessments, :ai_context])
+               Enum.sort([
+                 :progress,
+                 :summary,
+                 :challenging_objectives,
+                 :assessments,
+                 :ai_context
+               ])
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_proficiency) ==
                [:student_support]

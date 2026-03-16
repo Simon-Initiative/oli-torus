@@ -36,8 +36,14 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections do
                 end)
 
   @affected_by_oracle Enum.reduce(@dependencies, %{}, fn {capability_key, deps}, acc ->
-                        Enum.reduce(deps.required ++ deps.optional, acc, fn oracle_key, inner_acc ->
-                          Map.update(inner_acc, oracle_key, [capability_key], &[capability_key | &1])
+                        Enum.reduce(deps.required ++ deps.optional, acc, fn oracle_key,
+                                                                            inner_acc ->
+                          Map.update(
+                            inner_acc,
+                            oracle_key,
+                            [capability_key],
+                            &[capability_key | &1]
+                          )
                         end)
                       end)
                       |> Enum.into(%{}, fn {oracle_key, capabilities} ->
