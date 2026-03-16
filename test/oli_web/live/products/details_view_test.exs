@@ -255,20 +255,21 @@ defmodule OliWeb.Products.DetailsViewTest do
       {:ok, view, _html} = live(conn, product_route(product.slug))
 
       assert has_element?(view, "h4", "Paywall Settings")
-      assert has_element?(view, "p", "For information regarding paywall settings")
+      assert has_element?(view, "div", "For information regarding paywall settings")
       assert has_element?(view, "#tech_support_paywall_settings", "contact our support team.")
     end
 
-    test "paywall settings are no longer in the Details form", %{
+    test "renders paywall settings controls in the paywall section", %{
       conn: conn,
       product: product
     } do
       {:ok, _view, html} = live(conn, product_route(product.slug))
 
-      # Paywall fields should NOT be in the Details section form
-      refute html =~ "Requires Payment"
-      refute html =~ "Has Grace Period"
-      refute html =~ "Grace period days"
+      assert html =~ "Requires payment"
+      assert html =~ "Amount"
+      assert html =~ "Payment options"
+      assert html =~ "Has grace period"
+      assert html =~ "Grace period days"
     end
   end
 

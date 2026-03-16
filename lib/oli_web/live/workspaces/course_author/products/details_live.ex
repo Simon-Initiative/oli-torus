@@ -2,7 +2,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias Oli.Accounts
+  alias Oli.{Accounts, Publishing, Repo, Tags}
   alias Oli.Authoring.Course
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
@@ -11,12 +11,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Inventories
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.Confirm
+  alias OliWeb.Components.Common
+  alias OliWeb.Live.Components.Tags.TagsComponent
   alias OliWeb.Products.Details.Actions
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
   alias OliWeb.Products.Details.ImageUpload
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Sections.Mount
+  alias OliWeb.Sections.PaywallSettings
 
   require Logger
 
@@ -30,9 +33,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
       {_, _, product} ->
         author = socket.assigns.current_author
+        product = Repo.preload(product, communities: :institutions)
         base_project = Course.get_project!(product.base_project_id)
         publishers = Inventories.list_publishers()
         is_admin = Accounts.at_least_content_admin?(author)
+        tags = Tags.get_section_tags(product)
+        access_institutions = Publishing.get_institutions_with_access(product)
         changeset = Section.changeset(product, %{})
         project = socket.assigns.project
 
@@ -46,6 +52,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
            author: author,
            product: product,
            is_admin: is_admin,
+           tags: tags,
+           access_institutions: access_institutions,
            changeset: changeset,
            title: "Edit Template",
            show_confirm: false,
@@ -86,6 +94,57 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             is_admin={@is_admin}
             ctx={@ctx}
           />
+          <div class="form-label-group mb-3 mt-3">
+            <Common.label class="control-label">Tags</Common.label>
+            <.live_component
+              :if={@is_admin}
+              module={TagsComponent}
+              id={"product-tags-#{@product.id}"}
+              entity_type={:section}
+              entity_id={@product.id}
+              current_tags={@tags}
+              current_author={@author}
+              variant={:form}
+            />
+            <TagsComponent.read_only_tags :if={!@is_admin} tags={@tags} />
+          </div>
+          <div id="communities-section" class="form-label-group mb-3">
+            <Common.label class="control-label">Communities</Common.label>
+            <p class="text-secondary">
+              <Common.comma_separated_links items={
+                Enum.map(@product.communities, fn c ->
+                  %{name: c.name, href: ~p"/authoring/communities/#{c.id}"}
+                end)
+              } />
+            </p>
+          </div>
+          <div id="institutions-section" class="form-label-group mb-3">
+            <Common.label class="control-label">Institutions</Common.label>
+            <p class="text-secondary">
+              <Common.comma_separated_links items={
+                Enum.map(@access_institutions, fn i ->
+                  %{name: i.name, href: ~p"/admin/institutions/#{i.id}"}
+                end)
+              } />
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-cols-12 py-5 border-b dark:border-gray-700">
+        <div class="md:col-span-4 mr-4">
+          <h4>Paywall Settings</h4>
+          <div class="text-muted">
+            For information regarding paywall settings,
+            <.tech_support_link
+              id="tech_support_paywall_settings"
+              class="text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold cursor-pointer"
+            >
+              contact our support team.
+            </.tech_support_link>
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <PaywallSettings.render form={to_form(@changeset)} disabled={false} />
         </div>
       </div>
       <div class="grid grid-cols-12 py-5 border-b">
