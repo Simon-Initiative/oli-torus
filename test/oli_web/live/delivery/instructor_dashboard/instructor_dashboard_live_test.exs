@@ -676,7 +676,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
              )
 
       assert has_element?(view, "#learning-dashboard-assessments-placeholder")
-      refute has_element?(view, "#learning-dashboard-objectives-placeholder")
+      refute has_element?(view, "[id^='learning-dashboard-challenging-objectives-']")
     end
 
     test "root instructor dashboard route redirects to insights dashboard", %{
@@ -763,6 +763,36 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
                "course"
+    end
+  end
+
+  describe "instructor: insights > dashboard tab with objectives" do
+    setup [:instructor_conn, :create_full_project_with_objectives]
+
+    test "renders the challenging objectives tile when the section has objectives", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      assert has_element?(view, "#learning-dashboard-content-group")
+      assert has_element?(view, "[id^='learning-dashboard-challenging-objectives-']")
+      assert has_element?(view, "h3", "Challenging Objectives")
     end
   end
 end
