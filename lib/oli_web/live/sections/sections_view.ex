@@ -65,7 +65,7 @@ defmodule OliWeb.Sections.SectionsView do
   def mount(_, _session, socket) do
     ctx = socket.assigns.ctx
     author = socket.assigns.current_author
-    is_admin = Oli.Accounts.has_admin_role?(author, :content_admin)
+    is_admin = Oli.Accounts.at_least_content_admin?(author)
 
     filters = BrowseFilters.default()
     institutions = Institutions.list_institutions()

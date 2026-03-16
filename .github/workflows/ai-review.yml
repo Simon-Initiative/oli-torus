@@ -5,26 +5,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  lockfile-refresh-gate:
-    name: detect/lockfile-refresh-head
-    runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.detect.outputs.skip }}
-      reason: ${{ steps.detect.outputs.reason }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.sha }}
-      - id: detect
-        shell: bash
-        run: bash .github/scripts/should_skip_for_lockfile_refresh.sh
-
   changes:
-    if: ${{ needs.lockfile-refresh-gate.outputs.skip != 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     name: detect/changes
     runs-on: ubuntu-latest
-    needs: [lockfile-refresh-gate]
     outputs:
       elixir: ${{ steps.filter.outputs.elixir }}
       typescript: ${{ steps.filter.outputs.typescript }}
@@ -83,13 +67,12 @@ jobs:
           echo "roles=${json}" >> "$GITHUB_OUTPUT"
 
   specialist:
-    if: ${{ needs.lockfile-refresh-gate.outputs.skip != 'true' && needs.changes.outputs.roles != '[]' }}
     name: ai/${{ matrix.role }}
     runs-on: ubuntu-latest
-    needs: [lockfile-refresh-gate, changes]
+    needs: [changes]
     strategy:
       matrix:
-        role: ${{ fromJSON(needs.changes.outputs.roles || '[]') }}
+        role: ${{ fromJSON(needs.changes.outputs.roles) }}
     steps:
       - uses: actions/checkout@v4
         with:
