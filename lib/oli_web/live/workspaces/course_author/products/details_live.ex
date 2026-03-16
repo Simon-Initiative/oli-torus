@@ -33,12 +33,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
       {_, _, product} ->
         author = socket.assigns.current_author
-        product = Repo.preload(product, communities: :institutions)
         base_project = Course.get_project!(product.base_project_id)
         publishers = Inventories.list_publishers()
         is_admin = Accounts.at_least_content_admin?(author)
+
+        product =
+          if is_admin, do: Repo.preload(product, communities: :institutions), else: product
+
         tags = Tags.get_section_tags(product)
-        access_institutions = Publishing.get_institutions_with_access(product)
+
+        access_institutions =
+          if is_admin, do: Publishing.get_institutions_with_access(product), else: []
+
         changeset = Section.changeset(product, %{})
         project = socket.assigns.project
 
