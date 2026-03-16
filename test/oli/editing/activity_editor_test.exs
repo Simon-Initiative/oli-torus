@@ -599,6 +599,43 @@ defmodule Oli.ActivityEditingTest do
                )
     end
 
+    test "edit/5 handles malformed adaptive authoring containers without crashing", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "partsLayout" => [
+            %{
+              "id" => "image-1",
+              "type" => "janus-image",
+              "custom" => %{
+                "src" => "/images/placeholder-image.svg",
+                "enableAiTrigger" => true,
+                "aiTriggerPrompt" => "Use this image as context"
+              }
+            }
+          ],
+          "authoring" => []
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
     test "edit/5 allows adaptive AI trigger parts when project triggers are enabled", %{
       author: author,
       project: project,

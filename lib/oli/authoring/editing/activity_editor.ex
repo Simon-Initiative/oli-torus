@@ -675,8 +675,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       end
 
     parts =
-      get_in(update, ["content", "authoring", "parts"]) ||
-        get_in(revision.content, ["authoring", "parts"])
+      maybe_authoring_parts(Map.get(update, "content")) ||
+        maybe_authoring_parts(revision.content) || []
 
     with :ok <-
            validate_adaptive_dynamic_links(revision, update, project_id, project_page_targets),
@@ -809,8 +809,16 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp invalid_adaptive_trigger_content?(content) when is_map(content) do
-    parts_layout = map_value(content, :partsLayout) || []
-    authoring_parts = content |> map_value(:authoring) |> map_value(:parts) || []
+    parts_layout =
+      content
+      |> map_value(:partsLayout)
+      |> normalize_list()
+
+    authoring_parts =
+      content
+      |> map_value(:authoring)
+      |> map_value(:parts)
+      |> normalize_list()
 
     Enum.any?(parts_layout, &disallowed_adaptive_layout_part?/1) or
       Enum.any?(authoring_parts, &disallowed_adaptive_authoring_part?/1)
@@ -842,6 +850,24 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp ai_trigger_configured?(_), do: false
 
+  defp maybe_authoring_parts(content) when is_map(content) do
+    case map_value(content, :authoring) do
+      authoring when is_map(authoring) ->
+        case map_value(authoring, :parts) do
+          parts when is_list(parts) -> parts
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp maybe_authoring_parts(_), do: nil
+
+  defp normalize_list(value) when is_list(value), do: value
+  defp normalize_list(_), do: []
+
   defp present_text?(value) when is_binary(value), do: String.trim(value) != ""
   defp present_text?(_), do: false
 
@@ -853,6 +879,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       :error -> Map.get(map, Atom.to_string(key))
     end
   end
+
+  defp map_value(_, _key), do: nil
 
   defp validate_authoring_dynamic_links(nil, _project_id, _project_page_targets), do: :ok
 

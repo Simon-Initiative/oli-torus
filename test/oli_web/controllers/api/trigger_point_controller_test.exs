@@ -232,6 +232,51 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
       assert %{"type" => "submitted"} = json_response(conn, 200)
       refute_receive {:trigger, %Oli.Conversation.Trigger{}}, 100
     end
+
+    test "returns invalid trigger when adaptive partsLayout content is malformed", %{
+      conn: conn,
+      map: map
+    } do
+      Oli.Delivery.Sections.enroll(
+        map.user1.id,
+        map.section.id,
+        [Lti_1p3.Roles.ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      Oli.Delivery.Sections.update_section!(map.section, %{
+        triggers_enabled: true,
+        assistant_enabled: true
+      })
+
+      adaptive_revision =
+        map.adaptive_revision
+        |> Revision.changeset(%{
+          content: %{
+            "partsLayout" => "bad"
+          }
+        })
+        |> Oli.Repo.update!()
+
+      trigger = %{
+        "trigger_type" => "adaptive_component",
+        "resource_id" => adaptive_revision.resource_id,
+        "data" => %{
+          "component_id" => "trigger-1",
+          "component_type" => "janus-ai-trigger"
+        }
+      }
+
+      conn =
+        post(
+          conn,
+          Routes.trigger_point_path(conn, :invoke, map.section.slug),
+          %{"trigger" => trigger}
+        )
+
+      assert %{"type" => "failure", "reason" => "Invalid trigger point"} =
+               json_response(conn, 200)
+    end
   end
 
   defp setup_session(%{conn: conn}) do

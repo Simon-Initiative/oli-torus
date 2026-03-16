@@ -4,11 +4,12 @@ defmodule Oli.Conversation.Triggers do
   alias Oli.Repo
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Phoenix.PubSub
   alias Oli.Conversation.Trigger
   alias Oli.Conversation.AdaptiveTriggerInvocationCache
   alias Oli.Activities.Model.{Part}
-  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
 
   # The supported trigger type
@@ -173,7 +174,7 @@ defmodule Oli.Conversation.Triggers do
         )
 
       :duplicate ->
-        Logger.info(
+        Logger.debug(
           "Suppressing duplicate adaptive trigger for section=#{section_id} user=#{current_user_id} resource=#{trigger.resource_id}"
         )
 
@@ -262,11 +263,11 @@ defmodule Oli.Conversation.Triggers do
     end
   end
 
-  defp resolve_adaptive_client_trigger(section_slug, section_id, trigger) do
+  defp resolve_adaptive_client_trigger(_section_slug, section_id, trigger) do
     with {:ok, resource_id} <- normalize_adaptive_resource_id(trigger.resource_id),
-         revision_content when not is_nil(revision_content) <-
-           get_adaptive_revision_content(section_slug, section_id, resource_id),
-         {:ok, part} <- find_adaptive_trigger_part(revision_content, trigger.data),
+         parts_layout when is_list(parts_layout) <-
+           get_adaptive_parts_layout(section_id, resource_id),
+         {:ok, part} <- find_adaptive_trigger_part(parts_layout, trigger.data),
          {:ok, prompt} <- resolve_adaptive_prompt(trigger.trigger_type, part),
          {:ok, prompt} <- validate_adaptive_prompt(prompt) do
       {:ok,
@@ -297,29 +298,48 @@ defmodule Oli.Conversation.Triggers do
 
   defp normalize_adaptive_resource_id(_), do: {:error, :invalid_trigger}
 
-  defp get_adaptive_revision_content(section_slug, section_id, resource_id) do
+  defp get_adaptive_parts_layout(section_id, resource_id) do
     case SectionResourceDepot.get_section_resource(section_id, resource_id) do
       %{revision_id: revision_id} ->
-        Repo.one(from(r in Revision, where: r.id == ^revision_id, select: r.content))
+        revision_id
+        |> get_parts_layout_by_revision_id()
+        |> normalize_parts_layout()
 
       _ ->
         Repo.one(
-          from(
-            [_sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
-            where: rev.resource_id == ^resource_id,
-            select: rev.content
+          from(spp in SectionsProjectsPublications,
+            where: spp.section_id == ^section_id,
+            join: pr in PublishedResource,
+            on: pr.publication_id == spp.publication_id,
+            where: pr.resource_id == ^resource_id,
+            join: rev in Revision,
+            on: rev.id == pr.revision_id,
+            select: fragment("?->'partsLayout'", rev.content),
+            limit: 1
           )
         )
+        |> normalize_parts_layout()
     end
   end
 
-  defp find_adaptive_trigger_part(content, data) when is_map(content) and is_map(data) do
+  defp get_parts_layout_by_revision_id(revision_id) do
+    Repo.one(
+      from(r in Revision,
+        where: r.id == ^revision_id,
+        select: fragment("?->'partsLayout'", r.content)
+      )
+    )
+  end
+
+  defp normalize_parts_layout(parts_layout) when is_list(parts_layout), do: parts_layout
+  defp normalize_parts_layout(_), do: nil
+
+  defp find_adaptive_trigger_part(parts_layout, data)
+       when is_list(parts_layout) and is_map(data) do
     component_id =
       data
       |> Map.get("component_id")
       |> normalize_component_id(nil)
-
-    parts_layout = map_value(content, "partsLayout") || []
 
     case component_id do
       nil ->
