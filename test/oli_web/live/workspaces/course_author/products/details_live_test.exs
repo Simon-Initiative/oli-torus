@@ -93,6 +93,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert html =~ "Payment options"
       assert html =~ "Has grace period"
       assert html =~ "Grace period days"
+      refute html =~ "Payment Settings"
+      refute html =~ "Settings related to required student fee and optional grace period"
 
       {details_index, _} = :binary.match(html, "Details")
       {paywall_index, _} = :binary.match(html, "Paywall Settings")

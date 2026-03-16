@@ -148,7 +148,7 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="col-span-8">
-          <PaywallSettings.render form={to_form(@changeset)} disabled={false} />
+          <PaywallSettings.render form={to_form(@changeset)} disabled={false} show_group={false} />
         </div>
       </div>
 

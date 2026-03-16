@@ -144,7 +144,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
           </div>
         </div>
         <div class="md:col-span-8">
-          <PaywallSettings.render form={to_form(@changeset)} disabled={false} />
+          <PaywallSettings.render form={to_form(@changeset)} disabled={false} show_group={false} />
         </div>
       </div>
       <div class="grid grid-cols-12 py-5 border-b">

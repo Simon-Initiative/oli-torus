@@ -270,6 +270,8 @@ defmodule OliWeb.Products.DetailsViewTest do
       assert html =~ "Payment options"
       assert html =~ "Has grace period"
       assert html =~ "Grace period days"
+      refute html =~ "Payment Settings"
+      refute html =~ "Settings related to required student fee and optional grace period"
     end
   end
 
