@@ -5,6 +5,7 @@ import PageSlice from './name';
 
 export interface PageState {
   graded: boolean;
+  ai_enabled?: boolean;
   authorEmail: string;
   objectives: any;
   title: string;
@@ -23,6 +24,7 @@ export interface PageState {
 
 const initialState: PageState = {
   graded: false,
+  ai_enabled: true,
   authorEmail: '',
   objectives: { attached: [] },
   title: 'New Adaptive Page',
@@ -44,6 +46,7 @@ const slice: Slice<PageState> = createSlice({
   reducers: {
     loadPage(state, action: PayloadAction<Partial<PageState>>) {
       state.graded = !!action.payload.graded;
+      state.ai_enabled = action.payload.ai_enabled ?? !state.graded;
       state.authorEmail = action.payload.authorEmail || initialState.authorEmail;
       state.title = action.payload.title || initialState.title;
       state.objectives = action.payload.objectives || initialState.objectives;
@@ -63,6 +66,9 @@ const slice: Slice<PageState> = createSlice({
     updatePage(state, action: PayloadAction<Partial<PageState>>) {
       if (action.payload.graded !== undefined) {
         state.graded = action.payload.graded;
+      }
+      if (action.payload.ai_enabled !== undefined) {
+        state.ai_enabled = action.payload.ai_enabled;
       }
       if (action.payload.authorEmail !== undefined) {
         state.authorEmail = action.payload.authorEmail;

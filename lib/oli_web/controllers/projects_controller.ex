@@ -29,7 +29,7 @@ defmodule OliWeb.ProjectsController do
   """
   def export_csv(conn, params) do
     author = conn.assigns.current_author
-    is_content_admin = Accounts.has_admin_role?(author, :content_admin)
+    is_content_admin = Accounts.at_least_content_admin?(author)
 
     # Extract table state from URL parameters with validation
     sort_by =

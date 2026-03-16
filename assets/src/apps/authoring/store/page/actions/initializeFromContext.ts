@@ -26,6 +26,7 @@ export const initializeFromContext = createAsyncThunk(
     // load the page state properties
     const pageState: Partial<PageState> = {
       graded: params.context.graded,
+      ai_enabled: params.context.ai_enabled ?? !params.context.graded,
       authorEmail: params.context.authorEmail,
       objectives: params.context.objectives,
       title: params.context.title,
