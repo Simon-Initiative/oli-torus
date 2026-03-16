@@ -10,7 +10,7 @@ defmodule Oli.Dashboard.Oracle do
   alias Oli.Dashboard.OracleContext
 
   @type oracle_key :: atom()
-  @type payload :: map() | term()
+  @type payload :: term()
   @type reason :: term()
 
   @callback key() :: oracle_key()
