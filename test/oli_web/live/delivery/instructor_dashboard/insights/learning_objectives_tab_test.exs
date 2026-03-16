@@ -482,6 +482,32 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
     end
   end
 
+  describe "deep-link initialization" do
+    setup [:instructor_conn, :create_full_project_with_objectives]
+
+    test "invalid deep-link ids fall back without crashing or forcing expansion", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_learning_objectives_route(section.slug, %{
+            objective_id: 999_999,
+            subobjective_id: 999_998,
+            selected_card_value: :low_proficiency_skills
+          })
+        )
+
+      assert has_element?(view, "h4", "Learning Objectives")
+      refute has_element?(view, "button[aria-expanded='true']")
+    end
+  end
+
   describe "related activities column" do
     setup [:instructor_conn, :create_project_with_objectives]
 

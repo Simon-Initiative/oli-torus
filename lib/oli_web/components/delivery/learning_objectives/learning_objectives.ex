@@ -1,6 +1,8 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives do
   use OliWeb, :live_component
 
+  require Logger
+
   alias OliWeb.Common.{Params, StripedPagedTable, SearchInput}
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.Content.MultiSelect
@@ -18,7 +20,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     text_search: nil,
     filter_by: "root",
     selected_proficiency_ids: [],
-    selected_card_value: nil
+    selected_card_value: nil,
+    navigation_source: nil,
+    objective_id: nil,
+    subobjective_id: nil
   }
 
   @proficiency_options [
@@ -37,6 +42,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         socket
       ) do
     params = decode_params(params)
+    scoped_objectives = scoped_objectives(objectives_tab.objectives, params)
+    socket = maybe_handle_tile_navigation(socket, scoped_objectives, params)
 
     {total_count, rows, filtered_objectives} =
       apply_filters(objectives_tab.objectives, params, assigns[:patch_url_type])
@@ -53,8 +60,9 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     expanded_objectives = socket.assigns[:expanded_objectives] || MapSet.new()
 
     expanded_objectives =
-      maybe_expand_for_matching_subobjectives(
-        expanded_objectives,
+      expanded_objectives
+      |> MapSet.union(initial_expanded_rows(scoped_objectives, params))
+      |> maybe_expand_for_matching_subobjectives(
         filtered_objectives,
         params,
         assigns[:patch_url_type]
@@ -82,7 +90,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
     selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
 
-    scoped_objectives = scoped_objectives(objectives_tab.objectives, params)
     objectives_count = objectives_count(scoped_objectives)
 
     card_props = [
@@ -490,7 +497,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           "selected_card_value",
           [:low_proficiency_outcomes, :low_proficiency_skills],
           @default_params.selected_card_value
-        )
+        ),
+      navigation_source:
+        Params.get_param(params, "navigation_source", @default_params.navigation_source),
+      objective_id: Params.get_int_param(params, "objective_id", @default_params.objective_id),
+      subobjective_id:
+        Params.get_int_param(params, "subobjective_id", @default_params.subobjective_id)
     }
   end
 
@@ -580,6 +592,14 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
          _patch_url_type
        ),
        do: expanded_rows
+
+  @doc false
+  def initial_expanded_rows(scoped_objectives, params) do
+    case resolve_deep_link_parent_id(scoped_objectives, params) do
+      nil -> MapSet.new()
+      parent_id -> MapSet.new(["row_#{parent_id}"])
+    end
+  end
 
   defp filtered_subobjectives(filtered_objectives, params) do
     if subobjective_filters_active?(params) do
@@ -792,24 +812,30 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   defp maybe_filter_by_card(objectives, _), do: objectives
 
   defp route_for(socket, new_params, :instructor_dashboard) do
+    base_params =
+      Map.drop(socket.assigns.params, ["objective_id", "subobjective_id", "navigation_source"])
+
     Routes.live_path(
       socket,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       socket.assigns.section_slug,
       socket.assigns.view,
       :learning_objectives,
-      update_params(socket.assigns.params, new_params) |> encode_params_for_url()
+      update_params(base_params, new_params) |> encode_params_for_url()
     )
   end
 
   defp route_for(socket, new_params, :student_dashboard) do
+    base_params =
+      Map.drop(socket.assigns.params, ["objective_id", "subobjective_id", "navigation_source"])
+
     Routes.live_path(
       socket,
       OliWeb.Delivery.StudentDashboard.StudentDashboardLive,
       socket.assigns.section_slug,
       socket.assigns.student_id,
       :learning_objectives,
-      update_params(socket.assigns.params, new_params) |> encode_params_for_url()
+      update_params(base_params, new_params) |> encode_params_for_url()
     )
   end
 
@@ -870,5 +896,98 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         numbering_index: -1
       }
     ] ++ navigator_items
+  end
+
+  defp maybe_handle_tile_navigation(
+         socket,
+         scoped_objectives,
+         %{navigation_source: "challenging_objectives_tile"} = params
+       ) do
+    signature = navigation_signature(params)
+
+    if socket.assigns[:challenging_objectives_navigation_signature] == signature do
+      socket
+    else
+      :telemetry.execute(
+        [:oli, :instructor_dashboard, :challenging_objectives, :navigation],
+        %{count: 1},
+        %{
+          source: params.navigation_source,
+          target: navigation_target(params),
+          filter_by: params.filter_by
+        }
+      )
+
+      maybe_log_unresolved_deep_link(scoped_objectives, params)
+
+      assign(socket, :challenging_objectives_navigation_signature, signature)
+    end
+  end
+
+  defp maybe_handle_tile_navigation(socket, _scoped_objectives, _params), do: socket
+
+  defp maybe_log_unresolved_deep_link(scoped_objectives, params) do
+    if deep_link_target?(params) and
+         is_nil(resolve_deep_link_parent_id(scoped_objectives, params)) do
+      Logger.warning(
+        "challenging_objectives_tile.unresolved_deep_link objective_id=#{inspect(params.objective_id)} subobjective_id=#{inspect(params.subobjective_id)} filter_by=#{inspect(params.filter_by)}"
+      )
+    end
+  end
+
+  defp deep_link_target?(%{objective_id: objective_id, subobjective_id: subobjective_id}),
+    do: is_integer(objective_id) or is_integer(subobjective_id)
+
+  defp navigation_signature(params) do
+    Enum.join(
+      [
+        params.navigation_source,
+        params.selected_card_value,
+        params.filter_by,
+        params.objective_id,
+        params.subobjective_id
+      ]
+      |> Enum.map(&to_string/1),
+      ":"
+    )
+  end
+
+  defp navigation_target(%{subobjective_id: subobjective_id}) when is_integer(subobjective_id),
+    do: "subobjective"
+
+  defp navigation_target(%{objective_id: objective_id}) when is_integer(objective_id),
+    do: "objective"
+
+  defp navigation_target(_params), do: "view_all"
+
+  defp resolve_deep_link_parent_id(scoped_objectives, %{
+         objective_id: objective_id,
+         subobjective_id: nil
+       }) do
+    case Enum.find(
+           scoped_objectives,
+           &(&1.resource_id == objective_id and top_level_objective?(&1))
+         ) do
+      nil -> nil
+      objective -> objective.resource_id
+    end
+  end
+
+  defp resolve_deep_link_parent_id(scoped_objectives, %{subobjective_id: subobjective_id}) do
+    case Enum.find(scoped_objectives, &(&1.resource_id == subobjective_id and subobjective?(&1))) do
+      nil ->
+        nil
+
+      subobjective ->
+        parent_id = parent_id(subobjective)
+
+        case Enum.find(
+               scoped_objectives,
+               &(&1.resource_id == parent_id and top_level_objective?(&1))
+             ) do
+          nil -> nil
+          parent -> parent.resource_id
+        end
+    end
   end
 end

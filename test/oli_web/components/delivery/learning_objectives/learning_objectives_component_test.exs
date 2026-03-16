@@ -118,11 +118,113 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
       assert card_text(html, "low_proficiency_outcomes") =~ "1"
       assert card_text(html, "low_proficiency_skills") =~ "1"
     end
+
+    test "initial_expanded_rows expands the targeted parent objective" do
+      scoped_objectives = objectives_with_subobjective()
+
+      assert LearningObjectives.initial_expanded_rows(scoped_objectives, %{
+               objective_id: 1,
+               subobjective_id: nil
+             }) == MapSet.new(["row_1"])
+    end
+
+    test "initial_expanded_rows expands the parent for a subobjective deep link" do
+      scoped_objectives = objectives_with_subobjective()
+
+      assert LearningObjectives.initial_expanded_rows(scoped_objectives, %{
+               objective_id: 1,
+               subobjective_id: 2
+             }) == MapSet.new(["row_1"])
+    end
+
+    test "initial_expanded_rows ignores unresolved deep-link ids" do
+      scoped_objectives = objectives_with_subobjective()
+
+      assert LearningObjectives.initial_expanded_rows(scoped_objectives, %{
+               objective_id: 99,
+               subobjective_id: 999
+             }) == MapSet.new()
+    end
+
+    test "emits navigation telemetry when arriving from challenging objectives tile", %{
+      conn: conn
+    } do
+      handler_id = "challenging-objectives-nav-#{System.unique_integer([:positive])}"
+
+      :telemetry.attach(
+        handler_id,
+        [:oli, :instructor_dashboard, :challenging_objectives, :navigation],
+        fn event, measurements, metadata, pid ->
+          send(pid, {:telemetry_event, event, measurements, metadata})
+        end,
+        self()
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      {:ok, _view, _html} =
+        live_component_isolated(conn, LearningObjectives, %{
+          id: "learning-objectives-telemetry-test",
+          objectives_tab: %{objectives: objectives_with_subobjective(), navigator_items: []},
+          params: %{
+            "navigation_source" => "challenging_objectives_tile",
+            "objective_id" => "1",
+            "selected_card_value" => "low_proficiency_outcomes",
+            "filter_by" => "10"
+          },
+          section_slug: "test-section",
+          section_id: 1,
+          section_title: "Test Section",
+          current_user: %{email: "instructor@example.edu"},
+          patch_url_type: :instructor_dashboard,
+          student_id: nil,
+          view: :insights,
+          v25_migration: :done
+        })
+
+      assert_receive {:telemetry_event,
+                      [:oli, :instructor_dashboard, :challenging_objectives, :navigation],
+                      %{count: 1},
+                      %{
+                        source: "challenging_objectives_tile",
+                        target: "objective",
+                        filter_by: 10
+                      }}
+    end
   end
 
   defp card_text(html, value) do
     {:ok, document} = Floki.parse_document(html)
     [card] = Floki.find(document, ~s(div[phx-value-selected="#{value}"]))
     Floki.text(card)
+  end
+
+  defp objectives_with_subobjective do
+    [
+      %{
+        resource_id: 1,
+        title: "LO.01",
+        objective: "LO.01",
+        subobjective: nil,
+        student_proficiency_obj: "Low",
+        student_proficiency_subobj: nil,
+        student_proficiency_obj_dist: %{},
+        container_ids: [10],
+        related_activities_count: 0
+      },
+      %{
+        resource_id: 2,
+        title: "Sub.LO.01a",
+        objective: "LO.01",
+        objective_resource_id: 1,
+        subobjective: "Sub.LO.01a",
+        student_proficiency_obj: "Low",
+        student_proficiency_subobj: "Low",
+        student_proficiency_obj_dist: %{},
+        student_proficiency_subobj_dist: %{},
+        container_ids: [10],
+        related_activities_count: 0
+      }
+    ]
   end
 end
