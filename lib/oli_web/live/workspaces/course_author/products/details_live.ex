@@ -108,7 +108,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             />
             <TagsComponent.read_only_tags :if={!@is_admin} tags={@tags} />
           </div>
-          <div id="communities-section" class="form-label-group mb-3">
+          <div :if={@is_admin} id="communities-section" class="form-label-group mb-3">
             <Common.label class="control-label">Communities</Common.label>
             <p class="text-secondary">
               <Common.comma_separated_links items={
@@ -118,7 +118,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
               } />
             </p>
           </div>
-          <div id="institutions-section" class="form-label-group mb-3">
+          <div :if={@is_admin} id="institutions-section" class="form-label-group mb-3">
             <Common.label class="control-label">Institutions</Common.label>
             <p class="text-secondary">
               <Common.comma_separated_links items={

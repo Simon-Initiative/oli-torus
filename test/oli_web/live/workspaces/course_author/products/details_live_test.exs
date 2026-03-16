@@ -122,7 +122,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert updated_html =~ ~r/name="section\[has_grace_period\]"[^>]*disabled=/
     end
 
-    test "renders details additions for workspace authors", ctx do
+    test "renders only non-admin-safe details additions for workspace authors", ctx do
       %{conn: conn, project: project, product: product} = ctx
 
       {:ok, tag} = Tags.create_tag(%{name: "Biology"})
@@ -145,21 +145,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert html =~ "Biology"
       refute has_element?(live, "div[phx-hook='TagsComponent']")
 
-      assert has_element?(live, "label", "Communities")
-
-      assert has_element?(
-               live,
-               "a[href='/authoring/communities/#{community.id}']",
-               "Test Community"
-             )
-
-      assert has_element?(live, "label", "Institutions")
-
-      assert has_element?(
-               live,
-               "a[href='/admin/institutions/#{institution.id}']",
-               "Visibility University"
-             )
+      refute has_element?(live, "label", "Communities")
+      refute has_element?(live, "label", "Institutions")
+      refute html =~ "Test Community"
+      refute html =~ "Visibility University"
+      refute has_element?(live, "a[href='/authoring/communities/#{community.id}']")
+      refute has_element?(live, "a[href='/admin/institutions/#{institution.id}']")
     end
   end
 
