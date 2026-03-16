@@ -291,6 +291,7 @@ defmodule OliWeb.Products.DetailsViewTest do
 
       assert updated_html =~ ~s(name="section[amount]")
       refute updated_html =~ ~r/name="section\[amount\]"[^>]*disabled=/
+      refute updated_html =~ ~r/name="section\[payment_options\]"[^>]*disabled=/
       refute updated_html =~ ~r/name="section\[has_grace_period\]"[^>]*disabled=/
     end
   end

@@ -78,14 +78,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     {render_modal(assigns)}
     <div class="overview container">
       <div class="grid grid-cols-12 py-5 border-b">
-        <div class="md:col-span-4">
+        <div class="col-span-12 md:col-span-4">
           <h4>Details</h4>
           <div class="text-muted">
             The template title and description will be shown
             to instructors when they create their course section.
           </div>
         </div>
-        <div class="md:col-span-8">
+        <div class="col-span-12 md:col-span-8">
           <Edit.render
             product={@product}
             project_slug={@base_project.slug}
@@ -131,7 +131,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         </div>
       </div>
       <div class="grid grid-cols-12 py-5 border-b dark:border-gray-700">
-        <div class="md:col-span-4 mr-4">
+        <div class="col-span-12 md:col-span-4 mr-4">
           <h4>Paywall Settings</h4>
           <div class="text-muted">
             For information regarding paywall settings,
@@ -143,7 +143,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             </.tech_support_link>
           </div>
         </div>
-        <div class="md:col-span-8">
+        <div class="col-span-12 md:col-span-8">
           <.form
             for={@changeset}
             as={:section}
@@ -153,7 +153,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
           >
             <PaywallSettings.render
               form={to_form(@changeset)}
-              disabled={false}
+              disabled={!@is_admin}
               show_group={false}
             />
           </.form>
@@ -241,7 +241,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   end
 
   def handle_event("validate", %{"section" => params}, socket) do
-    changeset = Sections.change_section(socket.assigns.product, params)
+    changeset =
+      socket.assigns.product
+      |> Sections.change_section(filter_paywall_params(params, socket.assigns.is_admin))
+
     {:noreply, assign(socket, changeset: changeset)}
   end
 
@@ -274,7 +277,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   def handle_event("save", %{"section" => params}, socket) do
     socket = clear_flash(socket)
 
-    case Sections.update_section(socket.assigns.product, decode_welcome_title(params)) do
+    params =
+      params
+      |> filter_paywall_params(socket.assigns.is_admin)
+      |> decode_welcome_title()
+
+    case Sections.update_section(socket.assigns.product, params) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Template changes saved")
 
@@ -386,5 +394,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   defp decode_welcome_title(project_params) do
     Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
+  end
+
+  defp filter_paywall_params(params, true), do: params
+
+  defp filter_paywall_params(params, false) do
+    Map.drop(params, [
+      "requires_payment",
+      "amount",
+      "payment_options",
+      "pay_by_institution",
+      "has_grace_period",
+      "grace_period_days",
+      "grace_period_strategy"
+    ])
   end
 end

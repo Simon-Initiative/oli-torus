@@ -104,7 +104,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert paywall_index < content_index
     end
 
-    test "enables paywall fields when requires payment is checked", ctx do
+    test "keeps paywall fields disabled for non-admin workspace authors", ctx do
       %{conn: conn, project: project, product: product} = ctx
 
       {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
@@ -117,8 +117,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
         |> element("#paywall-settings-form")
         |> render_change(%{"section" => %{"requires_payment" => "true"}})
 
-      refute updated_html =~ ~r/name="section\[amount\]"[^>]*disabled=/
-      refute updated_html =~ ~r/name="section\[has_grace_period\]"[^>]*disabled=/
+      assert updated_html =~ ~r/name="section\[amount\]"[^>]*disabled=/
+      assert updated_html =~ ~r/name="section\[payment_options\]"[^>]*disabled=/
+      assert updated_html =~ ~r/name="section\[has_grace_period\]"[^>]*disabled=/
     end
 
     test "renders details additions for workspace authors", ctx do

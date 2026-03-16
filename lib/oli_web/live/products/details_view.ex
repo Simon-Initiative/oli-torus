@@ -135,7 +135,7 @@ defmodule OliWeb.Products.DetailsView do
       </Overview.section>
 
       <div class="grid grid-cols-12 py-5 border-b dark:border-gray-700">
-        <div class="col-span-4 mr-4">
+        <div class="col-span-12 md:col-span-4 mr-4">
           <h4>Paywall Settings</h4>
           <div class="text-muted">
             For information regarding paywall settings,
@@ -147,7 +147,7 @@ defmodule OliWeb.Products.DetailsView do
             </.tech_support_link>
           </div>
         </div>
-        <div class="col-span-8">
+        <div class="col-span-12 md:col-span-8">
           <.form
             for={@changeset}
             as={:section}

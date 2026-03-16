@@ -69,7 +69,7 @@ defmodule OliWeb.Sections.PaywallSettings do
         label="Payment options"
         class="form-control"
         options={payment_options_choices()}
-        disabled={@disabled or !@form[:payment_options].value}
+        disabled={@disabled or !get_boolean_value(@form[:requires_payment])}
       />
     </div>
     <%= unless get_boolean_value(@form[:open_and_free]) do %>
