@@ -148,7 +148,19 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="col-span-8">
-          <PaywallSettings.render form={to_form(@changeset)} disabled={false} show_group={false} />
+          <.form
+            for={@changeset}
+            as={:section}
+            phx-change="validate"
+            phx-submit="save"
+            id="paywall-settings-form"
+          >
+            <PaywallSettings.render
+              form={to_form(@changeset)}
+              disabled={false}
+              show_group={false}
+            />
+          </.form>
         </div>
       </div>
 

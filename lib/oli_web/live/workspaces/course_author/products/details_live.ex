@@ -144,7 +144,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
           </div>
         </div>
         <div class="md:col-span-8">
-          <PaywallSettings.render form={to_form(@changeset)} disabled={false} show_group={false} />
+          <.form
+            for={@changeset}
+            as={:section}
+            phx-change="validate"
+            phx-submit="save"
+            id="paywall-settings-form"
+          >
+            <PaywallSettings.render
+              form={to_form(@changeset)}
+              disabled={false}
+              show_group={false}
+            />
+          </.form>
         </div>
       </div>
       <div class="grid grid-cols-12 py-5 border-b">
