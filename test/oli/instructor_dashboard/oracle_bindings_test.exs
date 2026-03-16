@@ -11,6 +11,7 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
       assert Map.has_key?(bindings, :oracles)
       assert Map.has_key?(bindings.consumers, :progress_summary)
       assert Map.has_key?(bindings.consumers, :support_summary)
+      assert Map.has_key?(bindings.consumers, :challenging_objectives)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress_bins)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress_proficiency)
@@ -26,6 +27,17 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
       assert {:ok, binding} = OracleBindings.binding_for(:progress_summary)
       assert binding.required_oracles == %{progress: :oracle_instructor_progress}
       assert binding.optional_oracles == %{engagement: :oracle_instructor_engagement}
+    end
+
+    test "resolves challenging objectives binding with objective-specific dependencies" do
+      assert {:ok, binding} = OracleBindings.binding_for(:challenging_objectives)
+
+      assert binding.required_oracles == %{
+               objectives_proficiency: :oracle_instructor_objectives_proficiency,
+               scope_resources: :oracle_instructor_scope_resources
+             }
+
+      assert binding.optional_oracles == %{}
     end
 
     test "returns deterministic error for unknown consumers" do
@@ -47,6 +59,13 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
              ]
 
       assert profiles.support_summary.optional == []
+
+      assert profiles.challenging_objectives.required == [
+               :oracle_instructor_objectives_proficiency,
+               :oracle_instructor_scope_resources
+             ]
+
+      assert profiles.challenging_objectives.optional == []
     end
 
     test "extending one consumer binding does not mutate unrelated consumer profiles" do
