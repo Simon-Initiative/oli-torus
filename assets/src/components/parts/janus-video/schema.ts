@@ -1,6 +1,7 @@
 import { JSONSchema7Object } from 'json-schema';
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { iso639_language_codes } from '../../../utils/language-codes-iso639';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface VideoModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -11,8 +12,18 @@ export interface VideoModel extends JanusAbsolutePositioned, JanusCustomCss {
   startTime: number;
   endTime: number;
   enableReplay: boolean;
-  subtitles: Array<{ default?: boolean; language: string; src: string }>;
+  subtitles: Array<{
+    default?: boolean;
+    label?: string;
+    language_code?: string;
+    src: string;
+  }>;
 }
+
+const subtitleLanguageEnum = iso639_language_codes.map(({ code }) => code);
+const subtitleLanguageEnumNames = iso639_language_codes.map(
+  ({ code, name }) => `${name} [${code}]`,
+);
 
 export const schema: JSONSchema7Object = {
   customCssClass: {
@@ -63,11 +74,17 @@ export const schema: JSONSchema7Object = {
     items: {
       type: 'object',
       properties: {
+        label: { type: 'string', title: 'Label' },
+        language_code: {
+          type: 'string',
+          title: 'Language',
+          enum: subtitleLanguageEnum,
+          enumNames: subtitleLanguageEnumNames,
+        },
+        src: { type: 'string', title: 'Caption URL' },
         default: { type: 'boolean', title: 'Default' },
-        language: { type: 'string', title: 'Language' },
-        src: { type: 'string', title: 'Source' },
       },
-      required: ['src', 'language'],
+      required: ['src', 'language_code'],
     },
   },
 };
@@ -111,11 +128,17 @@ export const simpleSchema: JSONSchema7Object = {
     items: {
       type: 'object',
       properties: {
+        label: { type: 'string', title: 'Label' },
+        language_code: {
+          type: 'string',
+          title: 'Language',
+          enum: subtitleLanguageEnum,
+          enumNames: subtitleLanguageEnumNames,
+        },
+        src: { type: 'string', title: 'Caption URL' },
         default: { type: 'boolean', title: 'Default' },
-        language: { type: 'string', title: 'Language' },
-        src: { type: 'string', title: 'Source' },
       },
-      required: ['src', 'language'],
+      required: ['src', 'language_code'],
     },
   },
 };
@@ -123,12 +146,7 @@ export const simpleSchema: JSONSchema7Object = {
 export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
   subtitles: {
-    'ui:title': 'Subtitles',
-    items: {
-      src: {
-        'ui:widget': 'TorusCaptionBrowser',
-      },
-    },
+    'ui:widget': 'JanusSubtitlesManager',
   },
   src: {
     'ui:widget': 'TorusVideoBrowser',
@@ -139,12 +157,7 @@ export const simpleUISchema = {
 
 export const uiSchema = {
   subtitles: {
-    'ui:title': 'Subtitles',
-    items: {
-      src: {
-        'ui:widget': 'TorusCaptionBrowser',
-      },
-    },
+    'ui:widget': 'JanusSubtitlesManager',
   },
   src: {
     'ui:widget': 'TorusVideoBrowser',

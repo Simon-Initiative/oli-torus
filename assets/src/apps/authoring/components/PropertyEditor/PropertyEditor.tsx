@@ -21,9 +21,9 @@ import { SpokeCustomErrorFeedbackAuthoring } from './custom/SpokeCustomErrorFeed
 import { SpokeOptionsEditor } from './custom/SpokeOptionsEditor';
 import ThemeSelectorWidget from './custom/ThemeSelectorWidget';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
-import { TorusCaptionBrowser } from './custom/TorusCaptionBrowser';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
+import { JanusSubtitlesManager } from './custom/JanusSubtitlesManager';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
@@ -42,8 +42,8 @@ const widgets: any = {
   ScreenDropdownTemplate: ScreenDropdownTemplate,
   TorusImageBrowser: TorusImageBrowser,
   TorusAudioBrowser: TorusAudioBrowser,
-  TorusCaptionBrowser: TorusCaptionBrowser,
   TorusVideoBrowser: TorusVideoBrowser,
+  JanusSubtitlesManager: JanusSubtitlesManager,
   OptionsCorrectPicker: OptionsCorrectPicker,
   OptionsCustomErrorFeedbackAuthoring: OptionsCustomErrorFeedbackAuthoring,
   SpokeCustomErrorFeedbackAuthoring: SpokeCustomErrorFeedbackAuthoring,
