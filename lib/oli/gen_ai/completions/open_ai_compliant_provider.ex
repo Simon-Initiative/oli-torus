@@ -3,7 +3,7 @@ defmodule Oli.GenAI.Completions.OpenAICompliantProvider do
   require Logger
 
   @moduledoc """
-  An OpenAI compliant provider for chat completions.  Note that this provider
+  An OpenAI compliant provider for chat completions. Note that this provider
   is a bit of a "clone and own" of internal code from the :openai library. That library
   has a limitation in that you cannot actually override the base URL, which makes it
   impossible to use with custom OpenAI compliant providers. This provider is
