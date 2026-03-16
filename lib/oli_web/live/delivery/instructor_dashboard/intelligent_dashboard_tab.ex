@@ -574,7 +574,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   """
   @spec parse_student_support_tile_state(map()) :: student_support_tile_state()
   def parse_student_support_tile_state(params) when is_map(params) do
-    tile_params = Map.get(params, "tile_support", %{})
+    tile_params =
+      case Map.get(params, "tile_support", %{}) do
+        value when is_map(value) -> value
+        _ -> %{}
+      end
+
     page = normalize_positive_integer(Map.get(tile_params, "page"), 1)
 
     %{

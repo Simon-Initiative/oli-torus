@@ -141,6 +141,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
   # Progress already arrives in 0..100, while proficiency currently arrives as 0..1.
   # Normalize both onto the same scale before bucket classification.
   defp normalize_proficiency_pct(nil), do: nil
+  defp normalize_proficiency_pct(value) when is_integer(value) and value <= 1, do: value * 100.0
   defp normalize_proficiency_pct(value) when is_integer(value), do: value * 1.0
 
   defp normalize_proficiency_pct(value) when is_float(value) and value <= 1.0,

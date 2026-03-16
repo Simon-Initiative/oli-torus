@@ -5,6 +5,7 @@ import type { Hook } from 'phoenix_live_view/assets/js/types/view_hook';
 type ChartHookState = {
   __studentSupportView?: { finalize: () => void } | null;
   __studentSupportSpec?: string | null;
+  __studentSupportRenderToken?: number;
 };
 
 function readSpec(el: HTMLElement): VisualizationSpec | null {
@@ -41,7 +42,14 @@ function chartTarget(hook: Hook<ChartHookState>): HTMLElement {
 async function renderChart(hook: Hook<ChartHookState>) {
   const rawSpec = hook.el.dataset.spec ?? null;
 
-  if (!rawSpec || hook.__studentSupportSpec === rawSpec) {
+  if (!rawSpec) {
+    finalizeView(hook);
+    hook.__studentSupportSpec = null;
+    chartTarget(hook).innerHTML = '';
+    return;
+  }
+
+  if (hook.__studentSupportSpec === rawSpec) {
     return;
   }
 
@@ -49,13 +57,14 @@ async function renderChart(hook: Hook<ChartHookState>) {
 
   if (!spec) {
     finalizeView(hook);
-    hook.__studentSupportSpec = rawSpec;
+    hook.__studentSupportSpec = null;
     chartTarget(hook).innerHTML = '';
     return;
   }
 
   finalizeView(hook);
-  hook.__studentSupportSpec = rawSpec;
+  const renderToken = (hook.__studentSupportRenderToken ?? 0) + 1;
+  hook.__studentSupportRenderToken = renderToken;
 
   try {
     // Phase 1 keeps the chart intentionally minimal. This hook exists to validate
@@ -65,6 +74,11 @@ async function renderChart(hook: Hook<ChartHookState>) {
       renderer: 'svg',
     });
 
+    if (hook.__studentSupportRenderToken !== renderToken) {
+      result.view.finalize();
+      return;
+    }
+
     result.view.addEventListener('click', (_event: unknown, item: unknown) => {
       const bucketId = (item as { datum?: { bucket_id?: string } } | undefined)?.datum?.bucket_id;
 
@@ -73,8 +87,10 @@ async function renderChart(hook: Hook<ChartHookState>) {
       }
     });
 
+    hook.__studentSupportSpec = rawSpec;
     hook.__studentSupportView = result.view;
   } catch (error) {
+    hook.__studentSupportSpec = null;
     console.warn('[StudentSupportChart] Failed to render chart', error);
   }
 }
@@ -88,5 +104,6 @@ export const StudentSupportChart: Hook<ChartHookState> = {
   },
   destroyed() {
     finalizeView(this);
+    this.__studentSupportSpec = null;
   },
 };

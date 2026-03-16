@@ -115,5 +115,44 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       assert katherine.proficiency_pct == 84.0
       assert alan.proficiency_pct == 35.0
     end
+
+    test "normalizes integer 0..1 proficiency ratios before bucket classification" do
+      now = ~U[2026-03-13 12:00:00Z]
+
+      progress_rows = [
+        %{student_id: 30, progress_pct: 82.0, proficiency_pct: 1},
+        %{student_id: 31, progress_pct: 25.0, proficiency_pct: 0}
+      ]
+
+      student_info_rows = [
+        %{
+          student_id: 30,
+          email: "barbara@example.edu",
+          given_name: "Barbara",
+          family_name: "Liskov",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        },
+        %{
+          student_id: 31,
+          email: "donald@example.edu",
+          given_name: "Donald",
+          family_name: "Knuth",
+          last_interaction_at: ~U[2026-03-12 08:00:00Z]
+        }
+      ]
+
+      projection = Projector.build(progress_rows, student_info_rows, now: now)
+
+      assert Enum.find(projection.buckets, &(&1.id == "excelling")).count == 1
+      assert Enum.find(projection.buckets, &(&1.id == "struggling")).count == 1
+
+      excelling_bucket = Enum.find(projection.buckets, &(&1.id == "excelling"))
+      struggling_bucket = Enum.find(projection.buckets, &(&1.id == "struggling"))
+
+      assert [barbara] = excelling_bucket.students
+      assert [donald] = struggling_bucket.students
+      assert barbara.proficiency_pct == 100.0
+      assert donald.proficiency_pct == 0.0
+    end
   end
 end

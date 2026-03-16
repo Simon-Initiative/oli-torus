@@ -82,6 +82,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
                visible_count: 40
              }
     end
+
+    test "falls back safely when tile_support is not a map" do
+      assert IntelligentDashboardTab.parse_student_support_tile_state(%{
+               "tile_support" => "bad"
+             }) == %{
+               selected_bucket_id: nil,
+               selected_activity_filter: :all,
+               search_term: "",
+               page: 1,
+               visible_count: 20
+             }
+    end
   end
 
   describe "student_support_path/2" do

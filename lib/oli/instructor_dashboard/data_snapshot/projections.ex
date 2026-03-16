@@ -18,16 +18,35 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections do
           | :assessments
           | :ai_context
 
+  @modules %{
+    summary: Summary,
+    progress: Progress,
+    student_support: StudentSupport,
+    challenging_objectives: ChallengingObjectives,
+    assessments: Assessments,
+    ai_context: AiContext
+  }
+
+  @dependencies Enum.into(@modules, %{}, fn {capability_key, module} ->
+                  {capability_key,
+                   %{
+                     required: module.required_oracles(),
+                     optional: module.optional_oracles()
+                   }}
+                end)
+
+  @affected_by_oracle Enum.reduce(@dependencies, %{}, fn {capability_key, deps}, acc ->
+                        Enum.reduce(deps.required ++ deps.optional, acc, fn oracle_key, inner_acc ->
+                          Map.update(inner_acc, oracle_key, [capability_key], &[capability_key | &1])
+                        end)
+                      end)
+                      |> Enum.into(%{}, fn {oracle_key, capabilities} ->
+                        {oracle_key, Enum.reverse(capabilities)}
+                      end)
+
   @spec modules() :: %{required(capability_key()) => module()}
   def modules do
-    %{
-      summary: Summary,
-      progress: Progress,
-      student_support: StudentSupport,
-      challenging_objectives: ChallengingObjectives,
-      assessments: Assessments,
-      ai_context: AiContext
-    }
+    @modules
   end
 
   @doc """
@@ -39,23 +58,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections do
   @spec dependencies() :: %{
           required(capability_key()) => %{required: [atom()], optional: [atom()]}
         }
-  def dependencies do
-    Enum.into(modules(), %{}, fn {capability_key, module} ->
-      _ = Code.ensure_loaded(module)
-
-      required =
-        if function_exported?(module, :required_oracles, 0),
-          do: module.required_oracles(),
-          else: []
-
-      optional =
-        if function_exported?(module, :optional_oracles, 0),
-          do: module.optional_oracles(),
-          else: []
-
-      {capability_key, %{required: required, optional: optional}}
-    end)
-  end
+  def dependencies, do: @dependencies
 
   @doc """
   Returns the capabilities whose derived projections can change when the given
@@ -66,18 +69,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections do
   """
   @spec affected_capabilities(atom()) :: [capability_key()]
   def affected_capabilities(oracle_key) when is_atom(oracle_key) do
-    # Keep projection modules as the single source of truth for oracle dependencies.
-    # The tab runtime derives this inverse lookup to recalculate only the projections
-    # that can change when an oracle result arrives.
-    dependencies()
-    |> Enum.reduce([], fn {capability_key, %{required: required, optional: optional}}, acc ->
-      if oracle_key in required or oracle_key in optional do
-        [capability_key | acc]
-      else
-        acc
-      end
-    end)
-    |> Enum.reverse()
+    @affected_by_oracle
+    |> Map.get(oracle_key, [])
   end
 
   def affected_capabilities(_oracle_key), do: []
