@@ -65,6 +65,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     end
   end
 
+  describe "parse_student_support_tile_state/1" do
+    test "normalizes tile-local dashboard params" do
+      assert IntelligentDashboardTab.parse_student_support_tile_state(%{
+               "tile_support" => %{
+                 "bucket" => "struggling",
+                 "filter" => "inactive",
+                 "page" => "2",
+                 "q" => " ada "
+               }
+             }) == %{
+               selected_bucket_id: "struggling",
+               selected_activity_filter: :inactive,
+               search_term: "ada",
+               page: 2,
+               visible_count: 40
+             }
+    end
+  end
+
+  describe "student_support_path/2" do
+    test "preserves only dashboard and namespaced tile params" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          section: %{slug: "elixir_30"},
+          dashboard_scope: "course",
+          params: %{
+            "view" => "insights",
+            "active_tab" => "dashboard",
+            "section_slug" => "elixir_30",
+            "dashboard_scope" => "course",
+            "tile_support" => %{"filter" => "inactive"}
+          }
+        }
+      }
+
+      assert IntelligentDashboardTab.student_support_path(socket, %{bucket: "on_track", page: 1}) ==
+               "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_support[bucket]=on_track&tile_support[filter]=inactive"
+    end
+  end
+
   describe "validate_scope_selector/3" do
     test "accepts course scope" do
       assert IntelligentDashboardTab.validate_scope_selector(%{}, nil, "course") ==

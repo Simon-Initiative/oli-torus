@@ -406,13 +406,11 @@ defmodule Oli.Dashboard.LiveDataCoordinator do
   end
 
   defp cache_payload(%{status: :error}), do: {:skip, :oracle_error}
-  defp cache_payload(%{status: :ok, payload: payload}) when is_map(payload), do: {:ok, payload}
-  defp cache_payload(%{status: :ok, payload: payload}), do: {:skip, {:invalid_payload, payload}}
+  defp cache_payload(%{status: :ok, payload: payload}), do: {:ok, payload}
 
   defp cache_payload(%{} = oracle_result) do
     case Map.fetch(oracle_result, :payload) do
-      {:ok, payload} when is_map(payload) -> {:ok, payload}
-      {:ok, payload} -> {:skip, {:invalid_payload, payload}}
+      {:ok, payload} -> {:ok, payload}
       :error -> {:ok, oracle_result}
     end
   end

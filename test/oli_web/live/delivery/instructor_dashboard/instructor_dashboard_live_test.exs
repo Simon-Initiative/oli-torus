@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
@@ -414,6 +414,35 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       {:ok, view, _html} = live(conn, redirected_path)
 
       assert has_element?(view, "button", "Entire Course")
+    end
+
+    test "student support bucket selection patches the url with namespaced tile params", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      render_hook(view, "student_support_bucket_selected", %{"bucket_id" => "on_track"})
+
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_support[bucket]=on_track"
+      )
     end
 
     test "courses with only pages render a non-interactive Entire Course navigator", %{
