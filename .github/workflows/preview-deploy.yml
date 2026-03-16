@@ -13,29 +13,9 @@ on:
         required: false
 
 jobs:
-  lockfile-refresh-gate:
-    name: Detect lockfile refresh head commit
-    runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.detect.outputs.skip }}
-      reason: ${{ steps.detect.outputs.reason }}
-    steps:
-      - name: 🛎️ Checkout head commit
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/head', github.event.pull_request.number) || github.sha }}
-
-      - name: 🔍 Detect lockfile-refresh-only head commit
-        id: detect
-        shell: bash
-        run: bash .github/scripts/should_skip_for_lockfile_refresh.sh
-
   simon-token-available:
     name: Check simon-bot Access Token
     runs-on: ubuntu-latest
-    needs: [lockfile-refresh-gate]
-    if: needs.lockfile-refresh-gate.outputs.skip != 'true'
     outputs:
       available: ${{ steps.check_token.outputs.available }}
     steps:
@@ -46,8 +26,8 @@ jobs:
   preview-context:
     name: Determine Preview Context
     runs-on: ubuntu-latest
-    needs: [lockfile-refresh-gate, simon-token-available]
-    if: needs.lockfile-refresh-gate.outputs.skip != 'true' && needs.simon-token-available.outputs.available == 'true'
+    needs: simon-token-available
+    if: needs.simon-token-available.outputs.available == 'true'
     outputs:
       preview_slug: ${{ steps.compute.outputs.preview_slug }}
       target_ref: ${{ steps.compute.outputs.target_ref }}
@@ -75,8 +55,8 @@ jobs:
   build-container:
     name: Build Container
     runs-on: ubuntu-latest
-    needs: [lockfile-refresh-gate, simon-token-available, preview-context]
-    if: needs.lockfile-refresh-gate.outputs.skip != 'true' && needs.simon-token-available.outputs.available == 'true'
+    needs: [simon-token-available, preview-context]
+    if: needs.simon-token-available.outputs.available == 'true'
     env:
       TARGET_REF: ${{ needs.preview-context.outputs.target_ref }}
     permissions:
@@ -133,8 +113,7 @@ jobs:
   deploy:
     name: Preview Deploy
     runs-on: plasma
-    needs: [lockfile-refresh-gate, build-container, preview-context]
-    if: needs.lockfile-refresh-gate.outputs.skip != 'true'
+    needs: [build-container, preview-context]
     env:
       PREVIEW_SLUG: ${{ needs.preview-context.outputs.preview_slug }}
       PREVIEW_DOMAIN: ${{ needs.preview-context.outputs.preview_domain }}
