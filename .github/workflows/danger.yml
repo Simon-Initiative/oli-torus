@@ -9,27 +9,7 @@ permissions:
   statuses: write          # allow setting commit status
 
 jobs:
-  lockfile-refresh-gate:
-    name: Detect lockfile refresh head commit
-    runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.detect.outputs.skip }}
-      reason: ${{ steps.detect.outputs.reason }}
-    steps:
-      - name: 🛎️ Checkout head commit
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-          ref: ${{ format('refs/pull/{0}/head', github.event.pull_request.number) }}
-
-      - name: 🔍 Detect lockfile-refresh-only head commit
-        id: detect
-        shell: bash
-        run: bash .github/scripts/should_skip_for_lockfile_refresh.sh
-
   run:
-    needs: [lockfile-refresh-gate]
-    if: needs.lockfile-refresh-gate.outputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

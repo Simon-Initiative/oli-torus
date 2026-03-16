@@ -9,29 +9,9 @@ on:
       - nextgen-ux
 
 jobs:
-  lockfile-refresh-gate:
-    name: Detect lockfile refresh head commit
-    runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.detect.outputs.skip }}
-      reason: ${{ steps.detect.outputs.reason }}
-    steps:
-      - name: 🛎️ Checkout head commit
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-          ref: ${{ format('refs/pull/{0}/head', github.event.pull_request.number) }}
-
-      - name: 🔍 Detect lockfile-refresh-only head commit
-        id: detect
-        shell: bash
-        run: bash .github/scripts/should_skip_for_lockfile_refresh.sh
-
   elixir-build-test:
     name: Elixir build and test
     runs-on: ubuntu-latest
-    needs: [lockfile-refresh-gate]
-    if: needs.lockfile-refresh-gate.outputs.skip != 'true'
     services:
       postgres:
         image: pgvector/pgvector:pg18
@@ -55,47 +35,12 @@ jobs:
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-
-      - name: 🔍 Detect lockfile-only bot commit
-        id: lockfile-only
-        shell: bash
-        run: |
-          lockfile_only=false
-
-          if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
-            changed_files="$(git diff --name-only HEAD^ HEAD | sed '/^$/d')"
-          else
-            changed_files="$(git show --pretty='' --name-only HEAD | sed '/^$/d')"
-          fi
-
-          if [ -n "$changed_files" ]; then
-            non_lockfile_count=0
-            while IFS= read -r file; do
-              if [ "$file" != "priv_signal.lockfile.json" ]; then
-                non_lockfile_count=$((non_lockfile_count + 1))
-              fi
-            done <<< "$changed_files"
-
-            if [ "$non_lockfile_count" = "0" ]; then
-              lockfile_only=true
-            fi
-          fi
-
-          echo "lockfile_only=$lockfile_only" >> "$GITHUB_OUTPUT"
-
-      - name: ⏭️ Skip heavy Elixir checks for lockfile-only bot commit
-        if: steps.lockfile-only.outputs.lockfile_only == 'true'
-        run: echo "Skipping Elixir build/test for lockfile-only bot commit."
 
       - name: 🔧 Configure
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: |
           cp oli.example.env oli.env
 
       - name: 💾 Restore the deps cache
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         id: mix-deps-cache
         uses: actions/cache@v3
         with:
@@ -107,7 +52,6 @@ jobs:
             ${{ runner.os }}-mix-
 
       - name: 💾 Restore the Node.js cache
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         id: yarn-cache
         uses: actions/cache@v3
         with:
@@ -117,48 +61,39 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: 🧪 Setup elixir
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         uses: erlef/setup-elixir@v1
         with:
           elixir-version: 1.19.2 # Define the elixir version [required]
           otp-version: 28.1.1 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: mix deps.get
 
       - name: 🔨 Build dependencies
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: mix deps.compile
 
       - name: 🧹 Clean on master
-        if: steps.lockfile-only.outputs.lockfile_only != 'true' && github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/master'
         run: set -a;source oli.env && mix clean
 
       - name: 🔨 Build project
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: set -a; source oli.env && mix compile --warnings-as-errors
 
       - name: 📋 Check Formatting
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: mix format --check-formatted
 
       - name: ▶️ Run unit tests
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: |
           set -a;source oli.env
           MIX_ENV=test mix ecto.setup
           mix test --trace || if [[ $? = 2  ]]; then mix test --failed; else false; fi # https://angelika.me/2024/01/08/do-not-run-mix-test-failed/
 
       - name: 📦 Install node_module dependencies
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: yarn --cwd assets --frozen-lockfile
 
   check-simon-token:
     name: Check simon-bot access token
     runs-on: ubuntu-latest
-    needs: [lockfile-refresh-gate]
-    if: needs.lockfile-refresh-gate.outputs.skip != 'true'
     outputs:
       available: ${{ steps.check_token.outputs.available }}
     steps:
@@ -169,8 +104,8 @@ jobs:
   auto-format:
     name: Auto format and lint
     runs-on: ubuntu-latest
-    needs: [lockfile-refresh-gate, check-simon-token]
-    if: needs.lockfile-refresh-gate.outputs.skip != 'true' && needs.check-simon-token.outputs.available == 'true' && !endsWith(github.actor, '[bot]') && github.actor != 'simon-bot'
+    needs: check-simon-token
+    if: needs.check-simon-token.outputs.available == 'true'
 
     steps:
       - name: 🛎️ Checkout
@@ -213,81 +148,39 @@ jobs:
   ts-build-test:
     name: TypeScript build and test
     runs-on: ubuntu-latest
-    needs: [lockfile-refresh-gate]
-    if: needs.lockfile-refresh-gate.outputs.skip != 'true'
 
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v3
         with:
-          fetch-depth: 2
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: 🔍 Detect lockfile-only bot commit
-        id: lockfile-only
-        shell: bash
-        run: |
-          lockfile_only=false
-
-          if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
-            changed_files="$(git diff --name-only HEAD^ HEAD | sed '/^$/d')"
-          else
-            changed_files="$(git show --pretty='' --name-only HEAD | sed '/^$/d')"
-          fi
-
-          if [ -n "$changed_files" ]; then
-            non_lockfile_count=0
-            while IFS= read -r file; do
-              if [ "$file" != "priv_signal.lockfile.json" ]; then
-                non_lockfile_count=$((non_lockfile_count + 1))
-              fi
-            done <<< "$changed_files"
-
-            if [ "$non_lockfile_count" = "0" ]; then
-              lockfile_only=true
-            fi
-          fi
-
-          echo "lockfile_only=$lockfile_only" >> "$GITHUB_OUTPUT"
-
-      - name: ⏭️ Skip heavy TypeScript checks for lockfile-only bot commit
-        if: steps.lockfile-only.outputs.lockfile_only == 'true'
-        run: echo "Skipping TypeScript build/test for lockfile-only bot commit."
-
       - name: 🔧 Configure
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         uses: actions/setup-node@v1
         with:
           node-version: "16.14.2"
 
       - name: 🧪 Setup elixir
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         uses: erlef/setup-elixir@v1
         with:
           elixir-version: 1.19.2 # Define the elixir version [required]
           otp-version: 28.1.1 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: mix deps.get
 
       - name: 📦 Install node_module dependencies
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: yarn --cwd assets --frozen-lockfile
 
       - name: 🧹 Lint
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: yarn --cwd assets run prettier && yarn --cwd assets run lint
 
       - name: 👁️ Typecheck
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: yarn --cwd assets run check-types
 
       - name: 🔨 Build
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: yarn --cwd assets run deploy
 
       - name: ⚙️ Test
-        if: steps.lockfile-only.outputs.lockfile_only != 'true'
         run: yarn --cwd assets run test
