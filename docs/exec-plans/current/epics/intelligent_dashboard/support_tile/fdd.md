@@ -55,6 +55,7 @@ This feature delivers the `Student Support` tile for the Instructor Intelligent 
   - Accepts server-generated spec JSON from HEEx data attributes.
   - Forwards donut interactions back to LiveView via `pushEvent`.
   - Does not own filtering, search, paging, or selection state.
+  - In Phase 1, this hook drives a deliberately minimal chart used to validate runtime viability and state synchronization before visual refinement.
 - `OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab`
   - Owns scope-wide dashboard routing, snapshot/oracle hydration, and distribution of tile param slices.
   - Must distinguish scope-affecting param changes from tile-local param changes so support-tile URL patches do not trigger scope-wide refetch.

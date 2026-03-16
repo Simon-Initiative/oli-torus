@@ -16,6 +16,7 @@ This plan assumes multiple developers may work across adjacent dashboard tiles i
 
 ## Clarifications & Default Assumptions
 - `PR 1` is an architecture-validation slice, not a final-design slice. Minimal UI is acceptable if it proves data flow, URL patching, and chart/list synchronization.
+- The `PR 1` chart is intentionally minimal and provisional; its purpose is to validate renderer viability and LiveView integration, not final Figma fidelity.
 - `Vega-Lite` is treated as the initial renderer candidate, but not as an irreversible architectural dependency.
 - Tile-local URL params for this feature will use the namespaced shape:
   - `tile_support[bucket]`
