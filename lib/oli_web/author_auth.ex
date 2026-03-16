@@ -360,7 +360,7 @@ defmodule OliWeb.AuthorAuth do
   end
 
   def require_account_admin(conn, _opts) do
-    if Accounts.has_admin_role?(conn.assigns[:current_author], :account_admin) do
+    if Accounts.at_least_account_admin?(conn.assigns[:current_author]) do
       conn
     else
       conn
@@ -371,7 +371,7 @@ defmodule OliWeb.AuthorAuth do
   end
 
   def require_content_admin(conn, _opts) do
-    if Accounts.has_admin_role?(conn.assigns[:current_author], :content_admin) do
+    if Accounts.at_least_content_admin?(conn.assigns[:current_author]) do
       conn
     else
       conn
@@ -382,7 +382,7 @@ defmodule OliWeb.AuthorAuth do
   end
 
   def require_system_admin(conn, _opts) do
-    if Accounts.has_admin_role?(conn.assigns[:current_author], :system_admin) do
+    if Accounts.is_system_admin?(conn.assigns[:current_author]) do
       conn
     else
       conn
