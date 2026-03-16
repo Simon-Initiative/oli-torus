@@ -97,6 +97,71 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
       assert %{"type" => "submitted"} = json_response(conn, 200)
     end
 
+    test "returns invalid trigger when trigger_type is missing", %{
+      conn: conn,
+      map: map
+    } do
+      Oli.Delivery.Sections.enroll(
+        map.user1.id,
+        map.section.id,
+        [Lti_1p3.Roles.ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      Oli.Delivery.Sections.update_section!(map.section, %{
+        triggers_enabled: true,
+        assistant_enabled: true
+      })
+
+      trigger = %{
+        "resource_id" => "resource_id",
+        "data" => %{}
+      }
+
+      conn =
+        post(
+          conn,
+          Routes.trigger_point_path(conn, :invoke, map.section.slug),
+          %{"trigger" => trigger}
+        )
+
+      assert %{"type" => "failure", "reason" => "Invalid trigger point"} =
+               json_response(conn, 200)
+    end
+
+    test "returns invalid trigger when trigger_type is not a string", %{
+      conn: conn,
+      map: map
+    } do
+      Oli.Delivery.Sections.enroll(
+        map.user1.id,
+        map.section.id,
+        [Lti_1p3.Roles.ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      Oli.Delivery.Sections.update_section!(map.section, %{
+        triggers_enabled: true,
+        assistant_enabled: true
+      })
+
+      trigger = %{
+        "trigger_type" => 123,
+        "resource_id" => "resource_id",
+        "data" => %{}
+      }
+
+      conn =
+        post(
+          conn,
+          Routes.trigger_point_path(conn, :invoke, map.section.slug),
+          %{"trigger" => trigger}
+        )
+
+      assert %{"type" => "failure", "reason" => "Invalid trigger point"} =
+               json_response(conn, 200)
+    end
+
     test "resolves adaptive prompts from authored content instead of the client payload", %{
       conn: conn,
       map: map

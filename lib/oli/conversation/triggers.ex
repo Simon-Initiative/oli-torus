@@ -141,7 +141,13 @@ defmodule Oli.Conversation.Triggers do
   @doc """
   Parse and validate a client-provided trigger payload.
   """
-  def resolve_client_trigger(section_slug, section_id, user_id, params) when is_map(params) do
+  def resolve_client_trigger(
+        section_slug,
+        section_id,
+        user_id,
+        %{"trigger_type" => trigger_type} = params
+      )
+      when is_binary(trigger_type) do
     trigger = Trigger.parse(params, section_id, user_id)
 
     case trigger.trigger_type do
@@ -154,6 +160,9 @@ defmodule Oli.Conversation.Triggers do
   rescue
     ArgumentError -> {:error, :invalid_trigger}
   end
+
+  def resolve_client_trigger(_section_slug, _section_id, _user_id, _params),
+    do: {:error, :invalid_trigger}
 
   @doc """
   Invoke a trigger point for a given section id and user id.  This will broadcast
