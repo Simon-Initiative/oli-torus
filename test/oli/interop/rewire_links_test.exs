@@ -238,5 +238,75 @@ defmodule Oli.Interop.RewireLinksTest do
       assert link["href"] == "rewritten:5779"
       refute Map.has_key?(link, "idref")
     end
+
+    # @ac "AC-007"
+    test "rewire/3 rewrites adaptive iframe page-link idref and source metadata" do
+      page_map = %{"10" => %{resource_id: 42, slug: "target-page"}}
+
+      iframe = %{
+        "type" => "janus-capi-iframe",
+        "sourceType" => "page",
+        "linkType" => "page",
+        "idref" => "10",
+        "src" => "/course/link/legacy-page"
+      }
+
+      {true, rewritten} = RewireLinks.rewire(iframe, &fake_link_builder/1, page_map)
+
+      assert rewritten["idref"] == 42
+      assert rewritten["resource_id"] == 42
+      assert rewritten["sourceType"] == "page"
+      assert rewritten["linkType"] == "page"
+      assert rewritten["sourcePageSlug"] == "target-page"
+      assert rewritten["src"] == "rewritten:42"
+    end
+
+    test "rewire/3 rewrites adaptive iframe page-link metadata nested under custom" do
+      page_map = %{"10" => %{resource_id: 42, slug: "target-page"}}
+
+      iframe = %{
+        "type" => "janus-capi-iframe",
+        "custom" => %{
+          "sourceType" => "page",
+          "linkType" => "page",
+          "idref" => "10",
+          "src" => "/course/link/legacy-page",
+          "source" =>
+            "{\"mode\":\"page\",\"pageId\":10,\"pageSlug\":\"legacy-page\",\"url\":\"\"}"
+        }
+      }
+
+      {true, rewritten} = RewireLinks.rewire(iframe, &fake_link_builder/1, page_map)
+      custom = rewritten["custom"]
+
+      assert custom["idref"] == 42
+      assert custom["resource_id"] == 42
+      assert custom["sourceType"] == "page"
+      assert custom["linkType"] == "page"
+      assert custom["sourcePageSlug"] == "target-page"
+      assert custom["src"] == "rewritten:42"
+
+      assert Jason.decode!(custom["source"]) == %{
+               "mode" => "page",
+               "pageId" => 42,
+               "pageSlug" => "target-page",
+               "url" => ""
+             }
+    end
+
+    test "rewire/3 keeps adaptive iframe external URL mode unchanged" do
+      page_map = %{"10" => %{resource_id: 42, slug: "target-page"}}
+
+      iframe = %{
+        "type" => "janus-capi-iframe",
+        "sourceType" => "url",
+        "linkType" => "page",
+        "idref" => "10",
+        "src" => "https://example.org/embed"
+      }
+
+      {false, rewritten} = RewireLinks.rewire(iframe, &fake_link_builder/1, page_map)
+      assert rewritten == iframe
+    end
   end
 end

@@ -9,7 +9,7 @@ services:
       - 443:443
 
   postgres:
-    image: ankane/pgvector
+    image: pgvector/pgvector:pg18
     logging:
       driver: "json-file"
       options:
@@ -19,7 +19,7 @@ services:
       - 5432:5432
     env_file: ./postgres.env
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql
 
   minio:
     image: minio/minio
@@ -30,7 +30,7 @@ services:
       MINIO_ROOT_USER: your_minio_access_key
       MINIO_ROOT_PASSWORD: your_minio_secret_key
     volumes:
-      - ./data:/data
+      - minio_data:/data
     command: ["server", "--console-address", ":9001", "/data"]
 
   clickhouse:
@@ -44,5 +44,6 @@ services:
       - ./clickhouse/users.xml:/etc/clickhouse-server/users.d/dev-users.xml
 
 volumes:
-  postgres_data:
+  pg_data:
+  minio_data:
   clickhouse_data:

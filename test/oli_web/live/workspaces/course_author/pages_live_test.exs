@@ -25,6 +25,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
           children: [],
           content: %{"model" => []},
           deleted: false,
+          ai_enabled: true,
           title: "Nested page #{index}",
           resource: nested_page_resource
         })
@@ -53,6 +54,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         children: [],
         content: %{"model" => []},
         deleted: false,
+        ai_enabled: true,
         title: "Nested page 1",
         author_id: author_1.id
       })
@@ -67,6 +69,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         deleted: false,
         title: "Nested page 2",
         graded: true,
+        ai_enabled: false,
         author_id: author_1.id
       })
 
@@ -428,6 +431,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
                assessment_mode: :traditional,
                duration_minutes: nil,
                graded: false,
+               ai_enabled: true,
                max_attempts: 0,
                purpose: :foundation,
                scoring_strategy_id: 1,
@@ -461,6 +465,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
           "duration_minutes" => "5",
           "explanation_strategy" => %{"type" => "after_max_resource_attempts_exhausted"},
           "graded" => "true",
+          "ai_enabled" => "false",
           "max_attempts" => "10",
           "poster_image" => "some_poster_image_url",
           "purpose" => "application",
@@ -486,6 +491,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
                assessment_mode: :one_at_a_time,
                duration_minutes: 5,
                graded: true,
+               ai_enabled: false,
                max_attempts: 10,
                purpose: :application,
                scoring_strategy_id: 2,
@@ -524,6 +530,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         |> then(&Resources.get_revisions_by_resource_id([&1]))
         |> List.first()
 
+      assert new_practice_page.ai_enabled == true
+
       conn = recycle_author_session(conn, admin)
 
       ## Go to the new practice page edit view
@@ -558,6 +566,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         |> Map.get(:resource_id)
         |> then(&Resources.get_revisions_by_resource_id([&1]))
         |> List.first()
+
+      assert new_scored_page.ai_enabled == false
 
       conn = recycle_author_session(conn, admin)
 
@@ -595,6 +605,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
         |> Map.get(:resource_id)
         |> then(&Resources.get_revisions_by_resource_id([&1]))
         |> List.first()
+
+      assert new_adaptive_page.ai_enabled == true
 
       conn = recycle_author_session(conn, admin)
 

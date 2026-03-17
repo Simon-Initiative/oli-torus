@@ -217,6 +217,31 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
     end
   end
 
+  describe "projects live as account admin" do
+    setup [:account_admin_conn, :set_timezone]
+
+    test "shows content-admin controls including the show-all filter", %{
+      conn: conn,
+      account_admin: account_admin
+    } do
+      admin_project = create_project_with_owner(account_admin)
+      other_project = insert(:author) |> create_project_with_owner()
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, ProjectsLive))
+
+      assert has_element?(view, "#allCheck")
+      assert has_element?(view, "##{admin_project.id}")
+      assert has_element?(view, "##{other_project.id}")
+
+      view
+      |> element("#allCheck")
+      |> render_click()
+
+      assert has_element?(view, "##{admin_project.id}")
+      refute has_element?(view, "##{other_project.id}")
+    end
+  end
+
   describe "projects live as author" do
     setup [:author_conn, :set_timezone]
 

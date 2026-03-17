@@ -20,13 +20,17 @@ defmodule Oli.InstructorDashboardTest do
 
       {:ok, state} =
         InstructorDashboard.upsert_state(enrollment.id, %{
-          last_viewed_scope: "container:123"
+          last_viewed_scope: "container:123",
+          section_order: ["engagement", "content"],
+          collapsed_section_ids: ["content"]
         })
 
       fetched_state = InstructorDashboard.get_state_by_enrollment_id(enrollment.id)
 
       assert %InstructorDashboardState{} = fetched_state
       assert fetched_state.id == state.id
+      assert fetched_state.section_order == ["engagement", "content"]
+      assert fetched_state.collapsed_section_ids == ["content"]
     end
   end
 
@@ -36,11 +40,15 @@ defmodule Oli.InstructorDashboardTest do
 
       assert {:ok, state} =
                InstructorDashboard.upsert_state(enrollment.id, %{
-                 last_viewed_scope: "course"
+                 last_viewed_scope: "course",
+                 section_order: ["engagement", "content"],
+                 collapsed_section_ids: ["content"]
                })
 
       assert state.enrollment_id == enrollment.id
       assert state.last_viewed_scope == "course"
+      assert state.section_order == ["engagement", "content"]
+      assert state.collapsed_section_ids == ["content"]
     end
 
     test "updates the existing state for the enrollment" do
@@ -59,8 +67,86 @@ defmodule Oli.InstructorDashboardTest do
       assert updated_state.id == original_state.id
       assert updated_state.enrollment_id == enrollment.id
       assert updated_state.last_viewed_scope == "container:456"
+      assert updated_state.section_order == []
+      assert updated_state.collapsed_section_ids == []
 
       assert Repo.aggregate(InstructorDashboardState, :count, :id) == 1
+    end
+
+    test "preserves existing scope when updating layout fields only" do
+      enrollment = instructor_enrollment_fixture()
+
+      assert {:ok, original_state} =
+               InstructorDashboard.upsert_state(enrollment.id, %{
+                 last_viewed_scope: "container:456"
+               })
+
+      assert {:ok, updated_state} =
+               InstructorDashboard.upsert_state(enrollment.id, %{
+                 section_order: ["content", "engagement"],
+                 collapsed_section_ids: ["engagement"]
+               })
+
+      assert updated_state.id == original_state.id
+      assert updated_state.last_viewed_scope == "container:456"
+      assert updated_state.section_order == ["content", "engagement"]
+      assert updated_state.collapsed_section_ids == ["engagement"]
+    end
+
+    test "creates a new state for layout-only updates using the default scope" do
+      enrollment = instructor_enrollment_fixture()
+
+      assert {:ok, state} =
+               InstructorDashboard.upsert_state(enrollment.id, %{
+                 section_order: ["content", "engagement"],
+                 collapsed_section_ids: ["engagement"]
+               })
+
+      assert state.last_viewed_scope == "course"
+      assert state.section_order == ["content", "engagement"]
+      assert state.collapsed_section_ids == ["engagement"]
+    end
+
+    test "rejects duplicate ids in persisted layout fields" do
+      enrollment = instructor_enrollment_fixture()
+
+      assert {:ok, _state} =
+               InstructorDashboard.upsert_state(enrollment.id, %{
+                 last_viewed_scope: "course",
+                 section_order: ["engagement", "content"]
+               })
+
+      assert {:error, changeset} =
+               InstructorDashboard.upsert_state(enrollment.id, %{
+                 section_order: ["content", "content"]
+               })
+
+      assert "must not contain duplicate ids" in errors_on(changeset).section_order
+
+      persisted_state = InstructorDashboard.get_state_by_enrollment_id(enrollment.id)
+
+      assert persisted_state.section_order == ["engagement", "content"]
+    end
+  end
+
+  describe "resolve_section_layout/2" do
+    test "returns default layout when no persisted state exists" do
+      assert InstructorDashboard.resolve_section_layout(nil, ["engagement", "content"]) == %{
+               section_order: ["engagement", "content"],
+               collapsed_section_ids: []
+             }
+    end
+
+    test "drops stale ids, de-duplicates persisted ids, and appends new visible sections" do
+      state = %InstructorDashboardState{
+        section_order: ["content", "legacy", "content"],
+        collapsed_section_ids: ["legacy", "engagement", "engagement"]
+      }
+
+      assert InstructorDashboard.resolve_section_layout(state, ["engagement", "content"]) == %{
+               section_order: ["content", "engagement"],
+               collapsed_section_ids: ["engagement"]
+             }
     end
   end
 

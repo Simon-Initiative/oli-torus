@@ -685,7 +685,7 @@ defmodule OliWeb.Sections.OverviewView do
   end
 
   defp is_content_admin?(%Oli.Accounts.Author{} = user) do
-    Oli.Accounts.has_admin_role?(user, :content_admin)
+    Oli.Accounts.at_least_content_admin?(user)
   end
 
   defp is_content_admin?(_), do: false

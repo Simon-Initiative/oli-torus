@@ -13,6 +13,7 @@ export interface PageContent {
 
 export interface PageContext {
   graded: boolean;
+  ai_enabled?: boolean;
   authorEmail: string;
   objectives: any;
   title: string;

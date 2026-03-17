@@ -1,4 +1,5 @@
 import LiveReact from 'phoenix_live_react';
+import { AdaptiveDialogueSync } from './adaptive_dialogue_sync';
 import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
@@ -13,6 +14,7 @@ import { CopyToClipboard } from './copy_to_clipboard';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
+import { DashboardSectionChrome } from './dashboard_section_chrome';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DebouncedTextInputListener } from './debounced_text_input_listener';
 import { DelayedSubmit } from './delayed_submit';
@@ -30,6 +32,7 @@ import { HighlightCode } from './highlight_code';
 import { HomeMobileTabs } from './home_mobile_tabs';
 import { InputAutoSelect } from './input_auto_select';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
+import { ListNavigatorDropdown } from './list_navigator_dropdown';
 import { LiveModal } from './live_modal';
 import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
@@ -66,6 +69,7 @@ import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
+  AdaptiveDialogueSync,
   AnnotationBubbles,
   DebouncedTextInputListener,
   GlobalTooltip,
@@ -104,6 +108,7 @@ export const Hooks = {
   SubmitForm,
   LoadSurveyScripts,
   LiveModal,
+  ListNavigatorDropdown,
   EmailList,
   ClickOutside,
   ChunkLogsDetails,
@@ -120,6 +125,7 @@ export const Hooks = {
   CustomFocusWrap,
   Countdown,
   CountdownTimer,
+  DashboardSectionChrome,
   EndDateTimer,
   EvaluateMathJaxExpressions,
   HighlightCode,

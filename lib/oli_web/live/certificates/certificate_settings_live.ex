@@ -172,7 +172,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
             checked={Ecto.Changeset.get_field(@section_changeset, :certificate_enabled)}
           />
           <div class="grow shrink basis-0 text-base font-medium">
-            Enable certificate capabilities for this product
+            Enable certificate capabilities for this template
           </div>
         </.form>
         <.tabs

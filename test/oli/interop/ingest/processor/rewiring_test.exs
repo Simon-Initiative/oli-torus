@@ -257,5 +257,56 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
       [link] = result["children"]
       assert link["idref"] == "missing"
     end
+
+    test "rewires adaptive iframe page-link idrefs" do
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [
+              %{
+                "type" => "janus-capi-iframe",
+                "sourceType" => "page",
+                "linkType" => "page",
+                "idref" => "10",
+                "src" => "/course/link/legacy"
+              }
+            ]
+          }
+        ]
+      }
+
+      result = Rewiring.rewire_adaptive_link_references(content, %{10 => 200})
+      [container] = result["model"]
+      [iframe] = container["children"]
+
+      assert iframe["idref"] == 200
+      assert iframe["resource_id"] == 200
+      assert iframe["sourceType"] == "page"
+      assert iframe["linkType"] == "page"
+    end
+
+    test "keeps adaptive iframe external URL mode unchanged" do
+      content = %{
+        "type" => "content",
+        "children" => [
+          %{
+            "type" => "janus-capi-iframe",
+            "sourceType" => "url",
+            "linkType" => "page",
+            "idref" => "10",
+            "src" => "https://example.org/embed"
+          }
+        ]
+      }
+
+      result = Rewiring.rewire_adaptive_link_references(content, %{10 => 200})
+      [iframe] = result["children"]
+
+      assert iframe["sourceType"] == "url"
+      assert iframe["idref"] == "10"
+      refute Map.has_key?(iframe, "resource_id")
+      assert iframe["src"] == "https://example.org/embed"
+    end
   end
 end

@@ -622,6 +622,40 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert has_element?(view, "p", "None exist")
     end
 
+    test "flat-course progress excludes dual-role administrator learners", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{section: section, pages: pages} = create_project_with_n_scored_pages(conn, 3)
+      [page_1, page_2, page_3] = pages
+
+      learner = insert(:user, %{given_name: "Active", family_name: "Learner"})
+      admin_and_learner = insert(:user, %{given_name: "Dual", family_name: "Role"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(learner.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.enroll(admin_and_learner.id, section.id, [
+        ContextRoles.get_role(:context_administrator),
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      set_progress(section.id, page_1.resource_id, learner.id, 1.0, page_1)
+      set_progress(section.id, page_2.resource_id, learner.id, 1.0, page_2)
+      set_progress(section.id, page_3.resource_id, learner.id, 1.0, page_3)
+
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
+
+      progress =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
+
+      assert progress == ["100%", "100%", "100%"]
+    end
+
     test "cards to filter works correctly combined with input search", %{
       conn: conn,
       instructor: instructor
@@ -951,6 +985,231 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
 
       # Module 1 should show 100% (not 200%) because instructor progress is excluded
       # Module 2 and 3 should show 0% (no student progress)
+      assert progress == ["100%", "0%", "0%"]
+    end
+
+    test "administrator progress submissions do not affect class progress calculation", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{
+        section: section,
+        mod1_pages: mod1_pages
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, page_3] = mod1_pages
+
+      student = insert(:user, %{given_name: "Test", family_name: "Student"})
+      admin = insert(:user, %{given_name: "Test", family_name: "Admin"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(admin.id, section.id, [ContextRoles.get_role(:context_administrator)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_3.revision
+      )
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        admin.id,
+        1.0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        admin.id,
+        1.0,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        admin.id,
+        0.0,
+        page_3.revision
+      )
+
+      params = %{container_filter_by: :modules}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      progress =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
+
+      assert progress == ["100%", "0%", "0%"]
+    end
+
+    test "administrator with learner role is excluded from class progress denominator", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{
+        section: section,
+        mod1_pages: mod1_pages
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, page_3] = mod1_pages
+
+      student = insert(:user, %{given_name: "Test", family_name: "Student"})
+      admin_and_learner = insert(:user, %{given_name: "Dual", family_name: "Role"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.enroll(admin_and_learner.id, section.id, [
+        ContextRoles.get_role(:context_administrator),
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        student.id,
+        1.0,
+        page_3.revision
+      )
+
+      params = %{container_filter_by: :modules}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      progress =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
+
+      assert progress == ["100%", "0%", "0%"]
+    end
+
+    test "suspended learners do not affect class progress calculation", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{
+        section: section,
+        mod1_pages: mod1_pages
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, page_3] = mod1_pages
+
+      active_student = insert(:user, %{given_name: "Active", family_name: "Student"})
+      suspended_student = insert(:user, %{given_name: "Suspended", family_name: "Student"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(active_student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(suspended_student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        active_student.id,
+        1.0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        active_student.id,
+        1.0,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        active_student.id,
+        1.0,
+        page_3.revision
+      )
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        suspended_student.id,
+        1.0,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        suspended_student.id,
+        1.0,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        suspended_student.id,
+        0.0,
+        page_3.revision
+      )
+
+      {:ok, _} = Sections.unenroll_learner(suspended_student.id, section.id)
+
+      params = %{container_filter_by: :modules}
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
+
+      progress =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
+        |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
+
       assert progress == ["100%", "0%", "0%"]
     end
   end

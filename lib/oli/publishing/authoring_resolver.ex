@@ -537,6 +537,29 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> Enum.flat_map(&adaptive_hyperlink_refs_for_node/1)
   end
 
+  defp adaptive_hyperlink_refs_for_part(%{"type" => "janus-capi-iframe"} = part) do
+    if Map.get(part, "sourceType") == "url" do
+      []
+    else
+      idref =
+        (Map.get(part, "idref") || Map.get(part, "resource_id"))
+        |> to_integer_or_nil()
+
+      href = Map.get(part, "src") |> internal_page_slug_from_href()
+      source_type = Map.get(part, "sourceType")
+      link_type = Map.get(part, "linkType")
+
+      is_internal =
+        source_type == "page" or link_type == "page" or not is_nil(idref) or not is_nil(href)
+
+      if is_internal and (not is_nil(idref) or not is_nil(href)) do
+        [%{"idref" => idref, "href" => href, "source" => "iframe"}]
+      else
+        []
+      end
+    end
+  end
+
   defp adaptive_hyperlink_refs_for_part(_), do: []
 
   defp adaptive_hyperlink_refs_for_node(%{"tag" => "a"} = node) do
@@ -550,7 +573,7 @@ defmodule Oli.Publishing.AuthoringResolver do
       if is_nil(idref) and is_nil(href) do
         []
       else
-        [%{"idref" => idref, "href" => href}]
+        [%{"idref" => idref, "href" => href, "source" => "text"}]
       end
 
     current_refs ++ adaptive_hyperlink_refs_for_children(node)
@@ -591,44 +614,64 @@ defmodule Oli.Publishing.AuthoringResolver do
 
   # Function that processes the given references to return only the ones pointing to the specified page slug.
   defp process_and_filter_references(raw_references_data, project_slug, page_slug) do
-    # Collect the resource_ids and transform the refs from a map to a list
-    # For instance, %{refs: [%{"href" => nil, "idref" => 1}, %{"href" => "some_slug", "idref" => nil}]}
-    # will be transformed to [1, "some_slug"]
+    # Collect resource_ids and flatten references while preserving source context.
     {resource_ids, data_with_refs_as_list} =
       Enum.reduce(raw_references_data, {[], []}, fn %{refs: refs} = data, acc ->
-        {hrefs, idrefs} =
+        {href_refs, idref_refs} =
           Enum.reduce(refs || [], {[], []}, fn ref, {href_acc, idref_acc} ->
+            source = Map.get(ref, "source", "text")
+
             href_acc =
               case Map.get(ref, "href") do
-                href when is_binary(href) and href != "" -> [href | href_acc]
-                _ -> href_acc
+                href when is_binary(href) and href != "" ->
+                  [%{reference: href, source: source} | href_acc]
+
+                _ ->
+                  href_acc
               end
 
             idref_acc =
               case Map.get(ref, "idref") do
-                idref when is_integer(idref) -> [idref | idref_acc]
-                _ -> idref_acc
+                idref when is_integer(idref) ->
+                  [%{reference: idref, source: source} | idref_acc]
+
+                _ ->
+                  idref_acc
               end
 
             {href_acc, idref_acc}
           end)
 
-        {idrefs ++ elem(acc, 0), [%{data | refs: hrefs ++ idrefs} | elem(acc, 1)]}
+        idrefs = Enum.map(idref_refs, & &1.reference)
+        refs_as_list = href_refs ++ idref_refs
+
+        {idrefs ++ elem(acc, 0), [%{data | refs: refs_as_list} | elem(acc, 1)]}
       end)
 
     res_id_to_rev_slug_map = map_resource_id_to_rev_slug(project_slug, resource_ids)
 
-    # Map resource_ids and filter references by the given page_slug
+    # Map resource ids and filter references by the given page slug, preserving source context.
     Enum.reduce(data_with_refs_as_list, [], fn data, acc ->
-      refs_maped =
+      refs_mapped =
         Enum.reduce(data.refs, [], fn
-          reference, acc2 when is_number(reference) -> [res_id_to_rev_slug_map[reference] | acc2]
-          reference, acc2 -> [reference | acc2]
+          %{reference: reference, source: source}, acc2 when is_number(reference) ->
+            [%{target: res_id_to_rev_slug_map[reference], source: source} | acc2]
+
+          %{reference: reference, source: source}, acc2 ->
+            [%{target: reference, source: source} | acc2]
         end)
 
-      if page_slug in refs_maped,
-        do: [%{title: data.title, slug: data.slug} | acc],
-        else: acc
+      matching_sources =
+        refs_mapped
+        |> Enum.filter(fn ref -> ref.target == page_slug end)
+        |> Enum.map(& &1.source)
+        |> Enum.uniq()
+
+      if matching_sources == [] do
+        acc
+      else
+        [%{title: data.title, slug: data.slug, link_sources: matching_sources} | acc]
+      end
     end)
   end
 

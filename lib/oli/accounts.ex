@@ -536,7 +536,22 @@ defmodule Oli.Accounts do
     Repo.exists?(query)
   end
 
-  # MER-3835 TODO: reconcile with new functions below
+  @doc """
+  Returns true if an author has some role admin.
+  """
+
+  def is_admin?(%Author{system_role_id: system_role_id}) do
+    system_role_id in [
+      SystemRole.role_id().system_admin,
+      SystemRole.role_id().account_admin,
+      SystemRole.role_id().content_admin
+    ]
+  end
+
+  def is_admin?(_), do: false
+
+  # Admin roles function as levels ordered content < account < system
+  # These min-level checks ensure each level includes all rights of lower ones.
 
   def at_least_content_admin?(%Author{system_role_id: system_role_id}) do
     SystemRole.role_id().content_admin == system_role_id or
@@ -553,59 +568,11 @@ defmodule Oli.Accounts do
 
   def at_least_account_admin?(_), do: false
 
-  @doc """
-  Returns true if an author has some role admin.
-  """
-
-  def is_admin?(%Author{system_role_id: system_role_id}) do
-    system_role_id in [
-      SystemRole.role_id().system_admin,
-      SystemRole.role_id().account_admin,
-      SystemRole.role_id().content_admin
-    ]
+  def is_system_admin?(%Author{system_role_id: system_role_id}) do
+    SystemRole.role_id().system_admin == system_role_id
   end
 
-  def is_admin?(_), do: false
-
-  @doc """
-  Returns true if an author has some role admin. System admins have all roles by definition.
-
-  This function can either accept the role_id, typically provided in the long form:
-
-  ## Examples
-      iex> has_admin_role?(author, SystemRole.role_id().content_admin)
-      false
-
-      iex> has_admin_role?(author, SystemRole.role_id().account_admin)
-      true
-
-      iex> has_admin_role?(author, SystemRole.role_id().system_admin)
-      false
-
-  or the role can also be passed as a short-hand key form:
-
-  ## Examples
-      iex> has_admin_role?(author, :content_admin)
-      false
-
-      iex> has_admin_role?(author, :account_admin)
-      true
-
-      iex> has_admin_role?(author, :system_admin)
-      false
-
-  """
-  def has_admin_role?(%Author{system_role_id: system_role_id}, role_id)
-      when is_integer(role_id) do
-    system_role_id == role_id or system_role_id == SystemRole.role_id().system_admin
-  end
-
-  def has_admin_role?(%Author{system_role_id: system_role_id}, role) when is_atom(role) do
-    system_role_id == SystemRole.role_id()[role] or
-      system_role_id == SystemRole.role_id().system_admin
-  end
-
-  def has_admin_role?(_, _), do: false
+  def is_system_admin?(_), do: false
 
   @doc """
   Returns true if an author is a community admin.
@@ -899,7 +866,7 @@ defmodule Oli.Accounts do
   end
 
   def can_access_via_slug?(author, project_slug) do
-    if has_admin_role?(author, :content_admin) do
+    if at_least_content_admin?(author) do
       # Admin authors have access to every project
       true
     else
