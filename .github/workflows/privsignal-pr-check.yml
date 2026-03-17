@@ -1,0 +1,261 @@
+name: PrivSignal PR Check
+
+on:
+  pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+  issues: write
+
+concurrency:
+  group: privsignal-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  privsignal:
+    name: Scan, Diff, Score, and Annotate PR
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: dev
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.19.2
+          otp-version: 28.1.1
+
+      - name: Install deps
+        run: mix deps.get
+
+      - name: Generate candidate lockfile + diff + score
+        run: |
+          set -euo pipefail
+
+          mkdir -p tmp/privsignal
+          git fetch --no-tags --prune \
+            "https://github.com/${GITHUB_REPOSITORY}.git" \
+            +refs/heads/master:refs/remotes/upstream/master
+
+          mix priv_signal.scan --quiet --json-path tmp/privsignal/priv_signal.lockfile.json
+          mix priv_signal.diff \
+            --base refs/remotes/upstream/master \
+            --candidate-path tmp/privsignal/priv_signal.lockfile.json \
+            --format json \
+            --output tmp/privsignal/priv_signal.diff.json
+          mix priv_signal.score \
+            --diff tmp/privsignal/priv_signal.diff.json \
+            --output tmp/privsignal/priv_signal.score.json \
+            --quiet
+
+      - name: Upload generated lockfile artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: privsignal-lockfile
+          path: tmp/privsignal/priv_signal.lockfile.json
+          if-no-files-found: error
+
+      - name: Build PR summary outputs
+        id: summary
+        run: |
+          set -euo pipefail
+
+          score="$(jq -r '.score // "NONE"' tmp/privsignal/priv_signal.score.json | tr '[:lower:]' '[:upper:]')"
+          label_suffix="$(echo "${score}" | tr '[:upper:]' '[:lower:]')"
+
+          case "${label_suffix}" in
+            none|low|medium|high)
+              ;;
+            *)
+              label_suffix="high"
+              ;;
+          esac
+
+          reasons_markdown="$(
+            jq -r --argfile diff tmp/privsignal/priv_signal.diff.json '
+              def rank:
+                if . == "high" then 0
+                elif . == "medium" then 1
+                elif . == "low" then 2
+                else 3
+                end;
+
+              ($diff.events // []) as $events
+              | ($events | map({key: (.event_id // ""), value: .}) | from_entries) as $event_by_id
+              | (.reasons // []) as $reasons
+              | (
+                  if ($reasons | length) > 0 then
+                    $reasons
+                    | map(
+                        . as $reason
+                        | ($event_by_id[($reason.event_id // "")] // {}) as $event
+                        | {
+                            rule_id: ($reason.rule_id // "unknown-rule"),
+                            event_id: ($reason.event_id // "unknown-event"),
+                            event_type: ($event.event_type // "unknown"),
+                            event_class: ($event.event_class // "low"),
+                            file_path: ($event.location.file_path // "n/a"),
+                            line: ($event.location.line // "n/a")
+                          }
+                      )
+                  else
+                    $events
+                    | map({
+                        rule_id: (.rule_id // "unknown-rule"),
+                        event_id: (.event_id // "unknown-event"),
+                        event_type: (.event_type // "unknown"),
+                        event_class: (.event_class // "low"),
+                        file_path: (.location.file_path // "n/a"),
+                        line: (.location.line // "n/a")
+                      })
+                  end
+                )
+              | sort_by((.event_class | rank), .rule_id, .event_id)
+              | .[:10]
+              | if length == 0 then
+                  "- No contributing events detected."
+                else
+                  to_entries
+                  | map("\(.key + 1). [`\(.value.rule_id)`] `\(.value.event_type)` (\(.value.event_class)) at `\(.value.file_path):\(.value.line)`")
+                  | join("\n")
+                end
+            ' tmp/privsignal/priv_signal.score.json
+          )"
+
+          echo "score=${score}" >> "${GITHUB_OUTPUT}"
+          echo "privacy_label=privacy-${label_suffix}" >> "${GITHUB_OUTPUT}"
+          {
+            echo "top_reasons<<EOF"
+            printf '%s\n' "${reasons_markdown}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Post PR comment + enforce one privacy label
+        uses: actions/github-script@v7
+        env:
+          PR_SCORE: ${{ steps.summary.outputs.score }}
+          PRIVACY_LABEL: ${{ steps.summary.outputs.privacy_label }}
+          TOP_REASONS: ${{ steps.summary.outputs.top_reasons }}
+        with:
+          script: |
+            const marker = "<!-- privsignal-risk-report -->";
+            const score = process.env.PR_SCORE || "UNKNOWN";
+            const privacyLabel = process.env.PRIVACY_LABEL || "privacy-high";
+            const reasons = process.env.TOP_REASONS || "- No contributing events detected.";
+            const issue_number = context.issue.number;
+            const { owner, repo } = context.repo;
+
+            const body = [
+              marker,
+              `### PrivSignal Risk: \`${score}\``,
+              "",
+              "**Top 10 contributing items**",
+              reasons
+            ].join("\n");
+
+            const existingLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+
+            const stalePrivacyLabels = existingLabels
+              .map((label) => label.name)
+              .filter((name) => name.startsWith("privacy-"));
+
+            for (const labelName of stalePrivacyLabels) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo,
+                  issue_number,
+                  name: labelName
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+              }
+            }
+
+            const defaultLabelColor = {
+              "privacy-none": "0e8a16",
+              "privacy-low": "fbca04",
+              "privacy-medium": "ff9f1c",
+              "privacy-high": "d73a4a"
+            };
+
+            try {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: [privacyLabel]
+              });
+            } catch (error) {
+              if (error.status !== 422) {
+                throw error;
+              }
+
+              await github.rest.issues.createLabel({
+                owner,
+                repo,
+                name: privacyLabel,
+                color: defaultLabelColor[privacyLabel] || "d73a4a",
+                description: "PrivSignal privacy risk classification"
+              });
+
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: [privacyLabel]
+              });
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+
+            const prior = comments.find(
+              (comment) =>
+                comment.user?.login === "github-actions[bot]" &&
+                typeof comment.body === "string" &&
+                comment.body.includes(marker)
+            );
+
+            if (prior) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: prior.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body
+              });
+            }
