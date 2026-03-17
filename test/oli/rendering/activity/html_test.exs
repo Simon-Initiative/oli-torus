@@ -466,6 +466,209 @@ defmodule Oli.Content.Activity.HtmlTest do
       assert link["target"] == "_blank"
     end
 
+    # @ac "AC-004"
+    test "rewrites adaptive internal iframe idref sources to section lesson urls", %{
+      author: author
+    } do
+      adaptive_model = %{
+        "partsLayout" => [
+          %{
+            "id" => "part_iframe_1",
+            "type" => "janus-capi-iframe",
+            "src" => "/course/link/legacy-slug",
+            "sourceType" => "page",
+            "linkType" => "page",
+            "idref" => 22
+          }
+        ]
+      }
+
+      activity_map = %{
+        1 => %ActivitySummary{
+          id: 1,
+          graded: false,
+          state: "{ \"active\": true }",
+          model: Jason.encode!(adaptive_model) |> Oli.Delivery.Page.ActivityContext.encode(),
+          delivery_element: "oli-adaptive-delivery",
+          authoring_element: "oli-adaptive-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
+        }
+      }
+
+      rendered_html =
+        Activity.render(
+          %Context{
+            user: author,
+            section_slug: "my-section",
+            page_link_params: [selected_view: "gallery"],
+            activity_map: activity_map,
+            resource_summary_fn: fn 22 ->
+              %Oli.Rendering.Content.ResourceSummary{title: "T", slug: "target-page"}
+            end
+          },
+          %{"activity_id" => 1, "purpose" => "none"},
+          Activity.Html
+        )
+
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+      [_, model_json] = Regex.run(~r/model="([^"]+)"/, rendered_html_string)
+      {:ok, model} = model_json |> HtmlEntities.decode() |> Jason.decode()
+
+      [iframe_part] = model["partsLayout"]
+
+      assert iframe_part["src"] ==
+               "/sections/my-section/lesson/target-page?selected_view=gallery"
+
+      refute Map.has_key?(iframe_part, "idref")
+      refute Map.has_key?(iframe_part, "resource_id")
+      refute Map.has_key?(iframe_part, "dynamicLinkFallback")
+    end
+
+    # @ac "AC-005"
+    test "falls back safely for unresolved adaptive iframe sources while preserving other link rewrites",
+         %{author: author} do
+      adaptive_model = %{
+        "partsLayout" => [
+          %{
+            "id" => "part_iframe_missing",
+            "type" => "janus-capi-iframe",
+            "src" => "/course/link/missing-page",
+            "sourceType" => "page",
+            "linkType" => "page",
+            "idref" => 999
+          },
+          %{
+            "id" => "part_text_ok",
+            "type" => "janus-text-flow",
+            "custom" => %{
+              "nodes" => [
+                %{
+                  "tag" => "a",
+                  "idref" => 22,
+                  "children" => [%{"tag" => "text", "text" => "Ok", "children" => []}]
+                }
+              ]
+            }
+          }
+        ]
+      }
+
+      activity_map = %{
+        1 => %ActivitySummary{
+          id: 1,
+          graded: false,
+          state: "{ \"active\": true }",
+          model: Jason.encode!(adaptive_model) |> Oli.Delivery.Page.ActivityContext.encode(),
+          delivery_element: "oli-adaptive-delivery",
+          authoring_element: "oli-adaptive-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
+        }
+      }
+
+      assert capture_log(fn ->
+               rendered_html =
+                 Activity.render(
+                   %Context{
+                     user: author,
+                     section_slug: "my-section",
+                     page_link_params: [request_path: "/sections/my-section/lesson/current"],
+                     activity_map: activity_map,
+                     resource_summary_fn: fn
+                       22 ->
+                         %Oli.Rendering.Content.ResourceSummary{title: "T", slug: "target-page"}
+
+                       _ ->
+                         raise "missing"
+                     end
+                   },
+                   %{"activity_id" => 1, "purpose" => "none"},
+                   Activity.Html
+                 )
+
+               rendered_html_string =
+                 Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+               [_, model_json] = Regex.run(~r/model="([^"]+)"/, rendered_html_string)
+               {:ok, model} = model_json |> HtmlEntities.decode() |> Jason.decode()
+
+               iframe_part =
+                 Enum.find(model["partsLayout"], fn part ->
+                   part["id"] == "part_iframe_missing"
+                 end)
+
+               text_part =
+                 Enum.find(model["partsLayout"], fn part -> part["id"] == "part_text_ok" end)
+
+               [link] = text_part["custom"]["nodes"]
+
+               assert iframe_part["src"] == "about:blank"
+               assert iframe_part["dynamicLinkFallback"]["type"] == "unresolved_internal_source"
+
+               assert iframe_part["dynamicLinkFallback"]["message"] ==
+                        "This embedded page is unavailable."
+
+               assert iframe_part["dynamicLinkFallback"]["href"] ==
+                        "/sections/my-section/lesson/current"
+
+               assert link["href"] ==
+                        "/sections/my-section/lesson/target-page?request_path=%2Fsections%2Fmy-section%2Flesson%2Fcurrent"
+
+               assert link["target"] == "_blank"
+             end) =~ "Unable to resolve adaptive dynamic link idref 999; using fallback"
+    end
+
+    # @ac "AC-006"
+    test "leaves external adaptive iframe urls untouched", %{author: author} do
+      adaptive_model = %{
+        "partsLayout" => [
+          %{
+            "id" => "part_iframe_external",
+            "type" => "janus-capi-iframe",
+            "src" => "https://example.com/embed",
+            "sourceType" => "url"
+          }
+        ]
+      }
+
+      activity_map = %{
+        1 => %ActivitySummary{
+          id: 1,
+          graded: false,
+          state: "{ \"active\": true }",
+          model: Jason.encode!(adaptive_model) |> Oli.Delivery.Page.ActivityContext.encode(),
+          delivery_element: "oli-adaptive-delivery",
+          authoring_element: "oli-adaptive-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
+        }
+      }
+
+      rendered_html =
+        Activity.render(
+          %Context{
+            user: author,
+            section_slug: "my-section",
+            page_link_params: [selected_view: "gallery"],
+            activity_map: activity_map
+          },
+          %{"activity_id" => 1, "purpose" => "none"},
+          Activity.Html
+        )
+
+      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+      [_, model_json] = Regex.run(~r/model="([^"]+)"/, rendered_html_string)
+      {:ok, model} = model_json |> HtmlEntities.decode() |> Jason.decode()
+
+      [iframe_part] = model["partsLayout"]
+      assert iframe_part["src"] == "https://example.com/embed"
+      refute Map.has_key?(iframe_part, "dynamicLinkFallback")
+    end
+
     test "memoizes adaptive link resolution per resource id within a render", %{author: author} do
       {:ok, counter} = Agent.start_link(fn -> 0 end)
 
@@ -488,6 +691,63 @@ defmodule Oli.Content.Activity.HtmlTest do
                 }
               ]
             }
+          }
+        ]
+      }
+
+      activity_map = %{
+        1 => %ActivitySummary{
+          id: 1,
+          graded: false,
+          state: "{ \"active\": true }",
+          model: Jason.encode!(adaptive_model) |> Oli.Delivery.Page.ActivityContext.encode(),
+          delivery_element: "oli-adaptive-delivery",
+          authoring_element: "oli-adaptive-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
+        }
+      }
+
+      _rendered_html =
+        Activity.render(
+          %Context{
+            user: author,
+            section_slug: "my-section",
+            page_link_params: [],
+            activity_map: activity_map,
+            resource_summary_fn: fn 77 ->
+              Agent.update(counter, &(&1 + 1))
+              %Oli.Rendering.Content.ResourceSummary{title: "Memo", slug: "memo-page"}
+            end
+          },
+          %{"activity_id" => 1, "purpose" => "none"},
+          Activity.Html
+        )
+
+      assert Agent.get(counter, & &1) == 1
+    end
+
+    test "memoizes adaptive iframe source resolution per resource id within a render", %{
+      author: author
+    } do
+      {:ok, counter} = Agent.start_link(fn -> 0 end)
+
+      adaptive_model = %{
+        "partsLayout" => [
+          %{
+            "id" => "part_iframe_1",
+            "type" => "janus-capi-iframe",
+            "src" => "/course/link/legacy-one",
+            "sourceType" => "page",
+            "idref" => 77
+          },
+          %{
+            "id" => "part_iframe_2",
+            "type" => "janus-capi-iframe",
+            "src" => "/course/link/legacy-two",
+            "sourceType" => "page",
+            "idref" => 77
           }
         ]
       }
@@ -604,6 +864,86 @@ defmodule Oli.Content.Activity.HtmlTest do
 
       assert broken_metadata.target_resource_id == 999
       assert broken_metadata.reason == "fallback_rendered"
+
+      :telemetry.detach(handler)
+    end
+
+    # @ac "AC-009"
+    test "emits iframe-specific adaptive dynamic-link telemetry metadata", %{author: author} do
+      handler = attach_telemetry([:resolved, :resolution_failed, :broken_clicked])
+
+      adaptive_model = %{
+        "partsLayout" => [
+          %{
+            "id" => "iframe_resolved",
+            "type" => "janus-capi-iframe",
+            "src" => "/course/link/target-page",
+            "sourceType" => "page",
+            "linkType" => "page",
+            "idref" => 22
+          },
+          %{
+            "id" => "iframe_missing",
+            "type" => "janus-capi-iframe",
+            "src" => "/course/link/missing-page",
+            "sourceType" => "page",
+            "linkType" => "page",
+            "idref" => 999
+          }
+        ]
+      }
+
+      activity_map = %{
+        1 => %ActivitySummary{
+          id: 1,
+          graded: false,
+          state: "{ \"active\": true }",
+          model: Jason.encode!(adaptive_model) |> Oli.Delivery.Page.ActivityContext.encode(),
+          delivery_element: "oli-adaptive-delivery",
+          authoring_element: "oli-adaptive-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
+        }
+      }
+
+      _ =
+        Activity.render(
+          %Context{
+            user: author,
+            project_slug: "project-slug",
+            section_slug: "my-section",
+            page_link_params: [request_path: "/sections/my-section/lesson/current"],
+            activity_map: activity_map,
+            resource_summary_fn: fn
+              22 -> %Oli.Rendering.Content.ResourceSummary{title: "T", slug: "target-page"}
+              _ -> raise "missing"
+            end
+          },
+          %{"activity_id" => 1, "purpose" => "none"},
+          Activity.Html
+        )
+
+      assert_receive {:telemetry_event, [:oli, :adaptive, :dynamic_link, :resolved], %{count: 1},
+                      resolved_metadata}
+
+      assert resolved_metadata.target_resource_id == 22
+      assert resolved_metadata.reason == "resolved"
+      assert resolved_metadata.source == "iframe_delivery_render"
+
+      assert_receive {:telemetry_event, [:oli, :adaptive, :dynamic_link, :resolution_failed],
+                      %{count: 1}, failed_metadata}
+
+      assert failed_metadata.target_resource_id == 999
+      assert failed_metadata.reason in ["resource_not_found", "invalid_resource_id"]
+      assert failed_metadata.source == "iframe_delivery_render"
+
+      assert_receive {:telemetry_event, [:oli, :adaptive, :dynamic_link, :broken_clicked],
+                      %{count: 1}, broken_metadata}
+
+      assert broken_metadata.target_resource_id == 999
+      assert broken_metadata.reason == "fallback_rendered"
+      assert broken_metadata.source == "iframe_delivery_render"
 
       :telemetry.detach(handler)
     end

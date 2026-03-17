@@ -853,7 +853,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   end
 
   defp can_import?(author) do
-    Accounts.is_admin?(author) || Accounts.has_admin_role?(author, :content_admin)
+    Accounts.at_least_content_admin?(author)
   end
 
   defp revision_slug(%Revision{slug: slug}) when is_binary(slug) and slug != "", do: slug

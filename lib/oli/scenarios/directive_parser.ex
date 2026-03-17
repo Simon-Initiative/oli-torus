@@ -361,6 +361,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       "virtual_id",
       "scope",
       "type",
+      "content_format",
       "content",
       "objectives",
       "tags"
@@ -374,6 +375,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           virtual_id: activity_data["virtual_id"],
           scope: activity_data["scope"] || "embedded",
           type: activity_data["type"],
+          content_format: activity_data["content_format"] || "torusdoc",
           content: activity_data["content"],
           objectives: activity_data["objectives"],
           tags: activity_data["tags"]

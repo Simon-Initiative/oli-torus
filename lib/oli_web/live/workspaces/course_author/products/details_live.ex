@@ -32,7 +32,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         author = socket.assigns.current_author
         base_project = Course.get_project!(product.base_project_id)
         publishers = Inventories.list_publishers()
-        is_admin = Accounts.has_admin_role?(author, :content_admin)
+        is_admin = Accounts.at_least_content_admin?(author)
         changeset = Section.changeset(product, %{})
         project = socket.assigns.project
 
@@ -157,6 +157,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             is_admin={@is_admin}
             base_project={@base_project}
             has_payment_codes={Paywall.has_payment_codes?(@product.id)}
+            usage_path={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/usage"
+            }
           />
         </div>
       </div>

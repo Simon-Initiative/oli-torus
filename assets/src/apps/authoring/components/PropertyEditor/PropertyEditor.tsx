@@ -8,6 +8,7 @@ import { debounce } from 'lodash';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
+import IframeSourceEditor from './custom/IframeSourceEditor';
 import { MCQCorrectAnswerEditor } from './custom/MCQCorrectAnswerEditor';
 import { MCQCustomErrorFeedbackAuthoring } from './custom/MCQCustomErrorFeedbackAuthoring';
 import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
@@ -54,6 +55,7 @@ const widgets: any = {
   SliderOptionsTextEditor: SliderOptionsTextEditor,
   ThemeSelectorWidget: ThemeSelectorWidget,
   PopupIconSelector: PopupIconSelector,
+  IframeSourceEditor: IframeSourceEditor,
 };
 
 /**

@@ -112,4 +112,111 @@ defmodule OliWeb.ProductsControllerTest do
       assert String.contains?(csv_content, "$15.00")
     end
   end
+
+  describe "export_usage_csv/2" do
+    setup do
+      author = insert(:author)
+      admin = insert(:author, %{system_role_id: SystemRole.role_id().system_admin})
+      content_admin = insert(:author, %{system_role_id: SystemRole.role_id().content_admin})
+      project = insert(:project, authors: [author])
+
+      product =
+        insert(:section, %{
+          type: :blueprint,
+          title: "Template For Usage",
+          slug: "template-for-usage",
+          base_project: project
+        })
+
+      tagged_section =
+        insert(:section, %{
+          type: :enrollable,
+          title: "Usage Section One",
+          slug: "usage-section-one",
+          base_project: project,
+          blueprint_id: product.id
+        })
+
+      insert(:section, %{
+        type: :enrollable,
+        title: "Usage Section Two",
+        slug: "usage-section-two",
+        base_project: project,
+        blueprint_id: product.id
+      })
+
+      tag = insert(:tag, name: "UsageTag")
+      insert(:section_tag, section: tagged_section, tag: tag)
+
+      %{
+        author: author,
+        admin: admin,
+        content_admin: content_admin,
+        product: product
+      }
+    end
+
+    test "non-admin export excludes tags column", %{conn: conn, author: author, product: product} do
+      conn =
+        conn
+        |> log_in_author(author)
+        |> get(~p"/authoring/products/#{product.slug}/usage/export")
+
+      assert response(conn, 200)
+      csv = response(conn, 200)
+      [header | _] = String.split(csv, "\n", trim: true)
+
+      refute String.contains?(header, "Tags")
+      assert String.contains?(header, "Project Version")
+    end
+
+    test "admin export includes tags column", %{conn: conn, admin: admin, product: product} do
+      conn =
+        conn
+        |> log_in_author(admin)
+        |> get(~p"/authoring/products/#{product.slug}/usage/export")
+
+      assert response(conn, 200)
+      csv = response(conn, 200)
+      [header | _] = String.split(csv, "\n", trim: true)
+
+      assert String.contains?(header, "Tags")
+      assert String.contains?(csv, "Usage Section One")
+    end
+
+    test "content admin can export usage csv", %{
+      conn: conn,
+      content_admin: content_admin,
+      product: product
+    } do
+      conn =
+        conn
+        |> log_in_author(content_admin)
+        |> get(~p"/authoring/products/#{product.slug}/usage/export")
+
+      assert response(conn, 200)
+      csv = response(conn, 200)
+      [header | _] = String.split(csv, "\n", trim: true)
+
+      assert String.contains?(header, "Tags")
+      assert String.contains?(csv, "Usage Section One")
+    end
+
+    test "empty usage export returns headers only", %{
+      conn: conn,
+      author: author,
+      product: product
+    } do
+      conn =
+        conn
+        |> log_in_author(author)
+        |> get(~p"/authoring/products/#{product.slug}/usage/export?active_today=true")
+
+      csv = response(conn, 200)
+      lines = String.split(csv, "\n", trim: true)
+
+      assert length(lines) == 1
+      assert hd(lines) =~ "Title,Section ID"
+    end
+  end
 end

@@ -22,6 +22,9 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias OliWeb.Components
   alias OliWeb.Dialogue.UserInput
 
+  @adaptive_runtime_update_name "adaptive_runtime_update"
+  @activity_attempt_guid_pattern ~r/\A[a-zA-Z0-9_-]+\z/
+
   defp realize_prompt_template(nil, _), do: ""
 
   defp realize_prompt_template(template, bindings) do
@@ -63,7 +66,14 @@ defmodule OliWeb.Dialogue.WindowLive do
     realize_prompt_template(section.page_prompt_template, bindings)
   end
 
-  defp init_dialogue_server(section, project, revision_id, user_id) do
+  defp init_dialogue_server(
+         section,
+         project,
+         revision_id,
+         user_id,
+         session_context,
+         service_config
+       ) do
     system_prompt =
       if revision_id do
         build_page_prompt(section, project, revision_id, user_id)
@@ -72,9 +82,9 @@ defmodule OliWeb.Dialogue.WindowLive do
       end
 
     configuration = %Configuration{
-      service_config: FeatureConfig.load_for(section.id, :student_dialogue),
+      service_config: service_config,
       messages: [Message.new(:system, system_prompt)],
-      functions: OliWeb.Dialogue.StudentFunctions.functions(),
+      functions: OliWeb.Dialogue.StudentFunctions.functions_for_session(session_context),
       reply_to_pid: self()
     }
 
@@ -138,40 +148,67 @@ defmodule OliWeb.Dialogue.WindowLive do
       ) do
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
     resource_id = session["resource_id"]
+    adaptive_supported? = adaptive_supported?(session)
+
+    dialogue_session_context =
+      dialogue_session_context(adaptive_supported?, section, current_user_id)
+
     requested_revision_id = session["revision_id"]
 
-    PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
+    if Sections.assistant_enabled?(section) do
+      {page_enabled?, revision_id} = page_ai_context(section, resource_id, requested_revision_id)
 
-    {page_enabled?, revision_id} = page_ai_context(section, resource_id, requested_revision_id)
+      if page_enabled? do
+        project = Oli.Authoring.Course.get_project!(section.base_project_id)
 
-    if Sections.assistant_enabled?(section) and page_enabled? do
-      project = Oli.Authoring.Course.get_project!(section.base_project_id)
+        service_config =
+          case Map.fetch(session, "service_config") do
+            {:ok, config} -> config
+            :error -> FeatureConfig.load_for(section.id, :student_dialogue)
+          end
 
-      case init_dialogue_server(section, project, revision_id, current_user_id) do
-        {:ok, dialogue_server} ->
-          {:ok,
-           assign(socket,
-             enabled: true,
-             minimized: true,
-             dialogue: dialogue_server,
-             form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
-             messages: [],
-             streaming: false,
-             allow_submission?: true,
-             trigger_queue: [],
-             active_message: nil,
-             title: "Dot",
-             current_user: Oli.Accounts.get_user!(current_user_id),
-             height: 500,
-             width: 400,
-             section: section,
-             resource_id: session["resource_id"],
-             is_page: session["is_page"] == true
-           )}
+        case init_dialogue_server(
+               section,
+               project,
+               revision_id,
+               current_user_id,
+               dialogue_session_context,
+               service_config
+             ) do
+          {:ok, dialogue_server} ->
+            PubSub.subscribe(
+              Oli.PubSub,
+              "trigger:#{current_user_id}:#{section.id}:#{resource_id}"
+            )
 
-        {:error, reason} ->
-          Logger.error("Failed to initialize dialogue server: #{inspect(reason)}")
-          {:ok, assign(socket, enabled: false)}
+            {:ok,
+             assign(socket,
+               enabled: true,
+               minimized: true,
+               dialogue: dialogue_server,
+               form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
+               messages: [],
+               streaming: false,
+               allow_submission?: true,
+               trigger_queue: [],
+               active_message: nil,
+               title: "Dot",
+               current_user: Oli.Accounts.get_user!(current_user_id),
+               height: 500,
+               width: 400,
+               section: section,
+               resource_id: session["resource_id"],
+               is_page: session["is_page"] == true,
+               adaptive_supported?: adaptive_supported?,
+               current_activity_attempt_guid: nil
+             )}
+
+          {:error, reason} ->
+            Logger.error("Failed to initialize dialogue server: #{inspect(reason)}")
+            {:ok, assign(socket, enabled: false)}
+        end
+      else
+        {:ok, assign(socket, enabled: false)}
       end
     else
       {:ok, assign(socket, enabled: false)}
@@ -186,11 +223,23 @@ defmodule OliWeb.Dialogue.WindowLive do
     {:ok, assign(socket, enabled: false)}
   end
 
+  defp adaptive_supported?(%{"adaptive_delivery_view" => "adaptive_with_chrome"}), do: true
+  defp adaptive_supported?(_), do: false
+
+  defp dialogue_session_context(adaptive_supported?, section, current_user_id) do
+    %{
+      adaptive?: adaptive_supported?,
+      current_user_id: current_user_id,
+      section_id: section.id
+    }
+  end
+
   def render(assigns) do
     ~H"""
     <div
       :if={@enabled}
       id="ai_bot"
+      phx-hook={if(@adaptive_supported?, do: "AdaptiveDialogueSync", else: nil)}
       class={[
         "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
         if(@is_page, do: "bottom-0 sm:bottom-20", else: "bottom-0")
@@ -645,6 +694,20 @@ defmodule OliWeb.Dialogue.WindowLive do
     {:noreply, assign(socket, streaming: true, messages: messages, allow_submission?: false)}
   end
 
+  def handle_event(
+        "adaptive_screen_changed",
+        %{"activity_attempt_guid" => activity_attempt_guid},
+        socket
+      ) do
+    case normalize_activity_attempt_guid(activity_attempt_guid) do
+      {:ok, guid} ->
+        {:noreply, maybe_remember_adaptive_runtime_update(socket, guid)}
+
+      {:error, :invalid_activity_attempt_guid} ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("resize", %{"height" => height, "width" => width}, socket) do
     {:noreply, assign(socket, height: height, width: width)}
   end
@@ -761,4 +824,48 @@ defmodule OliWeb.Dialogue.WindowLive do
       socket.assigns.section.id
     )
   end
+
+  defp maybe_remember_adaptive_runtime_update(
+         %{assigns: %{adaptive_supported?: true, current_activity_attempt_guid: current_guid}} =
+           socket,
+         guid
+       )
+       when current_guid != guid do
+    runtime_message =
+      adaptive_runtime_update_message(guid)
+
+    Server.remember(socket.assigns.dialogue, runtime_message)
+
+    assign(socket, current_activity_attempt_guid: guid)
+  end
+
+  defp maybe_remember_adaptive_runtime_update(socket, _guid), do: socket
+
+  defp adaptive_runtime_update_message(activity_attempt_guid) do
+    Message.new(
+      :system,
+      """
+      Adaptive runtime update: the learner's current adaptive screen activity_attempt_guid is #{activity_attempt_guid}.
+      When calling `adaptive_page_context`, use:
+      - activity_attempt_guid=#{activity_attempt_guid}
+      """,
+      @adaptive_runtime_update_name
+    )
+  end
+
+  defp normalize_activity_attempt_guid(activity_attempt_guid)
+       when is_binary(activity_attempt_guid) do
+    case String.trim(activity_attempt_guid) do
+      "" ->
+        {:error, :invalid_activity_attempt_guid}
+
+      guid ->
+        case Regex.match?(@activity_attempt_guid_pattern, guid) do
+          true -> {:ok, guid}
+          false -> {:error, :invalid_activity_attempt_guid}
+        end
+    end
+  end
+
+  defp normalize_activity_attempt_guid(_), do: {:error, :invalid_activity_attempt_guid}
 end

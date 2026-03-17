@@ -1,0 +1,128 @@
+work_item: adaptive_context
+requirements:
+- title: DOT shall expose an adaptive page context tool only when the learner is on
+    an adaptive page rendered in Torus navigation and existing AI enablement allows
+    DOT to be shown.
+  status: verified
+  id: FR-001
+- title: The adaptive context tool shall accept the lesson activity attempt GUID for
+    the learner's current adaptive screen attempt.
+  status: verified
+  id: FR-002
+- title: The system shall resolve the supplied activity attempt to the matching learner
+    page attempt before building adaptive context.
+  status: verified
+  id: FR-003
+- title: The adaptive page context builder shall return markdown that narrates visited
+    screens in actual visit order with ordinal position and screen title.
+  status: verified
+  id: FR-004
+- title: Each visited screen entry shall include a text representation of the screen
+    content from the activity revision together with the learner's relevant submitted
+    responses.
+  status: verified
+  id: FR-005
+- title: The adaptive context output shall identify the current screen and distinguish
+    visited scope from not-yet-visited scope.
+  status: verified
+  id: FR-006
+- title: DOT shall not reference unseen adaptive screens or provide exercise answers
+    derived from screens the learner has not yet visited.
+  status: verified
+  id: FR-007
+- title: Adaptive context retrieval failures shall degrade safely without exposing
+    fabricated, cross-user, or cross-section content.
+  status: verified
+  id: FR-008
+- title: The system shall emit telemetry for adaptive context tool availability and
+    execution outcomes without including raw student content in event metadata.
+  status: verified
+  id: FR-009
+acceptance_criteria:
+- title: Given a learner is on an adaptive page in Torus navigation with AI enabled,
+    when a DOT session initializes, then the available tool list includes an adaptive
+    context retrieval tool whose description mentions current screen, visited screens,
+    unvisited screens, and page content retrieval.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/dialogue/window_live_test.exs
+  - test/oli_web/live/dialogue/student_functions_test.exs
+  id: AC-001
+- title: Given AI is disabled or the adaptive page is outside the supported Torus
+    navigation shell, when the lesson renders, then DOT is not visible and the adaptive
+    context tool is not available.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli_web/live/dialogue/window_live_test.exs
+  - docs/exec-plans/current/epics/adaptive_page_improvements/adaptive_context/manual_qa.md
+  id: AC-002
+- title: Given the adaptive context tool is called with the current screen activity
+    attempt GUID, when lookup executes, then the system resolves the corresponding
+    page attempt for the same learner and delivery context.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/conversation/adaptive_page_context_builder_test.exs
+  id: AC-003
+- title: Given a learner visited screens A, B, and C in that order, when adaptive
+    context is built from screen C, then the markdown output lists A, B, and C in
+    visit order with numbered headers and screen titles.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/conversation/adaptive_page_context_builder_test.exs
+  id: AC-004
+- title: Given visited screens include activities with submitted answers, when adaptive
+    context is built, then each visited screen entry contains the screen content and
+    the learner's relevant response state from the associated attempts.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/conversation/adaptive_page_context_builder_test.exs
+  id: AC-005
+- title: Given the current screen is B and later screens remain unseen, when adaptive
+    context is returned, then B is identifiable as current and unseen screen content
+    is excluded from the visited-screen narrative.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/conversation/adaptive_page_context_builder_test.exs
+  id: AC-006
+- title: Given an adaptive page branches or the learner revisits a screen, when adaptive
+    context is built, then the output reflects actual visit history rather than authored
+    linear order.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/conversation/adaptive_page_context_builder_test.exs
+  id: AC-007
+- title: Given adaptive context retrieval fails or required data is missing, when
+    DOT continues processing, then the system uses safe fallback behavior and does
+    not expose fabricated or cross-user content.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/conversation/adaptive_page_context_builder_test.exs
+  - test/oli_web/live/dialogue/student_functions_test.exs
+  id: AC-008
+- title: Given telemetry is inspected, when the adaptive context tool is offered,
+    invoked, succeeds, or fails, then corresponding events are emitted without raw
+    student answers or raw screen content in metadata.
+  status: verified
+  verification_method: automated
+  proofs:
+  - test/oli/gen_ai/adaptive_context_telemetry_test.exs
+  - test/oli_web/live/dialogue/student_functions_test.exs
+  id: AC-009
+- title: Given a learner tries to use DOT to obtain answers or unseen future-screen
+    information, when DOT responds in an adaptive lesson, then it does not provide
+    direct exercise answers or reference content from screens the learner has not
+    visited.
+  status: verified
+  verification_method: hybrid
+  proofs:
+  - test/oli/conversation/adaptive_page_context_builder_test.exs
+  - docs/exec-plans/current/epics/adaptive_page_improvements/adaptive_context/manual_qa.md
+  id: AC-010

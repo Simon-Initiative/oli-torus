@@ -76,8 +76,6 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
           position: 'absolute' as const,
           top: '65px',
           left: '300px',
-          paddingRight: '300px',
-          paddingBottom: '300px',
           pointerEvents: `${editMode ? 'auto' : 'none'}`,
         },
     authoringContext: JSON.stringify({
