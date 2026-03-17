@@ -21,6 +21,19 @@ defmodule OliWeb.Sections.EditView do
   alias Oli.Branding.CustomLabels
   alias Oli.Institutions
 
+  defp set_breadcrumbs(_type, %{type: :blueprint} = section) do
+    [
+      Breadcrumb.new(%{
+        full_title: "Template Overview",
+        link: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
+      }),
+      Breadcrumb.new(%{
+        full_title: "Edit Template Details",
+        link: ~p"/authoring/products/#{section.slug}/edit"
+      })
+    ]
+  end
+
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
     |> breadcrumb(section)
@@ -66,6 +79,7 @@ defmodule OliWeb.Sections.EditView do
            institutions: available_institutions,
            changeset: Sections.change_section(section),
            is_admin: type == :admin,
+           is_blueprint: section.type == :blueprint,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            labels: labels,
@@ -90,7 +104,10 @@ defmodule OliWeb.Sections.EditView do
     <title>{@title}</title>
     <.form as={:section} for={@form} phx-change="validate" phx-submit="save" autocomplete="off">
       <Groups.render>
-        <Group.render label="Settings" description="Manage the course section settings">
+        <Group.render
+          label="Settings"
+          description={if @is_blueprint, do: "Manage the template settings", else: "Manage the course section settings"}
+        >
           <MainDetails.render
             form={@form}
             disabled={false}
@@ -102,15 +119,18 @@ defmodule OliWeb.Sections.EditView do
           />
         </Group.render>
         <Group.render
+          :if={!@is_blueprint}
           label="Schedule"
           description="Edit the start and end dates for scheduling purposes"
         >
           <StartEnd.render form={@form} disabled={false} is_admin={@is_admin} ctx={@ctx} />
         </Group.render>
-        <%= if @section.open_and_free do %>
-          <OpenFreeSettings.render is_admin={@is_admin} form={@form} disabled={false} ctx={@ctx} />
-        <% else %>
-          <LtiSettings.render section={@section} />
+        <%= if !@is_blueprint do %>
+          <%= if @section.open_and_free do %>
+            <OpenFreeSettings.render is_admin={@is_admin} form={@form} disabled={false} ctx={@ctx} />
+          <% else %>
+            <LtiSettings.render section={@section} />
+          <% end %>
         <% end %>
         <PaywallSettings.render form={@form} disabled={!@is_admin} />
         <ContentSettings.render form={@form} />

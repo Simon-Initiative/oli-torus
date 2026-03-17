@@ -5,13 +5,19 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.{Accounts, Branding, Inventories, Publishing, Repo, Tags}
   alias Oli.Authoring.Course
   alias Oli.Delivery.{Paywall, Sections}
-  alias Oli.Delivery.Sections.{Blueprint, Section}
+  alias Oli.Delivery.Sections.{Blueprint, Section, SectionResource}
+  alias Oli.Resources.Collaboration
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.{Breadcrumb, Confirm}
   alias OliWeb.Components.{Common, Overview}
   alias OliWeb.Live.Components.Tags.TagsComponent
+  alias OliWeb.Live.Components.Sections.AiAssistantComponent
+  alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
+  alias OliWeb.Live.Components.Sections.NotesComponent
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
   alias OliWeb.Products.ProductsToTransferCodes
+  alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
 
@@ -55,6 +61,36 @@ defmodule OliWeb.Products.DetailsView do
 
         publishers = Inventories.list_publishers()
 
+        # Notes: load page-level collab space counts
+        {collab_space_pages_count, pages_count} =
+          Collaboration.count_collab_spaces_enabled_in_pages_for_section(product.slug)
+
+        # Discussions: load root container's section_resource and collab_space_config
+        root_revision = DeliveryResolver.root_container(product.slug)
+
+        {root_section_resource, root_collab_space_config} =
+          if root_revision do
+            {:ok, config} =
+              Collaboration.get_collab_space_config_for_page_in_section(
+                root_revision.slug,
+                product.slug
+              )
+
+            root_sr = Repo.get(SectionResource, product.root_section_resource_id)
+            {root_sr, config}
+          else
+            {nil, nil}
+          end
+
+        # Required Survey: check if base project has a survey
+        show_required_section_config =
+          if product.required_survey_resource_id != nil or
+               Sections.get_base_project_survey(product.slug) do
+            true
+          else
+            false
+          end
+
         {:ok,
          assign(socket,
            available_brands: available_brands,
@@ -69,7 +105,12 @@ defmodule OliWeb.Products.DetailsView do
            title: "Edit Template",
            show_confirm: false,
            breadcrumbs: [Breadcrumb.new(%{full_title: "Template Overview"})],
-           base_project: base_project
+           base_project: base_project,
+           collab_space_pages_count: collab_space_pages_count,
+           pages_count: pages_count,
+           root_section_resource: root_section_resource,
+           root_collab_space_config: root_collab_space_config,
+           show_required_section_config: show_required_section_config
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -149,18 +190,6 @@ defmodule OliWeb.Products.DetailsView do
       </Overview.section>
 
       <Overview.section
-        title="Content"
-        description="Manage and customize the presentation of content in this template."
-      >
-        <Content.render
-          product={@product}
-          changeset={to_form(@changeset)}
-          save="save"
-          updates={@updates}
-        />
-      </Overview.section>
-
-      <Overview.section
         title="Cover Image"
         description="Manage the cover image for this template. Max file size is 5 MB."
       >
@@ -171,6 +200,18 @@ defmodule OliWeb.Products.DetailsView do
           upload_event="update_image"
           change="change"
           cancel_upload="cancel_upload"
+          updates={@updates}
+        />
+      </Overview.section>
+
+      <Overview.section
+        title="Content"
+        description="Manage and customize the presentation of content in this template."
+      >
+        <Content.render
+          product={@product}
+          changeset={to_form(@changeset)}
+          save="save"
           updates={@updates}
         />
       </Overview.section>
@@ -193,9 +234,91 @@ defmodule OliWeb.Products.DetailsView do
       </Overview.section>
 
       <Overview.section
+        title="AI Assistant"
+        description="Configure AI Assistant defaults for course sections created from this template."
+      >
+        <.live_component
+          module={AiAssistantComponent}
+          id={"ai-assistant-#{@product.id}"}
+          section={@product}
+        />
+      </Overview.section>
+
+      <Overview.section
+        title="Notes"
+        description="Enable students to annotate content for saving and sharing within the class community."
+      >
+        <.live_component
+          module={NotesComponent}
+          id={"notes-#{@product.id}"}
+          section={@product}
+          collab_space_pages_count={@collab_space_pages_count}
+          pages_count={@pages_count}
+        />
+      </Overview.section>
+
+      <Overview.section
+        title="Course Discussions"
+        description="Give students a course discussion board."
+      >
+        <.live_component
+          module={CourseDiscussionsComponent}
+          id={"discussions-#{@product.id}"}
+          section={@product}
+          collab_space_config={@root_collab_space_config}
+          root_section_resource={@root_section_resource}
+        />
+      </Overview.section>
+
+      <Overview.section
+        title="Required Survey"
+        description="Show a required survey to students who access the course for the first time."
+      >
+        <%= if @show_required_section_config do %>
+          <.live_component
+            module={RequiredSurvey}
+            project={@product}
+            enabled={@product.required_survey_resource_id}
+            is_section={true}
+            id="product-required-survey"
+          />
+        <% else %>
+          <div class="flex items-center">
+            <p class="m-0 text-gray-500">
+              The base project does not have a survey configured. Please contact the project author to add one.
+            </p>
+          </div>
+        <% end %>
+      </Overview.section>
+
+      <Overview.section
+        title="Scheduling & Assessment Settings"
+        description="Configure scheduling and assessment settings for this template."
+      >
+        <a
+          href={~p"/authoring/products/#{@product.slug}/schedule"}
+          class="btn btn-link"
+        >
+          Edit scheduling and assessment settings
+        </a>
+      </Overview.section>
+
+      <Overview.section
+        title="Edit Template Details"
+        description="Edit template details, paywall settings, and content settings for this template."
+      >
+        <a
+          href={~p"/authoring/products/#{@product.slug}/edit"}
+          class="btn btn-link"
+        >
+          Edit Template Details
+        </a>
+      </Overview.section>
+
+      <Overview.section
         :if={@is_admin}
         title="Feature Flags"
-        description="Manage scoped feature flags for this section."
+        description="Manage scoped feature flags for this template."
       >
         <.live_component
           module={OliWeb.Components.ScopedFeatureToggleComponent}
@@ -205,7 +328,7 @@ defmodule OliWeb.Products.DetailsView do
           source_type={:section}
           source={@product}
           current_author={@author}
-          title="Section Features"
+          title="Template Features"
         />
       </Overview.section>
 
@@ -389,6 +512,47 @@ defmodule OliWeb.Products.DetailsView do
   def handle_info({:scoped_feature_notice, type, message}, socket) do
     level = if type == :error, do: :error, else: :info
     {:noreply, put_flash(socket, level, message)}
+  end
+
+  # Generic flash handler for child LiveComponents
+  def handle_info({:flash, level, message}, socket) do
+    {:noreply, put_flash(socket, level, message)}
+  end
+
+  # Keep @product in sync when child LiveComponents update the section.
+  # We merge only scalar fields from the updated section onto the existing @product
+  # to preserve preloaded associations (e.g. communities) that the render function needs.
+  def handle_info({:section_updated, %Oli.Delivery.Sections.Section{} = updated_section}, socket) do
+    current_product = socket.assigns.product
+
+    merged =
+      Map.merge(
+        Map.from_struct(current_product),
+        Map.from_struct(updated_section),
+        fn _key, current_val, new_val ->
+          case new_val do
+            %Ecto.Association.NotLoaded{} -> current_val
+            _ -> new_val
+          end
+        end
+      )
+
+    {:noreply, assign(socket, product: struct(Oli.Delivery.Sections.Section, merged))}
+  end
+
+  # Keep parent's notes count in sync so NotesComponent doesn't get stale assigns on re-render
+  def handle_info({:notes_count_updated, count}, socket) do
+    {:noreply, assign(socket, collab_space_pages_count: count)}
+  end
+
+  # Keep parent's collab_space_config in sync so CourseDiscussionsComponent doesn't get stale
+  # assigns on re-render (e.g. when another component triggers a parent re-render)
+  def handle_info({:collab_space_config_updated, config, root_sr}, socket) do
+    {:noreply,
+     assign(socket,
+       root_collab_space_config: config,
+       root_section_resource: root_sr
+     )}
   end
 
   defp ext(entry) do

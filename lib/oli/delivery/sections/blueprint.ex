@@ -310,7 +310,13 @@ defmodule Oli.Delivery.Sections.Blueprint do
           skip_email_verification: section.skip_email_verification,
           registration_open: section.registration_open,
           requires_enrollment: section.requires_enrollment,
-          certificate: certificate
+          certificate: certificate,
+          # Course section defaults (MER-4054)
+          assistant_enabled: section.assistant_enabled,
+          triggers_enabled: section.triggers_enabled,
+          page_prompt_template: section.page_prompt_template,
+          contains_discussions: section.contains_discussions,
+          required_survey_resource_id: section.required_survey_resource_id
         },
         attrs
       )

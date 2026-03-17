@@ -690,6 +690,30 @@ defmodule OliWeb.Sections.OverviewView do
     {:noreply, socket}
   end
 
+  # Keep @section in sync when child LiveComponents (e.g. RequiredSurvey) update the section.
+  def handle_info({:section_updated, %Oli.Delivery.Sections.Section{} = updated_section}, socket) do
+    current_section = socket.assigns.section
+
+    merged =
+      Map.merge(
+        Map.from_struct(current_section),
+        Map.from_struct(updated_section),
+        fn _key, current_val, new_val ->
+          case new_val do
+            %Ecto.Association.NotLoaded{} -> current_val
+            _ -> new_val
+          end
+        end
+      )
+
+    {:noreply, assign(socket, section: struct(Oli.Delivery.Sections.Section, merged))}
+  end
+
+  # Generic flash handler for child LiveComponents
+  def handle_info({:flash, level, message}, socket) do
+    {:noreply, put_flash(socket, level, message)}
+  end
+
   def handle_info({:scoped_feature_updated, feature_name, enabled, _source}, socket) do
     action = if enabled, do: "enabled", else: "disabled"
     message = "Feature '#{feature_name}' #{action} successfully"

@@ -5,6 +5,19 @@ defmodule OliWeb.Sections.ScheduleView do
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{Breadcrumb}
 
+  defp set_breadcrumbs(_type, %{type: :blueprint} = section) do
+    [
+      Breadcrumb.new(%{
+        full_title: "Template Overview",
+        link: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
+      }),
+      Breadcrumb.new(%{
+        full_title: "Schedule",
+        link: ~p"/authoring/products/#{section.slug}/schedule"
+      })
+    ]
+  end
+
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
     |> breadcrumb(section)
@@ -26,6 +39,13 @@ defmodule OliWeb.Sections.ScheduleView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _user, section} ->
+        edit_url =
+          if section.type == :blueprint do
+            ~p"/authoring/products/#{section.slug}/edit"
+          else
+            Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, section.slug)
+          end
+
         {:ok,
          assign(socket,
            breadcrumbs: set_breadcrumbs(type, section),
@@ -38,8 +58,8 @@ defmodule OliWeb.Sections.ScheduleView do
              title: section.title,
              section_slug: section_slug,
              display_curriculum_item_numbering: section.display_curriculum_item_numbering,
-             edit_section_details_url:
-               Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, section.slug),
+             edit_section_details_url: edit_url,
+             is_blueprint: section.type == :blueprint,
              agenda: section.agenda
            }
          )}

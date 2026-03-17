@@ -484,6 +484,20 @@ defmodule OliWeb.Router do
       as: :product_remix
     )
 
+    live_session :product_settings,
+      on_mount: [
+        {OliWeb.AuthorAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx
+      ] do
+      live("/products/:section_slug/schedule", Sections.ScheduleView, :product_schedule,
+        as: :product_schedule
+      )
+
+      live("/products/:section_slug/edit", Sections.EditView, :product_edit,
+        as: :product_edit
+      )
+    end
+
     get(
       "/products/:product_id/downloads/granted_certificates",
       GrantedCertificatesController,
