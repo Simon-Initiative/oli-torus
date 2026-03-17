@@ -3,6 +3,7 @@
 -- This table consolidates all event types into a single table for better performance and simplified queries
 CREATE TABLE IF NOT EXISTS raw_events (
     -- Core event fields (required for all events)
+    event_id String,
     user_id String,
     host_name String,
     section_id UInt64,
