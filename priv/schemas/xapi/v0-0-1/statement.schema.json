@@ -1,0 +1,1362 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.oli.cmu.edu/xapi/v0-0-1/statement.schema.json",
+  "title": "OLI xAPI Statement v0.0.1",
+  "description": "Reference schema for xAPI statements emitted by Torus analytics producers. Statements are top-level xAPI objects and are not wrapped under a `statement` property.",
+  "anyOf": [
+    {
+      "$ref": "#/$defs/activityAttemptEvaluated"
+    },
+    {
+      "$ref": "#/$defs/pageAttemptEvaluated"
+    },
+    {
+      "$ref": "#/$defs/partAttemptEvaluated"
+    },
+    {
+      "$ref": "#/$defs/pageViewed"
+    },
+    {
+      "$ref": "#/$defs/tutorMessage"
+    },
+    {
+      "$ref": "#/$defs/videoPlayed"
+    },
+    {
+      "$ref": "#/$defs/videoPaused"
+    },
+    {
+      "$ref": "#/$defs/videoSeeked"
+    },
+    {
+      "$ref": "#/$defs/videoCompleted"
+    }
+  ],
+  "$defs": {
+    "jsonValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/jsonValue"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/jsonValue"
+          }
+        }
+      ]
+    },
+    "langString": {
+      "type": "object",
+      "properties": {
+        "en-US": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "en-US"
+      ],
+      "additionalProperties": false
+    },
+    "actor": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "type": "object",
+          "properties": {
+            "homePage": {
+              "type": "string"
+            },
+            "name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
+          },
+          "required": [
+            "homePage",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "objectType": {
+          "const": "Agent"
+        }
+      },
+      "required": [
+        "account",
+        "objectType"
+      ],
+      "additionalProperties": false
+    },
+    "score": {
+      "type": "object",
+      "properties": {
+        "scaled": {
+          "type": "number"
+        },
+        "raw": {
+          "type": "number"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "scaled",
+        "raw",
+        "min",
+        "max"
+      ],
+      "additionalProperties": false
+    },
+    "attemptContextExtensionsBase": {
+      "type": "object",
+      "properties": {
+        "http://oli.cmu.edu/extensions/section_id": {
+          "type": "integer"
+        },
+        "http://oli.cmu.edu/extensions/project_id": {
+          "type": "integer"
+        },
+        "http://oli.cmu.edu/extensions/publication_id": {
+          "type": "integer"
+        },
+        "http://oli.cmu.edu/extensions/page_id": {
+          "type": "integer"
+        },
+        "http://oli.cmu.edu/extensions/page_attempt_guid": {
+          "type": "string"
+        },
+        "http://oli.cmu.edu/extensions/page_attempt_number": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "http://oli.cmu.edu/extensions/section_id",
+        "http://oli.cmu.edu/extensions/project_id",
+        "http://oli.cmu.edu/extensions/publication_id",
+        "http://oli.cmu.edu/extensions/page_id"
+      ],
+      "additionalProperties": true
+    },
+    "attemptContext": {
+      "type": "object",
+      "properties": {
+        "extensions": {
+          "$ref": "#/$defs/attemptContextExtensionsBase"
+        }
+      },
+      "required": [
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "videoContextActivities": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "const": "https://w3id.org/xapi/video"
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "category"
+      ],
+      "additionalProperties": false
+    },
+    "videoContextExtensionsBase": {
+      "type": "object",
+      "properties": {
+        "http://oli.cmu.edu/extensions/page_attempt_number": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "http://oli.cmu.edu/extensions/page_attempt_guid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "http://oli.cmu.edu/extensions/section_id": {
+          "type": "integer"
+        },
+        "http://oli.cmu.edu/extensions/project_id": {
+          "type": "integer"
+        },
+        "http://oli.cmu.edu/extensions/publication_id": {
+          "type": "integer"
+        },
+        "http://oli.cmu.edu/extensions/resource_id": {
+          "type": "integer"
+        },
+        "http://oli.cmu.edu/extensions/content_element_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "http://oli.cmu.edu/extensions/page_attempt_number",
+        "http://oli.cmu.edu/extensions/page_attempt_guid",
+        "http://oli.cmu.edu/extensions/section_id",
+        "http://oli.cmu.edu/extensions/project_id",
+        "http://oli.cmu.edu/extensions/publication_id",
+        "http://oli.cmu.edu/extensions/resource_id",
+        "http://oli.cmu.edu/extensions/content_element_id"
+      ],
+      "additionalProperties": true
+    },
+    "videoContext": {
+      "type": "object",
+      "properties": {
+        "contextActivities": {
+          "$ref": "#/$defs/videoContextActivities"
+        },
+        "extensions": {
+          "$ref": "#/$defs/videoContextExtensionsBase"
+        }
+      },
+      "required": [
+        "contextActivities",
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "activityAttemptEvaluated": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "verb": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "http://adlnet.gov/expapi/verbs/completed"
+            },
+            "display": {
+              "$ref": "#/$defs/langString"
+            }
+          },
+          "required": [
+            "id",
+            "display"
+          ],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "definition": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/langString"
+                },
+                "type": {
+                  "const": "http://oli.cmu.edu/extensions/activity_attempt"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "objectType": {
+              "const": "Activity"
+            }
+          },
+          "required": [
+            "id",
+            "definition",
+            "objectType"
+          ],
+          "additionalProperties": false
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "score": {
+              "$ref": "#/$defs/score"
+            },
+            "completion": {
+              "const": true
+            },
+            "success": {
+              "const": true
+            }
+          },
+          "required": [
+            "score",
+            "completion",
+            "success"
+          ],
+          "additionalProperties": false
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "extensions": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/attemptContextExtensionsBase"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "http://oli.cmu.edu/extensions/activity_attempt_number": {
+                      "type": "integer"
+                    },
+                    "http://oli.cmu.edu/extensions/activity_attempt_guid": {
+                      "type": "string"
+                    },
+                    "http://oli.cmu.edu/extensions/activity_id": {
+                      "type": "integer"
+                    },
+                    "http://oli.cmu.edu/extensions/activity_revision_id": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "http://oli.cmu.edu/extensions/activity_attempt_number",
+                    "http://oli.cmu.edu/extensions/activity_attempt_guid",
+                    "http://oli.cmu.edu/extensions/activity_id",
+                    "http://oli.cmu.edu/extensions/activity_revision_id"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "timestamp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "verb",
+        "object",
+        "result",
+        "context",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    },
+    "pageAttemptEvaluated": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "verb": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "http://adlnet.gov/expapi/verbs/completed"
+            },
+            "display": {
+              "$ref": "#/$defs/langString"
+            }
+          },
+          "required": [
+            "id",
+            "display"
+          ],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "definition": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/langString"
+                },
+                "type": {
+                  "const": "http://oli.cmu.edu/extensions/page_attempt"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "objectType": {
+              "const": "Activity"
+            }
+          },
+          "required": [
+            "id",
+            "definition",
+            "objectType"
+          ],
+          "additionalProperties": false
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "score": {
+              "$ref": "#/$defs/score"
+            },
+            "completion": {
+              "const": true
+            },
+            "success": {
+              "const": true
+            }
+          },
+          "required": [
+            "score",
+            "completion",
+            "success"
+          ],
+          "additionalProperties": false
+        },
+        "context": {
+          "$ref": "#/$defs/attemptContext"
+        },
+        "timestamp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "verb",
+        "object",
+        "result",
+        "context",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    },
+    "partAttemptEvaluated": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "verb": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "http://adlnet.gov/expapi/verbs/completed"
+            },
+            "display": {
+              "$ref": "#/$defs/langString"
+            }
+          },
+          "required": [
+            "id",
+            "display"
+          ],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "definition": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/langString"
+                },
+                "type": {
+                  "const": "http://adlnet.gov/expapi/activities/question"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "objectType": {
+              "const": "Activity"
+            }
+          },
+          "required": [
+            "id",
+            "definition",
+            "objectType"
+          ],
+          "additionalProperties": false
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "score": {
+              "$ref": "#/$defs/score"
+            },
+            "response": {
+              "$ref": "#/$defs/jsonValue"
+            },
+            "completion": {
+              "const": true
+            },
+            "success": {
+              "const": true
+            },
+            "extensions": {
+              "type": "object",
+              "properties": {
+                "http://oli.cmu.edu/extensions/feedback": {
+                  "$ref": "#/$defs/jsonValue"
+                }
+              },
+              "required": [
+                "http://oli.cmu.edu/extensions/feedback"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "score",
+            "response",
+            "completion",
+            "success",
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "extensions": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/attemptContextExtensionsBase"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "http://oli.cmu.edu/extensions/hints_requested": {
+                      "$ref": "#/$defs/jsonValue"
+                    },
+                    "http://oli.cmu.edu/extensions/part_attempt_number": {
+                      "type": "integer"
+                    },
+                    "http://oli.cmu.edu/extensions/activity_attempt_number": {
+                      "type": "integer"
+                    },
+                    "http://oli.cmu.edu/extensions/part_attempt_guid": {
+                      "type": "string"
+                    },
+                    "http://oli.cmu.edu/extensions/activity_attempt_guid": {
+                      "type": "string"
+                    },
+                    "http://oli.cmu.edu/extensions/activity_id": {
+                      "type": "integer"
+                    },
+                    "http://oli.cmu.edu/extensions/activity_revision_id": {
+                      "type": "integer"
+                    },
+                    "http://oli.cmu.edu/extensions/part_id": {
+                      "type": "string"
+                    },
+                    "http://oli.cmu.edu/extensions/attached_objectives": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/jsonValue"
+                      }
+                    },
+                    "http://oli.cmu.edu/extensions/session_id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "http://oli.cmu.edu/extensions/hints_requested",
+                    "http://oli.cmu.edu/extensions/part_attempt_number",
+                    "http://oli.cmu.edu/extensions/activity_attempt_number",
+                    "http://oli.cmu.edu/extensions/part_attempt_guid",
+                    "http://oli.cmu.edu/extensions/activity_attempt_guid",
+                    "http://oli.cmu.edu/extensions/activity_id",
+                    "http://oli.cmu.edu/extensions/activity_revision_id",
+                    "http://oli.cmu.edu/extensions/part_id",
+                    "http://oli.cmu.edu/extensions/attached_objectives",
+                    "http://oli.cmu.edu/extensions/session_id"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "timestamp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "verb",
+        "object",
+        "result",
+        "context",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    },
+    "pageViewed": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "verb": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "http://id.tincanapi.com/verb/viewed"
+            },
+            "display": {
+              "$ref": "#/$defs/langString"
+            }
+          },
+          "required": [
+            "id",
+            "display"
+          ],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "definition": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/langString"
+                },
+                "type": {
+                  "const": "http://oli.cmu.edu/extensions/types/page"
+                },
+                "subType": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "type",
+                "subType"
+              ],
+              "additionalProperties": false
+            },
+            "objectType": {
+              "const": "Page"
+            }
+          },
+          "required": [
+            "id",
+            "definition",
+            "objectType"
+          ],
+          "additionalProperties": false
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "completion": {
+              "const": true
+            },
+            "success": {
+              "const": true
+            }
+          },
+          "required": [
+            "completion",
+            "success"
+          ],
+          "additionalProperties": false
+        },
+        "context": {
+          "$ref": "#/$defs/attemptContext"
+        },
+        "timestamp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "verb",
+        "object",
+        "result",
+        "context",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    },
+    "tutorMessage": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "verb": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "http://activitystrea.ms/schema/1.0/create"
+            },
+            "display": {
+              "$ref": "#/$defs/langString"
+            }
+          },
+          "required": [
+            "id",
+            "display"
+          ],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "definition": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/langString"
+                },
+                "type": {
+                  "const": "http://oli.cmu.edu/extensions/tutor_message"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "objectType": {
+              "const": "Tutor"
+            }
+          },
+          "required": [
+            "id",
+            "definition",
+            "objectType"
+          ],
+          "additionalProperties": false
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "$ref": "#/$defs/jsonValue"
+            }
+          },
+          "required": [
+            "message"
+          ],
+          "additionalProperties": false
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "extensions": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/attemptContextExtensionsBase"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "http://oli.cmu.edu/extensions/activity_attempt_number": {
+                      "type": "integer"
+                    },
+                    "http://oli.cmu.edu/extensions/activity_attempt_guid": {
+                      "type": "string"
+                    },
+                    "http://oli.cmu.edu/extensions/activity_id": {
+                      "type": "integer"
+                    },
+                    "http://oli.cmu.edu/extensions/activity_revision_id": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "http://oli.cmu.edu/extensions/activity_attempt_number",
+                    "http://oli.cmu.edu/extensions/activity_attempt_guid",
+                    "http://oli.cmu.edu/extensions/activity_id",
+                    "http://oli.cmu.edu/extensions/activity_revision_id"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "timestamp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "verb",
+        "object",
+        "result",
+        "context",
+        "timestamp"
+      ],
+      "additionalProperties": false
+    },
+    "videoPlayed": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "verb": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "https://w3id.org/xapi/video/verbs/played"
+            },
+            "display": {
+              "$ref": "#/$defs/langString"
+            }
+          },
+          "required": [
+            "id",
+            "display"
+          ],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "definition": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/langString"
+                },
+                "type": {
+                  "const": "https://w3id.org/xapi/video/activity-type/video"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "objectType": {
+              "const": "Activity"
+            }
+          },
+          "required": [
+            "id",
+            "definition",
+            "objectType"
+          ],
+          "additionalProperties": false
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "extensions": {
+              "type": "object",
+              "properties": {
+                "https://w3id.org/xapi/video/extensions/time": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "https://w3id.org/xapi/video/extensions/time"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "contextActivities": {
+              "$ref": "#/$defs/videoContextActivities"
+            },
+            "extensions": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/videoContextExtensionsBase"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "https://w3id.org/xapi/video/extensions/length": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "https://w3id.org/xapi/video/extensions/length"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "contextActivities",
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "registration": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "verb",
+        "object",
+        "result",
+        "context",
+        "timestamp",
+        "registration"
+      ],
+      "additionalProperties": false
+    },
+    "videoPaused": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "verb": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "https://w3id.org/xapi/video/verbs/paused"
+            },
+            "display": {
+              "$ref": "#/$defs/langString"
+            }
+          },
+          "required": [
+            "id",
+            "display"
+          ],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "definition": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/langString"
+                },
+                "type": {
+                  "const": "https://w3id.org/xapi/video/activity-type/video"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "objectType": {
+              "const": "Activity"
+            }
+          },
+          "required": [
+            "id",
+            "definition",
+            "objectType"
+          ],
+          "additionalProperties": false
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "extensions": {
+              "type": "object",
+              "properties": {
+                "https://w3id.org/xapi/video/extensions/played-segments": {
+                  "type": "string"
+                },
+                "https://w3id.org/xapi/video/extensions/progress": {
+                  "type": "number"
+                },
+                "https://w3id.org/xapi/video/extensions/time": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "https://w3id.org/xapi/video/extensions/played-segments",
+                "https://w3id.org/xapi/video/extensions/progress",
+                "https://w3id.org/xapi/video/extensions/time"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "contextActivities": {
+              "$ref": "#/$defs/videoContextActivities"
+            },
+            "extensions": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/videoContextExtensionsBase"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "https://w3id.org/xapi/video/extensions/length": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "https://w3id.org/xapi/video/extensions/length"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "contextActivities",
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "registration": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "verb",
+        "object",
+        "result",
+        "context",
+        "timestamp",
+        "registration"
+      ],
+      "additionalProperties": false
+    },
+    "videoSeeked": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "verb": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "https://w3id.org/xapi/video/verbs/seeked"
+            },
+            "display": {
+              "$ref": "#/$defs/langString"
+            }
+          },
+          "required": [
+            "id",
+            "display"
+          ],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "definition": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/langString"
+                },
+                "type": {
+                  "const": "https://w3id.org/xapi/video/activity-type/video"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "objectType": {
+              "const": "Activity"
+            }
+          },
+          "required": [
+            "id",
+            "definition",
+            "objectType"
+          ],
+          "additionalProperties": false
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "extensions": {
+              "type": "object",
+              "properties": {
+                "https://w3id.org/xapi/video/extensions/time-to": {
+                  "type": "number"
+                },
+                "https://w3id.org/xapi/video/extensions/time-from": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "https://w3id.org/xapi/video/extensions/time-to",
+                "https://w3id.org/xapi/video/extensions/time-from"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "context": {
+          "$ref": "#/$defs/videoContext"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "registration": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "verb",
+        "object",
+        "result",
+        "context",
+        "timestamp",
+        "registration"
+      ],
+      "additionalProperties": false
+    },
+    "videoCompleted": {
+      "type": "object",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "verb": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "https://w3id.org/xapi/video/verbs/completed"
+            },
+            "display": {
+              "$ref": "#/$defs/langString"
+            }
+          },
+          "required": [
+            "id",
+            "display"
+          ],
+          "additionalProperties": false
+        },
+        "object": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "definition": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "$ref": "#/$defs/langString"
+                },
+                "type": {
+                  "const": "https://w3id.org/xapi/video/activity-type/video"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "objectType": {
+              "const": "Activity"
+            }
+          },
+          "required": [
+            "id",
+            "definition",
+            "objectType"
+          ],
+          "additionalProperties": false
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "extensions": {
+              "type": "object",
+              "properties": {
+                "https://w3id.org/xapi/video/extensions/played-segments": {
+                  "type": "string"
+                },
+                "https://w3id.org/xapi/video/extensions/progress": {
+                  "type": "number"
+                },
+                "https://w3id.org/xapi/video/extensions/time": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "https://w3id.org/xapi/video/extensions/played-segments",
+                "https://w3id.org/xapi/video/extensions/progress",
+                "https://w3id.org/xapi/video/extensions/time"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "contextActivities": {
+              "$ref": "#/$defs/videoContextActivities"
+            },
+            "extensions": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/videoContextExtensionsBase"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "https://w3id.org/xapi/video/extensions/completion-threshold": {
+                      "const": "1.0"
+                    },
+                    "https://w3id.org/xapi/video/extensions/length": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "https://w3id.org/xapi/video/extensions/completion-threshold",
+                    "https://w3id.org/xapi/video/extensions/length"
+                  ]
+                }
+              ]
+            }
+          },
+          "required": [
+            "contextActivities",
+            "extensions"
+          ],
+          "additionalProperties": false
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "registration": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "actor",
+        "verb",
+        "object",
+        "result",
+        "context",
+        "timestamp",
+        "registration"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
