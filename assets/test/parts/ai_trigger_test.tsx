@@ -83,7 +83,9 @@ describe('AITrigger', () => {
     jest.useFakeTimers();
 
     const model = JSON.stringify({ launchMode: 'auto', prompt: 'Greet the learner' });
-    const { rerender } = render(<AITrigger {...defaultProps} resourceId={undefined} model={model} />);
+    const { rerender } = render(
+      <AITrigger {...defaultProps} resourceId={undefined} model={model} />,
+    );
 
     await act(async () => Promise.resolve());
 

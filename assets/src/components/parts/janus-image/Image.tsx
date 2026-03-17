@@ -4,7 +4,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { invokeAdaptiveAiTrigger, hasAiTriggerPrompt } from '../aiTrigger';
+import { hasAiTriggerPrompt, invokeAdaptiveAiTrigger } from '../aiTrigger';
 import { PartComponentProps } from '../types/parts';
 import { ImageModel } from './schema';
 

@@ -3,7 +3,11 @@ import { AIIcon } from 'components/misc/AIIcon';
 import { AuthorPartComponentProps } from '../types/parts';
 import { AITriggerModel } from './schema';
 
-const AITriggerAuthor: React.FC<AuthorPartComponentProps<AITriggerModel>> = ({ id, model, onReady }) => {
+const AITriggerAuthor: React.FC<AuthorPartComponentProps<AITriggerModel>> = ({
+  id,
+  model,
+  onReady,
+}) => {
   useEffect(() => {
     onReady({ id });
   }, [id, onReady]);

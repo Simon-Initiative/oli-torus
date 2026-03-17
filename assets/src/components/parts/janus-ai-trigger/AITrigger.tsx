@@ -2,9 +2,9 @@ import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { AIIcon } from 'components/misc/AIIcon';
 import {
   buildAdaptiveAiTriggerPayload,
-  invokeAdaptiveAiTrigger,
   canInvokeAiTrigger,
   hasAiTriggerPrompt,
+  invokeAdaptiveAiTrigger,
 } from '../aiTrigger';
 import { PartComponentProps } from '../types/parts';
 import { aiTriggerTagName } from './constants';
@@ -163,12 +163,7 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     triggerAvailable,
   ]);
 
-  if (
-    !ready ||
-    launchMode !== 'click' ||
-    !hasAiTriggerPrompt(prompt) ||
-    !triggerAvailable
-  ) {
+  if (!ready || launchMode !== 'click' || !hasAiTriggerPrompt(prompt) || !triggerAvailable) {
     return null;
   }
 

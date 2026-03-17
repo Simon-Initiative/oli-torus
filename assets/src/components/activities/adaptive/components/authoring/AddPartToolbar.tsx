@@ -18,7 +18,10 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
 }) => {
   const paths = { images: '/images' }; // TODO: provide context to authoring
   const imgsPath = paths?.images || '';
-  const availableComponents = useMemo(() => availablePartComponents || [], [availablePartComponents]);
+  const availableComponents = useMemo(
+    () => availablePartComponents || [],
+    [availablePartComponents],
+  );
 
   const [priorityPartComponents, setPriorityPartComponents] = useState<any[]>([]);
   const [otherPartComponents, setOtherPartComponents] = useState<any[]>([]);

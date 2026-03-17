@@ -7,8 +7,8 @@ import {
   savePartState,
   savePartStateToTree,
 } from 'apps/delivery/store/features/attempt/actions/savePart';
-import { Objective } from '../../../../data/content/objective';
 import { aiTriggerPartSlug } from '../../../../components/parts/janus-ai-trigger/constants';
+import { Objective } from '../../../../data/content/objective';
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { savePage } from '../page/actions/savePage';
 import { AuthoringRootState } from '../rootReducer';
@@ -356,12 +356,8 @@ export const selectHasEditingLock = createSelector(
   (state: AppState) => state.hasEditingLock,
 );
 
-export const selectPartComponentTypes = createSelector(
-  selectState,
-  (state: AppState) =>
-    state.partComponentTypes.filter(
-      (part) => state.allowTriggers || part.slug !== aiTriggerPartSlug,
-    ),
+export const selectPartComponentTypes = createSelector(selectState, (state: AppState) =>
+  state.partComponentTypes.filter((part) => state.allowTriggers || part.slug !== aiTriggerPartSlug),
 );
 
 export const selectActivityTypes = createSelector(
