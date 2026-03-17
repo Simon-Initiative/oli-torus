@@ -6,6 +6,7 @@ on:
       - closed
     branches:
       - master
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -20,7 +21,7 @@ concurrency:
 jobs:
   refresh-lockfile:
     name: Refresh priv_signal.lockfile.json from S3
-    if: ${{ github.event.pull_request.merged == true }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
