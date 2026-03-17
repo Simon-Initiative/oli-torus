@@ -24,8 +24,8 @@ capabilities:
 
 providers:
   observability:
-    name: none
+    name: appsignal
   issue_tracker:
-    name: none
+    name: jira
 
 links: {}
