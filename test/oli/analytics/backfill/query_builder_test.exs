@@ -22,8 +22,8 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
 
     assert sql =~ "cityHash64(json) AS event_hash"
     assert sql =~ "coalesce(nullIf(JSON_VALUE(json, '$.id'), ''), nullIf(JSON_VALUE(json, '$.statement.id'), ''))"
-    assert sql =~ "nullIf(JSON_VALUE(json, '$.timestamp'), '')"
-    assert sql =~ "nullIf(JSON_VALUE(json, '$.statement.timestamp'), '')"
+    assert sql =~ "coalesce(nullIf(JSON_VALUE(json, '$.timestamp'), ''), nullIf(JSON_VALUE(json, '$.statement.timestamp'), ''))"
+    refute sql =~ "JSONExtract(json, 'actor.account.name', 'Int64')"
 
     assert sql =~
              ~r/rowNumberInAllBlocks\(\)\s+- min\(rowNumberInAllBlocks\(\)\) OVER \(PARTITION BY _path\)\s+\+ 1 AS source_line/

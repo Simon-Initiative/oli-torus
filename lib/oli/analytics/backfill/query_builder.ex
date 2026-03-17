@@ -43,12 +43,6 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         coalesce(
           #{json_value("$.actor.account.name")},
           #{json_value("$.actor.mbox")},
-          toString(
-            coalesce(
-              JSONExtract(json, 'actor.account.name', 'Int64'),
-              JSONExtract(json, 'statement.actor.account.name', 'Int64')
-            )
-          ),
           ''
         ) AS user_id,
 
