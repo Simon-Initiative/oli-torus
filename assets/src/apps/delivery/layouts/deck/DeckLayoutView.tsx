@@ -732,11 +732,18 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         },${config?.palette?.fillAlpha})`;
       }
     }
-    if (config?.x) {
-      styles.left = config.x;
-    }
-    if (config?.y) {
-      styles.top = config.y;
+    const multiActivityTree = responsiveLayout && localActivityTree.length > 1;
+    if (multiActivityTree) {
+      styles.display = 'flex';
+      styles.flexDirection = 'column';
+      styles.alignItems = 'stretch';
+    } else {
+      if (config?.x) {
+        styles.left = config.x;
+      }
+      if (config?.y) {
+        styles.top = config.y;
+      }
     }
     if (config?.z) {
       styles.zIndex = config.z || 0;
@@ -778,8 +785,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       );
     });
 
+    const contentClassName = multiActivityTree ? 'content activity-tree-stack' : 'content';
+
     return (
-      <div ref={contentRef} className="content" tabIndex={-1} style={styles}>
+      <div ref={contentRef} className={contentClassName} tabIndex={-1} style={styles}>
         {activities}
       </div>
     );

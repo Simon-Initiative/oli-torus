@@ -3498,7 +3498,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def module_schedule_details(assigns) do
     ~H"""
-    <div class="flex flex-col gap-2 sm:gap-0 sm:flex-row text-xs leading-3 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] sm:[text-shadow:_none] text-Specially-Tokens-Text-text-tile-details opacity-75 font-semibold">
+    <div class="flex flex-col gap-2 sm:gap-0 sm:flex-row text-xs leading-3 [text-shadow:_0px_1px_1px_rgb(0_0_0_/_0.50)] sm:[text-shadow:_none] text-Text-text-low font-semibold">
       <span>
         Available: {get_available_date(
           @module[

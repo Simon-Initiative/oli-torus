@@ -55,13 +55,23 @@ defmodule OliWeb.Delivery.RemixSection do
   defp redirect_after_save(:product_creator, %Section{slug: slug}, socket),
     do: Routes.live_path(socket, OliWeb.Products.DetailsView, slug)
 
-  def set_breadcrumbs(type, section) do
+  defp set_breadcrumbs(type, section) do
     type
     |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
     |> breadcrumb(section)
   end
 
-  def breadcrumb(previous, section) do
+  defp set_product_breadcrumbs(section) do
+    OliWeb.Products.DetailsView.set_breadcrumbs(section) ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Customize Content",
+          link: Routes.product_remix_path(OliWeb.Endpoint, :product_remix, section.slug)
+        })
+      ]
+  end
+
+  defp breadcrumb(previous, section) do
     previous ++
       [
         Breadcrumb.new(%{
@@ -143,7 +153,7 @@ defmodule OliWeb.Delivery.RemixSection do
       {:ok, state} = Remix.init_open_and_free(section)
 
       init_state_from_remix(socket, state,
-        breadcrumbs: set_breadcrumbs(:user, state.section),
+        breadcrumbs: set_product_breadcrumbs(state.section),
         redirect_after_save: redirect_after_save(:product_creator, state.section, socket)
       )
     else

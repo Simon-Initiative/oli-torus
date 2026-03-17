@@ -45,11 +45,12 @@ export const schema: JSONSchema7Object = {
     default: false,
   },
   defaultURL: {
-    title: 'Default URL',
+    title: 'Icon',
     type: 'string',
-    description: 'default URL for the button icon',
+    description: 'Icon for the popup button',
     default: '/repo/icons/question_mark_orange_32x32.png',
     enum: [
+      '',
       '/repo/icons/question_mark_orange_32x32.png',
       '/repo/icons/question_mark_red_32x32.png',
       '/repo/icons/question_mark_green_32x32.png',
@@ -160,9 +161,10 @@ export const simpleSchema: JSONSchema7Object = {
   defaultURL: {
     title: 'Icon',
     type: 'string',
-    description: 'URL for the button icon',
+    description: 'Icon for the popup button',
     default: '/repo/icons/question_mark_orange_32x32.png',
     enum: [
+      '',
       '/repo/icons/question_mark_orange_32x32.png',
       '/repo/icons/question_mark_red_32x32.png',
       '/repo/icons/question_mark_green_32x32.png',
@@ -255,6 +257,9 @@ export const simpleSchema: JSONSchema7Object = {
 };
 
 export const uiSchema = {
+  defaultURL: {
+    'ui:widget': 'PopupIconSelector',
+  },
   labelText: {
     'ui:title': 'Label Text',
   },
@@ -262,7 +267,7 @@ export const uiSchema = {
     'ui:title': 'Label Position',
   },
   hideIcon: {
-    'ui:title': 'Hide Icon',
+    'ui:widget': 'hidden',
   },
   popup: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,

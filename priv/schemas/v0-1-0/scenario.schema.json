@@ -1,0 +1,782 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/scenario.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Oli.Scenarios YAML Schema",
+  "description": "Schema for Oli.Scenarios directive files authored as YAML and parsed as JSON-compatible data.",
+  "oneOf": [
+    {
+      "type": "array",
+      "items": { "$ref": "#/definitions/directive" }
+    },
+    {
+      "type": "object",
+      "required": ["directives"],
+      "additionalProperties": false,
+      "properties": {
+        "directives": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/directive" }
+        }
+      }
+    },
+    { "$ref": "#/definitions/directive" }
+  ],
+  "definitions": {
+    "booleanLike": {
+      "oneOf": [
+        { "type": "boolean" },
+        { "type": "string", "enum": ["true", "false"] },
+        { "type": "integer" }
+      ]
+    },
+    "objective": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "node": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["page"],
+          "additionalProperties": false,
+          "properties": {
+            "page": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["container"],
+          "additionalProperties": false,
+          "properties": {
+            "container": { "type": "string" },
+            "children": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/node" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["children"],
+          "additionalProperties": false,
+          "properties": {
+            "children": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/node" }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["root"],
+          "additionalProperties": false,
+          "properties": {
+            "root": {
+              "oneOf": [
+                { "$ref": "#/definitions/node" },
+                { "type": "null" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "structureAssertion": {
+      "type": "object",
+      "required": ["to"],
+      "additionalProperties": false,
+      "properties": {
+        "to": { "type": "string" },
+        "root": {
+          "oneOf": [
+            { "$ref": "#/definitions/node" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "resourceAssertion": {
+      "type": "object",
+      "required": ["to", "target"],
+      "additionalProperties": false,
+      "properties": {
+        "to": { "type": "string" },
+        "target": { "type": "string" },
+        "resource": { "type": "object" }
+      }
+    },
+    "progressAssertion": {
+      "type": "object",
+      "required": ["section", "progress"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "progress": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "string" }
+          ]
+        },
+        "page": { "type": "string" },
+        "container": { "type": "string" },
+        "student": { "type": "string" }
+      },
+      "anyOf": [
+        { "required": ["page"] },
+        { "required": ["container"] }
+      ]
+    },
+    "proficiencyAssertion": {
+      "type": "object",
+      "required": ["section", "objective", "bucket"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "objective": { "type": "string" },
+        "bucket": { "type": "string" },
+        "value": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "student": { "type": "string" },
+        "page": { "type": "string" },
+        "container": { "type": "string" }
+      }
+    },
+    "assertDirective": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "structure": { "$ref": "#/definitions/structureAssertion" },
+        "resource": { "$ref": "#/definitions/resourceAssertion" },
+        "progress": { "$ref": "#/definitions/progressAssertion" },
+        "proficiency": { "$ref": "#/definitions/proficiencyAssertion" },
+        "assertions": {}
+      }
+    },
+    "verifyDirective": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "to": { "type": "string" },
+        "structure": { "$ref": "#/definitions/structureAssertion" },
+        "resource": { "$ref": "#/definitions/resourceAssertion" },
+        "progress": { "$ref": "#/definitions/progressAssertion" },
+        "proficiency": { "$ref": "#/definitions/proficiencyAssertion" },
+        "assertions": {}
+      }
+    },
+    "manipulateOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["add_container"],
+          "additionalProperties": false,
+          "properties": {
+            "add_container": {
+              "type": "object",
+              "required": ["title"],
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string" },
+                "to": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["add_page"],
+          "additionalProperties": false,
+          "properties": {
+            "add_page": {
+              "type": "object",
+              "required": ["title"],
+              "additionalProperties": false,
+              "properties": {
+                "title": { "type": "string" },
+                "to": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["move"],
+          "additionalProperties": false,
+          "properties": {
+            "move": {
+              "type": "object",
+              "required": ["from"],
+              "additionalProperties": false,
+              "properties": {
+                "from": { "type": "string" },
+                "to": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["reorder"],
+          "additionalProperties": false,
+          "properties": {
+            "reorder": {
+              "type": "object",
+              "required": ["from"],
+              "additionalProperties": false,
+              "properties": {
+                "from": { "type": "string" },
+                "before": { "type": "string" },
+                "after": { "type": "string" }
+              },
+              "anyOf": [
+                { "required": ["before"] },
+                { "required": ["after"] }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["remove"],
+          "additionalProperties": false,
+          "properties": {
+            "remove": {
+              "type": "object",
+              "required": ["from"],
+              "additionalProperties": false,
+              "properties": {
+                "from": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["revise"],
+          "additionalProperties": false,
+          "properties": {
+            "revise": {
+              "type": "object",
+              "required": ["target"],
+              "additionalProperties": false,
+              "properties": {
+                "target": { "type": "string" },
+                "set": { "type": "object" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["change"],
+          "additionalProperties": false,
+          "properties": {
+            "change": { "type": "object" }
+          }
+        }
+      ]
+    },
+    "customizeOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["remove"],
+          "additionalProperties": false,
+          "properties": {
+            "remove": {
+              "type": "object",
+              "required": ["from"],
+              "additionalProperties": false,
+              "properties": {
+                "from": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["reorder"],
+          "additionalProperties": false,
+          "properties": {
+            "reorder": {
+              "type": "object",
+              "required": ["from"],
+              "additionalProperties": false,
+              "properties": {
+                "from": { "type": "string" },
+                "before": { "type": "string" },
+                "after": { "type": "string" }
+              },
+              "anyOf": [
+                { "required": ["before"] },
+                { "required": ["after"] }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "directive": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["project"],
+          "additionalProperties": false,
+          "properties": {
+            "project": {
+              "type": "object",
+              "required": ["name"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "title": { "type": "string" },
+                "root": {
+                  "oneOf": [
+                    { "$ref": "#/definitions/node" },
+                    { "type": "null" }
+                  ]
+                },
+                "objectives": {
+                  "type": "array",
+                  "items": { "$ref": "#/definitions/objective" }
+                },
+                "tags": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "slug": { "type": "string" },
+                "visibility": {
+                  "type": "string",
+                  "enum": ["authors", "selected", "global"]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["clone"],
+          "additionalProperties": false,
+          "properties": {
+            "clone": {
+              "type": "object",
+              "required": ["from", "name"],
+              "additionalProperties": false,
+              "properties": {
+                "from": { "type": "string" },
+                "name": { "type": "string" },
+                "title": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["section"],
+          "additionalProperties": false,
+          "properties": {
+            "section": {
+              "type": "object",
+              "required": ["name"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "title": { "type": "string" },
+                "from": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["enrollable", "open_and_free"]
+                },
+                "registration_open": { "$ref": "#/definitions/booleanLike" },
+                "slug": { "type": "string" },
+                "open_and_free": { "$ref": "#/definitions/booleanLike" },
+                "requires_enrollment": { "$ref": "#/definitions/booleanLike" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["product"],
+          "additionalProperties": false,
+          "properties": {
+            "product": {
+              "type": "object",
+              "required": ["name"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "title": { "type": "string" },
+                "from": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["remix"],
+          "additionalProperties": false,
+          "properties": {
+            "remix": {
+              "type": "object",
+              "required": ["from", "resource", "section", "to"],
+              "additionalProperties": false,
+              "properties": {
+                "from": { "type": "string" },
+                "resource": { "type": "string" },
+                "section": { "type": "string" },
+                "to": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["manipulate"],
+          "additionalProperties": false,
+          "properties": {
+            "manipulate": {
+              "type": "object",
+              "required": ["to", "ops"],
+              "additionalProperties": false,
+              "properties": {
+                "to": { "type": "string" },
+                "ops": {
+                  "type": "array",
+                  "items": { "$ref": "#/definitions/manipulateOperation" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["publish"],
+          "additionalProperties": false,
+          "properties": {
+            "publish": {
+              "type": "object",
+              "required": ["to"],
+              "additionalProperties": false,
+              "properties": {
+                "to": { "type": "string" },
+                "description": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["assert"],
+          "additionalProperties": false,
+          "properties": {
+            "assert": { "$ref": "#/definitions/assertDirective" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["verify"],
+          "additionalProperties": false,
+          "properties": {
+            "verify": { "$ref": "#/definitions/verifyDirective" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["user"],
+          "additionalProperties": false,
+          "properties": {
+            "user": {
+              "type": "object",
+              "required": ["name"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["author", "instructor", "student"]
+                },
+                "email": { "type": "string" },
+                "given_name": { "type": "string" },
+                "family_name": { "type": "string" },
+                "password": { "type": "string" },
+                "system_role": {
+                  "type": "string",
+                  "enum": ["author", "system_admin", "account_admin", "content_admin"]
+                },
+                "can_create_sections": { "$ref": "#/definitions/booleanLike" },
+                "email_verified": { "$ref": "#/definitions/booleanLike" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["enroll"],
+          "additionalProperties": false,
+          "properties": {
+            "enroll": {
+              "type": "object",
+              "required": ["user", "section"],
+              "additionalProperties": false,
+              "properties": {
+                "user": { "type": "string" },
+                "section": { "type": "string" },
+                "role": {
+                  "type": "string",
+                  "enum": ["student", "instructor"]
+                },
+                "email": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["institution"],
+          "additionalProperties": false,
+          "properties": {
+            "institution": {
+              "type": "object",
+              "required": ["name"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "country_code": { "type": "string" },
+                "institution_email": { "type": "string" },
+                "institution_url": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["update"],
+          "additionalProperties": false,
+          "properties": {
+            "update": {
+              "type": "object",
+              "required": ["from", "to"],
+              "additionalProperties": false,
+              "properties": {
+                "from": { "type": "string" },
+                "to": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["customize"],
+          "additionalProperties": false,
+          "properties": {
+            "customize": {
+              "type": "object",
+              "required": ["to", "ops"],
+              "additionalProperties": false,
+              "properties": {
+                "to": { "type": "string" },
+                "ops": {
+                  "type": "array",
+                  "items": { "$ref": "#/definitions/customizeOperation" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["create_activity"],
+          "additionalProperties": false,
+          "properties": {
+            "create_activity": {
+              "type": "object",
+              "required": ["project", "title", "type", "content"],
+              "additionalProperties": false,
+              "properties": {
+                "project": { "type": "string" },
+                "title": { "type": "string" },
+                "virtual_id": { "type": "string" },
+                "scope": {
+                  "type": "string",
+                  "enum": ["embedded", "banked"]
+                },
+                "type": { "type": "string" },
+                "content_format": {
+                  "type": "string",
+                  "enum": ["torusdoc", "json"]
+                },
+                "content": {
+                  "oneOf": [
+                    { "type": "string" },
+                    { "type": "object" }
+                  ]
+                },
+                "objectives": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "tags": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["edit_page"],
+          "additionalProperties": false,
+          "properties": {
+            "edit_page": {
+              "type": "object",
+              "required": ["project", "page", "content"],
+              "additionalProperties": false,
+              "properties": {
+                "project": { "type": "string" },
+                "page": { "type": "string" },
+                "content": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["view_practice_page"],
+          "additionalProperties": false,
+          "properties": {
+            "view_practice_page": {
+              "type": "object",
+              "required": ["student", "section", "page"],
+              "additionalProperties": false,
+              "properties": {
+                "student": { "type": "string" },
+                "section": { "type": "string" },
+                "page": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["answer_question"],
+          "additionalProperties": false,
+          "properties": {
+            "answer_question": {
+              "type": "object",
+              "required": ["student", "section", "page", "activity_virtual_id", "response"],
+              "additionalProperties": false,
+              "properties": {
+                "student": { "type": "string" },
+                "section": { "type": "string" },
+                "page": { "type": "string" },
+                "activity_virtual_id": { "type": "string" },
+                "response": {}
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["use"],
+          "additionalProperties": false,
+          "properties": {
+            "use": {
+              "type": "object",
+              "required": ["file"],
+              "additionalProperties": false,
+              "properties": {
+                "file": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["collaborator"],
+          "additionalProperties": false,
+          "properties": {
+            "collaborator": {
+              "type": "object",
+              "required": ["project"],
+              "additionalProperties": false,
+              "properties": {
+                "user": { "type": "string" },
+                "project": { "type": "string" },
+                "email": { "type": "string" }
+              },
+              "anyOf": [
+                { "required": ["user"] },
+                { "required": ["email"] }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["media"],
+          "additionalProperties": false,
+          "properties": {
+            "media": {
+              "type": "object",
+              "required": ["project", "path"],
+              "additionalProperties": false,
+              "properties": {
+                "project": { "type": "string" },
+                "path": { "type": "string" },
+                "mime": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["bibliography"],
+          "additionalProperties": false,
+          "properties": {
+            "bibliography": {
+              "type": "object",
+              "required": ["project", "entry"],
+              "additionalProperties": false,
+              "properties": {
+                "project": { "type": "string" },
+                "entry": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["hook"],
+          "additionalProperties": false,
+          "properties": {
+            "hook": {
+              "type": "object",
+              "required": ["function"],
+              "additionalProperties": false,
+              "properties": {
+                "function": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

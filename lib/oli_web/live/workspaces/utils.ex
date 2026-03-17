@@ -314,7 +314,7 @@ defmodule OliWeb.Workspaces.Utils do
             parent_view: :author_publish
           },
           %SubMenuItem{
-            text: "Products",
+            text: "Templates",
             view: :products,
             parent_view: :author_publish
           }

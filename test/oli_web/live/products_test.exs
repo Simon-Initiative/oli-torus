@@ -92,6 +92,9 @@ defmodule OliWeb.ProductsLiveTest do
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
 
+      assert render(view) =~ "Browse Course Section Templates"
+      assert render(view) =~ "Include Archived Templates"
+
       assert has_element?(view, "a", product.title)
       assert has_element?(view, "a", product_2.title)
     end
@@ -333,14 +336,12 @@ defmodule OliWeb.ProductsLiveTest do
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
       assert render(view) =~ "Details"
-      assert render(view) =~ "The Product title and description"
+      assert render(view) =~ "The template title and description"
       assert has_element?(view, "input[value=\"#{product.title}\"]")
-      assert has_element?(view, "input[name=\"section[pay_by_institution]\"]")
 
-      assert has_element?(
-               view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts.ProductsIndexView, product.slug)}\"]"
-             )
+      # Paywall settings are now in their own section with a support team link
+      assert has_element?(view, "h4", "Paywall Settings")
+      assert render(view) =~ "contact our support team"
     end
   end
 
@@ -451,13 +452,21 @@ defmodule OliWeb.ProductsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_products_route(project.slug))
 
-      assert render(view) =~ "Products cannot be created until project is published"
+      assert render(view) =~ "Templates cannot be created until project is published"
 
       Seeder.Project.ensure_published(seeds, publication)
 
       {:ok, view, _html} = live(conn, live_view_products_route(project.slug))
 
-      assert render(view) =~ "Create a new product with title"
+      assert has_element?(view, "#button-new-template", "New Template")
+
+      view
+      |> element("#button-new-template")
+      |> render_click()
+
+      assert render(view) =~ "Create Template"
+      assert render(view) =~ "This can be changed later"
+      assert has_element?(view, "button[type='submit']", "Create")
     end
   end
 
@@ -474,7 +483,7 @@ defmodule OliWeb.ProductsLiveTest do
              |> element("button[phx-click='show_products_to_transfer']")
              |> render() =~ "Transfer Payment Codes"
 
-      assert has_element?(view, "div", "Allow transfer of payment codes to another product.")
+      assert has_element?(view, "div", "Allow transfer of payment codes to another template.")
     end
 
     test "does not show transfer payment codes button if project has this option disabled", %{
@@ -485,7 +494,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       refute has_element?(view, "button", "Transfer Payment Codes")
 
-      refute has_element?(view, "div", "Allow transfer of payment codes to another product.")
+      refute has_element?(view, "div", "Allow transfer of payment codes to another template.")
     end
 
     test "does not show transfer payment codes button if product has no payment codes", %{
@@ -500,7 +509,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       refute has_element?(view, "button", "Transfer Payment Codes")
 
-      refute has_element?(view, "div", "Allow transfer of payment codes to another product.")
+      refute has_element?(view, "div", "Allow transfer of payment codes to another template.")
     end
 
     test "shows a modal to select another product to transfer payment codes when clicking on transfer payment codes button",
@@ -527,7 +536,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(
                view,
                "h6",
-               "Select a product to transfer payment codes from this product."
+               "Select a template to transfer payment codes from this template."
              )
 
       assert has_element?(view, ".torus-select option", product_2.title)
@@ -548,7 +557,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(
                view,
                "h6",
-               "There are no products available to transfer payment codes."
+               "There are no templates available to transfer payment codes."
              )
     end
 

@@ -208,4 +208,105 @@ defmodule Oli.Interop.Ingest.Processing.RewiringTest do
       assert result["group"] == missing_group
     end
   end
+
+  describe "rewire_adaptive_link_references/2" do
+    test "rewires adaptive tag a idref references" do
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [
+              %{"tag" => "a", "idref" => "10", "children" => [%{"text" => "Go"}]},
+              %{"tag" => "a", "href" => "https://example.org", "children" => [%{"text" => "Out"}]}
+            ]
+          }
+        ]
+      }
+
+      result = Rewiring.rewire_adaptive_link_references(content, %{10 => 200})
+      [container] = result["model"]
+      [internal, external] = container["children"]
+
+      assert internal["idref"] == 200
+      assert external["href"] == "https://example.org"
+    end
+
+    test "is idempotent for already rewired adaptive idrefs" do
+      content = %{
+        "type" => "content",
+        "children" => [
+          %{"tag" => "a", "idref" => 200, "children" => [%{"text" => "Go"}]}
+        ]
+      }
+
+      once = Rewiring.rewire_adaptive_link_references(content, %{200 => 200})
+      twice = Rewiring.rewire_adaptive_link_references(once, %{200 => 200})
+
+      assert once == twice
+    end
+
+    test "leaves unmapped adaptive idrefs unchanged" do
+      content = %{
+        "type" => "content",
+        "children" => [
+          %{"tag" => "a", "idref" => "missing", "children" => [%{"text" => "Go"}]}
+        ]
+      }
+
+      result = Rewiring.rewire_adaptive_link_references(content, %{})
+      [link] = result["children"]
+      assert link["idref"] == "missing"
+    end
+
+    test "rewires adaptive iframe page-link idrefs" do
+      content = %{
+        "model" => [
+          %{
+            "type" => "content",
+            "children" => [
+              %{
+                "type" => "janus-capi-iframe",
+                "sourceType" => "page",
+                "linkType" => "page",
+                "idref" => "10",
+                "src" => "/course/link/legacy"
+              }
+            ]
+          }
+        ]
+      }
+
+      result = Rewiring.rewire_adaptive_link_references(content, %{10 => 200})
+      [container] = result["model"]
+      [iframe] = container["children"]
+
+      assert iframe["idref"] == 200
+      assert iframe["resource_id"] == 200
+      assert iframe["sourceType"] == "page"
+      assert iframe["linkType"] == "page"
+    end
+
+    test "keeps adaptive iframe external URL mode unchanged" do
+      content = %{
+        "type" => "content",
+        "children" => [
+          %{
+            "type" => "janus-capi-iframe",
+            "sourceType" => "url",
+            "linkType" => "page",
+            "idref" => "10",
+            "src" => "https://example.org/embed"
+          }
+        ]
+      }
+
+      result = Rewiring.rewire_adaptive_link_references(content, %{10 => 200})
+      [iframe] = result["children"]
+
+      assert iframe["sourceType"] == "url"
+      assert iframe["idref"] == "10"
+      refute Map.has_key?(iframe, "resource_id")
+      assert iframe["src"] == "https://example.org/embed"
+    end
+  end
 end

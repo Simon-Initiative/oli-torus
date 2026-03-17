@@ -24,7 +24,10 @@ defmodule OliWeb.Components.Delivery.DeliberatePractice do
           {intro_content(@practice)}
         </div>
         <div class="flex flex-row justify-end items-center space-x-6">
-          <.button variant={:primary} href={practice_link(@section_slug, @practice, @preview_mode)}>
+          <.button
+            class="rounded bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white hover:text-Text-text-white hover:no-underline"
+            href={practice_link(@section_slug, @practice, @preview_mode)}
+          >
             Open
           </.button>
         </div>

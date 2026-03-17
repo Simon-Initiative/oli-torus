@@ -125,6 +125,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 1",
         duration_minutes: 10,
+        ai_enabled: true,
         content: %{
           model: [
             %{
@@ -147,6 +148,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Exploration 1",
+        ai_enabled: true,
         purpose: :application,
         content: %{
           "model" => [],
@@ -162,6 +164,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         graded: true,
+        ai_enabled: false,
         max_attempts: 5,
         title: "Graded Adaptive Page",
         purpose: :foundation,
@@ -195,6 +198,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 3",
         graded: true,
+        ai_enabled: false,
         max_attempts: 5,
         content: %{
           model: [
@@ -220,6 +224,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         title: "Page 4",
         duration_minutes: 5,
         graded: true,
+        ai_enabled: false,
         max_attempts: 5,
         content: %{
           model: []
@@ -232,6 +237,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         title: "Page 5",
         duration_minutes: 5,
         graded: true,
+        ai_enabled: false,
         max_attempts: 5,
         content: %{
           model: []
@@ -243,6 +249,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 6",
         duration_minutes: 5,
+        ai_enabled: true,
         max_attempts: 5,
         content: %{
           model: []
@@ -1737,6 +1744,54 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute has_element?(view, "div[id=ai_bot_collapsed]")
     end
 
+    test "can see DOT AI Bot interface on a scored page when AI assistant is enabled for the page",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_3: page_3
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      {1, _} =
+        from(r in Oli.Resources.Revision, where: r.id == ^page_3.id)
+        |> Oli.Repo.update_all(set: [ai_enabled: true])
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, "div[id='dialogue-window']")
+      assert has_element?(view, "div[id=ai_bot_collapsed]")
+    end
+
+    test "does not show DOT AI Bot interface when section assistant is disabled, even if page enables it",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_1: page_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {1, _} =
+        from(r in Oli.Resources.Revision, where: r.id == ^page_1.id)
+        |> Oli.Repo.update_all(set: [ai_enabled: true])
+
+      assert {:ok, _updated_section} =
+               Sections.update_section(section, %{assistant_enabled: false})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, "div[id='dialogue-window']")
+      refute has_element?(view, "div[id=ai_bot_collapsed]")
+    end
+
     test "show check icon when page is not graded and is completed", %{
       conn: conn,
       user: user,
@@ -1881,6 +1936,48 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # the attempt was auto-submitted, so it's not considered late
       assert updated_attempt.lifecycle_state == :evaluated
       refute updated_attempt.was_late
+    end
+
+    test "expired graded attempts cannot continue in lesson mode after auto-finalization", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      Sections.get_section_resource(section.id, page_3.resource_id)
+      |> Sections.update_section_resource(%{
+        end_date: yesterday(),
+        late_submit: :disallow,
+        late_start: :disallow,
+        scheduling_type: :read_by,
+        time_limit: 20
+      })
+
+      attempt_in_progress =
+        create_attempt(user, section, page_3, %{
+          lifecycle_state: :active,
+          inserted_at: DateTime.add(DateTime.utc_now(), -21, :minute)
+        })
+
+      {:error, {:redirect, %{to: review_redirect_path}}} =
+        live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+
+      assert review_redirect_path =~
+               "/sections/#{section.slug}/lesson/#{page_3.slug}/attempt/#{attempt_in_progress.attempt_guid}/review"
+
+      updated_attempt =
+        Core.get_resource_attempt_by(attempt_guid: attempt_in_progress.attempt_guid)
+
+      assert updated_attempt.lifecycle_state in [:submitted, :evaluated]
+
+      # After finalization, revisiting lesson should not return the learner to an active lesson attempt.
+      {:error, {:redirect, %{to: follow_up_redirect_path}}} =
+        live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+
+      assert follow_up_redirect_path =~ "/sections/#{section.slug}/prologue/#{page_3.slug}"
     end
 
     test "uses ResourceAccess.out_of instead of ResourceAttempt.out_of for current_out_of display in score-as-you-go assessment",

@@ -107,14 +107,17 @@ defmodule OliWeb.UserSettingsLiveTest do
         |> put_settings_return_to()
         |> live(~p"/users/settings")
 
-      lv
-      |> form("#settings_form", %{
-        "user" => %{
-          "given_name" => "John",
-          "family_name" => ""
-        }
-      })
-      |> render_submit()
+      result =
+        lv
+        |> form("#settings_form", %{
+          "user" => %{
+            "given_name" => "John",
+            "family_name" => ""
+          }
+        })
+        |> render_submit()
+
+      assert result =~ "Please enter a Last Name"
 
       reloaded_user = Accounts.get_user!(user.id)
       assert reloaded_user.family_name == user.family_name
@@ -135,9 +138,13 @@ defmodule OliWeb.UserSettingsLiveTest do
         "family_name" => ""
       }
 
-      lv
-      |> form("#settings_form", %{"user" => invalid_params})
-      |> render_submit()
+      result =
+        lv
+        |> form("#settings_form", %{"user" => invalid_params})
+        |> render_submit()
+
+      assert result =~ "Please enter a First Name"
+      assert result =~ "Please enter a Last Name"
 
       reloaded_user = Accounts.get_user!(user.id)
       assert reloaded_user.given_name == user.given_name

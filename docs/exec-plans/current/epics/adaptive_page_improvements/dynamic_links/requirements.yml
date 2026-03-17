@@ -1,0 +1,157 @@
+version: 1
+feature: dynamic_links
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Adaptive authoring shall allow selecting text and creating an internal link
+    to an in-project resource.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-001
+    title: Given an author selects text in an adaptive screen, when they choose to
+      add an internal link, then a picker lists eligible resources in the same project.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:28
+    - type: fdd
+      ref: fdd.md:22
+- id: FR-002
+  title: Adaptive internal links shall persist a resource-id based reference and shall
+    not persist revision slugs as source-of-truth.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-002
+    title: Given an internal adaptive link is saved, when content JSON is inspected,
+      then the link contains a resource_id based reference and does not require a
+      revision slug to resolve.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:29
+    - type: fdd
+      ref: fdd.md:23
+- id: FR-003
+  title: External links in adaptive content shall remain unchanged and continue using
+    standard href semantics.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-003
+    title: Given a saved adaptive external link, when content is rendered, then its
+      href remains unchanged and no internal-link rewriting is applied.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:30
+    - type: fdd
+      ref: fdd.md:24
+- id: FR-004
+  title: Import rewiring shall remap adaptive internal link resource references to
+    the newly created resource ids.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-004
+    title: Given adaptive content is imported into a new project, when import rewiring
+      runs, then internal link resource references are updated to the destination
+      resource ids.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:31
+    - type: fdd
+      ref: fdd.md:25
+- id: FR-005
+  title: Delivery rendering shall resolve adaptive internal links to section lesson
+    URLs.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-005
+    title: Given a student opens an adaptive page in a section, when adaptive internal
+      links are rendered, then each resolves to /sections/:section_slug/lesson/:page_revision_slug
+      for the linked resource.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:32
+    - type: fdd
+      ref: fdd.md:26
+- id: FR-006
+  title: Student navigation from adaptive internal links shall open in a new tab.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-006
+    title: Given a rendered adaptive internal link, when a student clicks it, then
+      the destination opens in a new tab.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:33
+    - type: fdd
+      ref: fdd.md:27
+- id: FR-007
+  title: Broken adaptive internal links shall show a clear recovery state in delivery.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-007
+    title: Given an adaptive internal link cannot be resolved, when a student attempts
+      navigation, then they see a clear error with options to return and report the
+      issue.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:34
+    - type: fdd
+      ref: fdd.md:28
+- id: FR-008
+  title: Authoring shall warn before deleting a resource that has inbound adaptive
+    dynamic links.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-008
+    title: Given an author attempts to delete a linked target resource, when inbound
+      adaptive links exist, then the UI warns and shows where links originate before
+      confirmation.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:35
+    - type: fdd
+      ref: fdd.md:29
+- id: FR-009
+  title: Link picker and link resolution shall enforce project, section, and tenant
+    authorization boundaries.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-009
+    title: Given resources outside the authorized project or section, when authoring
+      or delivery link operations run, then those resources are not exposed or resolved.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:36
+    - type: fdd
+      ref: fdd.md:30
+- id: FR-010
+  title: The system shall emit telemetry for adaptive internal-link authoring and
+    delivery outcomes.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-010
+    title: Given link create, update, resolve, failure, and delete-block events occur,
+      when telemetry is inspected, then expected events are emitted without PII payloads.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: plan
+      ref: plan.md:37
+    - type: fdd
+      ref: fdd.md:31

@@ -1648,6 +1648,33 @@ defmodule Oli.Publishing do
     )
   end
 
+  @doc """
+  Returns a deduplicated, sorted list of institutions that have access to a product
+  through either publishing visibility (base project) or community membership.
+
+  Path A: institutions granted access via the base project's ProjectVisibility records.
+  Path B: institutions that share a community with the product.
+
+  Expects `product.communities` to be preloaded with `:institutions`
+  (e.g. `Repo.preload(product, communities: :institutions)`).
+  """
+  def get_institutions_with_access(product) do
+    # Path A: institutions from the base project's publishing visibility
+    visibility_institutions =
+      get_all_project_visibilities(product.base_project_id)
+      |> Enum.map(& &1.institution)
+      |> Enum.reject(&is_nil/1)
+
+    # Path B: institutions from the product's communities
+    community_institutions =
+      product.communities
+      |> Enum.flat_map(& &1.institutions)
+
+    (visibility_institutions ++ community_institutions)
+    |> Enum.uniq_by(& &1.id)
+    |> Enum.sort_by(& &1.name)
+  end
+
   def find_objective_in_selections(objective_id, publication_id) do
     page_id = ResourceType.id_for_page()
 

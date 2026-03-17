@@ -71,6 +71,7 @@ defmodule Oli.Delivery.Sections do
   ]
 
   @instructor_role_ids Enum.map(@instructor_roles, & &1.id)
+  @context_administrator_role_id ContextRoles.get_role(:context_administrator).id
   @doc """
   Fetches the hidden instructor for a given section. If no hidden instructor exists,
   it creates one.  The "hidden" instructor is a special user account that is used to
@@ -174,6 +175,97 @@ defmodule Oli.Delivery.Sections do
       select: u.id
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Returns user IDs that should be excluded from instructor-dashboard progress aggregation.
+
+  Excluded users are:
+  - non-learner context roles (`context_instructor`, `context_content_developer`, `context_administrator`)
+  - learners whose enrollment status is not `:enrolled` (e.g. suspended)
+  """
+  def excluded_progress_user_ids(section_id) do
+    %{excluded_user_ids: excluded_user_ids} = progress_aggregation_inputs(section_id)
+    excluded_user_ids
+  end
+
+  @doc """
+  Returns user IDs included in instructor-dashboard progress aggregation.
+
+  Included users are enrolled learners that do not also carry non-learner
+  context roles (`context_instructor`, `context_content_developer`,
+  `context_administrator`) in the section.
+  """
+  def progress_user_ids(section_id) do
+    %{included_user_ids: included_user_ids} = progress_aggregation_inputs(section_id)
+    included_user_ids
+  end
+
+  @doc """
+  Returns the count of active learner users included in instructor-dashboard
+  progress aggregation.
+
+  Included users are enrolled learners that do not also carry non-learner
+  context roles (`context_instructor`, `context_content_developer`,
+  `context_administrator`) in the section.
+  """
+  def count_progress_users(section_id) do
+    %{included_user_count: included_user_count} = progress_aggregation_inputs(section_id)
+    included_user_count
+  end
+
+  @doc """
+  Returns inputs used by instructor-dashboard progress aggregation using a single
+  enrollment-role query.
+  """
+  def progress_aggregation_inputs(section_id) do
+    non_learner_role_ids = @instructor_role_ids ++ [@context_administrator_role_id]
+
+    rows =
+      from(e in Enrollment,
+        join: learner_role in EnrollmentContextRole,
+        on: learner_role.enrollment_id == e.id,
+        where: e.section_id == ^section_id,
+        group_by: [e.user_id, e.status],
+        select: %{
+          user_id: e.user_id,
+          enrollment_status: e.status,
+          has_learner_role:
+            fragment("bool_or(? = ?)", learner_role.context_role_id, ^@student_role_id),
+          has_non_learner_role:
+            fragment("bool_or(? = ANY(?))", learner_role.context_role_id, ^non_learner_role_ids)
+        }
+      )
+      |> Repo.all()
+
+    Enum.reduce(
+      rows,
+      %{excluded_user_ids: [], included_user_ids: [], included_user_count: 0},
+      fn row, acc ->
+        included? =
+          row.enrollment_status == :enrolled and row.has_learner_role and
+            not row.has_non_learner_role
+
+        excluded? =
+          row.has_non_learner_role or
+            (row.has_learner_role and row.enrollment_status != :enrolled)
+
+        acc =
+          if included? do
+            %{
+              acc
+              | included_user_ids: [row.user_id | acc.included_user_ids],
+                included_user_count: acc.included_user_count + 1
+            }
+          else
+            acc
+          end
+
+        if excluded?,
+          do: %{acc | excluded_user_ids: [row.user_id | acc.excluded_user_ids]},
+          else: acc
+      end
+    )
   end
 
   @doc """
@@ -3061,6 +3153,7 @@ defmodule Oli.Delivery.Sections do
         numbering_level: level,
         slug: slug,
         collab_space_config: revision.collab_space_config,
+        ai_enabled: revision.ai_enabled,
         max_attempts: revision.max_attempts || 0,
         resource_id: revision.resource_id,
         project_id: publication.project_id,
@@ -3796,6 +3889,46 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+  @doc """
+  Returns true when the requested section scope contains at least one graded page.
+
+  Passing `nil` checks the entire course scope. Passing a `container_id` checks the
+  selected container subtree using the `contained_pages` relation, so graded pages
+  nested under descendant containers are included in the result.
+  """
+  @spec section_container_has_graded_pages?(integer(), integer() | nil) :: boolean()
+  def section_container_has_graded_pages?(section_id, container_id \\ nil)
+
+  def section_container_has_graded_pages?(section_id, nil) when is_integer(section_id) do
+    page_type_id = ResourceType.id_for_page()
+
+    from(sr in SectionResource,
+      where:
+        sr.section_id == ^section_id and
+          sr.graded == true and
+          sr.resource_type_id == ^page_type_id
+    )
+    |> Repo.exists?()
+  end
+
+  def section_container_has_graded_pages?(section_id, container_id)
+      when is_integer(section_id) and is_integer(container_id) do
+    page_type_id = ResourceType.id_for_page()
+
+    from(cp in ContainedPage,
+      join: sr in SectionResource,
+      on: sr.resource_id == cp.page_id and sr.section_id == cp.section_id,
+      where:
+        cp.section_id == ^section_id and
+          cp.container_id == ^container_id and
+          sr.graded == true and
+          sr.resource_type_id == ^page_type_id
+    )
+    |> Repo.exists?()
+  end
+
+  def section_container_has_graded_pages?(_, _), do: false
+
   def get_learning_objectives_for_container_id(section_id, container_id) do
     from(
       rev in Revision,
@@ -3946,6 +4079,7 @@ defmodule Oli.Delivery.Sections do
               # we set children to nil here so that we know it needs to be set in the next step
               children: nil,
               scoring_strategy_id: pr.scoring_strategy_id,
+              ai_enabled: pr.ai_enabled,
               slug: Oli.Utils.Slug.generate("section_resources", pr.title),
               inserted_at: {:placeholder, :timestamp},
               updated_at: {:placeholder, :timestamp}
@@ -4243,6 +4377,7 @@ defmodule Oli.Delivery.Sections do
             section_id: section_id,
             children: Enum.reverse(children_sr_ids),
             collab_space_config: revision.collab_space_config,
+            ai_enabled: revision.ai_enabled,
             max_attempts: revision.max_attempts || 0,
             scoring_strategy_id: revision.scoring_strategy_id,
             retake_mode: revision.retake_mode,
@@ -4330,6 +4465,7 @@ defmodule Oli.Delivery.Sections do
           inserted_at: now,
           updated_at: now,
           collab_space_config: item.collab_space_config,
+          ai_enabled: item.ai_enabled,
           max_attempts:
             if is_nil(item.max_attempts) do
               0
@@ -5387,22 +5523,29 @@ defmodule Oli.Delivery.Sections do
                 proficiency
               end)
 
-            proficiency_mode =
-              proficiency_dist
-              |> Enum.map(fn {key, value} ->
-                ordinal =
-                  case String.downcase(key) do
-                    "low" -> 0
-                    "medium" -> 1
-                    "high" -> 2
-                    _ -> 3
-                  end
+            {proficiency_mode, proficiency_dist} =
+              if map_size(proficiency_dist) == 0 do
+                {"Not enough data", %{"Not enough data" => length(student_ids)}}
+              else
+                proficiency_mode =
+                  proficiency_dist
+                  |> Enum.map(fn {key, value} ->
+                    ordinal =
+                      case String.downcase(key) do
+                        "low" -> 0
+                        "medium" -> 1
+                        "high" -> 2
+                        _ -> 3
+                      end
 
-                {key, value, ordinal}
-              end)
-              |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
-              |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
-              |> elem(0)
+                    {key, value, ordinal}
+                  end)
+                  |> Enum.sort_by(fn {_key, _value, ordinal} -> ordinal end)
+                  |> Enum.max_by(fn {_key, value, _ordinal} -> value end)
+                  |> elem(0)
+
+                {proficiency_mode, proficiency_dist}
+              end
 
             Map.put(acc, objective_id,
               proficiency_dist: proficiency_dist,
@@ -6006,6 +6149,38 @@ defmodule Oli.Delivery.Sections do
   def assistant_enabled?(%Section{} = section) do
     section.assistant_enabled
   end
+
+  @doc """
+  Returns true if the section has the ai assistant enabled and the page allows it.
+  """
+  def assistant_enabled_for_page?(%Section{} = section, page) do
+    assistant_enabled?(section) and page_ai_enabled?(page)
+  end
+
+  def assistant_enabled_for_page?(_, _), do: false
+
+  @doc """
+  Returns true if ai assistant is enabled for a page.
+  Falls back to the historic behavior when `ai_enabled` is nil:
+  practice pages enabled, scored pages disabled.
+  """
+  def page_ai_enabled?(page) when is_map(page) do
+    ai_enabled = Map.get(page, :ai_enabled, Map.get(page, "ai_enabled"))
+    graded = Map.get(page, :graded, Map.get(page, "graded", false))
+
+    case ai_enabled do
+      nil -> !graded
+      true -> true
+      false -> false
+      "true" -> true
+      "false" -> false
+      1 -> true
+      0 -> false
+      _ -> !graded
+    end
+  end
+
+  def page_ai_enabled?(_), do: false
 
   @doc """
   Returns a map from resource_id to the current revision title for all resources

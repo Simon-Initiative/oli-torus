@@ -32,7 +32,7 @@ defmodule OliWeb.Admin.AdminView do
         <strong>Note:</strong>
         All administrative actions taken in the system are logged for auditing purposes.
       </div>
-      <%= if Accounts.has_admin_role?(@author, :account_admin) do %>
+      <%= if Accounts.at_least_account_admin?(@author) do %>
         <Group.render label="Account Management" description="Access and manage all users and authors">
           <ul class="link-list">
             <li>
@@ -82,7 +82,7 @@ defmodule OliWeb.Admin.AdminView do
             </li>
             <li>
               <a href={~p"/admin/products"}>
-                Browse all Products
+                Browse all Templates
               </a>
             </li>
             <li>
@@ -105,7 +105,7 @@ defmodule OliWeb.Admin.AdminView do
           </ul>
         </Group.render>
       <% end %>
-      <%= if Accounts.has_admin_role?(@author, :system_admin) do %>
+      <%= if Accounts.is_system_admin?(@author) do %>
         <Group.render label="GenAI Features" description="Manage and support GenAI based features">
           <ul class="link-list">
             <li>

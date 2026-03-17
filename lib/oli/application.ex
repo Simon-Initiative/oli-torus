@@ -105,6 +105,10 @@ defmodule Oli.Application do
         # GenAI routing and breaker infrastructure
         Oli.GenAI.AdmissionControl,
         Oli.GenAI.Telemetry,
+        Oli.GenAI.AdaptiveContextTelemetry,
+        Oli.Adaptive.DynamicLinks.Telemetry,
+        Oli.Dashboard.OracleTelemetry,
+        {Oli.Dashboard.RevisitCache, name: Oli.Dashboard.RevisitCache},
         {Registry, keys: :unique, name: Oli.GenAI.BreakerRegistry},
         Oli.GenAI.BreakerSupervisor,
 

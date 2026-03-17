@@ -61,6 +61,42 @@ mix scenarios
 
 # Run a single scenario (when mix task is compiled)
 mix scenarios core/simple_project
+
+# Not supported:
+# mix run scenarios
+```
+
+## Schema Validation
+
+The scenarios DSL now has a JSON Schema source of truth at:
+
+- `priv/schemas/v0-1-0/scenario.schema.json`
+
+Validate scenarios programmatically before execution:
+
+```elixir
+alias Oli.Scenarios
+
+:ok = Oli.Scenarios.validate_file("test/scenarios/core/simple_project.scenario.yaml")
+```
+
+If validation fails, the API returns structured errors:
+
+```elixir
+{:error, [%{message: "...", path: "..."}]}
+```
+
+Schema validation enforces directive/attribute structure. Runtime semantics
+(for example missing referenced entities) are still enforced during parser/engine
+execution.
+
+### Scenario-only coverage:
+```bash
+# Console coverage summary for scenario tests only
+mix scenarios.coverage
+
+# HTML report
+mix scenarios.coverage --html
 ```
 
 ### Run tests with specific tags:

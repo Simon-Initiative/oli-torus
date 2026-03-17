@@ -219,13 +219,19 @@ defmodule Oli.GenAI.Execution do
 
   defp breaker_thresholds(registered_model) do
     %{
-      error_rate_threshold: registered_model.routing_breaker_error_rate_threshold || 0.2,
-      rate_limit_threshold: registered_model.routing_breaker_429_threshold || 0.1,
-      latency_p95_ms: registered_model.routing_breaker_latency_p95_ms || 6000,
-      open_cooldown_ms: registered_model.routing_open_cooldown_ms || 30_000,
-      half_open_probe_count: registered_model.routing_half_open_probe_count || 3
+      error_rate_threshold:
+        default_if_nil(registered_model.routing_breaker_error_rate_threshold, 0.2),
+      rate_limit_threshold: default_if_nil(registered_model.routing_breaker_429_threshold, 0.1),
+      latency_p95_ms: default_if_nil(registered_model.routing_breaker_latency_p95_ms, 6000),
+      open_cooldown_ms: default_if_nil(registered_model.routing_open_cooldown_ms, 30_000),
+      half_open_probe_count: default_if_nil(registered_model.routing_half_open_probe_count, 3)
     }
   end
+
+  defp default_if_nil(nil, fallback), do: fallback
+  defp default_if_nil(value, _fallback), do: value
+
+  defp release_admission!(%{admission: :bypass}), do: :ok
 
   defp release_admission!(%{pool_name: pool_name, selected_model: %{id: model_id}}) do
     AdmissionControl.release_pool(pool_name)

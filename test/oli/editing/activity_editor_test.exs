@@ -469,5 +469,693 @@ defmodule Oli.ActivityEditingTest do
       # Verify that the objective tied to that part has been removed as well
       assert updated.objectives == %{"1" => [ob1.resource_id]}
     end
+
+    test "edit/5 allows adaptive internal links when idref references a project resource", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow",
+                "custom" => %{
+                  "nodes" => [
+                    %{
+                      "tag" => "p",
+                      "children" => [
+                        %{
+                          "tag" => "a",
+                          "idref" => revision.resource_id,
+                          "children" => [
+                            %{"tag" => "text", "text" => "next", "children" => []}
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, _} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 rejects adaptive internal links with href slugs outside the project", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow",
+                "custom" => %{
+                  "nodes" => [
+                    %{
+                      "tag" => "p",
+                      "children" => [
+                        %{
+                          "tag" => "a",
+                          "href" => "/course/link/page_not_in_project",
+                          "children" => [
+                            %{"tag" => "text", "text" => "next", "children" => []}
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 normalizes adaptive internal links to persist idref and resource_id", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow",
+                "custom" => %{
+                  "nodes" => [
+                    %{
+                      "tag" => "p",
+                      "children" => [
+                        %{
+                          "tag" => "a",
+                          "resource_id" => "#{revision.resource_id}",
+                          "children" => [
+                            %{"tag" => "text", "text" => "next", "children" => []}
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+
+      [part] = get_in(updated_revision.content, ["authoring", "parts"])
+      [paragraph] = get_in(part, ["custom", "nodes"])
+      [link] = paragraph["children"]
+
+      assert link["idref"] == revision.resource_id
+      assert link["resource_id"] == revision.resource_id
+      assert link["linkType"] == "page"
+    end
+
+    test "edit/5 normalizes adaptive internal href links to persist idref, resource_id, and linkType",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow",
+                "custom" => %{
+                  "nodes" => [
+                    %{
+                      "tag" => "p",
+                      "children" => [
+                        %{
+                          "tag" => "a",
+                          "href" => "/course/link/#{revision.slug}",
+                          "children" => [
+                            %{"tag" => "text", "text" => "next", "children" => []}
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+
+      [part] = get_in(updated_revision.content, ["authoring", "parts"])
+      [paragraph] = get_in(part, ["custom", "nodes"])
+      [link] = paragraph["children"]
+
+      assert link["idref"] == revision.resource_id
+      assert link["resource_id"] == revision.resource_id
+      assert link["linkType"] == "page"
+    end
+
+    test "edit/5 normalizes adaptive internal href links with query/fragment", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow",
+                "custom" => %{
+                  "nodes" => [
+                    %{
+                      "tag" => "p",
+                      "children" => [
+                        %{
+                          "tag" => "a",
+                          "href" => "/course/link/#{revision.slug}?x=1#y",
+                          "children" => [
+                            %{"tag" => "text", "text" => "next", "children" => []}
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+
+      [part] = get_in(updated_revision.content, ["authoring", "parts"])
+      [paragraph] = get_in(part, ["custom", "nodes"])
+      [link] = paragraph["children"]
+
+      assert link["idref"] == revision.resource_id
+      assert link["resource_id"] == revision.resource_id
+      assert link["linkType"] == "page"
+    end
+
+    test "edit/5 tolerates janus-text-flow parts without custom nodes during adaptive normalization",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+
+      [part] = get_in(updated_revision.content, ["authoring", "parts"])
+      assert part["id"] == "part-1"
+      assert part["type"] == "janus-text-flow"
+      refute Map.has_key?(part, "custom")
+    end
+
+    test "edit/5 emits adaptive dynamic-link authoring telemetry for creation",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      handler = attach_telemetry([:created])
+
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      initial_update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow",
+                "custom" => %{
+                  "nodes" => [
+                    %{
+                      "tag" => "p",
+                      "children" => [
+                        %{
+                          "tag" => "a",
+                          "idref" => revision.resource_id,
+                          "children" => [%{"tag" => "text", "text" => "next", "children" => []}]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, _} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 initial_update
+               )
+
+      assert_receive {:telemetry_event, [:oli, :adaptive, :dynamic_link, :created], %{count: 1},
+                      created_metadata}
+
+      assert created_metadata.project_id == project.id
+      assert created_metadata.activity_resource_id == resource_id
+      assert created_metadata.source == "activity_editor"
+
+      :telemetry.detach(handler)
+    end
+
+    test "edit/5 emits adaptive iframe authoring telemetry for creation",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      handler = attach_telemetry([:created])
+
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      iframe_update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "/course/link/#{revision.slug}",
+                "sourceType" => "page",
+                "linkType" => "page",
+                "idref" => revision.resource_id
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, _} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 iframe_update
+               )
+
+      assert_receive {:telemetry_event, [:oli, :adaptive, :dynamic_link, :created], %{count: 1},
+                      created_metadata}
+
+      assert created_metadata.project_id == project.id
+      assert created_metadata.activity_resource_id == resource_id
+      assert created_metadata.source == "iframe_authoring"
+
+      :telemetry.detach(handler)
+    end
+
+    test "edit/5 rejects adaptive internal links with out-of-project idref", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      {:ok, other_resource} = Resources.create_new_resource()
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-1",
+                "type" => "janus-text-flow",
+                "custom" => %{
+                  "nodes" => [
+                    %{
+                      "tag" => "p",
+                      "children" => [
+                        %{
+                          "tag" => "a",
+                          "idref" => other_resource.id,
+                          "children" => [
+                            %{"tag" => "text", "text" => "next", "children" => []}
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 allows adaptive iframe internal links when idref references a project resource",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "/course/link/#{revision.slug}",
+                "sourceType" => "page",
+                "idref" => revision.resource_id
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, _updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    # @ac "AC-002"
+    test "edit/5 normalizes adaptive iframe internal src links to persist idref and resource_id",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "/course/link/#{revision.slug}",
+                "sourceType" => "page"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+
+      [part] = get_in(updated_revision.content, ["authoring", "parts"])
+
+      assert part["idref"] == revision.resource_id
+      assert part["resource_id"] == revision.resource_id
+      assert part["linkType"] == "page"
+      assert part["sourceType"] == "page"
+    end
+
+    # @ac "AC-003"
+    test "edit/5 rejects adaptive iframe links with src slugs outside the project", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "/course/link/page_not_in_project",
+                "sourceType" => "page"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    # @ac "AC-008"
+    test "edit/5 rejects adaptive iframe links with out-of-project idref", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      %{revision1: other_project_revision} = Seeder.base_project_with_resource2()
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "/course/link/#{other_project_revision.slug}",
+                "sourceType" => "page",
+                "idref" => other_project_revision.resource_id
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    # @ac "AC-006"
+    test "edit/5 bypasses internal-link validation for external adaptive iframe sources", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "https://example.com",
+                "sourceType" => "url"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+
+      [part] = get_in(updated_revision.content, ["authoring", "parts"])
+      assert part["src"] == "https://example.com"
+      refute Map.has_key?(part, "idref")
+      refute Map.has_key?(part, "resource_id")
+      refute Map.has_key?(part, "linkType")
+    end
+  end
+
+  defp attach_telemetry(events) do
+    handler_id = "adaptive-authoring-telemetry-test-#{System.unique_integer([:positive])}"
+    parent = self()
+
+    telemetry_events =
+      Enum.map(events, fn event ->
+        [:oli, :adaptive, :dynamic_link, event]
+      end)
+
+    :ok =
+      :telemetry.attach_many(
+        handler_id,
+        telemetry_events,
+        fn event_name, measurements, metadata, _config ->
+          send(parent, {:telemetry_event, event_name, measurements, metadata})
+        end,
+        nil
+      )
+
+    handler_id
   end
 end

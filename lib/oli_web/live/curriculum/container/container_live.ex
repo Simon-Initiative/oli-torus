@@ -40,6 +40,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
+  alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -343,6 +344,16 @@ defmodule OliWeb.Curriculum.ContainerLive do
             proceed_with_deletion_warning(socket, container, project, author, item)
 
           references ->
+            telemetry_source = delete_blocked_source(references)
+
+            DynamicLinksTelemetry.delete_blocked(%{
+              project_id: project.id,
+              project_slug: project.slug,
+              target_resource_id: item.resource_id,
+              reason: "inbound_links_present",
+              source: telemetry_source
+            })
+
             show_hyperlink_dependency_modal(socket, container, project, references, item)
         end
 
@@ -621,6 +632,18 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
+
+  defp delete_blocked_source(references) when is_list(references) do
+    contains_iframe? =
+      Enum.any?(references, fn reference ->
+        sources = Map.get(reference, :link_sources) || Map.get(reference, "link_sources") || []
+        Enum.member?(sources, "iframe")
+      end)
+
+    if contains_iframe?, do: "curriculum_delete_modal_iframe", else: "curriculum_delete_modal"
+  end
+
+  defp delete_blocked_source(_), do: "curriculum_delete_modal"
 
   defp update_author_view_pref(author, curriculum_view) do
     updated_preferences =

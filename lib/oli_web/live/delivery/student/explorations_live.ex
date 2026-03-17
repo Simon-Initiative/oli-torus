@@ -34,7 +34,10 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
       </div>
 
       <%= for {container_name, explorations} <- @explorations_by_container do %>
-        <h2 :if={container_name != :default} class="text-sm font-bold my-6 uppercase text-gray-500">
+        <h2
+          :if={container_name != :default}
+          class="text-sm font-bold my-6 uppercase text-Text-text-high"
+        >
           {container_name}
         </h2>
 
@@ -76,7 +79,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
         </div>
         <div class="flex flex-row justify-end items-center space-x-6">
           <.button
-            variant={:primary}
+            class="rounded bg-Fill-Buttons-fill-primary hover:bg-Fill-Buttons-fill-primary-hover text-Text-text-white hover:text-Text-text-white hover:no-underline"
             href={exploration_link(@section_slug, @exploration, @preview_mode)}
           >
             {exploration_link_text(@status)}

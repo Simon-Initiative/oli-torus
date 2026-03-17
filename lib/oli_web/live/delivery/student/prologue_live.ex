@@ -238,7 +238,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       class="self-stretch py-1 justify-between items-start inline-flex"
     >
       <div class="justify-start items-center flex">
-        <div class="w-[92px] opacity-40 dark:text-white text-xs font-bold font-['Open Sans'] uppercase leading-normal tracking-wide">
+        <div class="w-[92px] text-Text-text-low text-xs font-bold font-['Open Sans'] uppercase leading-normal tracking-wide">
           Attempt {@index}:
         </div>
         <div class="py-1 justify-end items-center gap-1.5 flex text-green-700 dark:text-green-500">

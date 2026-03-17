@@ -222,6 +222,60 @@ defmodule OliWeb.Plugs.RedirectByAttemptStateTest do
       )
     end
 
+    test "redirects graded not adaptive expired active attempt to lesson for finalization", %{
+      conn: conn,
+      section: section,
+      page_2_revision: page_2_revision,
+      user: user
+    } do
+      page_2_revision
+      |> Changeset.change(%{
+        graded: true,
+        content: %{
+          "advancedDelivery" => false
+        }
+      })
+      |> Repo.update!()
+
+      section_resource =
+        Repo.get_by!(Oli.Delivery.Sections.SectionResource,
+          section_id: section.id,
+          resource_id: page_2_revision.resource_id
+        )
+
+      section_resource
+      |> Changeset.change(%{
+        end_date: DateTime.utc_now() |> DateTime.add(-5, :minute) |> DateTime.truncate(:second),
+        scheduling_type: :due_by,
+        late_submit: :disallow
+      })
+      |> Repo.update!()
+
+      resource_access =
+        insert(:resource_access, %{
+          user: user,
+          section: section,
+          resource: page_2_revision.resource
+        })
+
+      insert(:resource_attempt, %{
+        lifecycle_state: :active,
+        revision: page_2_revision,
+        resource_access: resource_access,
+        inserted_at:
+          DateTime.utc_now() |> DateTime.add(-10, :minute) |> DateTime.truncate(:second)
+      })
+
+      conn = prepare_conn(conn, section, page_2_revision)
+
+      result_conn = RedirectByAttemptState.call(conn, [])
+
+      assert_redirected_to_path(
+        result_conn,
+        "/sections/#{section.slug}/lesson/#{page_2_revision.slug}?"
+      )
+    end
+
     # Test: {:graded, :adaptive_chromeless, %ResourceAttempt{lifecycle_state: :active}, false} -> ensure_path(conn, :adaptive_lesson)
     test "redirects graded adaptive chromeless to adaptive lesson when active attempt", %{
       conn: conn,

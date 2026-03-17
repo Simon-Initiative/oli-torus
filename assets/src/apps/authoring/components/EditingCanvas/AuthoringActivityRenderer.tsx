@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ActivityModelSchema } from 'components/activities/types';
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
+import { selectProjectSlug } from 'apps/authoring/store/app/slice';
 import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
 
@@ -10,6 +11,7 @@ interface AuthoringActivityRendererProps {
   editMode: boolean;
   configEditorId: string;
   responsiveLayout?: boolean;
+  stackLayout?: boolean;
   onSelectPart?: (partId: string) => Promise<any>;
   onCopyPart?: (part: any) => Promise<any>;
   onConfigurePart?: (part: any, context: any) => Promise<any>;
@@ -26,6 +28,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   editMode,
   configEditorId,
   responsiveLayout,
+  stackLayout,
   onSelectPart,
   onCopyPart,
   onConfigurePart,
@@ -38,6 +41,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   const [isReady, setIsReady] = useState(false);
 
   const selectedPartId = useSelector(selectCurrentSelection);
+  const projectSlug = useSelector(selectProjectSlug);
 
   const ref = useRef<any>(null);
 
@@ -46,15 +50,20 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     ref,
     model: JSON.stringify(activityModel),
     editMode,
+    projectSlug,
     responsiveLayout,
-    style: {
-      position: 'absolute',
-      top: '65px',
-      left: '300px',
-      paddingRight: '300px',
-      paddingBottom: '300px',
-      pointerEvents: `${editMode ? 'auto' : 'none'}`,
-    },
+    style: stackLayout
+      ? {
+          position: 'relative' as const,
+          width: '100%',
+          pointerEvents: `${editMode ? 'auto' : 'none'}`,
+        }
+      : {
+          position: 'absolute' as const,
+          top: '65px',
+          left: '300px',
+          pointerEvents: `${editMode ? 'auto' : 'none'}`,
+        },
     authoringContext: JSON.stringify({
       selectedPartId,
       configurePortalId: configEditorId,

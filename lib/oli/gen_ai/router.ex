@@ -23,22 +23,33 @@ defmodule Oli.GenAI.Router do
     request_type = Map.get(request_ctx, :request_type, :generate)
 
     primary = normalize_model(service_config.primary_model)
+    kill_switch_enabled = primary_only_kill_switch_enabled?()
 
     secondary =
       normalize_secondary(service_config.secondary_model, primary, service_config.backup_model)
 
     backup = normalize_model(service_config.backup_model)
 
-    primary_snapshot = breaker_snapshot(primary)
-    secondary_snapshot = if secondary, do: breaker_snapshot(secondary), else: %{state: :closed}
-    backup_snapshot = if backup, do: breaker_snapshot(backup), else: %{state: :closed}
+    primary_snapshot = breaker_snapshot(primary, kill_switch_enabled)
 
-    primary_open = primary && breaker_open?(primary_snapshot)
-    secondary_open = secondary && breaker_open?(secondary_snapshot)
-    backup_open = backup && breaker_open?(backup_snapshot)
+    secondary_snapshot =
+      if secondary, do: breaker_snapshot(secondary, kill_switch_enabled), else: %{state: :closed}
+
+    backup_snapshot =
+      if backup, do: breaker_snapshot(backup, kill_switch_enabled), else: %{state: :closed}
+
+    primary_open = primary && breaker_open?(primary, primary_snapshot, kill_switch_enabled)
+
+    secondary_open =
+      secondary && breaker_open?(secondary, secondary_snapshot, kill_switch_enabled)
+
+    backup_open = backup && breaker_open?(backup, backup_snapshot, kill_switch_enabled)
 
     result =
       cond do
+        kill_switch_enabled ->
+          attempt_primary_only(primary, request_type)
+
         (primary && primary_open) and (is_nil(secondary) or secondary_open) ->
           attempt_backup(
             backup,
@@ -98,23 +109,77 @@ defmodule Oli.GenAI.Router do
     result
   end
 
-  defp breaker_snapshot(%{id: id}), do: Breaker.snapshot(id)
-  defp breaker_snapshot(nil), do: %{state: :closed}
+  defp breaker_snapshot(_model, true), do: %{state: :closed}
+  defp breaker_snapshot(%{id: id}, false), do: Breaker.snapshot(id)
+  defp breaker_snapshot(nil, _kill_switch_enabled), do: %{state: :closed}
 
-  defp breaker_open?(snapshot) do
-    snapshot.state == :open
+  defp breaker_open?(_model, _snapshot, true), do: false
+  defp breaker_open?(model, _snapshot, false) when is_nil(model), do: false
+
+  defp breaker_open?(model, snapshot, false) do
+    if breaker_enabled_for_model?(model) do
+      snapshot.state == :open
+    else
+      false
+    end
   end
 
-  defp build_plan(request_type, selected, tier, pool_name, reason) do
+  defp build_plan(request_type, selected, tier, pool_name, reason, admission) do
     %RoutingPlan{
       selected_model: selected,
       tier: tier,
       fallback_models: [],
       reason: reason,
-      admission: :admit,
+      admission: admission,
       request_type: request_type,
       pool_name: pool_name
     }
+  end
+
+  defp build_plan(request_type, selected, tier, pool_name, reason) do
+    build_plan(request_type, selected, tier, pool_name, reason, :admit)
+  end
+
+  defp attempt_primary_only(nil, _request_type), do: {:error, :primary_unavailable}
+
+  defp attempt_primary_only(primary, request_type) do
+    {:ok,
+     build_plan(
+       request_type,
+       primary,
+       :primary,
+       HackneyPool.pool_name(primary),
+       :kill_switch_primary_only,
+       :bypass
+     )}
+  end
+
+  defp breaker_enabled_for_model?(model) do
+    threshold_enabled?(model.routing_breaker_error_rate_threshold) or
+      threshold_enabled?(model.routing_breaker_429_threshold) or
+      threshold_enabled?(model.routing_breaker_latency_p95_ms)
+  end
+
+  defp threshold_enabled?(threshold) when is_number(threshold), do: threshold > 0
+  defp threshold_enabled?(_), do: false
+
+  defp primary_only_kill_switch_enabled? do
+    System.get_env("GENAI_ROUTING_PRIMARY_ONLY", "false")
+    |> String.trim()
+    |> String.downcase()
+    |> Kernel.in(["1", "true", "yes", "on"])
+  end
+
+  defp model_limit_enabled?(model) do
+    breaker_enabled_for_model?(model)
+  end
+
+  defp admit_model_if_enabled(model) do
+    if model_limit_enabled?(model) do
+      admit_model(model)
+    else
+      :ok
+    end
   end
 
   defp attempt_primary(primary, request_type) do
@@ -141,6 +206,10 @@ defmodule Oli.GenAI.Router do
     end
   end
 
+  defp attempt_backup(nil, _backup_open, _request_type, :primary_over_capacity) do
+    {:error, :over_capacity}
+  end
+
   defp attempt_backup(nil, _backup_open, _request_type, _reason) do
     {:error, :all_breakers_open}
   end
@@ -159,7 +228,7 @@ defmodule Oli.GenAI.Router do
 
     case AdmissionControl.try_admit_pool(pool_name, pool_limit) do
       :ok ->
-        case admit_model(model) do
+        case admit_model_if_enabled(model) do
           :ok ->
             {:ok, build_plan(request_type, model, tier, pool_name, reason)}
 
@@ -217,7 +286,10 @@ defmodule Oli.GenAI.Router do
       case result do
         {:ok, plan} ->
           model_pool_class = plan.selected_model.pool_class || :slow
-          {plan.reason, plan.selected_model.id, plan.tier, plan.pool_name, model_pool_class, 1}
+          admitted = if plan.admission == :admit, do: 1, else: 0
+
+          {plan.reason, plan.selected_model.id, plan.tier, plan.pool_name, model_pool_class,
+           admitted}
 
         {:error, reason} ->
           {reason, nil, nil, nil, nil, 0}

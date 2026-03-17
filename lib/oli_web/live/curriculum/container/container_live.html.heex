@@ -38,7 +38,7 @@
       <.link
         :if={
           (assigns[:has_show_links_uri_hash] || false) and
-            Accounts.has_admin_role?(@author, :content_admin)
+            Accounts.at_least_content_admin?(@author)
         }
         navigate={
           ~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@container.slug}/history"
@@ -111,7 +111,7 @@
             numberings={@numberings}
             revision_history_link={
               (assigns[:has_show_links_uri_hash] || false) and
-                Accounts.has_admin_role?(@author, :content_admin)
+                Accounts.at_least_content_admin?(@author)
             }
           />
         <% end %>

@@ -7,6 +7,7 @@ export type ResourceUpdate = {
   objectives: AttachedObjectives;
   content: PageContent;
   releaseLock: boolean;
+  ai_enabled?: boolean;
 };
 
 // TODO: server responding with revision_slug instead of revisionSlug as expected
@@ -48,10 +49,11 @@ export type PagesReceived = { type: 'success'; pages: Page[] };
 // of constructing links
 export function pages(project: ProjectSlug, current?: string) {
   const currentSlug = current === undefined ? '' : `?current=${current}`;
+  const encodedProject = encodeURIComponent(project);
 
   const params = {
     method: 'GET',
-    url: `/project/${project}/link${currentSlug}`,
+    url: `/project/${encodedProject}/link${currentSlug}`,
   };
 
   return makeRequest<PagesReceived>(params);
