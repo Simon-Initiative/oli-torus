@@ -8,6 +8,7 @@ jest.mock('../../src/data/persistence/trigger', () => ({
 }));
 
 const triggerPersistence = jest.requireMock('../../src/data/persistence/trigger');
+const serializeModel = (model: Record<string, unknown>) => JSON.stringify(model) as any;
 
 describe('Image AI trigger', () => {
   beforeEach(() => {
@@ -20,7 +21,7 @@ describe('Image AI trigger', () => {
       <Image
         id="image-1"
         type="janus-image"
-        model={JSON.stringify({
+        model={serializeModel({
           src: '/images/placeholder-image.svg',
           alt: 'Support image',
           width: 320,
@@ -59,7 +60,7 @@ describe('Image AI trigger', () => {
       <Image
         id="image-1"
         type="janus-image"
-        model={JSON.stringify({
+        model={serializeModel({
           src: '/images/placeholder-image.svg',
           alt: 'Support image',
           width: 320,

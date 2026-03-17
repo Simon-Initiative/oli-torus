@@ -8,6 +8,7 @@ jest.mock('../../src/data/persistence/trigger', () => ({
 }));
 
 const triggerPersistence = jest.requireMock('../../src/data/persistence/trigger');
+const serializeModel = (model: Record<string, unknown>) => JSON.stringify(model) as any;
 
 const defaultProps = {
   id: 'ai-trigger-1',
@@ -33,7 +34,7 @@ describe('AITrigger', () => {
     render(
       <AITrigger
         {...defaultProps}
-        model={JSON.stringify({ launchMode: 'click', prompt: 'Offer a hint' })}
+        model={serializeModel({ launchMode: 'click', prompt: 'Offer a hint' })}
       />,
     );
 
@@ -56,7 +57,7 @@ describe('AITrigger', () => {
     render(
       <AITrigger
         {...defaultProps}
-        model={JSON.stringify({ launchMode: 'auto', prompt: 'Greet the learner' })}
+        model={serializeModel({ launchMode: 'auto', prompt: 'Greet the learner' })}
       />,
     );
 
@@ -82,7 +83,7 @@ describe('AITrigger', () => {
   it('waits for a resource id before consuming the auto-trigger session guard', async () => {
     jest.useFakeTimers();
 
-    const model = JSON.stringify({ launchMode: 'auto', prompt: 'Greet the learner' });
+    const model = serializeModel({ launchMode: 'auto', prompt: 'Greet the learner' });
     const { rerender } = render(
       <AITrigger {...defaultProps} resourceId={undefined} model={model} />,
     );
@@ -119,7 +120,7 @@ describe('AITrigger', () => {
 
     const props = {
       ...defaultProps,
-      model: JSON.stringify({ launchMode: 'auto', prompt: 'Greet the learner' }),
+      model: serializeModel({ launchMode: 'auto', prompt: 'Greet the learner' }),
     };
 
     const { unmount } = render(<AITrigger {...props} />);
@@ -151,7 +152,7 @@ describe('AITrigger', () => {
     render(
       <AITrigger
         {...defaultProps}
-        model={JSON.stringify({ launchMode: 'click', prompt: 'Offer a hint' })}
+        model={serializeModel({ launchMode: 'click', prompt: 'Offer a hint' })}
       />,
     );
 
@@ -176,7 +177,7 @@ describe('AITrigger', () => {
       ...defaultProps,
       onInit,
       onReady,
-      model: JSON.stringify({ launchMode: 'click', prompt: 'Offer a hint' }),
+      model: serializeModel({ launchMode: 'click', prompt: 'Offer a hint' }),
     };
 
     const { rerender } = render(<AITrigger {...props} />);

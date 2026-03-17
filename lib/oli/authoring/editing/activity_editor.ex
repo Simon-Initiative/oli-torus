@@ -859,7 +859,10 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         end
 
       _ ->
-        nil
+        case map_value(content, :content) do
+          nested_content when is_map(nested_content) -> maybe_authoring_parts(nested_content)
+          _ -> nil
+        end
     end
   end
 
@@ -1441,7 +1444,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     objectives =
       objectives
       |> Enum.reduce(%{}, fn {part_id, list}, accumulator ->
-        if Enum.any?(parts, fn x -> x["id"] == part_id end) do
+        if Enum.any?(parts, &part_matches_objective_id?(&1, part_id)) do
           accumulator |> Map.put(part_id, list)
         else
           accumulator
@@ -1450,6 +1453,20 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
     Map.put(update, "objectives", objectives)
   end
+
+  defp part_matches_objective_id?(%{"id" => id}, part_id),
+    do: normalize_part_id(id) == normalize_part_id(part_id)
+
+  defp part_matches_objective_id?(%{id: id}, part_id),
+    do: normalize_part_id(id) == normalize_part_id(part_id)
+
+  defp part_matches_objective_id?(id, part_id),
+    do: normalize_part_id(id) == normalize_part_id(part_id)
+
+  defp normalize_part_id(id) when is_binary(id), do: id
+  defp normalize_part_id(id) when is_integer(id), do: Integer.to_string(id)
+  defp normalize_part_id(id) when is_atom(id), do: Atom.to_string(id)
+  defp normalize_part_id(_), do: nil
 
   @doc """
   Attempts to process a request to create a new activity.

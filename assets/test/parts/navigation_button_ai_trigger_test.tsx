@@ -9,6 +9,7 @@ jest.mock('../../src/data/persistence/trigger', () => ({
 }));
 
 const triggerPersistence = jest.requireMock('../../src/data/persistence/trigger');
+const serializeModel = (model: Record<string, unknown>) => JSON.stringify(model) as any;
 
 describe('NavigationButton AI trigger', () => {
   beforeEach(() => {
@@ -23,7 +24,7 @@ describe('NavigationButton AI trigger', () => {
       <NavigationButton
         id="nav-button-1"
         type="janus-navigation-button"
-        model={JSON.stringify({
+        model={serializeModel({
           title: 'Next',
           ariaLabel: 'Next screen',
           visible: true,

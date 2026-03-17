@@ -470,6 +470,46 @@ defmodule Oli.ActivityEditingTest do
       assert updated.objectives == %{"1" => [ob1.resource_id]}
     end
 
+    test "can sync objectives when authoring parts are legacy part id strings", %{
+      author: author,
+      project: project,
+      revision1: revision1
+    } do
+      {:ok, %{revision: ob1}} =
+        ObjectiveEditor.add_new(%{title: "this is an objective"}, author, project)
+
+      {:ok, %{revision: ob2}} =
+        ObjectiveEditor.add_new(%{title: "this is another objective"}, author, project)
+
+      content = %{
+        "content" => %{"authoring" => %{"parts" => ["1", "2"]}}
+      }
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+      update = %{
+        "objectives" => %{"1" => [ob1.resource_id], "2" => [ob2.resource_id]},
+        "content" => %{"authoring" => %{"parts" => ["1", "2"]}}
+      }
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
+      {:ok, updated} =
+        ActivityEditor.edit(
+          project.slug,
+          revision1.resource_id,
+          revision.resource_id,
+          author.email,
+          update
+        )
+
+      assert updated.objectives == %{
+               "1" => [ob1.resource_id],
+               "2" => [ob2.resource_id]
+             }
+    end
+
     test "edit/5 allows adaptive internal links when idref references a project resource", %{
       author: author,
       project: project,
