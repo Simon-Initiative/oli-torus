@@ -1,6 +1,6 @@
+import type { Hook } from 'phoenix_live_view/assets/js/types/view_hook';
 import embed from 'vega-embed';
 import type { VisualizationSpec } from 'vega-embed';
-import type { Hook } from 'phoenix_live_view/assets/js/types/view_hook';
 
 type ChartHookState = {
   __studentSupportView?: { finalize: () => void } | null;
