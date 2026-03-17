@@ -40,7 +40,6 @@ import os
 import platform
 import time
 import sys
-import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
@@ -120,7 +119,6 @@ _sqs_client = boto3.client("sqs") if _FAILURE_DLQ_URL else None
 # ClickHouse defaults (e.g., inserted_at, event_version) are intentionally
 # omitted so the server supplies those values automatically.
 DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
-    "event_id",
     "user_id",
     "host_name",
     "section_id",
@@ -630,7 +628,6 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
     global _CLICKHOUSE_TYPE_MAP  # noqa: PLW0603 -- module level cache for performance
     if _CLICKHOUSE_TYPE_MAP is None:
         _CLICKHOUSE_TYPE_MAP = {
-            "event_id": pa.string(),
             "user_id": pa.string(),
             "host_name": pa.string(),
             "section_id": pa.uint64(),
@@ -705,9 +702,6 @@ def transform_xapi_statement(
     verb_id = verb.get("id", "") or ""
     object_type = object_definition.get("type", "") or ""
     event_type = _determine_event_type(verb_id, object_type)
-
-    event_id = statement.get("id") or statement.get("event_id") or str(uuid.uuid4())
-    event_id = str(event_id)
 
     user_id = account.get("name") or actor.get("mbox") or ""
     if not isinstance(user_id, str):
@@ -789,7 +783,6 @@ def transform_xapi_statement(
     raw_hash = hashlib.sha256(raw_bytes).hexdigest()
 
     transformed: Dict[str, Any] = {
-        "event_id": event_id,
         "user_id": user_id,
         "host_name": host_name or "",
         "section_id": section_id,

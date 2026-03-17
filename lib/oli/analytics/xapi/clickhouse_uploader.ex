@@ -172,7 +172,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     context_extensions = get_in(event, ["context", "extensions"]) || %{}
 
     %{
-      event_id: event["id"],
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       host_name: get_in(context_extensions, ["https://oli.cmu.edu/extensions/host_name"]),
       section_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/section_id"]),
@@ -217,7 +216,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     result = event["result"] || %{}
 
     %{
-      event_id: event["id"],
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       host_name: get_in(context_extensions, ["https://oli.cmu.edu/extensions/host_name"]),
       section_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/section_id"]),
@@ -253,7 +251,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     result = event["result"] || %{}
 
     %{
-      event_id: event["id"],
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       host_name: get_in(context_extensions, ["https://oli.cmu.edu/extensions/host_name"]),
       section_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/section_id"]),
@@ -283,7 +280,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     result = event["result"] || %{}
 
     %{
-      event_id: event["id"],
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       host_name: get_in(context_extensions, ["https://oli.cmu.edu/extensions/host_name"]),
       section_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/section_id"]),
@@ -304,7 +300,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
     result = event["result"] || %{}
 
     %{
-      event_id: event["id"],
       user_id: safe_extract_email(get_in(event, ["actor", "mbox"])),
       host_name: get_in(context_extensions, ["https://oli.cmu.edu/extensions/host_name"]),
       section_id: get_in(context_extensions, ["https://oli.cmu.edu/extensions/section_id"]),
@@ -370,7 +365,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
     """
     INSERT INTO #{raw_events_table} (
-      event_id,
       user_id,
       host_name,
       section_id,
@@ -414,7 +408,6 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
 
   defp build_raw_event_values(event) do
     [
-      escape_value(event[:event_id]),
       escape_value(event[:user_id]),
       escape_value(event[:host_name]),
       escape_value(event[:section_id]),

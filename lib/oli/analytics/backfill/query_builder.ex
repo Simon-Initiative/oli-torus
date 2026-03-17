@@ -18,7 +18,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     """
     INSERT INTO #{target_table} (
         event_hash, event_version, source_file, source_etag, source_line, inserted_at,
-        event_id, user_id, host_name, section_id, project_id, publication_id,
+        user_id, host_name, section_id, project_id, publication_id,
         timestamp, event_type, page_id,
         content_element_id, video_url, video_time, video_length,
         video_progress, video_played_segments, video_play_time, video_seek_from,
@@ -29,7 +29,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         response, feedback, hints_requested, attached_objectives, session_id
     )
     SELECT
-        cityHash64(json) AS event_hash,
+        lower(hex(SHA256(json))) AS event_hash,
         now64(3) AS event_version,
         _path AS source_file,
         _file AS source_etag,
@@ -38,27 +38,25 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           + 1 AS source_line,
         now() AS inserted_at,
 
-        coalesce(#{json_value("$.id")}, #{json_value("$.event_id")}, toString(generateUUIDv4())) AS event_id,
-
         coalesce(
-          #{json_value("$.actor.account.name")},
-          #{json_value("$.actor.mbox")},
+          #{json_value_or_null("$.actor.account.name")},
+          #{json_value_or_null("$.actor.mbox")},
           ''
         ) AS user_id,
 
         coalesce(
-          #{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/host_name\"")},
-          #{json_value("$.actor.account.homePage")},
+          #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/host_name\"")},
+          #{json_value_or_null("$.actor.account.homePage")},
           ''
         ) AS host_name,
-        toUInt64OrNull(#{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/section_id\"")}) AS section_id,
-        toUInt64OrNull(#{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/project_id\"")}) AS project_id,
-        toUInt64OrNull(#{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/publication_id\"")}) AS publication_id,
+        toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/section_id\"")}) AS section_id,
+        toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/project_id\"")}) AS project_id,
+        toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/publication_id\"")}) AS publication_id,
 
-        parseDateTime64BestEffortOrNull(#{json_value("$.timestamp")}, 3) AS timestamp,
+        parseDateTime64BestEffortOrNull(#{json_value_or_null("$.timestamp")}, 3) AS timestamp,
 
         multiIf(
-          #{json_value("$.verb.id")} IN (
+          #{json_value_or_null("$.verb.id")} IN (
             'https://w3id.org/xapi/video/verbs/played',
             'https://w3id.org/xapi/video/verbs/paused',
             'https://w3id.org/xapi/video/verbs/seeked',
@@ -66,83 +64,83 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
             'http://adlnet.gov/expapi/verbs/experienced'
           ), 'video',
 
-          (#{json_value("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
-            AND (#{json_value("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/activity_attempt'),
+          (#{json_value_or_null("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
+            AND (#{json_value_or_null("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/activity_attempt'),
           'activity_attempt',
 
-          (#{json_value("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
-            AND (#{json_value("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/page_attempt'),
+          (#{json_value_or_null("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
+            AND (#{json_value_or_null("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/page_attempt'),
           'page_attempt',
 
-          (#{json_value("$.verb.id")} = 'http://id.tincanapi.com/verb/viewed')
-            AND (#{json_value("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/types/page'),
+          (#{json_value_or_null("$.verb.id")} = 'http://id.tincanapi.com/verb/viewed')
+            AND (#{json_value_or_null("$.object.definition.type")} = 'http://oli.cmu.edu/extensions/types/page'),
           'page_viewed',
 
-          (#{json_value("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
-            AND (#{json_value("$.object.definition.type")} = 'http://adlnet.gov/expapi/activities/question'),
+          (#{json_value_or_null("$.verb.id")} = 'http://adlnet.gov/expapi/verbs/completed')
+            AND (#{json_value_or_null("$.object.definition.type")} = 'http://adlnet.gov/expapi/activities/question'),
           'part_attempt',
 
           'unknown'
         ) AS event_type,
 
-        toUInt64OrNull(#{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/page_id\"")}) AS page_id,
+        toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/page_id\"")}) AS page_id,
 
         coalesce(
-          #{json_value("$.result.extensions.content_element_id")},
-          #{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/content_element_id\"")},
+          #{json_value_or_null("$.result.extensions.content_element_id")},
+          #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/content_element_id\"")},
           NULL
         ) AS content_element_id,
         multiIf(
-          #{json_value("$.verb.id")} IN (
+          #{json_value_or_null("$.verb.id")} IN (
             'https://w3id.org/xapi/video/verbs/played',
             'https://w3id.org/xapi/video/verbs/paused',
             'https://w3id.org/xapi/video/verbs/seeked',
             'https://w3id.org/xapi/video/verbs/completed',
             'http://adlnet.gov/expapi/verbs/experienced'
           ),
-          #{json_value("$.object.id")},
+          #{json_value_or_null("$.object.id")},
           NULL
         ) AS video_url,
-        toFloat64OrNull(#{json_value("$.result.extensions.\"https://w3id.org/xapi/video/extensions/time\"")}) AS video_time,
+        toFloat64OrNull(#{json_value_or_null("$.result.extensions.\"https://w3id.org/xapi/video/extensions/time\"")}) AS video_time,
         coalesce(
-          toFloat64OrNull(#{json_value("$.result.extensions.\"https://w3id.org/xapi/video/extensions/length\"")}),
-          toFloat64OrNull(#{json_value("$.context.extensions.\"https://w3id.org/xapi/video/extensions/length\"")})
+          toFloat64OrNull(#{json_value_or_null("$.result.extensions.\"https://w3id.org/xapi/video/extensions/length\"")}),
+          toFloat64OrNull(#{json_value_or_null("$.context.extensions.\"https://w3id.org/xapi/video/extensions/length\"")})
         ) AS video_length,
-        toFloat64OrNull(#{json_value("$.result.extensions.\"https://w3id.org/xapi/video/extensions/progress\"")}) AS video_progress,
-        #{json_value("$.result.extensions.\"https://w3id.org/xapi/video/extensions/played-segments\"")} AS video_played_segments,
-        toFloat64OrNull(#{json_value("$.result.extensions.video_play_time")}) AS video_play_time,
-        toFloat64OrNull(#{json_value("$.result.extensions.\"https://w3id.org/xapi/video/extensions/time-from\"")}) AS video_seek_from,
-        toFloat64OrNull(#{json_value("$.result.extensions.\"https://w3id.org/xapi/video/extensions/time-to\"")}) AS video_seek_to,
+        toFloat64OrNull(#{json_value_or_null("$.result.extensions.\"https://w3id.org/xapi/video/extensions/progress\"")}) AS video_progress,
+        #{json_value_or_null("$.result.extensions.\"https://w3id.org/xapi/video/extensions/played-segments\"")} AS video_played_segments,
+        toFloat64OrNull(#{json_value_or_null("$.result.extensions.video_play_time")}) AS video_play_time,
+        toFloat64OrNull(#{json_value_or_null("$.result.extensions.\"https://w3id.org/xapi/video/extensions/time-from\"")}) AS video_seek_from,
+        toFloat64OrNull(#{json_value_or_null("$.result.extensions.\"https://w3id.org/xapi/video/extensions/time-to\"")}) AS video_seek_to,
 
-        #{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/activity_attempt_guid\"")} AS activity_attempt_guid,
-        toUInt32OrNull(#{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/activity_attempt_number\"")}) AS activity_attempt_number,
-        #{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/page_attempt_guid\"")} AS page_attempt_guid,
-        toUInt32OrNull(#{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/page_attempt_number\"")}) AS page_attempt_number,
-        #{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/part_attempt_guid\"")} AS part_attempt_guid,
-        toUInt32OrNull(#{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/part_attempt_number\"")}) AS part_attempt_number,
-        toUInt64OrNull(#{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/activity_id\"")}) AS activity_id,
-        toUInt64OrNull(#{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/activity_revision_id\"")}) AS activity_revision_id,
-        #{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/part_id\"")} AS part_id,
+        #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/activity_attempt_guid\"")} AS activity_attempt_guid,
+        toUInt32OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/activity_attempt_number\"")}) AS activity_attempt_number,
+        #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/page_attempt_guid\"")} AS page_attempt_guid,
+        toUInt32OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/page_attempt_number\"")}) AS page_attempt_number,
+        #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/part_attempt_guid\"")} AS part_attempt_guid,
+        toUInt32OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/part_attempt_number\"")}) AS part_attempt_number,
+        toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/activity_id\"")}) AS activity_id,
+        toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/activity_revision_id\"")}) AS activity_revision_id,
+        #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/part_id\"")} AS part_id,
 
-        #{json_value("$.object.definition.subType")} AS page_sub_type,
+        #{json_value_or_null("$.object.definition.subType")} AS page_sub_type,
 
-        toFloat64OrNull(#{json_value("$.result.score.raw")}) AS score,
-        toFloat64OrNull(#{json_value("$.result.score.max")}) AS out_of,
-        toFloat64OrNull(#{json_value("$.result.score.scaled")}) AS scaled_score,
-        #{json_value("$.result.success")} IN ('1', 'true', 'True') AS success,
-        #{json_value("$.result.completion")} IN ('1', 'true', 'True') AS completion,
+        toFloat64OrNull(#{json_value_or_null("$.result.score.raw")}) AS score,
+        toFloat64OrNull(#{json_value_or_null("$.result.score.max")}) AS out_of,
+        toFloat64OrNull(#{json_value_or_null("$.result.score.scaled")}) AS scaled_score,
+        #{json_value_or_null("$.result.success")} IN ('1', 'true', 'True') AS success,
+        #{json_value_or_null("$.result.completion")} IN ('1', 'true', 'True') AS completion,
 
         coalesce(
-          #{json_value("$.result.response")},
-          #{json_value("$.result.response.input")},
+          #{json_value_or_null("$.result.response")},
+          #{json_value_or_null("$.result.response.input")},
           nullIf(JSON_QUERY(json, '$.result.response'), ''),
           nullIf(JSON_QUERY(json, '$.statement.result.response'), '')
         ) AS response,
 
-        #{json_value("$.result.extensions.\"http://oli.cmu.edu/extensions/feedback\"")} AS feedback,
-        toUInt32OrNull(#{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/hints_requested\"")}) AS hints_requested,
-        #{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/attached_objectives\"")} AS attached_objectives,
-        #{json_value("$.context.extensions.\"http://oli.cmu.edu/extensions/session_id\"")} AS session_id
+        #{json_value_or_null("$.result.extensions.\"http://oli.cmu.edu/extensions/feedback\"")} AS feedback,
+        toUInt32OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/hints_requested\"")}) AS hints_requested,
+        #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/attached_objectives\"")} AS attached_objectives,
+        #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/session_id\"")} AS session_id
     FROM #{s3_source}
     #{settings_clause}
     """
@@ -286,7 +284,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     end
   end
 
-  defp json_value(path) when is_binary(path) do
+  defp json_value_or_null(path) when is_binary(path) do
     "nullIf(JSON_VALUE(json, '#{path}'), '')"
   end
 
