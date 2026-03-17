@@ -1,17 +1,17 @@
 name: PrivSignal Master Refresh
 
 on:
-  push:
+  pull_request_target:
+    types:
+      - closed
     branches:
       - master
-    paths-ignore:
-      - priv_signal.lockfile.json
 
 permissions:
   contents: write
   pull-requests: write
   actions: read
-  issues: write
+  issues: read
 
 concurrency:
   group: privsignal-master-refresh
@@ -19,174 +19,53 @@ concurrency:
 
 jobs:
   refresh-lockfile:
-    name: Refresh priv_signal.lockfile.json from PR artifact
-    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    name: Refresh priv_signal.lockfile.json from S3
+    if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-2
+      S3_BUCKET: oli-torus-releases
 
     steps:
-      - name: Resolve merged PR from push commit
-        id: pr
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const commitSha = context.sha;
-
-            const pulls = await github.paginate(github.rest.repos.listPullRequestsAssociatedWithCommit, {
-              owner,
-              repo,
-              commit_sha: commitSha,
-              per_page: 100
-            });
-
-            const mergedToMaster = pulls
-              .filter((pr) => pr.merged_at && pr.base?.ref === "master")
-              .sort((a, b) => new Date(b.merged_at) - new Date(a.merged_at));
-
-            if (mergedToMaster.length === 0) {
-              core.notice(`No merged PR associated with commit ${commitSha}; skipping lockfile refresh.`);
-              core.setOutput("number", "");
-              core.setOutput("head_sha", "");
-              return;
-            }
-
-            const pr = mergedToMaster[0];
-            core.setOutput("number", String(pr.number));
-            core.setOutput("head_sha", pr.head?.sha || "");
-            core.notice(`Resolved PR #${pr.number} for commit ${commitSha}.`);
-
-      - name: Find latest successful PrivSignal PR check run
-        id: run
-        if: ${{ steps.pr.outputs.number != '' }}
-        uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
-          PR_HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
-        with:
-          script: |
-            const { owner, repo } = context.repo;
-            const workflowId = "privsignal-pr-check.yml";
-            const prNumber = Number(process.env.PR_NUMBER);
-            const prHeadSha = process.env.PR_HEAD_SHA || "";
-
-            const normalizeRuns = (runs) =>
-              (Array.isArray(runs) ? runs : []).filter((run) => run && typeof run === "object");
-
-            const hasMatchingPr = (run) =>
-              Array.isArray(run?.pull_requests) &&
-              run.pull_requests.some((pr) => pr && pr.number === prNumber);
-
-            const isSuccessful = (run) => !!run && run.conclusion === "success";
-
-            let candidateRuns = [];
-
-            if (prHeadSha) {
-              const byHead = await github.rest.actions.listWorkflowRuns({
-                owner,
-                repo,
-                workflow_id: workflowId,
-                event: "pull_request",
-                status: "completed",
-                head_sha: prHeadSha,
-                per_page: 100
-              });
-
-            // For head_sha lookup, trust SHA match + successful conclusion.
-            // GitHub can return empty pull_requests[] for some valid PR-triggered runs.
-            candidateRuns = normalizeRuns(byHead?.data?.workflow_runs).filter(isSuccessful);
-            }
-
-            if (candidateRuns.length === 0) {
-              const allRuns = await github.paginate(
-                github.rest.actions.listWorkflowRuns,
-                {
-                  owner,
-                  repo,
-                  workflow_id: workflowId,
-                  event: "pull_request",
-                  status: "completed",
-                  per_page: 100
-                },
-                (response) => response.data.workflow_runs
-              );
-
-            candidateRuns = normalizeRuns(allRuns).filter(
-              (run) =>
-                isSuccessful(run) &&
-                (hasMatchingPr(run) || (prHeadSha && run.head_sha === prHeadSha))
-            );
-            }
-
-            if (candidateRuns.length === 0) {
-              core.notice(`No successful ${workflowId} run found for PR #${prNumber}; skipping lockfile refresh.`);
-              core.setOutput("id", "");
-              return;
-            }
-
-            candidateRuns.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            const run = candidateRuns[0];
-
-            core.setOutput("id", String(run.id));
-            core.notice(`Using workflow run ${run.id} (${run.html_url}) for PR #${prNumber}.`);
-
-      - name: Download privsignal-lockfile artifact via REST API
-        id: artifact
-        if: ${{ steps.run.outputs.id != '' }}
-        env:
-          RUN_ID: ${{ steps.run.outputs.id }}
+      - name: Download stored PR lockfile from S3
+        id: stored
         run: |
           set -euo pipefail
 
-          api_root="https://api.github.com/repos/${GITHUB_REPOSITORY}"
-          artifacts_json="$(mktemp)"
-          archive_zip="$(mktemp).zip"
-          extract_dir="$(mktemp -d)"
+          aws --version
 
-          curl -fsSL \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "${api_root}/actions/runs/${RUN_ID}/artifacts?per_page=100" \
-            -o "${artifacts_json}"
+          pr_number="${{ github.event.pull_request.number }}"
+          s3_key="privsignal/pr-${pr_number}/priv_signal.lockfile.json"
+          s3_uri="s3://${S3_BUCKET}/${s3_key}"
+          candidate_file="$(mktemp)"
+          err_file="$(mktemp)"
 
-          artifact_id="$(
-            jq -r '
-              .artifacts
-              | map(select(.name == "privsignal-lockfile" and (.expired | not)))
-              | sort_by(.created_at)
-              | last
-              | .id // ""
-            ' "${artifacts_json}"
-          )"
+          if aws s3api head-object \
+            --bucket "${S3_BUCKET}" \
+            --key "${s3_key}" \
+            --region "${AWS_REGION}" >/dev/null 2>"${err_file}"; then
+            aws s3 cp "${s3_uri}" "${candidate_file}" --region "${AWS_REGION}"
+            echo "found=true" >> "${GITHUB_OUTPUT}"
+            echo "candidate_path=${candidate_file}" >> "${GITHUB_OUTPUT}"
+            echo "s3_uri=${s3_uri}" >> "${GITHUB_OUTPUT}"
+          else
+            if grep -qiE 'Not Found|404|NoSuchKey' "${err_file}"; then
+              echo "No lockfile found in ${s3_uri}; skipping refresh."
+              echo "found=false" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
 
-          if [ -z "${artifact_id}" ]; then
-            echo "found=false" >> "${GITHUB_OUTPUT}"
-            echo "No non-expired privsignal-lockfile artifact found for run ${RUN_ID}."
-            exit 0
+            echo "Failed to query ${s3_uri}."
+            cat "${err_file}"
+            exit 1
           fi
-
-          curl -fsSL \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "${api_root}/actions/artifacts/${artifact_id}/zip" \
-            -o "${archive_zip}"
-
-          unzip -q -o "${archive_zip}" -d "${extract_dir}"
-
-          candidate_path="$(find "${extract_dir}" -type f -name "priv_signal.lockfile.json" | head -n 1)"
-
-          if [ -z "${candidate_path}" ]; then
-            echo "found=false" >> "${GITHUB_OUTPUT}"
-            echo "Artifact ${artifact_id} did not contain priv_signal.lockfile.json."
-            exit 0
-          fi
-
-          echo "found=true" >> "${GITHUB_OUTPUT}"
-          echo "candidate_path=${candidate_path}" >> "${GITHUB_OUTPUT}"
 
       - name: Commit lockfile to master via Contents REST API (if changed)
-        if: ${{ steps.artifact.outputs.found == 'true' }}
+        if: ${{ steps.stored.outputs.found == 'true' }}
         env:
-          CANDIDATE_PATH: ${{ steps.artifact.outputs.candidate_path }}
+          CANDIDATE_PATH: ${{ steps.stored.outputs.candidate_path }}
         run: |
           set -euo pipefail
 
@@ -195,12 +74,12 @@ jobs:
           get_resp="$(mktemp)"
           current_file="$(mktemp)"
 
-          http_code="$(
+          http_code="$({
             curl -sSL -o "${get_resp}" -w "%{http_code}" \
               -H "Authorization: Bearer ${GITHUB_TOKEN}" \
               -H "Accept: application/vnd.github+json" \
               "${api_root}/contents/${target_path}?ref=master"
-          )"
+          } || true)"
 
           current_sha=""
 
@@ -223,7 +102,7 @@ jobs:
           new_content_b64="$(base64 < "${CANDIDATE_PATH}" | tr -d '\n')"
 
           if [ -n "${current_sha}" ]; then
-            payload="$(
+            payload="$({
               jq -n \
                 --arg message "chore(privsignal): update lockfile [skip ci]" \
                 --arg content "${new_content_b64}" \
@@ -241,7 +120,7 @@ jobs:
                 }'
             )"
           else
-            payload="$(
+            payload="$({
               jq -n \
                 --arg message "chore(privsignal): update lockfile [skip ci]" \
                 --arg content "${new_content_b64}" \
