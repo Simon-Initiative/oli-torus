@@ -103,39 +103,35 @@ jobs:
           new_content_b64="$(base64 < "${CANDIDATE_PATH}" | tr -d '\n')"
 
           if [ -n "${current_sha}" ]; then
-            payload="$({
-              jq -n \
-                --arg message "chore(privsignal): update lockfile [skip ci]" \
-                --arg content "${new_content_b64}" \
-                --arg branch "master" \
-                --arg sha "${current_sha}" \
-                --arg bot_name "github-actions[bot]" \
-                --arg bot_email "41898282+github-actions[bot]@users.noreply.github.com" \
-                '{
-                  message: $message,
-                  content: $content,
-                  branch: $branch,
-                  sha: $sha,
-                  committer: {name: $bot_name, email: $bot_email},
-                  author: {name: $bot_name, email: $bot_email}
-                }'
-            )"
+            payload="$(jq -n \
+              --arg message "chore(privsignal): update lockfile [skip ci]" \
+              --arg content "${new_content_b64}" \
+              --arg branch "master" \
+              --arg sha "${current_sha}" \
+              --arg bot_name "github-actions[bot]" \
+              --arg bot_email "41898282+github-actions[bot]@users.noreply.github.com" \
+              '{
+                message: $message,
+                content: $content,
+                branch: $branch,
+                sha: $sha,
+                committer: {name: $bot_name, email: $bot_email},
+                author: {name: $bot_name, email: $bot_email}
+              }')"
           else
-            payload="$({
-              jq -n \
-                --arg message "chore(privsignal): update lockfile [skip ci]" \
-                --arg content "${new_content_b64}" \
-                --arg branch "master" \
-                --arg bot_name "github-actions[bot]" \
-                --arg bot_email "41898282+github-actions[bot]@users.noreply.github.com" \
-                '{
-                  message: $message,
-                  content: $content,
-                  branch: $branch,
-                  committer: {name: $bot_name, email: $bot_email},
-                  author: {name: $bot_name, email: $bot_email}
-                }'
-            )"
+            payload="$(jq -n \
+              --arg message "chore(privsignal): update lockfile [skip ci]" \
+              --arg content "${new_content_b64}" \
+              --arg branch "master" \
+              --arg bot_name "github-actions[bot]" \
+              --arg bot_email "41898282+github-actions[bot]@users.noreply.github.com" \
+              '{
+                message: $message,
+                content: $content,
+                branch: $branch,
+                committer: {name: $bot_name, email: $bot_email},
+                author: {name: $bot_name, email: $bot_email}
+              }')"
           fi
 
           put_resp="$(mktemp)"
