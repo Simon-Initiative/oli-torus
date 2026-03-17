@@ -71,6 +71,86 @@ jobs:
           path: tmp/privsignal/priv_signal.lockfile.json
           if-no-files-found: error
 
+      - name: Store generated lockfile in repo (well-known location)
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: actions/github-script@v7
+        env:
+          STORE_BRANCH: privsignal-lockfiles
+          LOCKFILE_PATH: tmp/privsignal/priv_signal.lockfile.json
+        with:
+          script: |
+            const fs = require("fs");
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            const storeBranch = process.env.STORE_BRANCH;
+            const lockfilePath = process.env.LOCKFILE_PATH;
+            const targetPath = `.privsignal/pr-${prNumber}/priv_signal.lockfile.json`;
+
+            const botName = "github-actions[bot]";
+            const botEmail = "41898282+github-actions[bot]@users.noreply.github.com";
+            const contentB64 = Buffer.from(fs.readFileSync(lockfilePath, "utf8"), "utf8").toString("base64");
+
+            try {
+              await github.rest.git.getRef({
+                owner,
+                repo,
+                ref: `heads/${storeBranch}`
+              });
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+
+              const repoMeta = await github.rest.repos.get({ owner, repo });
+              const baseRef = await github.rest.git.getRef({
+                owner,
+                repo,
+                ref: `heads/${repoMeta.data.default_branch}`
+              });
+
+              await github.rest.git.createRef({
+                owner,
+                repo,
+                ref: `refs/heads/${storeBranch}`,
+                sha: baseRef.data.object.sha
+              });
+            }
+
+            let existingSha;
+            try {
+              const existing = await github.rest.repos.getContent({
+                owner,
+                repo,
+                path: targetPath,
+                ref: storeBranch
+              });
+
+              if (!Array.isArray(existing.data)) {
+                existingSha = existing.data.sha;
+              }
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+            }
+
+            await github.rest.repos.createOrUpdateFileContents({
+              owner,
+              repo,
+              path: targetPath,
+              branch: storeBranch,
+              message: `chore(privsignal): store lockfile for PR #${prNumber} [skip ci]`,
+              content: contentB64,
+              sha: existingSha,
+              committer: { name: botName, email: botEmail },
+              author: { name: botName, email: botEmail }
+            });
+
+      - name: Note fork PR lockfile storage skip
+        if: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          echo "Skipping repo lockfile storage for fork PR due token write restrictions."
+
       - name: Build PR summary outputs
         id: summary
         run: |
