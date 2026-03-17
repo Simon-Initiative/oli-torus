@@ -29,14 +29,15 @@ function finalizeView(hook: Hook<ChartHookState>) {
 }
 
 function chartTarget(hook: Hook<ChartHookState>): HTMLElement {
-  const targetId = hook.el.dataset.chartTarget;
+  const el = hook.el as HTMLElement;
+  const targetId = el.dataset.chartTarget;
 
   if (!targetId) {
-    return hook.el;
+    return el;
   }
 
-  const target = hook.el.querySelector<HTMLElement>(`#${CSS.escape(targetId)}`);
-  return target ?? hook.el;
+  const target = el.querySelector<HTMLElement>(`#${CSS.escape(targetId)}`);
+  return target ?? el;
 }
 
 async function renderChart(hook: Hook<ChartHookState>) {
