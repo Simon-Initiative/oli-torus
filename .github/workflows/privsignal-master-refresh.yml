@@ -91,9 +91,9 @@ jobs:
                 per_page: 100
               });
 
-              // For head_sha lookup, trust SHA match + successful conclusion.
-              // GitHub can return empty pull_requests[] for some valid PR-triggered runs.
-              candidateRuns = normalizeRuns(byHead?.data?.workflow_runs).filter(isSuccessful);
+            // For head_sha lookup, trust SHA match + successful conclusion.
+            // GitHub can return empty pull_requests[] for some valid PR-triggered runs.
+            candidateRuns = normalizeRuns(byHead?.data?.workflow_runs).filter(isSuccessful);
             }
 
             if (candidateRuns.length === 0) {
@@ -110,11 +110,11 @@ jobs:
                 (response) => response.data.workflow_runs
               );
 
-              candidateRuns = normalizeRuns(allRuns).filter(
-                (run) =>
-                  isSuccessful(run) &&
-                  (hasMatchingPr(run) || (prHeadSha && run.head_sha === prHeadSha))
-              );
+            candidateRuns = normalizeRuns(allRuns).filter(
+              (run) =>
+                isSuccessful(run) &&
+                (hasMatchingPr(run) || (prHeadSha && run.head_sha === prHeadSha))
+            );
             }
 
             if (candidateRuns.length === 0) {
