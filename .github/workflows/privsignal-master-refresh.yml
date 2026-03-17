@@ -28,6 +28,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: us-east-2
       S3_BUCKET: oli-torus-releases
+      PUSH_TOKEN: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
     steps:
       - name: Download stored lockfile from S3
@@ -45,19 +46,26 @@ jobs:
           echo "found=true" >> "${GITHUB_OUTPUT}"
           echo "candidate_path=${candidate_file}" >> "${GITHUB_OUTPUT}"
           echo "s3_uri=${s3_uri}" >> "${GITHUB_OUTPUT}"
+
       - name: Checkout master branch
         if: ${{ steps.stored.outputs.found == 'true' }}
         uses: actions/checkout@v4
         with:
           ref: master
           fetch-depth: 1
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
-      - name: Commit lockfile to master (if changed)
+      - name: Commit lockfile directly to master (if changed)
         if: ${{ steps.stored.outputs.found == 'true' }}
         env:
           CANDIDATE_PATH: ${{ steps.stored.outputs.candidate_path }}
         run: |
           set -euo pipefail
+
+          if [ -z "${PUSH_TOKEN}" ]; then
+            echo "SIMON_BOT_PERSONAL_ACCESS_TOKEN is required for direct protected-branch push."
+            exit 1
+          fi
 
           target_path="priv_signal.lockfile.json"
           if [ -f "${target_path}" ] && cmp -s "${target_path}" "${CANDIDATE_PATH}"; then
@@ -78,4 +86,5 @@ jobs:
           fi
 
           git commit -m "chore(privsignal): update lockfile [skip ci]"
+          git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push origin HEAD:master
