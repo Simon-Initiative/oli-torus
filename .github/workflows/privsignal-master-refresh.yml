@@ -72,11 +72,11 @@ jobs:
             const normalizeRuns = (runs) =>
               (Array.isArray(runs) ? runs : []).filter((run) => run && typeof run === "object");
 
-            const matchesPr = (run) =>
-              !!run &&
-              run.conclusion === "success" &&
-              Array.isArray(run.pull_requests) &&
+            const hasMatchingPr = (run) =>
+              Array.isArray(run?.pull_requests) &&
               run.pull_requests.some((pr) => pr && pr.number === prNumber);
+
+            const isSuccessful = (run) => !!run && run.conclusion === "success";
 
             let candidateRuns = [];
 
@@ -91,7 +91,9 @@ jobs:
                 per_page: 100
               });
 
-              candidateRuns = normalizeRuns(byHead?.data?.workflow_runs).filter(matchesPr);
+              // For head_sha lookup, trust SHA match + successful conclusion.
+              // GitHub can return empty pull_requests[] for some valid PR-triggered runs.
+              candidateRuns = normalizeRuns(byHead?.data?.workflow_runs).filter(isSuccessful);
             }
 
             if (candidateRuns.length === 0) {
@@ -108,7 +110,11 @@ jobs:
                 (response) => response.data.workflow_runs
               );
 
-              candidateRuns = normalizeRuns(allRuns).filter(matchesPr);
+              candidateRuns = normalizeRuns(allRuns).filter(
+                (run) =>
+                  isSuccessful(run) &&
+                  (hasMatchingPr(run) || (prHeadSha && run.head_sha === prHeadSha))
+              );
             }
 
             if (candidateRuns.length === 0) {
