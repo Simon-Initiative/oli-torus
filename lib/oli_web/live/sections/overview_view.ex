@@ -6,7 +6,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
+  alias Oli.Delivery.Sections.{Section, SectionResource, EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Details.ImageUpload
   alias OliWeb.Sections.{Instructors, Mount}
@@ -14,6 +14,8 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Live.Components.Sections.AiAssistantComponent
+  alias OliWeb.Live.Components.Sections.NotesComponent
+  alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias Oli.Utils.S3Storage
   alias Oli.Repo
 
@@ -65,13 +67,26 @@ defmodule OliWeb.Sections.OverviewView do
             false
           end
 
-        %{slug: revision_slug} = DeliveryResolver.root_container(section.slug)
+        # Notes: load page-level collab space counts
+        {collab_space_pages_count, pages_count} =
+          Collaboration.count_collab_spaces_enabled_in_pages_for_section(section.slug)
 
-        {:ok, collab_space_config} =
-          Collaboration.get_collab_space_config_for_page_in_section(
-            revision_slug,
-            section.slug
-          )
+        # Discussions: load root container's section_resource and collab_space_config
+        root_revision = DeliveryResolver.root_container(section.slug)
+
+        {root_section_resource, root_collab_space_config} =
+          if root_revision do
+            {:ok, config} =
+              Collaboration.get_collab_space_config_for_page_in_section(
+                root_revision.slug,
+                section.slug
+              )
+
+            root_sr = Repo.get(SectionResource, section.root_section_resource_id)
+            {root_sr, config}
+          else
+            {nil, nil}
+          end
 
         %{base_project: base_project} = section |> Repo.preload(:base_project)
 
@@ -87,8 +102,10 @@ defmodule OliWeb.Sections.OverviewView do
            updates_count: updates_count,
            has_submitted_attempts:
              Oli.Delivery.Attempts.ManualGrading.has_submitted_attempts(section),
-           collab_space_config: collab_space_config,
-           resource_slug: revision_slug,
+           collab_space_pages_count: collab_space_pages_count,
+           pages_count: pages_count,
+           root_section_resource: root_section_resource,
+           root_collab_space_config: root_collab_space_config,
            show_required_section_config: show_required_section_config,
            base_project: base_project
          )
@@ -314,16 +331,30 @@ defmodule OliWeb.Sections.OverviewView do
         <% end %>
       </Group.render>
 
-      {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-        id: "collab_space_config",
-        session: %{
-          "collab_space_config" => @collab_space_config,
-          "section_slug" => @section.slug,
-          "resource_slug" => @resource_slug,
-          "is_overview_render" => true,
-          "is_delivery" => true
-        }
-      )}
+      <Group.render
+        label="Notes"
+        description="Enable students to annotate content for saving and sharing within the class community."
+      >
+        <.live_component
+          module={NotesComponent}
+          id={"notes-#{@section.id}"}
+          section={@section}
+          collab_space_pages_count={@collab_space_pages_count}
+          pages_count={@pages_count}
+        />
+      </Group.render>
+      <Group.render
+        label="Course Discussions"
+        description="Give students a course discussion board."
+      >
+        <.live_component
+          module={CourseDiscussionsComponent}
+          id={"discussions-#{@section.id}"}
+          section={@section}
+          collab_space_config={@root_collab_space_config}
+          root_section_resource={@root_section_resource}
+        />
+      </Group.render>
 
       <Group.render label="Scoring" description="View and manage student scores and progress">
         <ul class="link-list">
@@ -615,6 +646,21 @@ defmodule OliWeb.Sections.OverviewView do
   # Generic flash handler for child LiveComponents
   def handle_info({:flash, level, message}, socket) do
     {:noreply, put_flash(socket, level, message)}
+  end
+
+  # Keep parent's notes count in sync so NotesComponent doesn't get stale assigns on re-render
+  def handle_info({:notes_count_updated, count}, socket) do
+    {:noreply, assign(socket, collab_space_pages_count: count)}
+  end
+
+  # Keep parent's collab_space_config in sync so CourseDiscussionsComponent doesn't get stale
+  # assigns on re-render (e.g. when another component triggers a parent re-render)
+  def handle_info({:collab_space_config_updated, config, root_sr}, socket) do
+    {:noreply,
+     assign(socket,
+       root_collab_space_config: config,
+       root_section_resource: root_sr
+     )}
   end
 
   def handle_info({:scoped_feature_updated, feature_name, enabled, _source}, socket) do
