@@ -2,8 +2,8 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Button, Modal as RBModal, Table } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { WidgetProps } from '@rjsf/core';
-import { iso639_language_codes } from '../../../../../utils/language-codes-iso639';
 import { MIMETYPE_FILTERS } from '../../../../../components/media/manager/MediaManager';
+import { iso639_language_codes } from '../../../../../utils/language-codes-iso639';
 import { selectProjectSlug } from '../../../store/app/slice';
 import { MediaPickerModal } from '../../Modal/MediaPickerModal';
 
@@ -115,7 +115,9 @@ export const JanusSubtitlesManager: React.FC<WidgetProps> = (props) => {
   };
 
   const subtitleSummary =
-    trackCount === 0 ? 'No subtitles configured' : `${trackCount} subtitle${trackCount > 1 ? 's' : ''} configured`;
+    trackCount === 0
+      ? 'No subtitles configured'
+      : `${trackCount} subtitle${trackCount > 1 ? 's' : ''} configured`;
 
   return (
     <div id={id}>
@@ -151,8 +153,9 @@ export const JanusSubtitlesManager: React.FC<WidgetProps> = (props) => {
         </RBModal.Header>
         <RBModal.Body>
           <p className="mb-2">
-            Provide subtitles for the video. These will be displayed to viewers who choose to turn them on
-            and can be supplied in multiple languages. You must provide a file formatted as a{' '}
+            Provide subtitles for the video. These will be displayed to viewers who choose to turn
+            them on and can be supplied in multiple languages. You must provide a file formatted as
+            a{' '}
             <a
               href="https://developer.mozilla.org/en-US/docs/Web/API/WebVTT_API"
               target="_blank"
@@ -187,14 +190,18 @@ export const JanusSubtitlesManager: React.FC<WidgetProps> = (props) => {
                     <select
                       className="form-control"
                       value={row.language_code || ''}
-                      onChange={(e) => updateRow(index, { language_code: e.target.value || undefined })}
+                      onChange={(e) =>
+                        updateRow(index, { language_code: e.target.value || undefined })
+                      }
                     >
                       <option value="">None Selected</option>
-                      {iso639_language_codes.map(({ code, name }: { code: string; name: string }) => (
-                        <option key={code} value={code}>
-                          {name} [{code}]
-                        </option>
-                      ))}
+                      {iso639_language_codes.map(
+                        ({ code, name }: { code: string; name: string }) => (
+                          <option key={code} value={code}>
+                            {name} [{code}]
+                          </option>
+                        ),
+                      )}
                     </select>
                   </td>
                   <td>
@@ -269,4 +276,3 @@ export const JanusSubtitlesManager: React.FC<WidgetProps> = (props) => {
     </div>
   );
 };
-
