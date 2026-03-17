@@ -16,7 +16,7 @@ Quick triage:
   - output should become durable design guidance under `design/`
 
 - `lightweight` mode:
-  - supports `spec_work`
+  - supports `harness-work`
   - output should remain in chat unless the user explicitly asks to persist it
 
 ## Handoff
@@ -24,6 +24,5 @@ Quick triage:
 This skill stops at analysis + mapping + brief.
 
 Typical next step:
-- `spec_develop` for feature work
-- `spec_work` for small-ticket execution
-
+- `harness-develop` for feature work
+- `harness-work` for small-ticket execution
