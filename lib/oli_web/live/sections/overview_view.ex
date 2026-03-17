@@ -13,7 +13,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
-  alias OliWeb.Common.Monaco
+  alias OliWeb.Live.Components.Sections.AiAssistantComponent
   alias Oli.Utils.S3Storage
   alias Oli.Repo
 
@@ -77,7 +77,6 @@ defmodule OliWeb.Sections.OverviewView do
 
         {:ok,
          assign(socket,
-           page_prompt_template: section.page_prompt_template,
            is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
            is_admin: is_content_admin?(user),
            breadcrumbs: set_breadcrumbs(type, section),
@@ -450,9 +449,11 @@ defmodule OliWeb.Sections.OverviewView do
           description="View and manage the AI Assistant details"
           is_last={true}
         >
-          <div class="my-2">
-            <.assistant_buttons section={@section} />
-          </div>
+          <.live_component
+            module={AiAssistantComponent}
+            id={"ai-assistant-#{@section.id}"}
+            section={@section}
+          />
           <div :if={Sections.assistant_enabled?(@section)}>
             <section class="flex flex-col space-y-4">
               <ul class="link-list">
@@ -466,48 +467,6 @@ defmodule OliWeb.Sections.OverviewView do
                 </li>
               </ul>
             </section>
-
-            <section class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200">
-              <h5>Prompt Templates</h5>
-
-              <Monaco.editor
-                id="attribute-monaco-editor"
-                height="200px"
-                language="text"
-                on_change="monaco_editor_on_change"
-                set_options="monaco_editor_set_options"
-                set_value="monaco_editor_set_value"
-                get_value="monaco_editor_get_value"
-                validate_schema_uri=""
-                default_value={
-                  if is_nil(@section.page_prompt_template) do
-                    ""
-                  else
-                    @section.page_prompt_template
-                  end
-                }
-                default_options={
-                  %{
-                    "readOnly" => false,
-                    "selectOnLineNumbers" => true,
-                    "minimap" => %{"enabled" => false},
-                    "scrollBeyondLastLine" => false,
-                    "tabSize" => 2
-                  }
-                }
-                use_code_lenses={[]}
-              />
-
-              <div>
-                <button
-                  type="button"
-                  class="btn btn-primary action-button mt-4"
-                  phx-click="save_prompt"
-                >
-                  Save
-                </button>
-              </div>
-            </section>
           </div>
         </Group.render>
       </div>
@@ -520,24 +479,6 @@ defmodule OliWeb.Sections.OverviewView do
       true -> "Direct Delivery"
       _ -> "LTI"
     end
-  end
-
-  def handle_event("monaco_editor_on_change", value, socket) do
-    {:noreply, assign(socket, page_prompt_template: value)}
-  end
-
-  def handle_event("save_prompt", _, socket) do
-    section = socket.assigns.section
-
-    Oli.Delivery.Sections.update_section(section, %{
-      page_prompt_template: socket.assigns.page_prompt_template
-    })
-
-    socket =
-      socket
-      |> put_flash(:info, "Prompt successfully saved")
-
-    {:noreply, socket}
   end
 
   def handle_event("show_delete_modal", _params, socket) do
@@ -615,44 +556,6 @@ defmodule OliWeb.Sections.OverviewView do
     {:noreply, socket |> hide_modal(modal_assigns: nil, section_has_student_data: nil)}
   end
 
-  def handle_event("toggle_assistant", _, socket) do
-    section = socket.assigns.section
-    assistant_enabled = section.assistant_enabled
-
-    triggers_enabled =
-      if assistant_enabled do
-        false
-      else
-        section.triggers_enabled
-      end
-
-    {:ok, section} =
-      Oli.Delivery.Sections.update_section(section, %{
-        assistant_enabled: !assistant_enabled,
-        triggers_enabled: triggers_enabled
-      })
-
-    socket =
-      socket
-      |> put_flash(:info, "AI assistant settings updated successfully")
-
-    {:noreply, assign(socket, section: section)}
-  end
-
-  def handle_event("toggle_triggers", _, socket) do
-    section = socket.assigns.section
-    triggers_enabled = section.triggers_enabled
-
-    {:ok, section} =
-      Oli.Delivery.Sections.update_section(section, %{triggers_enabled: !triggers_enabled})
-
-    socket =
-      socket
-      |> put_flash(:info, "AI assistant activation settings updated successfully")
-
-    {:noreply, assign(socket, section: section)}
-  end
-
   def handle_event("update_image", _, socket) do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
@@ -728,35 +631,6 @@ defmodule OliWeb.Sections.OverviewView do
   def handle_info({:scoped_feature_notice, type, message}, socket) do
     level = if type == :error, do: :error, else: :info
     {:noreply, put_flash(socket, level, message)}
-  end
-
-  attr :section, Section
-
-  def assistant_buttons(assigns) do
-    ~H"""
-    <div>
-      <div class="flex py-2 mb-2">
-        <div>Enable AI Assistant</div>
-        <.toggle_switch
-          id="toggle_assistant_switch"
-          class="ml-4"
-          checked={@section.assistant_enabled}
-          on_toggle="toggle_assistant"
-          name="toggle_assistant"
-        />
-      </div>
-      <div class="flex py-2 mb-2">
-        <div>Enable AI Activation Points</div>
-        <.toggle_switch
-          id="toggle_triggers_switch"
-          class="ml-4"
-          checked={@section.triggers_enabled}
-          on_toggle="toggle_triggers"
-          name="toggle_triggers"
-        />
-      </div>
-    </div>
-    """
   end
 
   defp ext(entry) do
