@@ -714,6 +714,79 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Ensures a user has an active learner enrollment in a section.
+
+  The enrollment row and learner role mapping are created idempotently and the
+  existing enrollment is reactivated when it is not currently `:enrolled`.
+  """
+  @spec ensure_student_enrollment(number(), number()) ::
+          {:ok, %{enrollment: Enrollment.t(), outcome: :created | :reused}}
+          | {:error, term()}
+  def ensure_student_enrollment(user_id, section_id) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    Repo.transaction(fn ->
+      {count, rows} =
+        Repo.insert_all(
+          Enrollment,
+          [
+            %{
+              user_id: user_id,
+              section_id: section_id,
+              inserted_at: now,
+              updated_at: now,
+              status: :enrolled,
+              state: %{}
+            }
+          ],
+          returning: [:id],
+          on_conflict: :nothing,
+          conflict_target: [:user_id, :section_id]
+        )
+
+      {enrollment_id, outcome} =
+        case {count, rows} do
+          {1, [%{id: id}]} ->
+            {id, :created}
+
+          _ ->
+            enrollment =
+              Repo.one!(
+                from e in Enrollment,
+                  where: e.user_id == ^user_id and e.section_id == ^section_id,
+                  lock: "FOR UPDATE"
+              )
+
+            if enrollment.status != :enrolled do
+              enrollment
+              |> Enrollment.changeset(%{status: :enrolled})
+              |> Repo.update!()
+            end
+
+            {enrollment.id, :reused}
+        end
+
+      Repo.insert_all(
+        EnrollmentContextRole,
+        [%{enrollment_id: enrollment_id, context_role_id: @student_role_id}],
+        on_conflict: :nothing,
+        conflict_target: [:enrollment_id, :context_role_id]
+      )
+
+      enrollment =
+        Enrollment
+        |> Repo.get!(enrollment_id)
+        |> Repo.preload(:context_roles)
+
+      {:ok, %{enrollment: enrollment, outcome: outcome}}
+    end)
+    |> case do
+      {:ok, {:ok, result}} -> {:ok, result}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
   Unenrolls a user from a section by removing the provided context roles.
   If no context roles are provided, no change is made. If all context roles
   are removed from the user, the enrollment is marked as suspended.

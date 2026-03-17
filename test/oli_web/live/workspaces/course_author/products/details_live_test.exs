@@ -1,6 +1,7 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
   use OliWeb.ConnCase
 
+  import Ecto.Query
   import Oli.Factory
   import Phoenix.LiveViewTest
 
@@ -90,6 +91,69 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
                "a[href='/workspaces/course_author/#{project.slug}/products/#{product.slug}/usage']",
                "View Usage"
              )
+    end
+
+    test "prepares template preview, creates an enrollment, and pushes a launch event", ctx do
+      %{conn: conn, author: author, project: project, product: product} = ctx
+      user = insert(:user, author: author, email: author.email)
+      conn = conn |> log_in_user(user) |> log_in_author(author)
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+      preview_url = "/sections/#{product.slug}"
+
+      render_click(element(live, "button[phx-click='template_preview']"))
+
+      assert_push_event(live, "template-preview-open", %{url: ^preview_url})
+
+      enrollment =
+        Oli.Delivery.Sections.get_enrollment(product.slug, user.id, filter_by_status: false)
+        |> Oli.Repo.preload(:context_roles)
+
+      assert enrollment.status == :enrolled
+
+      assert Enum.any?(
+               enrollment.context_roles,
+               &(&1.id == Lti_1p3.Roles.ContextRoles.get_role(:context_learner).id)
+             )
+
+      assert has_element?(live, "a[href='/sections/#{product.slug}']", "Open Preview")
+    end
+
+    test "reuses the existing enrollment when preview is launched again", ctx do
+      %{conn: conn, author: author, project: project, product: product} = ctx
+      user = insert(:user, author: author, email: author.email)
+      conn = conn |> log_in_user(user) |> log_in_author(author)
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+      preview_url = "/sections/#{product.slug}"
+
+      render_click(element(live, "button[phx-click='template_preview']"))
+      assert_push_event(live, "template-preview-open", %{url: ^preview_url})
+
+      render_click(element(live, "button[phx-click='template_preview']"))
+      assert_push_event(live, "template-preview-open", %{url: ^preview_url})
+
+      count =
+        Oli.Repo.aggregate(
+          from(e in Oli.Delivery.Sections.Enrollment,
+            where: e.user_id == ^user.id and e.section_id == ^product.id
+          ),
+          :count,
+          :id
+        )
+
+      assert count == 1
+    end
+
+    test "shows an error when the author has no linked learner account", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      render_click(element(live, "button[phx-click='template_preview']"))
+
+      assert render(live) =~ "Preview requires a linked learner account for the current author"
+      refute has_element?(live, "a[href='/sections/#{product.slug}']", "Open Preview")
     end
   end
 

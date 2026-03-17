@@ -223,6 +223,12 @@ window.addEventListener('phx:js-exec', ({ detail }: any) => {
   });
 });
 
+window.addEventListener('phx:template-preview-open', ({ detail }: any) => {
+  if (detail?.url) {
+    window.open(detail.url, '_blank', 'noopener');
+  }
+});
+
 window.addEventListener('mouseover', (e: any) => {
   // if the event's target has the xphx-mouseover attribute,
   // execute the commands on that element

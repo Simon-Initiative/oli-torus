@@ -7,10 +7,35 @@ defmodule OliWeb.Products.Details.Actions do
   attr(:base_project, :map, required: true)
   attr(:has_payment_codes, :boolean, required: true)
   attr(:usage_path, :string, required: true)
+  attr(:preview_launching?, :boolean, default: false)
+  attr(:preview_url, :string, default: nil)
 
   def render(assigns) do
     ~H"""
     <div class="flex flex-col gap-2">
+      <div class="flex items-center gap-3">
+        <div>
+          <button
+            class="btn btn-link action-button"
+            phx-click="template_preview"
+            disabled={@preview_launching?}
+            aria-label="Preview Template"
+          >
+            {if @preview_launching?, do: "Preparing Preview...", else: "Preview Template"}
+          </button>
+        </div>
+        <div>Open the student delivery experience for this template in a new tab.</div>
+      </div>
+
+      <div :if={@preview_url} class="flex items-center gap-3">
+        <div>
+          <a class="btn btn-link action-button" href={@preview_url} target="_blank" rel="noopener">
+            Open Preview
+          </a>
+        </div>
+        <div>Use this if your browser blocked the automatic preview launch.</div>
+      </div>
+
       <div class="flex items-center gap-3">
         <div>
           <a class="btn btn-link action-button" href={@usage_path}>

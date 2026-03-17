@@ -8,6 +8,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.TemplatePreview
   alias Oli.Inventories
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.Confirm
@@ -49,6 +50,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
            changeset: changeset,
            title: "Edit Template",
            show_confirm: false,
+           preview_launching?: false,
+           preview_url: nil,
            base_project: base_project,
            resource_slug: project.slug,
            resource_title: project.title,
@@ -157,6 +160,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             is_admin={@is_admin}
             base_project={@base_project}
             has_payment_codes={Paywall.has_payment_codes?(@product.id)}
+            preview_launching?={@preview_launching?}
+            preview_url={@preview_url}
             usage_path={
               ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/usage"
             }
@@ -179,6 +184,46 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   def handle_event("request_duplicate", _, socket) do
     {:noreply, assign(socket, show_confirm: true)}
+  end
+
+  def handle_event("template_preview", _, %{assigns: %{preview_launching?: true}} = socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("template_preview", _, socket) do
+    socket =
+      socket
+      |> clear_flash()
+      |> assign(preview_launching?: true)
+
+    case Mount.for(socket.assigns.product.slug, socket) do
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> assign(preview_launching?: false)
+         |> put_flash(:error, "You are not allowed to preview this template")}
+
+      _ ->
+        case TemplatePreview.prepare_launch(
+               socket.assigns.product,
+               Map.get(socket.assigns, :current_user),
+               socket.assigns.current_author
+             ) do
+          {:ok, %{section_slug: section_slug}} ->
+            preview_url = ~p"/sections/#{section_slug}"
+
+            {:noreply,
+             socket
+             |> assign(preview_launching?: false, preview_url: preview_url)
+             |> push_event("template-preview-open", %{url: preview_url})}
+
+          {:error, reason} ->
+            {:noreply,
+             socket
+             |> assign(preview_launching?: false)
+             |> put_flash(:error, preview_error_message(reason))}
+        end
+    end
   end
 
   def handle_event("cancel_modal", _, socket) do
@@ -318,5 +363,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   defp decode_welcome_title(project_params) do
     Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
+  end
+
+  defp preview_error_message(:missing_delivery_identity) do
+    "Preview requires a linked learner account for the current author"
+  end
+
+  defp preview_error_message(:section_unavailable) do
+    "Preview is unavailable for this template"
+  end
+
+  defp preview_error_message(:unauthorized) do
+    "You are not allowed to preview this template"
+  end
+
+  defp preview_error_message(_reason) do
+    "Template preview could not be prepared"
   end
 end
