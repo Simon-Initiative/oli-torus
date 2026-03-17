@@ -88,7 +88,7 @@ jobs:
           esac
 
           reasons_markdown="$(
-            jq -r --argfile diff tmp/privsignal/priv_signal.diff.json '
+            jq -r --slurpfile diff tmp/privsignal/priv_signal.diff.json '
               def rank:
                 if . == "high" then 0
                 elif . == "medium" then 1
@@ -96,7 +96,7 @@ jobs:
                 else 3
                 end;
 
-              ($diff.events // []) as $events
+              ($diff[0].events // []) as $events
               | ($events | map({key: (.event_id // ""), value: .}) | from_entries) as $event_by_id
               | (.reasons // []) as $reasons
               | (
