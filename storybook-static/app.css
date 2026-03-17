@@ -31113,6 +31113,10 @@ Not supports in Firefox and IE */
     gap: 30px;
   }
 
+  .md\:self-start {
+    align-self: flex-start;
+  }
+
   .md\:overflow-x-auto {
     overflow-x: auto;
   }
