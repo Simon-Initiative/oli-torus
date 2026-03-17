@@ -213,8 +213,7 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
           valid_lines: acc.valid_lines + file.valid_lines,
           invalid_json_lines: acc.invalid_json_lines + file.invalid_json_lines,
           schema_mismatch_lines: acc.schema_mismatch_lines + file.schema_mismatch_lines,
-          error_count:
-            acc.error_count + file.invalid_json_lines + file.schema_mismatch_lines
+          error_count: acc.error_count + file.invalid_json_lines + file.schema_mismatch_lines
       }
     end)
   end

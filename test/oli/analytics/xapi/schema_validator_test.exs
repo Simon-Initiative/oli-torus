@@ -4,13 +4,17 @@ defmodule Oli.Analytics.XAPI.SchemaValidatorTest do
   alias Oli.Analytics.XAPI.SchemaValidator
 
   setup do
-    tmp_dir = Path.join(System.tmp_dir!(), "xapi_schema_validator_#{System.unique_integer([:positive])}")
+    tmp_dir =
+      Path.join(System.tmp_dir!(), "xapi_schema_validator_#{System.unique_integer([:positive])}")
+
     File.mkdir_p!(tmp_dir)
     on_exit(fn -> File.rm_rf(tmp_dir) end)
     %{tmp_dir: tmp_dir}
   end
 
-  test "validates a JSONL file and classifies invalid json and schema mismatch rows", %{tmp_dir: tmp_dir} do
+  test "validates a JSONL file and classifies invalid json and schema mismatch rows", %{
+    tmp_dir: tmp_dir
+  } do
     file_path = Path.join(tmp_dir, "sample.jsonl")
 
     valid_statement = %{
@@ -42,7 +46,7 @@ defmodule Oli.Analytics.XAPI.SchemaValidatorTest do
           "http://oli.cmu.edu/extensions/section_id" => 5515,
           "http://oli.cmu.edu/extensions/project_id" => 2788,
           "http://oli.cmu.edu/extensions/publication_id" => 13771,
-          "http://oli.cmu.edu/extensions/page_id" => 416784
+          "http://oli.cmu.edu/extensions/page_id" => 416_784
         }
       },
       "timestamp" => "2025-10-17T22:22:11Z"
@@ -52,7 +56,10 @@ defmodule Oli.Analytics.XAPI.SchemaValidatorTest do
       valid_statement
       |> put_in(["verb", "id"], "http://adlnet.gov/expapi/verbs/completed")
       |> put_in(["object", "definition", "type"], "http://oli.cmu.edu/extensions/page_attempt")
-      |> update_in(["context", "extensions"], &Map.delete(&1, "http://oli.cmu.edu/extensions/page_id"))
+      |> update_in(
+        ["context", "extensions"],
+        &Map.delete(&1, "http://oli.cmu.edu/extensions/page_id")
+      )
 
     invalid_json = ~s({"actor":{"account":{"homePage":"proton.oli.cmu.edu","name":87969}})
 
