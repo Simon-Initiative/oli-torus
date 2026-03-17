@@ -30,38 +30,21 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
 
     steps:
-      - name: Download stored PR lockfile from S3
+      - name: Download stored lockfile from S3
         id: stored
         run: |
           set -euo pipefail
 
           aws --version
 
-          pr_number="${{ github.event.pull_request.number }}"
-          s3_key="privsignal/pr-${pr_number}/priv_signal.lockfile.json"
+          s3_key="privsignal/priv_signal.lockfile.json"
           s3_uri="s3://${S3_BUCKET}/${s3_key}"
           candidate_file="$(mktemp)"
-          err_file="$(mktemp)"
 
-          if aws s3api head-object \
-            --bucket "${S3_BUCKET}" \
-            --key "${s3_key}" \
-            --region "${AWS_REGION}" >/dev/null 2>"${err_file}"; then
-            aws s3 cp "${s3_uri}" "${candidate_file}" --region "${AWS_REGION}"
-            echo "found=true" >> "${GITHUB_OUTPUT}"
-            echo "candidate_path=${candidate_file}" >> "${GITHUB_OUTPUT}"
-            echo "s3_uri=${s3_uri}" >> "${GITHUB_OUTPUT}"
-          else
-            if grep -qiE 'Not Found|404|NoSuchKey' "${err_file}"; then
-              echo "No lockfile found in ${s3_uri}; skipping refresh."
-              echo "found=false" >> "${GITHUB_OUTPUT}"
-              exit 0
-            fi
-
-            echo "Failed to query ${s3_uri}."
-            cat "${err_file}"
-            exit 1
-          fi
+          aws s3 cp "${s3_uri}" "${candidate_file}" --region "${AWS_REGION}"
+          echo "found=true" >> "${GITHUB_OUTPUT}"
+          echo "candidate_path=${candidate_file}" >> "${GITHUB_OUTPUT}"
+          echo "s3_uri=${s3_uri}" >> "${GITHUB_OUTPUT}"
 
       - name: Commit lockfile to master via Contents REST API (if changed)
         if: ${{ steps.stored.outputs.found == 'true' }}

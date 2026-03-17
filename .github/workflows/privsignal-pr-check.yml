@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           aws --version
 
-          key="privsignal/pr-${{ github.event.pull_request.number }}/priv_signal.lockfile.json"
+          key="privsignal/priv_signal.lockfile.json"
           aws s3 cp \
             "tmp/privsignal/priv_signal.lockfile.json" \
             "s3://${S3_BUCKET}/${key}" \
