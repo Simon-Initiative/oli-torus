@@ -97,7 +97,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
 
   def render_type_column(_, item, _) do
     case item.unique_type do
-      "product" -> "Product"
+      "product" -> "Template"
       "project" -> "Project"
     end
   end
