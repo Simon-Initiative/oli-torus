@@ -27,6 +27,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: us-east-2
       S3_BUCKET: oli-torus-releases
+      GITHUB_TOKEN: ${{ github.token }}
 
     steps:
       - name: Download stored PR lockfile from S3
