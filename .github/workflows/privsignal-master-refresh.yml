@@ -69,10 +69,14 @@ jobs:
             const prNumber = Number(process.env.PR_NUMBER);
             const prHeadSha = process.env.PR_HEAD_SHA || "";
 
+            const normalizeRuns = (runs) =>
+              (Array.isArray(runs) ? runs : []).filter((run) => run && typeof run === "object");
+
             const matchesPr = (run) =>
+              !!run &&
               run.conclusion === "success" &&
               Array.isArray(run.pull_requests) &&
-              run.pull_requests.some((pr) => pr.number === prNumber);
+              run.pull_requests.some((pr) => pr && pr.number === prNumber);
 
             let candidateRuns = [];
 
@@ -87,7 +91,7 @@ jobs:
                 per_page: 100
               });
 
-              candidateRuns = (byHead.data.workflow_runs || []).filter(matchesPr);
+              candidateRuns = normalizeRuns(byHead?.data?.workflow_runs).filter(matchesPr);
             }
 
             if (candidateRuns.length === 0) {
@@ -104,7 +108,7 @@ jobs:
                 (response) => response.data.workflow_runs
               );
 
-              candidateRuns = allRuns.filter(matchesPr);
+              candidateRuns = normalizeRuns(allRuns).filter(matchesPr);
             }
 
             if (candidateRuns.length === 0) {
