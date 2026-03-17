@@ -1,0 +1,54 @@
+defmodule Oli.GenAI.Completions.FunctionTest do
+  use ExUnit.Case, async: true
+
+  alias Oli.GenAI.Completions.Function
+
+  def echo_arguments(arguments), do: arguments
+
+  test "trusted arguments override model supplied values" do
+    available_functions = [
+      %{
+        name: "echo_arguments",
+        full_name: "Elixir.Oli.GenAI.Completions.FunctionTest.echo_arguments",
+        trusted_arguments: %{"section_id" => 42, "current_user_id" => 7}
+      }
+    ]
+
+    assert {:ok, encoded_result} =
+             Function.call(available_functions, "echo_arguments", %{
+               "section_id" => 999,
+               "current_user_id" => 888,
+               "activity_attempt_guid" => "attempt-guid-1"
+             })
+
+    assert Jason.decode!(encoded_result) == %{
+             "section_id" => 42,
+             "current_user_id" => 7,
+             "activity_attempt_guid" => "attempt-guid-1"
+           }
+  end
+
+  test "malformed full_name returns invalid_function_name instead of raising" do
+    available_functions = [
+      %{
+        name: "echo_arguments",
+        full_name: "Elixir..echo_arguments"
+      }
+    ]
+
+    assert {:error, :invalid_function_name} =
+             Function.call(available_functions, "echo_arguments", %{})
+  end
+
+  test "non-map arguments return invalid_arguments instead of raising" do
+    available_functions = [
+      %{
+        name: "echo_arguments",
+        full_name: "Elixir.Oli.GenAI.Completions.FunctionTest.echo_arguments"
+      }
+    ]
+
+    assert {:error, :invalid_arguments} =
+             Function.call(available_functions, "echo_arguments", ["not-a-map"])
+  end
+end
