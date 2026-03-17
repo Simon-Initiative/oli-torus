@@ -7,6 +7,17 @@ It should aim toward a gradual consolidation model:
 - cross-feature primitives and shared feedback components can move into `design_tokens/`
 - feature-specific compositions stay close to their feature modules
 
+## Sections
+
+- Naming Direction
+- Source of Truth vs Consumption Layer
+- What Belongs in `design_tokens/`
+- What Should Stay in Feature Directories
+- Extraction Heuristic
+- Current Priority Areas
+- Figma Alignment
+- Output Expectation
+
 ## Naming Direction
 
 When proposing or creating shared UI homes, prefer `design_tokens` in the path name.

@@ -1,14 +1,14 @@
 ---
 name: implement_ui
-description: Convert a provided UI design source into an implementation-ready design brief that maps visual intent to Torus design tokens, icons, reusable components, and code targets. Use when a Jira ticket or developer provides Figma or another design reference and the team needs governed implementation guidance before coding. Supports full feature-spec mode and lightweight `spec_work` mode.
+description: Convert a provided UI design source into an implementation-ready design brief that maps visual intent to Torus design tokens, icons, reusable components, and code targets. Use when a Jira ticket or developer provides Figma or another design reference and the team needs governed implementation guidance before coding. Supports durable feature briefs and lightweight ticket-level briefs.
 examples:
   - "$implement_ui docs/exec-plans/current/epics/intelligent_dashboard/tile_chrome slice=section-chrome figma=https://figma.com/..."
   - "Use implement_ui for MER-5258; the Jira ticket has the Figma links"
-  - "Before implementing this UI tweak with spec_work, run implement_ui against this Figma link"
+  - "Before implementing this UI tweak with harness-work, run implement_ui against this Figma link"
 when_to_use:
   - "A feature or ticket has meaningful UI work and the visual source of truth is Figma or another design reference."
   - "The team needs to map design intent to existing tokens, icons, reusable components, and repo conventions before implementation."
-  - "A ticket is small enough for `spec_work`, but still needs design-system triage before coding."
+  - "A ticket is small enough for `harness-work`, but still needs design-system triage before coding."
 when_not_to_use:
   - "The work is backend-only or does not materially change the UI."
   - "There is no external design reference and local code inspection alone is sufficient."
@@ -25,6 +25,15 @@ Always load before running:
 - `references/target_organization.md`
 - `references/design_system_sources.md`
 - `assets/templates/ui_implementation_brief_template.md`
+
+Load when needed:
+
+- `references/icon_mapping.md`
+  - when the brief needs to map a new icon, verify whether an icon already exists, or recommend icon-system extension
+- `references/fidelity_rules.md`
+  - when the brief must describe static vs dynamic fidelity, overflow handling, or implementation constraints that affect layout matching
+- `references/responsive_validation.md`
+  - when the design includes breakpoint-specific behavior, dense dashboards, charts, stacked layouts, or any responsive ambiguity that should be called out before coding
 
 When running in feature mode, also read:
 
@@ -45,7 +54,25 @@ It produces an implementation-ready design brief that:
 - identifies gaps that need developer confirmation
 - recommends where code should live
 
-Use it as a bridge between design references and implementation skills such as `spec_develop` or `spec_work`.
+Use it as a bridge between design references and implementation skills such as `harness-develop` or `harness-work`.
+
+## Preferred Execution Context
+
+This skill can run in plain Codex mode.
+
+Prefer Tidewave when available for:
+
+- complex UI surfaces
+- responsive layouts
+- dashboard or chart-heavy views
+- work where visual fidelity is especially important
+
+Why:
+
+- Tidewave enables faster runtime inspection, viewport resizing, and visual verification against the design source.
+- In practice this often produces a stronger brief with fewer hidden assumptions than Codex-only execution.
+
+If Tidewave is not available, continue in Codex and record uncertainty more explicitly in `Open Questions / Requires Approval`.
 
 ## Modes
 
@@ -57,7 +84,7 @@ Choose one mode up front:
   - This mode is appropriate when the design materially affects planning or slice-level implementation.
 
 - `lightweight`
-  - Use for `spec_work` tickets or smaller UI changes.
+  - Use for `harness-work` tickets or smaller UI changes.
   - Produce the brief in chat by default.
   - Do not create a file unless the user explicitly asks to persist the brief.
 
@@ -94,7 +121,8 @@ If the request does not specify a mode:
    - icon system
    - existing reusable components or patterns
    - likely target modules/files
-   - for icons, prefer exact SVG extraction from Figma node assets over manual reconstruction
+   - whether the result should stay feature-local or be extracted to `design_tokens/`
+   - load conditional references when icon extraction, fidelity rules, or responsive behavior need deeper guidance
 
 5. Detect and record gaps.
    - unrecognized token usage
@@ -109,7 +137,7 @@ If the request does not specify a mode:
    - In `lightweight` mode, return the brief in chat unless the user explicitly requests persistence.
 
 7. End with a clear handoff.
-   - If implementation should follow, state whether the next skill should be `spec_develop` or `spec_work`.
+   - If implementation should follow, state whether the next skill should be `harness-develop` or `harness-work`.
    - Do not proceed to coding unless the user explicitly asks.
 
 ## Output Contract
@@ -127,33 +155,38 @@ Every brief must include:
 
 In `lightweight` mode, keep the same structure in chat unless the user asks for a shorter summary.
 
-## Hard Rules
+## Guardrails
 
-- Prefer existing design tokens over hardcoded colors or arbitrary utility values.
-- When translating Figma spacing/radius/sizing into Tailwind utilities, prefer native Tailwind utility classes first.
-  - Example: prefer `rounded-xl` over `rounded-[12px]` when they are equivalent.
-  - Only use arbitrary values like `rounded-[13px]`, `px-[13px]`, or `h-[37px]` when there is no reasonable native Tailwind utility that preserves the design intent.
-- If a color in the design does not map cleanly to an existing token, flag it and ask for approval before proposing implementation.
-- Prefer the existing icon systems:
-  - `OliWeb.Icons` for HEEx/LiveView
-  - `assets/src/components/misc/icons/Icons` for React/TS
-- Icon source priority is:
-  - first, find the icon in the Torus design-system icon catalog at `node-id=2:24`
-  - second, if it is not present there, inspect the feature-level Figma node
-  - third, for feature-level icons, use MCP asset extraction to fetch the exact SVG from the icon node or its vector-owning child node
-- When implementing or proposing a new icon from Figma, the default extraction method is:
-  - identify the exact icon node, not just a surrounding frame
-  - call Figma context/metadata tools on that node
-  - if the response includes an asset URL from `https://www.figma.com/api/mcp/asset/...`, fetch that asset and use the returned SVG as the source of truth
-  - if the selected node is a composite wrapper, recurse into the child node that owns the vector asset until you get the real icon SVG
-  - do not manually redraw or approximate a Figma icon when the design-system catalog or MCP asset flow can provide an SVG
-- Only fall back to manual SVG reconstruction when:
-  - the icon is not available in the design-system icon catalog
-  - the MCP asset flow does not expose an SVG for the node after checking the relevant child vector nodes
-  - and that limitation is called out explicitly in the brief or handoff
-- If an icon is missing, recommend extending the relevant icon system instead of introducing a local ad hoc icon.
-- Prefer existing reusable components and patterns before introducing new primitives.
-- If a repeated visual pattern suggests reuse, recommend extraction, but do not force a new shared component without justification.
-- Avoid unnecessary nested tags and wrapper elements. Do not reproduce Figma frame nesting literally unless that structure is required for semantics, layout, accessibility, or interactive state handling.
-- Do not invent missing design behavior. Escalate ambiguities.
-- Do not create or modify design tokens automatically. You may recommend additions, but approval is required before implementation.
+Follow the detailed rules in:
+
+- `references/guardrails.md`
+- `references/target_organization.md`
+- `references/design_system_sources.md`
+- `references/icon_mapping.md` when icon work is in scope
+- `references/fidelity_rules.md` when fidelity or overflow behavior must be specified
+- `references/responsive_validation.md` when responsive behavior must be assessed
+
+Non-negotiable rules:
+
+- Prefer existing design tokens, icons, and reusable components before proposing new ones.
+- If a token, icon, interaction, or responsive behavior is ambiguous, record it under `Open Questions / Requires Approval`.
+- Do not invent missing design behavior.
+- Do not create or modify design tokens automatically. Recommend additions only when necessary and only with explicit approval.
+
+## Validation
+
+Before finishing, verify that the brief:
+
+- uses the exact section structure from `assets/templates/ui_implementation_brief_template.md`
+- names the primary design source and the relevant Figma node ids or links
+- states the implementation surface explicitly
+- maps tokens, icons, reusable components, and file targets
+- records any unresolved ambiguity or approval-dependent decision in `Open Questions / Requires Approval`
+
+## Handoff Guidance
+
+If the user wants implementation next:
+
+- use `harness-develop` for planned feature execution
+- use `harness-work` for smaller ticket-level execution
+- tell the implementer to read the resulting brief before coding
