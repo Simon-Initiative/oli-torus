@@ -71,85 +71,29 @@ jobs:
           path: tmp/privsignal/priv_signal.lockfile.json
           if-no-files-found: error
 
-      - name: Store generated lockfile in repo (well-known location)
+      - name: Upload lockfile to S3 (well-known location)
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: actions/github-script@v7
         env:
-          STORE_BRANCH: privsignal-lockfiles
-          LOCKFILE_PATH: tmp/privsignal/priv_signal.lockfile.json
-        with:
-          script: |
-            const fs = require("fs");
-            const { owner, repo } = context.repo;
-            const prNumber = context.payload.pull_request.number;
-            const storeBranch = process.env.STORE_BRANCH;
-            const lockfilePath = process.env.LOCKFILE_PATH;
-            const targetPath = `.privsignal/pr-${prNumber}/priv_signal.lockfile.json`;
+          AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-2
+          S3_BUCKET: oli-torus-releases
+        run: |
+          set -euo pipefail
+          aws --version
 
-            const botName = "github-actions[bot]";
-            const botEmail = "41898282+github-actions[bot]@users.noreply.github.com";
-            const contentB64 = Buffer.from(fs.readFileSync(lockfilePath, "utf8"), "utf8").toString("base64");
+          key="privsignal/pr-${{ github.event.pull_request.number }}/priv_signal.lockfile.json"
+          aws s3 cp \
+            "tmp/privsignal/priv_signal.lockfile.json" \
+            "s3://${S3_BUCKET}/${key}" \
+            --region "${AWS_REGION}"
 
-            try {
-              await github.rest.git.getRef({
-                owner,
-                repo,
-                ref: `heads/${storeBranch}`
-              });
-            } catch (error) {
-              if (error.status !== 404) {
-                throw error;
-              }
-
-              const repoMeta = await github.rest.repos.get({ owner, repo });
-              const baseRef = await github.rest.git.getRef({
-                owner,
-                repo,
-                ref: `heads/${repoMeta.data.default_branch}`
-              });
-
-              await github.rest.git.createRef({
-                owner,
-                repo,
-                ref: `refs/heads/${storeBranch}`,
-                sha: baseRef.data.object.sha
-              });
-            }
-
-            let existingSha;
-            try {
-              const existing = await github.rest.repos.getContent({
-                owner,
-                repo,
-                path: targetPath,
-                ref: storeBranch
-              });
-
-              if (!Array.isArray(existing.data)) {
-                existingSha = existing.data.sha;
-              }
-            } catch (error) {
-              if (error.status !== 404) {
-                throw error;
-              }
-            }
-
-            await github.rest.repos.createOrUpdateFileContents({
-              owner,
-              repo,
-              path: targetPath,
-              branch: storeBranch,
-              message: `chore(privsignal): store lockfile for PR #${prNumber} [skip ci]`,
-              content: contentB64,
-              sha: existingSha,
-              committer: { name: botName, email: botEmail },
-              author: { name: botName, email: botEmail }
-            });
+          echo "Uploaded lockfile to s3://${S3_BUCKET}/${key}"
 
       - name: Note fork PR lockfile storage skip
         if: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
-          echo "Skipping repo lockfile storage for fork PR due token write restrictions."
+          echo "Skipping S3 lockfile upload for fork PR due secret restrictions."
 
       - name: Build PR summary outputs
         id: summary

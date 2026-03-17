@@ -19,48 +19,48 @@ concurrency:
 
 jobs:
   refresh-lockfile:
-    name: Refresh priv_signal.lockfile.json from stored PR lockfile
+    name: Refresh priv_signal.lockfile.json from S3
     if: ${{ github.event.pull_request.merged == true }}
     runs-on: ubuntu-latest
     env:
-      STORE_BRANCH: privsignal-lockfiles
+      AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-2
+      S3_BUCKET: oli-torus-releases
 
     steps:
-      - name: Read stored PR lockfile from well-known repo path
+      - name: Download stored PR lockfile from S3
         id: stored
         run: |
           set -euo pipefail
 
+          aws --version
+
           pr_number="${{ github.event.pull_request.number }}"
-          store_path=".privsignal/pr-${pr_number}/priv_signal.lockfile.json"
-          api_root="https://api.github.com/repos/${GITHUB_REPOSITORY}"
-
-          resp_json="$(mktemp)"
+          s3_key="privsignal/pr-${pr_number}/priv_signal.lockfile.json"
+          s3_uri="s3://${S3_BUCKET}/${s3_key}"
           candidate_file="$(mktemp)"
+          err_file="$(mktemp)"
 
-          http_code="$({
-            curl -sSL -o "${resp_json}" -w "%{http_code}" \
-              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-              -H "Accept: application/vnd.github+json" \
-              "${api_root}/contents/${store_path}?ref=${STORE_BRANCH}"
-          } || true)"
+          if aws s3api head-object \
+            --bucket "${S3_BUCKET}" \
+            --key "${s3_key}" \
+            --region "${AWS_REGION}" >/dev/null 2>"${err_file}"; then
+            aws s3 cp "${s3_uri}" "${candidate_file}" --region "${AWS_REGION}"
+            echo "found=true" >> "${GITHUB_OUTPUT}"
+            echo "candidate_path=${candidate_file}" >> "${GITHUB_OUTPUT}"
+            echo "s3_uri=${s3_uri}" >> "${GITHUB_OUTPUT}"
+          else
+            if grep -qiE 'Not Found|404|NoSuchKey' "${err_file}"; then
+              echo "No lockfile found in ${s3_uri}; skipping refresh."
+              echo "found=false" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
 
-          if [ "${http_code}" = "404" ]; then
-            echo "No stored lockfile found at ${STORE_BRANCH}:${store_path}; skipping refresh."
-            echo "found=false" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-
-          if [ "${http_code}" != "200" ]; then
-            echo "Failed to read stored lockfile (HTTP ${http_code})."
-            cat "${resp_json}"
+            echo "Failed to query ${s3_uri}."
+            cat "${err_file}"
             exit 1
           fi
-
-          jq -r '.content // ""' "${resp_json}" | tr -d '\n' | base64 --decode > "${candidate_file}"
-
-          echo "found=true" >> "${GITHUB_OUTPUT}"
-          echo "candidate_path=${candidate_file}" >> "${GITHUB_OUTPUT}"
 
       - name: Commit lockfile to master via Contents REST API (if changed)
         if: ${{ steps.stored.outputs.found == 'true' }}
