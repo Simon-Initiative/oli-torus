@@ -21,7 +21,10 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
              "FROM s3('s3://bucket/section/**/*.jsonl', 'AKIA_TEST', 'secret', 'JSONAsString', 'json String')"
 
     assert sql =~ "lower(hex(SHA256(json))) AS event_hash"
-    assert sql =~ "parseDateTime64BestEffortOrNull(nullIf(JSON_VALUE(json, '$.timestamp'), ''), 3) AS timestamp"
+
+    assert sql =~
+             "parseDateTime64BestEffortOrNull(nullIf(JSON_VALUE(json, '$.timestamp'), ''), 3) AS timestamp"
+
     refute sql =~ " AS event_id"
     refute sql =~ "JSONExtract(json, 'actor.account.name', 'Int64')"
     refute sql =~ "nullIf(JSON_VALUE(json, '$.statement.id'), '')"
