@@ -287,13 +287,8 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
   end
 
   defp json_value(path) when is_binary(path) do
-    statement_path = statement_json_path(path)
-
-    "coalesce(nullIf(JSON_VALUE(json, '#{path}'), ''), nullIf(JSON_VALUE(json, '#{statement_path}'), ''))"
+    "nullIf(JSON_VALUE(json, '#{path}'), '')"
   end
-
-  defp statement_json_path("$." <> rest), do: "$.statement." <> rest
-  defp statement_json_path(path), do: "$.statement." <> path
 
   defp escape(nil), do: ""
 

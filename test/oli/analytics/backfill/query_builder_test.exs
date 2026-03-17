@@ -21,9 +21,12 @@ defmodule Oli.Analytics.Backfill.QueryBuilderTest do
              "FROM s3('s3://bucket/section/**/*.jsonl', 'AKIA_TEST', 'secret', 'JSONAsString', 'json String')"
 
     assert sql =~ "cityHash64(json) AS event_hash"
-    assert sql =~ "coalesce(nullIf(JSON_VALUE(json, '$.id'), ''), nullIf(JSON_VALUE(json, '$.statement.id'), ''))"
-    assert sql =~ "coalesce(nullIf(JSON_VALUE(json, '$.timestamp'), ''), nullIf(JSON_VALUE(json, '$.statement.timestamp'), ''))"
+    assert sql =~ "coalesce(nullIf(JSON_VALUE(json, '$.id'), ''), nullIf(JSON_VALUE(json, '$.event_id'), ''), toString(generateUUIDv4())) AS event_id"
+    assert sql =~ "parseDateTime64BestEffortOrNull(nullIf(JSON_VALUE(json, '$.timestamp'), ''), 3) AS timestamp"
     refute sql =~ "JSONExtract(json, 'actor.account.name', 'Int64')"
+    refute sql =~ "nullIf(JSON_VALUE(json, '$.statement.id'), '')"
+    refute sql =~ "nullIf(JSON_VALUE(json, '$.statement.timestamp'), '')"
+    refute sql =~ "nullIf(JSON_VALUE(json, '$.statement.actor.account.name'), '')"
 
     assert sql =~
              ~r/rowNumberInAllBlocks\(\)\s+- min\(rowNumberInAllBlocks\(\)\) OVER \(PARTITION BY _path\)\s+\+ 1 AS source_line/
