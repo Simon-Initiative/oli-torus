@@ -120,7 +120,7 @@ _sqs_client = boto3.client("sqs") if _FAILURE_DLQ_URL else None
 # omitted so the server supplies those values automatically.
 DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "user_id",
-    "host_name",
+    "home_page",
     "section_id",
     "project_id",
     "publication_id",
@@ -629,7 +629,7 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
     if _CLICKHOUSE_TYPE_MAP is None:
         _CLICKHOUSE_TYPE_MAP = {
             "user_id": pa.string(),
-            "host_name": pa.string(),
+            "home_page": pa.string(),
             "section_id": pa.uint64(),
             "project_id": pa.uint64(),
             "publication_id": pa.uint64(),
@@ -707,17 +707,9 @@ def transform_xapi_statement(
     if not isinstance(user_id, str):
         user_id = str(user_id)
 
-    host_name = extensions.get("http://oli.cmu.edu/extensions/host_name")
-    if not host_name:
-        home_page = account.get("homePage")
-        if isinstance(home_page, str):
-            host_name = _extract_hostname(home_page)
-        if not host_name:
-            object_id = obj.get("id")
-            if isinstance(object_id, str):
-                host_name = _extract_hostname(object_id)
-    if host_name is not None and not isinstance(host_name, str):
-        host_name = str(host_name)
+    home_page = account.get("homePage")
+    if home_page is not None and not isinstance(home_page, str):
+        home_page = str(home_page)
 
     section_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/section_id"))
     project_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/project_id"))
@@ -784,7 +776,7 @@ def transform_xapi_statement(
 
     transformed: Dict[str, Any] = {
         "user_id": user_id,
-        "host_name": host_name or "",
+        "home_page": home_page or "",
         "section_id": section_id,
         "project_id": project_id,
         "publication_id": publication_id,

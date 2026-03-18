@@ -18,7 +18,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     """
     INSERT INTO #{target_table} (
         event_hash, event_version, source_file, source_etag, source_line, inserted_at,
-        user_id, host_name, section_id, project_id, publication_id,
+        user_id, home_page, section_id, project_id, publication_id,
         timestamp, event_type, page_id,
         content_element_id, video_url, video_time, video_length,
         video_progress, video_played_segments, video_play_time, video_seek_from,
@@ -44,11 +44,7 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           ''
         ) AS user_id,
 
-        coalesce(
-          #{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/host_name\"")},
-          #{json_value_or_null("$.actor.account.homePage")},
-          ''
-        ) AS host_name,
+        coalesce(#{json_value_or_null("$.actor.account.homePage")}, '') AS home_page,
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/section_id\"")}) AS section_id,
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/project_id\"")}) AS project_id,
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/publication_id\"")}) AS publication_id,
