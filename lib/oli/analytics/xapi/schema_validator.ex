@@ -117,8 +117,8 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
       |> File.stream!([], :line)
       |> Enum.with_index(1)
       |> Enum.reduce({0, 0, 0, 0, 0, []}, fn {line, line_number},
-                                          {total, valid, invalid_json, mismatch, stored_error_count,
-                                           errors} ->
+                                             {total, valid, invalid_json, mismatch,
+                                              stored_error_count, errors} ->
         trimmed = String.trim_trailing(line, "\n") |> String.trim_trailing("\r")
 
         case Jason.decode(trimmed) do
@@ -138,7 +138,8 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
                     details: format_schema_error_details(validation_errors)
                   })
 
-                {total + 1, valid, invalid_json, mismatch + 1, updated_error_count, updated_errors}
+                {total + 1, valid, invalid_json, mismatch + 1, updated_error_count,
+                 updated_errors}
             end
 
           {:error, error} ->
