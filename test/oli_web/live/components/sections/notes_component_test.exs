@@ -77,7 +77,11 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       %{product: product, pages_count: 2}
     end
 
-    test "renders with notes OFF (0 pages)", %{conn: conn, product: product, pages_count: pages_count} do
+    test "renders with notes OFF (0 pages)", %{
+      conn: conn,
+      product: product,
+      pages_count: pages_count
+    } do
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
           id: "notes-test",
@@ -95,7 +99,11 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       assert render(view) =~ "Notes enabled."
     end
 
-    test "renders with notes ON showing count", %{conn: conn, product: product, pages_count: pages_count} do
+    test "renders with notes ON showing count", %{
+      conn: conn,
+      product: product,
+      pages_count: pages_count
+    } do
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
           id: "notes-test",
@@ -113,7 +121,11 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       assert html =~ "page currently has"
     end
 
-    test "renders 'All X' when all pages have notes", %{conn: conn, product: product, pages_count: pages_count} do
+    test "renders 'All X' when all pages have notes", %{
+      conn: conn,
+      product: product,
+      pages_count: pages_count
+    } do
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
           id: "notes-test",
@@ -128,7 +140,11 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       assert html =~ "All #{pages_count}"
     end
 
-    test "toggle ON enables notes for all pages", %{conn: conn, product: product, pages_count: pages_count} do
+    test "toggle ON enables notes for all pages", %{
+      conn: conn,
+      product: product,
+      pages_count: pages_count
+    } do
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
           id: "notes-test",
@@ -150,7 +166,11 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       assert enabled_count == pages_count
     end
 
-    test "toggle OFF disables notes for all pages", %{conn: conn, product: product, pages_count: pages_count} do
+    test "toggle OFF disables notes for all pages", %{
+      conn: conn,
+      product: product,
+      pages_count: pages_count
+    } do
       # First enable notes for all pages
       Collaboration.enable_all_page_collab_spaces_for_section(
         product.slug,
@@ -181,7 +201,11 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       assert enabled_count == 0
     end
 
-    test "sends :notes_count_updated to parent on toggle ON", %{conn: conn, product: product, pages_count: pages_count} do
+    test "sends :notes_count_updated to parent on toggle ON", %{
+      conn: conn,
+      product: product,
+      pages_count: pages_count
+    } do
       {:ok, view, _html} =
         live_component_isolated(conn, NotesComponent, %{
           id: "notes-test",
@@ -210,7 +234,11 @@ defmodule OliWeb.Live.Components.Sections.NotesComponentTest do
       assert count == pages_count
     end
 
-    test "sends :notes_count_updated with 0 on toggle OFF", %{conn: conn, product: product, pages_count: pages_count} do
+    test "sends :notes_count_updated with 0 on toggle OFF", %{
+      conn: conn,
+      product: product,
+      pages_count: pages_count
+    } do
       # Enable notes first
       Collaboration.enable_all_page_collab_spaces_for_section(
         product.slug,

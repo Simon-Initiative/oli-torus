@@ -106,7 +106,11 @@ defmodule OliWeb.Sections.EditView do
       <Groups.render>
         <Group.render
           label="Settings"
-          description={if @is_blueprint, do: "Manage the template settings", else: "Manage the course section settings"}
+          description={
+            if @is_blueprint,
+              do: "Manage the template settings",
+              else: "Manage the course section settings"
+          }
         >
           <MainDetails.render
             form={@form}

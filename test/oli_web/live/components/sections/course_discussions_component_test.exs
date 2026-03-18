@@ -101,7 +101,11 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
       refute has_element?(view, "input[phx-click='toggle_anonymous_posting'][disabled]")
     end
 
-    test "toggle discussions ON persists to database", %{conn: conn, product: product, root_sr: root_sr} do
+    test "toggle discussions ON persists to database", %{
+      conn: conn,
+      product: product,
+      root_sr: root_sr
+    } do
       {:ok, view, _html} =
         live_component_isolated(conn, CourseDiscussionsComponent, %{
           id: "disc-test",
@@ -125,7 +129,11 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
       assert updated_sr.collab_space_config.status == :enabled
     end
 
-    test "toggle discussions OFF persists to database", %{conn: conn, product: product, root_sr: root_sr} do
+    test "toggle discussions OFF persists to database", %{
+      conn: conn,
+      product: product,
+      root_sr: root_sr
+    } do
       # First enable discussions
       config = %Oli.Resources.Collaboration.CollabSpaceConfig{status: :enabled}
 
@@ -158,7 +166,11 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
       assert db_sr.collab_space_config.status == :disabled
     end
 
-    test "toggle auto_accept persists to database", %{conn: conn, product: product, root_sr: root_sr} do
+    test "toggle auto_accept persists to database", %{
+      conn: conn,
+      product: product,
+      root_sr: root_sr
+    } do
       config = %Oli.Resources.Collaboration.CollabSpaceConfig{
         status: :enabled,
         auto_accept: false,
@@ -184,7 +196,11 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponentTest do
       assert db_sr.collab_space_config.auto_accept == true
     end
 
-    test "toggle anonymous_posting persists to database", %{conn: conn, product: product, root_sr: root_sr} do
+    test "toggle anonymous_posting persists to database", %{
+      conn: conn,
+      product: product,
+      root_sr: root_sr
+    } do
       config = %Oli.Resources.Collaboration.CollabSpaceConfig{
         status: :enabled,
         auto_accept: false,

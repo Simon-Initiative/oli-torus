@@ -91,7 +91,11 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
   # ── Event Handlers ──
 
   @impl true
-  def handle_event("toggle_discussions", _params, %{assigns: %{root_section_resource: nil}} = socket) do
+  def handle_event(
+        "toggle_discussions",
+        _params,
+        %{assigns: %{root_section_resource: nil}} = socket
+      ) do
     send(self(), {:flash, :error, "Cannot configure discussions: no root container found"})
     {:noreply, socket}
   end

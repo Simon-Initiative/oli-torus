@@ -495,9 +495,7 @@ defmodule OliWeb.Router do
         as: :product_schedule
       )
 
-      live("/products/:section_slug/edit", Sections.EditView, :product_edit,
-        as: :product_edit
-      )
+      live("/products/:section_slug/edit", Sections.EditView, :product_edit, as: :product_edit)
     end
 
     get(
