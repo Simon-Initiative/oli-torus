@@ -40,11 +40,10 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
 
         coalesce(
           #{json_value_or_null("$.actor.account.name")},
-          #{json_value_or_null("$.actor.mbox")},
-          ''
+          #{json_value_or_null("$.actor.mbox")}
         ) AS user_id,
 
-        coalesce(#{json_value_or_null("$.actor.account.homePage")}, '') AS home_page,
+        #{json_value_or_null("$.actor.account.homePage")} AS home_page,
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/section_id\"")}) AS section_id,
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/project_id\"")}) AS project_id,
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/publication_id\"")}) AS publication_id,

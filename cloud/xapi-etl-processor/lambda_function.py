@@ -696,15 +696,17 @@ def transform_xapi_statement(
     object_extensions = object_definition.get("extensions", {}) or {}
 
     timestamp_raw = statement.get("timestamp")
-    if not isinstance(timestamp_raw, str) or not timestamp_raw.strip():
-        timestamp_raw = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    if isinstance(timestamp_raw, str):
+        timestamp_raw = timestamp_raw.strip() or None
+    else:
+        timestamp_raw = None
 
     verb_id = verb.get("id", "") or ""
     object_type = object_definition.get("type", "") or ""
     event_type = _determine_event_type(verb_id, object_type)
 
-    user_id = account.get("name") or actor.get("mbox") or ""
-    if not isinstance(user_id, str):
+    user_id = account.get("name") or actor.get("mbox")
+    if user_id is not None and not isinstance(user_id, str):
         user_id = str(user_id)
 
     home_page = account.get("homePage")
@@ -776,7 +778,7 @@ def transform_xapi_statement(
 
     transformed: Dict[str, Any] = {
         "user_id": user_id,
-        "home_page": home_page or "",
+        "home_page": home_page,
         "section_id": section_id,
         "project_id": project_id,
         "publication_id": publication_id,
