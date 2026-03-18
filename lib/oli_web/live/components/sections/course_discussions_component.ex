@@ -23,6 +23,7 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
   use OliWeb, :live_component
 
   alias Oli.Delivery.Sections
+  alias Oli.Repo
 
   @impl true
   def update(assigns, socket) do
@@ -113,22 +114,29 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
       |> config_to_map()
       |> Map.put(:status, new_status)
 
-    with {:ok, updated_sr} <-
-           Sections.update_section_resource(root_sr, %{collab_space_config: new_config_attrs}),
-         {:ok, updated_section} <-
-           Sections.update_section(section, %{contains_discussions: contains}) do
-      send(self(), {:flash, :info, "Course discussions #{new_status}"})
-      send(self(), {:section_updated, updated_section})
-      send(self(), {:collab_space_config_updated, updated_sr.collab_space_config, updated_sr})
+    case Repo.transact(fn ->
+           with {:ok, updated_sr} <-
+                  Sections.update_section_resource(root_sr, %{
+                    collab_space_config: new_config_attrs
+                  }),
+                {:ok, updated_section} <-
+                  Sections.update_section(section, %{contains_discussions: contains}) do
+             {:ok, {updated_sr, updated_section}}
+           end
+         end) do
+      {:ok, {updated_sr, updated_section}} ->
+        send(self(), {:flash, :info, "Course discussions #{new_status}"})
+        send(self(), {:section_updated, updated_section})
+        send(self(), {:collab_space_config_updated, updated_sr.collab_space_config, updated_sr})
 
-      {:noreply,
-       socket
-       |> assign(:root_section_resource, updated_sr)
-       |> assign(:collab_space_config, updated_sr.collab_space_config)
-       |> assign(:collab_space_status, new_status)
-       |> assign(:section, updated_section)}
-    else
-      {:error, _changeset} ->
+        {:noreply,
+         socket
+         |> assign(:root_section_resource, updated_sr)
+         |> assign(:collab_space_config, updated_sr.collab_space_config)
+         |> assign(:collab_space_status, new_status)
+         |> assign(:section, updated_section)}
+
+      {:error, _reason} ->
         send(self(), {:flash, :error, "Failed to update course discussions"})
         {:noreply, socket}
     end
