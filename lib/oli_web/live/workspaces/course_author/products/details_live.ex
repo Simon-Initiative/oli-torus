@@ -234,6 +234,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             is_admin={@is_admin}
             base_project={@base_project}
             has_payment_codes={Paywall.has_payment_codes?(@product.id)}
+            usage_path={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/usage"
+            }
           />
         </div>
       </div>

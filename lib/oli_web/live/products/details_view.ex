@@ -231,6 +231,7 @@ defmodule OliWeb.Products.DetailsView do
           is_admin={@is_admin}
           base_project={@base_project}
           has_payment_codes={Paywall.has_payment_codes?(@product.id)}
+          usage_path={~p"/authoring/products/#{@product.slug}/usage"}
         />
       </Overview.section>
 

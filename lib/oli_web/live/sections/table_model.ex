@@ -83,7 +83,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
       },
       %ColumnSpec{
         name: :base,
-        label: "Base Project/Product",
+        label: "Base Project/Template",
         td_class: default_td_class,
         th_class: default_th_class,
         render_fn: &custom_render/3
