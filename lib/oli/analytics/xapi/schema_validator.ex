@@ -111,23 +111,25 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
   defp validate_file(path, schema, opts) do
     max_errors = Keyword.get(opts, :max_errors, 20)
 
-    {line_count, valid_count, invalid_json_count, schema_mismatch_count, errors} =
+    {line_count, valid_count, invalid_json_count, schema_mismatch_count, _stored_error_count,
+     errors} =
       path
       |> File.stream!([], :line)
       |> Enum.with_index(1)
-      |> Enum.reduce({0, 0, 0, 0, []}, fn {line, line_number},
-                                          {total, valid, invalid_json, mismatch, errors} ->
+      |> Enum.reduce({0, 0, 0, 0, 0, []}, fn {line, line_number},
+                                          {total, valid, invalid_json, mismatch, stored_error_count,
+                                           errors} ->
         trimmed = String.trim_trailing(line, "\n") |> String.trim_trailing("\r")
 
         case Jason.decode(trimmed) do
           {:ok, decoded} ->
             case ExJsonSchema.Validator.validate(schema, decoded) do
               :ok ->
-                {total + 1, valid + 1, invalid_json, mismatch, errors}
+                {total + 1, valid + 1, invalid_json, mismatch, stored_error_count, errors}
 
               {:error, validation_errors} ->
-                updated_errors =
-                  maybe_append_error(errors, max_errors, %{
+                {updated_error_count, updated_errors} =
+                  maybe_append_error(stored_error_count, errors, max_errors, %{
                     path: path,
                     line: line_number,
                     classification: :schema_mismatch,
@@ -136,12 +138,12 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
                     details: format_schema_error_details(validation_errors)
                   })
 
-                {total + 1, valid, invalid_json, mismatch + 1, updated_errors}
+                {total + 1, valid, invalid_json, mismatch + 1, updated_error_count, updated_errors}
             end
 
           {:error, error} ->
-            updated_errors =
-              maybe_append_error(errors, max_errors, %{
+            {updated_error_count, updated_errors} =
+              maybe_append_error(stored_error_count, errors, max_errors, %{
                 path: path,
                 line: line_number,
                 classification: :invalid_json,
@@ -150,7 +152,7 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
                 details: []
               })
 
-            {total + 1, valid, invalid_json + 1, mismatch, updated_errors}
+            {total + 1, valid, invalid_json + 1, mismatch, updated_error_count, updated_errors}
         end
       end)
 
@@ -160,14 +162,16 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
       valid_lines: valid_count,
       invalid_json_lines: invalid_json_count,
       schema_mismatch_lines: schema_mismatch_count,
-      errors: errors
+      errors: Enum.reverse(errors)
     }
   end
 
-  defp maybe_append_error(errors, max_errors, error) when length(errors) < max_errors,
-    do: errors ++ [error]
+  defp maybe_append_error(stored_error_count, errors, max_errors, error)
+       when stored_error_count < max_errors,
+       do: {stored_error_count + 1, [error | errors]}
 
-  defp maybe_append_error(errors, _max_errors, _error), do: errors
+  defp maybe_append_error(stored_error_count, errors, _max_errors, _error),
+    do: {stored_error_count, errors}
 
   defp format_schema_errors(errors) when is_list(errors) do
     errors
