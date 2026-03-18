@@ -243,7 +243,13 @@ defmodule Oli.MixProject do
       "test.ecto.reset": ["ecto.reset"],
 
       # resets the database and runs the test suite
-      test: ["ecto.drop --quiet", "ecto.create --quiet", "ecto.migrate --quiet", "run priv/repo/seeds.exs", "test"],
+      test: [
+        "ecto.drop --quiet",
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        "run priv/repo/seeds.exs",
+        "test"
+      ],
 
       # runs the test suite and watches for changes
       "test.watch": ["test.watch --seed 0 --max-failures 1 --include pending --trace"],
