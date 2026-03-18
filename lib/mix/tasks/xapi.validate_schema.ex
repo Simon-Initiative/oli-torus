@@ -41,6 +41,7 @@ defmodule Mix.Tasks.Xapi.ValidateSchema do
   end
 
   defp validate(paths, opts) do
+    opts = normalize_validator_opts(opts)
     trace? = Keyword.get(opts, :trace, false)
     progress_callback = build_progress_callback(trace?)
 
@@ -61,6 +62,18 @@ defmodule Mix.Tasks.Xapi.ValidateSchema do
 
       {:error, message} ->
         Mix.raise(message)
+    end
+  end
+
+  defp normalize_validator_opts(opts) do
+    case Keyword.fetch(opts, :schema) do
+      {:ok, schema_path} ->
+        opts
+        |> Keyword.delete(:schema)
+        |> Keyword.put(:schema_path, schema_path)
+
+      :error ->
+        opts
     end
   end
 
