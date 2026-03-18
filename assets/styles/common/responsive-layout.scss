@@ -338,7 +338,7 @@ janus-input-number .unitsLabel {
 .responsive-layout-section .content,
 .responsive-layout-section .advance-authoring-responsive-layout {
   width: 100vw;
-  max-width: 1200px;
+  max-width: var(--responsive-max-width, 1200px);
   min-width: 350px;
 }
 .checkContainer {
@@ -351,7 +351,7 @@ janus-input-number .unitsLabel {
   left: 120px;
 }
 .checkContainer.rowRestriction.columnRestriction {
-  max-width: 1200px;
+  max-width: var(--responsive-max-width, 1200px);
   width: 100vw !important;
 }
 @media (max-width: 600px) {
