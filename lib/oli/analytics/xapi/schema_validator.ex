@@ -3,7 +3,7 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
   Validates JSONL xAPI statement files against the Torus xAPI reference schema.
   """
 
-  @default_schema_path "priv/schemas/xapi/v0-0-1/statement.schema.json"
+  @default_schema_path "priv/schemas/xapi/v0-1-0/statement.schema.json"
 
   @type error_entry :: %{
           path: String.t(),
