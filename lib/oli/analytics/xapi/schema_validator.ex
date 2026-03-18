@@ -203,10 +203,15 @@ defmodule Oli.Analytics.XAPI.SchemaValidator do
   defp format_schema_error(error), do: inspect(error)
 
   defp line_preview(line) when is_binary(line) do
-    line
-    |> String.replace("\n", "\\n")
-    |> String.replace("\r", "\\r")
-    |> String.slice(0, 300)
+    escaped =
+      line
+      |> String.replace("\n", "\\n")
+      |> String.replace("\r", "\\r")
+
+    case String.length(escaped) > 300 do
+      true -> String.slice(escaped, 0, 300) <> "..."
+      false -> escaped
+    end
   end
 
   defp summarize(files) do
