@@ -30,7 +30,7 @@ defmodule Oli.InstructorDashboard.Prototype.Scope do
 
   def default_filters do
     %{
-      completion_threshold: 80,
+      completion_threshold: 100,
       progress_bin_size: 10,
       student_support_rules: %{
         struggling: %{any: [{:progress, :lt, 40}, {:proficiency, :lt, 40}], all: []},
