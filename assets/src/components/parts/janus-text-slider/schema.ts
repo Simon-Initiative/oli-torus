@@ -111,6 +111,10 @@ export const simpleUISchema = {
 };
 
 export const schema: JSONSchema7Object = {
+  customCssClass: {
+    title: 'Custom CSS Class',
+    type: 'string',
+  },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
@@ -194,4 +198,5 @@ export const createSchema = (): Partial<SliderTextModel> => ({
   snapInterval: 1,
   label: 'Slider (Text)',
   showTicks: true,
+  customCssClass: '',
 });
