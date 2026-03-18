@@ -44,6 +44,28 @@ requirements:
     status: proposed
     verification_method: automated
     proofs: []
+- id: FR-005
+  title: When preview is launched by an authorized author/admin without a currently
+    logged in user account, system SHALL create or reuse the section's singleton
+    hidden instructor account and use that account for preview access.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-008
+    title: Given an authorized author/admin with no current user session, when they
+      click Preview for a section that has no hidden instructor account, then exactly
+      one hidden instructor account is created for that section, enrolled as an instructor,
+      and preview launch succeeds using that hidden account.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-009
+    title: Given an authorized author/admin with no current user session, when they
+      click Preview for a section that already has a hidden instructor account, then
+      that existing hidden instructor account is reused, no second hidden instructor
+      is created for the section, and preview launch succeeds.
+    status: proposed
+    verification_method: automated
+    proofs: []
 - id: FR-004
   title: System SHALL preserve the user's existing author/admin identity and permissions
     in authoring while enabling student-view launch context for preview.

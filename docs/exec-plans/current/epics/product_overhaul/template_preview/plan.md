@@ -1,11 +1,11 @@
 # Template Preview — Delivery Plan
 
 Scope and guardrails reference:
-- PRD: `docs/epics/product_overhaul/template_preview/prd.md`
-- FDD: `docs/epics/product_overhaul/template_preview/fdd.md`
+- PRD: `docs/exec-plans/current/epics/product_overhaul/template_preview/prd.md`
+- FDD: `docs/exec-plans/current/epics/product_overhaul/template_preview/fdd.md`
 
 ## Scope
-Deliver template preview from Template Overview by reusing canonical student delivery routes. The flow must authorize template access, ensure idempotent learner enrollment for the acting user, and open `/sections/:section_slug` in a new tab with deterministic error handling and telemetry.
+Deliver template preview from Template Overview by reusing canonical section delivery routes. The flow must authorize template access, ensure idempotent learner enrollment for the acting user when `current_user` exists, create or reuse the section-scoped singleton hidden instructor fallback when `current_user` is absent, and open the resolved section delivery destination in a new tab with deterministic error handling and telemetry.
 
 ## Non-Functional Guardrails
 - Preview launch-preparation latency target: p95 <= 700ms under normal authoring load.
@@ -16,17 +16,19 @@ Deliver template preview from Template Overview by reusing canonical student del
 - Rollout posture: no feature flag; release only after regression and operational gates pass.
 
 ## Clarifications & Default Assumptions
-- `current_user` is available for template authors/admins in the Template Overview LiveView session; if absent, flow returns deterministic `:missing_delivery_identity` without DB writes.
+- When `current_user` is available for template authors/admins in the Template Overview LiveView session, preview uses the learner-enrollment path.
+- When `current_user` is absent but the preview request is authorized by `current_author`, preview falls back to the section-scoped singleton hidden instructor model used for admin section access.
 - V1 launch destination is always canonical student home (`/sections/:section_slug`) and does not deep-link to previously visited pages.
 - Browser popup-blocks are treated as client launch failures; backend enrollment work is not retried solely because popup dispatch failed.
 - Existing enrollment uniqueness constraints (`enrollments.user_id+section_id` and enrollment-role uniqueness) are present in all deployed environments.
+- Existing hidden instructor behavior (`Sections.fetch_hidden_instructor/1`) is available to provide singleton-per-section fallback identity semantics.
 
 ## Requirements Traceability
-- Source of truth: `docs/epics/product_overhaul/template_preview/requirements.yml`
+- Source of truth: `docs/exec-plans/current/epics/product_overhaul/template_preview/requirements.yml`
 - Plan verification command:
-  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/template_preview --action verify_plan`
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/product_overhaul/template_preview --action verify_plan`
 - Stage gate command:
-  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/template_preview --action master_validate --stage plan_present`
+  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/product_overhaul/template_preview --action master_validate --stage plan_present`
 
 ## Phase 1: Entry Point, Authorization, and UX Wiring
 - Goal: Add a Preview control in Template Overview with strict authorization-gated visibility and accessible in-flight/error states.
@@ -52,21 +54,23 @@ Deliver template preview from Template Overview by reusing canonical student del
   - i18n copy additions and a11y polish can proceed in parallel with test-writing because they touch UI strings/templates without altering core backend behavior.
 
 ## Phase 2: Backend Launch Preparation Service and Enrollment Idempotency
-- Goal: Implement deterministic `prepare_launch` orchestration with tenant-safe section validation and idempotent student enrollment ensure.
+- Goal: Implement deterministic `prepare_launch` orchestration with tenant-safe section validation, idempotent student enrollment ensure, and hidden-instructor fallback for no-`current_user` launches.
 - Tasks:
-  - [ ] Implement `Oli.Delivery.TemplatePreview.prepare_launch/3` with typed outcomes (`{:ok, %{section_slug, enrollment_outcome}} | {:error, reason}`).
+  - [ ] Implement `Oli.Delivery.TemplatePreview.prepare_launch/3` with typed outcomes covering both learner-enrollment and hidden-instructor fallback launch identities.
   - [ ] Add/extend `Oli.Delivery.Sections.ensure_student_enrollment/2` for create/reuse/reactivate semantics inside a transaction.
+  - [ ] Add/extend hidden-instructor ensure/reuse helper(s) so no-`current_user` preview launches create or reuse exactly one hidden instructor per section.
   - [ ] Enforce tenant and section-type checks before enrollment writes; reject invalid/unavailable sections early.
   - [ ] Ensure role-association upsert uses conflict-safe semantics to prevent duplicate role rows.
-  - [ ] Return launch data only after successful enrollment ensure; never construct router URLs inside delivery context.
+  - [ ] Return launch data only after successful learner-enrollment or hidden-instructor ensure; never construct router URLs inside delivery context.
 - Testing Tasks:
-  - [ ] Add unit tests for `TemplatePreview.prepare_launch/3` success, unauthorized, section unavailable, and missing identity cases.
+  - [ ] Add unit tests for `TemplatePreview.prepare_launch/3` success, unauthorized, section unavailable, learner-enrollment, hidden-instructor create/reuse, and missing identity cases.
   - [ ] Add enrollment helper tests covering create, reuse, suspended-to-enrolled reactivation, and duplicate-call idempotency.
-  - [ ] Add concurrency-focused regression test proving repeated preview requests do not create duplicate enrollment/role rows.
+  - [ ] Add hidden-instructor tests covering singleton create vs reuse semantics per section.
+  - [ ] Add concurrency-focused regression test proving repeated preview requests do not create duplicate enrollment/role rows or multiple hidden instructor users for the same section.
   - [ ] Command(s): `mix test test/oli/delivery/template_preview_test.exs test/oli/delivery/sections_test.exs`
 - Definition of Done:
   - Backend service returns deterministic typed outcomes for all expected branches.
-  - Enrollment idempotency and transactional integrity are validated by automated tests.
+  - Enrollment idempotency, hidden-instructor singleton behavior, and transactional integrity are validated by automated tests.
   - Tenant/authz preconditions are enforced before mutation paths.
 - Gate:
   - All Phase 2 tests pass with no duplicate-enrollment regressions under repeated invocations.
@@ -76,21 +80,21 @@ Deliver template preview from Template Overview by reusing canonical student del
   - Service-level tests and enrollment helper implementation can run in parallel once interface contract is agreed, because one validates orchestration boundaries while the other focuses persistence semantics.
 
 ## Phase 3: LiveView Launch Integration and Failure UX Completion
-- Goal: Connect LiveView preview event to backend service and open canonical student home in a new tab with robust fallback/error behavior.
+- Goal: Connect LiveView preview event to backend service and open the correct section delivery destination in a new tab with robust fallback/error behavior.
 - Tasks:
   - [ ] Wire `"template_preview"` event flow to call `TemplatePreview.prepare_launch/3` and translate outcomes to UI state.
-  - [ ] Build launch path in LiveView with canonical router path (`~p"/sections/#{section_slug}"`) and trigger client new-tab dispatch.
+  - [ ] Build launch path in LiveView with a server handoff/redirect route that can establish hidden-instructor preview sessions when needed, then trigger client new-tab dispatch.
   - [ ] Ensure no blank-window behavior on backend error by only dispatching launch after successful preparation.
   - [ ] Provide deterministic popup-block/client-launch failure messaging with manual fallback link behavior.
   - [ ] Confirm originating authoring tab retains context and recovers action state after launch attempt.
 - Testing Tasks:
-  - [ ] Add/extend LiveView integration tests for first-launch (create enrollment), repeat-launch (reuse), and failure flows.
-  - [ ] Add tests ensuring canonical destination path generation and no launch dispatch on service error.
+  - [ ] Add/extend LiveView integration tests for first-launch learner enrollment creation, repeat-launch learner reuse, hidden-instructor create/reuse fallback, and failure flows.
+  - [ ] Add tests ensuring handoff path generation and no launch dispatch on service error.
   - [ ] Command(s): `mix test test/oli_web/live/workspaces/course_author/products/details_live_test.exs`
 - Definition of Done:
-  - Authorized preview clicks open canonical student home on success.
+  - Authorized preview clicks open the correct section delivery destination on success.
   - Failure flows show deterministic feedback and avoid duplicate writes/blank launch behavior.
-  - Integration tests validate create vs reuse outcomes and launch path correctness.
+  - Integration tests validate learner create vs reuse outcomes, hidden-instructor create vs reuse outcomes, and launch path correctness.
 - Gate:
   - End-to-end preview flow works in LiveView tests for both happy and failure paths.
 - Dependencies:
@@ -101,14 +105,14 @@ Deliver template preview from Template Overview by reusing canonical student del
 ## Phase 4: Observability, Performance Verification, and Operational Hardening
 - Goal: Add telemetry/AppSignal visibility and prove non-functional targets for reliability, latency, and secure metadata.
 - Tasks:
-  - [ ] Emit telemetry events for requested, enrollment ensured (`created|reused`), launch succeeded, and launch failed.
+  - [ ] Emit telemetry events for requested, learner enrollment ensured (`created|reused`), hidden instructor ensured (`created|reused`), launch succeeded, and launch failed.
   - [ ] Add AppSignal tags/labels for `template_preview` outcome categories and latency buckets.
   - [ ] Ensure metadata uses IDs/category values only (no sensitive payload logging).
   - [ ] Add timing instrumentation around prepare-launch path and verify p95 against <= 700ms target in representative environment.
   - [ ] Document alert thresholds and release monitoring checks for failure-rate and latency regressions.
 - Testing Tasks:
   - [ ] Add telemetry tests asserting event emission sequence and required metadata fields.
-  - [ ] Add regression test for failure telemetry categorization without PII-bearing payload values.
+  - [ ] Add regression tests for learner-vs-hidden-instructor outcome categorization and failure telemetry without PII-bearing payload values.
   - [ ] Run focused suites plus broad regression sweep.
   - [ ] Command(s): `mix test test/oli/delivery/template_preview_test.exs test/oli_web/live/workspaces/course_author/products/details_live_test.exs && mix test`
 - Definition of Done:
@@ -126,10 +130,10 @@ Deliver template preview from Template Overview by reusing canonical student del
 - Goal: Complete release gate with full regression confidence, documentation alignment, and rollback posture.
 - Tasks:
   - [ ] Run full automated regression and fix any preview-related breakages before merge.
-  - [ ] Execute manual QA matrix from PRD: first launch create, repeat launch reuse, unauthorized denial, keyboard/focus behavior, popup-block fallback.
+  - [ ] Execute manual QA matrix from PRD: first launch create, repeat launch reuse, hidden-instructor fallback create/reuse, unauthorized denial, keyboard/focus behavior, popup-block fallback.
   - [ ] Update feature documentation/changelog notes for template preview behavior and known limitations.
   - [ ] Confirm rollback posture: additive code-path changes only, no schema migrations, revert-by-deploy available.
-  - [ ] Capture final acceptance traceability for FR-001..FR-008 and AC-001..AC-007.
+  - [ ] Capture final acceptance traceability for FR-001..FR-005, FR-007..FR-008 and AC-001..AC-009.
 - Testing Tasks:
   - [ ] Run full backend suite and targeted UI regressions used by template overview flows.
   - [ ] Command(s): `mix test`
@@ -153,7 +157,10 @@ Deliver template preview from Template Overview by reusing canonical student del
 
 ## Phase Gate Summary
 - Gate A (post Phase 1): Authorization-gated Preview UI/event behavior verified; safe to proceed with backend orchestration.
-- Gate B (post Phase 2): Idempotent enrollment ensure and tenant-safe launch preparation validated.
+- Gate B (post Phase 2): Idempotent enrollment ensure, hidden-instructor singleton fallback, and tenant-safe launch preparation validated.
 - Gate C (post Phase 3): End-to-end launch and deterministic failure UX proven in integration tests.
 - Gate D (post Phase 4): Observability, performance, and security-metadata checks meet non-functional requirements.
 - Gate E (post Phase 5): Full regression, documentation, and acceptance sign-off complete for release.
+
+## Decision Log
+- 2026-03-18: Replaced the prior missing-`current_user` failure assumption with a required hidden-instructor fallback. The plan now treats no-user preview as a singleton-per-section hidden instructor create/reuse path that must be covered in orchestration, launch handoff, telemetry, and QA.
