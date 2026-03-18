@@ -1,5 +1,5 @@
-import '@testing-library/jest-dom';
 import React from 'react';
+import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import ActionTriggerEditor from '../../../src/apps/authoring/components/AdaptivityEditor/ActionTriggerEditor';
 import { processResults } from '../../../src/apps/delivery/layouts/deck/DeckLayoutFooter';

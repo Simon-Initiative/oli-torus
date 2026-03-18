@@ -14,10 +14,10 @@ import {
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { clone } from 'utils/common';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import { AIIcon } from '../../../../components/misc/AIIcon';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectAllowTriggers, selectCurrentRule } from '../../../authoring/store/app/slice';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
-import { AIIcon } from '../../../../components/misc/AIIcon';
 import {
   findInSequence,
   getIsBank,

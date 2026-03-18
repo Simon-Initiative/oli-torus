@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
-import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
-import { TriggerAction, TriggerActionParams } from 'apps/authoring/types';
 import { TriggerPromptEditor } from 'components/editing/elements/trigger/TriggerEditor';
 import { AIIcon } from 'components/misc/AIIcon';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
+import { TriggerAction, TriggerActionParams } from 'apps/authoring/types';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 interface ActionTriggerEditorProps {
@@ -19,7 +19,11 @@ const promptSamples = [
   'Coach the student through the next best step, using the current trap state as context.',
 ] as const;
 
-const ActionTriggerEditor: React.FC<ActionTriggerEditorProps> = ({ action, onChange, onDelete }) => {
+const ActionTriggerEditor: React.FC<ActionTriggerEditorProps> = ({
+  action,
+  onChange,
+  onDelete,
+}) => {
   const dispatch = useDispatch();
   const [prompt, setPrompt] = useState(action.params.prompt || '');
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
