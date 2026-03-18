@@ -502,10 +502,11 @@ defmodule OliWeb.Api.AttemptController do
            datashop_session_id
          ) do
       {:ok, evaluations} ->
-        maybe_fire_trigger(
+        maybe_fire_activity_trigger(
           section_slug,
-          Plug.Conn.get_session(conn, :current_user_id),
-          evaluations
+          current_user_id(conn),
+          evaluations,
+          activity_attempt_guid
         )
 
         json(conn, %{"type" => "success", "actions" => evaluations})
@@ -544,6 +545,40 @@ defmodule OliWeb.Api.AttemptController do
   end
 
   defp maybe_fire_trigger(_section_slug, _user_id, _other), do: :ok
+
+  defp maybe_fire_activity_trigger(section_slug, user_id, evaluations, activity_attempt_guid)
+       when is_map(evaluations) do
+    try do
+      with %{resource_attempt_id: resource_attempt_id} <-
+             Attempts.get_activity_attempt_by(attempt_guid: activity_attempt_guid),
+           %{resource_access_id: resource_access_id} <-
+             Attempts.get_resource_attempt_by(id: resource_attempt_id),
+           %{resource_id: page_id} <- Attempts.get_resource_access(resource_access_id),
+           %Trigger{} = trigger <-
+             Triggers.check_for_trap_state_trigger(evaluations, %{
+               activity_attempt_guid: activity_attempt_guid,
+               page_id: page_id
+             }) do
+        maybe_fire_trigger(section_slug, user_id, trigger)
+      else
+        _ -> :ok
+      end
+    rescue
+      e ->
+        Logger.error("Could not fire adaptive trap-state trigger: #{inspect(e)}")
+        :ok
+    end
+  end
+
+  defp maybe_fire_activity_trigger(section_slug, user_id, evaluations, _activity_attempt_guid),
+    do: maybe_fire_trigger(section_slug, user_id, evaluations)
+
+  defp current_user_id(conn) do
+    case Map.get(conn.assigns, :current_user) do
+      %{id: user_id} -> user_id
+      _ -> Plug.Conn.get_session(conn, :current_user_id)
+    end
+  end
 
   @doc """
   Requests a new attempt for a specific part of an activity. NOT IMPLEMENTED.
@@ -584,7 +619,7 @@ defmodule OliWeb.Api.AttemptController do
       }) do
     case Activity.request_hint(activity_attempt_guid, part_attempt_guid) do
       {:ok, {hint, trigger, has_more_hints}} ->
-        maybe_fire_trigger(section_slug, Plug.Conn.get_session(conn, :current_user_id), trigger)
+        maybe_fire_trigger(section_slug, current_user_id(conn), trigger)
 
         json(conn, %{"type" => "success", "hint" => hint, "hasMoreHints" => has_more_hints})
 
@@ -693,10 +728,11 @@ defmodule OliWeb.Api.AttemptController do
            datashop_session_id
          ) do
       {:ok, evaluations} ->
-        maybe_fire_trigger(
+        maybe_fire_activity_trigger(
           section_slug,
-          Plug.Conn.get_session(conn, :current_user_id),
-          evaluations
+          current_user_id(conn),
+          evaluations,
+          activity_attempt_guid
         )
 
         json(conn, %{"type" => "success", "actions" => evaluations})

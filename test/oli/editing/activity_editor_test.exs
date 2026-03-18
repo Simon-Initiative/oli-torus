@@ -639,6 +639,54 @@ defmodule Oli.ActivityEditingTest do
                )
     end
 
+    test "edit/5 rejects adaptive rule activation points when project triggers are disabled", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "rules" => [
+              %{
+                "id" => "r:trap.incorrect",
+                "name" => "incorrect",
+                "correct" => false,
+                "default" => false,
+                "disabled" => false,
+                "conditions" => %{"all" => []},
+                "event" => %{
+                  "type" => "r:trap.incorrect",
+                  "params" => %{
+                    "actions" => [
+                      %{
+                        "type" => "trigger",
+                        "params" => %{"prompt" => "Offer the learner a hint"}
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
     test "edit/5 handles malformed adaptive authoring containers without crashing", %{
       author: author,
       project: project,

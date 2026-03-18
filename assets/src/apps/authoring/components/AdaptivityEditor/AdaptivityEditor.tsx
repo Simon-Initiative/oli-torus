@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Alert, Dropdown, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import debounce from 'lodash/debounce';
 import flatten from 'lodash/flatten';
@@ -15,8 +15,9 @@ import { selectSequence } from 'apps/delivery/store/features/groups/selectors/de
 import { clone } from 'utils/common';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
-import { selectCurrentRule } from '../../../authoring/store/app/slice';
+import { selectAllowTriggers, selectCurrentRule } from '../../../authoring/store/app/slice';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
+import { AIIcon } from '../../../../components/misc/AIIcon';
 import {
   findInSequence,
   getIsBank,
@@ -26,18 +27,20 @@ import { createFeedback } from '../../store/activities/actions/createFeedback';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
+import ActionTriggerEditor from './ActionTriggerEditor';
 import ConditionsBlockEditor from './ConditionsBlockEditor';
 
 export interface AdaptivityEditorProps {
   content?: any;
 }
 
-export type ActionType = 'navigation' | 'mutateState' | 'feedback';
+export type ActionType = 'navigation' | 'mutateState' | 'feedback' | 'trigger';
 
 export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const dispatch = useDispatch();
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);
+  const allowTriggers = useSelector(selectAllowTriggers);
   const sequence = useSelector(selectSequence);
   const isLayer = getIsLayer();
   const isBank = getIsBank();
@@ -59,6 +62,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   );
   const hasFeedback = actions.find((action: any) => action.type === 'feedback');
   const hasNavigation = actions.find((action: any) => action.type === 'navigation');
+  const hasTrigger = actions.find((action: any) => action.type === 'trigger');
 
   useEffect(() => {
     if (!currentRule) return;
@@ -266,6 +270,17 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             onDelete={handleDeleteAction}
           />
         );
+      case 'trigger':
+        return (
+          <ActionTriggerEditor
+            key={index}
+            action={action}
+            onChange={(changes: any) => {
+              handleActionChange(action, changes);
+            }}
+            onDelete={handleDeleteAction}
+          />
+        );
     }
   };
 
@@ -292,6 +307,14 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             target: 'stage.',
             targetType: CapiVariableTypes.STRING,
             value: undefined,
+          },
+        };
+        break;
+      case 'trigger':
+        newAction = {
+          type: 'trigger',
+          params: {
+            prompt: '',
           },
         };
         break;
@@ -343,13 +366,22 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       {currentRule && !isLayer && !isBank && (
         <>
           {!(currentRule.default && !currentRule.correct) && (
-            <ConditionsBlockEditor
-              id="root"
-              type={rootConditionIsAll ? 'all' : 'any'}
-              rootConditions={conditions}
-              onChange={handleConditionsEditorChange}
-              index={-1}
-            />
+            <>
+              <p className="mb-2">When to activate:</p>
+              <ConditionsBlockEditor
+                id="root"
+                type={rootConditionIsAll ? 'all' : 'any'}
+                rootConditions={conditions}
+                onChange={handleConditionsEditorChange}
+                index={-1}
+              />
+              {allowTriggers && hasTrigger && (
+                <Alert variant="warning" className="mt-3 mb-0">
+                  <strong>Best Practice</strong> Avoid adding both feedback and a trap state
+                  activation point for the same rule. This may overwhelm the student.
+                </Alert>
+              )}
+            </>
           )}
           <p className={`${currentRule.default && !currentRule.correct ? '' : 'mt-3'} mb-0`}>
             Perform the following actions:
@@ -387,6 +419,11 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
                 <Dropdown.Item onClick={() => handleAddAction('mutateState')}>
                   <i className="fa fa-crosshairs mr-2" /> Mutate State
                 </Dropdown.Item>
+                {allowTriggers && (
+                  <Dropdown.Item onClick={() => handleAddAction('trigger')}>
+                    <AIIcon size="sm" className="inline mr-2" /> Activation Point
+                  </Dropdown.Item>
+                )}
               </Dropdown.Menu>
             </Dropdown>
             <div className="d-flex flex-column">

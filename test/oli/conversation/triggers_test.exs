@@ -277,4 +277,70 @@ defmodule Oli.Conversation.TriggersTest do
            }) ==
              "Activated an adaptive component trigger (type: component, id: badscriptalert1script)"
   end
+
+  test "describes adaptive trap state trigger" do
+    assert Triggers.description(:adaptive_trap_state, %{
+             "rule_id" => "r:trap",
+             "rule_name" => "incorrect",
+             "trap_state_type" => "incorrect"
+           }) ==
+             "Triggered an adaptive trap state activation point (type: incorrect, rule: incorrect, id: r:trap)"
+  end
+
+  test "extracts a trap state trigger from adaptive rule results" do
+    evaluations = %{
+      "results" => [
+        %{
+          "type" => "r:trap.incorrect",
+          "params" => %{
+            "actions" => [
+              %{
+                "type" => "trigger",
+                "params" => %{"prompt" => " Help the student recover. "}
+              }
+            ]
+          }
+        }
+      ]
+    }
+
+    trigger =
+      Triggers.check_for_trap_state_trigger(evaluations, %{
+        activity_attempt_guid: "attempt-guid-1",
+        page_id: 321
+      })
+
+    assert trigger.trigger_type == :adaptive_trap_state
+    assert trigger.resource_id == 321
+    assert trigger.prompt == "Help the student recover."
+    assert trigger.data["activity_attempt_guid"] == "attempt-guid-1"
+    assert trigger.data["rule_id"] == "r:trap"
+    assert trigger.data["rule_name"] == "incorrect"
+    assert trigger.data["trap_state_type"] == "incorrect"
+  end
+
+  test "ignores blank trap state trigger prompts" do
+    evaluations = %{
+      "results" => [
+        %{
+          "type" => "r:trap.incorrect",
+          "params" => %{
+            "actions" => [
+              %{
+                "type" => "trigger",
+                "params" => %{"prompt" => "   "}
+              }
+            ]
+          }
+        }
+      ]
+    }
+
+    assert is_nil(
+             Triggers.check_for_trap_state_trigger(evaluations, %{
+               activity_attempt_guid: "attempt-guid-1",
+               page_id: 321
+             })
+           )
+  end
 end

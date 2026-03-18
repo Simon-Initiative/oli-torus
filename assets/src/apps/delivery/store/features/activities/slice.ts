@@ -248,6 +248,13 @@ export interface IFeedbackAction {
   };
 }
 
+export interface ITriggerAction {
+  type: 'trigger';
+  params: {
+    prompt: string;
+  };
+}
+
 export interface INavigationAction {
   type: 'navigation';
   params: {
@@ -255,7 +262,7 @@ export interface INavigationAction {
   };
 }
 
-export type IAction = IMutateAction | INavigationAction | IFeedbackAction; //| IScoreAction | IStageAction;
+export type IAction = IMutateAction | INavigationAction | IFeedbackAction | ITriggerAction; //| IScoreAction | IStageAction;
 
 export interface IEvent {
   params: {

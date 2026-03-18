@@ -1,0 +1,87 @@
+version: 1
+feature: trap_state_triggers
+generated_from: prd.md
+requirements:
+- id: FR-001
+  title: Advanced Author adaptive rules shall expose a trap-state Activation Point action only when project trigger capability is enabled.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-001
+    title: Given project triggers are enabled, when an author opens the Rules Editor action menu, then they can add an action labeled Activation Point.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:17
+    - type: plan
+      ref: plan.md:25
+  - id: AC-002
+    title: Given project triggers are disabled, when adaptive content containing trap-state Activation Point actions is authored or saved, then the option is not available in the UI and the server rejects the hidden trigger action shape.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:17
+    - type: plan
+      ref: plan.md:25
+- id: FR-002
+  title: Trap-state Activation Point actions shall persist authored prompt text in adaptive rule JSON.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-003
+    title: Given an author selects Activation Point, when the action editor opens, then they can enter a custom DOT prompt and keep it in the rule action list.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:18
+    - type: plan
+      ref: plan.md:26
+  - id: AC-004
+    title: Given adaptive rules containing Activation Point actions are evaluated in delivery, when actions are grouped client-side, then the new trigger action type does not break existing adaptive action processing.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:18
+    - type: plan
+      ref: plan.md:26
+- id: FR-003
+  title: Adaptive submit_activity shall emit a server-side trap-state trigger when evaluated rules include an Activation Point.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-005
+    title: Given an adaptive rule result includes a trap-state Activation Point with a non-blank prompt and the section has AI activation enabled, when submit_activity returns, then the server broadcasts one adaptive trap-state trigger using the current page resource id.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:19
+    - type: plan
+      ref: plan.md:27
+- id: FR-004
+  title: Trap-state trigger emission shall fail closed when the authored prompt or runtime context is invalid.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-006
+    title: Given no Activation Point is present, the prompt is blank, or page context cannot be resolved, when adaptive results are inspected, then no trap-state trigger is emitted.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:19
+    - type: plan
+      ref: plan.md:27
+- id: FR-005
+  title: The new adaptive trap-state trigger type shall remain server-only.
+  status: verified_plan
+  acceptance_criteria:
+  - id: AC-007
+    title: Given a client submits a trigger payload with type adaptive_trap_state, when the trigger endpoint resolves the request, then it is rejected as invalid.
+    status: verified_plan
+    verification_method: automated
+    proofs:
+    - type: fdd
+      ref: fdd.md:20
+    - type: plan
+      ref: plan.md:27

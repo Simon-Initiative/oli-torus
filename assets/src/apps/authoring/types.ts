@@ -30,8 +30,12 @@ export interface PageContext {
   };
 }
 
-export type ActionType = 'navigation' | 'mutateState' | 'feedback';
-export type ActionParams = NavigationActionParams | MutateStateActionParams | FeedbackActionParams;
+export type ActionType = 'navigation' | 'mutateState' | 'feedback' | 'trigger';
+export type ActionParams =
+  | NavigationActionParams
+  | MutateStateActionParams
+  | FeedbackActionParams
+  | TriggerActionParams;
 export interface AdaptiveRuleAction {
   type: ActionType;
   params: ActionParams;
@@ -52,6 +56,10 @@ export interface FeedbackActionParams {
   feedback: any;
 }
 
+export interface TriggerActionParams {
+  prompt: string;
+}
+
 export type NavigationAction = {
   type: 'navigation';
   params: NavigationActionParams;
@@ -65,4 +73,9 @@ export type MutateStateAction = {
 export type FeedbackAction = {
   type: 'feedback';
   params: FeedbackActionParams;
+};
+
+export type TriggerAction = {
+  type: 'trigger';
+  params: TriggerActionParams;
 };

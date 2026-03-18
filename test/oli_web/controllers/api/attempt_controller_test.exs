@@ -4,6 +4,8 @@ defmodule OliWeb.AttemptControllerTest do
   alias Oli.Seeder
   alias Oli.Activities.Model.Part
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Resources.Revision
+  alias Phoenix.PubSub
 
   describe "bulk activity attempt request" do
     setup [:setup_session]
@@ -198,6 +200,114 @@ defmodule OliWeb.AttemptControllerTest do
                "error" => true
              } =
                json_response(conn, 403)
+    end
+  end
+
+  describe "adaptive trap-state activation points" do
+    setup [:setup_session]
+
+    test "submit_activity emits an authored trap-state trigger", %{
+      conn: conn,
+      map: map
+    } do
+      Oli.Delivery.Sections.enroll(
+        map.user1.id,
+        map.section.id,
+        [Lti_1p3.Roles.ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      Oli.Delivery.Sections.update_section!(map.section, %{
+        triggers_enabled: true,
+        assistant_enabled: true
+      })
+
+      adaptive_content =
+        map.adaptive_revision.content
+        |> put_in(
+          ["authoring", "rules"],
+          [
+            %{
+              "id" => "r:trap.incorrect",
+              "name" => "incorrect",
+              "priority" => 1,
+              "disabled" => false,
+              "default" => false,
+              "correct" => false,
+              "conditions" => %{"all" => []},
+              "event" => %{
+                "type" => "r:trap.incorrect",
+                "params" => %{
+                  "actions" => [
+                    %{
+                      "type" => "trigger",
+                      "params" => %{"prompt" => "Authored trap-state prompt"}
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        )
+
+      _adaptive_revision =
+        map.adaptive_revision
+        |> Revision.changeset(%{content: adaptive_content})
+        |> Oli.Repo.update!()
+
+      map =
+        Seeder.create_resource_attempt(
+          map,
+          %{attempt_number: 1},
+          :user1,
+          :adaptive_page_resource,
+          :adaptive_page_revision,
+          :adaptive_rule_page_attempt
+        )
+
+      {:ok, activity_attempt} =
+        Core.create_activity_attempt(%{
+          attempt_number: 1,
+          transformed_model: nil,
+          resource_attempt_id: map.adaptive_rule_page_attempt.id,
+          revision_id: map.adaptive_revision.id,
+          resource_id: map.adaptive_revision.resource_id,
+          attempt_guid: Ecto.UUID.generate()
+        })
+
+      topic =
+        "trigger:#{map.user1.id}:#{map.section.id}:#{map.adaptive_page_revision.resource_id}"
+
+      :ok = PubSub.subscribe(Oli.PubSub, topic)
+
+      conn =
+        put(
+          conn,
+          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{activity_attempt.attempt_guid}",
+          %{
+            "activity_attempt_guid" => activity_attempt.attempt_guid,
+            "partInputs" => []
+          }
+        )
+
+      assert %{"type" => "success"} = json_response(conn, 200)
+
+      assert_receive {:trigger,
+                      %Oli.Conversation.Trigger{
+                        trigger_type: :adaptive_trap_state,
+                        prompt: "Authored trap-state prompt",
+                        resource_id: resource_id,
+                        data: %{
+                          "activity_attempt_guid" => attempt_guid,
+                          "rule_id" => "r:trap",
+                          "rule_name" => "incorrect",
+                          "trap_state_type" => "incorrect"
+                        }
+                      }},
+                     1_500
+
+      assert resource_id == map.adaptive_page_revision.resource_id
+      assert attempt_guid == activity_attempt.attempt_guid
     end
   end
 

@@ -202,11 +202,14 @@ export const processResults = (events: any) => {
     feedback: [],
     mutateState: [],
     navigation: [],
+    trigger: [],
   };
   events.forEach((evt: any) => {
     const { actions } = evt.params;
     actions.forEach((action: any) => {
-      actionsByType[action.type].push(action);
+      if (actionsByType[action.type]) {
+        actionsByType[action.type].push(action);
+      }
     });
   });
   return actionsByType;

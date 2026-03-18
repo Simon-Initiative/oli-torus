@@ -17,6 +17,7 @@ defmodule Oli.Conversation.Triggers do
     :page,
     :adaptive_page,
     :adaptive_component,
+    :adaptive_trap_state,
     :content_group,
     :content_block,
     :correct_answer,
@@ -41,6 +42,10 @@ defmodule Oli.Conversation.Triggers do
   def description(:adaptive_component, data),
     do:
       "Activated an adaptive component trigger (type: #{sanitize_component_type(data)}, id: #{sanitize_component_id(data)})"
+
+  def description(:adaptive_trap_state, data),
+    do:
+      "Triggered an adaptive trap state activation point (type: #{sanitize_trap_state_type(data)}, rule: #{sanitize_rule_name(data)}, id: #{sanitize_rule_id(data)})"
 
   def description(:content_group, data),
     do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
@@ -99,6 +104,30 @@ defmodule Oli.Conversation.Triggers do
 
   defp sanitize_component_id(_), do: "unknown"
 
+  defp sanitize_rule_id(data) when is_map(data) do
+    data
+    |> Map.get("rule_id")
+    |> normalize_component_id("unknown")
+  end
+
+  defp sanitize_rule_id(_), do: "unknown"
+
+  defp sanitize_rule_name(data) when is_map(data) do
+    data
+    |> Map.get("rule_name")
+    |> normalize_text("unknown", 120)
+  end
+
+  defp sanitize_rule_name(_), do: "unknown"
+
+  defp sanitize_trap_state_type(data) when is_map(data) do
+    data
+    |> Map.get("trap_state_type")
+    |> normalize_text("trap_state", 100)
+  end
+
+  defp sanitize_trap_state_type(_), do: "trap_state"
+
   defp normalize_component_id(value, fallback) when is_binary(value) do
     value
     |> String.replace(~r/[[:cntrl:]]/u, "")
@@ -111,6 +140,19 @@ defmodule Oli.Conversation.Triggers do
   end
 
   defp normalize_component_id(_, fallback), do: fallback
+
+  defp normalize_text(value, fallback, max_length) when is_binary(value) do
+    value
+    |> String.replace(~r/[[:cntrl:]]/u, "")
+    |> String.trim()
+    |> String.slice(0, max_length)
+    |> case do
+      "" -> fallback
+      sanitized -> sanitized
+    end
+  end
+
+  defp normalize_text(_, fallback, _max_length), do: fallback
 
   @doc """
   Verify that the user is enrolled in a section with
@@ -153,6 +195,9 @@ defmodule Oli.Conversation.Triggers do
     case trigger.trigger_type do
       type when type in [:adaptive_page, :adaptive_component] ->
         resolve_adaptive_client_trigger(section_slug, section_id, trigger)
+
+      :adaptive_trap_state ->
+        {:error, :invalid_trigger}
 
       _ ->
         {:ok, trigger}
@@ -244,7 +289,14 @@ defmodule Oli.Conversation.Triggers do
     case trigger do
       # No additional data needed for these trigger types
       %{trigger_type: t}
-      when t in [:page, :adaptive_page, :adaptive_component, :content_group, :content_block] ->
+      when t in [
+             :page,
+             :adaptive_page,
+             :adaptive_component,
+             :adaptive_trap_state,
+             :content_group,
+             :content_block
+           ] ->
         trigger
 
       # For these trigger types, we need to fetch the question model and encode it
@@ -479,6 +531,98 @@ defmodule Oli.Conversation.Triggers do
   end
 
   defp normalize_component_type(_, fallback), do: fallback
+
+  @doc """
+  Check adaptive rules-engine results for a trap-state activation point trigger.
+
+  Returns the first authored trigger action found, or nil when the result payload
+  does not contain one.
+  """
+  def check_for_trap_state_trigger(%{"results" => results}, context) when is_list(results) do
+    Enum.find_value(results, &trap_state_trigger_from_event(&1, context))
+  end
+
+  def check_for_trap_state_trigger(%{results: results}, context) when is_list(results) do
+    Enum.find_value(results, &trap_state_trigger_from_event(&1, context))
+  end
+
+  def check_for_trap_state_trigger(_, _), do: nil
+
+  defp trap_state_trigger_from_event(event, context) when is_map(event) do
+    params = map_value(event, "params")
+    actions = params |> map_value("actions") |> normalize_list()
+
+    case Enum.find(actions, &trap_state_trigger_action?/1) do
+      nil ->
+        nil
+
+      action ->
+        event_type = map_value(event, "type")
+        prompt = action |> map_value("params") |> map_value("prompt") |> String.trim()
+        page_id = Map.get(context, :page_id) || Map.get(context, "page_id")
+
+        activity_attempt_guid =
+          Map.get(context, :activity_attempt_guid) || Map.get(context, "activity_attempt_guid")
+
+        %Trigger{
+          trigger_type: :adaptive_trap_state,
+          section_id: nil,
+          user_id: nil,
+          resource_id: page_id,
+          prompt: prompt,
+          data: %{
+            "activity_attempt_guid" => activity_attempt_guid,
+            "rule_id" => trap_state_rule_id(event_type),
+            "rule_name" => trap_state_rule_name(event_type),
+            "trap_state_type" => trap_state_type(event_type)
+          }
+        }
+    end
+  end
+
+  defp trap_state_trigger_from_event(_, _), do: nil
+
+  defp trap_state_trigger_action?(action) when is_map(action) do
+    map_value(action, "type") == "trigger" and
+      present_text?(action |> map_value("params") |> map_value("prompt"))
+  end
+
+  defp trap_state_trigger_action?(_), do: false
+
+  defp trap_state_rule_id(event_type) when is_binary(event_type) do
+    event_type
+    |> String.split(".", parts: 2)
+    |> List.first()
+    |> normalize_component_id("unknown")
+  end
+
+  defp trap_state_rule_id(_), do: "unknown"
+
+  defp trap_state_rule_name(event_type) when is_binary(event_type) do
+    event_type
+    |> String.split(".", parts: 2)
+    |> case do
+      [_rule_id, rule_name] -> normalize_text(rule_name, "unknown", 120)
+      _ -> normalize_text(event_type, "unknown", 120)
+    end
+  end
+
+  defp trap_state_rule_name(_), do: "unknown"
+
+  defp trap_state_type(event_type) when is_binary(event_type) do
+    case String.split(event_type, "r:trap.", parts: 2) do
+      [_prefix, trap_state_type] -> normalize_text(trap_state_type, "trap_state", 100)
+      _ -> "trap_state"
+    end
+  end
+
+  defp trap_state_type(_), do: "trap_state"
+
+  defp normalize_list(value) when is_list(value), do: value
+  defp normalize_list(_), do: []
+
+  defp present_text?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present_text?(_), do: false
 
   @doc """
   Check for a hint trigger based on the activity attempt, part attempt, model, and hint.

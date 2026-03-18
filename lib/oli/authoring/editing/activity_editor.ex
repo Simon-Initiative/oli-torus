@@ -820,8 +820,15 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       |> map_value(:parts)
       |> normalize_list()
 
+    rules =
+      content
+      |> map_value(:authoring)
+      |> map_value(:rules)
+      |> normalize_list()
+
     Enum.any?(parts_layout, &disallowed_adaptive_layout_part?/1) or
-      Enum.any?(authoring_parts, &disallowed_adaptive_authoring_part?/1)
+      Enum.any?(authoring_parts, &disallowed_adaptive_authoring_part?/1) or
+      Enum.any?(rules, &disallowed_adaptive_rule_trigger?/1)
   end
 
   defp invalid_adaptive_trigger_content?(_), do: false
@@ -849,6 +856,20 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp ai_trigger_configured?(_), do: false
+
+  defp disallowed_adaptive_rule_trigger?(rule) when is_map(rule) do
+    rule
+    |> map_value(:event)
+    |> map_value(:params)
+    |> map_value(:actions)
+    |> normalize_list()
+    |> Enum.any?(fn action ->
+      map_value(action, :type) == "trigger" and
+        present_text?(action |> map_value(:params) |> map_value(:prompt))
+    end)
+  end
+
+  defp disallowed_adaptive_rule_trigger?(_), do: false
 
   defp maybe_authoring_parts(content) when is_map(content) do
     case map_value(content, :authoring) do
