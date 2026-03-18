@@ -12,6 +12,7 @@ defmodule Oli.SectionsTest do
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Remix
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Transfer
   alias Oli.Authoring.Editing.ContainerEditor
@@ -1048,11 +1049,111 @@ defmodule Oli.SectionsTest do
     test "apply_publication_update/2 reintroduces a previously removed page", %{
       author: author,
       project: project,
+      container: %{resource: container_resource, revision: container_revision},
       page1: page1,
       page2: page2,
       revision2: revision2,
       institution: institution
     } do
+      working_publication = Publishing.project_working_publication(project.slug)
+
+      %{resource: page3, revision: _revision3} =
+        Seeder.create_page("Page three", working_publication, project, author)
+
+      _container_revision =
+        Seeder.attach_pages_to(
+          [page3],
+          container_resource,
+          container_revision,
+          working_publication
+        )
+
+      {:ok, initial_publication} = Publishing.publish_project(project, "initial", author.id)
+
+      {:ok, section} =
+        Sections.create_section(%{
+          title: "1",
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          institution_id: institution.id,
+          base_project_id: project.id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(initial_publication)
+
+      initial_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      assert Enum.map(initial_hierarchy.children, & &1.resource_id) == [
+               page1.id,
+               page2.id,
+               page3.id
+             ]
+
+      root_container = AuthoringResolver.root_container(project.slug)
+      {:ok, _} = ContainerEditor.move_to(revision2, root_container, nil, author, project)
+
+      {:ok, page_removed_publication} =
+        Publishing.publish_project(project, "remove page from curriculum", author.id)
+
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, page_removed_publication.id)
+
+      after_removal_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+      assert Enum.map(after_removal_hierarchy.children, & &1.resource_id) == [page1.id, page3.id]
+
+      section_resources_after_removal =
+        from(sr in SectionResource,
+          where: sr.section_id == ^section.id,
+          select: sr.resource_id
+        )
+        |> Repo.all()
+
+      refute page2.id in section_resources_after_removal
+
+      root_container = AuthoringResolver.root_container(project.slug)
+      restored_page_revision = AuthoringResolver.from_resource_id(project.slug, page2.id)
+
+      {:ok, _} =
+        ContainerEditor.move_to(restored_page_revision, nil, root_container, author, project)
+
+      root_container = AuthoringResolver.root_container(project.slug)
+      restored_page_revision = AuthoringResolver.from_resource_id(project.slug, page2.id)
+
+      {:ok, _} =
+        ContainerEditor.reorder_child(
+          root_container,
+          project,
+          author,
+          restored_page_revision.slug,
+          1
+        )
+
+      {:ok, page_reintroduced_publication} =
+        Publishing.publish_project(project, "restore page to curriculum", author.id)
+
+      Oli.Delivery.Sections.Updates.apply_publication_update(
+        section,
+        page_reintroduced_publication.id
+      )
+
+      after_reintroduction_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      assert Enum.map(after_reintroduction_hierarchy.children, & &1.resource_id) == [
+               page1.id,
+               page2.id,
+               page3.id
+             ]
+    end
+
+    @tag capture_log: true
+    test "apply_publication_update/2 preserves remix removals while adding unrelated major updates",
+         %{
+           author: author,
+           project: project,
+           container: %{resource: container_resource, revision: container_revision},
+           page1: page1,
+           page2: page2,
+           institution: institution
+         } do
       {:ok, initial_publication} = Publishing.publish_project(project, "initial", author.id)
 
       {:ok, section} =
@@ -1069,39 +1170,40 @@ defmodule Oli.SectionsTest do
       initial_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
       assert Enum.map(initial_hierarchy.children, & &1.resource_id) == [page1.id, page2.id]
 
-      root_container = AuthoringResolver.root_container(project.slug)
-      {:ok, _} = ContainerEditor.remove_child(root_container, project, author, revision2.slug)
+      {:ok, remix_state} = Remix.init(section, author)
+      page1_uuid = Enum.find(remix_state.active.children, &(&1.resource_id == page1.id)).uuid
+      {:ok, remix_state} = Remix.remove(remix_state, page1_uuid)
+      {:ok, _section} = Remix.save(remix_state)
 
-      {:ok, page_removed_publication} =
-        Publishing.publish_project(project, "remove page two", author.id)
+      remixed_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+      assert Enum.map(remixed_hierarchy.children, & &1.resource_id) == [page2.id]
 
-      Oli.Delivery.Sections.Updates.apply_publication_update(section, page_removed_publication.id)
+      working_pub = Publishing.project_working_publication(project.slug)
 
-      after_removal_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
-      assert Enum.map(after_removal_hierarchy.children, & &1.resource_id) == [page1.id]
+      %{resource: new_page_resource, revision: _new_page_revision} =
+        Seeder.create_page("New Major Update Page", working_pub, project, author)
 
-      deleted_page_revision = AuthoringResolver.from_resource_id(project.slug, page2.id)
-      root_container = AuthoringResolver.root_container(project.slug)
+      _updated_root =
+        Seeder.attach_pages_to(
+          [new_page_resource],
+          container_resource,
+          container_revision,
+          working_pub
+        )
 
-      {:ok, _} =
-        ContainerEditor.move_to(deleted_page_revision, nil, root_container, author, project)
+      {:ok, latest_publication} =
+        Publishing.publish_project(project, "add unrelated page", author.id)
 
-      assert AuthoringResolver.from_resource_id(project.slug, page2.id).deleted == false
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
-      {:ok, page_reintroduced_publication} =
-        Publishing.publish_project(project, "reintroduce page two", author.id)
+      updated_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
-      Oli.Delivery.Sections.Updates.apply_publication_update(
-        section,
-        page_reintroduced_publication.id
-      )
-
-      after_reintroduction_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
-
-      assert Enum.map(after_reintroduction_hierarchy.children, & &1.resource_id) == [
-               page1.id,
-               page2.id
+      assert Enum.map(updated_hierarchy.children, & &1.resource_id) == [
+               page2.id,
+               new_page_resource.id
              ]
+
+      refute Enum.any?(updated_hierarchy.children, &(&1.resource_id == page1.id))
     end
 
     @tag capture_log: true

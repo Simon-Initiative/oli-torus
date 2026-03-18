@@ -39,7 +39,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
       |> Enum.map(& &1.institution)
       |> Enum.reject(&is_nil/1)
 
-    is_admin? = Accounts.has_admin_role?(author, :content_admin)
+    is_admin? = Accounts.at_least_content_admin?(author)
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project.slug)

@@ -30,6 +30,10 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
     %Oli.Resources.ExplanationStrategy{type: :after_set_num_attempts, set_num_attempts: 2}
   end
 
+  defp get_ai_enabled(resource, graded) do
+    Map.get(resource, "aiEnabled", !graded)
+  end
+
   # Read the collab space config in a robust manner, falling back to defaults if
   # the entire collabSpace key is missing or if any sub keys are missing
   defp read_collab_space(%{"collabSpace" => nil}), do: read_collab_space(%{"collabSpace" => %{}})
@@ -124,6 +128,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       relates_to:
         Map.get(resource, "relatesTo", []) |> Enum.map(fn id -> String.to_integer(id) end),
       graded: graded,
+      ai_enabled: get_ai_enabled(resource, graded),
       max_attempts: Map.get(resource, "maxAttempts", if(graded, do: 5, else: 0)),
       intro_content: Map.get(resource, "introContent", %{}),
       intro_video: Map.get(resource, "introVideo"),

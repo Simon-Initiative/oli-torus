@@ -435,7 +435,6 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
           margin-top: 2rem;
           font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif;
           font-weight: 700;
-          color: #3398b9;
         }
         .text-flow-authoring-preview > :first-child {
           margin-top: 0;

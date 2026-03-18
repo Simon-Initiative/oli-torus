@@ -822,6 +822,14 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
+  defp validate_part_dynamic_links(
+         %{"type" => "janus-capi-iframe"} = part,
+         allowed_resource_ids,
+         allowed_page_slugs
+       ) do
+    validate_iframe_dynamic_link(part, allowed_resource_ids, allowed_page_slugs)
+  end
+
   defp validate_part_dynamic_links(_, _allowed_resource_ids, _allowed_page_slugs), do: :ok
 
   defp validate_nodes_dynamic_links(nodes, allowed_resource_ids, allowed_page_slugs)
@@ -874,6 +882,42 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp validate_node_dynamic_link(_, _allowed_resource_ids, _allowed_page_slugs), do: :ok
+
+  defp validate_iframe_dynamic_link(part, allowed_resource_ids, allowed_page_slugs) do
+    src = Map.get(part, "src")
+    idref = Map.get(part, "idref") || Map.get(part, "resource_id")
+    source_type = Map.get(part, "sourceType")
+    link_type = Map.get(part, "linkType")
+
+    is_internal =
+      internal_course_link?(src) or source_type == "page" or link_type == "page" or
+        not is_nil(idref)
+
+    if is_internal do
+      case {internal_course_link?(src), idref} do
+        {true, nil} ->
+          with {:ok, slug} <- internal_slug(src),
+               true <- MapSet.member?(allowed_page_slugs, slug) do
+            :ok
+          else
+            _ -> {:error, {:invalid_update_field}}
+          end
+
+        {_, nil} ->
+          {:error, {:invalid_update_field}}
+
+        {_, ref} ->
+          with {:ok, resource_id} <- normalize_resource_id(ref),
+               true <- MapSet.member?(allowed_resource_ids, resource_id) do
+            :ok
+          else
+            _ -> {:error, {:invalid_update_field}}
+          end
+      end
+    else
+      :ok
+    end
+  end
 
   defp internal_course_link?(href) when is_binary(href),
     do: String.starts_with?(href, "/course/link/")
@@ -984,6 +1028,23 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
+  defp normalize_part_dynamic_links(
+         %{"type" => "janus-capi-iframe"} = part,
+         page_slug_to_resource_id
+       ) do
+    case normalize_iframe_link_ref(part, page_slug_to_resource_id) do
+      {:ok, ref} ->
+        part
+        |> Map.put("idref", ref)
+        |> Map.put("resource_id", ref)
+        |> Map.put("linkType", "page")
+        |> Map.put("sourceType", "page")
+
+      :ignore ->
+        part
+    end
+  end
+
   defp normalize_part_dynamic_links(part, _page_slug_to_resource_id), do: part
 
   defp normalize_node_dynamic_links(node, page_slug_to_resource_id) when is_map(node) do
@@ -1037,6 +1098,29 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp normalize_node_link_ref(_, _page_slug_to_resource_id), do: :ignore
 
+  defp normalize_iframe_link_ref(part, page_slug_to_resource_id) when is_map(part) do
+    src = Map.get(part, "src")
+    idref = Map.get(part, "idref") || Map.get(part, "resource_id")
+
+    cond do
+      not is_nil(idref) ->
+        normalize_resource_id(idref)
+
+      internal_course_link?(src) ->
+        with {:ok, slug} <- internal_slug(src),
+             ref when is_integer(ref) <- Map.get(page_slug_to_resource_id, slug) do
+          {:ok, ref}
+        else
+          _ -> :ignore
+        end
+
+      true ->
+        :ignore
+    end
+  end
+
+  defp normalize_iframe_link_ref(_, _page_slug_to_resource_id), do: :ignore
+
   defp resolve_project_page_targets(_project_id, {ids, slugs, slug_to_resource_id})
        when is_struct(ids, MapSet) and is_struct(slugs, MapSet) and is_map(slug_to_resource_id),
        do: {ids, slugs, slug_to_resource_id}
@@ -1075,51 +1159,78 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     if adaptive_activity?(previous) do
       previous_links = authoring_dynamic_link_refs(previous)
       updated_links = authoring_dynamic_link_refs(updated)
+      previous_by_source = group_dynamic_link_refs_by_source(previous_links)
+      updated_by_source = group_dynamic_link_refs_by_source(updated_links)
 
-      previous_paths = Map.keys(previous_links) |> MapSet.new()
-      updated_paths = Map.keys(updated_links) |> MapSet.new()
-      common_paths = MapSet.intersection(previous_paths, updated_paths)
+      all_sources =
+        Map.keys(previous_by_source)
+        |> Kernel.++(Map.keys(updated_by_source))
+        |> MapSet.new()
+        |> MapSet.to_list()
 
-      updated_count =
-        Enum.count(common_paths, fn path ->
-          Map.get(previous_links, path) != Map.get(updated_links, path)
-        end)
+      Enum.each(all_sources, fn source ->
+        previous_for_source = Map.get(previous_by_source, source, %{})
+        updated_for_source = Map.get(updated_by_source, source, %{})
 
-      created_by_path = MapSet.size(MapSet.difference(updated_paths, previous_paths))
-      removed_by_path = MapSet.size(MapSet.difference(previous_paths, updated_paths))
+        {created_count, updated_count, removed_count} =
+          dynamic_link_change_counts(previous_for_source, updated_for_source)
 
-      replacement_updates =
-        if updated_count == 0 do
-          min(created_by_path, removed_by_path)
-        else
-          0
-        end
+        metadata = %{
+          project_id: project_id,
+          activity_resource_id: previous.resource_id,
+          source: source
+        }
 
-      updated_count = updated_count + replacement_updates
-      created_count = max(created_by_path - replacement_updates, 0)
-      removed_count = max(removed_by_path - replacement_updates, 0)
-
-      updated_count =
-        if updated_count == 0 and map_size(previous_links) > 0 and map_size(updated_links) > 0 and
-             previous_links != updated_links do
-          1
-        else
-          updated_count
-        end
-
-      metadata = %{
-        project_id: project_id,
-        activity_resource_id: previous.resource_id,
-        source: "activity_editor"
-      }
-
-      DynamicLinksTelemetry.authoring_created(created_count, metadata)
-      DynamicLinksTelemetry.authoring_updated(updated_count, metadata)
-      DynamicLinksTelemetry.authoring_removed(removed_count, metadata)
+        DynamicLinksTelemetry.authoring_created(created_count, metadata)
+        DynamicLinksTelemetry.authoring_updated(updated_count, metadata)
+        DynamicLinksTelemetry.authoring_removed(removed_count, metadata)
+      end)
     end
   end
 
   defp maybe_emit_authoring_dynamic_link_telemetry(_, _, _), do: :ok
+
+  defp dynamic_link_change_counts(previous_links, updated_links) do
+    previous_paths = Map.keys(previous_links) |> MapSet.new()
+    updated_paths = Map.keys(updated_links) |> MapSet.new()
+    common_paths = MapSet.intersection(previous_paths, updated_paths)
+
+    updated_count =
+      Enum.count(common_paths, fn path ->
+        Map.get(previous_links, path) != Map.get(updated_links, path)
+      end)
+
+    created_by_path = MapSet.size(MapSet.difference(updated_paths, previous_paths))
+    removed_by_path = MapSet.size(MapSet.difference(previous_paths, updated_paths))
+
+    replacement_updates =
+      if updated_count == 0 do
+        min(created_by_path, removed_by_path)
+      else
+        0
+      end
+
+    updated_count = updated_count + replacement_updates
+    created_count = max(created_by_path - replacement_updates, 0)
+    removed_count = max(removed_by_path - replacement_updates, 0)
+
+    updated_count =
+      if updated_count == 0 and map_size(previous_links) > 0 and map_size(updated_links) > 0 and
+           previous_links != updated_links do
+        1
+      else
+        updated_count
+      end
+
+    {created_count, updated_count, removed_count}
+  end
+
+  defp group_dynamic_link_refs_by_source(refs) when is_map(refs) do
+    Enum.reduce(refs, %{}, fn {path, %{reference: reference, source: source}}, acc ->
+      source_refs = Map.get(acc, source, %{})
+      Map.put(acc, source, Map.put(source_refs, path, reference))
+    end)
+  end
 
   defp authoring_dynamic_link_refs(%Revision{content: content}) do
     authoring =
@@ -1151,13 +1262,27 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end)
   end
 
+  defp accumulate_part_dynamic_link_refs(
+         %{"type" => "janus-capi-iframe"} = part,
+         part_index,
+         acc
+       ) do
+    case iframe_dynamic_link_reference(part) do
+      nil ->
+        acc
+
+      reference ->
+        Map.put(acc, "part:#{part_index}", %{reference: reference, source: "iframe_authoring"})
+    end
+  end
+
   defp accumulate_part_dynamic_link_refs(_, _part_index, acc), do: acc
 
   defp accumulate_node_dynamic_link_refs(node, path, acc) when is_map(node) do
     acc =
       case dynamic_link_reference(node) do
         nil -> acc
-        reference -> Map.put(acc, path, reference)
+        reference -> Map.put(acc, path, %{reference: reference, source: "activity_editor"})
       end
 
     node
@@ -1188,6 +1313,30 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp dynamic_link_reference(_), do: nil
+
+  defp iframe_dynamic_link_reference(part) when is_map(part) do
+    idref =
+      Map.get(part, "idref") || Map.get(part, "resource_id") ||
+        get_in(part, ["custom", "idref"]) || get_in(part, ["custom", "resource_id"])
+
+    src = Map.get(part, "src") || get_in(part, ["custom", "src"])
+
+    case idref do
+      nil ->
+        case internal_slug(src) do
+          {:ok, slug} -> "slug:#{slug}"
+          _ -> nil
+        end
+
+      resource_id ->
+        case normalize_resource_id(resource_id) do
+          {:ok, normalized} -> "id:#{normalized}"
+          _ -> nil
+        end
+    end
+  end
+
+  defp iframe_dynamic_link_reference(_), do: nil
 
   defp sync_objectives_to_parts(_objectives, update, nil), do: update
 

@@ -270,7 +270,15 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     setShowPopup(toggleVal);
     if (toggleVal === false) {
       setTimeout(() => {
-        triggerRef.current?.focus();
+        // After closing, return focus to the primary trigger:
+        // - If there is only an icon (no label), focus the icon input so the next
+        //   Tab moves on to the next control.
+        // - If there is a label, the container remains the logical trigger.
+        if (isStandaloneIconTrigger && inputRef.current) {
+          inputRef.current.focus();
+        } else {
+          triggerRef.current?.focus();
+        }
       }, 0);
     }
     // optimistically write state
@@ -435,6 +443,10 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const iconAriaLabel =
     !shouldShowLabel && description ? description || 'Additional Information' : description; // When label exists, icon is decorative so aria-label used for alt text
 
+  // When there is no label, the icon becomes the primary control; in that case
+  // keep only the icon in the tab order so tabbing past the popup is a single step.
+  const isStandaloneIconTrigger = !shouldShowLabel && shouldShowIcon;
+
   return ready ? (
     <React.Fragment>
       {popupVisible ? (
@@ -442,7 +454,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
           ref={triggerRef}
           className="popup-container"
           role="button"
-          tabIndex={0}
+          tabIndex={isStandaloneIconTrigger ? -1 : 0}
           aria-haspopup="dialog"
           aria-expanded={showPopup}
           style={containerStyle}

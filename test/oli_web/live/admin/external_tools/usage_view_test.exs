@@ -86,7 +86,7 @@ defmodule OliWeb.Admin.ExternalTools.UsageViewTest do
       assert has_element?(view, "th", "Start")
       assert has_element?(view, "th", "End")
       assert has_element?(view, "th", "Status")
-      assert has_element?(view, "th", "Base Project/Product")
+      assert has_element?(view, "th", "Base Project/Template")
       assert has_element?(view, "th", "Instructors")
       assert has_element?(view, "th", "Institution")
     end

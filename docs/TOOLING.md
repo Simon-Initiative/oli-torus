@@ -2,7 +2,7 @@
 
 ## Commands
 
-- `asdf` via [`.tool-versions`](/Users/darren/dev/oli-torus/.tool-versions) for pinned Erlang, Elixir, Node.js, Yarn, and Python versions
+- `asdf` via [`.tool-versions`](../.tool-versions) for pinned Erlang, Elixir, Node.js, Yarn, and Python versions
 - `mix` for backend dependency management, compilation, database tasks, tests, formatting, and the Phoenix server
 - `yarn` in `assets/` for frontend dependencies, tests, linting, formatting, and bundling
 - `devmode.sh` as the main native-development convenience entrypoint for first-run setup, local env loading, Postgres startup, and MinIO setup

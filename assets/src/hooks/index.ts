@@ -1,4 +1,5 @@
 import LiveReact from 'phoenix_live_react';
+import { AdaptiveDialogueSync } from './adaptive_dialogue_sync';
 import { AnnotationBubbles } from './annotation_bubbles';
 import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
@@ -68,6 +69,7 @@ import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { WakeUpDot } from './wakeup_dot';
 
 export const Hooks = {
+  AdaptiveDialogueSync,
   AnnotationBubbles,
   DebouncedTextInputListener,
   GlobalTooltip,
