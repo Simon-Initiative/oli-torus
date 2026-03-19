@@ -1895,6 +1895,7 @@ defmodule OliWeb.Router do
       pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
+      live("/design_tokens", Dev.DesignTokensLive)
       live("/icons", Dev.IconsLive)
       live("/tokens", Dev.TokensLive)
       live("/metrics_smoke", Dev.MetricsSmokeLive)
