@@ -48,6 +48,20 @@ defmodule OliWeb.Products.DetailsViewTest do
   describe "product details page - tags for admin" do
     setup [:setup_admin_conn, :create_product]
 
+    test "places tags between description and welcome message title", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, _view, html} = live(conn, product_route(product.slug))
+
+      {description_index, _} = :binary.match(html, "Description")
+      {tags_index, _} = :binary.match(html, "Tags")
+      {welcome_title_index, _} = :binary.match(html, "Welcome Message Title")
+
+      assert description_index < tags_index
+      assert tags_index < welcome_title_index
+    end
+
     test "displays Tags section with editable TagsComponent", %{
       conn: conn,
       product: product,

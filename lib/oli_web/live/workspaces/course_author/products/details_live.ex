@@ -12,7 +12,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.Confirm
   alias OliWeb.Components.Common
-  alias OliWeb.Live.Components.Tags.TagsComponent
   alias OliWeb.Products.Details.Actions
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
@@ -99,21 +98,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             publishers={@publishers}
             is_admin={@is_admin}
             ctx={@ctx}
+            tags={@tags}
+            author={@author}
           />
-          <div class="form-label-group mb-3 mt-3">
-            <Common.label class="control-label">Tags</Common.label>
-            <.live_component
-              :if={@is_admin}
-              module={TagsComponent}
-              id={"product-tags-#{@product.id}"}
-              entity_type={:section}
-              entity_id={@product.id}
-              current_tags={@tags}
-              current_author={@author}
-              variant={:form}
-            />
-            <TagsComponent.read_only_tags :if={!@is_admin} tags={@tags} />
-          </div>
           <div :if={@is_admin} id="communities-section" class="form-label-group mb-3">
             <Common.label class="control-label">Communities</Common.label>
             <p class="text-secondary">
