@@ -195,7 +195,7 @@
     padding-bottom: 20px;
   }
 
- janus-popup:has(input)[model*='question'],
+  janus-popup:has(input)[model*='question'],
   .responsive-item .react-draggable janus-popup:has(input) {
     background-size: 20px !important;
     width: fit-content !important;
