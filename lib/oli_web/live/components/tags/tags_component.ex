@@ -408,8 +408,8 @@ defmodule OliWeb.Live.Components.Tags.TagsComponent do
 
   Used by both project and product overview pages when the current user
   does not have admin permissions to edit tags.
-  Safely handles `%Ecto.Association.NotLoaded{}` by rendering "None"
-  instead of crashing, in case the caller forgot to preload tags.
+
+  Expects `tags` to be a preloaded list. Raises `FunctionClauseError` if tags are not preloaded.
   """
   attr :tags, :list, required: true
 
