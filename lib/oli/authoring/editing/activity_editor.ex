@@ -29,6 +29,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Resources.ContentMigrator
   alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
 
+  @adaptive_ai_trigger_part_type "janus-ai-trigger"
+  @adaptive_ai_triggerable_part_types MapSet.new(["janus-image", "janus-navigation-button"])
+
   # Filters out objective ids that are no longer present in the list of all objectives
   @doc """
   Filters an objectives map so that only objective ids present in `all_objectives`
@@ -672,11 +675,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       end
 
     parts =
-      get_in(update, ["content", "authoring", "parts"]) ||
-        get_in(revision.content, ["authoring", "parts"])
+      maybe_authoring_parts(Map.get(update, "content")) ||
+        maybe_authoring_parts(revision.content) || []
 
     with :ok <-
-           validate_adaptive_dynamic_links(revision, update, project_id, project_page_targets) do
+           validate_adaptive_dynamic_links(revision, update, project_id, project_page_targets),
+         :ok <- validate_adaptive_trigger_content(revision, update, project_id) do
       update =
         normalize_adaptive_dynamic_links(revision, update, project_id, project_page_targets)
 
@@ -784,6 +788,102 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
        do: authoring
 
   defp authoring_from_update(_), do: nil
+
+  defp validate_adaptive_trigger_content(%Revision{} = revision, update, project_id) do
+    if adaptive_activity?(revision) and not project_allows_triggers?(project_id) do
+      content = Map.get(update, "content", revision.content)
+
+      case invalid_adaptive_trigger_content?(content) do
+        true -> {:error, {:invalid_update_field}}
+        false -> :ok
+      end
+    else
+      :ok
+    end
+  end
+
+  defp project_allows_triggers?(project_id) do
+    from(p in Course.Project, where: p.id == ^project_id, select: p.allow_triggers)
+    |> Repo.one()
+    |> Kernel.==(true)
+  end
+
+  defp invalid_adaptive_trigger_content?(content) when is_map(content) do
+    parts_layout =
+      content
+      |> map_value(:partsLayout)
+      |> normalize_list()
+
+    authoring_parts =
+      content
+      |> map_value(:authoring)
+      |> map_value(:parts)
+      |> normalize_list()
+
+    Enum.any?(parts_layout, &disallowed_adaptive_layout_part?/1) or
+      Enum.any?(authoring_parts, &disallowed_adaptive_authoring_part?/1)
+  end
+
+  defp invalid_adaptive_trigger_content?(_), do: false
+
+  defp disallowed_adaptive_authoring_part?(part) when is_map(part) do
+    map_value(part, :type) == @adaptive_ai_trigger_part_type
+  end
+
+  defp disallowed_adaptive_authoring_part?(_), do: false
+
+  defp disallowed_adaptive_layout_part?(part) when is_map(part) do
+    type = map_value(part, :type)
+    custom = map_value(part, :custom)
+
+    type == @adaptive_ai_trigger_part_type or
+      (MapSet.member?(@adaptive_ai_triggerable_part_types, type) and
+         ai_trigger_configured?(custom))
+  end
+
+  defp disallowed_adaptive_layout_part?(_), do: false
+
+  defp ai_trigger_configured?(custom) when is_map(custom) do
+    map_value(custom, :enableAiTrigger) == true or
+      present_text?(map_value(custom, :aiTriggerPrompt))
+  end
+
+  defp ai_trigger_configured?(_), do: false
+
+  defp maybe_authoring_parts(content) when is_map(content) do
+    case map_value(content, :authoring) do
+      authoring when is_map(authoring) ->
+        case map_value(authoring, :parts) do
+          parts when is_list(parts) -> parts
+          _ -> nil
+        end
+
+      _ ->
+        case map_value(content, :content) do
+          nested_content when is_map(nested_content) -> maybe_authoring_parts(nested_content)
+          _ -> nil
+        end
+    end
+  end
+
+  defp maybe_authoring_parts(_), do: nil
+
+  defp normalize_list(value) when is_list(value), do: value
+  defp normalize_list(_), do: []
+
+  defp present_text?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present_text?(_), do: false
+
+  defp map_value(nil, _key), do: nil
+
+  defp map_value(map, key) when is_map(map) and is_atom(key) do
+    case Map.fetch(map, key) do
+      {:ok, value} -> value
+      :error -> Map.get(map, Atom.to_string(key))
+    end
+  end
+
+  defp map_value(_, _key), do: nil
 
   defp validate_authoring_dynamic_links(nil, _project_id, _project_page_targets), do: :ok
 
@@ -1344,7 +1444,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     objectives =
       objectives
       |> Enum.reduce(%{}, fn {part_id, list}, accumulator ->
-        if Enum.any?(parts, fn x -> x["id"] == part_id end) do
+        if Enum.any?(parts, &part_matches_objective_id?(&1, part_id)) do
           accumulator |> Map.put(part_id, list)
         else
           accumulator
@@ -1353,6 +1453,20 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
     Map.put(update, "objectives", objectives)
   end
+
+  defp part_matches_objective_id?(%{"id" => id}, part_id),
+    do: normalize_part_id(id) == normalize_part_id(part_id)
+
+  defp part_matches_objective_id?(%{id: id}, part_id),
+    do: normalize_part_id(id) == normalize_part_id(part_id)
+
+  defp part_matches_objective_id?(id, part_id),
+    do: normalize_part_id(id) == normalize_part_id(part_id)
+
+  defp normalize_part_id(id) when is_binary(id), do: id
+  defp normalize_part_id(id) when is_integer(id), do: Integer.to_string(id)
+  defp normalize_part_id(id) when is_atom(id), do: Atom.to_string(id)
+  defp normalize_part_id(_), do: nil
 
   @doc """
   Attempts to process a request to create a new activity.
