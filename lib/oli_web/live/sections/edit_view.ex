@@ -88,7 +88,14 @@ defmodule OliWeb.Sections.EditView do
 
     ~H"""
     <title>{@title}</title>
-    <.form as={:section} for={@form} phx-change="validate" phx-submit="save" autocomplete="off">
+    <.form
+      id="section-edit-form"
+      as={:section}
+      for={@form}
+      phx-change="validate"
+      phx-submit="save"
+      autocomplete="off"
+    >
       <Groups.render>
         <Group.render label="Settings" description="Manage the course section settings">
           <MainDetails.render

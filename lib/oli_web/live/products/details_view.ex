@@ -13,6 +13,7 @@ defmodule OliWeb.Products.DetailsView do
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Sections.PaywallSettings
   alias OliWeb.Sections.Mount
 
   require Logger
@@ -133,20 +134,35 @@ defmodule OliWeb.Products.DetailsView do
         </div>
       </Overview.section>
 
-      <Overview.section
-        title="Paywall Settings"
-        description="Manage payment requirements for this template."
-      >
-        <p class="text-secondary">
-          For information regarding paywall settings,
-          <.tech_support_link
-            id="tech_support_paywall_settings"
-            class="text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold cursor-pointer"
+      <div class="grid grid-cols-12 py-5 border-b dark:border-gray-700">
+        <div class="col-span-12 md:col-span-4 mr-4">
+          <h4>Paywall Settings</h4>
+          <div class="text-muted">
+            For information regarding paywall settings,
+            <.tech_support_link
+              id="tech_support_paywall_settings"
+              class="text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold cursor-pointer"
+            >
+              contact our support team.
+            </.tech_support_link>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-8">
+          <.form
+            for={@changeset}
+            as={:section}
+            phx-change="validate"
+            phx-submit="save"
+            id="paywall-settings-form"
           >
-            contact our support team.
-          </.tech_support_link>
-        </p>
-      </Overview.section>
+            <PaywallSettings.render
+              form={to_form(@changeset)}
+              disabled={false}
+              show_group={false}
+            />
+          </.form>
+        </div>
+      </div>
 
       <Overview.section
         title="Content"

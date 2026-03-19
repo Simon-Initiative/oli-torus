@@ -21,7 +21,14 @@ defmodule OliWeb.Products.Details.Edit do
   def render(assigns) do
     ~H"""
     <div>
-      <.form :let={f} for={@changeset} phx-change="validate" phx-submit="save" action="#">
+      <.form
+        :let={f}
+        id="template-details-form"
+        for={@changeset}
+        phx-change="validate"
+        phx-submit="save"
+        action="#"
+      >
         <div class="form-group mb-2">
           {label(f, :title)}
           {text_input(f, :title, class: "form-control")}
