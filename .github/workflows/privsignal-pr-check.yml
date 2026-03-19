@@ -23,7 +23,7 @@ concurrency:
 jobs:
   privsignal:
     name: Scan, Diff, Score, and Annotate PR
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.body || '', '<!-- privsignal-auto-refresh -->') }}
     runs-on: ubuntu-latest
     env:
       MIX_ENV: dev
@@ -71,30 +71,6 @@ jobs:
           name: privsignal-lockfile
           path: tmp/privsignal/priv_signal.lockfile.json
           if-no-files-found: error
-
-      - name: Upload lockfile to S3 (well-known location)
-        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: us-east-2
-          S3_BUCKET: oli-torus-releases
-        run: |
-          set -euo pipefail
-          aws --version
-
-          key="privsignal/priv_signal.lockfile.json"
-          aws s3 cp \
-            "tmp/privsignal/priv_signal.lockfile.json" \
-            "s3://${S3_BUCKET}/${key}" \
-            --region "${AWS_REGION}"
-
-          echo "Uploaded lockfile to s3://${S3_BUCKET}/${key}"
-
-      - name: Note fork PR lockfile storage skip
-        if: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
-        run: |
-          echo "Skipping S3 lockfile upload for fork PR due secret restrictions."
 
       - name: Build PR summary outputs
         id: summary
