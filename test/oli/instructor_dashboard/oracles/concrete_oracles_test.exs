@@ -72,6 +72,39 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       assert container_bins[0] == 1
       assert Map.keys(container_bins) |> Enum.sort() == Enum.to_list(0..100//10)
     end
+
+    test "returns by_resource_bins for mixed direct children without breaking by_container_bins",
+         %{
+           map: map
+         } do
+      direct_page = add_direct_page_child(map, map.unit1_resource.id, "Unit 1 extra page")
+      [page_1, _page_2, _page_3] = map.mod1_pages
+
+      set_progress(map.section.id, page_1.resource.id, map.student_a.id, 1.0)
+      set_progress(map.section.id, direct_page.resource_id, map.student_a.id, 1.0)
+
+      context =
+        build_context(
+          map.section.id,
+          map.instructor.id,
+          %{container_type: :container, container_id: map.unit1_resource.id}
+        )
+
+      assert {:ok, payload} = ProgressBins.load(context, [])
+
+      assert payload.total_students == 2
+      assert Map.has_key?(payload.by_container_bins, map.mod1_resource.id)
+      assert Map.has_key?(payload.by_resource_bins, map.mod1_resource.id)
+      assert Map.has_key?(payload.by_resource_bins, direct_page.resource_id)
+
+      module_bins = payload.by_resource_bins[map.mod1_resource.id]
+      direct_page_bins = payload.by_resource_bins[direct_page.resource_id]
+
+      assert module_bins[40] == 1
+      assert module_bins[0] == 1
+      assert direct_page_bins[100] == 1
+      assert direct_page_bins[0] == 1
+    end
   end
 
   describe "ProgressProficiency oracle" do
@@ -460,5 +493,41 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
     )
 
     handler_id
+  end
+
+  defp add_direct_page_child(map, parent_resource_id, title) do
+    page_type_id = ResourceType.id_for_page()
+
+    revision =
+      insert(:revision, %{
+        resource_type_id: page_type_id,
+        title: title,
+        graded: false,
+        content: %{"advancedDelivery" => true}
+      })
+
+    section_resource =
+      insert(:section_resource, %{
+        section: map.section,
+        project: map.project,
+        resource_id: revision.resource_id,
+        revision_id: revision.id,
+        resource_type_id: page_type_id,
+        title: title,
+        slug: "progress-direct-page-#{revision.resource_id}"
+      })
+
+    parent_section_resource =
+      Repo.get_by!(SectionResource, section_id: map.section.id, resource_id: parent_resource_id)
+
+    {:ok, _updated_parent} =
+      Sections.update_section_resource(parent_section_resource, %{
+        children: parent_section_resource.children ++ [section_resource.id]
+      })
+
+    SectionResourceDepot.update_section_resource(section_resource)
+    {:ok, _} = Sections.rebuild_contained_pages(map.section)
+
+    section_resource
   end
 end

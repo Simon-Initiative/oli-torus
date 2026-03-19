@@ -59,14 +59,19 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Progress.Projector do
   end
 
   defp build_series(items, progress_bins_payload, total_students) do
-    by_container_bins = Map.get(progress_bins_payload, :by_container_bins, %{})
+    by_resource_bins =
+      Map.get(
+        progress_bins_payload,
+        :by_resource_bins,
+        Map.get(progress_bins_payload, :by_container_bins, %{})
+      )
 
     Enum.map(items, fn item ->
       %{
         container_id: item.resource_id,
         label: item.title,
         resource_type: resource_type(item.resource_type_id),
-        bins: Map.get(by_container_bins, item.resource_id, %{}),
+        bins: Map.get(by_resource_bins, item.resource_id, %{}),
         total: total_students,
         count: 0,
         percent: 0.0,

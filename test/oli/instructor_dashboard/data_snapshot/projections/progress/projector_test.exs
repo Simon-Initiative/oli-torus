@@ -11,10 +11,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Progress.ProjectorTes
 
       progress_bins_payload = %{
         total_students: 10,
-        by_container_bins: %{
+        by_resource_bins: %{
           101 => %{50 => 4, 100 => 6},
           202 => %{20 => 8, 100 => 2}
-        }
+        },
+        by_container_bins: %{101 => %{50 => 4, 100 => 6}}
       }
 
       scope_resources_payload = %{

@@ -1,6 +1,6 @@
 defmodule Oli.InstructorDashboard.Oracles.ProgressBins do
   @moduledoc """
-  Returns fixed-size progress histograms per direct child container.
+  Returns fixed-size progress histograms per direct child resource.
   """
 
   use Oli.Dashboard.Oracle
@@ -16,6 +16,8 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressBins do
   alias Oli.Resources.ResourceType
 
   @bins Enum.to_list(0..100//10)
+  @page_type_id ResourceType.id_for_page()
+  @container_type_id ResourceType.id_for_container()
 
   @impl true
   def key, do: :oracle_instructor_progress_bins
@@ -27,29 +29,38 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressBins do
   def load(%OracleContext{} = context, opts) do
     with {:ok, section_id, scope} <- Helpers.section_scope(context),
          learner_ids <- Helpers.enrolled_learner_ids(section_id),
-         container_ids <- axis_container_ids(section_id, scope, opts) do
+         axis_items <- axis_items(section_id, scope, opts) do
+      by_resource_bins = by_resource_bins(section_id, axis_items, learner_ids)
+
       {:ok,
        %{
          bin_size: 10,
-         by_container_bins: by_container_bins(section_id, container_ids, learner_ids),
+         by_container_bins: container_bins(axis_items, by_resource_bins),
+         by_resource_bins: by_resource_bins,
          total_students: Enum.count(learner_ids)
        }}
     end
   end
 
-  defp axis_container_ids(section_id, scope, opts) do
+  defp axis_items(section_id, scope, opts) do
+    direct_children = direct_children(section_id, scope)
+
     opts
-    |> Keyword.get(:axis_container_ids, [])
+    |> Keyword.get(:axis_resource_ids, Keyword.get(opts, :axis_container_ids, []))
     |> case do
-      [] -> derive_axis_container_ids(section_id, scope)
-      ids when is_list(ids) -> ids |> Enum.uniq() |> Enum.sort()
-      _ -> []
+      [] ->
+        direct_children
+
+      ids when is_list(ids) ->
+        id_set = ids |> Enum.uniq() |> MapSet.new()
+        Enum.filter(direct_children, &MapSet.member?(id_set, &1.resource_id))
+
+      _ ->
+        []
     end
   end
 
-  defp derive_axis_container_ids(section_id, scope) do
-    container_type_id = ResourceType.id_for_container()
-
+  defp direct_children(section_id, scope) do
     hierarchy =
       section_id
       |> Helpers.section()
@@ -65,10 +76,14 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressBins do
           node -> node.children || []
         end
     end
-    |> Enum.filter(&(&1.revision.resource_type_id == container_type_id))
-    |> Enum.map(& &1.resource_id)
-    |> Enum.uniq()
-    |> Enum.sort()
+    |> Enum.map(fn child ->
+      %{
+        resource_id: child.resource_id,
+        resource_type_id: child.revision.resource_type_id
+      }
+    end)
+    |> Enum.uniq_by(& &1.resource_id)
+    |> Enum.sort_by(& &1.resource_id)
   end
 
   defp find_by_resource_id(node, resource_id) do
@@ -83,29 +98,57 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressBins do
     end
   end
 
-  defp by_container_bins(_section_id, [], _learner_ids), do: %{}
+  defp by_resource_bins(_section_id, [], _learner_ids), do: %{}
 
-  defp by_container_bins(section_id, container_ids, learner_ids) do
+  defp by_resource_bins(section_id, axis_items, learner_ids) do
+    {container_items, page_items} =
+      Enum.split_with(axis_items, &(&1.resource_type_id == @container_type_id))
+
+    container_ids = Enum.map(container_items, & &1.resource_id)
+    page_ids = Enum.map(page_items, & &1.resource_id)
+
     page_counts = page_counts(section_id, container_ids)
-    progress = progress_by_student(section_id, container_ids, learner_ids)
+    container_progress = container_progress_by_student(section_id, container_ids, learner_ids)
+    page_progress = page_progress_by_student(section_id, page_ids, learner_ids)
 
-    Enum.reduce(container_ids, %{}, fn container_id, acc ->
+    Enum.reduce(axis_items, %{}, fn item, acc ->
       bins =
-        learner_ids
-        |> Enum.reduce(empty_bins(), fn learner_id, bins_acc ->
-          ratio =
-            progress
-            |> Map.get(container_id, %{})
-            |> Map.get(learner_id, 0.0)
+        case item.resource_type_id do
+          resource_type_id when resource_type_id == @container_type_id ->
+            build_bins(
+              learner_ids,
+              Map.get(container_progress, item.resource_id, %{}),
+              Map.get(page_counts, item.resource_id, 0) > 0
+            )
 
-          Map.update!(bins_acc, bin_for_progress(ratio), &(&1 + 1))
-        end)
+          resource_type_id when resource_type_id == @page_type_id ->
+            build_bins(learner_ids, Map.get(page_progress, item.resource_id, %{}), true)
 
-      case Map.get(page_counts, container_id, 0) do
-        0 -> Map.put(acc, container_id, empty_bins())
-        _ -> Map.put(acc, container_id, bins)
-      end
+          _ ->
+            empty_bins()
+        end
+
+      Map.put(acc, item.resource_id, bins)
     end)
+  end
+
+  defp container_bins(axis_items, by_resource_bins) do
+    axis_items
+    |> Enum.filter(&(&1.resource_type_id == @container_type_id))
+    |> Enum.reduce(%{}, fn item, acc ->
+      Map.put(acc, item.resource_id, Map.get(by_resource_bins, item.resource_id, empty_bins()))
+    end)
+  end
+
+  defp build_bins(learner_ids, progress_by_learner, has_progress_source?) do
+    if has_progress_source? do
+      Enum.reduce(learner_ids, empty_bins(), fn learner_id, bins_acc ->
+        ratio = Map.get(progress_by_learner, learner_id, 0.0)
+        Map.update!(bins_acc, bin_for_progress(ratio), &(&1 + 1))
+      end)
+    else
+      empty_bins()
+    end
   end
 
   defp page_counts(section_id, container_ids) do
@@ -118,9 +161,10 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressBins do
     |> Enum.into(%{})
   end
 
-  defp progress_by_student(_section_id, _container_ids, []), do: %{}
+  defp container_progress_by_student(_section_id, _container_ids, []), do: %{}
+  defp container_progress_by_student(_section_id, [], _learner_ids), do: %{}
 
-  defp progress_by_student(section_id, container_ids, learner_ids) do
+  defp container_progress_by_student(section_id, container_ids, learner_ids) do
     page_counts_query =
       from(cp in ContainedPage,
         where: cp.section_id == ^section_id and cp.container_id in ^container_ids,
@@ -148,6 +192,23 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressBins do
     |> Enum.reduce(%{}, fn {container_id, learner_id, ratio}, acc ->
       container_progress = Map.get(acc, container_id, %{})
       Map.put(acc, container_id, Map.put(container_progress, learner_id, ratio || 0.0))
+    end)
+  end
+
+  defp page_progress_by_student(_section_id, _page_ids, []), do: %{}
+  defp page_progress_by_student(_section_id, [], _learner_ids), do: %{}
+
+  defp page_progress_by_student(section_id, page_ids, learner_ids) do
+    from(ra in ResourceAccess,
+      where:
+        ra.section_id == ^section_id and ra.resource_id in ^page_ids and
+          ra.user_id in ^learner_ids,
+      select: {ra.resource_id, ra.user_id, ra.progress}
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn {page_id, learner_id, ratio}, acc ->
+      page_progress = Map.get(acc, page_id, %{})
+      Map.put(acc, page_id, Map.put(page_progress, learner_id, ratio || 0.0))
     end)
   end
 
