@@ -16,15 +16,16 @@ defmodule Oli.Delivery.TemplatePreview do
   @launch_failed_event [:oli, :template_preview, :launch_failed]
 
   @spec prepare_launch(Section.t(), User.t() | nil, Author.t() | nil) ::
-          {:ok, %{section_slug: String.t(), enrollment_outcome: :created | :reused}}
+          {:ok,
+           %{
+             section_slug: String.t(),
+             launch_identity: :current_user | :hidden_instructor,
+             enrollment_outcome: :created | :reused | nil,
+             hidden_instructor_outcome: :created | :reused | nil
+           }}
           | {:error, atom()}
   def prepare_launch(%Section{} = section, actor_user, actor_author) do
-    metadata =
-      telemetry_metadata(
-        section,
-        actor_user || linked_user_for(author: actor_author),
-        actor_author
-      )
+    metadata = telemetry_metadata(section, actor_user, actor_author)
 
     :telemetry.execute(@requested_event, %{count: 1}, metadata)
 
@@ -34,13 +35,18 @@ defmodule Oli.Delivery.TemplatePreview do
       "prepare_launch",
       fn ->
         case do_prepare_launch(section, actor_user, actor_author) do
-          {:ok, %{enrollment_outcome: outcome} = result} ->
-            enriched = Map.put(metadata, :enrollment_outcome, outcome)
+          {:ok, result} ->
+            enriched =
+              metadata
+              |> Map.put(:user_id, result.user_id)
+              |> Map.put(:launch_identity, to_string(result.launch_identity))
+              |> Map.put(:enrollment_outcome, result.enrollment_outcome)
+              |> Map.put(:hidden_instructor_outcome, result.hidden_instructor_outcome)
 
             :telemetry.execute(@enrollment_ensured_event, %{count: 1}, enriched)
             :telemetry.execute(@launch_succeeded_event, %{count: 1}, enriched)
 
-            {:ok, result}
+            {:ok, Map.drop(result, [:user_id])}
 
           {:error, reason} = error ->
             :telemetry.execute(
@@ -61,11 +67,37 @@ defmodule Oli.Delivery.TemplatePreview do
          actor_user,
          actor_author
        ) do
-    with :ok <- authorize_author(actor_author, section),
-         {:ok, linked_user} <- resolve_linked_delivery_identity(actor_user, actor_author),
-         {:ok, %{outcome: outcome}} <-
-           Sections.ensure_student_enrollment(linked_user.id, section.id) do
-      {:ok, %{section_slug: section.slug, enrollment_outcome: outcome}}
+    with :ok <- authorize_author(actor_author, section) do
+      case resolve_launch_identity(actor_user, actor_author) do
+        {:ok, {:current_user, %User{} = user}} ->
+          with {:ok, %{outcome: outcome}} <-
+                 Sections.ensure_student_enrollment(user.id, section.id) do
+            {:ok,
+             %{
+               section_slug: section.slug,
+               launch_identity: :current_user,
+               enrollment_outcome: outcome,
+               hidden_instructor_outcome: nil,
+               user_id: user.id
+             }}
+          end
+
+        {:ok, :hidden_instructor} ->
+          with {:ok, %{user: user, outcome: outcome}} <-
+                 Sections.ensure_hidden_instructor(section.id) do
+            {:ok,
+             %{
+               section_slug: section.slug,
+               launch_identity: :hidden_instructor,
+               enrollment_outcome: nil,
+               hidden_instructor_outcome: outcome,
+               user_id: user.id
+             }}
+          end
+
+        error ->
+          error
+      end
     end
   end
 
@@ -82,17 +114,12 @@ defmodule Oli.Delivery.TemplatePreview do
     end
   end
 
-  defp resolve_linked_delivery_identity(%User{author_id: author_id} = user, %Author{id: author_id}),
-       do: {:ok, user}
+  defp resolve_launch_identity(%User{author_id: author_id} = user, %Author{id: author_id}),
+    do: {:ok, {:current_user, user}}
 
-  defp resolve_linked_delivery_identity(nil, %Author{id: author_id}) do
-    case Accounts.get_user_by(author_id: author_id) do
-      %User{} = user -> {:ok, user}
-      _ -> {:error, :missing_delivery_identity}
-    end
-  end
+  defp resolve_launch_identity(nil, %Author{}), do: {:ok, :hidden_instructor}
 
-  defp resolve_linked_delivery_identity(_user, _author), do: {:error, :missing_delivery_identity}
+  defp resolve_launch_identity(_user, _author), do: {:error, :missing_delivery_identity}
 
   defp telemetry_metadata(section, actor_user, actor_author) do
     %{
@@ -104,10 +131,4 @@ defmodule Oli.Delivery.TemplatePreview do
       tenant_id: section.institution_id
     }
   end
-
-  defp linked_user_for(author: %Author{id: author_id}) do
-    Accounts.get_user_by(author_id: author_id)
-  end
-
-  defp linked_user_for(author: _), do: nil
 end

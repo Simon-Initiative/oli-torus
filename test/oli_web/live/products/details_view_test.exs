@@ -324,16 +324,17 @@ defmodule OliWeb.Products.DetailsViewTest do
       assert has_element?(view, "a[href='/sections/#{product.slug}']", "Open Preview")
     end
 
-    test "shows an error when the author has no linked learner account", %{
+    test "uses hidden instructor fallback when no current user is present", %{
       conn: conn,
       product: product
     } do
       {:ok, view, _html} = live(conn, product_route(product.slug))
+      preview_url = "/authoring/products/#{product.slug}/preview_launch"
 
       render_click(element(view, "button[phx-click='template_preview']"))
 
-      assert render(view) =~ "Preview requires a linked learner account for the current author"
-      refute has_element?(view, "a[href='/sections/#{product.slug}']", "Open Preview")
+      assert_push_event(view, "template-preview-open", %{url: ^preview_url})
+      assert has_element?(view, "a[href='#{preview_url}']", "Open Preview")
     end
 
     test "reuses the existing enrollment on repeated launch", %{

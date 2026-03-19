@@ -78,6 +78,17 @@ defmodule Oli.Delivery.Sections do
   allow admins to access delivery routes.
   """
   def fetch_hidden_instructor(section_id) do
+    case ensure_hidden_instructor(section_id) do
+      {:ok, %{user: user, token: token}} -> {:ok, {user, token}}
+      error -> error
+    end
+  end
+
+  @doc """
+  Ensures a section-scoped hidden instructor exists and returns whether it was created
+  or reused. The hidden instructor is a singleton per section.
+  """
+  def ensure_hidden_instructor(section_id) do
     case from(e in Enrollment,
            join: ecr in EnrollmentContextRole,
            on: ecr.enrollment_id == e.id,
@@ -93,7 +104,7 @@ defmodule Oli.Delivery.Sections do
 
       [user | _rest] ->
         token = Oli.Accounts.generate_user_session_token(user)
-        {:ok, {user, token}}
+        {:ok, %{user: user, token: token, outcome: :reused}}
     end
   end
 
@@ -125,7 +136,7 @@ defmodule Oli.Delivery.Sections do
       token = Oli.Accounts.generate_user_session_token(user)
 
       # Return the created user and session token
-      {user, token}
+      %{user: user, token: token, outcome: :created}
     end)
   end
 

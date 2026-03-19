@@ -4,13 +4,14 @@ defmodule OliWeb.ProductsController do
   import OliWeb.Common.Params
 
   alias Oli.Accounts
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.{Sections, TemplatePreview}
   alias Oli.Delivery.Sections.{Blueprint, Browse, BrowseOptions, Section}
   alias Oli.Publishing.Publications.Publication
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.Utils
   alias OliWeb.Admin.BrowseFilters
+  alias OliWeb.UserAuth
 
   @csv_headers [
     "Title",
@@ -179,6 +180,47 @@ defmodule OliWeb.ProductsController do
     end
   end
 
+  def preview_launch(conn, %{"product_id" => product_slug}) do
+    author = conn.assigns.current_author
+    current_user = conn.assigns.current_user
+
+    with {:ok, product} <- fetch_product(product_slug),
+         :ok <- authorize_product_preview(author, product),
+         {:ok, %{launch_identity: launch_identity, section_slug: section_slug}} <-
+           TemplatePreview.prepare_launch(product, current_user, author) do
+      case launch_identity do
+        :current_user ->
+          redirect(conn, to: ~p"/sections/#{section_slug}")
+
+        :hidden_instructor ->
+          case Sections.fetch_hidden_instructor(product.id) do
+            {:ok, {user, _token}} ->
+              UserAuth.log_in_user(conn, user, %{"request_path" => ~p"/sections/#{section_slug}"})
+
+            _ ->
+              conn
+              |> put_flash(:error, "Template preview could not be prepared")
+              |> redirect(to: ~p"/authoring/products/#{product.slug}")
+          end
+      end
+    else
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> text("Template not found")
+
+      {:error, :unauthorized} ->
+        conn
+        |> put_flash(:error, "You are not authorized to access this page.")
+        |> redirect(to: "/workspaces/course_author")
+
+      {:error, _reason} ->
+        conn
+        |> put_flash(:error, "Template preview could not be prepared")
+        |> redirect(to: ~p"/authoring/products/#{product_slug}")
+    end
+  end
+
   defp products_to_csv(products) do
     rows =
       Enum.map(products, fn product ->
@@ -298,6 +340,9 @@ defmodule OliWeb.ProductsController do
       {:error, :unauthorized}
     end
   end
+
+  defp authorize_product_preview(author, product),
+    do: authorize_product_usage_export(author, product)
 
   defp sections_to_usage_csv(sections, true) do
     rows =

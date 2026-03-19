@@ -472,6 +472,7 @@ defmodule OliWeb.Router do
     live("/projects", Projects.ProjectsLive)
     get("/projects/export", ProjectsController, :export_csv)
     get("/products/export", ProductsController, :export_csv)
+    get("/products/:product_id/preview_launch", ProductsController, :preview_launch)
     get("/products/:product_id/usage/export", ProductsController, :export_usage_csv)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/usage", Products.UsageView, metadata: %{route_name: :authoring})

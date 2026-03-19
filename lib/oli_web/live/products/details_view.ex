@@ -18,6 +18,7 @@ defmodule OliWeb.Products.DetailsView do
   require Logger
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount {OliWeb.UserAuth, :mount_current_user}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def set_breadcrumbs(section),
@@ -271,8 +272,8 @@ defmodule OliWeb.Products.DetailsView do
                Map.get(socket.assigns, :current_user),
                socket.assigns.current_author
              ) do
-          {:ok, %{section_slug: section_slug}} ->
-            preview_url = ~p"/sections/#{section_slug}"
+          {:ok, %{section_slug: section_slug, launch_identity: launch_identity}} ->
+            preview_url = preview_launch_url(socket, section_slug, launch_identity)
 
             {:noreply,
              socket
@@ -463,5 +464,11 @@ defmodule OliWeb.Products.DetailsView do
 
   defp preview_error_message(_reason) do
     "Template preview could not be prepared"
+  end
+
+  defp preview_launch_url(_socket, section_slug, :current_user), do: ~p"/sections/#{section_slug}"
+
+  defp preview_launch_url(socket, _section_slug, :hidden_instructor) do
+    ~p"/authoring/products/#{socket.assigns.product.slug}/preview_launch"
   end
 end

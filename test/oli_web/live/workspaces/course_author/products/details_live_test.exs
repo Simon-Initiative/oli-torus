@@ -145,15 +145,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert count == 1
     end
 
-    test "shows an error when the author has no linked learner account", ctx do
+    test "uses hidden instructor fallback when no current user is present", ctx do
       %{conn: conn, project: project, product: product} = ctx
 
       {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+      preview_url = "/authoring/products/#{product.slug}/preview_launch"
 
       render_click(element(live, "button[phx-click='template_preview']"))
 
-      assert render(live) =~ "Preview requires a linked learner account for the current author"
-      refute has_element?(live, "a[href='/sections/#{product.slug}']", "Open Preview")
+      assert_push_event(live, "template-preview-open", %{url: ^preview_url})
+      assert has_element?(live, "a[href='#{preview_url}']", "Open Preview")
     end
   end
 
