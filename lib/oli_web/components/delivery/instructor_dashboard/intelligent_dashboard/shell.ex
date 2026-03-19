@@ -154,7 +154,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
     <EngagementSection.section
       expanded={@section.expanded}
       show_move_handle={@show_move_handle}
-      progress_status={Map.get(@dashboard, :progress_text, "Loading...")}
+      progress_projection={Map.get(@dashboard, :progress_projection, %{})}
+      progress_tile_state={@progress_tile_state}
       student_support_projection={Map.get(@dashboard, :student_support_projection, %{})}
       student_support_tile_state={@student_support_tile_state}
       params={@params}

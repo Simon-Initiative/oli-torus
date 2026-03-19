@@ -445,6 +445,39 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       )
     end
 
+    test "progress tile controls patch the url with namespaced tile params", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      assert has_element?(view, "#learning-dashboard-progress-tile", "Completion Threshold: 100%")
+
+      view
+      |> element("#learning-dashboard-progress-tile a[data-mode='percent']")
+      |> render_click()
+
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_progress[mode]=percent"
+      )
+    end
+
     test "courses with only pages render a non-interactive Entire Course navigator", %{
       instructor: instructor,
       conn: conn

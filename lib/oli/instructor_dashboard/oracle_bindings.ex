@@ -44,10 +44,11 @@ defmodule Oli.InstructorDashboard.OracleBindings do
       consumers: %{
         progress_summary: %{
           required_oracles: %{
-            progress: :oracle_instructor_progress
+            progress_bins: :oracle_instructor_progress_bins,
+            scope_resources: :oracle_instructor_scope_resources
           },
           optional_oracles: %{
-            engagement: :oracle_instructor_engagement
+            legacy_progress: :oracle_instructor_progress
           }
         },
         support_summary: %{

@@ -23,8 +23,11 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
     test "resolves dependency profiles for known consumer keys" do
       assert {:ok,
               %{
-                required: [:oracle_instructor_progress],
-                optional: [:oracle_instructor_engagement]
+                required: [
+                  :oracle_instructor_progress_bins,
+                  :oracle_instructor_scope_resources
+                ],
+                optional: [:oracle_instructor_progress]
               }} =
                OracleRegistry.dependencies_for(:progress_summary)
 
