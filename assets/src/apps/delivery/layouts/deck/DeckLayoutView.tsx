@@ -42,7 +42,7 @@ import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
-  // migrated legacy include as customCss
+  // migrated legacy include as  customCss
   // BS: do we need a default?
   const defaultCss = '';
   const injected = props.css || defaultCss;
