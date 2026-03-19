@@ -48,8 +48,8 @@ import {
   selectIsLegacyTheme,
   selectPageContent,
   selectPreviewMode,
-  selectResponsiveLayout,
   selectResourceAttemptGuid,
+  selectResponsiveLayout,
   selectReviewMode,
   selectSectionSlug,
   setScore,
@@ -781,10 +781,7 @@ const DeckLayoutFooter: React.FC = () => {
   return (
     <>
       {!isReviewMode && (
-        <div
-          className={`checkContainer rowRestriction columnRestriction`}
-          style={containerStyle}
-        >
+        <div className={`checkContainer rowRestriction columnRestriction`} style={containerStyle}>
           <NextButton
             isLoading={isLoading || !initPhaseComplete}
             text={nextButtonText}
