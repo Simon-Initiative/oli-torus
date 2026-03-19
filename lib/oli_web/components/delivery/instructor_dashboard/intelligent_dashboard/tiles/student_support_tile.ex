@@ -601,20 +601,26 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   def handle_event("student_support_row_toggled", %{"student_id" => student_id}, socket) do
-    student_id = String.to_integer(student_id)
-    selected_student_ids = normalize_selected_student_ids(socket.assigns[:selected_student_ids])
+    case Integer.parse(student_id) do
+      {parsed_student_id, ""} ->
+        selected_student_ids =
+          normalize_selected_student_ids(socket.assigns[:selected_student_ids])
 
-    next_selected_student_ids =
-      if student_id in selected_student_ids do
-        List.delete(selected_student_ids, student_id)
-      else
-        [student_id | selected_student_ids]
-      end
+        next_selected_student_ids =
+          if parsed_student_id in selected_student_ids do
+            List.delete(selected_student_ids, parsed_student_id)
+          else
+            [parsed_student_id | selected_student_ids]
+          end
 
-    {:noreply,
-     socket
-     |> assign(:selected_student_ids, next_selected_student_ids)
-     |> assign(:show_email_modal, false)}
+        {:noreply,
+         socket
+         |> assign(:selected_student_ids, next_selected_student_ids)
+         |> assign(:show_email_modal, false)}
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("edit_threshold_definitions", _params, socket) do
@@ -667,7 +673,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           "type" => "nominal",
           "legend" => nil,
           "scale" => %{
-            "domain" => Map.keys(@bucket_styles),
+            "domain" => @chart_bucket_order,
             "range" =>
               Enum.map(@chart_bucket_order, fn bucket_id ->
                 bucket_id

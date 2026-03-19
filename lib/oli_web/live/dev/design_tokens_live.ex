@@ -166,7 +166,7 @@ defmodule OliWeb.Dev.DesignTokensLive do
                 :if={primitive.catalog.figma_url}
                 href={primitive.catalog.figma_url}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 class="text-sm font-semibold text-Text-text-button hover:text-Text-text-button-hover hover:underline"
               >
                 Open Figma
@@ -204,6 +204,7 @@ defmodule OliWeb.Dev.DesignTokensLive do
                                 type="button"
                                 phx-hook="CopyToClipboard"
                                 data-copy-text={button_code(example.assigns)}
+                                aria-label="Copy HEEx snippet"
                                 class="absolute right-2 top-2 text-Text-text-low transition hover:text-Text-text-high"
                                 title="Copy HEEx"
                               >
@@ -242,6 +243,7 @@ defmodule OliWeb.Dev.DesignTokensLive do
                                 data-copy-text={
                                   button_code(Map.put(example.assigns, :disabled, true))
                                 }
+                                aria-label="Copy HEEx snippet"
                                 class="absolute right-2 top-2 text-Text-text-low transition hover:text-Text-text-high"
                                 title="Copy HEEx"
                               >
@@ -294,6 +296,7 @@ defmodule OliWeb.Dev.DesignTokensLive do
                                 type="button"
                                 phx-hook="CopyToClipboard"
                                 data-copy-text={button_code(example.assigns)}
+                                aria-label="Copy HEEx snippet"
                                 class="absolute right-2 top-2 text-Text-text-low transition hover:text-Text-text-high"
                                 title="Copy HEEx"
                               >

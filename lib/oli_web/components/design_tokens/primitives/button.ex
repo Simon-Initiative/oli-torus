@@ -322,7 +322,13 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
     assigns = normalize_button_assigns(assigns)
 
     ~H"""
-    <% label_text = slot_plain_text(render_slot(@inner_block)) %>
+    <% truncate_fallback_label_text =
+      if @text_behavior == :truncate and
+           (is_nil(@rest["title"]) or is_nil(@rest["aria-label"])) do
+        slot_plain_text(render_slot(@inner_block))
+      else
+        nil
+      end %>
     <%= case {@variant, @href} do %>
       <% {:close, _} -> %>
         <button
@@ -346,9 +352,9 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
             variant_classes(@variant, @muted, @disabled),
             @class
           ]}
-          aria-label={aria_label_text(@text_behavior, @rest["aria-label"], label_text)}
+          aria-label={aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)}
           aria-expanded={@aria_expanded}
-          title={title_text(@text_behavior, @rest["title"], label_text)}
+          title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
           disabled={@disabled}
           {@rest}
         >
@@ -373,9 +379,9 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
             variant_classes(@variant, @muted, @disabled),
             @class
           ]}
-          aria-label={aria_label_text(@text_behavior, @rest["aria-label"], label_text)}
+          aria-label={aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)}
           aria-disabled={to_string(@disabled)}
-          title={title_text(@text_behavior, @rest["title"], label_text)}
+          title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
           tabindex={if @disabled, do: "-1", else: @rest["tabindex"]}
           {@rest}
         >
