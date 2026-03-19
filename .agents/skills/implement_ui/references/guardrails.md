@@ -45,6 +45,12 @@ Good candidates include:
 - tab triggers
 - icon buttons
 
+For these cross-feature primitives:
+- check `design_tokens/` before recommending a feature-local implementation
+- if a shared primitive already exists, extend or compose it rather than restyling locally
+- if no suitable primitive exists and the pattern is clearly cross-feature, recommend creating it under `design_tokens/`
+- when recommending a new shared primitive, also recommend wiring it into `/dev/design_tokens` and linking its canonical Figma node
+
 Do not recommend extraction for every local layout wrapper.
 
 ## Ambiguity

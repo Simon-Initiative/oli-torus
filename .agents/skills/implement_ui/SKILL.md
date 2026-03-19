@@ -122,6 +122,8 @@ If the request does not specify a mode:
    - existing reusable components or patterns
    - likely target modules/files
    - whether the result should stay feature-local or be extracted to `design_tokens/`
+   - for cross-feature primitives, first check whether a shared primitive already exists under `design_tokens/`
+   - if proposing a new shared primitive, state where it should live, how it should appear in `/dev/design_tokens`, and which Figma node should be linked from the catalog
    - load conditional references when icon extraction, fidelity rules, or responsive behavior need deeper guidance
 
 5. Detect and record gaps.
@@ -169,6 +171,8 @@ Follow the detailed rules in:
 Non-negotiable rules:
 
 - Prefer existing design tokens, icons, and reusable components before proposing new ones.
+- For cross-feature primitives such as buttons, icon buttons, badges, pills, tabs, and simple feedback surfaces, prefer `design_tokens/` over feature-local styling unless there is a clear reason to keep the work local.
+- If a new shared primitive is recommended, the brief must say that it should be wired into `/dev/design_tokens` and linked to its canonical Figma source when one exists.
 - If a token, icon, interaction, or responsive behavior is ambiguous, record it under `Open Questions / Requires Approval`.
 - Do not invent missing design behavior.
 - Do not create or modify design tokens automatically. Recommend additions only when necessary and only with explicit approval.
@@ -181,6 +185,8 @@ Before finishing, verify that the brief:
 - names the primary design source and the relevant Figma node ids or links
 - states the implementation surface explicitly
 - maps tokens, icons, reusable components, and file targets
+- explicitly says whether any new primitive should live under `design_tokens/` or remain feature-local
+- includes `/dev/design_tokens` and Figma-link expectations when a new shared primitive is proposed
 - records any unresolved ambiguity or approval-dependent decision in `Open Questions / Requires Approval`
 
 ## Handoff Guidance
