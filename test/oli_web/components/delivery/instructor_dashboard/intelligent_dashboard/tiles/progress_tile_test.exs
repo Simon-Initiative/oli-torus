@@ -5,7 +5,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.ProgressTile
 
-  test "renders projected class size and threshold state" do
+  test "renders chart hook, controls, and class size" do
     html =
       render_component(ProgressTile,
         id: "progress_tile",
@@ -18,8 +18,26 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
     assert html =~ "Class size:"
     assert html =~ ">24<"
-    assert html =~ "Completion Threshold: 100%"
+    assert html =~ "Completion Threshold"
+    assert html =~ "phx-hook=\"ProgressTileChart\""
+    assert html =~ "Course Units"
     assert html =~ "View Progress Details"
+  end
+
+  test "renders visible schedule marker and mixed axis copy" do
+    html =
+      render_component(ProgressTile,
+        id: "progress_tile",
+        projection: scheduled_projection(),
+        tile_state: %{completion_threshold: 100, y_axis_mode: :count, page: 1},
+        params: %{"dashboard_scope" => "course"},
+        section_slug: "biology-101",
+        dashboard_scope: "course"
+      )
+
+    assert html =~ "Schedule: Unit 2"
+    assert html =~ "Course Content"
+    assert html =~ "Completion threshold 100%"
   end
 
   test "reprojects mode and page from tile-local state" do
@@ -40,6 +58,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     assert html =~ "Unit 8"
     refute html =~ "Unit 1"
     assert html =~ "% of class"
+    assert html =~ "aria-live=\"polite\""
   end
 
   defp base_projection do
@@ -72,6 +91,44 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       ],
       schedule_context: nil,
       page_window: %{page: 1, per_page: 7, total_items: 0, total_pages: 0}
+    }
+  end
+
+  defp scheduled_projection do
+    %{
+      axis_label: "Course Content",
+      class_size: 24,
+      completion_threshold: 100,
+      y_axis_mode: :count,
+      series_all: [
+        %{
+          container_id: 1,
+          label: "Unit 1",
+          resource_type: :container,
+          bins: %{100 => 12},
+          total: 24,
+          count: 0,
+          percent: 0.0,
+          value: 0
+        },
+        %{
+          container_id: 2,
+          label: "Unit 2",
+          resource_type: :page,
+          bins: %{100 => 6},
+          total: 24,
+          count: 0,
+          percent: 0.0,
+          value: 0
+        }
+      ],
+      schedule_context: %{
+        current_resource_id: 2,
+        label: "Schedule: Unit 2",
+        tooltip: "Schedule is currently at Unit 2"
+      },
+      page_window: %{page: 1, per_page: 7, total_items: 0, total_pages: 0},
+      schedule_marker: %{present?: false}
     }
   end
 

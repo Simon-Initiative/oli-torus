@@ -6,19 +6,26 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   use OliWeb, :live_component
 
   alias Oli.InstructorDashboard.DataSnapshot.Projections.Progress.Projector
+  alias OliWeb.Icons
   alias OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab
 
   @threshold_options Enum.to_list(10..100//10)
+  @chart_height 280
+  @count_chart_ticks 5
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
     projected =
       projected_view_model(Map.get(assigns, :projection, %{}), Map.get(assigns, :tile_state, %{}))
 
+    chart = chart_view_model(projected)
+
     assigns =
       assigns
       |> assign(:projected, projected)
+      |> assign(:chart, chart)
       |> assign(:threshold_options, @threshold_options)
+      |> assign(:page_announcement_id, "progress-page-announcement-#{assigns.id}")
 
     ~H"""
     <article
@@ -26,61 +33,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       class="h-full rounded-xl border border-Border-border-subtle bg-Surface-surface-primary p-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
     >
       <div class="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h3 class="text-lg font-semibold leading-6 text-Text-text-high">Progress</h3>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-5 w-5 items-center justify-center rounded-sm border border-Border-border-default text-[10px] font-bold text-Text-text-high">
+              /
+            </span>
+            <h3 class="text-lg font-semibold leading-6 text-Text-text-high">Progress</h3>
+          </div>
           <p class="mt-1 max-w-[32rem] text-sm leading-5 text-Text-text-low">
             {description_text(@projected)}
           </p>
         </div>
         <.link
           patch={view_details_path(assigns)}
-          class="text-sm font-semibold text-Text-text-button underline-offset-2 hover:underline"
+          class="shrink-0 text-sm font-semibold text-Text-text-button underline-offset-2 hover:underline"
         >
           View Progress Details
         </.link>
-      </div>
-
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p class="text-sm font-semibold text-Text-text-high">
-          Class size: <span data-role="progress-class-size">{@projected.class_size}</span>
-        </p>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <details class="relative">
-            <summary class="cursor-pointer list-none rounded-md border border-Border-border-default bg-Background-bg-primary px-3 py-2 text-sm font-semibold text-Text-text-high">
-              Completion Threshold: {@projected.completion_threshold}%
-            </summary>
-            <div class="absolute right-0 z-10 mt-2 grid min-w-[10rem] gap-1 rounded-lg border border-Border-border-subtle bg-Surface-surface-primary p-2 shadow-lg">
-              <%= for threshold <- @threshold_options do %>
-                <.link
-                  patch={tile_patch_path(assigns, %{"threshold" => threshold, "page" => 1})}
-                  data-threshold={threshold}
-                  class={[
-                    "rounded-md px-2 py-1 text-sm",
-                    threshold == @projected.completion_threshold &&
-                      "bg-Surface-surface-secondary font-semibold text-Text-text-high",
-                    threshold != @projected.completion_threshold && "text-Text-text-low"
-                  ]}
-                >
-                  {threshold}%
-                </.link>
-              <% end %>
-            </div>
-          </details>
-
-          <div class="flex items-center rounded-md border border-Border-border-default bg-Background-bg-primary p-1">
-            <.mode_button
-              current={@projected.y_axis_mode}
-              value={:count}
-              patch_path={tile_patch_path(assigns, %{"mode" => "count"})}
-            />
-            <.mode_button
-              current={@projected.y_axis_mode}
-              value={:percent}
-              patch_path={tile_patch_path(assigns, %{"mode" => "percent"})}
-            />
-          </div>
-        </div>
       </div>
 
       <%= case @projected.empty_state do %>
@@ -93,14 +62,57 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             No students are included in this view yet, so the chart is not rendered.
           </div>
         <% _ -> %>
-          <div class="space-y-3">
+          <div class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <p class="rounded-full px-1 text-sm font-semibold text-Text-text-high">
+                Class size: <span data-role="progress-class-size">{@projected.class_size}</span>
+              </p>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <div class="group relative flex items-center gap-1">
+                  <span class="text-sm text-Text-text-high">Completion Threshold</span>
+                  <button
+                    type="button"
+                    class="rounded-full text-Text-text-low focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
+                    aria-label="Completion threshold help"
+                  >
+                    <Icons.info />
+                  </button>
+                  <div class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden w-56 -translate-x-1/2 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block">
+                    Adjust the percentage considered complete for each visible content item.
+                  </div>
+                </div>
+
+                <details class="relative">
+                  <summary class="cursor-pointer list-none rounded-md border border-Border-border-default bg-Background-bg-primary px-3 py-2 text-sm font-semibold text-Text-text-high">
+                    {@projected.completion_threshold}%
+                  </summary>
+                  <div class="absolute right-0 z-20 mt-2 grid min-w-[9rem] gap-1 rounded-lg border border-Border-border-subtle bg-Surface-surface-primary p-2 shadow-lg">
+                    <%= for threshold <- @threshold_options do %>
+                      <.link
+                        patch={tile_patch_path(assigns, %{"threshold" => threshold, "page" => 1})}
+                        data-threshold={threshold}
+                        class={[
+                          "rounded-md px-2 py-1 text-sm",
+                          threshold == @projected.completion_threshold &&
+                            "bg-Surface-surface-secondary font-semibold text-Text-text-high",
+                          threshold != @projected.completion_threshold && "text-Text-text-low"
+                        ]}
+                      >
+                        {threshold}%
+                      </.link>
+                    <% end %>
+                  </div>
+                </details>
+              </div>
+            </div>
+
             <div
-              id={"progress-chart-#{@id}"}
-              data-role="progress-chart-target"
+              id={"progress-chart-shell-#{@id}"}
               class="rounded-lg border border-Border-border-subtle bg-Background-bg-primary p-4"
             >
               <div class="mb-3 flex items-center justify-between gap-3">
-                <div>
+                <div class="min-w-0">
                   <p class="text-sm font-semibold text-Text-text-high">{@projected.axis_label}</p>
                   <p class="text-xs text-Text-text-low">
                     Showing page {display_page(@projected.page_window.page)} of {display_page(
@@ -109,44 +121,180 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   </p>
                 </div>
 
-                <%= if @projected.page_window.total_pages > 1 do %>
-                  <div class="flex items-center gap-2">
-                    <.pagination_button
-                      enabled={@projected.page_window.page > 1}
-                      patch_path={
-                        tile_patch_path(assigns, %{"page" => @projected.page_window.page - 1})
-                      }
-                      label="Previous"
-                    />
-                    <.pagination_button
-                      enabled={@projected.page_window.page < @projected.page_window.total_pages}
-                      patch_path={
-                        tile_patch_path(assigns, %{"page" => @projected.page_window.page + 1})
-                      }
-                      label="Next"
-                    />
+                <div class="flex items-center gap-2">
+                  <div id={@page_announcement_id} aria-live="polite" class="sr-only">
+                    {page_announcement(@projected.page_window)}
                   </div>
-                <% end %>
+                  <.pagination_button
+                    enabled={@projected.page_window.page > 1}
+                    patch_path={
+                      tile_patch_path(assigns, %{"page" => @projected.page_window.page - 1})
+                    }
+                    label="Previous page"
+                    icon_rotation="rotate-180"
+                  />
+                  <.pagination_button
+                    enabled={@projected.page_window.page < @projected.page_window.total_pages}
+                    patch_path={
+                      tile_patch_path(assigns, %{"page" => @projected.page_window.page + 1})
+                    }
+                    label="Next page"
+                    icon_rotation=""
+                  />
+                </div>
               </div>
 
-              <div class="grid min-h-[220px] grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <%= for item <- @projected.series do %>
-                  <div class="rounded-lg border border-Border-border-subtle bg-Surface-surface-primary p-3">
-                    <div class="mb-2 flex items-end gap-3">
+              <div class="flex gap-4">
+                <div class="flex flex-col items-center justify-center gap-3 pt-10">
+                  <.mode_button
+                    current={@projected.y_axis_mode}
+                    value={:percent}
+                    patch_path={tile_patch_path(assigns, %{"mode" => "percent"})}
+                  />
+                  <.mode_button
+                    current={@projected.y_axis_mode}
+                    value={:count}
+                    patch_path={tile_patch_path(assigns, %{"mode" => "count"})}
+                  />
+                  <div class="pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-Text-text-high [writing-mode:vertical-rl] [transform:rotate(180deg)]">
+                    Students
+                  </div>
+                </div>
+
+                <div class="min-w-0 flex-1">
+                  <div class="flex gap-3">
+                    <div
+                      class="flex shrink-0 flex-col justify-between pt-3 text-xs text-Text-text-high"
+                      style={"height: #{@chart.height}px"}
+                    >
+                      <%= for tick <- @chart.y_ticks do %>
+                        <span>{tick_label(tick, @projected.y_axis_mode)}</span>
+                      <% end %>
+                    </div>
+
+                    <div class="min-w-0 flex-1">
                       <div
-                        class="w-10 rounded-t-sm bg-Fill-Accent-fill-accent-grey-muted"
-                        style={"height: #{bar_height(item.value, @projected.y_axis_mode)}px"}
+                        class="relative overflow-visible"
+                        style={"height: #{@chart.height}px"}
                       >
+                        <%= if @chart.schedule.visible? do %>
+                          <div
+                            aria-hidden="true"
+                            class="absolute inset-y-[12px] left-0 rounded-[2px] bg-[#33181a]"
+                            style={"width: #{@chart.schedule.shade_width_pct}%"}
+                          >
+                          </div>
+                          <div
+                            aria-hidden="true"
+                            class="absolute inset-y-[12px] border-l border-dashed border-[#eeebf5]"
+                            style={"left: #{@chart.schedule.marker_left_pct}%"}
+                          >
+                          </div>
+                          <div
+                            class="absolute top-0 z-10 -translate-x-1/2"
+                            style={"left: #{@chart.schedule.marker_left_pct}%"}
+                          >
+                            <div class="group relative">
+                              <button
+                                type="button"
+                                class="rounded-sm bg-Background-bg-primary px-2 py-1 text-xs font-semibold text-Text-text-high focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
+                                aria-label={@chart.schedule.tooltip}
+                              >
+                                {@chart.schedule.label}
+                              </button>
+                              <div class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 hidden w-max max-w-[12rem] -translate-x-1/2 rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block">
+                                {@chart.schedule.tooltip}
+                              </div>
+                            </div>
+                          </div>
+                        <% end %>
+
+                        <div
+                          id={"progress-chart-wrapper-#{@id}"}
+                          phx-hook="ProgressTileChart"
+                          data-spec={Jason.encode!(@chart.spec)}
+                          data-chart-target={"progress-chart-canvas-#{@id}"}
+                          class="relative h-full"
+                        >
+                          <div
+                            id={"progress-chart-canvas-#{@id}"}
+                            phx-update="ignore"
+                            class="h-full"
+                          >
+                          </div>
+                        </div>
+
+                        <div
+                          aria-hidden="true"
+                          class="pointer-events-none absolute inset-x-0 bottom-0 top-[12px] grid items-end gap-3 px-1"
+                          style={@chart.columns_style}
+                        >
+                          <%= for item <- @chart.series do %>
+                            <div class="flex h-full items-end justify-center">
+                              <div
+                                class="w-8 rounded-t-[4px] bg-[#c7c4cf]"
+                                style={"height: #{item.bar_height_pct}%"}
+                              >
+                              </div>
+                            </div>
+                          <% end %>
+                        </div>
+
+                        <div
+                          class="pointer-events-none absolute inset-x-0 bottom-0 top-[12px] grid"
+                          style={@chart.columns_style}
+                        >
+                          <%= for item <- @chart.series do %>
+                            <div class="relative h-full">
+                              <div class="group pointer-events-auto absolute inset-x-1 bottom-0 top-0">
+                                <button
+                                  type="button"
+                                  class="h-full w-full rounded-md bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
+                                  aria-label={bar_accessible_label(item, @projected)}
+                                >
+                                </button>
+                                <div
+                                  class="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
+                                  style={"bottom: calc(#{item.bar_top_pct}% + 12px)"}
+                                >
+                                  <p class="font-semibold">{item.label}</p>
+                                  <p>{item.value_text}</p>
+                                </div>
+                              </div>
+                            </div>
+                          <% end %>
+                        </div>
                       </div>
-                      <div>
-                        <p class="text-sm font-semibold text-Text-text-high">{item.label}</p>
-                        <p class="text-xs text-Text-text-low">
-                          {item_value_text(item, @projected.y_axis_mode)}
-                        </p>
+
+                      <div
+                        class="mt-4 grid items-start gap-3"
+                        style={@chart.columns_style}
+                      >
+                        <%= for item <- @chart.series do %>
+                          <div class="group relative min-w-0 text-center">
+                            <button
+                              type="button"
+                              class="w-full truncate text-xs text-Text-text-high focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
+                              aria-label={"#{item.label}. #{item.value_text}"}
+                            >
+                              {item.short_label}
+                            </button>
+                            <div class="pointer-events-none invisible absolute z-20 rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:visible group-focus-within:visible">
+                              {item.label}
+                            </div>
+                          </div>
+                        <% end %>
+                      </div>
+
+                      <div class="mt-4 flex items-center gap-2 text-xs text-Text-text-high">
+                        <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-[3px] bg-Background-bg-secondary font-semibold text-Text-text-white">
+                          X
+                        </span>
+                        <span>{@projected.axis_label}</span>
                       </div>
                     </div>
                   </div>
-                <% end %>
+                </div>
               </div>
             </div>
           </div>
@@ -164,11 +312,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     <.link
       patch={@patch_path}
       data-mode={@value}
+      aria-label={"Show #{@value} on the y-axis"}
       class={[
-        "rounded px-3 py-1.5 text-sm font-semibold transition",
+        "inline-flex h-8 w-8 items-center justify-center rounded-[3px] border text-xs font-bold transition",
         @current == @value &&
-          "bg-Surface-surface-secondary text-Text-text-high",
-        @current != @value && "text-Text-text-low"
+          "border-Text-text-button bg-Text-text-button text-white",
+        @current != @value &&
+          "border-Border-border-default bg-Background-bg-secondary text-Text-text-high"
       ]}
     >
       {mode_label(@value)}
@@ -179,19 +329,24 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :enabled, :boolean, required: true
   attr :patch_path, :string, required: true
   attr :label, :string, required: true
+  attr :icon_rotation, :string, default: ""
 
   defp pagination_button(assigns) do
     ~H"""
     <%= if @enabled do %>
       <.link
         patch={@patch_path}
-        class="rounded-md border border-Border-border-default px-3 py-1.5 text-xs font-semibold text-Text-text-high"
+        aria-label={@label}
+        class="inline-flex h-6 w-6 items-center justify-center rounded-[3px] bg-Background-bg-secondary text-Text-text-high"
       >
-        {@label}
+        <Icons.chevron_right class={@icon_rotation} />
       </.link>
     <% else %>
-      <span class="rounded-md border border-Border-border-subtle px-3 py-1.5 text-xs font-semibold text-Text-text-low-alpha">
-        {@label}
+      <span
+        aria-hidden="true"
+        class="inline-flex h-6 w-6 items-center justify-center rounded-[3px] bg-Background-bg-secondary text-Text-text-low-alpha"
+      >
+        <Icons.chevron_right class={@icon_rotation} />
       </span>
     <% end %>
     """
@@ -216,10 +371,190 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     )
   end
 
+  defp chart_view_model(projected) do
+    y_ticks = y_ticks(projected.series, projected.y_axis_mode, projected.class_size)
+    max_value = max(List.first(y_ticks) || 0, 1)
+    series = chart_series(projected.series, max_value, projected.y_axis_mode)
+
+    %{
+      height: @chart_height,
+      y_ticks: y_ticks,
+      series: series,
+      columns_style: columns_style(series),
+      spec: build_chart_spec(series, max_value),
+      schedule: schedule_overlay(projected.schedule_marker, series)
+    }
+  end
+
+  defp chart_series(series, max_value, y_axis_mode) do
+    Enum.with_index(series)
+    |> Enum.map(fn {item, index} ->
+      bar_top_pct = max(Float.round(item.value / max_value * 100.0, 2), 0.0)
+
+      %{
+        id: item.container_id,
+        label: item.label,
+        short_label: truncate_label(item.label),
+        value: item.value,
+        value_text: item_value_text(item, y_axis_mode),
+        order: index,
+        bar_top_pct: bar_top_pct,
+        bar_height_pct: visible_bar_height_pct(item.value, bar_top_pct)
+      }
+    end)
+  end
+
+  defp build_chart_spec(series, max_value) do
+    values =
+      Enum.map(series, fn item ->
+        %{
+          resource_id: item.id,
+          order: item.order,
+          value: item.value
+        }
+      end)
+
+    %{
+      "$schema" => "https://vega.github.io/schema/vega-lite/v5.json",
+      "background" => "transparent",
+      "autosize" => %{"type" => "fit-x", "contains" => "padding", "resize" => true},
+      "width" => "container",
+      "height" => @chart_height,
+      "padding" => %{"left" => 0, "right" => 0, "top" => 12, "bottom" => 0},
+      "data" => %{"values" => values},
+      "view" => %{"stroke" => nil},
+      "mark" => %{
+        "type" => "bar",
+        "cornerRadiusTopLeft" => 4,
+        "cornerRadiusTopRight" => 4,
+        "color" => "#c7c4cf",
+        "size" => 32
+      },
+      "encoding" => %{
+        "x" => %{"field" => "order", "type" => "ordinal", "axis" => nil},
+        "y" => %{
+          "field" => "value",
+          "type" => "quantitative",
+          "scale" => %{"domain" => [0, max_value]},
+          "axis" => %{
+            "title" => nil,
+            "domain" => false,
+            "ticks" => false,
+            "labels" => false,
+            "grid" => true,
+            "gridColor" => "#3b3740",
+            "gridOpacity" => 1
+          }
+        },
+        "tooltip" => [
+          %{"field" => "value", "type" => "quantitative", "title" => "Value"}
+        ]
+      },
+      "config" => %{
+        "axis" => %{"labelColor" => "#eeebf5"},
+        "background" => "transparent"
+      }
+    }
+  end
+
+  defp schedule_overlay(
+         %{present?: true, visible?: true, container_id: container_id} = marker,
+         series
+       ) do
+    index = Enum.find_index(series, &(&1.id == container_id)) || 0
+    count = max(length(series), 1)
+    marker_left_pct = Float.round((index + 0.5) / count * 100.0, 2)
+
+    %{
+      visible?: true,
+      marker_left_pct: marker_left_pct,
+      shade_width_pct: marker_left_pct,
+      label: marker.label,
+      tooltip: marker.tooltip
+    }
+  end
+
+  defp schedule_overlay(_marker, _series) do
+    %{visible?: false, marker_left_pct: 0.0, shade_width_pct: 0.0, label: nil, tooltip: nil}
+  end
+
+  defp y_ticks(_series, :percent, _class_size) do
+    [100, 75, 50, 25, 0]
+  end
+
+  defp y_ticks(series, _mode, class_size) do
+    max_count = series |> Enum.map(& &1.count) |> Enum.max(fn -> 0 end)
+    max_value = count_axis_upper_bound(max_count, class_size)
+    step_count = max(@count_chart_ticks - 1, 1)
+
+    0..step_count
+    |> Enum.map(fn index ->
+      max_value - round(index * (max_value / step_count))
+    end)
+    |> Enum.map(&max(&1, 0))
+    |> Enum.uniq()
+  end
+
+  defp count_axis_upper_bound(0, class_size) when class_size > 0 do
+    nice_axis_ceiling(min(class_size, 4))
+  end
+
+  defp count_axis_upper_bound(max_count, class_size) do
+    hard_cap =
+      class_size
+      |> max(max_count)
+      |> max(1)
+
+    max_count
+    |> nice_axis_ceiling()
+    |> min(hard_cap)
+    |> max(max_count)
+  end
+
+  defp nice_axis_ceiling(value) when value <= 1, do: 1
+
+  defp nice_axis_ceiling(value) do
+    exponent =
+      value
+      |> :math.log10()
+      |> Float.floor()
+      |> trunc()
+
+    magnitude = :math.pow(10, exponent)
+    normalized = value / magnitude
+
+    step =
+      cond do
+        normalized <= 1 -> 1
+        normalized <= 2 -> 2
+        normalized <= 5 -> 5
+        true -> 10
+      end
+
+    trunc(step * magnitude)
+  end
+
+  defp columns_style([]), do: "grid-template-columns: repeat(1, minmax(0, 1fr));"
+
+  defp columns_style(series) do
+    "grid-template-columns: repeat(#{length(series)}, minmax(0, 1fr));"
+  end
+
+  defp visible_bar_height_pct(0, _bar_top_pct), do: 0.0
+  defp visible_bar_height_pct(_value, bar_top_pct), do: bar_top_pct
+
   defp description_text(%{schedule_marker: %{present?: true}}),
-    do: "View content students have completed compared to the schedule."
+    do: "View content students have completed compared to the schedule (dashed line)."
 
   defp description_text(_projection), do: "View content students have completed."
+
+  defp page_announcement(%{page: page, total_pages: total_pages}) do
+    "Showing page #{display_page(page)} of #{display_page(total_pages)}."
+  end
+
+  defp bar_accessible_label(item, projected) do
+    "#{item.label}. #{item.value_text}. Completion threshold #{projected.completion_threshold}%."
+  end
 
   defp tile_patch_path(assigns, updates) do
     params =
@@ -267,14 +602,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     end
   end
 
-  defp mode_label(:count), do: "Count"
+  defp mode_label(:count), do: "#"
   defp mode_label(:percent), do: "%"
+
+  defp tick_label(value, :percent), do: "#{value}"
+  defp tick_label(value, _mode), do: Integer.to_string(value)
+
+  defp truncate_label(label) do
+    if String.length(label) > 9 do
+      String.slice(label, 0, 7) <> "..."
+    else
+      label
+    end
+  end
 
   defp item_value_text(item, :percent), do: "#{item.percent}% of class"
   defp item_value_text(item, _mode), do: "#{item.count} students"
-
-  defp bar_height(value, :percent), do: max(round(value * 1.6), 4)
-  defp bar_height(value, _mode), do: max(value * 12, 4)
 
   defp display_page(0), do: 1
   defp display_page(value), do: value
