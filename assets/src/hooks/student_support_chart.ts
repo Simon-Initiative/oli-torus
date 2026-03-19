@@ -5,8 +5,10 @@ import type { VisualizationSpec } from 'vega-embed';
 type ChartHookState = {
   __studentSupportView?: { finalize: () => void } | null;
   __studentSupportSpec?: string | null;
+  __studentSupportColors?: string | null;
   __studentSupportRenderToken?: number;
   __studentSupportTheme?: 'light' | 'dark';
+  __studentSupportThemeStyles?: string | null;
   __studentSupportSizeMode?: 'default' | 'intermediate';
   __studentSupportThemeObserver?: MutationObserver | null;
   __studentSupportResizeHandler?: (() => void) | null;
@@ -99,7 +101,7 @@ function applyChartColors(
   }
 
   const isDark = currentTheme() === 'dark';
-  const entries = Object.entries(colors);
+  const entries = Object.entries(colors ?? {});
   const separator = styles ? (isDark ? styles.separator.dark : styles.separator.light) : null;
   const activeBorder = styles
     ? isDark
@@ -245,13 +247,17 @@ function chartTarget(hook: Hook<ChartHookState>): HTMLElement {
 async function renderChart(hook: Hook<ChartHookState>) {
   const target = chartTarget(hook);
   const rawSpec = hook.el.dataset.spec ?? null;
+  const rawColors = hook.el.dataset.colors ?? null;
   const theme = currentTheme();
+  const rawThemeStyles = hook.el.dataset.themeStyles ?? null;
   const sizeMode = currentSizeMode();
 
   if (!rawSpec) {
     finalizeView(hook);
+    hook.__studentSupportColors = rawColors;
     hook.__studentSupportSpec = null;
     hook.__studentSupportTheme = theme;
+    hook.__studentSupportThemeStyles = rawThemeStyles;
     hook.__studentSupportSizeMode = sizeMode;
     target.innerHTML = '';
     return;
@@ -259,7 +265,9 @@ async function renderChart(hook: Hook<ChartHookState>) {
 
   if (
     hook.__studentSupportSpec === rawSpec &&
+    hook.__studentSupportColors === rawColors &&
     hook.__studentSupportTheme === theme &&
+    hook.__studentSupportThemeStyles === rawThemeStyles &&
     hook.__studentSupportSizeMode === sizeMode
   ) {
     return;
@@ -271,8 +279,10 @@ async function renderChart(hook: Hook<ChartHookState>) {
 
   if (!spec) {
     finalizeView(hook);
+    hook.__studentSupportColors = rawColors;
     hook.__studentSupportSpec = null;
     hook.__studentSupportTheme = theme;
+    hook.__studentSupportThemeStyles = rawThemeStyles;
     target.innerHTML = '';
     return;
   }
@@ -284,9 +294,13 @@ async function renderChart(hook: Hook<ChartHookState>) {
   try {
     // Phase 1 keeps the chart intentionally minimal. This hook exists to validate
     // Vega-Lite viability and LiveView state sync before visual polish work.
+    const renderedSpec = applyResponsiveSizing(
+      applyChartColors(spec, colors, styles),
+    ) as VisualizationSpec;
+
     const result = await embed(
       target,
-      applyResponsiveSizing(applyChartColors(spec, colors, styles)),
+      renderedSpec,
       {
         actions: false,
         renderer: 'svg',
@@ -311,12 +325,16 @@ async function renderChart(hook: Hook<ChartHookState>) {
     });
 
     hook.__studentSupportSpec = rawSpec;
+    hook.__studentSupportColors = rawColors;
     hook.__studentSupportTheme = theme;
+    hook.__studentSupportThemeStyles = rawThemeStyles;
     hook.__studentSupportSizeMode = sizeMode;
     hook.__studentSupportView = result.view;
   } catch (error) {
+    hook.__studentSupportColors = rawColors;
     hook.__studentSupportSpec = null;
     hook.__studentSupportTheme = theme;
+    hook.__studentSupportThemeStyles = rawThemeStyles;
     hook.__studentSupportSizeMode = sizeMode;
     console.warn('[StudentSupportChart] Failed to render chart', error);
   }
