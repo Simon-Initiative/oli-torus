@@ -16203,8 +16203,8 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 20rem;
 }
 
-.min-h-\[220px\] {
-  min-height: 220px;
+.min-h-\[240px\] {
+  min-height: 240px;
 }
 
 .min-h-\[300px\] {
@@ -16843,6 +16843,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 320px;
 }
 
+.max-w-\[32rem\] {
+  max-width: 32rem;
+}
+
 .max-w-\[350px\] {
   max-width: 350px;
 }
@@ -17331,10 +17335,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .grid-cols-6 {
   grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-
-.grid-cols-\[minmax\(0\2c 1fr\)_minmax\(0\2c 1\.1fr\)\] {
-  grid-template-columns: minmax(0,1fr) minmax(0,1.1fr);
 }
 
 .flex-row {
@@ -18081,10 +18081,6 @@ table.table-striped tbody tr:nth-child(even) {
   border-width: 1.2px;
 }
 
-.border-\[18px\] {
-  border-width: 18px;
-}
-
 .border-\[1px\] {
   border-width: 1px;
 }
@@ -18696,6 +18692,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(170 195 240 / 0.75);
 }
 
+.bg-\[\#DCFCE7\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(220 252 231 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#E6E9F2\] {
   --tw-bg-opacity: 1;
   background-color: rgb(230 233 242 / var(--tw-bg-opacity));
@@ -18714,6 +18715,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-\[\#F4CFFF\] {
   --tw-bg-opacity: 1;
   background-color: rgb(244 207 255 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#FEE2E2\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 226 226 / var(--tw-bg-opacity));
 }
 
 .bg-\[\#FEEBED\] {
@@ -20843,6 +20849,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(13 112 255 / var(--tw-text-opacity));
 }
 
+.text-\[\#166534\] {
+  --tw-text-opacity: 1;
+  color: rgb(22 101 52 / var(--tw-text-opacity));
+}
+
 .text-\[\#1B67B2\] {
   --tw-text-opacity: 1;
   color: rgb(27 103 178 / var(--tw-text-opacity));
@@ -20951,6 +20962,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#B0B4BF\] {
   --tw-text-opacity: 1;
   color: rgb(176 180 191 / var(--tw-text-opacity));
+}
+
+.text-\[\#B91C1C\] {
+  --tw-text-opacity: 1;
+  color: rgb(185 28 28 / var(--tw-text-opacity));
 }
 
 .text-\[\#CE2C31\] {
@@ -26487,6 +26503,14 @@ Not supports in Firefox and IE */
   background-color: #201D21;
 }
 
+.hover\:bg-Surface-surface-secondary:hover {
+  background-color: #FFFFFF;
+}
+
+.dark .hover\:bg-Surface-surface-secondary:hover {
+  background-color: #2B282E;
+}
+
 .hover\:bg-Surface-surface-secondary-muted:hover {
   background-color: #F3F4F8;
 }
@@ -31866,6 +31890,10 @@ Not supports in Firefox and IE */
 
   .xl\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .xl\:grid-cols-\[minmax\(0\2c 0\.92fr\)_minmax\(0\2c 1\.08fr\)\] {
+    grid-template-columns: minmax(0,0.92fr) minmax(0,1.08fr);
   }
 
   .xl\:flex-row {
