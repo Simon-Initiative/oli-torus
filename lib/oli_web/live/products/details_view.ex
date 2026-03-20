@@ -6,12 +6,17 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Authoring.Course
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.{Blueprint, Section}
+  alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.{Breadcrumb, Confirm}
   alias OliWeb.Components.{Common, Overview}
   alias OliWeb.Live.Components.Tags.TagsComponent
+  alias OliWeb.Live.Components.Sections.AiAssistantComponent
+  alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
+  alias OliWeb.Live.Components.Sections.NotesComponent
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
   alias OliWeb.Products.ProductsToTransferCodes
+  alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.PaywallSettings
   alias OliWeb.Sections.Mount
@@ -56,21 +61,26 @@ defmodule OliWeb.Products.DetailsView do
 
         publishers = Inventories.list_publishers()
 
+        component_data = SectionDefaultsHelpers.load_component_data(product)
+
         {:ok,
-         assign(socket,
-           available_brands: available_brands,
-           publishers: publishers,
-           updates: Sections.check_for_available_publication_updates(product),
-           author: author,
-           product: product,
-           tags: tags,
-           is_admin: is_admin?,
-           access_institutions: access_institutions,
-           changeset: Section.changeset(product, %{}),
-           title: "Edit Template",
-           show_confirm: false,
-           breadcrumbs: [Breadcrumb.new(%{full_title: "Template Overview"})],
-           base_project: base_project
+         assign(
+           socket,
+           Map.merge(component_data, %{
+             available_brands: available_brands,
+             publishers: publishers,
+             updates: Sections.check_for_available_publication_updates(product),
+             author: author,
+             product: product,
+             tags: tags,
+             is_admin: is_admin?,
+             access_institutions: access_institutions,
+             changeset: Section.changeset(product, %{}),
+             title: "Edit Template",
+             show_confirm: false,
+             breadcrumbs: [Breadcrumb.new(%{full_title: "Template Overview"})],
+             base_project: base_project
+           })
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -165,18 +175,6 @@ defmodule OliWeb.Products.DetailsView do
       </div>
 
       <Overview.section
-        title="Content"
-        description="Manage and customize the presentation of content in this template."
-      >
-        <Content.render
-          product={@product}
-          changeset={to_form(@changeset)}
-          save="save"
-          updates={@updates}
-        />
-      </Overview.section>
-
-      <Overview.section
         title="Cover Image"
         description="Manage the cover image for this template. Max file size is 5 MB."
       >
@@ -192,6 +190,19 @@ defmodule OliWeb.Products.DetailsView do
       </Overview.section>
 
       <Overview.section
+        title="Content"
+        description="Manage and customize the presentation of content in this template."
+      >
+        <Content.render
+          product={@product}
+          changeset={to_form(@changeset)}
+          save="save"
+          updates={@updates}
+          schedule_url={~p"/authoring/products/#{@product.slug}/schedule"}
+        />
+      </Overview.section>
+
+      <Overview.section
         title="Certificate Settings"
         description="Design and deliver digital credentials to students that complete this course."
       >
@@ -201,17 +212,78 @@ defmodule OliWeb.Products.DetailsView do
             currently produce a certificate.
           </div>
           <div>
-            <a href={~p"/authoring/products/#{@product.slug}/certificate_settings"}>
-              Manage Certificate Settings
+            <a
+              href={~p"/authoring/products/#{@product.slug}/certificate_settings"}
+              class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
+            >
+              Manage certificate settings
             </a>
           </div>
         </div>
       </Overview.section>
 
       <Overview.section
+        title="AI Assistant"
+        description="Configure AI Assistant defaults for course sections created from this template."
+      >
+        <.live_component
+          module={AiAssistantComponent}
+          id={"ai-assistant-#{@product.id}"}
+          section={@product}
+        />
+      </Overview.section>
+
+      <Overview.section
+        title="Notes"
+        description="Enable students to annotate content for saving and sharing within the class community."
+      >
+        <.live_component
+          module={NotesComponent}
+          id={"notes-#{@product.id}"}
+          section={@product}
+          collab_space_pages_count={@collab_space_pages_count}
+          pages_count={@pages_count}
+        />
+      </Overview.section>
+
+      <Overview.section
+        title="Course Discussions"
+        description="Give students a course discussion board."
+      >
+        <.live_component
+          module={CourseDiscussionsComponent}
+          id={"discussions-#{@product.id}"}
+          section={@product}
+          collab_space_config={@root_collab_space_config}
+          root_section_resource={@root_section_resource}
+        />
+      </Overview.section>
+
+      <Overview.section
+        title="Required Survey"
+        description="Show a required survey to students who access the course for the first time."
+      >
+        <%= if @show_required_section_config do %>
+          <.live_component
+            module={RequiredSurvey}
+            project={@product}
+            enabled={@product.required_survey_resource_id}
+            is_section={true}
+            id="product-required-survey"
+          />
+        <% else %>
+          <div class="flex items-center">
+            <p class="m-0 text-gray-500">
+              The base project does not have a survey configured. Please contact the project author to add one.
+            </p>
+          </div>
+        <% end %>
+      </Overview.section>
+
+      <Overview.section
         :if={@is_admin}
         title="Feature Flags"
-        description="Manage scoped feature flags for this section."
+        description="Manage scoped feature flags for this template."
       >
         <.live_component
           module={OliWeb.Components.ScopedFeatureToggleComponent}
@@ -221,7 +293,7 @@ defmodule OliWeb.Products.DetailsView do
           source_type={:section}
           source={@product}
           current_author={@author}
-          title="Section Features"
+          title="Template Features"
         />
       </Overview.section>
 
@@ -407,6 +479,23 @@ defmodule OliWeb.Products.DetailsView do
     level = if type == :error, do: :error, else: :info
     {:noreply, put_flash(socket, level, message)}
   end
+
+  # Generic flash handler for child LiveComponents
+  def handle_info({:flash, level, message}, socket) do
+    {:noreply, put_flash(socket, level, message)}
+  end
+
+  # Component sync handlers — delegated to shared helpers
+  def handle_info({:section_updated, %Section{} = updated}, socket),
+    do: {:noreply, SectionDefaultsHelpers.handle_section_updated(socket, :product, updated)}
+
+  def handle_info({:notes_count_updated, count}, socket),
+    do: {:noreply, SectionDefaultsHelpers.handle_notes_count_updated(socket, count)}
+
+  def handle_info({:collab_space_config_updated, config, root_sr}, socket),
+    do:
+      {:noreply,
+       SectionDefaultsHelpers.handle_collab_space_config_updated(socket, config, root_sr)}
 
   defp ext(entry) do
     [ext | _] = MIME.extensions(entry.client_type)

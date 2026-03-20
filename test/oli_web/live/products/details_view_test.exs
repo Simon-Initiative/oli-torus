@@ -315,6 +315,99 @@ defmodule OliWeb.Products.DetailsViewTest do
     end
   end
 
+  describe "product details page - component interaction (stale assigns)" do
+    setup [:setup_admin_conn, :create_product_with_pages]
+
+    test "toggling Notes ON then toggling Discussions does not revert Notes", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      # Both should start OFF
+      notes_form_id = "notes-#{product.id}-toggle-notes"
+      discussions_form_id = "discussions-#{product.id}-toggle-discussions"
+
+      # Notes toggle is OFF (0 pages with notes)
+      refute has_element?(view, "##{notes_form_id}_checkbox[checked]")
+
+      # Toggle Notes ON
+      view
+      |> form("##{notes_form_id}", %{})
+      |> render_change()
+
+      # Notes should now be ON
+      assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
+
+      # Toggle Discussions ON — this triggers a parent re-render via {:section_updated}
+      # Before the fix, this would overwrite Notes' internal collab_space_pages_count
+      # with the stale parent value (0), causing the Notes toggle to revert to OFF
+      view
+      |> form("##{discussions_form_id}", %{})
+      |> render_change()
+
+      # Discussions should be ON
+      assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
+
+      # Notes should STILL be ON — not reverted by the Discussions re-render
+      assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
+    end
+
+    test "toggling Discussions ON then toggling Notes does not revert Discussions", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      notes_form_id = "notes-#{product.id}-toggle-notes"
+      discussions_form_id = "discussions-#{product.id}-toggle-discussions"
+
+      # Toggle Discussions ON first
+      view
+      |> form("##{discussions_form_id}", %{})
+      |> render_change()
+
+      assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
+
+      # Toggle Notes ON — this does NOT send {:section_updated} but still causes
+      # a parent re-render via {:notes_count_updated}
+      view
+      |> form("##{notes_form_id}", %{})
+      |> render_change()
+
+      # Notes should be ON
+      assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
+
+      # Discussions should STILL be ON
+      assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
+    end
+
+    test "toggling AI Assistant does not revert Notes or Discussions state", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      notes_form_id = "notes-#{product.id}-toggle-notes"
+      discussions_form_id = "discussions-#{product.id}-toggle-discussions"
+      ai_form_id = "ai-assistant-#{product.id}-toggle-assistant"
+
+      # Enable Notes and Discussions
+      view |> form("##{notes_form_id}", %{}) |> render_change()
+      view |> form("##{discussions_form_id}", %{}) |> render_change()
+
+      assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
+      assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
+
+      # Toggle AI Assistant — sends {:section_updated} which re-renders parent
+      view |> form("##{ai_form_id}", %{}) |> render_change()
+
+      # Notes and Discussions should STILL be ON
+      assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
+      assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
+    end
+  end
+
   describe "product details content component - source materials badge" do
     test "shows tokenized badge when updates are available", _ctx do
       product = build(:section, type: :blueprint)
@@ -329,7 +422,7 @@ defmodule OliWeb.Products.DetailsViewTest do
           save: "save"
         })
 
-      assert html =~ "Manage Source Materials"
+      assert html =~ "Manage source materials"
       assert html =~ ~s(id="manage-source-materials-updates-badge")
       assert html =~ ~s(bg-Fill-Buttons-fill-primary)
       assert html =~ ~s(text-Text-text-white)
@@ -348,9 +441,83 @@ defmodule OliWeb.Products.DetailsViewTest do
           save: "save"
         })
 
-      refute html =~ "Manage Source Materials"
+      refute html =~ "Manage source materials"
       refute html =~ ~s(id="manage-source-materials-updates-badge")
       refute html =~ "updates</span>"
     end
+  end
+
+  # Creates a product (blueprint) with a published project containing pages,
+  # so that Notes and Discussions components have section_resources to work with.
+  defp create_product_with_pages(%{admin: admin}) do
+    project = insert(:project, authors: [admin])
+
+    # Create page revisions
+    page_1 =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Page One",
+        graded: false
+      )
+
+    page_2 =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Page Two",
+        graded: false
+      )
+
+    # Associate pages to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_1.resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: page_2.resource.id})
+
+    # Root container
+    container_resource = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        children: [page_1.resource.id, page_2.resource.id],
+        content: %{},
+        title: "Root Container"
+      })
+
+    # Publication
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: admin
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_1.resource,
+      revision: page_1,
+      author: admin
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_2.resource,
+      revision: page_2,
+      author: admin
+    })
+
+    # Create blueprint and section_resources
+    product =
+      insert(:section,
+        base_project: project,
+        type: :blueprint
+      )
+
+    {:ok, product} = Oli.Delivery.Sections.create_section_resources(product, publication)
+
+    {:ok, project: project, product: product, publication: publication}
   end
 end
