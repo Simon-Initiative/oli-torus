@@ -17600,6 +17600,11 @@ table.table-striped tbody tr:nth-child(even) {
        column-gap: 1.5rem;
 }
 
+.gap-x-\[14px\] {
+  -moz-column-gap: 14px;
+       column-gap: 14px;
+}
+
 .gap-y-0 {
   row-gap: 0px;
 }
@@ -28279,6 +28284,11 @@ Not supports in Firefox and IE */
   background-color: rgb(245 245 245 / var(--tw-bg-opacity));
 }
 
+.disabled\:bg-gray-200:disabled {
+  --tw-bg-opacity: 1;
+  background-color: rgb(229 229 229 / var(--tw-bg-opacity));
+}
+
 .disabled\:bg-gray-300:disabled {
   --tw-bg-opacity: 1;
   background-color: rgb(212 212 212 / var(--tw-bg-opacity));
@@ -28329,6 +28339,11 @@ Not supports in Firefox and IE */
 .disabled\:hover\:bg-blue-500:hover:disabled {
   --tw-bg-opacity: 1;
   background-color: rgb(59 118 211 / var(--tw-bg-opacity));
+}
+
+.disabled\:hover\:bg-gray-200:hover:disabled {
+  --tw-bg-opacity: 1;
+  background-color: rgb(229 229 229 / var(--tw-bg-opacity));
 }
 
 .disabled\:hover\:bg-primary-200:hover:disabled {
