@@ -104,6 +104,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert paywall_index < content_index
     end
 
+    test "places tags between description and welcome message title", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      {:ok, _} = Tags.associate_tag_with_section(product.id, tag.id, actor: admin)
+
+      {:ok, _live, html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      {description_index, _} = :binary.match(html, "Description")
+      {tags_index, _} = :binary.match(html, "Tags")
+      {welcome_title_index, _} = :binary.match(html, "Welcome Message Title")
+
+      assert description_index < tags_index
+      assert tags_index < welcome_title_index
+    end
+
     test "renders template usage action link", ctx do
       %{conn: conn, project: project, product: product} = ctx
 

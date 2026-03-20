@@ -10,7 +10,6 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.{Breadcrumb, Confirm}
   alias OliWeb.Components.{Common, Overview}
-  alias OliWeb.Live.Components.Tags.TagsComponent
   alias OliWeb.Live.Components.Sections.AiAssistantComponent
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias OliWeb.Live.Components.Sections.NotesComponent
@@ -107,21 +106,9 @@ defmodule OliWeb.Products.DetailsView do
           publishers={@publishers}
           is_admin={@is_admin}
           ctx={@ctx}
+          tags={@tags}
+          author={@author}
         />
-        <div class="form-label-group mb-3 mt-3">
-          <Common.label class="control-label">Tags</Common.label>
-          <.live_component
-            :if={@is_admin}
-            module={TagsComponent}
-            id={"product-tags-#{@product.id}"}
-            entity_type={:section}
-            entity_id={@product.id}
-            current_tags={@tags}
-            current_author={@author}
-            variant={:form}
-          />
-          <TagsComponent.read_only_tags :if={!@is_admin} tags={@tags} />
-        </div>
         <div id="communities-section" class="form-label-group mb-3">
           <Common.label class="control-label">Communities</Common.label>
           <p class="text-secondary">
@@ -188,7 +175,6 @@ defmodule OliWeb.Products.DetailsView do
           updates={@updates}
         />
       </Overview.section>
-
       <Overview.section
         title="Content"
         description="Manage and customize the presentation of content in this template."
