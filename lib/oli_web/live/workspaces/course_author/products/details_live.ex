@@ -78,7 +78,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     <h2 id="header_id" class="pb-2">Template Overview</h2>
     {render_modal(assigns)}
     <div class="overview container">
-      <div class="grid grid-cols-12 py-5 border-b">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
           <h4>Details</h4>
           <div class="text-muted">
@@ -97,7 +97,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
           />
         </div>
       </div>
-      <div class="grid grid-cols-12 py-5 border-b">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
           <h4>Content</h4>
           <div class="text-muted">
@@ -110,11 +110,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             changeset={to_form(@changeset)}
             save="save"
             updates={@updates}
+            schedule_url={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/schedule"
+            }
           />
         </div>
       </div>
 
-      <div class="grid grid-cols-12 py-5 border-b">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
           <h4>Cover Image</h4>
           <div class="text-muted">
@@ -134,7 +137,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         </div>
       </div>
 
-      <div class="grid grid-cols-12 py-5 border-b">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
           <h4>Certificate Settings</h4>
           <div class="max-w-[30rem] text-muted">
@@ -147,16 +150,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             currently produce a certificate.
           </div>
           <div>
-            <a href={
-              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/certificate_settings"
-            }>
-              Manage Certificate Settings
+            <a
+              href={
+                ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/certificate_settings"
+              }
+              class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
+            >
+              Manage certificate settings
             </a>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-12 py-5 border-b">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
           <h4>AI Assistant</h4>
           <div class="text-muted">
@@ -172,7 +178,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         </div>
       </div>
 
-      <div class="grid grid-cols-12 py-5 border-b">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
           <h4>Notes</h4>
           <div class="text-muted">
@@ -190,7 +196,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         </div>
       </div>
 
-      <div class="grid grid-cols-12 py-5 border-b">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
           <h4>Course Discussions</h4>
           <div class="text-muted">
@@ -208,7 +214,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         </div>
       </div>
 
-      <div class="grid grid-cols-12 py-5 border-b">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
           <h4>Required Survey</h4>
           <div class="max-w-[30rem] text-muted">
@@ -234,24 +240,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         </div>
       </div>
 
-      <div class="grid grid-cols-12 py-5 border-b">
-        <div class="md:col-span-4">
-          <h4>Scheduling & Assessment Settings</h4>
-          <div class="text-muted">
-            Configure scheduling and assessment settings for this template.
-          </div>
-        </div>
-        <div class="md:col-span-8">
-          <a
-            href={~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/schedule"}
-            class="btn btn-link"
-          >
-            Edit scheduling and assessment settings
-          </a>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-12 py-5">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5">
         <div class="md:col-span-4">
           <h4>Actions</h4>
         </div>

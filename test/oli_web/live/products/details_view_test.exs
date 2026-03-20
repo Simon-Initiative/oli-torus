@@ -398,7 +398,7 @@ defmodule OliWeb.Products.DetailsViewTest do
           save: "save"
         })
 
-      assert html =~ "Manage Source Materials"
+      assert html =~ "Manage source materials"
       assert html =~ ~s(id="manage-source-materials-updates-badge")
       assert html =~ ~s(bg-Fill-Buttons-fill-primary)
       assert html =~ ~s(text-Text-text-white)
@@ -417,7 +417,7 @@ defmodule OliWeb.Products.DetailsViewTest do
           save: "save"
         })
 
-      refute html =~ "Manage Source Materials"
+      refute html =~ "Manage source materials"
       refute html =~ ~s(id="manage-source-materials-updates-badge")
       refute html =~ "updates</span>"
     end

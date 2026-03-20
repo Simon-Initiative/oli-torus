@@ -182,6 +182,7 @@ defmodule OliWeb.Products.DetailsView do
           changeset={to_form(@changeset)}
           save="save"
           updates={@updates}
+          schedule_url={~p"/authoring/products/#{@product.slug}/schedule"}
         />
       </Overview.section>
 
@@ -195,8 +196,11 @@ defmodule OliWeb.Products.DetailsView do
             currently produce a certificate.
           </div>
           <div>
-            <a href={~p"/authoring/products/#{@product.slug}/certificate_settings"}>
-              Manage Certificate Settings
+            <a
+              href={~p"/authoring/products/#{@product.slug}/certificate_settings"}
+              class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
+            >
+              Manage certificate settings
             </a>
           </div>
         </div>
@@ -258,18 +262,6 @@ defmodule OliWeb.Products.DetailsView do
             </p>
           </div>
         <% end %>
-      </Overview.section>
-
-      <Overview.section
-        title="Scheduling & Assessment Settings"
-        description="Configure scheduling and assessment settings for this template."
-      >
-        <a
-          href={~p"/authoring/products/#{@product.slug}/schedule"}
-          class="btn btn-link"
-        >
-          Edit scheduling and assessment settings
-        </a>
       </Overview.section>
 
       <Overview.section
