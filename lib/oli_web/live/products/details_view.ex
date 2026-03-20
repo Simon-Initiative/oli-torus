@@ -304,18 +304,6 @@ defmodule OliWeb.Products.DetailsView do
       </Overview.section>
 
       <Overview.section
-        title="Edit Template Details"
-        description="Edit template details, paywall settings, and content settings for this template."
-      >
-        <a
-          href={~p"/authoring/products/#{@product.slug}/edit"}
-          class="btn btn-link"
-        >
-          Edit Template Details
-        </a>
-      </Overview.section>
-
-      <Overview.section
         :if={@is_admin}
         title="Feature Flags"
         description="Manage scoped feature flags for this template."

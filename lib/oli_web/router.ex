@@ -1030,6 +1030,18 @@ defmodule OliWeb.Router do
               metadata: %{route_name: :workspaces}
             )
           end
+
+          scope "/", alias: false do
+            live("/:section_slug/schedule", OliWeb.Sections.ScheduleView,
+              metadata: %{route_name: :workspaces}
+            )
+          end
+
+          scope "/", alias: false do
+            live("/:section_slug/edit", OliWeb.Sections.EditView,
+              metadata: %{route_name: :workspaces}
+            )
+          end
         end
       end
     end
@@ -1918,6 +1930,7 @@ defmodule OliWeb.Router do
       live("/icons", Dev.IconsLive)
       live("/tokens", Dev.TokensLive)
       live("/metrics_smoke", Dev.MetricsSmokeLive)
+      live("/tracking/mer-4054", Dev.Mer4054TrackingLive)
     end
   end
 end

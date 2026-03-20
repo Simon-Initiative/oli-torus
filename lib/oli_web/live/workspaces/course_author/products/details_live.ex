@@ -6,16 +6,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Authoring.Course
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Blueprint
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.{Blueprint, Section, SectionResource}
   alias Oli.Inventories
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Repo
+  alias Oli.Resources.Collaboration
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.Confirm
+  alias OliWeb.Live.Components.Sections.AiAssistantComponent
+  alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
+  alias OliWeb.Live.Components.Sections.NotesComponent
   alias OliWeb.Products.Details.Actions
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
   alias OliWeb.Products.Details.ImageUpload
   alias OliWeb.Products.ProductsToTransferCodes
+  alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Sections.Mount
 
   require Logger
@@ -39,6 +45,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         latest_publications =
           Sections.check_for_available_publication_updates(product)
 
+        # Notes: load page-level collab space counts
+        {collab_space_pages_count, pages_count} =
+          Collaboration.count_collab_spaces_enabled_in_pages_for_section(product.slug)
+
+        # Discussions: load root container's section_resource and collab_space_config
+        root_revision = DeliveryResolver.root_container(product.slug)
+
+        {root_section_resource, root_collab_space_config} =
+          if root_revision do
+            {:ok, config} =
+              Collaboration.get_collab_space_config_for_page_in_section(
+                root_revision.slug,
+                product.slug
+              )
+
+            root_sr = Repo.get(SectionResource, product.root_section_resource_id)
+            {root_sr, config}
+          else
+            {nil, nil}
+          end
+
+        # Required Survey: check if base project has a survey
+        show_required_section_config =
+          if product.required_survey_resource_id != nil or
+               Sections.get_base_project_survey(product.slug) do
+            true
+          else
+            false
+          end
+
         {:ok,
          assign(socket,
            publishers: publishers,
@@ -53,7 +89,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
            resource_slug: project.slug,
            resource_title: project.title,
            active_workspace: :course_author,
-           active_view: :products
+           active_view: :products,
+           collab_space_pages_count: collab_space_pages_count,
+           pages_count: pages_count,
+           root_section_resource: root_section_resource,
+           root_collab_space_config: root_collab_space_config,
+           show_required_section_config: show_required_section_config
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -144,6 +185,101 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
               Manage Certificate Settings
             </a>
           </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>AI Assistant</h4>
+          <div class="text-muted">
+            Configure AI Assistant defaults for course sections created from this template.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <.live_component
+            module={AiAssistantComponent}
+            id={"ai-assistant-#{@product.id}"}
+            section={@product}
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Notes</h4>
+          <div class="text-muted">
+            Enable students to annotate content for saving and sharing within the class community.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <.live_component
+            module={NotesComponent}
+            id={"notes-#{@product.id}"}
+            section={@product}
+            collab_space_pages_count={@collab_space_pages_count}
+            pages_count={@pages_count}
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Course Discussions</h4>
+          <div class="text-muted">
+            Give students a course discussion board.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <.live_component
+            module={CourseDiscussionsComponent}
+            id={"discussions-#{@product.id}"}
+            section={@product}
+            collab_space_config={@root_collab_space_config}
+            root_section_resource={@root_section_resource}
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Required Survey</h4>
+          <div class="max-w-[30rem] text-muted">
+            Show a required survey to students who access the course for the first time.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <%= if @show_required_section_config do %>
+            <.live_component
+              module={RequiredSurvey}
+              project={@product}
+              enabled={@product.required_survey_resource_id}
+              is_section={true}
+              id="workspace-required-survey"
+            />
+          <% else %>
+            <div class="flex items-center">
+              <p class="m-0 text-gray-500">
+                The base project does not have a survey configured. Please contact the project author to add one.
+              </p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Scheduling & Assessment Settings</h4>
+          <div class="text-muted">
+            Configure scheduling and assessment settings for this template.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <a
+            href={~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/schedule"}
+            class="btn btn-link"
+          >
+            Edit scheduling and assessment settings
+          </a>
         </div>
       </div>
 
@@ -306,6 +442,45 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
       })
 
     {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  # Keep @product in sync when child LiveComponents update the section.
+  def handle_info({:section_updated, %Section{} = updated_section}, socket) do
+    current_product = socket.assigns.product
+
+    merged =
+      Map.merge(
+        Map.from_struct(current_product),
+        Map.from_struct(updated_section),
+        fn _key, current_val, new_val ->
+          case new_val do
+            %Ecto.Association.NotLoaded{} -> current_val
+            _ -> new_val
+          end
+        end
+      )
+
+    {:noreply, assign(socket, product: struct(Section, merged))}
+  end
+
+  # Generic flash handler for child LiveComponents
+  def handle_info({:flash, level, message}, socket) do
+    {:noreply, put_flash(socket, level, message)}
+  end
+
+  # Keep parent's notes count in sync so NotesComponent doesn't get stale assigns on re-render
+  def handle_info({:notes_count_updated, count}, socket) do
+    {:noreply, assign(socket, collab_space_pages_count: count)}
+  end
+
+  # Keep parent's collab_space_config in sync so CourseDiscussionsComponent doesn't get stale
+  # assigns on re-render (e.g. when another component triggers a parent re-render)
+  def handle_info({:collab_space_config_updated, config, root_sr}, socket) do
+    {:noreply,
+     assign(socket,
+       root_collab_space_config: config,
+       root_section_resource: root_sr
+     )}
   end
 
   defp ext(entry) do
