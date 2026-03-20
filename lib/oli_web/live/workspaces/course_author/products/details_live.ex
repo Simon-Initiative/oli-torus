@@ -58,25 +58,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         component_data = SectionDefaultsHelpers.load_component_data(product)
 
         {:ok,
-           assign(
-             socket,
-             Map.merge(component_data, %{
-               publishers: publishers,
-               updates: latest_publications,
-               author: author,
-               product: product,
-               is_admin: is_admin,
-               tags: tags,
-               access_institutions: access_institutions,
-               changeset: changeset,
-               title: "Edit Template",
-               show_confirm: false,
-               base_project: base_project,
-               resource_slug: project.slug,
-               resource_title: project.title,
-               active_workspace: :course_author,
-               active_view: :products
-             })
+         assign(
+           socket,
+           Map.merge(component_data, %{
+             publishers: publishers,
+             updates: latest_publications,
+             author: author,
+             product: product,
+             is_admin: is_admin,
+             tags: tags,
+             access_institutions: access_institutions,
+             changeset: changeset,
+             title: "Edit Template",
+             show_confirm: false,
+             base_project: base_project,
+             resource_slug: project.slug,
+             resource_title: project.title,
+             active_workspace: :course_author,
+             active_view: :products
+           })
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -92,8 +92,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     <h2 id="header_id" class="pb-2">Template Overview</h2>
     {render_modal(assigns)}
     <div class="overview container">
-        <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
-          <div class="col-span-12 md:col-span-4">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
+        <div class="col-span-12 md:col-span-4">
           <h4>Details</h4>
           <div class="text-muted">
             The template title and description will be shown
