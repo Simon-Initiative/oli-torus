@@ -227,7 +227,7 @@ const EditingCanvas: React.FC = () => {
 
   return (
     <React.Fragment>
-      <section className={`aa-stage mt-8 ${customInterfaceSettings}`} onClick={handleStageClick}>
+      <section className={`aa-stage ${customInterfaceSettings}`} onClick={handleStageClick}>
         <StagePan>
           {stackLayout ? (
             <div

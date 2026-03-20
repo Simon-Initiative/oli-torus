@@ -19,6 +19,7 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { generateRules } from '../../../components/Flowchart/rules/rule-compilation';
+import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
 import { selectAppMode, selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { updateSequenceItemFromActivity } from '../../groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { createUndoAction } from '../../history/slice';
@@ -87,6 +88,11 @@ export const saveActivity = createAsyncThunk(
         content: { ...activity.content, authoring: activity.authoring },
         tags: activity.tags || [],
       };
+
+      if (isReadOnlyMode) {
+        notifyReadOnlyEditBlocked();
+        return;
+      }
 
       if (!isReadOnlyMode) {
         console.log('going to save acivity: ', { changeData, activity });
@@ -198,6 +204,11 @@ export const bulkSaveActivity = createAsyncThunk(
       activities,
       diff(currentActivities, activities),
     );
+
+    if (isReadOnlyMode) {
+      notifyReadOnlyEditBlocked();
+      return;
+    }
 
     if (!isReadOnlyMode) {
       const updates: BulkActivityUpdate[] = activities.map((activity) => {

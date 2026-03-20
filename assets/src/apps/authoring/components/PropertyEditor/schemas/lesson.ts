@@ -18,7 +18,6 @@ const lessonSchema: JSONSchema7 = {
         title: {
           type: 'string',
           title: 'Title',
-          readOnly: true,
         },
         Size: {
           type: 'object',
@@ -171,7 +170,6 @@ export const simpleLessonSchema: JSONSchema7 = {
         title: {
           type: 'string',
           title: 'Title',
-          readOnly: true,
         },
       },
     },

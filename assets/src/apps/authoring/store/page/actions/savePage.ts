@@ -7,6 +7,7 @@ import { ResourceContent } from 'data/content/resource';
 import { Edited, ResourceUpdate, edit } from 'data/persistence/resource';
 import { clone } from 'utils/common';
 import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
+import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
 import { selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { createUndoAction } from '../../history/slice';
 import { SAVE_DEBOUNCE_OPTIONS, SAVE_DEBOUNCE_TIMEOUT } from '../../persistance-options';
@@ -26,6 +27,7 @@ export const savePage = createAsyncThunk(
 
     const isReadOnlyMode = selectReadOnly(getState() as AuthoringRootState);
     if (isReadOnlyMode) {
+      notifyReadOnlyEditBlocked();
       return;
     }
     const projectSlug = selectProjectSlug(getState() as AuthoringRootState);

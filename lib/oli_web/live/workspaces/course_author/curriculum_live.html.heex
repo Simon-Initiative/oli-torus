@@ -309,8 +309,25 @@
                     >
                       Basic
                     </div>
-                    <div title="Contains rich content, images, styles and layouts and can be used to create adaptive learning experiences based on rules defined for a lesson">
-                      Adaptive
+                    <div class="mb-2 flex items-center gap-1">
+                      <span>Simple Author</span>
+                      <span
+                        id="simple_author_tooltip"
+                        title="Easily build adaptive lessons using templates, simplified interactions, and conditioning."
+                        phx-hook="TooltipInit"
+                      >
+                        <i class="fa-solid fa-circle-info text-gray-500"></i>
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span>Advanced Author</span>
+                      <span
+                        id="advanced_author_tooltip"
+                        title="Build complex adaptive lessons using extended logic rules and CSS editing."
+                        phx-hook="TooltipInit"
+                      >
+                        <i class="fa-solid fa-circle-info text-gray-500"></i>
+                      </span>
                     </div>
                   </div>
                 <% end %>
@@ -329,6 +346,18 @@
                     <button
                       phx-click="add"
                       phx-value-type="Adaptive"
+                      phx-value-adaptive_mode="flowchart"
+                      phx-value-scored="Unscored"
+                      title="Questions on the page will not be scored"
+                      class="btn btn-xs btn-outline-primary mb-2"
+                      type="button"
+                    >
+                      Practice
+                    </button>
+                    <button
+                      phx-click="add"
+                      phx-value-type="Adaptive"
+                      phx-value-adaptive_mode="expert"
                       phx-value-scored="Unscored"
                       title="Questions on the page will not be scored"
                       class="btn btn-xs btn-outline-primary"
@@ -353,6 +382,18 @@
                     <button
                       phx-click="add"
                       phx-value-type="Adaptive"
+                      phx-value-adaptive_mode="flowchart"
+                      phx-value-scored="Scored"
+                      title="Questions on the page will be scored"
+                      class="btn btn-xs btn-outline-primary mb-2"
+                      type="button"
+                    >
+                      Scored
+                    </button>
+                    <button
+                      phx-click="add"
+                      phx-value-type="Adaptive"
+                      phx-value-adaptive_mode="expert"
                       phx-value-scored="Scored"
                       title="Questions on the page will be scored"
                       class="btn btn-xs btn-outline-primary"

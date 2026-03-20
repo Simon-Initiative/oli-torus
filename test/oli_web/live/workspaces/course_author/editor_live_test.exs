@@ -2,7 +2,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
+  import Oli.Factory
 
+  alias Oli.Authoring.Editing.PageEditor
   alias Oli.Seeder
 
   defp live_view_route(project_slug, revision_slug, params \\ %{}),
@@ -104,6 +106,152 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
       assert html =~ "<nav class=\"breadcrumb-bar"
       assert html =~ "Curriculum"
       assert html =~ adaptive_page_revision.title
+    end
+
+    test "renders the shared authoring header shell for advanced authoring", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+      render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      assert has_element?(view, "div.TitleBar")
+      assert has_element?(view, "button[phx-click=\"begin_title_edit\"]")
+      assert has_element?(view, "button[phx-click=\"request_authoring_preview\"]")
+      assert has_element?(view, "div.TitleBar #adaptive_read_only_toggle")
+      refute has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+
+      assert has_element?(view, "#authoring_editor-container")
+    end
+
+    test "keeps preview disabled until the editor is ready", %{
+      conn: conn,
+      project: project,
+      revision: revision,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, basic_view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert has_element?(
+               basic_view,
+               "div.TitleBar button[phx-click=\"request_authoring_preview\"][disabled]"
+             )
+
+      render_hook(basic_view, "survey_scripts_loaded", %{})
+
+      refute has_element?(
+               basic_view,
+               "div.TitleBar button[phx-click=\"request_authoring_preview\"][disabled]"
+             )
+
+      refute has_element?(basic_view, "#adaptive_read_only_toggle")
+
+      {:ok, advanced_view, _html} =
+        live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+
+      assert has_element?(
+               advanced_view,
+               "div.TitleBar button[phx-click=\"request_authoring_preview\"][disabled]"
+             )
+
+      render_hook(advanced_view, "survey_scripts_loaded", %{})
+
+      assert has_element?(
+               advanced_view,
+               "div.TitleBar button[phx-click=\"request_authoring_preview\"][disabled]"
+             )
+
+      assert has_element?(
+               advanced_view,
+               "div.TitleBar #adaptive_read_only_toggle input[disabled]"
+             )
+
+      render_hook(advanced_view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      refute has_element?(
+               advanced_view,
+               "div.TitleBar button[phx-click=\"request_authoring_preview\"][disabled]"
+             )
+
+      refute has_element?(
+               advanced_view,
+               "div.TitleBar #adaptive_read_only_toggle input[disabled]"
+             )
+
+      assert has_element?(advanced_view, "div.TitleBar #adaptive_read_only_toggle")
+      refute has_element?(advanced_view, "nav.breadcrumb-bar #adaptive_read_only_toggle")
+      assert has_element?(advanced_view, "#adaptive_read_only_toggle input[role=\"switch\"]")
+      assert render(advanced_view) =~ "Read only"
+      assert render(advanced_view) =~ "Preview"
+    end
+
+    test "saves the title in liveview and patches the editor url", %{
+      conn: conn,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      view |> element("button[phx-click=\"begin_title_edit\"]") |> render_click()
+
+      html =
+        view
+        |> form("form[phx-submit=\"save_title\"]", %{
+          "title_editor" => %{"title" => "Renamed Basic Page"}
+        })
+        |> render_submit()
+
+      assert_patch(view, live_view_route(project.slug, "renamed_basic_page"))
+      assert html =~ "Renamed Basic Page"
+    end
+
+    test "shows a direct lock conflict message when another author holds the edit lock", %{
+      conn: conn,
+      project: project,
+      revision: revision
+    } do
+      other_author = insert(:author, email: "other-author@example.edu")
+
+      insert(:author_project,
+        author_id: other_author.id,
+        project_id: project.id
+      )
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(project.slug, revision.slug, other_author.email)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      view |> element("button[phx-click=\"begin_title_edit\"]") |> render_click()
+
+      html =
+        view
+        |> form("form[phx-submit=\"save_title\"]", %{
+          "title_editor" => %{"title" => "Conflicting Rename"}
+        })
+        |> render_submit()
+
+      assert html =~
+               "This page is currently being edited by other-author@example.edu. You can change the title after the edit lock is released."
+    end
+
+    test "shows a shell flash when adaptive read-only blocks an edit", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+
+      html =
+        render_hook(view, "authoring_readonly_edit_blocked", %{
+          "message" =>
+            "This page is in read-only mode. Toggle \"Read only\" off in the header to edit."
+        })
+
+      assert html =~
+               "This page is in read-only mode. Toggle &quot;Read only&quot; off in the header to edit."
     end
 
     test "breadcrumbs contain correct navigation links", %{

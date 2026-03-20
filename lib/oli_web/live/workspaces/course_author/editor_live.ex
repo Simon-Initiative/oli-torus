@@ -12,14 +12,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   alias OliWeb.Workspaces.CourseAuthor.HistoryLive
 
   @impl true
-  def mount(%{"project_id" => project_slug, "revision_slug" => revision_slug}, _session, socket) do
+  def mount(
+        %{"project_id" => project_slug, "revision_slug" => revision_slug} = params,
+        _session,
+        socket
+      ) do
     author = socket.assigns[:current_author]
     project = socket.assigns.project
     is_admin? = Accounts.at_least_content_admin?(author)
 
     case PageEditor.create_context(project_slug, revision_slug, author) do
       {:ok, context} ->
-        live_edit(socket, project, context, project_slug, revision_slug, is_admin?)
+        live_edit(socket, project, context, project_slug, revision_slug, is_admin?, params)
 
       {:error, :not_found} ->
         {:ok,
@@ -32,6 +36,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   @impl true
   def render(%{app_params: _app_params} = assigns) do
     ~H"""
+    <div id="react_to_live_view" phx-hook="ReactToLiveView"></div>
     <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <div id="editor" class="container">
         {React.component(@ctx, "Components.Authoring", @app_params, id: "authoring_editor")}
@@ -43,6 +48,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
   def render(assigns) do
     ~H"""
+    <div id="react_to_live_view" phx-hook="ReactToLiveView"></div>
     <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <%= if @is_admin? do %>
         <div
@@ -86,12 +92,116 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   @impl true
+  def handle_params(_params, uri, socket) do
+    {:noreply, assign(socket, uri: uri)}
+  end
+
+  @impl true
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
-    {:noreply, assign(socket, error: true, maybe_scripts_loaded: true)}
+    {:noreply,
+     socket
+     |> assign(:error, true)
+     |> assign(:maybe_scripts_loaded, true)
+     |> maybe_enable_preview_after_scripts_load()}
   end
 
   def handle_event("survey_scripts_loaded", _params, socket) do
-    {:noreply, assign(socket, maybe_scripts_loaded: true)}
+    {:noreply,
+     socket
+     |> assign(:maybe_scripts_loaded, true)
+     |> maybe_enable_preview_after_scripts_load()}
+  end
+
+  def handle_event("authoring_title_lock_state_changed", %{"editable" => editable}, socket) do
+    {:noreply, assign(socket, title_editable: editable)}
+  end
+
+  def handle_event("authoring_readonly_state_changed", %{"readonly" => readonly}, socket) do
+    {:noreply, assign(socket, adaptive_read_only: readonly)}
+  end
+
+  def handle_event("authoring_readonly_toggle_failed", %{"message" => message}, socket) do
+    {:noreply,
+     socket
+     |> assign(:adaptive_read_only, true)
+     |> put_flash(:error, message)}
+  end
+
+  def handle_event("authoring_readonly_edit_blocked", %{"message" => message}, socket) do
+    {:noreply, put_flash(socket, :info, message)}
+  end
+
+  def handle_event("authoring_preview_state_changed", %{"enabled" => enabled}, socket) do
+    {:noreply, assign(socket, :preview_enabled, enabled)}
+  end
+
+  def handle_event("toggle_adaptive_read_only", params, socket) do
+    desired_read_only = Map.has_key?(params, "adaptive_read_only")
+
+    cond do
+      !socket.assigns.preview_enabled ->
+        {:noreply, socket}
+
+      desired_read_only == socket.assigns.adaptive_read_only ->
+        {:noreply, socket}
+
+      true ->
+        {:noreply,
+         socket
+         |> assign(:adaptive_read_only, desired_read_only)
+         |> push_event("adaptive_readonly_toggle_requested", %{readonly: desired_read_only})}
+    end
+  end
+
+  def handle_event("begin_title_edit", _params, socket) do
+    {:noreply,
+     assign(socket,
+       title_editing: true,
+       title_input: socket.assigns.page_title
+     )}
+  end
+
+  def handle_event("cancel_title_edit", _params, socket) do
+    {:noreply,
+     assign(socket,
+       title_editing: false,
+       title_input: socket.assigns.page_title
+     )}
+  end
+
+  def handle_event("change_title_input", %{"title_editor" => %{"title" => title}}, socket) do
+    {:noreply, assign(socket, title_input: title)}
+  end
+
+  def handle_event("save_title", %{"title_editor" => %{"title" => title}}, socket) do
+    title = String.trim(title)
+
+    cond do
+      title == "" ->
+        {:noreply, put_flash(socket, :error, "Title cannot be blank")}
+
+      title == socket.assigns.page_title ->
+        {:noreply,
+         assign(socket,
+           title_editing: false,
+           title_input: socket.assigns.page_title
+         )}
+
+      true ->
+        save_page_title(socket, title)
+    end
+  end
+
+  def handle_event("request_authoring_preview", _params, socket) do
+    if socket.assigns.preview_enabled do
+      {:noreply,
+       push_event(socket, "authoring_preview_requested", %{
+         url: preview_url(socket),
+         window_name: preview_window_name(socket)
+       })}
+    else
+      {:noreply, socket}
+    end
   end
 
   defp maybe_show_error(assigns) do
@@ -99,6 +209,120 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     <div :if={@error} class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
       Something went wrong when loading the JS dependencies.
     </div>
+    """
+  end
+
+  attr(:title, :string, required: true)
+  attr(:title_input, :string, required: true)
+  attr(:title_editing, :boolean, required: true)
+  attr(:adaptive_read_only, :boolean, required: true)
+  attr(:is_advanced_authoring, :boolean, required: true)
+  attr(:preview_enabled, :boolean, required: true)
+
+  def authoring_header(assigns) do
+    ~H"""
+    <div class="container mx-auto">
+      <div class="resource-editor row">
+        <div class="col-span-12">
+          <div class="TitleBar w-100 align-items-baseline z-40" style="top: 64px;">
+            <div class="d-flex flex-wrap items-center justify-between gap-3 px-3 md:px-4 pt-1 pb-2">
+              <div class="d-flex align-items-baseline flex-grow-1 mr-2 min-w-0">
+                <%= if @title_editing do %>
+                  <.form
+                    for={%{}}
+                    as={:title_editor}
+                    phx-change="change_title_input"
+                    phx-submit="save_title"
+                    class="d-flex inline-flex flex-grow-1"
+                  >
+                    <input
+                      type="text"
+                      name="title_editor[title]"
+                      value={@title_input}
+                      class="form-control form-control-sm flex-1"
+                      autocomplete="off"
+                    />
+                    <div class="whitespace-nowrap">
+                      <button
+                        type="submit"
+                        class="btn btn-primary btn-sm ml-2"
+                        disabled={String.trim(@title_input) == ""}
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm ml-1"
+                        phx-click="cancel_title_edit"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </.form>
+                <% else %>
+                  <span style="display: inline-block; white-space: normal; text-align: left; font-weight: normal; font-size: 1.5rem;">
+                    {@title}
+                  </span>
+                  <button
+                    type="button"
+                    class="btn btn-link btn-sm"
+                    phx-click="begin_title_edit"
+                  >
+                    Edit Title
+                  </button>
+                <% end %>
+              </div>
+              <div class="d-flex shrink-0 items-center gap-3 whitespace-nowrap">
+                <.read_only_toggle
+                  :if={@is_advanced_authoring}
+                  adaptive_read_only={@adaptive_read_only}
+                  enabled={@preview_enabled}
+                />
+                <button
+                  type="button"
+                  class={[
+                    "btn btn-primary btn-sm rounded-pill px-4 d-inline-flex items-center gap-2",
+                    if(!@preview_enabled, do: "disabled opacity-60 cursor-not-allowed")
+                  ]}
+                  phx-click="request_authoring_preview"
+                  disabled={!@preview_enabled}
+                >
+                  <i class="fa-regular fa-file-lines"></i>
+                  <span>Preview</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr(:adaptive_read_only, :boolean, required: true)
+  attr(:enabled, :boolean, required: true)
+
+  def read_only_toggle(assigns) do
+    ~H"""
+    <form id="adaptive_read_only_toggle" phx-change="toggle_adaptive_read_only" class="mb-0">
+      <label class={[
+        "mb-0 inline-flex items-center gap-2",
+        if(@enabled, do: "cursor-pointer", else: "cursor-not-allowed opacity-60")
+      ]}>
+        <span class="text-sm font-semibold text-[#111827] dark:text-[#F5F5F5]">Read only</span>
+        <input
+          type="checkbox"
+          name="adaptive_read_only"
+          class="sr-only peer"
+          role="switch"
+          aria-checked={to_string(@adaptive_read_only)}
+          checked={@adaptive_read_only}
+          disabled={!@enabled}
+        />
+        <div class="relative h-6 w-11 rounded-full bg-gray-200 transition-colors duration-300 ease-in-out after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-transform after:duration-300 after:ease-in-out after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:bg-gray-700 dark:peer-focus:ring-primary-800 dark:border-gray-600">
+        </div>
+      </label>
+    </form>
     """
   end
 
@@ -120,7 +344,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     """
   end
 
-  defp live_edit(socket, project, context, project_slug, revision_slug, is_admin?) do
+  defp live_edit(socket, project, context, project_slug, revision_slug, is_admin?, params) do
     context = Map.put(context, :hasExperiments, project.has_experiments)
     activity_types = Activities.activities_for_project(project)
     part_component_types = PartComponents.part_components_for_project(project)
@@ -166,6 +390,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
               projectSlug: project_slug,
               graded: context.graded,
               content: context,
+              creationModeHint: creation_mode_hint(params, context),
               paths: %{images: Routes.static_path(socket, "/images")},
               activityTypes: activity_types,
               partComponentTypes: part_component_types,
@@ -188,10 +413,137 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       |> assign(error: false)
       |> assign(breadcrumbs: breadcrumbs)
       |> assign(is_advanced_authoring: is_advanced_authoring)
+      |> assign(page_title: context.title)
+      |> assign(title_input: context.title)
+      |> assign(title_editing: false)
+      |> assign(title_editable: false)
+      |> assign(adaptive_read_only: is_advanced_authoring)
+      |> assign(preview_enabled: false)
+      |> assign(show_authoring_header: true)
       |> push_event("load_survey_scripts", %{script_sources: all_scripts})
 
     {:ok, assign(socket, content)}
   end
+
+  defp save_page_title(socket, title) do
+    project_slug = socket.assigns.project_slug
+    revision_slug = socket.assigns.revision_slug
+    author = socket.assigns.current_author
+
+    with {:acquired} <- PageEditor.acquire_lock(project_slug, revision_slug, author.email),
+         {:ok, revision} <-
+           PageEditor.edit(project_slug, revision_slug, author.email, %{
+             "title" => title,
+             "releaseLock" => false
+           }) do
+      breadcrumbs =
+        Breadcrumb.trail_to(
+          project_slug,
+          revision.slug,
+          AuthoringResolver,
+          socket.assigns.project.customizations
+        )
+
+      socket =
+        socket
+        |> assign(:breadcrumbs, breadcrumbs)
+        |> assign(:page_title, revision.title)
+        |> assign(:revision_slug, revision.slug)
+        |> assign(:title_input, revision.title)
+        |> assign(:title_editing, false)
+        |> assign(:title, "Edit | " <> revision.title)
+        |> assign(:title_editable, true)
+        |> update_context_assigns(revision.title, revision.slug)
+        |> push_event("authoring_page_title_updated", %{
+          title: revision.title,
+          revision_slug: revision.slug
+        })
+
+      socket =
+        if revision.slug != revision_slug do
+          push_patch(
+            socket,
+            to: ~p"/workspaces/course_author/#{project_slug}/curriculum/#{revision.slug}/edit"
+          )
+        else
+          socket
+        end
+
+      {:noreply, socket}
+    else
+      {:lock_not_acquired, {user, _updated_at}} ->
+        {:noreply, put_flash(socket, :error, lock_conflict_message(user))}
+
+      {:error, {:lock_not_acquired, {user, _updated_at}}} ->
+        {:noreply, put_flash(socket, :error, lock_conflict_message(user))}
+
+      {:error, {:not_found}} ->
+        {:noreply, put_flash(socket, :error, "This page could not be found")}
+
+      {:error, {:not_authorized}} ->
+        {:noreply, put_flash(socket, :error, "You are not authorized to edit this page")}
+
+      {:error, {:error}} ->
+        {:noreply, put_flash(socket, :error, "Could not save the updated title")}
+
+      error ->
+        {_, msg} = Oli.Utils.log_error("Could not update page title", error)
+        {:noreply, put_flash(socket, :error, msg)}
+    end
+  end
+
+  defp update_context_assigns(socket, title, revision_slug) do
+    updated_raw_context =
+      socket.assigns.raw_context
+      |> Map.put(:title, title)
+      |> Map.put(:resourceSlug, revision_slug)
+
+    socket
+    |> maybe_assign_app_params(title, revision_slug)
+    |> assign(:raw_context, updated_raw_context)
+  end
+
+  defp maybe_assign_app_params(socket, title, revision_slug) do
+    case Map.get(socket.assigns, :app_params) do
+      nil ->
+        socket
+
+      app_params ->
+        assign(socket, :app_params, %{
+          app_params
+          | revisionSlug: revision_slug,
+            content:
+              app_params.content
+              |> Map.put(:title, title)
+              |> Map.put(:resourceSlug, revision_slug)
+        })
+    end
+  end
+
+  defp creation_mode_hint(%{"creation_mode" => "expert"}, %{
+         content: %{"advancedAuthoring" => true}
+       }),
+       do: "expert"
+
+  defp creation_mode_hint(_params, _context), do: nil
+
+  defp preview_url(socket),
+    do:
+      "/authoring/project/#{socket.assigns.project_slug}/preview/#{socket.assigns.revision_slug}"
+
+  defp preview_window_name(socket), do: "preview-#{socket.assigns.project_slug}"
+
+  defp maybe_enable_preview_after_scripts_load(socket) do
+    if socket.assigns.is_advanced_authoring do
+      socket
+    else
+      assign(socket, :preview_enabled, true)
+    end
+  end
+
+  defp lock_conflict_message(user),
+    do:
+      "This page is currently being edited by #{user}. You can change the title after the edit lock is released."
 
   defp render_prev_next_nav(assigns) do
     ~H"""

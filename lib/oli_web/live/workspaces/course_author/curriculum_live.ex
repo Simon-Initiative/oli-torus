@@ -567,25 +567,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     {:noreply, assign(socket, dragging: nil)}
   end
 
-  def handle_event("add", %{"type" => type, "scored" => scored}, socket) do
+  def handle_event("add", %{"type" => type, "scored" => scored} = params, socket) do
+    adaptive_mode = Map.get(params, "adaptive_mode")
+
     case ContainerEditor.add_new(
            socket.assigns.container,
            type,
            scored,
            socket.assigns.author,
            socket.assigns.project,
-           socket.assigns.numberings
+           socket.assigns.numberings,
+           %{"adaptive_mode" => adaptive_mode}
          ) do
-      {:ok, _} ->
-        {:noreply,
-         assign(socket,
-           numberings:
-             Numbering.number_full_tree(
-               Oli.Publishing.AuthoringResolver,
-               socket.assigns.project.slug,
-               socket.assigns.project.customizations
-             )
-         )}
+      {:ok, %Revision{slug: slug}} ->
+        handle_created_revision(socket, type, slug, adaptive_mode)
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply, put_flash(socket, :error, "Could not create new item")}
@@ -995,6 +990,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
       severity: :warn,
       metadata: %{}
     }
+  end
+
+  defp handle_created_revision(socket, "Container", _slug, _adaptive_mode) do
+    {:noreply,
+     assign(socket,
+       numberings:
+         Numbering.number_full_tree(
+           Oli.Publishing.AuthoringResolver,
+           socket.assigns.project.slug,
+           socket.assigns.project.customizations
+         )
+     )}
+  end
+
+  defp handle_created_revision(socket, _type, slug, _adaptive_mode) do
+    {:noreply,
+     redirect(
+       socket,
+       to: Routes.live_path(socket, EditorLive, socket.assigns.project.slug, slug)
+     )}
   end
 
   defp handle_import_success(socket, revision, warnings) do

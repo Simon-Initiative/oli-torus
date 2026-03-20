@@ -143,12 +143,15 @@ const verifyStartScreenExists = async (getState: () => unknown, dispatch: any) =
   const rootState = getState() as AuthoringRootState;
   const sequence = selectSequence(rootState);
   const screens = selectAllActivities(rootState);
+  const hasNonEndScreen = screens.some(
+    (screen) => screen.authoring?.flowchart?.screenType !== 'end_screen',
+  );
 
   const firstActivity = sequence.find(
     (c) => !!c.resourceId && c.authoring?.flowchart?.screenType !== 'end_screen',
   );
   const firstScreen = screens.find((s) => s.resourceId === firstActivity?.resourceId);
-  if (!firstScreen) {
+  if (!firstScreen && !hasNonEndScreen) {
     console.info('Creating welcome screen');
     await dispatch(
       addFlowchartScreen({

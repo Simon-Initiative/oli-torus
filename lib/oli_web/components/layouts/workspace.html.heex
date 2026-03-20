@@ -37,7 +37,10 @@
       if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
     ]}
   >
-    <div id="flash_container" class="mb-[28px] overview sticky top-14 z-40">
+    <div
+      id="flash_container"
+      class="overview sticky top-14 z-40 mb-0"
+    >
       <%= if Phoenix.Flash.get(@flash, :info) do %>
         <div class="alert alert-info flex flex-row" role="alert">
           <div class="flex-1">
@@ -82,6 +85,17 @@
         />
       <% end %>
     </div>
+    <OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.authoring_header
+      :if={
+        assigns[:show_authoring_header] && assigns[:page_title] && assigns[:is_advanced_authoring]
+      }
+      title={assigns[:page_title]}
+      title_input={assigns[:title_input]}
+      title_editing={assigns[:title_editing]}
+      adaptive_read_only={assigns[:adaptive_read_only]}
+      is_advanced_authoring={true}
+      preview_enabled={assigns[:preview_enabled]}
+    />
     <div class={OliWeb.Workspaces.Utils.maybe_add_padding(assigns[:uri])}>
       <div class="-mt-[28px]">
         <Components.Delivery.Layouts.breadcrumb_trail
@@ -90,6 +104,18 @@
           socket={@socket}
         />
       </div>
+      <OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.authoring_header
+        :if={
+          assigns[:show_authoring_header] && assigns[:page_title] &&
+            !assigns[:is_advanced_authoring]
+        }
+        title={assigns[:page_title]}
+        title_input={assigns[:title_input]}
+        title_editing={assigns[:title_editing]}
+        adaptive_read_only={false}
+        is_advanced_authoring={false}
+        preview_enabled={assigns[:preview_enabled]}
+      />
 
       {@inner_content}
     </div>
