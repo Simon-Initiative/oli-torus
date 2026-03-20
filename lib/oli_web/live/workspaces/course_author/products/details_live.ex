@@ -176,26 +176,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
       </div>
       <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
-          <h4>Content</h4>
-          <div class="text-muted">
-            Manage and customize the presentation of content in this template.
-          </div>
-        </div>
-        <div class="md:col-span-8">
-          <Content.render
-            product={@product}
-            changeset={to_form(@changeset)}
-            save="save"
-            updates={@updates}
-            schedule_url={
-              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/schedule"
-            }
-          />
-        </div>
-      </div>
-
-      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
-        <div class="md:col-span-4">
           <h4>Cover Image</h4>
           <div class="text-muted">
             Manage the cover image for this template. Max file size is 5 MB.
@@ -210,6 +190,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             change="change"
             cancel_upload="cancel_upload"
             updates={@updates}
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Content</h4>
+          <div class="text-muted">
+            Manage and customize the presentation of content in this template.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <Content.render
+            product={@product}
+            changeset={to_form(@changeset)}
+            save="save"
+            updates={@updates}
+            schedule_url={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/schedule"
+            }
           />
         </div>
       </div>
