@@ -866,7 +866,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       dashboard={@dashboard}
       dashboard_scope={@dashboard_scope}
       dashboard_visible_sections={@dashboard_visible_sections}
+      params={@params}
       section={@section}
+      student_support_tile_state={@student_support_tile_state}
     />
     """
   end
@@ -1291,6 +1293,51 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {:error, :invalid_order, socket} ->
         {:noreply, put_flash(socket, :error, "Invalid dashboard section order.")}
     end
+  end
+
+  def handle_event("student_support_bucket_selected", %{"bucket_id" => bucket_id}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         IntelligentDashboardTab.student_support_path(socket, %{
+           bucket: bucket_id,
+           page: 1
+         })
+     )}
+  end
+
+  def handle_event("student_support_activity_filter_selected", %{"filter" => filter}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         IntelligentDashboardTab.student_support_path(socket, %{
+           filter: filter,
+           page: 1
+         })
+     )}
+  end
+
+  def handle_event("student_support_search_changed", %{"value" => value}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         IntelligentDashboardTab.student_support_path(socket, %{
+           q: value,
+           page: 1
+         })
+     )}
+  end
+
+  def handle_event("student_support_load_more", _params, socket) do
+    current_page =
+      socket.assigns
+      |> Map.get(:student_support_tile_state, %{})
+      |> Map.get(:page, 1)
+
+    {:noreply,
+     push_patch(socket,
+       to: IntelligentDashboardTab.student_support_path(socket, %{page: current_page + 1})
+     )}
   end
 
   def handle_event(event, params, socket) do

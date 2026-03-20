@@ -9,10 +9,11 @@ defmodule Oli.Dashboard.Cache.InProcessStore do
   alias Oli.Dashboard.Cache.Policy
   alias Oli.Dashboard.Scope
 
+  @type payload :: term()
   @type container_key :: {pos_integer(), Scope.container_type(), pos_integer() | nil}
 
   @type entry :: %{
-          payload: map(),
+          payload: payload(),
           written_at_ms: non_neg_integer(),
           container_key: container_key()
         }
@@ -41,7 +42,7 @@ defmodule Oli.Dashboard.Cache.InProcessStore do
   end
 
   @doc "Writes a single oracle payload entry."
-  @spec write_oracle(GenServer.server(), Key.cache_key(), map(), keyword()) ::
+  @spec write_oracle(GenServer.server(), Key.cache_key(), payload(), keyword()) ::
           {:ok, %{evicted_containers: non_neg_integer()}} | {:error, error()}
   def write_oracle(store, cache_key, payload, opts \\ []) do
     GenServer.call(store, {:write_oracle, cache_key, payload, opts})
@@ -128,7 +129,7 @@ defmodule Oli.Dashboard.Cache.InProcessStore do
     {:reply, {:ok, result}, next_state}
   end
 
-  def handle_call({:write_oracle, cache_key, payload, opts}, _from, state) when is_map(payload) do
+  def handle_call({:write_oracle, cache_key, payload, opts}, _from, state) do
     with {:ok, container_key} <- container_key_from_cache_key(cache_key) do
       now_ms = now_ms(state)
 
@@ -152,10 +153,6 @@ defmodule Oli.Dashboard.Cache.InProcessStore do
       {:error, reason} ->
         {:reply, {:error, reason}, state}
     end
-  end
-
-  def handle_call({:write_oracle, _cache_key, payload, _opts}, _from, state) do
-    {:reply, {:error, {:invalid_payload, payload}}, state}
   end
 
   def handle_call(

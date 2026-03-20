@@ -30,6 +30,22 @@ defmodule Oli.Dashboard.Cache.InProcessStoreTest do
       assert result.expired == []
     end
 
+    test "stores and returns list payloads while entry is within ttl", %{store: store} do
+      key = cache_key(:progress_proficiency, 303)
+      payload = [%{student_id: 1, progress_pct: 88.0, proficiency_pct: 71.0}]
+
+      assert {:ok, %{evicted_containers: 0}} =
+               InProcessStore.write_oracle(store, key, payload,
+                 ttl_ms: 1_000,
+                 container_cap: 5
+               )
+
+      assert {:ok, result} = InProcessStore.lookup_required(store, [key], ttl_ms: 1_000)
+      assert result.hits == %{key => payload}
+      assert result.misses == []
+      assert result.expired == []
+    end
+
     test "expires ttl entries deterministically and treats them as misses", %{
       store: store,
       clock_ref: clock_ref
