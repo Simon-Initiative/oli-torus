@@ -181,8 +181,8 @@ Contract signatures (notional):
 @callback key() :: atom()
 @callback version() :: non_neg_integer()
 @callback requires() :: [atom()]
-@callback load(Oli.Dashboard.OracleContext.t(), keyword()) :: {:ok, map()} | {:error, term()}
-@callback project(map(), keyword()) :: term()
+@callback load(Oli.Dashboard.OracleContext.t(), keyword()) :: {:ok, term()} | {:error, term()}
+@callback project(term(), keyword()) :: term()
 
 @callback dependencies_for(registry :: term(), consumer_key :: atom()) ::
   {:ok, %{required: [atom()], optional: [atom()]}} | {:error, term()}

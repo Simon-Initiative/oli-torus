@@ -59,14 +59,22 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
                  cache_opts: [lookup_fun: lookup_fun],
                  dependency_profile: %{
                    required: [:oracle_instructor_progress],
-                   optional: [:oracle_instructor_support]
+                   optional: [
+                     :oracle_instructor_progress_proficiency,
+                     :oracle_instructor_student_info
+                   ]
                  }
                )
 
       assert is_binary(bundle.request_token)
       assert bundle.snapshot.oracles.oracle_instructor_progress == %{metric: :progress}
       assert bundle.snapshot.oracle_statuses.oracle_instructor_progress.status == :ready
-      assert bundle.snapshot.oracle_statuses.oracle_instructor_support.status == :unavailable
+
+      assert bundle.snapshot.oracle_statuses.oracle_instructor_progress_proficiency.status ==
+               :unavailable
+
+      assert bundle.snapshot.oracle_statuses.oracle_instructor_student_info.status == :unavailable
+
       assert bundle.projection_statuses.progress.status == :ready
     end
 
@@ -82,8 +90,26 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       runtime_results = %{
         oracle_instructor_progress:
           Result.ok(:oracle_instructor_progress, %{metric: :progress_runtime}, version: 2),
-        oracle_instructor_support:
-          Result.ok(:oracle_instructor_support, %{metric: :support_runtime}, version: 1)
+        oracle_instructor_progress_proficiency:
+          Result.ok(
+            :oracle_instructor_progress_proficiency,
+            [%{student_id: 101, progress_pct: 20.0, proficiency_pct: 30.0}],
+            version: 1
+          ),
+        oracle_instructor_student_info:
+          Result.ok(
+            :oracle_instructor_student_info,
+            [
+              %{
+                student_id: 101,
+                email: "ada@example.edu",
+                given_name: "Ada",
+                family_name: "Lovelace",
+                last_interaction_at: ~U[2026-03-12 00:00:00Z]
+              }
+            ],
+            version: 1
+          )
       }
 
       assert {:ok, bundle} =
@@ -91,14 +117,32 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
                  cache_module: cache_module,
                  cache_opts: [lookup_fun: lookup_fun],
                  dependency_profile: %{
-                   required: [:oracle_instructor_progress],
-                   optional: [:oracle_instructor_support]
+                   required: [
+                     :oracle_instructor_progress,
+                     :oracle_instructor_progress_proficiency,
+                     :oracle_instructor_student_info
+                   ],
+                   optional: []
                  },
                  runtime_results: runtime_results
                )
 
       assert bundle.snapshot.oracles.oracle_instructor_progress == %{metric: :progress_runtime}
-      assert bundle.snapshot.oracles.oracle_instructor_support == %{metric: :support_runtime}
+
+      assert bundle.snapshot.oracles.oracle_instructor_progress_proficiency == [
+               %{student_id: 101, progress_pct: 20.0, proficiency_pct: 30.0}
+             ]
+
+      assert bundle.snapshot.oracles.oracle_instructor_student_info == [
+               %{
+                 student_id: 101,
+                 email: "ada@example.edu",
+                 given_name: "Ada",
+                 family_name: "Lovelace",
+                 last_interaction_at: ~U[2026-03-12 00:00:00Z]
+               }
+             ]
+
       assert bundle.snapshot.oracle_statuses.oracle_instructor_progress.status == :ready
       assert bundle.projection_statuses.progress.status == :ready
       assert bundle.projection_statuses.student_support.status == :ready

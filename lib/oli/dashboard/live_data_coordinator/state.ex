@@ -597,21 +597,14 @@ defmodule Oli.Dashboard.LiveDataCoordinator.State do
     {:error, Map.get(oracle_result, :reason, :oracle_error)}
   end
 
-  defp outcome_from_oracle_result(%{status: :ok, payload: payload}) when is_map(payload) do
-    {:ok, payload}
-  end
-
   defp outcome_from_oracle_result(%{status: :ok, payload: payload}) do
-    {:error, {:invalid_payload, payload}}
+    {:ok, payload}
   end
 
   defp outcome_from_oracle_result(%{} = oracle_result) do
     case Map.fetch(oracle_result, :payload) do
-      {:ok, payload} when is_map(payload) ->
-        {:ok, payload}
-
       {:ok, payload} ->
-        {:error, {:invalid_payload, payload}}
+        {:ok, payload}
 
       :error ->
         {:ok, oracle_result}

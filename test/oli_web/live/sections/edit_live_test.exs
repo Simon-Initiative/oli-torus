@@ -18,7 +18,7 @@ defmodule OliWeb.Sections.EditLiveTest do
   end
 
   defp create_section(_conn) do
-    section = insert(:section)
+    section = insert(:section, type: :enrollable)
 
     [section: section]
   end
@@ -205,7 +205,7 @@ defmodule OliWeb.Sections.EditLiveTest do
     end
 
     test "loads section data correctly", %{conn: conn} do
-      section = insert(:section, requires_payment: true)
+      section = insert(:section, type: :enrollable, requires_payment: true)
 
       {:ok, view, html} = live(conn, live_view_edit_route(section.slug))
 
@@ -228,6 +228,7 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       section =
         insert(:section,
+          type: :enrollable,
           open_and_free: true,
           welcome_title: welcome_title,
           encouraging_subtitle: "Encouraging subtitle"
@@ -293,7 +294,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       {:ok, conn: conn, ctx: _} = set_timezone(context)
       timezone = Plug.Conn.get_session(conn, :browser_timezone)
 
-      section = insert(:section_with_dates, open_and_free: true)
+      section = insert(:section_with_dates, type: :enrollable, open_and_free: true)
 
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
