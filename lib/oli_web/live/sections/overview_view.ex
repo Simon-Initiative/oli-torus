@@ -6,16 +6,15 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, SectionResource, EnrollmentBrowseOptions}
+  alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Details.ImageUpload
   alias OliWeb.Sections.{Instructors, Mount}
-  alias Oli.Publishing.DeliveryResolver
-  alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Live.Components.Sections.AiAssistantComponent
   alias OliWeb.Live.Components.Sections.NotesComponent
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
+  alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias Oli.Utils.S3Storage
   alias Oli.Repo
 
@@ -59,55 +58,26 @@ defmodule OliWeb.Sections.OverviewView do
           Sections.check_for_available_publication_updates(section)
           |> Enum.count()
 
-        show_required_section_config =
-          if section.required_survey_resource_id != nil or
-               Sections.get_base_project_survey(section.slug) do
-            true
-          else
-            false
-          end
-
-        # Notes: load page-level collab space counts
-        {collab_space_pages_count, pages_count} =
-          Collaboration.count_collab_spaces_enabled_in_pages_for_section(section.slug)
-
-        # Discussions: load root container's section_resource and collab_space_config
-        root_revision = DeliveryResolver.root_container(section.slug)
-
-        {root_section_resource, root_collab_space_config} =
-          if root_revision do
-            {:ok, config} =
-              Collaboration.get_collab_space_config_for_page_in_section(
-                root_revision.slug,
-                section.slug
-              )
-
-            root_sr = Repo.get(SectionResource, section.root_section_resource_id)
-            {root_sr, config}
-          else
-            {nil, nil}
-          end
+        component_data = SectionDefaultsHelpers.load_component_data(section)
 
         %{base_project: base_project} = section |> Repo.preload(:base_project)
 
         {:ok,
-         assign(socket,
-           is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
-           is_admin: is_content_admin?(user),
-           breadcrumbs: set_breadcrumbs(type, section),
-           instructors: fetch_instructors(section),
-           user: user,
-           section: section,
-           changeset: Section.changeset(section, %{}),
-           updates_count: updates_count,
-           has_submitted_attempts:
-             Oli.Delivery.Attempts.ManualGrading.has_submitted_attempts(section),
-           collab_space_pages_count: collab_space_pages_count,
-           pages_count: pages_count,
-           root_section_resource: root_section_resource,
-           root_collab_space_config: root_collab_space_config,
-           show_required_section_config: show_required_section_config,
-           base_project: base_project
+         assign(
+           socket,
+           Map.merge(component_data, %{
+             is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
+             is_admin: is_content_admin?(user),
+             breadcrumbs: set_breadcrumbs(type, section),
+             instructors: fetch_instructors(section),
+             user: user,
+             section: section,
+             changeset: Section.changeset(section, %{}),
+             updates_count: updates_count,
+             has_submitted_attempts:
+               Oli.Delivery.Attempts.ManualGrading.has_submitted_attempts(section),
+             base_project: base_project
+           })
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -624,44 +594,22 @@ defmodule OliWeb.Sections.OverviewView do
     {:noreply, socket}
   end
 
-  # Keep @section in sync when child LiveComponents (e.g. RequiredSurvey) update the section.
-  def handle_info({:section_updated, %Oli.Delivery.Sections.Section{} = updated_section}, socket) do
-    current_section = socket.assigns.section
-
-    merged =
-      Map.merge(
-        Map.from_struct(current_section),
-        Map.from_struct(updated_section),
-        fn _key, current_val, new_val ->
-          case new_val do
-            %Ecto.Association.NotLoaded{} -> current_val
-            _ -> new_val
-          end
-        end
-      )
-
-    {:noreply, assign(socket, section: struct(Oli.Delivery.Sections.Section, merged))}
-  end
-
   # Generic flash handler for child LiveComponents
   def handle_info({:flash, level, message}, socket) do
     {:noreply, put_flash(socket, level, message)}
   end
 
-  # Keep parent's notes count in sync so NotesComponent doesn't get stale assigns on re-render
-  def handle_info({:notes_count_updated, count}, socket) do
-    {:noreply, assign(socket, collab_space_pages_count: count)}
-  end
+  # Component sync handlers — delegated to shared helpers
+  def handle_info({:section_updated, %Section{} = updated}, socket),
+    do: {:noreply, SectionDefaultsHelpers.handle_section_updated(socket, :section, updated)}
 
-  # Keep parent's collab_space_config in sync so CourseDiscussionsComponent doesn't get stale
-  # assigns on re-render (e.g. when another component triggers a parent re-render)
-  def handle_info({:collab_space_config_updated, config, root_sr}, socket) do
-    {:noreply,
-     assign(socket,
-       root_collab_space_config: config,
-       root_section_resource: root_sr
-     )}
-  end
+  def handle_info({:notes_count_updated, count}, socket),
+    do: {:noreply, SectionDefaultsHelpers.handle_notes_count_updated(socket, count)}
+
+  def handle_info({:collab_space_config_updated, config, root_sr}, socket),
+    do:
+      {:noreply,
+       SectionDefaultsHelpers.handle_collab_space_config_updated(socket, config, root_sr)}
 
   def handle_info({:scoped_feature_updated, feature_name, enabled, _source}, socket) do
     action = if enabled, do: "enabled", else: "disabled"

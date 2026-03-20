@@ -6,11 +6,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Authoring.Course
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Blueprint, Section, SectionResource}
+  alias Oli.Delivery.Sections.{Blueprint, Section}
   alias Oli.Inventories
-  alias Oli.Publishing.DeliveryResolver
-  alias Oli.Repo
-  alias Oli.Resources.Collaboration
+  alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.Confirm
   alias OliWeb.Live.Components.Sections.AiAssistantComponent
@@ -45,56 +43,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         latest_publications =
           Sections.check_for_available_publication_updates(product)
 
-        # Notes: load page-level collab space counts
-        {collab_space_pages_count, pages_count} =
-          Collaboration.count_collab_spaces_enabled_in_pages_for_section(product.slug)
-
-        # Discussions: load root container's section_resource and collab_space_config
-        root_revision = DeliveryResolver.root_container(product.slug)
-
-        {root_section_resource, root_collab_space_config} =
-          if root_revision do
-            {:ok, config} =
-              Collaboration.get_collab_space_config_for_page_in_section(
-                root_revision.slug,
-                product.slug
-              )
-
-            root_sr = Repo.get(SectionResource, product.root_section_resource_id)
-            {root_sr, config}
-          else
-            {nil, nil}
-          end
-
-        # Required Survey: check if base project has a survey
-        show_required_section_config =
-          if product.required_survey_resource_id != nil or
-               Sections.get_base_project_survey(product.slug) do
-            true
-          else
-            false
-          end
+        component_data = SectionDefaultsHelpers.load_component_data(product)
 
         {:ok,
-         assign(socket,
-           publishers: publishers,
-           updates: latest_publications,
-           author: author,
-           product: product,
-           is_admin: is_admin,
-           changeset: changeset,
-           title: "Edit Template",
-           show_confirm: false,
-           base_project: base_project,
-           resource_slug: project.slug,
-           resource_title: project.title,
-           active_workspace: :course_author,
-           active_view: :products,
-           collab_space_pages_count: collab_space_pages_count,
-           pages_count: pages_count,
-           root_section_resource: root_section_resource,
-           root_collab_space_config: root_collab_space_config,
-           show_required_section_config: show_required_section_config
+         assign(
+           socket,
+           Map.merge(component_data, %{
+             publishers: publishers,
+             updates: latest_publications,
+             author: author,
+             product: product,
+             is_admin: is_admin,
+             changeset: changeset,
+             title: "Edit Template",
+             show_confirm: false,
+             base_project: base_project,
+             resource_slug: project.slug,
+             resource_title: project.title,
+             active_workspace: :course_author,
+             active_view: :products
+           })
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -444,44 +412,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     {:noreply, assign(socket, changeset: changeset)}
   end
 
-  # Keep @product in sync when child LiveComponents update the section.
-  def handle_info({:section_updated, %Section{} = updated_section}, socket) do
-    current_product = socket.assigns.product
-
-    merged =
-      Map.merge(
-        Map.from_struct(current_product),
-        Map.from_struct(updated_section),
-        fn _key, current_val, new_val ->
-          case new_val do
-            %Ecto.Association.NotLoaded{} -> current_val
-            _ -> new_val
-          end
-        end
-      )
-
-    {:noreply, assign(socket, product: struct(Section, merged))}
-  end
-
   # Generic flash handler for child LiveComponents
   def handle_info({:flash, level, message}, socket) do
     {:noreply, put_flash(socket, level, message)}
   end
 
-  # Keep parent's notes count in sync so NotesComponent doesn't get stale assigns on re-render
-  def handle_info({:notes_count_updated, count}, socket) do
-    {:noreply, assign(socket, collab_space_pages_count: count)}
-  end
+  # Component sync handlers — delegated to shared helpers
+  def handle_info({:section_updated, %Section{} = updated}, socket),
+    do: {:noreply, SectionDefaultsHelpers.handle_section_updated(socket, :product, updated)}
 
-  # Keep parent's collab_space_config in sync so CourseDiscussionsComponent doesn't get stale
-  # assigns on re-render (e.g. when another component triggers a parent re-render)
-  def handle_info({:collab_space_config_updated, config, root_sr}, socket) do
-    {:noreply,
-     assign(socket,
-       root_collab_space_config: config,
-       root_section_resource: root_sr
-     )}
-  end
+  def handle_info({:notes_count_updated, count}, socket),
+    do: {:noreply, SectionDefaultsHelpers.handle_notes_count_updated(socket, count)}
+
+  def handle_info({:collab_space_config_updated, config, root_sr}, socket),
+    do:
+      {:noreply,
+       SectionDefaultsHelpers.handle_collab_space_config_updated(socket, config, root_sr)}
 
   defp ext(entry) do
     [ext | _] = MIME.extensions(entry.client_type)
