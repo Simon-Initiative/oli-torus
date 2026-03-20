@@ -10,13 +10,10 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.{Breadcrumb, Confirm}
   alias OliWeb.Components.{Common, Overview}
-<<<<<<< MER-4679-product-overview-page-updates
-=======
   alias OliWeb.Live.Components.Tags.TagsComponent
   alias OliWeb.Live.Components.Sections.AiAssistantComponent
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias OliWeb.Live.Components.Sections.NotesComponent
->>>>>>> master
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Projects.RequiredSurvey
