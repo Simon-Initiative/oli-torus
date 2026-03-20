@@ -122,6 +122,8 @@ defmodule OliWeb.Live.Components.Sections.CourseDiscussionsComponent do
                 {:ok, updated_section} <-
                   Sections.update_section(section, %{contains_discussions: contains}) do
              {:ok, {updated_sr, updated_section}}
+           else
+             {:error, reason} -> {:error, reason}
            end
          end) do
       {:ok, {updated_sr, updated_section}} ->
