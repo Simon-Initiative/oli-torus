@@ -307,6 +307,27 @@ defmodule OliWeb.Products.DetailsViewTest do
       refute updated_html =~ ~r/name="section\[payment_options\]"[^>]*disabled=/
       refute updated_html =~ ~r/name="section\[has_grace_period\]"[^>]*disabled=/
     end
+
+    test "shows Manage Discounts when requires payment is checked", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      refute has_element?(
+               view,
+               "a[href='/authoring/products/#{product.slug}/discounts']",
+               "Manage Discounts"
+             )
+
+      updated_html =
+        view
+        |> element("#paywall-settings-form")
+        |> render_change(%{"section" => %{"requires_payment" => "true"}})
+
+      assert updated_html =~ "Manage Discounts"
+      assert updated_html =~ ~r/href="[^"]*\/discounts"/
+    end
   end
 
   describe "product details page - overview sections" do
