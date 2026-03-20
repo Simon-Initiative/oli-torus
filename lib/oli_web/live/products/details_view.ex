@@ -10,7 +10,6 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.{Breadcrumb, Confirm}
   alias OliWeb.Components.{Common, Overview}
-  alias OliWeb.Live.Components.Tags.TagsComponent
   alias OliWeb.Live.Components.Sections.AiAssistantComponent
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias OliWeb.Live.Components.Sections.NotesComponent
