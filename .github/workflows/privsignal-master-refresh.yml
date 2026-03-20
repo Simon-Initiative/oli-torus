@@ -12,7 +12,6 @@ permissions:
   contents: write
   pull-requests: write
   actions: read
-  issues: read
 
 concurrency:
   group: privsignal-master-refresh
@@ -20,52 +19,31 @@ concurrency:
 
 jobs:
   refresh-lockfile:
-    name: Refresh priv_signal.lockfile.json from S3
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.head.ref != 'bot/privsignal-lockfile-update') }}
+    name: Refresh priv_signal.lockfile.json on master
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && !contains(github.event.pull_request.body || '', '<!-- privsignal-auto-refresh -->')) }}
     runs-on: ubuntu-latest
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.SIMON_BOT_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.SIMON_BOT_AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: us-east-2
-      S3_BUCKET: oli-torus-releases
       PUSH_TOKEN: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
     steps:
-      - name: Download stored lockfile from S3
-        id: stored
-        run: |
-          set -euo pipefail
-
-          aws --version
-
-          s3_key="privsignal/priv_signal.lockfile.json"
-          s3_uri="s3://${S3_BUCKET}/${s3_key}"
-          candidate_file="$(mktemp)"
-
-          if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "${s3_key}" --region "${AWS_REGION}" >/dev/null 2>&1; then
-            echo "No lockfile found at ${s3_uri}; skipping refresh."
-            echo "found=false" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-
-          aws s3 cp "${s3_uri}" "${candidate_file}" --region "${AWS_REGION}"
-          echo "found=true" >> "${GITHUB_OUTPUT}"
-          echo "candidate_path=${candidate_file}" >> "${GITHUB_OUTPUT}"
-          echo "s3_uri=${s3_uri}" >> "${GITHUB_OUTPUT}"
-
       - name: Checkout master branch
-        if: ${{ steps.stored.outputs.found == 'true' }}
         uses: actions/checkout@v4
         with:
           ref: master
-          fetch-depth: 1
+          fetch-depth: 0
           token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
-      - name: Commit lockfile to bot branch (if changed)
-        if: ${{ steps.stored.outputs.found == 'true' }}
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.19.2
+          otp-version: 28.1.1
+
+      - name: Install deps
+        run: mix deps.get
+
+      - name: Regenerate lockfile and push update branch
         id: branch_update
-        env:
-          CANDIDATE_PATH: ${{ steps.stored.outputs.candidate_path }}
         run: |
           set -euo pipefail
 
@@ -74,20 +52,15 @@ jobs:
             exit 1
           fi
 
-          update_branch="bot/privsignal-lockfile-update"
           target_path="priv_signal.lockfile.json"
-          if [ -f "${target_path}" ] && cmp -s "${target_path}" "${CANDIDATE_PATH}"; then
-            echo "priv_signal.lockfile.json is unchanged; skipping commit."
-            echo "changed=false" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
+          timestamp="$(date -u +%Y%m%d%H%M%S)"
+          update_branch="bot/privsignal-lockfile-update-${timestamp}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 
-          cp "${CANDIDATE_PATH}" "${target_path}"
+          mix priv_signal.scan --quiet --json-path "${target_path}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git checkout -B "${update_branch}"
           git add "${target_path}"
 
           if git diff --cached --quiet; then
@@ -96,84 +69,41 @@ jobs:
             exit 0
           fi
 
+          git checkout -b "${update_branch}"
           git commit -m "chore(privsignal): update lockfile [skip ci]"
           git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git push --force-with-lease origin "${update_branch}"
+          git push --set-upstream origin "${update_branch}"
 
           echo "changed=true" >> "${GITHUB_OUTPUT}"
           echo "update_branch=${update_branch}" >> "${GITHUB_OUTPUT}"
 
-      - name: Open or update PR and merge immediately
+      - name: Open PR and merge immediately
         if: ${{ steps.branch_update.outputs.changed == 'true' }}
         env:
+          GH_TOKEN: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
           UPDATE_BRANCH: ${{ steps.branch_update.outputs.update_branch }}
         run: |
           set -euo pipefail
 
-          if [ -z "${PUSH_TOKEN}" ]; then
+          if [ -z "${GH_TOKEN}" ]; then
             echo "SIMON_BOT_PERSONAL_ACCESS_TOKEN is required."
             exit 1
           fi
 
-          api_root="https://api.github.com/repos/${GITHUB_REPOSITORY}"
-          owner="${GITHUB_REPOSITORY%/*}"
-          auth_header="Authorization: Bearer ${PUSH_TOKEN}"
-          accept_header="Accept: application/vnd.github+json"
-
-          open_prs_json="$(mktemp)"
-          curl -fsSL \
-            -H "${auth_header}" \
-            -H "${accept_header}" \
-            "${api_root}/pulls?state=open&base=master&head=${owner}:${UPDATE_BRANCH}" \
-            -o "${open_prs_json}"
-
-          pr_number="$(
-            jq -r '.[0].number // ""' "${open_prs_json}"
+          pr_url="$(
+            gh pr create \
+              --base master \
+              --head "${UPDATE_BRANCH}" \
+              --title "chore(privsignal): update lockfile" \
+              --body $'<!-- privsignal-auto-refresh -->\nAutomated PrivSignal lockfile refresh generated from a fresh master checkout.'
           )"
 
-          if [ -z "${pr_number}" ]; then
-            create_payload="$(jq -n \
-              --arg title "chore(privsignal): update lockfile" \
-              --arg head "${UPDATE_BRANCH}" \
-              --arg base "master" \
-              --arg body "Automated PrivSignal lockfile refresh from S3." \
-              '{title: $title, head: $head, base: $base, body: $body, maintainer_can_modify: true}')"
+          pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
-            create_resp="$(mktemp)"
-            curl -fsSL -X POST \
-              -H "${auth_header}" \
-              -H "${accept_header}" \
-              "${api_root}/pulls" \
-              -d "${create_payload}" \
-              -o "${create_resp}"
-
-            pr_number="$(jq -r '.number // ""' "${create_resp}")"
-          fi
-
-          if [ -z "${pr_number}" ]; then
-            echo "Failed to create/find update PR."
-            exit 1
-          fi
-
-          merge_payload="$(jq -n \
-            --arg commit_title "chore(privsignal): update lockfile [skip ci]" \
-            --arg merge_method "squash" \
-            '{commit_title: $commit_title, merge_method: $merge_method}')"
-
-          merge_resp="$(mktemp)"
-          merge_code="$(
-            curl -sSL -o "${merge_resp}" -w "%{http_code}" -X PUT \
-              -H "${auth_header}" \
-              -H "${accept_header}" \
-              "${api_root}/pulls/${pr_number}/merge" \
-              -d "${merge_payload}"
-          )"
-
-          if [ "${merge_code}" != "200" ] && [ "${merge_code}" != "201" ]; then
-            echo "Immediate merge failed for PR #${pr_number} (HTTP ${merge_code})."
-            cat "${merge_resp}"
-            echo "This usually means branch rules still require checks/review for this actor."
-            exit 1
-          fi
+          gh pr merge "${pr_number}" \
+            --squash \
+            --delete-branch \
+            --admin \
+            --subject "chore(privsignal): update lockfile [skip ci]"
 
           echo "Merged PR #${pr_number}."

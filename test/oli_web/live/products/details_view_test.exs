@@ -255,20 +255,44 @@ defmodule OliWeb.Products.DetailsViewTest do
       {:ok, view, _html} = live(conn, product_route(product.slug))
 
       assert has_element?(view, "h4", "Paywall Settings")
-      assert has_element?(view, "p", "For information regarding paywall settings")
+      assert has_element?(view, "div", "For information regarding paywall settings")
       assert has_element?(view, "#tech_support_paywall_settings", "contact our support team.")
     end
 
-    test "paywall settings are no longer in the Details form", %{
+    test "renders paywall settings controls in the paywall section", %{
       conn: conn,
       product: product
     } do
       {:ok, _view, html} = live(conn, product_route(product.slug))
 
-      # Paywall fields should NOT be in the Details section form
-      refute html =~ "Requires Payment"
-      refute html =~ "Has Grace Period"
-      refute html =~ "Grace period days"
+      assert html =~ "Requires payment"
+      assert html =~ "Amount"
+      assert html =~ "Payment options"
+      assert html =~ "Has grace period"
+      assert html =~ "Grace period days"
+      refute html =~ "Payment Settings"
+      refute html =~ "Settings related to required student fee and optional grace period"
+    end
+
+    test "enables paywall fields when requires payment is checked", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      initial_html = view |> element("#paywall-settings-form") |> render()
+      assert initial_html =~ ~s(name="section[amount]")
+      assert initial_html =~ ~r/name="section\[amount\]"[^>]*disabled=/
+
+      updated_html =
+        view
+        |> element("#paywall-settings-form")
+        |> render_change(%{"section" => %{"requires_payment" => "true"}})
+
+      assert updated_html =~ ~s(name="section[amount]")
+      refute updated_html =~ ~r/name="section\[amount\]"[^>]*disabled=/
+      refute updated_html =~ ~r/name="section\[payment_options\]"[^>]*disabled=/
+      refute updated_html =~ ~r/name="section\[has_grace_period\]"[^>]*disabled=/
     end
   end
 

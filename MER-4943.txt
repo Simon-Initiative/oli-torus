@@ -1,0 +1,146 @@
+JIRA ISSUE: MER-4943
+URL: https://eliterate.atlassian.net/browse/MER-4943
+================================================================================
+
+SUMMARY: Enable/Disable DOT on a Page Level
+
+TYPE:        Story
+STATUS:      In Progress
+PRIORITY:    Medium
+ASSIGNEE:    Martin Manelli (martin.manelli@wyeworks.com)
+REPORTER:    Miasha Brunkhorst
+CREATED:     2025-09-12T16:45:57-0400
+UPDATED:     2026-02-27T15:45:03-0500
+
+PARENT EPIC: MER-5200 - Adaptive Pages Epic (Status: Analyzing)
+
+SPRINT:      33.1 Name LLaMa (active, 2026-02-27 to 2026-03-13)
+
+STORY POINTS: 5
+
+ISSUE LINKS:
+  - Is blocked by: MER-4584 - Enable DOT on Adaptive Pages (Status: Closed Won't Do)
+
+================================================================================
+DESCRIPTION
+================================================================================
+
+# User Story
+
+As an author, I want to be able to toggle DOT visibility on adaptive pages, even
+when they are scored, because some scored adaptive pages are formative assessments
+and DOT should be available to the learner.
+
+# Acceptance Criteria
+
+## Positive Acceptance Criteria
+
+* Given a **scored adaptive page**
+    * When a user opens the page configuration UI (e.g., Page Options modal or
+      Advanced Authoring Panel)
+        * Then they see an option to **Enable DOT on this page** (default: unchecked)
+
+* Given the option is **enabled**
+    * When a learner views the page
+        * Then **DOT is visible and accessible** to the learner during the activity
+
+* Given the option is **disabled** (default)
+    * When a learner views the page
+        * Then **DOT remains hidden**, consistent with the current behavior for
+          scored adaptive pages
+
+## Negative Acceptance Criteria
+
+* Given a **non-adaptive page** or a **non-scored adaptive page**
+    * When a user configures the page
+        * Then **DOT behavior remains unchanged**, and no new toggle appears
+
+* Given no changes made to a scored adaptive page
+    * When a learner views it
+        * Then **DOT remains hidden by default**
+
+## Design Notes
+
+* Add a toggle or checkbox to the authoring UI labeled: "Enable DOT on this page"
+* Location:
+    * **Advanced Author Lesson Panel** inside the adaptive page editor, underneath
+      "Enable Dark Mode"
+
+================================================================================
+ATTACHMENTS
+================================================================================
+
+1. image-20260116-143856.png
+   - Author: Miasha Brunkhorst
+   - Created: 2026-01-16T09:39:20-0500
+   - Size: 102722 bytes
+
+2. Screenshot 2025-11-19 at 1.42.49 PM.png
+   - Author: Jess Fortunato
+   - Created: 2025-11-19T13:43:30-0500
+   - Size: 85239 bytes
+
+3. Screenshot 2025-11-19 at 1.42.49 PM (272fe7df-...).png
+   - Author: Jess Fortunato
+   - Created: 2025-11-19T13:44:04-0500
+   - Size: 85239 bytes
+
+4. Screenshot 2025-11-19 at 1.44.40 PM.png
+   - Author: Jess Fortunato
+   - Created: 2025-11-19T13:45:16-0500
+   - Size: 632923 bytes
+
+5. Screenshot 2025-11-19 at 1.44.52 PM.png
+   - Author: Jess Fortunato
+   - Created: 2025-11-19T13:45:16-0500
+   - Size: 1074494 bytes
+
+================================================================================
+COMMENTS (3)
+================================================================================
+
+--- Comment #1 ---
+Author:  Miasha Brunkhorst
+Created: 2025-09-24T13:08:10-0400
+Updated: 2025-11-10T12:56:22-0500
+
+Mia to test to see if activation points show up on scored basic pages - update -
+they do not function
+
+--- Comment #2 ---
+Author:  Jess Fortunato
+Created: 2025-11-19T13:44:05-0500
+
+I would recommend adding a check box in the adaptive authoring tool to enable DOT
+on a page level. Basic page DOT settings can be found within the page as well.
+[Attached screenshot: Screenshot 2025-11-19 at 1.42.49 PM.png]
+
+--- Comment #3 ---
+Author:  Darren Siegel
+Created: 2026-02-13T07:23:04-0500
+
+Technical guidance:
+
+This is a FEATURE. Slug: override_dot
+
+We need to make this option work for both basic pages and adaptive pages, for both
+practice and scored contexts.
+
+Approach: Add a new option in authoring page options modal (from curriculum and
+from All Pages) "Enable AI Assistant (DOT)"
+
+For Adaptive, Scored pages this value defaults to UNCHECKED
+For Adaptive, Practice pages this value defaults to CHECKED
+For Basic, Scored pages this value defaults to UNCHECKED
+For Basic, Practice pages this value defaults to CHECKED
+
+This will require a new Revision attribute: "ai_enabled" (boolean), and a new
+SectionResource attribute "ai_enabled". The logic that populates new Revisions
+based on a previous in Authoring must be updated. The logic that populates attrs
+in SectionResource records from Revisions must be updated. A good way to track
+down all places to update is to search code base for OTHER attributes that are
+common to Revision and SectionResource (e.g. max_attempts).
+
+Finally, the check in page rendering as to whether or not DOT (ai assistant) is
+enabled has to take into account BOTH this new setting and the overall section
+level setting.

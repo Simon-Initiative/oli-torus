@@ -15,20 +15,25 @@ defmodule OliWeb.Api.TriggerPointController do
 
     case Oli.Conversation.Triggers.verify_access(section_slug, current_user.id) do
       {:ok, section} ->
-        trigger =
-          conn.body_params["trigger"]
-          |> Oli.Conversation.Trigger.parse(section.id, current_user.id)
-
-        case Oli.Conversation.Triggers.invoke(section.id, current_user.id, trigger) do
-          :ok ->
-            json(conn, %{"type" => "submitted"})
+        with {:ok, trigger} <-
+               Oli.Conversation.Triggers.resolve_client_trigger(
+                 section_slug,
+                 section.id,
+                 current_user.id,
+                 conn.body_params["trigger"] || %{}
+               ),
+             :ok <- Oli.Conversation.Triggers.invoke(section.id, current_user.id, trigger) do
+          json(conn, %{"type" => "submitted"})
+        else
+          {:error, :invalid_trigger} ->
+            json(conn, %{"type" => "failure", "reason" => "Invalid trigger point"})
 
           e ->
             Logger.error(
               "Unable to invoke trigger point for section: #{section_slug} and user: #{current_user.id}, error: #{inspect(e)}"
             )
 
-            json(conn, %{"type" => "failured", "reason" => "Unable to invoke trigger point"})
+            json(conn, %{"type" => "failure", "reason" => "Unable to invoke trigger point"})
         end
 
       {:error, :no_access} ->

@@ -14,7 +14,7 @@ defmodule OliWeb.ProductsController do
 
   @csv_headers [
     "Title",
-    "Product ID",
+    "Template ID",
     "Tags",
     "Created",
     "Requires Payment",
@@ -113,7 +113,7 @@ defmodule OliWeb.ProductsController do
       |> Repo.preload([:base_project, :tags])
 
     csv_content = products_to_csv(products)
-    filename = "products-#{Date.utc_today() |> Date.to_iso8601()}.csv"
+    filename = "templates-#{Date.utc_today() |> Date.to_iso8601()}.csv"
 
     conn
     |> put_resp_header("content-type", "text/csv")

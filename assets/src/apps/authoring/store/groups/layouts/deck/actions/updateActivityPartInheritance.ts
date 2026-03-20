@@ -45,9 +45,13 @@ export const updateActivityPartInheritance = createAsyncThunk(
               },
             };
 
-            // for now exclude janus-text-flow and janus-image
+            // for now exclude janus-text-flow, janus-image, and AI activation points
             // TODO: base on adaptivity flag?
-            if (part.type === 'janus-text-flow' || part.type === 'janus-image') {
+            if (
+              part.type === 'janus-text-flow' ||
+              part.type === 'janus-image' ||
+              part.type === 'janus-ai-trigger'
+            ) {
               return null;
             }
 

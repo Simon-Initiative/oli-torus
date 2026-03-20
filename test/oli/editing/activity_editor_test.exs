@@ -470,6 +470,46 @@ defmodule Oli.ActivityEditingTest do
       assert updated.objectives == %{"1" => [ob1.resource_id]}
     end
 
+    test "can sync objectives when authoring parts are legacy part id strings", %{
+      author: author,
+      project: project,
+      revision1: revision1
+    } do
+      {:ok, %{revision: ob1}} =
+        ObjectiveEditor.add_new(%{title: "this is an objective"}, author, project)
+
+      {:ok, %{revision: ob2}} =
+        ObjectiveEditor.add_new(%{title: "this is another objective"}, author, project)
+
+      content = %{
+        "content" => %{"authoring" => %{"parts" => ["1", "2"]}}
+      }
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+      update = %{
+        "objectives" => %{"1" => [ob1.resource_id], "2" => [ob2.resource_id]},
+        "content" => %{"authoring" => %{"parts" => ["1", "2"]}}
+      }
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
+      {:ok, updated} =
+        ActivityEditor.edit(
+          project.slug,
+          revision1.resource_id,
+          revision.resource_id,
+          author.email,
+          update
+        )
+
+      assert updated.objectives == %{
+               "1" => [ob1.resource_id],
+               "2" => [ob2.resource_id]
+             }
+    end
+
     test "edit/5 allows adaptive internal links when idref references a project resource", %{
       author: author,
       project: project,
@@ -510,6 +550,169 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, _} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 rejects adaptive AI trigger parts when project triggers are disabled", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "partsLayout" => [
+            %{
+              "id" => "trigger-1",
+              "type" => "janus-ai-trigger",
+              "custom" => %{
+                "launchMode" => "click",
+                "prompt" => "Ask DOT for help"
+              }
+            }
+          ],
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "trigger-1",
+                "type" => "janus-ai-trigger"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 rejects adaptive image AI trigger configuration when project triggers are disabled",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "partsLayout" => [
+            %{
+              "id" => "image-1",
+              "type" => "janus-image",
+              "custom" => %{
+                "src" => "/images/placeholder-image.svg",
+                "enableAiTrigger" => true,
+                "aiTriggerPrompt" => "Use this image as context"
+              }
+            }
+          ]
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 handles malformed adaptive authoring containers without crashing", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "partsLayout" => [
+            %{
+              "id" => "image-1",
+              "type" => "janus-image",
+              "custom" => %{
+                "src" => "/images/placeholder-image.svg",
+                "enableAiTrigger" => true,
+                "aiTriggerPrompt" => "Use this image as context"
+              }
+            }
+          ],
+          "authoring" => []
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 allows adaptive AI trigger parts when project triggers are enabled", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, _project} = Oli.Authoring.Course.update_project(project, %{allow_triggers: true})
+
+      {:ok, {%{resource_id: resource_id, content: content}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" =>
+          Map.merge(content, %{
+            "partsLayout" => [
+              %{
+                "id" => "trigger-1",
+                "type" => "janus-ai-trigger",
+                "custom" => %{
+                  "launchMode" => "click",
+                  "prompt" => "Ask DOT for help"
+                }
+              }
+            ],
+            "authoring" => %{
+              "parts" => [
+                %{
+                  "id" => "trigger-1",
+                  "type" => "janus-ai-trigger"
+                }
+              ]
+            }
+          })
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, _updated_revision} =
                ActivityEditor.edit(
                  project.slug,
                  revision.resource_id,

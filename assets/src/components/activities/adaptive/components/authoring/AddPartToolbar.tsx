@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { AnyPartComponent } from 'components/parts/types/parts';
 import guid from 'utils/guid';
@@ -6,17 +6,22 @@ import guid from 'utils/guid';
 interface AddPartToolbarProps {
   partTypes: string[];
   priorityTypes?: string[];
+  availablePartComponents: any[];
   onAdd: (part: AnyPartComponent) => void;
 }
 
 const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
   partTypes,
   priorityTypes = [],
+  availablePartComponents,
   onAdd,
 }) => {
   const paths = { images: '/images' }; // TODO: provide context to authoring
   const imgsPath = paths?.images || '';
-  const availablePartComponents = (window as any)['partComponentTypes'] || []; // TODO: replace with context
+  const availableComponents = useMemo(
+    () => availablePartComponents || [],
+    [availablePartComponents],
+  );
 
   const [priorityPartComponents, setPriorityPartComponents] = useState<any[]>([]);
   const [otherPartComponents, setOtherPartComponents] = useState<any[]>([]);
@@ -34,7 +39,7 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
       setShowMorePartsMenu(false);
       setMorePartsMenuTarget(null);
 
-      const partType = availablePartComponents.find((p: any) => p.slug === partSlug);
+      const partType = availableComponents.find((p: any) => p.slug === partSlug);
       if (partType) {
         const PartClass = customElements.get(partType.authoring_element);
         if (PartClass) {
@@ -58,11 +63,11 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
         }
       }
     },
-    [availablePartComponents, onAdd],
+    [availableComponents, onAdd],
   );
 
   useEffect(() => {
-    const filteredByPriority = availablePartComponents
+    const filteredByPriority = availableComponents
       .filter((part: any) => partTypes[0] === '*' || partTypes.includes(part.slug))
       .filter((part: any) => priorityTypes.includes(part.slug))
       .sort((a: any, b: any) => {
@@ -71,11 +76,11 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
         return aIndex - bIndex;
       });
     setPriorityPartComponents(filteredByPriority);
-    const remainder = availablePartComponents
+    const remainder = availableComponents
       .filter((part: any) => partTypes[0] === '*' || partTypes.includes(part.slug))
       .filter((part: any) => !priorityTypes.includes(part.slug));
     setOtherPartComponents(remainder);
-  }, [availablePartComponents, priorityTypes]);
+  }, [availableComponents, partTypes, priorityTypes]);
 
   return (
     <Fragment>

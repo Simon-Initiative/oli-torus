@@ -5,6 +5,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
   import Phoenix.LiveViewTest
 
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Tags
 
   # Testing for the edit form is located in OliWeb.Sections.EditLiveTest
 
@@ -80,6 +81,29 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
                "Template Overview"
     end
 
+    test "renders paywall settings after details with support text and controls", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, live, html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      assert has_element?(live, "h4", "Paywall Settings")
+      assert has_element?(live, "#tech_support_paywall_settings", "contact our support team.")
+      assert html =~ "Requires payment"
+      assert html =~ "Amount"
+      assert html =~ "Payment options"
+      assert html =~ "Has grace period"
+      assert html =~ "Grace period days"
+      refute html =~ "Payment Settings"
+      refute html =~ "Settings related to required student fee and optional grace period"
+
+      {details_index, _} = :binary.match(html, "Details")
+      {paywall_index, _} = :binary.match(html, "Paywall Settings")
+      {content_index, _} = :binary.match(html, "Content")
+
+      assert details_index < paywall_index
+      assert paywall_index < content_index
+    end
+
     test "renders template usage action link", ctx do
       %{conn: conn, project: project, product: product} = ctx
 
@@ -90,6 +114,55 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
                "a[href='/workspaces/course_author/#{project.slug}/products/#{product.slug}/usage']",
                "View Usage"
              )
+    end
+
+    test "keeps paywall fields disabled for non-admin workspace authors", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      initial_html = live |> element("#paywall-settings-form") |> render()
+      assert initial_html =~ ~r/name="section\[amount\]"[^>]*disabled=/
+
+      updated_html =
+        live
+        |> element("#paywall-settings-form")
+        |> render_change(%{"section" => %{"requires_payment" => "true"}})
+
+      assert updated_html =~ ~r/name="section\[amount\]"[^>]*disabled=/
+      assert updated_html =~ ~r/name="section\[payment_options\]"[^>]*disabled=/
+      assert updated_html =~ ~r/name="section\[has_grace_period\]"[^>]*disabled=/
+    end
+
+    test "renders only non-admin-safe details additions for workspace authors", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, tag} = Tags.create_tag(%{name: "Biology"})
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      {:ok, _} = Tags.associate_tag_with_section(product.id, tag.id, actor: admin)
+
+      community = insert(:community, name: "Test Community")
+      institution = insert(:institution, name: "Visibility University")
+
+      insert(:community_product_visibility, community: community, section: product)
+
+      insert(:project_institution_visibility,
+        project_id: project.id,
+        institution_id: institution.id
+      )
+
+      {:ok, live, html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      assert has_element?(live, "label", "Tags")
+      assert html =~ "Biology"
+      refute has_element?(live, "div[phx-hook='TagsComponent']")
+
+      refute has_element?(live, "label", "Communities")
+      refute has_element?(live, "label", "Institutions")
+      refute html =~ "Test Community"
+      refute html =~ "Visibility University"
+      refute has_element?(live, "a[href='/authoring/communities/#{community.id}']")
+      refute has_element?(live, "a[href='/admin/institutions/#{institution.id}']")
     end
   end
 

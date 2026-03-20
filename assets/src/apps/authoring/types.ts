@@ -24,6 +24,10 @@ export interface PageContext {
   resourceSlug?: string;
   resourceId?: ResourceId;
   activities?: any;
+  optionalContentTypes?: {
+    triggers?: boolean;
+    [key: string]: any;
+  };
 }
 
 export type ActionType = 'navigation' | 'mutateState' | 'feedback';
