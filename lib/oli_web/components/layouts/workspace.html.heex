@@ -92,9 +92,11 @@
       title={assigns[:page_title]}
       title_input={assigns[:title_input]}
       title_editing={assigns[:title_editing]}
+      title_editable={assigns[:title_editable]}
       adaptive_read_only={assigns[:adaptive_read_only]}
       is_advanced_authoring={true}
       preview_enabled={assigns[:preview_enabled]}
+      lock_controls_enabled={assigns[:lock_controls_enabled]}
     />
     <div class={OliWeb.Workspaces.Utils.maybe_add_padding(assigns[:uri])}>
       <div class="-mt-[28px]">
@@ -112,9 +114,11 @@
         title={assigns[:page_title]}
         title_input={assigns[:title_input]}
         title_editing={assigns[:title_editing]}
+        title_editable={assigns[:title_editable]}
         adaptive_read_only={false}
         is_advanced_authoring={false}
         preview_enabled={assigns[:preview_enabled]}
+        lock_controls_enabled={false}
       />
 
       {@inner_content}

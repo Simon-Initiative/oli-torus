@@ -4,8 +4,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
   alias Oli.Accounts
   alias Oli.Activities
+  alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.PartComponents
+  alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.React
@@ -139,6 +141,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     desired_read_only = Map.has_key?(params, "adaptive_read_only")
 
     cond do
+      !socket.assigns.lock_controls_enabled ->
+        {:noreply, socket}
+
       !socket.assigns.preview_enabled ->
         {:noreply, socket}
 
@@ -154,11 +159,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   def handle_event("begin_title_edit", _params, socket) do
-    {:noreply,
-     assign(socket,
-       title_editing: true,
-       title_input: socket.assigns.page_title
-     )}
+    if socket.assigns.title_editable do
+      {:noreply,
+       assign(socket,
+         title_editing: true,
+         title_input: socket.assigns.page_title
+       )}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("cancel_title_edit", _params, socket) do
@@ -177,6 +186,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     title = String.trim(title)
 
     cond do
+      !socket.assigns.title_editable ->
+        {:noreply, socket}
+
       title == "" ->
         {:noreply, put_flash(socket, :error, "Title cannot be blank")}
 
@@ -204,6 +216,34 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     end
   end
 
+  @impl true
+  def handle_info(
+        {:lock_acquired, publication_id, resource_id, author_id},
+        %{assigns: %{current_author: current_author, project: project, context: context}} = socket
+      ) do
+    cond do
+      !socket.assigns.is_advanced_authoring ->
+        {:noreply, socket}
+
+      publication_id != Publishing.get_unpublished_publication_id!(project.id) ->
+        {:noreply, socket}
+
+      resource_id != context.resourceId ->
+        {:noreply, socket}
+
+      author_id == current_author.id ->
+        {:noreply, socket}
+
+      true ->
+        {:noreply,
+         socket
+         |> assign(:adaptive_read_only, true)
+         |> assign(:lock_controls_enabled, false)
+         |> assign(:title_editable, false)
+         |> assign(:title_editing, false)}
+    end
+  end
+
   defp maybe_show_error(assigns) do
     ~H"""
     <div :if={@error} class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
@@ -215,9 +255,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   attr(:title, :string, required: true)
   attr(:title_input, :string, required: true)
   attr(:title_editing, :boolean, required: true)
+  attr(:title_editable, :boolean, required: true)
   attr(:adaptive_read_only, :boolean, required: true)
   attr(:is_advanced_authoring, :boolean, required: true)
   attr(:preview_enabled, :boolean, required: true)
+  attr(:lock_controls_enabled, :boolean, required: true)
 
   def authoring_header(assigns) do
     ~H"""
@@ -265,8 +307,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
                   </span>
                   <button
                     type="button"
-                    class="btn btn-link btn-sm"
+                    class={[
+                      "btn btn-link btn-sm",
+                      if(!@title_editable, do: "disabled opacity-60 cursor-not-allowed")
+                    ]}
                     phx-click="begin_title_edit"
+                    disabled={!@title_editable}
                   >
                     Edit Title
                   </button>
@@ -276,7 +322,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
                 <.read_only_toggle
                   :if={@is_advanced_authoring}
                   adaptive_read_only={@adaptive_read_only}
-                  enabled={@preview_enabled}
+                  enabled={@preview_enabled && @lock_controls_enabled}
                 />
                 <button
                   type="button"
@@ -419,8 +465,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       |> assign(title_editable: false)
       |> assign(adaptive_read_only: is_advanced_authoring)
       |> assign(preview_enabled: false)
+      |> assign(
+        :lock_controls_enabled,
+        if(
+          is_advanced_authoring,
+          do:
+            initial_lock_controls_enabled(
+              project.id,
+              context.resourceId,
+              socket.assigns.current_author.id
+            ),
+          else: false
+        )
+      )
       |> assign(show_authoring_header: true)
       |> push_event("load_survey_scripts", %{script_sources: all_scripts})
+
+    if connected?(socket) and is_advanced_authoring do
+      Subscriber.subscribe_to_locks_acquired(project_slug, context.resourceId)
+    end
 
     {:ok, assign(socket, content)}
   end
@@ -544,6 +607,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   defp lock_conflict_message(user),
     do:
       "This page is currently being edited by #{user}. You can change the title after the edit lock is released."
+
+  defp initial_lock_controls_enabled(project_id, resource_id, current_author_id) do
+    publication_id = Publishing.get_unpublished_publication_id!(project_id)
+
+    case Publishing.retrieve_lock_info([resource_id], publication_id) do
+      [] -> true
+      [%{author: %{id: ^current_author_id}}] -> true
+      _ -> false
+    end
+  end
 
   defp render_prev_next_nav(assigns) do
     ~H"""

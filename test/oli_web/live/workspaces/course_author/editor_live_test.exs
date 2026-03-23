@@ -122,6 +122,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
       assert has_element?(view, "button[phx-click=\"request_authoring_preview\"]")
       assert has_element?(view, "div.TitleBar #adaptive_read_only_toggle")
       refute has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+      assert has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
 
       assert has_element?(view, "#authoring_editor-container")
     end
@@ -140,6 +141,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
              )
 
       render_hook(basic_view, "survey_scripts_loaded", %{})
+      render_hook(basic_view, "authoring_title_lock_state_changed", %{"editable" => true})
 
       refute has_element?(
                basic_view,
@@ -185,6 +187,83 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
       assert has_element?(advanced_view, "#adaptive_read_only_toggle input[role=\"switch\"]")
       assert render(advanced_view) =~ "Read only"
       assert render(advanced_view) =~ "Preview"
+
+      assert has_element?(
+               advanced_view,
+               "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]"
+             )
+    end
+
+    test "keeps basic edit title disabled until the basic page lock is acquired", %{
+      conn: conn,
+      project: project,
+      revision: revision
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+
+      assert has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
+
+      render_hook(view, "authoring_title_lock_state_changed", %{"editable" => true})
+
+      refute has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
+    end
+
+    test "disables adaptive read only toggle when another author already holds the lock", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      other_author = insert(:author, email: "adaptive-lock-owner@example.edu")
+
+      insert(:author_project,
+        author_id: other_author.id,
+        project_id: project.id
+      )
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 adaptive_page_revision.slug,
+                 other_author.email
+               )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+
+      render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      assert has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+      assert has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
+    end
+
+    test "disables adaptive read only toggle when another author acquires the lock after load", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      other_author = insert(:author, email: "adaptive-lock-after-load@example.edu")
+
+      insert(:author_project,
+        author_id: other_author.id,
+        project_id: project.id
+      )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+
+      render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      refute has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 adaptive_page_revision.slug,
+                 other_author.email
+               )
+
+      assert has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+      assert has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
     end
 
     test "saves the title in liveview and patches the editor url", %{
@@ -193,6 +272,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
       revision: revision
     } do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+      render_hook(view, "authoring_title_lock_state_changed", %{"editable" => true})
 
       view |> element("button[phx-click=\"begin_title_edit\"]") |> render_click()
 
@@ -223,6 +303,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
                PageEditor.acquire_lock(project.slug, revision.slug, other_author.email)
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
+      render_hook(view, "authoring_title_lock_state_changed", %{"editable" => true})
 
       view |> element("button[phx-click=\"begin_title_edit\"]") |> render_click()
 
