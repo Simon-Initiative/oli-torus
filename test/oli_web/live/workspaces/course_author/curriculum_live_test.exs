@@ -135,13 +135,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       assert has_element?(
                view,
-               "button[phx-click='add'][phx-value-type='Adaptive'][phx-value-adaptive_mode='flowchart'][phx-value-scored='Unscored']",
+               "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='flowchart'][phx-value-scored='Unscored']",
                "Practice"
              )
 
       assert has_element?(
                view,
-               "button[phx-click='add'][phx-value-type='Adaptive'][phx-value-adaptive_mode='expert'][phx-value-scored='Scored']",
+               "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='expert'][phx-value-scored='Scored']",
                "Scored"
              )
     end
@@ -165,7 +165,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       view
       |> element(
-        "button[phx-click='add'][phx-value-type='Adaptive'][phx-value-adaptive_mode='flowchart'][phx-value-scored='Unscored']",
+        "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='flowchart'][phx-value-scored='Unscored']",
         "Practice"
       )
       |> render_click()
@@ -199,7 +199,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       view
       |> element(
-        "button[phx-click='add'][phx-value-type='Adaptive'][phx-value-adaptive_mode='expert'][phx-value-scored='Unscored']",
+        "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='expert'][phx-value-scored='Unscored']",
         "Practice"
       )
       |> render_click()
@@ -233,7 +233,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       view
       |> element(
-        "button[phx-click='add'][phx-value-type='Adaptive'][phx-value-adaptive_mode='flowchart'][phx-value-scored='Scored']",
+        "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='flowchart'][phx-value-scored='Scored']",
         "Scored"
       )
       |> render_click()
@@ -257,7 +257,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
 
       view
       |> element(
-        "button[phx-click='add'][phx-value-type='Adaptive'][phx-value-adaptive_mode='expert'][phx-value-scored='Scored']",
+        "button[data-create-page-action='true'][phx-value-type='Adaptive'][phx-value-adaptive_mode='expert'][phx-value-scored='Scored']",
         "Scored"
       )
       |> render_click()

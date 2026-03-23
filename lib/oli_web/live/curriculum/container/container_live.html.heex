@@ -122,7 +122,7 @@
           <div class="border rounded shadow-md p-2">
             <div class="text-secondary mb-3">Create a page:</div>
             <div class="flex mb-2">
-              <div class="grid grid-cols-3 gap-x-4">
+              <div id="curriculum-create-actions" class="grid grid-cols-3 gap-x-4">
                 <%= if @adaptivity_flag do %>
                   <div class="flex flex-col">
                     <div
@@ -161,35 +161,41 @@
                 <% end %>
                 <div class="flex flex-col">
                   <button
-                    phx-click="add"
-                    phx-value-type="Basic"
-                    phx-value-scored="Unscored"
+                    phx-click={add_page_click("Basic", "Unscored")}
                     title="Questions on the page will not be scored"
                     class="btn btn-xs btn-outline-primary mb-2"
                     type="button"
+                    data-create-page-action="true"
+                    disabled={@creating_page}
+                    phx-value-type="Basic"
+                    phx-value-scored="Unscored"
                   >
                     Practice
                   </button>
                   <%= if @adaptivity_flag do %>
                     <button
-                      phx-click="add"
-                      phx-value-type="Adaptive"
-                      phx-value-adaptive_mode="flowchart"
-                      phx-value-scored="Unscored"
+                      phx-click={add_page_click("Adaptive", "Unscored", "flowchart")}
                       title="Questions on the page will not be scored"
                       class="btn btn-xs btn-outline-primary mb-2"
                       type="button"
+                      data-create-page-action="true"
+                      disabled={@creating_page}
+                      phx-value-type="Adaptive"
+                      phx-value-adaptive_mode="flowchart"
+                      phx-value-scored="Unscored"
                     >
                       Practice
                     </button>
                     <button
-                      phx-click="add"
-                      phx-value-type="Adaptive"
-                      phx-value-adaptive_mode="expert"
-                      phx-value-scored="Unscored"
+                      phx-click={add_page_click("Adaptive", "Unscored", "expert")}
                       title="Questions on the page will not be scored"
                       class="btn btn-xs btn-outline-primary"
                       type="button"
+                      data-create-page-action="true"
+                      disabled={@creating_page}
+                      phx-value-type="Adaptive"
+                      phx-value-adaptive_mode="expert"
+                      phx-value-scored="Unscored"
                     >
                       Practice
                     </button>
@@ -197,35 +203,41 @@
                 </div>
                 <div class="flex flex-col">
                   <button
-                    phx-click="add"
-                    phx-value-type="Basic"
-                    phx-value-scored="Scored"
+                    phx-click={add_page_click("Basic", "Scored")}
                     title="Questions on the page will be scored"
                     class="btn btn-xs btn-outline-primary mb-2"
                     type="button"
+                    data-create-page-action="true"
+                    disabled={@creating_page}
+                    phx-value-type="Basic"
+                    phx-value-scored="Scored"
                   >
                     Scored
                   </button>
                   <%= if @adaptivity_flag do %>
                     <button
-                      phx-click="add"
-                      phx-value-type="Adaptive"
-                      phx-value-adaptive_mode="flowchart"
-                      phx-value-scored="Scored"
+                      phx-click={add_page_click("Adaptive", "Scored", "flowchart")}
                       title="Questions on the page will be scored"
                       class="btn btn-xs btn-outline-primary mb-2"
                       type="button"
+                      data-create-page-action="true"
+                      disabled={@creating_page}
+                      phx-value-type="Adaptive"
+                      phx-value-adaptive_mode="flowchart"
+                      phx-value-scored="Scored"
                     >
                       Scored
                     </button>
                     <button
-                      phx-click="add"
-                      phx-value-type="Adaptive"
-                      phx-value-adaptive_mode="expert"
-                      phx-value-scored="Scored"
+                      phx-click={add_page_click("Adaptive", "Scored", "expert")}
                       title="Questions on the page will be scored"
                       class="btn btn-xs btn-outline-primary"
                       type="button"
+                      data-create-page-action="true"
+                      disabled={@creating_page}
+                      phx-value-type="Adaptive"
+                      phx-value-adaptive_mode="expert"
+                      phx-value-scored="Scored"
                     >
                       Scored
                     </button>
@@ -236,12 +248,14 @@
           </div>
         </div>
         <button
-          phx-click="add"
-          phx-value-type="Container"
-          phx-value-scored="Unscored"
+          phx-click={add_page_click("Container", "Unscored")}
           title="A grouping of pages"
           class="btn btn-xs btn-outline-primary mr-0.5"
           type="button"
+          data-create-page-action="true"
+          disabled={@creating_page}
+          phx-value-type="Container"
+          phx-value-scored="Unscored"
         >
           Create a {new_container_name(@numberings, @container)}
         </button>

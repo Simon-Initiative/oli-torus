@@ -41,6 +41,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
   alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
+  alias Phoenix.LiveView.JS
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -115,6 +116,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
                project.customizations
              ),
            dragging: nil,
+           creating_page: false,
            page_title: "Curriculum | " <> project.title,
            options_modal_assigns: nil
          )
@@ -540,23 +542,46 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("add", %{"type" => type, "scored" => scored} = params, socket) do
-    adaptive_mode = Map.get(params, "adaptive_mode")
+    if socket.assigns.creating_page do
+      {:noreply, socket}
+    else
+      adaptive_mode = Map.get(params, "adaptive_mode")
+      socket = assign(socket, :creating_page, true)
 
-    case ContainerEditor.add_new(
-           socket.assigns.container,
-           type,
-           scored,
-           socket.assigns.author,
-           socket.assigns.project,
-           socket.assigns.numberings,
-           %{"adaptive_mode" => adaptive_mode}
-         ) do
-      {:ok, %Revision{slug: slug}} ->
-        handle_created_revision(socket, type, slug, adaptive_mode)
+      case ContainerEditor.add_new(
+             socket.assigns.container,
+             type,
+             scored,
+             socket.assigns.author,
+             socket.assigns.project,
+             socket.assigns.numberings,
+             %{"adaptive_mode" => adaptive_mode}
+           ) do
+        {:ok, %Revision{slug: slug}} ->
+          handle_created_revision(socket, type, slug, adaptive_mode)
 
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        {:noreply, put_flash(socket, :error, "Could not create new item")}
+        {:error, %Ecto.Changeset{} = _changeset} ->
+          {:noreply,
+           socket
+           |> assign(:creating_page, false)
+           |> put_flash(:error, "Could not create new item")}
+      end
     end
+  end
+
+  defp add_page_click(type, scored, adaptive_mode \\ nil) do
+    values = %{"type" => type, "scored" => scored}
+    values = if adaptive_mode, do: Map.put(values, "adaptive_mode", adaptive_mode), else: values
+
+    JS.set_attribute(
+      {"disabled", "disabled"},
+      to: "#curriculum-create-actions [data-create-page-action='true']"
+    )
+    |> JS.add_class(
+      "pointer-events-none opacity-50",
+      to: "#curriculum-create-actions [data-create-page-action='true']"
+    )
+    |> JS.push("add", value: values)
   end
 
   def handle_event("change-view", %{"view" => view}, socket) do
