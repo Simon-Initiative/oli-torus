@@ -143,3 +143,7 @@ const _edit = debounce(
   SAVE_DEBOUNCE_TIMEOUT,
   SAVE_DEBOUNCE_OPTIONS,
 );
+
+export const flushPendingPageSave = async () => {
+  await _edit.flush();
+};

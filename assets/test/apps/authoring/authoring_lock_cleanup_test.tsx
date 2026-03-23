@@ -1,8 +1,10 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import Authoring, { AuthoringProps } from 'apps/authoring/Authoring';
 import { releaseEditingLock } from 'apps/authoring/store/app/actions/locking';
+import { flushPendingActivitySaves } from 'apps/authoring/store/activities/actions/saveActivity';
+import { flushPendingPageSave } from 'apps/authoring/store/page/actions/savePage';
 
 jest.mock('react-redux', () => ({
   useDispatch: jest.fn(),
@@ -94,6 +96,18 @@ jest.mock('apps/authoring/readOnlyBridge', () => ({
 
 jest.mock('apps/authoring/store/page/actions/initializeFromContext', () => ({
   initializeFromContext: jest.fn(() => ({ type: 'page/initializeFromContext' })),
+}));
+
+jest.mock('apps/authoring/store/page/actions/savePage', () => ({
+  savePage: Object.assign(jest.fn(), {
+    fulfilled: 'page/savePage/fulfilled',
+    rejected: 'page/savePage/rejected',
+  }),
+  flushPendingPageSave: jest.fn(() => Promise.resolve()),
+}));
+
+jest.mock('apps/authoring/store/activities/actions/saveActivity', () => ({
+  flushPendingActivitySaves: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('apps/authoring/store/app/actions/locking', () => {
@@ -221,6 +235,12 @@ describe('Authoring lock cleanup', () => {
 
     unmount();
 
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(flushPendingPageSave).toHaveBeenCalledTimes(1);
+    expect(flushPendingActivitySaves).toHaveBeenCalledTimes(1);
     expect(releaseEditingLock).toHaveBeenCalledTimes(1);
     expect(dispatch).toHaveBeenCalledWith({ type: 'app/releaseEditingLock' });
   });
@@ -239,6 +259,12 @@ describe('Authoring lock cleanup', () => {
 
     unmount();
 
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(flushPendingPageSave).not.toHaveBeenCalled();
+    expect(flushPendingActivitySaves).not.toHaveBeenCalled();
     expect(releaseEditingLock).not.toHaveBeenCalled();
     expect(dispatch).not.toHaveBeenCalled();
   });

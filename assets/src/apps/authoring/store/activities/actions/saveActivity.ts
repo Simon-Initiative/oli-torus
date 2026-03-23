@@ -186,7 +186,19 @@ const wrapEdit = (activityId: string) =>
     SAVE_DEBOUNCE_TIMEOUT,
     SAVE_DEBOUNCE_OPTIONS,
   );
-const getDebouncedEdit = memoize(wrapEdit, (activityId) => activityId || 'default');
+
+const debouncedEdits = new Set<ReturnType<typeof wrapEdit>>();
+
+const registeredWrapEdit = (activityId: string) => {
+  const debouncedEdit = wrapEdit(activityId);
+  debouncedEdits.add(debouncedEdit);
+  return debouncedEdit;
+};
+const getDebouncedEdit = memoize(registeredWrapEdit, (activityId) => activityId || 'default');
+
+export const flushPendingActivitySaves = async () => {
+  await Promise.all(Array.from(debouncedEdits, (debouncedEdit) => debouncedEdit.flush()));
+};
 
 export const bulkSaveActivity = createAsyncThunk(
   `${ActivitiesSlice}/bulkSaveActivity`,

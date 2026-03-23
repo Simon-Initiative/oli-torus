@@ -93,6 +93,10 @@ export const initializeFromContext = createAsyncThunk(
       });
       const { payload: newGroup } = await dispatch(createNewGroup({ children: newSequence }));
 
+      // Replace any placeholder bootstrap group before the first persist so savePage writes the
+      // newly materialized blank-lesson structure instead of stale local-only sequence state.
+      await dispatch(setGroups({ groups: [newGroup] }));
+
       // write model to server now or else the above created activity will be orphaned
       await dispatch(savePage({ undoable: true, immiediate: true }));
 

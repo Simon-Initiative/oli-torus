@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
 import { isFirefox } from 'utils/browser';
@@ -19,6 +19,7 @@ import DiagnosticsWindow from './components/Modal/DiagnosticsWindow';
 import ScoringOverview from './components/Modal/ScoringOverview';
 import { handleShellReadOnlyToggle } from './readOnlyBridge';
 import { releaseEditingLock } from './store/app/actions/locking';
+import { flushPendingActivitySaves } from './store/activities/actions/saveActivity';
 import {
   AppConfig,
   ApplicationMode,
@@ -38,6 +39,7 @@ import {
   setPanelState,
 } from './store/app/slice';
 import { initializeFromContext } from './store/page/actions/initializeFromContext';
+import { flushPendingPageSave } from './store/page/actions/savePage';
 import { setRevisionSlug as setPageRevisionSlug, setTitle } from './store/page/slice';
 import { PageContext } from './types';
 
@@ -86,6 +88,11 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const isReadOnly = useSelector(selectReadOnly);
   const activities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
+  const hasReadonlyBootstrapActivities = activities.some(
+    (activity) =>
+      typeof activity.resourceId === 'string' &&
+      String(activity.resourceId).startsWith('readonly_'),
+  );
 
   const editingMode = useSelector(selectEditMode);
 
@@ -176,6 +183,10 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     dispatch(setPanelState({ top, right, left, bottom }));
   };
 
+  const flushPendingAdaptiveSaves = useCallback(async () => {
+    await Promise.all([flushPendingPageSave(), flushPendingActivitySaves()]);
+  }, []);
+
   useEffect(() => {
     if (isAppVisible) {
       document.body.classList.add('overflow-hidden'); // prevents double scroll bars
@@ -210,6 +221,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       }
 
       isUnloadingRef.current = true;
+      void flushPendingAdaptiveSaves();
 
       if (isFirefox) {
         setTimeout(() => {
@@ -226,10 +238,12 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       window.removeEventListener('beforeunload', beforeUnloadHandler);
 
       if (!isUnloadingRef.current && hasEditingLockRef.current) {
-        void dispatch(releaseEditingLock());
+        void flushPendingAdaptiveSaves().finally(() => {
+          void dispatch(releaseEditingLock());
+        });
       }
     };
-  }, [dispatch]);
+  }, [dispatch, flushPendingAdaptiveSaves]);
 
   useEffect(() => {
     const appConfig: AppConfig = {
@@ -269,7 +283,10 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         return;
       }
 
-      if (initializedRevisionRef.current === revisionSlug) {
+      const shouldMaterializeReadonlyBootstrap =
+        hasEditingLock && !isReadOnly && hasReadonlyBootstrapActivities;
+
+      if (initializedRevisionRef.current === revisionSlug && !shouldMaterializeReadonlyBootstrap) {
         if (!cancelled) {
           setIsLoading(false);
           setIsAppVisible(true);
@@ -281,12 +298,17 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         initializedResourceIdRef.current !== undefined &&
         initializedResourceIdRef.current === resourceId
       ) {
-        if (!cancelled) {
-          initializedRevisionRef.current = revisionSlug;
-          setIsLoading(false);
-          setIsAppVisible(true);
+        if (shouldMaterializeReadonlyBootstrap) {
+          initializedRevisionRef.current = null;
+          initializedResourceIdRef.current = undefined;
+        } else {
+          if (!cancelled) {
+            initializedRevisionRef.current = revisionSlug;
+            setIsLoading(false);
+            setIsAppVisible(true);
+          }
+          return;
         }
-        return;
       }
 
       if (!cancelled) {
@@ -326,6 +348,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     content,
     dispatch,
     hasEditingLock,
+    hasReadonlyBootstrapActivities,
     isAdmin,
     isReadOnly,
     partComponentTypes,
@@ -358,6 +381,10 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     const onReadOnlyToggleRequested = async (event: Event) => {
       const detail = (event as CustomEvent).detail as { readonly: boolean };
 
+      if (detail.readonly && hasEditingLock) {
+        await flushPendingAdaptiveSaves();
+      }
+
       const result = await handleShellReadOnlyToggle({
         desiredReadOnly: detail.readonly,
         hasEditingLock,
@@ -385,7 +412,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         'phx:adaptive_readonly_toggle_requested',
         onReadOnlyToggleRequested,
       );
-  }, [dispatch, hasEditingLock]);
+  }, [dispatch, flushPendingAdaptiveSaves, hasEditingLock]);
 
   useEffect(() => {
     const onTitleUpdated = (event: Event) => {

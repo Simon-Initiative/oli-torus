@@ -690,7 +690,11 @@ $font-family-sans-serif: var(--font-sans);
         color: inherit;
 
         & > .aa-sequence-details-wrapper,
-        & > .aa-rules-list-details-wrapper {
+        & > .aa-sequence-details-wrapper:hover,
+        & > .aa-sequence-details-wrapper:focus,
+        & > .aa-rules-list-details-wrapper,
+        & > .aa-rules-list-details-wrapper:hover,
+        & > .aa-rules-list-details-wrapper:focus {
           color: #fff;
           background-color: var(--color-primary);
 
@@ -1107,6 +1111,17 @@ $font-family-sans-serif: var(--font-sans);
 .dark .aa-sequence-item,
 .dark .aa-rules-list-item,
 .dark .aa-adaptivity-editor {
+  color: var(--color-body-color-dark);
+
+  .aa-sequence-details-wrapper,
+  .aa-rules-list-details-wrapper,
+  .details,
+  .title,
+  .aa-sequence-item-toggle,
+  .aa-context-menu-trigger {
+    color: inherit;
+  }
+
   .dropdown-item {
     &:hover {
       border: 1px solid white;
