@@ -38,12 +38,14 @@ defmodule OliWeb.Components.Modal do
     default: "bg-transparent text-blue-500 hover:underline hover:bg-transparent"
 
   attr :show, :boolean, default: false
+  attr :show_close, :boolean, default: true
   attr :on_cancel, JS, default: %JS{}
   attr :on_confirm, JS, default: %JS{}
 
   slot :inner_block, required: true
   slot :title
   slot :subtitle
+  slot :header_actions
   slot :confirm
   slot :cancel
   slot :custom_footer
@@ -102,7 +104,11 @@ defmodule OliWeb.Components.Modal do
                     </p>
                   </div>
                 </div>
+                <div :if={@header_actions != []} class="ml-auto inline-flex items-center">
+                  {render_slot(@header_actions)}
+                </div>
                 <button
+                  :if={@show_close}
                   type="button"
                   class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
                   phx-click={hide_modal(@on_cancel, @id)}
