@@ -2,8 +2,8 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { act, render } from '@testing-library/react';
 import Authoring, { AuthoringProps } from 'apps/authoring/Authoring';
-import { releaseEditingLock } from 'apps/authoring/store/app/actions/locking';
 import { flushPendingActivitySaves } from 'apps/authoring/store/activities/actions/saveActivity';
+import { releaseEditingLock } from 'apps/authoring/store/app/actions/locking';
 import { flushPendingPageSave } from 'apps/authoring/store/page/actions/savePage';
 
 jest.mock('react-redux', () => ({

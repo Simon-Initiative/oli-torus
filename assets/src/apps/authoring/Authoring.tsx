@@ -18,8 +18,8 @@ import { InvalidScreenWarning } from './components/Flowchart/toolbar/InvalidScre
 import DiagnosticsWindow from './components/Modal/DiagnosticsWindow';
 import ScoringOverview from './components/Modal/ScoringOverview';
 import { handleShellReadOnlyToggle } from './readOnlyBridge';
-import { releaseEditingLock } from './store/app/actions/locking';
 import { flushPendingActivitySaves } from './store/activities/actions/saveActivity';
+import { releaseEditingLock } from './store/app/actions/locking';
 import {
   AppConfig,
   ApplicationMode,
