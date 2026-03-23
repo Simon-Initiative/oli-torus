@@ -30,6 +30,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :section_slug, :string, required: true
   attr :section_title, :string, default: nil
   attr :instructor_email, :string, default: nil
+  attr :instructor_name, :string, default: nil
   attr :dashboard_scope, :string, default: "course"
   attr :show_progress_tile, :boolean, default: true
   attr :show_student_support_tile, :boolean, default: true
@@ -66,6 +67,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           section_slug={@section_slug}
           section_title={@section_title}
           instructor_email={@instructor_email}
+          instructor_name={@instructor_name}
           dashboard_scope={@dashboard_scope}
         />
       </div>

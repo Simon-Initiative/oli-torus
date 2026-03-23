@@ -863,6 +863,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       module={Shell}
       id="learning_dashboard"
       containers={@dashboard_navigator_items}
+      current_author={@current_author}
+      current_user={@current_user}
       dashboard={@dashboard}
       dashboard_scope={@dashboard_scope}
       dashboard_visible_sections={@dashboard_visible_sections}
