@@ -35,7 +35,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert statuses.ai_context.reason_code == :dependency_unavailable
 
       assert projections.progress.progress == %{metric: :progress}
-      assert projections.student_support.support == %{metric: :support}
+      assert projections.student_support.support.default_bucket_id == "struggling"
+
+      assert Enum.find(projections.student_support.support.buckets, &(&1.id == "struggling")).count ==
+               1
+
       assert projections.assessments.analytics == %{metric: :assessment}
 
       assert projections.summary.required_oracles.oracle_instructor_progress == %{
@@ -43,6 +47,23 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
              }
 
       assert projections.ai_context.progress == %{metric: :progress}
+    end
+
+    test "derives affected capabilities from projection dependency metadata" do
+      assert Enum.sort(InstructorProjections.affected_capabilities(:oracle_instructor_progress)) ==
+               Enum.sort([
+                 :progress,
+                 :summary,
+                 :challenging_objectives,
+                 :assessments,
+                 :ai_context
+               ])
+
+      assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_proficiency) ==
+               [:student_support]
+
+      assert InstructorProjections.affected_capabilities(:oracle_instructor_student_info) ==
+               [:student_support]
     end
   end
 
@@ -59,12 +80,24 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
         metadata: %{timezone: "UTC"},
         oracles: %{
           oracle_instructor_progress: %{metric: :progress},
-          oracle_instructor_support: %{metric: :support},
+          oracle_instructor_progress_proficiency: [
+            %{student_id: 1, progress_pct: 25.0, proficiency_pct: 30.0}
+          ],
+          oracle_instructor_student_info: [
+            %{
+              student_id: 1,
+              email: "ada@example.edu",
+              given_name: "Ada",
+              family_name: "Lovelace",
+              last_interaction_at: ~U[2026-03-12 00:00:00Z]
+            }
+          ],
           oracle_instructor_section_analytics: %{metric: :assessment}
         },
         oracle_statuses: %{
           oracle_instructor_progress: %{status: :ready},
-          oracle_instructor_support: %{status: :ready},
+          oracle_instructor_progress_proficiency: %{status: :ready},
+          oracle_instructor_student_info: %{status: :ready},
           oracle_instructor_section_analytics: %{status: :ready}
         }
       })

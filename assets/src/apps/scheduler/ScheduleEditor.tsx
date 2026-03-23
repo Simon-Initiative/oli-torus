@@ -30,6 +30,7 @@ export interface SchedulerProps {
   display_curriculum_item_numbering: boolean;
   wizard_mode: boolean;
   edit_section_details_url: string;
+  is_blueprint: boolean;
   agenda: boolean;
 }
 
@@ -46,6 +47,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
   display_curriculum_item_numbering,
   wizard_mode,
   edit_section_details_url,
+  is_blueprint,
   preferred_scheduling_time,
   agenda,
 }) => {
@@ -364,9 +366,16 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
     return (
       <div className="container">
         <Alert variant="warning">
-          <p>Your section must have a start and end date set before you can schedule it. </p>
           <p>
-            Set these on the <a href={edit_section_details_url}> Edit Section Details</a> page.
+            Your {is_blueprint ? 'template' : 'section'} must have a start and end date set before
+            you can schedule it.{' '}
+          </p>
+          <p>
+            Set these on the{' '}
+            <a href={edit_section_details_url}>
+              {is_blueprint ? ' Edit Template Details' : ' Edit Section Details'}
+            </a>{' '}
+            page.
           </p>
         </Alert>
       </div>

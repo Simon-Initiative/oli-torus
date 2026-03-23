@@ -471,13 +471,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot do
       status in [:error, "error"] ->
         {:skip, :oracle_error}
 
-      status in [:ok, "ok"] and is_map(payload) ->
-        {:ok, payload}
-
       status in [:ok, "ok"] ->
-        {:skip, {:invalid_payload, payload}}
-
-      is_map(payload) ->
         {:ok, payload}
 
       is_map(oracle_result) ->

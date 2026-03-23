@@ -1,0 +1,16 @@
+{
+  "id": "janus_ai_trigger",
+  "friendlyName": "AI Activation Point",
+  "description": "An adaptive screen-level AI activation point for DOT.",
+  "icon": "icon-AI.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-ai-trigger",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-ai-trigger",
+    "entry": "./authoring-entry.ts"
+  }
+}

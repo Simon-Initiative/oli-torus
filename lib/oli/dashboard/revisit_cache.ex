@@ -9,8 +9,10 @@ defmodule Oli.Dashboard.RevisitCache do
   alias Oli.Dashboard.Cache.Policy
   alias Oli.Dashboard.Cache.Telemetry
 
+  @type payload :: term()
+
   @type entry :: %{
-          payload: map(),
+          payload: payload(),
           written_at_ms: non_neg_integer(),
           last_accessed_at_ms: non_neg_integer()
         }
@@ -21,7 +23,7 @@ defmodule Oli.Dashboard.RevisitCache do
           write_count: non_neg_integer()
         }
 
-  @type error :: {:invalid_cache_key, term()} | {:invalid_payload, term()}
+  @type error :: {:invalid_cache_key, term()}
 
   @doc "Starts the revisit cache process."
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -39,7 +41,8 @@ defmodule Oli.Dashboard.RevisitCache do
   end
 
   @doc "Writes one revisit cache key."
-  @spec write(GenServer.server(), Key.revisit_key(), map(), keyword()) :: :ok | {:error, error()}
+  @spec write(GenServer.server(), Key.revisit_key(), payload(), keyword()) ::
+          :ok | {:error, error()}
   def write(cache, revisit_key, payload, opts \\ []) do
     GenServer.call(cache, {:write, revisit_key, payload, opts})
   end
@@ -103,7 +106,7 @@ defmodule Oli.Dashboard.RevisitCache do
     end
   end
 
-  def handle_call({:write, revisit_key, payload, opts}, _from, state) when is_map(payload) do
+  def handle_call({:write, revisit_key, payload, opts}, _from, state) do
     with :ok <- validate_revisit_key(revisit_key) do
       now_ms = now_ms(state)
       write_count = state.write_count + 1
@@ -159,20 +162,6 @@ defmodule Oli.Dashboard.RevisitCache do
 
         {:reply, error, state}
     end
-  end
-
-  def handle_call({:write, _revisit_key, payload, _opts}, _from, state) do
-    Telemetry.write_stop(
-      %{duration_ms: 0},
-      %{
-        cache_tier: :revisit,
-        outcome: :rejected,
-        container_type: :unknown,
-        error_type: :invalid_payload
-      }
-    )
-
-    {:reply, {:error, {:invalid_payload, payload}}, state}
   end
 
   def handle_call(:snapshot, _from, state), do: {:reply, {:ok, state}, state}

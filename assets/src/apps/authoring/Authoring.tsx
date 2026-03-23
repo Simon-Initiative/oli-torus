@@ -59,6 +59,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
   const initializedRevisionRef = useRef<string | null>(null);
   const previewRequestRef = useRef<{ url: string; windowName: string } | null>(null);
+  const allowTriggers = props.content.optionalContentTypes?.triggers === true;
 
   const [isAppVisible, setIsAppVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -173,6 +174,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       isAdmin: props.isAdmin,
       projectSlug: props.projectSlug,
       revisionSlug: props.revisionSlug,
+      allowTriggers,
       partComponentTypes: props.partComponentTypes,
       activityTypes: props.activityTypes,
       allObjectives: props.content.allObjectives || [],
@@ -180,7 +182,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         props.content.content?.custom?.contentMode === 'flowchart' ? 'flowchart' : 'expert',
     };
     dispatch(setInitialConfig(appConfig));
-  }, [dispatch, props]);
+  }, [allowTriggers, dispatch, props]);
 
   useEffect(() => {
     window.addEventListener('beforeunload', async () =>
@@ -220,6 +222,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           isAdmin: props.isAdmin,
           projectSlug: props.projectSlug,
           revisionSlug: props.revisionSlug,
+          allowTriggers,
           partComponentTypes: props.partComponentTypes,
           activityTypes: props.activityTypes,
         };
@@ -240,7 +243,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       window.removeEventListener('beforeunload', async () => await dispatch(releaseEditingLock()));
       cancelled = true;
     };
-  }, [props, hasEditingLock, isReadOnly, dispatch]);
+  }, [allowTriggers, props, hasEditingLock, isReadOnly, dispatch]);
 
   useEffect(() => {
     const editable = hasEditingLock && !isReadOnly;
@@ -285,7 +288,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         });
       }
     };
-
     window.addEventListener('phx:adaptive_readonly_toggle_requested', onReadOnlyToggleRequested);
     return () =>
       window.removeEventListener(

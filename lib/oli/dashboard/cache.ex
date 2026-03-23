@@ -33,14 +33,16 @@ defmodule Oli.Dashboard.Cache do
         }
 
   @typedoc "Result returned from required lookup APIs."
+  @type oracle_payload :: term()
+
   @type lookup_result :: %{
-          required(:hits) => %{optional(oracle_key()) => map()},
+          required(:hits) => %{optional(oracle_key()) => oracle_payload()},
           required(:misses) => [oracle_key()],
           required(:source) => :inprocess | :revisit | :mixed | :none
         }
 
   @typedoc "Miss coalescing build function."
-  @type build_fun :: (-> {:ok, map()} | {:error, term()} | map())
+  @type build_fun :: (-> {:ok, oracle_payload()} | {:error, term()} | oracle_payload())
 
   @typedoc "Cache identity error."
   @type error ::
@@ -271,7 +273,7 @@ defmodule Oli.Dashboard.Cache do
           OracleContext.input(),
           Scope.input(),
           oracle_key(),
-          map(),
+          oracle_payload(),
           key_meta(),
           keyword()
         ) :: :ok | {:error, error()}
@@ -378,7 +380,7 @@ defmodule Oli.Dashboard.Cache do
   degrades to non-coalesced builder execution on coalescer failures/timeouts.
   """
   @spec coalesce_or_build(Key.cache_key(), build_fun(), keyword()) ::
-          {:ok, map()} | {:error, term()}
+          {:ok, oracle_payload()} | {:error, term()}
   def coalesce_or_build(cache_key, build_fun, opts \\ [])
 
   def coalesce_or_build(cache_key, build_fun, opts) when is_function(build_fun, 0) do
@@ -734,10 +736,9 @@ defmodule Oli.Dashboard.Cache do
   defp normalize_oracle_key(key) when is_binary(key) and byte_size(key) > 0, do: {:ok, key}
   defp normalize_oracle_key(key), do: {:error, {:invalid_oracle_key, key}}
 
-  defp normalize_builder_result({:ok, payload} = ok) when is_map(payload), do: ok
+  defp normalize_builder_result({:ok, payload}), do: {:ok, payload}
   defp normalize_builder_result({:error, _reason} = error), do: error
-  defp normalize_builder_result(payload) when is_map(payload), do: {:ok, payload}
-  defp normalize_builder_result(other), do: {:error, {:invalid_builder_result, other}}
+  defp normalize_builder_result(payload), do: {:ok, payload}
 
   defp error_class({reason, _detail}) when is_atom(reason), do: reason
   defp error_class({reason, _detail, _extra}) when is_atom(reason), do: reason

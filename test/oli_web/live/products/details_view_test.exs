@@ -48,6 +48,20 @@ defmodule OliWeb.Products.DetailsViewTest do
   describe "product details page - tags for admin" do
     setup [:setup_admin_conn, :create_product]
 
+    test "places tags between description and welcome message title", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, _view, html} = live(conn, product_route(product.slug))
+
+      {description_index, _} = :binary.match(html, "Description")
+      {tags_index, _} = :binary.match(html, "Tags")
+      {welcome_title_index, _} = :binary.match(html, "Welcome Message Title")
+
+      assert description_index < tags_index
+      assert tags_index < welcome_title_index
+    end
+
     test "displays Tags section with editable TagsComponent", %{
       conn: conn,
       product: product,
@@ -114,7 +128,6 @@ defmodule OliWeb.Products.DetailsViewTest do
       {:ok, view, _html} = live(conn, product_route(product.slug))
 
       assert has_element?(view, "label", "Communities")
-
       # Scope "None" to the Communities container to avoid matching other sections
       communities_html = view |> element("#communities-section") |> render()
       assert communities_html =~ "None"
@@ -255,20 +268,44 @@ defmodule OliWeb.Products.DetailsViewTest do
       {:ok, view, _html} = live(conn, product_route(product.slug))
 
       assert has_element?(view, "h4", "Paywall Settings")
-      assert has_element?(view, "p", "For information regarding paywall settings")
+      assert has_element?(view, "div", "For information regarding paywall settings")
       assert has_element?(view, "#tech_support_paywall_settings", "contact our support team.")
     end
 
-    test "paywall settings are no longer in the Details form", %{
+    test "renders paywall settings controls in the paywall section", %{
       conn: conn,
       product: product
     } do
       {:ok, _view, html} = live(conn, product_route(product.slug))
 
-      # Paywall fields should NOT be in the Details section form
-      refute html =~ "Requires Payment"
-      refute html =~ "Has Grace Period"
-      refute html =~ "Grace period days"
+      assert html =~ "Requires payment"
+      assert html =~ "Amount"
+      assert html =~ "Payment options"
+      assert html =~ "Has grace period"
+      assert html =~ "Grace period days"
+      refute html =~ "Payment Settings"
+      refute html =~ "Settings related to required student fee and optional grace period"
+    end
+
+    test "enables paywall fields when requires payment is checked", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      initial_html = view |> element("#paywall-settings-form") |> render()
+      assert initial_html =~ ~s(name="section[amount]")
+      assert initial_html =~ ~r/name="section\[amount\]"[^>]*disabled=/
+
+      updated_html =
+        view
+        |> element("#paywall-settings-form")
+        |> render_change(%{"section" => %{"requires_payment" => "true"}})
+
+      assert updated_html =~ ~s(name="section[amount]")
+      refute updated_html =~ ~r/name="section\[amount\]"[^>]*disabled=/
+      refute updated_html =~ ~r/name="section\[payment_options\]"[^>]*disabled=/
+      refute updated_html =~ ~r/name="section\[has_grace_period\]"[^>]*disabled=/
     end
   end
 
@@ -291,6 +328,99 @@ defmodule OliWeb.Products.DetailsViewTest do
     end
   end
 
+  describe "product details page - component interaction (stale assigns)" do
+    setup [:setup_admin_conn, :create_product_with_pages]
+
+    test "toggling Notes ON then toggling Discussions does not revert Notes", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      # Both should start OFF
+      notes_form_id = "notes-#{product.id}-toggle-notes"
+      discussions_form_id = "discussions-#{product.id}-toggle-discussions"
+
+      # Notes toggle is OFF (0 pages with notes)
+      refute has_element?(view, "##{notes_form_id}_checkbox[checked]")
+
+      # Toggle Notes ON
+      view
+      |> form("##{notes_form_id}", %{})
+      |> render_change()
+
+      # Notes should now be ON
+      assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
+
+      # Toggle Discussions ON — this triggers a parent re-render via {:section_updated}
+      # Before the fix, this would overwrite Notes' internal collab_space_pages_count
+      # with the stale parent value (0), causing the Notes toggle to revert to OFF
+      view
+      |> form("##{discussions_form_id}", %{})
+      |> render_change()
+
+      # Discussions should be ON
+      assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
+
+      # Notes should STILL be ON — not reverted by the Discussions re-render
+      assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
+    end
+
+    test "toggling Discussions ON then toggling Notes does not revert Discussions", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      notes_form_id = "notes-#{product.id}-toggle-notes"
+      discussions_form_id = "discussions-#{product.id}-toggle-discussions"
+
+      # Toggle Discussions ON first
+      view
+      |> form("##{discussions_form_id}", %{})
+      |> render_change()
+
+      assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
+
+      # Toggle Notes ON — this does NOT send {:section_updated} but still causes
+      # a parent re-render via {:notes_count_updated}
+      view
+      |> form("##{notes_form_id}", %{})
+      |> render_change()
+
+      # Notes should be ON
+      assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
+
+      # Discussions should STILL be ON
+      assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
+    end
+
+    test "toggling AI Assistant does not revert Notes or Discussions state", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      notes_form_id = "notes-#{product.id}-toggle-notes"
+      discussions_form_id = "discussions-#{product.id}-toggle-discussions"
+      ai_form_id = "ai-assistant-#{product.id}-toggle-assistant"
+
+      # Enable Notes and Discussions
+      view |> form("##{notes_form_id}", %{}) |> render_change()
+      view |> form("##{discussions_form_id}", %{}) |> render_change()
+
+      assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
+      assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
+
+      # Toggle AI Assistant — sends {:section_updated} which re-renders parent
+      view |> form("##{ai_form_id}", %{}) |> render_change()
+
+      # Notes and Discussions should STILL be ON
+      assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
+      assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
+    end
+  end
+
   describe "product details content component - source materials badge" do
     test "shows tokenized badge when updates are available", _ctx do
       product = build(:section, type: :blueprint)
@@ -305,7 +435,7 @@ defmodule OliWeb.Products.DetailsViewTest do
           save: "save"
         })
 
-      assert html =~ "Manage Source Materials"
+      assert html =~ "Manage source materials"
       assert html =~ ~s(id="manage-source-materials-updates-badge")
       assert html =~ ~s(bg-Fill-Buttons-fill-primary)
       assert html =~ ~s(text-Text-text-white)
@@ -324,9 +454,83 @@ defmodule OliWeb.Products.DetailsViewTest do
           save: "save"
         })
 
-      refute html =~ "Manage Source Materials"
+      refute html =~ "Manage source materials"
       refute html =~ ~s(id="manage-source-materials-updates-badge")
       refute html =~ "updates</span>"
     end
+  end
+
+  # Creates a product (blueprint) with a published project containing pages,
+  # so that Notes and Discussions components have section_resources to work with.
+  defp create_product_with_pages(%{admin: admin}) do
+    project = insert(:project, authors: [admin])
+
+    # Create page revisions
+    page_1 =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Page One",
+        graded: false
+      )
+
+    page_2 =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+        title: "Page Two",
+        graded: false
+      )
+
+    # Associate pages to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_1.resource.id})
+    insert(:project_resource, %{project_id: project.id, resource_id: page_2.resource.id})
+
+    # Root container
+    container_resource = insert(:resource)
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        children: [page_1.resource.id, page_2.resource.id],
+        content: %{},
+        title: "Root Container"
+      })
+
+    # Publication
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: admin
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_1.resource,
+      revision: page_1,
+      author: admin
+    })
+
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_2.resource,
+      revision: page_2,
+      author: admin
+    })
+
+    # Create blueprint and section_resources
+    product =
+      insert(:section,
+        base_project: project,
+        type: :blueprint
+      )
+
+    {:ok, product} = Oli.Delivery.Sections.create_section_resources(product, publication)
+
+    {:ok, project: project, product: product, publication: publication}
   end
 end

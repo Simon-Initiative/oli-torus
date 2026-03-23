@@ -24,7 +24,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
             items={navigator_items(@containers)}
             current_item_resource_id={current_dashboard_item_resource_id(@dashboard_scope)}
             navigation_type={:patch}
-            path_builder_fn={fn item -> dashboard_path(@section.slug, item.resource_id) end}
+            path_builder_fn={
+              fn item ->
+                dashboard_path(@section.slug, item.resource_id, dashboard_navigation_params(@params))
+              end
+            }
           />
         </div>
       </div>
@@ -87,19 +91,30 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   defp navigator_items(items) when is_list(items), do: items
   defp navigator_items(_), do: []
 
-  defp dashboard_path(section_slug, "course"),
-    do: IntelligentDashboardTab.path_for_section(section_slug, "course")
+  defp dashboard_path(section_slug, "course", params),
+    do: IntelligentDashboardTab.path_for_section(section_slug, "course", params)
 
-  defp dashboard_path(section_slug, resource_id),
-    do: IntelligentDashboardTab.path_for_section(section_slug, "container:#{resource_id}")
+  defp dashboard_path(section_slug, resource_id, params),
+    do: IntelligentDashboardTab.path_for_section(section_slug, "container:#{resource_id}", params)
+
+  defp dashboard_navigation_params(params) when is_map(params) do
+    Enum.into(params, %{}, fn {key, value} -> {to_string(key), value} end)
+    |> Enum.filter(fn {key, _value} -> String.starts_with?(key, "tile_") end)
+    |> Map.new()
+  end
+
+  defp dashboard_navigation_params(_), do: %{}
 
   defp show_prototype_validation_ui? do
     Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :dev
   end
 
   defp render_dashboard_section(assigns, %{id: "engagement"} = section) do
+    section_slug = assigns.section.slug
+
     assigns =
       assigns
+      |> assign(:section_slug, section_slug)
       |> assign(:section, section)
       |> assign(:show_move_handle, length(assigns.dashboard_visible_sections) > 1)
 
@@ -108,7 +123,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       expanded={@section.expanded}
       show_move_handle={@show_move_handle}
       progress_status={Map.get(@dashboard, :progress_text, "Loading...")}
-      student_support_status={Map.get(@dashboard, :student_support_text, "Loading...")}
+      student_support_projection={Map.get(@dashboard, :student_support_projection, %{})}
+      student_support_tile_state={@student_support_tile_state}
+      params={@params}
+      section_slug={@section_slug}
+      dashboard_scope={@dashboard_scope}
       show_progress_tile={section_has_tile?(@section, "progress")}
       show_student_support_tile={section_has_tile?(@section, "student_support")}
     />
@@ -116,8 +135,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   end
 
   defp render_dashboard_section(assigns, %{id: "content"} = section) do
+    section_slug = assigns.section.slug
+
     assigns =
       assigns
+      |> assign(:section_slug, section_slug)
       |> assign(:section, section)
       |> assign(:show_move_handle, length(assigns.dashboard_visible_sections) > 1)
 

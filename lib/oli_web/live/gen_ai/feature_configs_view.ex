@@ -218,7 +218,7 @@ defmodule OliWeb.GenAI.FeatureConfigsView do
             {if @section.type == :enrollable do
               "Section"
             else
-              "Product"
+              "Template"
             end}
           </div>
         </div>
