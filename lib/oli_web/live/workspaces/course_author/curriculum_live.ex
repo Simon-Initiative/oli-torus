@@ -597,21 +597,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     end
   end
 
-  defp add_page_click(type, scored, adaptive_mode \\ nil) do
-    values = %{"type" => type, "scored" => scored}
-    values = if adaptive_mode, do: Map.put(values, "adaptive_mode", adaptive_mode), else: values
-
-    JS.set_attribute(
-      {"disabled", "disabled"},
-      to: "#curriculum-create-actions [data-create-page-action='true']"
-    )
-    |> JS.add_class(
-      "pointer-events-none opacity-50",
-      to: "#curriculum-create-actions [data-create-page-action='true']"
-    )
-    |> JS.push("add", value: values)
-  end
-
   def handle_event("change-view", params, socket) do
     {:noreply,
      push_patch(socket,
@@ -625,6 +610,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     # that don't need handling (like dropdown toggles)
     Logger.warning("Unhandled event in CurriculumLive: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
+  end
+
+  defp add_page_click(type, scored, adaptive_mode \\ nil) do
+    values = %{"type" => type, "scored" => scored}
+    values = if adaptive_mode, do: Map.put(values, "adaptive_mode", adaptive_mode), else: values
+
+    JS.set_attribute(
+      {"disabled", "disabled"},
+      to: "#curriculum-create-actions [data-create-page-action='true']"
+    )
+    |> JS.add_class(
+      "pointer-events-none opacity-50",
+      to: "#curriculum-create-actions [data-create-page-action='true']"
+    )
+    |> JS.push("add", value: values)
   end
 
   def handle_info({ref, result}, socket) when socket.assigns.import_state.task_ref == ref do

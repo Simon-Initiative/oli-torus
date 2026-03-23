@@ -569,6 +569,20 @@ defmodule OliWeb.Curriculum.ContainerLive do
     end
   end
 
+  def handle_event("change-view", %{"view" => view}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.container_path(
+           socket,
+           :index,
+           socket.assigns.project.slug,
+           socket.assigns.container.slug,
+           %{view: view}
+         )
+     )}
+  end
+
   defp add_page_click(type, scored, adaptive_mode \\ nil) do
     values = %{"type" => type, "scored" => scored}
     values = if adaptive_mode, do: Map.put(values, "adaptive_mode", adaptive_mode), else: values
@@ -582,20 +596,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
       to: "#curriculum-create-actions [data-create-page-action='true']"
     )
     |> JS.push("add", value: values)
-  end
-
-  def handle_event("change-view", %{"view" => view}, socket) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         Routes.container_path(
-           socket,
-           :index,
-           socket.assigns.project.slug,
-           socket.assigns.container.slug,
-           %{view: view}
-         )
-     )}
   end
 
   defp proceed_with_deletion_warning(socket, container, project, author, item) do
