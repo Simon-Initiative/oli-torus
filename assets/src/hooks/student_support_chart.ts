@@ -106,8 +106,8 @@ function applyChartColors(
   const separator = styles ? (isDark ? styles.separator.dark : styles.separator.light) : null;
   const activeBorder = styles
     ? isDark
-      ? (styles.border_active?.dark ?? styles.selected_stroke?.dark ?? null)
-      : (styles.border_active?.light ?? styles.selected_stroke?.light ?? null)
+      ? styles.border_active?.dark ?? styles.selected_stroke?.dark ?? null
+      : styles.border_active?.light ?? styles.selected_stroke?.light ?? null
     : null;
   const colorEncoding = spec.encoding?.color;
 
@@ -300,14 +300,10 @@ async function renderChart(hook: Hook<ChartHookState>) {
       applyChartColors(spec, colors, styles),
     ) as VisualizationSpec;
 
-    const result = await embed(
-      target,
-      renderedSpec,
-      {
-        actions: false,
-        renderer: 'svg',
-      },
-    );
+    const result = await embed(target, renderedSpec, {
+      actions: false,
+      renderer: 'svg',
+    });
 
     target.style.width = '100%';
     target.style.maxWidth = '100%';
