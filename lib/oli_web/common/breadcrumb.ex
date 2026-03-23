@@ -243,6 +243,16 @@ defmodule OliWeb.Common.Breadcrumb do
     end
   end
 
+  @doc """
+  Returns the route-aware "Template Overview" link for a product/template page.
+  Uses workspace-scoped URL when `route_name` is `:workspaces`, authoring URL otherwise.
+  """
+  def product_overview_link(section, :workspaces, project),
+    do: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}"
+
+  def product_overview_link(section, _, _project),
+    do: ~p"/authoring/products/#{section.slug}"
+
   def project_breadcrumb(project) do
     [
       Breadcrumb.new(%{

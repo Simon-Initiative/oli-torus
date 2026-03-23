@@ -45,6 +45,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
   on_mount {OliWeb.AuthorAuth, :mount_current_author}
   on_mount {OliWeb.UserAuth, :mount_current_user}
+  on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
   defp redirect_after_save(:instructor, %Section{slug: slug}),
     do: ~p"/sections/#{slug}/remix"
@@ -61,14 +62,20 @@ defmodule OliWeb.Delivery.RemixSection do
     |> breadcrumb(section)
   end
 
-  defp set_product_breadcrumbs(section) do
-    OliWeb.Products.DetailsView.set_breadcrumbs(section) ++
-      [
-        Breadcrumb.new(%{
-          full_title: "Customize Content",
-          link: Routes.product_remix_path(OliWeb.Endpoint, :product_remix, section.slug)
-        })
-      ]
+  defp set_product_breadcrumbs(section, socket) do
+    route_name = socket.assigns[:route_name]
+    project = socket.assigns[:project]
+    overview_link = Breadcrumb.product_overview_link(section, route_name, project)
+
+    page_link =
+      if route_name == :workspaces,
+        do: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}/remix",
+        else: ~p"/authoring/products/#{section.slug}/remix"
+
+    [
+      Breadcrumb.new(%{full_title: "Template Overview", link: overview_link}),
+      Breadcrumb.new(%{full_title: "Customize Content", link: page_link})
+    ]
   end
 
   defp breadcrumb(previous, section) do
@@ -153,13 +160,33 @@ defmodule OliWeb.Delivery.RemixSection do
       {:ok, state} = Remix.init_open_and_free(section)
 
       init_state_from_remix(socket, state,
-        breadcrumbs: set_product_breadcrumbs(state.section),
+        breadcrumbs: set_product_breadcrumbs(state.section, socket),
         redirect_after_save: redirect_after_save(:product_creator, state.section, socket)
       )
     else
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
     end
   end
+
+  def handle_params(_params, _url, %{assigns: %{section: %{type: :blueprint}}} = socket) do
+    section = socket.assigns.section
+    route_name = socket.assigns[:route_name]
+    project = socket.assigns[:project]
+
+    {:noreply,
+     assign(socket,
+       breadcrumbs: set_product_breadcrumbs(section, socket),
+       redirect_after_save: product_overview_url(section, route_name, project)
+     )}
+  end
+
+  def handle_params(_params, _url, socket), do: {:noreply, socket}
+
+  defp product_overview_url(section, :workspaces, project),
+    do: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}"
+
+  defp product_overview_url(section, _, _project),
+    do: ~p"/authoring/products/#{section.slug}"
 
   defp init_state_from_remix(socket, state, opts) do
     params = %{
@@ -347,18 +374,15 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("ok_cancel_modal", _, socket) do
     %{redirect_after_save: redirect_after_save} = socket.assigns
 
-    {:noreply,
-     redirect(socket,
-       to: redirect_after_save
-     )}
+    {:noreply, push_navigate(socket, to: redirect_after_save)}
   end
 
   def handle_event("save", _, socket) do
     %{remix_state: state, redirect_after_save: redirect_after_save} = socket.assigns
 
     case Oli.Delivery.Remix.save(state) do
-      {:ok, _section} -> {:noreply, redirect(socket, to: redirect_after_save)}
-      {:error, _} -> {:noreply, redirect(socket, to: redirect_after_save)}
+      {:ok, _section} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
+      {:error, _} -> {:noreply, push_navigate(socket, to: redirect_after_save)}
     end
   end
 

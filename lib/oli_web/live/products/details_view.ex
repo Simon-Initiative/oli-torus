@@ -184,6 +184,9 @@ defmodule OliWeb.Products.DetailsView do
           changeset={to_form(@changeset)}
           save="save"
           updates={@updates}
+          source_materials_url={~p"/authoring/products/#{@product.slug}/source_materials"}
+          customize_url={~p"/authoring/products/#{@product.slug}/remix"}
+          edit_url={~p"/authoring/products/#{@product.slug}/edit"}
           schedule_url={~p"/authoring/products/#{@product.slug}/schedule"}
         />
       </Overview.section>
@@ -198,12 +201,10 @@ defmodule OliWeb.Products.DetailsView do
             currently produce a certificate.
           </div>
           <div>
-            <a
-              href={~p"/authoring/products/#{@product.slug}/certificate_settings"}
-              class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
-            >
-              Manage certificate settings
-            </a>
+            <.action_link
+              navigate={~p"/authoring/products/#{@product.slug}/certificate_settings"}
+              label="Manage certificate settings"
+            />
           </div>
         </div>
       </Overview.section>

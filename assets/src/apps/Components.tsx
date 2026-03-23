@@ -24,6 +24,8 @@ import { registerApplication } from 'apps/app';
 import { globalStore } from 'state/store';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { OfflineDetector } from './OfflineDetector';
+// Side-effect import: registers ScheduleEditor on window.Components for LiveView rendering
+import './SchedulerApp';
 import ActivityBank from './bank/ActivityBank';
 import Bibliography from './bibliography/Bibliography';
 import { References } from './bibliography/References';

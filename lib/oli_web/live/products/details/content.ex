@@ -1,12 +1,13 @@
 defmodule OliWeb.Products.Details.Content do
   use OliWeb, :html
 
-  alias OliWeb.Router.Helpers, as: Routes
-
   attr(:product, :any, required: true)
   attr(:updates, :any, required: true)
   attr(:changeset, :any, default: nil)
   attr(:save, :any, required: true)
+  attr(:source_materials_url, :string, default: nil)
+  attr(:customize_url, :string, required: true)
+  attr(:edit_url, :string, default: nil)
   attr(:schedule_url, :string, default: nil)
 
   def render(assigns) do
@@ -35,28 +36,25 @@ defmodule OliWeb.Products.Details.Content do
               {ngettext("1 update", "%{count} updates", updates_count)}
             </span>
           </div>
-          <.link
-            :if={updates_count > 0}
-            href={
-              Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSourceMaterials, @product.slug)
-            }
-            class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
-          >
-            Manage source materials
-          </.link>
-          <.link
-            href={Routes.product_remix_path(OliWeb.Endpoint, :product_remix, @product.slug)}
-            class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
-          >
-            Customize content
-          </.link>
-          <.link
+          <.action_link
+            :if={updates_count > 0 and @source_materials_url}
+            navigate={@source_materials_url}
+            label="Manage source materials"
+          />
+          <.action_link
+            navigate={@customize_url}
+            label="Customize content"
+          />
+          <.action_link
+            :if={@edit_url}
+            navigate={@edit_url}
+            label="Edit template details"
+          />
+          <.action_link
             :if={@schedule_url}
-            href={@schedule_url}
-            class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
-          >
-            Edit scheduling and assessment settings
-          </.link>
+            navigate={@schedule_url}
+            label="Edit scheduling and assessment settings"
+          />
         </div>
       </div>
 
