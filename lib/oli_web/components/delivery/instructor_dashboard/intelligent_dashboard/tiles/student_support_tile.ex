@@ -7,7 +7,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   alias OliWeb.Icons
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Students.EmailButton
-  alias OliWeb.Components.Delivery.Students.EmailModal
+
+  alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportEmailModal
 
   @bucket_styles %{
     "struggling" => %{
@@ -102,6 +103,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     remaining_count = max(length(filtered_students) - length(visible_students), 0)
     compact_graph_keys? = compact_graph_keys?(buckets)
     selected_student_ids = normalize_selected_student_ids(assigns[:selected_student_ids])
+    selected_students_data = selected_students_data(buckets, selected_student_ids)
 
     select_all_checked =
       visible_students != [] and Enum.all?(visible_students, &selected?(&1, selected_student_ids))
@@ -119,6 +121,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       |> assign(:visible_students, visible_students)
       |> assign(:remaining_count, remaining_count)
       |> assign(:selected_student_ids, selected_student_ids)
+      |> assign(:selected_students_data, selected_students_data)
       |> assign(:select_all_checked, select_all_checked)
       |> assign(:compact_graph_keys?, compact_graph_keys?)
       |> assign(:chart_spec, build_chart_spec(buckets, selected_bucket_id))
@@ -168,12 +171,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 data-colors={Jason.encode!(@chart_colors)}
                 data-theme-styles={Jason.encode!(@chart_theme_styles)}
                 data-chart-target={"student-support-chart-canvas-#{@id}"}
-                class="min-h-[360px] w-full flex justify-center xl:justify-start"
+                class="flex min-h-[360px] w-full justify-center"
               >
                 <div
                   id={"student-support-chart-canvas-#{@id}"}
                   phx-update="ignore"
-                  class="min-h-[360px] w-full flex justify-center xl:justify-start"
+                  class="flex min-h-[360px] w-full justify-center"
                 >
                 </div>
               </div>
@@ -270,7 +273,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       :if={@search_term not in ["", nil]}
                       patch={tile_patch_path(assigns, %{"q" => nil, "page" => 1})}
                       aria-label="Clear search"
-                      class="absolute right-3 inline-flex h-4 w-4 items-center justify-center rounded-sm text-Icon-icon-default hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+                      class="absolute right-3 inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm text-Icon-icon-default hover:text-Text-text-high focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
                     >
                       <Icons.close_sm class="h-4 w-4 stroke-current" />
                     </.link>
@@ -370,7 +373,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       })
                     }
                     data-role="load-more"
-                    class="inline-flex rounded-md px-6 py-2 text-sm font-semibold text-Text-text-button"
+                    class="inline-flex cursor-pointer rounded-md px-6 py-2 text-sm font-semibold text-Text-text-button"
                   >
                     Load {min(@remaining_count, 20)} more ({@remaining_count} remaining)
                   </.link>
@@ -379,12 +382,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 <.live_component
                   :if={@show_email_modal}
                   id={"student_support_email_modal_#{@id}"}
-                  module={EmailModal}
-                  selected_students={@selected_student_ids}
-                  students={@filtered_students}
+                  module={StudentSupportEmailModal}
+                  students={@selected_students_data}
                   section_title={@section_title}
                   instructor_email={@instructor_email}
+                  instructor_name={@instructor_name}
                   section_slug={@section_slug}
+                  selected_bucket_id={@selected_bucket_id}
                   show_modal={@show_email_modal}
                   email_handler_id={@id}
                 />
@@ -411,7 +415,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       aria-label={filter_button_label(@label, @count, @selected, @with_dot)}
       title={inactive_tooltip(@label)}
       class={[
-        "inline-flex items-center gap-1 rounded-[3px] border px-[10px] py-[5px] text-base font-semibold leading-6 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+        "inline-flex cursor-pointer items-center gap-1 rounded-[3px] border px-[10px] py-[5px] text-base font-semibold leading-6 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
         @selected &&
           "border-Text-text-button bg-Background-bg-primary text-Text-text-button",
         !@selected &&
@@ -447,7 +451,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       phx-click={@on_click}
       phx-target={@target}
       phx-value-student_id={@value}
-      class="inline-flex h-6 w-6 items-center justify-center rounded-[3px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
+      class="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-[3px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
     >
       <span class={[
         "inline-flex h-5 w-5 items-center justify-center rounded-[3px] border",
@@ -483,7 +487,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       data-bucket-id={@bucket.id}
       aria-label={graph_key_aria_label(@bucket, @display_count, @display_pct, @selected)}
       class={[
-        "group items-center gap-[5px] rounded-[3px] p-[6px] transition no-underline hover:no-underline focus:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
+        "group cursor-pointer items-center gap-[5px] rounded-[3px] p-[6px] transition no-underline hover:no-underline focus:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary",
         @compact_graph_keys? && "flex w-full min-w-0 justify-between",
         !@compact_graph_keys? && "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto]",
         @selected && "bg-Fill-Chip-Gray",
@@ -848,6 +852,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   defp normalize_selected_student_ids(selected_student_ids) when is_list(selected_student_ids),
     do: selected_student_ids
+
+  defp selected_students_data(buckets, selected_student_ids) do
+    buckets
+    |> Enum.flat_map(&Map.get(&1, :students, []))
+    |> Enum.uniq_by(& &1.id)
+    |> Enum.filter(&(&1.id in selected_student_ids))
+  end
 
   defp current_visible_students(projection, tile_state) do
     projection
