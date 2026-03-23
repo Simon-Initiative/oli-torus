@@ -5,6 +5,7 @@ defmodule OliWeb.Products.Details.Edit do
   import OliWeb.ErrorHelpers
 
   alias OliWeb.Components.Common
+  alias OliWeb.Live.Components.Tags.TagsComponent
 
   defp statuses do
     [{"Active", "active"}, {"Archived", "archived"}]
@@ -17,11 +18,20 @@ defmodule OliWeb.Products.Details.Edit do
   attr(:is_admin, :boolean)
   attr(:project_slug, :string, required: true)
   attr(:ctx, :map, required: true)
+  attr(:tags, :list, default: [])
+  attr(:author, :any, default: nil)
 
   def render(assigns) do
     ~H"""
     <div>
-      <.form :let={f} for={@changeset} phx-change="validate" phx-submit="save" action="#">
+      <.form
+        :let={f}
+        id="template-details-form"
+        for={@changeset}
+        phx-change="validate"
+        phx-submit="save"
+        action="#"
+      >
         <div class="form-group mb-2">
           {label(f, :title)}
           {text_input(f, :title, class: "form-control")}
@@ -41,6 +51,21 @@ defmodule OliWeb.Products.Details.Edit do
           {label(f, :description)}
           {text_input(f, :description, class: "form-control")}
           <div>{error_tag(f, :description)}</div>
+        </div>
+
+        <div class="form-label-group mb-3 mt-3">
+          <Common.label class="control-label">Tags</Common.label>
+          <.live_component
+            :if={@is_admin}
+            module={TagsComponent}
+            id={"product-tags-#{@product.id}"}
+            entity_type={:section}
+            entity_id={@product.id}
+            current_tags={@tags}
+            current_author={@author}
+            variant={:form}
+          />
+          <TagsComponent.read_only_tags :if={!@is_admin} tags={@tags} />
         </div>
 
         <% welcome_title =

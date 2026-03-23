@@ -140,7 +140,7 @@ defmodule Oli.MixProject do
       {:cachex, "~> 3.5"},
       {:cloak_ecto, "~> 1.2.0"},
       {:priv_signal,
-       github: "marmot-labs/priv-signal", tag: "v0.2.1", only: [:dev, :test], runtime: false},
+       github: "marmot-labs/priv-signal", tag: "v0.2.2", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},
@@ -241,6 +241,15 @@ defmodule Oli.MixProject do
 
       # resets the database in the :test env
       "test.ecto.reset": ["ecto.reset"],
+
+      # resets the database and runs the test suite
+      test: [
+        "ecto.drop --quiet",
+        "ecto.create --quiet",
+        "ecto.migrate --quiet",
+        "run priv/repo/seeds.exs",
+        "test"
+      ],
 
       # runs the test suite and watches for changes
       "test.watch": ["test.watch --seed 0 --max-failures 1 --include pending --trace"],

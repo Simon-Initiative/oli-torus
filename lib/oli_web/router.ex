@@ -472,7 +472,9 @@ defmodule OliWeb.Router do
     live("/projects", Projects.ProjectsLive)
     get("/projects/export", ProjectsController, :export_csv)
     get("/products/export", ProductsController, :export_csv)
+    get("/products/:product_id/usage/export", ProductsController, :export_usage_csv)
     live("/products/:product_id", Products.DetailsView)
+    live("/products/:product_id/usage", Products.UsageView, metadata: %{route_name: :authoring})
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
 
@@ -483,6 +485,18 @@ defmodule OliWeb.Router do
     live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
       as: :product_remix
     )
+
+    live_session :product_settings,
+      on_mount: [
+        {OliWeb.AuthorAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx
+      ] do
+      live("/products/:section_slug/schedule", Sections.ScheduleView, :product_schedule,
+        as: :product_schedule
+      )
+
+      live("/products/:section_slug/edit", Sections.EditView, :product_edit, as: :product_edit)
+    end
 
     get(
       "/products/:product_id/downloads/granted_certificates",
@@ -1004,9 +1018,27 @@ defmodule OliWeb.Router do
           live("/:product_id", Products.DetailsLive)
 
           scope "/", alias: false do
+            live("/:product_id/usage", OliWeb.Products.UsageView,
+              metadata: %{route_name: :workspaces}
+            )
+          end
+
+          scope "/", alias: false do
             live(
               "/:product_id/certificate_settings",
               OliWeb.Certificates.CertificatesSettingsLive,
+              metadata: %{route_name: :workspaces}
+            )
+          end
+
+          scope "/", alias: false do
+            live("/:section_slug/schedule", OliWeb.Sections.ScheduleView,
+              metadata: %{route_name: :workspaces}
+            )
+          end
+
+          scope "/", alias: false do
+            live("/:section_slug/edit", OliWeb.Sections.EditView,
               metadata: %{route_name: :workspaces}
             )
           end

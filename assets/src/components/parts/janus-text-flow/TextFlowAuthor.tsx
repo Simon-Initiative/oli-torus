@@ -415,10 +415,58 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       */}
           {`
         .text-flow-authoring-preview {
-          font-size: 16px;
+          font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+          font-size: 1rem;
+          line-height: 1.25rem;
+        }
+        .text-flow-authoring-preview p,
+        .text-flow-authoring-preview h1,
+        .text-flow-authoring-preview h2,
+        .text-flow-authoring-preview h3,
+        .text-flow-authoring-preview h4,
+        .text-flow-authoring-preview p.caption {
+          margin-top: 0;
+          margin-bottom: 1rem;
+        }
+        .text-flow-authoring-preview h1,
+        .text-flow-authoring-preview h2,
+        .text-flow-authoring-preview h3,
+        .text-flow-authoring-preview h4 {
+          margin-top: 2rem;
+          font-family: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+          font-weight: 700;
+        }
+        .text-flow-authoring-preview > :first-child {
+          margin-top: 0;
+        }
+        .text-flow-authoring-preview h1 {
+          font-size: 2rem;
+          line-height: 2.25rem;
+        }
+        .text-flow-authoring-preview h2 {
+          font-size: 1.75rem;
+          line-height: 1.875rem;
+        }
+        .text-flow-authoring-preview h3 {
+          font-size: 1.5rem;
+          line-height: 1.75rem;
+        }
+        .text-flow-authoring-preview h4 {
+          font-size: 1.25rem;
+          line-height: 1.625rem;
         }
         .text-flow-authoring-preview p {
-          margin: 0;
+          font-size: 1rem;
+          line-height: 1.25rem;
+        }
+        .text-flow-authoring-preview p.caption,
+        .text-flow-authoring-preview .caption span {
+          font-size: 0.875rem;
+          line-height: 1rem;
+        }
+        .text-flow-authoring-preview hr {
+          margin-top: 2rem;
+          margin-bottom: 1rem;
         }
       `}
         </style>

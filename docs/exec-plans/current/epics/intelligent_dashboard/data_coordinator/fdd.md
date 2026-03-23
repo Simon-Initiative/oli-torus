@@ -183,13 +183,15 @@ Integration guardrails:
 Notional coordinator API:
 
 ```elixir
+@type oracle_payload :: term()
+
 @type action ::
   {:cache_lookup, scope(), [oracle_key()]} |
   {:runtime_start, request_token(), [oracle_key()]} |
   {:emit_loading, request_token(), [oracle_key()]} |
   {:emit_ready, request_token(), oracle_key()} |
   {:emit_failure, request_token(), oracle_key(), term()} |
-  {:cache_write, scope(), oracle_key(), map()} |
+  {:cache_write, scope(), oracle_key(), oracle_payload()} |
   {:promote_queued, scope(), request_token()} |
   {:complete, request_token()}
 
@@ -197,6 +199,10 @@ new_session(opts) :: state()
 request_scope_change(state(), scope(), dependency_profile()) :: {state(), [action()]}
 handle_oracle_result(state(), request_token(), oracle_key(), oracle_result()) :: {state(), [action()]}
 ```
+
+Payload boundary rule:
+- Coordinator treats successful oracle payloads as opaque values and forwards them to cache/snapshot layers without assuming a map-only shape.
+- Payload semantics remain oracle-owned; coordinator logic may branch on envelope status (`:ok`/`:error`) but not on payload structure.
 
 Required cache facade calls (coordinator dependency only):
 - `lookup_required/4`

@@ -37,6 +37,31 @@ defmodule Oli.Dashboard.Cache.RevisitCacheTest do
   end
 
   describe "lookup_revisit/5 eligibility and fallback" do
+    test "hydrates list payloads from revisit cache for explicit-container eligible flow", %{
+      revisit_cache: revisit_cache,
+      context: context,
+      scope: scope,
+      opts: opts
+    } do
+      key =
+        revisit_key(
+          45,
+          910,
+          %{container_type: :container, container_id: 3001},
+          :progress_proficiency
+        )
+
+      payload = [%{student_id: 1, progress_pct: 55.0, proficiency_pct: 70.0}]
+      assert :ok = RevisitCache.write(revisit_cache, key, payload)
+
+      assert {:ok, result} =
+               Cache.lookup_revisit(45, context, scope, [:progress_proficiency], opts)
+
+      assert result.hits == %{progress_proficiency: payload}
+      assert result.misses == []
+      assert result.source == :revisit
+    end
+
     test "hydrates from revisit cache for explicit-container eligible flow", %{
       revisit_cache: revisit_cache,
       context: context,

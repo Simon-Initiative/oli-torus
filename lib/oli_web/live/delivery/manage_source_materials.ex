@@ -91,8 +91,8 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
       <%= if not is_nil(@section.blueprint_id) do %>
         <ProjectCard.render
           id={"product_info_#{@section.blueprint_id}"}
-          title="Product Info"
-          tooltip="Information about the product on which this section is based"
+          title="Template Info"
+          tooltip="Information about the template on which this section is based"
         >
           <div class="card-title">
             <h5>{@section.blueprint.title}</h5>

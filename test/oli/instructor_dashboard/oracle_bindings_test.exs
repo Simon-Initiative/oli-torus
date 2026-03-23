@@ -40,7 +40,12 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
 
       assert profiles.progress_summary.required == [:oracle_instructor_progress]
       assert profiles.progress_summary.optional == [:oracle_instructor_engagement]
-      assert profiles.support_summary.required == [:oracle_instructor_support]
+
+      assert profiles.support_summary.required == [
+               :oracle_instructor_progress_proficiency,
+               :oracle_instructor_student_info
+             ]
+
       assert profiles.support_summary.optional == []
     end
 

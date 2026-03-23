@@ -1,0 +1,108 @@
+# Scenario: Adaptive iframe internal-link delivery resolution and fallback
+# Covers:
+# - internal iframe resolution to section lesson routes
+# - unresolved fallback behavior for out-of-scope targets
+# - import/export rewiring helpers for iframe link metadata
+
+- project:
+    name: "iframe_project"
+    title: "Iframe Links Project"
+    root:
+      children:
+        - page: "Source Page"
+        - page: "Target Page"
+
+- project:
+    name: "outside_project"
+    title: "Outside Project"
+    root:
+      children:
+        - page: "Outside Page"
+
+- create_activity:
+    project: "iframe_project"
+    title: "Adaptive Iframe Activity"
+    virtual_id: "adaptive_iframe"
+    scope: "embedded"
+    type: "oli_adaptive"
+    content_format: "json"
+    content:
+      authoring:
+        parts:
+          - id: "iframe_primary"
+            type: "janus-capi-iframe"
+            src: "/course/link/placeholder"
+            sourceType: "page"
+            linkType: "page"
+            idref: 0
+      partsLayout:
+        - id: "iframe_primary"
+          type: "janus-capi-iframe"
+          src: "/course/link/placeholder"
+          sourceType: "page"
+          linkType: "page"
+          idref: 0
+
+- edit_page:
+    project: "iframe_project"
+    page: "Source Page"
+    content: |
+      title: "Source Page"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "Adaptive iframe source page"
+        - type: activity_reference
+          virtual_id: "adaptive_iframe"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.IframeLinksHooks.bind_iframe_to_target_page/1"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.IframeLinksHooks.assert_iframe_rewiring_support/1"
+
+- publish:
+    to: "iframe_project"
+    description: "Initial publish with in-project iframe target"
+
+- section:
+    name: "iframe_section"
+    title: "Iframe Section"
+    from: "iframe_project"
+
+- user:
+    name: "iframe_student"
+    type: "student"
+    email: "iframe_student@example.com"
+
+- enroll:
+    user: "iframe_student"
+    section: "iframe_section"
+    role: "student"
+
+- view_practice_page:
+    student: "iframe_student"
+    section: "iframe_section"
+    page: "Source Page"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.IframeLinksHooks.assert_iframe_section_resolution/1"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.IframeLinksHooks.retarget_iframe_to_outside_page/1"
+
+- publish:
+    to: "iframe_project"
+    description: "Retarget iframe to out-of-project page"
+
+- update:
+    from: "iframe_project"
+    to: "iframe_section"
+
+- view_practice_page:
+    student: "iframe_student"
+    section: "iframe_section"
+    page: "Source Page"
+
+- hook:
+    function: "Oli.Scenarios.Delivery.IframeLinksHooks.assert_iframe_outside_fallback/1"

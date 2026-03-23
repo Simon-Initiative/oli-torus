@@ -4,6 +4,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
+import { hasAiTriggerPrompt, invokeAdaptiveAiTrigger } from '../aiTrigger';
 import { PartComponentProps } from '../types/parts';
 import { ImageModel } from './schema';
 
@@ -99,6 +100,8 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
   }, [ready]);
 
   const { width, height, src, imageSrc, defaultSrc, alt, lockAspectRatio, scaleContent } = model;
+  const aiTriggerAvailable =
+    model.enableAiTrigger === true && hasAiTriggerPrompt(model.aiTriggerPrompt);
 
   // Detect responsive layout mode (when width is '100%')
   const isResponsiveLayout = width === '100%' || (typeof width === 'string' && width.includes('%'));
@@ -152,6 +155,18 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     const imageSource = imageSrc?.length && imageSrc != defaultSrc ? imageSrc : src;
     setImgSrc(imageSource);
   }, [model]);
+
+  const fireAiTrigger = () =>
+    invokeAdaptiveAiTrigger({
+      sectionSlug: props.sectionSlug,
+      resourceId: props.resourceId,
+      triggerType: 'adaptive_component',
+      data: {
+        component_id: id,
+        component_type: tagName,
+      },
+    });
+
   return ready ? (
     <img
       data-janus-type={tagName}
@@ -159,7 +174,23 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
       alt={alt}
       src={imgSrc}
       className={imageClasses || undefined}
-      style={imageStyles}
+      onClick={aiTriggerAvailable ? () => void fireAiTrigger() : undefined}
+      onKeyDown={
+        aiTriggerAvailable
+          ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                void fireAiTrigger();
+              }
+            }
+          : undefined
+      }
+      role={aiTriggerAvailable ? 'button' : undefined}
+      tabIndex={aiTriggerAvailable ? 0 : undefined}
+      style={{
+        ...imageStyles,
+        ...(aiTriggerAvailable ? { cursor: 'pointer' } : {}),
+      }}
     />
   ) : null;
 };

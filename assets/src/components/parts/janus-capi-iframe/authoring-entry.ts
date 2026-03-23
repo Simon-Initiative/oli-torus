@@ -13,6 +13,8 @@ import {
   schema,
   simpleSchema,
   simpleUISchema,
+  transformModelToSchema,
+  transformSchemaToModel,
   uiSchema,
   validateUserConfig,
 } from './schema';
@@ -39,6 +41,8 @@ register(CapiIframeAuthor, manifest.authoring.element, observedAttributes, {
   customApi: {
     getSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleSchema : schema),
     getUiSchema: (mode: PartAuthoringMode) => (mode === 'simple' ? simpleUISchema : uiSchema),
+    transformModelToSchema,
+    transformSchemaToModel,
     createSchema,
     getCapabilities,
     getAdaptivitySchema: adaptivitySchema,

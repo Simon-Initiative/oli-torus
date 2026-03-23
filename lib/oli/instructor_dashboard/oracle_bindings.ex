@@ -16,7 +16,6 @@ defmodule Oli.InstructorDashboard.OracleBindings do
   alias Oli.InstructorDashboard.Oracles.ObjectivesProficiency
   alias Oli.InstructorDashboard.Oracles.Placeholder.Engagement
   alias Oli.InstructorDashboard.Oracles.Placeholder.Progress
-  alias Oli.InstructorDashboard.Oracles.Placeholder.Support
   alias Oli.InstructorDashboard.Oracles.ProgressBins
   alias Oli.InstructorDashboard.Oracles.ProgressProficiency
   alias Oli.InstructorDashboard.Oracles.SectionAnalytics
@@ -53,7 +52,8 @@ defmodule Oli.InstructorDashboard.OracleBindings do
         },
         support_summary: %{
           required_oracles: %{
-            support: :oracle_instructor_support
+            progress_proficiency: :oracle_instructor_progress_proficiency,
+            student_info: :oracle_instructor_student_info
           },
           optional_oracles: %{}
         },
@@ -66,7 +66,6 @@ defmodule Oli.InstructorDashboard.OracleBindings do
       },
       oracles: %{
         oracle_instructor_progress: Progress,
-        oracle_instructor_support: Support,
         oracle_instructor_engagement: Engagement,
         oracle_instructor_section_analytics: SectionAnalytics,
         oracle_instructor_progress_bins: ProgressBins,

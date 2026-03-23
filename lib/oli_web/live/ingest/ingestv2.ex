@@ -94,7 +94,7 @@ defmodule OliWeb.Admin.IngestV2 do
           <ReadOnly.render label="Objectives" value={@resource_counts.objectives} />
           <ReadOnly.render label="Activities" value={@resource_counts.activities} />
           <ReadOnly.render label="Pages" value={@resource_counts.pages} />
-          <ReadOnly.render label="Products" value={@resource_counts.products} />
+          <ReadOnly.render label="Templates" value={@resource_counts.products} />
           <ReadOnly.render label="Media Items" value={@resource_counts.media_items} />
         </Group.render>
         <Group.render label="Errors" description="Errors encountered during preprocessing">

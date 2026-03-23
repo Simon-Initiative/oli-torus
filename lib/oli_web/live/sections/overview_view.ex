@@ -10,10 +10,11 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Details.ImageUpload
   alias OliWeb.Sections.{Instructors, Mount}
-  alias Oli.Publishing.DeliveryResolver
-  alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
-  alias OliWeb.Common.Monaco
+  alias OliWeb.Live.Components.Sections.AiAssistantComponent
+  alias OliWeb.Live.Components.Sections.NotesComponent
+  alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
+  alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias Oli.Utils.S3Storage
   alias Oli.Repo
 
@@ -57,41 +58,26 @@ defmodule OliWeb.Sections.OverviewView do
           Sections.check_for_available_publication_updates(section)
           |> Enum.count()
 
-        show_required_section_config =
-          if section.required_survey_resource_id != nil or
-               Sections.get_base_project_survey(section.slug) do
-            true
-          else
-            false
-          end
-
-        %{slug: revision_slug} = DeliveryResolver.root_container(section.slug)
-
-        {:ok, collab_space_config} =
-          Collaboration.get_collab_space_config_for_page_in_section(
-            revision_slug,
-            section.slug
-          )
+        component_data = SectionDefaultsHelpers.load_component_data(section)
 
         %{base_project: base_project} = section |> Repo.preload(:base_project)
 
         {:ok,
-         assign(socket,
-           page_prompt_template: section.page_prompt_template,
-           is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
-           is_admin: is_content_admin?(user),
-           breadcrumbs: set_breadcrumbs(type, section),
-           instructors: fetch_instructors(section),
-           user: user,
-           section: section,
-           changeset: Section.changeset(section, %{}),
-           updates_count: updates_count,
-           has_submitted_attempts:
-             Oli.Delivery.Attempts.ManualGrading.has_submitted_attempts(section),
-           collab_space_config: collab_space_config,
-           resource_slug: revision_slug,
-           show_required_section_config: show_required_section_config,
-           base_project: base_project
+         assign(
+           socket,
+           Map.merge(component_data, %{
+             is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
+             is_admin: is_content_admin?(user),
+             breadcrumbs: set_breadcrumbs(type, section),
+             instructors: fetch_instructors(section),
+             user: user,
+             section: section,
+             changeset: Section.changeset(section, %{}),
+             updates_count: updates_count,
+             has_submitted_attempts:
+               Oli.Delivery.Attempts.ManualGrading.has_submitted_attempts(section),
+             base_project: base_project
+           })
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -315,16 +301,30 @@ defmodule OliWeb.Sections.OverviewView do
         <% end %>
       </Group.render>
 
-      {live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-        id: "collab_space_config",
-        session: %{
-          "collab_space_config" => @collab_space_config,
-          "section_slug" => @section.slug,
-          "resource_slug" => @resource_slug,
-          "is_overview_render" => true,
-          "is_delivery" => true
-        }
-      )}
+      <Group.render
+        label="Notes"
+        description="Enable students to annotate content for saving and sharing within the class community."
+      >
+        <.live_component
+          module={NotesComponent}
+          id={"notes-#{@section.id}"}
+          section={@section}
+          collab_space_pages_count={@collab_space_pages_count}
+          pages_count={@pages_count}
+        />
+      </Group.render>
+      <Group.render
+        label="Course Discussions"
+        description="Give students a course discussion board."
+      >
+        <.live_component
+          module={CourseDiscussionsComponent}
+          id={"discussions-#{@section.id}"}
+          section={@section}
+          collab_space_config={@root_collab_space_config}
+          root_section_resource={@root_section_resource}
+        />
+      </Group.render>
 
       <Group.render label="Scoring" description="View and manage student scores and progress">
         <ul class="link-list">
@@ -450,9 +450,11 @@ defmodule OliWeb.Sections.OverviewView do
           description="View and manage the AI Assistant details"
           is_last={true}
         >
-          <div class="my-2">
-            <.assistant_buttons section={@section} />
-          </div>
+          <.live_component
+            module={AiAssistantComponent}
+            id={"ai-assistant-#{@section.id}"}
+            section={@section}
+          />
           <div :if={Sections.assistant_enabled?(@section)}>
             <section class="flex flex-col space-y-4">
               <ul class="link-list">
@@ -466,48 +468,6 @@ defmodule OliWeb.Sections.OverviewView do
                 </li>
               </ul>
             </section>
-
-            <section class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200">
-              <h5>Prompt Templates</h5>
-
-              <Monaco.editor
-                id="attribute-monaco-editor"
-                height="200px"
-                language="text"
-                on_change="monaco_editor_on_change"
-                set_options="monaco_editor_set_options"
-                set_value="monaco_editor_set_value"
-                get_value="monaco_editor_get_value"
-                validate_schema_uri=""
-                default_value={
-                  if is_nil(@section.page_prompt_template) do
-                    ""
-                  else
-                    @section.page_prompt_template
-                  end
-                }
-                default_options={
-                  %{
-                    "readOnly" => false,
-                    "selectOnLineNumbers" => true,
-                    "minimap" => %{"enabled" => false},
-                    "scrollBeyondLastLine" => false,
-                    "tabSize" => 2
-                  }
-                }
-                use_code_lenses={[]}
-              />
-
-              <div>
-                <button
-                  type="button"
-                  class="btn btn-primary action-button mt-4"
-                  phx-click="save_prompt"
-                >
-                  Save
-                </button>
-              </div>
-            </section>
           </div>
         </Group.render>
       </div>
@@ -520,24 +480,6 @@ defmodule OliWeb.Sections.OverviewView do
       true -> "Direct Delivery"
       _ -> "LTI"
     end
-  end
-
-  def handle_event("monaco_editor_on_change", value, socket) do
-    {:noreply, assign(socket, page_prompt_template: value)}
-  end
-
-  def handle_event("save_prompt", _, socket) do
-    section = socket.assigns.section
-
-    Oli.Delivery.Sections.update_section(section, %{
-      page_prompt_template: socket.assigns.page_prompt_template
-    })
-
-    socket =
-      socket
-      |> put_flash(:info, "Prompt successfully saved")
-
-    {:noreply, socket}
   end
 
   def handle_event("show_delete_modal", _params, socket) do
@@ -615,44 +557,6 @@ defmodule OliWeb.Sections.OverviewView do
     {:noreply, socket |> hide_modal(modal_assigns: nil, section_has_student_data: nil)}
   end
 
-  def handle_event("toggle_assistant", _, socket) do
-    section = socket.assigns.section
-    assistant_enabled = section.assistant_enabled
-
-    triggers_enabled =
-      if assistant_enabled do
-        false
-      else
-        section.triggers_enabled
-      end
-
-    {:ok, section} =
-      Oli.Delivery.Sections.update_section(section, %{
-        assistant_enabled: !assistant_enabled,
-        triggers_enabled: triggers_enabled
-      })
-
-    socket =
-      socket
-      |> put_flash(:info, "AI assistant settings updated successfully")
-
-    {:noreply, assign(socket, section: section)}
-  end
-
-  def handle_event("toggle_triggers", _, socket) do
-    section = socket.assigns.section
-    triggers_enabled = section.triggers_enabled
-
-    {:ok, section} =
-      Oli.Delivery.Sections.update_section(section, %{triggers_enabled: !triggers_enabled})
-
-    socket =
-      socket
-      |> put_flash(:info, "AI assistant activation settings updated successfully")
-
-    {:noreply, assign(socket, section: section)}
-  end
-
   def handle_event("update_image", _, socket) do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
@@ -690,6 +594,23 @@ defmodule OliWeb.Sections.OverviewView do
     {:noreply, socket}
   end
 
+  # Generic flash handler for child LiveComponents
+  def handle_info({:flash, level, message}, socket) do
+    {:noreply, put_flash(socket, level, message)}
+  end
+
+  # Component sync handlers — delegated to shared helpers
+  def handle_info({:section_updated, %Section{} = updated}, socket),
+    do: {:noreply, SectionDefaultsHelpers.handle_section_updated(socket, :section, updated)}
+
+  def handle_info({:notes_count_updated, count}, socket),
+    do: {:noreply, SectionDefaultsHelpers.handle_notes_count_updated(socket, count)}
+
+  def handle_info({:collab_space_config_updated, config, root_sr}, socket),
+    do:
+      {:noreply,
+       SectionDefaultsHelpers.handle_collab_space_config_updated(socket, config, root_sr)}
+
   def handle_info({:scoped_feature_updated, feature_name, enabled, _source}, socket) do
     action = if enabled, do: "enabled", else: "disabled"
     message = "Feature '#{feature_name}' #{action} successfully"
@@ -706,42 +627,13 @@ defmodule OliWeb.Sections.OverviewView do
     {:noreply, put_flash(socket, level, message)}
   end
 
-  attr :section, Section
-
-  def assistant_buttons(assigns) do
-    ~H"""
-    <div>
-      <div class="flex py-2 mb-2">
-        <div>Enable AI Assistant</div>
-        <.toggle_switch
-          id="toggle_assistant_switch"
-          class="ml-4"
-          checked={@section.assistant_enabled}
-          on_toggle="toggle_assistant"
-          name="toggle_assistant"
-        />
-      </div>
-      <div class="flex py-2 mb-2">
-        <div>Enable AI Activation Points</div>
-        <.toggle_switch
-          id="toggle_triggers_switch"
-          class="ml-4"
-          checked={@section.triggers_enabled}
-          on_toggle="toggle_triggers"
-          name="toggle_triggers"
-        />
-      </div>
-    </div>
-    """
-  end
-
   defp ext(entry) do
     [ext | _] = MIME.extensions(entry.client_type)
     ext
   end
 
   defp is_content_admin?(%Oli.Accounts.Author{} = user) do
-    Oli.Accounts.has_admin_role?(user, :content_admin)
+    Oli.Accounts.at_least_content_admin?(user)
   end
 
   defp is_content_admin?(_), do: false

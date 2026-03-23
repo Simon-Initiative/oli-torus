@@ -21,7 +21,39 @@ defmodule OliWeb.Sections.EditView do
   alias Oli.Branding.CustomLabels
   alias Oli.Institutions
 
-  defp set_breadcrumbs(type, section) do
+  on_mount OliWeb.LiveSessionPlugs.SetRouteName
+
+  defp set_breadcrumbs(_type, %{type: :blueprint} = section, socket) do
+    case Map.get(socket.assigns, :route_name) do
+      :workspaces ->
+        project = socket.assigns.project
+
+        [
+          Breadcrumb.new(%{
+            full_title: "Template Overview",
+            link: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}"
+          }),
+          Breadcrumb.new(%{
+            full_title: "Edit Template Details",
+            link: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}/edit"
+          })
+        ]
+
+      _ ->
+        [
+          Breadcrumb.new(%{
+            full_title: "Template Overview",
+            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
+          }),
+          Breadcrumb.new(%{
+            full_title: "Edit Template Details",
+            link: ~p"/authoring/products/#{section.slug}/edit"
+          })
+        ]
+    end
+  end
+
+  defp set_breadcrumbs(type, section, _socket) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
     |> breadcrumb(section)
   end
@@ -66,12 +98,20 @@ defmodule OliWeb.Sections.EditView do
            institutions: available_institutions,
            changeset: Sections.change_section(section),
            is_admin: type == :admin,
-           breadcrumbs: set_breadcrumbs(type, section),
+           is_blueprint: section.type == :blueprint,
+           mount_type: type,
            section: section,
            labels: labels,
            base_project: base_project
          )}
     end
+  end
+
+  def handle_params(_params, _url, socket) do
+    section = socket.assigns.section
+    type = socket.assigns.mount_type
+
+    {:noreply, assign(socket, breadcrumbs: set_breadcrumbs(type, section, socket))}
   end
 
   attr(:breadcrumbs, :any)
@@ -88,9 +128,23 @@ defmodule OliWeb.Sections.EditView do
 
     ~H"""
     <title>{@title}</title>
-    <.form as={:section} for={@form} phx-change="validate" phx-submit="save" autocomplete="off">
+    <.form
+      id="section-edit-form"
+      as={:section}
+      for={@form}
+      phx-change="validate"
+      phx-submit="save"
+      autocomplete="off"
+    >
       <Groups.render>
-        <Group.render label="Settings" description="Manage the course section settings">
+        <Group.render
+          label="Settings"
+          description={
+            if @is_blueprint,
+              do: "Manage the template settings",
+              else: "Manage the course section settings"
+          }
+        >
           <MainDetails.render
             form={@form}
             disabled={false}
@@ -107,10 +161,12 @@ defmodule OliWeb.Sections.EditView do
         >
           <StartEnd.render form={@form} disabled={false} is_admin={@is_admin} ctx={@ctx} />
         </Group.render>
-        <%= if @section.open_and_free do %>
-          <OpenFreeSettings.render is_admin={@is_admin} form={@form} disabled={false} ctx={@ctx} />
-        <% else %>
-          <LtiSettings.render section={@section} />
+        <%= if !@is_blueprint do %>
+          <%= if @section.open_and_free do %>
+            <OpenFreeSettings.render is_admin={@is_admin} form={@form} disabled={false} ctx={@ctx} />
+          <% else %>
+            <LtiSettings.render section={@section} />
+          <% end %>
         <% end %>
         <PaywallSettings.render form={@form} disabled={!@is_admin} />
         <ContentSettings.render form={@form} />
@@ -140,9 +196,12 @@ defmodule OliWeb.Sections.EditView do
       |> convert_dates(socket.assigns.ctx)
       |> decode_welcome_title()
 
+    save_message =
+      if socket.assigns.is_blueprint, do: "Template changes saved", else: "Section changes saved"
+
     case Sections.update_section(socket.assigns.section, params) do
       {:ok, section} ->
-        socket = put_flash(socket, :info, "Section changes saved")
+        socket = put_flash(socket, :info, save_message)
 
         {:noreply, assign(socket, section: section, changeset: Sections.change_section(section))}
 
@@ -165,12 +224,15 @@ defmodule OliWeb.Sections.EditView do
         end
       end)
 
+    save_message =
+      if socket.assigns.is_blueprint, do: "Template changes saved", else: "Section changes saved"
+
     case Sections.update_section(socket.assigns.section, %{customizations: params}) do
       {:ok, section} ->
         # we need to update the order container labels on the cache
         SectionCache.clear(section.slug, [:ordered_container_labels])
 
-        socket = put_flash(socket, :info, "Section changes saved")
+        socket = put_flash(socket, :info, save_message)
 
         {:noreply,
          assign(socket,

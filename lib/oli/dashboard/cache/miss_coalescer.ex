@@ -35,13 +35,13 @@ defmodule Oli.Dashboard.Cache.MissCoalescer do
   end
 
   @doc "Publishes a coalesced result for all waiters."
-  @spec publish(GenServer.server(), coalesce_key(), {:ok, map()} | {:error, term()}) :: :ok
+  @spec publish(GenServer.server(), coalesce_key(), {:ok, term()} | {:error, term()}) :: :ok
   def publish(coalescer, key, result) do
     GenServer.cast(coalescer, {:publish, key, result})
   end
 
   @doc "Waits for published producer result for a waiter claim ref."
-  @spec await(wait_ref(), non_neg_integer()) :: {:ok, map()} | {:error, term()}
+  @spec await(wait_ref(), non_neg_integer()) :: {:ok, term()} | {:error, term()}
   def await(wait_ref, timeout_ms) when is_integer(timeout_ms) and timeout_ms >= 0 do
     receive do
       {@result_tag, ^wait_ref, result} -> result

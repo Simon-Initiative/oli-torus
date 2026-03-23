@@ -21,6 +21,16 @@ Core design principles for Torus:
 - treat accessibility and responsive behavior as first-class design requirements, not late polish
 - keep implementation aligned with approved design intent, but raise mismatches or usability issues early rather than silently diverging
 
+## Torus UI Skill
+
+Torus keeps a local `implement_ui` skill for Figma-driven UI implementation work. This skill is Torus-specific and is not part of the shared Harness skill set.
+
+Use it as supporting input when a Jira ticket or user request includes Figma links or another concrete design source and the task requires implementation work that should stay aligned with approved visual design. It should inform token mapping, icon sourcing, reusable component decisions, and file targets before coding begins.
+
+When a Torus implementation ticket includes Figma links or another concrete UI design source, `implement_ui` should be considered before coding starts.
+
+When a Torus feature is being specced from a ticket that already includes Figma links or another concrete UI design source, `implement_ui` should also be considered during spec creation so the feature pack captures the relevant visual-system decisions early.
+
 ## Accessibility And Responsiveness
 
 Torus values accessible, responsive applications. UI changes should preserve or improve:
