@@ -22,6 +22,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   def render(assigns) do
     assigns =
       assigns
+      |> assign(:excluded_recipient_students, excluded_recipient_students(assigns))
+      |> assign(:excluded_recipient_count, excluded_recipient_count(assigns))
       |> assign(:send_disabled, send_disabled?(assigns))
 
     ~H"""
@@ -93,6 +95,21 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 </button>
               </div>
             </div>
+            <p
+              :if={@excluded_recipient_count > 0}
+              class="text-sm leading-5 text-Text-text-low-alpha"
+            >
+              <span
+                class="cursor-pointer underline decoration-dotted underline-offset-2"
+                title={excluded_recipient_names(@excluded_recipient_students)}
+                tabindex="0"
+              >
+                {excluded_recipient_subject(@excluded_recipient_count)}
+              </span>
+              <span>
+                {excluded_recipient_message_suffix(@excluded_recipient_count, @recipient_students)}
+              </span>
+            </p>
           </div>
 
           <div class="space-y-1">
@@ -265,10 +282,44 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     |> length()
   end
 
+  defp excluded_recipient_students(assigns) do
+    assigns
+    |> Map.get(:students, [])
+    |> Enum.reject(&(is_binary(&1.email) and String.trim(&1.email) != ""))
+  end
+
+  defp excluded_recipient_count(assigns) do
+    assigns
+    |> excluded_recipient_students()
+    |> length()
+  end
+
   defp send_disabled?(assigns) do
     valid_recipient_count(assigns.recipient_students) == 0 or
       String.trim(assigns.subject) == "" or
       String.trim(assigns.body) == ""
+  end
+
+  defp excluded_recipient_subject(1), do: "1 selected student"
+
+  defp excluded_recipient_subject(excluded_count), do: "#{excluded_count} selected students"
+
+  defp excluded_recipient_message_suffix(1, []),
+    do: " does not have an associated email."
+
+  defp excluded_recipient_message_suffix(_excluded_count, []),
+    do: " do not have associated email addresses."
+
+  defp excluded_recipient_message_suffix(1, _recipient_students),
+    do: " does not have an associated email and will not receive this message."
+
+  defp excluded_recipient_message_suffix(_excluded_count, _recipient_students),
+    do: " do not have associated email addresses and will not receive this message."
+
+  defp excluded_recipient_names(excluded_recipient_students) do
+    excluded_recipient_students
+    |> Enum.map(&Map.get(&1, :display_name, "Unknown student"))
+    |> Enum.join(", ")
   end
 
   defp temporary_default_subject(bucket_id) do
