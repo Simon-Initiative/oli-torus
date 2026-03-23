@@ -352,7 +352,9 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
             variant_classes(@variant, @muted, @disabled),
             @class
           ]}
-          aria-label={aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)}
+          aria-label={
+            aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)
+          }
           aria-expanded={@aria_expanded}
           title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
           disabled={@disabled}
@@ -379,7 +381,9 @@ defmodule OliWeb.Components.DesignTokens.Primitives.Button do
             variant_classes(@variant, @muted, @disabled),
             @class
           ]}
-          aria-label={aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)}
+          aria-label={
+            aria_label_text(@text_behavior, @rest["aria-label"], truncate_fallback_label_text)
+          }
           aria-disabled={to_string(@disabled)}
           title={title_text(@text_behavior, @rest["title"], truncate_fallback_label_text)}
           tabindex={if @disabled, do: "-1", else: @rest["tabindex"]}
