@@ -38,7 +38,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   @impl true
   def render(%{app_params: _app_params} = assigns) do
     ~H"""
-    <div id="react_to_live_view" phx-hook="ReactToLiveView"></div>
+    <div id="react_to_live_view" phx-hook="ReactToLiveView" phx-update="ignore"></div>
     <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <div id="editor" class="container">
         {React.component(@ctx, "Components.Authoring", @app_params, id: "authoring_editor")}
@@ -50,7 +50,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
   def render(assigns) do
     ~H"""
-    <div id="react_to_live_view" phx-hook="ReactToLiveView"></div>
+    <div id="react_to_live_view" phx-hook="ReactToLiveView" phx-update="ignore"></div>
     <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <%= if @is_admin? do %>
         <div
@@ -249,12 +249,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
         {:noreply, socket}
 
       author_id == current_author.id ->
-        {:noreply, refresh_title_editable(socket)}
+        {:noreply,
+         socket
+         |> assign(:lock_holder_id, current_author.id)
+         |> assign(:lock_holder_email, current_author.email)
+         |> refresh_title_editable()}
 
       true ->
         if socket.assigns.is_advanced_authoring do
           {:noreply,
            socket
+           |> assign(:lock_holder_id, author_id)
+           |> assign(:lock_holder_email, nil)
            |> assign(:adaptive_read_only, true)
            |> assign(:lock_controls_enabled, false)
            |> assign(:title_editable, false)
@@ -262,9 +268,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
         else
           {:noreply,
            socket
+           |> assign(:lock_holder_id, author_id)
+           |> assign(:lock_holder_email, nil)
            |> assign(:title_editable, false)
            |> assign(:title_editing, false)}
         end
+    end
+  end
+
+  def handle_info(
+        {:lock_released, publication_id, resource_id},
+        %{assigns: %{context: context}} = socket
+      ) do
+    cond do
+      publication_id != socket.assigns.unpublished_publication_id ->
+        {:noreply, socket}
+
+      resource_id != context.resourceId ->
+        {:noreply, socket}
+
+      true ->
+        {:noreply,
+         socket
+         |> assign(:lock_holder_id, nil)
+         |> assign(:lock_holder_email, nil)
+         |> refresh_title_editable()}
     end
   end
 
@@ -377,25 +405,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
   def read_only_toggle(assigns) do
     ~H"""
-    <form id="adaptive_read_only_toggle" phx-change="toggle_adaptive_read_only" class="mb-0">
-      <label class={[
-        "mb-0 inline-flex items-center gap-2",
-        if(@enabled, do: "cursor-pointer", else: "cursor-not-allowed opacity-60")
-      ]}>
-        <span class="text-sm font-semibold text-[#111827] dark:text-[#F5F5F5]">Read only</span>
-        <input
-          type="checkbox"
-          name="adaptive_read_only"
-          class="sr-only peer"
-          role="switch"
-          aria-checked={to_string(@adaptive_read_only)}
-          checked={@adaptive_read_only}
-          disabled={!@enabled}
-        />
-        <div class="relative h-6 w-11 rounded-full bg-gray-200 transition-colors duration-300 ease-in-out after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-transform after:duration-300 after:ease-in-out after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:bg-gray-700 dark:peer-focus:ring-primary-800 dark:border-gray-600">
-        </div>
-      </label>
-    </form>
+    <div>
+      <form id="adaptive_read_only_toggle" phx-change="toggle_adaptive_read_only" class="mb-0">
+        <label class={[
+          "mb-0 inline-flex items-center gap-2",
+          if(@enabled, do: "cursor-pointer", else: "cursor-not-allowed opacity-60")
+        ]}>
+          <span class="text-sm font-semibold text-[#111827] dark:text-[#F5F5F5]">Read only</span>
+          <input
+            type="checkbox"
+            name="adaptive_read_only"
+            class="sr-only peer"
+            role="switch"
+            aria-checked={to_string(@adaptive_read_only)}
+            checked={@adaptive_read_only}
+            disabled={!@enabled}
+          />
+          <div class="relative h-6 w-11 rounded-full bg-gray-200 transition-colors duration-300 ease-in-out after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-transform after:duration-300 after:ease-in-out after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:bg-gray-700 dark:peer-focus:ring-primary-800 dark:border-gray-600">
+          </div>
+        </label>
+      </form>
+    </div>
     """
   end
 
@@ -480,13 +510,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     all_scripts = content.part_scripts ++ content.scripts ++ target_scripts
     all_scripts = all_scripts |> Enum.uniq() |> Enum.map(&"/js/#{&1}")
     unpublished_publication_id = Publishing.get_unpublished_publication_id!(project.id)
+    lock_info = Publishing.retrieve_lock_info([context.resourceId], unpublished_publication_id)
 
-    current_author_holds_lock? =
-      current_author_holds_lock?(
-        unpublished_publication_id,
-        context.resourceId,
-        socket.assigns.current_author.id
-      )
+    %{lock_holder_id: lock_holder_id, lock_holder_email: lock_holder_email} =
+      lock_holder_assigns(lock_info)
 
     socket =
       socket
@@ -497,20 +524,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       |> assign(page_title: context.title)
       |> assign(title_input: context.title)
       |> assign(title_editing: false)
-      |> assign(title_editable: current_author_holds_lock? and not is_advanced_authoring)
+      |> assign(
+        title_editable:
+          current_author_holds_lock?(lock_holder_id, socket.assigns.current_author.id) and
+            not is_advanced_authoring
+      )
       |> assign(adaptive_read_only: is_advanced_authoring)
       |> assign(preview_enabled: false)
       |> assign(unpublished_publication_id: unpublished_publication_id)
+      |> assign(lock_holder_id: lock_holder_id)
+      |> assign(lock_holder_email: lock_holder_email)
       |> assign(
         :lock_controls_enabled,
-        if(
-          is_advanced_authoring,
-          do:
-            initial_lock_controls_enabled(
-              unpublished_publication_id,
-              context.resourceId,
-              socket.assigns.current_author.id
-            ),
+        if(is_advanced_authoring,
+          do: initial_lock_controls_enabled(lock_info, socket.assigns.current_author.id),
           else: false
         )
       )
@@ -519,6 +546,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
     if connected?(socket) do
       Subscriber.subscribe_to_locks_acquired(project_slug, context.resourceId)
+      Subscriber.subscribe_to_locks_released(project_slug, context.resourceId)
     end
 
     {:ok, assign(socket, content)}
@@ -551,6 +579,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
         |> assign(:title_input, revision.title)
         |> assign(:title_editing, false)
         |> assign(:title, "Edit | " <> revision.title)
+        |> assign(:lock_holder_id, author.id)
+        |> assign(:lock_holder_email, author.email)
         |> refresh_title_editable()
         |> update_context_assigns(revision.title, revision.slug)
         |> push_event("authoring_page_title_updated", %{
@@ -645,8 +675,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       "This page is currently being edited by #{user}. You can change the title after the edit lock is released."
 
   defp maybe_put_title_lock_conflict_flash(socket) do
-    case current_lock_info(socket) do
-      [%{author: %{email: email}}] when is_binary(email) ->
+    case socket.assigns.lock_holder_email do
+      email when is_binary(email) ->
         put_flash(socket, :error, lock_conflict_message(email))
 
       _ ->
@@ -669,29 +699,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   defp current_author_holds_lock?(socket) do
-    current_author_holds_lock?(
-      socket.assigns.unpublished_publication_id,
-      socket.assigns.context.resourceId,
-      socket.assigns.current_author.id
-    )
+    current_author_holds_lock?(socket.assigns.lock_holder_id, socket.assigns.current_author.id)
   end
 
-  defp current_author_holds_lock?(publication_id, resource_id, current_author_id) do
-    case Publishing.retrieve_lock_info([resource_id], publication_id) do
-      [%{author: %{id: ^current_author_id}}] ->
-        true
+  defp current_author_holds_lock?(lock_holder_id, current_author_id),
+    do: lock_holder_id == current_author_id
 
-      _ ->
-        false
-    end
+  defp lock_holder_assigns([%{author: %{id: id, email: email}} | _]) do
+    %{lock_holder_id: id, lock_holder_email: email}
   end
 
-  defp current_lock_info(socket) do
-    Publishing.retrieve_lock_info(
-      [socket.assigns.context.resourceId],
-      socket.assigns.unpublished_publication_id
-    )
-  end
+  defp lock_holder_assigns(_), do: %{lock_holder_id: nil, lock_holder_email: nil}
 
   defp normalize_boolean(value) do
     case value do
@@ -703,8 +721,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     end
   end
 
-  defp initial_lock_controls_enabled(publication_id, resource_id, current_author_id) do
-    case Publishing.retrieve_lock_info([resource_id], publication_id) do
+  defp initial_lock_controls_enabled(lock_info, current_author_id) do
+    case lock_info do
       [] -> true
       [%{author: %{id: ^current_author_id}}] -> true
       _ -> false

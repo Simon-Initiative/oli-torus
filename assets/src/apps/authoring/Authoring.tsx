@@ -56,6 +56,16 @@ export interface AuthoringProps {
 }
 
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
+  const {
+    paths,
+    isAdmin,
+    projectSlug,
+    revisionSlug,
+    partComponentTypes,
+    activityTypes,
+    content,
+    resourceId,
+  } = props;
   const dispatch = useDispatch();
   const initializedRevisionRef = useRef<string | null>(null);
   const initializedResourceIdRef = useRef<number | undefined>(undefined);
@@ -205,19 +215,28 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
   useEffect(() => {
     const appConfig: AppConfig = {
-      paths: props.paths,
-      isAdmin: props.isAdmin,
-      projectSlug: props.projectSlug,
-      revisionSlug: props.revisionSlug,
+      paths,
+      isAdmin,
+      projectSlug,
+      revisionSlug,
       allowTriggers,
-      partComponentTypes: props.partComponentTypes,
-      activityTypes: props.activityTypes,
-      allObjectives: props.content.allObjectives || [],
-      applicationMode:
-        props.content.content?.custom?.contentMode === 'flowchart' ? 'flowchart' : 'expert',
+      partComponentTypes,
+      activityTypes,
+      allObjectives: content.allObjectives || [],
+      applicationMode: content.content?.custom?.contentMode === 'flowchart' ? 'flowchart' : 'expert',
     };
     dispatch(setInitialConfig(appConfig));
-  }, [allowTriggers, dispatch, props]);
+  }, [
+    activityTypes,
+    allowTriggers,
+    content,
+    dispatch,
+    isAdmin,
+    partComponentTypes,
+    paths,
+    projectSlug,
+    revisionSlug,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -231,7 +250,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         return;
       }
 
-      if (initializedRevisionRef.current === props.revisionSlug) {
+      if (initializedRevisionRef.current === revisionSlug) {
         if (!cancelled) {
           setIsLoading(false);
           setIsAppVisible(true);
@@ -241,10 +260,10 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
       if (
         initializedResourceIdRef.current !== undefined &&
-        initializedResourceIdRef.current === props.resourceId
+        initializedResourceIdRef.current === resourceId
       ) {
         if (!cancelled) {
-          initializedRevisionRef.current = props.revisionSlug;
+          initializedRevisionRef.current = revisionSlug;
           setIsLoading(false);
           setIsAppVisible(true);
         }
@@ -255,23 +274,23 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         setIsLoading(true);
       }
 
-      if (props.content) {
+      if (content) {
         const appConfig = {
-          paths: props.paths,
-          isAdmin: props.isAdmin,
-          projectSlug: props.projectSlug,
-          revisionSlug: props.revisionSlug,
+          paths,
+          isAdmin,
+          projectSlug,
+          revisionSlug,
           allowTriggers,
-          partComponentTypes: props.partComponentTypes,
-          activityTypes: props.activityTypes,
+          partComponentTypes,
+          activityTypes,
         };
 
-        await dispatch(initializeFromContext({ context: props.content, config: appConfig }));
+        await dispatch(initializeFromContext({ context: content, config: appConfig }));
       }
 
       if (!cancelled) {
-        initializedRevisionRef.current = props.revisionSlug;
-        initializedResourceIdRef.current = props.resourceId;
+        initializedRevisionRef.current = revisionSlug;
+        initializedResourceIdRef.current = resourceId;
         setIsAppVisible(true);
         setIsLoading(false);
       }
@@ -282,7 +301,20 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     return () => {
       cancelled = true;
     };
-  }, [allowTriggers, props, hasEditingLock, isReadOnly, dispatch]);
+  }, [
+    activityTypes,
+    allowTriggers,
+    content,
+    dispatch,
+    hasEditingLock,
+    isAdmin,
+    isReadOnly,
+    partComponentTypes,
+    paths,
+    projectSlug,
+    resourceId,
+    revisionSlug,
+  ]);
 
   useEffect(() => {
     const editable = hasEditingLock && !isReadOnly;
