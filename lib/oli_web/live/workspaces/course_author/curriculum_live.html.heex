@@ -311,23 +311,29 @@
                     </div>
                     <div class="mb-2 flex items-center gap-1">
                       <span>Simple Author</span>
-                      <span
+                      <button
+                        type="button"
                         id="simple_author_tooltip"
                         title="Easily build adaptive lessons using templates, simplified interactions, and conditioning."
                         phx-hook="TooltipInit"
+                        aria-label="Simple Author information"
+                        class="inline-flex items-center border-0 bg-transparent p-0 text-gray-500"
                       >
                         <i class="fa-solid fa-circle-info text-gray-500"></i>
-                      </span>
+                      </button>
                     </div>
                     <div class="flex items-center gap-1">
                       <span>Advanced Author</span>
-                      <span
+                      <button
+                        type="button"
                         id="advanced_author_tooltip"
                         title="Build complex adaptive lessons using extended logic rules and CSS editing."
                         phx-hook="TooltipInit"
+                        aria-label="Advanced Author information"
+                        class="inline-flex items-center border-0 bg-transparent p-0 text-gray-500"
                       >
                         <i class="fa-solid fa-circle-info text-gray-500"></i>
-                      </span>
+                      </button>
                     </div>
                   </div>
                 <% end %>

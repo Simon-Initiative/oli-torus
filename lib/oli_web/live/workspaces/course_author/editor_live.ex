@@ -357,9 +357,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
                     </div>
                   </.form>
                 <% else %>
-                  <span style="display: inline-block; white-space: normal; text-align: left; font-weight: normal; font-size: 1.5rem;">
+                  <h1 style="display: inline-block; white-space: normal; text-align: left; font-weight: normal; font-size: 1.5rem; margin: 0;">
                     {@title}
-                  </span>
+                  </h1>
                   <button
                     type="button"
                     class={[

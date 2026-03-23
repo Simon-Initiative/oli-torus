@@ -64,7 +64,11 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
             }
           >
             <span>
-              <button className="px-2 btn btn-link" onClick={handleScoringOverviewClick}>
+              <button
+                className="px-2 btn btn-link"
+                onClick={handleScoringOverviewClick}
+                aria-label="Scoring Overview"
+              >
                 <i
                   className="fa fa-star"
                   style={{
@@ -91,6 +95,7 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
               <span>
                 <button
                   className="px-2 btn btn-link"
+                  aria-label="Revision History"
                   onClick={(e) => {
                     e.stopPropagation();
                     // open revistion history in same window
@@ -122,7 +127,11 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
               }
             >
               <span>
-                <button className="px-2 btn btn-link" onClick={props.onToggleExport}>
+                <button
+                  className="px-2 btn btn-link"
+                  onClick={props.onToggleExport}
+                  aria-label="Template Export"
+                >
                   <i
                     className="fa fa-file-export"
                     style={{

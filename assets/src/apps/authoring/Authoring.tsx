@@ -69,7 +69,11 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
   const initializedRevisionRef = useRef<string | null>(null);
   const initializedResourceIdRef = useRef<number | undefined>(undefined);
-  const previewRequestRef = useRef<{ url: string; windowName: string } | null>(null);
+  const previewRequestRef = useRef<{
+    url: string;
+    windowName: string;
+    previewWindow: Window | null;
+  } | null>(null);
   const hasEditingLockRef = useRef(false);
   const isUnloadingRef = useRef(false);
   const allowTriggers = props.content.optionalContentTypes?.triggers === true;
@@ -130,6 +134,20 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     bottom: bottomPanelState,
   };
   const [sidebarExpanded, setSidebarExpanded] = useState(props.initialSidebarExpanded);
+
+  const openPreviewWindow = (
+    url: string,
+    windowName: string,
+    previewWindow: Window | null = null,
+  ) => {
+    if (previewWindow && !previewWindow.closed) {
+      previewWindow.location.href = url;
+      previewWindow.focus();
+      return;
+    }
+
+    window.open(url, windowName);
+  };
 
   const handleSidebarExpanded = () => {
     setSidebarExpanded((prev) => !prev);
@@ -386,22 +404,23 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [dispatch]);
 
   useEffect(() => {
-    const openPreviewWindow = (url: string, windowName: string) => {
-      window.open(url, windowName);
-    };
-
     const onPreviewRequested = async (event: Event) => {
       const detail = (event as CustomEvent).detail as {
         url: string;
         window_name: string;
       };
 
-      previewRequestRef.current = { url: detail.url, windowName: detail.window_name };
-
       if (!isFlowchartMode) {
         openPreviewWindow(detail.url, detail.window_name);
         return;
       }
+
+      const previewWindow = window.open('', detail.window_name);
+      previewRequestRef.current = {
+        url: detail.url,
+        windowName: detail.window_name,
+        previewWindow,
+      };
 
       await dispatch(verifyFlowchartLesson({}) as any);
 
@@ -410,11 +429,14 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       );
 
       if (nextInvalidScreens.length > 0) {
+        if (previewWindow && !previewWindow.closed) {
+          previewWindow.close();
+        }
         setInvalidScreens(nextInvalidScreens);
         return;
       }
 
-      openPreviewWindow(detail.url, detail.window_name);
+      openPreviewWindow(detail.url, detail.window_name, previewWindow);
     };
 
     window.addEventListener('phx:authoring_preview_requested', onPreviewRequested);
@@ -423,7 +445,12 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
   const onAcceptInvalidPreview = () => {
     if (previewRequestRef.current) {
-      window.open(previewRequestRef.current.url, previewRequestRef.current.windowName);
+      openPreviewWindow(
+        previewRequestRef.current.url,
+        previewRequestRef.current.windowName,
+        previewRequestRef.current.previewWindow,
+      );
+      previewRequestRef.current = null;
     }
     setInvalidScreens([]);
   };
@@ -474,7 +501,10 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
             <InvalidScreenWarning
               screens={invalidScreens}
               onAccept={onAcceptInvalidPreview}
-              onCancel={() => setInvalidScreens([])}
+              onCancel={() => {
+                previewRequestRef.current = null;
+                setInvalidScreens([]);
+              }}
             />
           )}
 
