@@ -1,6 +1,7 @@
 defmodule OliWeb.Components.Delivery.Students.EmailModal do
   use OliWeb, :live_component
 
+  alias Oli.Delivery.EmailSender
   alias OliWeb.Components.Modal
   alias OliWeb.Common.Utils
   alias Phoenix.LiveView.JS
@@ -199,10 +200,10 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
         |> Oli.Accounts.get_user_emails_by_ids()
         |> Enum.reject(&is_nil/1)
 
-      send_student_emails(
+      EmailSender.deliver_text_emails(
         student_emails,
+        "Note from your #{socket.assigns.section_title} Instructor #{socket.assigns.instructor_email}",
         socket.assigns.email_message,
-        socket.assigns.section_title,
         socket.assigns.instructor_email,
         socket.assigns[:instructor_name] || "Instructor"
       )
@@ -220,28 +221,6 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
   def handle_event("close_email_modal", _params, socket) do
     send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
     {:noreply, socket}
-  end
-
-  defp send_student_emails(
-         student_emails,
-         message,
-         course_name,
-         instructor_email,
-         instructor_name
-       ) do
-    student_emails
-    |> Enum.map(fn student_email ->
-      Oli.Email.create_text_email(
-        student_email,
-        "Note from your #{course_name} Instructor #{instructor_email}",
-        message
-      )
-      # Note: We don't set FROM to instructor's email because email providers like
-      # Amazon SES require verified sender addresses. The reply_to header ensures
-      # replies go back to the instructor.
-      |> Oli.Email.maybe_reply_to({instructor_name, instructor_email})
-    end)
-    |> Oli.Mailer.deliver_later()
   end
 
   defp this_email_will_send_message([selected_student_id], students) do
