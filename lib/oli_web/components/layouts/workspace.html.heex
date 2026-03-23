@@ -97,6 +97,7 @@
       is_advanced_authoring={true}
       preview_enabled={assigns[:preview_enabled]}
       lock_controls_enabled={assigns[:lock_controls_enabled]}
+      authoring_notice={assigns[:authoring_notice]}
     />
     <div class={OliWeb.Workspaces.Utils.maybe_add_padding(assigns[:uri])}>
       <div class="-mt-[28px]">
@@ -119,6 +120,7 @@
         is_advanced_authoring={false}
         preview_enabled={assigns[:preview_enabled]}
         lock_controls_enabled={false}
+        authoring_notice={assigns[:authoring_notice]}
       />
 
       {@inner_content}

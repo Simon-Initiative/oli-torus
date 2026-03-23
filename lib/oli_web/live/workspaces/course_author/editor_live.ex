@@ -124,6 +124,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
     {:noreply,
      socket
+     |> assign(:authoring_notice, nil)
      |> assign(:adaptive_read_only, readonly)
      |> refresh_title_editable(readonly)}
   end
@@ -144,7 +145,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   def handle_event("authoring_readonly_edit_blocked", %{"message" => message}, socket) do
-    {:noreply, put_flash(socket, :info, message)}
+    {:noreply, assign(socket, :authoring_notice, message)}
+  end
+
+  def handle_event("dismiss_authoring_notice", _params, socket) do
+    {:noreply, assign(socket, :authoring_notice, nil)}
   end
 
   def handle_event("authoring_preview_state_changed", %{"enabled" => enabled}, socket) do
@@ -312,6 +317,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   attr(:is_advanced_authoring, :boolean, required: true)
   attr(:preview_enabled, :boolean, required: true)
   attr(:lock_controls_enabled, :boolean, required: true)
+  attr(:authoring_notice, :string, default: nil)
 
   def authoring_header(assigns) do
     ~H"""
@@ -394,6 +400,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
               </div>
             </div>
           </div>
+        </div>
+      </div>
+      <div
+        :if={@authoring_notice}
+        class="pointer-events-none fixed right-4 top-[8.5rem] z-50 max-w-md"
+      >
+        <div class="pointer-events-auto alert alert-info shadow-lg flex flex-row gap-3 items-start mb-0">
+          <div class="flex-1">
+            {@authoring_notice}
+          </div>
+          <button
+            type="button"
+            class="close"
+            aria-label="Close"
+            phx-click="dismiss_authoring_notice"
+          >
+            <i class="fa-solid fa-xmark fa-lg"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -524,6 +548,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       |> assign(page_title: context.title)
       |> assign(title_input: context.title)
       |> assign(title_editing: false)
+      |> assign(authoring_notice: nil)
       |> assign(
         title_editable:
           current_author_holds_lock?(lock_holder_id, socket.assigns.current_author.id) and

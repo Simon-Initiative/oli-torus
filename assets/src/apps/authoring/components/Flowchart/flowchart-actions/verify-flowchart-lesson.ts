@@ -146,19 +146,28 @@ const verifyStartScreenExists = async (getState: () => unknown, dispatch: any) =
   const hasNonEndScreen = screens.some(
     (screen) => screen.authoring?.flowchart?.screenType !== 'end_screen',
   );
-
-  const firstActivity = sequence.find(
-    (c) => !!c.resourceId && c.authoring?.flowchart?.screenType !== 'end_screen',
+  const welcomeScreen = screens.find(
+    (screen) => screen.authoring?.flowchart?.screenType === 'welcome_screen',
   );
-  const firstScreen = screens.find((s) => s.resourceId === firstActivity?.resourceId);
-  if (!firstScreen && !hasNonEndScreen) {
-    console.info('Creating welcome screen');
-    await dispatch(
-      addFlowchartScreen({
-        title: 'Welcome Screen',
-        screenType: 'welcome_screen',
-      }),
-    );
+
+  const firstScreen =
+    sequence
+      .map((entry) => screens.find((screen) => screen.resourceId === entry.resourceId))
+      .find((screen) => screen && screen.authoring?.flowchart?.screenType !== 'end_screen') ||
+    welcomeScreen;
+  if (!firstScreen) {
+    if (!hasNonEndScreen) {
+      console.info('Creating welcome screen');
+      await dispatch(
+        addFlowchartScreen({
+          title: 'Welcome Screen',
+          screenType: 'welcome_screen',
+        }),
+      );
+      return;
+    }
+
+    throw new Error('Flowchart lesson has non-end screens but no valid start screen');
   }
 };
 
