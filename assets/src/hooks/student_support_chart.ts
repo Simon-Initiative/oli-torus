@@ -305,6 +305,10 @@ async function renderChart(hook: Hook<ChartHookState>) {
       renderer: 'svg',
     });
 
+    target.style.display = 'flex';
+    target.style.flexDirection = 'column';
+    target.style.alignItems = 'center';
+    target.style.justifyContent = 'center';
     target.style.width = '100%';
     target.style.maxWidth = '100%';
     target.style.marginLeft = 'auto';
