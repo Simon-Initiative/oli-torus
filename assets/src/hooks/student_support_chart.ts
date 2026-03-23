@@ -23,6 +23,7 @@ type ChartThemeStyles = {
 };
 type ChartColorEncoding = {
   scale?: {
+    type?: string;
     domain?: string[];
     range?: string[];
   } | null;
