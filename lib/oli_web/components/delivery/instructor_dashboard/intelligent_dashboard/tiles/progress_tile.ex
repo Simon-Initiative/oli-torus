@@ -25,7 +25,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       |> assign(:projected, projected)
       |> assign(:chart, chart)
       |> assign(:threshold_options, @threshold_options)
-      |> assign(:page_announcement_id, "progress-page-announcement-#{assigns.id}")
 
     ~H"""
     <article
@@ -35,8 +34,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       <div class="mb-4 flex items-start justify-between gap-4">
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <span class="inline-flex h-5 w-5 items-center justify-center rounded-sm border border-Border-border-default text-[10px] font-bold text-Text-text-high">
-              /
+            <span class="inline-flex h-5 w-5 items-center justify-center text-Text-text-high">
+              <Icons.progress_arrow />
             </span>
             <h3 class="text-lg font-semibold leading-6 text-Text-text-high">Progress</h3>
           </div>
@@ -54,11 +53,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
       <%= case @projected.empty_state do %>
         <% %{type: :no_scope_children} -> %>
-          <div class="rounded-lg border border-Border-border-subtle bg-Background-bg-primary p-5 text-sm leading-6 text-Text-text-low">
+          <div class="rounded-lg border border-Border-border-subtle bg-Surface-surface-primary p-5 text-sm leading-6 text-Text-text-low">
             No scoped content is available for this selection yet.
           </div>
         <% %{type: :no_students} -> %>
-          <div class="rounded-lg border border-Border-border-subtle bg-Background-bg-primary p-5 text-sm leading-6 text-Text-text-low">
+          <div class="rounded-lg border border-Border-border-subtle bg-Surface-surface-primary p-5 text-sm leading-6 text-Text-text-low">
             No students are included in this view yet, so the chart is not rendered.
           </div>
         <% _ -> %>
@@ -69,17 +68,19 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               </p>
 
               <div class="flex flex-wrap items-center gap-3">
-                <div class="group relative flex items-center gap-1">
+                <div class="flex items-center gap-1">
                   <span class="text-sm text-Text-text-high">Completion Threshold</span>
-                  <button
-                    type="button"
-                    class="rounded-full text-Text-text-low focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
-                    aria-label="Completion threshold help"
-                  >
-                    <Icons.info />
-                  </button>
-                  <div class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden w-56 -translate-x-1/2 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block">
-                    Adjust the percentage considered complete for each visible content item.
+                  <div class="group relative inline-flex items-center justify-center">
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center rounded-full text-Text-text-low focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
+                      aria-label="Completion threshold help"
+                    >
+                      <Icons.info />
+                    </button>
+                    <div class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden w-56 -translate-x-1/2 rounded-sm border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-xs leading-4 text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block">
+                      Adjust the percentage considered complete for each visible content item.
+                    </div>
                   </div>
                 </div>
 
@@ -93,7 +94,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                         patch={tile_patch_path(assigns, %{"threshold" => threshold, "page" => 1})}
                         data-threshold={threshold}
                         class={[
-                          "rounded-md px-2 py-1 text-sm",
+                          "rounded-md px-2 py-1 text-sm no-underline hover:no-underline hover:text-current",
                           threshold == @projected.completion_threshold &&
                             "bg-Surface-surface-secondary font-semibold text-Text-text-high",
                           threshold != @projected.completion_threshold && "text-Text-text-low"
@@ -109,29 +110,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
             <div
               id={"progress-chart-shell-#{@id}"}
-              class="rounded-lg border border-Border-border-subtle bg-Background-bg-primary p-4"
+              class="rounded-lg bg-inherit p-4"
             >
-              <div class="mb-3 flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                  <p class="text-sm font-semibold text-Text-text-high">{@projected.axis_label}</p>
-                  <p class="text-xs text-Text-text-low">
-                    Showing page {display_page(@projected.page_window.page)} of {display_page(
-                      @projected.page_window.total_pages
-                    )}
-                  </p>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <div id={@page_announcement_id} aria-live="polite" class="sr-only">
-                    {page_announcement(@projected.page_window)}
-                  </div>
+              <div class="mb-3 flex items-center justify-end">
+                <div class="flex items-center gap-1">
                   <.pagination_button
                     enabled={@projected.page_window.page > 1}
                     patch_path={
                       tile_patch_path(assigns, %{"page" => @projected.page_window.page - 1})
                     }
                     label="Previous page"
-                    icon_rotation="rotate-180"
+                    icon_rotation="rotate-90"
                   />
                   <.pagination_button
                     enabled={@projected.page_window.page < @projected.page_window.total_pages}
@@ -139,25 +128,30 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       tile_patch_path(assigns, %{"page" => @projected.page_window.page + 1})
                     }
                     label="Next page"
-                    icon_rotation=""
+                    icon_rotation="-rotate-90"
                   />
                 </div>
               </div>
 
               <div class="flex gap-4">
-                <div class="flex flex-col items-center justify-center gap-3 pt-10">
-                  <.mode_button
-                    current={@projected.y_axis_mode}
-                    value={:percent}
-                    patch_path={tile_patch_path(assigns, %{"mode" => "percent"})}
-                  />
-                  <.mode_button
-                    current={@projected.y_axis_mode}
-                    value={:count}
-                    patch_path={tile_patch_path(assigns, %{"mode" => "count"})}
-                  />
-                  <div class="pt-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-Text-text-high [writing-mode:vertical-rl] [transform:rotate(180deg)]">
-                    Students
+                <div class="flex flex-col items-center justify-center pt-10">
+                  <div class="flex flex-col items-center gap-0 rounded-[6px] p-1">
+                    <.mode_button
+                      current={@projected.y_axis_mode}
+                      value={:percent}
+                      patch_path={tile_patch_path(assigns, %{"mode" => "percent"})}
+                    />
+                    <.mode_button
+                      current={@projected.y_axis_mode}
+                      value={:count}
+                      patch_path={tile_patch_path(assigns, %{"mode" => "count"})}
+                    />
+                  </div>
+                  <div class="mt-3 flex items-center gap-2 [writing-mode:vertical-rl] [transform:rotate(180deg)]">
+                    <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-[3px] bg-Background-bg-secondary text-[11px] font-semibold text-Text-text-high">
+                      Y
+                    </span>
+                    <span class="text-xs font-semibold text-Text-text-high">Students</span>
                   </div>
                 </div>
 
@@ -246,21 +240,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                         >
                           <%= for item <- @chart.series do %>
                             <div class="relative h-full">
-                              <div class="group pointer-events-auto absolute inset-x-1 bottom-0 top-0">
-                                <button
-                                  type="button"
-                                  class="h-full w-full rounded-md bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
-                                  aria-label={bar_accessible_label(item, @projected)}
-                                >
-                                </button>
+                              <%= if item.bar_height_pct > 0 do %>
                                 <div
-                                  class="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block"
-                                  style={"bottom: calc(#{item.bar_top_pct}% + 12px)"}
+                                  class="group pointer-events-auto absolute inset-x-1 bottom-0"
+                                  style={"height: #{item.bar_height_pct}%"}
                                 >
-                                  <p class="font-semibold">{item.label}</p>
-                                  <p>{item.value_text}</p>
+                                  <button
+                                    type="button"
+                                    class="h-full w-full cursor-default rounded-md bg-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
+                                    aria-label={bar_accessible_label(item, @projected)}
+                                  >
+                                  </button>
+                                  <div class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 hidden -translate-x-1/2 rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs font-semibold text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block">
+                                    {item.hover_value_text}
+                                  </div>
                                 </div>
-                              </div>
+                              <% end %>
                             </div>
                           <% end %>
                         </div>
@@ -287,10 +282,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                       </div>
 
                       <div class="mt-4 flex items-center gap-2 text-xs text-Text-text-high">
-                        <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-[3px] bg-Background-bg-secondary font-semibold text-Text-text-white">
+                        <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-[3px] bg-Background-bg-secondary font-semibold text-Text-text-high">
                           X
                         </span>
-                        <span>{@projected.axis_label}</span>
+                        <span class="font-semibold">{@projected.axis_label}</span>
                       </div>
                     </div>
                   </div>
@@ -314,7 +309,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       data-mode={@value}
       aria-label={"Show #{@value} on the y-axis"}
       class={[
-        "inline-flex h-8 w-8 items-center justify-center rounded-[3px] border text-xs font-bold transition",
+        "inline-flex h-8 w-8 items-center justify-center rounded-[4px] border text-sm font-semibold leading-4 no-underline transition hover:no-underline hover:text-current",
         @current == @value &&
           "border-Text-text-button bg-Text-text-button text-white",
         @current != @value &&
@@ -337,16 +332,24 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       <.link
         patch={@patch_path}
         aria-label={@label}
-        class="inline-flex h-6 w-6 items-center justify-center rounded-[3px] bg-Background-bg-secondary text-Text-text-high"
+        class="inline-flex h-7 w-7 items-center justify-center rounded-[4px] bg-Background-bg-secondary text-Icon-icon-active no-underline transition hover:no-underline focus:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-Fill-Buttons-fill-primary"
       >
-        <Icons.chevron_right class={@icon_rotation} />
+        <Icons.chevron_right
+          width="16"
+          height="16"
+          class={"fill-Icon-icon-active stroke-Icon-icon-active #{@icon_rotation}"}
+        />
       </.link>
     <% else %>
       <span
         aria-hidden="true"
-        class="inline-flex h-6 w-6 items-center justify-center rounded-[3px] bg-Background-bg-secondary text-Text-text-low-alpha"
+        class="inline-flex h-7 w-7 items-center justify-center rounded-[4px] bg-Background-bg-secondary"
       >
-        <Icons.chevron_right class={@icon_rotation} />
+        <Icons.chevron_right
+          width="16"
+          height="16"
+          class={"fill-Fill-Buttons-fill-muted-hover stroke-Fill-Buttons-fill-muted-hover #{@icon_rotation}"}
+        />
       </span>
     <% end %>
     """
@@ -372,7 +375,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   defp chart_view_model(projected) do
-    y_ticks = y_ticks(projected.series, projected.y_axis_mode, projected.class_size)
+    scale_series = Map.get(projected, :series_all, projected.series)
+    y_ticks = y_ticks(scale_series, projected.y_axis_mode, projected.class_size)
     max_value = max(List.first(y_ticks) || 0, 1)
     series = chart_series(projected.series, max_value, projected.y_axis_mode)
 
@@ -397,6 +401,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         short_label: truncate_label(item.label),
         value: item.value,
         value_text: item_value_text(item, y_axis_mode),
+        hover_value_text: hover_value_text(item.value, y_axis_mode),
         order: index,
         bar_top_pct: bar_top_pct,
         bar_height_pct: visible_bar_height_pct(item.value, bar_top_pct)
@@ -548,10 +553,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   defp description_text(_projection), do: "View content students have completed."
 
-  defp page_announcement(%{page: page, total_pages: total_pages}) do
-    "Showing page #{display_page(page)} of #{display_page(total_pages)}."
-  end
-
   defp bar_accessible_label(item, projected) do
     "#{item.label}. #{item.value_text}. Completion threshold #{projected.completion_threshold}%."
   end
@@ -608,6 +609,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp tick_label(value, :percent), do: "#{value}"
   defp tick_label(value, _mode), do: Integer.to_string(value)
 
+  defp hover_value_text(value, :percent), do: "#{Float.round(value, 1)}%"
+  defp hover_value_text(value, _mode), do: Integer.to_string(round(value))
+
   defp truncate_label(label) do
     if String.length(label) > 9 do
       String.slice(label, 0, 7) <> "..."
@@ -618,7 +622,4 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   defp item_value_text(item, :percent), do: "#{item.percent}% of class"
   defp item_value_text(item, _mode), do: "#{item.count} students"
-
-  defp display_page(0), do: 1
-  defp display_page(value), do: value
 end

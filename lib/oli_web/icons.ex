@@ -151,6 +151,36 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: ""
+
+  def progress_arrow(assigns) do
+    ~H"""
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <g clip-path="url(#progress_arrow_clip)">
+        <path
+          d="M15 4.1665L17.5 6.6665M17.5 6.6665L15 9.1665M17.5 6.6665H12.5L6.66667 14.9998H2.5"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="progress_arrow_clip">
+          <rect width="20" height="20" rx="3" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
   attr :class, :string, default: "fill-[#0CAF61] dark:fill-[#12E56A]"
 
   def square_checked(assigns) do

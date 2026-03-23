@@ -54,11 +54,30 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         dashboard_scope: "course"
       )
 
-    assert html =~ "Showing page 2 of 2"
     assert html =~ "Unit 8"
     refute html =~ "Unit 1"
     assert html =~ "% of class"
-    assert html =~ "aria-live=\"polite\""
+    refute html =~ "Showing page 2 of 2"
+  end
+
+  test "keeps the count y-axis scale stable across paginated pages" do
+    html =
+      render_component(ProgressTile,
+        id: "progress_tile",
+        projection: paginated_projection(),
+        tile_state: %{completion_threshold: 100, y_axis_mode: :count, page: 2},
+        params: %{
+          "dashboard_scope" => "course",
+          "tile_progress" => %{"mode" => "count", "page" => "2"}
+        },
+        section_slug: "biology-101",
+        dashboard_scope: "course"
+      )
+
+    assert html =~ ">20<"
+    assert html =~ ">5<"
+    assert html =~ "Unit 8"
+    refute html =~ "Showing page 2 of 2"
   end
 
   defp base_projection do
@@ -135,7 +154,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp paginated_projection do
     %{
       axis_label: "Course Units",
-      class_size: 10,
+      class_size: 30,
       completion_threshold: 100,
       y_axis_mode: :count,
       series_all:
@@ -144,8 +163,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             container_id: idx,
             label: "Unit #{idx}",
             resource_type: :container,
-            bins: %{100 => idx},
-            total: 10,
+            bins: %{100 => if(idx == 1, do: 18, else: idx)},
+            total: 30,
             count: 0,
             percent: 0.0,
             value: 0
