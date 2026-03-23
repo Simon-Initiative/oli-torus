@@ -58,14 +58,14 @@ Achieve a release posture where:
 - Cover both Torus-side protocol handling and real browser-mediated LMS journeys.
 
 ### Story Focus
-1. LTI launch protocol simulator for Torus tool-side launch validation
-2. LTI AGS and grade passback simulator for Torus passback validation
-3. Automated Canvas-to-Torus LTI launch smoke test (Playwright)
-4. Automated Canvas-to-Torus grade passback smoke test (Playwright)
-5. Automated instructor first-launch and course section creation test (Playwright)
-6. Automated LMS-originated learner launch and enrollment-state validation (Playwright)
-7. Automated deep-linking and external-tool launch validation (Playwright)
-8. Automated LTI settings and deployment regression coverage (Playwright)
+1. LTI launch protocol simulator for Torus tool-side launch validation [MER-5368]
+2. LTI AGS and grade passback simulator for Torus passback validation [MER-5392]
+3. Automated Canvas-to-Torus LTI launch smoke test (Playwright) [MER-5394]
+4. Automated Canvas-to-Torus grade passback smoke test (Playwright) [MER-5396]
+5. Automated instructor first-launch and course section creation test (Playwright) [MER-5397]
+6. Automated LMS-originated learner launch and enrollment-state validation (Playwright) [MER-5399]
+7. Automated deep-linking and external-tool launch validation (Playwright) [MER-5401]
+8. Automated LTI settings and deployment regression coverage (Playwright) [MER-5404]
 
 ## Lane 2: Basic Page Authoring
 
@@ -74,13 +74,13 @@ Achieve a release posture where:
 - Cover the authoring behaviors that are partly represented in scenarios today but still require browser validation for confidence.
 
 ### Story Focus
-1. Automated project creation and curriculum bootstrap coverage, including any scenario service extraction needed to make curriculum bootstrap and page-management flows executable below the UI (Playwright)
-2. Automated page creation, edit, save, and reopen coverage (Playwright)
-3. Automated curriculum move, reorder, remove, and duplicate coverage (Playwright)
-4. Automated activity insertion and page composition coverage (Playwright)
-5. Automated objectives, tags, and bank-selection authoring coverage (Playwright)
-6. Automated publication-ready validation of basic authored content (Playwright)
-7. Automated regression coverage for Google Docs import and authoring-side content ingestion (Playwright)
+1. Automated project creation and curriculum bootstrap coverage, including any scenario service extraction needed to make curriculum bootstrap and page-management flows executable below the UI (Playwright) [MER-5406]
+2. Automated page creation, edit, save, and reopen coverage (Playwright) [MER-5407]
+3. Automated curriculum move, reorder, remove, and duplicate coverage (Playwright) [MER-5411]
+4. Automated activity insertion and page composition coverage (Playwright) [MER-5413]
+5. Automated objectives, tags, and bank-selection authoring coverage (Playwright) [MER-5415]
+6. Automated publication-ready validation of basic authored content (Playwright) [MER-5416]
+7. Automated regression coverage for Google Docs import and authoring-side content ingestion (Playwright) [MER-5418]
 
 ## Lane 3: Adaptive Page Authoring
 
@@ -89,13 +89,13 @@ Achieve a release posture where:
 - Cover authoring flows that are distinct from basic page editing and currently live heavily in the client/UI layer.
 
 ### Story Focus
-1. Automated adaptive page creation and author entry coverage (Playwright)
-2. Automated adaptive screen editing and save/reopen coverage (Playwright)
-3. Automated dynamic-link authoring coverage (Playwright)
-4. Automated adaptive trigger and progression-rule authoring coverage, including any required scenario DSL or application-service expansion to express those workflows outside the LiveView layer (Playwright)
-5. Automated adaptive activity configuration coverage (Playwright)
-6. Automated adaptive preview and author-to-preview handoff coverage (Playwright)
-7. Automated adaptive duplication and internal-reference integrity coverage (Playwright)
+1. Automated adaptive page creation and author entry coverage (Playwright) [MER-5420]
+2. Automated adaptive screen editing and save/reopen coverage (Playwright) [MER-5422]
+3. Automated dynamic-link authoring coverage (Playwright) [MER-5424]
+4. Automated adaptive trigger and progression-rule authoring coverage, including any required scenario DSL or application-service expansion to express those workflows outside the LiveView layer (Playwright) [MER-5426]
+5. Automated adaptive activity configuration coverage (Playwright) [MER-5428]
+6. Automated adaptive preview and author-to-preview handoff coverage (Playwright) [MER-5430]
+7. Automated adaptive duplication and internal-reference integrity coverage (Playwright) [MER-5432]
 
 ## Lane 4: Basic Page Delivery and Activity Use
 
@@ -104,15 +104,15 @@ Achieve a release posture where:
 - Prioritize the activity ecosystem and learner flows that have weak or no broad automation today.
 
 ### Story Focus
-1. Automated standard page launch and learner session coverage (Playwright)
-2. Automated multiple choice and short answer delivery regression suite hardening
-3. Automated check-all-that-apply delivery coverage, including any directive expansion needed for scenario-driven learner interaction and assertion support (Playwright)
-4. Automated ordering activity delivery coverage, including any directive expansion needed for scenario-driven learner interaction and assertion support (Playwright)
-5. Automated multi-input activity delivery coverage, including any directive expansion needed for scenario-driven learner interaction and assertion support (Playwright)
-6. Automated file-upload, likert, and discussion-style activity delivery coverage, including any directive expansion needed for scenario-driven learner interaction and assertion support (Playwright)
-7. Automated embedded, image-hotspot, image-coding, logic-lab, and vlab delivery coverage (Playwright)
-8. Automated external-tool activity delivery coverage (Playwright)
-9. Automated learner progress and proficiency assertion coverage for standard delivery (Playwright)
+1. Automated standard page launch and learner session coverage (Playwright) [MER-5434]
+2. Automated multiple choice and short answer delivery regression suite hardening [MER-5436]
+3. Automated check-all-that-apply delivery coverage, including any directive expansion needed for scenario-driven learner interaction and assertion support (Playwright) [MER-5438]
+4. Automated ordering activity delivery coverage, including any directive expansion needed for scenario-driven learner interaction and assertion support (Playwright) [MER-5440]
+5. Automated multi-input activity delivery coverage, including any directive expansion needed for scenario-driven learner interaction and assertion support (Playwright) [MER-5441]
+6. Automated file-upload, likert, and discussion-style activity delivery coverage, including any directive expansion needed for scenario-driven learner interaction and assertion support (Playwright) [MER-5443]
+7. Automated embedded, image-hotspot, image-coding, logic-lab, and vlab delivery coverage (Playwright) [MER-5446]
+8. Automated external-tool activity delivery coverage (Playwright) [MER-5447]
+9. Automated learner progress and proficiency assertion coverage for standard delivery (Playwright) [MER-5449]
 
 ## Lane 5: Adaptive Page Delivery
 
@@ -121,12 +121,12 @@ Achieve a release posture where:
 - Validate adaptive launch, traversal, state transitions, and learner-visible outcomes.
 
 ### Story Focus
-1. Automated adaptive page launch and session bootstrap coverage, including the scenario directives and execution support needed to launch adaptive delivery outside the browser (Playwright)
-2. Automated adaptive page traversal and progression coverage, including the scenario directives and assertions needed to prove adaptive outcomes (Playwright)
-3. Automated adaptive iframe rendering and embedded-content coverage (Playwright)
-4. Automated adaptive scoring and completion-state coverage (Playwright)
-5. Automated adaptive learner-response capture and state-persistence coverage (Playwright)
-6. Automated adaptive preview-to-delivery parity regression coverage (Playwright)
+1. Automated adaptive page launch and session bootstrap coverage, including the scenario directives and execution support needed to launch adaptive delivery outside the browser (Playwright) [MER-5451]
+2. Automated adaptive page traversal and progression coverage, including the scenario directives and assertions needed to prove adaptive outcomes (Playwright) [MER-5453]
+3. Automated adaptive iframe rendering and embedded-content coverage (Playwright) [MER-5455]
+4. Automated adaptive scoring and completion-state coverage (Playwright) [MER-5457]
+5. Automated adaptive learner-response capture and state-persistence coverage (Playwright) [MER-5459]
+6. Automated adaptive preview-to-delivery parity regression coverage (Playwright) [MER-5461]
 
 ## Lane 6: Scheduling, Gating, and Assessment Controls
 
@@ -135,13 +135,13 @@ Achieve a release posture where:
 - Cover the configuration surfaces called out as both scenario gaps and UI-business-logic hotspots, with any needed scenario and service-boundary expansion delivered inside the owning stories.
 
 ### Story Focus
-1. Automated section schedule creation and due-date behavior coverage, including any scenario directives needed for schedule mutation and learner-visible assertions
-2. Automated content gating rule creation and update coverage, including any scenario directives and service extraction needed to move gating workflows below the UI boundary
-3. Automated graded versus ungraded gate eligibility coverage
-4. Automated assessment setting configuration coverage, including any scenario directives and service extraction needed to make assessment-setting workflows scenario-addressable
-5. Automated student exception create, update, and removal coverage, including any scenario directives and service extraction needed to make section-level overrides scenario-addressable
-6. Automated learner visibility and access-behavior assertions under schedule and gating rules
-7. Automated auto-submit and deadline-expiration behavior coverage
+1. Automated section schedule creation and due-date behavior coverage, including any scenario directives needed for schedule mutation and learner-visible assertions [MER-5463]
+2. Automated content gating rule creation and update coverage, including any scenario directives and service extraction needed to move gating workflows below the UI boundary [MER-5465]
+3. Automated graded versus ungraded gate eligibility coverage [MER-5467]
+4. Automated assessment setting configuration coverage, including any scenario directives and service extraction needed to make assessment-setting workflows scenario-addressable [MER-5469]
+5. Automated student exception create, update, and removal coverage, including any scenario directives and service extraction needed to make section-level overrides scenario-addressable [MER-5471]
+6. Automated learner visibility and access-behavior assertions under schedule and gating rules [MER-5473]
+7. Automated auto-submit and deadline-expiration behavior coverage [MER-5475]
 
 ## Lane 7: Graded Assessment Lifecycle and Grade Outcomes
 
@@ -150,13 +150,13 @@ Achieve a release posture where:
 - Cover the score, review, and finalization behaviors that matter directly to release confidence.
 
 ### Story Focus
-1. Automated graded page attempt start coverage, including any scenario directives needed to create and control graded attempts
-2. Automated graded answer submission and score accumulation coverage, including any scenario directives needed for graded submission flows
-3. Automated attempt finalization and review-mode coverage, including any scenario directives and delivery-service extraction needed to prove finalize and review behavior below the UI
-4. Automated late-submit, grace-period, and deadline-expiration coverage
-5. Automated score-as-you-go and batch-scoring coverage
-6. Automated gradebook update and LMS grade-update side-effect coverage
-7. Automated regression suite for graded-practice differences and edge cases
+1. Automated graded page attempt start coverage, including any scenario directives needed to create and control graded attempts [MER-5477]
+2. Automated graded answer submission and score accumulation coverage, including any scenario directives needed for graded submission flows [MER-5479]
+3. Automated attempt finalization and review-mode coverage, including any scenario directives and delivery-service extraction needed to prove finalize and review behavior below the UI [MER-5481]
+4. Automated late-submit, grace-period, and deadline-expiration coverage [MER-5482]
+5. Automated score-as-you-go and batch-scoring coverage [MER-5483]
+6. Automated gradebook update and LMS grade-update side-effect coverage [MER-5484]
+7. Automated regression suite for graded-practice differences and edge cases [MER-5485]
 
 ## Lane 8: Instructor and Student Operational Surfaces
 
@@ -165,13 +165,13 @@ Achieve a release posture where:
 - Cover dashboards, analytics, reporting, and operational section workflows that are meaningful release blockers.
 
 ### Story Focus
-1. Automated instructor dashboard correctness coverage
-2. Automated insights and analytics data-generation coverage
-3. Automated dataset generation and reporting-job coverage
-4. Automated student dashboard, assignments, and schedule-view coverage
-5. Automated onboarding, explorations, and certificate-view coverage
-6. Automated source-material update and publication-diff workflow coverage
-7. Automated enrollment transfer and section-operation workflow coverage, including any scenario directives needed for enrollments and instructor-managed delivery mutations
+1. Automated instructor dashboard correctness coverage [MER-5486]
+2. Automated insights and analytics data-generation coverage [MER-5487]
+3. Automated dataset generation and reporting-job coverage [MER-5488]
+4. Automated student dashboard, assignments, and schedule-view coverage [MER-5489]
+5. Automated onboarding, explorations, and certificate-view coverage [MER-5490]
+6. Automated source-material update and publication-diff workflow coverage [MER-5491]
+7. Automated enrollment transfer and section-operation workflow coverage, including any scenario directives needed for enrollments and instructor-managed delivery mutations [MER-5492]
 
 ## Lane 9: Collaboration and Community Features
 
@@ -180,11 +180,11 @@ Achieve a release posture where:
 - Cover workflows that currently live partly in lesson and community UI state handling.
 
 ### Story Focus
-1. Automated annotation creation, reply, and reaction coverage
-2. Automated lesson-level collaboration visibility and anonymity-rule coverage
-3. Automated discussion participation and moderation coverage
-4. Automated community interaction and participation-state coverage
-5. Automated collaboration regression coverage across delivery contexts
+1. Automated annotation creation, reply, and reaction coverage [MER-5493]
+2. Automated lesson-level collaboration visibility and anonymity-rule coverage [MER-5494]
+3. Automated discussion participation and moderation coverage [MER-5495]
+4. Automated community interaction and participation-state coverage [MER-5496]
+5. Automated collaboration regression coverage across delivery contexts [MER-5497]
 
 ## Lane 10: Commerce, Access, and External Service Gates
 
@@ -193,11 +193,11 @@ Achieve a release posture where:
 - Ensure release validation includes the non-academic workflows that can block delivery.
 
 ### Story Focus
-1. Automated paywall setup and section access-rule coverage
-2. Automated entitlement and purchase-state coverage
-3. Automated payment-provider integration smoke coverage
-4. Automated restricted-access delivery regression coverage
-5. Automated certificate and access-unlock workflow coverage
+1. Automated paywall setup and section access-rule coverage [MER-5498]
+2. Automated entitlement and purchase-state coverage [MER-5499]
+3. Automated payment-provider integration smoke coverage [MER-5500]
+4. Automated restricted-access delivery regression coverage [MER-5501]
+5. Automated certificate and access-unlock workflow coverage [MER-5502]
 
 ## Suggested Global Execution Shape
 
