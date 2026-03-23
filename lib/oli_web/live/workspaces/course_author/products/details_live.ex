@@ -2,21 +2,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias Oli.Accounts
+  alias Oli.{Accounts, Publishing, Repo, Tags}
   alias Oli.Authoring.Course
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Blueprint
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.{Blueprint, Section}
   alias Oli.Inventories
+  alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.Confirm
+  alias OliWeb.Live.Components.Sections.AiAssistantComponent
+  alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
+  alias OliWeb.Live.Components.Sections.NotesComponent
+  alias OliWeb.Components.Common
   alias OliWeb.Products.Details.Actions
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
   alias OliWeb.Products.Details.ImageUpload
   alias OliWeb.Products.ProductsToTransferCodes
+  alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Sections.Mount
+  alias OliWeb.Sections.PaywallSettings
 
   require Logger
 
@@ -33,27 +39,43 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         base_project = Course.get_project!(product.base_project_id)
         publishers = Inventories.list_publishers()
         is_admin = Accounts.at_least_content_admin?(author)
+
+        product =
+          if is_admin, do: Repo.preload(product, communities: :institutions), else: product
+
+        tags = Tags.get_section_tags(product)
+
+        access_institutions =
+          if is_admin, do: Publishing.get_institutions_with_access(product), else: []
+
         changeset = Section.changeset(product, %{})
         project = socket.assigns.project
 
         latest_publications =
           Sections.check_for_available_publication_updates(product)
 
+        component_data = SectionDefaultsHelpers.load_component_data(product)
+
         {:ok,
-         assign(socket,
-           publishers: publishers,
-           updates: latest_publications,
-           author: author,
-           product: product,
-           is_admin: is_admin,
-           changeset: changeset,
-           title: "Edit Template",
-           show_confirm: false,
-           base_project: base_project,
-           resource_slug: project.slug,
-           resource_title: project.title,
-           active_workspace: :course_author,
-           active_view: :products
+         assign(
+           socket,
+           Map.merge(component_data, %{
+             publishers: publishers,
+             updates: latest_publications,
+             author: author,
+             product: product,
+             is_admin: is_admin,
+             tags: tags,
+             access_institutions: access_institutions,
+             changeset: changeset,
+             title: "Edit Template",
+             show_confirm: false,
+             base_project: base_project,
+             resource_slug: project.slug,
+             resource_title: project.title,
+             active_workspace: :course_author,
+             active_view: :products
+           })
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -69,15 +91,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     <h2 id="header_id" class="pb-2">Template Overview</h2>
     {render_modal(assigns)}
     <div class="overview container">
-      <div class="grid grid-cols-12 py-5 border-b">
-        <div class="md:col-span-4">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
+        <div class="col-span-12 md:col-span-4">
           <h4>Details</h4>
           <div class="text-muted">
             The template title and description will be shown
             to instructors when they create their course section.
           </div>
         </div>
-        <div class="md:col-span-8">
+        <div class="col-span-12 md:col-span-8">
           <Edit.render
             product={@product}
             project_slug={@base_project.slug}
@@ -85,27 +107,61 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             publishers={@publishers}
             is_admin={@is_admin}
             ctx={@ctx}
+            tags={@tags}
+            author={@author}
           />
-        </div>
-      </div>
-      <div class="grid grid-cols-12 py-5 border-b">
-        <div class="md:col-span-4">
-          <h4>Content</h4>
-          <div class="text-muted">
-            Manage and customize the presentation of content in this template.
+          <div :if={@is_admin} id="communities-section" class="form-label-group mb-3">
+            <Common.label class="control-label">Communities</Common.label>
+            <p class="text-secondary">
+              <Common.comma_separated_links items={
+                Enum.map(@product.communities, fn c ->
+                  %{name: c.name, href: ~p"/authoring/communities/#{c.id}"}
+                end)
+              } />
+            </p>
+          </div>
+          <div :if={@is_admin} id="institutions-section" class="form-label-group mb-3">
+            <Common.label class="control-label">Institutions</Common.label>
+            <p class="text-secondary">
+              <Common.comma_separated_links items={
+                Enum.map(@access_institutions, fn i ->
+                  %{name: i.name, href: ~p"/admin/institutions/#{i.id}"}
+                end)
+              } />
+            </p>
           </div>
         </div>
-        <div class="md:col-span-8">
-          <Content.render
-            product={@product}
-            changeset={to_form(@changeset)}
-            save="save"
-            updates={@updates}
-          />
+      </div>
+      <div class="grid grid-cols-12 py-5 border-b dark:border-gray-700">
+        <div class="col-span-12 md:col-span-4 mr-4">
+          <h4>Paywall Settings</h4>
+          <div class="text-muted">
+            For information regarding paywall settings,
+            <.tech_support_link
+              id="tech_support_paywall_settings"
+              class="text-Text-text-button hover:text-Text-text-button-hover hover:underline font-semibold cursor-pointer"
+            >
+              contact our support team.
+            </.tech_support_link>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-8">
+          <.form
+            for={@changeset}
+            as={:section}
+            phx-change="validate"
+            phx-submit="save"
+            id="paywall-settings-form"
+          >
+            <PaywallSettings.render
+              form={to_form(@changeset)}
+              disabled={!@is_admin}
+              show_group={false}
+            />
+          </.form>
         </div>
       </div>
-
-      <div class="grid grid-cols-12 py-5 border-b">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
           <h4>Cover Image</h4>
           <div class="text-muted">
@@ -125,7 +181,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         </div>
       </div>
 
-      <div class="grid grid-cols-12 py-5 border-b">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Content</h4>
+          <div class="text-muted">
+            Manage and customize the presentation of content in this template.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <Content.render
+            product={@product}
+            changeset={to_form(@changeset)}
+            save="save"
+            updates={@updates}
+            schedule_url={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/schedule"
+            }
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
         <div class="md:col-span-4">
           <h4>Certificate Settings</h4>
           <div class="max-w-[30rem] text-muted">
@@ -138,16 +214,97 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             currently produce a certificate.
           </div>
           <div>
-            <a href={
-              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/certificate_settings"
-            }>
-              Manage Certificate Settings
+            <a
+              href={
+                ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/certificate_settings"
+              }
+              class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
+            >
+              Manage certificate settings
             </a>
           </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-12 py-5">
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>AI Assistant</h4>
+          <div class="text-muted">
+            Configure AI Assistant defaults for course sections created from this template.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <.live_component
+            module={AiAssistantComponent}
+            id={"ai-assistant-#{@product.id}"}
+            section={@product}
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Notes</h4>
+          <div class="text-muted">
+            Enable students to annotate content for saving and sharing within the class community.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <.live_component
+            module={NotesComponent}
+            id={"notes-#{@product.id}"}
+            section={@product}
+            collab_space_pages_count={@collab_space_pages_count}
+            pages_count={@pages_count}
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Course Discussions</h4>
+          <div class="text-muted">
+            Give students a course discussion board.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <.live_component
+            module={CourseDiscussionsComponent}
+            id={"discussions-#{@product.id}"}
+            section={@product}
+            collab_space_config={@root_collab_space_config}
+            root_section_resource={@root_section_resource}
+          />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-x-[14px] py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Required Survey</h4>
+          <div class="max-w-[30rem] text-muted">
+            Show a required survey to students who access the course for the first time.
+          </div>
+        </div>
+        <div class="md:col-span-8">
+          <%= if @show_required_section_config do %>
+            <.live_component
+              module={RequiredSurvey}
+              project={@product}
+              enabled={@product.required_survey_resource_id}
+              is_section={true}
+              id="workspace-required-survey"
+            />
+          <% else %>
+            <div class="flex items-center">
+              <p class="m-0 text-gray-500">
+                The base project does not have a survey configured. Please contact the project author to add one.
+              </p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-x-[14px] py-5">
         <div class="md:col-span-4">
           <h4>Actions</h4>
         </div>
@@ -157,6 +314,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             is_admin={@is_admin}
             base_project={@base_project}
             has_payment_codes={Paywall.has_payment_codes?(@product.id)}
+            usage_path={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/usage"
+            }
           />
         </div>
       </div>
@@ -170,7 +330,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   end
 
   def handle_event("validate", %{"section" => params}, socket) do
-    changeset = Sections.change_section(socket.assigns.product, params)
+    changeset =
+      socket.assigns.product
+      |> Sections.change_section(filter_paywall_params(params, socket.assigns.is_admin))
+
     {:noreply, assign(socket, changeset: changeset)}
   end
 
@@ -203,7 +366,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   def handle_event("save", %{"section" => params}, socket) do
     socket = clear_flash(socket)
 
-    case Sections.update_section(socket.assigns.product, decode_welcome_title(params)) do
+    params =
+      params
+      |> filter_paywall_params(socket.assigns.is_admin)
+      |> decode_welcome_title()
+
+    case Sections.update_section(socket.assigns.product, params) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Template changes saved")
 
@@ -305,6 +473,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     {:noreply, assign(socket, changeset: changeset)}
   end
 
+  # Generic flash handler for child LiveComponents
+  def handle_info({:flash, level, message}, socket) do
+    {:noreply, put_flash(socket, level, message)}
+  end
+
+  # Component sync handlers — delegated to shared helpers
+  def handle_info({:section_updated, %Section{} = updated}, socket),
+    do: {:noreply, SectionDefaultsHelpers.handle_section_updated(socket, :product, updated)}
+
+  def handle_info({:notes_count_updated, count}, socket),
+    do: {:noreply, SectionDefaultsHelpers.handle_notes_count_updated(socket, count)}
+
+  def handle_info({:collab_space_config_updated, config, root_sr}, socket),
+    do:
+      {:noreply,
+       SectionDefaultsHelpers.handle_collab_space_config_updated(socket, config, root_sr)}
+
   defp ext(entry) do
     [ext | _] = MIME.extensions(entry.client_type)
     ext
@@ -315,5 +500,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   defp decode_welcome_title(project_params) do
     Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
+  end
+
+  defp filter_paywall_params(params, true), do: params
+
+  defp filter_paywall_params(params, false) do
+    Map.drop(params, [
+      "requires_payment",
+      "amount",
+      "payment_options",
+      "pay_by_institution",
+      "has_grace_period",
+      "grace_period_days",
+      "grace_period_strategy"
+    ])
   end
 end

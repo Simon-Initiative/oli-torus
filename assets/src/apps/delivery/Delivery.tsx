@@ -5,6 +5,7 @@ import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
 import { isDarkMode } from 'utils/browser';
+import { AdaptiveDialogueBridge } from './components/AdaptiveDialogueBridge';
 import PreviewTools from './components/PreviewTools';
 import { DeadlineTimer } from './layouts/deck/DeadlineTimer';
 import DeckLayoutView from './layouts/deck/DeckLayoutView';
@@ -18,6 +19,7 @@ import {
   selectScreenIdleTimeOutTriggered,
   setScreenIdleTimeOutTriggered,
 } from './store/features/adaptivity/slice';
+import { selectCurrentActivityTreeAttemptState } from './store/features/groups/selectors/deck';
 import { LayoutType, selectCurrentGroup } from './store/features/groups/slice';
 import { loadInitialPageState } from './store/features/page/actions/loadInitialPageState';
 import { selectScreenIdleExpirationTime } from './store/features/page/slice';
@@ -82,6 +84,7 @@ const Delivery: React.FC<DeliveryProps> = ({
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
+  const currentActivityTreeAttemptState = useSelector(selectCurrentActivityTreeAttemptState);
   const restartLesson = useSelector(selectRestartLesson);
   const screenIdleExpirationTime = useSelector(selectScreenIdleExpirationTime);
   const screenIdleTimeOutTriggered = useSelector(selectScreenIdleTimeOutTriggered);
@@ -204,6 +207,13 @@ const Delivery: React.FC<DeliveryProps> = ({
   const dialogImageUrl = content?.custom?.logoutPanelImageURL;
   const dialogMessage = content?.custom?.logoutMessage;
   const fullscreen = !content?.displayApplicationChrome;
+  const adaptiveDialogueBridgeEnabled =
+    !!content?.advancedDelivery &&
+    !!content?.displayApplicationChrome &&
+    !previewMode &&
+    !reviewMode;
+  const currentActivityAttemptGuid =
+    currentActivityTreeAttemptState?.[currentActivityTreeAttemptState.length - 1]?.attemptGuid;
 
   // this is something SS does.....
   const { width: windowWidth } = useWindowSize();
@@ -214,6 +224,10 @@ const Delivery: React.FC<DeliveryProps> = ({
         reviewMode && isInstructor ? 'instructor-preview' : ''
       }`}
     >
+      <AdaptiveDialogueBridge
+        activityAttemptGuid={currentActivityAttemptGuid}
+        enabled={adaptiveDialogueBridgeEnabled}
+      />
       {(previewMode || (reviewMode && (isInstructor || isAdmin || isAuthor))) && (
         <PreviewTools reviewMode={reviewMode} isInstructor={isInstructor} model={content?.model} />
       )}

@@ -470,6 +470,46 @@ defmodule Oli.ActivityEditingTest do
       assert updated.objectives == %{"1" => [ob1.resource_id]}
     end
 
+    test "can sync objectives when authoring parts are legacy part id strings", %{
+      author: author,
+      project: project,
+      revision1: revision1
+    } do
+      {:ok, %{revision: ob1}} =
+        ObjectiveEditor.add_new(%{title: "this is an objective"}, author, project)
+
+      {:ok, %{revision: ob2}} =
+        ObjectiveEditor.add_new(%{title: "this is another objective"}, author, project)
+
+      content = %{
+        "content" => %{"authoring" => %{"parts" => ["1", "2"]}}
+      }
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+      update = %{
+        "objectives" => %{"1" => [ob1.resource_id], "2" => [ob2.resource_id]},
+        "content" => %{"authoring" => %{"parts" => ["1", "2"]}}
+      }
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
+      {:ok, updated} =
+        ActivityEditor.edit(
+          project.slug,
+          revision1.resource_id,
+          revision.resource_id,
+          author.email,
+          update
+        )
+
+      assert updated.objectives == %{
+               "1" => [ob1.resource_id],
+               "2" => [ob2.resource_id]
+             }
+    end
+
     test "edit/5 allows adaptive internal links when idref references a project resource", %{
       author: author,
       project: project,
@@ -510,6 +550,169 @@ defmodule Oli.ActivityEditingTest do
       PageEditor.acquire_lock(project.slug, revision.slug, author.email)
 
       assert {:ok, _} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 rejects adaptive AI trigger parts when project triggers are disabled", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "partsLayout" => [
+            %{
+              "id" => "trigger-1",
+              "type" => "janus-ai-trigger",
+              "custom" => %{
+                "launchMode" => "click",
+                "prompt" => "Ask DOT for help"
+              }
+            }
+          ],
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "trigger-1",
+                "type" => "janus-ai-trigger"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 rejects adaptive image AI trigger configuration when project triggers are disabled",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "partsLayout" => [
+            %{
+              "id" => "image-1",
+              "type" => "janus-image",
+              "custom" => %{
+                "src" => "/images/placeholder-image.svg",
+                "enableAiTrigger" => true,
+                "aiTriggerPrompt" => "Use this image as context"
+              }
+            }
+          ]
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 handles malformed adaptive authoring containers without crashing", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "partsLayout" => [
+            %{
+              "id" => "image-1",
+              "type" => "janus-image",
+              "custom" => %{
+                "src" => "/images/placeholder-image.svg",
+                "enableAiTrigger" => true,
+                "aiTriggerPrompt" => "Use this image as context"
+              }
+            }
+          ],
+          "authoring" => []
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    test "edit/5 allows adaptive AI trigger parts when project triggers are enabled", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, _project} = Oli.Authoring.Course.update_project(project, %{allow_triggers: true})
+
+      {:ok, {%{resource_id: resource_id, content: content}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" =>
+          Map.merge(content, %{
+            "partsLayout" => [
+              %{
+                "id" => "trigger-1",
+                "type" => "janus-ai-trigger",
+                "custom" => %{
+                  "launchMode" => "click",
+                  "prompt" => "Ask DOT for help"
+                }
+              }
+            ],
+            "authoring" => %{
+              "parts" => [
+                %{
+                  "id" => "trigger-1",
+                  "type" => "janus-ai-trigger"
+                }
+              ]
+            }
+          })
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, _updated_revision} =
                ActivityEditor.edit(
                  project.slug,
                  revision.resource_id,
@@ -838,6 +1041,55 @@ defmodule Oli.ActivityEditingTest do
       :telemetry.detach(handler)
     end
 
+    test "edit/5 emits adaptive iframe authoring telemetry for creation",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      handler = attach_telemetry([:created])
+
+      {:ok, {%{resource_id: resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      iframe_update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "/course/link/#{revision.slug}",
+                "sourceType" => "page",
+                "linkType" => "page",
+                "idref" => revision.resource_id
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, _} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 resource_id,
+                 author.email,
+                 iframe_update
+               )
+
+      assert_receive {:telemetry_event, [:oli, :adaptive, :dynamic_link, :created], %{count: 1},
+                      created_metadata}
+
+      assert created_metadata.project_id == project.id
+      assert created_metadata.activity_resource_id == resource_id
+      assert created_metadata.source == "iframe_authoring"
+
+      :telemetry.detach(handler)
+    end
+
     test "edit/5 rejects adaptive internal links with out-of-project idref", %{
       author: author,
       project: project,
@@ -887,6 +1139,204 @@ defmodule Oli.ActivityEditingTest do
                  author.email,
                  update
                )
+    end
+
+    test "edit/5 allows adaptive iframe internal links when idref references a project resource",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "/course/link/#{revision.slug}",
+                "sourceType" => "page",
+                "idref" => revision.resource_id
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, _updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    # @ac "AC-002"
+    test "edit/5 normalizes adaptive iframe internal src links to persist idref and resource_id",
+         %{
+           author: author,
+           project: project,
+           revision1: revision
+         } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "/course/link/#{revision.slug}",
+                "sourceType" => "page"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+
+      [part] = get_in(updated_revision.content, ["authoring", "parts"])
+
+      assert part["idref"] == revision.resource_id
+      assert part["resource_id"] == revision.resource_id
+      assert part["linkType"] == "page"
+      assert part["sourceType"] == "page"
+    end
+
+    # @ac "AC-003"
+    test "edit/5 rejects adaptive iframe links with src slugs outside the project", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "/course/link/page_not_in_project",
+                "sourceType" => "page"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    # @ac "AC-008"
+    test "edit/5 rejects adaptive iframe links with out-of-project idref", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      %{revision1: other_project_revision} = Seeder.base_project_with_resource2()
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "/course/link/#{other_project_revision.slug}",
+                "sourceType" => "page",
+                "idref" => other_project_revision.resource_id
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:error, {:invalid_update_field}} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+    end
+
+    # @ac "AC-006"
+    test "edit/5 bypasses internal-link validation for external adaptive iframe sources", %{
+      author: author,
+      project: project,
+      revision1: revision
+    } do
+      {:ok, {%{resource_id: activity_resource_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_adaptive", author, %{}, [])
+
+      update = %{
+        "content" => %{
+          "authoring" => %{
+            "parts" => [
+              %{
+                "id" => "part-iframe-1",
+                "type" => "janus-capi-iframe",
+                "src" => "https://example.com",
+                "sourceType" => "url"
+              }
+            ]
+          }
+        }
+      }
+
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
+      assert {:ok, updated_revision} =
+               ActivityEditor.edit(
+                 project.slug,
+                 revision.resource_id,
+                 activity_resource_id,
+                 author.email,
+                 update
+               )
+
+      [part] = get_in(updated_revision.content, ["authoring", "parts"])
+      assert part["src"] == "https://example.com"
+      refute Map.has_key?(part, "idref")
+      refute Map.has_key?(part, "resource_id")
+      refute Map.has_key?(part, "linkType")
     end
   end
 

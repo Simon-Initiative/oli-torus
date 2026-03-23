@@ -171,6 +171,31 @@ defmodule Oli.Ingest.RewireLinks do
     end
   end
 
+  defp rewire(
+         %{"type" => "janus-capi-iframe"} = part,
+         link_builder,
+         page_map,
+         resource_id_lookup
+       ) do
+    {part_changed?, rewritten_part} =
+      rewire_iframe_dynamic_link(part, link_builder, page_map, resource_id_lookup)
+
+    {custom_changed?, rewritten_custom} =
+      case Map.get(rewritten_part, "custom") do
+        %{} = custom ->
+          rewire_iframe_dynamic_link(custom, link_builder, page_map, resource_id_lookup)
+
+        _ ->
+          {false, nil}
+      end
+
+    if custom_changed? do
+      {true, Map.put(rewritten_part, "custom", rewritten_custom)}
+    else
+      {part_changed?, rewritten_part}
+    end
+  end
+
   defp rewire(item, link_builder, page_map, resource_id_lookup) when is_map(item) do
     if maybe_link_payload?(item) do
       Enum.reduce(item, {false, item}, fn {key, value}, {changed?, acc} ->
@@ -201,6 +226,7 @@ defmodule Oli.Ingest.RewireLinks do
   defp maybe_link_payload?(%{} = item) do
     direct_link_node? =
       Map.has_key?(item, "idref") or
+        Map.has_key?(item, "resource_id") or
         Map.get(item, "type") in ["a", "page_link"] or
         Map.get(item, "tag") == "a"
 
@@ -213,4 +239,91 @@ defmodule Oli.Ingest.RewireLinks do
   end
 
   defp maybe_link_payload?(_), do: false
+
+  defp rewire_iframe_dynamic_link(part, link_builder, page_map, resource_id_lookup) do
+    if internal_iframe_source?(part) do
+      case Map.get(part, "idref") || Map.get(part, "resource_id") do
+        nil ->
+          {false, part}
+
+        idref ->
+          case lookup_revision(page_map, resource_id_lookup, idref) do
+            %{resource_id: resource_id, slug: slug} ->
+              rewritten =
+                part
+                |> Map.put("idref", resource_id)
+                |> Map.put("resource_id", resource_id)
+                |> Map.put("sourceType", "page")
+                |> Map.put("linkType", "page")
+                |> Map.put("sourcePageSlug", slug)
+                |> Map.put("src", link_builder.(resource_id))
+                |> maybe_rewrite_iframe_source(resource_id, slug)
+
+              {rewritten != part, rewritten}
+
+            nil ->
+              Logger.warning(
+                "Skipping adaptive iframe rewiring, missing idref mapping for #{inspect(idref)}"
+              )
+
+              {false, part}
+          end
+      end
+    else
+      {false, part}
+    end
+  end
+
+  defp maybe_rewrite_iframe_source(%{"source" => source} = part, resource_id, slug)
+       when is_binary(source) do
+    case Jason.decode(source) do
+      {:ok, decoded} when is_map(decoded) ->
+        updated =
+          decoded
+          |> Map.put("mode", "page")
+          |> Map.put("pageId", resource_id)
+          |> Map.put("pageSlug", slug)
+          |> Map.put("url", "")
+
+        Map.put(part, "source", Jason.encode!(updated))
+
+      _ ->
+        part
+    end
+  end
+
+  defp maybe_rewrite_iframe_source(%{"source" => source} = part, resource_id, slug)
+       when is_map(source) do
+    updated =
+      source
+      |> Map.put("mode", "page")
+      |> Map.put("pageId", resource_id)
+      |> Map.put("pageSlug", slug)
+      |> Map.put("url", "")
+
+    Map.put(part, "source", updated)
+  end
+
+  defp maybe_rewrite_iframe_source(part, _resource_id, _slug), do: part
+
+  defp internal_iframe_source?(%{"sourceType" => "url"}), do: false
+
+  defp internal_iframe_source?(%{} = part) do
+    src = Map.get(part, "src")
+    source_type = Map.get(part, "sourceType")
+    link_type = Map.get(part, "linkType")
+    idref = Map.get(part, "idref") || Map.get(part, "resource_id")
+
+    source_type == "page" or
+      link_type == "page" or
+      internal_course_link?(src) or
+      not is_nil(idref)
+  end
+
+  defp internal_iframe_source?(_), do: false
+
+  defp internal_course_link?(value) when is_binary(value),
+    do: String.starts_with?(value, "/course/link/")
+
+  defp internal_course_link?(_), do: false
 end

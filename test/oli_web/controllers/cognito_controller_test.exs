@@ -392,7 +392,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :launch, "bad", params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Invalid product or project\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Invalid template or project\">redirected</a>.</body></html>"
     end
 
     test "redirects to unauthorized url with bad project slug", %{
@@ -415,7 +415,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :launch, "bad", params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Invalid product or project\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Invalid template or project\">redirected</a>.</body></html>"
     end
 
     test "redirects to unauthorized url with missing error_url", %{
@@ -627,7 +627,7 @@ defmodule OliWeb.CognitoControllerTest do
                )
              )
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Invalid product or project"
+               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Invalid template or project"
     end
 
     test "fails if there are missing parameters",
@@ -695,7 +695,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :clone, "this_project_slug_does_not_exist"))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/unauthorized?error=Invalid product or project"
+               "<html><body>You are being <a href=\"/unauthorized?error=Invalid template or project"
     end
   end
 
