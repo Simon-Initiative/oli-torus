@@ -107,9 +107,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         # resets state that depends on the current dataset shape. Bucket selection
         # and pagination are scope-specific, so dropping them lets Student Support
         # choose the correct default bucket and restart the list at page 1.
-        tile_support
-        |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
-        |> Map.drop(["bucket", "page"])
+        case tile_support do
+          tile_support when is_map(tile_support) ->
+            tile_support
+            |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
+            |> Map.drop(["bucket", "page"])
+
+          tile_support when is_list(tile_support) ->
+            tile_support
+            |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
+            |> Map.drop(["bucket", "page"])
+
+          _ ->
+            %{}
+        end
       end)
     end)
   end

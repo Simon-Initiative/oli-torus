@@ -62,6 +62,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   def update(assigns, socket) do
     projection = Map.get(assigns, :projection, socket.assigns[:projection] || %{})
     tile_state = Map.get(assigns, :tile_state, socket.assigns[:tile_state] || %{})
+    visible_students = current_visible_students(projection, tile_state)
     projection_signature = projection_signature(projection, tile_state)
 
     selected_student_ids =
@@ -80,6 +81,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:visible_students, visible_students)
      |> assign(:student_support_projection_signature, projection_signature)
      |> assign(:selected_student_ids, selected_student_ids)
      |> assign(:show_email_modal, show_email_modal)}
@@ -578,10 +580,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   @impl Phoenix.LiveComponent
   def handle_event("select_all_students", _params, socket) do
     visible_student_ids =
-      current_visible_students(
-        socket.assigns[:projection] || %{},
-        socket.assigns[:tile_state] || %{}
-      )
+      (socket.assigns[:visible_students] || [])
       |> Enum.map(& &1.id)
 
     selected_student_ids = normalize_selected_student_ids(socket.assigns[:selected_student_ids])
@@ -865,6 +864,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   defp projection_signature(projection, tile_state) do
     %{
+      dataset_signature: dataset_signature(projection),
       bucket_id: selected_bucket_id(projection, tile_state),
       selected_filter: Map.get(tile_state, :selected_activity_filter, :all),
       search_term: Map.get(tile_state, :search_term, ""),
@@ -875,6 +875,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           {bucket.id, bucket.count, bucket.active_count, bucket.inactive_count}
         end)
     }
+  end
+
+  defp dataset_signature(projection) do
+    projection
+    |> Map.get(:buckets, [])
+    |> Enum.map(fn bucket ->
+      {bucket.id, Enum.map(Map.get(bucket, :students, []), & &1.id)}
+    end)
   end
 
   defp filter_patch_updates(:all, :active), do: %{"filter" => "inactive", "page" => 1}

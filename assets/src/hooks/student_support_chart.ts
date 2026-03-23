@@ -283,6 +283,7 @@ async function renderChart(hook: Hook<ChartHookState>) {
     hook.__studentSupportSpec = null;
     hook.__studentSupportTheme = theme;
     hook.__studentSupportThemeStyles = rawThemeStyles;
+    hook.__studentSupportSizeMode = sizeMode;
     target.innerHTML = '';
     return;
   }
@@ -307,7 +308,8 @@ async function renderChart(hook: Hook<ChartHookState>) {
       },
     );
 
-    target.style.width = 'fit-content';
+    target.style.width = '100%';
+    target.style.maxWidth = '100%';
     target.style.marginLeft = 'auto';
     target.style.marginRight = 'auto';
 
@@ -352,7 +354,7 @@ export const StudentSupportChart: Hook<ChartHookState> = {
     });
 
     this.__studentSupportResizeHandler = () => {
-      if (this.__studentSupportResizeRaf) {
+      if (this.__studentSupportResizeRaf != null) {
         cancelAnimationFrame(this.__studentSupportResizeRaf);
       }
 
@@ -376,7 +378,7 @@ export const StudentSupportChart: Hook<ChartHookState> = {
       window.removeEventListener('resize', this.__studentSupportResizeHandler);
     }
     this.__studentSupportResizeHandler = null;
-    if (this.__studentSupportResizeRaf) {
+    if (this.__studentSupportResizeRaf != null) {
       cancelAnimationFrame(this.__studentSupportResizeRaf);
     }
     this.__studentSupportResizeRaf = null;

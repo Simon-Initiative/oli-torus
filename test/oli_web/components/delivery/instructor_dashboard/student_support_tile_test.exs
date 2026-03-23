@@ -133,6 +133,32 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       refute has_element?(component, "a[data-role='load-more']")
     end
 
+    test "selection resets when the underlying bucket dataset changes", %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
+
+      component
+      |> element("button[aria-label='Select Student 1']")
+      |> render_click()
+
+      assert has_element?(component, "button[aria-label='Select Student 1'][aria-checked='true']")
+
+      rerender_component(
+        component,
+        base_attrs(%{
+          projection: projection_with_shifted_student_ids(),
+          tile_state: tile_state()
+        })
+      )
+
+      assert has_element?(
+               component,
+               "button[aria-label='Select Student 101'][aria-checked='false']"
+             )
+
+      assert has_element?(component, "button[disabled]", "Email Selected")
+    end
+
     test "individual row toggle enables email button", %{conn: conn} do
       {:ok, component, _html} =
         live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
@@ -213,6 +239,66 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
           picture: nil,
           email: "student#{index}@example.edu",
           activity_status: if(index <= 2, do: :inactive, else: :active),
+          progress_pct: 25.0,
+          proficiency_pct: 35.0
+        }
+      end)
+
+    %{
+      has_activity_data?: true,
+      default_bucket_id: "struggling",
+      totals: %{total_students: 25, active_students: 23, inactive_students: 2},
+      buckets: [
+        %{
+          id: "struggling",
+          label: "Struggling",
+          count: 25,
+          pct: 1.0,
+          active_count: 23,
+          inactive_count: 2,
+          students: students
+        },
+        %{
+          id: "excelling",
+          label: "Excelling",
+          count: 0,
+          pct: 0.0,
+          active_count: 0,
+          inactive_count: 0,
+          students: []
+        },
+        %{
+          id: "on_track",
+          label: "On Track",
+          count: 0,
+          pct: 0.0,
+          active_count: 0,
+          inactive_count: 0,
+          students: []
+        },
+        %{
+          id: "not_enough_information",
+          label: "N/A",
+          count: 0,
+          pct: 0.0,
+          active_count: 0,
+          inactive_count: 0,
+          students: []
+        }
+      ]
+    }
+  end
+
+  defp projection_with_shifted_student_ids do
+    students =
+      Enum.map(101..125, fn index ->
+        %{
+          id: index,
+          display_name: "Student #{index}",
+          searchable_text: String.downcase("Student #{index}"),
+          picture: nil,
+          email: "student#{index}@example.edu",
+          activity_status: if(index <= 102, do: :inactive, else: :active),
           progress_pct: 25.0,
           proficiency_pct: 35.0
         }
