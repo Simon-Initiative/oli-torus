@@ -121,21 +121,17 @@ export const addFlowchartScreen = createAsyncThunk(
         }
       }
 
-      let createResults: any = {
-        resourceId: `readonly_${Date.now()}`,
-        revisionSlug: `readonly_${Date.now()}`,
-      };
-
       if (isReadOnlyMode) {
         notifyReadOnlyEditBlocked();
-      } else {
-        createResults = await create(
-          projectSlug,
-          activity.typeSlug,
-          activity.model,
-          activity.objectives.attached,
-        );
+        return;
       }
+
+      const createResults = await create(
+        projectSlug,
+        activity.typeSlug,
+        activity.model,
+        activity.objectives.attached,
+      );
 
       if (createResults.result === 'failure') {
         throw new Error("Couldn't create activity: " + JSON.stringify(createResults));
