@@ -29,6 +29,56 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportEmailModa
       assert html =~ "Cancel"
     end
 
+    test "shows a subtle note when some selected students do not have an email", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            students: [
+              %{id: 1, display_name: "Student 1", email: "student1@example.edu"},
+              %{id: 2, display_name: "Student 2", email: nil}
+            ]
+          })
+        )
+
+      assert has_element?(
+               view,
+               ~s{span[title="Student 2"]},
+               "1 selected student"
+             )
+
+      assert has_element?(
+               view,
+               "p",
+               "does not have an associated email and will not receive this message."
+             )
+    end
+
+    test "shows a subtle note when no selected students have an email", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            students: [
+              %{id: 1, display_name: "Student 1", email: nil},
+              %{id: 2, display_name: "Student 2", email: ""}
+            ]
+          })
+        )
+
+      assert has_element?(
+               view,
+               ~s{span[title="Student 1, Student 2"]},
+               "2 selected students"
+             )
+
+      assert has_element?(view, "p", "do not have associated email addresses.")
+    end
+
     test "removing the last recipient disables send", %{conn: conn} do
       {:ok, view, _html} =
         live_component_isolated(
