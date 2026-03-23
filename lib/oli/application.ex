@@ -85,6 +85,13 @@ defmodule Oli.Application do
           },
           id: :ai_page_trigger_reply_cache
         ),
+        Supervisor.child_spec(
+          {
+            Cachex,
+            name: :adaptive_trigger_invocation_cache, limit: 50_000, policy: Cachex.Policy.LRW
+          },
+          id: :adaptive_trigger_invocation_cache
+        ),
 
         # Starts Cachex to store vr user agents
         Oli.VrLookupCache,
@@ -105,6 +112,7 @@ defmodule Oli.Application do
         # GenAI routing and breaker infrastructure
         Oli.GenAI.AdmissionControl,
         Oli.GenAI.Telemetry,
+        Oli.GenAI.AdaptiveContextTelemetry,
         Oli.Adaptive.DynamicLinks.Telemetry,
         Oli.Dashboard.OracleTelemetry,
         {Oli.Dashboard.RevisitCache, name: Oli.Dashboard.RevisitCache},

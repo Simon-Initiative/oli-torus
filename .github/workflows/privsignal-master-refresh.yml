@@ -1,0 +1,109 @@
+name: PrivSignal Master Refresh
+
+on:
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: privsignal-master-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh-lockfile:
+    name: Refresh priv_signal.lockfile.json on master
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && !contains(github.event.pull_request.body || '', '<!-- privsignal-auto-refresh -->')) }}
+    runs-on: ubuntu-latest
+    env:
+      PUSH_TOKEN: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+
+    steps:
+      - name: Checkout master branch
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.19.2
+          otp-version: 28.1.1
+
+      - name: Install deps
+        run: mix deps.get
+
+      - name: Regenerate lockfile and push update branch
+        id: branch_update
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PUSH_TOKEN}" ]; then
+            echo "SIMON_BOT_PERSONAL_ACCESS_TOKEN is required."
+            exit 1
+          fi
+
+          target_path="priv_signal.lockfile.json"
+          timestamp="$(date -u +%Y%m%d%H%M%S)"
+          update_branch="bot/privsignal-lockfile-update-${timestamp}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          mix priv_signal.scan --quiet --json-path "${target_path}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "${target_path}"
+
+          if git diff --cached --quiet; then
+            echo "No staged changes; skipping commit."
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          git checkout -b "${update_branch}"
+          git commit -m "chore(privsignal): update lockfile [skip ci]"
+          git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --set-upstream origin "${update_branch}"
+
+          echo "changed=true" >> "${GITHUB_OUTPUT}"
+          echo "update_branch=${update_branch}" >> "${GITHUB_OUTPUT}"
+
+      - name: Open PR and merge immediately
+        if: ${{ steps.branch_update.outputs.changed == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          UPDATE_BRANCH: ${{ steps.branch_update.outputs.update_branch }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "SIMON_BOT_PERSONAL_ACCESS_TOKEN is required."
+            exit 1
+          fi
+
+          pr_url="$(
+            gh pr create \
+              --base master \
+              --head "${UPDATE_BRANCH}" \
+              --title "chore(privsignal): update lockfile" \
+              --body $'<!-- privsignal-auto-refresh -->\nAutomated PrivSignal lockfile refresh generated from a fresh master checkout.'
+          )"
+
+          pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
+
+          gh pr merge "${pr_number}" \
+            --squash \
+            --delete-branch \
+            --admin \
+            --subject "chore(privsignal): update lockfile [skip ci]"
+
+          echo "Merged PR #${pr_number}."

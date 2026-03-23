@@ -137,7 +137,7 @@ defmodule OliWeb.Products.ProductsView do
         _ -> Publishing.project_published?(project.slug)
       end
 
-    export_filename = "products-" <> Date.to_iso8601(Date.utc_today()) <> ".csv"
+    export_filename = "templates-" <> Date.to_iso8601(Date.utc_today()) <> ".csv"
 
     {:ok,
      assign(socket,
