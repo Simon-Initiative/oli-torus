@@ -59,6 +59,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
   const initializedRevisionRef = useRef<string | null>(null);
   const previewRequestRef = useRef<{ url: string; windowName: string } | null>(null);
+  const hasEditingLockRef = useRef(false);
+  const isUnloadingRef = useRef(false);
   const allowTriggers = props.content.optionalContentTypes?.triggers === true;
 
   const [isAppVisible, setIsAppVisible] = useState(false);
@@ -169,6 +171,38 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [isAppVisible]);
 
   useEffect(() => {
+    hasEditingLockRef.current = hasEditingLock;
+  }, [hasEditingLock]);
+
+  useEffect(() => {
+    const beforeUnloadHandler = () => {
+      if (!hasEditingLockRef.current) {
+        return;
+      }
+
+      isUnloadingRef.current = true;
+
+      if (isFirefox) {
+        setTimeout(() => {
+          void dispatch(releaseEditingLock());
+        });
+      } else {
+        void dispatch(releaseEditingLock());
+      }
+    };
+
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
+
+      if (!isUnloadingRef.current && hasEditingLockRef.current) {
+        void dispatch(releaseEditingLock());
+      }
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
     const appConfig: AppConfig = {
       paths: props.paths,
       isAdmin: props.isAdmin,
@@ -185,14 +219,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [allowTriggers, dispatch, props]);
 
   useEffect(() => {
-    window.addEventListener('beforeunload', async () =>
-      isFirefox
-        ? setTimeout(async () => {
-            await dispatch(releaseEditingLock());
-          })
-        : await dispatch(releaseEditingLock()),
-    );
-
     let cancelled = false;
 
     const initialize = async () => {
@@ -240,7 +266,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     initialize();
 
     return () => {
-      window.removeEventListener('beforeunload', async () => await dispatch(releaseEditingLock()));
       cancelled = true;
     };
   }, [allowTriggers, props, hasEditingLock, isReadOnly, dispatch]);
