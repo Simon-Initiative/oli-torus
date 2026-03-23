@@ -307,6 +307,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       if (result.errorMessage) {
         (window as any).ReactToLiveView?.pushEvent('authoring_readonly_toggle_failed', {
           message: result.errorMessage,
+          readonly: result.readonly,
         });
         (window as any).ReactToLiveView?.pushEvent('authoring_readonly_state_changed', {
           readonly: result.readonly,

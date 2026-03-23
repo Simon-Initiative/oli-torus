@@ -115,18 +115,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   def handle_event("authoring_title_lock_state_changed", %{"editable" => editable}, socket) do
-    {:noreply, assign(socket, title_editable: editable)}
+    {:noreply, assign(socket, title_editable: normalize_boolean(editable))}
   end
 
   def handle_event("authoring_readonly_state_changed", %{"readonly" => readonly}, socket) do
-    {:noreply, assign(socket, adaptive_read_only: readonly)}
+    {:noreply, assign(socket, adaptive_read_only: normalize_boolean(readonly))}
+  end
+
+  def handle_event(
+        "authoring_readonly_toggle_failed",
+        %{"message" => message, "readonly" => readonly},
+        socket
+      ) do
+    {:noreply,
+     socket
+     |> assign(:adaptive_read_only, normalize_boolean(readonly))
+     |> put_flash(:error, message)}
   end
 
   def handle_event("authoring_readonly_toggle_failed", %{"message" => message}, socket) do
-    {:noreply,
-     socket
-     |> assign(:adaptive_read_only, true)
-     |> put_flash(:error, message)}
+    {:noreply, put_flash(socket, :error, message)}
   end
 
   def handle_event("authoring_readonly_edit_blocked", %{"message" => message}, socket) do
@@ -134,7 +142,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   def handle_event("authoring_preview_state_changed", %{"enabled" => enabled}, socket) do
-    {:noreply, assign(socket, :preview_enabled, enabled)}
+    {:noreply, assign(socket, :preview_enabled, normalize_boolean(enabled))}
   end
 
   def handle_event("toggle_adaptive_read_only", params, socket) do
@@ -219,13 +227,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   @impl true
   def handle_info(
         {:lock_acquired, publication_id, resource_id, author_id},
-        %{assigns: %{current_author: current_author, project: project, context: context}} = socket
+        %{assigns: %{current_author: current_author, context: context}} = socket
       ) do
     cond do
       !socket.assigns.is_advanced_authoring ->
         {:noreply, socket}
 
-      publication_id != Publishing.get_unpublished_publication_id!(project.id) ->
+      publication_id != socket.assigns.unpublished_publication_id ->
         {:noreply, socket}
 
       resource_id != context.resourceId ->
@@ -278,9 +286,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
                     class="d-flex inline-flex flex-grow-1"
                   >
                     <input
+                      id="page_title_input"
                       type="text"
                       name="title_editor[title]"
                       value={@title_input}
+                      phx-debounce="300"
+                      aria-label="Page Title"
                       class="form-control form-control-sm flex-1"
                       autocomplete="off"
                     />
@@ -452,6 +463,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
     all_scripts = content.part_scripts ++ content.scripts ++ target_scripts
     all_scripts = all_scripts |> Enum.uniq() |> Enum.map(&"/js/#{&1}")
+    unpublished_publication_id = Publishing.get_unpublished_publication_id!(project.id)
 
     socket =
       socket
@@ -465,13 +477,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       |> assign(title_editable: false)
       |> assign(adaptive_read_only: is_advanced_authoring)
       |> assign(preview_enabled: false)
+      |> assign(unpublished_publication_id: unpublished_publication_id)
       |> assign(
         :lock_controls_enabled,
         if(
           is_advanced_authoring,
           do:
             initial_lock_controls_enabled(
-              project.id,
+              unpublished_publication_id,
               context.resourceId,
               socket.assigns.current_author.id
             ),
@@ -608,9 +621,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     do:
       "This page is currently being edited by #{user}. You can change the title after the edit lock is released."
 
-  defp initial_lock_controls_enabled(project_id, resource_id, current_author_id) do
-    publication_id = Publishing.get_unpublished_publication_id!(project_id)
+  defp normalize_boolean(value) do
+    case value do
+      true -> true
+      false -> false
+      "true" -> true
+      "false" -> false
+      _ -> false
+    end
+  end
 
+  defp initial_lock_controls_enabled(publication_id, resource_id, current_author_id) do
     case Publishing.retrieve_lock_info([resource_id], publication_id) do
       [] -> true
       [%{author: %{id: ^current_author_id}}] -> true
