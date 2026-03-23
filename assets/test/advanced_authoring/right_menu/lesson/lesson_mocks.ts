@@ -5,7 +5,7 @@ export const transformedSchema = {
     enableHistory: true,
     variables: [],
     logoutMessage: '',
-    logoutPanelImageURL: ''
+    logoutPanelImageURL: '',
   },
   additionalStylesheets: [
     'default',
