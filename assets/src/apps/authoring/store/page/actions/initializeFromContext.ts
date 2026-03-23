@@ -6,8 +6,8 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { setGroups } from '../../../../delivery/store/features/groups/slice';
-import { createAlwaysGoToPath } from '../../../components/Flowchart/paths/path-factories';
 import { verifyFlowchartLesson } from '../../../components/Flowchart/flowchart-actions/verify-flowchart-lesson';
+import { createAlwaysGoToPath } from '../../../components/Flowchart/paths/path-factories';
 import { PageContext } from '../../../types';
 import { createNew as createNewActivity } from '../../activities/actions/createNew';
 import { selectAppMode } from '../../app/slice';
