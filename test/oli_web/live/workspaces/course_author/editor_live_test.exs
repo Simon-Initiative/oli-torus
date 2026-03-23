@@ -196,6 +196,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
 
     test "keeps basic edit title disabled until the basic page lock is acquired", %{
       conn: conn,
+      author: author,
       project: project,
       revision: revision
     } do
@@ -203,7 +204,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
 
       assert has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
 
-      render_hook(view, "authoring_title_lock_state_changed", %{"editable" => true})
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 revision.slug,
+                 author.email
+               )
 
       refute has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
     end
@@ -268,11 +274,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
 
     test "saves the title in liveview and patches the editor url", %{
       conn: conn,
+      author: author,
       project: project,
       revision: revision
     } do
       {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
-      render_hook(view, "authoring_title_lock_state_changed", %{"editable" => true})
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 revision.slug,
+                 author.email
+               )
 
       view |> element("button[phx-click=\"begin_title_edit\"]") |> render_click()
 
@@ -303,16 +316,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
                PageEditor.acquire_lock(project.slug, revision.slug, other_author.email)
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug, revision.slug))
-      render_hook(view, "authoring_title_lock_state_changed", %{"editable" => true})
-
-      view |> element("button[phx-click=\"begin_title_edit\"]") |> render_click()
 
       html =
-        view
-        |> form("form[phx-submit=\"save_title\"]", %{
+        render_submit(view, "save_title", %{
           "title_editor" => %{"title" => "Conflicting Rename"}
         })
-        |> render_submit()
 
       assert html =~
                "This page is currently being edited by other-author@example.edu. You can change the title after the edit lock is released."

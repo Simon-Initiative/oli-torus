@@ -115,11 +115,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   def handle_event("authoring_title_lock_state_changed", %{"editable" => editable}, socket) do
-    {:noreply, assign(socket, title_editable: normalize_boolean(editable))}
+    _ = editable
+    {:noreply, socket}
   end
 
   def handle_event("authoring_readonly_state_changed", %{"readonly" => readonly}, socket) do
-    {:noreply, assign(socket, adaptive_read_only: normalize_boolean(readonly))}
+    readonly = normalize_boolean(readonly)
+
+    {:noreply,
+     socket
+     |> assign(:adaptive_read_only, readonly)
+     |> refresh_title_editable(readonly)}
   end
 
   def handle_event(
@@ -167,6 +173,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   def handle_event("begin_title_edit", _params, socket) do
+    socket = refresh_title_editable(socket)
+
     if socket.assigns.title_editable do
       {:noreply,
        assign(socket,
@@ -192,10 +200,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
 
   def handle_event("save_title", %{"title_editor" => %{"title" => title}}, socket) do
     title = String.trim(title)
+    socket = refresh_title_editable(socket)
 
     cond do
       !socket.assigns.title_editable ->
-        {:noreply, socket}
+        {:noreply,
+         socket
+         |> assign(:title_editing, false)
+         |> maybe_put_title_lock_conflict_flash()}
 
       title == "" ->
         {:noreply, put_flash(socket, :error, "Title cannot be blank")}
@@ -230,9 +242,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
         %{assigns: %{current_author: current_author, context: context}} = socket
       ) do
     cond do
-      !socket.assigns.is_advanced_authoring ->
-        {:noreply, socket}
-
       publication_id != socket.assigns.unpublished_publication_id ->
         {:noreply, socket}
 
@@ -240,15 +249,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
         {:noreply, socket}
 
       author_id == current_author.id ->
-        {:noreply, socket}
+        {:noreply, refresh_title_editable(socket)}
 
       true ->
-        {:noreply,
-         socket
-         |> assign(:adaptive_read_only, true)
-         |> assign(:lock_controls_enabled, false)
-         |> assign(:title_editable, false)
-         |> assign(:title_editing, false)}
+        if socket.assigns.is_advanced_authoring do
+          {:noreply,
+           socket
+           |> assign(:adaptive_read_only, true)
+           |> assign(:lock_controls_enabled, false)
+           |> assign(:title_editable, false)
+           |> assign(:title_editing, false)}
+        else
+          {:noreply,
+           socket
+           |> assign(:title_editable, false)
+           |> assign(:title_editing, false)}
+        end
     end
   end
 
@@ -465,6 +481,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     all_scripts = all_scripts |> Enum.uniq() |> Enum.map(&"/js/#{&1}")
     unpublished_publication_id = Publishing.get_unpublished_publication_id!(project.id)
 
+    current_author_holds_lock? =
+      current_author_holds_lock?(
+        unpublished_publication_id,
+        context.resourceId,
+        socket.assigns.current_author.id
+      )
+
     socket =
       socket
       |> assign(maybe_scripts_loaded: false)
@@ -474,7 +497,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       |> assign(page_title: context.title)
       |> assign(title_input: context.title)
       |> assign(title_editing: false)
-      |> assign(title_editable: false)
+      |> assign(title_editable: current_author_holds_lock? and not is_advanced_authoring)
       |> assign(adaptive_read_only: is_advanced_authoring)
       |> assign(preview_enabled: false)
       |> assign(unpublished_publication_id: unpublished_publication_id)
@@ -494,7 +517,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       |> assign(show_authoring_header: true)
       |> push_event("load_survey_scripts", %{script_sources: all_scripts})
 
-    if connected?(socket) and is_advanced_authoring do
+    if connected?(socket) do
       Subscriber.subscribe_to_locks_acquired(project_slug, context.resourceId)
     end
 
@@ -528,7 +551,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
         |> assign(:title_input, revision.title)
         |> assign(:title_editing, false)
         |> assign(:title, "Edit | " <> revision.title)
-        |> assign(:title_editable, true)
+        |> refresh_title_editable()
         |> update_context_assigns(revision.title, revision.slug)
         |> push_event("authoring_page_title_updated", %{
           title: revision.title,
@@ -620,6 +643,55 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   defp lock_conflict_message(user),
     do:
       "This page is currently being edited by #{user}. You can change the title after the edit lock is released."
+
+  defp maybe_put_title_lock_conflict_flash(socket) do
+    case current_lock_info(socket) do
+      [%{author: %{email: email}}] when is_binary(email) ->
+        put_flash(socket, :error, lock_conflict_message(email))
+
+      _ ->
+        socket
+    end
+  end
+
+  defp refresh_title_editable(socket, adaptive_read_only \\ nil) do
+    adaptive_read_only =
+      if is_nil(adaptive_read_only),
+        do: socket.assigns.adaptive_read_only,
+        else: adaptive_read_only
+
+    assign(socket, :title_editable, title_editable?(socket, adaptive_read_only))
+  end
+
+  defp title_editable?(socket, adaptive_read_only) do
+    current_author_holds_lock?(socket) and
+      (!socket.assigns.is_advanced_authoring or !adaptive_read_only)
+  end
+
+  defp current_author_holds_lock?(socket) do
+    current_author_holds_lock?(
+      socket.assigns.unpublished_publication_id,
+      socket.assigns.context.resourceId,
+      socket.assigns.current_author.id
+    )
+  end
+
+  defp current_author_holds_lock?(publication_id, resource_id, current_author_id) do
+    case Publishing.retrieve_lock_info([resource_id], publication_id) do
+      [%{author: %{id: ^current_author_id}}] ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  defp current_lock_info(socket) do
+    Publishing.retrieve_lock_info(
+      [socket.assigns.context.resourceId],
+      socket.assigns.unpublished_publication_id
+    )
+  end
 
   defp normalize_boolean(value) do
     case value do

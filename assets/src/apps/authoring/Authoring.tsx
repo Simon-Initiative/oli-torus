@@ -58,6 +58,7 @@ export interface AuthoringProps {
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
   const initializedRevisionRef = useRef<string | null>(null);
+  const initializedResourceIdRef = useRef<number | undefined>(undefined);
   const previewRequestRef = useRef<{ url: string; windowName: string } | null>(null);
   const hasEditingLockRef = useRef(false);
   const isUnloadingRef = useRef(false);
@@ -238,6 +239,18 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         return;
       }
 
+      if (
+        initializedResourceIdRef.current !== undefined &&
+        initializedResourceIdRef.current === props.resourceId
+      ) {
+        if (!cancelled) {
+          initializedRevisionRef.current = props.revisionSlug;
+          setIsLoading(false);
+          setIsAppVisible(true);
+        }
+        return;
+      }
+
       if (!cancelled) {
         setIsLoading(true);
       }
@@ -258,6 +271,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
       if (!cancelled) {
         initializedRevisionRef.current = props.revisionSlug;
+        initializedResourceIdRef.current = props.resourceId;
         setIsAppVisible(true);
         setIsLoading(false);
       }
