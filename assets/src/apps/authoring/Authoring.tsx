@@ -223,7 +223,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       partComponentTypes,
       activityTypes,
       allObjectives: content.allObjectives || [],
-      applicationMode: content.content?.custom?.contentMode === 'flowchart' ? 'flowchart' : 'expert',
+      applicationMode:
+        content.content?.custom?.contentMode === 'flowchart' ? 'flowchart' : 'expert',
     };
     dispatch(setInitialConfig(appConfig));
   }, [
