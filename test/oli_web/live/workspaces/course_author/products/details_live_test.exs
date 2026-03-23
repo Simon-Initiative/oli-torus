@@ -149,6 +149,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert updated_html =~ ~r/name="section\[amount\]"[^>]*disabled=/
       assert updated_html =~ ~r/name="section\[payment_options\]"[^>]*disabled=/
       assert updated_html =~ ~r/name="section\[has_grace_period\]"[^>]*disabled=/
+      refute updated_html =~ "Manage Discounts"
+    end
+
+    test "shows Manage Discounts for admin authors when requires payment is checked", ctx do
+      %{project: project, product: product} = ctx
+
+      admin = insert(:author, system_role_id: Oli.Accounts.SystemRole.role_id().content_admin)
+      conn = build_conn() |> log_in_author(admin)
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      refute has_element?(
+               live,
+               "a[href='/authoring/products/#{product.slug}/discounts']",
+               "Manage Discounts"
+             )
+
+      updated_html =
+        live
+        |> element("#paywall-settings-form")
+        |> render_change(%{"section" => %{"requires_payment" => "true"}})
+
+      assert updated_html =~ "Manage Discounts"
+      assert updated_html =~ ~r/href="[^"]*\/discounts"/
     end
 
     test "renders only non-admin-safe details additions for workspace authors", ctx do

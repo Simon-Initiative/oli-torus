@@ -19,8 +19,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
   alias OliWeb.Products.Details.ImageUpload
+  alias OliWeb.Products.Payments.Discounts.ProductsIndexView
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Projects.RequiredSurvey
+  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
   alias OliWeb.Sections.PaywallSettings
 
@@ -157,6 +159,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
               form={to_form(@changeset)}
               disabled={!@is_admin}
               show_group={false}
+              manage_discounts_path={
+                Routes.live_path(OliWeb.Endpoint, ProductsIndexView, @product.slug)
+              }
             />
           </.form>
         </div>

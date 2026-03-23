@@ -14,6 +14,7 @@ defmodule OliWeb.Products.DetailsView do
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias OliWeb.Live.Components.Sections.NotesComponent
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
+  alias OliWeb.Products.Payments.Discounts.ProductsIndexView
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Router.Helpers, as: Routes
@@ -156,6 +157,9 @@ defmodule OliWeb.Products.DetailsView do
               form={to_form(@changeset)}
               disabled={false}
               show_group={false}
+              manage_discounts_path={
+                Routes.live_path(OliWeb.Endpoint, ProductsIndexView, @product.slug)
+              }
             />
           </.form>
         </div>
