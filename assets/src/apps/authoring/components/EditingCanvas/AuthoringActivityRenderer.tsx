@@ -2,7 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ActivityModelSchema } from 'components/activities/types';
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
-import { selectProjectSlug } from 'apps/authoring/store/app/slice';
+import {
+  selectAllowTriggers,
+  selectPartComponentTypes,
+  selectProjectSlug,
+} from 'apps/authoring/store/app/slice';
 import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
 
@@ -42,8 +46,18 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
 
   const selectedPartId = useSelector(selectCurrentSelection);
   const projectSlug = useSelector(selectProjectSlug);
+  const allowTriggers = useSelector(selectAllowTriggers);
+  const partComponentTypes = useSelector(selectPartComponentTypes);
 
   const ref = useRef<any>(null);
+  const authoringContext = {
+    selectedPartId,
+    configurePortalId: configEditorId,
+    optionalContentTypes: {
+      triggers: allowTriggers,
+    },
+    partComponentTypes,
+  };
 
   const elementProps = {
     id: `activity-${activityModel.id}`,
@@ -65,8 +79,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
           pointerEvents: `${editMode ? 'auto' : 'none'}`,
         },
     authoringContext: JSON.stringify({
-      selectedPartId,
-      configurePortalId: configEditorId,
+      ...authoringContext,
     }),
   };
 

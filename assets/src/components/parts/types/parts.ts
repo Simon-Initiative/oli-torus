@@ -36,6 +36,8 @@ export interface PartComponentProps<T extends CustomProperties> {
   type: string;
   model: T;
   state: any;
+  sectionSlug?: string;
+  resourceId?: number;
   notify?: any;
   className?: string;
   onInit: (payload: any) => Promise<any>;

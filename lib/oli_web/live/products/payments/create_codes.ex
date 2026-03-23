@@ -14,7 +14,7 @@ defmodule OliWeb.Products.Payments.CreateCodes do
       <%= if @disabled do %>
         <div class="alert alert-info mb-3" role="alert">
           <i class="fas fa-info-circle mr-2" aria-hidden="true"></i>
-          Payment code quantity cannot be edited because this product does not require payment. To enable editing, please enable "Requires Payment" in the product settings.
+          Payment code quantity cannot be edited because this template does not require payment. To enable editing, please enable "Requires Payment" in the template settings.
         </div>
       <% end %>
 

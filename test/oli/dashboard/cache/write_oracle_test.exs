@@ -19,6 +19,33 @@ defmodule Oli.Dashboard.Cache.WriteOracleTest do
   end
 
   describe "write_oracle/6 identity guard" do
+    test "accepts list payloads when identity guard passes", %{context: context, opts: opts} do
+      scope = %{container_type: :container, container_id: 100}
+      payload = [%{student_id: 1, progress_pct: 73.0}]
+
+      assert :ok =
+               Cache.write_oracle(
+                 context,
+                 scope,
+                 :progress_proficiency,
+                 payload,
+                 %{
+                   dashboard_context_id: 4321,
+                   container_type: :container,
+                   container_id: 100,
+                   oracle_version: 1,
+                   data_version: 1
+                 },
+                 opts
+               )
+
+      assert {:ok, result} =
+               Cache.lookup_required(context, scope, [:progress_proficiency], opts)
+
+      assert result.hits == %{progress_proficiency: payload}
+      assert result.misses == []
+    end
+
     test "accepts late write when identity guard passes", %{context: context, opts: opts} do
       active_scope = %{container_type: :container, container_id: 200}
       late_scope = %{container_type: :container, container_id: 100}

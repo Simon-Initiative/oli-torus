@@ -14,6 +14,7 @@ export interface SchedulerAppProps {
   section_slug: string;
   display_curriculum_item_numbering: boolean;
   edit_section_details_url: string;
+  is_blueprint: boolean;
   preferred_scheduling_time: string;
   agenda: boolean;
 }
@@ -28,6 +29,7 @@ const ScheduleEditorApp: React.FC<SchedulerAppProps> = React.memo(
     section_slug,
     display_curriculum_item_numbering,
     edit_section_details_url,
+    is_blueprint,
     preferred_scheduling_time,
     agenda,
   }) => (
@@ -40,6 +42,7 @@ const ScheduleEditorApp: React.FC<SchedulerAppProps> = React.memo(
         display_curriculum_item_numbering={display_curriculum_item_numbering}
         wizard_mode={false} // TODO - set this from torus
         edit_section_details_url={edit_section_details_url}
+        is_blueprint={is_blueprint}
         preferred_scheduling_time={preferred_scheduling_time}
         agenda={agenda}
       />

@@ -492,7 +492,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
       <Overview.section
         title="Transfer Payment Codes"
-        description="Allows to transfer payment codes between products of this project."
+        description="Allows to transfer payment codes between templates of this project."
       >
         <.live_component
           module={TransferPaymentCodes}

@@ -26,13 +26,15 @@ requirements:
     verification_method: automated
     proofs: []
 - id: FR-004
-  title: Default selected bucket is `struggling`; selecting legend item or donut segment
-    updates highlighted segment and student list.
+  title: Default selection prefers `struggling`, but falls back to the first non-empty
+    bucket in priority order; selecting legend item or donut segment updates highlighted
+    segment and student list.
   status: proposed
   acceptance_criteria:
   - id: AC-003
-    title: "(FR-004) \u2014 Given default load, when tile first renders, then struggling\
-      \ bucket is selected and list shows struggling students."
+    title: "(FR-004) \u2014 Given default load, when tile first renders, then `struggling`\
+      \ is selected if non-empty; otherwise the first non-empty bucket in priority\
+      \ order is selected and the list shows students from that bucket."
     status: proposed
     verification_method: automated
     proofs: []

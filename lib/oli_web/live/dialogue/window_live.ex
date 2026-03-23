@@ -238,8 +238,7 @@ defmodule OliWeb.Dialogue.WindowLive do
     ~H"""
     <div
       :if={@enabled}
-      id="dialogue-window-root"
-      data-dialogue-window
+      id="ai_bot"
       phx-hook={if(@adaptive_supported?, do: "AdaptiveDialogueSync", else: nil)}
       class={[
         "fixed z-[10000] lg:bottom-0 right-0 ml-auto",

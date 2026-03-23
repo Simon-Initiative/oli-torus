@@ -49,7 +49,7 @@ defmodule OliWeb.ProductsLiveTest do
              |> render() =~ "checked"
 
       view
-      |> element("#content-form form[phx-change='save']")
+      |> element("form[phx-change='save']")
       |> render_change(%{
         "section" => %{"display_curriculum_item_numbering" => "false"}
       })
@@ -70,7 +70,7 @@ defmodule OliWeb.ProductsLiveTest do
              |> render() =~ "checked"
 
       view
-      |> element("#content-form form[phx-change='save']")
+      |> element("form[phx-change='save']")
       |> render_change(%{
         "section" => %{"apply_major_updates" => "true"}
       })

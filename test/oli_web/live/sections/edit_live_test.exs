@@ -18,7 +18,7 @@ defmodule OliWeb.Sections.EditLiveTest do
   end
 
   defp create_section(_conn) do
-    section = insert(:section)
+    section = insert(:section, type: :enrollable)
 
     [section: section]
   end
@@ -116,14 +116,14 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert has_element?(view, "#section_requires_payment[checked]")
 
       view
-      |> element("form[phx-change='validate']")
+      |> element("#section-edit-form")
       |> render_change(section: %{title: "New title"})
 
       # Validate event shouldn't change section_requires_payment
       assert has_element?(view, "#section_requires_payment[checked]")
 
       view
-      |> element("form[phx-submit='save']")
+      |> element("#section-edit-form")
       |> render_submit(section: %{title: "New title"})
 
       # Save event shouldn't change section_requires_payment
@@ -153,14 +153,14 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       # Handle event "validate" shouldn't change has_grace_period
       view
-      |> element("form[phx-change='validate']")
+      |> element("#section-edit-form")
       |> render_change(section: %{title: "New title"})
 
       assert has_element?(view, "#section_has_grace_period[checked]")
 
       # Handle event "save" shouldn't change has_grace_period
       view
-      |> element("form[phx-submit='save']")
+      |> element("#section-edit-form")
       |> render_submit(section: %{title: "New title"})
 
       assert has_element?(view, "#section_has_grace_period[checked]")
@@ -181,13 +181,13 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert has_element?(view, "#section_requires_payment[checked]")
 
       view
-      |> element("form[phx-change='validate']")
+      |> element("#section-edit-form")
       |> render_change(section: %{requires_payment: "false"})
 
       refute has_element?(view, "#section_requires_payment[checked]")
 
       view
-      |> element("form[phx-submit='save']")
+      |> element("#section-edit-form")
       |> render_submit(section: %{requires_payment: "false"})
 
       refute has_element?(view, "#section_requires_payment[checked]")
@@ -205,7 +205,7 @@ defmodule OliWeb.Sections.EditLiveTest do
     end
 
     test "loads section data correctly", %{conn: conn} do
-      section = insert(:section, requires_payment: true)
+      section = insert(:section, type: :enrollable, requires_payment: true)
 
       {:ok, view, html} = live(conn, live_view_edit_route(section.slug))
 
@@ -228,6 +228,7 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       section =
         insert(:section,
+          type: :enrollable,
           open_and_free: true,
           welcome_title: welcome_title,
           encouraging_subtitle: "Encouraging subtitle"
@@ -293,7 +294,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       {:ok, conn: conn, ctx: _} = set_timezone(context)
       timezone = Plug.Conn.get_session(conn, :browser_timezone)
 
-      section = insert(:section_with_dates, open_and_free: true)
+      section = insert(:section_with_dates, type: :enrollable, open_and_free: true)
 
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
@@ -358,7 +359,7 @@ defmodule OliWeb.Sections.EditLiveTest do
              |> render() =~ "checked"
 
       view
-      |> element("form[phx-submit='save']")
+      |> element("#section-edit-form")
       |> render_submit(%{
         "section" => %{"display_curriculum_item_numbering" => "false"}
       })
@@ -378,7 +379,7 @@ defmodule OliWeb.Sections.EditLiveTest do
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
 
       view
-      |> element("form[phx-submit='save']")
+      |> element("#template-details-form")
       |> render_submit(%{section: %{title: long_title}})
 
       assert view
@@ -387,7 +388,7 @@ defmodule OliWeb.Sections.EditLiveTest do
                "Couldn&#39;t update template title"
 
       assert view
-             |> element("#section_title")
+             |> element("#template-details-form_title")
              |> render() =~ long_title
 
       assert has_element?(view, "span", "Title should be at most 255 character(s)")
@@ -402,7 +403,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       valid_title = "Valid title"
 
       view
-      |> element("form[phx-submit='save']")
+      |> element("#template-details-form")
       |> render_submit(%{section: %{title: valid_title}})
 
       assert view
@@ -411,7 +412,7 @@ defmodule OliWeb.Sections.EditLiveTest do
                "Template changes saved"
 
       assert view
-             |> element("#section_title")
+             |> element("#template-details-form_title")
              |> render() =~ valid_title
 
       updated_section = Sections.get_section!(section.id)
@@ -436,7 +437,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       }
 
       view
-      |> element("form[phx-submit='save']")
+      |> element("#template-details-form")
       |> render_submit(%{section: %{welcome_title: Poison.encode!(welcome_title)}})
 
       assert view
@@ -464,7 +465,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       valid_subtitle = "Valid subtitle"
 
       view
-      |> element("form[phx-submit='save']")
+      |> element("#template-details-form")
       |> render_submit(%{section: %{encouraging_subtitle: valid_subtitle}})
 
       assert view
@@ -473,7 +474,7 @@ defmodule OliWeb.Sections.EditLiveTest do
                "Template changes saved"
 
       assert view
-             |> element("#section_encouraging_subtitle")
+             |> element("#template-details-form_encouraging_subtitle")
              |> render() =~ valid_subtitle
 
       updated_section = Sections.get_section!(section.id)
@@ -490,7 +491,7 @@ defmodule OliWeb.Sections.EditLiveTest do
       yesterday = DateTime.add(today, -1, :day)
 
       view
-      |> element("form[phx-submit='save']")
+      |> element("#section-edit-form")
       |> render_submit(%{section: %{start_date: today, end_date: yesterday}})
 
       assert has_element?(view, "p", "must be before the end date")
@@ -509,7 +510,7 @@ defmodule OliWeb.Sections.EditLiveTest do
              |> render() =~ "23:59:59"
 
       view
-      |> element("form[phx-submit='save']")
+      |> element("#section-edit-form")
       |> render_submit(%{section: %{preferred_scheduling_time: ~T[20:00:00]}})
 
       updated_section = Sections.get_section!(section.id)

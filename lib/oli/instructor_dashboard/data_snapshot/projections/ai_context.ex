@@ -9,6 +9,12 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.AiContext do
   @required_oracles [:oracle_instructor_progress]
   @optional_oracles [:oracle_instructor_support, :oracle_instructor_engagement]
 
+  @spec required_oracles() :: [atom()]
+  def required_oracles, do: @required_oracles
+
+  @spec optional_oracles() :: [atom()]
+  def optional_oracles, do: @optional_oracles
+
   @spec derive(Contract.t(), keyword()) ::
           {:ok, map()} | {:partial, map(), term()} | {:error, term()}
   def derive(%Contract{} = snapshot, _opts) do
