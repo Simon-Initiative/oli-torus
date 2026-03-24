@@ -97,6 +97,29 @@ jobs:
                 else 3
                 end;
 
+              def string_list:
+                if type == "array" then
+                  map(select(type == "string" and . != ""))
+                elif type == "string" and . != "" then
+                  [.]
+                else
+                  []
+                end;
+
+              def unique_strings:
+                map(select(type == "string" and . != "")) | unique;
+
+              def attribute_keys($event):
+                (
+                  [
+                    ($event.details.source_key // empty),
+                    ($event.details.key // empty)
+                  ]
+                  + (($event.details.linked_refs // []) | string_list)
+                )
+                | unique_strings
+                | if length == 0 then "unknown" else join(", ") end;
+
               ($diff[0].events // []) as $events
               | ($events | map({key: (.event_id // ""), value: .}) | from_entries) as $event_by_id
               | (.reasons // []) as $reasons
@@ -111,6 +134,7 @@ jobs:
                             event_id: ($reason.event_id // "unknown-event"),
                             event_type: ($event.event_type // "unknown"),
                             event_class: ($event.event_class // "low"),
+                            attributes: attribute_keys($event),
                             file_path: ($event.location.file_path // "n/a"),
                             line: ($event.location.line // "n/a")
                           }
@@ -122,6 +146,7 @@ jobs:
                         event_id: (.event_id // "unknown-event"),
                         event_type: (.event_type // "unknown"),
                         event_class: (.event_class // "low"),
+                        attributes: attribute_keys(.),
                         file_path: (.location.file_path // "n/a"),
                         line: (.location.line // "n/a")
                       })
@@ -133,7 +158,7 @@ jobs:
                   "- No contributing events detected."
                 else
                   to_entries
-                  | map("\(.key + 1). [`\(.value.rule_id)`] `\(.value.event_type)` (\(.value.event_class)) at `\(.value.file_path):\(.value.line)`")
+                  | map("\(.key + 1). [`\(.value.rule_id)`] `\(.value.event_type)` (\(.value.event_class)) for `\(.value.attributes)` at `\(.value.file_path):\(.value.line)`")
                   | join("\n")
                 end
             ' tmp/privsignal/priv_signal.score.json
