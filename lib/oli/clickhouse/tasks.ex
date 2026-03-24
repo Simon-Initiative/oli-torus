@@ -61,7 +61,11 @@ defmodule Oli.ClickHouse.Tasks do
     config = Application.get_env(:oli, :clickhouse)
 
     if config do
-      config |> Enum.into(%{})
+      config = Enum.into(config, %{})
+
+      config
+      |> Map.put(:user, Map.fetch!(config, :admin_user))
+      |> Map.put(:password, Map.fetch!(config, :admin_password))
     else
       raise "ClickHouse configuration not found. Please ensure :clickhouse config is set in :oli application."
     end
@@ -379,8 +383,8 @@ defmodule Oli.ClickHouse.Tasks do
     try do
       host = config[:host] || "localhost"
       port = config[:http_port] || 8123
-      user = config[:user] || "default"
-      password = config[:password] || "clickhouse"
+      user = config[:user]
+      password = config[:password]
 
       url = "http://#{user}:#{password}@#{host}:#{port}/"
 

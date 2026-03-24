@@ -43,8 +43,12 @@ config :oli, :clickhouse,
   host: System.get_env("CLICKHOUSE_HOST", "localhost"),
   http_port: System.get_env("CLICKHOUSE_HTTP_PORT", "8123") |> String.to_integer(),
   native_port: System.get_env("CLICKHOUSE_NATIVE_PORT", "9090") |> String.to_integer(),
-  user: System.get_env("CLICKHOUSE_USER", "default"),
-  password: System.get_env("CLICKHOUSE_PASSWORD", "clickhouse"),
+  analytics_user: System.get_env("CLICKHOUSE_ANALYTICS_USER", "default"),
+  analytics_password:
+    System.get_env("CLICKHOUSE_ANALYTICS_PASSWORD", "clickhouse"),
+  admin_user: System.get_env("CLICKHOUSE_ADMIN_USER", "default"),
+  admin_password:
+    System.get_env("CLICKHOUSE_ADMIN_PASSWORD", "clickhouse"),
   database: System.get_env("CLICKHOUSE_DATABASE", "oli_analytics_dev")
 
 config :oli, :vendor_property,

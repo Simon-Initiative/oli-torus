@@ -274,8 +274,10 @@ if clickhouse_olap_enabled do
     host: System.get_env("CLICKHOUSE_HOST", "localhost"),
     http_port: String.to_integer(System.get_env("CLICKHOUSE_HTTP_PORT", "8123")),
     native_port: String.to_integer(System.get_env("CLICKHOUSE_NATIVE_PORT", "9000")),
-    user: System.get_env("CLICKHOUSE_USER", "default"),
-    password: System.fetch_env!("CLICKHOUSE_PASSWORD"),
+    analytics_user: System.fetch_env!("CLICKHOUSE_ANALYTICS_USER"),
+    analytics_password: System.fetch_env!("CLICKHOUSE_ANALYTICS_PASSWORD"),
+    admin_user: System.fetch_env!("CLICKHOUSE_ADMIN_USER"),
+    admin_password: System.fetch_env!("CLICKHOUSE_ADMIN_PASSWORD"),
     database: System.get_env("CLICKHOUSE_DATABASE", "default")
 end
 

@@ -91,6 +91,8 @@ Operational prerequisites:
 
 - `clickhouse-olap` feature flag must be enabled for ClickHouse admin and analytics features.
 - `clickhouse-olap-bulk-ingest` feature flag must be enabled for the admin backfill console.
+- Analytics query credentials must be configured with `CLICKHOUSE_ANALYTICS_USER` and `CLICKHOUSE_ANALYTICS_PASSWORD`.
+- Bulk ingest and backfill credentials must be configured with `CLICKHOUSE_ADMIN_USER` and `CLICKHOUSE_ADMIN_PASSWORD`.
 - The ClickHouse database schema must exist and be current before backfills or ETL resume.
 
 ## Operational Procedures

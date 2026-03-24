@@ -313,7 +313,8 @@ defmodule Oli.Analytics.Backfill do
   defp refresh_run_status(%BackfillRun{} = run) do
     module = analytics_module()
 
-    with {:ok, %{status: :running} = progress_info} <- module.query_progress(run.query_id) do
+    with {:ok, %{status: :running} = progress_info} <-
+           module.query_progress(run.query_id, credential: :admin) do
       progress_metadata =
         progress_info
         |> Map.put(:percent, compute_progress_percent(progress_info))
@@ -338,7 +339,7 @@ defmodule Oli.Analytics.Backfill do
       end
     end
 
-    case module.query_status(run.query_id) do
+    case module.query_status(run.query_id, credential: :admin) do
       {:ok, %{status: :completed} = info} ->
         attrs = metrics_from_info(info)
 

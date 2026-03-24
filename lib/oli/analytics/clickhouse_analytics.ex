@@ -8,9 +8,28 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   alias Jason
   require Logger
 
-  defp clickhouse_config do
-    Application.get_env(:oli, :clickhouse, [])
-    |> Enum.into(%{})
+  defp clickhouse_config(role \\ :readonly) when role in [:readonly, :admin] do
+    config =
+      Application.get_env(:oli, :clickhouse, [])
+      |> Enum.into(%{})
+
+    {user_key, password_key} =
+      case role do
+        :readonly -> {:analytics_user, :analytics_password}
+        :admin -> {:admin_user, :admin_password}
+      end
+
+    %{
+      host: config.host,
+      http_port: config.http_port,
+      native_port: config.native_port,
+      database: config.database,
+      user: Map.get(config, user_key),
+      password: Map.get(config, password_key),
+      http_options: Map.get(config, :http_options, []),
+      http_timeout_ms: Map.get(config, :http_timeout_ms),
+      http_recv_timeout_ms: Map.get(config, :http_recv_timeout_ms)
+    }
   end
 
   @doc """
@@ -19,7 +38,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   def health_check() do
     query = "SELECT 1"
 
-    case execute_query(query, "health check") do
+    case execute_query(query, "health check", credential: :admin) do
       {:ok, _} ->
         Logger.info("ClickHouse health check passed")
         {:ok, :healthy}
@@ -49,7 +68,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse health metadata")
+    |> execute_query("clickhouse health metadata", credential: :admin)
     |> extract_single_row()
   end
 
@@ -67,7 +86,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse table metrics")
+    |> execute_query("clickhouse table metrics", credential: :admin)
     |> case do
       {:ok, %{parsed_body: %{"data" => []}}} -> {:ok, %{"name" => table}}
       other -> extract_single_row(other)
@@ -88,7 +107,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     """
 
     query
-    |> execute_query("clickhouse parts metrics")
+    |> execute_query("clickhouse parts metrics", credential: :admin)
     |> case do
       {:ok, %{parsed_body: %{"data" => []}}} -> {:ok, %{}}
       other -> extract_single_row(other)
@@ -138,7 +157,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   Collects ClickHouse health metadata and table-level metrics for observability.
   """
   def health_summary do
-    database = clickhouse_config().database
+    database = clickhouse_config(:admin).database
 
     with {:ok, base} <- fetch_health_metadata(database),
          {:ok, table} <- fetch_table_metrics(database, "raw_events"),
@@ -241,7 +260,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         ELSE 6
       END
     """
-    |> execute_query("comprehensive section analytics for section #{section_id}")
+    |> execute_query("comprehensive section analytics for section #{section_id}",
+      credential: :readonly
+    )
   end
 
   @doc """
@@ -257,7 +278,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     FROM #{raw_events_table}
     WHERE section_id = #{section_id}
     """
-    |> execute_query("section analytics load status for section #{section_id}")
+    |> execute_query("section analytics load status for section #{section_id}",
+      credential: :readonly
+    )
     |> case do
       {:ok, %{parsed_body: %{"data" => data}} = result} when is_list(data) ->
         {:ok, parse_boolean_from_json(data) || parse_boolean_result(result.body)}
@@ -278,8 +301,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   @doc """
   Retrieves the most recent ClickHouse query status for the provided `query_id`.
   """
-  def query_status(query_id) when is_binary(query_id) and byte_size(query_id) > 0 do
+  def query_status(query_id, opts \\ []) when is_binary(query_id) and byte_size(query_id) > 0 do
     sanitized_id = escape_single_quotes(query_id)
+    credential = Keyword.get(opts, :credential, :readonly)
 
     """
     SELECT
@@ -300,14 +324,14 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     ORDER BY event_time DESC
     LIMIT 1
     """
-    |> execute_query("query status for #{query_id}")
+    |> execute_query("query status for #{query_id}", credential: credential)
     |> case do
       {:ok, response} -> parse_query_status(response)
       other -> other
     end
   end
 
-  def query_status(_), do: {:error, :invalid_query_id}
+  def query_status(_, _opts), do: {:error, :invalid_query_id}
 
   @doc """
   Fetches the current progress for a running ClickHouse query by inspecting
@@ -315,8 +339,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   active, `{:ok, :none}` when no matching process exists, or `{:error, reason}`
   if the lookup fails.
   """
-  def query_progress(query_id) when is_binary(query_id) and byte_size(query_id) > 0 do
+  def query_progress(query_id, opts \\ []) when is_binary(query_id) and byte_size(query_id) > 0 do
     sanitized_id = escape_single_quotes(query_id)
+    credential = Keyword.get(opts, :credential, :readonly)
 
     """
     SELECT
@@ -331,18 +356,19 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     WHERE query_id = '#{sanitized_id}'
     LIMIT 1
     """
-    |> execute_query("query progress for #{query_id}")
+    |> execute_query("query progress for #{query_id}", credential: credential)
     |> case do
       {:ok, response} -> parse_query_progress(response)
       other -> other
     end
   end
 
-  def query_progress(_), do: {:error, :invalid_query_id}
+  def query_progress(_, _opts), do: {:error, :invalid_query_id}
 
   def execute_query(query, description, opts \\ [])
       when is_binary(query) and byte_size(query) > 0 do
-    config = clickhouse_config()
+    credential = Keyword.get(opts, :credential, :readonly)
+    config = clickhouse_config(credential)
 
     # Include database in the URL path for ClickHouse HTTP interface
     query_params = build_query_params(config, Keyword.get(opts, :query_params, %{}))

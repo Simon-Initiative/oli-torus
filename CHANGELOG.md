@@ -7,6 +7,32 @@ For a complete list of changes and release notes, please refer to the [GitHub re
 If a PR is opened that adds a new environment config or requires infrastructure changes, please
 update this file accordingly.
 
+## 0.33.0
+
+### Environment Configs
+
+| Name                          | Required | Description                                                              |
+| ----------------------------- | -------- | ------------------------------------------------------------------------ |
+| CLICKHOUSE_ANALYTICS_USER     | Yes      | ClickHouse user for read/query analytics paths                           |
+| CLICKHOUSE_ANALYTICS_PASSWORD | Yes      | ClickHouse password for read/query analytics paths                       |
+| CLICKHOUSE_ADMIN_USER         | Yes      | ClickHouse user for admin health, backfill, ingest, and schema tasks     |
+| CLICKHOUSE_ADMIN_PASSWORD     | Yes      | ClickHouse password for admin health, backfill, ingest, and schema tasks |
+
+- ClickHouse OLAP has split credentials for analytics vs admin/write operations.
+  `CLICKHOUSE_ANALYTICS_USER` and `CLICKHOUSE_ANALYTICS_PASSWORD` are used for
+  read/query paths. `CLICKHOUSE_ADMIN_USER` and `CLICKHOUSE_ADMIN_PASSWORD` are
+  used for admin health, bulk ingest, backfill, and other write-capable
+  ClickHouse operations.
+
+- `CLICKHOUSE_USER` and `CLICKHOUSE_PASSWORD` are no longer used by the Torus application runtime
+  for OLAP access.
+
+### Infrastructure Changes
+
+None
+
+---
+
 ## 0.32.5
 
 ### Environment Configs
