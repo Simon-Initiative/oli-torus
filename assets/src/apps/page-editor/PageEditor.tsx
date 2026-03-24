@@ -546,6 +546,11 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     const state = this.state;
 
     const { projectSlug } = this.props;
+    const resourceContext = {
+      ...props,
+      resourceSlug: state.resourceSlug,
+      title: state.title,
+    };
 
     const onEdit = (content: PageEditorContent) => this.update({ content });
 
@@ -644,6 +649,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                 <div className="d-flex flex-row">
                   <AlternativesContextProvider projectSlug={projectSlug}>
                     <ContentOutline
+                      key={state.resourceSlug}
                       editMode={this.state.editMode}
                       content={this.state.content}
                       activityContexts={this.state.activityContexts}
@@ -668,7 +674,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                       onPostUndoable={this.onPostUndoable}
                       content={this.state.content}
                       onAddItem={onAddItem}
-                      resourceContext={props}
+                      resourceContext={resourceContext}
                       onDuplicate={onDuplicateActivity}
                     />
                   </AlternativesContextProvider>
