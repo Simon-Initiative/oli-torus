@@ -110,6 +110,7 @@ defmodule OliWeb.Router do
 
   pipeline :require_section do
     plug(Oli.Plugs.RequireSection)
+    plug(OliWeb.Plugs.SetTemplatePreview)
   end
 
   pipeline :force_required_survey do
@@ -473,6 +474,7 @@ defmodule OliWeb.Router do
     get("/projects/export", ProjectsController, :export_csv)
     get("/products/export", ProductsController, :export_csv)
     get("/products/:product_id/preview_launch", ProductsController, :preview_launch)
+    delete("/template_preview/exit", ProductsController, :preview_exit)
     get("/products/:product_id/usage/export", ProductsController, :export_usage_csv)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/usage", Products.UsageView, metadata: %{route_name: :authoring})

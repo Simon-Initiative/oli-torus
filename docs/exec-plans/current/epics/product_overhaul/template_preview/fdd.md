@@ -55,6 +55,8 @@ This design adds a Template Overview preview action that launches the real stude
   - Supplies product/template context and authorization-gated rendering.
 - `OliWeb.Products.Details.Actions`:
   - Adds `Preview` affordance with loading/disabled state support and descriptive help text.
+- `OliWeb.Workspaces.Instructor.IndexLive`:
+  - Surfaces the currently active hidden delivery account and logout control whenever `current_user.hidden == true`, regardless of whether that hidden session originated from admin section access or template preview fallback.
 - New service module: `Oli.Delivery.TemplatePreview`:
   - `prepare_launch(product_section, actor_user, actor_author)` orchestrates:
     - section/type/tenant validation,
@@ -70,6 +72,7 @@ This design adds a Template Overview preview action that launches the real stude
   - Extend/wrap it as needed so preview launch can distinguish `:created` versus `:reused` outcomes for telemetry and testing.
 - Delivery reuse:
   - Launch target remains `/sections/:section_slug` (canonical student home), but a server redirect/session-establishing handoff is required for the hidden-instructor fallback so the launched tab receives the correct user session before entering delivery.
+  - Because hidden instructor login state is stored in the normal browser user session, that state persists after preview/admin section access until replaced or explicitly logged out.
 
 ### 4.2 State & Message Flow
 1. Authorized author/admin opens Template Overview (`Products.DetailsLive`).
@@ -81,6 +84,9 @@ This design adds a Template Overview preview action that launches the real stude
 7. Service returns launch payload describing the launch identity and section slug.
 8. LiveView launches a server-owned redirect/session handoff URL in a new tab/window and restores ready UI state.
 9. The handoff establishes the chosen preview identity in the launched tab, then redirects to `/sections/:section_slug`, where existing plugs (`RequireEnrollment`, paywall, survey, etc.) continue enforcing runtime policy for learner launches and existing hidden-instructor access behavior for fallback launches.
+10. Template preview delivery renders a `Preview Mode` header strip with an `Exit Preview` action.
+11. `Exit Preview` always clears the template-preview session markers and, when the launched identity is a hidden instructor, also logs that hidden user out of the browser session before returning to authoring.
+12. If a hidden instructor session still remains active after preview/admin section access, users can also reset it from Instructor Workspace via the hidden delivery-account logout control before launching a different section/template.
 
 Backpressure and concurrency notes:
 - Concurrent double-clicks are tolerated by enrollment uniqueness constraints and role upsert idempotency.
@@ -122,6 +128,11 @@ Backpressure and concurrency notes:
 - `OliWeb.Products.Details.Actions`:
   - Add `Preview` button wired to parent `phx-click="template_preview"`.
   - Accessibility: clear label, disabled semantics during in-flight state.
+- `OliWeb.ProductsController.preview_exit/2`:
+  - Clears template preview session state.
+  - If `current_user.hidden == true`, also logs out that hidden delivery account before redirecting back to the template overview return path.
+- `OliWeb.Workspaces.Instructor.IndexLive`:
+  - When `current_user.hidden == true`, render a lightweight hidden-delivery-account panel with account details and a `/users/log_out` action so users can manually clear persistent hidden instructor session state.
 
 ### 5.3 Processes
 - No new GenServer/Task/Registry process is required.
@@ -187,6 +198,10 @@ Backpressure and concurrency notes:
   - Show manual open link as fallback without rerunning enrollment mutation.
 - Section no longer active/accessible:
   - Return `:section_unavailable` and avoid launch.
+- Hidden instructor session persists and user later targets a different section/template:
+  - Do not create a second hidden identity type; continue reusing the section-scoped hidden instructor model.
+  - Primary recovery path is `Exit Preview`, which clears hidden-user session state when preview is the source of that identity.
+  - Instructor Workspace also exposes the hidden account/logout affordance as a manual recovery/reset path for sticky cross-section session state.
 
 ## 11. Observability
 - Telemetry events:
@@ -234,6 +249,8 @@ Backpressure and concurrency notes:
 - Manual QA:
   - Validate new-tab launch to student home.
   - Validate parity with true student delivery for same template section.
+  - Validate `Exit Preview` clears template preview session markers and logs out hidden instructor sessions created by preview fallback.
+  - Validate hidden instructor session is visible in Instructor Workspace and can be cleared with the logout control after preview/admin section access.
   - Validate keyboard-only operation and focus continuity.
 
 ## 14. Backwards Compatibility
@@ -258,6 +275,18 @@ Backpressure and concurrency notes:
 
 ## 17. References
 - `docs/exec-plans/current/epics/product_overhaul/template_preview/prd.md`
+
+## Decision Log
+### 2026-03-24 - Document Hidden Session Logout Handling
+- Change: Clarified that hidden-instructor preview fallback uses persistent browser session state and that Instructor Workspace exposes the hidden delivery-account logout affordance for manual reset.
+- Reason: Implementation now explicitly reuses sticky hidden instructor sessions and exposes the logout panel outside the admin-only placeholder branch.
+- Evidence: `lib/oli_web/live/workspaces/instructor/index_live.ex`, `lib/oli/delivery/template_preview.ex`, `test/oli_web/live/workspaces/instructor_test.exs`
+- Impact: Makes the session-lifecycle tradeoff and supported operator workflow explicit in interfaces, failure modes, and manual QA.
+### 2026-03-24 - Document Exit Preview Hidden-User Cleanup
+- Change: Added the explicit `Exit Preview` cleanup behavior for hidden-instructor launches.
+- Reason: The implementation now uses `preview_exit/2` to clear preview markers and log out hidden users when preview was running under the hidden-instructor fallback.
+- Evidence: `lib/oli_web/controllers/products_controller.ex`, `test/oli_web/controllers/products_controller_test.exs`
+- Impact: Clarifies the primary cleanup path for hidden preview sessions in the runtime flow and QA expectations.
 - `docs/exec-plans/current/epics/product_overhaul/overview.md`
 - `docs/exec-plans/current/epics/product_overhaul/prd.md`
 - `docs/design-docs/high-level.md`

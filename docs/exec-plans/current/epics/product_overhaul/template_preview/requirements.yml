@@ -78,6 +78,23 @@ requirements:
     status: proposed
     verification_method: automated
     proofs: []
+  - id: AC-010
+    title: Given preview or admin section access has established a hidden instructor
+      browser session, when the user visits Instructor Workspace, then the active
+      hidden delivery account is shown together with a logout action that can be
+      used to clear that persistent hidden session before entering a different section
+      or template preview.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-011
+    title: Given template preview is active, when the user invokes Exit Preview,
+      then template-preview session markers are cleared and, if preview was running
+      under a hidden instructor account, that hidden user is also removed from the
+      browser session before redirecting back to authoring.
+    status: proposed
+    verification_method: automated
+    proofs: []
 - id: FR-007
   title: System SHALL provide deterministic error handling when enrollment upsert
     or launch URL resolution fails, without partial/duplicate writes.

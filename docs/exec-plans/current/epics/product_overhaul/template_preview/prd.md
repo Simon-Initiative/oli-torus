@@ -37,12 +37,16 @@ Links: `docs/exec-plans/current/epics/product_overhaul/overview.md`, `docs/exec-
   - The same author clicks Preview again and delivery opens without creating a second enrollment.
   - An admin verifies that preview content matches what a real student sees for the same section.
   - An authorized author without a logged-in user account clicks Preview and the system creates or reuses the section's singleton hidden instructor account so preview can launch without asking the author to choose a learner login.
+  - A user clicks Exit Preview from template preview delivery and the system clears preview-session state; if preview was using a hidden instructor account, that hidden user is also removed from the browser session.
+  - An authorized author or admin who is left in a hidden instructor session after preview can open Instructor Workspace, inspect the active hidden delivery account, and sign it out before moving to a different section/template preview.
 
 ## 5. UX / UI Requirements
 - Key Screens/States:
   - Template Overview displays a Preview action for authorized users.
   - Preview click shows loading/disabled state until launch URL resolution completes.
+  - Template preview delivery shows a `Preview Mode` header strip with an `Exit Preview` action; exiting clears preview state and logs out the hidden delivery account when one is in use.
   - Error state shows actionable message if enrollment upsert or launch resolution fails.
+  - Instructor Workspace exposes the active hidden delivery account and a logout control whenever a hidden instructor session is present, so users can manually clear sticky preview/admin hidden-user state before opening a different section.
 - Navigation & Entry Points:
   - Entry point is Template Overview page action area.
   - Destination is the section student home/delivery entrypoint in a new browser window/tab.
@@ -114,6 +118,7 @@ No feature flags present in this feature
 - Enrollment race conditions under rapid repeated clicks -> Use idempotent upsert with DB constraint-backed uniqueness and retry-safe logic.
 - Authorization edge cases across template vs delivery roles -> Enforce server-side permission checks before enrollment changes and add regression tests for unauthorized roles.
 - Hidden-instructor fallback could create ambiguous preview identity if not section-scoped -> Reuse the existing singleton-per-section hidden instructor model and cover create vs reuse paths with regression tests.
+- Hidden-instructor sessions persist in browser state and can be wrong for a later section/template -> Surface the active hidden delivery account in Instructor Workspace with a logout affordance so users can manually reset the session before bouncing to another section.
 
 ## 14. Open Questions & Assumptions
 - Assumptions:
@@ -142,6 +147,8 @@ No feature flags present in this feature
   - Verify first preview click creates enrollment and launches student home.
   - Verify repeated clicks do not create duplicate enrollments.
   - Verify no-`current_user` author/admin preview creates or reuses the hidden instructor fallback and launches without asking for a separate learner login.
+  - Verify `Exit Preview` clears template preview session state and logs out the hidden instructor account when preview was launched through hidden-instructor fallback.
+  - Verify a hidden instructor session created via preview can be identified and signed out from Instructor Workspace before opening a different section/template.
   - Verify unauthorized users cannot view or invoke Preview.
   - Verify keyboard access, focus behavior, and status/error messaging accessibility.
 - Performance Verification:
@@ -155,3 +162,5 @@ No feature flags present in this feature
 
 ## Decision Log
 - 2026-03-18: Added an explicit no-`current_user` preview requirement. Authorized authors/admins now fall back to the section-scoped singleton hidden instructor model instead of failing for missing delivery identity.
+- 2026-03-24: Clarified that hidden-instructor fallback uses persistent browser session state and that the supported workaround for cross-section/template bouncing is the hidden delivery-account logout affordance in Instructor Workspace. Evidence: `lib/oli_web/live/workspaces/instructor/index_live.ex`, `test/oli_web/live/workspaces/instructor_test.exs`.
+- 2026-03-24: Clarified that `Exit Preview` also clears the hidden delivery account when template preview is running under the hidden-instructor fallback. Evidence: `lib/oli_web/controllers/products_controller.ex`, `test/oli_web/controllers/products_controller_test.exs`.

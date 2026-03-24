@@ -6,6 +6,10 @@
       </script>
 
       <div class="absolute top-0 w-full bg-Specially-Tokens-Background-lesson-page min-h-[100vh]">
+        <Components.Delivery.Layouts.template_preview_banner
+          template_preview_mode={assigns[:template_preview_mode]}
+          template_preview_exit_path={assigns[:template_preview_exit_path]}
+        />
         <div class="sticky top-0 z-[999]">
           <Components.Delivery.Layouts.header
             :if={@section}

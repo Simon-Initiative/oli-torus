@@ -190,12 +190,16 @@ defmodule OliWeb.ProductsController do
            TemplatePreview.prepare_launch(product, current_user, author) do
       case launch_identity do
         :current_user ->
-          redirect(conn, to: ~p"/sections/#{section_slug}")
+          conn
+          |> put_template_preview_session(section_slug, template_preview_return_to(product))
+          |> redirect(to: ~p"/sections/#{section_slug}")
 
         :hidden_instructor ->
           case Sections.fetch_hidden_instructor(product.id) do
             {:ok, {user, _token}} ->
-              UserAuth.log_in_user(conn, user, %{"request_path" => ~p"/sections/#{section_slug}"})
+              conn
+              |> put_template_preview_session(section_slug, template_preview_return_to(product))
+              |> UserAuth.log_in_user(user, %{"request_path" => ~p"/sections/#{section_slug}"})
 
             _ ->
               conn
@@ -218,6 +222,19 @@ defmodule OliWeb.ProductsController do
         conn
         |> put_flash(:error, "Template preview could not be prepared")
         |> redirect(to: ~p"/authoring/products/#{product_slug}")
+    end
+  end
+
+  def preview_exit(conn, _params) do
+    return_to = get_session(conn, :template_preview_return_to) || ~p"/"
+    current_user = conn.assigns.current_user
+
+    conn = clear_template_preview_session(conn)
+
+    if match?(%Accounts.User{hidden: true}, current_user) do
+      UserAuth.log_out_user(conn, %{"redirect_to" => return_to})
+    else
+      redirect(conn, to: return_to)
     end
   end
 
@@ -343,6 +360,24 @@ defmodule OliWeb.ProductsController do
 
   defp authorize_product_preview(author, product),
     do: authorize_product_usage_export(author, product)
+
+  defp put_template_preview_session(conn, section_slug, return_to) do
+    conn
+    |> put_session(:template_preview_mode, true)
+    |> put_session(:template_preview_section_slug, section_slug)
+    |> put_session(:template_preview_return_to, return_to)
+  end
+
+  defp clear_template_preview_session(conn) do
+    conn
+    |> delete_session(:template_preview_mode)
+    |> delete_session(:template_preview_section_slug)
+    |> delete_session(:template_preview_return_to)
+  end
+
+  defp template_preview_return_to(%Section{slug: product_slug}) do
+    ~p"/authoring/products/#{product_slug}"
+  end
 
   defp sections_to_usage_csv(sections, true) do
     rows =

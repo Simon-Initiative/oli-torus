@@ -114,12 +114,11 @@ defmodule Oli.Delivery.TemplatePreview do
     end
   end
 
-  defp resolve_launch_identity(%User{author_id: author_id} = user, %Author{id: author_id}),
-    do: {:ok, {:current_user, user}}
+  defp resolve_launch_identity(%User{hidden: true}, %Author{}), do: {:ok, :hidden_instructor}
+
+  defp resolve_launch_identity(%User{} = user, %Author{}), do: {:ok, {:current_user, user}}
 
   defp resolve_launch_identity(nil, %Author{}), do: {:ok, :hidden_instructor}
-
-  defp resolve_launch_identity(_user, _author), do: {:error, :missing_delivery_identity}
 
   defp telemetry_metadata(section, actor_user, actor_author) do
     %{

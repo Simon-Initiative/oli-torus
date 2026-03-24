@@ -18,6 +18,8 @@ Deliver template preview from Template Overview by reusing canonical section del
 ## Clarifications & Default Assumptions
 - When `current_user` is available for template authors/admins in the Template Overview LiveView session, preview uses the learner-enrollment path.
 - When `current_user` is absent but the preview request is authorized by `current_author`, preview falls back to the section-scoped singleton hidden instructor model used for admin section access.
+- Hidden instructor preview/admin sessions persist in the browser user session until replaced or explicitly logged out; the supported manual reset path is the hidden delivery-account logout affordance in Instructor Workspace.
+- `Exit Preview` is the primary cleanup path for template preview sessions; it clears preview markers in all cases and logs out the hidden delivery account when preview was launched via hidden-instructor fallback.
 - V1 launch destination is always canonical student home (`/sections/:section_slug`) and does not deep-link to previously visited pages.
 - Browser popup-blocks are treated as client launch failures; backend enrollment work is not retried solely because popup dispatch failed.
 - Existing enrollment uniqueness constraints (`enrollments.user_id+section_id` and enrollment-role uniqueness) are present in all deployed environments.
@@ -36,6 +38,7 @@ Deliver template preview from Template Overview by reusing canonical section del
   - [ ] Add Preview action wiring in `OliWeb.Products.Details.Actions` and event handling in `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive`.
   - [ ] Gate rendering and event acceptance by existing template-management authorization checks from mounted context.
   - [ ] Add launch-in-progress disable state and deterministic error presentation (`preview_launching?`, `preview_error`) with localizable strings.
+  - [ ] Document and expose the hidden delivery-account logout affordance for sticky hidden-session recovery in Instructor Workspace.
   - [ ] Ensure keyboard activation, accessible naming, and predictable focus continuity after success/failure.
   - [ ] Add server-side denial handling for direct unauthorized event invocation (not only hidden UI).
 - Testing Tasks:
@@ -84,12 +87,16 @@ Deliver template preview from Template Overview by reusing canonical section del
 - Tasks:
   - [ ] Wire `"template_preview"` event flow to call `TemplatePreview.prepare_launch/3` and translate outcomes to UI state.
   - [ ] Build launch path in LiveView with a server handoff/redirect route that can establish hidden-instructor preview sessions when needed, then trigger client new-tab dispatch.
+  - [ ] Add a preview-exit route that clears template preview session state and logs out the hidden user when preview is running under the hidden-instructor fallback.
   - [ ] Ensure no blank-window behavior on backend error by only dispatching launch after successful preparation.
   - [ ] Provide deterministic popup-block/client-launch failure messaging with manual fallback link behavior.
+  - [ ] Preserve the existing hidden-instructor session model and rely on the Instructor Workspace logout affordance as the supported manual reset path for cross-section/template bouncing.
   - [ ] Confirm originating authoring tab retains context and recovers action state after launch attempt.
 - Testing Tasks:
   - [ ] Add/extend LiveView integration tests for first-launch learner enrollment creation, repeat-launch learner reuse, hidden-instructor create/reuse fallback, and failure flows.
   - [ ] Add tests ensuring handoff path generation and no launch dispatch on service error.
+  - [ ] Add controller tests for preview exit cleanup, including hidden-user logout when exit is invoked from hidden-instructor preview.
+  - [ ] Add/extend Instructor Workspace tests proving hidden sessions created via preview/admin access expose the logout affordance for manual reset.
   - [ ] Command(s): `mix test test/oli_web/live/workspaces/course_author/products/details_live_test.exs`
 - Definition of Done:
   - Authorized preview clicks open the correct section delivery destination on success.
@@ -130,7 +137,7 @@ Deliver template preview from Template Overview by reusing canonical section del
 - Goal: Complete release gate with full regression confidence, documentation alignment, and rollback posture.
 - Tasks:
   - [ ] Run full automated regression and fix any preview-related breakages before merge.
-  - [ ] Execute manual QA matrix from PRD: first launch create, repeat launch reuse, hidden-instructor fallback create/reuse, unauthorized denial, keyboard/focus behavior, popup-block fallback.
+  - [ ] Execute manual QA matrix from PRD: first launch create, repeat launch reuse, hidden-instructor fallback create/reuse, `Exit Preview` hidden-user cleanup, hidden-session logout/reset flow, unauthorized denial, keyboard/focus behavior, popup-block fallback.
   - [ ] Update feature documentation/changelog notes for template preview behavior and known limitations.
   - [ ] Confirm rollback posture: additive code-path changes only, no schema migrations, revert-by-deploy available.
   - [ ] Capture final acceptance traceability for FR-001..FR-005, FR-007..FR-008 and AC-001..AC-009.
@@ -164,3 +171,5 @@ Deliver template preview from Template Overview by reusing canonical section del
 
 ## Decision Log
 - 2026-03-18: Replaced the prior missing-`current_user` failure assumption with a required hidden-instructor fallback. The plan now treats no-user preview as a singleton-per-section hidden instructor create/reuse path that must be covered in orchestration, launch handoff, telemetry, and QA.
+- 2026-03-24: Documented the persistent hidden-session limitation and the supported recovery path via the Instructor Workspace hidden delivery-account logout affordance. Evidence: `lib/oli_web/live/workspaces/instructor/index_live.ex`, `test/oli_web/live/workspaces/instructor_test.exs`.
+- 2026-03-24: Documented `Exit Preview` as the primary cleanup path for preview session state, including hidden-user logout when preview is using the hidden-instructor fallback. Evidence: `lib/oli_web/controllers/products_controller.ex`, `test/oli_web/controllers/products_controller_test.exs`.

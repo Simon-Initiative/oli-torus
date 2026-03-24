@@ -265,6 +265,11 @@ defmodule OliWeb.ProductsControllerTest do
         |> get(~p"/authoring/products/#{product.slug}/preview_launch")
 
       assert redirected_to(conn) == "/sections/#{product.slug}"
+      assert get_session(conn, :template_preview_mode)
+      assert get_session(conn, :template_preview_section_slug) == product.slug
+
+      assert get_session(conn, :template_preview_return_to) ==
+               "/authoring/products/#{product.slug}"
 
       hidden_user = Oli.Repo.get!(Oli.Accounts.User, get_session(conn, :current_user_id))
 
@@ -310,6 +315,71 @@ defmodule OliWeb.ProductsControllerTest do
 
       assert hidden_user.hidden
       assert Oli.Delivery.Sections.is_instructor?(hidden_user, product.slug)
+    end
+
+    test "authorized author with current_user sets template preview session and preserves user",
+         %{
+           conn: conn,
+           author: author,
+           author_product: product
+         } do
+      user = insert(:user)
+
+      conn =
+        conn
+        |> log_in_author(author)
+        |> log_in_user(user)
+        |> get(~p"/authoring/products/#{product.slug}/preview_launch")
+
+      assert redirected_to(conn) == "/sections/#{product.slug}"
+      assert get_session(conn, :current_user_id) == user.id
+      assert get_session(conn, :template_preview_mode)
+      assert get_session(conn, :template_preview_section_slug) == product.slug
+    end
+  end
+
+  describe "preview_exit/2" do
+    test "clears template preview session without logging out a non-hidden user", %{conn: conn} do
+      author = insert(:author)
+      user = insert(:user)
+
+      conn =
+        conn
+        |> log_in_author(author)
+        |> log_in_user(user)
+        |> init_test_session(%{
+          template_preview_mode: true,
+          template_preview_section_slug: "template-preview-author",
+          template_preview_return_to: "/authoring/products/template-preview-author"
+        })
+        |> delete(~p"/authoring/template_preview/exit")
+
+      assert redirected_to(conn) == "/authoring/products/template-preview-author"
+      assert get_session(conn, :current_user_id) == user.id
+      refute get_session(conn, :template_preview_mode)
+      refute get_session(conn, :template_preview_section_slug)
+      refute get_session(conn, :template_preview_return_to)
+    end
+
+    test "logs out a hidden user while preserving author session", %{conn: conn} do
+      author = insert(:author)
+      hidden_user = insert(:user, hidden: true)
+
+      conn =
+        conn
+        |> log_in_author(author)
+        |> log_in_user(hidden_user)
+        |> init_test_session(%{
+          template_preview_mode: true,
+          template_preview_section_slug: "template-preview-author",
+          template_preview_return_to: "/authoring/products/template-preview-author"
+        })
+        |> delete(~p"/authoring/template_preview/exit")
+
+      assert redirected_to(conn) == "/authoring/products/template-preview-author"
+      assert get_session(conn, :current_author_id) == author.id
+      refute get_session(conn, :current_user_id)
+      refute get_session(conn, :template_preview_mode)
     end
   end
 end

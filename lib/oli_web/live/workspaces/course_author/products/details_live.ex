@@ -367,7 +367,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   end
 
   defp preview_error_message(:missing_delivery_identity) do
-    "Preview requires a linked learner account for the current author"
+    "Preview requires an available delivery identity"
   end
 
   defp preview_error_message(:section_unavailable) do

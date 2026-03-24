@@ -60,12 +60,27 @@ defmodule Oli.Delivery.TemplatePreviewTest do
                TemplatePreview.prepare_launch(section, nil, author)
     end
 
-    test "returns an error when the learner account is not linked to the author" do
+    test "treats an existing hidden instructor current_user as hidden-instructor fallback" do
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+      section = insert(:section, base_project: project, type: :blueprint, status: :active)
+
+      {:ok, %{user: hidden_user}} = Oli.Delivery.Sections.ensure_hidden_instructor(section.id)
+
+      assert {:ok, %{launch_identity: :hidden_instructor, hidden_instructor_outcome: :reused}} =
+               TemplatePreview.prepare_launch(section, hidden_user, author)
+    end
+
+    test "uses any current user for learner enrollment" do
       %{author: author, section: section} = blueprint_fixture()
       other_user = insert(:user)
 
-      assert {:error, :missing_delivery_identity} =
-               TemplatePreview.prepare_launch(section, other_user, author)
+      assert {:ok,
+              %{
+                launch_identity: :current_user,
+                enrollment_outcome: :created,
+                hidden_instructor_outcome: nil
+              }} = TemplatePreview.prepare_launch(section, other_user, author)
     end
 
     test "returns an error for unauthorized authors" do
