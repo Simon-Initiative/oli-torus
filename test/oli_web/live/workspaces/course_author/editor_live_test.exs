@@ -272,6 +272,42 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
       assert has_element?(view, "div.TitleBar button[phx-click=\"begin_title_edit\"][disabled]")
     end
 
+    test "re-enables adaptive read only toggle after another author releases the lock", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      other_author = insert(:author, email: "adaptive-lock-release@example.edu")
+
+      insert(:author_project,
+        author_id: other_author.id,
+        project_id: project.id
+      )
+
+      assert {:acquired} =
+               PageEditor.acquire_lock(
+                 project.slug,
+                 adaptive_page_revision.slug,
+                 other_author.email
+               )
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug, adaptive_page_revision.slug))
+
+      render_hook(view, "survey_scripts_loaded", %{})
+      render_hook(view, "authoring_preview_state_changed", %{"enabled" => true})
+
+      assert has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+
+      assert {:ok, {:released}} =
+               PageEditor.release_lock(
+                 project.slug,
+                 adaptive_page_revision.slug,
+                 other_author.email
+               )
+
+      refute has_element?(view, "div.TitleBar #adaptive_read_only_toggle input[disabled]")
+    end
+
     test "saves the title in liveview and patches the editor url", %{
       conn: conn,
       author: author,

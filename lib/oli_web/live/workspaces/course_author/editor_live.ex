@@ -254,6 +254,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
          socket
          |> assign(:lock_holder_id, current_author.id)
          |> assign(:lock_holder_email, current_author.email)
+         |> refresh_lock_controls_enabled()
          |> refresh_title_editable()}
 
       true ->
@@ -293,6 +294,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
          socket
          |> assign(:lock_holder_id, nil)
          |> assign(:lock_holder_email, nil)
+         |> refresh_lock_controls_enabled()
          |> refresh_title_editable()}
     end
   end
@@ -711,9 +713,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     assign(socket, :title_editable, title_editable?(socket, adaptive_read_only))
   end
 
+  defp refresh_lock_controls_enabled(socket) do
+    if socket.assigns.is_advanced_authoring do
+      assign(socket, :lock_controls_enabled, lock_controls_enabled?(socket))
+    else
+      socket
+    end
+  end
+
   defp title_editable?(socket, adaptive_read_only) do
     current_author_holds_lock?(socket) and
       (!socket.assigns.is_advanced_authoring or !adaptive_read_only)
+  end
+
+  defp lock_controls_enabled?(socket) do
+    is_nil(socket.assigns.lock_holder_id) or current_author_holds_lock?(socket)
   end
 
   defp current_author_holds_lock?(socket) do
