@@ -3,6 +3,8 @@ defmodule Oli.Delivery.EmailSender do
   Shared email delivery helpers for instructor-facing delivery workflows.
   """
 
+  alias Oli.Mailer
+
   @spec normalize_recipient_emails([String.t() | nil]) :: [String.t()]
   def normalize_recipient_emails(recipient_emails) do
     recipient_emails
@@ -21,21 +23,31 @@ defmodule Oli.Delivery.EmailSender do
           String.t() | nil,
           String.t() | nil
         ) ::
-          {:ok, non_neg_integer()}
+          {:ok, non_neg_integer()} | {:error, term()}
   def deliver_text_emails(recipient_emails, subject, body, instructor_email, instructor_name) do
     recipient_emails = normalize_recipient_emails(recipient_emails)
+    email_count = length(recipient_emails)
 
-    recipient_emails
-    |> Enum.map(fn recipient_email ->
-      Oli.Email.create_text_email(recipient_email, subject, body)
-      # Note: We don't set FROM to instructor's email because email providers like
-      # Amazon SES require verified sender addresses. The reply_to header ensures
-      # replies go back to the instructor.
-      |> Oli.Email.maybe_reply_to(reply_to_value(instructor_name, instructor_email))
-    end)
-    |> Oli.Mailer.deliver_later()
+    emails =
+      recipient_emails
+      |> Enum.map(fn recipient_email ->
+        Oli.Email.create_text_email(recipient_email, subject, body)
+        # Note: We don't set FROM to instructor's email because email providers like
+        # Amazon SES require verified sender addresses. The reply_to header ensures
+        # replies go back to the instructor.
+        |> Oli.Email.maybe_reply_to(reply_to_value(instructor_name, instructor_email))
+      end)
 
-    {:ok, length(recipient_emails)}
+    case Mailer.deliver_later(emails) do
+      {:ok, jobs} when is_list(jobs) ->
+        {:ok, email_count}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  rescue
+    exception ->
+      {:error, exception}
   end
 
   defp reply_to_value(_name, nil), do: nil

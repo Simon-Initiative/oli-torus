@@ -854,10 +854,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     do: selected_student_ids
 
   defp selected_students_data(buckets, selected_student_ids) do
+    selected_ids = MapSet.new(selected_student_ids)
+
     buckets
     |> Enum.flat_map(&Map.get(&1, :students, []))
     |> Enum.uniq_by(& &1.id)
-    |> Enum.filter(&(&1.id in selected_student_ids))
+    |> Enum.filter(&MapSet.member?(selected_ids, &1.id))
   end
 
   defp current_visible_students(projection, tile_state) do

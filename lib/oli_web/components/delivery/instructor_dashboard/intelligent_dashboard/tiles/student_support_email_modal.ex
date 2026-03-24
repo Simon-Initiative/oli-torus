@@ -20,10 +20,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   }
 
   def render(assigns) do
+    excluded_recipient_students = excluded_recipient_students(assigns)
+
     assigns =
       assigns
-      |> assign(:excluded_recipient_students, excluded_recipient_students(assigns))
-      |> assign(:excluded_recipient_count, excluded_recipient_count(assigns))
+      |> assign(:excluded_recipient_students, excluded_recipient_students)
+      |> assign(:excluded_recipient_count, length(excluded_recipient_students))
       |> assign(:send_disabled, send_disabled?(assigns))
 
     ~H"""
@@ -248,17 +250,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     else
       recipient_emails = Enum.map(socket.assigns.recipient_students, & &1.email)
 
-      {:ok, _count} =
-        EmailSender.deliver_text_emails(
-          recipient_emails,
-          String.trim(socket.assigns.subject),
-          String.trim(socket.assigns.body),
-          socket.assigns.instructor_email,
-          socket.assigns[:instructor_name] || "Instructor"
-        )
+      case EmailSender.deliver_text_emails(
+             recipient_emails,
+             String.trim(socket.assigns.subject),
+             String.trim(socket.assigns.body),
+             socket.assigns.instructor_email,
+             socket.assigns[:instructor_name] || "Instructor"
+           ) do
+        {:ok, _count} ->
+          send(self(), {:flash_message, {:info, "Email sent"}})
+          send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
 
-      send(self(), {:flash_message, {:info, "Email sent"}})
-      send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
+        {:error, _reason} ->
+          send(self(), {:flash_message, {:error, "Email could not be sent"}})
+      end
 
       {:noreply, socket}
     end
@@ -288,12 +293,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     |> Enum.reject(&(is_binary(&1.email) and String.trim(&1.email) != ""))
   end
 
-  defp excluded_recipient_count(assigns) do
-    assigns
-    |> excluded_recipient_students()
-    |> length()
-  end
-
   defp send_disabled?(assigns) do
     valid_recipient_count(assigns.recipient_students) == 0 or
       String.trim(assigns.subject) == "" or
@@ -318,7 +317,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   defp excluded_recipient_names(excluded_recipient_students) do
     excluded_recipient_students
-    |> Enum.map(&Map.get(&1, :display_name, "Unknown student"))
+    |> Enum.map(fn student ->
+      case Map.get(student, :display_name) do
+        name when is_binary(name) ->
+          trimmed = String.trim(name)
+          if trimmed == "", do: "Unknown student", else: trimmed
+
+        _ ->
+          "Unknown student"
+      end
+    end)
     |> Enum.join(", ")
   end
 

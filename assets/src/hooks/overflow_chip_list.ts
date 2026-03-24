@@ -113,10 +113,6 @@ function collapseToFit(root: HTMLElement) {
     }
   }
 
-  if (visibleCount < 1) {
-    visibleCount = 1;
-  }
-
   chips.forEach((chip, index) => {
     chip.style.display = index < visibleCount ? '' : 'none';
   });
