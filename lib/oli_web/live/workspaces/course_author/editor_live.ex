@@ -199,10 +199,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
      )}
   end
 
-  def handle_event("change_title_input", %{"title_editor" => %{"title" => title}}, socket) do
-    {:noreply, assign(socket, title_input: title)}
-  end
-
   def handle_event("save_title", %{"title_editor" => %{"title" => title}}, socket) do
     title = String.trim(title)
     socket = refresh_title_editable(socket)
@@ -331,7 +327,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
                   <.form
                     for={%{}}
                     as={:title_editor}
-                    phx-change="change_title_input"
                     phx-submit="save_title"
                     class="d-flex inline-flex flex-grow-1"
                   >
@@ -340,7 +335,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
                       type="text"
                       name="title_editor[title]"
                       value={@title_input}
-                      phx-debounce="300"
                       aria-label="Page Title"
                       class="form-control form-control-sm flex-1"
                       autocomplete="off"
@@ -349,7 +343,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
                       <button
                         type="submit"
                         class="btn btn-primary btn-sm ml-2"
-                        disabled={String.trim(@title_input) == ""}
                       >
                         Save
                       </button>

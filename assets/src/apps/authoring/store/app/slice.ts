@@ -237,9 +237,6 @@ const slice: Slice<AppState> = createSlice({
     builder.addCase(releaseEditingLock.fulfilled, (state) => {
       state.hasEditingLock = false;
     });
-    builder.addCase(releaseEditingLock.rejected, (state) => {
-      state.hasEditingLock = false;
-    });
     builder.addCase(savePage.rejected, (state) => {
       state.hasEditingLock = false;
     });
