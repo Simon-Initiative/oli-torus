@@ -638,6 +638,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   defp handle_created_revision(socket, "Container", _slug, _adaptive_mode) do
     {:noreply,
      assign(socket,
+       creating_page: false,
        numberings:
          Numbering.number_full_tree(
            Oli.Publishing.AuthoringResolver,
