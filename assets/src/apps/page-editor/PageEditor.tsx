@@ -44,7 +44,7 @@ import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { PageEditorContent } from '../../data/editor/PageEditorContent';
-import { initAppSignal } from '../../utils/appsignal';
+import { initAppSignal, updateAppSignalMetadata } from '../../utils/appsignal';
 import '../ResourceEditor.scss';
 import { PageTriggerEditor } from './PageTriggerEditor';
 import { registerUnload, unregisterUnload } from './listeners';
@@ -223,6 +223,11 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       };
 
       this.currentResourceSlug = detail.revision_slug;
+      updateAppSignalMetadata(this.state.appsignal, 'Core Authoring Editor', {
+        projectSlug: this.props.projectSlug,
+        resourceSlug: detail.revision_slug,
+        resourceId: String(this.props.resourceId),
+      });
       this.setState({
         title: detail.title,
         resourceSlug: detail.revision_slug,

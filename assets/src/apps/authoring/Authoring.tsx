@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
 import { isFirefox } from 'utils/browser';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
-import { initAppSignal } from '../../utils/appsignal';
+import { initAppSignal, updateAppSignalMetadata } from '../../utils/appsignal';
 import { IActivity, selectAllActivities } from '../delivery/store/features/activities/slice';
 import { selectSequence } from '../delivery/store/features/groups/selectors/deck';
 import { AuthoringExpertPageEditor } from './AuthoringExpertPageEditor';
@@ -424,11 +424,16 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       dispatch(setTitle({ title: detail.title }));
       dispatch(setPageRevisionSlug({ revisionSlug: detail.revision_slug }));
       dispatch(setAppRevisionSlug({ revisionSlug: detail.revision_slug }));
+      updateAppSignalMetadata(appsignal, 'Advanced Authoring', {
+        projectSlug,
+        revisionSlug: detail.revision_slug,
+        resourceId: String(resourceId),
+      });
     };
 
     window.addEventListener('phx:authoring_page_title_updated', onTitleUpdated);
     return () => window.removeEventListener('phx:authoring_page_title_updated', onTitleUpdated);
-  }, [dispatch]);
+  }, [appsignal, dispatch, projectSlug, resourceId]);
 
   useEffect(() => {
     const onPreviewRequested = async (event: Event) => {
