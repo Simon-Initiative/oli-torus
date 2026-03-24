@@ -301,7 +301,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   @doc """
   Retrieves the most recent ClickHouse query status for the provided `query_id`.
   """
-  def query_status(query_id, opts \\ []) when is_binary(query_id) and byte_size(query_id) > 0 do
+  def query_status(query_id, opts \\ [])
+
+  def query_status(query_id, opts) when is_binary(query_id) and byte_size(query_id) > 0 do
     sanitized_id = escape_single_quotes(query_id)
     credential = Keyword.get(opts, :credential, :readonly)
 
@@ -339,7 +341,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   active, `{:ok, :none}` when no matching process exists, or `{:error, reason}`
   if the lookup fails.
   """
-  def query_progress(query_id, opts \\ []) when is_binary(query_id) and byte_size(query_id) > 0 do
+  def query_progress(query_id, opts \\ [])
+
+  def query_progress(query_id, opts) when is_binary(query_id) and byte_size(query_id) > 0 do
     sanitized_id = escape_single_quotes(query_id)
     credential = Keyword.get(opts, :credential, :readonly)
 
