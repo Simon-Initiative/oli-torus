@@ -56,7 +56,7 @@ export async function handleShellReadOnlyToggle({
   if (attemptResult.meta?.requestStatus !== 'fulfilled') {
     const errorCode = attemptResult.payload?.error;
 
-    if (errorCode == 'SESSION_EXPIRED') {
+    if (errorCode === 'SESSION_EXPIRED') {
       reload();
       return { readonly: true, sessionExpired: true };
     }

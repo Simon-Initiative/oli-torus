@@ -2,7 +2,6 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { diff } from 'deep-object-diff';
 import cloneDeep from 'lodash/cloneDeep';
 import debounce from 'lodash/debounce';
-import memoize from 'lodash/memoize';
 import { ActivityModelSchema } from 'components/activities/types';
 import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
 import { ObjectiveMap } from 'data/content/activity';
@@ -187,17 +186,25 @@ const wrapEdit = (activityId: string) =>
     SAVE_DEBOUNCE_OPTIONS,
   );
 
-const debouncedEdits = new Set<ReturnType<typeof wrapEdit>>();
+const debouncedEdits = new Map<string, ReturnType<typeof wrapEdit>>();
 
-const registeredWrapEdit = (activityId: string) => {
-  const debouncedEdit = wrapEdit(activityId);
-  debouncedEdits.add(debouncedEdit);
+const getDebouncedEdit = (activityId: string) => {
+  const key = activityId || 'default';
+  const existing = debouncedEdits.get(key);
+
+  if (existing) {
+    return existing;
+  }
+
+  const debouncedEdit = wrapEdit(key);
+  debouncedEdits.set(key, debouncedEdit);
   return debouncedEdit;
 };
-const getDebouncedEdit = memoize(registeredWrapEdit, (activityId) => activityId || 'default');
 
 export const flushPendingActivitySaves = async () => {
-  await Promise.all(Array.from(debouncedEdits, (debouncedEdit) => debouncedEdit.flush()));
+  const pendingDebouncedEdits = Array.from(debouncedEdits.values());
+  debouncedEdits.clear();
+  await Promise.all(pendingDebouncedEdits.map((debouncedEdit) => debouncedEdit.flush()));
 };
 
 export const bulkSaveActivity = createAsyncThunk(
