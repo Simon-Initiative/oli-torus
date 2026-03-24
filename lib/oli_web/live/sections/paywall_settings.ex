@@ -22,6 +22,7 @@ defmodule OliWeb.Sections.PaywallSettings do
   attr :form, :any, required: true
   attr :disabled, :boolean, required: true
   attr :show_group, :boolean, default: true
+  attr :manage_discounts_path, :string, default: nil
 
   def render(%{show_group: true} = assigns) do
     ~H"""
@@ -29,19 +30,24 @@ defmodule OliWeb.Sections.PaywallSettings do
       label="Payment Settings"
       description="Settings related to required student fee and optional grace period"
     >
-      <.fields form={@form} disabled={@disabled} />
+      <.fields
+        form={@form}
+        disabled={@disabled}
+        manage_discounts_path={@manage_discounts_path}
+      />
     </Group.render>
     """
   end
 
   def render(assigns) do
     ~H"""
-    <.fields form={@form} disabled={@disabled} />
+    <.fields form={@form} disabled={@disabled} manage_discounts_path={@manage_discounts_path} />
     """
   end
 
   attr :form, :any, required: true
   attr :disabled, :boolean, required: true
+  attr :manage_discounts_path, :string, default: nil
 
   defp fields(assigns) do
     ~H"""
@@ -116,6 +122,18 @@ defmodule OliWeb.Sections.PaywallSettings do
             !get_boolean_value(@form[:has_grace_period])
         }
       />
+    </div>
+    <div class="form-row float-right">
+      <.link
+        :if={
+          @manage_discounts_path && !@disabled && get_boolean_value(@form[:requires_payment]) &&
+            !get_boolean_value(@form[:open_and_free])
+        }
+        class="btn btn-link action-button"
+        href={@manage_discounts_path}
+      >
+        Manage Discounts
+      </.link>
     </div>
 
     <button :if={!@disabled} class="btn btn-primary mt-3" type="submit">Save</button>
