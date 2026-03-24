@@ -1,5 +1,5 @@
-import reducer, { setHasEditingLock } from 'apps/authoring/store/app/slice';
 import { releaseEditingLock } from 'apps/authoring/store/app/actions/locking';
+import reducer, { setHasEditingLock } from 'apps/authoring/store/app/slice';
 
 describe('authoring app slice lock state', () => {
   test('preserves hasEditingLock when releasing the lock fails', () => {
@@ -16,10 +16,7 @@ describe('authoring app slice lock state', () => {
   test('clears hasEditingLock when releasing the lock succeeds', () => {
     const initialState = reducer(undefined, setHasEditingLock({ hasEditingLock: true }));
 
-    const nextState = reducer(
-      initialState,
-      releaseEditingLock.fulfilled(undefined, 'request-id'),
-    );
+    const nextState = reducer(initialState, releaseEditingLock.fulfilled(undefined, 'request-id'));
 
     expect(nextState.hasEditingLock).toBe(false);
   });
