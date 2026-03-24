@@ -22,6 +22,7 @@ interface CarouselImageModel {
 }
 
 const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
+  const carouselLabel = 'Image carousel';
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
   const [images, setImages] = useState<CarouselImageModel[]>(props.model.images || []);
@@ -32,10 +33,11 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
   const [carouselZoom, setCarouselZoom] = useState<boolean>(true);
   const [cssClass, setCssClass] = useState('');
   const [swiper, setSwiper] = useState<any>(null);
+  const [liveAnnouncement, setLiveAnnouncement] = useState('');
 
   // initialize the swiper
   const initialize = useCallback(async (pModel) => {
-    // set defaults
+    // set default
     const dZoom = typeof pModel.zoom === 'boolean' ? pModel.zoom : carouselZoom;
     setCarouselZoom(dZoom);
 
@@ -161,6 +163,16 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
     overflow: 'hidden',
     display: 'flex',
   };
+  const srOnlyStyle: CSSProperties = {
+    position: 'absolute',
+    width: '1px',
+    height: '1px',
+    padding: 0,
+    margin: '-1px',
+    overflow: 'hidden',
+    clip: 'rect(0, 0, 0, 0)',
+    border: 0,
+  };
 
   const imgStyles: CSSProperties = {
     maxWidth: `calc(${width}px - ${MAGIC_NUMBER}px)`,
@@ -225,8 +237,16 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
   }, [currentSlide]);
 
   const handleSlideChange = (currentSlide: any) => {
-    setViewedSlides((viewedSlides) => [...viewedSlides, currentSlide]);
-    setCurrentSlide(currentSlide);
+    const slideIndex = Number(currentSlide);
+    const slide = images[slideIndex];
+    const slideText = `Slide ${slideIndex + 1} of ${images.length}`;
+    const altText = slide?.alt?.trim();
+    const captionText = slide?.caption?.trim();
+    const details = [altText, captionText].filter(Boolean).join('. ');
+
+    setViewedSlides((viewedSlides) => [...viewedSlides, slideIndex]);
+    setCurrentSlide(slideIndex);
+    setLiveAnnouncement(details ? `${slideText}. ${details}` : slideText);
   };
 
   // useeffect that destroys swiper when component unmounts
@@ -237,7 +257,17 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
   }, []);
 
   return ready ? (
-    <div data-janus-type={tagName} className={`janus-image-carousel`} style={styles}>
+    <div
+      data-janus-type={tagName}
+      className={`janus-image-carousel`}
+      style={styles}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label={carouselLabel}
+    >
+      <span className="sr-only" style={srOnlyStyle} role="status" aria-live="polite">
+        {liveAnnouncement}
+      </span>
       {images.length > 0 && (
         <Swiper
           modules={[Navigation, Pagination, A11y, Keyboard, Zoom]}
@@ -247,8 +277,16 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
           zoom={carouselZoom ? { maxRatio: 3 } : false}
           keyboard={{ enabled: true }}
           pagination={{ clickable: true }}
+          a11y={{
+            containerMessage: carouselLabel,
+            containerRoleDescriptionMessage: 'carousel',
+            itemRoleDescriptionMessage: 'slide',
+            slideLabelMessage: 'Slide {{index}} of {{slidesLength}}',
+            paginationBulletMessage: 'Go to slide {{index}}',
+          }}
           onSwiper={(swiper) => {
             setSwiper(swiper);
+            setCurrentSlide(swiper.realIndex);
             swiper.slideTo(1);
           }}
           onSlideChange={(swiper) => {
@@ -261,9 +299,21 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
         >
           {images.map((image: any, index: number) => (
             <SwiperSlide key={index} zoom={carouselZoom}>
-              <figure className="swiper-zoom-container">
-                <img style={imgStyles} src={image.url} alt={image.alt ? image.alt : undefined} />
-                {image.caption && <figcaption ref={captionRefs[index]}>{image.caption}</figcaption>}
+              <figure
+                className="swiper-zoom-container"
+                aria-labelledby={image.caption ? `carousel-caption-${id}-${index}` : undefined}
+              >
+                <img
+                  style={imgStyles}
+                  src={image.url}
+                  alt={image.alt?.trim() ? image.alt : `Slide ${index + 1}`}
+                  aria-describedby={image.caption ? `carousel-caption-${id}-${index}` : undefined}
+                />
+                {image.caption && (
+                  <figcaption id={`carousel-caption-${id}-${index}`} ref={captionRefs[index]}>
+                    {image.caption}
+                  </figcaption>
+                )}
               </figure>
             </SwiperSlide>
           ))}
