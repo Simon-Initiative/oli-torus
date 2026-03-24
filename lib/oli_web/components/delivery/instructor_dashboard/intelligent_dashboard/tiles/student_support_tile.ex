@@ -65,6 +65,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     tile_state = Map.get(assigns, :tile_state, socket.assigns[:tile_state] || %{})
     visible_students = current_visible_students(projection, tile_state)
     projection_signature = projection_signature(projection, tile_state)
+    student_lookup = student_lookup(projection)
 
     selected_student_ids =
       case socket.assigns[:student_support_projection_signature] do
@@ -83,6 +84,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
      socket
      |> assign(assigns)
      |> assign(:visible_students, visible_students)
+     |> assign(:student_lookup, student_lookup)
      |> assign(:student_support_projection_signature, projection_signature)
      |> assign(:selected_student_ids, selected_student_ids)
      |> assign(:show_email_modal, show_email_modal)}
@@ -103,7 +105,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     remaining_count = max(length(filtered_students) - length(visible_students), 0)
     compact_graph_keys? = compact_graph_keys?(buckets)
     selected_student_ids = normalize_selected_student_ids(assigns[:selected_student_ids])
-    selected_students_data = selected_students_data(buckets, selected_student_ids)
+
+    selected_students_data =
+      selected_students_data(assigns[:student_lookup] || %{}, selected_student_ids)
 
     select_all_checked =
       visible_students != [] and Enum.all?(visible_students, &selected?(&1, selected_student_ids))
@@ -853,13 +857,19 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp normalize_selected_student_ids(selected_student_ids) when is_list(selected_student_ids),
     do: selected_student_ids
 
-  defp selected_students_data(buckets, selected_student_ids) do
-    selected_ids = MapSet.new(selected_student_ids)
+  defp selected_students_data(student_lookup, selected_student_ids) do
+    selected_student_ids
+    |> Enum.map(&Map.get(student_lookup, &1))
+    |> Enum.reject(&is_nil/1)
+  end
 
-    buckets
+  defp student_lookup(projection) do
+    projection
+    |> Map.get(:buckets, [])
     |> Enum.flat_map(&Map.get(&1, :students, []))
-    |> Enum.uniq_by(& &1.id)
-    |> Enum.filter(&MapSet.member?(selected_ids, &1.id))
+    |> Enum.reduce(%{}, fn student, acc ->
+      Map.put_new(acc, student.id, student)
+    end)
   end
 
   defp current_visible_students(projection, tile_state) do

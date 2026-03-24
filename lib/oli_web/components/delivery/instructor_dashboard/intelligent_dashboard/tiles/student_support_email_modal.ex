@@ -91,9 +91,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   type="button"
                   data-overflow-toggle
                   class="hidden shrink-0 items-center rounded-[12px] bg-Fill-Chip-Gray px-3 py-1 text-sm font-semibold leading-4 text-Text-text-high"
+                  aria-controls="student_support_email_recipients"
+                  aria-expanded="false"
                   aria-label="Show all recipients"
                 >
-                  ...
+                  Show more
                 </button>
               </div>
             </div>

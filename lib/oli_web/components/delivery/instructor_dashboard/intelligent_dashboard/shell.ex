@@ -122,10 +122,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   end
 
   defp normalize_tile_support_params(tile_support) when is_list(tile_support) do
-    if Enum.all?(tile_support, &match?({_, _}, &1)) do
-      Enum.into(tile_support, %{}, fn {key, value} -> {to_string(key), value} end)
-    else
-      %{}
+    case Enum.reduce_while(tile_support, %{}, fn
+           {key, value}, acc -> {:cont, Map.put(acc, to_string(key), value)}
+           _, _acc -> {:halt, :invalid}
+         end) do
+      :invalid -> %{}
+      normalized -> normalized
     end
   end
 

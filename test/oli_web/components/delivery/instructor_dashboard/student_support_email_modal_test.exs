@@ -27,6 +27,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportEmailModa
       assert html =~ "student2@example.edu"
       assert html =~ "Checking in about your course progress"
       assert html =~ "Cancel"
+      assert html =~ ~s(aria-controls="student_support_email_recipients")
+      assert html =~ ~s(aria-expanded="false")
     end
 
     test "shows a subtle note when some selected students do not have an email", %{conn: conn} do

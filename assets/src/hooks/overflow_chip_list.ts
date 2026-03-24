@@ -2,6 +2,7 @@ import type { Hook } from 'phoenix_live_view/assets/js/types/view_hook';
 
 type OverflowChipListState = {
   __overflowChipListExpanded?: boolean;
+  __overflowChipListClickHandler?: ((event: Event) => void) | null;
   __overflowChipListResizeHandler?: (() => void) | null;
   __overflowChipListResizeRaf?: number | null;
 };
@@ -32,16 +33,50 @@ function setExpanded(root: HTMLElement, expanded: boolean) {
   root.classList.toggle('items-center', !expanded);
 }
 
+function toggleLabel(hiddenCount: number): string {
+  return hiddenCount > 0 ? `+${hiddenCount} more` : 'Show less';
+}
+
+function updateToggle(root: HTMLElement, expanded: boolean, hiddenCount: number, visible: boolean) {
+  const toggle = toggleElement(root);
+
+  if (!toggle) {
+    return;
+  }
+
+  toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  toggle.setAttribute('aria-hidden', visible ? 'false' : 'true');
+
+  if (visible) {
+    toggle.classList.remove('hidden');
+    toggle.classList.add('inline-flex');
+  } else {
+    toggle.classList.add('hidden');
+    toggle.classList.remove('inline-flex');
+  }
+
+  toggle.textContent = expanded ? 'Show less' : toggleLabel(hiddenCount);
+  toggle.setAttribute('aria-label', expanded ? 'Show fewer recipients' : 'Show all recipients');
+}
+
 function showAllChips(root: HTMLElement) {
   chipElements(root).forEach((chip) => {
     chip.style.display = '';
   });
+  updateToggle(root, true, 0, true);
+}
 
-  const toggle = toggleElement(root);
-  if (toggle) {
-    toggle.classList.add('hidden');
-    toggle.classList.remove('inline-flex');
+function scheduleLayout(root: HTMLElement, expanded: boolean) {
+  const state = root as HTMLElement & OverflowChipListState;
+
+  if (state.__overflowChipListResizeRaf != null) {
+    cancelAnimationFrame(state.__overflowChipListResizeRaf);
   }
+
+  state.__overflowChipListResizeRaf = requestAnimationFrame(() => {
+    state.__overflowChipListResizeRaf = null;
+    layout(root, expanded);
+  });
 }
 
 function collapseToFit(root: HTMLElement) {
@@ -56,26 +91,26 @@ function collapseToFit(root: HTMLElement) {
     chip.style.display = '';
   });
 
-  toggle.classList.add('hidden');
-  toggle.classList.remove('inline-flex');
+  updateToggle(root, false, 0, false);
 
   const availableWidth = root.clientWidth;
   const gap = gapSize(root);
 
   if (availableWidth <= 0 || chips.length === 0) {
+    if (chips.length > 0) {
+      scheduleLayout(root, false);
+    }
     return;
   }
 
   const chipWidths = chips.map((chip) => chip.getBoundingClientRect().width);
 
   const measureToggleWidth = () => {
-    toggle.classList.remove('hidden');
-    toggle.classList.add('inline-flex');
+    updateToggle(root, false, chips.length, true);
     toggle.style.visibility = 'hidden';
     const width = toggle.getBoundingClientRect().width;
     toggle.style.visibility = '';
-    toggle.classList.add('hidden');
-    toggle.classList.remove('inline-flex');
+    updateToggle(root, false, 0, false);
     return width;
   };
 
@@ -117,8 +152,7 @@ function collapseToFit(root: HTMLElement) {
     chip.style.display = index < visibleCount ? '' : 'none';
   });
 
-  toggle.classList.remove('hidden');
-  toggle.classList.add('inline-flex');
+  updateToggle(root, false, chips.length - visibleCount, true);
 }
 
 function layout(root: HTMLElement, expanded: boolean) {
@@ -136,21 +170,27 @@ export const OverflowChipList: Hook<OverflowChipListState> = {
   mounted() {
     this.__overflowChipListExpanded = false;
 
-    const toggle = toggleElement(this.el as HTMLElement);
-    toggle?.addEventListener('click', () => {
-      this.__overflowChipListExpanded = true;
-      layout(this.el as HTMLElement, true);
-    });
+    this.__overflowChipListClickHandler = (event: Event) => {
+      const target = event.target;
 
-    this.__overflowChipListResizeHandler = () => {
-      if (this.__overflowChipListResizeRaf != null) {
-        cancelAnimationFrame(this.__overflowChipListResizeRaf);
+      if (!(target instanceof Element)) {
+        return;
       }
 
-      this.__overflowChipListResizeRaf = requestAnimationFrame(() => {
-        this.__overflowChipListResizeRaf = null;
-        layout(this.el as HTMLElement, this.__overflowChipListExpanded ?? false);
-      });
+      const toggle = target.closest<HTMLElement>('[data-overflow-toggle]');
+      if (!toggle || !this.el.contains(toggle)) {
+        return;
+      }
+
+      event.preventDefault();
+      this.__overflowChipListExpanded = !(this.__overflowChipListExpanded ?? false);
+      layout(this.el as HTMLElement, this.__overflowChipListExpanded);
+    };
+
+    this.el.addEventListener('click', this.__overflowChipListClickHandler);
+
+    this.__overflowChipListResizeHandler = () => {
+      scheduleLayout(this.el as HTMLElement, this.__overflowChipListExpanded ?? false);
     };
 
     window.addEventListener('resize', this.__overflowChipListResizeHandler);
@@ -162,6 +202,10 @@ export const OverflowChipList: Hook<OverflowChipListState> = {
   },
 
   destroyed() {
+    if (this.__overflowChipListClickHandler) {
+      this.el.removeEventListener('click', this.__overflowChipListClickHandler);
+    }
+
     if (this.__overflowChipListResizeHandler) {
       window.removeEventListener('resize', this.__overflowChipListResizeHandler);
     }
@@ -170,6 +214,7 @@ export const OverflowChipList: Hook<OverflowChipListState> = {
       cancelAnimationFrame(this.__overflowChipListResizeRaf);
     }
 
+    this.__overflowChipListClickHandler = null;
     this.__overflowChipListResizeHandler = null;
     this.__overflowChipListResizeRaf = null;
   },

@@ -39,7 +39,7 @@ defmodule Oli.Delivery.EmailSender do
       end)
 
     case Mailer.deliver_later(emails) do
-      {:ok, jobs} when is_list(jobs) ->
+      jobs when is_list(jobs) ->
         {:ok, email_count}
 
       {:error, reason} ->

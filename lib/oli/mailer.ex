@@ -4,14 +4,11 @@ defmodule Oli.Mailer do
   alias Oli.Mailer.SendEmailWorker
 
   def deliver_later(emails) when is_list(emails) do
-    jobs =
-      emails
-      |> Enum.map(fn email ->
-        SendEmailWorker.new(%{email: SendEmailWorker.serialize_email(email)})
-      end)
-      |> Oban.insert_all()
-
-    {:ok, jobs}
+    emails
+    |> Enum.map(fn email ->
+      SendEmailWorker.new(%{email: SendEmailWorker.serialize_email(email)})
+    end)
+    |> Oban.insert_all()
   rescue
     exception ->
       {:error, exception}
