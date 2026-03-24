@@ -421,7 +421,7 @@ class LambdaFunctionTests(TestCase):
             query = lambda_function.build_insert_query()
 
         self.assertTrue(query.startswith("INSERT INTO `db`.`raw_events`"))
-        self.assertIn("`event_id`", query)
+        self.assertIn("`user_id`", query)
         self.assertNotIn("`attempt_guid`", query)
         self.assertTrue(query.endswith("FORMAT Parquet"))
 
@@ -431,10 +431,10 @@ class LambdaFunctionTests(TestCase):
             {
                 "CLICKHOUSE_DATABASE": "db",
                 "CLICKHOUSE_TABLE": "raw_events",
-                "CLICKHOUSE_INSERT_COLUMNS": "event_id,timestamp",
+                "CLICKHOUSE_INSERT_COLUMNS": "user_id,timestamp",
             },
             clear=False,
         ):
             query = lambda_function.build_insert_query()
 
-        self.assertIn("(`event_id`, `timestamp`)", query)
+        self.assertIn("(`user_id`, `timestamp`)", query)

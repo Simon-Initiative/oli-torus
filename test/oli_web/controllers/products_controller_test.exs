@@ -66,7 +66,7 @@ defmodule OliWeb.ProductsControllerTest do
 
       assert String.contains?(
                csv_content,
-               "Title,Product ID,Tags,Created,Requires Payment,Base Project,Base Project ID,Status"
+               "Title,Template ID,Tags,Created,Requires Payment,Base Project,Base Project ID,Status"
              )
 
       assert String.contains?(csv_content, product.title)

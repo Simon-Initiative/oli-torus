@@ -1,17 +1,17 @@
 name: PrivSignal Master Refresh
 
 on:
-  push:
+  pull_request_target:
+    types:
+      - closed
     branches:
       - master
-    paths-ignore:
-      - priv_signal.lockfile.json
+  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
   actions: read
-  issues: write
 
 concurrency:
   group: privsignal-master-refresh
@@ -19,260 +19,91 @@ concurrency:
 
 jobs:
   refresh-lockfile:
-    name: Refresh priv_signal.lockfile.json from PR artifact
-    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    name: Refresh priv_signal.lockfile.json on master
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && !contains(github.event.pull_request.body || '', '<!-- privsignal-auto-refresh -->')) }}
     runs-on: ubuntu-latest
+    env:
+      PUSH_TOKEN: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
     steps:
-      - name: Resolve merged PR from push commit
-        id: pr
-        uses: actions/github-script@v7
+      - name: Checkout master branch
+        uses: actions/checkout@v4
         with:
-          script: |
-            const { owner, repo } = context.repo;
-            const commitSha = context.sha;
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
-            const pulls = await github.paginate(github.rest.repos.listPullRequestsAssociatedWithCommit, {
-              owner,
-              repo,
-              commit_sha: commitSha,
-              per_page: 100
-            });
-
-            const mergedToMaster = pulls
-              .filter((pr) => pr.merged_at && pr.base?.ref === "master")
-              .sort((a, b) => new Date(b.merged_at) - new Date(a.merged_at));
-
-            if (mergedToMaster.length === 0) {
-              core.notice(`No merged PR associated with commit ${commitSha}; skipping lockfile refresh.`);
-              core.setOutput("number", "");
-              core.setOutput("head_sha", "");
-              return;
-            }
-
-            const pr = mergedToMaster[0];
-            core.setOutput("number", String(pr.number));
-            core.setOutput("head_sha", pr.head?.sha || "");
-            core.notice(`Resolved PR #${pr.number} for commit ${commitSha}.`);
-
-      - name: Find latest successful PrivSignal PR check run
-        id: run
-        if: ${{ steps.pr.outputs.number != '' }}
-        uses: actions/github-script@v7
-        env:
-          PR_NUMBER: ${{ steps.pr.outputs.number }}
-          PR_HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+      - name: Setup Elixir/OTP
+        uses: erlef/setup-elixir@v1
         with:
-          script: |
-            const { owner, repo } = context.repo;
-            const workflowId = "privsignal-pr-check.yml";
-            const prNumber = Number(process.env.PR_NUMBER);
-            const prHeadSha = process.env.PR_HEAD_SHA || "";
+          elixir-version: 1.19.2
+          otp-version: 28.1.1
 
-            const normalizeRuns = (runs) =>
-              (Array.isArray(runs) ? runs : []).filter((run) => run && typeof run === "object");
+      - name: Install deps
+        run: mix deps.get
 
-            const hasMatchingPr = (run) =>
-              Array.isArray(run?.pull_requests) &&
-              run.pull_requests.some((pr) => pr && pr.number === prNumber);
-
-            const isSuccessful = (run) => !!run && run.conclusion === "success";
-
-            let candidateRuns = [];
-
-            if (prHeadSha) {
-              const byHead = await github.rest.actions.listWorkflowRuns({
-                owner,
-                repo,
-                workflow_id: workflowId,
-                event: "pull_request",
-                status: "completed",
-                head_sha: prHeadSha,
-                per_page: 100
-              });
-
-            // For head_sha lookup, trust SHA match + successful conclusion.
-            // GitHub can return empty pull_requests[] for some valid PR-triggered runs.
-            candidateRuns = normalizeRuns(byHead?.data?.workflow_runs).filter(isSuccessful);
-            }
-
-            if (candidateRuns.length === 0) {
-              const allRuns = await github.paginate(
-                github.rest.actions.listWorkflowRuns,
-                {
-                  owner,
-                  repo,
-                  workflow_id: workflowId,
-                  event: "pull_request",
-                  status: "completed",
-                  per_page: 100
-                },
-                (response) => response.data.workflow_runs
-              );
-
-            candidateRuns = normalizeRuns(allRuns).filter(
-              (run) =>
-                isSuccessful(run) &&
-                (hasMatchingPr(run) || (prHeadSha && run.head_sha === prHeadSha))
-            );
-            }
-
-            if (candidateRuns.length === 0) {
-              core.notice(`No successful ${workflowId} run found for PR #${prNumber}; skipping lockfile refresh.`);
-              core.setOutput("id", "");
-              return;
-            }
-
-            candidateRuns.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            const run = candidateRuns[0];
-
-            core.setOutput("id", String(run.id));
-            core.notice(`Using workflow run ${run.id} (${run.html_url}) for PR #${prNumber}.`);
-
-      - name: Download privsignal-lockfile artifact via REST API
-        id: artifact
-        if: ${{ steps.run.outputs.id != '' }}
-        env:
-          RUN_ID: ${{ steps.run.outputs.id }}
+      - name: Regenerate lockfile and push update branch
+        id: branch_update
         run: |
           set -euo pipefail
 
-          api_root="https://api.github.com/repos/${GITHUB_REPOSITORY}"
-          artifacts_json="$(mktemp)"
-          archive_zip="$(mktemp).zip"
-          extract_dir="$(mktemp -d)"
-
-          curl -fsSL \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "${api_root}/actions/runs/${RUN_ID}/artifacts?per_page=100" \
-            -o "${artifacts_json}"
-
-          artifact_id="$(
-            jq -r '
-              .artifacts
-              | map(select(.name == "privsignal-lockfile" and (.expired | not)))
-              | sort_by(.created_at)
-              | last
-              | .id // ""
-            ' "${artifacts_json}"
-          )"
-
-          if [ -z "${artifact_id}" ]; then
-            echo "found=false" >> "${GITHUB_OUTPUT}"
-            echo "No non-expired privsignal-lockfile artifact found for run ${RUN_ID}."
-            exit 0
+          if [ -z "${PUSH_TOKEN}" ]; then
+            echo "SIMON_BOT_PERSONAL_ACCESS_TOKEN is required."
+            exit 1
           fi
 
-          curl -fsSL \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "${api_root}/actions/artifacts/${artifact_id}/zip" \
-            -o "${archive_zip}"
-
-          unzip -q -o "${archive_zip}" -d "${extract_dir}"
-
-          candidate_path="$(find "${extract_dir}" -type f -name "priv_signal.lockfile.json" | head -n 1)"
-
-          if [ -z "${candidate_path}" ]; then
-            echo "found=false" >> "${GITHUB_OUTPUT}"
-            echo "Artifact ${artifact_id} did not contain priv_signal.lockfile.json."
-            exit 0
-          fi
-
-          echo "found=true" >> "${GITHUB_OUTPUT}"
-          echo "candidate_path=${candidate_path}" >> "${GITHUB_OUTPUT}"
-
-      - name: Commit lockfile to master via Contents REST API (if changed)
-        if: ${{ steps.artifact.outputs.found == 'true' }}
-        env:
-          CANDIDATE_PATH: ${{ steps.artifact.outputs.candidate_path }}
-        run: |
-          set -euo pipefail
-
-          api_root="https://api.github.com/repos/${GITHUB_REPOSITORY}"
           target_path="priv_signal.lockfile.json"
-          get_resp="$(mktemp)"
-          current_file="$(mktemp)"
+          timestamp="$(date -u +%Y%m%d%H%M%S)"
+          update_branch="bot/privsignal-lockfile-update-${timestamp}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 
-          http_code="$(
-            curl -sSL -o "${get_resp}" -w "%{http_code}" \
-              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-              -H "Accept: application/vnd.github+json" \
-              "${api_root}/contents/${target_path}?ref=master"
+          mix priv_signal.scan --quiet --json-path "${target_path}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "${target_path}"
+
+          if git diff --cached --quiet; then
+            echo "No staged changes; skipping commit."
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          git checkout -b "${update_branch}"
+          git commit -m "chore(privsignal): update lockfile [skip ci]"
+          git remote set-url origin "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --set-upstream origin "${update_branch}"
+
+          echo "changed=true" >> "${GITHUB_OUTPUT}"
+          echo "update_branch=${update_branch}" >> "${GITHUB_OUTPUT}"
+
+      - name: Open PR and merge immediately
+        if: ${{ steps.branch_update.outputs.changed == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          UPDATE_BRANCH: ${{ steps.branch_update.outputs.update_branch }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "SIMON_BOT_PERSONAL_ACCESS_TOKEN is required."
+            exit 1
+          fi
+
+          pr_url="$(
+            gh pr create \
+              --base master \
+              --head "${UPDATE_BRANCH}" \
+              --title "chore(privsignal): update lockfile" \
+              --body $'<!-- privsignal-auto-refresh -->\nAutomated PrivSignal lockfile refresh generated from a fresh master checkout.'
           )"
 
-          current_sha=""
+          pr_number="$(gh pr view "${pr_url}" --json number --jq '.number')"
 
-          if [ "${http_code}" = "200" ]; then
-            current_sha="$(jq -r '.sha // ""' "${get_resp}")"
-            jq -r '.content // ""' "${get_resp}" | tr -d '\n' | base64 --decode > "${current_file}"
+          gh pr merge "${pr_number}" \
+            --squash \
+            --delete-branch \
+            --admin \
+            --subject "chore(privsignal): update lockfile [skip ci]"
 
-            if cmp -s "${current_file}" "${CANDIDATE_PATH}"; then
-              echo "priv_signal.lockfile.json is unchanged; skipping commit."
-              exit 0
-            fi
-          elif [ "${http_code}" = "404" ]; then
-            echo "priv_signal.lockfile.json does not exist on master yet; creating it."
-          else
-            echo "Failed to read current lockfile from master (HTTP ${http_code})."
-            cat "${get_resp}"
-            exit 1
-          fi
-
-          new_content_b64="$(base64 < "${CANDIDATE_PATH}" | tr -d '\n')"
-
-          if [ -n "${current_sha}" ]; then
-            payload="$(
-              jq -n \
-                --arg message "chore(privsignal): update lockfile [skip ci]" \
-                --arg content "${new_content_b64}" \
-                --arg branch "master" \
-                --arg sha "${current_sha}" \
-                --arg bot_name "github-actions[bot]" \
-                --arg bot_email "41898282+github-actions[bot]@users.noreply.github.com" \
-                '{
-                  message: $message,
-                  content: $content,
-                  branch: $branch,
-                  sha: $sha,
-                  committer: {name: $bot_name, email: $bot_email},
-                  author: {name: $bot_name, email: $bot_email}
-                }'
-            )"
-          else
-            payload="$(
-              jq -n \
-                --arg message "chore(privsignal): update lockfile [skip ci]" \
-                --arg content "${new_content_b64}" \
-                --arg branch "master" \
-                --arg bot_name "github-actions[bot]" \
-                --arg bot_email "41898282+github-actions[bot]@users.noreply.github.com" \
-                '{
-                  message: $message,
-                  content: $content,
-                  branch: $branch,
-                  committer: {name: $bot_name, email: $bot_email},
-                  author: {name: $bot_name, email: $bot_email}
-                }'
-            )"
-          fi
-
-          put_resp="$(mktemp)"
-
-          curl -fsSL -X PUT \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "${api_root}/contents/${target_path}" \
-            -d "${payload}" \
-            -o "${put_resp}"
-
-          commit_sha="$(jq -r '.commit.sha // ""' "${put_resp}")"
-
-          if [ -n "${commit_sha}" ]; then
-            echo "Committed updated lockfile to master at ${commit_sha}."
-          else
-            echo "Unexpected response while updating lockfile:"
-            cat "${put_resp}"
-            exit 1
-          fi
+          echo "Merged PR #${pr_number}."

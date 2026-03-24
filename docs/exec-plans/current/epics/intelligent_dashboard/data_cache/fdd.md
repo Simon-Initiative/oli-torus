@@ -179,18 +179,26 @@ LiveView integration occurs indirectly through coordinator/snapshot callers that
 Notional cache facade API:
 
 ```elixir
+@type oracle_payload :: term()
+
 lookup_required(context, container, required_oracles, opts) ::
-  {:ok, %{hits: %{atom() => map()}, misses: [atom()], source: atom()}} | {:error, term()}
+  {:ok, %{hits: %{atom() => oracle_payload()}, misses: [atom()], source: atom()}} | {:error, term()}
 
 lookup_revisit(user_id, context, container, oracle_keys, opts) ::
-  {:ok, %{hits: %{atom() => map()}, misses: [atom()]}} | {:error, term()}
+  {:ok, %{hits: %{atom() => oracle_payload()}, misses: [atom()]}} | {:error, term()}
 
-write_oracle(context, container, oracle_key, payload, meta, opts) :: :ok | {:error, term()}
+write_oracle(context, container, oracle_key, oracle_payload(), meta, opts) ::
+  :ok | {:error, term()}
 
 touch_container(context, container, opts) :: :ok
 
-coalesce_or_build(cache_key, build_fun, opts) :: {:ok, map()} | {:error, term()}
+coalesce_or_build(cache_key, build_fun, opts) :: {:ok, oracle_payload()} | {:error, term()}
 ```
+
+Payload-shape rule:
+- Cache stores oracle payloads opaquely and must not assume map-only values.
+- Oracle identity/version metadata live in the cache key and envelope metadata, not in the payload shape.
+- Row-set payloads such as lists of student records are first-class cache values when returned by concrete oracle contracts.
 
 Required metadata in `meta`:
 - `oracle_version`

@@ -6,7 +6,8 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
   alias Oli.InstructorDashboard.Oracles.Grades
   alias Oli.InstructorDashboard.Oracles.ProgressBins
   alias Oli.InstructorDashboard.Oracles.Placeholder.Progress
-  alias Oli.InstructorDashboard.Oracles.Placeholder.Support
+  alias Oli.InstructorDashboard.Oracles.ProgressProficiency
+  alias Oli.InstructorDashboard.Oracles.StudentInfo
 
   describe "registry wrapper APIs" do
     test "returns deterministic known consumers" do
@@ -22,14 +23,24 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
               }} =
                OracleRegistry.dependencies_for(:progress_summary)
 
-      assert {:ok, [:oracle_instructor_support]} = OracleRegistry.required_for(:support_summary)
+      assert {:ok,
+              [
+                :oracle_instructor_progress_proficiency,
+                :oracle_instructor_student_info
+              ]} = OracleRegistry.required_for(:support_summary)
+
       assert {:ok, []} = OracleRegistry.optional_for(:support_summary)
     end
 
     test "resolves oracle modules for known keys" do
       assert {:ok, Progress} = OracleRegistry.oracle_module(:oracle_instructor_progress)
-      assert {:ok, Support} = OracleRegistry.oracle_module(:oracle_instructor_support)
       assert {:ok, ProgressBins} = OracleRegistry.oracle_module(:oracle_instructor_progress_bins)
+
+      assert {:ok, ProgressProficiency} =
+               OracleRegistry.oracle_module(:oracle_instructor_progress_proficiency)
+
+      assert {:ok, StudentInfo} = OracleRegistry.oracle_module(:oracle_instructor_student_info)
+
       assert {:ok, Grades} = OracleRegistry.oracle_module(:oracle_instructor_grades)
     end
 
@@ -42,8 +53,17 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
     end
 
     test "builds execution plans that respect oracle prerequisites" do
-      assert {:ok, [[:oracle_instructor_progress], [:oracle_instructor_support]]} =
-               OracleRegistry.execution_plan_for([:oracle_instructor_support])
+      assert {:ok,
+              [
+                [
+                  :oracle_instructor_progress_proficiency,
+                  :oracle_instructor_student_info
+                ]
+              ]} =
+               OracleRegistry.execution_plan_for([
+                 :oracle_instructor_progress_proficiency,
+                 :oracle_instructor_student_info
+               ])
     end
 
     test "exposes startup bootstrap validation path" do

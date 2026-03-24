@@ -40,7 +40,6 @@ import os
 import platform
 import time
 import sys
-import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional
@@ -120,9 +119,8 @@ _sqs_client = boto3.client("sqs") if _FAILURE_DLQ_URL else None
 # ClickHouse defaults (e.g., inserted_at, event_version) are intentionally
 # omitted so the server supplies those values automatically.
 DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
-    "event_id",
     "user_id",
-    "host_name",
+    "home_page",
     "section_id",
     "project_id",
     "publication_id",
@@ -630,9 +628,8 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
     global _CLICKHOUSE_TYPE_MAP  # noqa: PLW0603 -- module level cache for performance
     if _CLICKHOUSE_TYPE_MAP is None:
         _CLICKHOUSE_TYPE_MAP = {
-            "event_id": pa.string(),
             "user_id": pa.string(),
-            "host_name": pa.string(),
+            "home_page": pa.string(),
             "section_id": pa.uint64(),
             "project_id": pa.uint64(),
             "publication_id": pa.uint64(),
@@ -699,31 +696,22 @@ def transform_xapi_statement(
     object_extensions = object_definition.get("extensions", {}) or {}
 
     timestamp_raw = statement.get("timestamp")
-    if not isinstance(timestamp_raw, str) or not timestamp_raw.strip():
-        timestamp_raw = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    if isinstance(timestamp_raw, str):
+        timestamp_raw = timestamp_raw.strip() or None
+    else:
+        timestamp_raw = None
 
     verb_id = verb.get("id", "") or ""
     object_type = object_definition.get("type", "") or ""
     event_type = _determine_event_type(verb_id, object_type)
 
-    event_id = statement.get("id") or statement.get("event_id") or str(uuid.uuid4())
-    event_id = str(event_id)
-
-    user_id = account.get("name") or actor.get("mbox") or ""
-    if not isinstance(user_id, str):
+    user_id = account.get("name") or actor.get("mbox")
+    if user_id is not None and not isinstance(user_id, str):
         user_id = str(user_id)
 
-    host_name = extensions.get("http://oli.cmu.edu/extensions/host_name")
-    if not host_name:
-        home_page = account.get("homePage")
-        if isinstance(home_page, str):
-            host_name = _extract_hostname(home_page)
-        if not host_name:
-            object_id = obj.get("id")
-            if isinstance(object_id, str):
-                host_name = _extract_hostname(object_id)
-    if host_name is not None and not isinstance(host_name, str):
-        host_name = str(host_name)
+    home_page = account.get("homePage")
+    if home_page is not None and not isinstance(home_page, str):
+        home_page = str(home_page)
 
     section_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/section_id"))
     project_id = _safe_int(extensions.get("http://oli.cmu.edu/extensions/project_id"))
@@ -789,9 +777,8 @@ def transform_xapi_statement(
     raw_hash = hashlib.sha256(raw_bytes).hexdigest()
 
     transformed: Dict[str, Any] = {
-        "event_id": event_id,
         "user_id": user_id,
-        "host_name": host_name or "",
+        "home_page": home_page,
         "section_id": section_id,
         "project_id": project_id,
         "publication_id": publication_id,

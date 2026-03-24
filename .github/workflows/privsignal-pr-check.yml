@@ -23,6 +23,7 @@ concurrency:
 jobs:
   privsignal:
     name: Scan, Diff, Score, and Annotate PR
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.body || '', '<!-- privsignal-auto-refresh -->') }}
     runs-on: ubuntu-latest
     env:
       MIX_ENV: dev
