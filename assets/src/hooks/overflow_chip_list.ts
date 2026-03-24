@@ -97,9 +97,6 @@ function collapseToFit(root: HTMLElement) {
   const gap = gapSize(root);
 
   if (availableWidth <= 0 || chips.length === 0) {
-    if (chips.length > 0) {
-      scheduleLayout(root, false);
-    }
     return;
   }
 

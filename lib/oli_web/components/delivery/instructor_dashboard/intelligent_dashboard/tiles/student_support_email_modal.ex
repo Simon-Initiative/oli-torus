@@ -26,7 +26,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assigns
       |> assign(:excluded_recipient_students, excluded_recipient_students)
       |> assign(:excluded_recipient_count, length(excluded_recipient_students))
-      |> assign(:send_disabled, send_disabled?(assigns))
 
     ~H"""
     <div id="student_support_email_modal_wrapper">
@@ -170,8 +169,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             <Button.button
               variant={:primary}
               size={:sm}
+              id="student_support_send_button"
               disabled={@send_disabled}
-              role="send email"
               class="relative z-10"
               phx-click={
                 Modal.hide_modal(
@@ -198,7 +197,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
        show_modal: false,
        subject: "",
        body: "",
-       recipient_students: []
+       recipient_students: [],
+       send_disabled: true
      )}
   end
 
@@ -212,16 +212,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       |> assign(:show_modal, show_modal)
 
     if show_modal and not was_open? do
+      recipient_students = normalize_recipient_students(Map.get(assigns, :students, []))
+
       {:ok,
        socket
-       |> assign(
-         :recipient_students,
-         normalize_recipient_students(Map.get(assigns, :students, []))
-       )
+       |> assign(:recipient_students, recipient_students)
        |> assign(:subject, temporary_default_subject(Map.get(assigns, :selected_bucket_id)))
-       |> assign(:body, initial_body())}
+       |> assign(:body, initial_body())
+       |> assign_send_state()}
     else
-      {:ok, socket}
+      {:ok, assign_send_state(socket)}
     end
   end
 
@@ -229,9 +229,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     case Integer.parse(student_id) do
       {parsed_student_id, ""} ->
         {:noreply,
-         update(socket, :recipient_students, fn recipient_students ->
+         socket
+         |> update(:recipient_students, fn recipient_students ->
            Enum.reject(recipient_students, &(&1.id == parsed_student_id))
-         end)}
+         end)
+         |> assign_send_state()}
 
       _ ->
         {:noreply, socket}
@@ -239,11 +241,11 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   def handle_event("update_subject", %{"value" => subject}, socket) do
-    {:noreply, assign(socket, :subject, subject)}
+    {:noreply, socket |> assign(:subject, subject) |> assign_send_state()}
   end
 
   def handle_event("update_body", %{"value" => body}, socket) do
-    {:noreply, assign(socket, :body, body)}
+    {:noreply, socket |> assign(:body, body) |> assign_send_state()}
   end
 
   def handle_event("send_email", _params, socket) do
@@ -299,6 +301,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     valid_recipient_count(assigns.recipient_students) == 0 or
       String.trim(assigns.subject) == "" or
       String.trim(assigns.body) == ""
+  end
+
+  defp assign_send_state(socket) do
+    assign(socket, :send_disabled, send_disabled?(socket.assigns))
   end
 
   defp excluded_recipient_subject(1), do: "1 selected student"

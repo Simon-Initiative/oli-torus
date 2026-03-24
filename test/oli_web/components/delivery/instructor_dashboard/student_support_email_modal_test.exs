@@ -118,7 +118,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportEmailModa
 
       send_button_html =
         view
-        |> element("button[role='send email']")
+        |> element("#student_support_send_button")
         |> render()
 
       assert send_button_html =~ "disabled"
@@ -142,7 +142,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportEmailModa
       |> render_blur(%{"value" => "Custom outreach body"})
 
       view
-      |> element("button[role='send email']")
+      |> element("#student_support_send_button")
       |> render_click()
 
       [job] = Repo.all(Oban.Job)
