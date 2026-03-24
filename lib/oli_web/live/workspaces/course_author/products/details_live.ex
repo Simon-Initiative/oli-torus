@@ -31,6 +31,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   on_mount {OliWeb.UserAuth, :mount_current_user}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
+  @preview_fallback_timeout_ms 10_000
+
   def mount(%{"product_id" => product_slug}, _session, socket) do
     case Mount.for(product_slug, socket) do
       {:error, e} ->
@@ -355,7 +357,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     socket =
       socket
       |> clear_flash()
-      |> assign(preview_launching?: true)
+      |> assign(preview_launching?: true, preview_url: nil)
 
     case Mount.for(socket.assigns.product.slug, socket) do
       {:error, _} ->
@@ -372,6 +374,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
              ) do
           {:ok, %{section_slug: section_slug, launch_identity: launch_identity}} ->
             preview_url = preview_launch_url(socket, section_slug, launch_identity)
+
+            Process.send_after(
+              self(),
+              {:clear_preview_url, preview_url},
+              @preview_fallback_timeout_ms
+            )
 
             {:noreply,
              socket
@@ -522,6 +530,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   # Generic flash handler for child LiveComponents
   def handle_info({:flash, level, message}, socket) do
     {:noreply, put_flash(socket, level, message)}
+  end
+
+  def handle_info(
+        {:clear_preview_url, preview_url},
+        %{assigns: %{preview_url: preview_url}} = socket
+      ) do
+    {:noreply, assign(socket, preview_url: nil)}
+  end
+
+  def handle_info({:clear_preview_url, _preview_url}, socket) do
+    {:noreply, socket}
   end
 
   # Component sync handlers — delegated to shared helpers
