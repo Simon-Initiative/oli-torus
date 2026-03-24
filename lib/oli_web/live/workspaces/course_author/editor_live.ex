@@ -401,7 +401,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
         :if={@authoring_notice}
         class="pointer-events-none fixed right-4 top-[8.5rem] z-50 max-w-md"
       >
-        <div class="pointer-events-auto alert alert-info shadow-lg flex flex-row gap-3 items-start mb-0">
+        <div
+          class="pointer-events-auto alert alert-info shadow-lg flex flex-row gap-3 items-start mb-0"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           <div class="flex-1">
             {@authoring_notice}
           </div>
