@@ -35,8 +35,15 @@ defmodule OliWeb.LiveSessionPlugs.SetRouteName do
     end
   end
 
-  defp maybe_assign_active_workspace(socket, :workspaces),
-    do: assign(socket, active_workspace: :course_author)
+  # active_workspace is set here (not in AssignActiveMenu) because shared views
+  # like EditView and RemixSection aren't under the Workspaces.CourseAuthor namespace,
+  # so AssignActiveMenu can't detect them. SetRouteName is the only plug that runs
+  # in handle_params with access to route metadata.
+  defp maybe_assign_active_workspace(socket, :workspaces) do
+    if socket.assigns[:active_workspace] != :course_author,
+      do: assign(socket, active_workspace: :course_author),
+      else: socket
+  end
 
   defp maybe_assign_active_workspace(socket, _), do: socket
 end
