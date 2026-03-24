@@ -1,0 +1,9 @@
+[Unit]
+Description=ClickHouse Backup Job
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/scripts/clickhouse-backup.sh
+User=root
