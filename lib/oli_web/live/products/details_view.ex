@@ -77,7 +77,13 @@ defmodule OliWeb.Products.DetailsView do
              changeset: Section.changeset(product, %{}),
              title: "Edit Template",
              show_confirm: false,
-             breadcrumbs: [Breadcrumb.new(%{full_title: "Template Overview"})],
+             breadcrumbs: [
+               Breadcrumb.new(%{
+                 full_title: base_project.title,
+                 link: ~p"/workspaces/course_author/#{base_project.slug}/overview"
+               }),
+               Breadcrumb.new(%{full_title: "Template Overview"})
+             ],
              base_project: base_project
            })
          )
