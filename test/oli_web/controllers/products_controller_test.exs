@@ -336,6 +336,23 @@ defmodule OliWeb.ProductsControllerTest do
       assert get_session(conn, :template_preview_mode)
       assert get_session(conn, :template_preview_section_slug) == product.slug
     end
+
+    test "unauthorized author is denied direct preview endpoint access", %{
+      conn: conn,
+      author_product: product
+    } do
+      other_author = insert(:author)
+
+      conn =
+        conn
+        |> log_in_author(other_author)
+        |> get(~p"/authoring/products/#{product.slug}/preview_launch")
+
+      assert redirected_to(conn) == "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are not authorized to access this page."
+    end
   end
 
   describe "preview_exit/2" do
