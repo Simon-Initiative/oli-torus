@@ -58,7 +58,7 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
             placement="bottom"
             delay={{ show: 150, hide: 150 }}
             overlay={
-              <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+              <Tooltip id="scoring-overview-tooltip" style={{ fontSize: '12px' }}>
                 Scoring Overview
               </Tooltip>
             }
@@ -87,7 +87,7 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
               placement="bottom"
               delay={{ show: 150, hide: 150 }}
               overlay={
-                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                <Tooltip id="revision-history-tooltip" style={{ fontSize: '12px' }}>
                   Revision History (Admin)
                 </Tooltip>
               }
@@ -121,7 +121,7 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
               placement="bottom"
               delay={{ show: 150, hide: 150 }}
               overlay={
-                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                <Tooltip id="template-export-tooltip" style={{ fontSize: '12px' }}>
                   Template Export
                 </Tooltip>
               }
