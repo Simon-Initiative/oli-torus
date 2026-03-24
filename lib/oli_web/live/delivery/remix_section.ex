@@ -160,7 +160,6 @@ defmodule OliWeb.Delivery.RemixSection do
       {:ok, state} = Remix.init_open_and_free(section)
 
       init_state_from_remix(socket, state,
-        breadcrumbs: set_product_breadcrumbs(state.section, socket),
         redirect_after_save: redirect_after_save(:product_creator, state.section, socket)
       )
     else
@@ -200,7 +199,7 @@ defmodule OliWeb.Delivery.RemixSection do
     {:ok, pages_table_model} = PagesTableModel.new([])
 
     redirect_after_save = Keyword.fetch!(opts, :redirect_after_save)
-    breadcrumbs = Keyword.fetch!(opts, :breadcrumbs)
+    breadcrumbs = Keyword.get(opts, :breadcrumbs, [])
     available_publications = state.available_publications
     pinned_project_publications = state.pinned_project_publications
 

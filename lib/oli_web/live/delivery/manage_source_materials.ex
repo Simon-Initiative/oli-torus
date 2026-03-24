@@ -80,7 +80,6 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
            user_type: user_type,
            updates: updates,
            updates_in_progress: updates_in_progress,
-           breadcrumbs: set_breadcrumbs(section, user_type, socket),
            base_project_details: base_project_details,
            current_publication: current_publication,
            remixed_projects: remixed_projects
