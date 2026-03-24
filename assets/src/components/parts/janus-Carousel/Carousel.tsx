@@ -37,7 +37,7 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
 
   // initialize the swiper
   const initialize = useCallback(async (pModel) => {
-    // set defaults
+    // set default
     const dZoom = typeof pModel.zoom === 'boolean' ? pModel.zoom : carouselZoom;
     setCarouselZoom(dZoom);
 
