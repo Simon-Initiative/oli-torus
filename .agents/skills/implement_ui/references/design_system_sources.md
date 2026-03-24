@@ -4,6 +4,8 @@ These are the current baseline design-system references for Torus.
 
 Use them as the first external design references when the implementation work touches shared UI patterns, token semantics, iconography, or reusable primitives.
 
+For repository conventions about shared primitives, `design_tokens/`, and incremental extraction policy, see `docs/design_tokens.md`.
+
 They are not a guarantee that the codebase already matches them perfectly.
 When the code and these references diverge, call out the mismatch explicitly instead of silently choosing one.
 
@@ -39,24 +41,20 @@ When a ticket or feature includes a specific Figma design for a concrete surface
 When the ticket is about shared UI primitives or design-system alignment:
 - use these references as the primary design source
 
-## Icons Direction
+## Scope Of This Reference
 
-Default icon lookup order:
-- first, inspect the Torus design-system icon page at `node-id=2:24`
-- if the needed icon exists there, treat that node as the primary icon source of truth
-- only if the icon is not present there, inspect the feature-level Figma and extract the SVG from the feature node via MCP asset URLs
-- if feature-level extraction requires descending into child vector nodes, document that explicitly instead of silently redrawing the icon
+This file is intentionally operational, not normative.
 
-The current repo still has established icon modules outside `design_tokens/`.
+Use it to answer:
 
-Current waypoints:
-- `lib/oli_web/icons.ex`
-- `assets/src/components/misc/icons/Icons`
+- which Torus design-system Figma node should I inspect first?
+- which design-system page defines buttons, icons, colors, or flash messages?
+- when should feature-level Figma override design-system references as the primary visual source?
 
-Target direction:
-- shared icon access should gradually converge toward `design_tokens/icons`
+Do not use this file as the authority for:
 
-Until that convergence happens:
-- prefer extending the current canonical icon modules
-- avoid introducing ad hoc local icon implementations
-- note when a change would be a good candidate for future `design_tokens/icons` consolidation
+- shared-vs-local component placement policy
+- `design_tokens/` extraction rules
+- incremental consolidation strategy
+
+Those conventions belong in `docs/design_tokens.md`.

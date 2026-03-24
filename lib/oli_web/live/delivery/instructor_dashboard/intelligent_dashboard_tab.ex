@@ -105,13 +105,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   """
   @spec path(socket(), scope_selector(), map()) :: String.t()
   def path(socket, scope_selector, extra_params \\ %{}) do
-    current_params =
-      socket.assigns
-      |> Map.get(:params, %{})
-      |> dashboard_navigation_params(scope_selector)
+    params =
+      socket
+      |> dashboard_base_params(scope_selector)
+      |> merge_dashboard_params(extra_params)
 
-    merged_params = merge_dashboard_params(current_params, extra_params)
-    path_for_section(socket.assigns.section.slug, scope_selector, merged_params)
+    path_for_section(socket.assigns.section.slug, scope_selector, params)
   end
 
   @doc """
@@ -598,12 +597,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   """
   @spec student_support_path(socket(), map()) :: String.t()
   def student_support_path(socket, updates) when is_map(updates) do
-    params =
-      socket.assigns
-      |> Map.get(:params, %{})
-      |> dashboard_navigation_params(Map.get(socket.assigns, :dashboard_scope, "course"))
-
     scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
+    params = dashboard_base_params(socket, scope_selector)
     current = Map.get(params, "tile_support", %{})
 
     merged_tile_params =
@@ -611,7 +606,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       |> Map.merge(stringify_keys(updates))
       |> normalize_student_support_path_params()
 
-    path(socket, scope_selector, %{"tile_support" => merged_tile_params})
+    params = put_student_support_params(params, merged_tile_params)
+
+    path_for_section(socket.assigns.section.slug, scope_selector, params)
   end
 
   defp persist_revisit_cache(nil, _context, _scope, _oracles), do: :ok
@@ -1316,6 +1313,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end)
   end
 
+  defp dashboard_base_params(socket, scope_selector) do
+    socket.assigns
+    |> Map.get(:params, %{})
+    |> dashboard_navigation_params(scope_selector)
+  end
+
   defp merge_dashboard_params(current_params, extra_params) do
     current_params = stringify_keys(current_params)
     extra_params = stringify_keys(extra_params)
@@ -1327,6 +1330,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       _key, _left, right ->
         right
     end)
+  end
+
+  defp put_student_support_params(params, tile_support) when is_map(tile_support) do
+    if map_size(tile_support) == 0 do
+      Map.delete(params, "tile_support")
+    else
+      Map.put(params, "tile_support", tile_support)
+    end
   end
 
   defp normalize_student_support_path_params(nil), do: %{}
