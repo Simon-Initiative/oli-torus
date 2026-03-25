@@ -23,6 +23,25 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     assert render_async(view) =~ "ClickHouse health check failed"
   end
 
+  test "shows an error when ClickHouse admin credentials are not configured", %{conn: conn} do
+    Application.put_env(:oli, :clickhouse, %{
+      host: "http://localhost",
+      http_port: 8123,
+      native_port: 9000,
+      query_user: "test",
+      query_password: "secret",
+      admin_user: nil,
+      admin_password: nil,
+      database: "analytics"
+    })
+
+    {:ok, view, _html} = live(conn, @route)
+
+    html = render_async(view)
+    assert html =~ "ClickHouse health check failed"
+    assert html =~ "ClickHouse admin credentials are not configured"
+  end
+
   defp enable_clickhouse_feature(_) do
     Application.put_env(:oli, :clickhouse_olap_enabled?, true)
     Oli.Features.bootstrap_feature_states()
@@ -39,8 +58,11 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     Application.put_env(:oli, :clickhouse, %{
       host: "http://localhost",
       http_port: 8123,
-      user: "test",
-      password: "secret",
+      native_port: 9000,
+      query_user: "test",
+      query_password: "secret",
+      admin_user: "admin",
+      admin_password: "admin-secret",
       database: "analytics"
     })
 

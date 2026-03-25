@@ -63,7 +63,11 @@ defmodule Oli.Analytics.Backfill.Worker do
     query = QueryBuilder.dry_run_sql(run, creds)
     desc = "clickhouse backfill dry run #{run.id}"
 
-    case analytics_module().execute_query(query, desc, query_options(run)) do
+    case analytics_module().execute_query(
+           query,
+           desc,
+           Keyword.merge(query_options(run), credential: :admin)
+         ) do
       {:ok, response} -> {:ok, %{mode: :dry_run, response: response}}
       {:error, reason} -> {:error, reason}
     end
@@ -73,7 +77,11 @@ defmodule Oli.Analytics.Backfill.Worker do
     query = QueryBuilder.insert_sql(run, creds)
     desc = "clickhouse backfill #{run.id}"
 
-    case analytics_module().execute_query(query, desc, query_options(run)) do
+    case analytics_module().execute_query(
+           query,
+           desc,
+           Keyword.merge(query_options(run), credential: :admin)
+         ) do
       {:ok, response} -> {:ok, %{mode: :insert, response: response}}
       {:error, reason} -> {:error, reason}
     end
@@ -161,7 +169,7 @@ defmodule Oli.Analytics.Backfill.Worker do
   end
 
   defp poll_query_status(query_id, attempt) do
-    case analytics_module().query_status(query_id) do
+    case analytics_module().query_status(query_id, credential: :admin) do
       {:ok, %{status: status} = info} when status in [:completed, :failed] ->
         {:ok, info}
 
