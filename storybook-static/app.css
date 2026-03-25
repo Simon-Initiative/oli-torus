@@ -16658,6 +16658,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 24px;
 }
 
+.h-\[255px\] {
+  height: 255px;
+}
+
 .h-\[25px\] {
   height: 25px;
 }
@@ -17569,6 +17573,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-w-\[1040px\] {
   max-width: 1040px;
+}
+
+.max-w-\[1048px\] {
+  max-width: 1048px;
 }
 
 .max-w-\[200px\] {
@@ -18562,6 +18570,10 @@ table.table-striped tbody tr:nth-child(even) {
   overflow: visible !important;
 }
 
+.overflow-visible {
+  overflow: visible;
+}
+
 .overflow-scroll {
   overflow: scroll;
 }
@@ -18678,6 +18690,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .rounded-\[60px\] {
   border-radius: 60px;
+}
+
+.rounded-\[6px\] {
+  border-radius: 6px;
 }
 
 .rounded-\[82px\] {
@@ -20710,6 +20726,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 35px;
 }
 
+.px-\[38px\] {
+  padding-left: 38px;
+  padding-right: 38px;
+}
+
 .px-\[4px\] {
   padding-left: 4px;
   padding-right: 4px;
@@ -21307,6 +21328,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .text-\[208px\] {
   font-size: 208px;
+}
+
+.text-\[24px\] {
+  font-size: 24px;
 }
 
 .text-\[32px\] {
@@ -32865,10 +32890,6 @@ Not supports in Firefox and IE */
 
   .xl\:flex-row {
     flex-direction: row;
-  }
-
-  .xl\:justify-start {
-    justify-content: flex-start;
   }
 
   .xl\:gap-32 {
