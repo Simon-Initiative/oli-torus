@@ -5,14 +5,13 @@ Scope and guardrails reference:
 - FDD: `docs/exec-plans/current/epics/product_overhaul/template_preview/fdd.md`
 
 ## Scope
-Deliver template preview from Template Overview by reusing canonical section delivery routes. The flow must authorize template access, ensure idempotent learner enrollment for the acting user when `current_user` exists, create or reuse the section-scoped singleton hidden instructor fallback when `current_user` is absent, and open the resolved section delivery destination in a new tab with deterministic error handling and telemetry.
+Deliver template preview from Template Overview by reusing canonical section delivery routes. The flow must authorize template access, ensure idempotent learner enrollment for the acting user when `current_user` exists, create or reuse the section-scoped singleton hidden instructor fallback when `current_user` is absent, and open the resolved section delivery destination in a new tab with deterministic error handling.
 
 ## Non-Functional Guardrails
 - Preview launch-preparation latency target: p95 <= 700ms under normal authoring load.
 - Enrollment idempotency target: zero duplicate enrollments for `(user_id, section_id)` from preview flow.
 - Security/tenancy: server-side authz and tenant-scoped section resolution before any enrollment mutation.
 - Accessibility: Preview action and status/error feedback remain WCAG 2.1 AA compliant.
-- Observability: emit preview request/enrollment outcome/success/failure telemetry with ID-only metadata.
 - Rollout posture: no feature flag; release only after regression and operational gates pass.
 
 ## Clarifications & Default Assumptions
@@ -109,29 +108,22 @@ Deliver template preview from Template Overview by reusing canonical section del
 - Parallelizable Work:
   - Popup-fallback UI copy/localization and test assertions can run parallel to launch wiring since they depend only on exposed error states.
 
-## Phase 4: Observability, Performance Verification, and Operational Hardening
-- Goal: Add telemetry/AppSignal visibility and prove non-functional targets for reliability, latency, and secure metadata.
+## Phase 4: Performance Verification and Operational Hardening
+- Goal: Prove non-functional targets for reliability, latency, and secure metadata.
 - Tasks:
-  - [ ] Emit telemetry events for requested, learner enrollment ensured (`created|reused`), hidden instructor ensured (`created|reused`), launch succeeded, and launch failed.
-  - [ ] Add AppSignal tags/labels for `template_preview` outcome categories and latency buckets.
-  - [ ] Ensure metadata uses IDs/category values only (no sensitive payload logging).
   - [ ] Add timing instrumentation around prepare-launch path and verify p95 against <= 700ms target in representative environment.
-  - [ ] Document alert thresholds and release monitoring checks for failure-rate and latency regressions.
 - Testing Tasks:
-  - [ ] Add telemetry tests asserting event emission sequence and required metadata fields.
-  - [ ] Add regression tests for learner-vs-hidden-instructor outcome categorization and failure telemetry without PII-bearing payload values.
   - [ ] Run focused suites plus broad regression sweep.
   - [ ] Command(s): `mix test test/oli/delivery/template_preview_test.exs test/oli_web/live/workspaces/course_author/products/details_live_test.exs && mix test`
 - Definition of Done:
-  - Telemetry and AppSignal signals are emitted for full lifecycle and validated by tests.
   - Performance verification evidence shows launch-prep path meets or explains p95 target.
-  - Operational thresholds and on-call monitoring expectations are documented.
+  - Operational verification notes are documented.
 - Gate:
-  - Observability and performance checks are complete and acceptable for release sign-off.
+  - Performance checks are complete and acceptable for release sign-off.
 - Dependencies:
   - Phase 3 end-to-end flow stabilized.
 - Parallelizable Work:
-  - AppSignal dashboard/alert configuration can proceed in parallel with telemetry unit tests because runtime wiring and monitoring configuration are separable workstreams.
+  - Broad regression execution can proceed in parallel with performance measurement because they are separable verification streams.
 
 ## Phase 5: Final Regression, Documentation, and Release Readiness
 - Goal: Complete release gate with full regression confidence, documentation alignment, and rollback posture.
@@ -140,7 +132,7 @@ Deliver template preview from Template Overview by reusing canonical section del
   - [ ] Execute manual QA matrix from PRD: first launch create, repeat launch reuse, hidden-instructor fallback create/reuse, `Exit Preview` hidden-user cleanup, hidden-session logout/reset flow, unauthorized denial, keyboard/focus behavior, popup-block fallback.
   - [ ] Update feature documentation/changelog notes for template preview behavior and known limitations.
   - [ ] Confirm rollback posture: additive code-path changes only, no schema migrations, revert-by-deploy available.
-  - [ ] Capture final acceptance traceability for FR-001..FR-005, FR-007..FR-008 and AC-001..AC-009.
+  - [ ] Capture final acceptance traceability for FR-001..FR-005 and FR-007 plus AC-001..AC-009.
 - Testing Tasks:
   - [ ] Run full backend suite and targeted UI regressions used by template overview flows.
   - [ ] Command(s): `mix test`
@@ -159,17 +151,17 @@ Deliver template preview from Template Overview by reusing canonical section del
 - Phase 1 must complete first to lock event contract and authorization behavior.
 - Within Phase 2, orchestration-service tests and enrollment-helper implementation/testing can proceed in parallel after interface agreement.
 - Phase 3 starts after Phase 2 gate; popup-fallback UX and localization can run concurrently with launch dispatch wiring.
-- Phase 4 instrumentation work can begin once Phase 3 behavior is stable; monitoring/dashboard setup can run parallel to telemetry tests.
+- Phase 4 verification work can begin once Phase 3 behavior is stable; performance measurement can run parallel to broad regression execution.
 - Phase 5 documentation and traceability are parallelizable with final regression execution, but release sign-off waits for all prior phase gates.
 
 ## Phase Gate Summary
 - Gate A (post Phase 1): Authorization-gated Preview UI/event behavior verified; safe to proceed with backend orchestration.
 - Gate B (post Phase 2): Idempotent enrollment ensure, hidden-instructor singleton fallback, and tenant-safe launch preparation validated.
 - Gate C (post Phase 3): End-to-end launch and deterministic failure UX proven in integration tests.
-- Gate D (post Phase 4): Observability, performance, and security-metadata checks meet non-functional requirements.
+- Gate D (post Phase 4): Performance and security-metadata checks meet non-functional requirements.
 - Gate E (post Phase 5): Full regression, documentation, and acceptance sign-off complete for release.
 
 ## Decision Log
-- 2026-03-18: Replaced the prior missing-`current_user` failure assumption with a required hidden-instructor fallback. The plan now treats no-user preview as a singleton-per-section hidden instructor create/reuse path that must be covered in orchestration, launch handoff, telemetry, and QA.
+- 2026-03-18: Replaced the prior missing-`current_user` failure assumption with a required hidden-instructor fallback. The plan now treats no-user preview as a singleton-per-section hidden instructor create/reuse path that must be covered in orchestration, launch handoff, and QA.
 - 2026-03-24: Documented the persistent hidden-session limitation and the supported recovery path via the Instructor Workspace hidden delivery-account logout affordance. Evidence: `lib/oli_web/live/workspaces/instructor/index_live.ex`, `test/oli_web/live/workspaces/instructor_test.exs`.
 - 2026-03-24: Documented `Exit Preview` as the primary cleanup path for preview session state, including hidden-user logout when preview is using the hidden-instructor fallback. Evidence: `lib/oli_web/controllers/products_controller.ex`, `test/oli_web/controllers/products_controller_test.exs`.

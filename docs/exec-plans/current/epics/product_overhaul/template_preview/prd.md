@@ -66,9 +66,8 @@ Requirements are found in requirements.yml
 ## 8. Non-Functional Requirements
 - Performance & Scale: Preview launch preparation (authorization + enrollment check/upsert + launch URL generation) p95 <= 700ms under normal authoring load; duplicate-click handling remains consistent under concurrent requests.
 - Reliability: Enrollment upsert operation is atomic/idempotent and maintains zero duplicate enrollments for `(user_id, section_id, role=student)` across retries; preview launch failure rate <= 1% excluding external browser-popup blocking.
-- Security & Privacy: Server-side authorization required for every preview action; tenant and section scoping enforced before enrollment operations; logs and telemetry avoid PII payloads.
+- Security & Privacy: Server-side authorization required for every preview action; tenant and section scoping enforced before enrollment operations; logs avoid PII payloads.
 - Compliance: WCAG 2.1 AA for preview action and status messaging; auditability of enrollment creation/reuse and preview launch events.
-- Observability: Telemetry and AppSignal instrumentation for preview request count, upsert outcome (`created`/`reused`), launch success/failure, and latency distributions.
 
 ## 9. Data Model & APIs
 - Ecto Schemas & Migrations:
@@ -102,16 +101,11 @@ Requirements are found in requirements.yml
 ## 11. Feature Flagging, Rollout & Migration
 No feature flags present in this feature
 
-## 12. Analytics & Success Metrics
+## 12. Success Metrics
 - KPIs:
   - >= 95% preview launch success for authorized users (excluding browser popup blocks).
   - 0 duplicate student enrollments attributable to preview flow.
   - >= 90% of preview launches complete within NFR p95 latency target.
-- Events:
-  - `template_preview_requested`
-  - `template_preview_enrollment_upserted` (outcome: `created` or `reused`)
-  - `template_preview_launch_succeeded`
-  - `template_preview_launch_failed` (error_category)
 
 ## 13. Risks & Mitigations
 - Popup blockers may prevent window launch -> Open window/tab in direct user-click context and provide fallback link on failure.
@@ -134,7 +128,7 @@ No feature flags present in this feature
 - Milestone 1: Confirm Template Overview entrypoint and permission boundaries.
 - Milestone 2: Implement enrollment idempotent upsert + launch URL resolution.
 - Milestone 3: Wire frontend launch behavior and failure UX.
-- Milestone 4: Add telemetry, regression coverage, and release readiness checks.
+- Milestone 4: Add regression coverage and release readiness checks.
 
 ## 16. QA Plan
 - Automated:
@@ -142,7 +136,6 @@ No feature flags present in this feature
   - Enrollment upsert tests for create vs reuse paths and duplicate-prevention under repeated requests.
   - Hidden instructor fallback tests for no-`current_user` author/admin launches, including singleton create vs reuse behavior.
   - Integration/LiveView tests validating preview launches to canonical student home URL.
-  - Telemetry tests for request/success/failure/outcome payloads.
 - Manual:
   - Verify first preview click creates enrollment and launches student home.
   - Verify repeated clicks do not create duplicate enrollments.

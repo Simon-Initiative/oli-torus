@@ -149,21 +149,3 @@ requirements:
       ref: test/oli/delivery/template_preview_test.exs:91
     - type: test
       ref: test/oli_web/controllers/products_controller_test.exs:340
-- id: FR-008
-  title: System SHALL emit telemetry for preview requested, enrollment created/reused,
-    preview launch success, and preview launch failure.
-  status: verified
-  acceptance_criteria:
-  - id: AC-007
-    title: Given preview request lifecycle events occur, when telemetry is inspected,
-      then request/start/success/failure events include section/user identifiers and
-      outcome metadata scoped to tenant and without sensitive payloads.
-    status: verified
-    verification_method: automated
-    proofs:
-    - type: test
-      ref: test/oli/delivery/template_preview_test.exs:107
-    - type: test
-      ref: test/oli/delivery/template_preview_test.exs:143
-    - type: test
-      ref: test/oli/delivery/template_preview_test.exs:171

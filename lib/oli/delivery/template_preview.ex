@@ -8,12 +8,6 @@ defmodule Oli.Delivery.TemplatePreview do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Delivery.Sections.Section
-  alias Oli.FeatureTelemetry
-
-  @requested_event [:oli, :template_preview, :requested]
-  @enrollment_ensured_event [:oli, :template_preview, :enrollment_ensured]
-  @launch_succeeded_event [:oli, :template_preview, :launch_succeeded]
-  @launch_failed_event [:oli, :template_preview, :launch_failed]
 
   @spec prepare_launch(Section.t(), User.t() | nil, Author.t() | nil) ::
           {:ok,
@@ -25,41 +19,13 @@ defmodule Oli.Delivery.TemplatePreview do
            }}
           | {:error, atom()}
   def prepare_launch(%Section{} = section, actor_user, actor_author) do
-    metadata = telemetry_metadata(section, actor_user, actor_author)
+    case do_prepare_launch(section, actor_user, actor_author) do
+      {:ok, result} ->
+        {:ok, Map.drop(result, [:user_id])}
 
-    :telemetry.execute(@requested_event, %{count: 1}, metadata)
-
-    FeatureTelemetry.span(
-      :template_preview,
-      "delivery",
-      "prepare_launch",
-      fn ->
-        case do_prepare_launch(section, actor_user, actor_author) do
-          {:ok, result} ->
-            enriched =
-              metadata
-              |> Map.put(:user_id, result.user_id)
-              |> Map.put(:launch_identity, to_string(result.launch_identity))
-              |> Map.put(:enrollment_outcome, result.enrollment_outcome)
-              |> Map.put(:hidden_instructor_outcome, result.hidden_instructor_outcome)
-
-            :telemetry.execute(@enrollment_ensured_event, %{count: 1}, enriched)
-            :telemetry.execute(@launch_succeeded_event, %{count: 1}, enriched)
-
-            {:ok, Map.drop(result, [:user_id])}
-
-          {:error, reason} = error ->
-            :telemetry.execute(
-              @launch_failed_event,
-              %{count: 1},
-              Map.put(metadata, :error_category, to_string(reason))
-            )
-
-            error
-        end
-      end,
-      metadata
-    )
+      error ->
+        error
+    end
   end
 
   defp do_prepare_launch(
@@ -119,15 +85,4 @@ defmodule Oli.Delivery.TemplatePreview do
   defp resolve_launch_identity(%User{} = user, %Author{}), do: {:ok, {:current_user, user}}
 
   defp resolve_launch_identity(nil, %Author{}), do: {:ok, :hidden_instructor}
-
-  defp telemetry_metadata(section, actor_user, actor_author) do
-    %{
-      section_id: section.id,
-      section_slug: section.slug,
-      product_id: section.id,
-      user_id: actor_user && actor_user.id,
-      author_id: actor_author && actor_author.id,
-      tenant_id: section.institution_id
-    }
-  end
 end

@@ -1,7 +1,7 @@
 # Template Preview — Functional Design Document
 
 ## 1. Executive Summary
-This design adds a Template Overview preview action that launches the real student delivery home for the template-backed section instead of rendering a parallel preview surface. The implementation keeps the feature in existing Product/Template overview boundaries and reuses canonical delivery routes under `/sections/:section_slug`. On preview launch, the backend ensures the acting user has an enrolled learner record in that section when a delivery `current_user` is present, creating or reactivating it when missing. When preview is initiated from an authorized author/admin session without a logged-in delivery user, the backend instead creates or reuses the section's singleton hidden instructor account, following the existing admin section-access pattern so preview can launch without an extra learner-login decision. Enrollment and hidden-instructor writes are idempotent by relying on existing uniqueness constraints and explicit helper flows, so repeated preview clicks never create duplicate learner enrollments or multiple hidden instructor identities for the same section. Authorization remains server-side and reuses current template access checks already enforced by product/template mount logic. The launch opens in a new browser tab/window to preserve authoring context in the originating tab. No schema or migration changes are required because current enrollment, enrollment-role, and hidden-user access patterns already provide the needed integrity constraints. Observability adds preview lifecycle telemetry and AppSignal tags so we can track launch success, latency, learner-enrollment create/reuse, and hidden-instructor create/reuse outcomes. Security posture remains tenant-scoped by validating section ownership and user authorization before any enrollment mutation. Rollout uses standard deployment with no feature flag (per PRD), guarded by focused integration and LiveView regression coverage.
+This design adds a Template Overview preview action that launches the real student delivery home for the template-backed section instead of rendering a parallel preview surface. The implementation keeps the feature in existing Product/Template overview boundaries and reuses canonical delivery routes under `/sections/:section_slug`. On preview launch, the backend ensures the acting user has an enrolled learner record in that section when a delivery `current_user` is present, creating or reactivating it when missing. When preview is initiated from an authorized author/admin session without a logged-in delivery user, the backend instead creates or reuses the section's singleton hidden instructor account, following the existing admin section-access pattern so preview can launch without an extra learner-login decision. Enrollment and hidden-instructor writes are idempotent by relying on existing uniqueness constraints and explicit helper flows, so repeated preview clicks never create duplicate learner enrollments or multiple hidden instructor identities for the same section. Authorization remains server-side and reuses current template access checks already enforced by product/template mount logic. The launch opens in a new browser tab/window to preserve authoring context in the originating tab. No schema or migration changes are required because current enrollment, enrollment-role, and hidden-user access patterns already provide the needed integrity constraints. Security posture remains tenant-scoped by validating section ownership and user authorization before any enrollment mutation. Rollout uses standard deployment with no feature flag (per PRD), guarded by focused integration and LiveView regression coverage.
 
 ## 2. Requirements & Assumptions
 - Functional Requirements:
@@ -13,7 +13,6 @@ This design adds a Template Overview preview action that launches the real stude
   - Canonical launch destination remains the resolved section delivery home.
   - `FR-006`: Repeated launches do not create duplicate enrollment rows.
   - `FR-007`: Deterministic error handling with no partial/duplicate writes.
-  - `FR-008`: Emit telemetry for request, enrollment outcome, and launch result.
 - Non-Functional Requirements:
   - Launch preparation p95 <= 700ms (auth + section resolve + enrollment ensure + URL generation).
   - Zero duplicate enrollments for `(user_id, section_id)` from preview flow.
@@ -46,7 +45,6 @@ This design adds a Template Overview preview action that launches the real stude
   - Design docs confirm section-as-delivery ontology and publication/resource invariants (`docs/design-docs/high-level.md`, `docs/design-docs/publication-model.md`, `docs/design-docs/page-model.md`).
 - Unknowns to confirm:
   - Whether launch target should always be `"/sections/:slug"` for v1 or support deeper remembered destinations later.
-  - Final telemetry naming convention alignment with existing product-overhaul dashboards.
 
 ## 4. Proposed Design
 ### 4.1 Component Roles & Interactions
@@ -69,7 +67,7 @@ This design adds a Template Overview preview action that launches the real stude
   - Explicitly preserves uniqueness and can reactivate suspended enrollment to `:enrolled`.
 - Hidden instructor helper reuse:
   - Reuse `Oli.Delivery.Sections.fetch_hidden_instructor/1` semantics as the section-scoped singleton hidden instructor provisioner.
-  - Extend/wrap it as needed so preview launch can distinguish `:created` versus `:reused` outcomes for telemetry and testing.
+  - Extend/wrap it as needed so preview launch can distinguish `:created` versus `:reused` outcomes for application branching and testing.
 - Delivery reuse:
   - Launch target remains `/sections/:section_slug` (canonical student home), but a server redirect/session-establishing handoff is required for the hidden-instructor fallback so the launched tab receives the correct user session before entering delivery.
   - Because hidden instructor login state is stored in the normal browser user session, that state persists after preview/admin section access until replaced or explicitly logged out.
@@ -193,7 +191,7 @@ Backpressure and concurrency notes:
   - If `current_author` is authorized and `current_user` is absent, create/reuse the hidden instructor singleton instead of failing.
   - Only return typed error when neither a valid learner identity nor an authorized hidden-instructor fallback can be established.
 - Enrollment ensure fails (DB/constraint):
-  - Surface error, log structured context, emit failure telemetry.
+  - Surface error and log structured context.
 - Launch dispatch fails client-side (popup blocked):
   - Show manual open link as fallback without rerunning enrollment mutation.
 - Section no longer active/accessible:
@@ -203,34 +201,18 @@ Backpressure and concurrency notes:
   - Primary recovery path is `Exit Preview`, which clears hidden-user session state when preview is the source of that identity.
   - Instructor Workspace also exposes the hidden account/logout affordance as a manual recovery/reset path for sticky cross-section session state.
 
-## 11. Observability
-- Telemetry events:
-  - `[:oli, :template_preview, :requested]`
-  - `[:oli, :template_preview, :enrollment_ensured]`
-  - `[:oli, :template_preview, :launch_succeeded]`
-  - `[:oli, :template_preview, :launch_failed]`
-- Measurements:
-  - `duration` (native monotonic), `count`.
-- Metadata:
-  - `section_id`, `section_slug`, `product_id`, `user_id`, `author_id`, `tenant_id`, `launch_identity`, `enrollment_outcome`, `hidden_instructor_outcome`, `error_category`.
-- AppSignal:
-  - Tag feature area `template_preview` and outcome labels for alerting.
-- Alert thresholds:
-  - launch failure ratio > 1% over 15m,
-  - p95 launch-prep latency > 700ms over 15m.
-
-## 12. Security & Privacy
+## 11. Security & Privacy
 - AuthN/AuthZ:
   - Reuse existing author authentication and blueprint authorization (`Mount.for/2`).
   - Enforce server checks before any enrollment mutation.
 - Tenant isolation:
   - Section context originates from authorized product/template scope; no cross-tenant section lookup path.
 - PII handling:
-  - Avoid sensitive payloads in telemetry/logs; use IDs and categorical errors only.
+  - Avoid sensitive payloads in logs; use IDs and categorical errors only.
 - Auditability:
   - Capture preview launch attempts/outcomes in existing auditing pipeline when enabled.
 
-## 13. Testing Strategy
+## 12. Testing Strategy
 - Unit tests:
   - `TemplatePreview.prepare_launch/3` success and typed error paths.
   - `Sections.ensure_student_enrollment/2` create, reuse, suspended->enrolled reactivation, duplicate-call idempotency.
@@ -244,8 +226,6 @@ Backpressure and concurrency notes:
 - LiveView tests:
   - Preview action visibility by role.
   - In-flight disable and error/success feedback behavior.
-- Observability tests:
-  - Assert telemetry event emission and metadata hygiene.
 - Manual QA:
   - Validate new-tab launch to student home.
   - Validate parity with true student delivery for same template section.
@@ -253,7 +233,7 @@ Backpressure and concurrency notes:
   - Validate hidden instructor session is visible in Instructor Workspace and can be cleared with the logout control after preview/admin section access.
   - Validate keyboard-only operation and focus continuity.
 
-## 14. Backwards Compatibility
+## 13. Backwards Compatibility
 - No changes to existing delivery URL contracts.
 - No schema/migration changes, so no data migration risk.
 - Existing template overview actions remain unchanged except for additive Preview action.
@@ -261,7 +241,7 @@ Backpressure and concurrency notes:
 
 ## 15. Risks & Mitigations
 - Risk: Some authors may lack a logged-in delivery user identity.
-  - Mitigation: create/reuse the section-scoped hidden instructor fallback and track create/reuse rates with telemetry.
+  - Mitigation: create/reuse the section-scoped hidden instructor fallback and validate create/reuse behavior in automated tests.
 - Risk: Enrollment race condition under concurrent launches.
   - Mitigation: transactionally enforced idempotent upsert leveraging existing unique indexes.
 - Risk: Popup blockers reduce perceived launch reliability.
@@ -271,7 +251,6 @@ Backpressure and concurrency notes:
 
 ## 16. Open Questions & Follow-ups
 - Do we want a dedicated lightweight preview redirect endpoint (server 302) to maximize popup compatibility, or keep launch dispatch fully inside LiveView JS events?
-- Should preview telemetry be integrated into an existing Product Overhaul dashboard or a new template-preview-specific dashboard?
 
 ## 17. References
 - `docs/exec-plans/current/epics/product_overhaul/template_preview/prd.md`
