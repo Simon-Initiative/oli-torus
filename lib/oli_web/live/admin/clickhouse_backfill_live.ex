@@ -341,7 +341,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
            assign(socket,
              inventory_form: to_form(error_changeset, as: :inventory),
              inventory_form_inputs:
-             inventory_inputs_from_params(params, socket.assigns.inventory_config),
+               inventory_inputs_from_params(params, socket.assigns.inventory_config),
              inventory_advanced_touched?: true
            )}
 
