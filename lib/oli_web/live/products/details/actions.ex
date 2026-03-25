@@ -24,7 +24,11 @@ defmodule OliWeb.Products.Details.Actions do
 
       <div class="flex items-center gap-3">
         <div>
-          <button class="btn btn-link action-button" phx-click="request_duplicate">
+          <button
+            class="btn btn-secondary action-button"
+            phx-click="request_duplicate"
+            type="button"
+          >
             Duplicate
           </button>
         </div>

@@ -122,7 +122,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert tags_index < welcome_title_index
     end
 
-    test "renders template usage action link", ctx do
+    test "renders Duplicate as a button and Preview last in the actions list", ctx do
       %{conn: conn, project: project, product: product} = ctx
 
       {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
@@ -136,11 +136,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
 
       assert has_element?(
                live,
+               "button[phx-click='request_duplicate'].btn.btn-secondary",
+               "Duplicate"
+             )
+
+      assert has_element?(
+               live,
                "button[phx-click='template_preview'].btn.btn-primary",
                "Preview Template"
              )
 
       assert html =~ "fa-solid fa-eye"
+
+      assert elem(:binary.match(html, "Duplicate"), 0) <
+               elem(:binary.match(html, "Preview Template"), 0)
 
       assert elem(:binary.match(html, "View Usage"), 0) <
                elem(:binary.match(html, "Preview Template"), 0)
