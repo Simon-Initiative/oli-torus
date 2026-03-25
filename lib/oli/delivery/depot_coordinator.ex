@@ -13,8 +13,10 @@ defmodule Oli.Delivery.DepotCoordinator do
 
   def refresh(%DepotDesc{} = depot_desc, table_id, caller_module) do
     clear(depot_desc, table_id)
+    parent = self()
 
     Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      Ecto.Adapters.SQL.Sandbox.allow(Oli.Repo, parent, self())
       init_if_necessary(depot_desc, table_id, caller_module)
     end)
   end

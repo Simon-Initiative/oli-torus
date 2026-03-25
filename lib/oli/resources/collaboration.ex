@@ -1140,7 +1140,11 @@ defmodule Oli.Resources.Collaboration do
   end
 
   def mark_posts_as_read(posts, user_id, true) do
+    parent = self()
+
     Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      Ecto.Adapters.SQL.Sandbox.allow(Oli.Repo, parent, self())
+
       Enum.reduce(posts, [], fn post, acc ->
         if post.user_id != user_id, do: [post.id | acc], else: acc
       end)
