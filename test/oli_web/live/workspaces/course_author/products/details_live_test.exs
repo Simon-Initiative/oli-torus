@@ -126,12 +126,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       %{conn: conn, project: project, product: product} = ctx
 
       {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+      html = render(live)
 
       assert has_element?(
                live,
                "a[href='/workspaces/course_author/#{project.slug}/products/#{product.slug}/usage']",
                "View Usage"
              )
+
+      assert has_element?(
+               live,
+               "button[phx-click='template_preview'].btn.btn-primary",
+               "Preview Template"
+             )
+
+      assert html =~ "fa-solid fa-eye"
+
+      assert elem(:binary.match(html, "View Usage"), 0) <
+               elem(:binary.match(html, "Preview Template"), 0)
     end
 
     test "prepares template preview, creates an enrollment, and pushes a launch event", ctx do

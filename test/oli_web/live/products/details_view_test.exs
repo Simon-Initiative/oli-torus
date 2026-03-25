@@ -332,6 +332,31 @@ defmodule OliWeb.Products.DetailsViewTest do
   describe "product details page - template preview" do
     setup [:setup_admin_conn, :create_product]
 
+    test "renders Preview Template as the last primary action", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+      html = render(view)
+
+      assert has_element?(
+               view,
+               "button[phx-click='template_preview'].btn.btn-primary",
+               "Preview Template"
+             )
+
+      assert has_element?(
+               view,
+               "a[href='/authoring/products/#{product.slug}/usage']",
+               "View Usage"
+             )
+
+      assert html =~ "fa-solid fa-eye"
+
+      assert elem(:binary.match(html, "View Usage"), 0) <
+               elem(:binary.match(html, "Preview Template"), 0)
+    end
+
     test "prepares preview, creates an enrollment, and pushes a launch event", %{
       conn: conn,
       admin: admin,
