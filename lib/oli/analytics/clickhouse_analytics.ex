@@ -367,11 +367,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   def validate_credentials(role \\ :query) when role in [:query, :admin] do
     config = clickhouse_config(role)
-
-    case {present?(config.user), present?(config.password)} do
-      {true, true} -> :ok
-      _ -> {:error, missing_credentials_error(role)}
-    end
+    validate_config_credentials(config, role)
   end
 
   def execute_query(query, description, opts \\ [])
@@ -379,7 +375,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     credential = Keyword.get(opts, :credential, :query)
     config = clickhouse_config(credential)
 
-    with :ok <- validate_credentials(credential) do
+    with :ok <- validate_config_credentials(config, credential) do
       query_params = build_query_params(config, Keyword.get(opts, :query_params, %{}))
       url = build_clickhouse_url(config, query_params)
 
@@ -451,6 +447,13 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   defp normalize_keyword_options(value) when is_list(value), do: value
   defp normalize_keyword_options(%{} = map), do: Enum.into(map, [])
   defp normalize_keyword_options(_), do: []
+
+  defp validate_config_credentials(config, role) do
+    case {present?(config.user), present?(config.password)} do
+      {true, true} -> :ok
+      _ -> {:error, missing_credentials_error(role)}
+    end
+  end
 
   defp present?(value) when is_binary(value), do: String.trim(value) != ""
   defp present?(value), do: not is_nil(value)
