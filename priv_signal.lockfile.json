@@ -11029,17 +11029,17 @@
       },
       "evidence": [
         {
-          "line": 138,
+          "line": 137,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "6f0f4757e84898d9",
+          "finding_id": "4dab3125e65bd3f6",
           "ast_kind": "token"
         },
         {
-          "line": 138,
+          "line": 137,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "6f0f4757e84898d9",
+          "finding_id": "4dab3125e65bd3f6",
           "ast_kind": "unknown"
         }
       ],
@@ -11048,7 +11048,7 @@
         "function": "assigns_for/2",
         "module": "OliWeb.Certificates.CertificatesSettingsLive",
         "lines": [
-          138
+          137
         ],
         "file_path": "lib/oli_web/live/certificates/certificate_settings_live.ex"
       },
@@ -24964,7 +24964,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Delivery.RemixSection",
         "lines": [
-          464
+          492
         ],
         "file_path": "lib/oli_web/live/delivery/remix_section.ex"
       },
@@ -43854,7 +43854,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "a60b63d51d789417449930f5e8aef2e46b2cda5c"
+    "commit": "5af131fa2256fb24900b2136a991b6b3399c9fb8"
   },
   "schema_version": "1",
   "summary": {
@@ -43866,7 +43866,7 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1591,
-    "scan_duration_ms": 1655,
+    "scan_duration_ms": 1690,
     "node_count": 1516,
     "data_node_count": 122,
     "flow_count": 756,
