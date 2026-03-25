@@ -54,7 +54,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
 
   defmodule AssertDirective do
     @moduledoc "Asserts the structure, resource properties, progress, proficiency, or general assertions"
-    defstruct [:structure, :resource, :progress, :proficiency, :certificate, :assertions]
+    defstruct [:structure, :resource, :progress, :proficiency, :certificate, :gating, :assertions]
   end
 
   defmodule UserDirective do
@@ -136,6 +136,54 @@ defmodule Oli.Scenarios.DirectiveTypes do
     page: title of the page to view
     """
     defstruct [:student, :section, :page]
+  end
+
+  defmodule VisitPageDirective do
+    @moduledoc """
+    Simulates a student visiting a page in a section.
+    student: name of the student user (as defined in user directive)
+    section: name of the section
+    page: title of the page to visit
+    """
+    defstruct [:student, :section, :page]
+  end
+
+  defmodule GateDirective do
+    @moduledoc """
+    Creates a top-level gating condition or a student-specific exception.
+    name: scenario-local gate identifier
+    section: target section name
+    target: title of the gated resource
+    type: gating condition type
+    source: optional source resource title for started/finished/progress gates
+    start: optional start datetime for schedule gate
+    end: optional end datetime for schedule gate
+    minimum_percentage: optional threshold for finished/progress gates
+    student: optional learner name for student-specific exceptions
+    parent: optional parent gate name for student-specific exceptions
+    graded_resource_policy: optional policy for graded resources
+    """
+    defstruct [
+      :name,
+      :section,
+      :target,
+      :type,
+      :source,
+      :start,
+      :end,
+      :minimum_percentage,
+      :student,
+      :parent,
+      :graded_resource_policy
+    ]
+  end
+
+  defmodule TimeDirective do
+    @moduledoc """
+    Sets the scenario-local current time for deterministic workflows.
+    at: ISO8601 datetime string or parsed DateTime value
+    """
+    defstruct [:at]
   end
 
   defmodule AnswerQuestionDirective do
@@ -228,6 +276,10 @@ defmodule Oli.Scenarios.DirectiveTypes do
               page_attempts: %{},
               # {user_name, section_name, page_title, activity_virtual_id} -> evaluation result
               activity_evaluations: %{},
+              # gate name -> GatingCondition
+              gates: %{},
+              # scenario-local current time
+              scenario_time: nil,
               # Default author for operations
               current_author: nil,
               # Default institution

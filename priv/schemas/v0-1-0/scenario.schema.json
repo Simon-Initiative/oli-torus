@@ -214,6 +214,36 @@
         "admin_title3": { "type": "string" }
       }
     },
+    "gatingAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gate": { "type": "string" },
+        "section": { "type": "string" },
+        "student": { "type": "string" },
+        "resource": { "type": "string" },
+        "target": { "type": "string" },
+        "source": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["schedule", "always_open", "started", "finished", "progress", "alwaysopen"]
+        },
+        "accessible": { "$ref": "#/definitions/booleanLike" },
+        "blocking_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["schedule", "always_open", "started", "finished", "progress", "alwaysopen"]
+          }
+        },
+        "blocking_count": { "type": "integer" },
+        "minimum_percentage": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }]
+        },
+        "start": { "type": "string" },
+        "end": { "type": "string" }
+      }
+    },
     "assertDirective": {
       "type": "object",
       "additionalProperties": false,
@@ -223,6 +253,7 @@
         "progress": { "$ref": "#/definitions/progressAssertion" },
         "proficiency": { "$ref": "#/definitions/proficiencyAssertion" },
         "certificate": { "$ref": "#/definitions/certificateAssertion" },
+        "gating": { "$ref": "#/definitions/gatingAssertion" },
         "assertions": {}
       }
     },
@@ -236,6 +267,7 @@
         "progress": { "$ref": "#/definitions/progressAssertion" },
         "proficiency": { "$ref": "#/definitions/proficiencyAssertion" },
         "certificate": { "$ref": "#/definitions/certificateAssertion" },
+        "gating": { "$ref": "#/definitions/gatingAssertion" },
         "assertions": {}
       }
     },
@@ -729,6 +761,71 @@
                 "student": { "type": "string" },
                 "section": { "type": "string" },
                 "page": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["visit_page"],
+          "additionalProperties": false,
+          "properties": {
+            "visit_page": {
+              "type": "object",
+              "required": ["student", "section", "page"],
+              "additionalProperties": false,
+              "properties": {
+                "student": { "type": "string" },
+                "section": { "type": "string" },
+                "page": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["gate"],
+          "additionalProperties": false,
+          "properties": {
+            "gate": {
+              "type": "object",
+              "required": ["section", "type"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "section": { "type": "string" },
+                "target": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["schedule", "always_open", "started", "finished", "progress", "alwaysopen"]
+                },
+                "source": { "type": "string" },
+                "start": { "type": "string" },
+                "end": { "type": "string" },
+                "minimum_percentage": {
+                  "oneOf": [{ "type": "number" }, { "type": "string" }]
+                },
+                "student": { "type": "string" },
+                "parent": { "type": "string" },
+                "graded_resource_policy": {
+                  "type": "string",
+                  "enum": ["allows_nothing", "allows_review"]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["time"],
+          "additionalProperties": false,
+          "properties": {
+            "time": {
+              "type": "object",
+              "required": ["at"],
+              "additionalProperties": false,
+              "properties": {
+                "at": { "type": "string" }
               }
             }
           }

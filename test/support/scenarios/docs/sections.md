@@ -7,6 +7,7 @@ This document covers directives for creating and managing course sections, apply
 - [update](#update) - Apply project updates to sections
 - [customize](#customize) - Modify section curriculum
 - [remix](#remix) - Copy content into sections
+- [advanced gating](#advanced-gating) - Gate section resources and add student exceptions
 - [assert](#assert) - Assert section structure
 
 ---
@@ -258,6 +259,45 @@ Copies content from a source project into a section's hierarchy. This allows ins
     name: "main_course"
     title: "Main Course"
     root:
+
+---
+
+## advanced gating
+
+Advanced gating scenario support is documented in [gating.md](gating.md).
+
+Use it when a section workflow needs to:
+- block or open a resource based on schedule, started, or finished conditions
+- add student-specific exceptions such as `always_open`
+- verify learner access outcomes with `assert.gating`
+- control time deterministically with the `time` directive
+
+Minimal example:
+
+```yaml
+- section:
+    name: "gating_section"
+    from: "source_project"
+    title: "Gating Section"
+
+- gate:
+    name: "started_gate"
+    section: "gating_section"
+    target: "Locked Page"
+    type: "started"
+    source: "Warmup Page"
+
+- assert:
+    gating:
+      section: "gating_section"
+      student: "alice"
+      resource: "Locked Page"
+      accessible: false
+      blocking_types: ["started"]
+      blocking_count: 1
+```
+
+See [gating.md](gating.md) for the full directive and assertion reference.
       children:
         - container: "Core Module"
           children:

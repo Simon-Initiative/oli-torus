@@ -5,6 +5,7 @@ This document covers directives for simulating student interactions and tracking
 ## Table of Contents
 - [Overview](#overview)
 - [view_practice_page](#view_practice_page) - Simulate viewing pages
+- [visit_page](#visit_page) - Simulate visiting any page
 - [answer_question](#answer_question) - Simulate answering activities
 - [discussion_post](#discussion_post) - Create learner discussion contributions
 - [class_note](#class_note) - Create learner public class notes
@@ -66,6 +67,31 @@ Simulates a student viewing a practice (ungraded) page in a section. This create
 - Must be called before `answer_question` for that page
 - Automatically enrolls the student if not already enrolled
 - Only works with practice (ungraded) pages
+
+---
+
+## visit_page
+
+Simulates a student visiting any page in a section. Unlike `view_practice_page`, this works for both ungraded and graded pages and is the preferred directive for gating workflows that require a page to be started.
+
+### Parameters
+- `student`: Name of the student user (as defined in user directive) (required)
+- `section`: Name of the section (required)
+- `page`: Title of the page to visit (required)
+
+### Example
+```yaml
+- visit_page:
+    student: "alice"
+    section: "my_section"
+    page: "Quiz 1"
+```
+
+### Notes
+- Creates or resumes the learner's page attempt state
+- Works for graded pages as well as practice pages
+- Useful for `started` and `finished` gating workflows
+- `view_practice_page` remains available as the legacy practice-page-specific alias
 
 ---
 

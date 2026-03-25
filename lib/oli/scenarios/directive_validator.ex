@@ -106,6 +106,23 @@ defmodule Oli.Scenarios.DirectiveValidator do
             "admin_title3"
           ]
 
+        :gating ->
+          [
+            "gate",
+            "section",
+            "student",
+            "resource",
+            "target",
+            "source",
+            "type",
+            "accessible",
+            "blocking_types",
+            "blocking_count",
+            "minimum_percentage",
+            "start",
+            "end"
+          ]
+
         _ ->
           []
       end

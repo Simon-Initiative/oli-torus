@@ -22,6 +22,9 @@ defmodule Oli.Scenarios.DirectiveParser do
     ActivityDirective,
     EditPageDirective,
     ViewPracticePageDirective,
+    VisitPageDirective,
+    GateDirective,
+    TimeDirective,
     AnswerQuestionDirective,
     CertificateDirective,
     DiscussionPostDirective,
@@ -217,6 +220,7 @@ defmodule Oli.Scenarios.DirectiveParser do
       "progress",
       "proficiency",
       "certificate",
+      "gating",
       "assertions"
     ]
 
@@ -228,6 +232,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           progress: parse_progress_assertion(assert_data["progress"]),
           proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
           certificate: parse_certificate_assertion(assert_data["certificate"]),
+          gating: parse_gating_assertion(assert_data["gating"]),
           assertions: assert_data["assertions"]
         }
 
@@ -243,11 +248,28 @@ defmodule Oli.Scenarios.DirectiveParser do
       if Map.has_key?(verify_data, "to") && Map.has_key?(verify_data, "structure") do
         # Legacy format with "to" at top level
         {%{"structure" => Map.merge(verify_data["structure"], %{"to" => verify_data["to"]})},
-         ["to", "structure", "resource", "progress", "proficiency", "certificate", "assertions"]}
+         [
+           "to",
+           "structure",
+           "resource",
+           "progress",
+           "proficiency",
+           "certificate",
+           "gating",
+           "assertions"
+         ]}
       else
         # Standard format
         {verify_data,
-         ["structure", "resource", "progress", "proficiency", "certificate", "assertions"]}
+         [
+           "structure",
+           "resource",
+           "progress",
+           "proficiency",
+           "certificate",
+           "gating",
+           "assertions"
+         ]}
       end
 
     # Validate attributes
@@ -259,6 +281,7 @@ defmodule Oli.Scenarios.DirectiveParser do
           progress: parse_progress_assertion(assert_data["progress"]),
           proficiency: parse_proficiency_assertion(assert_data["proficiency"]),
           certificate: parse_certificate_assertion(assert_data["certificate"]),
+          gating: parse_gating_assertion(assert_data["gating"]),
           assertions: assert_data["assertions"]
         }
 
@@ -428,6 +451,72 @@ defmodule Oli.Scenarios.DirectiveParser do
           student: view_data["student"],
           section: view_data["section"],
           page: view_data["page"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"visit_page" => visit_data}) do
+    allowed_attrs = ["student", "section", "page"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, visit_data, "visit_page") do
+      :ok ->
+        %VisitPageDirective{
+          student: visit_data["student"],
+          section: visit_data["section"],
+          page: visit_data["page"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"gate" => gate_data}) do
+    allowed_attrs = [
+      "name",
+      "section",
+      "target",
+      "type",
+      "source",
+      "start",
+      "end",
+      "minimum_percentage",
+      "student",
+      "parent",
+      "graded_resource_policy"
+    ]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, gate_data, "gate") do
+      :ok ->
+        %GateDirective{
+          name: gate_data["name"],
+          section: gate_data["section"],
+          target: gate_data["target"],
+          type: parse_gate_type(gate_data["type"]),
+          source: gate_data["source"],
+          start: parse_optional_datetime(gate_data["start"]),
+          end: parse_optional_datetime(gate_data["end"]),
+          minimum_percentage: parse_optional_float(gate_data["minimum_percentage"]),
+          student: gate_data["student"],
+          parent: gate_data["parent"],
+          graded_resource_policy: parse_optional_gate_policy(gate_data["graded_resource_policy"])
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_directive(%{"time" => time_data}) do
+    allowed_attrs = ["at"]
+
+    case DirectiveValidator.validate_attributes(allowed_attrs, time_data, "time") do
+      :ok ->
+        %TimeDirective{
+          at: parse_required_datetime(time_data["at"], "time.at")
         }
 
       {:error, msg} ->
@@ -650,6 +739,9 @@ defmodule Oli.Scenarios.DirectiveParser do
          "create_activity",
          "edit_page",
          "view_practice_page",
+         "visit_page",
+         "gate",
+         "time",
          "answer_question",
          "use",
          "collaborator",
@@ -657,7 +749,7 @@ defmodule Oli.Scenarios.DirectiveParser do
          "bibliography",
          "hook"
        ] do
-      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, use, collaborator, media, bibliography, hook"
+      raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, gate, time, answer_question, use, collaborator, media, bibliography, hook"
     else
       # This shouldn't happen as specific handlers above should match first
       raise "Internal error: unhandled directive '#{key}'"
@@ -684,6 +776,9 @@ defmodule Oli.Scenarios.DirectiveParser do
              "create_activity",
              "edit_page",
              "view_practice_page",
+             "visit_page",
+             "gate",
+             "time",
              "answer_question",
              "certificate",
              "discussion_post",
@@ -701,7 +796,7 @@ defmodule Oli.Scenarios.DirectiveParser do
         [parse_directive(%{key => value})]
 
       {key, _value} ->
-        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, answer_question, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
+        raise "Unrecognized directive: '#{key}'. Valid directives are: project, clone, section, product, remix, manipulate, publish, assert, verify, user, enroll, institution, update, customize, create_activity, edit_page, view_practice_page, visit_page, gate, time, answer_question, certificate, discussion_post, class_note, complete_scored_page, certificate_action, use, collaborator, media, bibliography, hook"
     end)
   end
 
@@ -807,6 +902,32 @@ defmodule Oli.Scenarios.DirectiveParser do
           admin_title2: data["admin_title2"],
           admin_name3: data["admin_name3"],
           admin_title3: data["admin_title3"]
+        }
+
+      {:error, msg} ->
+        raise msg
+    end
+  end
+
+  defp parse_gating_assertion(nil), do: nil
+
+  defp parse_gating_assertion(data) when is_map(data) do
+    case DirectiveValidator.validate_assertion_attributes(:gating, data) do
+      :ok ->
+        %{
+          gate: data["gate"],
+          section: data["section"],
+          student: data["student"],
+          resource: data["resource"],
+          target: data["target"],
+          source: data["source"],
+          type: if(data["type"], do: parse_gate_type(data["type"]), else: nil),
+          accessible: parse_optional_boolean(data["accessible"], "accessible"),
+          blocking_types: parse_optional_gate_types(data["blocking_types"]),
+          blocking_count: parse_optional_integer(data["blocking_count"]),
+          minimum_percentage: parse_optional_float(data["minimum_percentage"]),
+          start: parse_optional_datetime(data["start"]),
+          end: parse_optional_datetime(data["end"])
         }
 
       {:error, msg} ->
@@ -1033,9 +1154,73 @@ defmodule Oli.Scenarios.DirectiveParser do
   defp parse_optional_float(nil), do: nil
   defp parse_optional_float(value), do: parse_float(value)
 
+  defp parse_required_datetime(nil, field),
+    do: raise("Missing required datetime for #{field}")
+
+  defp parse_required_datetime(value, _field), do: parse_datetime(value)
+
+  defp parse_optional_datetime(nil), do: nil
+  defp parse_optional_datetime(value), do: parse_datetime(value)
+
+  defp parse_datetime(%DateTime{} = value), do: value
+
+  defp parse_datetime(value) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, datetime, _offset} -> datetime
+      {:error, reason} -> raise "Invalid datetime #{inspect(value)}: #{inspect(reason)}"
+    end
+  end
+
+  defp parse_datetime(value),
+    do: raise("Invalid datetime value #{inspect(value)}")
+
   defp parse_optional_string_or_atom(nil), do: nil
   defp parse_optional_string_or_atom(value) when is_binary(value), do: value
   defp parse_optional_string_or_atom(value) when is_atom(value), do: Atom.to_string(value)
+
+  defp parse_gate_type(nil), do: raise("gate requires a type")
+
+  defp parse_gate_type(value) when is_atom(value) do
+    case value do
+      type when type in [:schedule, :always_open, :started, :finished, :progress] -> type
+      other -> raise "Invalid gate type #{inspect(other)}"
+    end
+  end
+
+  defp parse_gate_type(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "schedule" -> :schedule
+      "always_open" -> :always_open
+      "alwaysopen" -> :always_open
+      "started" -> :started
+      "finished" -> :finished
+      "progress" -> :progress
+      other -> raise "Invalid gate type '#{other}'"
+    end
+  end
+
+  defp parse_optional_gate_policy(nil), do: nil
+
+  defp parse_optional_gate_policy(value) when is_atom(value) do
+    case value do
+      policy when policy in [:allows_nothing, :allows_review] -> policy
+      other -> raise "Invalid graded_resource_policy #{inspect(other)}"
+    end
+  end
+
+  defp parse_optional_gate_policy(value) when is_binary(value) do
+    case String.downcase(String.trim(value)) do
+      "allows_nothing" -> :allows_nothing
+      "allows_review" -> :allows_review
+      other -> raise "Invalid graded_resource_policy '#{other}'"
+    end
+  end
+
+  defp parse_optional_gate_types(nil), do: nil
+
+  defp parse_optional_gate_types(values) when is_list(values) do
+    Enum.map(values, &parse_gate_type/1)
+  end
 
   defp parse_optional_certificate_state(nil), do: nil
 
