@@ -170,9 +170,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       assert has_element?(component, "button:not([disabled])", "Email Selected")
     end
 
-    @tag :skip
-    test "opens the email modal from the tile", %{conn: conn} do
-      # TODO: wire Student Support tile email flow to EmailModal and assert the modal opens here.
+    test "renders the student support email modal for the current selection", %{conn: conn} do
       {:ok, component, _html} =
         live_component_isolated(conn, StudentSupportTile, base_attrs(%{tile_state: tile_state()}))
 
@@ -180,11 +178,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
       |> element("button[aria-label='Select Student 1']")
       |> render_click()
 
-      component
-      |> element("button", "Email Selected")
-      |> render_click()
+      rerender_component(
+        component,
+        base_attrs(%{tile_state: tile_state(), show_email_modal: true})
+      )
 
-      assert has_element?(component, "#email_modal")
+      assert has_element?(component, "#student_support_email_modal")
+      assert render(component) =~ "student1@example.edu"
     end
   end
 
@@ -210,6 +210,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
         dashboard_scope: "course",
         params: %{},
         instructor_email: "instructor@example.edu",
+        instructor_name: "Instructor Example",
         section_title: "Demo Section"
       },
       overrides

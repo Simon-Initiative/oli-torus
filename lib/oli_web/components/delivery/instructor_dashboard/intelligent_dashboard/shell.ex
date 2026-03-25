@@ -1,6 +1,7 @@
 defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Shell do
   use OliWeb, :live_component
 
+  alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Components.Delivery.ListNavigator
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.TileGroups.ContentSection
@@ -107,25 +108,30 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         # resets state that depends on the current dataset shape. Bucket selection
         # and pagination are scope-specific, so dropping them lets Student Support
         # choose the correct default bucket and restart the list at page 1.
-        case tile_support do
-          tile_support when is_map(tile_support) ->
-            tile_support
-            |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
-            |> Map.drop(["bucket", "page"])
-
-          tile_support when is_list(tile_support) ->
-            tile_support
-            |> Enum.into(%{}, fn {key, value} -> {to_string(key), value} end)
-            |> Map.drop(["bucket", "page"])
-
-          _ ->
-            %{}
-        end
+        tile_support
+        |> normalize_tile_support_params()
+        |> Map.drop(["bucket", "page"])
       end)
     end)
   end
 
   defp dashboard_navigation_params(_), do: %{}
+
+  defp normalize_tile_support_params(tile_support) when is_map(tile_support) do
+    Enum.into(tile_support, %{}, fn {key, value} -> {to_string(key), value} end)
+  end
+
+  defp normalize_tile_support_params(tile_support) when is_list(tile_support) do
+    case Enum.reduce_while(tile_support, %{}, fn
+           {key, value}, acc -> {:cont, Map.put(acc, to_string(key), value)}
+           _, _acc -> {:halt, :invalid}
+         end) do
+      :invalid -> %{}
+      normalized -> normalized
+    end
+  end
+
+  defp normalize_tile_support_params(_), do: %{}
 
   defp show_prototype_validation_ui? do
     Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :dev
@@ -140,6 +146,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       |> assign(:section_slug, section_slug)
       |> assign(:section_title, section_title)
       |> assign(:instructor_email, instructor_email(assigns))
+      |> assign(:instructor_name, instructor_name(assigns))
       |> assign(:section, section)
       |> assign(:show_move_handle, length(assigns.dashboard_visible_sections) > 1)
 
@@ -154,6 +161,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       section_slug={@section_slug}
       section_title={@section_title}
       instructor_email={@instructor_email}
+      instructor_name={@instructor_name}
       dashboard_scope={@dashboard_scope}
       show_progress_tile={section_has_tile?(@section, "progress")}
       show_student_support_tile={section_has_tile?(@section, "student_support")}
@@ -194,6 +202,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
     cond do
       Map.get(assigns, :current_author) -> assigns.current_author.email
       Map.get(assigns, :current_user) -> assigns.current_user.email
+      true -> nil
+    end
+  end
+
+  defp instructor_name(assigns) do
+    cond do
+      Map.get(assigns, :current_author) -> DeliveryUtils.user_name(assigns.current_author)
+      Map.get(assigns, :current_user) -> DeliveryUtils.user_name(assigns.current_user)
       true -> nil
     end
   end

@@ -93,13 +93,8 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
   end
 
   def handle_event("show_email_modal", _params, socket) do
-    if Map.get(socket.assigns, :email_handler_id) == "student_support_tile" do
-      # TODO: wire the Student Support tile email flow to EmailModal in the follow-up PR.
-      {:noreply, socket}
-    else
-      send(self(), {:show_email_modal, socket.assigns})
-      {:noreply, socket}
-    end
+    send(self(), {:show_email_modal, socket.assigns})
+    {:noreply, socket}
   end
 
   defp normalize_variant(variant) when variant in [:full, "full"], do: :full
