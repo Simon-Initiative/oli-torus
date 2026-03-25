@@ -47,6 +47,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:project, Project, default: nil)
   attr(:preview_mode, :boolean)
   attr(:resource_title, :string, default: nil)
+  attr(:template_preview_mode, :boolean, default: false)
+  attr(:template_preview_exit_path, :string, default: nil)
 
   attr(:sidebar_enabled, :boolean,
     default: false,
@@ -134,6 +136,37 @@ defmodule OliWeb.Components.Delivery.Layouts do
           >
             <i class="fa-solid fa-xmark"></i>
           </button>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr(:template_preview_mode, :boolean, default: false)
+  attr(:template_preview_exit_path, :string, default: nil)
+
+  def template_preview_banner(assigns) do
+    ~H"""
+    <div
+      :if={@template_preview_mode}
+      id="template-preview-banner"
+      class="border-b border-[#c9dff7] bg-[#deecff] px-4 py-6"
+      role="region"
+      aria-label="Template preview"
+    >
+      <div class="mx-auto flex max-w-[1512px] flex-col items-center gap-3 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:gap-0">
+        <div class="hidden sm:block" />
+        <div class="text-center font-['Open_Sans'] text-[24px] font-semibold leading-8 text-[#353740]">
+          Preview Mode
+        </div>
+        <div class="sm:justify-self-end">
+          <.link
+            href={@template_preview_exit_path}
+            method="delete"
+            class="inline-flex items-center justify-center rounded-[6px] border border-[#8ab8e5] bg-[#deecff] px-6 py-2 font-['Open_Sans'] text-[14px] font-semibold leading-4 text-[#006cd9] shadow-[0_2px_4px_rgba(0,52,99,0.10)] transition-colors hover:bg-[#eef6ff] hover:no-underline"
+          >
+            Exit Preview
+          </.link>
         </div>
       </div>
     </div>

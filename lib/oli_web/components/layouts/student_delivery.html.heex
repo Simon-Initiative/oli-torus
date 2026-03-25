@@ -1,4 +1,8 @@
 <main role="main" class="relative flex flex-col">
+  <Components.Delivery.Layouts.template_preview_banner
+    template_preview_mode={assigns[:template_preview_mode]}
+    template_preview_exit_path={assigns[:template_preview_exit_path]}
+  />
   <div class="sticky top-0 z-50">
     <Components.Delivery.Layouts.header
       ctx={@ctx}

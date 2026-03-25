@@ -394,4 +394,30 @@ defmodule OliWeb.Workspaces.InstructorTest do
              )
     end
   end
+
+  describe "user logged in as hidden instructor" do
+    test "sees the hidden delivery account logout panel", %{conn: conn} do
+      hidden_user =
+        insert(:user,
+          hidden: true,
+          name: "Hidden Instructor",
+          given_name: "Hidden",
+          family_name: "Instructor",
+          email: "hidden_instructor@example.com"
+        )
+
+      conn = log_in_user(conn, hidden_user)
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      assert has_element?(
+               view,
+               "p",
+               "You are currently logged in with a hidden delivery account:"
+             )
+
+      assert has_element?(view, "td", "hidden_instructor@example.com")
+      assert has_element?(view, "a[href='/users/log_out']", "Sign out of this delivery account.")
+    end
+  end
 end
