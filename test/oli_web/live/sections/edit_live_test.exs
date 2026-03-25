@@ -214,6 +214,15 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert has_element?(view, "input[name=\"section[pay_by_institution]\"]")
     end
 
+    test "does not show Manage Discounts on real section edit view", %{conn: conn} do
+      section = insert(:section, type: :enrollable, requires_payment: true)
+
+      {:ok, _view, html} = live(conn, live_view_edit_route(section.slug))
+
+      refute html =~ "Manage Discounts"
+      refute html =~ "/authoring/products/#{section.slug}/discounts"
+    end
+
     test "loads open and free section data correctly", %{conn: conn} do
       welcome_title = %{
         type: "p",

@@ -45,7 +45,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       show_move_handle={@show_move_handle}
     >
       <div
-        class={["grid grid-cols-1 gap-4", @tile_count > 1 && "xl:grid-cols-2"]}
+        class={[
+          "grid grid-cols-1 gap-4",
+          @tile_count > 1 && "xl:grid-cols-[minmax(0,0.43fr)_minmax(0,0.57fr)]"
+        ]}
         data-section-layout={if @tile_count == 1, do: "single", else: "multi"}
       >
         <ChallengingObjectivesTile.tile :if={@show_objectives_tile} status={@objectives_status} />

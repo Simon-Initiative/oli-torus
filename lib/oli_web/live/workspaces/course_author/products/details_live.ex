@@ -20,8 +20,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
   alias OliWeb.Products.Details.ImageUpload
+  alias OliWeb.Products.Payments.Discounts.ProductsIndexView
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Projects.RequiredSurvey
+  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
   alias OliWeb.Sections.PaywallSettings
 
@@ -163,6 +165,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
               form={to_form(@changeset)}
               disabled={!@is_admin}
               show_group={false}
+              manage_discounts_path={
+                Routes.live_path(OliWeb.Endpoint, ProductsIndexView, @product.slug)
+              }
             />
           </.form>
         </div>
@@ -200,6 +205,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             changeset={to_form(@changeset)}
             save="save"
             updates={@updates}
+            source_materials_url={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/source_materials"
+            }
+            customize_url={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/remix"
+            }
+            edit_url={~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/edit"}
             schedule_url={
               ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/schedule"
             }
@@ -220,14 +232,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             currently produce a certificate.
           </div>
           <div>
-            <a
-              href={
+            <.action_link
+              navigate={
                 ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/certificate_settings"
               }
-              class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
-            >
-              Manage certificate settings
-            </a>
+              label="Manage certificate settings"
+            />
           </div>
         </div>
       </div>

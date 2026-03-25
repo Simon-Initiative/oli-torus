@@ -1,40 +1,32 @@
 defmodule OliWeb.Sections.ScheduleView do
   use OliWeb, :live_view
 
+  alias Oli.Authoring.Course.Project
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
-  alias OliWeb.Common.{Breadcrumb}
+  alias OliWeb.Common.{Breadcrumb, React}
 
   on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
   defp set_breadcrumbs(_type, %{type: :blueprint} = section, socket) do
-    case Map.get(socket.assigns, :route_name) do
-      :workspaces ->
-        project = socket.assigns.project
+    route_name = socket.assigns[:route_name]
+    project = socket.assigns[:project]
 
-        [
-          Breadcrumb.new(%{
-            full_title: "Template Overview",
-            link: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}"
-          }),
-          Breadcrumb.new(%{
-            full_title: "Schedule",
-            link: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}/schedule"
-          })
-        ]
+    overview_link = Breadcrumb.product_overview_link(section, route_name, project)
 
-      _ ->
-        [
-          Breadcrumb.new(%{
-            full_title: "Template Overview",
-            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
-          }),
-          Breadcrumb.new(%{
-            full_title: "Schedule",
-            link: ~p"/authoring/products/#{section.slug}/schedule"
-          })
-        ]
-    end
+    page_link =
+      case {route_name, project} do
+        {:workspaces, %Project{slug: project_slug}} ->
+          ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/schedule"
+
+        _ ->
+          ~p"/authoring/products/#{section.slug}/schedule"
+      end
+
+    [
+      Breadcrumb.new(%{full_title: "Template Overview", link: overview_link}),
+      Breadcrumb.new(%{full_title: "Schedule", link: page_link})
+    ]
   end
 
   defp set_breadcrumbs(type, section, _socket) do
@@ -57,25 +49,20 @@ defmodule OliWeb.Sections.ScheduleView do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {type, _user, section} ->
-        {:ok,
-         assign(socket,
-           mount_type: type,
-           section: section,
-           js_path: Routes.static_path(OliWeb.Endpoint, "/js/scheduler.js")
-         )}
+      {user_type, _user, section} ->
+        {:ok, assign(socket, user_type: user_type, section: section)}
     end
   end
 
   def handle_params(_params, _url, socket) do
     section = socket.assigns.section
-    type = socket.assigns.mount_type
+    type = socket.assigns.user_type
 
     edit_url =
       case {section.type, Map.get(socket.assigns, :route_name)} do
         {:blueprint, :workspaces} ->
-          project = socket.assigns.project
-          ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}/edit"
+          %Project{slug: project_slug} = socket.assigns.project
+          ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/edit"
 
         {:blueprint, _} ->
           ~p"/authoring/products/#{section.slug}/edit"
@@ -109,13 +96,7 @@ defmodule OliWeb.Sections.ScheduleView do
 
   def render(assigns) do
     ~H"""
-    <script type="text/javascript" src={@js_path} />
-
-    <div id="schedule-container" phx-update="ignore">
-      <div id="schedule-app">
-        {ReactPhoenix.ClientSide.react_component("Components.ScheduleEditor", @appConfig)}
-      </div>
-    </div>
+    {React.component(@ctx, "Components.ScheduleEditor", @appConfig, id: "schedule-editor")}
     """
   end
 end

@@ -308,6 +308,27 @@ defmodule OliWeb.Products.DetailsViewTest do
       refute updated_html =~ ~r/name="section\[payment_options\]"[^>]*disabled=/
       refute updated_html =~ ~r/name="section\[has_grace_period\]"[^>]*disabled=/
     end
+
+    test "shows Manage Discounts when requires payment is checked", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+
+      refute has_element?(
+               view,
+               "a[href='/authoring/products/#{product.slug}/discounts']",
+               "Manage Discounts"
+             )
+
+      updated_html =
+        view
+        |> element("#paywall-settings-form")
+        |> render_change(%{"section" => %{"requires_payment" => "true"}})
+
+      assert updated_html =~ "Manage Discounts"
+      assert updated_html =~ ~r/href="[^"]*\/discounts"/
+    end
   end
 
   describe "product details page - overview sections" do
@@ -514,7 +535,9 @@ defmodule OliWeb.Products.DetailsViewTest do
           updates: updates,
           changeset:
             Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
-          save: "save"
+          save: "save",
+          customize_url: "/authoring/products/#{product.slug}/remix",
+          source_materials_url: "/authoring/products/#{product.slug}/source_materials"
         })
 
       assert html =~ "Manage source materials"
@@ -533,12 +556,49 @@ defmodule OliWeb.Products.DetailsViewTest do
           updates: %{},
           changeset:
             Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
-          save: "save"
+          save: "save",
+          customize_url: "/authoring/products/#{product.slug}/remix"
         })
 
       refute html =~ "Manage source materials"
       refute html =~ ~s(id="manage-source-materials-updates-badge")
       refute html =~ "updates</span>"
+    end
+  end
+
+  describe "product details content component - edit template details link" do
+    test "shows edit template details link when edit_url is provided", _ctx do
+      product = build(:section, type: :blueprint, slug: "test-product")
+
+      html =
+        render_component(&Content.render/1, %{
+          product: product,
+          updates: %{},
+          changeset:
+            Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
+          save: "save",
+          customize_url: "/authoring/products/test-product/remix",
+          edit_url: "/authoring/products/test-product/edit"
+        })
+
+      assert html =~ "Edit template details"
+      assert html =~ "/authoring/products/test-product/edit"
+    end
+
+    test "does not show edit template details link when edit_url is not provided", _ctx do
+      product = build(:section, type: :blueprint)
+
+      html =
+        render_component(&Content.render/1, %{
+          product: product,
+          updates: %{},
+          changeset:
+            Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
+          save: "save",
+          customize_url: "/authoring/products/#{product.slug}/remix"
+        })
+
+      refute html =~ "Edit template details"
     end
   end
 

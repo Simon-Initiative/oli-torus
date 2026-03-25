@@ -14,6 +14,7 @@ defmodule OliWeb.Products.DetailsView do
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias OliWeb.Live.Components.Sections.NotesComponent
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
+  alias OliWeb.Products.Payments.Discounts.ProductsIndexView
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Router.Helpers, as: Routes
@@ -82,7 +83,13 @@ defmodule OliWeb.Products.DetailsView do
              show_confirm: false,
              preview_launching?: false,
              preview_url: nil,
-             breadcrumbs: [Breadcrumb.new(%{full_title: "Template Overview"})],
+             breadcrumbs: [
+               Breadcrumb.new(%{
+                 full_title: base_project.title,
+                 link: ~p"/workspaces/course_author/#{base_project.slug}/overview"
+               }),
+               Breadcrumb.new(%{full_title: "Template Overview"})
+             ],
              base_project: base_project
            })
          )
@@ -161,6 +168,9 @@ defmodule OliWeb.Products.DetailsView do
               form={to_form(@changeset)}
               disabled={false}
               show_group={false}
+              manage_discounts_path={
+                Routes.live_path(OliWeb.Endpoint, ProductsIndexView, @product.slug)
+              }
             />
           </.form>
         </div>
@@ -189,6 +199,9 @@ defmodule OliWeb.Products.DetailsView do
           changeset={to_form(@changeset)}
           save="save"
           updates={@updates}
+          source_materials_url={~p"/authoring/products/#{@product.slug}/source_materials"}
+          customize_url={~p"/authoring/products/#{@product.slug}/remix"}
+          edit_url={~p"/authoring/products/#{@product.slug}/edit"}
           schedule_url={~p"/authoring/products/#{@product.slug}/schedule"}
         />
       </Overview.section>
@@ -203,12 +216,10 @@ defmodule OliWeb.Products.DetailsView do
             currently produce a certificate.
           </div>
           <div>
-            <a
-              href={~p"/authoring/products/#{@product.slug}/certificate_settings"}
-              class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
-            >
-              Manage certificate settings
-            </a>
+            <.action_link
+              navigate={~p"/authoring/products/#{@product.slug}/certificate_settings"}
+              label="Manage certificate settings"
+            />
           </div>
         </div>
       </Overview.section>
