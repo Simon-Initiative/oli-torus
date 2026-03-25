@@ -1,6 +1,8 @@
 defmodule Oli.Mailer.SendEmailWorkerTest do
   use ExUnit.Case, async: true
 
+  import Swoosh.TestAssertions
+
   alias Oli.Mailer.SendEmailWorker
 
   describe "serialize_email/1 and deserialize_email/1" do
@@ -140,6 +142,30 @@ defmodule Oli.Mailer.SendEmailWorkerTest do
 
       # Verify it can be encoded to JSON (required for Oban job args)
       assert {:ok, _json} = Jason.encode(serialized)
+    end
+  end
+
+  describe "perform/1" do
+    test "delivers the serialized email through the mailer" do
+      email =
+        Swoosh.Email.new()
+        |> Swoosh.Email.to({"Student", "student@example.edu"})
+        |> Swoosh.Email.from({"Sender", "sender@example.edu"})
+        |> Swoosh.Email.reply_to({"Instructor", "instructor@example.edu"})
+        |> Swoosh.Email.subject("Worker delivery test")
+        |> Swoosh.Email.text_body("Hello from the worker")
+
+      job = %Oban.Job{args: %{"email" => SendEmailWorker.serialize_email(email)}}
+
+      assert :ok = SendEmailWorker.perform(job)
+
+      assert_email_sent(fn delivered_email ->
+        delivered_email.to == [{"Student", "student@example.edu"}] and
+          delivered_email.from == {"Sender", "sender@example.edu"} and
+          delivered_email.reply_to == {"Instructor", "instructor@example.edu"} and
+          delivered_email.subject == "Worker delivery test" and
+          delivered_email.text_body == "Hello from the worker"
+      end)
     end
   end
 end

@@ -239,6 +239,28 @@ defmodule OliWeb.Components.Common do
   end
 
   @doc """
+  Renders a text-style action link using the project's design tokens.
+  Used for navigational links on template/product overview pages.
+
+  ## Examples
+
+      <.action_link navigate={~p"/some/path"} label="Edit template details" />
+  """
+  attr :navigate, :string, required: true
+  attr :label, :string, required: true
+
+  def action_link(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
+    >
+      {@label}
+    </.link>
+    """
+  end
+
+  @doc """
   Renders an input with label and error messages.
 
   A `Phoenix.HTML.FormField` may be passed as argument,

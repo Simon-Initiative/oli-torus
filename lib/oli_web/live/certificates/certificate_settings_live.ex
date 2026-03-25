@@ -91,7 +91,6 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
         socket
         |> assign(resource_slug: project.slug)
         |> assign(resource_title: project.title)
-        |> assign(active_workspace: :course_author)
         |> assign(active_view: :products)
     end
     |> assign(title: "Manage Certificate Settings")

@@ -951,8 +951,8 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> Floki.parse_document!()
         |> Floki.find("ol.custom-breadcrumb li")
 
-      # First breadcrumb: product title with link to product details page
-      assert Floki.text(product_breadcrumb) =~ prod.title
+      # First breadcrumb: Template Overview with link to product details page
+      assert Floki.text(product_breadcrumb) =~ "Template Overview"
 
       assert Floki.attribute(product_breadcrumb, "a", "href") == [
                "/authoring/products/#{prod.slug}"

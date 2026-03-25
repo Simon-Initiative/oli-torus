@@ -25,7 +25,7 @@ defmodule OliWeb.Projects.PublishChangesTableModel do
       rows: changes,
       column_specs: column_specs,
       event_suffix: "publish_changes",
-      id_field: [:id]
+      id_field: ["publish-change", :id]
     )
   end
 

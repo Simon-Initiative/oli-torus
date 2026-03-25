@@ -372,7 +372,7 @@ export const ScheduleEditor: React.FC<SchedulerProps> = ({
           </p>
           <p>
             Set these on the{' '}
-            <a href={edit_section_details_url}>
+            <a href={edit_section_details_url} data-phx-link="redirect" data-phx-link-state="push">
               {is_blueprint ? ' Edit Template Details' : ' Edit Section Details'}
             </a>{' '}
             page.
