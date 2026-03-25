@@ -427,5 +427,37 @@ defmodule Oli.Scenarios.Validation.InvalidAttributesTest do
       assert error.message =~ "version"
       assert error.message =~ ~r/Unknown attributes in 'project' directive:/
     end
+
+    test "certificate directive with unknown nested attribute fails" do
+      yaml = """
+      - certificate:
+          target: "product1"
+          thresholds:
+            unexpected: true
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'certificate thresholds' directive: \["unexpected"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
+
+    test "certificate action directive with unknown attribute fails" do
+      yaml = """
+      - certificate_action:
+          instructor: "instructor1"
+          section: "section1"
+          student: "student1"
+          action: "approve"
+          email: true
+      """
+
+      assert_raise RuntimeError,
+                   ~r/Unknown attributes in 'certificate_action' directive: \["email"\]/,
+                   fn ->
+                     DirectiveParser.parse_yaml!(yaml)
+                   end
+    end
   end
 end

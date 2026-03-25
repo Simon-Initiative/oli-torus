@@ -6,6 +6,12 @@ This document covers directives for simulating student interactions and tracking
 - [Overview](#overview)
 - [view_practice_page](#view_practice_page) - Simulate viewing pages
 - [answer_question](#answer_question) - Simulate answering activities
+- [discussion_post](#discussion_post) - Create learner discussion contributions
+- [class_note](#class_note) - Create learner public class notes
+- [complete_scored_page](#complete_scored_page) - Record scored-page completion
+- [certificate_action](#certificate_action) - Apply instructor certificate decisions
+- [certificate](#certificate) - Configure certificate settings
+- [certificate assertions](#certificate-assertions) - Assert certificate config and learner state
 - [assert](#assert) - Assert progress metrics and other conditions
 - [Complete Workflows](#complete-workflows)
 
@@ -23,6 +29,7 @@ This enables testing of:
 - Progress calculation
 - Assessment scoring
 - Attempt management
+- Certificate qualification and approval workflows
 
 ---
 
@@ -72,6 +79,159 @@ Simulates a student answering a question on a page they've already viewed.
 - `page`: Title of the page containing the activity (required)
 - `activity_virtual_id`: Virtual ID of the activity to answer (required)
 - `response`: The student's response (required)
+
+---
+
+## discussion_post
+
+Creates a learner discussion post in a section and then evaluates certificate qualification synchronously.
+
+### Parameters
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `body`: Post body text (required)
+
+### Example
+```yaml
+- discussion_post:
+    student: "alice"
+    section: "my_section"
+    body: "My discussion contribution"
+```
+
+---
+
+## class_note
+
+Creates a learner public class note on a page in a section and then evaluates certificate qualification synchronously.
+
+### Parameters
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `page`: Title of the page being annotated (required)
+- `body`: Note body text (required)
+
+### Example
+```yaml
+- class_note:
+    student: "alice"
+    section: "my_section"
+    page: "Lesson 1"
+    body: "Important idea here"
+```
+
+---
+
+## complete_scored_page
+
+Records a scored page completion by creating or updating `ResourceAccess` for the learner, then runs certificate qualification logic synchronously.
+
+### Parameters
+- `student`: Name of the student user (required)
+- `section`: Name of the section (required)
+- `page`: Title of the page being completed (required)
+- `score`: Earned score (required)
+- `out_of`: Maximum score (required)
+
+### Example
+```yaml
+- complete_scored_page:
+    student: "alice"
+    section: "my_section"
+    page: "Lesson 1"
+    score: 0.75
+    out_of: 1.0
+```
+
+---
+
+## certificate_action
+
+Applies an instructor certificate decision for a learner below the UI layer.
+
+### Parameters
+- `instructor`: Name of the instructor user (required)
+- `section`: Name of the section (required)
+- `student`: Name of the student user (required)
+- `action`: `approve` or `deny` (required)
+
+### Example
+```yaml
+- certificate_action:
+    instructor: "instructor_1"
+    section: "my_section"
+    student: "alice"
+    action: "approve"
+```
+
+---
+
+## certificate
+
+Configures certificate enablement, thresholds, and selected design fields on a section or product.
+
+### Parameters
+- `target`: Scenario name of the section or product (required)
+- `enabled`: Whether certificate capability is enabled on the target
+- `thresholds`: Nested threshold settings
+- `design`: Nested certificate design fields
+
+### Example
+```yaml
+- certificate:
+    target: "certificate_product"
+    enabled: true
+    thresholds:
+      required_discussion_posts: 1
+      required_class_notes: 1
+      min_percentage_for_completion: 50
+      min_percentage_for_distinction: 90
+      assessments_apply_to: "custom"
+      scored_pages:
+        - "Lesson 1"
+      requires_instructor_approval: true
+    design:
+      title: "Completion Certificate"
+      description: "Course Subtitle"
+```
+
+---
+
+## certificate assertions
+
+Use `assert.certificate` to verify section certificate configuration and learner certificate state.
+
+### Supported checks
+- section certificate enablement
+- threshold values
+- selected scored pages
+- design fields such as title, description, and administrator names/titles
+- learner granted-certificate state: `none`, `pending`, `earned`, `denied`
+- learner distinction flag
+- learner progress counts for:
+  - `discussion_posts`
+  - `class_notes`
+  - `required_assignments`
+
+### Example
+```yaml
+- assert:
+    certificate:
+      section: "my_section"
+      student: "alice"
+      state: "pending"
+      with_distinction: false
+      progress:
+        discussion_posts:
+          completed: 1
+          total: 1
+        class_notes:
+          completed: 1
+          total: 1
+        required_assignments:
+          completed: 1
+          total: 1
+```
 
 ### Response Formats
 

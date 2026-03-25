@@ -81,6 +81,31 @@ defmodule Oli.Scenarios.DirectiveValidator do
         :proficiency ->
           ["section", "objective", "bucket", "value", "student", "page", "container"]
 
+        :certificate ->
+          [
+            "section",
+            "student",
+            "enabled",
+            "state",
+            "with_distinction",
+            "progress",
+            "requires_instructor_approval",
+            "required_discussion_posts",
+            "required_class_notes",
+            "min_percentage_for_completion",
+            "min_percentage_for_distinction",
+            "assessments_apply_to",
+            "scored_pages",
+            "title",
+            "description",
+            "admin_name1",
+            "admin_title1",
+            "admin_name2",
+            "admin_title2",
+            "admin_name3",
+            "admin_title3"
+          ]
+
         _ ->
           []
       end

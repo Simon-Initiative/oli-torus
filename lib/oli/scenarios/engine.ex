@@ -24,6 +24,11 @@ defmodule Oli.Scenarios.Engine do
     EditPageDirective,
     ViewPracticePageDirective,
     AnswerQuestionDirective,
+    CertificateDirective,
+    DiscussionPostDirective,
+    ClassNoteDirective,
+    CompleteScoredPageDirective,
+    CertificateActionDirective,
     UseDirective,
     CollaboratorDirective,
     MediaDirective,
@@ -49,6 +54,11 @@ defmodule Oli.Scenarios.Engine do
     EditPageHandler,
     ViewPracticePageHandler,
     AnswerQuestionHandler,
+    CertificateHandler,
+    DiscussionPostHandler,
+    ClassNoteHandler,
+    CompleteScoredPageHandler,
+    CertificateActionHandler,
     UseHandler,
     CollaboratorHandler,
     MediaHandler,
@@ -247,6 +257,26 @@ defmodule Oli.Scenarios.Engine do
 
   def execute_directive(%AnswerQuestionDirective{} = directive, state) do
     AnswerQuestionHandler.handle(directive, state)
+  end
+
+  def execute_directive(%CertificateDirective{} = directive, state) do
+    CertificateHandler.handle(directive, state)
+  end
+
+  def execute_directive(%DiscussionPostDirective{} = directive, state) do
+    DiscussionPostHandler.handle(directive, state)
+  end
+
+  def execute_directive(%ClassNoteDirective{} = directive, state) do
+    ClassNoteHandler.handle(directive, state)
+  end
+
+  def execute_directive(%CompleteScoredPageDirective{} = directive, state) do
+    CompleteScoredPageHandler.handle(directive, state)
+  end
+
+  def execute_directive(%CertificateActionDirective{} = directive, state) do
+    CertificateActionHandler.handle(directive, state)
   end
 
   def execute_directive(%CollaboratorDirective{} = directive, state) do

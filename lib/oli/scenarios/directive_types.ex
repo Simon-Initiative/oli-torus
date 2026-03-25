@@ -54,7 +54,7 @@ defmodule Oli.Scenarios.DirectiveTypes do
 
   defmodule AssertDirective do
     @moduledoc "Asserts the structure, resource properties, progress, proficiency, or general assertions"
-    defstruct [:structure, :resource, :progress, :proficiency, :assertions]
+    defstruct [:structure, :resource, :progress, :proficiency, :certificate, :assertions]
   end
 
   defmodule UserDirective do
@@ -148,6 +148,61 @@ defmodule Oli.Scenarios.DirectiveTypes do
     response: the student's response (e.g., "b" for multiple choice)
     """
     defstruct [:student, :section, :page, :activity_virtual_id, :response]
+  end
+
+  defmodule CertificateDirective do
+    @moduledoc """
+    Configures certificate settings on a section or product.
+    target: scenario name of the section/product
+    enabled: whether certificate support is enabled on the target
+    thresholds: nested threshold configuration
+    design: nested certificate design fields
+    """
+    defstruct [:target, :enabled, :thresholds, :design]
+  end
+
+  defmodule DiscussionPostDirective do
+    @moduledoc """
+    Creates a discussion post for a student in a section.
+    student: scenario user name
+    section: scenario section name
+    body: discussion post body
+    """
+    defstruct [:student, :section, :body]
+  end
+
+  defmodule ClassNoteDirective do
+    @moduledoc """
+    Creates a public class note for a student on a page in a section.
+    student: scenario user name
+    section: scenario section name
+    page: title of the page being annotated
+    body: note body
+    """
+    defstruct [:student, :section, :page, :body]
+  end
+
+  defmodule CompleteScoredPageDirective do
+    @moduledoc """
+    Records a scored page completion for a student in a section.
+    student: scenario user name
+    section: scenario section name
+    page: title of the page being completed
+    score: earned score
+    out_of: total available score
+    """
+    defstruct [:student, :section, :page, :score, :out_of]
+  end
+
+  defmodule CertificateActionDirective do
+    @moduledoc """
+    Applies an instructor certificate action for a student.
+    instructor: scenario user name
+    section: scenario section name
+    student: scenario user name
+    action: approve or deny
+    """
+    defstruct [:instructor, :section, :student, :action]
   end
 
   # Execution state

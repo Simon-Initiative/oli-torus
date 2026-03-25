@@ -85,6 +85,13 @@ All directives are documented in detail in the linked documentation files.
 | **Students** | | | |
 | | `view_practice_page` | Simulate student viewing page | [student_simulation.md](docs/student_simulation.md#view_practice_page) |
 | | `answer_question` | Simulate answering activity | [student_simulation.md](docs/student_simulation.md#answer_question) |
+| | `discussion_post` | Create a discussion contribution for a learner | [student_simulation.md](docs/student_simulation.md#discussion_post) |
+| | `class_note` | Create a public class note for a learner on a page | [student_simulation.md](docs/student_simulation.md#class_note) |
+| | `complete_scored_page` | Record a scored-page completion for a learner | [student_simulation.md](docs/student_simulation.md#complete_scored_page) |
+| | `certificate_action` | Apply instructor certificate approve/deny actions | [student_simulation.md](docs/student_simulation.md#certificate_action) |
+| **Certificates** | | | |
+| | `certificate` | Configure certificate settings on a section or product | [student_simulation.md](docs/student_simulation.md#certificate) |
+| | `assert.certificate` | Assert certificate configuration and learner certificate state | [student_simulation.md](docs/student_simulation.md#certificate_assertions) |
 | **Organization** | | | |
 | | `user` | Create users (author/instructor/student) | [users_and_org.md](docs/users_and_org.md#user) |
 | | `institution` | Create institution | [users_and_org.md](docs/users_and_org.md#institution) |
