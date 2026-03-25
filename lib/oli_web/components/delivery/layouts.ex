@@ -22,14 +22,20 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   attr(:breadcrumbs, :list, default: [])
   attr(:socket, :map, required: true)
+  slot(:inner_block)
 
   def breadcrumb_trail(%{breadcrumbs: breadcrumbs} = assigns) when not is_nil(breadcrumbs) do
     ~H"""
-    <nav class="breadcrumb-bar flex flex-row align-items-center border-gray-300 dark:border-neutral-800">
-      {live_render(@socket, OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive,
-        id: "breadcrumb-trail",
-        session: %{"breadcrumbs" => @breadcrumbs}
-      )}
+    <nav class="breadcrumb-bar flex flex-row items-center justify-between gap-3 px-3 border-gray-300 dark:border-neutral-800">
+      <div class="min-w-0 flex-1">
+        {live_render(@socket, OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive,
+          id: "breadcrumb-trail",
+          session: %{"breadcrumbs" => @breadcrumbs}
+        )}
+      </div>
+      <div :if={@inner_block != []} class="flex shrink-0 items-center">
+        {render_slot(@inner_block)}
+      </div>
     </nav>
     """
   end

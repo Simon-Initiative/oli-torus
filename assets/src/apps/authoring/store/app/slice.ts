@@ -12,7 +12,7 @@ import { Objective } from '../../../../data/content/objective';
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { savePage } from '../page/actions/savePage';
 import { AuthoringRootState } from '../rootReducer';
-import { acquireEditingLock } from './actions/locking';
+import { acquireEditingLock, releaseEditingLock } from './actions/locking';
 import { AppSlice } from './name';
 
 interface PartComponentRegistration {
@@ -217,6 +217,9 @@ const slice: Slice<AppState> = createSlice({
     setReadonly(state, action: PayloadAction<{ readonly: boolean }>) {
       state.readonly = action.payload.readonly;
     },
+    setRevisionSlug(state, action: PayloadAction<{ revisionSlug: string }>) {
+      state.revisionSlug = action.payload.revisionSlug;
+    },
     setShowDiagnosticsWindow(state, action: PayloadAction<{ show: boolean }>) {
       state.showDiagnosticsWindow = action.payload.show;
     },
@@ -229,6 +232,9 @@ const slice: Slice<AppState> = createSlice({
       state.hasEditingLock = true;
     });
     builder.addCase(acquireEditingLock.rejected, (state) => {
+      state.hasEditingLock = false;
+    });
+    builder.addCase(releaseEditingLock.fulfilled, (state) => {
       state.hasEditingLock = false;
     });
     builder.addCase(savePage.rejected, (state) => {
@@ -261,6 +267,7 @@ export const {
   setCopiedPartActivityId,
   setDebugConfig,
   setReadonly,
+  setRevisionSlug,
   setShowDiagnosticsWindow,
   changeAppMode,
   setShowScoringOverview,

@@ -11,6 +11,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.GoogleDocs.{Import, Warnings}
   alias Phoenix.Component
+  alias Phoenix.LiveView.JS
 
   alias OliWeb.Curriculum.{
     Rollup,
@@ -117,6 +118,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
                project.customizations
              ),
            dragging: nil,
+           creating_page: false,
            page_title: "Curriculum | " <> project.title,
            options_modal_assigns: nil,
            import_state: new_import_state()
@@ -567,28 +569,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     {:noreply, assign(socket, dragging: nil)}
   end
 
-  def handle_event("add", %{"type" => type, "scored" => scored}, socket) do
-    case ContainerEditor.add_new(
-           socket.assigns.container,
-           type,
-           scored,
-           socket.assigns.author,
-           socket.assigns.project,
-           socket.assigns.numberings
-         ) do
-      {:ok, _} ->
-        {:noreply,
-         assign(socket,
-           numberings:
-             Numbering.number_full_tree(
-               Oli.Publishing.AuthoringResolver,
-               socket.assigns.project.slug,
-               socket.assigns.project.customizations
-             )
-         )}
+  def handle_event("add", %{"type" => type, "scored" => scored} = params, socket) do
+    if socket.assigns.creating_page do
+      {:noreply, socket}
+    else
+      adaptive_mode = Map.get(params, "adaptive_mode")
+      socket = assign(socket, :creating_page, true)
 
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        {:noreply, put_flash(socket, :error, "Could not create new item")}
+      case ContainerEditor.add_new(
+             socket.assigns.container,
+             type,
+             scored,
+             socket.assigns.author,
+             socket.assigns.project,
+             socket.assigns.numberings,
+             %{"adaptive_mode" => adaptive_mode}
+           ) do
+        {:ok, %Revision{slug: slug}} ->
+          handle_created_revision(socket, type, slug, adaptive_mode)
+
+        {:error, %Ecto.Changeset{} = _changeset} ->
+          {:noreply,
+           socket
+           |> assign(:creating_page, false)
+           |> put_flash(:error, "Could not create new item")}
+      end
     end
   end
 
@@ -605,6 +610,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     # that don't need handling (like dropdown toggles)
     Logger.warning("Unhandled event in CurriculumLive: #{inspect(event)}, #{inspect(params)}")
     {:noreply, socket}
+  end
+
+  defp add_page_click(type, scored, adaptive_mode \\ nil) do
+    values = %{"type" => type, "scored" => scored}
+    values = if adaptive_mode, do: Map.put(values, "adaptive_mode", adaptive_mode), else: values
+
+    JS.set_attribute(
+      {"disabled", "disabled"},
+      to: "#curriculum-create-actions [data-create-page-action='true']"
+    )
+    |> JS.add_class(
+      "pointer-events-none opacity-50",
+      to: "#curriculum-create-actions [data-create-page-action='true']"
+    )
+    |> JS.push("add", value: values)
   end
 
   def handle_info({ref, result}, socket) when socket.assigns.import_state.task_ref == ref do
@@ -995,6 +1015,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
       severity: :warn,
       metadata: %{}
     }
+  end
+
+  defp handle_created_revision(socket, "Container", _slug, _adaptive_mode) do
+    {:noreply,
+     assign(socket,
+       creating_page: false,
+       numberings:
+         Numbering.number_full_tree(
+           Oli.Publishing.AuthoringResolver,
+           socket.assigns.project.slug,
+           socket.assigns.project.customizations
+         )
+     )}
+  end
+
+  defp handle_created_revision(socket, _type, slug, _adaptive_mode) do
+    {:noreply,
+     redirect(
+       socket,
+       to: Routes.live_path(socket, EditorLive, socket.assigns.project.slug, slug)
+     )}
   end
 
   defp handle_import_success(socket, revision, warnings) do

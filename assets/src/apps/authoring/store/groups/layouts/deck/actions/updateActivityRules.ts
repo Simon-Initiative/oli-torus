@@ -26,6 +26,7 @@ import {
   upsertActivities,
 } from '../../../../../../delivery/store/features/activities/slice';
 import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
+import { notifyReadOnlyEditBlocked } from '../../../../../readOnlyNotifier';
 import { selectProjectSlug, selectReadOnly } from '../../../../app/slice';
 import { selectResourceId } from '../../../../page/slice';
 
@@ -303,6 +304,11 @@ export const updateActivityRules = createAsyncThunk(
 
     if (activitiesToUpdate.length) {
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
+      if (isReadOnlyMode) {
+        notifyReadOnlyEditBlocked();
+        return;
+      }
+
       if (!isReadOnlyMode) {
         const projectSlug = selectProjectSlug(rootState);
         const pageResourceId = selectResourceId(rootState);
