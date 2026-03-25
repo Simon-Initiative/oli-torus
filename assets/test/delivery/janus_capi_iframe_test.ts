@@ -17,7 +17,7 @@ describe('janus_capi_iframe delivery behavior', () => {
     ).toBe(true);
   });
 
-  it('keeps external embeds non-scrollable unless explicitly enabled', () => {
+  it('enables scrolling for external embeds in delivery', () => {
     expect(
       shouldAllowIframeScrolling(
         {
@@ -26,7 +26,7 @@ describe('janus_capi_iframe delivery behavior', () => {
         },
         'https://example.com/embed',
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('clamps the iframe part and iframe element to the adaptive slot', () => {

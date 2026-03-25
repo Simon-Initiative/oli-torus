@@ -19,7 +19,11 @@ export const shouldAllowIframeScrolling = (
   model: Partial<CapiIframeModel> = {},
   frameSrc = '',
 ): boolean => {
-  return Boolean(model.allowScrolling) || isInternalPageIframeSource(model, frameSrc);
+  return (
+    Boolean(model.allowScrolling) ||
+    isInternalPageIframeSource(model, frameSrc) ||
+    Boolean(frameSrc)
+  );
 };
 
 export const getIframePartDeliveryStyle = (style: CSSProperties): CSSProperties => ({
