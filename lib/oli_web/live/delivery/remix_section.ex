@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.RemixSection do
     ]
 
   alias Oli.Repo
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
@@ -68,9 +69,13 @@ defmodule OliWeb.Delivery.RemixSection do
     overview_link = Breadcrumb.product_overview_link(section, route_name, project)
 
     page_link =
-      if route_name == :workspaces,
-        do: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}/remix",
-        else: ~p"/authoring/products/#{section.slug}/remix"
+      case {route_name, project} do
+        {:workspaces, %Project{slug: project_slug}} ->
+          ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/remix"
+
+        _ ->
+          ~p"/authoring/products/#{section.slug}/remix"
+      end
 
     [
       Breadcrumb.new(%{full_title: "Template Overview", link: overview_link}),
@@ -181,8 +186,8 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_params(_params, _url, socket), do: {:noreply, socket}
 
-  defp product_overview_url(section, :workspaces, project),
-    do: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}"
+  defp product_overview_url(section, :workspaces, %Project{slug: project_slug}),
+    do: ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
 
   defp product_overview_url(section, _, _project),
     do: ~p"/authoring/products/#{section.slug}"

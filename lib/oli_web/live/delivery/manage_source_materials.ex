@@ -3,6 +3,7 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
   use OliWeb.Common.Modal
 
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Updates.{Subscriber, Worker}
   alias Oli.Publishing
@@ -20,11 +21,11 @@ defmodule OliWeb.Delivery.ManageSourceMaterials do
     route_name = socket.assigns[:route_name]
 
     if route_name == :workspaces do
-      project = socket.assigns[:project]
+      %Project{slug: project_slug} = project = socket.assigns[:project]
       overview_link = Breadcrumb.product_overview_link(section, route_name, project)
 
       page_link =
-        ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}/source_materials"
+        ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/source_materials"
 
       [
         Breadcrumb.new(%{full_title: "Template Overview", link: overview_link}),

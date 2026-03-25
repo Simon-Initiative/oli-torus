@@ -2,6 +2,7 @@ defmodule OliWeb.Sections.EditView do
   use OliWeb, :live_view
 
   alias Oli.Branding
+  alias Oli.Authoring.Course.Project
   alias OliWeb.Sections.StartEnd
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionCache
@@ -30,9 +31,13 @@ defmodule OliWeb.Sections.EditView do
     overview_link = Breadcrumb.product_overview_link(section, route_name, project)
 
     page_link =
-      if route_name == :workspaces,
-        do: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}/edit",
-        else: ~p"/authoring/products/#{section.slug}/edit"
+      case {route_name, project} do
+        {:workspaces, %Project{slug: project_slug}} ->
+          ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/edit"
+
+        _ ->
+          ~p"/authoring/products/#{section.slug}/edit"
+      end
 
     [
       Breadcrumb.new(%{full_title: "Template Overview", link: overview_link}),

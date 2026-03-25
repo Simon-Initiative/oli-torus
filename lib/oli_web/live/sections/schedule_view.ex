@@ -1,6 +1,7 @@
 defmodule OliWeb.Sections.ScheduleView do
   use OliWeb, :live_view
 
+  alias Oli.Authoring.Course.Project
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{Breadcrumb, React}
@@ -14,9 +15,13 @@ defmodule OliWeb.Sections.ScheduleView do
     overview_link = Breadcrumb.product_overview_link(section, route_name, project)
 
     page_link =
-      if route_name == :workspaces,
-        do: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}/schedule",
-        else: ~p"/authoring/products/#{section.slug}/schedule"
+      case {route_name, project} do
+        {:workspaces, %Project{slug: project_slug}} ->
+          ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/schedule"
+
+        _ ->
+          ~p"/authoring/products/#{section.slug}/schedule"
+      end
 
     [
       Breadcrumb.new(%{full_title: "Template Overview", link: overview_link}),
@@ -56,8 +61,8 @@ defmodule OliWeb.Sections.ScheduleView do
     edit_url =
       case {section.type, Map.get(socket.assigns, :route_name)} do
         {:blueprint, :workspaces} ->
-          project = socket.assigns.project
-          ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}/edit"
+          %Project{slug: project_slug} = socket.assigns.project
+          ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/edit"
 
         {:blueprint, _} ->
           ~p"/authoring/products/#{section.slug}/edit"
