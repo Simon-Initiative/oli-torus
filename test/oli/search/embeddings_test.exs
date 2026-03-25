@@ -200,28 +200,18 @@ defmodule Oli.Search.EmbeddingsTest do
       expected_embedding_1 = Pgvector.new(Enum.to_list(1..1536))
       expected_embedding_2 = Pgvector.new(Enum.to_list(2..1537))
 
-      expect(MockOpenAIClient, :embeddings, 1, fn _params, _config ->
-        {:ok,
-         %{
-           data: [
-             %{
-               "embedding" => expected_embedding_1,
-               "index" => 0,
-               "object" => "embedding"
-             }
-           ],
-           model: "text-embedding-ada-002",
-           object: "list",
-           usage: %{"prompt_tokens" => 8, "total_tokens" => 8}
-         }}
-      end)
+      expect(MockOpenAIClient, :embeddings, 2, fn params, _config ->
+        expected_embedding =
+          case Keyword.fetch!(params, :input) do
+            ["revision A"] -> expected_embedding_1
+            ["revision B"] -> expected_embedding_2
+          end
 
-      expect(MockOpenAIClient, :embeddings, 1, fn _params, _config ->
         {:ok,
          %{
            data: [
              %{
-               "embedding" => expected_embedding_2,
+               "embedding" => expected_embedding,
                "index" => 0,
                "object" => "embedding"
              }
