@@ -8,22 +8,22 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   alias Jason
   require Logger
 
-  defp clickhouse_config(role \\ :readonly) when role in [:readonly, :admin] do
+  defp clickhouse_config(role \\ :query) when role in [:query, :admin] do
     config =
       Application.get_env(:oli, :clickhouse, [])
       |> Enum.into(%{})
 
     {user_key, password_key} =
       case role do
-        :readonly -> {:analytics_user, :analytics_password}
+        :query -> {:query_user, :query_password}
         :admin -> {:admin_user, :admin_password}
       end
 
     %{
-      host: config.host,
-      http_port: config.http_port,
-      native_port: config.native_port,
-      database: config.database,
+      host: Map.get(config, :host),
+      http_port: Map.get(config, :http_port),
+      native_port: Map.get(config, :native_port),
+      database: Map.get(config, :database),
       user: Map.get(config, user_key),
       password: Map.get(config, password_key),
       http_options: Map.get(config, :http_options, []),
@@ -260,9 +260,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
         ELSE 6
       END
     """
-    |> execute_query("comprehensive section analytics for section #{section_id}",
-      credential: :readonly
-    )
+    |> execute_query("comprehensive section analytics for section #{section_id}")
   end
 
   @doc """
@@ -278,9 +276,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
     FROM #{raw_events_table}
     WHERE section_id = #{section_id}
     """
-    |> execute_query("section analytics load status for section #{section_id}",
-      credential: :readonly
-    )
+    |> execute_query("section analytics load status for section #{section_id}")
     |> case do
       {:ok, %{parsed_body: %{"data" => data}} = result} when is_list(data) ->
         {:ok, parse_boolean_from_json(data) || parse_boolean_result(result.body)}
@@ -305,7 +301,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   def query_status(query_id, opts) when is_binary(query_id) and byte_size(query_id) > 0 do
     sanitized_id = escape_single_quotes(query_id)
-    credential = Keyword.get(opts, :credential, :readonly)
+    credential = Keyword.get(opts, :credential, :query)
 
     """
     SELECT
@@ -345,7 +341,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   def query_progress(query_id, opts) when is_binary(query_id) and byte_size(query_id) > 0 do
     sanitized_id = escape_single_quotes(query_id)
-    credential = Keyword.get(opts, :credential, :readonly)
+    credential = Keyword.get(opts, :credential, :query)
 
     """
     SELECT
@@ -369,76 +365,84 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   def query_progress(_, _opts), do: {:error, :invalid_query_id}
 
+  def validate_credentials(role \\ :query) when role in [:query, :admin] do
+    config = clickhouse_config(role)
+
+    case {present?(config.user), present?(config.password)} do
+      {true, true} -> :ok
+      _ -> {:error, missing_credentials_error(role)}
+    end
+  end
+
   def execute_query(query, description, opts \\ [])
       when is_binary(query) and byte_size(query) > 0 do
-    credential = Keyword.get(opts, :credential, :readonly)
+    credential = Keyword.get(opts, :credential, :query)
     config = clickhouse_config(credential)
 
-    # Include database in the URL path for ClickHouse HTTP interface
-    query_params = build_query_params(config, Keyword.get(opts, :query_params, %{}))
-    url = build_clickhouse_url(config, query_params)
+    with :ok <- validate_credentials(credential) do
+      query_params = build_query_params(config, Keyword.get(opts, :query_params, %{}))
+      url = build_clickhouse_url(config, query_params)
 
-    extra_headers = Keyword.get(opts, :headers, [])
+      extra_headers = Keyword.get(opts, :headers, [])
 
-    headers =
-      [
-        {"Content-Type", "text/plain"},
-        {"X-ClickHouse-User", config.user},
-        {"X-ClickHouse-Key", config.password}
-      ] ++ extra_headers
+      headers =
+        [
+          {"Content-Type", "text/plain"},
+          {"X-ClickHouse-User", config.user},
+          {"X-ClickHouse-Key", config.password}
+        ] ++ extra_headers
 
-    # Add FORMAT clause to include headers in the output
-    {formatted_query, response_format} = normalize_query_format(query)
+      {formatted_query, response_format} = normalize_query_format(query)
 
-    Logger.debug("Executing ClickHouse query for #{description}")
+      Logger.debug("Executing ClickHouse query for #{description}")
 
-    http_options = build_http_options(config, opts)
+      http_options = build_http_options(config, opts)
 
-    http_client =
-      Oli.HTTP.http()
-      |> ensure_http_client_module()
+      http_client =
+        Oli.HTTP.http()
+        |> ensure_http_client_module()
 
-    # Time the query execution
-    {execution_time_microseconds, result} =
-      Oli.Timing.run(fn ->
-        cond do
-          function_exported?(http_client, :post, 4) ->
-            apply(http_client, :post, [url, formatted_query, headers, http_options])
+      {execution_time_microseconds, result} =
+        Oli.Timing.run(fn ->
+          cond do
+            function_exported?(http_client, :post, 4) ->
+              apply(http_client, :post, [url, formatted_query, headers, http_options])
 
-          function_exported?(http_client, :post, 3) ->
-            Logger.debug(
-              "HTTP client #{inspect(http_client)} only supports post/3; using default timeouts"
-            )
+            function_exported?(http_client, :post, 3) ->
+              Logger.debug(
+                "HTTP client #{inspect(http_client)} only supports post/3; using default timeouts"
+              )
 
-            apply(http_client, :post, [url, formatted_query, headers])
+              apply(http_client, :post, [url, formatted_query, headers])
 
-          true ->
-            raise ArgumentError,
-                  "Configured HTTP client #{inspect(http_client)} does not define post/3 or post/4"
-        end
-      end)
+            true ->
+              raise ArgumentError,
+                    "Configured HTTP client #{inspect(http_client)} does not define post/3 or post/4"
+          end
+        end)
 
-    execution_time_ms = execution_time_microseconds / 1000
+      execution_time_ms = execution_time_microseconds / 1000
 
-    case result do
-      {:ok, %{status_code: 200} = response} ->
-        Logger.debug("Successfully executed #{description} in #{execution_time_ms}ms")
+      case result do
+        {:ok, %{status_code: 200} = response} ->
+          Logger.debug("Successfully executed #{description} in #{execution_time_ms}ms")
 
-        parsed_body = parse_query_body(response.body, response_format)
+          parsed_body = parse_query_body(response.body, response_format)
 
-        formatted_response =
-          response
-          |> Map.put(:body, format_query_results(response.body, response_format))
-          |> maybe_put_parsed_body(parsed_body)
-          |> Map.put(:execution_time_ms, execution_time_ms)
+          formatted_response =
+            response
+            |> Map.put(:body, format_query_results(response.body, response_format))
+            |> maybe_put_parsed_body(parsed_body)
+            |> Map.put(:execution_time_ms, execution_time_ms)
 
-        {:ok, formatted_response}
+          {:ok, formatted_response}
 
-      {:ok, %{status_code: status_code, body: body}} ->
-        {:error, "Query \"#{description}\" failed with status #{status_code}: #{body}"}
+        {:ok, %{status_code: status_code, body: body}} ->
+          {:error, "Query \"#{description}\" failed with status #{status_code}: #{body}"}
 
-      {:error, reason} ->
-        {:error, "HTTP request for query \"#{description}\" failed: #{inspect(reason)}"}
+        {:error, reason} ->
+          {:error, "HTTP request for query \"#{description}\" failed: #{inspect(reason)}"}
+      end
     end
   end
 
@@ -447,6 +451,17 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   defp normalize_keyword_options(value) when is_list(value), do: value
   defp normalize_keyword_options(%{} = map), do: Enum.into(map, [])
   defp normalize_keyword_options(_), do: []
+
+  defp present?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present?(value), do: not is_nil(value)
+
+  defp missing_credentials_error(:query) do
+    "ClickHouse query credentials are not configured. Set CLICKHOUSE_QUERY_USER and CLICKHOUSE_QUERY_PASSWORD."
+  end
+
+  defp missing_credentials_error(:admin) do
+    "ClickHouse admin credentials are not configured. Set CLICKHOUSE_ADMIN_USER and CLICKHOUSE_ADMIN_PASSWORD."
+  end
 
   defp build_http_options(config, opts) do
     provided =

@@ -10,6 +10,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   alias Jason
   alias Oli.Analytics.Backfill
   alias Oli.Analytics.Backfill.BackfillRun
+  alias Oli.Analytics.ClickhouseAnalytics
   alias Oli.Analytics.Backfill.Inventory
   alias Oli.Analytics.Backfill.InventoryBatch
   alias Oli.Analytics.Backfill.InventoryRun
@@ -133,39 +134,39 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
   @impl true
   def handle_event("schedule", %{"backfill" => params}, socket) do
-    case normalize_form_params(params) do
-      {:ok, attrs, _raw_inputs} ->
-        case Backfill.schedule_backfill(attrs, socket.assigns[:current_author]) do
-          {:ok, _run} ->
-            {:noreply,
-             socket
-             |> put_flash(:info, "Backfill job has been enqueued.")
-             |> assign(
-               runs: Backfill.list_runs(limit: @runs_limit),
-               changeset: reset_changeset(),
-               form_inputs: default_form_inputs(),
-               form: to_form(reset_changeset(), as: :backfill)
-             )}
+    with :ok <- ClickhouseAnalytics.validate_credentials(:admin),
+         {:ok, attrs, _raw_inputs} <- normalize_form_params(params) do
+      case Backfill.schedule_backfill(attrs, socket.assigns[:current_author]) do
+        {:ok, _run} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Backfill job has been enqueued.")
+           |> assign(
+             runs: Backfill.list_runs(limit: @runs_limit),
+             changeset: reset_changeset(),
+             form_inputs: default_form_inputs(),
+             form: to_form(reset_changeset(), as: :backfill)
+           )}
 
-          {:error, %Ecto.Changeset{} = changeset} ->
-            {:noreply,
-             assign(socket,
-               changeset: Map.put(changeset, :action, :insert),
-               form_inputs: refill_inputs(params),
-               form: to_form(Map.put(changeset, :action, :insert), as: :backfill)
-             )}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply,
+           assign(socket,
+             changeset: Map.put(changeset, :action, :insert),
+             form_inputs: refill_inputs(params),
+             form: to_form(Map.put(changeset, :action, :insert), as: :backfill)
+           )}
 
-          {:error, reason} ->
-            {:noreply,
-             socket
-             |> put_flash(:error, format_error(reason))
-             |> assign(
-               changeset: reset_changeset(),
-               form_inputs: refill_inputs(params),
-               form: to_form(reset_changeset(), as: :backfill)
-             )}
-        end
-
+        {:error, reason} ->
+          {:noreply,
+           socket
+           |> put_flash(:error, format_error(reason))
+           |> assign(
+             changeset: reset_changeset(),
+             form_inputs: refill_inputs(params),
+             form: to_form(reset_changeset(), as: :backfill)
+           )}
+      end
+    else
       {:error, field, message, attrs, raw_inputs} ->
         changeset =
           %BackfillRun{}
@@ -179,6 +180,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
            form_inputs: raw_inputs,
            form: to_form(changeset, as: :backfill)
          )}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, format_error(reason))
+         |> assign(form_inputs: refill_inputs(params))}
     end
   end
 
@@ -298,7 +305,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   def handle_event("inventory_schedule", %{"inventory" => params}, socket) do
     changeset = inventory_form_changeset(params, socket.assigns.inventory_config)
 
-    if changeset.valid? do
+    with :ok <- ClickhouseAnalytics.validate_credentials(:admin),
+         true <- changeset.valid? do
       attrs =
         changeset
         |> Ecto.Changeset.apply_changes()
@@ -333,7 +341,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
            assign(socket,
              inventory_form: to_form(error_changeset, as: :inventory),
              inventory_form_inputs:
-               inventory_inputs_from_params(params, socket.assigns.inventory_config),
+             inventory_inputs_from_params(params, socket.assigns.inventory_config),
              inventory_advanced_touched?: true
            )}
 
@@ -349,15 +357,27 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
            )}
       end
     else
-      changeset = Map.put(changeset, :action, :validate)
+      false ->
+        changeset = Map.put(changeset, :action, :validate)
 
-      {:noreply,
-       assign(socket,
-         inventory_form: to_form(changeset, as: :inventory),
-         inventory_form_inputs:
-           inventory_inputs_from_params(params, socket.assigns.inventory_config),
-         inventory_advanced_touched?: true
-       )}
+        {:noreply,
+         assign(socket,
+           inventory_form: to_form(changeset, as: :inventory),
+           inventory_form_inputs:
+             inventory_inputs_from_params(params, socket.assigns.inventory_config),
+           inventory_advanced_touched?: true
+         )}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, format_error(reason))
+         |> assign(
+           inventory_form: to_form(Map.put(changeset, :action, :insert), as: :inventory),
+           inventory_form_inputs:
+             inventory_inputs_from_params(params, socket.assigns.inventory_config),
+           inventory_advanced_touched?: true
+         )}
     end
   end
 

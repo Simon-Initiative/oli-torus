@@ -2,10 +2,10 @@
 
 This runbook describes how to create a dedicated ClickHouse user for instructor custom analytics queries. The user must be limited to SELECT-only access with resource limits to protect cluster performance.
 
-This user is intended for the Torus analytics credential pair:
+This user is intended for the Torus query credential pair:
 
-- `CLICKHOUSE_ANALYTICS_USER`
-- `CLICKHOUSE_ANALYTICS_PASSWORD`
+- `CLICKHOUSE_QUERY_USER`
+- `CLICKHOUSE_QUERY_PASSWORD`
 
 It is not the admin or bulk ingest credential. Backfill and other write-capable OLAP operations should use the separate admin credential pair:
 
@@ -15,7 +15,7 @@ It is not the admin or bulk ingest credential. Backfill and other write-capable 
 ## Preconditions
 
 - ClickHouse admin access (SQL or users.d config access).
-- The analytics database name (defaults to `CLICKHOUSE_DATABASE`, usually `default`).
+- The query database name (defaults to `CLICKHOUSE_DATABASE`, usually `default`).
 - A password policy and secret storage location for service credentials.
 
 ## Option A: Create the user with SQL (recommended for managed ClickHouse)

@@ -11,15 +11,15 @@ update this file accordingly.
 
 ### Environment Configs
 
-| Name                          | Required | Description                                                              |
-| ----------------------------- | -------- | ------------------------------------------------------------------------ |
-| CLICKHOUSE_ANALYTICS_USER     | Yes      | ClickHouse user for read/query analytics paths                           |
-| CLICKHOUSE_ANALYTICS_PASSWORD | Yes      | ClickHouse password for read/query analytics paths                       |
-| CLICKHOUSE_ADMIN_USER         | Yes      | ClickHouse user for admin health, backfill, ingest, and schema tasks     |
-| CLICKHOUSE_ADMIN_PASSWORD     | Yes      | ClickHouse password for admin health, backfill, ingest, and schema tasks |
+| Name                      | Required | Description                                                              |
+| ------------------------- | -------- | ------------------------------------------------------------------------ |
+| CLICKHOUSE_QUERY_USER     | No       | ClickHouse user for read/query analytics paths                           |
+| CLICKHOUSE_QUERY_PASSWORD | No       | ClickHouse password for read/query analytics paths                       |
+| CLICKHOUSE_ADMIN_USER     | No       | ClickHouse user for admin health, backfill, ingest, and schema tasks     |
+| CLICKHOUSE_ADMIN_PASSWORD | No       | ClickHouse password for admin health, backfill, ingest, and schema tasks |
 
-- ClickHouse OLAP has split credentials for analytics vs admin/write operations.
-  `CLICKHOUSE_ANALYTICS_USER` and `CLICKHOUSE_ANALYTICS_PASSWORD` are used for
+- ClickHouse OLAP has split credentials for query vs admin/write operations.
+  `CLICKHOUSE_QUERY_USER` and `CLICKHOUSE_QUERY_PASSWORD` are used for
   read/query paths. `CLICKHOUSE_ADMIN_USER` and `CLICKHOUSE_ADMIN_PASSWORD` are
   used for admin health, bulk ingest, backfill, and other write-capable
   ClickHouse operations.

@@ -46,7 +46,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
             </:loading>
             <:failed :let={reason}>
               <div class="text-red-600 dark:text-red-400">
-                ClickHouse health check failed: {inspect(reason)}
+                ClickHouse health check failed: {format_error(reason)}
               </div>
             </:failed>
             <% raw_events = Map.get(summary, :raw_events, %{}) %>
@@ -195,6 +195,9 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   defp div_rem(value, divisor) do
     {div(value, divisor), rem(value, divisor)}
   end
+
+  defp format_error(reason) when is_binary(reason), do: reason
+  defp format_error(reason), do: inspect(reason)
 
   defp format_uptime_unit(0, _unit), do: nil
   defp format_uptime_unit(value, unit), do: "#{format_number(value)}#{unit}"

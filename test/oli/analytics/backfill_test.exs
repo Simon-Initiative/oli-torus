@@ -11,7 +11,7 @@ defmodule Oli.Analytics.BackfillTest do
   defmodule FakeAnalyticsRunning do
     def raw_events_table, do: "analytics.raw_events"
 
-    def query_progress("running-query") do
+    def query_progress("running-query", _opts) do
       {:ok,
        %{
          status: :running,
@@ -28,18 +28,18 @@ defmodule Oli.Analytics.BackfillTest do
        }}
     end
 
-    def query_progress(_), do: {:ok, :none}
+    def query_progress(_, _opts), do: {:ok, :none}
 
-    def query_status("running-query"), do: {:ok, %{status: :running}}
-    def query_status(_), do: {:ok, %{status: :running}}
+    def query_status("running-query", _opts), do: {:ok, %{status: :running}}
+    def query_status(_, _opts), do: {:ok, %{status: :running}}
   end
 
   defmodule FakeAnalyticsCompleted do
     def raw_events_table, do: "analytics.raw_events"
 
-    def query_progress(_), do: {:ok, :none}
+    def query_progress(_, _opts), do: {:ok, :none}
 
-    def query_status("completed-query") do
+    def query_status("completed-query", _opts) do
       {:ok,
        %{
          status: :completed,
@@ -52,7 +52,7 @@ defmodule Oli.Analytics.BackfillTest do
        }}
     end
 
-    def query_status(_), do: {:ok, %{status: :running}}
+    def query_status(_, _opts), do: {:ok, %{status: :running}}
   end
 
   setup do
