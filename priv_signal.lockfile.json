@@ -18420,10 +18420,10 @@
       },
       "evidence": [
         {
-          "line": 152,
+          "line": 153,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "b289fc14660226ef",
+          "finding_id": "53483b5578dc8fe3",
           "ast_kind": "token"
         }
       ],
@@ -18432,7 +18432,7 @@
         "function": "handle_event/3",
         "module": "OliWeb.Admin.ClickhouseBackfillLive",
         "lines": [
-          152
+          153
         ],
         "file_path": "lib/oli_web/live/admin/clickhouse_backfill_live.ex"
       },
@@ -18455,10 +18455,10 @@
       },
       "evidence": [
         {
-          "line": 344,
+          "line": 352,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "3557631c35a5ee5c",
+          "finding_id": "e3fde800407290b4",
           "ast_kind": "token"
         }
       ],
@@ -18467,7 +18467,42 @@
         "function": "handle_event/3",
         "module": "OliWeb.Admin.ClickhouseBackfillLive",
         "lines": [
-          344
+          352
+        ],
+        "file_path": "lib/oli_web/live/admin/clickhouse_backfill_live.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Custom Activity Log Action",
+          "sensitive": false,
+          "reference": "Oli.Delivery.CustomLogs.CustomActivityLog.action",
+          "key": "custom_activity_log_action",
+          "class": "behavioral_signal"
+        }
+      ]
+    },
+    {
+      "id": "psn_6d43a2df16168833",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 375,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "c0e2c41a335875d8",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "handle_event/3",
+        "module": "OliWeb.Admin.ClickhouseBackfillLive",
+        "lines": [
+          375
         ],
         "file_path": "lib/oli_web/live/admin/clickhouse_backfill_live.ex"
       },
@@ -25169,17 +25204,17 @@
       },
       "evidence": [
         {
-          "line": 387,
+          "line": 391,
           "signal": "indirect_payload_ref",
           "rule": "http_prd",
-          "finding_id": "351a3e3445df02a4",
+          "finding_id": "adca73b02770a5e8",
           "ast_kind": "unknown"
         },
         {
-          "line": 387,
+          "line": 391,
           "signal": "token_match",
           "rule": "http_prd",
-          "finding_id": "351a3e3445df02a4",
+          "finding_id": "adca73b02770a5e8",
           "ast_kind": "token"
         }
       ],
@@ -25188,7 +25223,7 @@
         "function": "execute_clickhouse_query/2",
         "module": "Oli.ClickHouse.Tasks",
         "lines": [
-          387
+          391
         ],
         "file_path": "lib/oli/clickhouse/tasks.ex"
       },
@@ -31636,17 +31671,17 @@
       },
       "evidence": [
         {
-          "line": 428,
+          "line": 432,
           "signal": "indirect_payload_ref",
           "rule": "http_prd",
-          "finding_id": "32dd08069b1664f0",
+          "finding_id": "fdd819a4d8cfaa9d",
           "ast_kind": "unknown"
         },
         {
-          "line": 428,
+          "line": 432,
           "signal": "token_match",
           "rule": "http_prd",
-          "finding_id": "32dd08069b1664f0",
+          "finding_id": "fdd819a4d8cfaa9d",
           "ast_kind": "token"
         }
       ],
@@ -31655,7 +31690,7 @@
         "function": "test_clickhouse_connection/1",
         "module": "Oli.ClickHouse.Tasks",
         "lines": [
-          428
+          432
         ],
         "file_path": "lib/oli/clickhouse/tasks.ex"
       },
@@ -31936,7 +31971,7 @@
         "function": "update_run_progress/1",
         "module": "Oli.Analytics.Backfill.Inventory.BatchWorker",
         "lines": [
-          913
+          915
         ],
         "file_path": "lib/oli/analytics/backfill/inventory/batch_worker.ex"
       },
@@ -40207,7 +40242,7 @@
         "function": "check_for_interruption/1",
         "module": "Oli.Analytics.Backfill.Inventory.BatchWorker",
         "lines": [
-          1143
+          1145
         ],
         "file_path": "lib/oli/analytics/backfill/inventory/batch_worker.ex"
       },
@@ -43854,7 +43889,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "578b787aa98cac477ec661d09d855d9563cb8d9d"
+    "commit": "c958bac327fb473576a28619a97a02c91775487d"
   },
   "schema_version": "1",
   "summary": {
@@ -43866,8 +43901,8 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1593,
-    "scan_duration_ms": 2018,
-    "node_count": 1516,
+    "scan_duration_ms": 1738,
+    "node_count": 1517,
     "data_node_count": 122,
     "flow_count": 756,
     "scan_error_count": 0,
@@ -43875,7 +43910,7 @@
     "flow_candidate_count": 756,
     "proto_flows_enabled": true,
     "node_type_counts": {
-      "sink": 604,
+      "sink": 605,
       "source": 912
     },
     "boundary_counts": {
@@ -43883,7 +43918,7 @@
       "internal": 286
     },
     "confirmed_count": 156,
-    "possible_count": 1360
+    "possible_count": 1361
   },
   "flows": [
     {
