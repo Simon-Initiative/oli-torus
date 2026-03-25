@@ -660,6 +660,62 @@
       "data_refs": []
     },
     {
+      "id": "psn_06695ede3c4c0cab",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 608,
+          "signal": "direct_field_access",
+          "rule": "liveview_render_prd",
+          "finding_id": "89b59134bcff97f1",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 608,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "89b59134bcff97f1",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "save_page_title/2",
+        "module": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive",
+        "lines": [
+          608
+        ],
+        "file_path": "lib/oli_web/live/workspaces/course_author/editor_live.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Author Email",
+          "sensitive": true,
+          "reference": "Oli.Accounts.Author.email",
+          "key": "author_email",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "User Email",
+          "sensitive": true,
+          "reference": "Oli.Accounts.User.email",
+          "key": "user_email",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "Publisher Email",
+          "sensitive": true,
+          "reference": "Oli.Inventories.Publisher.email",
+          "key": "publisher_email",
+          "class": "direct_identifier"
+        }
+      ]
+    },
+    {
       "id": "psn_06bd5eb3c409d332",
       "node_type": "source",
       "role": {
@@ -1992,6 +2048,62 @@
         "file_path": "lib/oli/delivery.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_0ca645feffe134f6",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 256,
+          "signal": "direct_field_access",
+          "rule": "liveview_render_prd",
+          "finding_id": "62f36a4c5dd4e482",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 256,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "62f36a4c5dd4e482",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "handle_info/2",
+        "module": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive",
+        "lines": [
+          256
+        ],
+        "file_path": "lib/oli_web/live/workspaces/course_author/editor_live.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Author Email",
+          "sensitive": true,
+          "reference": "Oli.Accounts.Author.email",
+          "key": "author_email",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "User Email",
+          "sensitive": true,
+          "reference": "Oli.Accounts.User.email",
+          "key": "user_email",
+          "class": "direct_identifier"
+        },
+        {
+          "label": "Publisher Email",
+          "sensitive": true,
+          "reference": "Oli.Inventories.Publisher.email",
+          "key": "publisher_email",
+          "class": "direct_identifier"
+        }
+      ]
     },
     {
       "id": "psn_0cc099648172b873",
@@ -14215,69 +14327,6 @@
       "data_refs": []
     },
     {
-      "id": "psn_518eac6029ecd19b",
-      "node_type": "sink",
-      "role": {
-        "kind": "http_response",
-        "callee": "render"
-      },
-      "evidence": [
-        {
-          "line": 45,
-          "signal": "key_match",
-          "rule": "http_response_prd",
-          "finding_id": "3b19b2fa3aa12bb4",
-          "ast_kind": "key_match"
-        },
-        {
-          "line": 45,
-          "signal": "token_match",
-          "rule": "http_response_prd",
-          "finding_id": "3b19b2fa3aa12bb4",
-          "ast_kind": "token"
-        }
-      ],
-      "confidence": 1.0,
-      "code_context": {
-        "function": "render_editor/5",
-        "module": "OliWeb.ResourceController",
-        "lines": [
-          45
-        ],
-        "file_path": "lib/oli_web/controllers/resource_controller.ex"
-      },
-      "data_refs": [
-        {
-          "label": "Conversation Message Content",
-          "sensitive": true,
-          "reference": "Oli.Conversation.ConversationMessage.content",
-          "key": "conversation_message_content",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Activity Attempt Save File Content",
-          "sensitive": true,
-          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-          "key": "activity_attempt_save_file_content",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Resource Attempt Content",
-          "sensitive": true,
-          "reference": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-          "key": "resource_attempt_content",
-          "class": "behavioral_signal"
-        },
-        {
-          "label": "Dialogue User Input Content",
-          "sensitive": true,
-          "reference": "OliWeb.Dialogue.UserInput.content",
-          "key": "dialogue_user_input_content",
-          "class": "behavioral_signal"
-        }
-      ]
-    },
-    {
       "id": "psn_526db24f94c850c0",
       "node_type": "source",
       "role": {
@@ -22589,7 +22638,7 @@
         "function": "reorder_child/5",
         "module": "Oli.Authoring.Editing.ContainerEditor",
         "lines": [
-          367
+          421
         ],
         "file_path": "lib/oli/authoring/editing/container_editor.ex"
       },
@@ -25118,6 +25167,76 @@
         "file_path": "lib/oli/publishing/delivery_resolver.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_8f0c6b4fcc08cc71",
+      "node_type": "sink",
+      "role": {
+        "kind": "liveview_render",
+        "callee": "assign"
+      },
+      "evidence": [
+        {
+          "line": 666,
+          "signal": "direct_field_access",
+          "rule": "liveview_render_prd",
+          "finding_id": "f35d3cc921973dbe",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 666,
+          "signal": "token_match",
+          "rule": "liveview_render_prd",
+          "finding_id": "f35d3cc921973dbe",
+          "ast_kind": "token"
+        },
+        {
+          "line": 666,
+          "signal": "unknown",
+          "rule": "liveview_render_prd",
+          "finding_id": "f35d3cc921973dbe",
+          "ast_kind": "unknown"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "maybe_assign_app_params/3",
+        "module": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive",
+        "lines": [
+          666
+        ],
+        "file_path": "lib/oli_web/live/workspaces/course_author/editor_live.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Conversation Message Content",
+          "sensitive": true,
+          "reference": "Oli.Conversation.ConversationMessage.content",
+          "key": "conversation_message_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Activity Attempt Save File Content",
+          "sensitive": true,
+          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+          "key": "activity_attempt_save_file_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Resource Attempt Content",
+          "sensitive": true,
+          "reference": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+          "key": "resource_attempt_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Dialogue User Input Content",
+          "sensitive": true,
+          "reference": "OliWeb.Dialogue.UserInput.content",
+          "key": "dialogue_user_input_content",
+          "class": "behavioral_signal"
+        }
+      ]
     },
     {
       "id": "psn_8f235f578952a65e",
@@ -29548,7 +29667,7 @@
         "function": "list_all_container_children/2",
         "module": "Oli.Authoring.Editing.ContainerEditor",
         "lines": [
-          74
+          103
         ],
         "file_path": "lib/oli/authoring/editing/container_editor.ex"
       },
@@ -32084,6 +32203,83 @@
         "file_path": "lib/oli/delivery/attempts/core.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_b5c0cf910b54d1c2",
+      "node_type": "sink",
+      "role": {
+        "kind": "http_response",
+        "callee": "render"
+      },
+      "evidence": [
+        {
+          "line": 45,
+          "signal": "direct_field_access",
+          "rule": "http_response_prd",
+          "finding_id": "67388fa9505bfd55",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 45,
+          "signal": "key_match",
+          "rule": "http_response_prd",
+          "finding_id": "67388fa9505bfd55",
+          "ast_kind": "key_match"
+        },
+        {
+          "line": 45,
+          "signal": "token_match",
+          "rule": "http_response_prd",
+          "finding_id": "67388fa9505bfd55",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "render_editor/5",
+        "module": "OliWeb.ResourceController",
+        "lines": [
+          45
+        ],
+        "file_path": "lib/oli_web/controllers/resource_controller.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Conversation Message Content",
+          "sensitive": true,
+          "reference": "Oli.Conversation.ConversationMessage.content",
+          "key": "conversation_message_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Activity Attempt Save File Content",
+          "sensitive": true,
+          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+          "key": "activity_attempt_save_file_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Resource Attempt Content",
+          "sensitive": true,
+          "reference": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+          "key": "resource_attempt_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "LTI Params Parameters",
+          "sensitive": true,
+          "reference": "Oli.Lti.LtiParams.params",
+          "key": "lti_params_params",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Dialogue User Input Content",
+          "sensitive": true,
+          "reference": "OliWeb.Dialogue.UserInput.content",
+          "key": "dialogue_user_input_content",
+          "class": "behavioral_signal"
+        }
+      ]
     },
     {
       "id": "psn_b61434672cb55852",
@@ -41787,24 +41983,24 @@
       },
       "evidence": [
         {
-          "line": 109,
+          "line": 117,
           "signal": "direct_field_access",
           "rule": "http_response_prd",
-          "finding_id": "e6f93fc592d0b789",
+          "finding_id": "008f1f105f3bfe99",
           "ast_kind": "field_access"
         },
         {
-          "line": 109,
+          "line": 117,
           "signal": "key_match",
           "rule": "http_response_prd",
-          "finding_id": "e6f93fc592d0b789",
+          "finding_id": "008f1f105f3bfe99",
           "ast_kind": "key_match"
         },
         {
-          "line": 109,
+          "line": 117,
           "signal": "token_match",
           "rule": "http_response_prd",
-          "finding_id": "e6f93fc592d0b789",
+          "finding_id": "008f1f105f3bfe99",
           "ast_kind": "token"
         }
       ],
@@ -41813,7 +42009,7 @@
         "function": "preview_advanced/4",
         "module": "OliWeb.ResourceController",
         "lines": [
-          109
+          117
         ],
         "file_path": "lib/oli_web/controllers/resource_controller.ex"
       },
@@ -43889,7 +44085,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "c06c6f9cebe67949545d811c482cc0d22a3d7b6b"
+    "commit": "d70ef9fd76e592ba2c9d6dd23a36a96b397e760d"
   },
   "schema_version": "1",
   "summary": {
@@ -43901,23 +44097,23 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1593,
-    "scan_duration_ms": 1677,
-    "node_count": 1517,
+    "scan_duration_ms": 1680,
+    "node_count": 1520,
     "data_node_count": 122,
-    "flow_count": 756,
+    "flow_count": 767,
     "scan_error_count": 0,
-    "flows_hash": "e65cb213151114a4",
-    "flow_candidate_count": 756,
+    "flows_hash": "37a70dfd0654db4a",
+    "flow_candidate_count": 767,
     "proto_flows_enabled": true,
     "node_type_counts": {
-      "sink": 605,
+      "sink": 608,
       "source": 912
     },
     "boundary_counts": {
-      "external": 470,
+      "external": 481,
       "internal": 286
     },
-    "confirmed_count": 156,
+    "confirmed_count": 159,
     "possible_count": 1361
   },
   "flows": [
@@ -44364,6 +44560,35 @@
       "variant_id": "psf_0455cb074792"
     },
     {
+      "id": "psf_0476c58fd751",
+      "source": "OliWeb.Dialogue.UserInput.content",
+      "boundary": "external",
+      "entrypoint": "OliWeb.ResourceController.render_editor/5",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_b5c0cf910b54d1c2"
+      ],
+      "confidence": 0.7,
+      "source_key": "dialogue_user_input_content",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Conversation.ConversationMessage.content",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+        "Oli.Lti.LtiParams.params",
+        "OliWeb.Dialogue.UserInput.content"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_714b72a523f5",
+      "variant_id": "psf_0476c58fd751"
+    },
+    {
       "id": "psf_0486204efeb8",
       "source": "Oli.Accounts.User.name",
       "boundary": "external",
@@ -44713,6 +44938,33 @@
       ],
       "stable_id": "psfs_fb1966ca469a",
       "variant_id": "psf_06ba4165276e"
+    },
+    {
+      "id": "psf_07a10cd90cdd",
+      "source": "Oli.Inventories.Publisher.email",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.handle_info/2",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_0ca645feffe134f6"
+      ],
+      "confidence": 0.7,
+      "source_key": "publisher_email",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.email",
+        "Oli.Accounts.User.email",
+        "Oli.Inventories.Publisher.email"
+      ],
+      "linked_classes": [
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_734a18fde633",
+      "variant_id": "psf_07a10cd90cdd"
     },
     {
       "id": "psf_07eadff8aee8",
@@ -45288,34 +45540,6 @@
       "variant_id": "psf_0bd147d8366e"
     },
     {
-      "id": "psf_0cc8fe3c9da0",
-      "source": "OliWeb.Dialogue.UserInput.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.ResourceController.render_editor/5",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_518eac6029ecd19b"
-      ],
-      "confidence": 0.7,
-      "source_key": "dialogue_user_input_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal"
-      ],
-      "stable_id": "psfs_84e4bea9e45d",
-      "variant_id": "psf_0cc8fe3c9da0"
-    },
-    {
       "id": "psf_0cf18678c454",
       "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
       "boundary": "external",
@@ -45608,6 +45832,34 @@
       ],
       "stable_id": "psfs_f6ddddd6025a",
       "variant_id": "psf_0fd7e0c09431"
+    },
+    {
+      "id": "psf_0ff148b8ba40",
+      "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.maybe_assign_app_params/3",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_8f0c6b4fcc08cc71"
+      ],
+      "confidence": 0.7,
+      "source_key": "activity_attempt_save_file_content",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Conversation.ConversationMessage.content",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+        "OliWeb.Dialogue.UserInput.content"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_729fee82159b",
+      "variant_id": "psf_0ff148b8ba40"
     },
     {
       "id": "psf_0ff234bcbf0c",
@@ -49400,6 +49652,33 @@
       "variant_id": "psf_324f6662431e"
     },
     {
+      "id": "psf_327f5b0aa107",
+      "source": "Oli.Accounts.User.email",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.handle_info/2",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_0ca645feffe134f6"
+      ],
+      "confidence": 0.7,
+      "source_key": "user_email",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.email",
+        "Oli.Accounts.User.email",
+        "Oli.Inventories.Publisher.email"
+      ],
+      "linked_classes": [
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_a9072a9daaf4",
+      "variant_id": "psf_327f5b0aa107"
+    },
+    {
       "id": "psf_32adaa7e0a3e",
       "source": "Oli.Accounts.User.sub",
       "boundary": "internal",
@@ -51575,6 +51854,34 @@
       "variant_id": "psf_4b393a3a3142"
     },
     {
+      "id": "psf_4ba2887c69a6",
+      "source": "OliWeb.Dialogue.UserInput.content",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.maybe_assign_app_params/3",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_8f0c6b4fcc08cc71"
+      ],
+      "confidence": 0.7,
+      "source_key": "dialogue_user_input_content",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Conversation.ConversationMessage.content",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+        "OliWeb.Dialogue.UserInput.content"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_08697af1c3a6",
+      "variant_id": "psf_4ba2887c69a6"
+    },
+    {
       "id": "psf_4bad431b5b42",
       "source": "Oli.Conversation.ConversationMessage.content",
       "boundary": "external",
@@ -52030,6 +52337,34 @@
       "variant_id": "psf_5108de69e25d"
     },
     {
+      "id": "psf_51a4a4cc51bb",
+      "source": "Oli.Conversation.ConversationMessage.content",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.maybe_assign_app_params/3",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_8f0c6b4fcc08cc71"
+      ],
+      "confidence": 0.7,
+      "source_key": "conversation_message_content",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Conversation.ConversationMessage.content",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+        "OliWeb.Dialogue.UserInput.content"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_59ae096d8bed",
+      "variant_id": "psf_51a4a4cc51bb"
+    },
+    {
       "id": "psf_51eed0af7c7f",
       "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.attempt_guid",
       "boundary": "external",
@@ -52120,34 +52455,6 @@
       ],
       "stable_id": "psfs_8a7251e4d7b0",
       "variant_id": "psf_51f1748b4796"
-    },
-    {
-      "id": "psf_528eb1a41cf2",
-      "source": "Oli.Conversation.ConversationMessage.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.ResourceController.render_editor/5",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_518eac6029ecd19b"
-      ],
-      "confidence": 0.7,
-      "source_key": "conversation_message_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal"
-      ],
-      "stable_id": "psfs_53a602f83b4c",
-      "variant_id": "psf_528eb1a41cf2"
     },
     {
       "id": "psf_52958e4fd4e2",
@@ -53297,6 +53604,33 @@
       ],
       "stable_id": "psfs_fce1301c0638",
       "variant_id": "psf_5c6246801a8b"
+    },
+    {
+      "id": "psf_5c6d807874ae",
+      "source": "Oli.Accounts.Author.email",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.save_page_title/2",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_06695ede3c4c0cab"
+      ],
+      "confidence": 0.7,
+      "source_key": "author_email",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.email",
+        "Oli.Accounts.User.email",
+        "Oli.Inventories.Publisher.email"
+      ],
+      "linked_classes": [
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_c435808204b4",
+      "variant_id": "psf_5c6d807874ae"
     },
     {
       "id": "psf_5d0df6d1f40f",
@@ -57737,6 +58071,33 @@
       "variant_id": "psf_83a0e0d7f4ac"
     },
     {
+      "id": "psf_83e4c926c822",
+      "source": "Oli.Accounts.User.email",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.save_page_title/2",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_06695ede3c4c0cab"
+      ],
+      "confidence": 0.7,
+      "source_key": "user_email",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.email",
+        "Oli.Accounts.User.email",
+        "Oli.Inventories.Publisher.email"
+      ],
+      "linked_classes": [
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_188c924687f6",
+      "variant_id": "psf_83e4c926c822"
+    },
+    {
       "id": "psf_842513a676eb",
       "source": "Oli.Accounts.Author.email",
       "boundary": "external",
@@ -57862,6 +58223,34 @@
       ],
       "stable_id": "psfs_0a56c8a81bcf",
       "variant_id": "psf_852768ad1b0c"
+    },
+    {
+      "id": "psf_854b57e321cb",
+      "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.maybe_assign_app_params/3",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_8f0c6b4fcc08cc71"
+      ],
+      "confidence": 0.7,
+      "source_key": "resource_attempt_content",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Conversation.ConversationMessage.content",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+        "OliWeb.Dialogue.UserInput.content"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_3b716c4407a1",
+      "variant_id": "psf_854b57e321cb"
     },
     {
       "id": "psf_85bc42e1b334",
@@ -64599,6 +64988,35 @@
       "variant_id": "psf_c43d37e5e80f"
     },
     {
+      "id": "psf_c4722cff3aea",
+      "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+      "boundary": "external",
+      "entrypoint": "OliWeb.ResourceController.render_editor/5",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_b5c0cf910b54d1c2"
+      ],
+      "confidence": 0.7,
+      "source_key": "activity_attempt_save_file_content",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Conversation.ConversationMessage.content",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+        "Oli.Lti.LtiParams.params",
+        "OliWeb.Dialogue.UserInput.content"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_40923cd387ea",
+      "variant_id": "psf_c4722cff3aea"
+    },
+    {
       "id": "psf_c4726ea621f7",
       "source": "Oli.Accounts.UserToken.token",
       "boundary": "external",
@@ -64972,34 +65390,6 @@
       ],
       "stable_id": "psfs_333a47457b31",
       "variant_id": "psf_c9f12b8a2ff3"
-    },
-    {
-      "id": "psf_c9f38dc2c452",
-      "source": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.ResourceController.render_editor/5",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_518eac6029ecd19b"
-      ],
-      "confidence": 0.7,
-      "source_key": "activity_attempt_save_file_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal"
-      ],
-      "stable_id": "psfs_32c4c430159f",
-      "variant_id": "psf_c9f38dc2c452"
     },
     {
       "id": "psf_c9ff7f2adc8e",
@@ -65526,6 +65916,35 @@
       "variant_id": "psf_ce596c193314"
     },
     {
+      "id": "psf_cf32a7a549e0",
+      "source": "Oli.Conversation.ConversationMessage.content",
+      "boundary": "external",
+      "entrypoint": "OliWeb.ResourceController.render_editor/5",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_b5c0cf910b54d1c2"
+      ],
+      "confidence": 0.7,
+      "source_key": "conversation_message_content",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Conversation.ConversationMessage.content",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+        "Oli.Lti.LtiParams.params",
+        "OliWeb.Dialogue.UserInput.content"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_fbe3dd795504",
+      "variant_id": "psf_cf32a7a549e0"
+    },
+    {
       "id": "psf_cf80b970c803",
       "source": "Oli.Accounts.User.email",
       "boundary": "external",
@@ -65928,6 +66347,33 @@
       ],
       "stable_id": "psfs_defa70f9f9f9",
       "variant_id": "psf_d2cbbc7282cf"
+    },
+    {
+      "id": "psf_d2e5025bd1a7",
+      "source": "Oli.Accounts.Author.email",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.handle_info/2",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_0ca645feffe134f6"
+      ],
+      "confidence": 0.7,
+      "source_key": "author_email",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.email",
+        "Oli.Accounts.User.email",
+        "Oli.Inventories.Publisher.email"
+      ],
+      "linked_classes": [
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_960565beeee3",
+      "variant_id": "psf_d2e5025bd1a7"
     },
     {
       "id": "psf_d2f4cf494132",
@@ -66626,6 +67072,33 @@
       ],
       "stable_id": "psfs_8ca0e2c07e1d",
       "variant_id": "psf_da7662dc6f6d"
+    },
+    {
+      "id": "psf_dbeaa4d02c52",
+      "source": "Oli.Inventories.Publisher.email",
+      "boundary": "external",
+      "entrypoint": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive.save_page_title/2",
+      "sink": {
+        "kind": "liveview_render",
+        "subtype": "assign"
+      },
+      "evidence": [
+        "psn_06695ede3c4c0cab"
+      ],
+      "confidence": 0.7,
+      "source_key": "publisher_email",
+      "source_class": "direct_identifier",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Accounts.Author.email",
+        "Oli.Accounts.User.email",
+        "Oli.Inventories.Publisher.email"
+      ],
+      "linked_classes": [
+        "direct_identifier"
+      ],
+      "stable_id": "psfs_6b8f298b90b5",
+      "variant_id": "psf_dbeaa4d02c52"
     },
     {
       "id": "psf_dc7bbc359673",
@@ -68104,6 +68577,35 @@
       "variant_id": "psf_ea459e51eef4"
     },
     {
+      "id": "psf_ea4d6ed7aa8e",
+      "source": "Oli.Lti.LtiParams.params",
+      "boundary": "external",
+      "entrypoint": "OliWeb.ResourceController.render_editor/5",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_b5c0cf910b54d1c2"
+      ],
+      "confidence": 0.7,
+      "source_key": "lti_params_params",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Conversation.ConversationMessage.content",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+        "Oli.Lti.LtiParams.params",
+        "OliWeb.Dialogue.UserInput.content"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_50c5730dcad8",
+      "variant_id": "psf_ea4d6ed7aa8e"
+    },
+    {
       "id": "psf_ea601d1e5eb3",
       "source": "Oli.Delivery.Attempts.Core.ActivityAttempt.aggregate_score",
       "boundary": "internal",
@@ -68348,6 +68850,35 @@
       ],
       "stable_id": "psfs_c823a88caa8c",
       "variant_id": "psf_ec48d3b1b887"
+    },
+    {
+      "id": "psf_ec6e6cef32d1",
+      "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+      "boundary": "external",
+      "entrypoint": "OliWeb.ResourceController.render_editor/5",
+      "sink": {
+        "kind": "http_response",
+        "subtype": "render"
+      },
+      "evidence": [
+        "psn_b5c0cf910b54d1c2"
+      ],
+      "confidence": 0.7,
+      "source_key": "resource_attempt_content",
+      "source_class": "behavioral_signal",
+      "source_sensitive": true,
+      "linked_refs": [
+        "Oli.Conversation.ConversationMessage.content",
+        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+        "Oli.Lti.LtiParams.params",
+        "OliWeb.Dialogue.UserInput.content"
+      ],
+      "linked_classes": [
+        "behavioral_signal"
+      ],
+      "stable_id": "psfs_c28079e93622",
+      "variant_id": "psf_ec6e6cef32d1"
     },
     {
       "id": "psf_ec8b6124d86f",
@@ -69063,34 +69594,6 @@
       ],
       "stable_id": "psfs_fee6cd4e192e",
       "variant_id": "psf_f3c42178a44c"
-    },
-    {
-      "id": "psf_f3e94f0b0f22",
-      "source": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-      "boundary": "external",
-      "entrypoint": "OliWeb.ResourceController.render_editor/5",
-      "sink": {
-        "kind": "http_response",
-        "subtype": "render"
-      },
-      "evidence": [
-        "psn_518eac6029ecd19b"
-      ],
-      "confidence": 0.7,
-      "source_key": "resource_attempt_content",
-      "source_class": "behavioral_signal",
-      "source_sensitive": true,
-      "linked_refs": [
-        "Oli.Conversation.ConversationMessage.content",
-        "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
-        "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
-        "OliWeb.Dialogue.UserInput.content"
-      ],
-      "linked_classes": [
-        "behavioral_signal"
-      ],
-      "stable_id": "psfs_395d835ab414",
-      "variant_id": "psf_f3e94f0b0f22"
     },
     {
       "id": "psf_f4016b9ac66a",
