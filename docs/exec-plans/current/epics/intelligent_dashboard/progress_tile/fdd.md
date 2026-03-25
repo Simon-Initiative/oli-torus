@@ -9,7 +9,7 @@ Based on follow-up clarification from Jess Fortunato, the x-axis must render the
 
 ## 2. Requirements & Assumptions
 - Functional requirements:
-  - `FR-001` through `FR-014` from `requirements.yml` define the required tile behavior, including scoped rendering, threshold control, count/percentage toggle, schedule-aware overlays, pagination, empty states, and accessibility.
+  - `FR-001` through `FR-015` from `requirements.yml` define the required tile behavior, including scoped rendering, threshold control, count/percentage toggle, scope-aware schedule overlays, pagination, empty states, and accessibility.
   - The tile must consume dashboard data through the oracle/snapshot path rather than querying directly from UI code.
   - The tile must navigate to `Insights > Content` via the existing instructor dashboard route contract.
 - Non-functional requirements:
@@ -37,7 +37,7 @@ Based on follow-up clarification from Jess Fortunato, the x-axis must render the
   - Dashboard architecture guidance already states that tiles consume prepared view models and that browser hooks should remain thin.
   - `assets/src/hooks/student_support_chart.ts` provides a working baseline for a thin Vega-Lite LiveView hook with mount/update/destroy handling.
 - Unknowns to confirm:
-  - The exact schedule marker payload shape and which upstream module provides it to the snapshot/projection layer.
+  - Which upstream dashboard/oracle module should own derivation of the now-defined schedule-position semantics.
 
 ## 4. Proposed Design
 ### 4.1 Component Roles & Interactions
@@ -77,6 +77,10 @@ Primary flow:
    - computes threshold-aware completion counts
    - derives count and percentage values
    - derives the axis label copy, including generic fallback such as `Course Content` when mixed direct-child types are present
+   - derives the current schedule position at the same semantic level as the current scope:
+     - `course` -> scheduled unit position
+     - `unit` -> scheduled direct-child position for that unit
+     - `module` -> next scheduled page closest to today
    - derives pagination windows and empty-state semantics
    - decorates schedule/no-schedule output
 5. The Progress tile LiveComponent renders the controls and sends the chart payload/spec to the browser hook.
@@ -122,7 +126,7 @@ Primary flow:
     - scope identity: `section_id`, `container_type`, `container_id`
     - `ProgressBinsOracle` payload
     - `ScopeResourcesOracle` payload
-    - optional schedule payload block
+    - optional schedule-position payload block
   - Output:
     - a Progress tile base projection input struct or map
 - Progress tile projection interface
@@ -141,6 +145,12 @@ Primary flow:
     - `schedule_marker`
     - `empty_state`
     - localized labels/tooltips keys or resolved text
+  - Schedule-position rules:
+    - `has_schedule?` should become true when the section has scheduled resources in Torus
+    - `current_resource_id` should represent a general "where are we?" position, not a detailed scheduler row
+    - at `course` scope the position should resolve to a unit
+    - at `unit` scope the position should resolve to a direct child of that unit
+    - at `module` scope the position should resolve to the next scheduled page closest to today
 - LiveComponent interface
   - Suggested module:
     - `OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.ProgressTile`
@@ -231,7 +241,7 @@ Primary flow:
 
 ## 13. Testing Strategy
 - Elixir unit tests
-  - projection tests for threshold handling, direct-child resolution in homogeneous and mixed scopes, axis-label fallback to `Course Content`, schedule/no-schedule behavior, pagination metadata, and empty states
+  - projection tests for threshold handling, direct-child resolution in homogeneous and mixed scopes, axis-label fallback to `Course Content`, schedule/no-schedule behavior, schedule-position derivation per scope, pagination metadata, and empty states
   - tests should validate that `ProgressBinsOracle` and `ScopeResourcesOracle` payloads are consumed without UI-specific assumptions
 - LiveView/component tests
   - tile renders title, CTA, class size, threshold control, toggle, and empty states
@@ -254,10 +264,11 @@ Primary flow:
 - Overloading the LiveView shell with tile-local state: move Progress tile to a dedicated `LiveComponent` and keep threshold/mode/pagination there.
 - Leaking projection logic into the browser hook: keep the hook limited to Vega-Lite render lifecycle and treat Elixir as the source of truth.
 - Depending on schedule data that is not yet contractually stable: design the tile to degrade cleanly to no-schedule mode until the upstream schedule payload is confirmed.
+  - Product semantics for the marker are now defined; only the technical source and derivation boundary remain open.
 - Chart accessibility regressions due to renderer defaults: implement accessible control wrappers and announcements in the LiveComponent rather than trusting Vega-Lite defaults.
 
 ## 16. Open Questions & Follow-ups
-- Confirm the exact upstream schedule metadata contract and whether it enters the tile through snapshot assembly, a dedicated oracle field, or another already-existing dashboard projection layer.
+- Confirm the exact upstream schedule metadata contract and whether it enters the tile through snapshot assembly, a dedicated schedule-position oracle, or another already-existing dashboard projection layer.
 - During implementation, verify whether the existing `OliWeb.Icons` set already contains a sufficiently matching Progress icon; if not, extend the canonical icon module rather than introducing a local SVG.
 
 ## 17. References

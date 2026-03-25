@@ -38,6 +38,13 @@ requirements:
     status: proposed
     verification_method: automated
     proofs: []
+  - id: AC-016
+    title: (FR-003) - Given schedule data exists, when the tile derives the marker,
+      then it treats the marker as a general "where are we in the course?" position
+      rather than as an exact scheduler-detail indicator.
+    status: proposed
+    verification_method: automated
+    proofs: []
 - id: FR-004
   title: Display a `View Progress Details` CTA that routes instructors to `Insights
     > Content`.
@@ -140,6 +147,32 @@ requirements:
     title: (FR-011) - Given a schedule exists, when the chart renders, then the scheduled
       point appears as a dotted vertical marker, content behind that point is visually
       de-emphasized, and the schedule marker exposes explanatory tooltip content.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-015
+  title: Derive the current schedule position from the current scope level so the
+    marker resolves to units at course scope, direct children at unit scope, and
+    the next scheduled page closest to today at module scope.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-017
+    title: (FR-015) - Given the dashboard filter is the entire course, when schedule
+      position is derived, then the marker resolves to the scheduled unit-level position.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-018
+    title: (FR-015) - Given the dashboard filter is a unit, when schedule position
+      is derived, then the marker resolves to the scheduled direct child of that
+      unit.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-019
+    title: (FR-015) - Given the dashboard filter is a module, when schedule position
+      is derived, then the marker resolves to the next scheduled page whose scheduled
+      date is closest to today.
     status: proposed
     verification_method: automated
     proofs: []

@@ -14,6 +14,7 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
       assert Map.has_key?(bindings.consumers, :challenging_objectives)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress_bins)
+      assert Map.has_key?(bindings.oracles, :oracle_instructor_schedule_position)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress_proficiency)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_student_info)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_scope_resources)
@@ -31,7 +32,10 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
                scope_resources: :oracle_instructor_scope_resources
              }
 
-      assert binding.optional_oracles == %{legacy_progress: :oracle_instructor_progress}
+      assert binding.optional_oracles == %{
+               legacy_progress: :oracle_instructor_progress,
+               schedule_position: :oracle_instructor_schedule_position
+             }
     end
 
     test "resolves challenging objectives binding with objective-specific dependencies" do
@@ -60,7 +64,10 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
                :oracle_instructor_scope_resources
              ]
 
-      assert profiles.progress_summary.optional == [:oracle_instructor_progress]
+      assert profiles.progress_summary.optional == [
+               :oracle_instructor_progress,
+               :oracle_instructor_schedule_position
+             ]
 
       assert profiles.support_summary.required == [
                :oracle_instructor_progress_proficiency,

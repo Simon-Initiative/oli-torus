@@ -756,6 +756,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       socket
       |> assign(:dashboard_oracle_results, oracle_results)
       |> maybe_assign_dashboard_bundle(request_token, context, dependency_profile)
+      |> maybe_start_optional_runtime_loads(request_token, context, dependency_profile)
     else
       socket
     end
@@ -780,9 +781,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          socket,
          %{type: :runtime_start, request_token: request_token, misses: misses},
          context,
-         _dependency_profile
+         dependency_profile
        ) do
-    start_dashboard_runtime_loads(request_token, misses, context)
+    start_dashboard_runtime_loads(
+      request_token,
+      misses ++ Map.get(dependency_profile, :optional, []),
+      context
+    )
+
     socket
   end
 
@@ -802,6 +808,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     socket
     |> update(:dashboard_oracle_results, &Map.put(&1, oracle_key, oracle_result))
     |> maybe_assign_incremental_dashboard_bundle(context, dependency_profile, oracle_key)
+  end
+
+  defp apply_dashboard_coordinator_action(
+         socket,
+         %{
+           type: :oracle_result_received,
+           token_state: :stale,
+           request_token: request_token,
+           oracle_key: oracle_key,
+           oracle_result: oracle_result
+         },
+         context,
+         dependency_profile
+       ) do
+    if active_dashboard_request?(socket, request_token) do
+      socket
+      |> update(:dashboard_oracle_results, &Map.put(&1, oracle_key, oracle_result))
+      |> maybe_assign_incremental_dashboard_bundle(context, dependency_profile, oracle_key)
+    else
+      socket
+    end
   end
 
   defp apply_dashboard_coordinator_action(
@@ -964,6 +991,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         :progress in Map.keys(projections)
       )
       |> maybe_put_dashboard_field(
+        :progress_projection,
+        Map.get(payload, :progress_projection),
+        :progress in Map.keys(projections)
+      )
+      |> maybe_put_dashboard_field(
         :student_support_text,
         Map.get(payload, :student_support_text),
         :student_support in Map.keys(projections)
@@ -1078,11 +1110,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     )
   end
 
-  defp start_dashboard_runtime_loads(request_token, misses, context) do
+  defp maybe_start_optional_runtime_loads(socket, request_token, context, dependency_profile) do
+    required = Map.get(dependency_profile, :required, [])
+    optional = Map.get(dependency_profile, :optional, [])
+    loaded_oracles = socket.assigns.dashboard_oracle_results |> Map.keys() |> MapSet.new()
+
+    if Enum.all?(required, &MapSet.member?(loaded_oracles, &1)) do
+      start_dashboard_runtime_loads(request_token, optional, context, loaded_oracles)
+    end
+
+    socket
+  end
+
+  defp start_dashboard_runtime_loads(request_token, oracle_keys, context, already_loaded \\ []) do
     live_view_pid = self()
+    already_loaded = MapSet.new(already_loaded)
+
+    oracle_keys =
+      oracle_keys
+      |> Enum.uniq()
+      |> Enum.reject(&MapSet.member?(already_loaded, &1))
 
     Task.start(fn ->
-      misses
+      oracle_keys
       |> Task.async_stream(
         fn oracle_key -> {oracle_key, dashboard_runtime_result(oracle_key, context)} end,
         max_concurrency: dashboard_runtime_max_concurrency(),

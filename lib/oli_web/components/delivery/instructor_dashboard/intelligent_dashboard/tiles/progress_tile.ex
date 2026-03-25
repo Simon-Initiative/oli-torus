@@ -171,16 +171,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                         class="relative overflow-visible"
                         style={"height: #{@chart.height}px"}
                       >
-                        <%= if @chart.schedule.visible? do %>
+                        <%= if @chart.schedule.shaded? do %>
                           <div
                             aria-hidden="true"
-                            class="absolute inset-y-[12px] left-0 rounded-[2px] bg-[#33181a]"
+                            class="absolute left-0 top-[12px] bottom-0 rounded-[2px] bg-Fill-fill-danger"
                             style={"width: #{@chart.schedule.shade_width_pct}%"}
                           >
                           </div>
+                        <% end %>
+                        <%= if @chart.schedule.visible? do %>
                           <div
                             aria-hidden="true"
-                            class="absolute inset-y-[12px] border-l border-dashed border-[#eeebf5]"
+                            class="absolute top-[12px] bottom-0 border-l border-dashed border-[#eeebf5]"
                             style={"left: #{@chart.schedule.marker_left_pct}%"}
                           >
                           </div>
@@ -188,16 +190,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                             class="absolute top-0 z-10 -translate-x-1/2"
                             style={"left: #{@chart.schedule.marker_left_pct}%"}
                           >
-                            <div class="group relative">
-                              <button
-                                type="button"
-                                class="rounded-sm bg-Background-bg-primary px-2 py-1 text-xs font-semibold text-Text-text-high focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
-                                aria-label={@chart.schedule.tooltip}
-                              >
+                            <div>
+                              <div class="rounded-sm bg-Background-bg-primary px-2 py-1 text-xs font-semibold text-Text-text-high">
                                 {@chart.schedule.label}
-                              </button>
-                              <div class="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 hidden w-max max-w-[12rem] -translate-x-1/2 rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:block group-focus-within:block">
-                                {@chart.schedule.tooltip}
                               </div>
                             </div>
                           </div>
@@ -386,7 +381,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       series: series,
       columns_style: columns_style(series),
       spec: build_chart_spec(series, max_value),
-      schedule: schedule_overlay(projected.schedule_marker, series)
+      schedule: schedule_overlay(projected.schedule_marker, series, projected.page_window.page)
     }
   end
 
@@ -463,24 +458,42 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   defp schedule_overlay(
-         %{present?: true, visible?: true, container_id: container_id} = marker,
-         series
+         %{present?: true, container_id: container_id, page: marker_page, visible?: visible?} =
+           marker,
+         series,
+         current_page
        ) do
     index = Enum.find_index(series, &(&1.id == container_id)) || 0
     count = max(length(series), 1)
     marker_left_pct = Float.round((index + 0.5) / count * 100.0, 2)
+    shaded? = current_page <= marker_page
+
+    shade_width_pct =
+      cond do
+        current_page < marker_page -> 100.0
+        visible? -> marker_left_pct
+        true -> 0.0
+      end
 
     %{
-      visible?: true,
+      shaded?: shaded?,
+      visible?: visible?,
       marker_left_pct: marker_left_pct,
-      shade_width_pct: marker_left_pct,
+      shade_width_pct: shade_width_pct,
       label: marker.label,
       tooltip: marker.tooltip
     }
   end
 
-  defp schedule_overlay(_marker, _series) do
-    %{visible?: false, marker_left_pct: 0.0, shade_width_pct: 0.0, label: nil, tooltip: nil}
+  defp schedule_overlay(_marker, _series, _current_page) do
+    %{
+      shaded?: false,
+      visible?: false,
+      marker_left_pct: 0.0,
+      shade_width_pct: 0.0,
+      label: nil,
+      tooltip: nil
+    }
   end
 
   defp y_ticks(_series, :percent, _class_size) do

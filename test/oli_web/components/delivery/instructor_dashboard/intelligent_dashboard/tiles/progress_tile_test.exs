@@ -38,6 +38,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     assert html =~ "Schedule: Unit 2"
     assert html =~ "Course Content"
     assert html =~ "Completion threshold 100%"
+    refute html =~ "Schedule is currently at Unit 2"
   end
 
   test "reprojects mode and page from tile-local state" do
@@ -78,6 +79,24 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     assert html =~ ">5<"
     assert html =~ "Unit 8"
     refute html =~ "Showing page 2 of 2"
+  end
+
+  test "shades prior pages completely when the schedule marker is on a later page" do
+    html =
+      render_component(ProgressTile,
+        id: "progress_tile",
+        projection: paginated_scheduled_projection(),
+        tile_state: %{completion_threshold: 100, y_axis_mode: :count, page: 1},
+        params: %{
+          "dashboard_scope" => "course",
+          "tile_progress" => %{"mode" => "count", "page" => "1"}
+        },
+        section_slug: "biology-101",
+        dashboard_scope: "course"
+      )
+
+    assert html =~ "width: 100.0%"
+    refute html =~ "Schedule: Unit 8"
   end
 
   defp base_projection do
@@ -173,5 +192,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       schedule_context: nil,
       page_window: %{page: 1, per_page: 7, total_items: 0, total_pages: 0}
     }
+  end
+
+  defp paginated_scheduled_projection do
+    paginated_projection()
+    |> Map.put(:schedule_context, %{
+      current_resource_id: 8,
+      label: "Schedule: Unit 8",
+      tooltip: "Schedule is currently at Unit 8"
+    })
   end
 end

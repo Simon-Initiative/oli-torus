@@ -81,5 +81,47 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Progress.ProjectorTes
       assert Enum.map(projection.series, & &1.label) == ["Unit 8"]
       assert hd(projection.series).value == 80.0
     end
+
+    test "hydrates schedule marker when a schedule payload is supplied" do
+      {:ok, scope} = Scope.new(%{container_type: :course})
+
+      progress_bins_payload = %{
+        total_students: 10,
+        by_resource_bins: %{
+          101 => %{100 => 6},
+          202 => %{100 => 2}
+        }
+      }
+
+      scope_resources_payload = %{
+        items: [
+          %{
+            resource_id: 101,
+            resource_type_id: ResourceType.id_for_container(),
+            title: "Unit 1"
+          },
+          %{
+            resource_id: 202,
+            resource_type_id: ResourceType.id_for_container(),
+            title: "Unit 2"
+          }
+        ]
+      }
+
+      base_projection =
+        Projector.build(scope, progress_bins_payload, scope_resources_payload,
+          schedule: %{
+            current_resource_id: 202,
+            label: "Schedule: Unit 2",
+            tooltip: "Schedule: Unit 2"
+          }
+        )
+
+      projection = Projector.reproject(base_projection, %{completion_threshold: 100, page: 1})
+
+      assert projection.schedule_marker.present? == true
+      assert projection.schedule_marker.container_id == 202
+      assert projection.schedule_marker.visible? == true
+    end
   end
 end

@@ -7,6 +7,8 @@ The visual source of truth is the Figma work attached to `MER-5251`, using the u
 
 Designer confirmation from Jess Fortunato clarified one important edge case for this feature: the x-axis should show the direct children of the filtered scope even when those children are structurally mixed (for example modules and standalone pages at the same level). In those mixed cases, the x-axis label should use the generic copy `Course Content`.
 
+Jess Fortunato also clarified the intended meaning of the schedule marker. The marker is not meant to be a precise schedule-management indicator; it is a general "where are we in the course?" cue. Its meaning varies by scope: at course scope it should indicate the current scheduled unit, at unit scope it should indicate the current scheduled direct child of that unit, and at module scope it should indicate the next scheduled page whose scheduled date is closest to today.
+
 ## 2. Background & Problem Statement
 Instructors need an at-a-glance way to judge whether learners are progressing through course content, but the current dashboard work does not yet provide a concrete, hierarchy-aware progress visualization. The missing piece is not only the data projection; the ticket also depends on a chart-heavy visual design with explicit behaviors for thresholding, schedule overlays, pagination, label truncation, and y-axis mode changes.
 
@@ -36,6 +38,7 @@ Without a precise product and UI contract, implementation risk is high in three 
 - Instructor: switches between student count and class percentage to understand the same data in different terms.
 - Instructor: uses the schedule-aware chart to identify content that is behind the current scheduled point.
 - Instructor: navigates to `Insights > Content` from the tile when the high-level chart suggests deeper investigation is needed.
+- Instructor: interprets the dotted schedule marker as a general position in the curriculum rather than an exact scheduler detail, with the marker resolving to units, direct-child modules/pages, or pages depending on the current scope.
 
 ## 5. UX / UI Requirements
 - Design Sources:
@@ -83,6 +86,11 @@ Without a precise product and UI contract, implementation risk is high in three 
 - Interaction and state requirements:
   - The selected dashboard scope determines the set of direct child items shown on the x-axis and should update the tile without stale or orphaned UI state.
   - The x-axis must support structurally mixed direct children of a scope; each rendered bar should retain its own resource type metadata even when the axis-level label uses generic copy such as `Course Content`.
+  - When schedule data exists, the current scheduled position must be derived at the same semantic level as the current scope:
+    - `course` scope resolves to a scheduled unit-level position
+    - `unit` scope resolves to a scheduled direct-child position for that unit
+    - `module` scope resolves to the next scheduled page whose scheduled date is closest to today
+  - The schedule marker is intentionally approximate and should answer "where are we in the course?" rather than reproduce the full scheduling UI with exact fidelity.
   - Completion threshold, y-axis mode, and pagination are tile-local interaction states and must not trigger a broader scope reload when only tile-local state changes.
   - Tooltips for bars, schedule marker, and completion-threshold help text must be reachable by hover and keyboard focus.
   - Truncated x-axis labels must expose the full content name through an accessible mechanism.
@@ -110,7 +118,7 @@ Requirements are found in requirements.yml
   - ordered child content labels, IDs, and per-item resource types
   - completion counts and percentages
   - total class size
-  - schedule marker metadata when a schedule exists
+  - schedule marker metadata when a schedule exists, derived from the current scope level rather than from an always page-level schedule detail
   - pagination metadata for visible slices
   - empty-state metadata for zero-class-size and no-activity cases
 - The UI layer may derive presentational state from the projection, but it must not run independent analytics queries or duplicate business rules for scope-to-axis mapping or completion classification.
@@ -153,7 +161,7 @@ No feature flags present in this work item
 
 ## 14. Open Questions & Assumptions
 ### Open Questions
-- Which exact schedule payload and field names should the projection consume for the current scheduled position, and are they already part of the dashboard snapshot contract or still pending in upstream work?
+- Which exact upstream oracle or snapshot field should supply the schedule-position payload (`has_schedule?`, `current_resource_id`, `label`, `tooltip`) now that the scope-specific semantics are defined?
 
 ### Assumptions
 - The selected Figma node `1074:28220` is the current approved implementation context for the Engagement section, and the Progress tile inside it is visually authoritative when combined with the Jira-linked tile variants.

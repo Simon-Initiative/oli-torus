@@ -7,6 +7,7 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
   alias Oli.InstructorDashboard.Oracles.ProgressBins
   alias Oli.InstructorDashboard.Oracles.Placeholder.Progress
   alias Oli.InstructorDashboard.Oracles.ProgressProficiency
+  alias Oli.InstructorDashboard.Oracles.SchedulePosition
   alias Oli.InstructorDashboard.Oracles.StudentInfo
 
   describe "registry wrapper APIs" do
@@ -27,7 +28,10 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
                   :oracle_instructor_progress_bins,
                   :oracle_instructor_scope_resources
                 ],
-                optional: [:oracle_instructor_progress]
+                optional: [
+                  :oracle_instructor_progress,
+                  :oracle_instructor_schedule_position
+                ]
               }} =
                OracleRegistry.dependencies_for(:progress_summary)
 
@@ -52,6 +56,9 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
     test "resolves oracle modules for known keys" do
       assert {:ok, Progress} = OracleRegistry.oracle_module(:oracle_instructor_progress)
       assert {:ok, ProgressBins} = OracleRegistry.oracle_module(:oracle_instructor_progress_bins)
+
+      assert {:ok, SchedulePosition} =
+               OracleRegistry.oracle_module(:oracle_instructor_schedule_position)
 
       assert {:ok, ProgressProficiency} =
                OracleRegistry.oracle_module(:oracle_instructor_progress_proficiency)

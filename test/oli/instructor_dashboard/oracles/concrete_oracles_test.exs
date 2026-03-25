@@ -14,6 +14,7 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
   alias Oli.InstructorDashboard.Oracles.ObjectivesProficiency
   alias Oli.InstructorDashboard.Oracles.ProgressBins
   alias Oli.InstructorDashboard.Oracles.ProgressProficiency
+  alias Oli.InstructorDashboard.Oracles.SchedulePosition
   alias Oli.InstructorDashboard.Oracles.ScopeResources
   alias Oli.InstructorDashboard.Oracles.StudentInfo
   alias Oli.Repo
@@ -104,6 +105,118 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       assert module_bins[0] == 1
       assert direct_page_bins[100] == 1
       assert direct_page_bins[0] == 1
+    end
+  end
+
+  describe "SchedulePosition oracle" do
+    test "returns the current unit for course scope based on scheduled descendants", %{map: map} do
+      [mod1_page_1 | _] = map.mod1_pages
+      [mod2_page_1 | _] = map.mod2_pages
+      [mod3_page_1 | _] = map.mod3_pages
+      now = ~U[2026-02-18 12:00:00Z]
+
+      schedule_resource(
+        map.section.id,
+        mod1_page_1.resource.id,
+        ~U[2026-02-09 00:00:00Z],
+        ~U[2026-02-15 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        mod2_page_1.resource.id,
+        ~U[2026-02-16 00:00:00Z],
+        ~U[2026-02-22 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        mod3_page_1.resource.id,
+        ~U[2026-03-02 00:00:00Z],
+        ~U[2026-03-08 23:59:59Z]
+      )
+
+      context = build_context(map.section.id, map.instructor.id, %{container_type: :course})
+
+      assert {:ok, payload} = SchedulePosition.load(context, now: now)
+      assert payload.has_schedule? == true
+      assert payload.current_resource_id == map.unit1_resource.id
+      assert payload.label == "Schedule: Unit 1"
+    end
+
+    test "returns the current direct child for unit scope", %{map: map} do
+      [mod1_page_1 | _] = map.mod1_pages
+      [mod2_page_1 | _] = map.mod2_pages
+      now = ~U[2026-02-18 12:00:00Z]
+
+      schedule_resource(
+        map.section.id,
+        mod1_page_1.resource.id,
+        ~U[2026-02-09 00:00:00Z],
+        ~U[2026-02-15 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        mod2_page_1.resource.id,
+        ~U[2026-02-16 00:00:00Z],
+        ~U[2026-02-22 23:59:59Z]
+      )
+
+      context =
+        build_context(
+          map.section.id,
+          map.instructor.id,
+          %{container_type: :container, container_id: map.unit1_resource.id}
+        )
+
+      assert {:ok, payload} = SchedulePosition.load(context, now: now)
+      assert payload.current_resource_id == map.mod2_resource.id
+      assert payload.label == "Schedule: Module 2"
+    end
+
+    test "returns the next scheduled page closest to today for module scope", %{map: map} do
+      [page_1, page_2, page_3] = map.mod2_pages
+      now = ~U[2026-02-18 12:00:00Z]
+
+      schedule_resource(
+        map.section.id,
+        page_1.resource.id,
+        ~U[2026-02-16 00:00:00Z],
+        ~U[2026-02-16 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        page_2.resource.id,
+        ~U[2026-02-20 00:00:00Z],
+        ~U[2026-02-20 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        page_3.resource.id,
+        ~U[2026-02-24 00:00:00Z],
+        ~U[2026-02-24 23:59:59Z]
+      )
+
+      context =
+        build_context(
+          map.section.id,
+          map.instructor.id,
+          %{container_type: :container, container_id: map.mod2_resource.id}
+        )
+
+      assert {:ok, payload} = SchedulePosition.load(context, now: now)
+      assert payload.current_resource_id == page_2.resource.id
+      assert payload.label == "Schedule: Page 2"
+    end
+
+    test "returns has_schedule false when the section has no scheduled resources", %{map: map} do
+      context = build_context(map.section.id, map.instructor.id, %{container_type: :course})
+
+      assert {:ok, %{has_schedule?: false}} =
+               SchedulePosition.load(context, now: ~U[2026-02-18 12:00:00Z])
     end
   end
 
@@ -529,5 +642,24 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
     {:ok, _} = Sections.rebuild_contained_pages(map.section)
 
     section_resource
+  end
+
+  defp schedule_resource(section_id, resource_id, start_date, end_date) do
+    from(sr in SectionResource,
+      where: sr.section_id == ^section_id and sr.resource_id == ^resource_id
+    )
+    |> Repo.update_all(
+      set: [
+        start_date: start_date,
+        end_date: end_date,
+        removed_from_schedule: false,
+        hidden: false
+      ]
+    )
+
+    section_resource =
+      Repo.get_by!(SectionResource, section_id: section_id, resource_id: resource_id)
+
+    SectionResourceDepot.update_section_resource(section_resource)
   end
 end
