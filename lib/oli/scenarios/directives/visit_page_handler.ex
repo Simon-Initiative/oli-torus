@@ -110,7 +110,8 @@ defmodule Oli.Scenarios.Directives.VisitPageHandler do
   end
 
   defp start_graded_attempt(section, user, page_revision, datashop_session_id, page_context) do
-    publication_id = Publishing.get_publication_id_for_resource(section.slug, page_revision.resource_id)
+    publication_id =
+      Publishing.get_publication_id_for_resource(section.slug, page_revision.resource_id)
 
     visit_context = %VisitContext{
       publication_id: publication_id,
@@ -143,12 +144,15 @@ defmodule Oli.Scenarios.Directives.VisitPageHandler do
     end
   end
 
-  defp attempt_result_from_page_context(%PageContext{
-         progress_state: :not_started,
-         user: user,
-         page: page_revision,
-         resource_attempts: resource_attempts
-       }, section) do
+  defp attempt_result_from_page_context(
+         %PageContext{
+           progress_state: :not_started,
+           user: user,
+           page: page_revision,
+           resource_attempts: resource_attempts
+         },
+         section
+       ) do
     resource_access =
       Core.get_resource_access(page_revision.resource_id, section.slug, user.id)
 
@@ -159,12 +163,15 @@ defmodule Oli.Scenarios.Directives.VisitPageHandler do
      }}
   end
 
-  defp attempt_result_from_page_context(%PageContext{
-         progress_state: progress_state,
-         resource_attempts: [resource_attempt | _],
-         latest_attempts: latest_attempts,
-         page: page_revision
-       }, _section) do
+  defp attempt_result_from_page_context(
+         %PageContext{
+           progress_state: progress_state,
+           resource_attempts: [resource_attempt | _],
+           latest_attempts: latest_attempts,
+           page: page_revision
+         },
+         _section
+       ) do
     {:ok, attempt_state} =
       Oli.Delivery.Attempts.PageLifecycle.AttemptState.fetch_attempt_state(
         resource_attempt,
