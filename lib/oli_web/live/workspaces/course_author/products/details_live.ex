@@ -199,6 +199,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             changeset={to_form(@changeset)}
             save="save"
             updates={@updates}
+            source_materials_url={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/source_materials"
+            }
+            customize_url={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/remix"
+            }
+            edit_url={~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/edit"}
             schedule_url={
               ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/schedule"
             }
@@ -219,14 +226,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             currently produce a certificate.
           </div>
           <div>
-            <a
-              href={
+            <.action_link
+              navigate={
                 ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/certificate_settings"
               }
-              class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
-            >
-              Manage certificate settings
-            </a>
+              label="Manage certificate settings"
+            />
           </div>
         </div>
       </div>
