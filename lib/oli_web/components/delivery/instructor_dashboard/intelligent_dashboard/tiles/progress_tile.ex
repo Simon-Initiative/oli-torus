@@ -32,14 +32,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       class="h-full rounded-xl border border-Border-border-subtle bg-Surface-surface-primary p-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]"
     >
       <div class="mb-4 flex items-start justify-between gap-4">
-        <div class="min-w-0">
+        <div class="min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <span class="inline-flex h-5 w-5 items-center justify-center text-Text-text-high">
               <Icons.progress_arrow />
             </span>
             <h3 class="text-lg font-semibold leading-6 text-Text-text-high">Progress</h3>
           </div>
-          <p class="mt-1 max-w-[32rem] text-sm leading-5 text-Text-text-low">
+          <p class="mt-3 text-sm leading-5 text-Text-text-low">
             {description_text(@projected)}
           </p>
         </div>
@@ -63,11 +63,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         <% _ -> %>
           <div class="space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
-              <p class="rounded-full px-1 text-sm font-semibold text-Text-text-high">
-                Class size: <span data-role="progress-class-size">{@projected.class_size}</span>
+              <p class="rounded-full px-1 text-sm text-Text-text-high">
+                Class size:
+                <span data-role="progress-class-size" class="font-semibold">
+                  {@projected.class_size}
+                </span>
               </p>
 
-              <div class="flex flex-wrap items-center gap-3">
+              <div class="mr-4 flex flex-wrap items-center gap-3">
                 <div class="flex items-center gap-1">
                   <span class="text-sm text-Text-text-high">Completion Threshold</span>
                   <div class="group relative inline-flex items-center justify-center">
@@ -84,23 +87,31 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   </div>
                 </div>
 
-                <details class="relative">
-                  <summary class="cursor-pointer list-none rounded-md border border-Border-border-default bg-Background-bg-primary px-3 py-2 text-sm font-semibold text-Text-text-high">
-                    {@projected.completion_threshold}%
+                <details class="group relative">
+                  <summary class="flex h-[35px] cursor-pointer list-none items-center justify-center gap-[10px] rounded-[3px] border border-Border-border-default bg-Background-bg-primary px-[10px] text-[16px] font-semibold leading-6 text-Text-text-high transition hover:border-Text-text-button hover:text-Text-text-button focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button group-open:border-Border-border-default group-open:text-Text-text-high [&::-webkit-details-marker]:hidden">
+                    <span>{@projected.completion_threshold}%</span>
+                    <Icons.chevron_down
+                      width="16"
+                      height="16"
+                      class="fill-Icon-icon-active transition group-hover:fill-Text-text-button group-open:fill-Icon-icon-active group-open:rotate-180"
+                    />
                   </summary>
-                  <div class="absolute right-0 z-20 mt-2 grid min-w-[9rem] gap-1 rounded-lg border border-Border-border-subtle bg-Surface-surface-primary p-2 shadow-lg">
+                  <div class="absolute right-0 z-20 mt-[1.5px] grid min-w-[113px] gap-0 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input p-[7px] shadow-[0px_8px_24px_0px_rgba(0,0,0,0.24)]">
                     <%= for threshold <- @threshold_options do %>
                       <.link
                         patch={tile_patch_path(assigns, %{"threshold" => threshold, "page" => 1})}
                         data-threshold={threshold}
                         class={[
-                          "rounded-md px-2 py-1 text-sm no-underline hover:no-underline hover:text-current",
+                          "flex h-6 items-center justify-between gap-2 rounded-[3px] px-2 py-0 text-[14px] font-normal leading-4 no-underline transition hover:bg-Specially-Tokens-Fill-fill-input-focused hover:no-underline hover:text-current",
                           threshold == @projected.completion_threshold &&
-                            "bg-Surface-surface-secondary font-semibold text-Text-text-high",
+                            "text-Text-text-high",
                           threshold != @projected.completion_threshold && "text-Text-text-low"
                         ]}
                       >
-                        {threshold}%
+                        <span>{threshold}%</span>
+                        <%= if threshold == @projected.completion_threshold do %>
+                          <Icons.checkmark class="h-4 w-4 text-Icon-icon-active" />
+                        <% end %>
                       </.link>
                     <% end %>
                   </div>
@@ -110,7 +121,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
             <div
               id={"progress-chart-shell-#{@id}"}
-              class="rounded-lg bg-inherit p-4"
+              class="rounded-lg bg-inherit py-4 pr-4"
             >
               <div class="mb-3 flex items-center justify-end">
                 <div class="flex items-center gap-1">
@@ -135,7 +146,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
               <div class="flex gap-4">
                 <div class="flex flex-col items-center justify-center pt-10">
-                  <div class="flex flex-col items-center gap-0 rounded-[6px] p-1">
+                  <div class="flex flex-col overflow-hidden rounded-[4px]">
                     <.mode_button
                       current={@projected.y_axis_mode}
                       value={:percent}
@@ -182,7 +193,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                         <%= if @chart.schedule.visible? do %>
                           <div
                             aria-hidden="true"
-                            class="absolute top-[12px] bottom-0 border-l border-dashed border-[#eeebf5]"
+                            class="absolute top-[12px] bottom-0 border-l border-dashed border-Specially-Tokens-Text-text-button-pill-muted"
                             style={"left: #{@chart.schedule.marker_left_pct}%"}
                           >
                           </div>
@@ -191,7 +202,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                             style={"left: #{@chart.schedule.marker_left_pct}%"}
                           >
                             <div>
-                              <div class="rounded-sm bg-Background-bg-primary px-2 py-1 text-xs font-semibold text-Text-text-high">
+                              <div class="rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs font-semibold text-Text-text-high">
                                 {@chart.schedule.label}
                               </div>
                             </div>
@@ -261,16 +272,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                         style={@chart.columns_style}
                       >
                         <%= for item <- @chart.series do %>
-                          <div class="group relative min-w-0 text-center">
-                            <button
-                              type="button"
-                              class="w-full truncate text-xs text-Text-text-high focus:outline-none focus-visible:ring-2 focus-visible:ring-Text-text-button"
-                              aria-label={"#{item.label}. #{item.value_text}"}
-                            >
-                              {item.short_label}
-                            </button>
-                            <div class="pointer-events-none invisible absolute z-20 rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:visible group-focus-within:visible">
-                              {item.label}
+                          <div class="flex min-w-0 justify-center">
+                            <div class="group relative min-w-0 text-center">
+                              <span
+                                class="inline-block max-w-full truncate px-1 text-xs text-Text-text-high"
+                                aria-label={"#{item.label}. #{item.value_text}"}
+                              >
+                                {item.short_label}
+                              </span>
+                              <div class="pointer-events-none invisible absolute bottom-[calc(100%+8px)] left-1/2 z-20 -translate-x-1/2 rounded-sm border border-Border-border-default bg-Surface-surface-background px-2 py-1 text-xs text-Text-text-high shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)] group-hover:visible">
+                                {item.label}
+                              </div>
                             </div>
                           </div>
                         <% end %>
@@ -304,14 +316,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       data-mode={@value}
       aria-label={"Show #{@value} on the y-axis"}
       class={[
-        "inline-flex h-8 w-8 items-center justify-center rounded-[4px] border text-sm font-semibold leading-4 no-underline transition hover:no-underline hover:text-current",
+        "inline-flex h-9 w-6 cursor-pointer items-center justify-center text-[14px] font-semibold leading-4 no-underline hover:no-underline hover:text-current focus:no-underline",
         @current == @value &&
-          "border-Text-text-button bg-Text-text-button text-white",
+          "bg-Fill-Buttons-fill-primary text-white",
         @current != @value &&
-          "border-Border-border-default bg-Background-bg-secondary text-Text-text-high"
+          "border border-Specially-Tokens-Border-border-input-focused text-Text-text-low"
       ]}
     >
-      {mode_label(@value)}
+      <span class="-rotate-90">{mode_label(@value)}</span>
     </.link>
     """
   end

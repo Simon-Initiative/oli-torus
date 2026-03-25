@@ -17,7 +17,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       )
 
     assert html =~ "Class size:"
-    assert html =~ ">24<"
+    assert html =~ ~s(data-role="progress-class-size")
+    assert html =~ "24"
     assert html =~ "Completion Threshold"
     assert html =~ "phx-hook=\"ProgressTileChart\""
     assert html =~ "Course Units"
