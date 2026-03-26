@@ -599,6 +599,7 @@ defmodule OliWeb.Components.Delivery.Students do
               id="email_button_component"
               module={OliWeb.Components.Delivery.Students.EmailButton}
               selected_students={@selected_students}
+              selected_emails={selected_student_emails(@all_students, @selected_students)}
               students={@all_students}
               section_title={@section_title}
               instructor_email={issued_by_email(@current_author, @current_user)}
@@ -669,6 +670,17 @@ defmodule OliWeb.Components.Delivery.Students do
 
   defp issued_by_name(author, _user) when not is_nil(author), do: DeliveryUtils.user_name(author)
   defp issued_by_name(_author, user), do: DeliveryUtils.user_name(user)
+
+  defp selected_student_emails(all_students, selected_students) do
+    selected_student_ids = MapSet.new(selected_students)
+
+    all_students
+    |> Enum.filter(&(MapSet.member?(selected_student_ids, &1.id) and is_binary(&1.email)))
+    |> Enum.map(&String.trim(&1.email))
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+    |> Enum.join(", ")
+  end
 
   #### Add enrollments modal related stuff ####
   def add_enrollments(%{add_enrollments_step: :step_1} = assigns) do

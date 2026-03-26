@@ -6,23 +6,13 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
   alias Phoenix.LiveView.JS
 
   def update(assigns, socket) do
-    selected_students =
-      Map.get(assigns, :selected_students, socket.assigns[:selected_students] || [])
-
-    previous_selected_students = socket.assigns[:selected_students] || []
-
-    selected_emails =
-      if socket.assigns[:selected_emails] && selected_students == previous_selected_students do
-        socket.assigns.selected_emails
-      else
-        load_selected_emails(selected_students)
-      end
-
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:selected_students, selected_students)
-     |> assign(:selected_emails, selected_emails)
+     |> assign(
+       :selected_emails,
+       Map.get(assigns, :selected_emails, socket.assigns[:selected_emails] || "")
+     )
      |> assign(:variant, normalize_variant(Map.get(assigns, :variant, :full)))}
   end
 
@@ -103,17 +93,6 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
   def handle_event("show_email_modal", _params, socket) do
     send(self(), {:show_email_modal, socket.assigns})
     {:noreply, socket}
-  end
-
-  # Reuse the computed email list unless the selected student ids change.
-  # Longer term, this lookup should likely move to the parent and be passed
-  # into EmailButton as data from the Students page, the Learning Objectives
-  # student proficiency list, and the Student Support tile call sites.
-  defp load_selected_emails(selected_students) do
-    selected_students
-    |> Oli.Accounts.get_user_emails_by_ids()
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(", ")
   end
 
   defp normalize_variant(variant) when variant in [:full, "full"], do: :full

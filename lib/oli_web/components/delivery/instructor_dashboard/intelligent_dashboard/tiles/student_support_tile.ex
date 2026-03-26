@@ -323,6 +323,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                     module={EmailButton}
                     variant={:minimal}
                     selected_students={@selected_student_ids}
+                    selected_emails={selected_student_emails(@selected_students_data)}
                     section_slug={@section_slug}
                     instructor_email={@instructor_email}
                     email_handler_id={@id}
@@ -861,6 +862,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     selected_student_ids
     |> Enum.map(&Map.get(student_lookup, &1))
     |> Enum.reject(&is_nil/1)
+  end
+
+  defp selected_student_emails(selected_students_data) do
+    selected_students_data
+    |> Enum.filter(&is_binary(&1.email))
+    |> Enum.map(&String.trim(&1.email))
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+    |> Enum.join(", ")
   end
 
   defp student_lookup(projection) do

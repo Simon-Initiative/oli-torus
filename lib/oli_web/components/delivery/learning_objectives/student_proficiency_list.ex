@@ -48,6 +48,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
           id="email_button_proficiency_component"
           module={OliWeb.Components.Delivery.Students.EmailButton}
           selected_students={@selected_students}
+          selected_emails={selected_student_emails(@filtered_student_data, @selected_students)}
           instructor_email={@instructor_email}
           section_slug={@section_slug}
           email_handler_id={@id}
@@ -197,5 +198,18 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
     |> String.split(" ")
     |> Enum.map(&String.capitalize/1)
     |> Enum.join(" ")
+  end
+
+  defp selected_student_emails(student_data, selected_students) do
+    selected_student_ids = MapSet.new(selected_students)
+
+    student_data
+    |> Enum.filter(fn student ->
+      MapSet.member?(selected_student_ids, student.id) and is_binary(Map.get(student, :email))
+    end)
+    |> Enum.map(fn student -> String.trim(Map.get(student, :email)) end)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+    |> Enum.join(", ")
   end
 end

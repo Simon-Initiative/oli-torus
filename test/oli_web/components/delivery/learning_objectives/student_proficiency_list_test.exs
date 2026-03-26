@@ -14,31 +14,36 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
           id: 1,
           full_name: "Smith, John",
           proficiency: 0.85,
-          proficiency_range: "High"
+          proficiency_range: "High",
+          email: "john@test.com"
         },
         %{
           id: 2,
           full_name: "Johnson, Alice",
           proficiency: 0.65,
-          proficiency_range: "High"
+          proficiency_range: "High",
+          email: "alice@test.com"
         },
         %{
           id: 3,
           full_name: "Brown, Charlie",
           proficiency: 0.45,
-          proficiency_range: "Medium"
+          proficiency_range: "Medium",
+          email: "charlie@test.com"
         },
         %{
           id: 4,
           full_name: "Davis, Emma",
           proficiency: 0.25,
-          proficiency_range: "Low"
+          proficiency_range: "Low",
+          email: "emma@test.com"
         },
         %{
           id: 5,
           full_name: "Wilson, Oliver",
           proficiency: 0.0,
-          proficiency_range: "Not enough data"
+          proficiency_range: "Not enough data",
+          email: "oliver@test.com"
         }
       ]
 
@@ -182,7 +187,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
           id: 1,
           full_name: "Smith, John",
           proficiency: 0.85,
-          proficiency_range: "High"
+          proficiency_range: "High",
+          email: "john@test.com"
         }
       ]
 
@@ -304,7 +310,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
           id: 1,
           full_name: "Only, Student",
           proficiency: 0.85,
-          proficiency_range: "High"
+          proficiency_range: "High",
+          email: "only@test.com"
         }
       ]
 
@@ -338,19 +345,22 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
           id: 1,
           full_name: "Smith, John",
           proficiency: 0.85,
-          proficiency_range: "High"
+          proficiency_range: "High",
+          email: "john@test.com"
         },
         %{
           id: 2,
           full_name: "Johnson, Alice",
           proficiency: 0.65,
-          proficiency_range: "High"
+          proficiency_range: "High",
+          email: "alice@test.com"
         },
         %{
           id: 3,
           full_name: "Brown, Charlie",
           proficiency: 0.45,
-          proficiency_range: "High"
+          proficiency_range: "High",
+          email: "charlie@test.com"
         }
       ]
 
@@ -526,11 +536,41 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
   describe "Select All Functionality" do
     setup %{conn: conn} do
       student_proficiency_data = [
-        %{id: 1, full_name: "Student 1", proficiency: 0.85, proficiency_range: "High"},
-        %{id: 2, full_name: "Student 2", proficiency: 0.75, proficiency_range: "High"},
-        %{id: 3, full_name: "Student 3", proficiency: 0.65, proficiency_range: "High"},
-        %{id: 4, full_name: "Student 4", proficiency: 0.55, proficiency_range: "High"},
-        %{id: 5, full_name: "Student 5", proficiency: 0.45, proficiency_range: "High"}
+        %{
+          id: 1,
+          full_name: "Student 1",
+          proficiency: 0.85,
+          proficiency_range: "High",
+          email: "student1@test.com"
+        },
+        %{
+          id: 2,
+          full_name: "Student 2",
+          proficiency: 0.75,
+          proficiency_range: "High",
+          email: "student2@test.com"
+        },
+        %{
+          id: 3,
+          full_name: "Student 3",
+          proficiency: 0.65,
+          proficiency_range: "High",
+          email: "student3@test.com"
+        },
+        %{
+          id: 4,
+          full_name: "Student 4",
+          proficiency: 0.55,
+          proficiency_range: "High",
+          email: "student4@test.com"
+        },
+        %{
+          id: 5,
+          full_name: "Student 5",
+          proficiency: 0.45,
+          proficiency_range: "High",
+          email: "student5@test.com"
+        }
       ]
 
       %{
@@ -652,8 +692,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
   describe "EmailButton Integration" do
     setup %{conn: conn} do
       student_proficiency_data = [
-        %{id: 1, full_name: "Smith, John", proficiency: 0.85, proficiency_range: "High"},
-        %{id: 2, full_name: "Johnson, Alice", proficiency: 0.65, proficiency_range: "High"}
+        %{
+          id: 1,
+          full_name: "Smith, John",
+          proficiency: 0.85,
+          proficiency_range: "High",
+          email: "john@test.com"
+        },
+        %{
+          id: 2,
+          full_name: "Johnson, Alice",
+          proficiency: 0.65,
+          proficiency_range: "High",
+          email: "alice@test.com"
+        }
       ]
 
       %{
@@ -819,7 +871,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyListTe
           id: 1,
           full_name: "Smith, John",
           proficiency: 0.85,
-          proficiency_range: "High"
+          proficiency_range: "High",
+          email: "john@test.com"
         }
       ]
 
