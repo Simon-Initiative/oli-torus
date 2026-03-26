@@ -8,10 +8,8 @@ defmodule Oli.Delivery.EmailSender do
   @spec normalize_recipient_emails([String.t() | nil]) :: [String.t()]
   def normalize_recipient_emails(recipient_emails) do
     recipient_emails
-    |> Enum.map(fn
-      email when is_binary(email) -> String.trim(email)
-      _ -> ""
-    end)
+    |> Enum.filter(&is_binary/1)
+    |> Enum.map(&String.trim/1)
     |> Enum.reject(&(&1 == ""))
     |> Enum.uniq()
   end
@@ -45,9 +43,6 @@ defmodule Oli.Delivery.EmailSender do
       {:error, reason} ->
         {:error, reason}
     end
-  rescue
-    exception ->
-      {:error, exception}
   end
 
   defp reply_to_value(_name, nil), do: nil
