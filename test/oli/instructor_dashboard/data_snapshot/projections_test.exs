@@ -60,13 +60,19 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
                Enum.sort([
                  :progress,
                  :summary,
-                 :challenging_objectives,
                  :assessments,
                  :ai_context
                ])
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_proficiency) ==
                [:student_support]
+
+      assert InstructorProjections.affected_capabilities(
+               :oracle_instructor_objectives_proficiency
+             ) == [:challenging_objectives]
+
+      assert InstructorProjections.affected_capabilities(:oracle_instructor_scope_resources) ==
+               [:challenging_objectives]
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_student_info) ==
                [:student_support]
