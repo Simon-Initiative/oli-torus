@@ -165,6 +165,7 @@ defmodule Oli.Search.Embeddings do
 
   def revisions_to_embed(publication_id) do
     to_embed_query(publication_id)
+    |> order_by([_p, r, _re], asc: r.id)
     |> select([_p, r, _re], r.id)
     |> Repo.all()
   end

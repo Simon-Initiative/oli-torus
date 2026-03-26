@@ -156,6 +156,94 @@
         "container": { "type": "string" }
       }
     },
+    "certificateProgressCount": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "completed": { "type": "integer" },
+        "total": { "type": "integer" }
+      }
+    },
+    "certificateProgressAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "discussion_posts": { "$ref": "#/definitions/certificateProgressCount" },
+        "class_notes": { "$ref": "#/definitions/certificateProgressCount" },
+        "required_assignments": { "$ref": "#/definitions/certificateProgressCount" }
+      }
+    },
+    "certificateAssertion": {
+      "type": "object",
+      "required": ["section"],
+      "additionalProperties": false,
+      "properties": {
+        "section": { "type": "string" },
+        "student": { "type": "string" },
+        "enabled": { "$ref": "#/definitions/booleanLike" },
+        "state": {
+          "type": "string",
+          "enum": ["none", "pending", "earned", "denied"]
+        },
+        "with_distinction": { "$ref": "#/definitions/booleanLike" },
+        "progress": { "$ref": "#/definitions/certificateProgressAssertion" },
+        "requires_instructor_approval": { "$ref": "#/definitions/booleanLike" },
+        "required_discussion_posts": { "type": "integer" },
+        "required_class_notes": { "type": "integer" },
+        "min_percentage_for_completion": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }]
+        },
+        "min_percentage_for_distinction": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }]
+        },
+        "assessments_apply_to": {
+          "type": "string",
+          "enum": ["all", "custom"]
+        },
+        "scored_pages": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "admin_name1": { "type": "string" },
+        "admin_title1": { "type": "string" },
+        "admin_name2": { "type": "string" },
+        "admin_title2": { "type": "string" },
+        "admin_name3": { "type": "string" },
+        "admin_title3": { "type": "string" }
+      }
+    },
+    "gatingAssertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gate": { "type": "string" },
+        "section": { "type": "string" },
+        "student": { "type": "string" },
+        "resource": { "type": "string" },
+        "target": { "type": "string" },
+        "source": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["schedule", "always_open", "started", "finished", "progress", "alwaysopen"]
+        },
+        "accessible": { "$ref": "#/definitions/booleanLike" },
+        "blocking_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["schedule", "always_open", "started", "finished", "progress", "alwaysopen"]
+          }
+        },
+        "blocking_count": { "type": "integer" },
+        "minimum_percentage": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }]
+        },
+        "start": { "type": "string" },
+        "end": { "type": "string" }
+      }
+    },
     "assertDirective": {
       "type": "object",
       "additionalProperties": false,
@@ -164,6 +252,8 @@
         "resource": { "$ref": "#/definitions/resourceAssertion" },
         "progress": { "$ref": "#/definitions/progressAssertion" },
         "proficiency": { "$ref": "#/definitions/proficiencyAssertion" },
+        "certificate": { "$ref": "#/definitions/certificateAssertion" },
+        "gating": { "$ref": "#/definitions/gatingAssertion" },
         "assertions": {}
       }
     },
@@ -176,6 +266,8 @@
         "resource": { "$ref": "#/definitions/resourceAssertion" },
         "progress": { "$ref": "#/definitions/progressAssertion" },
         "proficiency": { "$ref": "#/definitions/proficiencyAssertion" },
+        "certificate": { "$ref": "#/definitions/certificateAssertion" },
+        "gating": { "$ref": "#/definitions/gatingAssertion" },
         "assertions": {}
       }
     },
@@ -675,6 +767,71 @@
         },
         {
           "type": "object",
+          "required": ["visit_page"],
+          "additionalProperties": false,
+          "properties": {
+            "visit_page": {
+              "type": "object",
+              "required": ["student", "section", "page"],
+              "additionalProperties": false,
+              "properties": {
+                "student": { "type": "string" },
+                "section": { "type": "string" },
+                "page": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["gate"],
+          "additionalProperties": false,
+          "properties": {
+            "gate": {
+              "type": "object",
+              "required": ["section", "type"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "section": { "type": "string" },
+                "target": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["schedule", "always_open", "started", "finished", "progress", "alwaysopen"]
+                },
+                "source": { "type": "string" },
+                "start": { "type": "string" },
+                "end": { "type": "string" },
+                "minimum_percentage": {
+                  "oneOf": [{ "type": "number" }, { "type": "string" }]
+                },
+                "student": { "type": "string" },
+                "parent": { "type": "string" },
+                "graded_resource_policy": {
+                  "type": "string",
+                  "enum": ["allows_nothing", "allows_review"]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["time"],
+          "additionalProperties": false,
+          "properties": {
+            "time": {
+              "type": "object",
+              "required": ["at"],
+              "additionalProperties": false,
+              "properties": {
+                "at": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
           "required": ["answer_question"],
           "additionalProperties": false,
           "properties": {
@@ -688,6 +845,138 @@
                 "page": { "type": "string" },
                 "activity_virtual_id": { "type": "string" },
                 "response": {}
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["certificate"],
+          "additionalProperties": false,
+          "properties": {
+            "certificate": {
+              "type": "object",
+              "required": ["target"],
+              "additionalProperties": false,
+              "properties": {
+                "target": { "type": "string" },
+                "enabled": { "$ref": "#/definitions/booleanLike" },
+                "thresholds": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "required_discussion_posts": { "type": "integer" },
+                    "required_class_notes": { "type": "integer" },
+                    "min_percentage_for_completion": {
+                      "oneOf": [{ "type": "number" }, { "type": "string" }]
+                    },
+                    "min_percentage_for_distinction": {
+                      "oneOf": [{ "type": "number" }, { "type": "string" }]
+                    },
+                    "assessments_apply_to": {
+                      "type": "string",
+                      "enum": ["all", "custom"]
+                    },
+                    "scored_pages": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "requires_instructor_approval": { "$ref": "#/definitions/booleanLike" }
+                  }
+                },
+                "design": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "title": { "type": "string" },
+                    "description": { "type": "string" },
+                    "admin_name1": { "type": "string" },
+                    "admin_title1": { "type": "string" },
+                    "admin_name2": { "type": "string" },
+                    "admin_title2": { "type": "string" },
+                    "admin_name3": { "type": "string" },
+                    "admin_title3": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["discussion_post"],
+          "additionalProperties": false,
+          "properties": {
+            "discussion_post": {
+              "type": "object",
+              "required": ["student", "section", "body"],
+              "additionalProperties": false,
+              "properties": {
+                "student": { "type": "string" },
+                "section": { "type": "string" },
+                "body": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["class_note"],
+          "additionalProperties": false,
+          "properties": {
+            "class_note": {
+              "type": "object",
+              "required": ["student", "section", "page", "body"],
+              "additionalProperties": false,
+              "properties": {
+                "student": { "type": "string" },
+                "section": { "type": "string" },
+                "page": { "type": "string" },
+                "body": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["complete_scored_page"],
+          "additionalProperties": false,
+          "properties": {
+            "complete_scored_page": {
+              "type": "object",
+              "required": ["student", "section", "page", "score", "out_of"],
+              "additionalProperties": false,
+              "properties": {
+                "student": { "type": "string" },
+                "section": { "type": "string" },
+                "page": { "type": "string" },
+                "score": {
+                  "oneOf": [{ "type": "number" }, { "type": "string" }]
+                },
+                "out_of": {
+                  "oneOf": [{ "type": "number" }, { "type": "string" }]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["certificate_action"],
+          "additionalProperties": false,
+          "properties": {
+            "certificate_action": {
+              "type": "object",
+              "required": ["instructor", "section", "student", "action"],
+              "additionalProperties": false,
+              "properties": {
+                "instructor": { "type": "string" },
+                "section": { "type": "string" },
+                "student": { "type": "string" },
+                "action": {
+                  "type": "string",
+                  "enum": ["approve", "deny"]
+                }
               }
             }
           }

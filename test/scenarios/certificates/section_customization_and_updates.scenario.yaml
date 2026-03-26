@@ -1,0 +1,137 @@
+# Certificate section customization and product update behavior
+
+- project:
+    name: "certificate_updates_course"
+    title: "Certificate Updates Course"
+    root:
+      children:
+        - page: "Required Assessment"
+        - page: "Later Assessment"
+
+- manipulate:
+    to: "certificate_updates_course"
+    ops:
+      - revise:
+          target: "Required Assessment"
+          set:
+            graded: true
+      - revise:
+          target: "Later Assessment"
+          set:
+            graded: true
+
+- product:
+    name: "certificate_updates_product"
+    title: "Certificate Updates Product"
+    from: "certificate_updates_course"
+
+- certificate:
+    target: "certificate_updates_product"
+    enabled: true
+    thresholds:
+      required_discussion_posts: 0
+      required_class_notes: 0
+      min_percentage_for_completion: 50
+      min_percentage_for_distinction: 90
+      assessments_apply_to: "custom"
+      scored_pages:
+        - "Required Assessment"
+      requires_instructor_approval: false
+
+- section:
+    name: "existing_certificate_section"
+    title: "Existing Certificate Section"
+    from: "certificate_updates_product"
+
+- assert:
+    certificate:
+      section: "existing_certificate_section"
+      enabled: true
+      required_discussion_posts: 0
+      required_class_notes: 0
+      min_percentage_for_completion: 50
+      min_percentage_for_distinction: 90
+      assessments_apply_to: "custom"
+      scored_pages:
+        - "Required Assessment"
+
+- manipulate:
+    to: "certificate_updates_course"
+    ops:
+      - add_page:
+          title: "Bonus Assessment"
+      - revise:
+          target: "Bonus Assessment"
+          set:
+            graded: true
+
+- publish:
+    to: "certificate_updates_course"
+    description: "Added a later bonus assessment to the source course"
+
+- user:
+    name: "existing_section_student"
+    type: "student"
+    email: "existing_section_student@test.edu"
+
+- enroll:
+    user: "existing_section_student"
+    section: "existing_certificate_section"
+
+- complete_scored_page:
+    student: "existing_section_student"
+    section: "existing_certificate_section"
+    page: "Required Assessment"
+    score: 1.0
+    out_of: 1.0
+
+- assert:
+    certificate:
+      section: "existing_certificate_section"
+      student: "existing_section_student"
+      state: "earned"
+      with_distinction: true
+
+- certificate:
+    target: "certificate_updates_product"
+    enabled: true
+    thresholds:
+      required_discussion_posts: 0
+      required_class_notes: 1
+      min_percentage_for_completion: 75
+      min_percentage_for_distinction: 95
+      assessments_apply_to: "custom"
+      scored_pages:
+        - "Required Assessment"
+        - "Later Assessment"
+      requires_instructor_approval: false
+
+- section:
+    name: "new_certificate_section"
+    title: "New Certificate Section"
+    from: "certificate_updates_product"
+
+- assert:
+    certificate:
+      section: "new_certificate_section"
+      enabled: true
+      required_discussion_posts: 0
+      required_class_notes: 1
+      min_percentage_for_completion: 75
+      min_percentage_for_distinction: 95
+      assessments_apply_to: "custom"
+      scored_pages:
+        - "Required Assessment"
+        - "Later Assessment"
+
+- assert:
+    certificate:
+      section: "existing_certificate_section"
+      enabled: true
+      required_discussion_posts: 0
+      required_class_notes: 0
+      min_percentage_for_completion: 50
+      min_percentage_for_distinction: 90
+      assessments_apply_to: "custom"
+      scored_pages:
+        - "Required Assessment"
