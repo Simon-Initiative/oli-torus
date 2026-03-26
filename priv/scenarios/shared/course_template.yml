@@ -1,0 +1,140 @@
+# Shared deterministic course template used by dev and QA seed scenarios.
+
+- project:
+    name: "seed_course"
+    title: "Seed Course for Dev and QA"
+    root:
+      children:
+        - page: "Course Orientation"
+        - container: "Unit 1: Foundations"
+          children:
+            - page: "Lesson 1.1: Core Concepts"
+            - page: "Lesson 1.2: Guided Example"
+            - page: "Lesson 1.3: Practice Set"
+            - page: "Lesson 1.4: Reflection"
+        - container: "Unit 2: Applied Work"
+          children:
+            - page: "Lesson 2.1: Real-World Framing"
+            - page: "Lesson 2.2: Worked Example"
+            - page: "Lesson 2.3: Guided Practice"
+            - page: "Lesson 2.4: Checkpoint"
+        - container: "Unit 3: Analysis"
+          children:
+            - page: "Lesson 3.1: Comparing Strategies"
+            - page: "Lesson 3.2: Reading Data"
+            - page: "Lesson 3.3: Making Decisions"
+            - page: "Lesson 3.4: Midpoint Review"
+        - container: "Unit 4: Synthesis"
+          children:
+            - page: "Lesson 4.1: Scenario Planning"
+            - page: "Lesson 4.2: Collaborative Work"
+            - page: "Lesson 4.3: Final Practice"
+            - page: "Lesson 4.4: Wrap Up"
+
+- edit_page:
+    project: "seed_course"
+    page: "Lesson 1.1: Core Concepts"
+    content: |
+      title: "Lesson 1.1: Core Concepts"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Core Concepts\n\nThis lesson introduces the foundational ideas used throughout the course."
+        - type: activity
+          virtual_id: "u1_core_check"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Foundations Check"
+            stem_md: "Which approach best supports durable understanding?"
+            choices:
+              - id: "a"
+                body_md: "Memorizing terms without context"
+              - id: "b"
+                body_md: "Connecting concepts to applied examples"
+                score: 1
+              - id: "c"
+                body_md: "Skipping introductory material"
+              - id: "d"
+                body_md: "Avoiding reflection on mistakes"
+
+- edit_page:
+    project: "seed_course"
+    page: "Lesson 2.4: Checkpoint"
+    content: |
+      title: "Lesson 2.4: Checkpoint"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Unit 2 Checkpoint\n\nThis checkpoint confirms readiness to move from guided work to analysis."
+        - type: activity
+          virtual_id: "u2_checkpoint_check"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Applied Work Checkpoint"
+            stem_md: "What is the strongest sign that a learner can transfer knowledge?"
+            choices:
+              - id: "a"
+                body_md: "They can repeat one memorized example"
+              - id: "b"
+                body_md: "They can explain and adapt a method in a new situation"
+                score: 1
+              - id: "c"
+                body_md: "They avoid unfamiliar contexts"
+              - id: "d"
+                body_md: "They rely only on hints"
+
+- edit_page:
+    project: "seed_course"
+    page: "Lesson 3.4: Midpoint Review"
+    content: |
+      title: "Lesson 3.4: Midpoint Review"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Midpoint Review\n\nThis review revisits the patterns learners should notice before the final unit."
+        - type: activity
+          virtual_id: "u3_review_check"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Analysis Review"
+            stem_md: "Which behavior most clearly reflects analytical reasoning?"
+            choices:
+              - id: "a"
+                body_md: "Choosing the first option without evaluation"
+              - id: "b"
+                body_md: "Comparing evidence and justifying a decision"
+                score: 1
+              - id: "c"
+                body_md: "Ignoring contradictory information"
+              - id: "d"
+                body_md: "Working only by habit"
+
+- edit_page:
+    project: "seed_course"
+    page: "Lesson 4.3: Final Practice"
+    content: |
+      title: "Lesson 4.3: Final Practice"
+      graded: false
+      blocks:
+        - type: prose
+          body_md: "# Final Practice\n\nThis practice page gives learners one last chance to apply the full workflow."
+        - type: activity
+          virtual_id: "u4_final_check"
+          activity:
+            type: "oli_multiple_choice"
+            title: "Synthesis Practice"
+            stem_md: "What shows the strongest evidence of synthesis?"
+            choices:
+              - id: "a"
+                body_md: "Repeating isolated facts"
+              - id: "b"
+                body_md: "Combining concepts into a justified solution"
+                score: 1
+              - id: "c"
+                body_md: "Relying on a single familiar step"
+              - id: "d"
+                body_md: "Avoiding explanation"
+
+- publish:
+    to: "seed_course"
+    description: "Initial shared seed publication"

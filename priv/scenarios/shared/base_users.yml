@@ -1,0 +1,219 @@
+# Shared deterministic user pool for dev and QA seed scenarios.
+
+- user:
+    name: "seed_author"
+    type: "author"
+    email: "seed.author@example.edu"
+    given_name: "Seed"
+    family_name: "Author"
+    password: "changeme123456"
+
+- user:
+    name: "lead_instructor"
+    type: "instructor"
+    email: "lead.instructor@example.edu"
+    given_name: "Leah"
+    family_name: "Instructor"
+    password: "changeme123456"
+    can_create_sections: true
+
+- user:
+    name: "assistant_instructor"
+    type: "instructor"
+    email: "assistant.instructor@example.edu"
+    given_name: "Avery"
+    family_name: "Instructor"
+    password: "changeme123456"
+    can_create_sections: true
+
+- user:
+    name: "student_01"
+    type: "student"
+    email: "student01@example.edu"
+    given_name: "Amina"
+    family_name: "Stone"
+    password: "changeme123456"
+
+- user:
+    name: "student_02"
+    type: "student"
+    email: "student02@example.edu"
+    given_name: "Ben"
+    family_name: "Carter"
+    password: "changeme123456"
+
+- user:
+    name: "student_03"
+    type: "student"
+    email: "student03@example.edu"
+    given_name: "Clara"
+    family_name: "Nguyen"
+    password: "changeme123456"
+
+- user:
+    name: "student_04"
+    type: "student"
+    email: "student04@example.edu"
+    given_name: "Diego"
+    family_name: "Lopez"
+    password: "changeme123456"
+
+- user:
+    name: "student_05"
+    type: "student"
+    email: "student05@example.edu"
+    given_name: "Elena"
+    family_name: "Brooks"
+    password: "changeme123456"
+
+- user:
+    name: "student_06"
+    type: "student"
+    email: "student06@example.edu"
+    given_name: "Farah"
+    family_name: "Patel"
+    password: "changeme123456"
+
+- user:
+    name: "student_07"
+    type: "student"
+    email: "student07@example.edu"
+    given_name: "Gavin"
+    family_name: "Ross"
+    password: "changeme123456"
+
+- user:
+    name: "student_08"
+    type: "student"
+    email: "student08@example.edu"
+    given_name: "Hana"
+    family_name: "Kim"
+    password: "changeme123456"
+
+- user:
+    name: "student_09"
+    type: "student"
+    email: "student09@example.edu"
+    given_name: "Isaac"
+    family_name: "Turner"
+    password: "changeme123456"
+
+- user:
+    name: "student_10"
+    type: "student"
+    email: "student10@example.edu"
+    given_name: "Jade"
+    family_name: "Foster"
+    password: "changeme123456"
+
+- user:
+    name: "student_11"
+    type: "student"
+    email: "student11@example.edu"
+    given_name: "Kai"
+    family_name: "Murphy"
+    password: "changeme123456"
+
+- user:
+    name: "student_12"
+    type: "student"
+    email: "student12@example.edu"
+    given_name: "Lena"
+    family_name: "Ortiz"
+    password: "changeme123456"
+
+- user:
+    name: "student_13"
+    type: "student"
+    email: "student13@example.edu"
+    given_name: "Mateo"
+    family_name: "Reed"
+    password: "changeme123456"
+
+- user:
+    name: "student_14"
+    type: "student"
+    email: "student14@example.edu"
+    given_name: "Nora"
+    family_name: "Price"
+    password: "changeme123456"
+
+- user:
+    name: "student_15"
+    type: "student"
+    email: "student15@example.edu"
+    given_name: "Owen"
+    family_name: "Bennett"
+    password: "changeme123456"
+
+- user:
+    name: "student_16"
+    type: "student"
+    email: "student16@example.edu"
+    given_name: "Priya"
+    family_name: "Shah"
+    password: "changeme123456"
+
+- user:
+    name: "student_17"
+    type: "student"
+    email: "student17@example.edu"
+    given_name: "Quinn"
+    family_name: "Hayes"
+    password: "changeme123456"
+
+- user:
+    name: "student_18"
+    type: "student"
+    email: "student18@example.edu"
+    given_name: "Rosa"
+    family_name: "Diaz"
+    password: "changeme123456"
+
+- user:
+    name: "student_19"
+    type: "student"
+    email: "student19@example.edu"
+    given_name: "Sam"
+    family_name: "Coleman"
+    password: "changeme123456"
+
+- user:
+    name: "student_20"
+    type: "student"
+    email: "student20@example.edu"
+    given_name: "Talia"
+    family_name: "Ward"
+    password: "changeme123456"
+
+- user:
+    name: "student_21"
+    type: "student"
+    email: "student21@example.edu"
+    given_name: "Uri"
+    family_name: "Fisher"
+    password: "changeme123456"
+
+- user:
+    name: "student_22"
+    type: "student"
+    email: "student22@example.edu"
+    given_name: "Vera"
+    family_name: "Moore"
+    password: "changeme123456"
+
+- user:
+    name: "student_23"
+    type: "student"
+    email: "student23@example.edu"
+    given_name: "Wes"
+    family_name: "Howard"
+    password: "changeme123456"
+
+- user:
+    name: "student_24"
+    type: "student"
+    email: "student24@example.edu"
+    given_name: "Yara"
+    family_name: "Lewis"
+    password: "changeme123456"

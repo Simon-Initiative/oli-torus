@@ -1,0 +1,9 @@
+# Shared deterministic section template used by dev and QA seed scenarios.
+
+- section:
+    name: "seed_section"
+    from: "seed_course"
+    title: "Seed Section"
+    slug: "seed-section"
+    registration_open: true
+    open_and_free: true

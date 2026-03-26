@@ -1,0 +1,307 @@
+# Example root-level seed scenario.
+# Copy this file to `seeds.yml` and tailor the non-shared directives as needed.
+
+- use:
+    file: "priv/scenarios/shared/base_users.yml"
+
+- use:
+    file: "priv/scenarios/shared/course_template.yml"
+
+- use:
+    file: "priv/scenarios/shared/section_template.yml"
+
+- enroll:
+    user: "lead_instructor"
+    section: "seed_section"
+    role: "instructor"
+
+- enroll:
+    user: "assistant_instructor"
+    section: "seed_section"
+    role: "instructor"
+
+- enroll:
+    user: "student_01"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_02"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_03"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_04"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_05"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_06"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_07"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_08"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_09"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_10"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_11"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_12"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_13"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_14"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_15"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_16"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_17"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_18"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_19"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_20"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_21"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_22"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_23"
+    section: "seed_section"
+    role: "student"
+
+- enroll:
+    user: "student_24"
+    section: "seed_section"
+    role: "student"
+
+- visit_page:
+    student: "student_01"
+    section: "seed_section"
+    page: "Lesson 1.1: Core Concepts"
+
+- answer_question:
+    student: "student_01"
+    section: "seed_section"
+    page: "Lesson 1.1: Core Concepts"
+    activity_virtual_id: "u1_core_check"
+    response: "b"
+
+- visit_page:
+    student: "student_01"
+    section: "seed_section"
+    page: "Lesson 2.4: Checkpoint"
+
+- answer_question:
+    student: "student_01"
+    section: "seed_section"
+    page: "Lesson 2.4: Checkpoint"
+    activity_virtual_id: "u2_checkpoint_check"
+    response: "b"
+
+- visit_page:
+    student: "student_02"
+    section: "seed_section"
+    page: "Lesson 1.1: Core Concepts"
+
+- answer_question:
+    student: "student_02"
+    section: "seed_section"
+    page: "Lesson 1.1: Core Concepts"
+    activity_virtual_id: "u1_core_check"
+    response: "a"
+
+- visit_page:
+    student: "student_02"
+    section: "seed_section"
+    page: "Lesson 3.4: Midpoint Review"
+
+- answer_question:
+    student: "student_02"
+    section: "seed_section"
+    page: "Lesson 3.4: Midpoint Review"
+    activity_virtual_id: "u3_review_check"
+    response: "b"
+
+- visit_page:
+    student: "student_03"
+    section: "seed_section"
+    page: "Lesson 2.4: Checkpoint"
+
+- answer_question:
+    student: "student_03"
+    section: "seed_section"
+    page: "Lesson 2.4: Checkpoint"
+    activity_virtual_id: "u2_checkpoint_check"
+    response: "b"
+
+- visit_page:
+    student: "student_03"
+    section: "seed_section"
+    page: "Lesson 4.3: Final Practice"
+
+- answer_question:
+    student: "student_03"
+    section: "seed_section"
+    page: "Lesson 4.3: Final Practice"
+    activity_virtual_id: "u4_final_check"
+    response: "d"
+
+- visit_page:
+    student: "student_04"
+    section: "seed_section"
+    page: "Lesson 3.4: Midpoint Review"
+
+- answer_question:
+    student: "student_04"
+    section: "seed_section"
+    page: "Lesson 3.4: Midpoint Review"
+    activity_virtual_id: "u3_review_check"
+    response: "b"
+
+- visit_page:
+    student: "student_04"
+    section: "seed_section"
+    page: "Lesson 4.3: Final Practice"
+
+- answer_question:
+    student: "student_04"
+    section: "seed_section"
+    page: "Lesson 4.3: Final Practice"
+    activity_virtual_id: "u4_final_check"
+    response: "b"
+
+- visit_page:
+    student: "student_05"
+    section: "seed_section"
+    page: "Lesson 1.1: Core Concepts"
+
+- answer_question:
+    student: "student_05"
+    section: "seed_section"
+    page: "Lesson 1.1: Core Concepts"
+    activity_virtual_id: "u1_core_check"
+    response: "b"
+
+- visit_page:
+    student: "student_06"
+    section: "seed_section"
+    page: "Lesson 2.4: Checkpoint"
+
+- answer_question:
+    student: "student_06"
+    section: "seed_section"
+    page: "Lesson 2.4: Checkpoint"
+    activity_virtual_id: "u2_checkpoint_check"
+    response: "c"
+
+- visit_page:
+    student: "student_07"
+    section: "seed_section"
+    page: "Lesson 3.4: Midpoint Review"
+
+- answer_question:
+    student: "student_07"
+    section: "seed_section"
+    page: "Lesson 3.4: Midpoint Review"
+    activity_virtual_id: "u3_review_check"
+    response: "b"
+
+- visit_page:
+    student: "student_08"
+    section: "seed_section"
+    page: "Lesson 4.3: Final Practice"
+
+- answer_question:
+    student: "student_08"
+    section: "seed_section"
+    page: "Lesson 4.3: Final Practice"
+    activity_virtual_id: "u4_final_check"
+    response: "b"
+
+- discussion_post:
+    student: "student_01"
+    section: "seed_section"
+    body: "I found the Unit 2 checkpoint useful because it connected the examples back to the core framework."
+
+- discussion_post:
+    student: "student_04"
+    section: "seed_section"
+    body: "The midpoint review made it easier to compare strategies across units."
+
+- class_note:
+    student: "student_03"
+    section: "seed_section"
+    page: "Lesson 3.2: Reading Data"
+    body: "Remember to compare the source of each measure before deciding which trend matters."
+
+- class_note:
+    student: "student_07"
+    section: "seed_section"
+    page: "Lesson 4.1: Scenario Planning"
+    body: "I used the scenario framing checklist here to keep the final practice organized."

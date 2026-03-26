@@ -11,15 +11,14 @@
 # and so on) as they will fail if something goes wrong.
 
 alias Oli.Seeder
-alias Oli.Utils
 alias Oli.Authoring.Collaborators
 alias Oli.Features
-alias Oli.Accounts
-alias Oli.Accounts.{User, Author}
+alias Oli.Accounts.Author
 alias Oli.Repo
-alias Oli.Utils.DataGenerators.NameGenerator
 alias Oli.GenAI.Completions.{ServiceConfig, RegisteredModel}
 alias Oli.GenAI.FeatureConfig
+alias Oli.Scenarios
+alias Oli.Scenarios.RuntimeOpts
 
 import Ecto.Query, only: [from: 2]
 
@@ -265,7 +264,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
       |> Map.put("context_id", UUID.uuid4())
       |> Map.put("registration_open", true)
 
-    section =
+    _section =
       with {:ok, section} <- Oli.Delivery.Sections.create_section(section_params),
            {:ok, section} <- Oli.Delivery.Sections.create_section_resources(section, publication) do
         section
@@ -273,88 +272,37 @@ if Application.fetch_env!(:oli, :env) == :dev do
         {:error, changeset} -> IO.inspect(changeset)
       end
 
-    # create any seeds defined in seeds.json
-    case Utils.read_json_file("./seeds.json") do
-      {:ok, json} ->
-        case json["registrations"] do
-          nil ->
-            nil
+    nil
+  end
+end
 
-          registrations ->
-            {:ok, %{id: jwk_id}} = Lti_1p3.get_active_jwk()
+seeds_yaml_path = "./seeds.yml"
 
-            registrations
-            |> Enum.each(fn attrs ->
-              attrs =
-                attrs
-                |> Map.merge(%{"tool_jwk_id" => jwk_id, "institution_id" => 1})
+if File.exists?(seeds_yaml_path) do
+  IO.puts("Executing optional scenario seeds from #{seeds_yaml_path}")
 
-              %Oli.Lti.Tool.Registration{}
-              |> Oli.Lti.Tool.Registration.changeset(attrs)
-              |> Oli.Repo.insert()
-            end)
-        end
+  result =
+    seeds_yaml_path
+    |> Scenarios.execute_file(RuntimeOpts.build())
 
-        case json["generate_authors"] do
-          nil ->
-            nil
+  failed_verifications = Enum.reject(result.verifications, & &1.passed)
 
-          num_authors ->
-            # create a bunch of authors
-            IO.puts("Generating #{num_authors} authors...")
+  case {result.errors, failed_verifications} do
+    {[], []} ->
+      summary = Scenarios.summarize(result)
+      IO.inspect(summary, label: "scenario_seed_summary")
 
-            0..num_authors
-            |> Enum.each(fn index ->
-              name = NameGenerator.name()
+    {errors, []} ->
+      raise """
+      Scenario seeding failed with execution errors:
+      #{inspect(errors, pretty: true)}
+      """
 
-              params = %{
-                email: "#{Oli.Utils.Slug.slugify(name)}_#{index}@example.edu",
-                name: name,
-                system_role_id: Accounts.SystemRole.role_id().author,
-                email_confirmed_at: DateTime.utc_now()
-              }
-
-              {:ok, _author} =
-                Author.noauth_changeset(%Author{}, params)
-                |> Repo.insert()
-            end)
-        end
-
-        case json["generate_users"] do
-          nil ->
-            nil
-
-          num_users ->
-            # create a bunch of users
-            IO.puts("Generating #{num_users} users...")
-
-            0..num_users
-            |> Enum.each(fn index ->
-              name = NameGenerator.name()
-
-              params = %{
-                sub: UUID.uuid4(),
-                name: name,
-                picture:
-                  "https://platform.example.edu/#{Oli.Utils.Slug.slugify(name)}_#{index}.jpg",
-                email: "#{Oli.Utils.Slug.slugify(name)}_#{index}@platform.example.edu",
-                email_confirmed_at: DateTime.utc_now(),
-                locale: "en-US"
-              }
-
-              {:ok, user} =
-                User.noauth_changeset(%User{}, params)
-                |> Repo.insert()
-
-              Oli.Delivery.Sections.enroll(user.id, section.id, [
-                Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
-              ])
-            end)
-        end
-
-      _ ->
-        # no seeds.json file, do nothing
-        nil
-    end
+    {errors, failed_verifications} ->
+      raise """
+      Scenario seeding failed.
+      errors=#{inspect(errors, pretty: true)}
+      failed_verifications=#{inspect(failed_verifications, pretty: true)}
+      """
   end
 end

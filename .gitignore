@@ -90,8 +90,6 @@ postgres.env
 assets/yarn.lock
 lib/oli/analytics/test.xml
 .devcontainer/data
-registrations.json
-seeds.json
 /docker-compose.override.yml
 supervisord.log
 supervisord.pid
@@ -127,3 +125,4 @@ devops/.env
 test/support/dataset/python/dataset/__pycache__
 
 /oli_project_exports
+seeds.yml
