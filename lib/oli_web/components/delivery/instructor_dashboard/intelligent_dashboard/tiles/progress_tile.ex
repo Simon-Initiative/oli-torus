@@ -526,19 +526,39 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   defp count_axis_upper_bound(0, class_size) when class_size > 0 do
-    nice_axis_ceiling(min(class_size, 4))
+    class_size_axis_ceiling(class_size)
   end
 
   defp count_axis_upper_bound(max_count, class_size) do
-    hard_cap =
-      class_size
-      |> max(max_count)
-      |> max(1)
+    cond do
+      class_size > 0 ->
+        class_size
+        |> max(max_count)
+        |> class_size_axis_ceiling()
 
-    max_count
-    |> nice_axis_ceiling()
-    |> min(hard_cap)
-    |> max(max_count)
+      true ->
+        max_count
+        |> max(1)
+        |> nice_axis_ceiling()
+    end
+  end
+
+  defp class_size_axis_ceiling(value) when value <= 10, do: value
+
+  defp class_size_axis_ceiling(value) when value <= 50 do
+    round_up_to_step(value, 5)
+  end
+
+  defp class_size_axis_ceiling(value) when value <= 100 do
+    round_up_to_step(value, 10)
+  end
+
+  defp class_size_axis_ceiling(value) when value <= 500 do
+    round_up_to_step(value, 25)
+  end
+
+  defp class_size_axis_ceiling(value) do
+    round_up_to_step(value, 50)
   end
 
   defp nice_axis_ceiling(value) when value <= 1, do: 1
@@ -562,6 +582,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       end
 
     trunc(step * magnitude)
+  end
+
+  defp round_up_to_step(value, step) do
+    value
+    |> Kernel./(step)
+    |> Float.ceil()
+    |> trunc()
+    |> Kernel.*(step)
   end
 
   defp columns_style([]), do: "grid-template-columns: repeat(1, minmax(0, 1fr));"

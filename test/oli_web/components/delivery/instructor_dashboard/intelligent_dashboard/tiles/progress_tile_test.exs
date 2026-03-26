@@ -76,10 +76,39 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         dashboard_scope: "course"
       )
 
-    assert html =~ ">20<"
-    assert html =~ ">5<"
+    assert html =~ ~r/>\s*30\s*</
+    assert html =~ ~r/>\s*8\s*</
     assert html =~ "Unit 8"
     refute html =~ "Showing page 2 of 2"
+  end
+
+  test "uses class size as the count axis ceiling when present" do
+    html =
+      render_component(ProgressTile,
+        id: "progress_tile",
+        projection: small_class_projection(),
+        tile_state: %{completion_threshold: 100, y_axis_mode: :count, page: 1},
+        params: %{"dashboard_scope" => "course"},
+        section_slug: "biology-101",
+        dashboard_scope: "course"
+      )
+
+    assert html =~ ~r/>\s*8\s*</
+    assert html =~ "height: 25.0%"
+  end
+
+  test "uses a friendly ceiling above larger class sizes" do
+    html =
+      render_component(ProgressTile,
+        id: "progress_tile",
+        projection: large_class_projection(),
+        tile_state: %{completion_threshold: 100, y_axis_mode: :count, page: 1},
+        params: %{"dashboard_scope" => "course"},
+        section_slug: "biology-101",
+        dashboard_scope: "course"
+      )
+
+    assert html =~ ~r/>\s*750\s*</
   end
 
   test "shades prior pages completely when the schedule marker is on a later page" do
@@ -202,5 +231,51 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       label: "Schedule: Unit 8",
       tooltip: "Schedule is currently at Unit 8"
     })
+  end
+
+  defp small_class_projection do
+    %{
+      axis_label: "Course Units",
+      class_size: 8,
+      completion_threshold: 100,
+      y_axis_mode: :count,
+      series_all: [
+        %{
+          container_id: 1,
+          label: "Unit 1",
+          resource_type: :container,
+          bins: %{100 => 2},
+          total: 8,
+          count: 0,
+          percent: 0.0,
+          value: 0
+        }
+      ],
+      schedule_context: nil,
+      page_window: %{page: 1, per_page: 7, total_items: 0, total_pages: 0}
+    }
+  end
+
+  defp large_class_projection do
+    %{
+      axis_label: "Course Units",
+      class_size: 738,
+      completion_threshold: 100,
+      y_axis_mode: :count,
+      series_all: [
+        %{
+          container_id: 1,
+          label: "Unit 1",
+          resource_type: :container,
+          bins: %{100 => 412},
+          total: 738,
+          count: 0,
+          percent: 0.0,
+          value: 0
+        }
+      ],
+      schedule_context: nil,
+      page_window: %{page: 1, per_page: 7, total_items: 0, total_pages: 0}
+    }
   end
 end
