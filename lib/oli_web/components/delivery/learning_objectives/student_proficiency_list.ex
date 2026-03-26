@@ -15,6 +15,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
 
     # Get selected students from socket or initialize empty list
     selected_students = socket.assigns[:selected_students] || []
+    selected_emails = selected_student_emails(filtered_student_data, selected_students)
 
     # Create the student proficiency table model
     {:ok, student_table_model} =
@@ -30,6 +31,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
       |> assign(:student_table_model, student_table_model)
       |> assign(:filtered_student_data, filtered_student_data)
       |> assign(:selected_students, selected_students)
+      |> assign(:selected_emails, selected_emails)
       |> assign(:show_email_modal, socket.assigns[:show_email_modal] || false)
 
     {:ok, socket}
@@ -48,7 +50,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
           id="email_button_proficiency_component"
           module={OliWeb.Components.Delivery.Students.EmailButton}
           selected_students={@selected_students}
-          selected_emails={selected_student_emails(@filtered_student_data, @selected_students)}
+          selected_emails={@selected_emails}
           instructor_email={@instructor_email}
           section_slug={@section_slug}
           email_handler_id={@id}
@@ -114,7 +116,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
     {:noreply,
      socket
      |> assign(:student_table_model, updated_table_model)
-     |> assign(:filtered_student_data, sorted_rows)}
+     |> assign(:filtered_student_data, sorted_rows)
+     |> assign(
+       :selected_emails,
+       selected_student_emails(sorted_rows, socket.assigns.selected_students)
+     )}
   end
 
   def handle_event("select_all_students", _params, socket) do
@@ -144,6 +150,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
      socket
      |> assign(:selected_students, selected_students)
      |> assign(:student_table_model, updated_table_model)
+     |> assign(
+       :selected_emails,
+       selected_student_emails(socket.assigns.filtered_student_data, selected_students)
+     )
      |> assign(:show_email_modal, false)}
   end
 
@@ -171,7 +181,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
     {:noreply,
      socket
      |> assign(:selected_students, selected_students)
-     |> assign(:student_table_model, updated_table_model)}
+     |> assign(:student_table_model, updated_table_model)
+     |> assign(
+       :selected_emails,
+       selected_student_emails(socket.assigns.filtered_student_data, selected_students)
+     )}
   end
 
   defp sort_students(students, sort_by, sort_order) do

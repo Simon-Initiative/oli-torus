@@ -5,14 +5,11 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
-  def update(assigns, socket) do
+  def update(%{selected_emails: selected_emails} = assigns, socket) do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(
-       :selected_emails,
-       Map.get(assigns, :selected_emails, socket.assigns[:selected_emails] || "")
-     )
+     |> assign(:selected_emails, selected_emails)
      |> assign(:variant, normalize_variant(Map.get(assigns, :variant, :full)))}
   end
 
