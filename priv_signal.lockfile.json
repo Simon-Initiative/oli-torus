@@ -6436,7 +6436,7 @@
         "function": "create_default_author/0",
         "module": "Oli.Scenarios.Engine",
         "lines": [
-          161
+          184
         ],
         "file_path": "lib/oli/scenarios/engine.ex"
       },
@@ -13653,7 +13653,7 @@
         "function": "project_embeddings_summary/1",
         "module": "Oli.Search.Embeddings",
         "lines": [
-          184
+          185
         ],
         "file_path": "lib/oli/search/embeddings.ex"
       },
@@ -13672,7 +13672,7 @@
         "function": "project_embeddings_summary/1",
         "module": "Oli.Search.Embeddings",
         "lines": [
-          189
+          190
         ],
         "file_path": "lib/oli/search/embeddings.ex"
       },
@@ -15416,7 +15416,7 @@
         "function": "count_revision_to_embed/1",
         "module": "Oli.Search.Embeddings",
         "lines": [
-          175
+          176
         ],
         "file_path": "lib/oli/search/embeddings.ex"
       },
@@ -35334,6 +35334,132 @@
       "data_refs": []
     },
     {
+      "id": "psn_cd68982a0777efa4",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.get_by"
+      },
+      "evidence": [
+        {
+          "line": 42,
+          "signal": "token_match",
+          "rule": "database_read_prd",
+          "finding_id": "f63e321a082912f7",
+          "ast_kind": "token"
+        },
+        {
+          "line": 42,
+          "signal": "unknown",
+          "rule": "database_read_prd",
+          "finding_id": "f63e321a082912f7",
+          "ast_kind": "unknown"
+        }
+      ],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "apply_action/4",
+        "module": "Oli.Scenarios.Directives.CertificateActionHandler",
+        "lines": [
+          42
+        ],
+        "file_path": "lib/oli/scenarios/directives/certificate_action_handler.ex"
+      },
+      "data_refs": [
+        {
+          "label": "User Token User ID",
+          "sensitive": false,
+          "reference": "Oli.Accounts.UserToken.user_id",
+          "key": "user_token_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Author Identity User ID",
+          "sensitive": false,
+          "reference": "Oli.AssentAuth.AuthorIdentity.user_id",
+          "key": "author_identity_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "User Identity User ID",
+          "sensitive": false,
+          "reference": "Oli.AssentAuth.UserIdentity.user_id",
+          "key": "user_identity_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Audit Log User ID",
+          "sensitive": false,
+          "reference": "Oli.Auditing.LogEvent.user_id",
+          "key": "audit_log_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Cookies Consent User ID",
+          "sensitive": false,
+          "reference": "Oli.Consent.CookiesConsent.user_id",
+          "key": "cookies_consent_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Conversation Message User ID",
+          "sensitive": false,
+          "reference": "Oli.Conversation.ConversationMessage.user_id",
+          "key": "conversation_message_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Activity Attempt Save File User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.user_id",
+          "key": "activity_attempt_save_file_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Resource Access User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Attempts.Core.ResourceAccess.user_id",
+          "key": "resource_access_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Custom Activity Log User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.CustomLogs.CustomActivityLog.user_id",
+          "key": "custom_activity_log_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Student Exception User ID",
+          "sensitive": false,
+          "reference": "Oli.Delivery.Settings.StudentException.user_id",
+          "key": "student_exception_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "LTI Params User ID",
+          "sensitive": false,
+          "reference": "Oli.Lti.LtiParams.user_id",
+          "key": "lti_params_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Collaboration Post User ID",
+          "sensitive": false,
+          "reference": "Oli.Resources.Collaboration.Post.user_id",
+          "key": "collaboration_post_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        },
+        {
+          "label": "Collaboration User Reaction Post User ID",
+          "sensitive": false,
+          "reference": "Oli.Resources.Collaboration.UserReactionPost.user_id",
+          "key": "collaboration_user_reaction_post_user_id",
+          "class": "persistent_pseudonymous_identifier"
+        }
+      ]
+    },
+    {
       "id": "psn_cdc69244cf8ded41",
       "node_type": "source",
       "role": {
@@ -42442,7 +42568,7 @@
         "function": "revisions_to_embed/1",
         "module": "Oli.Search.Embeddings",
         "lines": [
-          169
+          170
         ],
         "file_path": "lib/oli/search/embeddings.ex"
       },
@@ -44256,7 +44382,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "3e45672bb49990280d6aacde39055363c574d66c"
+    "commit": "611c5eafbbaa3e54f9a4def493a903cfa228470d"
   },
   "schema_version": "1",
   "summary": {
@@ -44267,9 +44393,9 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1595,
-    "scan_duration_ms": 1665,
-    "node_count": 1523,
+    "files_scanned": 1606,
+    "scan_duration_ms": 1576,
+    "node_count": 1524,
     "data_node_count": 122,
     "flow_count": 781,
     "scan_error_count": 0,
@@ -44278,14 +44404,14 @@
     "proto_flows_enabled": true,
     "node_type_counts": {
       "sink": 610,
-      "source": 913
+      "source": 914
     },
     "boundary_counts": {
       "external": 481,
       "internal": 300
     },
     "confirmed_count": 160,
-    "possible_count": 1363
+    "possible_count": 1364
   },
   "flows": [
     {
