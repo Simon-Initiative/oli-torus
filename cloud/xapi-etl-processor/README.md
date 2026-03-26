@@ -115,6 +115,7 @@ With dependencies moved into the layer, the handler bundle only contains
 
 ```bash
 cd cloud/xapi-etl-processor
+mkdir -p dist
 zip -j dist/xapi-etl-processor-handler.zip lambda_function.py
 ```
 
@@ -242,7 +243,7 @@ Run as a ClickHouse admin user:
 CREATE USER IF NOT EXISTS xapi_etl_processor
   IDENTIFIED WITH sha256_password BY '<strong-random-password>';
 
-GRANT INSERT ON default.raw_events TO xapi_etl_processor;
+GRANT INSERT ON oli_analytics.raw_events TO xapi_etl_processor;
 ```
 
 Optional hardening (adjust to your cluster baseline):
@@ -266,7 +267,7 @@ Set these Lambda environment variables:
 
 - `CLICKHOUSE_USER=xapi_etl_processor`
 - `CLICKHOUSE_PASSWORD=<strong-random-password>`
-- `CLICKHOUSE_DATABASE=default`
+- `CLICKHOUSE_DATABASE=oli_analytics`
 - `CLICKHOUSE_TABLE=raw_events`
 
 If you manage env vars via CLI, note that `update-function-configuration`
