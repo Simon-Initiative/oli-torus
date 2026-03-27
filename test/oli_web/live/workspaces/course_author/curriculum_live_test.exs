@@ -273,6 +273,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
       assert new_adaptive_page.title == "New Advanced Author Assessment"
     end
 
+    test "creating a container does not leave page creation actions disabled", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      view
+      |> element(
+        "button[data-create-container-action='true'][phx-value-type='Container'][phx-value-scored='Unscored']"
+      )
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button[data-create-page-action='true'][phx-value-type='Basic'][phx-value-scored='Unscored']:not([disabled])",
+               "Practice"
+             )
+
+      assert has_element?(
+               view,
+               "button[data-create-container-action='true'][phx-value-type='Container'][phx-value-scored='Unscored']:not([disabled])"
+             )
+    end
+
     test "show the correct fields for the page option modal", %{
       conn: conn,
       author: author,
