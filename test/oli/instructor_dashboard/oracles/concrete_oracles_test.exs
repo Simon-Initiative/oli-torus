@@ -218,6 +218,48 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       assert {:ok, %{has_schedule?: false}} =
                SchedulePosition.load(context, now: ~U[2026-02-18 12:00:00Z])
     end
+
+    test "does not project a schedule marker into scopes that do not contain the global position",
+         %{
+           map: map
+         } do
+      direct_course_page =
+        add_direct_page_child(map, map.section.root_section_resource_id, "Acknowledgements")
+
+      [unit1_page_1 | _] = map.mod1_pages
+      now = ~U[2026-03-27 12:00:00Z]
+
+      schedule_resource(
+        map.section.id,
+        unit1_page_1.resource.id,
+        ~U[2026-02-09 00:00:00Z],
+        ~U[2026-02-15 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        direct_course_page.resource_id,
+        ~U[2026-02-20 00:00:00Z],
+        ~U[2026-02-20 23:59:59Z]
+      )
+
+      course_context =
+        build_context(map.section.id, map.instructor.id, %{container_type: :course})
+
+      assert {:ok, course_payload} = SchedulePosition.load(course_context, now: now)
+      assert course_payload.current_resource_id == direct_course_page.resource_id
+
+      unit_context =
+        build_context(
+          map.section.id,
+          map.instructor.id,
+          %{container_type: :container, container_id: map.unit1_resource.id}
+        )
+
+      assert {:ok, unit_payload} = SchedulePosition.load(unit_context, now: now)
+      assert unit_payload.has_schedule? == true
+      refute Map.has_key?(unit_payload, :current_resource_id)
+    end
   end
 
   describe "ProgressProficiency oracle" do

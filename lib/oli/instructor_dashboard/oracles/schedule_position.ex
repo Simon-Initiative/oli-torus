@@ -28,11 +28,12 @@ defmodule Oli.InstructorDashboard.Oracles.SchedulePosition do
       if map_size(scheduled_resources) == 0 do
         {:ok, %{has_schedule?: false}}
       else
+        global_current_resource_id = choose_global_resource_id(scheduled_resources, now)
+
         current_item =
           hierarchy
           |> scoped_node(scope)
-          |> direct_children()
-          |> choose_current_item(scheduled_resources, now)
+          |> choose_current_item(global_current_resource_id)
 
         {:ok, build_payload(current_item)}
       end
@@ -63,24 +64,39 @@ defmodule Oli.InstructorDashboard.Oracles.SchedulePosition do
   defp direct_children(nil), do: []
   defp direct_children(node), do: node.children || []
 
-  defp choose_current_item([], _scheduled_resources, _now), do: nil
+  defp choose_current_item(nil, _global_current_resource_id), do: nil
+  defp choose_current_item(_node, nil), do: nil
 
-  # The schedule marker answers "where are we?" for the current scope. We resolve
-  # it by scoring the visible direct children of the scoped node against the
-  # current time, using each child's aggregated schedule range.
-  defp choose_current_item(children, scheduled_resources, now),
-    do: choose_by_range(children, scheduled_resources, now)
+  # The schedule marker is derived from the course-wide current scheduled
+  # resource first, then mapped into the currently visible scope. If the scoped
+  # subtree does not contain that global position, the tile should not show a
+  # local schedule marker at all.
+  defp choose_current_item(node, global_current_resource_id) do
+    cond do
+      node.resource_id == global_current_resource_id ->
+        node
 
-  defp choose_by_range(children, scheduled_resources, now) do
-    children
-    |> Enum.map(fn child -> {child, aggregate_range(child, scheduled_resources)} end)
-    |> Enum.reject(fn {_child, range} -> is_nil(range) end)
-    |> Enum.sort_by(fn {child, range} ->
-      {selection_bucket(range, now), selection_distance(range, now), child.resource_id}
+      true ->
+        direct_children(node)
+        |> Enum.find(fn child ->
+          subtree_contains_resource?(child, global_current_resource_id)
+        end)
+    end
+  end
+
+  defp choose_global_resource_id(scheduled_resources, now) do
+    scheduled_resources
+    |> Map.values()
+    |> Enum.map(fn section_resource ->
+      {section_resource.resource_id, normalize_range(section_resource)}
+    end)
+    |> Enum.reject(fn {_resource_id, range} -> is_nil(range) end)
+    |> Enum.sort_by(fn {resource_id, range} ->
+      {selection_bucket(range, now), selection_distance(range, now), resource_id}
     end)
     |> List.first()
     |> case do
-      {child, _range} -> child
+      {resource_id, _range} -> resource_id
       nil -> nil
     end
   end
@@ -108,46 +124,6 @@ defmodule Oli.InstructorDashboard.Oracles.SchedulePosition do
   defp within_range?(range, now) do
     DateTime.compare(range.start_at, now) in [:lt, :eq] and
       DateTime.compare(range.end_at, now) in [:gt, :eq]
-  end
-
-  # Container-level schedule position is derived from scheduled descendants, so a
-  # unit or module becomes "current" when any scheduled work inside its subtree
-  # makes its overall range current or nearest.
-  defp aggregate_range(node, scheduled_resources) do
-    [self_range(node, scheduled_resources) | descendant_ranges(node, scheduled_resources)]
-    |> Enum.reject(&is_nil/1)
-    |> case do
-      [] ->
-        nil
-
-      ranges ->
-        %{
-          start_at:
-            ranges
-            |> Enum.min_by(& &1.start_at, fn left, right ->
-              DateTime.compare(left, right) != :gt
-            end)
-            |> Map.fetch!(:start_at),
-          end_at:
-            ranges
-            |> Enum.max_by(& &1.end_at, fn left, right ->
-              DateTime.compare(left, right) != :lt
-            end)
-            |> Map.fetch!(:end_at)
-        }
-    end
-  end
-
-  defp descendant_ranges(node, scheduled_resources) do
-    Enum.flat_map(node.children || [], fn child ->
-      [aggregate_range(child, scheduled_resources)]
-    end)
-  end
-
-  defp self_range(node, scheduled_resources) do
-    node.resource_id
-    |> then(&Map.get(scheduled_resources, &1))
-    |> normalize_range()
   end
 
   defp normalize_range(nil), do: nil
@@ -183,5 +159,10 @@ defmodule Oli.InstructorDashboard.Oracles.SchedulePosition do
           find_by_resource_id(child, resource_id)
         end)
     end
+  end
+
+  defp subtree_contains_resource?(node, resource_id) do
+    node.resource_id == resource_id or
+      Enum.any?(node.children || [], &subtree_contains_resource?(&1, resource_id))
   end
 end
