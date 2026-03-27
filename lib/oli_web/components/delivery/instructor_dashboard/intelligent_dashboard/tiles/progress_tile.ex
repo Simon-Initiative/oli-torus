@@ -288,7 +288,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                         <% end %>
                       </div>
 
-                      <div class="mt-4 flex items-center gap-2 text-xs text-Text-text-high">
+                      <div class="mt-2 flex items-center gap-2 text-xs text-Text-text-high">
                         <span class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-[3px] bg-Background-bg-secondary font-semibold text-Text-text-high">
                           X
                         </span>
