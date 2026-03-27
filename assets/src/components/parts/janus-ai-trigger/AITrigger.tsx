@@ -146,15 +146,7 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     }, AUTO_TRIGGER_DELAY_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [
-    id,
-    launchMode,
-    prompt,
-    resourceId,
-    sectionSlug,
-    ready,
-    triggerAvailable,
-  ]);
+  }, [id, launchMode, prompt, resourceId, sectionSlug, ready, triggerAvailable]);
 
   if (!ready || launchMode !== 'click' || !hasAiTriggerPrompt(prompt) || !triggerAvailable) {
     return null;

@@ -436,9 +436,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       // The custom element wrapper lowercases attribute names
       const sectionSlug = (props as any).sectionslug ?? props.sectionSlug;
       const resourceId =
-        (props as any).resourceid != null
-          ? Number((props as any).resourceid)
-          : props.resourceId;
+        (props as any).resourceid != null ? Number((props as any).resourceid) : props.resourceId;
       void invokeAdaptiveAiTrigger({
         sectionSlug,
         resourceId,
