@@ -1,0 +1,50 @@
+{
+  "run_id": "run-001",
+  "test_id": "delivery_smoke",
+  "status": "passed",
+  "started_at": "2026-03-26T14:00:00Z",
+  "completed_at": "2026-03-26T14:02:15Z",
+  "duration_seconds": 135.0,
+  "base_url": "https://staging.example.org",
+  "case_path": "manual_testing/cases/delivery/delivery_smoke.yml",
+  "suite_id": "smoke",
+  "steps": [
+    {
+      "step_id": "step_open_delivery",
+      "instruction": "Sign in to the delivery environment and open the target section home.",
+      "status": "passed"
+    },
+    {
+      "step_id": "step_open_content",
+      "instruction": "Launch a learner-visible content page and wait for the page body to render.",
+      "status": "passed",
+      "notes": "Page content rendered without retries."
+    }
+  ],
+  "assertions": [
+    {
+      "assertion_id": "expect_section_visible",
+      "description": "The section home loads without an access or runtime error.",
+      "status": "passed"
+    },
+    {
+      "assertion_id": "expect_page_visible",
+      "description": "A learner-visible content page renders navigation and content.",
+      "status": "passed",
+      "observed": "Navigation chrome and content body were visible."
+    }
+  ],
+  "agent_notes": [
+    "Smoke flow completed on the first attempt."
+  ],
+  "confidence": 0.92,
+  "artifacts": [
+    {
+      "name": "final-page",
+      "path": "manual_testing/results/run-001/artifacts/final-page.png"
+    }
+  ],
+  "upload": {
+    "status": "pending"
+  }
+}

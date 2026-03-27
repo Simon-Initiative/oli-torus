@@ -1,0 +1,30 @@
+{
+  "status": "blocked",
+  "started_at": "2026-03-26T15:00:00Z",
+  "completed_at": "2026-03-26T15:01:15Z",
+  "duration_seconds": 75.0,
+  "steps": [
+    {
+      "step_id": "step_open_delivery",
+      "instruction": "Open the delivery environment.",
+      "status": "passed"
+    },
+    {
+      "step_id": "step_open_content",
+      "instruction": "Open the target learner page.",
+      "status": "skipped",
+      "notes": "Environment fixture was missing."
+    }
+  ],
+  "assertions": [
+    {
+      "assertion_id": "expect_page_visible",
+      "description": "The learner page renders.",
+      "status": "unverified"
+    }
+  ],
+  "agent_notes": [
+    "Blocked because required test data was not available."
+  ],
+  "confidence": 0.31
+}

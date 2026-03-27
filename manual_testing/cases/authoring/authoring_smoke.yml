@@ -1,0 +1,22 @@
+id: authoring_smoke
+title: Authoring smoke flow opens an editable page
+description: Minimal authoring-focused smoke case for the automated testing experiment.
+domain: authoring
+tags:
+  - smoke
+  - authoring
+preconditions:
+  - A staging or dev authoring environment is reachable.
+  - The runtime has a credentials source reference for authoring access.
+steps:
+  - id: step_open_authoring
+    instruction: Sign in to the authoring environment and open the target project overview.
+  - id: step_open_page
+    instruction: Navigate to an editable page and wait for the page editor to finish loading.
+expected:
+  - id: expect_project_visible
+    description: The target project overview loads without an access or runtime error.
+  - id: expect_editor_visible
+    description: The page editor renders an editable authoring surface.
+notes:
+  - This case is intended to stay stable and shallow for early smoke coverage.

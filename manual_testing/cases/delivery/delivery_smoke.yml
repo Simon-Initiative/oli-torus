@@ -1,0 +1,22 @@
+id: delivery_smoke
+title: Delivery smoke flow opens the learner view
+description: Minimal delivery-focused smoke case for the automated testing experiment.
+domain: delivery
+tags:
+  - smoke
+  - delivery
+preconditions:
+  - A staging or dev delivery environment is reachable.
+  - The runtime has a credentials source reference for learner or instructor delivery access.
+steps:
+  - id: step_open_delivery
+    instruction: Sign in to the delivery environment and open the target section home.
+  - id: step_open_content
+    instruction: Launch a learner-visible content page and wait for the page body to render.
+expected:
+  - id: expect_section_visible
+    description: The section home loads without an access or runtime error.
+  - id: expect_page_visible
+    description: A learner-visible content page renders navigation and content.
+notes:
+  - This case avoids deep grading or submission flows in Phase 1.

@@ -1,0 +1,25 @@
+{
+  "status": "error",
+  "started_at": "2026-03-26T16:00:00Z",
+  "completed_at": "2026-03-26T16:00:05Z",
+  "duration_seconds": 5.0,
+  "steps": [
+    {
+      "step_id": "step_open_authoring",
+      "instruction": "Open the authoring environment.",
+      "status": "failed",
+      "notes": "Browser driver crashed before the page loaded."
+    }
+  ],
+  "assertions": [
+    {
+      "assertion_id": "expect_project_visible",
+      "description": "The project overview loads.",
+      "status": "unverified"
+    }
+  ],
+  "agent_notes": [
+    "The runtime crashed before assertions could complete."
+  ],
+  "confidence": 0.0
+}

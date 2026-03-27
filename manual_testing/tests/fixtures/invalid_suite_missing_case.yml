@@ -1,0 +1,5 @@
+id: invalid_smoke
+title: Invalid suite
+tests:
+  - ../cases/authoring/missing_case.yml
+  - ../cases/authoring/missing_case.yml

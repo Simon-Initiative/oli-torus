@@ -1,0 +1,9 @@
+id: smoke
+title: Automated testing experiment smoke suite
+tests:
+  - ../cases/authoring/authoring_smoke.yml
+  - ../cases/delivery/delivery_smoke.yml
+tags:
+  - smoke
+defaults:
+  base_url_label: staging

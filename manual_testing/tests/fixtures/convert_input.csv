@@ -1,0 +1,4 @@
+test_id,title,description,domain,tags,preconditions,step_id,step_instruction,expected_id,expected_description,notes
+authoring_csv,Authoring CSV Case,Converted from spreadsheet,authoring,smoke|authoring,Project exists||User can sign in,step_open,Open the project overview,expect_open,Project overview loads,Keep wording as-is
+authoring_csv,Changed Title,Converted from spreadsheet,authoring,smoke|authoring,Project exists||User can sign in,step_edit,Open an editable page,expect_edit,Editable page loads,Keep wording as-is
+delivery_csv,Delivery CSV Case,Converted delivery case,delivery,smoke|delivery,Section exists,step_home,Open the section home,expect_home,Section home loads,Watch for slow loads

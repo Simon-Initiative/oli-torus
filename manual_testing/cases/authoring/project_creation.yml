@@ -1,0 +1,28 @@
+id: project_creation
+title: Authors can create a new project and create and publish a simple curriculum.
+description: Minimal authoring-focused smoke case for the automated testing experiment.
+domain: authoring
+tags:
+  - smoke
+  - authoring
+preconditions:
+  - A staging or dev authoring environment is reachable.
+  - The runtime has a credentials source reference for authoring access.
+steps:
+  - id: step_create project
+    instruction: Sign in to the authoring environment and create a new project named "Test Project"
+  - id: step_create_curriculum
+    instruction: From the Curriculum view, create a basic practice page and change its title to "Test Page"
+  - id: step_edit_page
+    instruction: From the page editor, add text to that page with the content "This is a test page."
+  - id: step_publish_project
+    instruction: From the Publish view, publish the project and confirm that the publish process completes without error.
+expected:
+  - id: expect_project_creates
+    description: The new project creates successfully and is visible in the project list for this user.
+  - id: expect_page_creates
+    description: The page editor renders an editable authoring surface.
+  - id: expect_publish_succeeds
+    description: The publish process completes without error.
+notes:
+  - This case is intended to stay stable and shallow for early smoke coverage.

@@ -1,0 +1,99 @@
+work_item: experiment
+requirements:
+- title: The system shall define canonical repository-managed schemas for manual test
+    cases, test suites, and test run reports covering the fields required for V1 agent-driven
+    execution.
+  status: proposed
+  id: FR-001
+- title: The system shall provide Python CLI tooling to validate and lint test case,
+    test suite, and test run documents against the V1 schemas before execution or
+    publication.
+  status: proposed
+  id: FR-002
+- title: The system shall support converting spreadsheet or CSV-based manual test
+    scripts into candidate YAML test case definitions while preserving original step
+    and expected-result text.
+  status: proposed
+  id: FR-003
+- title: The system shall execute a single test case or a suite sequentially from
+    repository-defined inputs against a supplied Torus target environment and produce
+    a structured run report for each executed case.
+  status: proposed
+  id: FR-004
+- title: The system shall record per-step and per-assertion outcomes together with
+    run metadata, agent notes, timing, and terminal status in a machine-readable run
+    report.
+  status: proposed
+  id: FR-005
+- title: The system shall persist completed run reports, and any supported artifacts,
+    to S3 using deterministic object naming and metadata sufficient for later inspection.
+  status: proposed
+  id: FR-006
+- title: The system shall distinguish product failures, blocked runs, validation failures,
+    and execution errors so reviewers can triage agent-run outcomes without replaying
+    the session.
+  status: proposed
+  id: FR-007
+- title: The system shall emit structured operational signals for validation, execution,
+    and upload lifecycle events without storing secrets in repository artifacts, logs,
+    or telemetry payloads.
+  status: proposed
+  id: FR-008
+acceptance_criteria:
+- title: Given a new or edited test case, suite, or run-report document, when the
+    validation CLI is executed, then schema violations are reported with actionable
+    errors and valid documents pass without manual interpretation.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-001
+- title: Given a spreadsheet or CSV export of an existing manual test script, when
+    the conversion CLI is executed, then the output contains a candidate YAML test
+    case with preserved step and expected-result text and any unresolved parsing ambiguity
+    is surfaced for review.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+  id: AC-002
+- title: Given a valid single test case definition and a target Torus base URL, when
+    the execution flow is started, then the agent runs the case steps in order and
+    produces a valid run-report JSON document for that case.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+  id: AC-003
+- title: Given a valid test suite containing multiple cases, when suite execution
+    is started, then the cases execute sequentially and each case receives its own
+    terminal run status and stored report.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+  id: AC-004
+- title: Given an executed test case, when reviewers inspect the stored run report,
+    then they can see run metadata, per-step outcomes, per-assertion outcomes, timing,
+    and agent notes without needing the original session transcript.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-005
+- title: Given a completed run with S3 storage configured, when upload finishes, then
+    the run report is written to the expected S3 location and the stored object can
+    be located by deterministic run metadata.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+  id: AC-006
+- title: Given validation fails before execution or the agent encounters a blocked
+    or error condition during execution, when the run ends, then the reported terminal
+    status and notes distinguish the failure mode clearly enough for follow-up triage.
+  status: proposed
+  verification_method: hybrid
+  proofs: []
+  id: AC-007
+- title: Given execution and upload telemetry are inspected, when runs start, complete,
+    fail, or upload results, then structured lifecycle events are available and do
+    not include credentials, session tokens, or other secrets in payloads.
+  status: proposed
+  verification_method: automated
+  proofs: []
+  id: AC-008
