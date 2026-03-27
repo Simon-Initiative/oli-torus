@@ -24,6 +24,34 @@ defmodule Oli.UtilsTest do
     end
   end
 
+  describe "normalize_strings" do
+    test "trims blanks and optionally removes duplicates" do
+      assert Utils.normalize_strings([
+               nil,
+               "  first@example.edu  ",
+               "",
+               " ",
+               "second@example.edu"
+             ]) ==
+               ["first@example.edu", "second@example.edu"]
+
+      assert Utils.normalize_strings(
+               [" first@example.edu ", "first@example.edu", "second@example.edu"],
+               unique: true
+             ) == ["first@example.edu", "second@example.edu"]
+    end
+  end
+
+  describe "normalize_and_join_strings" do
+    test "joins normalized strings with the given separator" do
+      assert Utils.normalize_and_join_strings(
+               [nil, " first@example.edu ", "", "second@example.edu", "first@example.edu"],
+               ", ",
+               unique: true
+             ) == "first@example.edu, second@example.edu"
+    end
+  end
+
   describe "ensure_absolute_url" do
     test "returns an absolute url" do
       assert Utils.ensure_absolute_url("test") == "https://localhost/test"

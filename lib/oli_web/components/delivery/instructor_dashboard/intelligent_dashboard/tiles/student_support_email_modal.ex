@@ -129,7 +129,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               phx-target={@myself}
               phx-keyup="update_subject"
               phx-blur="update_subject"
-              phx-debounce="200"
+              phx-debounce="300"
               class="h-[40px] w-full rounded-[6px] border border-Border-border-default bg-Surface-surface-primary px-4 text-base leading-6 text-Text-text-high focus:outline-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
             />
           </div>
@@ -146,7 +146,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               phx-target={@myself}
               phx-keyup="update_body"
               phx-blur="update_body"
-              phx-debounce="200"
+              phx-debounce="300"
               class="h-[255px] w-full resize-none rounded-[6px] border border-Border-border-default bg-Surface-surface-primary px-4 py-3 text-base leading-6 text-Text-text-high focus:outline-none focus:ring-2 focus:ring-Fill-Buttons-fill-primary"
             ><%= @body %></textarea>
           </div>
@@ -198,6 +198,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
        subject: "",
        body: "",
        recipient_students: [],
+       valid_recipient_count: 0,
        send_disabled: true
      )}
   end
@@ -216,7 +217,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
       {:ok,
        socket
-       |> assign(:recipient_students, recipient_students)
+       |> assign_recipient_students(recipient_students)
        |> assign(:subject, temporary_default_subject(Map.get(assigns, :selected_bucket_id)))
        |> assign(:body, initial_body())
        |> assign_send_state()}
@@ -230,7 +231,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       {parsed_student_id, ""} ->
         {:noreply,
          socket
-         |> update(:recipient_students, fn recipient_students ->
+         |> update_recipient_students(fn recipient_students ->
            Enum.reject(recipient_students, &(&1.id == parsed_student_id))
          end)
          |> assign_send_state()}
@@ -254,20 +255,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     else
       recipient_emails = Enum.map(socket.assigns.recipient_students, & &1.email)
 
-      case EmailSender.deliver_text_emails(
-             recipient_emails,
-             String.trim(socket.assigns.subject),
-             String.trim(socket.assigns.body),
-             socket.assigns.instructor_email,
-             socket.assigns[:instructor_name] || "Instructor"
-           ) do
-        {:ok, _count} ->
-          send(self(), {:flash_message, {:info, "Email sent"}})
-          send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
+      {:ok, _count} =
+        EmailSender.deliver_text_emails(
+          recipient_emails,
+          String.trim(socket.assigns.subject),
+          String.trim(socket.assigns.body),
+          socket.assigns.instructor_email,
+          socket.assigns[:instructor_name] || "Instructor"
+        )
 
-        {:error, _reason} ->
-          send(self(), {:flash_message, {:error, "Email could not be sent"}})
-      end
+      send(self(), {:flash_message, {:info, "Email sent"}})
+      send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
 
       {:noreply, socket}
     end
@@ -298,13 +296,26 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   end
 
   defp send_disabled?(assigns) do
-    valid_recipient_count(assigns.recipient_students) == 0 or
+    assigns.valid_recipient_count == 0 or
       String.trim(assigns.subject) == "" or
       String.trim(assigns.body) == ""
   end
 
   defp assign_send_state(socket) do
     assign(socket, :send_disabled, send_disabled?(socket.assigns))
+  end
+
+  defp assign_recipient_students(socket, recipient_students) do
+    socket
+    |> assign(:recipient_students, recipient_students)
+    # Cache the normalized recipient count so subject/body keyup does not
+    # recompute recipient validation on every send-state refresh.
+    |> assign(:valid_recipient_count, valid_recipient_count(recipient_students))
+  end
+
+  defp update_recipient_students(socket, updater) do
+    recipient_students = updater.(socket.assigns.recipient_students)
+    assign_recipient_students(socket, recipient_students)
   end
 
   defp excluded_recipient_subject(1), do: "1 selected student"

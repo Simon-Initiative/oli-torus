@@ -1,4 +1,6 @@
 $nav-height: 65px;
+$workspace-title-editor-height: 68px;
+$authoring-shell-offset: calc(#{$nav-height} + #{$workspace-title-editor-height});
 $panel-side-width: 270px;
 $panel-bg-color-light: #f5f6f7;
 $panel-bg-color-dark: black;
@@ -39,6 +41,7 @@ $font-family-sans-serif: var(--font-sans);
   }
 }
 .advanced-authoring {
+  margin-top: $workspace-title-editor-height;
   .activity-no-part-content {
     position: absolute;
     border: 1px solid #ccc;
@@ -85,7 +88,7 @@ $font-family-sans-serif: var(--font-sans);
     // }
 
     &.left-panel {
-      top: $nav-height;
+      top: $authoring-shell-offset;
       bottom: 0;
       left: -$panel-side-width;
       width: $panel-side-width;
@@ -98,7 +101,7 @@ $font-family-sans-serif: var(--font-sans);
       }
     }
     &.right-panel {
-      top: $nav-height;
+      top: $authoring-shell-offset;
       bottom: 0;
       right: -$panel-side-width;
       width: $panel-side-width;
@@ -141,7 +144,7 @@ $font-family-sans-serif: var(--font-sans);
       transition-property: top, left, right, visibility;
 
       &.open {
-        top: 65px;
+        top: $authoring-shell-offset;
         visibility: visible;
       }
     }
@@ -168,7 +171,7 @@ $font-family-sans-serif: var(--font-sans);
   .aa-panel-side-toggle {
     position: fixed;
     z-index: 50;
-    top: 50vh;
+    top: calc(50vh + (#{$workspace-title-editor-height} / 2));
     transition-timing-function: ease-in-out;
     transition-duration: 0.3s;
     border-radius: 100%;
@@ -402,6 +405,10 @@ $font-family-sans-serif: var(--font-sans);
         }
       }
     }
+  }
+
+  .aa-stage {
+    margin-top: $workspace-title-editor-height;
   }
   .aa-stage {
     position: fixed;
@@ -683,7 +690,11 @@ $font-family-sans-serif: var(--font-sans);
         color: inherit;
 
         & > .aa-sequence-details-wrapper,
-        & > .aa-rules-list-details-wrapper {
+        & > .aa-sequence-details-wrapper:hover,
+        & > .aa-sequence-details-wrapper:focus,
+        & > .aa-rules-list-details-wrapper,
+        & > .aa-rules-list-details-wrapper:hover,
+        & > .aa-rules-list-details-wrapper:focus {
           color: #fff;
           background-color: var(--color-primary);
 
@@ -798,6 +809,10 @@ $font-family-sans-serif: var(--font-sans);
     border: none;
     color: $panel-font-color-light;
   }
+}
+
+.flowchart-editor {
+  margin-top: $workspace-title-editor-height;
 }
 
 #aa-variable-picker {
@@ -1096,6 +1111,17 @@ $font-family-sans-serif: var(--font-sans);
 .dark .aa-sequence-item,
 .dark .aa-rules-list-item,
 .dark .aa-adaptivity-editor {
+  color: var(--color-body-color-dark);
+
+  .aa-sequence-details-wrapper,
+  .aa-rules-list-details-wrapper,
+  .details,
+  .title,
+  .aa-sequence-item-toggle,
+  .aa-context-menu-trigger {
+    color: inherit;
+  }
+
   .dropdown-item {
     &:hover {
       border: 1px solid white;

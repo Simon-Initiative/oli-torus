@@ -5,20 +5,17 @@ defmodule OliWeb.Components.Delivery.Students.EmailButton do
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
+  def update(assigns, socket) do
+    selected_emails = Map.get(assigns, :selected_emails, "")
+
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(:selected_emails, selected_emails)
+     |> assign(:variant, normalize_variant(Map.get(assigns, :variant, :full)))}
+  end
+
   def render(assigns) do
-    selected_emails =
-      assigns.selected_students
-      |> Oli.Accounts.get_user_emails_by_ids()
-      |> Enum.reject(&is_nil/1)
-      |> Enum.join(", ")
-
-    variant = normalize_variant(Map.get(assigns, :variant, :full))
-
-    assigns =
-      assigns
-      |> assign(:selected_emails, selected_emails)
-      |> assign(:variant, variant)
-
     ~H"""
     <div id="email_button_wrapper" class={if(@variant == :full, do: "relative", else: nil)}>
       <%= if @variant == :minimal do %>

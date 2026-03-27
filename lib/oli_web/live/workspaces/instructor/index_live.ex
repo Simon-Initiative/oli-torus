@@ -101,45 +101,10 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         <div class="flex flex-col gap-4">
           <h3 class="w-full text-xl dark:text-white">
             <%= if !is_nil(@current_user) do %>
-              You are currently logged in with a delivery account:
-              <div class="bg-gray-300 dark:bg-gray-700 rounded-lg p-4 text-sm">
-                <table>
-                  <tr>
-                    <th class="text-left">Name</th>
-                    <td>{@current_user.name}</td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Given Name</th>
-                    <td>{@current_user.given_name}</td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Family Name</th>
-                    <td>{@current_user.family_name}</td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Email</th>
-                    <td>{@current_user.email}</td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Guest?</th>
-                    <td>{@current_user.guest}</td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Hidden?</th>
-                    <td>{@current_user.hidden}</td>
-                  </tr>
-                  <tr>
-                    <th class="text-left">Direct Delivery?</th>
-                    <td>{@current_user.independent_learner}</td>
-                  </tr>
-                </table>
-              </div>
-
-              <p>
-                <%= link to: ~p"/users/log_out", method: :delete do %>
-                  Sign out of this delivery account.
-                <% end %>
-              </p>
+              <.delivery_account_panel
+                current_user={@current_user}
+                title="You are currently logged in with a delivery account:"
+              />
             <% else %>
               You are not logged in with any delivery account.
             <% end %>
@@ -229,6 +194,12 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
           <h3 class="dark:text-violet-100 text-xl font-bold font-['Open Sans'] leading-normal whitespace-nowrap">
             My courses
           </h3>
+          <%!-- Hidden instructor sessions can come from admin section access or template preview fallback. --%>
+          <.delivery_account_panel
+            :if={@current_user.hidden}
+            current_user={@current_user}
+            title="You are currently logged in with a hidden delivery account:"
+          />
           <div
             :if={!is_independent_instructor?(@current_user)}
             role="create section instructions"
@@ -370,6 +341,53 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
      push_patch(socket,
        to: ~p"/workspaces/instructor?#{%{socket.assigns.params | text_search: text_search}}"
      )}
+  end
+
+  attr :title, :string, required: true
+  attr :current_user, :map, required: true
+
+  defp delivery_account_panel(assigns) do
+    ~H"""
+    <div class="flex flex-col gap-3 rounded-lg bg-gray-300 p-4 text-sm dark:bg-gray-700">
+      <p class="font-semibold">{@title}</p>
+      <table>
+        <tr>
+          <th class="pr-3 text-left">Name</th>
+          <td>{@current_user.name}</td>
+        </tr>
+        <tr>
+          <th class="pr-3 text-left">Given Name</th>
+          <td>{@current_user.given_name}</td>
+        </tr>
+        <tr>
+          <th class="pr-3 text-left">Family Name</th>
+          <td>{@current_user.family_name}</td>
+        </tr>
+        <tr>
+          <th class="pr-3 text-left">Email</th>
+          <td>{@current_user.email}</td>
+        </tr>
+        <tr>
+          <th class="pr-3 text-left">Guest?</th>
+          <td>{@current_user.guest}</td>
+        </tr>
+        <tr>
+          <th class="pr-3 text-left">Hidden?</th>
+          <td>{@current_user.hidden}</td>
+        </tr>
+        <tr>
+          <th class="pr-3 text-left">Direct Delivery?</th>
+          <td>{@current_user.independent_learner}</td>
+        </tr>
+      </table>
+
+      <p>
+        <%= link to: ~p"/users/log_out", method: :delete do %>
+          Sign out of this delivery account.
+        <% end %>
+      </p>
+    </div>
+    """
   end
 
   defp add_instructors([]), do: []

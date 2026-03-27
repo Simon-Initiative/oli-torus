@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.SectionsTest do
   use OliWeb.ConnCase
 
+  import Ecto.Query
   import Oli.Utils.Seeder.Utils
   import Oli.Factory
 
@@ -2729,6 +2730,71 @@ defmodule Oli.Delivery.SectionsTest do
 
       assert hd(user_2_enrollment.context_roles).uri ==
                "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+    end
+  end
+
+  describe "ensure_student_enrollment/2" do
+    test "creates a learner enrollment when one does not exist" do
+      user = insert(:user)
+      section = insert(:section)
+
+      assert {:ok, %{outcome: :created, enrollment: enrollment}} =
+               Sections.ensure_student_enrollment(user.id, section.id)
+
+      assert enrollment.user_id == user.id
+      assert enrollment.section_id == section.id
+      assert enrollment.status == :enrolled
+
+      assert Enum.any?(
+               enrollment.context_roles,
+               &(&1.id == ContextRoles.get_role(:context_learner).id)
+             )
+    end
+
+    test "reuses the existing learner enrollment without creating duplicates" do
+      user = insert(:user)
+      section = insert(:section)
+
+      assert {:ok, %{outcome: :created}} = Sections.ensure_student_enrollment(user.id, section.id)
+
+      assert {:ok, %{outcome: :reused, enrollment: enrollment}} =
+               Sections.ensure_student_enrollment(user.id, section.id)
+
+      count =
+        Oli.Repo.aggregate(
+          from(e in Oli.Delivery.Sections.Enrollment,
+            where: e.user_id == ^user.id and e.section_id == ^section.id
+          ),
+          :count,
+          :id
+        )
+
+      assert count == 1
+      assert enrollment.status == :enrolled
+      assert Enum.count(enrollment.context_roles) == 1
+    end
+
+    test "reactivates a suspended enrollment and adds the learner role when needed" do
+      user = insert(:user)
+      section = insert(:section)
+
+      {:ok, enrollment} =
+        Sections.enroll(
+          user.id,
+          section.id,
+          [ContextRoles.get_role(:context_instructor)],
+          :suspended
+        )
+
+      assert {:ok, %{outcome: :reused, enrollment: ensured}} =
+               Sections.ensure_student_enrollment(user.id, section.id)
+
+      assert ensured.id == enrollment.id
+      assert ensured.status == :enrolled
+
+      role_ids = Enum.map(ensured.context_roles, & &1.id)
+      assert ContextRoles.get_role(:context_instructor).id in role_ids
+      assert ContextRoles.get_role(:context_learner).id in role_ids
     end
   end
 

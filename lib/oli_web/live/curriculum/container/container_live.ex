@@ -41,6 +41,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
   alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
+  alias Phoenix.LiveView.JS
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
@@ -115,6 +116,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
                project.customizations
              ),
            dragging: nil,
+           creating_page: false,
            page_title: "Curriculum | " <> project.title,
            options_modal_assigns: nil
          )
@@ -539,28 +541,31 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply, assign(socket, dragging: nil)}
   end
 
-  def handle_event("add", %{"type" => type, "scored" => scored}, socket) do
-    case ContainerEditor.add_new(
-           socket.assigns.container,
-           type,
-           scored,
-           socket.assigns.author,
-           socket.assigns.project,
-           socket.assigns.numberings
-         ) do
-      {:ok, _} ->
-        {:noreply,
-         assign(socket,
-           numberings:
-             Numbering.number_full_tree(
-               Oli.Publishing.AuthoringResolver,
-               socket.assigns.project.slug,
-               socket.assigns.project.customizations
-             )
-         )}
+  def handle_event("add", %{"type" => type, "scored" => scored} = params, socket) do
+    if socket.assigns.creating_page do
+      {:noreply, socket}
+    else
+      adaptive_mode = Map.get(params, "adaptive_mode")
+      socket = assign(socket, :creating_page, true)
 
-      {:error, %Ecto.Changeset{} = _changeset} ->
-        {:noreply, put_flash(socket, :error, "Could not create new item")}
+      case ContainerEditor.add_new(
+             socket.assigns.container,
+             type,
+             scored,
+             socket.assigns.author,
+             socket.assigns.project,
+             socket.assigns.numberings,
+             %{"adaptive_mode" => adaptive_mode}
+           ) do
+        {:ok, %Revision{slug: slug}} ->
+          handle_created_revision(socket, type, slug, adaptive_mode)
+
+        {:error, %Ecto.Changeset{} = _changeset} ->
+          {:noreply,
+           socket
+           |> assign(:creating_page, false)
+           |> put_flash(:error, "Could not create new item")}
+      end
     end
   end
 
@@ -576,6 +581,21 @@ defmodule OliWeb.Curriculum.ContainerLive do
            %{view: view}
          )
      )}
+  end
+
+  defp add_page_click(type, scored, adaptive_mode \\ nil) do
+    values = %{"type" => type, "scored" => scored}
+    values = if adaptive_mode, do: Map.put(values, "adaptive_mode", adaptive_mode), else: values
+
+    JS.set_attribute(
+      {"disabled", "disabled"},
+      to: "#curriculum-create-actions [data-create-page-action='true']"
+    )
+    |> JS.add_class(
+      "pointer-events-none opacity-50",
+      to: "#curriculum-create-actions [data-create-page-action='true']"
+    )
+    |> JS.push("add", value: values)
   end
 
   defp proceed_with_deletion_warning(socket, container, project, author, item) do
@@ -613,6 +633,26 @@ defmodule OliWeb.Curriculum.ContainerLive do
     end
 
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  defp handle_created_revision(socket, "Container", _slug, _adaptive_mode) do
+    {:noreply,
+     assign(socket,
+       creating_page: false,
+       numberings:
+         Numbering.number_full_tree(
+           Oli.Publishing.AuthoringResolver,
+           socket.assigns.project.slug,
+           socket.assigns.project.customizations
+         )
+     )}
+  end
+
+  defp handle_created_revision(socket, _type, slug, _adaptive_mode) do
+    {:noreply,
+     redirect(socket,
+       to: Routes.resource_path(socket, :edit, socket.assigns.project.slug, slug)
+     )}
   end
 
   defp notify_not_empty(socket, container, project, author, item) do

@@ -113,6 +113,49 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       assert Enum.map(on_track_bucket.students, & &1.display_name) == ["Leslie Lamport"]
     end
 
+    test "struggling requires low or high progress together with low proficiency" do
+      now = ~U[2026-03-13 12:00:00Z]
+
+      progress_rows = [
+        %{student_id: 40, progress_pct: 50.0, proficiency_pct: 30.0},
+        %{student_id: 41, progress_pct: 85.0, proficiency_pct: 30.0},
+        %{student_id: 42, progress_pct: 20.0, proficiency_pct: 30.0}
+      ]
+
+      student_info_rows = [
+        %{
+          student_id: 40,
+          email: "mid_progress@example.edu",
+          given_name: "Mid",
+          family_name: "Progress",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        },
+        %{
+          student_id: 41,
+          email: "high_progress@example.edu",
+          given_name: "High",
+          family_name: "Progress",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        },
+        %{
+          student_id: 42,
+          email: "low_progress@example.edu",
+          given_name: "Low",
+          family_name: "Progress",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        }
+      ]
+
+      projection = Projector.build(progress_rows, student_info_rows, now: now)
+
+      struggling_bucket = Enum.find(projection.buckets, &(&1.id == "struggling"))
+      struggling_names = Enum.map(struggling_bucket.students, & &1.display_name)
+
+      refute "Mid Progress" in struggling_names
+      assert "High Progress" in struggling_names
+      assert "Low Progress" in struggling_names
+    end
+
     test "normalizes 0..1 proficiency ratios before bucket classification" do
       now = ~U[2026-03-13 12:00:00Z]
 

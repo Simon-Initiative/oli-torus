@@ -12,6 +12,7 @@ import { contexts } from '../../../types/applicationContext';
 import { clone, parseBool, parseBoolean, parseNumString } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { JanusCAPIRequestTypes, getJanusCAPIRequestTypeString } from './JanusCAPIRequestTypes';
+import { getExternalIframeStyles, shouldAllowIframeScrolling } from './iframeBehavior';
 import { CapiIframeModel } from './schema';
 import { resolveAdaptiveIframeSource, sanitizeAdaptiveIframeFallbackHref } from './sourceResolver';
 
@@ -46,7 +47,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [lessonId, setLessonId] = useState('');
 
   // these rely on being set every render and the "model" useState value being set
-  const { allowScrolling, configData, description } = model;
+  const { configData, description } = model;
   const iframeFallback = model?.dynamicLinkFallback;
   const showIframeFallback = iframeFallback?.type === 'unresolved_internal_source';
   const fallbackMessage =
@@ -395,6 +396,14 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // writing 'visible' by default will take precedence (inline styles) over
     // any (legacy) override css attempt at hiding it
     visibility: frameVisible ? undefined : 'hidden',
+  };
+  const externalActivityContainerStyles: CSSProperties = {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    maxWidth: '100%',
+    maxHeight: '100%',
+    overflow: 'hidden',
   };
   const fallbackOverlayStyles: CSSProperties = {
     position: 'absolute',
@@ -1167,7 +1176,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce, initStateBindToFacts, screenContext]);
 
-  const scrolling = allowScrolling ? 'yes' : 'no';
+  const iframeScrollingEnabled = shouldAllowIframeScrolling(model, frameSrc);
+  const scrolling = iframeScrollingEnabled ? 'yes' : 'no';
 
   const formattedDescription = useMemo(() => {
     return description?.length
@@ -1178,11 +1188,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const resolvedFrameSrc = resolveAdaptiveIframeSource(frameSrc);
 
   return initStateReceived ? (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div style={externalActivityContainerStyles}>
       <iframe
         data-janus-type={tagName}
         ref={frameRef}
-        style={externalActivityStyles}
+        style={getExternalIframeStyles(externalActivityStyles, iframeScrollingEnabled)}
         title={formattedDescription || description}
         src={resolvedFrameSrc}
         scrolling={scrolling}

@@ -304,6 +304,8 @@ drop or disable the old user after validation.
   private network (remember to provide VPC subnets and security groups).
 - If throughput grows, deploy multiple Lambda functions partitioned by S3 prefix
   or increase memory to gain more CPU for Parquet serialization.
+- Use `docs/runbooks/clickhouse/operations.md` for reset, backfill, restart, and maintenance flow.
+- Use `docs/runbooks/clickhouse/backup-restore.md` for backup and restore validation procedures.
 
 ## Local development tips
 

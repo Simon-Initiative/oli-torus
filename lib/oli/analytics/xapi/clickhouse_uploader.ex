@@ -16,7 +16,14 @@ defmodule Oli.Analytics.XAPI.ClickHouseUploader do
   Parses the JSONL bundle and inserts the video events into the appropriate table.
   """
   def upload(%StatementBundle{body: body, category: category} = bundle) do
-    config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
+    raw_config = Application.get_env(:oli, :clickhouse) |> Enum.into(%{})
+
+    config =
+      raw_config
+      |> Map.take([:host, :database])
+      |> Map.put(:port, raw_config.http_port)
+      |> Map.put(:user, raw_config.admin_user)
+      |> Map.put(:password, raw_config.admin_password)
 
     dbg(bundle)
 

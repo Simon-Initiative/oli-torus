@@ -1,0 +1,9 @@
+[Unit]
+Description=Run ClickHouse Backup Daily at Midnight UTC
+
+[Timer]
+OnCalendar=*-*-* 00:00:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

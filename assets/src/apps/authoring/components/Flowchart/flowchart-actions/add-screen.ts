@@ -9,6 +9,7 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectAllGroups } from '../../../../delivery/store/features/groups/slice';
+import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
 import { saveActivity } from '../../../store/activities/actions/saveActivity';
 import {
   IActivityTemplate,
@@ -20,6 +21,7 @@ import {
   selectActivityTypes,
   selectAppMode,
   selectProjectSlug,
+  selectReadOnly,
 } from '../../../store/app/slice';
 import { reportAPIError } from '../../../store/flowchart/flowchart-slice';
 import { FlowchartSlice } from '../../../store/flowchart/name';
@@ -73,6 +75,7 @@ export const addFlowchartScreen = createAsyncThunk(
       const currentLesson = selectPageState(rootState);
       const sequence = selectSequence(rootState);
       const otherActivities = selectAllActivities(rootState);
+      const isReadOnlyMode = selectReadOnly(rootState);
       const otherActivityNames = otherActivities.map((a) => a.title || '');
 
       const group = selectAllGroups(rootState)[0];
@@ -116,6 +119,11 @@ export const addFlowchartScreen = createAsyncThunk(
         } else {
           flowchartData.paths.push(createEndOfActivityPath());
         }
+      }
+
+      if (isReadOnlyMode) {
+        notifyReadOnlyEditBlocked();
+        return;
       }
 
       const createResults = await create(

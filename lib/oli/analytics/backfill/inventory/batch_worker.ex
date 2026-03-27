@@ -143,7 +143,8 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
 
     case ClickhouseAnalytics.execute_query(
            query,
-           "inventory manifest batch #{batch.id} page offset #{sanitized_offset || 0}"
+           "inventory manifest batch #{batch.id} page offset #{sanitized_offset || 0}",
+           credential: :admin
          ) do
       {:ok, %{parsed_body: %{"data" => data}}} when is_list(data) ->
         {:ok, Enum.map(data, &normalize_manifest_row/1)}
@@ -427,7 +428,8 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
 
     case ClickhouseAnalytics.execute_query(
            query,
-           "inventory manifest count #{batch.id}"
+           "inventory manifest count #{batch.id}",
+           credential: :admin
          ) do
       {:ok, %{parsed_body: %{"data" => [row | _]}}} when is_map(row) ->
         count =
@@ -716,7 +718,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     case ClickhouseAnalytics.execute_query(
            query,
            "inventory batch #{batch.id} chunk #{chunk_index}",
-           options
+           Keyword.merge(options, credential: :admin)
          ) do
       {:ok, response} ->
         with {:ok, status} <- fetch_query_status(query_id) do
@@ -896,7 +898,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   end
 
   defp poll_query_status(query_id, attempt) do
-    case ClickhouseAnalytics.query_status(query_id) do
+    case ClickhouseAnalytics.query_status(query_id, credential: :admin) do
       {:ok, %{status: status} = info} when status in [:completed, :failed] ->
         {:ok, info}
 

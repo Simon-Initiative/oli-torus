@@ -49,6 +49,7 @@ defmodule OliWeb.ResourceController do
         projectSlug: project_slug,
         graded: context.graded,
         content: context,
+        creationModeHint: creation_mode_hint(conn.params, context),
         paths: %{
           images: Routes.static_path(conn, "/images")
         },
@@ -97,6 +98,13 @@ defmodule OliWeb.ResourceController do
       collab_space_config: context.collab_space_config
     )
   end
+
+  defp creation_mode_hint(%{"creation_mode" => "expert"}, %{
+         content: %{"advancedAuthoring" => true}
+       }),
+       do: "expert"
+
+  defp creation_mode_hint(_params, _context), do: nil
 
   defp preview_advanced(conn, author, project, revision) do
     # When we're previewing advanced content, there can be two render modes,

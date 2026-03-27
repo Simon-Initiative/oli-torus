@@ -219,4 +219,184 @@ defmodule OliWeb.ProductsControllerTest do
       assert hd(lines) =~ "Title,Section ID"
     end
   end
+
+  describe "preview_launch/2" do
+    setup do
+      author = insert(:author)
+      admin = insert(:author, %{system_role_id: SystemRole.role_id().content_admin})
+      project = insert(:project, authors: [author])
+      admin_project = insert(:project, authors: [admin])
+
+      author_product =
+        insert(:section, %{
+          type: :blueprint,
+          title: "Template Preview Author",
+          slug: "template-preview-author",
+          base_project: project,
+          status: :active
+        })
+
+      admin_product =
+        insert(:section, %{
+          type: :blueprint,
+          title: "Template Preview Admin",
+          slug: "template-preview-admin",
+          base_project: admin_project,
+          status: :active
+        })
+
+      %{
+        author: author,
+        admin: admin,
+        author_product: author_product,
+        admin_product: admin_product
+      }
+    end
+
+    test "authorized author without current_user is logged in as the section hidden instructor",
+         %{
+           conn: conn,
+           author: author,
+           author_product: product
+         } do
+      conn =
+        conn
+        |> log_in_author(author)
+        |> get(~p"/authoring/products/#{product.slug}/preview_launch")
+
+      assert redirected_to(conn) == "/sections/#{product.slug}"
+      assert get_session(conn, :template_preview_mode)
+      assert get_session(conn, :template_preview_section_slug) == product.slug
+
+      assert get_session(conn, :template_preview_return_to) ==
+               "/authoring/products/#{product.slug}"
+
+      hidden_user = Oli.Repo.get!(Oli.Accounts.User, get_session(conn, :current_user_id))
+
+      assert hidden_user.hidden
+      assert Oli.Delivery.Sections.is_instructor?(hidden_user, product.slug)
+    end
+
+    test "reuses the same hidden instructor across repeated preview launches", %{
+      conn: conn,
+      author: author,
+      author_product: product
+    } do
+      conn =
+        conn
+        |> log_in_author(author)
+        |> get(~p"/authoring/products/#{product.slug}/preview_launch")
+
+      first_hidden_user_id = get_session(conn, :current_user_id)
+
+      conn =
+        build_conn()
+        |> log_in_author(author)
+        |> get(~p"/authoring/products/#{product.slug}/preview_launch")
+
+      assert redirected_to(conn) == "/sections/#{product.slug}"
+      assert get_session(conn, :current_user_id) == first_hidden_user_id
+    end
+
+    test "authorized admin without current_user also reuses the section hidden instructor model",
+         %{
+           conn: conn,
+           admin: admin,
+           admin_product: product
+         } do
+      conn =
+        conn
+        |> log_in_author(admin)
+        |> get(~p"/authoring/products/#{product.slug}/preview_launch")
+
+      assert redirected_to(conn) == "/sections/#{product.slug}"
+
+      hidden_user = Oli.Repo.get!(Oli.Accounts.User, get_session(conn, :current_user_id))
+
+      assert hidden_user.hidden
+      assert Oli.Delivery.Sections.is_instructor?(hidden_user, product.slug)
+    end
+
+    test "authorized author with current_user sets template preview session and preserves user",
+         %{
+           conn: conn,
+           author: author,
+           author_product: product
+         } do
+      user = insert(:user)
+
+      conn =
+        conn
+        |> log_in_author(author)
+        |> log_in_user(user)
+        |> get(~p"/authoring/products/#{product.slug}/preview_launch")
+
+      assert redirected_to(conn) == "/sections/#{product.slug}"
+      assert get_session(conn, :current_user_id) == user.id
+      assert get_session(conn, :template_preview_mode)
+      assert get_session(conn, :template_preview_section_slug) == product.slug
+    end
+
+    test "unauthorized author is denied direct preview endpoint access", %{
+      conn: conn,
+      author_product: product
+    } do
+      other_author = insert(:author)
+
+      conn =
+        conn
+        |> log_in_author(other_author)
+        |> get(~p"/authoring/products/#{product.slug}/preview_launch")
+
+      assert redirected_to(conn) == "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are not authorized to access this page."
+    end
+  end
+
+  describe "preview_exit/2" do
+    test "clears template preview session without logging out a non-hidden user", %{conn: conn} do
+      author = insert(:author)
+      user = insert(:user)
+
+      conn =
+        conn
+        |> log_in_author(author)
+        |> log_in_user(user)
+        |> init_test_session(%{
+          template_preview_mode: true,
+          template_preview_section_slug: "template-preview-author",
+          template_preview_return_to: "/authoring/products/template-preview-author"
+        })
+        |> delete(~p"/authoring/template_preview/exit")
+
+      assert redirected_to(conn) == "/authoring/products/template-preview-author"
+      assert get_session(conn, :current_user_id) == user.id
+      refute get_session(conn, :template_preview_mode)
+      refute get_session(conn, :template_preview_section_slug)
+      refute get_session(conn, :template_preview_return_to)
+    end
+
+    test "logs out a hidden user while preserving author session", %{conn: conn} do
+      author = insert(:author)
+      hidden_user = insert(:user, hidden: true)
+
+      conn =
+        conn
+        |> log_in_author(author)
+        |> log_in_user(hidden_user)
+        |> init_test_session(%{
+          template_preview_mode: true,
+          template_preview_section_slug: "template-preview-author",
+          template_preview_return_to: "/authoring/products/template-preview-author"
+        })
+        |> delete(~p"/authoring/template_preview/exit")
+
+      assert redirected_to(conn) == "/authoring/products/template-preview-author"
+      assert get_session(conn, :current_author_id) == author.id
+      refute get_session(conn, :current_user_id)
+      refute get_session(conn, :template_preview_mode)
+    end
+  end
 end
