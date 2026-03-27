@@ -603,19 +603,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         Enum.uniq(selected_student_ids ++ visible_student_ids)
       end
 
+    selected_students_data =
+      selected_students_data(socket.assigns.student_lookup, next_selected_student_ids)
+
     {:noreply,
      socket
      |> assign(:selected_student_ids, next_selected_student_ids)
-     |> assign(
-       :selected_students_data,
-       selected_students_data(socket.assigns.student_lookup, next_selected_student_ids)
-     )
-     |> assign(
-       :selected_emails,
-       socket.assigns.student_lookup
-       |> selected_students_data(next_selected_student_ids)
-       |> selected_student_emails()
-     )
+     |> assign(:selected_students_data, selected_students_data)
+     |> assign(:selected_emails, selected_student_emails(selected_students_data))
      |> assign(:show_email_modal, false)}
   end
 
@@ -632,19 +627,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             [parsed_student_id | selected_student_ids]
           end
 
+        selected_students_data =
+          selected_students_data(socket.assigns.student_lookup, next_selected_student_ids)
+
         {:noreply,
          socket
          |> assign(:selected_student_ids, next_selected_student_ids)
-         |> assign(
-           :selected_students_data,
-           selected_students_data(socket.assigns.student_lookup, next_selected_student_ids)
-         )
-         |> assign(
-           :selected_emails,
-           socket.assigns.student_lookup
-           |> selected_students_data(next_selected_student_ids)
-           |> selected_student_emails()
-         )
+         |> assign(:selected_students_data, selected_students_data)
+         |> assign(:selected_emails, selected_student_emails(selected_students_data))
          |> assign(:show_email_modal, false)}
 
       _ ->
@@ -887,11 +877,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   defp selected_student_emails(selected_students_data) do
     selected_students_data
-    |> Enum.filter(&is_binary(&1.email))
-    |> Enum.map(&String.trim(&1.email))
-    |> Enum.reject(&(&1 == ""))
-    |> Enum.uniq()
-    |> Enum.join(", ")
+    |> Enum.map(& &1.email)
+    |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
   end
 
   defp student_lookup(projection) do

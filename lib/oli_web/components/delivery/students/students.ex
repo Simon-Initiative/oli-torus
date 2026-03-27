@@ -678,10 +678,8 @@ defmodule OliWeb.Components.Delivery.Students do
 
     all_students
     |> Enum.filter(&(MapSet.member?(selected_student_ids, &1.id) and is_binary(&1.email)))
-    |> Enum.map(&String.trim(&1.email))
-    |> Enum.reject(&(&1 == ""))
-    |> Enum.uniq()
-    |> Enum.join(", ")
+    |> Enum.map(& &1.email)
+    |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
   end
 
   #### Add enrollments modal related stuff ####

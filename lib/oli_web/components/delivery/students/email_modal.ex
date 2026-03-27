@@ -200,21 +200,18 @@ defmodule OliWeb.Components.Delivery.Students.EmailModal do
         |> Oli.Accounts.get_user_emails_by_ids()
         |> Enum.reject(&is_nil/1)
 
-      case EmailSender.deliver_text_emails(
-             student_emails,
-             "Note from your #{socket.assigns.section_title} Instructor #{socket.assigns.instructor_email}",
-             socket.assigns.email_message,
-             socket.assigns.instructor_email,
-             socket.assigns[:instructor_name] || "Instructor"
-           ) do
-        {:ok, _count} ->
-          # Send flash message to parent LiveView
-          send(self(), {:flash_message, {:info, "Emails sent successfully"}})
-          send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
+      {:ok, _count} =
+        EmailSender.deliver_text_emails(
+          student_emails,
+          "Note from your #{socket.assigns.section_title} Instructor #{socket.assigns.instructor_email}",
+          socket.assigns.email_message,
+          socket.assigns.instructor_email,
+          socket.assigns[:instructor_name] || "Instructor"
+        )
 
-        {:error, _reason} ->
-          send(self(), {:flash_message, {:error, "Emails could not be sent"}})
-      end
+      # Send flash message to parent LiveView
+      send(self(), {:flash_message, {:info, "Emails sent successfully"}})
+      send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
 
       {:noreply, socket}
     else

@@ -255,20 +255,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     else
       recipient_emails = Enum.map(socket.assigns.recipient_students, & &1.email)
 
-      case EmailSender.deliver_text_emails(
-             recipient_emails,
-             String.trim(socket.assigns.subject),
-             String.trim(socket.assigns.body),
-             socket.assigns.instructor_email,
-             socket.assigns[:instructor_name] || "Instructor"
-           ) do
-        {:ok, _count} ->
-          send(self(), {:flash_message, {:info, "Email sent"}})
-          send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
+      {:ok, _count} =
+        EmailSender.deliver_text_emails(
+          recipient_emails,
+          String.trim(socket.assigns.subject),
+          String.trim(socket.assigns.body),
+          socket.assigns.instructor_email,
+          socket.assigns[:instructor_name] || "Instructor"
+        )
 
-        {:error, _reason} ->
-          send(self(), {:flash_message, {:error, "Email could not be sent"}})
-      end
+      send(self(), {:flash_message, {:info, "Email sent"}})
+      send(self(), {:hide_email_modal, socket.assigns[:email_handler_id]})
 
       {:noreply, socket}
     end

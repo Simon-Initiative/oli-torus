@@ -4,14 +4,11 @@ defmodule Oli.Delivery.EmailSender do
   """
 
   alias Oli.Mailer
+  alias Oli.Utils
 
   @spec normalize_recipient_emails([String.t() | nil]) :: [String.t()]
   def normalize_recipient_emails(recipient_emails) do
-    recipient_emails
-    |> Enum.filter(&is_binary/1)
-    |> Enum.map(&String.trim/1)
-    |> Enum.reject(&(&1 == ""))
-    |> Enum.uniq()
+    Utils.normalize_strings(recipient_emails, unique: true)
   end
 
   @spec deliver_text_emails(
@@ -21,7 +18,7 @@ defmodule Oli.Delivery.EmailSender do
           String.t() | nil,
           String.t() | nil
         ) ::
-          {:ok, non_neg_integer()} | {:error, term()}
+          {:ok, non_neg_integer()}
   def deliver_text_emails(recipient_emails, subject, body, instructor_email, instructor_name) do
     recipient_emails = normalize_recipient_emails(recipient_emails)
     email_count = length(recipient_emails)
@@ -36,13 +33,8 @@ defmodule Oli.Delivery.EmailSender do
         |> Oli.Email.maybe_reply_to(reply_to_value(instructor_name, instructor_email))
       end)
 
-    case Mailer.deliver_later(emails) do
-      jobs when is_list(jobs) ->
-        {:ok, email_count}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+    _jobs = Mailer.deliver_later(emails)
+    {:ok, email_count}
   end
 
   defp reply_to_value(_name, nil), do: nil

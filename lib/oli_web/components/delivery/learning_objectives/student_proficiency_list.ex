@@ -221,9 +221,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList d
     |> Enum.filter(fn student ->
       MapSet.member?(selected_student_ids, student.id) and is_binary(Map.get(student, :email))
     end)
-    |> Enum.map(fn student -> String.trim(Map.get(student, :email)) end)
-    |> Enum.reject(&(&1 == ""))
-    |> Enum.uniq()
-    |> Enum.join(", ")
+    |> Enum.map(&Map.get(&1, :email))
+    |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
   end
 end
