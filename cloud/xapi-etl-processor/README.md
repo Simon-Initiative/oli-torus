@@ -6,6 +6,10 @@ payload into ClickHouse using the native HTTP `INSERT ... FORMAT Parquet` path.
 The design minimises moving pieces: only S3, SQS, Lambda, and ClickHouse are
 required.
 
+The current implementation uses bounded incremental sub-batching inside each
+Lambda invocation. It no longer waits to concatenate every prepared SQS message
+into a single invocation-wide insert.
+
 ## Runtime flow
 
 1. **S3 bucket** writes JSON Lines files (one JSON document per line).
@@ -13,12 +17,22 @@ required.
    an **SQS Standard queue**. The message contains the bucket and key of the
    object.
 3. **Lambda** subscribes to the SQS queue. Each invocation receives a batch of
-   SQS messages. The handler downloads every referenced object, converts the
-   rows into Arrow tables, writes a single Parquet blob in memory, and performs
-   an HTTP `INSERT` into ClickHouse.
-4. Successful messages are acknowledged via partial batch responses. Failed
-   messages remain in the queue and are retried, eventually landing in the DLQ
-   if they continue to fail.
+   SQS messages. The handler downloads referenced objects, converts them into
+   Arrow tables, and accumulates a current in-memory sub-batch.
+4. The handler flushes the current sub-batch when one of the configured
+   boundaries is reached:
+   - preferred row target
+   - hard row ceiling
+   - payload-size ceiling
+   - end of invocation
+   - remaining-time safety boundary
+5. Each flushed sub-batch is converted into Parquet and inserted into
+   ClickHouse over HTTP.
+6. Successful messages are acknowledged via partial batch responses. Failed
+   or untouched messages remain in the queue and are retried by SQS.
+7. Ordinary retryable ClickHouse insert failures are not copied into a custom
+   DLQ. Optional DLQ forwarding is reserved for malformed or otherwise
+   non-retryable message-preparation failures.
 
 ## Layout
 
@@ -31,33 +45,39 @@ cloud/xapi-etl-processor/
 
 ## Environment variables
 
-| Variable                                  | Description                                                                                      |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `CLICKHOUSE_URL`                          | Full ClickHouse HTTP endpoint (e.g. `https://host:8443`). Overrides host/port/env configuration. |
-| `CLICKHOUSE_HOST`                         | ClickHouse host when `CLICKHOUSE_URL` is not provided.                                           |
-| `CLICKHOUSE_PORT`                         | Optional port (defaults to 8443 for HTTPS, 8123 otherwise).                                      |
-| `CLICKHOUSE_SECURE`                       | `true`/`false` toggle for HTTPS (default `true`).                                                |
-| `CLICKHOUSE_PATH`                         | Optional URL suffix (e.g. `/custom/endpoint`).                                                   |
-| `CLICKHOUSE_DATABASE`                     | Target database if `CLICKHOUSE_INSERT_SQL` is not set.                                           |
-| `CLICKHOUSE_TABLE`                        | Target table if `CLICKHOUSE_INSERT_SQL` is not set.                                              |
-| `CLICKHOUSE_INSERT_SQL`                   | Full override for the `INSERT` statement. Use when targeting views or complex inserts.           |
-| `CLICKHOUSE_USER` / `CLICKHOUSE_PASSWORD` | Optional Basic Auth credentials.                                                                 |
-| `CLICKHOUSE_SETTINGS`                     | Comma-separated ClickHouse settings (e.g. `max_insert_block_size=100000,async_insert=1`).        |
-| `CLICKHOUSE_TIMEOUT_SECONDS`              | HTTP timeout in seconds (default `30`).                                                          |
-| `PARQUET_COMPRESSION`                     | Parquet compression codec (`snappy` by default).                                                 |
-| `MAX_S3_OBJECT_BYTES`                     | Optional soft limit for S3 object size.                                                          |
-| `DRY_RUN`                                 | `true` skips the ClickHouse insert but still reads/parses objects (useful for validation).       |
-| `LOG_LEVEL`                               | Override logging verbosity (`DEBUG`, `INFO`, `WARN`, etc.).                                      |
-| `S3_CONNECT_TIMEOUT_SECONDS`              | S3 client connect timeout (seconds, default `5`).                                                |
-| `S3_READ_TIMEOUT_SECONDS`                 | S3 client read timeout (seconds, default `60`).                                                  |
-| `S3_MAX_ATTEMPTS`                         | Max retry attempts for S3 operations (default `3`).                                              |
-| `ITER_LOG_INTERVAL_SECONDS`               | How often to log progress while streaming JSON lines (seconds, default `5`).                     |
-| `DIAG_S3_BUCKET`                          | Optional bucket to probe during diagnostics (list 1 object).                                     |
-| `DIAG_S3_PREFIX`                          | Optional prefix used with `DIAG_S3_BUCKET` for diagnostics.                                      |
+| Variable                                  | Description                                                                                                                                    |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CLICKHOUSE_URL`                          | Full ClickHouse HTTP endpoint (e.g. `https://host:8443`). Overrides host/port/env configuration.                                               |
+| `CLICKHOUSE_HOST`                         | ClickHouse host when `CLICKHOUSE_URL` is not provided.                                                                                         |
+| `CLICKHOUSE_PORT`                         | Optional port (defaults to 8443 for HTTPS, 8123 otherwise).                                                                                    |
+| `CLICKHOUSE_SECURE`                       | `true`/`false` toggle for HTTPS (default `true`).                                                                                              |
+| `CLICKHOUSE_PATH`                         | Optional URL suffix (e.g. `/custom/endpoint`).                                                                                                 |
+| `CLICKHOUSE_DATABASE`                     | Target database if `CLICKHOUSE_INSERT_SQL` is not set.                                                                                         |
+| `CLICKHOUSE_TABLE`                        | Target table if `CLICKHOUSE_INSERT_SQL` is not set.                                                                                            |
+| `CLICKHOUSE_INSERT_SQL`                   | Full override for the `INSERT` statement. Use when targeting views or complex inserts.                                                         |
+| `CLICKHOUSE_USER` / `CLICKHOUSE_PASSWORD` | Optional Basic Auth credentials.                                                                                                               |
+| `CLICKHOUSE_SETTINGS`                     | Comma-separated ClickHouse settings (e.g. `max_insert_block_size=100000,async_insert=1`).                                                      |
+| `CLICKHOUSE_TIMEOUT_SECONDS`              | Maximum HTTP timeout ceiling in seconds. Actual request timeout is derived from remaining Lambda time and capped by this value (default `30`). |
+| `PARQUET_COMPRESSION`                     | Parquet compression codec (`snappy` by default).                                                                                               |
+| `MAX_S3_OBJECT_BYTES`                     | Optional soft limit for S3 object size.                                                                                                        |
+| `TARGET_ROWS_PER_INSERT`                  | Preferred sub-batch row target before flushing (default `10000`).                                                                              |
+| `MAX_ROWS_PER_INSERT`                     | Hard sub-batch row ceiling (default `30000`).                                                                                                  |
+| `MAX_PARQUET_BYTES_PER_INSERT`            | Soft pre-serialization byte ceiling for a sub-batch (default `16777216`).                                                                      |
+| `MIN_REMAINING_TIME_TO_START_INSERT_MS`   | Minimum remaining Lambda time required before concat/serialize/insert work may start (default `15000`).                                        |
+| `LAMBDA_TIMEOUT_SAFETY_MARGIN_MS`         | Milliseconds reserved after deriving the request timeout from remaining Lambda budget (default `5000`).                                        |
+| `MAX_MESSAGES_PER_INVOCATION_TO_PROCESS`  | Optional code-level cap on how many SQS messages one invocation should prepare before leaving the rest for retry.                              |
+| `DRY_RUN`                                 | `true` skips the ClickHouse insert but still reads/parses objects (useful for validation).                                                     |
+| `LOG_LEVEL`                               | Override logging verbosity (`DEBUG`, `INFO`, `WARN`, etc.).                                                                                    |
+| `S3_CONNECT_TIMEOUT_SECONDS`              | S3 client connect timeout (seconds, default `5`).                                                                                              |
+| `S3_READ_TIMEOUT_SECONDS`                 | S3 client read timeout (seconds, default `60`).                                                                                                |
+| `S3_MAX_ATTEMPTS`                         | Max retry attempts for S3 operations (default `3`).                                                                                            |
+| `ITER_LOG_INTERVAL_SECONDS`               | How often to log progress while streaming JSON lines (seconds, default `5`).                                                                   |
+| `DIAG_S3_BUCKET`                          | Optional bucket to probe during diagnostics (list 1 object).                                                                                   |
+| `DIAG_S3_PREFIX`                          | Optional prefix used with `DIAG_S3_BUCKET` for diagnostics.                                                                                    |
 
 ## Packaging for Lambda
 
-The function now ships with a lightweight handler package and a separate Lambda
+The function ships with a lightweight handler package and a separate Lambda
 Layer that contains the heavy dependencies (`pyarrow`, `numpy`, `requests`).
 
 ### 1. Build the Lambda Layer
@@ -135,6 +155,17 @@ If you prefer staging in S3, replace the last command with the
 - Every cold start logs runtime metadata (Python version, architecture,
   dependency versions). Look for `Lambda cold start runtime metadata` entries in
   CloudWatch.
+- Each non-empty invocation emits structured stage logs for:
+  - invocation start and completion
+  - per-message preparation
+  - sub-batch flush start
+  - Arrow concatenation
+  - Parquet serialization
+  - ClickHouse insert success or failure
+  - explicit no-progress outcomes when prepared work cannot safely be committed
+- Each flushed sub-batch includes a deterministic `insert_token` in logs and in
+  the outbound request headers to help correlate retries and downstream insert
+  attempts.
 - Invoke the function manually with `{ "diagnostics": true }` to receive a
   JSON report containing runtime metadata, environment flags, dependency
   versions, and (if configured) an S3 connectivity probe.
@@ -143,9 +174,26 @@ If you prefer staging in S3, replace the last command with the
   Alternatively, set `DIAG_S3_BUCKET`/`DIAG_S3_PREFIX` env vars to always run
   this probe during diagnostics calls.
 - Set `DRY_RUN=true` to exercise the S3 parsing and Parquet conversion without
-  writing to ClickHouse. The summary log records when dry-run mode is active.
+  writing to ClickHouse. Dry-run sub-batches are still considered committed for
+  partial batch response purposes.
 - Temporarily raise verbosity with `LOG_LEVEL=DEBUG` to see per-object schema
   details and expanded diagnostics while debugging.
+
+## Recommended initial production posture
+
+These values match the current reliability design and are a better starting
+point than the older tiny-Lambda configuration:
+
+- SQS batch size: `50`
+- SQS maximum batching window: `60s`
+- Lambda memory: `1024 MB`
+- Lambda timeout: `60s`
+- Event source mapping maximum concurrency: `2`
+- SQS visibility timeout: at least `300s`
+
+At low traffic, expect smaller inserts. The implementation flushes smaller
+sub-batches when freshness or remaining Lambda budget makes waiting for a
+10k-30k row batch unreasonable.
 
 ## AWS configuration guide
 
@@ -165,8 +213,8 @@ environment.
 2. Create a second queue, e.g. `xapi-etl-processor-dlq`, to serve as the DLQ.
 3. Configure the main queue with a redrive policy that points to the DLQ (choose
    a `maxReceiveCount` suitable for your retry tolerance, e.g. `5`).
-4. Set the main queue visibility timeout to at least **2×** the Lambda timeout.
-   Example: Lambda timeout 120s ⇒ Visibility timeout ≥ 240s.
+4. Set the main queue visibility timeout to at least **5×** the Lambda timeout.
+   Example: Lambda timeout 60s ⇒ Visibility timeout ≥ 300s.
 5. Update the main queue **Access policy** to allow the S3 bucket to call
    `sqs:SendMessage`. Example statement:
 
@@ -208,8 +256,8 @@ environment.
 1. Create a Lambda function (Python 3.11 runtime recommended).
 2. Upload the deployment package created above or point to the S3 artifact.
 3. Set the handler to `lambda_function.lambda_handler`.
-4. Configure memory (e.g. 512–1024 MB) and timeout (e.g. 120s) based on file
-   sizes and ClickHouse insert latency.
+4. Start with memory `1024 MB` and timeout `60s`, then tune after observing
+   actual sub-batch size, insert latency, and backlog behavior.
 5. Populate the environment variables listed earlier (database, table, ClickHouse
    endpoint, authentication, etc.).
 6. (Optional) Configure a CloudWatch log retention policy.
@@ -218,9 +266,22 @@ environment.
 
 1. In the Lambda console, create an SQS trigger targeting the main queue.
 2. Enable **Report batch item failures** (partial batch response).
-3. Set the batch size (e.g. `100`) and the maximum batching window (e.g. `60`
-   seconds) to allow the queue to accumulate objects before invocation.
-4. Ensure the queue's access policy allows the Lambda service principal to poll.
+3. Start with batch size `50` and maximum batching window `60s`.
+4. Set event source mapping maximum concurrency to `2` initially.
+5. Ensure the queue's access policy allows the Lambda service principal to poll.
+
+## Maintenance posture
+
+Planned ClickHouse downtime is handled operationally through SQS buffering:
+
+1. Disable the Lambda SQS event source mapping before maintenance.
+2. Let SQS backlog accumulate while ClickHouse is unavailable.
+3. Re-enable the mapping once ClickHouse is healthy again.
+4. Watch queue depth, oldest message age, and drain rate alarms while the
+   backlog clears.
+
+This is an alarm-driven manual model. The Lambda itself does not auto-pause or
+auto-resume consumption.
 
 ### 7. Test the pipeline
 
@@ -228,7 +289,9 @@ environment.
    application).
 2. Watch the Lambda CloudWatch logs for processing messages.
 3. Confirm the data appears in ClickHouse (e.g. `SELECT count(*) FROM table`).
-4. If errors occur, inspect the DLQ messages and corresponding logs.
+4. If preparation fails, inspect the DLQ messages and corresponding logs.
+5. If ClickHouse insert failures occur, expect the source SQS messages to be
+   retried in place rather than mirrored into the custom DLQ.
 
 ## ClickHouse credential management
 

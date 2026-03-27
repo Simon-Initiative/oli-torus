@@ -16,6 +16,7 @@ The current pipeline is functionally straightforward but operationally fragile. 
 - Require a buffering and recovery posture that tolerates scheduled ClickHouse downtime without losing source events.
 - Allow architectural changes to the ingestion path, including staged intermediate artifacts such as Parquet in S3, when they materially improve the ability to meet the overall requirements with a single scalable pipeline.
 - Require Torus-managed backfills to include a one-time post-backfill dedupe cleanup step and expose that finalization progress in the admin UI.
+- Require the raw_events schema to preserve canonical xAPI verb identity and to retain only event-family columns that correspond to actual statement data emitted by Torus producers.
 - Provide a requirements baseline for subsequent fixes, tuning, and architecture adjustments.
 
 ### Non-Goals
@@ -53,6 +54,7 @@ Requirements are found in requirements.yml
 - Input interface: SQS event source mapping delivers batches of SQS messages, each containing one or more S3 object references derived from S3 object-created notifications.
 - Source data: S3 objects contain JSON Lines xAPI-like event payloads.
 - Transform path: The Lambda converts source rows into Arrow tables, normalizes to the ClickHouse raw events schema, concatenates message-level tables, and serializes a Parquet payload for insert.
+- Schema fidelity source of truth: Raw-event field design should be informed by both the Torus producers and `priv/schemas/xapi/v0-1-0/statement.schema.json`, with explicit documentation for any schema-defined event families or fields that are intentionally deferred.
 - Sink interface: ClickHouse HTTP `INSERT ... FORMAT Parquet`.
 - Failure interface: SQS partial batch response determines which messages are retried; an optional failure DLQ receives irrecoverable records with summarized failure context.
 - Dependencies: AWS Lambda, SQS, S3, ClickHouse HTTP endpoint, PyArrow, NumPy, Requests, CloudWatch logs, and AppSignal or equivalent telemetry aggregation used by the repository.
@@ -66,6 +68,7 @@ Requirements are found in requirements.yml
 - Repository guidance requires operationally risky work to be observable through telemetry and APM rather than inferred after failure.
 - The current implementation performs message-level preparation first and a single combined insert later, which has implications for memory duplication, retry scope, and timeout behavior.
 - The Lambda uses SQS partial batch responses, so timeout behavior is part of the product contract, not just an infrastructure detail.
+- The repository contains more than one ingestion implementation boundary into ClickHouse, including the runtime Lambda path and the Torus bulk backfill SQL builder, so raw-events schema changes must keep those mappings aligned.
 - Validation and follow-on implementation should prefer targeted automated tests around Python ETL behavior and operational contracts.
 
 ## 11. Feature Flagging, Rollout & Migration
@@ -102,6 +105,7 @@ No feature flags present in this work item
 - ClickHouse slowness can cause Lambda retries and duplicate upstream work: require request timeout behavior aligned with remaining Lambda time and explicit failure reporting.
 - Combined-batch insert failures can widen retry scope: require deterministic handling and clear accounting for which messages are retried.
 - Optimizing only for large batches could hurt freshness and cost during initial low-volume rollout: require explicit low-volume flush behavior and cost-efficiency evaluation, not only peak-throughput tuning.
+- Raw-events columns can drift away from the canonical xAPI schema and the actual Torus producer payloads: require a schema-backed audit so fictitious, redundant, or never-populated fields do not remain part of the sink contract.
 - The current Lambda-plus-SQS shape may not be the lowest-risk long-term architecture: permit other AWS-managed buffering or orchestration components if they better satisfy batching and cost goals.
 - The current direct Lambda-to-ClickHouse insert path may not be the best way to achieve large efficient batches and maintenance resilience: permit staged intermediate-storage designs if they reduce operational risk without creating parallel pipelines.
 - Scheduled ClickHouse downtime can create noisy retry storms or operator confusion if ingestion is not explicitly pausable: require a documented pause-buffer-resume workflow with durable upstream retention.

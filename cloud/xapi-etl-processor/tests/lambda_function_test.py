@@ -5,9 +5,17 @@ import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
-from unittest import TestCase, mock
+from unittest import SkipTest, TestCase, mock
 
-import pytest
+try:
+    import pytest
+except ModuleNotFoundError:  # pragma: no cover - local fallback when pytest is absent
+    class _PytestShim:
+        @staticmethod
+        def skip(message, allow_module_level=False):
+            raise SkipTest(message)
+
+    pytest = _PytestShim()
 
 try:
     import pyarrow  # noqa: F401
@@ -30,12 +38,41 @@ class FakeBody:
             yield line
 
 
+class FakeContext:
+    def __init__(self, remaining_time_ms=None):
+        self.remaining_time_ms = remaining_time_ms
+
+    def get_remaining_time_in_millis(self):
+        if self.remaining_time_ms is None:
+            raise RuntimeError("remaining time not configured")
+        return self.remaining_time_ms
+
+
 class LambdaFunctionTests(TestCase):
     def setUp(self):
         patcher = mock.patch.object(lambda_function, "s3_client")
         self.addCleanup(patcher.stop)
         self.mock_s3 = patcher.start()
-        self.addCleanup(lambda: os.environ.pop("DRY_RUN", None))
+        for env_var in [
+            "DRY_RUN",
+            "TARGET_ROWS_PER_INSERT",
+            "MAX_ROWS_PER_INSERT",
+            "MAX_PARQUET_BYTES_PER_INSERT",
+            "MIN_REMAINING_TIME_TO_START_INSERT_MS",
+            "LAMBDA_TIMEOUT_SAFETY_MARGIN_MS",
+            "CLICKHOUSE_TIMEOUT_SECONDS",
+            "MAX_MESSAGES_PER_INVOCATION_TO_PROCESS",
+        ]:
+            self.addCleanup(lambda name=env_var: os.environ.pop(name, None))
+
+    def _message(self, message_id):
+        body = json.dumps({"bucket": "bucket", "key": f"events/{message_id}.jsonl"})
+        return {"messageId": message_id, "body": body}
+
+    def _table_with_rows(self, row_count):
+        return lambda_function.pa.Table.from_pylist(
+            [{"event_hash": f"hash-{index}", "source_line": index + 1} for index in range(row_count)]
+        )
 
     def test_extract_s3_references_from_event(self):
         event = {
@@ -86,16 +123,19 @@ class LambdaFunctionTests(TestCase):
                 {
                     "CLICKHOUSE_DATABASE": "db",
                     "CLICKHOUSE_TABLE": "tbl",
+                    "TARGET_ROWS_PER_INSERT": "10",
                 },
                 clear=False,
             ):
-                result = lambda_function.lambda_handler(event, SimpleNamespace())
+                result = lambda_function.lambda_handler(event, FakeContext(remaining_time_ms=60000))
 
         self.assertEqual(result["batchItemFailures"], [])
         insert_mock.assert_called_once()
         args, kwargs = insert_mock.call_args
         self.assertGreater(len(args[0]), 0)  # parquet payload bytes
-        self.assertEqual(kwargs, {})
+        self.assertEqual(args[1], 1)
+        self.assertIn("timeout_seconds", kwargs)
+        self.assertIn("insert_token", kwargs)
 
     def test_lambda_handler_respects_dry_run(self):
         body = json.dumps(
@@ -131,10 +171,11 @@ class LambdaFunctionTests(TestCase):
                 {
                     "CLICKHOUSE_DATABASE": "db",
                     "CLICKHOUSE_TABLE": "tbl",
+                    "TARGET_ROWS_PER_INSERT": "10",
                 },
                 clear=False,
             ):
-                result = lambda_function.lambda_handler(event, SimpleNamespace())
+                result = lambda_function.lambda_handler(event, FakeContext(remaining_time_ms=60000))
 
         self.assertEqual(result["batchItemFailures"], [])
         insert_mock.assert_not_called()
@@ -171,10 +212,11 @@ class LambdaFunctionTests(TestCase):
                 {
                     "CLICKHOUSE_DATABASE": "db",
                     "CLICKHOUSE_TABLE": "tbl",
+                    "TARGET_ROWS_PER_INSERT": "10",
                 },
                 clear=False,
             ):
-                result = lambda_function.lambda_handler(event, SimpleNamespace())
+                result = lambda_function.lambda_handler(event, FakeContext(remaining_time_ms=60000))
 
         self.assertEqual(result["batchItemFailures"], [
             {"itemIdentifier": "msg-1"}
@@ -224,10 +266,11 @@ class LambdaFunctionTests(TestCase):
                         {
                             "CLICKHOUSE_DATABASE": "db",
                             "CLICKHOUSE_TABLE": "tbl",
+                            "TARGET_ROWS_PER_INSERT": "10",
                         },
                         clear=False,
                     ):
-                        result = lambda_function.lambda_handler(event, SimpleNamespace())
+                        result = lambda_function.lambda_handler(event, FakeContext(remaining_time_ms=60000))
 
         self.assertEqual(result["batchItemFailures"], [{"itemIdentifier": "msg-1"}])
         sqs_mock.send_message.assert_called_once()
@@ -236,51 +279,272 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(json.loads(call["MessageBody"]), json.loads(body))
         self.assertIn("FailureReason", call["MessageAttributes"])
 
-    def test_lambda_handler_sends_clickhouse_failures_to_dlq(self):
-        body = json.dumps({"bucket": "bucket", "key": "events/file.jsonl"})
-        event = {
-            "Records": [
-                {"messageId": "msg-1", "body": body},
-                {"messageId": "msg-2", "body": body},
-            ]
+    def test_lambda_handler_logs_bounded_info_on_prepare_failure(self):
+        record_payload = {
+            "bucket": "bucket",
+            "key": "events/file.jsonl",
+            "debug_blob": "SECRET_PAYLOAD_" * 20,
         }
+        body = json.dumps(record_payload)
+        event = {"Records": [{"messageId": "msg-1", "body": body}]}
 
-        mock_table = SimpleNamespace(num_rows=3)
-        combined_table = SimpleNamespace(num_rows=6)
+        with mock.patch.object(
+            lambda_function,
+            "extract_s3_references",
+            side_effect=ValueError("bad payload"),
+        ):
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "CLICKHOUSE_DATABASE": "db",
+                    "CLICKHOUSE_TABLE": "tbl",
+                    "TARGET_ROWS_PER_INSERT": "10",
+                },
+                clear=False,
+            ):
+                with self.assertLogs(lambda_function.logger, level="INFO") as captured_logs:
+                    result = lambda_function.lambda_handler(event, FakeContext(remaining_time_ms=60000))
+
+        self.assertEqual(result["batchItemFailures"], [{"itemIdentifier": "msg-1"}])
+        joined_logs = "\n".join(captured_logs.output)
+        self.assertIn("Failed to prepare SQS message msg-1: bad payload", joined_logs)
+        self.assertIn(
+            "Message msg-1 moved to DLQ (if configured); inspect the DLQ for full payload and reason details",
+            joined_logs,
+        )
+        self.assertNotIn(record_payload["debug_blob"], joined_logs)
+        self.assertNotIn(body, joined_logs)
+
+    def test_forward_failure_to_dlq_sends_summary_attributes(self):
+        body = json.dumps({"bucket": "bucket", "key": "events/file.jsonl"})
+        record = {"messageId": "msg-1", "body": body}
+        long_reason = "x" * 400
 
         with mock.patch.object(lambda_function, "_FAILURE_DLQ_URL", "https://example.com/dlq"):
             with mock.patch.object(lambda_function, "_sqs_client") as sqs_mock:
-                with mock.patch.object(lambda_function, "build_arrow_table_from_s3_objects", return_value=mock_table):
-                    with mock.patch.object(lambda_function, "concatenate_tables", return_value=combined_table):
-                        with mock.patch.object(lambda_function, "table_to_parquet", return_value=b"data"):
-                            with mock.patch.object(
-                                lambda_function,
-                                "insert_into_clickhouse",
-                                side_effect=RuntimeError("ClickHouse down"),
-                            ):
-                                with mock.patch.dict(
-                                    os.environ,
-                                    {
-                                        "CLICKHOUSE_DATABASE": "db",
-                                        "CLICKHOUSE_TABLE": "tbl",
-                                    },
-                                    clear=False,
-                                ):
-                                    result = lambda_function.lambda_handler(event, SimpleNamespace())
+                lambda_function.forward_failure_to_dlq(record, reason=long_reason)
+
+        sqs_mock.send_message.assert_called_once()
+        call = sqs_mock.send_message.call_args.kwargs
+        self.assertEqual(call["QueueUrl"], "https://example.com/dlq")
+        self.assertEqual(call["MessageBody"], body)
+        self.assertEqual(
+            set(call["MessageAttributes"].keys()),
+            {"OriginalMessageId", "FailureReason"},
+        )
+        self.assertEqual(
+            call["MessageAttributes"]["OriginalMessageId"]["StringValue"],
+            "msg-1",
+        )
+        self.assertEqual(
+            call["MessageAttributes"]["FailureReason"]["StringValue"],
+            long_reason[:256],
+        )
+
+    def test_lambda_handler_retries_clickhouse_failures_without_dlq_copy(self):
+        event = {"Records": [self._message("msg-1"), self._message("msg-2")]}
+
+        with mock.patch.object(lambda_function, "_FAILURE_DLQ_URL", "https://example.com/dlq"):
+            with mock.patch.object(lambda_function, "_sqs_client") as sqs_mock:
+                with mock.patch.object(
+                    lambda_function,
+                    "build_arrow_table_from_s3_objects",
+                    side_effect=[self._table_with_rows(2), self._table_with_rows(2)],
+                ):
+                    with mock.patch.object(
+                        lambda_function,
+                        "insert_into_clickhouse",
+                        side_effect=RuntimeError("ClickHouse down"),
+                    ):
+                        with mock.patch.dict(
+                            os.environ,
+                            {
+                                "CLICKHOUSE_DATABASE": "db",
+                                "CLICKHOUSE_TABLE": "tbl",
+                                "TARGET_ROWS_PER_INSERT": "4",
+                            },
+                            clear=False,
+                        ):
+                            result = lambda_function.lambda_handler(
+                                event,
+                                FakeContext(remaining_time_ms=60000),
+                            )
 
         self.assertEqual(
             result["batchItemFailures"],
-            [
-                {"itemIdentifier": "msg-1"},
-                {"itemIdentifier": "msg-2"},
-            ],
+            [{"itemIdentifier": "msg-1"}, {"itemIdentifier": "msg-2"}],
         )
-        self.assertEqual(sqs_mock.send_message.call_count, 2)
-        sent_ids = {
-            call.kwargs["MessageAttributes"]["OriginalMessageId"]["StringValue"]
-            for call in sqs_mock.send_message.mock_calls
+        sqs_mock.send_message.assert_not_called()
+
+    def test_lambda_handler_flushes_multiple_sub_batches(self):
+        event = {
+            "Records": [self._message("msg-1"), self._message("msg-2"), self._message("msg-3")]
         }
-        self.assertEqual(sent_ids, {"msg-1", "msg-2"})
+
+        insert_calls = []
+
+        def capture_insert(_payload, row_count, **kwargs):
+            insert_calls.append((row_count, kwargs))
+
+        with mock.patch.object(
+            lambda_function,
+            "build_arrow_table_from_s3_objects",
+            side_effect=[
+                self._table_with_rows(2),
+                self._table_with_rows(2),
+                self._table_with_rows(2),
+            ],
+        ):
+            with mock.patch.object(lambda_function, "insert_into_clickhouse", side_effect=capture_insert):
+                with mock.patch.dict(
+                    os.environ,
+                    {
+                        "CLICKHOUSE_DATABASE": "db",
+                        "CLICKHOUSE_TABLE": "tbl",
+                        "TARGET_ROWS_PER_INSERT": "4",
+                        "MAX_ROWS_PER_INSERT": "6",
+                    },
+                    clear=False,
+                ):
+                    result = lambda_function.lambda_handler(event, FakeContext(remaining_time_ms=60000))
+
+        self.assertEqual(result["batchItemFailures"], [])
+        self.assertEqual([call[0] for call in insert_calls], [4, 2])
+        self.assertTrue(all("insert_token" in kwargs for _, kwargs in insert_calls))
+
+    def test_lambda_handler_retries_only_failed_sub_batch(self):
+        event = {
+            "Records": [self._message("msg-1"), self._message("msg-2"), self._message("msg-3")]
+        }
+
+        with mock.patch.object(
+            lambda_function,
+            "build_arrow_table_from_s3_objects",
+            side_effect=[
+                self._table_with_rows(2),
+                self._table_with_rows(2),
+                self._table_with_rows(2),
+            ],
+        ):
+            with mock.patch.object(
+                lambda_function,
+                "insert_into_clickhouse",
+                side_effect=[None, RuntimeError("ClickHouse down")],
+            ):
+                with mock.patch.dict(
+                    os.environ,
+                    {
+                        "CLICKHOUSE_DATABASE": "db",
+                        "CLICKHOUSE_TABLE": "tbl",
+                        "TARGET_ROWS_PER_INSERT": "4",
+                        "MAX_ROWS_PER_INSERT": "6",
+                    },
+                    clear=False,
+                ):
+                    result = lambda_function.lambda_handler(event, FakeContext(remaining_time_ms=60000))
+
+        self.assertEqual(result["batchItemFailures"], [{"itemIdentifier": "msg-3"}])
+
+    def test_lambda_handler_emits_no_progress_and_returns_prepared_and_untouched_messages(self):
+        event = {"Records": [self._message("msg-1"), self._message("msg-2")]}
+        context = FakeContext(remaining_time_ms=2000)
+
+        def prepare_then_exhaust_time(_refs):
+            context.remaining_time_ms = 500
+            return self._table_with_rows(2)
+
+        with mock.patch.object(
+            lambda_function,
+            "build_arrow_table_from_s3_objects",
+            side_effect=prepare_then_exhaust_time,
+        ):
+            with mock.patch.object(lambda_function, "insert_into_clickhouse") as insert_mock:
+                with mock.patch.dict(
+                    os.environ,
+                    {
+                        "CLICKHOUSE_DATABASE": "db",
+                        "CLICKHOUSE_TABLE": "tbl",
+                        "MIN_REMAINING_TIME_TO_START_INSERT_MS": "1000",
+                    },
+                    clear=False,
+                ):
+                    with self.assertLogs(lambda_function.logger, level="INFO") as captured_logs:
+                        result = lambda_function.lambda_handler(event, context)
+
+        self.assertEqual(
+            result["batchItemFailures"],
+            [{"itemIdentifier": "msg-1"}, {"itemIdentifier": "msg-2"}],
+        )
+        insert_mock.assert_not_called()
+        self.assertTrue(any("sub_batch_no_progress" in line for line in captured_logs.output))
+
+    def test_lambda_handler_logs_last_successful_stage_before_insert_failure(self):
+        event = {"Records": [self._message("msg-1")]}
+
+        with mock.patch.object(
+            lambda_function,
+            "build_arrow_table_from_s3_objects",
+            return_value=self._table_with_rows(2),
+        ):
+            with mock.patch.object(
+                lambda_function,
+                "insert_into_clickhouse",
+                side_effect=RuntimeError("ClickHouse down"),
+            ):
+                with mock.patch.dict(
+                    os.environ,
+                    {
+                        "CLICKHOUSE_DATABASE": "db",
+                        "CLICKHOUSE_TABLE": "tbl",
+                        "TARGET_ROWS_PER_INSERT": "10",
+                    },
+                    clear=False,
+                ):
+                    with self.assertLogs(lambda_function.logger, level="INFO") as captured_logs:
+                        result = lambda_function.lambda_handler(
+                            event,
+                            FakeContext(remaining_time_ms=60000),
+                        )
+
+        self.assertEqual(result["batchItemFailures"], [{"itemIdentifier": "msg-1"}])
+        stage_lines = [line for line in captured_logs.output if "ETL stage" in line]
+        serialized_index = next(
+            index for index, line in enumerate(stage_lines) if '"stage": "sub_batch_serialized"' in line
+        )
+        failed_index = next(
+            index for index, line in enumerate(stage_lines) if '"stage": "sub_batch_failed"' in line
+        )
+        self.assertLess(serialized_index, failed_index)
+        self.assertIn('"outcome": "clickhouse_insert_failed"', stage_lines[failed_index])
+        self.assertFalse(any('"stage": "sub_batch_committed"' in line for line in stage_lines))
+
+    def test_lambda_handler_derives_clickhouse_timeout_from_remaining_time(self):
+        event = {"Records": [self._message("msg-1")]}
+
+        with mock.patch.object(
+            lambda_function,
+            "build_arrow_table_from_s3_objects",
+            return_value=self._table_with_rows(2),
+        ):
+            with mock.patch.object(lambda_function, "insert_into_clickhouse") as insert_mock:
+                with mock.patch.dict(
+                    os.environ,
+                    {
+                        "CLICKHOUSE_DATABASE": "db",
+                        "CLICKHOUSE_TABLE": "tbl",
+                        "CLICKHOUSE_TIMEOUT_SECONDS": "30",
+                        "LAMBDA_TIMEOUT_SAFETY_MARGIN_MS": "5000",
+                        "MIN_REMAINING_TIME_TO_START_INSERT_MS": "1000",
+                    },
+                    clear=False,
+                ):
+                    result = lambda_function.lambda_handler(
+                        event,
+                        FakeContext(remaining_time_ms=12000),
+                    )
+
+        self.assertEqual(result["batchItemFailures"], [])
+        self.assertEqual(insert_mock.call_args.kwargs["timeout_seconds"], 7.0)
 
     def test_lambda_handler_skips_s3_test_event(self):
         body = json.dumps(
@@ -301,7 +565,7 @@ class LambdaFunctionTests(TestCase):
         }
 
         with mock.patch.object(lambda_function, "extract_s3_references") as extract_mock:
-            result = lambda_function.lambda_handler(event, SimpleNamespace())
+            result = lambda_function.lambda_handler(event, FakeContext(remaining_time_ms=60000))
 
         self.assertEqual(result["batchItemFailures"], [])
         extract_mock.assert_not_called()

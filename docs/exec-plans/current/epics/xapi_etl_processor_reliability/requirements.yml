@@ -180,3 +180,43 @@ requirements:
       not silently report successful completion.
     status: drafted
     verification_method: automated
+- id: FR-010
+  title: The raw_events schema and all ingestion paths shall preserve canonical xAPI
+    verb identity and only retain event-family columns that correspond to actual
+    producer-backed statement fields.
+  status: drafted
+  acceptance_criteria:
+  - id: AC-023
+    title: Given any supported xAPI statement family, when the Lambda or Torus backfill
+      transforms it into raw_events, then the exact xAPI `verb.id` is stored in a
+      `verb_id` column for every ingested row.
+    status: drafted
+    verification_method: automated
+  - id: AC-024
+    title: Given video `played`, `paused`, `seeked`, and `completed` statements emitted
+      by current Torus producers and described by the xAPI schema, when they are transformed,
+      then each retained video-specific raw_events column maps to a real producer-backed
+      statement field and no retained column depends on a fictitious or never-emitted
+      source attribute.
+    status: drafted
+    verification_method: automated
+  - id: AC-025
+    title: Given the raw_events schema is audited against Torus producers and `priv/schemas/xapi/v0-1-0/statement.schema.json`,
+      when the schema revision is finalized, then redundant constants, derivable fields,
+      and columns that can never be populated are removed or explicitly documented
+      as out of scope.
+    status: drafted
+    verification_method: manual
+  - id: AC-026
+    title: Given both the Lambda ETL path and the Torus bulk backfill path insert
+      into raw_events, when schema-fidelity changes land, then both paths apply the
+      same `verb_id` and video-field mappings.
+    status: drafted
+    verification_method: automated
+  - id: AC-027
+    title: Given the schema audit identifies event families or fields that exist in
+      the canonical xAPI schema but are not currently represented in raw_events, when
+      the design is updated, then those gaps are either implemented or explicitly
+      documented with rationale and follow-up ownership.
+    status: drafted
+    verification_method: manual

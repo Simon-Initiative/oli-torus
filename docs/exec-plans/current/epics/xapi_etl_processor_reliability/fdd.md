@@ -31,6 +31,11 @@ The selected design intentionally does not introduce staged Parquet artifacts in
   - FR-009 / AC-019: Successful non-dry-run Torus backfills trigger a one-time post-backfill `OPTIMIZE TABLE ... FINAL` before the run is fully complete.
   - FR-009 / AC-020: The admin UI shows optimization as the last in-progress step while it is executing.
   - FR-009 / AC-021: Optimization failure is recorded explicitly and does not silently present as a successful completed backfill.
+  - FR-010 / AC-023: Every supported ingested event stores the exact xAPI `verb.id` in `raw_events.verb_id`.
+  - FR-010 / AC-024: Retained video-specific columns map only to actual producer-backed statement fields across `played`, `paused`, `seeked`, and `completed`.
+  - FR-010 / AC-025: Constants, derivable fields, and never-populated columns are removed or explicitly documented as out of scope.
+  - FR-010 / AC-026: Lambda ETL and Torus bulk backfill apply the same `verb_id` and video-field mappings.
+  - FR-010 / AC-027: Schema-defined event families or fields that are not represented in `raw_events` are explicitly implemented or documented as deferred gaps.
 - Non-functional requirements:
   - Reliability: at-least-once delivery semantics, explicit retry boundaries, and no silent timeout path.
   - Performance: preferred insert size is 10,000 to 30,000 rows when throughput allows, but freshness and Lambda safety limits override that preference.
@@ -51,6 +56,10 @@ The selected design intentionally does not introduce staged Parquet artifacts in
 - What we know:
   - The current implementation lives in `cloud/xapi-etl-processor/lambda_function.py` and processes an invocation-wide list of `tables_to_insert`, concatenates them, writes one in-memory Parquet payload, and posts it to ClickHouse.
   - The Lambda already consumes SQS, uses partial batch response semantics, optionally forwards permanent failures to a DLQ, and supports `DRY_RUN`.
+  - `priv/schemas/xapi/v0-1-0/statement.schema.json` is the canonical xAPI statement contract and currently defines `activityAttemptEvaluated`, `pageAttemptEvaluated`, `partAttemptEvaluated`, `pageViewed`, `tutorMessage`, `videoPlayed`, `videoPaused`, `videoSeeked`, and `videoCompleted`.
+  - The current raw-events schema and ETL include stale video shape assumptions: `video_play_time` has no canonical producer-backed xAPI field, while `video_seek_from` and `video_seek_to` are real but sparse because only `seeked` statements populate them.
+  - The current raw-events schema omits `verb_id`, so video subtypes and other exact xAPI verb semantics are lost once rows are inserted.
+  - The Torus bulk backfill SQL builder in `lib/oli/analytics/backfill/query_builder.ex` has drifted from the Lambda mapping around raw-events column names and video field extraction, so this boundary must be realigned with the runtime ETL.
   - The repository already treats Python Lambda-style ETL work as a valid analytics-adjacent boundary, and operations guidance emphasizes observability over guesswork.
   - The current implementation has no durable intermediate store beyond S3 source JSONL and SQS delivery metadata.
   - Torus already owns bulk backfill orchestration through `Oli.Analytics.Backfill`, `Oli.Analytics.Backfill.Worker`, and the admin LiveView in `lib/oli_web/live/admin/clickhouse_backfill_live.ex`.
@@ -201,7 +210,7 @@ sequenceDiagram
 
 - Database schema:
   - No Torus database schema changes.
-  - No ClickHouse schema changes required for this FDD.
+  - ClickHouse `raw_events` schema changes are required to preserve canonical verb identity and remove stale video columns.
 - Object storage:
   - Source JSONL remains in S3.
   - The selected design does not add staged Parquet objects in S3.
@@ -216,6 +225,36 @@ sequenceDiagram
     - a new `status` value such as `:optimizing`, or
     - a dedicated metadata-backed phase field plus existing `:running` or `:completed`
   - The preferred design is a first-class status so the admin UI, notifier, and tests can reason about optimization distinctly.
+
+### 6.1 Raw Event Schema Fidelity Analysis
+
+- Canonical design inputs:
+  - The producer implementations under `lib/oli/analytics/xapi/events/**`.
+  - The runtime payload emitters in `assets/src/components/video_player/VideoPlayer.tsx` and `assets/src/components/youtube_player/YoutubePlayer.tsx`.
+  - The schema contract in `priv/schemas/xapi/v0-1-0/statement.schema.json`.
+- Proposed raw-events core event identity changes:
+  - Add `verb_id LowCardinality(String)` and populate it directly from `statement.verb.id` for every ingested row.
+  - Keep `event_type` as the coarse normalized family (`video`, `activity_attempt`, `page_attempt`, `page_viewed`, `part_attempt`, and any future supported families), but do not rely on it to preserve subtype semantics.
+  - Do not add a separate `event_subtype` in this phase because `verb_id` provides the exact subtype discriminator without introducing another derived field contract.
+- Proposed retained video columns and mappings:
+  - `video_url`: `object.id` for all video statements.
+  - `video_time`: `result.extensions["https://w3id.org/xapi/video/extensions/time"]`, populated by `played`, `paused`, and `completed`.
+  - `video_length`: `context.extensions["https://w3id.org/xapi/video/extensions/length"]`, populated by `played`, `paused`, and `completed`.
+  - `video_progress`: `result.extensions["https://w3id.org/xapi/video/extensions/progress"]`, populated by `paused` and `completed`.
+  - `video_played_segments`: `result.extensions["https://w3id.org/xapi/video/extensions/played-segments"]`, populated by `paused` and `completed`.
+  - `video_seek_from`: `result.extensions["https://w3id.org/xapi/video/extensions/time-from"]`, populated by `seeked`.
+  - `video_seek_to`: `result.extensions["https://w3id.org/xapi/video/extensions/time-to"]`, populated by `seeked`.
+- Proposed removed video columns:
+  - Remove `video_play_time`.
+  - Rationale: the Torus producers turn frontend `video_play_time` into the canonical xAPI field `.../extensions/time` for `played` events, and the schema does not define a `result.extensions.video_play_time` field. Keeping a dedicated `video_play_time` column would preserve a fictitious pre-xAPI transport detail rather than the actual stored statement shape.
+- Explicitly omitted fields and rationale:
+  - Do not add a `video_completion_threshold` column. The schema requires `https://w3id.org/xapi/video/extensions/completion-threshold` only for `completed`, but the producer hardcodes it to `"1.0"`, so it is constant and not analytically useful.
+  - Do not add columns for generic `object.definition.name` display strings for attempt and page events. Those are static labels such as `"Page Attempt"` or `"Part Attempt"` and do not add event semantics.
+  - Do not add a dedicated `registration` column for video in this phase because the current producer registration value is derivable from existing identifiers and is not required for current analytics use cases.
+- Identified data gaps:
+  - `tutorMessage` exists in the schema but is not currently represented in the raw-events event family list, runtime Lambda transform, or backfill SQL builder.
+  - The development-only direct uploader in `lib/oli/analytics/xapi/clickhouse_uploader.ex` has drifted from the canonical Lambda/backfill mappings and should either be updated alongside the schema revision or explicitly documented as a non-production debug path with lower fidelity guarantees.
+  - The backfill SQL builder currently extracts some video fields from the wrong xAPI locations and does not preserve `verb_id`, so it cannot remain unchanged once the raw-events schema is revised.
 
 ## 7. Consistency & Transactions
 
