@@ -105,6 +105,46 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert paywall_index < content_index
     end
 
+    test "renders the cover image section beneath paywall settings with helper text and current image",
+         ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, product} =
+        Oli.Delivery.Sections.update_section(product, %{
+          cover_image: "https://example.com/template-cover.png"
+        })
+
+      {:ok, live, html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      assert has_element?(live, "h4", "Cover Image")
+
+      assert has_element?(
+               live,
+               "div",
+               "Manage the cover image for this template. Max file size is 5 MB."
+             )
+
+      assert has_element?(
+               live,
+               "#img-preview #current-product-img[src='https://example.com/template-cover.png']"
+             )
+
+      {paywall_index, _} = :binary.match(html, "Paywall Settings")
+      {cover_image_index, _} = :binary.match(html, "Cover Image")
+      {content_index, _} = :binary.match(html, "Content")
+
+      assert paywall_index < cover_image_index
+      assert cover_image_index < content_index
+    end
+
+    test "renders the current cover image slot even when no image is set", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      assert has_element?(live, "#img-preview #current-product-img")
+    end
+
     test "places tags between description and welcome message title", ctx do
       %{conn: conn, project: project, product: product} = ctx
 

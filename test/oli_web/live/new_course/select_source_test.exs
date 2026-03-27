@@ -173,6 +173,18 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "h5", "#{section.title}")
     end
 
+    test "uses the shared default course image fallback in cards view", %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, cover_image: nil})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               ~s{img[alt="course image"][src="/images/course_default.png"]}
+             )
+    end
+
     test "applies searching (case insensitive)", %{conn: conn} do
       %Publication{project: project} = insert(:publication)
       s1 = insert(:section, %{base_project: project, title: "testing"})
@@ -315,6 +327,18 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
       assert has_element?(view, "form#update_view_type")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
       assert has_element?(view, "h5", "#{section.title}")
+    end
+
+    test "uses the shared default course image fallback in instructor cards view", %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, %{base_project: project, cover_image: nil})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
+
+      assert has_element?(
+               view,
+               ~s{img[alt="course image"][src="/images/course_default.png"]}
+             )
     end
 
     test "applies searching", %{conn: conn} do
