@@ -3,87 +3,123 @@ feature: image_preview
 generated_from: prd.md
 requirements:
 - id: FR-001
-  title: 'System SHALL provide preview rendering for cover image in three contexts:
-    My Course, Course Picker, and Welcome page.'
+  title: System SHALL provide cover-image preview rendering for My Course, Course
+    Picker, and Student Welcome contexts.
   status: proposed
   acceptance_criteria:
   - id: AC-001
-    title: Given an authorized author viewing template settings, when they select
-      My Course preview, then the cover image preview renders using the My Course
-      production presentation.
+    title: (FR-001) - Given an authorized template manager selects My Course preview,
+      when the preview renders, then the cover image presentation matches the production
+      My Course surface.
     status: proposed
     verification_method: automated
     proofs: []
   - id: AC-002
-    title: Given an authorized author viewing template settings, when they select
-      Course Picker preview, then the cover image preview renders using the Course
-      Picker production presentation.
+    title: (FR-001) - Given an authorized template manager selects Course Picker preview,
+      when the preview renders, then the cover image presentation matches the production
+      Course Picker surface.
     status: proposed
     verification_method: automated
     proofs: []
   - id: AC-003
-    title: Given an authorized author viewing template settings, when they select
-      Welcome preview, then the cover image preview renders using the Welcome production
-      presentation.
+    title: (FR-001) - Given an authorized template manager selects Welcome preview,
+      when the preview renders, then the cover image presentation matches the production
+      Welcome surface.
     status: proposed
     verification_method: automated
     proofs: []
 - id: FR-002
-  title: System SHALL extract and reuse canonical runtime templates/components for
-    each context so preview and destination UI use the same rendering units.
+  title: System SHALL reuse shared runtime rendering units for each supported context
+    so preview and destination surfaces stay synchronized by construction.
   status: proposed
   acceptance_criteria:
   - id: AC-004
-    title: Given a code change to shared destination cover-image markup for one context,
-      when tests run, then both destination UI and preview output reflect the same
-      change without a second markup update.
+    title: (FR-002) - Given a supported context's shared rendering unit changes, when
+      tests run, then both the destination surface and preview reflect the same markup
+      change without a second preview-only update.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-003
+  title: System SHALL place the Cover Image section below Paywall Settings on Template
+    Overview and use the design-system upload affordance shown in MER-4052.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-005
+    title: (FR-003) - Given Template Overview renders, when the Cover Image section
+      is shown, then it appears below Paywall Settings and exposes the browse/drag-drop
+      upload affordance in the ticketed design style.
     status: proposed
     verification_method: automated
     proofs: []
 - id: FR-004
-  title: System SHALL preserve responsive behavior of each destination context at
-    supported breakpoints in preview mode.
+  title: System SHALL show no mockup gallery when no cover image is present, and
+    SHALL show a three-mockup gallery when a cover image has been uploaded.
   status: proposed
   acceptance_criteria:
-  - id: AC-005
-    title: Given desktop and mobile viewport breakpoints, when each preview context
-      is rendered, then layout/spacing/image treatment matches destination UI behavior
-      for the same breakpoint.
+  - id: AC-006
+    title: (FR-004) - Given no cover image is selected, when Template Overview loads,
+      then no mockups are shown.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-007
+    title: (FR-004) - Given a cover image upload succeeds, when the Cover Image section
+      renders, then a large selected mockup and three context mockups are shown for
+      My Course, Course Picker, and Student Welcome.
     status: proposed
     verification_method: automated
     proofs: []
 - id: FR-005
-  title: System SHALL provide deterministic fallback behavior for missing/invalid
-    cover images consistent with destination UI behavior.
+  title: System SHALL apply the Figma hover-state drop shadow to cover-image mockups.
   status: proposed
   acceptance_criteria:
-  - id: AC-006
-    title: Given a template with missing or invalid cover image data, when preview
-      loads, then fallback visuals and messaging match destination UI fallback behavior.
+  - id: AC-008
+    title: (FR-005) - Given an author hovers over a mockup, when the hover state
+      is active, then the mockup shows the design-specified drop shadow.
     status: proposed
     verification_method: automated
     proofs: []
 - id: FR-006
-  title: System SHALL enforce existing role/permission boundaries so only authorized
-    template-management roles can access preview controls.
+  title: System SHALL open a modal carousel when a mockup is clicked and SHALL let
+    the user move through the three context mockups from that modal.
   status: proposed
   acceptance_criteria:
-  - id: AC-007
-    title: Given a user without template-management permissions, when they navigate
-      to template editing surfaces, then preview controls are not shown and direct
-      access is denied by server-side authorization.
+  - id: AC-009
+    title: (FR-006) - Given an author clicks a mockup, when the modal opens, then
+      the selected mockup is enlarged in a modal view and carousel navigation is
+      available across all three mockups.
     status: proposed
     verification_method: automated
     proofs: []
 - id: FR-007
-  title: System SHALL emit telemetry for preview context selection and preview render
-    failures to support observability.
+  title: System SHALL enforce existing template-management authorization and institution
+    scoping for preview access.
   status: proposed
   acceptance_criteria:
-  - id: AC-008
-    title: Given preview context changes or render errors, when events occur, then
-      telemetry events are recorded with context type and result metadata and no PII
-      payloads.
+  - id: AC-010
+    title: (FR-007) - Given a user lacks template-management access for the template,
+      when they view or invoke preview, then preview controls are unavailable and
+      server-side access is denied.
+    status: proposed
+    verification_method: automated
+    proofs: []
+- id: FR-008
+  title: System SHALL preserve destination-surface fallback and responsive behavior
+    for each supported context at the agreed preview breakpoints.
+  status: proposed
+  acceptance_criteria:
+  - id: AC-011
+    title: (FR-008) - Given the template cover image is missing or invalid for a supported
+      context, when that context renders in the gallery or modal, then fallback visuals
+      and messaging match the corresponding destination surface.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - id: AC-012
+    title: (FR-008) - Given the agreed desktop and mobile breakpoints, when each
+      preview context renders, then layout, spacing, and image treatment match the
+      corresponding destination surface.
     status: proposed
     verification_method: automated
     proofs: []

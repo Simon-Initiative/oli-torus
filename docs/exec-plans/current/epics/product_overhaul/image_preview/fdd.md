@@ -1,284 +1,231 @@
-# Image Preview — Functional Design Document
+# Image Preview - Functional Design Document
 
 ## 1. Executive Summary
-This design implements image preview by rendering the exact existing runtime UI components used by My Course, Course Picker, and Welcome, directly from Product/Template overview preview mode. Instead of creating new replacement component trees, Product preview delegates to `OliWeb.Workspaces.Student.course_card/1`, `OliWeb.Common.CardListing.render/1`, and `OliWeb.Delivery.StudentOnboarding.Intro.render/1` with preview adapters that provide valid assigns. This is the best approach because it maximizes parity, minimizes markup duplication, and avoids a second rendering system that can drift. Full route LiveViews are intentionally not embedded in Product preview because they require router/mount/session context and page-level behavior that is inappropriate for inline preview. The design introduces no schema changes, no migrations, and no background processes. The only code seam allowed is small preview-safe options on existing components where interactivity or runtime-only data access must be disabled/substituted. Cover image fallback remains canonical through `OliWeb.Common.SourceImage.cover_image/1`. Observability adds telemetry for preview context selection and render outcomes. Rollout is a standard deploy with strict regression tests proving runtime UI and Product preview UI are rendered through the same real component entry points.
+This design adds ticket-accurate cover-image mockups to Template Overview by extending the existing cover-image upload area in `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive` and reusing the real learner-facing rendering seams that already exist for My Course, Course Picker, and Student Welcome. The selected implementation is a small Template Overview-owned gallery and modal flow: the page renders one large selected preview plus three thumbnail previews after a cover image exists, applies the Figma hover treatment on thumbnails, and opens a modal carousel when a thumbnail is clicked. The previews themselves are not screenshot composites or duplicate mock components; they are rendered through thin preview wrappers that call the existing runtime components with preview-safe assigns and optional non-interactive behavior. No schema changes, feature flags, or new telemetry are required.
 
 ## 2. Requirements & Assumptions
-- Functional Requirements:
-  - `FR-001`: Provide preview rendering for My Course, Course Picker, and Welcome contexts.
-  - `FR-002`: Reuse canonical runtime templates/components across preview and runtime.
-  - `FR-003`: Ensure destination runtime UIs and preview use the same rendering units.
-  - `FR-004`: Preserve responsive behavior at supported breakpoints.
-  - `FR-005`: Preserve fallback behavior for missing/invalid cover image data.
-  - `FR-006`: Keep preview access restricted to authorized template-management users.
-  - `FR-007`: Emit telemetry for preview context selection and preview render failures.
-- Non-Functional Requirements:
-  - Preview context switch p95 <= 400ms after initial page load.
-  - Initial preview render p95 <= 700ms for standard template payloads.
-  - No new N+1 query behavior during preview context switching.
-  - No uncaught LiveView crashes when image data is missing/invalid.
-  - WCAG 2.1 AA for preview selector controls and preview region semantics.
-  - No PII in telemetry metadata.
-- Explicit Assumptions:
-  - Product/template record already contains sufficient image/title/description data for preview surfaces.
-  - Product preview host remains `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive`.
-- Existing author auth and product mount authorization remain unchanged.
-- Dynamic runtime fields not present in Product view (for example enrolled instructors, progress) can be represented using deterministic preview adapter values.
+- Functional requirements:
+  - `FR-001` (`AC-001`, `AC-002`, `AC-003`): render cover-image previews for My Course, Course Picker, and Student Welcome using production-equivalent presentation.
+  - `FR-002` (`AC-004`): reuse shared runtime rendering units so preview and destination surfaces remain synchronized.
+  - `FR-003` (`AC-005`): place the Cover Image section below Paywall Settings and use the MER-4052 upload affordance styling.
+  - `FR-004` (`AC-006`, `AC-007`): render no preview gallery before upload and a three-preview gallery after upload.
+  - `FR-005` (`AC-008`): apply the Figma hover-state drop shadow to preview thumbnails.
+  - `FR-006` (`AC-009`): open a modal carousel from thumbnail click and allow navigation across all three previews.
+  - `FR-007` (`AC-010`): preserve existing template-management authorization and institution scoping.
+  - `FR-008` (`AC-011`, `AC-012`): preserve fallback behavior and responsive parity with the learner-facing surfaces.
+- Non-functional requirements:
+  - No new database schema, migration, background job, or external integration.
+  - No new telemetry instrumentation for this feature.
+  - No new obvious N+1 queries or repeated data fetch loops during preview rendering.
+  - Keyboard access, visible focus, semantic modal behavior, and responsive layout must remain aligned with WCAG 2.1 AA expectations and the linked Figma states.
+- Assumptions:
+  - The existing template/product section record already contains the data needed to render all three preview contexts.
+  - Template terminology work has already been completed elsewhere and is not an implementation objective of this story.
+  - The learner-facing components can accept narrowly scoped preview-only inputs or wrapper-provided defaults without changing runtime behavior.
+  - `MER-4052` and Figma nodes `275:11413`, `363:6938`, and `334:4814` are the design source of truth for layout and interaction details.
+  - QA parity validation will use `375px`, `768px`, and `1280px` as the required viewport matrix because those sizes align with the repository's standard Tailwind breakpoints (`md`, `xl`) plus a mobile sanity viewport; Student Welcome parity at `1280px` should also satisfy the runtime `hvxl` onboarding breakpoint.
 
-## Requirements Traceability
-
-- Source of truth: `docs/epics/product_overhaul/image_preview/requirements.yml`
-- FDD verification command:
-  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/image_preview --action verify_fdd`
-- Stage gate command:
-  - `python3 .agents/skills/spec_requirements/scripts/requirements_trace.py docs/epics/product_overhaul/image_preview --action master_validate --stage fdd_only`
-
-## 3. Torus Context Summary
+## 3. Repository Context Summary
 - What we know:
-  - `cover_image` fallback behavior is centralized in `OliWeb.Common.SourceImage.cover_image/1`.
-  - Product preview host is `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive.render/1`.
-  - My Course, Course Picker, and Welcome all have reusable component boundaries already, so full LiveView embedding is not required.
-- Inventory: My Course UI rendering
-  - `OliWeb.Workspaces.Student.render/1` (`lib/oli_web/live/workspaces/student.ex`) loops sections and calls:
-  - `OliWeb.Workspaces.Student.course_card/1` (same file), which renders the full card surface (image/background overlays, dates, title, instructors, progress, CTA arrow).
-  - `OliWeb.Common.SourceImage.cover_image/1` for image URL/fallback.
-  - `Oli.Delivery.Sections.get_instructors_for_section/1` currently called inside `course_card/1` for runtime instructor labels.
-  - `OliWeb.Common.FormatDateTime.to_formatted_datetime/3` for date labels.
-- Inventory: Course Picker UI rendering
-  - `OliWeb.Delivery.NewCourse.render_step(:select_source, assigns)` (`lib/oli_web/live/new_course/new_course.ex`) mounts:
-  - `OliWeb.Delivery.NewCourse.SelectSource.render/1` (`lib/oli_web/live/new_course/select_source.ex`) which renders:
-  - `OliWeb.Common.Listing.render/1` (`lib/oli_web/live/common/listing.ex`) and, in card mode:
-  - `OliWeb.Common.CardListing.render/1` (`lib/oli_web/live/common/card_listing.ex`) which renders the full picker card surface (image, title, description, payment badge, created date, selection styling).
-  - `OliWeb.Delivery.NewCourse.TableModel.render_payment_column/3` for payment badge text.
-- Inventory: Welcome UI rendering
-  - Route `/sections/:section_slug/welcome` maps to `OliWeb.Delivery.StudentOnboarding.Wizard`.
-  - `OliWeb.Delivery.StudentOnboarding.Wizard.render_step/1` with intro step calls:
-  - `OliWeb.Delivery.StudentOnboarding.Intro.render/1` (`lib/oli_web/live/delivery/student_onboarding/intro.ex`), which renders full intro preview surface (hero image, heading, expectation bullets).
-  - `OliWeb.Delivery.StudentOnboarding.Wizard.has_required_survey/1` and `has_explorations/1` drive conditional bullet rows.
+  - `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive` already owns the Template Overview page and renders the Cover Image section below Paywall Settings.
+  - `OliWeb.Products.Details.ImageUpload` already owns the upload widget and is the natural insertion point for no-image versus uploaded-image preview states.
+  - `OliWeb.Workspaces.Student.course_card/1` renders the My Course card and currently pulls image, dates, instructors, progress, and link behavior from a section-like assign.
+  - `OliWeb.Common.CardListing.render/1` renders the Course Picker card UI from `model.rows`.
+  - `OliWeb.Delivery.StudentOnboarding.Intro.render/1` renders the Student Welcome intro hero and text from a section-like assign.
+  - `OliWeb.Components.Modal` is the supported modal primitive for new modal work; `OliWeb.Common.Modal` is explicitly deprecated even though `DetailsLive` still uses it today.
+  - The current `course_card/1` implementation performs runtime-only work inline, including instructor lookup and navigation behavior, so preview rendering cannot call it blindly without a small seam or wrapper.
 - Unknowns to confirm:
-  - Exact placeholder text/value policy for preview-only dynamic fields (instructors/progress/payment badge/date).
-  - Whether preview should be strictly non-interactive (recommended) or partially interactive.
-  - Final placement/layout of preview controls in Product overview.
+  - Whether `course_card/1` should gain explicit preview attrs or whether a dedicated wrapper component should fully own preview-safe composition around shared lower-level elements.
+  - Whether the existing certificate-settings UI has any reusable carousel-specific helper beyond the general modal primitive. Current repository waypointing did not reveal a dedicated certificate preview carousel implementation.
 
 ## 4. Proposed Design
 ### 4.1 Component Roles & Interactions
-Use existing real runtime components directly as the rendering source for Product preview.
+The simplest adequate design is to keep gallery and modal state in Template Overview and introduce one small preview component module responsible for selecting and rendering the three contexts.
 
-- Product preview renderer (new helper component module): `OliWeb.Products.ImagePreview.RuntimePreview`
-  - Responsibility: choose context and call existing runtime components with adapted assigns.
-- Existing runtime components reused directly:
+- `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive`
+  - Continues to own page authorization, upload lifecycle, and overall page composition.
+  - Gains preview UI state assigns such as selected preview context and modal visibility.
+  - Renders the preview gallery directly beneath the existing upload area once a cover image is present.
+- `OliWeb.Products.Details.ImageUpload`
+  - Remains the upload/dropzone surface.
+  - Gains an optional slot or sibling render block for preview content so the upload affordance and preview states remain co-located.
+- New module: `OliWeb.Products.ImagePreview`
+  - Renders the large selected preview, the three thumbnails, and the modal carousel content.
+  - Owns context labels and context ordering: My Course, Course Picker, Student Welcome.
+  - Delegates actual context rendering to dedicated preview wrappers.
+- New wrapper components under `OliWeb.Products.ImagePreview`
+  - `MyCoursePreview`
+  - `CoursePickerPreview`
+  - `StudentWelcomePreview`
+  - Each wrapper adapts template data into the contract expected by the corresponding runtime component while disabling runtime-only behavior.
+- Existing runtime seams reused:
   - My Course: `OliWeb.Workspaces.Student.course_card/1`
   - Course Picker: `OliWeb.Common.CardListing.render/1`
-  - Welcome: `OliWeb.Delivery.StudentOnboarding.Intro.render/1`
-- Product preview adapters (new module): `OliWeb.Products.ImagePreview.Adapters`
-  - `my_course_assigns/2`
-  - `course_picker_assigns/2`
-  - `welcome_assigns/2`
-  - These map product/template data into the exact assign shape each real component expects.
-- Minimal preview-safe seams on existing components (only where needed):
-  - My Course `course_card/1`: support preview-provided instructors and disabled interaction to avoid runtime DB/event dependencies.
-  - Course Picker `CardListing.render/1`: support non-interactive preview mode (no source selection click handling).
-  - Welcome `Intro.render/1`: no seam required beyond adapter data shaping.
+  - Student Welcome: `OliWeb.Delivery.StudentOnboarding.Intro.render/1`
+- Modal primitive:
+  - New preview modal work should use `OliWeb.Components.Modal`, even if `DetailsLive` still carries deprecated modal support for unrelated behavior.
 
-```mermaid
-graph LR
-  subgraph Runtime[Runtime Paths]
-    A[OliWeb.Workspaces.Student.course_card/1]
-    B[OliWeb.Common.CardListing.render/1]
-    C[OliWeb.Delivery.StudentOnboarding.Intro.render/1]
-  end
+This is preferred over embedding full LiveViews or building screenshot mockups because it keeps the preview surface inside the authoring page while still sourcing markup from the real learner-facing components.
 
-  subgraph Product[Product/Template Overview]
-    D[OliWeb.Workspaces.CourseAuthor.Products.DetailsLive]
-    E[OliWeb.Products.ImagePreview.RuntimePreview]
-    F[OliWeb.Products.ImagePreview.Adapters]
-  end
+### 4.2 State & Data Flow
+1. `DetailsLive.mount/3` loads the template section as it does today.
+2. The Cover Image section renders the upload area via `ImageUpload.render`.
+3. If the template has no cover image, no preview gallery is rendered.
+4. If the template has a cover image, `DetailsLive` renders `OliWeb.Products.ImagePreview` with:
+   - the template section record
+   - the current context selection
+   - modal open/closed state
+   - the request context already assigned to the page
+5. `OliWeb.Products.ImagePreview` builds a fixed list of three preview items and renders:
+   - one large selected preview pane
+   - three thumbnail buttons
+6. Hover styling is applied in the gallery component using the design-system classes selected to match Figma.
+7. Clicking a thumbnail updates the selected context and opens the modal when requested.
+8. The selected wrapper component maps template data to the corresponding runtime component contract:
+   - My Course wrapper provides a preview-safe section-like map and disables link navigation and runtime instructor lookup.
+   - Course Picker wrapper provides a one-row `model` and disables card selection click handling.
+   - Student Welcome wrapper provides a section-like map with deterministic values for any conditional onboarding bullets.
+9. The modal carousel renders the same three wrapper components in modal form and uses next/previous controls plus position indicators.
 
-  D --> E
-  E --> F
-  F --> A
-  F --> B
-  F --> C
-
-  E --> A
-  E --> B
-  E --> C
-
-  A --> G[OliWeb.Common.SourceImage.cover_image/1]
-  B --> G
-  C --> G
-```
-
-### 4.2 State & Message Flow
-1. Product details page mounts with existing product/template assigns.
-2. Page initializes `preview_context` (`:my_course | :course_picker | :welcome`).
-3. User changes preview context via selector event.
-4. LiveView updates `preview_context` assign.
-5. `RuntimePreview` calls the corresponding adapter function for that context.
-6. Adapter returns assigns tailored for the real runtime component.
-7. Product preview renders the real runtime component with preview-safe options.
-8. Telemetry emits context selection and render outcome.
-
-No PubSub, no background job, and no new stateful process is required.
-
-### 4.3 Supervision & Lifecycle
-- No new OTP supervision tree entries.
-- Lifecycle remains within existing Product details LiveView render cycle.
-- Failure isolation:
-  - Unknown context falls back to `:my_course`.
-  - Missing/invalid image still resolves to default via `SourceImage.cover_image/1`.
-  - Preview adapter validation errors return an explicit fallback preview card rather than crashing.
+### 4.3 Lifecycle & Ownership
+- State ownership:
+  - `DetailsLive` owns modal visibility and selected-context state because the feature is page-local and does not need a separate process.
+  - `OliWeb.Products.ImagePreview` owns presentation logic for the gallery and modal but not page authorization or uploads.
+- Data ownership:
+  - The template section record remains the source of truth for title, description, welcome text, image, and related display values.
+  - Preview wrappers may derive deterministic placeholder values only for runtime-only fields that are not meaningfully available in Template Overview, such as instructor label or progress.
+- Lifecycle:
+  - No new OTP processes, PubSub subscriptions, cache layers, or background jobs.
+  - Preview state lives only for the duration of the Template Overview LiveView session.
 
 ### 4.4 Alternatives Considered
-- Build brand-new replacement components for preview:
-  - Rejected: introduces duplicate render paths and long-term drift risk.
-- Embed full route LiveViews in Product preview:
-  - Rejected: requires route/mount/session behavior, has heavy side effects, and is not suitable for inline preview.
-- Screenshot/composite approach:
-  - Rejected: brittle and does not guarantee parity.
-- Decision rationale (why selected approach is best):
-  - Calls real runtime component entry points directly.
-  - Keeps markup single-sourced where parity matters.
-  - Limits change to adapter and small preview seams rather than broad refactor.
+- Build custom static mockups for all three contexts.
+  - Rejected because it duplicates learner-facing markup and styling, which is the main source of drift this story is trying to avoid.
+- Mount the full learner LiveViews inside Template Overview.
+  - Rejected because those flows require routing, session, and side effects that are not appropriate for inline authoring preview.
+- Reuse the deprecated `OliWeb.Common.Modal` path because `DetailsLive` already imports it.
+  - Rejected for new preview work because the repository explicitly marks it deprecated and the supported modal primitive already exists.
+- Add telemetry because `harness.yml` enables it by default.
+  - Rejected because the PRD and Jira clarification make telemetry out of scope for this feature.
 
 ## 5. Interfaces
-### 5.1 HTTP/JSON APIs
-- No new HTTP endpoints.
-- No JSON contract changes.
-
-### 5.2 LiveView
-- Product details LiveView (`OliWeb.Workspaces.CourseAuthor.Products.DetailsLive`):
-  - Add assign: `:preview_context`.
-  - Add event: `"select_preview_context"`.
-  - Add preview render block invoking `RuntimePreview`.
-- `RuntimePreview` component contract:
-  - Inputs: `product`, `ctx`, `preview_context`.
-  - Behavior: delegate to adapters and then render one of existing runtime components.
-- Adapter contracts:
-  - `my_course_assigns(product, ctx)` returns map containing section-like data and preview options (`interactive?: false`, preview instructors/progress).
-  - `course_picker_assigns(product, ctx)` returns one-row model and non-interactive selection handler.
-  - `welcome_assigns(product, ctx)` returns section-like map with survey/exploration booleans and title/image.
-- Existing component seams (minimal, backward-compatible):
-  - `OliWeb.Workspaces.Student.course_card/1`: optional attrs for preview instructor list and interaction disable.
-  - `OliWeb.Common.CardListing.render/1`: optional non-interactive mode.
-
-### 5.3 Processes
-- None.
+- `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive`
+  - New assigns:
+    - `:image_preview_selected_context`
+    - `:image_preview_modal_open`
+  - New events:
+    - `"select_image_preview_context"`
+    - `"open_image_preview_modal"`
+    - `"close_image_preview_modal"`
+    - `"show_next_image_preview"`
+    - `"show_previous_image_preview"`
+- `OliWeb.Products.ImagePreview.render/1`
+  - Inputs:
+    - `section`
+    - `ctx`
+    - `selected_context`
+    - `modal_open?`
+  - Outputs:
+    - gallery markup, thumbnail controls, and modal markup
+- Preview wrapper interfaces:
+  - `MyCoursePreview.render/1`: accepts a section-like preview struct plus `ctx`; suppresses navigation and runtime-only lookup.
+  - `CoursePickerPreview.render/1`: accepts a one-row `model`, `ctx`, and a no-op or disabled `selected` action.
+  - `StudentWelcomePreview.render/1`: accepts a section-like preview struct.
+- Expected runtime seams needing small changes:
+  - `OliWeb.Workspaces.Student.course_card/1` likely needs optional attrs to disable `href` navigation and use precomputed instructors rather than calling `Sections.get_instructors_for_section/1`.
+  - `OliWeb.Common.CardListing.render/1` likely needs an optional disabled-preview mode so cards can render as buttons or inert containers instead of clickable selectors.
+  - `OliWeb.Delivery.StudentOnboarding.Intro.render/1` likely needs no interface change beyond wrapper-provided assigns.
 
 ## 6. Data Model & Storage
-### 6.1 Ecto Schemas
 - No schema changes.
 - No migrations.
-
-### 6.2 Query Performance
-- Preview context switching must not trigger new per-switch DB queries.
-- My Course preview must not call runtime instructor queries when preview instructors are provided.
-- Course Picker preview should render from adapter-provided in-memory row model.
+- No new persisted preview records.
+- The only new data structures are ephemeral view-layer maps or small structs used to adapt the template section into runtime-component inputs.
 
 ## 7. Consistency & Transactions
-- No new transaction boundaries.
-- Existing product image update flow remains unchanged.
-- Preview render always uses same runtime components as real surfaces, with adapter-provided data where runtime-only data is unavailable.
+- Existing cover-image upload behavior remains authoritative and unchanged.
+- Preview rendering is read-only and should not create, update, or delete any persisted records.
+- Modal and gallery interactions are purely UI state transitions inside the LiveView and do not need transactional behavior.
 
 ## 8. Caching Strategy
-- No new cache layers.
-- Keep existing static fallback image behavior.
-- Browser/CDN caching for image URLs remains unchanged.
+- N/A for new feature-specific caching.
+- Existing browser and CDN behavior for uploaded cover-image assets remains unchanged.
+- The design intentionally avoids any screenshot cache or generated preview artifact cache.
 
-## 9. Performance and Scalability Plan
-### 9.1 Budgets
-- Initial preview render p95 <= 700ms.
-- Context switch p95 <= 400ms.
-- No significant memory growth beyond preview context assign and adapter payloads.
-
-### 9.2 Hotspots & Mitigations
-- Hotspot: hidden runtime dependencies inside reused components.
-  - Mitigation: add explicit preview seams for interactivity and runtime data access.
-- Hotspot: adapter drift from runtime contracts.
-  - Mitigation: contract tests for adapters against component-required assigns.
-- Hotspot: preview mode accidentally triggering navigation/events.
-  - Mitigation: non-interactive preview mode and explicit no-op click handling.
+## 9. Performance & Scalability Posture
+- Performance posture:
+  - Rendering the gallery should be bounded to three preview wrappers and should not introduce repeated database queries on thumbnail selection or modal navigation.
+  - The My Course preview path must not trigger per-render instructor lookups once preview-safe data is provided.
+  - The Course Picker preview path should render from an in-memory single-row model rather than loading broader picker data.
+- Scalability posture:
+  - All state remains page-local and proportional to three small preview items.
+  - No server-side fan-out, background jobs, or external API dependencies are introduced.
 
 ## 10. Failure Modes & Resilience
-- Invalid preview context:
-  - Fallback to `:my_course` and log warning metadata.
-- Missing image:
-  - Render default image via `SourceImage.cover_image/1`.
-- Adapter returns invalid assign shape:
-  - Render safe fallback preview block and emit error telemetry.
-- Unauthorized access to Product details:
-  - Existing auth/mount protections remain authoritative.
+- No cover image present:
+  - Intended behavior, not an error. Render upload controls only and no gallery.
+- Missing or invalid image URL:
+  - Reuse the destination surface fallback path, primarily via `SourceImage.cover_image/1`, so the preview shows the same fallback visuals as runtime.
+- Wrapper receives insufficient data:
+  - Render a deterministic fallback presentation instead of crashing the LiveView.
+- Preview component accidentally triggers navigation or side effects:
+  - Prevent by explicit preview mode flags and inert click handling in the reused runtime components.
+- Unauthorized access:
+  - Remains blocked by existing `DetailsLive` authoring auth and mount behavior.
 
 ## 11. Observability
-- Telemetry events:
-  - `[:oli, :template, :image_preview, :context_selected]` with context metadata.
-  - `[:oli, :template, :image_preview, :rendered]` with duration/result metadata.
-- AppSignal tags:
-  - `feature=image_preview`, `surface=product_overview`, `context=<context>`.
-- Logging:
-  - Structured warnings for invalid context and adapter-shape failures.
+- No new telemetry events are required.
+- Existing request logging and ordinary exception reporting remain sufficient for this scope.
+- If preview rendering errors surface during implementation, normal logging should include enough context to identify the failing preview context without introducing a feature-specific telemetry requirement.
 
 ## 12. Security & Privacy
-- AuthN/AuthZ:
-  - Preview remains inside authenticated, authorized Product details surface.
-- Tenant isolation:
-  - Preview data comes from mounted product context; no cross-tenant lookup path added.
-- PII:
-  - Preview telemetry excludes user identifiers and freeform sensitive payloads.
-- Auditability:
-  - Existing request logs plus preview telemetry counters.
+- Preview remains available only inside the authenticated template-management surface.
+- Existing institution and authoring permission checks in `DetailsLive` remain the access-control boundary.
+- The design introduces no new cross-tenant lookup paths and no new user-generated payload storage.
+- The modal and gallery show only template-owned presentation data already visible to authorized template managers.
 
 ## 13. Testing Strategy
-- Inventory/contract tests:
-  - Verify Product preview renders through real runtime component entry points:
-    - `OliWeb.Workspaces.Student.course_card/1`
-    - `OliWeb.Common.CardListing.render/1`
-    - `OliWeb.Delivery.StudentOnboarding.Intro.render/1`
-- Component tests:
-  - My Course preview mode: non-interactive rendering, no runtime instructor query path, correct image/title/date/progress shell.
-  - Course Picker preview mode: non-interactive card list rendering with product data.
-  - Welcome preview: full intro content and conditional bullet behavior.
-- LiveView tests:
-  - Product details context selector switches preview surfaces.
-  - Missing cover image renders default image in each context.
-  - Unauthorized users cannot access preview controls.
+- LiveView tests for `DetailsLive`:
+  - no-image state renders upload affordance with no gallery (`AC-006`)
+  - uploaded-image state renders selected preview plus three thumbnails below Paywall Settings (`AC-005`, `AC-007`)
+  - unauthorized users cannot access the preview UI (`AC-010`)
+- Component tests for preview wrappers:
+  - My Course preview reuses the runtime card seam and does not navigate or issue runtime instructor queries (`AC-001`, `AC-004`)
+  - Course Picker preview reuses `CardListing` presentation with non-interactive behavior (`AC-002`, `AC-004`)
+  - Student Welcome preview reuses onboarding intro presentation (`AC-003`, `AC-004`)
+- UI interaction tests:
+  - thumbnail hover state applies the expected class or visual contract (`AC-008`)
+  - clicking a thumbnail opens the modal carousel and next/previous controls cycle across all three states (`AC-009`)
 - Regression tests:
-  - Existing runtime tests for student workspace, new course selection, and product details continue to pass.
-- Observability tests:
-  - Assert telemetry emitted for context selection and render outcome.
-- Manual:
-  - Visual parity checks (desktop/tablet/mobile) between runtime surfaces and Product preview.
+  - fallback image behavior stays aligned with the three runtime surfaces (`AC-011`)
+  - responsive parity checks are covered at `375px`, `768px`, and `1280px` through targeted UI assertions and manual QA (`AC-012`)
+- Manual verification:
+  - compare gallery and modal against Figma nodes `363:6938` and `334:4814`
+  - verify keyboard reachability, focus handling, escape-to-close, and accessible names in the modal and thumbnail gallery
 
 ## 14. Backwards Compatibility
-- Existing runtime routes and page composition remain unchanged.
-- Existing image upload/edit behavior in Product details remains unchanged.
-- Runtime components keep default behavior when preview options are not provided.
-- Preview uses runtime components directly, reducing future parity drift risk.
+- Existing template upload/edit behavior remains unchanged.
+- Existing learner-facing routes and components remain the source of truth for their own runtime views.
+- Any new attrs added to reused runtime components must be optional and preserve existing runtime behavior by default.
+- No feature-flag or migration rollout is required; normal deployment is sufficient.
 
 ## 15. Risks & Mitigations
-- Risk: Existing components are not preview-safe without small API seams.
-  - Mitigation: add narrowly-scoped optional attrs with safe defaults.
-- Risk: Adapter placeholder data may mislead users.
-  - Mitigation: document deterministic placeholder policy and visually indicate preview context.
-- Risk: Component changes for preview regress runtime interaction.
-  - Mitigation: runtime regression test suite as hard gate.
+- Runtime components may contain hidden assumptions that make inline preview unsafe: add narrow preview-mode attrs or wrapper-owned defaults rather than forking full component markup.
+- The gallery could drift from Figma while the embedded preview content stays accurate: keep all gallery and modal structure centralized in one new `OliWeb.Products.ImagePreview` module.
+- The My Course card currently performs DB lookups inline: remove or bypass that runtime-only lookup in preview mode so gallery and modal navigation stay cheap and deterministic.
+- Using the deprecated modal helper would create new cleanup debt: implement the new preview modal with `OliWeb.Components.Modal`.
 
 ## 16. Open Questions & Follow-ups
-- Confirm exact placeholder policy for dynamic fields in preview (instructors/progress/date/payment badge).
-- Confirm whether preview should show a subtle "Preview Data" hint for fields not sourced from live runtime enrollment state.
-- Confirm final responsive breakpoint matrix for parity sign-off.
+- Confirm whether the learner-facing My Course card should be adapted with preview attrs or whether its preview should be factored into a lower-level shared component during implementation.
+- If implementation reveals an existing certificate preview carousel helper not found during waypointing, reevaluate reuse before building a feature-specific carousel body.
 
 ## 17. References
-- `docs/epics/product_overhaul/image_preview/prd.md`
-- `docs/epics/product_overhaul/prd.md`
-- `docs/epics/product_overhaul/overview.md`
+- `docs/exec-plans/current/epics/product_overhaul/image_preview/prd.md`
+- `docs/exec-plans/current/epics/product_overhaul/image_preview/requirements.yml`
+- Jira `MER-4052`
+- Figma `GQm0yUEwFNbzznfpvV1eSM`, nodes `275:11413`, `363:6938`, `334:4814`
+- `lib/oli_web/live/workspaces/course_author/products/details_live.ex`
 - `lib/oli_web/live/workspaces/student.ex`
 - `lib/oli_web/live/common/card_listing.ex`
-- `lib/oli_web/live/new_course/select_source.ex`
-- `lib/oli_web/live/new_course/new_course.ex`
-- `lib/oli_web/live/common/listing.ex`
-- `lib/oli_web/live/delivery/student_onboarding/wizard.ex`
 - `lib/oli_web/live/delivery/student_onboarding/intro.ex`
-- `lib/oli_web/common/source_image.ex`
-- `lib/oli_web/live/workspaces/course_author/products/details_live.ex`
-- `lib/oli_web/live/new_course/table_model.ex`
+- `lib/oli_web/components/modal.ex`
