@@ -80,6 +80,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       Map.get(assigns, :show_email_modal, socket.assigns[:show_email_modal] || false) and
         selected_student_ids != []
 
+    selected_students_data = selected_students_data(student_lookup, selected_student_ids)
+    selected_emails = selected_student_emails(selected_students_data)
+
     {:ok,
      socket
      |> assign(assigns)
@@ -87,6 +90,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
      |> assign(:student_lookup, student_lookup)
      |> assign(:student_support_projection_signature, projection_signature)
      |> assign(:selected_student_ids, selected_student_ids)
+     |> assign(:selected_students_data, selected_students_data)
+     |> assign(:selected_emails, selected_emails)
      |> assign(:show_email_modal, show_email_modal)}
   end
 
@@ -106,9 +111,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     compact_graph_keys? = compact_graph_keys?(buckets)
     selected_student_ids = normalize_selected_student_ids(assigns[:selected_student_ids])
 
-    selected_students_data =
-      selected_students_data(assigns[:student_lookup] || %{}, selected_student_ids)
-
     select_all_checked =
       visible_students != [] and Enum.all?(visible_students, &selected?(&1, selected_student_ids))
 
@@ -125,7 +127,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       |> assign(:visible_students, visible_students)
       |> assign(:remaining_count, remaining_count)
       |> assign(:selected_student_ids, selected_student_ids)
-      |> assign(:selected_students_data, selected_students_data)
       |> assign(:select_all_checked, select_all_checked)
       |> assign(:compact_graph_keys?, compact_graph_keys?)
       |> assign(:chart_spec, build_chart_spec(buckets, selected_bucket_id))
@@ -323,6 +324,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                     module={EmailButton}
                     variant={:minimal}
                     selected_students={@selected_student_ids}
+                    selected_emails={@selected_emails}
                     section_slug={@section_slug}
                     instructor_email={@instructor_email}
                     email_handler_id={@id}
@@ -601,9 +603,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         Enum.uniq(selected_student_ids ++ visible_student_ids)
       end
 
+    selected_students_data =
+      selected_students_data(socket.assigns.student_lookup, next_selected_student_ids)
+
     {:noreply,
      socket
      |> assign(:selected_student_ids, next_selected_student_ids)
+     |> assign(:selected_students_data, selected_students_data)
+     |> assign(:selected_emails, selected_student_emails(selected_students_data))
      |> assign(:show_email_modal, false)}
   end
 
@@ -620,9 +627,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             [parsed_student_id | selected_student_ids]
           end
 
+        selected_students_data =
+          selected_students_data(socket.assigns.student_lookup, next_selected_student_ids)
+
         {:noreply,
          socket
          |> assign(:selected_student_ids, next_selected_student_ids)
+         |> assign(:selected_students_data, selected_students_data)
+         |> assign(:selected_emails, selected_student_emails(selected_students_data))
          |> assign(:show_email_modal, false)}
 
       _ ->
@@ -861,6 +873,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     selected_student_ids
     |> Enum.map(&Map.get(student_lookup, &1))
     |> Enum.reject(&is_nil/1)
+  end
+
+  defp selected_student_emails(selected_students_data) do
+    selected_students_data
+    |> Enum.map(& &1.email)
+    |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
   end
 
   defp student_lookup(projection) do

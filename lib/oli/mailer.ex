@@ -9,9 +9,6 @@ defmodule Oli.Mailer do
       SendEmailWorker.new(%{email: SendEmailWorker.serialize_email(email)})
     end)
     |> Oban.insert_all()
-  rescue
-    exception ->
-      {:error, exception}
   end
 
   def deliver_later(email) do

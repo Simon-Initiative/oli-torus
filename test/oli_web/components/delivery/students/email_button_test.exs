@@ -9,6 +9,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailButtonTest do
     test "renders full variant by default with dropdown options", %{conn: conn} do
       attrs = %{
         selected_students: [1],
+        selected_emails: "student1@test.com",
         students: [
           %{id: 1, email: "student1@test.com", name: "Student 1"}
         ],
@@ -27,6 +28,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailButtonTest do
     test "renders disabled when no students selected", %{conn: conn} do
       attrs = %{
         selected_students: [],
+        selected_emails: "",
         students: [],
         section_title: "Test Course",
         instructor_email: "instructor@test.com",
@@ -44,6 +46,7 @@ defmodule OliWeb.Components.Delivery.Students.EmailButtonTest do
       attrs = %{
         variant: :minimal,
         selected_students: [1],
+        selected_emails: "student1@test.com",
         students: [
           %{id: 1, email: "student1@test.com", name: "Student 1"}
         ],
@@ -59,6 +62,23 @@ defmodule OliWeb.Components.Delivery.Students.EmailButtonTest do
       refute html =~ "Copy email addresses"
       refute html =~ "Send email"
       refute html =~ "chevron_down"
+    end
+
+    test "defaults selected_emails when it is not provided", %{conn: conn} do
+      attrs = %{
+        selected_students: [1],
+        students: [
+          %{id: 1, email: "student1@test.com", name: "Student 1"}
+        ],
+        section_title: "Test Course",
+        instructor_email: "instructor@test.com",
+        section_slug: "test-section"
+      }
+
+      {:ok, _lcd, html} = live_component_isolated(conn, EmailButton, attrs)
+
+      assert html =~ "Copy email addresses"
+      assert html =~ ~s(data-copy-text="")
     end
   end
 end
