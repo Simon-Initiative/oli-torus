@@ -433,9 +433,15 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   }
   const submitButtonSelection = (emitAiTrigger = false) => {
     if (emitAiTrigger && model.enableAiTrigger && hasAiTriggerPrompt(model.aiTriggerPrompt)) {
+      // The custom element wrapper lowercases attribute names
+      const sectionSlug = (props as any).sectionslug ?? props.sectionSlug;
+      const resourceId =
+        (props as any).resourceid != null
+          ? Number((props as any).resourceid)
+          : props.resourceId;
       void invokeAdaptiveAiTrigger({
-        sectionSlug: props.sectionSlug,
-        resourceId: props.resourceId,
+        sectionSlug,
+        resourceId,
         triggerType: 'adaptive_component',
         data: {
           component_id: id,

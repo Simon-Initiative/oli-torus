@@ -11,32 +11,6 @@ import { aiTriggerTagName } from './constants';
 import { AITriggerModel } from './schema';
 
 const AUTO_TRIGGER_DELAY_MS = 2000;
-const AUTO_TRIGGER_SESSION_KEY_PREFIX = 'adaptive-ai-trigger:auto';
-
-const buildAutoTriggerSessionKey = (
-  sectionSlug?: string,
-  resourceId?: number,
-  componentId?: string,
-) =>
-  [AUTO_TRIGGER_SESSION_KEY_PREFIX, sectionSlug ?? 'unknown', resourceId ?? 'unknown', componentId]
-    .join(':')
-    .trim();
-
-const hasAutoTriggerFiredInSession = (key: string) => {
-  try {
-    return window.sessionStorage.getItem(key) === 'true';
-  } catch (_error) {
-    return false;
-  }
-};
-
-const markAutoTriggerFiredInSession = (key: string) => {
-  try {
-    window.sessionStorage.setItem(key, 'true');
-  } catch (_error) {
-    // Ignore storage failures and fall back to the in-memory guard.
-  }
-};
 
 const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
   const [model, setModel] = useState<Partial<AITriggerModel>>({});
@@ -44,7 +18,11 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
   const [triggerAvailable, setTriggerAvailable] = useState(() => canInvokeAiTrigger());
   const firedAutoTrigger = useRef(false);
   const id = props.id;
-  const { model: modelProp, onInit, onReady, resourceId, sectionSlug } = props;
+  const { model: modelProp, onInit, onReady } = props;
+  // The custom element wrapper lowercases attribute names, so sectionSlug arrives as sectionslug
+  const sectionSlug = (props as any).sectionslug ?? props.sectionSlug;
+  const resourceId =
+    (props as any).resourceid != null ? Number((props as any).resourceid) : props.resourceId;
 
   useEffect(() => {
     let parsedModel: Partial<AITriggerModel> | undefined;
@@ -90,15 +68,35 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
       return;
     }
 
-    const observer = new MutationObserver(refreshTriggerAvailability);
-    observer.observe(document.body, {
+    const observerConfig = {
       attributes: true,
       attributeFilter: ['id'],
       childList: true,
       subtree: true,
-    });
+    };
 
-    return () => observer.disconnect();
+    const observer = new MutationObserver(refreshTriggerAvailability);
+    observer.observe(document.body, observerConfig);
+
+    // In adaptive delivery the component runs inside an iframe while
+    // the DOT dialogue window lives in the parent frame. Observe the
+    // parent body as well so we detect late-mounting #ai_bot.
+    let parentObserver: MutationObserver | undefined;
+    try {
+      const isInIframe = window.parent !== window;
+      const parentBody = isInIframe ? window.parent.document.body : null;
+      if (parentBody) {
+        parentObserver = new MutationObserver(refreshTriggerAvailability);
+        parentObserver.observe(parentBody, observerConfig);
+      }
+    } catch (_e) {
+      // Cross-origin access denied — ignore.
+    }
+
+    return () => {
+      observer.disconnect();
+      parentObserver?.disconnect();
+    };
   }, []);
 
   const {
@@ -108,8 +106,6 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
     prompt,
     ariaLabel = 'Open DOT AI assistant',
   } = model;
-  const autoTriggerSessionKey = buildAutoTriggerSessionKey(sectionSlug, resourceId, id);
-
   useEffect(() => {
     if (
       !ready ||
@@ -118,8 +114,7 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
       !hasAiTriggerPrompt(prompt) ||
       resourceId == null ||
       !sectionSlug ||
-      !triggerAvailable ||
-      hasAutoTriggerFiredInSession(autoTriggerSessionKey)
+      !triggerAvailable
     ) {
       return;
     }
@@ -139,7 +134,6 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
       }
 
       firedAutoTrigger.current = true;
-      markAutoTriggerFiredInSession(autoTriggerSessionKey);
       void invokeAdaptiveAiTrigger({
         sectionSlug,
         resourceId,
@@ -153,7 +147,6 @@ const AITrigger: React.FC<PartComponentProps<AITriggerModel>> = (props) => {
 
     return () => window.clearTimeout(timeout);
   }, [
-    autoTriggerSessionKey,
     id,
     launchMode,
     prompt,
