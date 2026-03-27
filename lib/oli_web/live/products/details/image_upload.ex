@@ -9,8 +9,25 @@ defmodule OliWeb.Products.Details.ImageUpload do
   attr(:change, :any, required: true)
   attr(:cancel_upload, :any, required: true)
 
+  @preview_contexts [
+    %{id: "my-course", label: "My Course"},
+    %{id: "course-picker", label: "Course Picker"},
+    %{id: "student-welcome", label: "Student Welcome"}
+  ]
+
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
+    has_cover_image? =
+      case assigns[:product] do
+        %{cover_image: cover_image} -> present?(cover_image)
+        _ -> false
+      end
+
+    assigns =
+      assigns
+      |> assign(:preview_contexts, @preview_contexts)
+      |> assign(:has_cover_image?, has_cover_image?)
+
     ~H"""
     <div class="container">
       <div class="grid grid-cols-12">
@@ -99,9 +116,54 @@ defmodule OliWeb.Products.Details.ImageUpload do
                   </article>
                 <% end %>
               <% else %>
-                <article class="col-span-12">
-                  <img id="current-product-img" src={@product.cover_image} class="img-fluid w-75" />
-                </article>
+                <%= if @has_cover_image? do %>
+                  <div id="img-preview-gallery" class="col-span-12 flex flex-col gap-4">
+                    <article
+                      id="selected-image-preview"
+                      class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+                      data-preview-context="my-course"
+                    >
+                      <div class="border-b border-gray-200 px-4 py-3">
+                        <div class="text-sm font-semibold text-gray-900">My Course</div>
+                        <div class="text-xs text-gray-500">
+                          Selected preview shell for the uploaded cover image
+                        </div>
+                      </div>
+                      <div class="flex justify-center bg-gray-50 p-4">
+                        <img
+                          id="current-product-img"
+                          src={@product.cover_image}
+                          class="max-h-80 w-full rounded-xl object-contain"
+                          alt="Selected cover image preview"
+                        />
+                      </div>
+                    </article>
+
+                    <div
+                      id="image-preview-thumbnails"
+                      class="grid grid-cols-1 gap-3 md:grid-cols-3"
+                      role="list"
+                    >
+                      <%= for context <- @preview_contexts do %>
+                        <article
+                          id={"image-preview-thumbnail-#{context.id}"}
+                          class="image-preview-thumbnail group flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white text-left shadow-sm transition-shadow hover:shadow-lg"
+                          data-preview-context={context.id}
+                          role="listitem"
+                        >
+                          <img
+                            src={@product.cover_image}
+                            class="h-28 w-full object-cover"
+                            alt={context.label}
+                          />
+                          <span class="px-3 py-2 text-sm font-medium text-gray-700">
+                            {context.label}
+                          </span>
+                        </article>
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
               <% end %>
             </section>
 
@@ -135,6 +197,8 @@ defmodule OliWeb.Products.Details.ImageUpload do
   defp upload_has_entries?(upload) do
     upload.entries != []
   end
+
+  defp present?(value), do: not is_nil(value) and value != ""
 
   defp upload_has_errors?(upload) do
     Enum.any?(upload.entries, &entry_has_errors?(upload, &1))

@@ -348,15 +348,31 @@ defmodule OliWeb.ProductsLiveTest do
   describe "product overview image upload" do
     setup [:admin_conn, :create_product]
 
-    test "displays the current image", %{conn: conn} do
+    test "displays the uploaded gallery when a current image exists", %{conn: conn} do
       product =
         insert(:section, type: :blueprint, cover_image: "https://example.com/some-image-url.png")
 
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
+      assert has_element?(view, "#img-preview-gallery")
+
       assert view
-             |> element("#img-preview img")
+             |> element("#selected-image-preview #current-product-img")
              |> render() =~ "src=\"https://example.com/some-image-url.png\""
+
+      assert has_element?(view, "#image-preview-thumbnail-my-course")
+      assert has_element?(view, "#image-preview-thumbnail-course-picker")
+      assert has_element?(view, "#image-preview-thumbnail-student-welcome")
+    end
+
+    test "renders no preview gallery when there is no current image", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      refute has_element?(view, "#img-preview-gallery")
+      refute has_element?(view, "#current-product-img")
     end
 
     test "submit button is disabled if no file has been uploaded", %{conn: conn, product: product} do
@@ -394,13 +410,13 @@ defmodule OliWeb.ProductsLiveTest do
              |> element("#img-upload-form button[type=\"submit\"]")
              |> render() =~ "disabled"
 
-      # submitting displays new image
+      # submitting displays new gallery
       assert view
              |> element("#img-upload-form")
              |> render_submit(%{})
 
-      assert view
-             |> render() =~ "<img id=\"current-product-img\""
+      assert has_element?(view, "#img-preview-gallery")
+      assert has_element?(view, "#selected-image-preview #current-product-img")
     end
 
     test "canceling an upload restores previous rendered image", %{conn: conn} do
@@ -430,8 +446,10 @@ defmodule OliWeb.ProductsLiveTest do
       |> element("button[phx-click='cancel_upload']")
       |> render_click()
 
-      assert view
-             |> render() =~ "<img id=\"current-product-img\" src=\"#{current_image}\""
+      assert has_element?(
+               view,
+               "#selected-image-preview #current-product-img[src='#{current_image}']"
+             )
     end
   end
 

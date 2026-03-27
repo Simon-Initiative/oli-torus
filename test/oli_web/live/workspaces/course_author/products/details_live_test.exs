@@ -105,7 +105,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert paywall_index < content_index
     end
 
-    test "renders the cover image section beneath paywall settings with helper text and current image",
+    test "renders the cover image section beneath paywall settings with helper text and gallery shell",
          ctx do
       %{conn: conn, project: project, product: product} = ctx
 
@@ -126,8 +126,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
 
       assert has_element?(
                live,
-               "#img-preview #current-product-img[src='https://example.com/template-cover.png']"
+               "#img-preview-gallery #current-product-img[src='https://example.com/template-cover.png']"
              )
+
+      assert has_element?(live, "#selected-image-preview[data-preview-context='my-course']")
+      assert has_element?(live, "#image-preview-thumbnails")
+      assert has_element?(live, "#image-preview-thumbnail-my-course")
+      assert has_element?(live, "#image-preview-thumbnail-course-picker")
+      assert has_element?(live, "#image-preview-thumbnail-student-welcome")
+      assert has_element?(live, ".image-preview-thumbnail.hover\\:shadow-lg")
 
       {paywall_index, _} = :binary.match(html, "Paywall Settings")
       {cover_image_index, _} = :binary.match(html, "Cover Image")
@@ -137,12 +144,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert cover_image_index < content_index
     end
 
-    test "renders the current cover image slot even when no image is set", ctx do
+    test "renders no preview gallery when no image is set", ctx do
       %{conn: conn, project: project, product: product} = ctx
 
       {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
 
-      assert has_element?(live, "#img-preview #current-product-img")
+      refute has_element?(live, "#img-preview-gallery")
+      refute has_element?(live, "#current-product-img")
     end
 
     test "places tags between description and welcome message title", ctx do
