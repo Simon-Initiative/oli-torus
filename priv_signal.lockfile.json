@@ -25342,17 +25342,17 @@
       },
       "evidence": [
         {
-          "line": 391,
+          "line": 393,
           "signal": "indirect_payload_ref",
           "rule": "http_prd",
-          "finding_id": "adca73b02770a5e8",
+          "finding_id": "7fde57c0ade55a06",
           "ast_kind": "unknown"
         },
         {
-          "line": 391,
+          "line": 393,
           "signal": "token_match",
           "rule": "http_prd",
-          "finding_id": "adca73b02770a5e8",
+          "finding_id": "7fde57c0ade55a06",
           "ast_kind": "token"
         }
       ],
@@ -25361,7 +25361,7 @@
         "function": "execute_clickhouse_query/2",
         "module": "Oli.ClickHouse.Tasks",
         "lines": [
-          391
+          393
         ],
         "file_path": "lib/oli/clickhouse/tasks.ex"
       },
@@ -31809,17 +31809,17 @@
       },
       "evidence": [
         {
-          "line": 432,
+          "line": 434,
           "signal": "indirect_payload_ref",
           "rule": "http_prd",
-          "finding_id": "fdd819a4d8cfaa9d",
+          "finding_id": "93b64d6c6f520369",
           "ast_kind": "unknown"
         },
         {
-          "line": 432,
+          "line": 434,
           "signal": "token_match",
           "rule": "http_prd",
-          "finding_id": "fdd819a4d8cfaa9d",
+          "finding_id": "93b64d6c6f520369",
           "ast_kind": "token"
         }
       ],
@@ -31828,7 +31828,7 @@
         "function": "test_clickhouse_connection/1",
         "module": "Oli.ClickHouse.Tasks",
         "lines": [
-          432
+          434
         ],
         "file_path": "lib/oli/clickhouse/tasks.ex"
       },
@@ -44382,7 +44382,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "37f5d4d0b7a697b55d7f6d4a62239715f5f7bc49"
+    "commit": "fb78efee0f9a2001c5265c9b97141ad4c8006f4b"
   },
   "schema_version": "1",
   "summary": {
@@ -44394,7 +44394,7 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1606,
-    "scan_duration_ms": 1756,
+    "scan_duration_ms": 1772,
     "node_count": 1524,
     "data_node_count": 122,
     "flow_count": 781,
