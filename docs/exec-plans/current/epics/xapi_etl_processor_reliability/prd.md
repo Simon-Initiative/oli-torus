@@ -62,7 +62,7 @@ Requirements are found in requirements.yml
 - Backfill completion posture: Torus-managed backfills may perform a one-time post-backfill `OPTIMIZE TABLE ... FINAL` step and should not report the run as fully complete until that step has finished or failed explicitly.
 
 ## 10. Repository & Platform Considerations
-- The implementation lives in [`cloud/xapi-etl-processor/lambda_function.py`](/Users/eliknebel/Developer/oli-torus/cloud/xapi-etl-processor/lambda_function.py) and is a Python analytics-adjacent ETL component within a primarily Elixir/Phoenix repository.
+- The implementation lives in `cloud/xapi-etl-processor/lambda_function.py` and is a Python analytics-adjacent ETL component within a primarily Elixir/Phoenix repository.
 - Repository guidance requires operationally risky work to be observable through telemetry and APM rather than inferred after failure.
 - The current implementation performs message-level preparation first and a single combined insert later, which has implications for memory duplication, retry scope, and timeout behavior.
 - The Lambda uses SQS partial batch responses, so timeout behavior is part of the product contract, not just an infrastructure detail.

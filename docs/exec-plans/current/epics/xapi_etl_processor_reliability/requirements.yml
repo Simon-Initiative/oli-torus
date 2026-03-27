@@ -77,6 +77,13 @@ requirements:
       a larger batch.
     status: drafted
     verification_method: automated
+  - id: AC-022
+    title: Given an invocation prepares work but cannot safely commit even the minimum
+      viable sub-batch within the remaining budget, when the processor decides not
+      to start the insert, then it emits a distinct no-progress signal and returns
+      the affected messages for retry rather than looping silently.
+    status: drafted
+    verification_method: automated
 - id: FR-005
   title: The processor shall remain operationally and financially efficient across
     both low-volume rollout traffic and higher-throughput steady-state traffic.

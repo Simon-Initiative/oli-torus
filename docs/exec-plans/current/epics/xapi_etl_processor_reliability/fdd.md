@@ -18,6 +18,7 @@ The selected design intentionally does not introduce staged Parquet artifacts in
   - FR-004 / AC-007: ClickHouse request timeout stays below remaining Lambda budget by a safety margin.
   - FR-004 / AC-008: The processor uses bounded work rather than starting insert work unlikely to finish before timeout.
   - FR-004 / AC-009: Low-volume traffic still flushes within the freshness boundary.
+  - FR-004 / AC-022: If prepared work cannot safely commit even the minimum viable sub-batch, the processor emits a distinct no-progress signal and returns the affected messages for retry.
   - FR-005 / AC-010: Low-volume rollout traffic in the tens to hundreds of rows remains timely without depending on large-batch assumptions.
   - FR-005 / AC-011: Higher sustained throughput can aggregate toward preferred ClickHouse row targets.
   - FR-005 / AC-012: Excess Lambda invocations, retries, and idle compute are optimization targets.
@@ -48,11 +49,11 @@ The selected design intentionally does not introduce staged Parquet artifacts in
 ## 3. Repository Context Summary
 
 - What we know:
-  - The current implementation lives in [lambda_function.py](/Users/eliknebel/Developer/oli-torus/cloud/xapi-etl-processor/lambda_function.py) and processes an invocation-wide list of `tables_to_insert`, concatenates them, writes one in-memory Parquet payload, and posts it to ClickHouse.
+  - The current implementation lives in `cloud/xapi-etl-processor/lambda_function.py` and processes an invocation-wide list of `tables_to_insert`, concatenates them, writes one in-memory Parquet payload, and posts it to ClickHouse.
   - The Lambda already consumes SQS, uses partial batch response semantics, optionally forwards permanent failures to a DLQ, and supports `DRY_RUN`.
   - The repository already treats Python Lambda-style ETL work as a valid analytics-adjacent boundary, and operations guidance emphasizes observability over guesswork.
   - The current implementation has no durable intermediate store beyond S3 source JSONL and SQS delivery metadata.
-  - Torus already owns bulk backfill orchestration through `Oli.Analytics.Backfill`, `Oli.Analytics.Backfill.Worker`, and the admin LiveView in [clickhouse_backfill_live.ex](/Users/eliknebel/Developer/oli-torus/lib/oli_web/live/admin/clickhouse_backfill_live.ex).
+  - Torus already owns bulk backfill orchestration through `Oli.Analytics.Backfill`, `Oli.Analytics.Backfill.Worker`, and the admin LiveView in `lib/oli_web/live/admin/clickhouse_backfill_live.ex`.
 - Unknowns to confirm:
   - Production IaC for Lambda event source mapping, SQS retention, visibility timeout, and maximum concurrency is not represented in this repository and must be confirmed before rollout.
   - The target ClickHouse table engine and duplicate-tolerance posture need confirmation if stronger idempotency is later required.
@@ -129,6 +130,10 @@ sequenceDiagram
   - Payload-size ceiling reached.
   - Remaining time falls below the safe continuation budget.
   - End of available records with non-empty current sub-batch.
+- No-progress handling:
+  - If the invocation has prepared work but cannot safely concatenate, serialize, and insert even the minimum viable sub-batch within the remaining budget, it must not keep cycling silently.
+  - The handler emits a distinct no-progress outcome with the flush blocker and remaining-time context, then returns the affected messages for retry through partial batch response handling.
+  - Repeated no-progress outcomes are expected to be alarmable and eventually bounded by source-queue redrive policy rather than retried indefinitely without operator visibility.
 
 ### 4.3 Lifecycle & Ownership
 
@@ -227,6 +232,7 @@ sequenceDiagram
   - The system remains at-least-once until stronger ClickHouse idempotency guarantees are defined.
   - The design reduces ambiguous retries by ensuring request timeout is below the Lambda timeout and by making flush boundaries explicit, but it does not claim exactly-once behavior.
   - Duplicate tolerance relies on `event_hash` plus `ReplacingMergeTree(event_version)` for eventual convergence of stored raw events, not immediate query-time deduplication.
+  - No-progress outcomes are treated as explicit bounded failures, not as a reason to keep reprocessing the same prepared work silently.
 - Backfill completion semantics:
   - For eligible Torus-managed backfills, `completed` means both the data load and the one-time post-backfill optimization step have finished successfully.
   - If optimization fails, the run must surface that failure distinctly rather than presenting as a successful completed load.
@@ -283,6 +289,8 @@ sequenceDiagram
   - Mitigation: record the optimize query id and failure details on the backfill run, show optimization as failed in the admin UI, and require explicit operator acknowledgement or rerun rather than silently treating the backfill as completed.
 - Lambda timeout risk:
   - Mitigation: remaining-time checks before starting a new insert, bounded sub-batch size, and early return of untouched messages.
+- Repeated no-progress retries:
+  - Mitigation: emit a distinct no-progress signal, include the blocker in logs and metrics, tune batch-size or runtime settings so normal sub-batches have headroom, and rely on SQS redrive policy to prevent indefinite invisible looping for pathological workloads.
 - Poison source message:
   - Mitigation: per-message preparation failure handling and optional DLQ forwarding only for clearly non-retryable payload defects or exhausted source-queue retries.
 - Large skewed source object:
@@ -302,6 +310,7 @@ sequenceDiagram
 - Per sub-batch:
   - `insert_token`
   - flush reason
+  - no-progress outcome reason when a safe flush cannot start
   - row count
   - source message count
   - Arrow concat duration
@@ -342,12 +351,13 @@ sequenceDiagram
 
 ## 13. Testing Strategy
 
-- Unit tests in [lambda_function_test.py](/Users/eliknebel/Developer/oli-torus/cloud/xapi-etl-processor/tests/lambda_function_test.py):
+- Unit tests in `cloud/xapi-etl-processor/tests/lambda_function_test.py`:
   - sub-batch flush when `TARGET_ROWS_PER_INSERT` is reached
   - flush when remaining-time budget is low
   - end-of-invocation flush of undersized batch
   - partial batch response for mixed preparation outcomes
   - partial batch response when later records are intentionally left untouched due to safety budget
+  - distinct no-progress outcome when prepared work cannot safely commit even the minimum viable sub-batch
   - derived ClickHouse timeout never exceeds remaining Lambda budget
   - maintenance-mode operational assumptions documented and validated via integration or runbook exercises
 - Focused integration-style tests:
@@ -404,10 +414,10 @@ sequenceDiagram
 
 ## 17. References
 
-- [prd.md](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/epics/xapi_etl_processor_reliability/prd.md)
-- [requirements.yml](/Users/eliknebel/Developer/oli-torus/docs/exec-plans/current/epics/xapi_etl_processor_reliability/requirements.yml)
-- [lambda_function.py](/Users/eliknebel/Developer/oli-torus/cloud/xapi-etl-processor/lambda_function.py)
-- [README.md](/Users/eliknebel/Developer/oli-torus/cloud/xapi-etl-processor/README.md)
-- [ARCHITECTURE.md](/Users/eliknebel/Developer/oli-torus/ARCHITECTURE.md)
-- [docs/OPERATIONS.md](/Users/eliknebel/Developer/oli-torus/docs/OPERATIONS.md)
-- [docs/TESTING.md](/Users/eliknebel/Developer/oli-torus/docs/TESTING.md)
+- `docs/exec-plans/current/epics/xapi_etl_processor_reliability/prd.md`
+- `docs/exec-plans/current/epics/xapi_etl_processor_reliability/requirements.yml`
+- `cloud/xapi-etl-processor/lambda_function.py`
+- `cloud/xapi-etl-processor/README.md`
+- `ARCHITECTURE.md`
+- `docs/OPERATIONS.md`
+- `docs/TESTING.md`
