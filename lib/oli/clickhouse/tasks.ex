@@ -35,9 +35,20 @@ defmodule Oli.ClickHouse.Tasks do
   end
 
   def reset do
-    config = load_clickhouse_config()
-    IO.puts("Resetting ClickHouse database...")
-    reset_database(config)
+    IO.puts("WARNING! This will completely erase all data from the ClickHouse database.")
+    IO.puts("THIS IS A DANGEROUS AND PERMANENT OPERATION WHICH WILL RESULT IN DATA LOSS")
+
+    confirm =
+      IO.gets(
+        "Are you sure you want to continue? (Enter RESET CLICKHOUSE to continue, or use --force to bypass): "
+      )
+
+    if normalize_confirmation(confirm) == "RESET CLICKHOUSE" do
+      reset(%{dangerously_force: true})
+    else
+      IO.puts("ABORTED: Operation was not confirmed by user.")
+      :cancelled
+    end
   end
 
   def drop do
@@ -70,6 +81,9 @@ defmodule Oli.ClickHouse.Tasks do
       raise "ClickHouse configuration not found. Please ensure :clickhouse config is set in :oli application."
     end
   end
+
+  defp normalize_confirmation(nil), do: ""
+  defp normalize_confirmation(value), do: value |> String.trim() |> String.upcase()
 
   defp run_migrate_command(command, config) do
     case System.find_executable("goose") do
@@ -199,42 +213,8 @@ defmodule Oli.ClickHouse.Tasks do
     end
   end
 
-  defp reset_database(config) do
-    IO.puts("🔥 Resetting ClickHouse database...")
-
-    # Test connection first
-    case test_clickhouse_connection(config) do
-      :ok ->
-        # Drop database
-        drop_database(config)
-
-        # Create database
-        create_database_if_needed(config)
-
-        # Create migrations directory if it doesn't exist
-        ensure_migrations_directory()
-
-        # Run all migrations
-        IO.puts("📦 Running all migrations...")
-        run_migrate_command("up", config)
-
-        IO.puts("✅ ClickHouse database reset completed successfully!")
-        :ok
-
-      :error ->
-        raise """
-        ❌ Cannot connect to ClickHouse for reset
-
-        Please ensure:
-        1. ClickHouse is running: docker-compose up -d clickhouse
-        2. ClickHouse is accessible at #{config.host}:#{config.http_port}
-        3. User '#{config.user}' has proper permissions
-        """
-    end
-  end
-
   defp reset_database_force(config) do
-    IO.puts("🔥 Forcefully resetting ClickHouse database...")
+    IO.puts("🔥 Resetting ClickHouse database...")
 
     # Test connection first
     case test_clickhouse_connection(config) do
@@ -318,7 +298,7 @@ defmodule Oli.ClickHouse.Tasks do
     database = config[:database] || "oli_analytics_dev"
 
     if database != "default" do
-      IO.puts("🗑️  Force dropping database '#{database}'...")
+      IO.puts("🗑️  Dropping database '#{database}'...")
 
       case execute_clickhouse_query(config, "DROP DATABASE IF EXISTS #{database}") do
         :ok ->
@@ -342,18 +322,6 @@ defmodule Oli.ClickHouse.Tasks do
       execute_clickhouse_query(config, "CREATE DATABASE IF NOT EXISTS #{database}")
     else
       IO.puts("📊 Using default database")
-      :ok
-    end
-  end
-
-  defp drop_database(config) do
-    database = config[:database] || "oli_analytics_dev"
-
-    if database != "default" do
-      IO.puts("🗑️  Dropping database '#{database}'...")
-      execute_clickhouse_query(config, "DROP DATABASE IF EXISTS #{database}")
-    else
-      IO.puts("⚠️  Cannot drop default database, skipping...")
       :ok
     end
   end

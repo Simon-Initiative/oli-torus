@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
     mix clickhouse.migrate down    # Rollback one migration
     mix clickhouse.migrate create <name>  # Create new migration
     mix clickhouse.migrate setup   # Create database and run all migrations
-    mix clickhouse.migrate reset   # Drop and recreate database from scratch
+    mix clickhouse.migrate reset [--force]   # Drop and recreate database from scratch
     mix clickhouse.migrate drop    # Drop the database
   """
 
@@ -20,12 +20,7 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
   def run(args) do
     Mix.Task.run("app.start")
 
-    command =
-      case args do
-        [] -> "up"
-        [cmd] -> cmd
-        [cmd | _] -> cmd
-      end
+    {command, positional_args, opts} = parse_args(args)
 
     try do
       case command do
@@ -39,8 +34,8 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
           Oli.ClickHouse.Tasks.status()
 
         "create" ->
-          case args do
-            [_, name] when is_binary(name) ->
+          case positional_args do
+            ["create", name] when is_binary(name) ->
               Oli.ClickHouse.Tasks.create(name)
 
             _ ->
@@ -51,7 +46,11 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
           Oli.ClickHouse.Tasks.setup()
 
         "reset" ->
-          Oli.ClickHouse.Tasks.reset()
+          if opts[:force] do
+            Oli.ClickHouse.Tasks.reset(%{dangerously_force: true})
+          else
+            Oli.ClickHouse.Tasks.reset()
+          end
 
         "drop" ->
           Oli.ClickHouse.Tasks.drop()
@@ -65,5 +64,19 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
       e ->
         Mix.raise(Exception.message(e))
     end
+  end
+
+  @doc false
+  def parse_args(args) do
+    {opts, positional_args, _invalid} = OptionParser.parse(args, strict: [force: :boolean])
+
+    command =
+      case positional_args do
+        [] -> "up"
+        [cmd] -> cmd
+        [cmd | _] -> cmd
+      end
+
+    {command, positional_args, opts}
   end
 end
