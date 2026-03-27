@@ -219,6 +219,30 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
              )
     end
 
+    test "creating a container does not leave page creation actions disabled", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, Routes.container_path(@endpoint, :index, project.slug))
+
+      view
+      |> element(
+        "button[data-create-container-action='true'][phx-value-type='Container'][phx-value-scored='Unscored']"
+      )
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button[data-create-page-action='true'][phx-value-type='Basic'][phx-value-scored='Unscored']:not([disabled])",
+               "Practice"
+             )
+
+      assert has_element?(
+               view,
+               "button[data-create-container-action='true'][phx-value-type='Container'][phx-value-scored='Unscored']:not([disabled])"
+             )
+    end
+
     test "when the page is of type 'foundation', the related resources selector is disabled",
          %{
            conn: conn,
