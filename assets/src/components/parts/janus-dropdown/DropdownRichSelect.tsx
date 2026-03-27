@@ -19,7 +19,8 @@ const menuStyle: React.CSSProperties = {
   left: 0,
   right: 0,
   width: '100%',
-  minWidth: '100%',
+  minWidth: 0,
+  maxWidth: '100%',
   boxSizing: 'border-box',
   zIndex: 3000,
   maxHeight: 280,
@@ -31,6 +32,27 @@ const menuStyle: React.CSSProperties = {
   border: '1px solid rgba(0,0,0,.15)',
   backgroundColor: '#fff',
   listStyle: 'none',
+};
+
+const triggerStyle: React.CSSProperties = {
+  width: '100%',
+  minHeight: 38,
+  height: 38,
+  boxSizing: 'border-box',
+  display: 'flex',
+  alignItems: 'center',
+  textAlign: 'left',
+  padding: '0.375rem 2.25rem 0.375rem 0.75rem',
+  lineHeight: 1.5,
+  border: '1px solid #000',
+  borderRadius: 4,
+  backgroundColor: '#fff',
+  color: '#212529',
+  backgroundImage:
+    "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e\")",
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 0.75rem center',
+  backgroundSize: '16px 12px',
 };
 
 /**
@@ -66,9 +88,7 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
   const sanitizedPrompt = sanitizeRichLabelHtml(prompt || '');
 
   const showPromptInButton = selectedIndex <= 0;
-  const triggerHtml = showPromptInButton
-    ? sanitizedPrompt
-    : sanitized[selectedIndex - 1] ?? '';
+  const triggerHtml = showPromptInButton ? sanitizedPrompt : sanitized[selectedIndex - 1] ?? '';
 
   return (
     <div
@@ -77,6 +97,17 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
       style={{ width: '100%', ...style, zIndex: open ? 2000 : undefined }}
     >
       <style>{`
+        .janus-dropdown-rich-trigger:focus,
+        .janus-dropdown-rich-trigger:focus-visible {
+          border-color: rgb(0, 101, 134);
+          outline: 0;
+          box-shadow: 0 0 0 0.25rem rgba(0, 101, 134, 0.25);
+        }
+        .janus-dropdown-rich-trigger:disabled {
+          background-color: #e9ecef;
+          opacity: 1;
+          cursor: not-allowed;
+        }
         .janus-dropdown-rich-menu li {
           padding: 6px 16px;
           cursor: pointer;
@@ -85,10 +116,11 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
           color: #212529;
         }
         .janus-dropdown-rich-menu li:hover {
-          background-color: #f8f9fa;
+          background-color: gray;
+          color: #fff;
         }
         .janus-dropdown-rich-menu li.is-selected {
-          background-color: #343a40;
+          background-color: #6c757d;
           color: #fff;
         }
         .janus-dropdown-rich-menu li.is-prompt {
@@ -103,8 +135,8 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
       <button
         type="button"
         id={`${id}-select`}
-        className="form-select text-start d-flex align-items-center"
-        style={{ minHeight: 42, width: '100%' }}
+        className="janus-dropdown-rich-trigger"
+        style={triggerStyle}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -127,7 +159,12 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
       </button>
 
       {open ? (
-        <ul id={`${id}-listbox`} role="listbox" className="janus-dropdown-rich-menu" style={menuStyle}>
+        <ul
+          id={`${id}-listbox`}
+          role="listbox"
+          className="janus-dropdown-rich-menu"
+          style={menuStyle}
+        >
           {/* Prompt as first item — mirrors native disabled first <option> */}
           {sanitizedPrompt ? (
             <li

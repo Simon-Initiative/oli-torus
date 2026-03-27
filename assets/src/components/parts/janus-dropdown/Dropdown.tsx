@@ -187,10 +187,14 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     gap: '4px',
   };
 
-  const dropDownStyle: CSSProperties = {
+  const nativeDropDownStyle: CSSProperties = {
     width: '100%',
     height: 'auto',
-    minHeight: '42px',
+    minHeight: '38px',
+  };
+
+  const richDropDownStyle: CSSProperties = {
+    width: '100%',
   };
 
   useEffect(() => {
@@ -451,13 +455,13 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
           selectedIndex={selectedIndex}
           disabled={!enabled}
           onChange={handleRichSelectChange}
-          style={dropDownStyle}
+          style={richDropDownStyle}
         />
       ) : (
         <select
           id={`${id}-select`}
           className="dropdown"
-          style={dropDownStyle}
+          style={nativeDropDownStyle}
           value={selectedIndex > 0 ? selectedIndex : -1}
           disabled={!enabled}
           onChange={handleSelectChange}
