@@ -1,10 +1,14 @@
 defmodule Oli.ActivityEditingTest do
   use Oli.DataCase
 
+  import Mox
+
   alias Oli.Authoring.Editing.{ResourceContext, PageEditor, ActivityEditor, ObjectiveEditor}
   alias Oli.Resources
 
   describe "activity editing" do
+    setup :verify_on_exit!
+
     setup do
       Seeder.base_project_with_resource2()
       |> Seeder.add_objective("objective 1", :obj1)
@@ -18,6 +22,115 @@ defmodule Oli.ActivityEditingTest do
         ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
       assert revision.content == content
+    end
+
+    test "create/4 clones the starter bundle for new oli_embedded activities", %{
+      author: author,
+      project: project
+    } do
+      content = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+          <assets>
+            <asset name="layout">webcontent/custom_activity/layout.html</asset>
+            <asset name="controls">webcontent/custom_activity/controls.html</asset>
+          </assets>
+        </embed_activity>
+        """,
+        "resourceBase" => "1234",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      expect(Oli.Test.MockAws, :request, 3, fn %ExAws.Operation.S3{} = op ->
+        send(self(), {:aws_request, op})
+
+        case op.http_method do
+          :get ->
+            assert op.params["prefix"] == "media/webcontent/custom_activity/"
+
+            {:ok,
+             %{
+               status_code: 200,
+               body: %{
+                 contents: [
+                   %{key: "media/webcontent/custom_activity/customactivity.js"},
+                   %{key: "media/webcontent/custom_activity/layout.html"}
+                 ]
+               }
+             }}
+
+          :put ->
+            assert op.headers["x-amz-acl"] == "public-read"
+            assert String.starts_with?(op.headers["x-amz-copy-source"], "/torus-media-test/")
+            assert String.contains?(op.path, "/webcontent/custom_activity/")
+            assert String.starts_with?(op.path, "media/bundles/")
+
+            {:ok, %{status_code: 200}}
+        end
+      end)
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_embedded", author, content, [])
+
+      assert revision.content["resourceBase"] =~ ~r/^bundles\//
+      assert revision.content["resourceBase"] != "1234"
+
+      assert_received {:aws_request, %ExAws.Operation.S3{http_method: :get}}
+      assert_received {:aws_request, %ExAws.Operation.S3{http_method: :put}}
+      assert_received {:aws_request, %ExAws.Operation.S3{http_method: :put}}
+    end
+
+    test "create/4 preserves an existing oli_embedded bundle resourceBase", %{
+      author: author,
+      project: project
+    } do
+      content = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+        </embed_activity>
+        """,
+        "resourceBase" => "bundles/existing-bundle",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_embedded", author, content, [])
+
+      assert revision.content["resourceBase"] == "bundles/existing-bundle"
     end
 
     test "create/4 creates an activity revision with objectives", %{

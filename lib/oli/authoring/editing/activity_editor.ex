@@ -28,9 +28,14 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Authoring.Broadcaster
   alias Oli.Resources.ContentMigrator
   alias Oli.Adaptive.DynamicLinks.Telemetry, as: DynamicLinksTelemetry
+  alias ExAws.S3
 
   @adaptive_ai_trigger_part_type "janus-ai-trigger"
   @adaptive_ai_triggerable_part_types MapSet.new(["janus-image", "janus-navigation-button"])
+  @embedded_bundle_source_prefixes [
+    "media/webcontent/custom_activity/",
+    "webcontent/custom_activity/"
+  ]
 
   # Filters out objective ids that are no longer present in the list of all objectives
   @doc """
@@ -1596,6 +1601,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     Repo.transaction(fn ->
       with {:ok, activity_type} <-
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
+           {:ok, model} <- prepare_creation_model(activity_type_slug, model),
            {:ok, objectives} <- attach_objectives(model, objectives, objective_map),
            {:ok, activity} <-
              Resources.create_new(
@@ -1626,6 +1632,79 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         activity
       else
         error -> Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp prepare_creation_model("oli_embedded", model) when is_map(model) do
+    case should_clone_embedded_bundle?(model) do
+      true -> clone_embedded_bundle(model)
+      false -> {:ok, model}
+    end
+  end
+
+  defp prepare_creation_model(_activity_type_slug, model), do: {:ok, model}
+
+  defp should_clone_embedded_bundle?(model) do
+    resource_base = Map.get(model, "resourceBase")
+    model_xml = Map.get(model, "modelXml", "")
+
+    is_binary(resource_base) and not String.starts_with?(resource_base, "bundles/") and
+      is_binary(model_xml) and String.contains?(model_xml, "webcontent/custom_activity/")
+  end
+
+  defp clone_embedded_bundle(model) do
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+    resource_base = "bundles/#{Ecto.UUID.generate()}"
+
+    with {:ok, {source_prefix, object_keys}} <- list_embedded_bundle_source_objects(bucket_name),
+         :ok <-
+           copy_embedded_bundle_objects(bucket_name, resource_base, source_prefix, object_keys) do
+      {:ok, Map.put(model, "resourceBase", resource_base)}
+    end
+  end
+
+  defp list_embedded_bundle_source_objects(bucket_name) do
+    Enum.reduce_while(
+      @embedded_bundle_source_prefixes,
+      {:error, :missing_embedded_bundle_source},
+      fn prefix, _acc ->
+        case S3.list_objects(bucket_name, prefix: prefix)
+             |> Oli.HTTP.aws().request() do
+          {:ok, %{status_code: 200, body: %{contents: contents}}} when is_list(contents) ->
+            object_keys =
+              contents
+              |> Enum.map(&Map.get(&1, :key))
+              |> Enum.filter(&is_binary/1)
+
+            case object_keys do
+              [] -> {:cont, {:error, :missing_embedded_bundle_source}}
+              keys -> {:halt, {:ok, {prefix, keys}}}
+            end
+
+          _ ->
+            {:cont, {:error, :missing_embedded_bundle_source}}
+        end
+      end
+    )
+  end
+
+  defp copy_embedded_bundle_objects(bucket_name, resource_base, source_prefix, object_keys) do
+    destination_prefix = "media/#{resource_base}/"
+
+    Enum.reduce_while(object_keys, :ok, fn source_key, :ok ->
+      destination_key =
+        case source_prefix do
+          "media/" <> _rest -> String.replace_prefix(source_key, "media/", destination_prefix)
+          _ -> destination_prefix <> source_key
+        end
+
+      case S3.put_object_copy(bucket_name, destination_key, bucket_name, source_key,
+             acl: :public_read
+           )
+           |> Oli.HTTP.aws().request() do
+        {:ok, %{status_code: 200}} -> {:cont, :ok}
+        _ -> {:halt, {:error, :embedded_bundle_copy_failed}}
       end
     end)
   end
