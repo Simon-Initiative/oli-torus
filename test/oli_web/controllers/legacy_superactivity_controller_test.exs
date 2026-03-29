@@ -1,6 +1,8 @@
 defmodule OliWeb.LegacySuperactivityControllerTest do
   use OliWeb.ConnCase
 
+  import Mox
+
   alias Oli.Delivery.Sections
   alias Oli.Seeder
 
@@ -11,6 +13,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
   alias OliWeb.Router.Helpers, as: Routes
 
   describe "legacy superactivity" do
+    setup :verify_on_exit!
     setup [:setup_session]
 
     # this test should be migrated to a liveview approach since now we
@@ -404,6 +407,58 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       assert conn.resp_body =~ ~s(<attempt_history)
       assert conn.resp_body =~ ~s(<score value="75.0" score_id="percent"/>)
+    end
+
+    test "verifies supporting files relative to resourceBase", %{conn: conn, author: author} do
+      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+        assert op.http_method == :get
+        send(self(), {:aws_verify_request, op.params["prefix"]})
+
+        case op.params["prefix"] do
+          "media/bundles/verified-bundle/webcontent/custom_activity/customactivity.js" ->
+            {:ok,
+             %{
+               status_code: 200,
+               body: %{
+                 contents: [
+                   %{
+                     key:
+                       "media/bundles/verified-bundle/webcontent/custom_activity/customactivity.js"
+                   }
+                 ]
+               }
+             }}
+
+          "media/bundles/verified-bundle/webcontent/custom_activity/missing.css" ->
+            {:ok, %{status_code: 200, body: %{contents: []}}}
+        end
+      end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/media/verify", %{
+          "directory" => "bundles/verified-bundle",
+          "references" => [
+            "webcontent/custom_activity/customactivity.js",
+            "webcontent/custom_activity/missing.css"
+          ]
+        })
+
+      assert_received {:aws_verify_request,
+                       "media/bundles/verified-bundle/webcontent/custom_activity/customactivity.js"}
+
+      assert_received {:aws_verify_request,
+                       "media/bundles/verified-bundle/webcontent/custom_activity/missing.css"}
+
+      assert json_response(conn, 200) == %{
+               "statuses" => %{
+                 "webcontent/custom_activity/customactivity.js" => "verified",
+                 "webcontent/custom_activity/missing.css" => "missing"
+               }
+             }
     end
   end
 

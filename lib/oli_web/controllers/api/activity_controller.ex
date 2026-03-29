@@ -194,11 +194,15 @@ defmodule OliWeb.Api.ActivityController do
            Map.get(conn.body_params, "objective_map", %{}),
            Map.get(conn, "tags", [])
          ) do
-      {:ok, {%{slug: slug, resource_id: resource_id}, _}} ->
+      {:ok, {%{slug: slug, resource_id: resource_id} = activity, _}} ->
         json(conn, %{
           "type" => "success",
           "revisionSlug" => slug,
-          "resourceId" => resource_id
+          "resourceId" => resource_id,
+          "title" => activity.title,
+          "objectives" => activity.objectives,
+          "tags" => activity.tags,
+          "content" => activity.content
         })
 
       {:error, {:not_found}} ->

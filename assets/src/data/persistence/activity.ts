@@ -52,6 +52,10 @@ export type Created = {
   result: 'success';
   revisionSlug: string;
   resourceId: ResourceId;
+  title?: string;
+  objectives?: any;
+  tags?: any;
+  content?: any;
 };
 
 export type Updated = {

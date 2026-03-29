@@ -120,6 +120,7 @@ defmodule OliWeb.LegacySuperactivityController do
       {:ok, contents} ->
         bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
         hash = :crypto.hash(:md5, contents) |> Base.encode16()
+        directory = normalize_media_directory(directory)
         upload_path = Path.join(["/media", directory, "webcontent", hash, name])
         media_url = Application.fetch_env!(:oli, :media_url)
 
@@ -139,11 +140,80 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
+  def verify_media(conn, %{"directory" => directory, "references" => references})
+      when is_list(references) do
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+
+    statuses =
+      references
+      |> Enum.filter(&is_binary/1)
+      |> Enum.uniq()
+      |> Enum.map(fn reference ->
+        status =
+          reference
+          |> resolve_media_key(directory)
+          |> media_object_exists?(bucket_name)
+          |> case do
+            true -> "verified"
+            false -> "missing"
+          end
+
+        {reference, status}
+      end)
+      |> Enum.into(%{})
+
+    json(conn, %{statuses: statuses})
+  end
+
+  def verify_media(conn, _params), do: error(conn, 400, "invalid verification request")
+
   defp upload_file(bucket, file_name, contents) do
     mime_type = MIME.from_path(file_name)
     options = [{:acl, :public_read}, {:content_type, mime_type}]
-    ExAws.S3.put_object(bucket, file_name, contents, options) |> ExAws.request()
+    ExAws.S3.put_object(bucket, file_name, contents, options) |> aws_client().request()
   end
+
+  defp media_object_exists?(key, bucket_name) do
+    case ExAws.S3.list_objects(bucket_name, prefix: key, max_keys: 1) |> aws_client().request() do
+      {:ok, %{status_code: 200, body: %{contents: contents}}} ->
+        contents != []
+
+      _ ->
+        false
+    end
+  end
+
+  defp resolve_media_key(reference, directory) do
+    normalized_reference = String.trim_leading(reference, "/")
+    normalized_directory = normalize_media_directory(directory)
+
+    cond do
+      String.starts_with?(normalized_reference, "media/") ->
+        normalized_reference
+
+      String.starts_with?(normalized_reference, "bundles/") ->
+        Path.join(["media", normalized_reference])
+
+      normalized_directory != "" ->
+        Path.join(["media", normalized_directory, normalized_reference])
+
+      true ->
+        Path.join(["media", normalized_reference])
+    end
+  end
+
+  defp normalize_directory(nil), do: ""
+  defp normalize_directory(directory), do: String.trim(directory, "/")
+
+  defp normalize_media_directory(directory) do
+    case normalize_directory(directory) do
+      "" -> ""
+      "bundles/" <> _rest = normalized -> normalized
+      normalized -> Path.join("bundles", normalized)
+    end
+  end
+
+  defp aws_client(), do: Application.get_env(:oli, :aws_client, ExAws)
 
   def file_not_found(conn, _params) do
     conn

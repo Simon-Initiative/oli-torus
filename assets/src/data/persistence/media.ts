@@ -12,6 +12,10 @@ export type MediaItemsDeleted = {
   count: number;
 };
 
+export type SuperActivityMediaVerification = {
+  statuses: Record<string, 'verified' | 'missing'>;
+};
+
 export function getFileName(file: File) {
   const fileNameWithDot = file.name.slice(
     0,
@@ -89,6 +93,22 @@ export function createSuperActivityMedia(
 
     return makeRequest<MediaItemCreated>(params);
   });
+}
+
+export function verifySuperActivityMedia(
+  directory: string,
+  references: string[],
+): Promise<SuperActivityMediaVerification | ServerError> {
+  const params = {
+    method: 'POST',
+    body: JSON.stringify({
+      directory,
+      references,
+    }),
+    url: '/superactivity/media/verify',
+  };
+
+  return makeRequest<SuperActivityMediaVerification>(params);
 }
 
 export function deleteMedia(

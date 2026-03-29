@@ -424,6 +424,7 @@ defmodule OliWeb.Router do
   scope "/api/v1/superactivity/media", OliWeb do
     pipe_through([:api, :authoring_protected])
     post("/", LegacySuperactivityController, :create_media)
+    post("/verify", LegacySuperactivityController, :verify_media)
   end
 
   scope "/", OliWeb do

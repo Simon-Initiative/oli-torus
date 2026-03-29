@@ -1,5 +1,6 @@
 import { Maybe } from 'tsmonad';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
+import { lastPart } from 'components/activities/oli_embedded/utils';
 import { PostUndoable, ScoringStrategy, makeUndoable } from 'components/activities/types';
 import { Identifiable } from 'data/content/model/other';
 import { clone } from 'utils/common';
@@ -62,6 +63,16 @@ export class OliEmbeddedActions {
       );
 
       draftState.resourceURLs = draftState.resourceURLs.filter((url) => url !== value);
+
+      if (draftState.resourceVerification) {
+        delete draftState.resourceVerification[lastPart(draftState.resourceBase, value)];
+      }
+    };
+  }
+
+  static replaceResourceVerification(resourceVerification: Record<string, 'verified' | 'missing'>) {
+    return (draftState: OliEmbeddedModelSchema, _post: PostUndoable) => {
+      draftState.resourceVerification = resourceVerification;
     };
   }
 }

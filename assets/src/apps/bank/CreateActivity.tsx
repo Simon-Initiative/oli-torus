@@ -33,7 +33,8 @@ const create = (
       return Persistence.createBanked(projectSlug, editorDesc.slug, createdModel, []);
     })
     .then((result: Persistence.Created) => {
-      const objectives = model.authoring.parts
+      const persistedModel = result.content || model;
+      const objectives = persistedModel.authoring.parts
         .map((p: any) => {
           return p.id;
         })
@@ -51,7 +52,7 @@ const create = (
         activityId: result.resourceId,
         title: editorDesc.friendlyName,
         optionalContentTypes: { triggers: allowTriggers },
-        model,
+        model: persistedModel,
         objectives,
         tags: [],
         variables: editorDesc.variables,
