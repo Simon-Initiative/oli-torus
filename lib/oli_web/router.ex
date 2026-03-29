@@ -406,6 +406,12 @@ defmodule OliWeb.Router do
     pipe_through([:api])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
 
+    post(
+      "/jcourse/superactivity/preview_context",
+      OliWeb.LegacySuperactivityController,
+      :preview_context
+    )
+
     get(
       "/jcourse/superactivity/context/:attempt_guid",
       OliWeb.LegacySuperactivityController,

@@ -9,9 +9,12 @@ defmodule OliWeb.LegacySuperactivityController do
     SuperActivitySession,
     AttemptHistory,
     FileRecord,
-    FileDirectory
+    FileDirectory,
+    PreviewSessions
   }
 
+  alias Oli.Accounts.{Author, User}
+  alias Oli.Activities
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.ActivityLifecycle
@@ -21,6 +24,7 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Activities.Model.Feedback
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Repo
+  alias Lti_1p3.Roles.ContextRoles
 
   defmodule LegacySuperactivityContext do
     @moduledoc false
@@ -45,34 +49,32 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   def context(conn, %{"attempt_guid" => attempt_guid} = _params) do
-    user = conn.assigns.current_user
+    case fetch_context(conn, attempt_guid) do
+      {:ok, context} ->
+        json(conn, context_response(conn.host, context))
 
-    attempt = Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
-
-    case attempt do
-      nil ->
+      {:error, :not_found} ->
         error(conn, 404, "Attempt not found")
 
-      _ ->
-        activity_attempt =
-          Attempts.get_latest_activity_attempt(attempt.resource_attempt_id, attempt.resource_id)
-          |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
+      {:error, _reason} ->
+        error(conn, 500, "Unable to create preview context")
+    end
+  end
 
-        part_ids = Enum.map(activity_attempt.part_attempts, fn x -> x.part_id end)
+  def preview_context(
+        conn,
+        %{"attemptGuid" => attempt_guid, "model" => model, "context" => activity_context}
+      ) do
+    case init_preview_session(conn, attempt_guid, model, activity_context) do
+      {:ok, context} ->
+        json(conn, context_response(conn.host, context))
 
-        %{"base" => base, "src" => src} = activity_attempt.revision.content
+      {:error, :unauthorized} ->
+        error(conn, 403, "Unauthorized")
 
-        context = %{
-          attempt_guid: activity_attempt.attempt_guid,
-          src_url: "https://#{conn.host}/superactivity/#{base}/#{src}",
-          activity_type: activity_attempt.revision.activity_type.slug,
-          server_url: "https://#{conn.host}/jcourse/superactivity/server",
-          user_guid: user.id,
-          mode: "delivery",
-          part_ids: part_ids
-        }
-
-        json(conn, context)
+      {:error, reason} ->
+        Logger.error("Could not create embedded preview session: #{inspect(reason)}")
+        error(conn, 400, "Unable to create preview context")
     end
   end
 
@@ -80,23 +82,36 @@ defmodule OliWeb.LegacySuperactivityController do
         conn,
         %{"commandName" => command_name, "activityContextGuid" => attempt_guid} = params
       ) do
-    user = conn.assigns.current_user
-    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+    with {:ok, context} <- fetch_context(conn, attempt_guid),
+         xml_response <- process_command(command_name, context, params) do
+      case xml_response do
+        {:ok, xml} ->
+          conn
+          |> put_resp_content_type("text/xml")
+          |> send_resp(200, xml)
 
-    context = fetch_context(conn.host, user, attempt_guid, datashop_session_id)
-
-    xml_response = process_command(command_name, context, params)
-
-    case xml_response do
-      {:ok, xml} ->
-        conn
-        |> put_resp_content_type("text/xml")
-        |> send_resp(200, xml)
-
-      {:error, error, code} ->
+        {:error, error, code} ->
+          conn
+          |> put_resp_content_type("text/text")
+          |> send_resp(code, error)
+      end
+    else
+      {:error, :not_found} ->
         conn
         |> put_resp_content_type("text/text")
-        |> send_resp(code, error)
+        |> send_resp(404, "Attempt not found")
+
+      {:error, :unauthorized} ->
+        conn
+        |> put_resp_content_type("text/text")
+        |> send_resp(403, "Unauthorized")
+
+      {:error, reason} ->
+        Logger.error("Could not process legacy superactivity command: #{inspect(reason)}")
+
+        conn
+        |> put_resp_content_type("text/text")
+        |> send_resp(500, "server error")
     end
   end
 
@@ -136,7 +151,25 @@ defmodule OliWeb.LegacySuperactivityController do
     |> text("File Not Found")
   end
 
-  defp fetch_context(host, user, attempt_guid, datashop_session_id) do
+  defp fetch_context(conn, attempt_guid) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
+    case Attempts.get_activity_attempt_by(attempt_guid: attempt_guid) do
+      nil ->
+        fetch_preview_context(conn, attempt_guid)
+
+      _attempt ->
+        {:ok,
+         fetch_delivery_context(
+           conn.host,
+           conn.assigns.current_user,
+           attempt_guid,
+           datashop_session_id
+         )}
+    end
+  end
+
+  defp fetch_delivery_context(host, user, attempt_guid, datashop_session_id) do
     activity_attempt =
       Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
       |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
@@ -161,17 +194,6 @@ defmodule OliWeb.LegacySuperactivityController do
       Sections.get_enrollment(section.slug, user.id)
       |> Repo.preload([:context_roles])
 
-    path =
-      if String.starts_with?(resource_base, "bundles/") do
-        "super_media/#{resource_base}"
-      else
-        "super_media"
-      end
-
-    web_content_url = "https://#{host}/#{path}/"
-
-    host_url = "https://#{host}"
-
     save_files =
       ActivityLifecycle.get_activity_attempt_save_files(
         activity_attempt.attempt_guid,
@@ -192,11 +214,281 @@ defmodule OliWeb.LegacySuperactivityController do
       save_files: save_files,
       instructors: instructors,
       enrollment: enrollment,
-      web_content_url: web_content_url,
-      host_url: host_url,
+      web_content_url: web_content_url(host, resource_base),
+      host_url: "https://#{host}",
       base: base,
       src: src
     }
+  end
+
+  defp init_preview_session(conn, attempt_guid, model, activity_context) do
+    with {:ok, preview_user} <- preview_user(conn),
+         {:ok, activity_type} <- preview_activity_type(),
+         session <-
+           build_preview_session(
+             attempt_guid,
+             preview_user,
+             model,
+             activity_context,
+             activity_type
+           ),
+         {:ok, _session} <- PreviewSessions.put(attempt_guid, session) do
+      {:ok,
+       preview_session_to_context(
+         conn.host,
+         session,
+         Plug.Conn.get_session(conn, :datashop_session_id)
+       )}
+    end
+  end
+
+  defp fetch_preview_context(conn, attempt_guid) do
+    with {:ok, session} <- PreviewSessions.get(attempt_guid),
+         :ok <- authorize_preview_session(conn, session) do
+      {:ok,
+       preview_session_to_context(
+         conn.host,
+         session,
+         Plug.Conn.get_session(conn, :datashop_session_id)
+       )}
+    end
+  end
+
+  defp preview_activity_type() do
+    case Activities.get_registration_by_slug("oli_embedded") do
+      nil -> {:error, :missing_activity_type}
+      activity_type -> {:ok, activity_type}
+    end
+  end
+
+  defp preview_user(%Plug.Conn{assigns: %{current_user: %User{} = user}}), do: {:ok, user}
+
+  defp preview_user(%Plug.Conn{assigns: %{current_author: %Author{} = author}}) do
+    {:ok,
+     %{
+       id: "author:#{author.id}",
+       guest: false,
+       locale: "en",
+       inserted_at: author.inserted_at || DateTime.utc_now(),
+       email: author.email,
+       given_name: author.given_name || author.name || "Author",
+       family_name: author.family_name || ""
+     }}
+  end
+
+  defp preview_user(_conn), do: {:error, :unauthorized}
+
+  defp authorize_preview_session(conn, session) do
+    current_user_id = conn.assigns[:current_user] && to_string(conn.assigns.current_user.id)
+    current_author_id = conn.assigns[:current_author] && to_string(conn.assigns.current_author.id)
+
+    cond do
+      session.actor_user_id != nil and session.actor_user_id == current_user_id ->
+        :ok
+
+      session.actor_author_id != nil and session.actor_author_id == current_author_id ->
+        :ok
+
+      true ->
+        {:error, :unauthorized}
+    end
+  end
+
+  defp build_preview_session(attempt_guid, preview_user, model, activity_context, activity_type) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    part_ids = preview_part_ids(model)
+
+    slug =
+      Map.get(activity_context, "sectionSlug") || Map.get(activity_context, "projectSlug") ||
+        "preview"
+
+    section_title =
+      Map.get(activity_context, "pageTitle") || Map.get(model, "title") || "Embedded Preview"
+
+    max_attempts = preview_max_attempts(activity_context)
+    revision_title = Map.get(model, "title") || "Embedded activity"
+    scoring_strategy = %{type: preview_scoring_strategy(activity_context, model)}
+
+    activity_attempt =
+      %{
+        attempt_guid: attempt_guid,
+        attempt_number: 1,
+        resource_id: Map.get(activity_context, "resourceId", 0),
+        date_evaluated: nil,
+        date_submitted: nil,
+        score: nil,
+        out_of: nil,
+        custom_scores: %{},
+        inserted_at: now,
+        updated_at: now,
+        revision: %{
+          title: revision_title,
+          inserted_at: now,
+          graded: Map.get(activity_context, "graded", false),
+          max_attempts: max_attempts,
+          scoring_strategy: scoring_strategy,
+          activity_type: %{
+            slug: activity_type.slug,
+            title: activity_type.title
+          },
+          content: model
+        },
+        part_attempts: build_preview_part_attempts(attempt_guid, part_ids, now)
+      }
+
+    %{
+      actor_user_id: if(match?(%User{}, preview_user), do: to_string(preview_user.id), else: nil),
+      actor_author_id:
+        if(match?(%User{}, preview_user),
+          do: nil,
+          else: preview_user.id |> to_string() |> String.replace_prefix("author:", "")
+        ),
+      user: preview_user,
+      section: %{
+        id: "preview-section:#{slug}",
+        slug: slug,
+        title: section_title,
+        inserted_at: now,
+        updated_at: now,
+        start_date: nil,
+        end_date: nil,
+        open_and_free: true,
+        registration_open: true,
+        institution: nil
+      },
+      resource_access: %{
+        id: "preview-resource-access:#{attempt_guid}",
+        user_id: preview_user.id,
+        preview: true
+      },
+      enrollment: %{
+        id: "preview-enrollment:#{attempt_guid}",
+        inserted_at: now,
+        context_roles: [ContextRoles.get_role(:context_instructor)]
+      },
+      instructors: [preview_user],
+      activity_attempt: activity_attempt,
+      resource_attempt: %{
+        inserted_at: now,
+        updated_at: now,
+        revision: %{max_attempts: max_attempts},
+        activity_attempts: [activity_attempt]
+      },
+      file_records: %{}
+    }
+  end
+
+  defp preview_session_to_context(host, session, datashop_session_id) do
+    %{"base" => base, "src" => src, "resourceBase" => resource_base} =
+      session.activity_attempt.revision.content
+
+    %LegacySuperactivityContext{
+      server_time_zone: get_timezone(),
+      user: session.user,
+      host: host,
+      section: session.section,
+      datashop_session_id: datashop_session_id,
+      activity_attempt: session.activity_attempt,
+      resource_attempt: session.resource_attempt,
+      resource_access: session.resource_access,
+      attempt_user_id: session.user.id,
+      save_files: preview_save_files(session),
+      instructors: session.instructors,
+      enrollment: session.enrollment,
+      web_content_url: web_content_url(host, resource_base),
+      host_url: "https://#{host}",
+      base: base,
+      src: src
+    }
+  end
+
+  defp context_response(host, %LegacySuperactivityContext{} = context) do
+    %{
+      attempt_guid: context.activity_attempt.attempt_guid,
+      src_url: "https://#{host}/superactivity/#{context.base}/#{context.src}",
+      activity_type: context.activity_attempt.revision.activity_type.slug,
+      server_url: "https://#{host}/jcourse/superactivity/server",
+      user_guid: context.user.id,
+      mode: "delivery",
+      part_ids: Enum.map(context.activity_attempt.part_attempts, & &1.part_id)
+    }
+  end
+
+  defp preview_part_ids(%{"authoring" => %{"parts" => parts}}) when is_list(parts) do
+    parts
+    |> Enum.map(&Map.get(&1, "id"))
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] -> ["preview-part"]
+      part_ids -> part_ids
+    end
+  end
+
+  defp preview_part_ids(_model), do: ["preview-part"]
+
+  defp build_preview_part_attempts(attempt_guid, part_ids, now) do
+    Enum.map(part_ids, fn part_id ->
+      %{
+        part_id: part_id,
+        attempt_guid: "#{attempt_guid}:#{part_id}",
+        attempt_number: 1,
+        score: nil,
+        out_of: nil,
+        inserted_at: now,
+        updated_at: now,
+        date_evaluated: nil
+      }
+    end)
+  end
+
+  defp preview_save_files(session) do
+    current_attempt_number = to_string(session.activity_attempt.attempt_number)
+
+    session.file_records
+    |> Map.values()
+    |> Enum.filter(&(to_string(&1.attempt_number) == current_attempt_number))
+  end
+
+  defp preview_max_attempts(activity_context) do
+    case Map.get(activity_context, "maxAttempts") do
+      value when is_integer(value) ->
+        value
+
+      value when is_binary(value) ->
+        case Integer.parse(value) do
+          {parsed, _} -> parsed
+          _ -> 1
+        end
+
+      _ ->
+        1
+    end
+  end
+
+  defp preview_scoring_strategy(activity_context, model) do
+    strategy =
+      Map.get(activity_context, "scoringStrategy") || Map.get(model, "scoringStrategy") ||
+        "total"
+
+    case strategy do
+      value when value in ["average", "best", "most_recent", "total"] -> value
+      _ -> "total"
+    end
+  end
+
+  defp preview_context?(%LegacySuperactivityContext{} = context) do
+    Map.get(context.resource_access, :preview, false)
+  end
+
+  defp web_content_url(host, resource_base) do
+    path =
+      if String.starts_with?(resource_base, "bundles/") do
+        "super_media/#{resource_base}"
+      else
+        "super_media"
+      end
+
+    "https://#{host}/#{path}/"
   end
 
   defp process_command("loadClientConfig", %LegacySuperactivityContext{} = context, _params) do
@@ -227,32 +519,36 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command("startAttempt", %LegacySuperactivityContext{} = context, params) do
-    case context.activity_attempt.date_evaluated do
-      nil ->
-        attempt_history(context)
+    if preview_context?(context) do
+      preview_start_attempt(context, params)
+    else
+      case context.activity_attempt.date_evaluated do
+        nil ->
+          attempt_history(context)
 
-      _ ->
-        seed_state_from_previous = Map.get(params, "seedResponsesWithPrevious", false)
+        _ ->
+          seed_state_from_previous = Map.get(params, "seedResponsesWithPrevious", false)
 
-        case ActivityLifecycle.reset_activity(
-               context.section.slug,
-               context.activity_attempt.attempt_guid,
-               context.datashop_session_id,
-               seed_state_from_previous
-             ) do
-          {:ok, {attempt_state, _model}} ->
-            attempt_history(
-              fetch_context(
-                context.host,
-                context.user,
-                attempt_state.attemptGuid,
-                context.datashop_session_id
+          case ActivityLifecycle.reset_activity(
+                 context.section.slug,
+                 context.activity_attempt.attempt_guid,
+                 context.datashop_session_id,
+                 seed_state_from_previous
+               ) do
+            {:ok, {attempt_state, _model}} ->
+              attempt_history(
+                fetch_delivery_context(
+                  context.host,
+                  context.user,
+                  attempt_state.attemptGuid,
+                  context.datashop_session_id
+                )
               )
-            )
 
-          {:error, _} ->
-            {:error, "server error", 500}
-        end
+            {:error, _} ->
+              {:error, "server error", 500}
+          end
+      end
     end
   end
 
@@ -275,53 +571,65 @@ defmodule OliWeb.LegacySuperactivityController do
     # Worse still; an activity can supply multiple score types as part of the grade. How to handle these on Torus?
     case purse_score(score_type, score_value) do
       {:non_numeric, score_value} ->
-        custom_scores =
-          case context.activity_attempt.custom_scores do
-            nil ->
-              %{score_type => score_value}
+        if preview_context?(context) do
+          preview_store_non_numeric_score(context, score_type, score_value)
+        else
+          custom_scores =
+            case context.activity_attempt.custom_scores do
+              nil ->
+                %{score_type => score_value}
 
-            custom_scores ->
-              Map.merge(custom_scores, %{score_type => score_value})
-          end
+              custom_scores ->
+                Map.merge(custom_scores, %{score_type => score_value})
+            end
 
-        case Attempts.update_activity_attempt(context.activity_attempt, %{
-               custom_scores: custom_scores
-             }) do
-          {:ok, _} ->
-            attempt_history(
-              fetch_context(
-                context.host,
-                context.user,
-                context.activity_attempt.attempt_guid,
-                context.datashop_session_id
+          case Attempts.update_activity_attempt(context.activity_attempt, %{
+                 custom_scores: custom_scores
+               }) do
+            {:ok, _} ->
+              attempt_history(
+                fetch_delivery_context(
+                  context.host,
+                  context.user,
+                  context.activity_attempt.attempt_guid,
+                  context.datashop_session_id
+                )
               )
-            )
 
-          {:error, message} ->
-            Logger.error("Error when processing help message #{inspect(message)}")
-            {:error, "server error", 500}
+            {:error, message} ->
+              Logger.error("Error when processing help message #{inspect(message)}")
+              {:error, "server error", 500}
+          end
         end
 
       {:numeric, score, out_of} ->
-        eval_numeric_score(context, score, out_of, part_attempt)
+        if preview_context?(context) do
+          preview_eval_numeric_score(context, score, out_of, part_attempt)
+        else
+          eval_numeric_score(context, score, out_of, part_attempt)
+        end
     end
   end
 
   defp process_command("endAttempt", %LegacySuperactivityContext{} = context, _params) do
-    case finalize_activity_attempt(context) do
-      {:ok, _} ->
-        attempt_history(
-          fetch_context(
-            context.host,
-            context.user,
-            context.activity_attempt.attempt_guid,
-            context.datashop_session_id
+    if preview_context?(context) do
+      preview_end_attempt(context)
+    else
+      case finalize_activity_attempt(context) do
+        {:ok, _} ->
+          attempt_history(
+            fetch_delivery_context(
+              context.host,
+              context.user,
+              context.activity_attempt.attempt_guid,
+              context.datashop_session_id
+            )
           )
-        )
 
-      {:error, message} ->
-        Logger.error("Error when processing help message #{inspect(message)}")
-        {:error, "server error", 500}
+        {:error, message} ->
+          Logger.error("Error when processing help message #{inspect(message)}")
+          {:error, "server error", 500}
+      end
     end
   end
 
@@ -343,60 +651,74 @@ defmodule OliWeb.LegacySuperactivityController do
            "userGuid" => user_id
          } = params
        ) do
-    {:ok, save_file} =
-      case context.activity_attempt.date_evaluated do
+    if preview_context?(context) do
+      preview_write_file_record(
+        context,
+        attempt_guid,
+        user_id,
+        file_name,
+        content,
+        mime_type,
+        byte_encoding,
+        activity_type,
+        Map.get(params, "attemptNumber")
+      )
+    else
+      {:ok, save_file} =
+        case context.activity_attempt.date_evaluated do
+          nil ->
+            file_info = %{
+              attempt_guid: attempt_guid,
+              user_id: user_id,
+              content: content,
+              mime_type: mime_type,
+              byte_encoding: byte_encoding,
+              activity_type: activity_type,
+              file_name: file_name
+            }
+
+            attempt_number = Map.get(params, "attemptNumber")
+
+            file_info =
+              if attempt_number != nil do
+                Map.merge(file_info, %{attempt_number: attempt_number})
+              else
+                file_info
+              end
+
+            ActivityLifecycle.save_activity_attempt_state_file(file_info)
+
+          _ ->
+            attempt_number = Map.get(params, "attemptNumber")
+
+            save_file =
+              ActivityLifecycle.get_activity_attempt_save_file(
+                attempt_guid,
+                user_id,
+                attempt_number,
+                file_name
+              )
+
+            {:ok, save_file}
+        end
+
+      case save_file do
         nil ->
-          file_info = %{
-            attempt_guid: attempt_guid,
-            user_id: user_id,
-            content: content,
-            mime_type: mime_type,
-            byte_encoding: byte_encoding,
-            activity_type: activity_type,
-            file_name: file_name
-          }
-
-          attempt_number = Map.get(params, "attemptNumber")
-
-          file_info =
-            if attempt_number != nil do
-              Map.merge(file_info, %{attempt_number: attempt_number})
-            else
-              file_info
-            end
-
-          ActivityLifecycle.save_activity_attempt_state_file(file_info)
+          {:error, "file not found", 404}
 
         _ ->
-          attempt_number = Map.get(params, "attemptNumber")
+          xml =
+            FileRecord.setup(%{
+              context: context,
+              date_created: DateTime.to_unix(save_file.inserted_at),
+              file_name: save_file.file_name,
+              guid: save_file.file_guid
+            })
+            |> XmlBuilder.document()
+            |> XmlBuilder.generate()
 
-          save_file =
-            ActivityLifecycle.get_activity_attempt_save_file(
-              attempt_guid,
-              user_id,
-              attempt_number,
-              file_name
-            )
-
-          {:ok, save_file}
+          {:ok, xml}
       end
-
-    case save_file do
-      nil ->
-        {:error, "file not found", 404}
-
-      _ ->
-        xml =
-          FileRecord.setup(%{
-            context: context,
-            date_created: DateTime.to_unix(save_file.inserted_at),
-            file_name: save_file.file_name,
-            guid: save_file.file_guid
-          })
-          |> XmlBuilder.document()
-          |> XmlBuilder.generate()
-
-        {:ok, xml}
     end
   end
 
@@ -409,25 +731,239 @@ defmodule OliWeb.LegacySuperactivityController do
        ) do
     file_name = Map.get(params, "fileName")
     attempt_number = Map.get(params, "attemptNumber")
-    # use attempt_user from context to allow for instructor review of student work
-    attempt_user_id = context.attempt_user_id
 
-    save_file =
-      ActivityLifecycle.get_activity_attempt_save_file(
-        attempt_guid,
-        Integer.to_string(attempt_user_id),
-        attempt_number,
-        file_name
-      )
+    if preview_context?(context) do
+      preview_load_file_record(context, attempt_guid, attempt_number, file_name)
+    else
+      # use attempt_user from context to allow for instructor review of student work
+      attempt_user_id = context.attempt_user_id
 
-    case save_file do
-      nil -> {:error, "file not found", 404}
-      _ -> {:ok, URI.decode(save_file.content)}
+      save_file =
+        ActivityLifecycle.get_activity_attempt_save_file(
+          attempt_guid,
+          Integer.to_string(attempt_user_id),
+          attempt_number,
+          file_name
+        )
+
+      case save_file do
+        nil -> {:error, "file not found", 404}
+        _ -> {:ok, URI.decode(save_file.content)}
+      end
     end
   end
 
   defp process_command("deleteFileRecord", %LegacySuperactivityContext{} = context, _params) do
-    # no op
+    if preview_context?(context) do
+      preview_file_directory(context)
+    else
+      # no op
+      xml =
+        FileDirectory.setup(%{
+          context: context
+        })
+        |> XmlBuilder.document()
+        |> XmlBuilder.generate()
+
+      {:ok, xml}
+    end
+  end
+
+  defp process_command(_command_name, %LegacySuperactivityContext{} = _context, _params) do
+    {:error, "command not supported", 400}
+  end
+
+  defp preview_start_attempt(%LegacySuperactivityContext{} = context, _params) do
+    case context.activity_attempt.date_evaluated do
+      nil ->
+        attempt_history(context)
+
+      _ ->
+        now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+        case PreviewSessions.update(context.activity_attempt.attempt_guid, fn session ->
+               next_attempt_number = session.activity_attempt.attempt_number + 1
+
+               next_activity_attempt =
+                 session.activity_attempt
+                 |> Map.merge(%{
+                   attempt_number: next_attempt_number,
+                   date_evaluated: nil,
+                   date_submitted: nil,
+                   score: nil,
+                   out_of: nil,
+                   custom_scores: %{},
+                   inserted_at: now,
+                   updated_at: now,
+                   part_attempts:
+                     Enum.map(session.activity_attempt.part_attempts, fn part_attempt ->
+                       Map.merge(part_attempt, %{
+                         attempt_number: next_attempt_number,
+                         score: nil,
+                         out_of: nil,
+                         date_evaluated: nil,
+                         inserted_at: now,
+                         updated_at: now
+                       })
+                     end)
+                 })
+
+               session
+               |> Map.put(:activity_attempt, next_activity_attempt)
+               |> Map.update!(:resource_attempt, fn resource_attempt ->
+                 resource_attempt
+                 |> Map.put(:updated_at, now)
+                 |> Map.put(
+                   :activity_attempts,
+                   replace_or_append_activity_attempt(
+                     resource_attempt.activity_attempts,
+                     next_activity_attempt
+                   )
+                 )
+               end)
+             end) do
+          {:ok, updated_session} ->
+            attempt_history(
+              preview_session_to_context(
+                context.host,
+                updated_session,
+                context.datashop_session_id
+              )
+            )
+
+          _ ->
+            {:error, "server error", 500}
+        end
+    end
+  end
+
+  defp preview_store_non_numeric_score(
+         %LegacySuperactivityContext{} = context,
+         score_type,
+         score_value
+       ) do
+    case PreviewSessions.update(context.activity_attempt.attempt_guid, fn session ->
+           custom_scores =
+             Map.merge(session.activity_attempt.custom_scores || %{}, %{score_type => score_value})
+
+           update_preview_activity_attempt(session, fn activity_attempt ->
+             Map.put(activity_attempt, :custom_scores, custom_scores)
+           end)
+         end) do
+      {:ok, updated_session} ->
+        attempt_history(
+          preview_session_to_context(context.host, updated_session, context.datashop_session_id)
+        )
+
+      _ ->
+        {:error, "server error", 500}
+    end
+  end
+
+  defp preview_end_attempt(%LegacySuperactivityContext{} = context) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    case PreviewSessions.update(context.activity_attempt.attempt_guid, fn session ->
+           session
+           |> update_preview_activity_attempt(fn activity_attempt ->
+             Map.merge(activity_attempt, %{
+               date_evaluated: now,
+               date_submitted: activity_attempt.date_submitted || now,
+               updated_at: now
+             })
+           end)
+           |> Map.update!(:resource_attempt, &Map.put(&1, :updated_at, now))
+         end) do
+      {:ok, updated_session} ->
+        attempt_history(
+          preview_session_to_context(context.host, updated_session, context.datashop_session_id)
+        )
+
+      _ ->
+        {:error, "server error", 500}
+    end
+  end
+
+  defp preview_write_file_record(
+         %LegacySuperactivityContext{} = context,
+         attempt_guid,
+         user_id,
+         file_name,
+         content,
+         mime_type,
+         byte_encoding,
+         activity_type,
+         attempt_number
+       ) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    current_attempt_number = attempt_number || context.activity_attempt.attempt_number
+    file_key = preview_file_record_key(current_attempt_number, file_name)
+
+    case PreviewSessions.update(attempt_guid, fn session ->
+           save_file = %{
+             attempt_guid: attempt_guid,
+             attempt_number: current_attempt_number,
+             user_id: user_id,
+             content: content,
+             mime_type: mime_type,
+             byte_encoding: byte_encoding,
+             activity_type: activity_type,
+             file_name: file_name,
+             file_guid: Ecto.UUID.generate(),
+             inserted_at: now
+           }
+
+           Map.update!(session, :file_records, &Map.put(&1, file_key, save_file))
+         end) do
+      {:ok, updated_session} ->
+        save_file = Map.fetch!(updated_session.file_records, file_key)
+
+        xml =
+          FileRecord.setup(%{
+            context:
+              preview_session_to_context(
+                context.host,
+                updated_session,
+                context.datashop_session_id
+              ),
+            date_created: DateTime.to_unix(save_file.inserted_at),
+            file_name: save_file.file_name,
+            guid: save_file.file_guid
+          })
+          |> XmlBuilder.document()
+          |> XmlBuilder.generate()
+
+        {:ok, xml}
+
+      _ ->
+        {:error, "server error", 500}
+    end
+  end
+
+  defp preview_load_file_record(
+         %LegacySuperactivityContext{} = context,
+         attempt_guid,
+         attempt_number,
+         file_name
+       ) do
+    with {:ok, session} <- PreviewSessions.get(attempt_guid),
+         save_file when not is_nil(save_file) <-
+           Map.get(
+             session.file_records,
+             preview_file_record_key(
+               attempt_number || context.activity_attempt.attempt_number,
+               file_name
+             )
+           ) do
+      {:ok, save_file.content}
+    else
+      {:error, :not_found} -> {:error, "file not found", 404}
+      {:error, _reason} -> {:error, "server error", 500}
+      nil -> {:error, "file not found", 404}
+    end
+  end
+
+  defp preview_file_directory(%LegacySuperactivityContext{} = context) do
     xml =
       FileDirectory.setup(%{
         context: context
@@ -438,8 +974,86 @@ defmodule OliWeb.LegacySuperactivityController do
     {:ok, xml}
   end
 
-  defp process_command(_command_name, %LegacySuperactivityContext{} = _context, _params) do
-    {:error, "command not supported", 400}
+  defp preview_eval_numeric_score(
+         %LegacySuperactivityContext{} = context,
+         score,
+         out_of,
+         part_attempt
+       ) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    case PreviewSessions.update(context.activity_attempt.attempt_guid, fn session ->
+           session
+           |> update_preview_part_attempt(part_attempt, fn current_part_attempt ->
+             Map.merge(current_part_attempt, %{
+               score: score,
+               out_of: out_of,
+               date_evaluated: now,
+               updated_at: now
+             })
+           end)
+           |> update_preview_activity_attempt(fn activity_attempt ->
+             Map.merge(activity_attempt, %{
+               score: score,
+               out_of: out_of,
+               updated_at: now
+             })
+           end)
+           |> Map.update!(:resource_attempt, &Map.put(&1, :updated_at, now))
+         end) do
+      {:ok, updated_session} ->
+        attempt_history(
+          preview_session_to_context(context.host, updated_session, context.datashop_session_id)
+        )
+
+      _ ->
+        {:error, "server error", 500}
+    end
+  end
+
+  defp update_preview_activity_attempt(session, updater) do
+    updated_activity_attempt = updater.(session.activity_attempt)
+
+    session
+    |> Map.put(:activity_attempt, updated_activity_attempt)
+    |> Map.update!(:resource_attempt, fn resource_attempt ->
+      Map.put(
+        resource_attempt,
+        :activity_attempts,
+        replace_or_append_activity_attempt(
+          resource_attempt.activity_attempts,
+          updated_activity_attempt
+        )
+      )
+    end)
+  end
+
+  defp update_preview_part_attempt(session, part_attempt, updater) do
+    updated_part_attempts =
+      Enum.map(session.activity_attempt.part_attempts, fn current_part_attempt ->
+        if current_part_attempt.part_id == Map.get(part_attempt, :part_id) do
+          updater.(current_part_attempt)
+        else
+          current_part_attempt
+        end
+      end)
+
+    update_preview_activity_attempt(session, fn activity_attempt ->
+      Map.put(activity_attempt, :part_attempts, updated_part_attempts)
+    end)
+  end
+
+  defp replace_or_append_activity_attempt(activity_attempts, updated_activity_attempt) do
+    case Enum.find_index(activity_attempts, fn activity_attempt ->
+           activity_attempt.attempt_number == updated_activity_attempt.attempt_number
+         end) do
+      nil -> activity_attempts ++ [updated_activity_attempt]
+      index -> List.replace_at(activity_attempts, index, updated_activity_attempt)
+    end
+  end
+
+  defp preview_file_record_key(attempt_number, file_name) do
+    {to_string(attempt_number), file_name}
   end
 
   defp finalize_activity_attempt(%LegacySuperactivityContext{} = context) do
@@ -512,7 +1126,7 @@ defmodule OliWeb.LegacySuperactivityController do
          ) do
       {:ok, _evaluations} ->
         attempt_history(
-          fetch_context(
+          fetch_delivery_context(
             context.host,
             context.user,
             context.activity_attempt.attempt_guid,

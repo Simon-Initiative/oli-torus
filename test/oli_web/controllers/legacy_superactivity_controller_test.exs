@@ -239,6 +239,172 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       assert conn.resp_body =~ ~s(command not supported)
     end
+
+    test "creates and services an embedded preview session", %{
+      conn: conn,
+      content: content,
+      activity_id: activity_id,
+      project: project,
+      author: author,
+      user: user
+    } do
+      preview_attempt_guid = Ecto.UUID.generate()
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(conn, :preview_context),
+          %{
+            "attemptGuid" => preview_attempt_guid,
+            "model" => content,
+            "context" => %{
+              "projectSlug" => project.slug,
+              "pageTitle" => "Preview page",
+              "resourceId" => activity_id,
+              "graded" => false
+            }
+          }
+        )
+
+      assert conn.resp_body =~ preview_attempt_guid
+
+      assert conn.resp_body =~
+               ~s("server_url":"https://www.example.com/jcourse/superactivity/server")
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> log_in_user(user)
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "beginSession",
+              "activityContextGuid" => preview_attempt_guid
+            }
+          )
+        )
+
+      assert conn.resp_body =~ ~s(<super_activity_session>)
+      assert conn.resp_body =~ ~s(scoring_mode="total")
+      assert conn.resp_body =~ ~s(title="Embedded activity")
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> log_in_user(user)
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "loadClientConfig",
+              "activityContextGuid" => preview_attempt_guid
+            }
+          )
+        )
+
+      assert conn.resp_body =~ ~s(<super_activity_client server_time_zone=)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> log_in_user(user)
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "loadContentFile",
+              "activityContextGuid" => preview_attempt_guid
+            }
+          )
+        )
+
+      assert conn.resp_body =~ ~s(<embed_activity id="custom_side" width="670" height="300">)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> log_in_user(user)
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "writeFileRecord",
+              "activityContextGuid" => preview_attempt_guid,
+              "byteEncoding" => "utf8",
+              "fileName" => "preview.xml",
+              "fileRecordData" => "<preview />",
+              "resourceTypeID" => "oli_embedded",
+              "mimeType" => "xml",
+              "userGuid" => user.id,
+              "attemptNumber" => 1
+            }
+          )
+        )
+
+      assert conn.resp_body =~ ~s(<file_record file_name="preview.xml")
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> log_in_user(user)
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "loadFileRecord",
+              "activityContextGuid" => preview_attempt_guid,
+              "fileName" => "preview.xml",
+              "attemptNumber" => 1
+            }
+          )
+        )
+
+      assert conn.resp_body == "<preview />"
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> log_in_user(user)
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "scoreAttempt",
+              "activityContextGuid" => preview_attempt_guid,
+              "scoreValue" => "0.75",
+              "scoreId" => "percent"
+            }
+          )
+        )
+
+      assert conn.resp_body =~ ~s(<attempt_history)
+      assert conn.resp_body =~ ~s(<score value="75.0" score_id="percent"/>)
+    end
   end
 
   defp setup_session(%{conn: conn}) do
@@ -246,7 +412,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     content = %{
       "src" => "index.html",
-      "base" => "oli_embedded",
+      "base" => "embedded",
       "stem" => %{
         "id" => "1531714844",
         "content" => [
@@ -356,7 +522,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       section: map.section,
       revision: map.revision1,
       page_revision: map.page.revision,
-      activity_id: Map.get(map, :activity).resource.id
+      activity_id: Map.get(map, :activity).resource.id,
+      content: content
     }
   end
 end

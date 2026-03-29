@@ -30,6 +30,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
     onSubmitActivity,
     onResetActivity,
     context: activityContext,
+    mode,
   } = useDeliveryElementContext<OliEmbeddedModelSchema>();
 
   const [context, setContext] = useState<Context>();
@@ -67,6 +68,11 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
   }, []);
 
   const fetchContext = () => {
+    if (mode === 'author_preview' || mode === 'preview') {
+      fetchPreviewContext();
+      return;
+    }
+
     fetch('/jcourse/superactivity/context/' + activityState.attemptGuid, {
       method: 'GET',
     })
@@ -77,6 +83,35 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
       })
       .catch((error) => {
         // :TODO: display error somehow
+        setPreview(true);
+      });
+  };
+
+  const fetchPreviewContext = () => {
+    fetch('/jcourse/superactivity/preview_context', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        attemptGuid: activityState.attemptGuid,
+        model,
+        context: activityContext,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Unable to initialize embedded preview: ${response.status}`);
+        }
+
+        return response.json();
+      })
+      .then((json) => {
+        configDefaults(json);
+        setContext(json);
+      })
+      .catch((error) => {
+        console.error(error);
         setPreview(true);
       });
   };
@@ -93,7 +128,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
     window.workbookConfig = {
       userGUID: context.user_guid,
       sessionGuid: '1958e2f50a0000562295c9a569354ab5',
-      contextGuid: activityState.attemptGuid,
+      contextGuid: context.attempt_guid,
       dataSet: 'none',
       syllabusURI: 'none',
       sectionTitle: 'none',
@@ -139,8 +174,8 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           data-superactivityserver={context.server_url}
           data-activitymode={context.mode}
           allowFullScreen={true}
-          data-activitycontextguid={activityState.attemptGuid}
-          data-activityguid={activityState.attemptGuid}
+          data-activitycontextguid={context.attempt_guid}
+          data-activityguid={context.attempt_guid}
           data-userguid={context.user_guid}
           data-partids={context.part_ids}
           data-mode="oli"
