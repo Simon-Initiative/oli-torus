@@ -87,6 +87,47 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
     end
   end
 
+  describe "clickhouse_http_options/1" do
+    test "uses run metadata overrides when present" do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-08],
+          inventory_prefix: "inventory/prefix/2024-07-08",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :pending,
+          metadata: %{
+            "http_timeout_ms" => 45_000,
+            "http_recv_timeout_ms" => 420_000
+          }
+        }
+        |> Repo.insert!()
+
+      assert Inventory.clickhouse_http_options(run) ==
+               [timeout: 45_000, recv_timeout: 420_000]
+    end
+
+    test "falls back to inventory defaults when metadata is absent" do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-09],
+          inventory_prefix: "inventory/prefix/2024-07-09",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :pending,
+          metadata: %{}
+        }
+        |> Repo.insert!()
+
+      assert Inventory.clickhouse_http_options(run) ==
+               [timeout: 30_000, recv_timeout: 300_000]
+    end
+  end
+
   describe "chunk log storage" do
     setup do
       run =

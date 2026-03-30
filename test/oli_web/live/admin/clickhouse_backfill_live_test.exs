@@ -285,6 +285,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert run.metadata["optimize_after_backfill"] == false
       assert run.metadata["max_simultaneous_batches"] == 1
       assert run.metadata["max_batch_retries"] == 1
+      assert run.metadata["http_timeout_ms"] == 30_000
+      assert run.metadata["http_recv_timeout_ms"] == 300_000
 
       rendered = render(view)
       assert rendered =~ "Dry run: Yes"
@@ -309,6 +311,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
       assert run.metadata["max_simultaneous_batches"] == 1
       assert run.metadata["max_batch_retries"] == 1
+      assert run.metadata["http_timeout_ms"] == 30_000
+      assert run.metadata["http_recv_timeout_ms"] == 300_000
       assert run.metadata["optimize_after_backfill"]
       refute run.dry_run
 
@@ -808,7 +812,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
             "batch_chunk_size" => 1000,
             "manifest_page_size" => 20_000,
             "max_simultaneous_batches" => 1,
-            "max_batch_retries" => 1
+            "max_batch_retries" => 1,
+            "http_timeout_ms" => 30_000,
+            "http_recv_timeout_ms" => 300_000
           }
         }
         |> Repo.insert!()
@@ -825,7 +831,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         "batch_chunk_size" => "100",
         "manifest_page_size" => "2000",
         "max_simultaneous_batches" => "2",
-        "max_batch_retries" => "3"
+        "max_batch_retries" => "3",
+        "http_timeout_ms" => "45000",
+        "http_recv_timeout_ms" => "420000"
       }
 
       view
@@ -841,10 +849,38 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert run.metadata["manifest_page_size"] == 2000
       assert run.metadata["max_simultaneous_batches"] == 2
       assert run.metadata["max_batch_retries"] == 3
+      assert run.metadata["http_timeout_ms"] == 45_000
+      assert run.metadata["http_recv_timeout_ms"] == 420_000
 
       rendered = render(view)
       assert rendered =~ "Run #{run.id} settings updated."
       refute rendered =~ "Edit Execution Settings"
+    end
+
+    test "inventory scheduling accepts timeout overrides", %{conn: conn} do
+      Repo.delete_all(InventoryRun)
+      clear_oban_jobs()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-06",
+        "target_table" => "analytics.raw_events",
+        "http_timeout_ms" => "45000",
+        "http_recv_timeout_ms" => "420000"
+      }
+
+      view
+      |> form("form[phx-submit=\"inventory_schedule\"]", %{"inventory" => params})
+      |> render_submit()
+
+      assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
+      assert run.metadata["http_timeout_ms"] == 45_000
+      assert run.metadata["http_recv_timeout_ms"] == 420_000
+
+      rendered = render(view)
+      assert rendered =~ "HTTP timeout: 45000 ms"
+      assert rendered =~ "HTTP receive timeout: 420000 ms"
     end
 
     test "cancel inventory run transitions status to cancelled", %{conn: conn} do

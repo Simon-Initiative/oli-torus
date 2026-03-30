@@ -32,7 +32,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
           optional(:batch_chunk_size) => pos_integer(),
           optional(:manifest_page_size) => pos_integer(),
           optional(:max_simultaneous_batches) => pos_integer(),
-          optional(:max_batch_retries) => pos_integer()
+          optional(:max_batch_retries) => pos_integer(),
+          optional(:http_timeout_ms) => pos_integer(),
+          optional(:http_recv_timeout_ms) => pos_integer()
         }
 
   @doc """
@@ -80,6 +82,14 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
   defp default_max_batch_retries do
     inventory_config_value(:max_batch_retries, 1)
+  end
+
+  defp default_http_timeout_ms do
+    inventory_config_value(:http_timeout_ms, 30_000)
+  end
+
+  defp default_http_recv_timeout_ms do
+    inventory_config_value(:http_recv_timeout_ms, 300_000)
   end
 
   @doc """
@@ -710,11 +720,41 @@ defmodule Oli.Analytics.Backfill.Inventory do
           "max_batch_retries",
           parse_positive_integer(Map.get(attrs, :max_batch_retries), default_max_batch_retries())
         )
+        |> Map.put(
+          "http_timeout_ms",
+          parse_positive_integer(Map.get(attrs, :http_timeout_ms), default_http_timeout_ms())
+        )
+        |> Map.put(
+          "http_recv_timeout_ms",
+          parse_positive_integer(
+            Map.get(attrs, :http_recv_timeout_ms),
+            default_http_recv_timeout_ms()
+          )
+        )
 
       update_run(run, %{metadata: updated_metadata})
     else
       {:error, :run_not_editable}
     end
+  end
+
+  @doc """
+  Determine the HTTP timeout options to use for ClickHouse requests issued for a run.
+  """
+  @spec clickhouse_http_options(InventoryRun.t()) :: keyword()
+  def clickhouse_http_options(%InventoryRun{} = run) do
+    metadata = ensure_map(run.metadata)
+
+    [
+      timeout:
+        metadata
+        |> fetch_first(["http_timeout_ms", :http_timeout_ms])
+        |> parse_positive_integer(default_http_timeout_ms()),
+      recv_timeout:
+        metadata
+        |> fetch_first(["http_recv_timeout_ms", :http_recv_timeout_ms])
+        |> parse_positive_integer(default_http_recv_timeout_ms())
+    ]
   end
 
   @doc """
@@ -1352,6 +1392,24 @@ defmodule Oli.Analytics.Backfill.Inventory do
         |> fetch_value(:max_batch_retries, max_retries_default)
         |> parse_positive_integer(default_max_batch_retries())
 
+      http_timeout_default =
+        config[:http_timeout_ms]
+        |> parse_positive_integer(default_http_timeout_ms())
+
+      http_recv_timeout_default =
+        config[:http_recv_timeout_ms]
+        |> parse_positive_integer(default_http_recv_timeout_ms())
+
+      http_timeout_ms =
+        attrs
+        |> fetch_value(:http_timeout_ms, http_timeout_default)
+        |> parse_positive_integer(default_http_timeout_ms())
+
+      http_recv_timeout_ms =
+        attrs
+        |> fetch_value(:http_recv_timeout_ms, http_recv_timeout_default)
+        |> parse_positive_integer(default_http_recv_timeout_ms())
+
       metadata =
         attrs
         |> fetch_value(:metadata, %{})
@@ -1364,6 +1422,8 @@ defmodule Oli.Analytics.Backfill.Inventory do
         |> Map.put_new("manifest_page_size", config[:manifest_page_size])
         |> Map.put("max_simultaneous_batches", max_simultaneous)
         |> Map.put("max_batch_retries", max_batch_retries)
+        |> Map.put("http_timeout_ms", http_timeout_ms)
+        |> Map.put("http_recv_timeout_ms", http_recv_timeout_ms)
         |> Map.put(
           "manifest",
           %{
@@ -1502,7 +1562,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
               :batch_chunk_size,
               :manifest_page_size,
               :max_simultaneous_batches,
-              :max_batch_retries
+              :max_batch_retries,
+              :http_timeout_ms,
+              :http_recv_timeout_ms
             ] do
     Map.put(acc, key, value)
   end
@@ -1553,7 +1615,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
       batch_chunk_size: default_batch_chunk_size(),
       manifest_page_size: default_manifest_page_size(),
       max_simultaneous_batches: default_max_simultaneous_batches(),
-      max_batch_retries: default_max_batch_retries()
+      max_batch_retries: default_max_batch_retries(),
+      http_timeout_ms: default_http_timeout_ms(),
+      http_recv_timeout_ms: default_http_recv_timeout_ms()
     }
   end
 

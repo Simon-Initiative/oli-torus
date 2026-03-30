@@ -879,7 +879,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         Map.put(acc, to_string(key), normalize_param_value(value))
       end)
 
-    [headers: headers, query_params: params]
+    [headers: headers, query_params: params, http_options: Inventory.clickhouse_http_options(run)]
   end
 
   defp normalize_param_value(value) when is_boolean(value), do: if(value, do: "1", else: "0")

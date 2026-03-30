@@ -1096,6 +1096,30 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                       Retry attempts per batch before marking it failed.
                     </p>
                   </div>
+                  <div class="space-y-1">
+                    <.input
+                      field={@inventory_form[:http_timeout_ms]}
+                      type="number"
+                      min="1"
+                      label="HTTP Timeout (ms)"
+                      value={@inventory_form_inputs.http_timeout_ms}
+                    />
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      Request timeout for ClickHouse insert calls before a response body starts.
+                    </p>
+                  </div>
+                  <div class="space-y-1">
+                    <.input
+                      field={@inventory_form[:http_recv_timeout_ms]}
+                      type="number"
+                      min="1"
+                      label="HTTP Receive Timeout (ms)"
+                      value={@inventory_form_inputs.http_recv_timeout_ms}
+                    />
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      Maximum time Torus waits for ClickHouse to finish responding to a chunk insert.
+                    </p>
+                  </div>
                 </div>
               </div>
             </details>
@@ -1207,6 +1231,11 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                   Max simultaneous batches: {format_int(run.metadata["max_simultaneous_batches"])} · Max batch retries: {format_int(
                     run.metadata["max_batch_retries"]
                   )}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  HTTP timeout: {format_int(run.metadata["http_timeout_ms"])} ms · HTTP receive timeout: {format_int(
+                    run.metadata["http_recv_timeout_ms"]
+                  )} ms
                 </div>
                 <div
                   :if={inventory_skipped_objects(run) > 0}
@@ -1332,6 +1361,20 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     min="1"
                     label="Max Batch Retries"
                     value={@inventory_run_settings_inputs.max_batch_retries}
+                  />
+                  <.input
+                    field={@inventory_run_settings_form[:http_timeout_ms]}
+                    type="number"
+                    min="1"
+                    label="HTTP Timeout (ms)"
+                    value={@inventory_run_settings_inputs.http_timeout_ms}
+                  />
+                  <.input
+                    field={@inventory_run_settings_form[:http_recv_timeout_ms]}
+                    type="number"
+                    min="1"
+                    label="HTTP Receive Timeout (ms)"
+                    value={@inventory_run_settings_inputs.http_recv_timeout_ms}
                   />
                 </div>
                 <div class="flex items-center justify-end gap-2">
@@ -1850,7 +1893,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       batch_chunk_size: inventory_chunk_size(config),
       manifest_page_size: inventory_manifest_page_size(config),
       max_simultaneous_batches: inventory_max_simultaneous_batches(config),
-      max_batch_retries: inventory_max_batch_retries(config)
+      max_batch_retries: inventory_max_batch_retries(config),
+      http_timeout_ms: inventory_http_timeout_ms(config),
+      http_recv_timeout_ms: inventory_http_recv_timeout_ms(config)
     }
   end
 
@@ -1867,7 +1912,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       batch_chunk_size: :integer,
       manifest_page_size: :integer,
       max_simultaneous_batches: :integer,
-      max_batch_retries: :integer
+      max_batch_retries: :integer,
+      http_timeout_ms: :integer,
+      http_recv_timeout_ms: :integer
     }
 
     {data, types}
@@ -1885,6 +1932,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     |> Ecto.Changeset.validate_number(:manifest_page_size, greater_than: 0)
     |> Ecto.Changeset.validate_number(:max_simultaneous_batches, greater_than: 0)
     |> Ecto.Changeset.validate_number(:max_batch_retries, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:http_timeout_ms, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:http_recv_timeout_ms, greater_than: 0)
   end
 
   defp inventory_run_settings_changeset(attrs) do
@@ -1892,7 +1941,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       batch_chunk_size: :integer,
       manifest_page_size: :integer,
       max_simultaneous_batches: :integer,
-      max_batch_retries: :integer
+      max_batch_retries: :integer,
+      http_timeout_ms: :integer,
+      http_recv_timeout_ms: :integer
     }
 
     {%{}, types}
@@ -1902,6 +1953,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     |> Ecto.Changeset.validate_number(:manifest_page_size, greater_than: 0)
     |> Ecto.Changeset.validate_number(:max_simultaneous_batches, greater_than: 0)
     |> Ecto.Changeset.validate_number(:max_batch_retries, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:http_timeout_ms, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:http_recv_timeout_ms, greater_than: 0)
   end
 
   defp inventory_chunk_size(config) do
@@ -1932,6 +1985,18 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     config
     |> inventory_config_value(:max_batch_retries, 1)
     |> parse_positive_integer(1)
+  end
+
+  defp inventory_http_timeout_ms(config) do
+    config
+    |> inventory_config_value(:http_timeout_ms, 30_000)
+    |> parse_positive_integer(30_000)
+  end
+
+  defp inventory_http_recv_timeout_ms(config) do
+    config
+    |> inventory_config_value(:http_recv_timeout_ms, 300_000)
+    |> parse_positive_integer(300_000)
   end
 
   defp inventory_config_value(config, key, default) do
@@ -2036,6 +2101,18 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         |> Map.get(:max_batch_retries)
         |> Kernel.||(Map.get(inputs, "max_batch_retries"))
         |> Kernel.||(Map.get(defaults, :max_batch_retries))
+        |> format_integer_input(),
+      http_timeout_ms:
+        inputs
+        |> Map.get(:http_timeout_ms)
+        |> Kernel.||(Map.get(inputs, "http_timeout_ms"))
+        |> Kernel.||(Map.get(defaults, :http_timeout_ms))
+        |> format_integer_input(),
+      http_recv_timeout_ms:
+        inputs
+        |> Map.get(:http_recv_timeout_ms)
+        |> Kernel.||(Map.get(inputs, "http_recv_timeout_ms"))
+        |> Kernel.||(Map.get(defaults, :http_recv_timeout_ms))
         |> format_integer_input()
     }
   end
@@ -2059,6 +2136,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     page_size = params |> Map.get("manifest_page_size", "") |> String.trim()
     max_simultaneous = params |> Map.get("max_simultaneous_batches", "") |> String.trim()
     max_retries = params |> Map.get("max_batch_retries", "") |> String.trim()
+    http_timeout = params |> Map.get("http_timeout_ms", "") |> String.trim()
+    http_recv_timeout = params |> Map.get("http_recv_timeout_ms", "") |> String.trim()
 
     %{
       inventory_date: date,
@@ -2072,7 +2151,13 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       manifest_page_size: if(page_size == "", do: defaults.manifest_page_size, else: page_size),
       max_simultaneous_batches:
         if(max_simultaneous == "", do: defaults.max_simultaneous_batches, else: max_simultaneous),
-      max_batch_retries: if(max_retries == "", do: defaults.max_batch_retries, else: max_retries)
+      max_batch_retries: if(max_retries == "", do: defaults.max_batch_retries, else: max_retries),
+      http_timeout_ms: if(http_timeout == "", do: defaults.http_timeout_ms, else: http_timeout),
+      http_recv_timeout_ms:
+        if(http_recv_timeout == "",
+          do: defaults.http_recv_timeout_ms,
+          else: http_recv_timeout
+        )
     }
   end
 
@@ -2095,7 +2180,15 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       max_batch_retries:
         metadata
         |> fetch_first(["max_batch_retries", :max_batch_retries])
-        |> parse_positive_integer(inventory_max_batch_retries(config))
+        |> parse_positive_integer(inventory_max_batch_retries(config)),
+      http_timeout_ms:
+        metadata
+        |> fetch_first(["http_timeout_ms", :http_timeout_ms])
+        |> parse_positive_integer(inventory_http_timeout_ms(config)),
+      http_recv_timeout_ms:
+        metadata
+        |> fetch_first(["http_recv_timeout_ms", :http_recv_timeout_ms])
+        |> parse_positive_integer(inventory_http_recv_timeout_ms(config))
     }
   end
 
@@ -2107,7 +2200,10 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       manifest_page_size: params |> Map.get("manifest_page_size", "") |> format_integer_input(),
       max_simultaneous_batches:
         params |> Map.get("max_simultaneous_batches", "") |> format_integer_input(),
-      max_batch_retries: params |> Map.get("max_batch_retries", "") |> format_integer_input()
+      max_batch_retries: params |> Map.get("max_batch_retries", "") |> format_integer_input(),
+      http_timeout_ms: params |> Map.get("http_timeout_ms", "") |> format_integer_input(),
+      http_recv_timeout_ms:
+        params |> Map.get("http_recv_timeout_ms", "") |> format_integer_input()
     }
   end
 
@@ -2394,13 +2490,25 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       |> Map.get(:max_batch_retries)
       |> Kernel.||(Map.get(inputs, "max_batch_retries"))
 
+    http_timeout =
+      inputs
+      |> Map.get(:http_timeout_ms)
+      |> Kernel.||(Map.get(inputs, "http_timeout_ms"))
+
+    http_recv_timeout =
+      inputs
+      |> Map.get(:http_recv_timeout_ms)
+      |> Kernel.||(Map.get(inputs, "http_recv_timeout_ms"))
+
     has_value? =
       Enum.any?(
         [
           {chunk_size, defaults.batch_chunk_size},
           {page_size, defaults.manifest_page_size},
           {max_simultaneous, defaults.max_simultaneous_batches},
-          {max_retries, defaults.max_batch_retries}
+          {max_retries, defaults.max_batch_retries},
+          {http_timeout, defaults.http_timeout_ms},
+          {http_recv_timeout, defaults.http_recv_timeout_ms}
         ],
         fn {value, default} ->
           cond do
@@ -2420,7 +2528,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
           form[:batch_chunk_size].errors,
           form[:manifest_page_size].errors,
           form[:max_simultaneous_batches].errors,
-          form[:max_batch_retries].errors
+          form[:max_batch_retries].errors,
+          form[:http_timeout_ms].errors,
+          form[:http_recv_timeout_ms].errors
         ],
         fn errors ->
           match?([{_, _} | _], errors)
