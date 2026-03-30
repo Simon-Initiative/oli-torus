@@ -8,7 +8,7 @@
 # Requirements:
 # - oli.env must exist in the repository root
 # - docker compose MinIO service must already be running
-# - oli.env should define MINIO_ROOT_USER and MINIO_ROOT_PASSWORD
+# - oli.env should define AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 #
 # Optional environment overrides:
 # - COMPOSE_FILE: compose file to use instead of docker-compose-dev.yml
@@ -33,8 +33,8 @@ set -a
 source "$ROOT_DIR/oli.env"
 set +a
 
-MINIO_ACCESS_KEY="${MINIO_ROOT_USER:-${AWS_S3_ACCESS_KEY_ID:-${AWS_ACCESS_KEY_ID:-}}}"
-MINIO_SECRET_KEY="${MINIO_ROOT_PASSWORD:-${AWS_S3_SECRET_ACCESS_KEY:-${AWS_SECRET_ACCESS_KEY:-}}}"
+MINIO_ACCESS_KEY="${AWS_ACCESS_KEY_ID:-}"
+MINIO_SECRET_KEY="${AWS_SECRET_ACCESS_KEY:-}"
 MINIO_PORT="${AWS_S3_PORT:-9000}"
 MINIO_ENDPOINT="${MINIO_ENDPOINT:-http://localhost:${MINIO_PORT}}"
 MINIO_SERVICE="${MINIO_SERVICE:-minio}"
@@ -43,7 +43,7 @@ XAPI_BUCKET="${S3_XAPI_BUCKET_NAME:-torus-xapi-dev}"
 BLOB_BUCKET="${BLOB_STORAGE_BUCKET_NAME:-torus-blob-dev}"
 
 if [ -z "$MINIO_ACCESS_KEY" ] || [ -z "$MINIO_SECRET_KEY" ]; then
-  echo "Missing MINIO_ROOT_USER or MINIO_ROOT_PASSWORD in oli.env" >&2
+  echo "Missing AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY in oli.env" >&2
   exit 1
 fi
 
