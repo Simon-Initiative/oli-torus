@@ -204,22 +204,25 @@ defmodule OliWeb.Dialogue.WindowLive do
              )}
 
           {:error, reason} ->
-            Logger.error("Failed to initialize dialogue server: #{inspect(reason)}")
+            Logger.error("[WindowLive] Failed to initialize dialogue server: #{inspect(reason)}")
             {:ok, assign(socket, enabled: false)}
         end
       else
+        Logger.debug("[WindowLive] page NOT enabled, enabled=false")
         {:ok, assign(socket, enabled: false)}
       end
     else
+      Logger.debug("[WindowLive] assistant NOT enabled for section, enabled=false")
       {:ok, assign(socket, enabled: false)}
     end
   end
 
   def mount(
         _params,
-        _session,
+        session,
         socket
       ) do
+    Logger.debug("[WindowLive] catch-all mount, session_keys=#{inspect(Map.keys(session))}")
     {:ok, assign(socket, enabled: false)}
   end
 

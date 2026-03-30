@@ -31,6 +31,7 @@ const defaultFrequentlyUsed = [
   'janus_video',
   'janus_input_text',
   'janus_capi_iframe',
+  'janus_ai_trigger',
 ];
 
 const AddComponentToolbar: React.FC<{

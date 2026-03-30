@@ -18,6 +18,13 @@
   <%= react_component("Components.Delivery", @app_params) %>
 </div>
 
+<%= live_render(@conn, OliWeb.Dialogue.WindowLive,
+  session: %{
+    "section_slug" => @section_slug,
+    "resource_id" => @resource_id
+  }
+) %>
+
 
 <script>
   // Used in assets/src/phoenix/socket.ts

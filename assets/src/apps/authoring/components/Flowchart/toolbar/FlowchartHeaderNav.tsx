@@ -54,6 +54,7 @@ const staticComponents: string[] = [
   'janus_popup',
   'janus_audio',
   'janus_capi_iframe',
+  'janus_ai_trigger',
 ];
 const questionComponents: string[] = [
   'janus_mcq',
