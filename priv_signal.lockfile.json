@@ -8195,17 +8195,17 @@
       },
       "evidence": [
         {
-          "line": 335,
+          "line": 363,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "c7826b328dedd2eb",
+          "finding_id": "3c39766e95b18935",
           "ast_kind": "field_access"
         },
         {
-          "line": 335,
+          "line": 363,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "c7826b328dedd2eb",
+          "finding_id": "3c39766e95b18935",
           "ast_kind": "token"
         }
       ],
@@ -8214,7 +8214,7 @@
         "function": "get_parts_layout_by_revision_id/1",
         "module": "Oli.Conversation.Triggers",
         "lines": [
-          335
+          363
         ],
         "file_path": "lib/oli/conversation/triggers.ex"
       },
@@ -14403,6 +14403,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_52ecbe53a1476e0e",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "find_containing_page_resource_id/2",
+        "module": "Oli.Conversation.Triggers",
+        "lines": [
+          323
+        ],
+        "file_path": "lib/oli/conversation/triggers.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_52ee3b0035072acb",
       "node_type": "source",
       "role": {
@@ -16985,17 +17004,17 @@
       },
       "evidence": [
         {
-          "line": 839,
+          "line": 842,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "9b2e4d0da5ce79c5",
+          "finding_id": "82893c412958f7c7",
           "ast_kind": "token"
         },
         {
-          "line": 839,
+          "line": 842,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "9b2e4d0da5ce79c5",
+          "finding_id": "82893c412958f7c7",
           "ast_kind": "unknown"
         }
       ],
@@ -17004,7 +17023,7 @@
         "function": "maybe_remember_adaptive_runtime_update/2",
         "module": "OliWeb.Dialogue.WindowLive",
         "lines": [
-          839
+          842
         ],
         "file_path": "lib/oli_web/live/dialogue/window_live.ex"
       },
@@ -28477,17 +28496,17 @@
       },
       "evidence": [
         {
-          "line": 318,
+          "line": 346,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "e7b3543fac23ef5e",
+          "finding_id": "72b18127f7446208",
           "ast_kind": "field_access"
         },
         {
-          "line": 318,
+          "line": 346,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "e7b3543fac23ef5e",
+          "finding_id": "72b18127f7446208",
           "ast_kind": "token"
         }
       ],
@@ -28496,7 +28515,7 @@
         "function": "get_adaptive_parts_layout/2",
         "module": "Oli.Conversation.Triggers",
         "lines": [
-          318
+          346
         ],
         "file_path": "lib/oli/conversation/triggers.ex"
       },
@@ -36475,7 +36494,7 @@
         "function": "check_for_hint_trigger/5",
         "module": "Oli.Conversation.Triggers",
         "lines": [
-          505
+          533
         ],
         "file_path": "lib/oli/conversation/triggers.ex"
       },
@@ -44401,7 +44420,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "8751a81c3d440f63474e891684c7a665a3c491be"
+    "commit": "2d579311845b23dcd012f6ad956f1299f3ceb049"
   },
   "schema_version": "1",
   "summary": {
@@ -44413,8 +44432,8 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1606,
-    "scan_duration_ms": 1813,
-    "node_count": 1525,
+    "scan_duration_ms": 1743,
+    "node_count": 1526,
     "data_node_count": 122,
     "flow_count": 781,
     "scan_error_count": 0,
@@ -44423,14 +44442,14 @@
     "proto_flows_enabled": true,
     "node_type_counts": {
       "sink": 611,
-      "source": 914
+      "source": 915
     },
     "boundary_counts": {
       "external": 481,
       "internal": 300
     },
     "confirmed_count": 160,
-    "possible_count": 1365
+    "possible_count": 1366
   },
   "flows": [
     {
