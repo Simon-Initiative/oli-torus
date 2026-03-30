@@ -54,17 +54,17 @@ defmodule Oli.ClickHouse.Tasks do
   def drop do
     config = load_clickhouse_config()
     IO.puts("Dropping ClickHouse database...")
-    drop_database_command(config)
+    drop_database(config)
   end
 
   def reset(%{dangerously_force: true}) do
     config = load_clickhouse_config()
-    reset_database_force(config)
+    reset_database(config, force?: true)
   end
 
   def drop(%{dangerously_force: true}) do
     config = load_clickhouse_config()
-    drop_database_force(config)
+    drop_database(config, force?: true)
   end
 
   defp load_clickhouse_config do
@@ -215,13 +215,15 @@ defmodule Oli.ClickHouse.Tasks do
     end
   end
 
-  defp reset_database(config) do
+  defp reset_database(config, opts \\ []) do
+    force? = Keyword.get(opts, :force?, false)
+
     IO.puts("🔥 Resetting ClickHouse database...")
 
     # Test connection first
     case test_clickhouse_connection(config) do
       :ok ->
-        with :ok <- drop_database(config),
+        with :ok <- drop_database(config, force?: force?),
              :ok <- create_database_if_needed(config) do
           # Create migrations directory if it doesn't exist
           ensure_migrations_directory()
@@ -234,7 +236,14 @@ defmodule Oli.ClickHouse.Tasks do
           :ok
         else
           :error ->
-            raise "❌ Failed to reset ClickHouse database because the drop or create step did not succeed"
+            error_message =
+              if force? do
+                "❌ Failed to force reset ClickHouse database because the drop or create step did not succeed"
+              else
+                "❌ Failed to reset ClickHouse database because the drop or create step did not succeed"
+              end
+
+            raise error_message
         end
 
       :error ->
@@ -249,41 +258,8 @@ defmodule Oli.ClickHouse.Tasks do
     end
   end
 
-  defp reset_database_force(config) do
-    IO.puts("🔥 Resetting ClickHouse database...")
-
-    # Test connection first
-    case test_clickhouse_connection(config) do
-      :ok ->
-        with :ok <- drop_database_force(config),
-             :ok <- create_database_if_needed(config) do
-          # Create migrations directory if it doesn't exist
-          ensure_migrations_directory()
-
-          # Run all migrations
-          IO.puts("📦 Running all migrations...")
-          run_migrate_command("up", config)
-
-          IO.puts("✅ ClickHouse database reset completed successfully!")
-          :ok
-        else
-          :error ->
-            raise "❌ Failed to force reset ClickHouse database because the drop or create step did not succeed"
-        end
-
-      :error ->
-        raise """
-        ❌ Cannot connect to ClickHouse for reset
-
-        Please ensure:
-        1. ClickHouse is running: docker-compose up -d clickhouse
-        2. ClickHouse is accessible at #{config.host}:#{config.http_port}
-        3. User '#{config.user}' has proper permissions
-        """
-    end
-  end
-
-  defp drop_database_command(config) do
+  defp drop_database(config, opts \\ []) do
+    force? = Keyword.get(opts, :force?, false)
     IO.puts("🗑️  Dropping ClickHouse database...")
 
     # Test connection first
@@ -292,30 +268,26 @@ defmodule Oli.ClickHouse.Tasks do
         database = config[:database] || "oli_analytics_dev"
 
         if database != "default" do
-          # Confirm the action with user
-          IO.puts(
-            "⚠️  WARNING: This will permanently delete the database '#{database}' and all its data!"
-          )
+          if force? or confirm_drop_database?(database) do
+            case execute_clickhouse_query(config, "DROP DATABASE IF EXISTS #{database}") do
+              :ok ->
+                IO.puts("✅ Database '#{database}' dropped successfully")
+                :ok
 
-          IO.puts("Are you sure you want to continue? (y/N)")
-
-          case IO.gets("") |> String.trim() |> String.downcase() do
-            response when response in ["y", "yes"] ->
-              case execute_clickhouse_query(config, "DROP DATABASE IF EXISTS #{database}") do
-                :ok ->
-                  IO.puts("✅ Database '#{database}' dropped successfully")
-                  :ok
-
-                :error ->
-                  raise "❌ Failed to drop database '#{database}'"
-              end
-
-            _ ->
-              IO.puts("❌ Operation cancelled by user")
-              :cancelled
+              :error ->
+                raise "❌ Failed to drop database '#{database}'"
+            end
+          else
+            IO.puts("❌ Operation cancelled by user")
+            :cancelled
           end
         else
-          raise "❌ Cannot drop the 'default' database - it's required by ClickHouse"
+          if force? do
+            IO.puts("⚠️  Cannot drop default database, skipping...")
+            :ok
+          else
+            raise "❌ Cannot drop the 'default' database - it's required by ClickHouse"
+          end
         end
 
       :error ->
@@ -330,23 +302,13 @@ defmodule Oli.ClickHouse.Tasks do
     end
   end
 
-  defp drop_database_force(config) do
-    database = config[:database] || "oli_analytics_dev"
+  defp confirm_drop_database?(database) do
+    IO.puts("⚠️  WARNING: This will permanently delete the database '#{database}' and all its data!")
+    IO.puts("Are you sure you want to continue? (y/N)")
 
-    if database != "default" do
-      IO.puts("🗑️  Dropping database '#{database}'...")
-
-      case execute_clickhouse_query(config, "DROP DATABASE IF EXISTS #{database}") do
-        :ok ->
-          IO.puts("✅ Database '#{database}' dropped successfully")
-          :ok
-
-        :error ->
-          raise "❌ Failed to drop database '#{database}'"
-      end
-    else
-      IO.puts("⚠️  Cannot drop default database, skipping...")
-      :ok
+    case IO.gets("") |> String.trim() |> String.downcase() do
+      response when response in ["y", "yes"] -> true
+      _ -> false
     end
   end
 
