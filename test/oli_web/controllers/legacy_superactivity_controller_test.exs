@@ -15,6 +15,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
   describe "legacy superactivity" do
     setup :verify_on_exit!
+    setup :set_mox_from_context
     setup [:setup_session]
 
     # this test should be migrated to a liveview approach since now we
@@ -254,6 +255,24 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
     } do
       preview_attempt_guid = Ecto.UUID.generate()
 
+      preview_storage_path =
+        "/preview-save-files/#{preview_attempt_guid}/1/#{Base.url_encode64("preview.xml", padding: false)}"
+
+      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+        normalized_path = normalize_s3_path(op.path)
+
+        cond do
+          op.http_method == :put ->
+            assert normalized_path == preview_storage_path
+            assert op.body == "<preview />"
+            {:ok, %{status_code: 200}}
+
+          op.http_method == :get ->
+            assert normalized_path == preview_storage_path
+            {:ok, %{status_code: 200, body: "<preview />"}}
+        end
+      end)
+
       conn =
         post(
           conn,
@@ -410,29 +429,92 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       assert conn.resp_body =~ ~s(<score value="75.0" score_id="percent"/>)
     end
 
+    test "rejects oversized preview file records before caching them in memory", %{
+      conn: conn,
+      content: content,
+      activity_id: activity_id,
+      project: project,
+      author: author,
+      user: user
+    } do
+      previous_config = Application.get_env(:oli, OliWeb.LegacySuperactivityController, [])
+
+      Application.put_env(
+        :oli,
+        OliWeb.LegacySuperactivityController,
+        Keyword.put(previous_config, :preview_max_file_bytes, 4)
+      )
+
+      on_exit(fn ->
+        Application.put_env(:oli, OliWeb.LegacySuperactivityController, previous_config)
+      end)
+
+      preview_attempt_guid = Ecto.UUID.generate()
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(conn, :preview_context),
+          %{
+            "attemptGuid" => preview_attempt_guid,
+            "model" => content,
+            "context" => %{
+              "projectSlug" => project.slug,
+              "pageTitle" => "Preview page",
+              "resourceId" => activity_id,
+              "graded" => false
+            }
+          }
+        )
+
+      assert conn.resp_body =~ preview_attempt_guid
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+        |> log_in_user(user)
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "writeFileRecord",
+              "activityContextGuid" => preview_attempt_guid,
+              "byteEncoding" => "utf8",
+              "fileName" => "preview.xml",
+              "fileRecordData" => "<preview />",
+              "resourceTypeID" => "oli_embedded",
+              "mimeType" => "xml",
+              "userGuid" => user.id,
+              "attemptNumber" => 1
+            }
+          )
+        )
+
+      assert response(conn, 413) == "file too large"
+    end
+
     test "verifies supporting files relative to resourceBase", %{conn: conn, author: author} do
-      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+      expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} = op ->
         assert op.http_method == :get
         send(self(), {:aws_verify_request, op.params["prefix"]})
 
-        case op.params["prefix"] do
-          "media/bundles/verified-bundle/webcontent/custom_activity/customactivity.js" ->
-            {:ok,
-             %{
-               status_code: 200,
-               body: %{
-                 contents: [
-                   %{
-                     key:
-                       "media/bundles/verified-bundle/webcontent/custom_activity/customactivity.js"
-                   }
-                 ]
-               }
-             }}
+        assert op.params["prefix"] == "media/bundles/verified-bundle/webcontent/custom_activity/"
 
-          "media/bundles/verified-bundle/webcontent/custom_activity/missing.css" ->
-            {:ok, %{status_code: 200, body: %{contents: []}}}
-        end
+        {:ok,
+         %{
+           status_code: 200,
+           body: %{
+             contents: [
+               %{
+                 key: "media/bundles/verified-bundle/webcontent/custom_activity/customactivity.js"
+               }
+             ]
+           }
+         }}
       end)
 
       conn =
@@ -449,10 +531,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         })
 
       assert_received {:aws_verify_request,
-                       "media/bundles/verified-bundle/webcontent/custom_activity/customactivity.js"}
-
-      assert_received {:aws_verify_request,
-                       "media/bundles/verified-bundle/webcontent/custom_activity/missing.css"}
+                       "media/bundles/verified-bundle/webcontent/custom_activity/"}
 
       assert json_response(conn, 200) == %{
                "statuses" => %{

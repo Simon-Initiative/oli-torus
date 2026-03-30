@@ -27,6 +27,9 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Repo
   alias Lti_1p3.Roles.ContextRoles
 
+  @default_preview_max_file_bytes 1_000_000
+  @preview_file_storage_prefix "preview-save-files"
+
   defmodule LegacySuperactivityContext do
     @moduledoc false
     defstruct [
@@ -145,21 +148,35 @@ defmodule OliWeb.LegacySuperactivityController do
       when is_list(references) do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
-    statuses =
+    resolved_references =
       references
       |> Enum.filter(&is_binary/1)
       |> Enum.uniq()
-      |> Enum.map(fn reference ->
-        status =
-          reference
-          |> resolve_media_key(directory)
-          |> media_object_exists?(bucket_name)
-          |> case do
-            true -> "verified"
-            false -> "missing"
-          end
+      |> Enum.map(fn reference -> {reference, resolve_media_key(reference, directory)} end)
 
-        {reference, status}
+    existing_keys =
+      resolved_references
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.group_by(&media_lookup_prefix/1)
+      |> Enum.reduce(MapSet.new(), fn {prefix, keys}, acc ->
+        case list_media_keys(bucket_name, prefix) do
+          {:ok, listed_keys} ->
+            keys_set = MapSet.new(keys)
+
+            listed_keys
+            |> Enum.filter(&MapSet.member?(keys_set, &1))
+            |> Enum.reduce(acc, &MapSet.put(&2, &1))
+
+          {:error, _reason} ->
+            acc
+        end
+      end)
+
+    statuses =
+      resolved_references
+      |> Enum.map(fn {reference, resolved_key} ->
+        {reference,
+         if(MapSet.member?(existing_keys, resolved_key), do: "verified", else: "missing")}
       end)
       |> Enum.into(%{})
 
@@ -213,14 +230,23 @@ defmodule OliWeb.LegacySuperactivityController do
     ExAws.S3.put_object(bucket, file_name, contents, options) |> aws_client().request()
   end
 
-  defp media_object_exists?(key, bucket_name) do
-    case ExAws.S3.list_objects(bucket_name, prefix: key, max_keys: 1) |> aws_client().request() do
+  defp list_media_keys(bucket_name, prefix) do
+    case ExAws.S3.list_objects(bucket_name, prefix: prefix) |> aws_client().request() do
       {:ok, %{status_code: 200, body: %{contents: contents}}} ->
-        contents != []
+        {:ok,
+         contents
+         |> Enum.map(fn content -> Map.get(content, :key) || Map.get(content, "Key") end)
+         |> Enum.filter(&is_binary/1)}
 
-      _ ->
-        false
+      error ->
+        error
     end
+  end
+
+  defp media_lookup_prefix(key) do
+    key
+    |> Path.dirname()
+    |> Kernel.<>("/")
   end
 
   defp resolve_media_key(reference, directory) do
@@ -251,6 +277,40 @@ defmodule OliWeb.LegacySuperactivityController do
       "bundles/" <> _rest = normalized -> normalized
       normalized -> Path.join("bundles", normalized)
     end
+  end
+
+  defp preview_max_file_bytes do
+    config = Application.get_env(:oli, __MODULE__, [])
+    Keyword.get(config, :preview_max_file_bytes, @default_preview_max_file_bytes)
+  end
+
+  defp preview_storage_key(attempt_guid, attempt_number, file_name) do
+    encoded_file_name = Base.url_encode64(to_string(file_name), padding: false)
+
+    Path.join([
+      @preview_file_storage_prefix,
+      to_string(attempt_guid),
+      to_string(attempt_number),
+      encoded_file_name
+    ])
+  end
+
+  defp put_preview_file_object(bucket_name, storage_key, contents, mime_type) do
+    options =
+      case mime_type do
+        value when is_binary(value) and value != "" -> [content_type: value]
+        _ -> []
+      end
+
+    ExAws.S3.put_object(bucket_name, storage_key, contents, options) |> aws_client().request()
+  end
+
+  defp get_preview_file_object(bucket_name, storage_key) do
+    ExAws.S3.get_object(bucket_name, storage_key) |> aws_client().request()
+  end
+
+  defp delete_preview_file_object(bucket_name, storage_key) do
+    ExAws.S3.delete_object(bucket_name, storage_key) |> aws_client().request()
   end
 
   defp aws_client(), do: Application.get_env(:oli, :aws_client, ExAws)
@@ -1008,45 +1068,68 @@ defmodule OliWeb.LegacySuperactivityController do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     current_attempt_number = attempt_number || context.activity_attempt.attempt_number
     file_key = preview_file_record_key(current_attempt_number, file_name)
+    preview_bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+    storage_key = preview_storage_key(attempt_guid, current_attempt_number, file_name)
+    max_file_bytes = preview_max_file_bytes()
 
-    case PreviewSessions.update(attempt_guid, fn session ->
-           save_file = %{
-             attempt_guid: attempt_guid,
-             attempt_number: current_attempt_number,
-             user_id: user_id,
-             content: content,
-             mime_type: mime_type,
-             byte_encoding: byte_encoding,
-             activity_type: activity_type,
-             file_name: file_name,
-             file_guid: Ecto.UUID.generate(),
-             inserted_at: now
-           }
+    cond do
+      byte_size(content) > max_file_bytes ->
+        {:error, "file too large", 413}
 
-           Map.update!(session, :file_records, &Map.put(&1, file_key, save_file))
-         end) do
-      {:ok, updated_session} ->
-        save_file = Map.fetch!(updated_session.file_records, file_key)
+      true ->
+        with {:ok, %{status_code: 200}} <-
+               put_preview_file_object(preview_bucket_name, storage_key, content, mime_type),
+             {:ok, updated_session} <-
+               PreviewSessions.update(attempt_guid, fn session ->
+                 save_file = %{
+                   attempt_guid: attempt_guid,
+                   attempt_number: current_attempt_number,
+                   user_id: user_id,
+                   storage_key: storage_key,
+                   mime_type: mime_type,
+                   byte_encoding: byte_encoding,
+                   activity_type: activity_type,
+                   file_name: file_name,
+                   file_guid: Ecto.UUID.generate(),
+                   inserted_at: now,
+                   size_bytes: byte_size(content)
+                 }
 
-        xml =
-          FileRecord.setup(%{
-            context:
-              preview_session_to_context(
-                context.host,
-                updated_session,
-                context.datashop_session_id
-              ),
-            date_created: DateTime.to_unix(save_file.inserted_at),
-            file_name: save_file.file_name,
-            guid: save_file.file_guid
-          })
-          |> XmlBuilder.document()
-          |> XmlBuilder.generate()
+                 Map.update!(session, :file_records, &Map.put(&1, file_key, save_file))
+               end) do
+          save_file = Map.fetch!(updated_session.file_records, file_key)
 
-        {:ok, xml}
+          xml =
+            FileRecord.setup(%{
+              context:
+                preview_session_to_context(
+                  context.host,
+                  updated_session,
+                  context.datashop_session_id
+                ),
+              date_created: DateTime.to_unix(save_file.inserted_at),
+              file_name: save_file.file_name,
+              guid: save_file.file_guid
+            })
+            |> XmlBuilder.document()
+            |> XmlBuilder.generate()
 
-      _ ->
-        {:error, "server error", 500}
+          {:ok, xml}
+        else
+          {:ok, %{status_code: status_code}} when status_code not in [200, 204] ->
+            {:error, "server error", 500}
+
+          {:error, _reason} = update_error ->
+            _ = delete_preview_file_object(preview_bucket_name, storage_key)
+
+            case update_error do
+              {:error, :not_found} -> {:error, "file not found", 404}
+              _ -> {:error, "server error", 500}
+            end
+
+          _ ->
+            {:error, "server error", 500}
+        end
     end
   end
 
@@ -1056,6 +1139,8 @@ defmodule OliWeb.LegacySuperactivityController do
          attempt_number,
          file_name
        ) do
+    preview_bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+
     with {:ok, session} <- PreviewSessions.get(attempt_guid),
          save_file when not is_nil(save_file) <-
            Map.get(
@@ -1064,12 +1149,16 @@ defmodule OliWeb.LegacySuperactivityController do
                attempt_number || context.activity_attempt.attempt_number,
                file_name
              )
-           ) do
-      {:ok, save_file.content}
+           ),
+         {:ok, %{status_code: 200, body: body}} <-
+           get_preview_file_object(preview_bucket_name, save_file.storage_key) do
+      {:ok, body}
     else
       {:error, :not_found} -> {:error, "file not found", 404}
       {:error, _reason} -> {:error, "server error", 500}
+      {:ok, %{status_code: 404}} -> {:error, "file not found", 404}
       nil -> {:error, "file not found", 404}
+      _ -> {:error, "server error", 500}
     end
   end
 

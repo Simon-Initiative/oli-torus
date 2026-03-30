@@ -233,6 +233,11 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
   const id = guid();
   const packageImportId = guid();
+  const manifestDiagnosticsPanelId = `oli-embedded-manifest-diagnostics-${activityId ?? 'new'}`;
+  const bundleRuntimePanelId = `oli-embedded-bundle-runtime-${activityId ?? 'new'}`;
+  const supportingFilesPanelId = `oli-embedded-supporting-files-${activityId ?? 'new'}`;
+  const partsPanelId = `oli-embedded-parts-${activityId ?? 'new'}`;
+  const partsGuidancePanelId = `oli-embedded-parts-guidance-${activityId ?? 'new'}`;
   const uploadedResources = model.resourceURLs.map((url) => ({
     url,
     relativePath: lastPart(model.resourceBase, url),
@@ -460,7 +465,14 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
             </div>
           </div>
           {copyNotice ? (
-            <div className={`${infoAlertClass} mt-3 mb-0 py-2`}>{copyNotice}</div>
+            <div
+              className={`${infoAlertClass} mt-3 mb-0 py-2`}
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {copyNotice}
+            </div>
           ) : null}
         </div>
       </div>
@@ -505,14 +517,17 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
             <button
               type="button"
               className={secondarySmallButtonClass}
+              aria-expanded={showManifestDiagnostics}
+              aria-controls={manifestDiagnosticsPanelId}
               onClick={() => setShowManifestDiagnostics((value) => !value)}
             >
               {showManifestDiagnostics ? 'Hide Diagnostics' : 'Show Diagnostics'}
             </button>
           </div>
 
-          {showManifestDiagnostics ? (
-            <>
+          <div id={manifestDiagnosticsPanelId} hidden={!showManifestDiagnostics}>
+            {showManifestDiagnostics ? (
+              <>
               <div
                 className={`alert mt-3 ${
                   diagnostics.isWellFormed ? 'alert-success' : 'alert-danger'
@@ -595,8 +610,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                   ))}
                 </ul>
               ) : null}
-            </>
-          ) : null}
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -607,13 +623,16 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
             <button
               type="button"
               className={secondarySmallButtonClass}
+              aria-expanded={showBundleRuntime}
+              aria-controls={bundleRuntimePanelId}
               onClick={() => setShowBundleRuntime((value) => !value)}
             >
               {showBundleRuntime ? 'Hide Details' : 'Show Details'}
             </button>
           </div>
-          {showBundleRuntime ? (
-            <>
+          <div id={bundleRuntimePanelId} hidden={!showBundleRuntime}>
+            {showBundleRuntime ? (
+              <>
               <div
                 className={`alert ${bundleBacked ? 'alert-success' : 'alert-warning'} mb-0 mt-3`}
               >
@@ -650,8 +669,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                   <code>{runtimeAssetBase}</code>
                 </div>
               </div>
-            </>
-          ) : null}
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -669,99 +689,103 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
             <button
               type="button"
               className={secondarySmallButtonClass}
+              aria-expanded={showSupportingFiles}
+              aria-controls={supportingFilesPanelId}
               onClick={() => setShowSupportingFiles((value) => !value)}
             >
               {showSupportingFiles ? 'Hide Files' : 'Show Files'}
             </button>
           </div>
-          {showSupportingFiles ? (
-            uploadedResources.length === 0 ? (
-              <div className={`${mutedTextClass} mt-3`}>No supporting files uploaded yet.</div>
-            ) : (
-              <ul className="list-group mt-3">
-                {uploadedResources.map((resource) => {
-                  const assetTag = `<asset name="${suggestAssetName(resource.relativePath)}">${
-                    resource.relativePath
-                  }</asset>`;
-                  const sourceTag = `<source>${resource.relativePath}</source>`;
-                  const isUnused = unusedUploadSet.has(resource.relativePath);
-                  const storageStatus = verificationStatuses[resource.relativePath];
+          <div id={supportingFilesPanelId} hidden={!showSupportingFiles}>
+            {showSupportingFiles ? (
+              uploadedResources.length === 0 ? (
+                <div className={`${mutedTextClass} mt-3`}>No supporting files uploaded yet.</div>
+              ) : (
+                <ul className="list-group mt-3">
+                  {uploadedResources.map((resource) => {
+                    const assetTag = `<asset name="${suggestAssetName(resource.relativePath)}">${
+                      resource.relativePath
+                    }</asset>`;
+                    const sourceTag = `<source>${resource.relativePath}</source>`;
+                    const isUnused = unusedUploadSet.has(resource.relativePath);
+                    const storageStatus = verificationStatuses[resource.relativePath];
 
-                  return (
-                    <li className="list-group-item" key={resource.url}>
-                      <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
-                        <div>
+                    return (
+                      <li className="list-group-item" key={resource.url}>
+                        <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
                           <div>
-                            <code>{resource.relativePath}</code>
+                            <div>
+                              <code>{resource.relativePath}</code>
+                            </div>
+                            <div className={`small ${mutedTextClass}`}>{resource.url}</div>
                           </div>
-                          <div className={`small ${mutedTextClass}`}>{resource.url}</div>
-                        </div>
-                        <div className="d-flex flex-wrap gap-2">
-                          <span
-                            className={`badge ${
-                              storageStatus === 'missing'
-                                ? 'bg-warning text-dark'
+                          <div className="d-flex flex-wrap gap-2">
+                            <span
+                              className={`badge ${
+                                storageStatus === 'missing'
+                                  ? 'bg-warning text-dark'
+                                  : storageStatus === 'verified'
+                                  ? 'bg-success'
+                                  : 'bg-secondary'
+                              }`}
+                            >
+                              {storageStatus === 'missing'
+                                ? 'missing in storage'
                                 : storageStatus === 'verified'
-                                ? 'bg-success'
-                                : 'bg-secondary'
-                            }`}
-                          >
-                            {storageStatus === 'missing'
-                              ? 'missing in storage'
-                              : storageStatus === 'verified'
-                              ? 'present in storage'
-                              : 'verification pending'}
-                          </span>
-                          <span
-                            className={`badge ${isUnused ? 'bg-warning text-dark' : 'bg-success'}`}
-                          >
-                            {isUnused
-                              ? 'not referenced in Manifest XML'
-                              : 'referenced in Manifest XML'}
-                          </span>
-                          <button
-                            type="button"
-                            className={secondarySmallButtonClass}
-                            onClick={() => copyText(resource.relativePath, 'Path')}
-                          >
-                            Copy Path
-                          </button>
-                          <button
-                            type="button"
-                            className={secondarySmallButtonClass}
-                            onClick={() => copyText(assetTag, 'Asset tag')}
-                          >
-                            Copy Asset Tag
-                          </button>
-                          <button
-                            type="button"
-                            className={secondarySmallButtonClass}
-                            onClick={() => copyText(sourceTag, 'Source tag')}
-                          >
-                            Copy Source Tag
-                          </button>
-                          <button
-                            type="button"
-                            className={secondarySmallButtonClass}
-                            onClick={() => copyText(resource.url, 'URL')}
-                          >
-                            Copy URL
-                          </button>
-                          <CloseButton
-                            className="pl-3 pr-1"
-                            editMode={props.editMode}
-                            onClick={() =>
-                              dispatch(OliEmbeddedActions.removeResourceURL(resource.url))
-                            }
-                          />
+                                ? 'present in storage'
+                                : 'verification pending'}
+                            </span>
+                            <span
+                              className={`badge ${isUnused ? 'bg-warning text-dark' : 'bg-success'}`}
+                            >
+                              {isUnused
+                                ? 'not referenced in Manifest XML'
+                                : 'referenced in Manifest XML'}
+                            </span>
+                            <button
+                              type="button"
+                              className={secondarySmallButtonClass}
+                              onClick={() => copyText(resource.relativePath, 'Path')}
+                            >
+                              Copy Path
+                            </button>
+                            <button
+                              type="button"
+                              className={secondarySmallButtonClass}
+                              onClick={() => copyText(assetTag, 'Asset tag')}
+                            >
+                              Copy Asset Tag
+                            </button>
+                            <button
+                              type="button"
+                              className={secondarySmallButtonClass}
+                              onClick={() => copyText(sourceTag, 'Source tag')}
+                            >
+                              Copy Source Tag
+                            </button>
+                            <button
+                              type="button"
+                              className={secondarySmallButtonClass}
+                              onClick={() => copyText(resource.url, 'URL')}
+                            >
+                              Copy URL
+                            </button>
+                            <CloseButton
+                              className="pl-3 pr-1"
+                              editMode={props.editMode}
+                              onClick={() =>
+                                dispatch(OliEmbeddedActions.removeResourceURL(resource.url))
+                              }
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )
-          ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -781,26 +805,32 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
             <button
               type="button"
               className={secondarySmallButtonClass}
+              aria-expanded={showParts}
+              aria-controls={partsPanelId}
               onClick={() => setShowParts((value) => !value)}
             >
               {showParts ? 'Hide Parts' : 'Show Parts'}
             </button>
           </div>
 
-          {showParts ? (
-            <>
+          <div id={partsPanelId} hidden={!showParts}>
+            {showParts ? (
+              <>
               <div className="d-flex flex-wrap justify-content-end gap-2 mt-3">
                 <button
                   type="button"
                   className={secondarySmallButtonClass}
+                  aria-expanded={showPartsGuidance}
+                  aria-controls={partsGuidancePanelId}
                   onClick={() => setShowPartsGuidance((value) => !value)}
                 >
                   {showPartsGuidance ? 'Hide Integration Help' : 'Show Integration Help'}
                 </button>
               </div>
 
-              {showPartsGuidance ? (
-                <>
+              <div id={partsGuidancePanelId} hidden={!showPartsGuidance}>
+                {showPartsGuidance ? (
+                  <>
                   <div className={`${infoAlertClass} mt-3`}>
                     <div className="fw-bold mb-1">
                       Use part ids as your superactivity integration hooks
@@ -843,8 +873,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                       </div>
                     </div>
                   </div>
-                </>
-              ) : null}
+                  </>
+                ) : null}
+              </div>
 
               <div className="container">
                 {model.authoring.parts.map((part, i) => (
@@ -904,8 +935,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
               <button className="btn btn-primary" onClick={() => addNewPart()}>
                 Add Part
               </button>
-            </>
-          ) : null}
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
     </>

@@ -11,6 +11,7 @@ defmodule Oli.Interop.CustomActivities.Package do
   @default_max_archive_file_count 250
   @default_max_archive_uncompressed_bytes 50_000_000
   @default_max_archive_entry_bytes 10_000_000
+  @default_s3_operation_concurrency 8
 
   def export(%{} = model) do
     manifest_xml = Map.get(model, "modelXml", "")
@@ -211,53 +212,43 @@ defmodule Oli.Interop.CustomActivities.Package do
 
   defp stage_supporting_objects(bucket_name, supporting_objects) do
     supporting_objects
-    |> Enum.reduce_while({:ok, []}, fn %{staged_key: staged_key, content: content}, {:ok, keys} ->
+    |> parallel_s3_map(fn %{staged_key: staged_key, content: content} ->
       case upload_file(bucket_name, staged_key, content) do
-        {:ok, %{status_code: 200}} ->
-          {:cont, {:ok, [staged_key | keys]}}
-
-        _ ->
-          {:halt, {:error, {:staging_upload_failed, staged_key}, Enum.reverse(keys)}}
+        {:ok, %{status_code: 200}} -> {:ok, staged_key}
+        _ -> {:error, {:staging_upload_failed, staged_key}}
       end
     end)
     |> case do
-      {:ok, keys} -> {:ok, Enum.reverse(keys)}
-      error -> error
+      {:ok, keys} -> {:ok, keys}
+      {:error, reason, keys} -> {:error, reason, keys}
     end
   end
 
   defp backup_existing_destination_objects(bucket_name, supporting_objects, backup_resource_base) do
     supporting_objects
-    |> Enum.reduce_while({:ok, []}, fn %{destination_key: destination_key, relative_path: path},
-                                       {:ok, records} ->
+    |> parallel_s3_map(fn %{destination_key: destination_key, relative_path: path} ->
       case object_exists?(bucket_name, destination_key) do
         {:ok, false} ->
-          {:cont, {:ok, [%{destination_key: destination_key, existed?: false} | records]}}
+          {:ok, %{destination_key: destination_key, existed?: false}}
 
         {:ok, true} ->
           backup_key = Path.join(["media", backup_resource_base, path])
 
           case copy_object(bucket_name, backup_key, destination_key) do
             {:ok, %{status_code: 200}} ->
-              {:cont,
-               {:ok,
-                [
-                  %{destination_key: destination_key, existed?: true, backup_key: backup_key}
-                  | records
-                ]}}
+              {:ok, %{destination_key: destination_key, existed?: true, backup_key: backup_key}}
 
             _ ->
-              {:halt, {:error, {:backup_copy_failed, destination_key}, Enum.reverse(records)}}
+              {:error, {:backup_copy_failed, destination_key}}
           end
 
         {:error, reason} ->
-          {:halt,
-           {:error, {:backup_lookup_failed, destination_key, reason}, Enum.reverse(records)}}
+          {:error, {:backup_lookup_failed, destination_key, reason}}
       end
     end)
     |> case do
-      {:ok, records} -> {:ok, Enum.reverse(records)}
-      error -> error
+      {:ok, records} -> {:ok, records}
+      {:error, reason, records} -> {:error, reason, records}
     end
   end
 
@@ -317,9 +308,44 @@ defmodule Oli.Interop.CustomActivities.Package do
   end
 
   defp cleanup_objects(bucket_name, keys) do
-    Enum.each(keys, fn key ->
-      _ = delete_object(bucket_name, key)
+    keys
+    |> Task.async_stream(
+      fn key -> delete_object(bucket_name, key) end,
+      max_concurrency: s3_operation_concurrency(),
+      ordered: false,
+      timeout: :infinity
+    )
+    |> Stream.run()
+  end
+
+  defp parallel_s3_map(items, mapper) do
+    items
+    |> Task.async_stream(
+      mapper,
+      max_concurrency: s3_operation_concurrency(),
+      ordered: true,
+      timeout: :infinity
+    )
+    |> Enum.reduce({[], nil}, fn
+      {:ok, {:ok, value}}, {results, error} ->
+        {[value | results], error}
+
+      {:ok, {:error, reason}}, {results, nil} ->
+        {results, reason}
+
+      {:ok, {:error, _reason}}, {results, error} ->
+        {results, error}
+
+      {:exit, reason}, {results, nil} ->
+        {results, {:task_exit, reason}}
+
+      {:exit, _reason}, {results, error} ->
+        {results, error}
     end)
+    |> case do
+      {results, nil} -> {:ok, Enum.reverse(results)}
+      {results, error} -> {:error, error, Enum.reverse(results)}
+    end
   end
 
   defp unzip(upload_path) do
@@ -364,6 +390,11 @@ defmodule Oli.Interop.CustomActivities.Package do
       max_entry_bytes:
         Keyword.get(config, :max_archive_entry_bytes, @default_max_archive_entry_bytes)
     }
+  end
+
+  defp s3_operation_concurrency do
+    config = Application.get_env(:oli, __MODULE__, [])
+    Keyword.get(config, :s3_operation_concurrency, @default_s3_operation_concurrency)
   end
 
   defp archive_table(upload_path) do
