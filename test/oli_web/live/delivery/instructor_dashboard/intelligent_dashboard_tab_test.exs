@@ -155,6 +155,40 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
       assert IntelligentDashboardTab.progress_tile_path(socket, %{threshold: 80, page: 2}) ==
                "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_progress[mode]=percent&tile_progress[page]=2&tile_progress[threshold]=80"
     end
+
+    test "preserves the current page when only threshold changes" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          section: %{slug: "elixir_30"},
+          dashboard_scope: "course",
+          params: %{
+            "dashboard_scope" => "course",
+            "tile_progress" => %{"mode" => "percent", "page" => "3", "threshold" => "60"}
+          }
+        }
+      }
+
+      assert IntelligentDashboardTab.progress_tile_path(socket, %{threshold: 80}) ==
+               "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_progress[mode]=percent&tile_progress[page]=3&tile_progress[threshold]=80"
+    end
+  end
+
+  describe "path/3" do
+    test "resets tile_progress page when the dashboard scope changes" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          section: %{slug: "elixir_30"},
+          dashboard_scope: "course",
+          params: %{
+            "dashboard_scope" => "course",
+            "tile_progress" => %{"mode" => "percent", "threshold" => "80", "page" => "3"}
+          }
+        }
+      }
+
+      assert IntelligentDashboardTab.path(socket, "container:123") ==
+               "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A123&tile_progress[mode]=percent&tile_progress[threshold]=80"
+    end
   end
 
   describe "validate_scope_selector/3" do

@@ -113,6 +113,15 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         |> Map.drop(["bucket", "page"])
       end)
     end)
+    |> then(fn params ->
+      Map.update(params, "tile_progress", %{}, fn tile_progress ->
+        # Progress tile state keeps threshold/mode across scopes, but pagination is
+        # scope-local and should reset whenever the scoped dataset changes.
+        tile_progress
+        |> normalize_tile_progress_params()
+        |> Map.drop(["page"])
+      end)
+    end)
   end
 
   defp dashboard_navigation_params(_), do: %{}
@@ -132,6 +141,22 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
   end
 
   defp normalize_tile_support_params(_), do: %{}
+
+  defp normalize_tile_progress_params(tile_progress) when is_map(tile_progress) do
+    Enum.into(tile_progress, %{}, fn {key, value} -> {to_string(key), value} end)
+  end
+
+  defp normalize_tile_progress_params(tile_progress) when is_list(tile_progress) do
+    case Enum.reduce_while(tile_progress, %{}, fn
+           {key, value}, acc -> {:cont, Map.put(acc, to_string(key), value)}
+           _, _acc -> {:halt, :invalid}
+         end) do
+      :invalid -> %{}
+      normalized -> normalized
+    end
+  end
+
+  defp normalize_tile_progress_params(_), do: %{}
 
   defp show_prototype_validation_ui? do
     Code.ensure_loaded?(Mix) and function_exported?(Mix, :env, 0) and Mix.env() == :dev

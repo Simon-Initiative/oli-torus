@@ -1425,6 +1425,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   defp normalize_dashboard_path_params(params, scope_selector) do
+    previous_scope = params |> stringify_keys() |> Map.get("dashboard_scope")
+
     params
     |> stringify_keys()
     |> Map.put("dashboard_scope", scope_selector)
@@ -1440,6 +1442,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         tile_progress -> Map.put(params, "tile_progress", tile_progress)
       end
     end)
+    |> maybe_reset_progress_page(previous_scope, scope_selector)
+  end
+
+  defp maybe_reset_progress_page(params, nil, _scope_selector), do: params
+  defp maybe_reset_progress_page(params, scope_selector, scope_selector), do: params
+
+  defp maybe_reset_progress_page(params, _previous_scope, _scope_selector) do
+    case Map.get(params, "tile_progress") do
+      tile_progress when is_map(tile_progress) ->
+        tile_progress =
+          tile_progress
+          |> Map.delete("page")
+          |> normalize_progress_path_params()
+
+        if map_size(tile_progress) == 0 do
+          Map.delete(params, "tile_progress")
+        else
+          Map.put(params, "tile_progress", tile_progress)
+        end
+
+      _ ->
+        params
+    end
   end
 
   defp dashboard_base_params(socket, scope_selector) do

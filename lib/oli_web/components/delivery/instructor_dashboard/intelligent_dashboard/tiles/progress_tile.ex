@@ -99,7 +99,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   <div class="absolute right-0 z-20 mt-[1.5px] grid min-w-[113px] gap-0 rounded-[6px] border border-Specially-Tokens-Border-border-input bg-Specially-Tokens-Fill-fill-input p-[7px] shadow-[0px_8px_24px_0px_rgba(0,0,0,0.24)]">
                     <%= for threshold <- @threshold_options do %>
                       <.link
-                        patch={tile_patch_path(assigns, %{"threshold" => threshold, "page" => 1})}
+                        patch={tile_patch_path(assigns, %{"threshold" => threshold})}
                         data-threshold={threshold}
                         class={[
                           "flex h-6 items-center justify-between gap-2 rounded-[3px] px-2 py-0 text-[14px] font-normal leading-4 no-underline transition hover:bg-Specially-Tokens-Fill-fill-input-focused hover:no-underline hover:text-current",
