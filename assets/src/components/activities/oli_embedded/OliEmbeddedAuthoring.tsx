@@ -179,7 +179,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       })
       .catch((reason: any) => {
         const id = 'package_import_error';
-        display(errorModal(reason.message, id), id);
+        display(errorModal(formatPackageImportError(reason), id), id);
       })
       .finally(() => {
         setProcessingAction(null);
@@ -351,9 +351,39 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           dismiss(id);
         }}
       >
-        <div className="alert alert-warning">{error}</div>
+        <div className="alert alert-warning" style={{ whiteSpace: 'pre-line' }}>
+          {error}
+        </div>
       </Modal>
     );
+  };
+
+  const formatPackageImportError = (reason: any) => {
+    const message = reason?.message || 'Unable to import embedded activity package.';
+    const details = reason?.details || {};
+
+    switch (reason?.code) {
+      case 'missing_referenced_files': {
+        const missingFiles: string[] = Array.isArray(details.missing_files)
+          ? details.missing_files
+          : [];
+        return missingFiles.length > 0
+          ? `${message}\n\nMissing files:\n${missingFiles.map((file) => `- ${file}`).join('\n')}`
+          : message;
+      }
+
+      case 'archive_file_count_exceeded':
+        return `${message}\n\nFiles in archive: ${details.actual_file_count}\nAllowed maximum: ${details.max_file_count}`;
+
+      case 'archive_entry_too_large':
+        return `${message}\n\nFile: ${details.path}\nSize: ${details.actual_bytes} bytes\nAllowed maximum: ${details.max_bytes} bytes`;
+
+      case 'archive_uncompressed_size_exceeded':
+        return `${message}\n\nUncompressed size: ${details.actual_bytes} bytes\nAllowed maximum: ${details.max_bytes} bytes`;
+
+      default:
+        return message;
+    }
   };
 
   return (

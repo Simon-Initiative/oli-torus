@@ -619,13 +619,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       File.write!(upload_path, zip_binary)
       on_exit(fn -> File.rm_rf(upload_path) end)
 
-      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
-        assert op.http_method == :put
-        assert String.starts_with?(op.path, "/media/bundles/")
-        assert String.contains?(op.path, "/webcontent/custom_activity/")
-        assert op.headers["cache-control"] == "no-cache, no-store, must-revalidate"
-        {:ok, %{status_code: 200}}
-      end)
+      expect_staged_import_without_existing_objects(2)
 
       conn =
         recycle(conn)
@@ -717,13 +711,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       File.write!(upload_path, zip_binary)
       on_exit(fn -> File.rm_rf(upload_path) end)
 
-      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
-        assert op.http_method == :put
-        assert String.starts_with?(op.path, "/media/bundles/")
-        assert String.contains?(op.path, "/webcontent/custom_activity/")
-        assert op.headers["cache-control"] == "no-cache, no-store, must-revalidate"
-        {:ok, %{status_code: 200}}
-      end)
+      expect_staged_import_without_existing_objects(2)
 
       conn =
         recycle(conn)
@@ -800,15 +788,10 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       File.write!(upload_path, zip_binary)
       on_exit(fn -> File.rm_rf(upload_path) end)
 
-      uploaded_paths = Agent.start_link(fn -> [] end)
-      {:ok, uploaded_paths} = uploaded_paths
+      promoted_paths = Agent.start_link(fn -> [] end)
+      {:ok, promoted_paths} = promoted_paths
 
-      expect(Oli.Test.MockAws, :request, 4, fn %ExAws.Operation.S3{} = op ->
-        Agent.update(uploaded_paths, &[op.path | &1])
-        assert op.http_method == :put
-        assert op.headers["cache-control"] == "no-cache, no-store, must-revalidate"
-        {:ok, %{status_code: 200}}
-      end)
+      expect_staged_import_without_existing_objects(4, promoted_paths)
 
       conn =
         recycle(conn)
@@ -834,12 +817,167 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       assert length(resource_urls) == 4
 
-      assert Enum.sort(Agent.get(uploaded_paths, & &1)) == [
-               "/media/#{existing_resource_base}/webcontent/custom_activity/app.js",
-               "/media/#{existing_resource_base}/webcontent/custom_activity/assets/data/config.json",
-               "/media/#{existing_resource_base}/webcontent/custom_activity/assets/images/hero.png",
-               "/media/#{existing_resource_base}/webcontent/custom_activity/styles/main.css"
+      assert Enum.sort(Agent.get(promoted_paths, & &1)) == [
+               "media/#{existing_resource_base}/webcontent/custom_activity/app.js",
+               "media/#{existing_resource_base}/webcontent/custom_activity/assets/data/config.json",
+               "media/#{existing_resource_base}/webcontent/custom_activity/assets/images/hero.png",
+               "media/#{existing_resource_base}/webcontent/custom_activity/styles/main.css"
              ]
+    end
+
+    test "rolls back promoted files when promotion fails partway through import", %{
+      conn: conn,
+      author: author
+    } do
+      existing_resource_base = "bundles/existing-embedded-activity"
+
+      zip_binary =
+        Oli.Utils.zip(
+          [
+            {~c"model.json",
+             Jason.encode!(%{
+               "version" => 1,
+               "activityType" => "oli_embedded",
+               "base" => "embedded",
+               "src" => "index.html",
+               "manifestXmlFile" => "manifest.xml",
+               "supportingFilesPath" => "webcontent/",
+               "title" => "Imported Embedded Activity",
+               "stem" => %{"id" => "stem-id", "content" => []},
+               "authoring" => %{"parts" => [], "previewText" => ""},
+               "bibrefs" => []
+             })},
+            {~c"manifest.xml",
+             """
+             <embed_activity>
+               <source>webcontent/custom_activity/app.js</source>
+               <assets>
+                 <asset name="styles">webcontent/custom_activity/styles.css</asset>
+               </assets>
+             </embed_activity>
+             """},
+            {~c"webcontent/custom_activity/app.js", "console.log('imported');"},
+            {~c"webcontent/custom_activity/styles.css", "body { color: blue; }"}
+          ],
+          "embedded_activity_package.zip"
+        )
+
+      upload_path =
+        Path.join(
+          System.tmp_dir!(),
+          "embedded_activity_package_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(upload_path, zip_binary)
+      on_exit(fn -> File.rm_rf(upload_path) end)
+
+      operations = Agent.start_link(fn -> [] end)
+      {:ok, operations} = operations
+      existing_app_js = "media/#{existing_resource_base}/webcontent/custom_activity/app.js"
+
+      expected_destination_key =
+        "media/#{existing_resource_base}/webcontent/custom_activity/styles.css"
+
+      existing_styles_css =
+        "media/#{existing_resource_base}/webcontent/custom_activity/styles.css"
+
+      expect(Oli.Test.MockAws, :request, 11, fn %ExAws.Operation.S3{} = op ->
+        normalized_path = normalize_s3_path(op.path)
+        Agent.update(operations, &[{op.http_method, normalized_path, op.headers, op.params} | &1])
+
+        cond do
+          op.http_method == :put and Map.has_key?(op.headers, "cache-control") ->
+            assert String.contains?(normalized_path, "/.import-staging/")
+            {:ok, %{status_code: 200}}
+
+          op.http_method == :get ->
+            case op.params["prefix"] do
+              ^existing_app_js ->
+                {:ok,
+                 %{
+                   status_code: 200,
+                   body: %{
+                     contents: [%{key: existing_app_js}]
+                   }
+                 }}
+
+              ^existing_styles_css ->
+                {:ok, %{status_code: 200, body: %{contents: []}}}
+            end
+
+          op.http_method == :put and Map.has_key?(op.headers, "x-amz-copy-source") ->
+            copy_source = op.headers["x-amz-copy-source"]
+
+            cond do
+              String.contains?(copy_source, "/.import-backup/") ->
+                {:ok, %{status_code: 200}}
+
+              String.contains?(copy_source, "/.import-staging/") and
+                  String.ends_with?(normalized_path, "/webcontent/custom_activity/app.js") ->
+                {:ok, %{status_code: 200}}
+
+              String.contains?(copy_source, "/.import-staging/") and
+                  String.ends_with?(normalized_path, "/webcontent/custom_activity/styles.css") ->
+                {:error, :copy_failed}
+
+              true ->
+                {:ok, %{status_code: 200}}
+            end
+
+          op.http_method == :delete ->
+            {:ok, %{status_code: 204}}
+        end
+      end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/package/import", %{
+          "resourceBase" => existing_resource_base,
+          "upload" => %Plug.Upload{
+            content_type: "application/zip",
+            filename: "embedded_activity_package.zip",
+            path: upload_path
+          }
+        })
+
+      assert %{
+               "type" => "error",
+               "result" => "failure",
+               "code" => "supporting_file_promote_failed",
+               "message" => "The staged package could not be promoted into the activity bundle.",
+               "details" => %{
+                 "reason" => %{
+                   "code" => "promote_copy_failed",
+                   "destination_key" => ^expected_destination_key,
+                   "staged_key" => staged_key
+                 }
+               }
+             } = json_response(conn, 400)
+
+      assert String.contains?(staged_key, "/.import-staging/")
+
+      recorded_operations =
+        operations
+        |> Agent.get(&Enum.reverse(&1))
+
+      assert Enum.any?(recorded_operations, fn {method, path, headers, _params} ->
+               method == :put and
+                 path == "/media/#{existing_resource_base}/webcontent/custom_activity/app.js" and
+                 String.contains?(headers["x-amz-copy-source"] || "", "/.import-staging/")
+             end)
+
+      assert Enum.any?(recorded_operations, fn {method, path, headers, _params} ->
+               method == :put and
+                 path == "/media/#{existing_resource_base}/webcontent/custom_activity/app.js" and
+                 String.contains?(headers["x-amz-copy-source"] || "", "/.import-backup/")
+             end)
+
+      assert Enum.any?(recorded_operations, fn {method, path, _headers, _params} ->
+               method == :delete and String.contains?(path, "/.import-staging/")
+             end)
     end
 
     test "rejects a package when the manifest references files missing from the archive", %{
@@ -899,7 +1037,16 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
           }
         })
 
-      assert response(conn, 400) == "Unable to import embedded activity package"
+      assert json_response(conn, 400) == %{
+               "type" => "error",
+               "result" => "failure",
+               "code" => "missing_referenced_files",
+               "message" =>
+                 "The package manifest references files that are missing from the ZIP archive.",
+               "details" => %{
+                 "missing_files" => ["webcontent/custom_activity/styles.css"]
+               }
+             }
     end
 
     test "rejects a package when the archive contains too many files", %{
@@ -966,7 +1113,13 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
           }
         })
 
-      assert response(conn, 400) == "Unable to import embedded activity package"
+      assert json_response(conn, 400) == %{
+               "type" => "error",
+               "result" => "failure",
+               "code" => "archive_file_count_exceeded",
+               "message" => "The ZIP archive contains too many files.",
+               "details" => %{"actual_file_count" => 3, "max_file_count" => 2}
+             }
     end
 
     test "rejects a package when an archive entry exceeds the size limit", %{
@@ -1033,7 +1186,17 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
           }
         })
 
-      assert response(conn, 400) == "Unable to import embedded activity package"
+      assert json_response(conn, 400) == %{
+               "type" => "error",
+               "result" => "failure",
+               "code" => "archive_entry_too_large",
+               "message" => "A file in the ZIP archive exceeds the allowed size.",
+               "details" => %{
+                 "path" => "webcontent/custom_activity/app.js",
+                 "actual_bytes" => 1001,
+                 "max_bytes" => 1000
+               }
+             }
     end
 
     test "rejects a package when total uncompressed archive size exceeds the limit", %{
@@ -1108,9 +1271,49 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
           }
         })
 
-      assert response(conn, 400) == "Unable to import embedded activity package"
+      assert json_response(conn, 400) == %{
+               "type" => "error",
+               "result" => "failure",
+               "code" => "archive_uncompressed_size_exceeded",
+               "message" => "The ZIP archive is too large when uncompressed.",
+               "details" => %{"actual_bytes" => 1860, "max_bytes" => 1500}
+             }
     end
   end
+
+  defp expect_staged_import_without_existing_objects(file_count, promoted_paths \\ nil) do
+    expect(Oli.Test.MockAws, :request, file_count * 4, fn %ExAws.Operation.S3{} = op ->
+      normalized_path = normalize_s3_path(op.path)
+
+      cond do
+        op.http_method == :put and Map.has_key?(op.headers, "cache-control") ->
+          assert String.contains?(normalized_path, "/.import-staging/")
+          assert op.headers["cache-control"] == "no-cache, no-store, must-revalidate"
+          {:ok, %{status_code: 200}}
+
+        op.http_method == :get ->
+          assert op.path == "/"
+          assert String.starts_with?(op.params["prefix"], "media/bundles/")
+          refute String.contains?(op.params["prefix"], ".import-")
+          {:ok, %{status_code: 200, body: %{contents: []}}}
+
+        op.http_method == :put and Map.has_key?(op.headers, "x-amz-copy-source") ->
+          assert String.contains?(op.headers["x-amz-copy-source"], "/.import-staging/")
+
+          if promoted_paths do
+            Agent.update(promoted_paths, &[String.trim_leading(normalized_path, "/") | &1])
+          end
+
+          {:ok, %{status_code: 200}}
+
+        op.http_method == :delete ->
+          assert String.contains?(normalized_path, "/.import-staging/")
+          {:ok, %{status_code: 204}}
+      end
+    end)
+  end
+
+  defp normalize_s3_path(path), do: "/" <> String.trim_leading(path, "/")
 
   defp setup_session(%{conn: conn}) do
     user = user_fixture()

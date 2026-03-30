@@ -194,11 +194,12 @@ defmodule OliWeb.LegacySuperactivityController do
 
       {:error, reason} ->
         Logger.error("Could not import embedded activity package: #{inspect(reason)}")
-        error(conn, 400, "Unable to import embedded activity package")
+        import_error(conn, reason)
     end
   end
 
-  def import_package(conn, _params), do: error(conn, 400, "invalid embedded activity package")
+  def import_package(conn, _params),
+    do: import_error(conn, {:invalid_request, "invalid embedded activity package"})
 
   defp upload_file(bucket, file_name, contents) do
     mime_type = MIME.from_path(file_name)
@@ -1333,4 +1334,171 @@ defmodule OliWeb.LegacySuperactivityController do
     |> Plug.Conn.send_resp(code, reason)
     |> Plug.Conn.halt()
   end
+
+  defp import_error(conn, reason) do
+    payload = import_error_payload(reason)
+
+    conn
+    |> Plug.Conn.put_status(400)
+    |> json(payload)
+    |> Plug.Conn.halt()
+  end
+
+  defp import_error_payload(:invalid_package) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "invalid_package",
+      message: "The uploaded ZIP is not a valid embedded activity package.",
+      details: %{}
+    }
+  end
+
+  defp import_error_payload({:invalid_request, message}) when is_binary(message) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "invalid_request",
+      message: message,
+      details: %{}
+    }
+  end
+
+  defp import_error_payload({:missing_referenced_files, missing_files}) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "missing_referenced_files",
+      message: "The package manifest references files that are missing from the ZIP archive.",
+      details: %{missing_files: missing_files}
+    }
+  end
+
+  defp import_error_payload({:archive_file_count_exceeded, actual_file_count, max_file_count}) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "archive_file_count_exceeded",
+      message: "The ZIP archive contains too many files.",
+      details: %{actual_file_count: actual_file_count, max_file_count: max_file_count}
+    }
+  end
+
+  defp import_error_payload({:archive_entry_too_large, path, actual_bytes, max_bytes}) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "archive_entry_too_large",
+      message: "A file in the ZIP archive exceeds the allowed size.",
+      details: %{path: path, actual_bytes: actual_bytes, max_bytes: max_bytes}
+    }
+  end
+
+  defp import_error_payload({:archive_uncompressed_size_exceeded, actual_bytes, max_bytes}) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "archive_uncompressed_size_exceeded",
+      message: "The ZIP archive is too large when uncompressed.",
+      details: %{actual_bytes: actual_bytes, max_bytes: max_bytes}
+    }
+  end
+
+  defp import_error_payload({:supporting_file_staging_failed, reason}) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "supporting_file_staging_failed",
+      message: "The package files could not be staged for import.",
+      details: %{reason: serialize_import_reason(reason)}
+    }
+  end
+
+  defp import_error_payload({:supporting_file_backup_failed, reason}) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "supporting_file_backup_failed",
+      message: "Existing activity files could not be backed up before import.",
+      details: %{reason: serialize_import_reason(reason)}
+    }
+  end
+
+  defp import_error_payload({:supporting_file_promote_failed, reason}) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "supporting_file_promote_failed",
+      message: "The staged package could not be promoted into the activity bundle.",
+      details: %{reason: serialize_import_reason(reason)}
+    }
+  end
+
+  defp import_error_payload({:supporting_file_promote_failed, reason, rollback_reason}) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "supporting_file_promote_failed",
+      message: "The staged package could not be promoted into the activity bundle.",
+      details: %{
+        reason: serialize_import_reason(reason),
+        rollback_reason: serialize_import_reason(rollback_reason)
+      }
+    }
+  end
+
+  defp import_error_payload(reason) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "package_import_failed",
+      message: "Unable to import embedded activity package.",
+      details: %{reason: serialize_import_reason(reason)}
+    }
+  end
+
+  defp serialize_import_reason({:staging_upload_failed, path}) do
+    %{code: "staging_upload_failed", path: path}
+  end
+
+  defp serialize_import_reason({:backup_copy_failed, destination_key}) do
+    %{code: "backup_copy_failed", destination_key: destination_key}
+  end
+
+  defp serialize_import_reason({:backup_lookup_failed, destination_key, reason}) do
+    %{
+      code: "backup_lookup_failed",
+      destination_key: destination_key,
+      reason: serialize_import_reason(reason)
+    }
+  end
+
+  defp serialize_import_reason({:promote_copy_failed, destination_key, staged_key}) do
+    %{
+      code: "promote_copy_failed",
+      destination_key: destination_key,
+      staged_key: staged_key
+    }
+  end
+
+  defp serialize_import_reason({:rollback_restore_failed, destination_key, backup_key}) do
+    %{
+      code: "rollback_restore_failed",
+      destination_key: destination_key,
+      backup_key: backup_key
+    }
+  end
+
+  defp serialize_import_reason({:rollback_delete_failed, destination_key}) do
+    %{code: "rollback_delete_failed", destination_key: destination_key}
+  end
+
+  defp serialize_import_reason({:rollback_missing_backup_record, destination_key}) do
+    %{code: "rollback_missing_backup_record", destination_key: destination_key}
+  end
+
+  defp serialize_import_reason({:ok, value}), do: %{code: "ok", value: inspect(value)}
+  defp serialize_import_reason(value) when is_atom(value), do: %{code: Atom.to_string(value)}
+  defp serialize_import_reason(value) when is_binary(value), do: %{message: value}
+  defp serialize_import_reason(value), do: %{message: inspect(value)}
 end

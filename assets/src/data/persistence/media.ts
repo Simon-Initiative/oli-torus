@@ -24,6 +24,11 @@ export type SuperActivityPackageImport = {
   model: any;
 };
 
+export type SuperActivityPackageImportError = ServerError & {
+  code?: string;
+  details?: Record<string, any>;
+};
+
 export type SuperActivityPackageExport = {
   blob: Blob;
   filename: string;
@@ -180,14 +185,47 @@ export function importSuperActivityPackage(
     body.append('resourceBase', resourceBase);
   }
 
-  const params = {
-    method: 'POST',
-    body,
-    headers: {},
-    url: '/superactivity/package/import',
-  };
+  return new Promise((resolve, reject) => {
+    return fetch(getBaseURL() + '/superactivity/package/import', {
+      method: 'POST',
+      headers: {},
+      body,
+    })
+      .then((response: Response) => {
+        if (!response.ok) {
+          response.text().then((text) => {
+            let payload: any = null;
 
-  return makeRequest<SuperActivityPackageImport>(params);
+            try {
+              payload = JSON.parse(text);
+            } catch (_e) {
+              payload = null;
+            }
+
+            reject({
+              type: 'ServerError',
+              result: 'failure',
+              status: String(response.status),
+              statusText: response.statusText,
+              message: payload?.message || text,
+              code: payload?.code,
+              details: payload?.details,
+            } as SuperActivityPackageImportError);
+          });
+        } else {
+          response.json().then((json) => resolve(json));
+        }
+      })
+      .catch((error: { status: string; statusText: string; message: string }) =>
+        reject({
+          type: 'ServerError',
+          result: 'failure',
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+        } as SuperActivityPackageImportError),
+      );
+  });
 }
 
 export function deleteMedia(

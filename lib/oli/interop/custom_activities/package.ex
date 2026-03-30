@@ -130,6 +130,7 @@ defmodule Oli.Interop.CustomActivities.Package do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
     media_url = Application.fetch_env!(:oli, :media_url)
     supporting_prefix = normalize_supporting_path(supporting_files_path)
+    import_id = Ecto.UUID.generate()
 
     resource_base =
       case normalize_media_directory(existing_resource_base) do
@@ -137,26 +138,188 @@ defmodule Oli.Interop.CustomActivities.Package do
         normalized -> normalized
       end
 
-    entries
-    |> Enum.filter(fn {path, _content} ->
-      String.starts_with?(path, supporting_prefix) and not String.ends_with?(path, "/")
-    end)
-    |> Enum.sort_by(fn {path, _content} -> path end)
-    |> Enum.reduce_while({:ok, []}, fn {path, content}, {:ok, urls} ->
-      upload_path = Path.join(["/media", resource_base, path])
+    supporting_files =
+      entries
+      |> Enum.filter(fn {path, _content} ->
+        String.starts_with?(path, supporting_prefix) and not String.ends_with?(path, "/")
+      end)
+      |> Enum.sort_by(fn {path, _content} -> path end)
 
-      case upload_file(bucket_name, upload_path, content) do
+    staged_resource_base = Path.join([resource_base, ".import-staging", import_id])
+    backup_resource_base = Path.join([resource_base, ".import-backup", import_id])
+
+    supporting_objects =
+      build_supporting_objects(supporting_files, resource_base, staged_resource_base, media_url)
+
+    case stage_supporting_objects(bucket_name, supporting_objects) do
+      {:ok, staged_keys} ->
+        case backup_existing_destination_objects(
+               bucket_name,
+               supporting_objects,
+               backup_resource_base
+             ) do
+          {:ok, backup_records} ->
+            case promote_staged_objects(bucket_name, supporting_objects) do
+              {:ok, _promoted_keys} ->
+                cleanup_objects(bucket_name, staged_keys)
+                cleanup_objects(bucket_name, backup_keys(backup_records))
+
+                {:ok, {resource_base, Enum.map(supporting_objects, & &1.url)}}
+
+              {:error, reason, promoted_keys} ->
+                rollback_result =
+                  rollback_promoted_objects(bucket_name, promoted_keys, backup_records)
+
+                cleanup_objects(bucket_name, staged_keys)
+                cleanup_objects(bucket_name, backup_keys(backup_records))
+
+                case rollback_result do
+                  :ok ->
+                    {:error, {:supporting_file_promote_failed, reason}}
+
+                  {:error, rollback_reason} ->
+                    {:error, {:supporting_file_promote_failed, reason, rollback_reason}}
+                end
+            end
+
+          {:error, reason, backup_records} ->
+            cleanup_objects(bucket_name, backup_keys(backup_records))
+            cleanup_objects(bucket_name, staged_keys)
+            {:error, {:supporting_file_backup_failed, reason}}
+        end
+
+      {:error, reason, staged_keys} ->
+        cleanup_objects(bucket_name, staged_keys)
+        {:error, {:supporting_file_staging_failed, reason}}
+    end
+  end
+
+  defp build_supporting_objects(files, resource_base, staged_resource_base, media_url) do
+    Enum.map(files, fn {path, content} ->
+      destination_key = Path.join(["media", resource_base, path])
+      staged_key = Path.join(["media", staged_resource_base, path])
+
+      %{
+        relative_path: path,
+        content: content,
+        staged_key: staged_key,
+        destination_key: destination_key,
+        url: "#{media_url}/#{destination_key}"
+      }
+    end)
+  end
+
+  defp stage_supporting_objects(bucket_name, supporting_objects) do
+    supporting_objects
+    |> Enum.reduce_while({:ok, []}, fn %{staged_key: staged_key, content: content}, {:ok, keys} ->
+      case upload_file(bucket_name, staged_key, content) do
         {:ok, %{status_code: 200}} ->
-          {:cont, {:ok, ["#{media_url}#{upload_path}" | urls]}}
+          {:cont, {:ok, [staged_key | keys]}}
 
         _ ->
-          {:halt, {:error, :supporting_file_upload_failed}}
+          {:halt, {:error, {:staging_upload_failed, staged_key}, Enum.reverse(keys)}}
       end
     end)
     |> case do
-      {:ok, urls} -> {:ok, {resource_base, Enum.reverse(urls)}}
+      {:ok, keys} -> {:ok, Enum.reverse(keys)}
       error -> error
     end
+  end
+
+  defp backup_existing_destination_objects(bucket_name, supporting_objects, backup_resource_base) do
+    supporting_objects
+    |> Enum.reduce_while({:ok, []}, fn %{destination_key: destination_key, relative_path: path},
+                                       {:ok, records} ->
+      case object_exists?(bucket_name, destination_key) do
+        {:ok, false} ->
+          {:cont, {:ok, [%{destination_key: destination_key, existed?: false} | records]}}
+
+        {:ok, true} ->
+          backup_key = Path.join(["media", backup_resource_base, path])
+
+          case copy_object(bucket_name, backup_key, destination_key) do
+            {:ok, %{status_code: 200}} ->
+              {:cont,
+               {:ok,
+                [
+                  %{destination_key: destination_key, existed?: true, backup_key: backup_key}
+                  | records
+                ]}}
+
+            _ ->
+              {:halt, {:error, {:backup_copy_failed, destination_key}, Enum.reverse(records)}}
+          end
+
+        {:error, reason} ->
+          {:halt,
+           {:error, {:backup_lookup_failed, destination_key, reason}, Enum.reverse(records)}}
+      end
+    end)
+    |> case do
+      {:ok, records} -> {:ok, Enum.reverse(records)}
+      error -> error
+    end
+  end
+
+  defp promote_staged_objects(bucket_name, supporting_objects) do
+    supporting_objects
+    |> Enum.reduce_while({:ok, []}, fn %{staged_key: staged_key, destination_key: destination_key},
+                                       {:ok, promoted_keys} ->
+      case copy_object(bucket_name, destination_key, staged_key) do
+        {:ok, %{status_code: 200}} ->
+          {:cont, {:ok, [destination_key | promoted_keys]}}
+
+        _ ->
+          {:halt,
+           {:error, {:promote_copy_failed, destination_key, staged_key},
+            Enum.reverse(promoted_keys)}}
+      end
+    end)
+    |> case do
+      {:ok, promoted_keys} -> {:ok, Enum.reverse(promoted_keys)}
+      error -> error
+    end
+  end
+
+  defp rollback_promoted_objects(bucket_name, promoted_keys, backup_records) do
+    backup_records_by_destination =
+      Map.new(backup_records, fn record -> {record.destination_key, record} end)
+
+    promoted_keys
+    |> Enum.reverse()
+    |> Enum.reduce_while(:ok, fn destination_key, :ok ->
+      case Map.fetch(backup_records_by_destination, destination_key) do
+        {:ok, %{existed?: true, backup_key: backup_key}} ->
+          case copy_object(bucket_name, destination_key, backup_key) do
+            {:ok, %{status_code: 200}} -> {:cont, :ok}
+            _ -> {:halt, {:error, {:rollback_restore_failed, destination_key, backup_key}}}
+          end
+
+        {:ok, %{existed?: false}} ->
+          case delete_object(bucket_name, destination_key) do
+            {:ok, %{status_code: status_code}} when status_code in [200, 204] ->
+              {:cont, :ok}
+
+            _ ->
+              {:halt, {:error, {:rollback_delete_failed, destination_key}}}
+          end
+
+        :error ->
+          {:halt, {:error, {:rollback_missing_backup_record, destination_key}}}
+      end
+    end)
+  end
+
+  defp backup_keys(backup_records) do
+    backup_records
+    |> Enum.filter(&Map.get(&1, :existed?, false))
+    |> Enum.map(&Map.fetch!(&1, :backup_key))
+  end
+
+  defp cleanup_objects(bucket_name, keys) do
+    Enum.each(keys, fn key ->
+      _ = delete_object(bucket_name, key)
+    end)
   end
 
   defp unzip(upload_path) do
@@ -401,6 +564,31 @@ defmodule Oli.Interop.CustomActivities.Package do
       true ->
         Path.join(["media", normalized_reference])
     end
+  end
+
+  defp object_exists?(bucket_name, key) do
+    case S3.list_objects(bucket_name, prefix: key, max_keys: 1) |> HTTP.aws().request() do
+      {:ok, %{status_code: 200, body: %{contents: contents}}} ->
+        {:ok,
+         Enum.any?(contents, fn content ->
+           case Map.get(content, :key) || Map.get(content, "Key") do
+             ^key -> true
+             _ -> false
+           end
+         end)}
+
+      error ->
+        {:error, error}
+    end
+  end
+
+  defp copy_object(bucket_name, destination_key, source_key) do
+    S3.put_object_copy(bucket_name, destination_key, bucket_name, source_key, acl: :public_read)
+    |> HTTP.aws().request()
+  end
+
+  defp delete_object(bucket_name, key) do
+    S3.delete_object(bucket_name, key) |> HTTP.aws().request()
   end
 
   defp upload_file(bucket, file_name, contents) do
