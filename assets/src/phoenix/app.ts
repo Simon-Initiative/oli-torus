@@ -78,11 +78,17 @@ window.addEventListener('phx:page-loading-stop', () => {
   NProgress.done();
 });
 
-window.addEventListener('phx:learning-objectives-scroll', ({ detail }: any) => {
-  const targetId = detail?.id;
+type LearningObjectivesScrollDetail = {
+  id?: unknown;
+  scroll_delay?: unknown;
+};
+
+window.addEventListener('phx:learning-objectives-scroll', (event: Event) => {
+  const detail = (event as CustomEvent<LearningObjectivesScrollDetail>).detail ?? {};
+  const targetId = typeof detail.id === 'string' ? detail.id : null;
   if (!targetId) return;
 
-  const scrollDelay = detail?.scroll_delay || 0;
+  const scrollDelay = typeof detail.scroll_delay === 'number' ? detail.scroll_delay : 0;
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const scrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
 
@@ -90,8 +96,7 @@ window.addEventListener('phx:learning-objectives-scroll', ({ detail }: any) => {
     const target = document.getElementById(targetId);
     if (!target) return;
 
-    const top = target.getBoundingClientRect().top + window.scrollY - 72;
-    window.scrollTo({ top, behavior: scrollBehavior });
+    target.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
   }, scrollDelay);
 });
 

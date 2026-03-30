@@ -92,6 +92,23 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
       assert projection.row_count == 0
     end
 
+    test "treats lowercase proficiency keys as meaningful objective data" do
+      %{section: section, unit: unit, parent: parent} = setup_projection_resources()
+
+      snapshot =
+        snapshot_fixture(section.id, unit.resource_id, [
+          %{
+            objective_id: parent.resource_id,
+            title: parent.title,
+            proficiency_distribution: %{"medium" => 2}
+          }
+        ])
+
+      assert {:ok, projection} = ChallengingObjectives.derive(snapshot, [])
+      assert projection.state == :empty_low_proficiency
+      assert projection.rows == []
+    end
+
     test "returns empty_low_proficiency when objective data exists but none is low" do
       %{section: section, unit: unit, parent: parent} = setup_projection_resources()
 
@@ -240,6 +257,41 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
                  objective_id: parent_id,
                  numbering: "2",
                  children: [%{objective_id: child_id, numbering: "2.1"}]
+               }
+             ] = projection.rows
+
+      assert parent_id == parent.resource_id
+      assert child_id == child.resource_id
+    end
+
+    test "guards against cycles in objective hierarchy recursion" do
+      %{section: section, unit: unit, parent: parent, child: child} = setup_projection_resources()
+
+      from(sr in Oli.Delivery.Sections.SectionResource, where: sr.id == ^child.id)
+      |> Repo.update_all(set: [children: [child.resource_id]])
+
+      SectionResourceDepot.update_section_resource(child)
+
+      snapshot =
+        snapshot_fixture(section.id, unit.resource_id, [
+          %{
+            objective_id: parent.resource_id,
+            title: parent.title,
+            proficiency_distribution: %{"Low" => 2}
+          },
+          %{
+            objective_id: child.resource_id,
+            title: child.title,
+            proficiency_distribution: %{"Low" => 2}
+          }
+        ])
+
+      assert {:ok, projection} = ChallengingObjectives.derive(snapshot, [])
+
+      assert [
+               %{
+                 objective_id: parent_id,
+                 children: [%{objective_id: child_id, children: []}]
                }
              ] = projection.rows
 

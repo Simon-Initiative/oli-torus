@@ -186,9 +186,14 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   end
 
   defp expand_with_ancestor_ids(ids, parent_map) do
-    Enum.reduce(ids, ids, fn objective_id, acc ->
-      collect_ancestor_ids(objective_id, parent_map, acc)
+    ids
+    |> MapSet.new()
+    |> then(fn expanded_ids ->
+      Enum.reduce(ids, expanded_ids, fn objective_id, acc ->
+        collect_ancestor_ids(objective_id, parent_map, acc)
+      end)
     end)
+    |> MapSet.to_list()
   end
 
   defp collect_ancestor_ids(objective_id, parent_map, acc) do
@@ -197,10 +202,10 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
         acc
 
       parent_id ->
-        if parent_id in acc do
+        if MapSet.member?(acc, parent_id) do
           acc
         else
-          collect_ancestor_ids(parent_id, parent_map, [parent_id | acc])
+          collect_ancestor_ids(parent_id, parent_map, MapSet.put(acc, parent_id))
         end
     end
   end
@@ -213,38 +218,31 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
          objective_rows_by_id,
          numbering_map,
          parent_map,
-         scope_filter_by
+         scope_filter_by,
+         visited_ids \\ MapSet.new()
        ) do
-    objective_row = Map.get(objective_rows_by_id, section_resource.resource_id)
+    if MapSet.member?(visited_ids, section_resource.resource_id) do
+      nil
+    else
+      visited_ids = MapSet.put(visited_ids, section_resource.resource_id)
+      objective_row = Map.get(objective_rows_by_id, section_resource.resource_id)
 
-    child_ids =
-      effective_children_map
-      |> Map.get(section_resource.resource_id, [])
-      |> Enum.filter(&Map.has_key?(section_resources_by_id, &1))
+      child_ids =
+        effective_children_map
+        |> Map.get(section_resource.resource_id, [])
+        |> Enum.filter(&Map.has_key?(section_resources_by_id, &1))
 
-    parent_id = Map.get(parent_map, section_resource.resource_id)
+      parent_id = Map.get(parent_map, section_resource.resource_id)
 
-    parent_title =
-      all_objective_resources_by_id
-      |> Map.get(parent_id)
-      |> case do
-        nil -> nil
-        parent -> parent.title
-      end
+      parent_title =
+        all_objective_resources_by_id
+        |> Map.get(parent_id)
+        |> case do
+          nil -> nil
+          parent -> parent.title
+        end
 
-    %{
-      objective_id: section_resource.resource_id,
-      parent_objective_id: parent_id,
-      parent_title: parent_title,
-      title: objective_title(section_resource, objective_row),
-      row_type: if(is_nil(parent_id), do: :objective, else: :subobjective),
-      numbering: Map.get(numbering_map, section_resource.resource_id),
-      numbering_index: section_resource.numbering_index,
-      numbering_level: section_resource.numbering_level,
-      proficiency_label: proficiency_label(objective_row),
-      proficiency_distribution: proficiency_distribution(objective_row),
-      has_children: child_ids != [],
-      children:
+      children =
         child_ids
         |> Enum.map(&Map.fetch!(section_resources_by_id, &1))
         |> Enum.sort_by(&{&1.numbering_index, &1.resource_id})
@@ -257,17 +255,34 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
             objective_rows_by_id,
             numbering_map,
             parent_map,
+            scope_filter_by,
+            visited_ids
+          )
+        )
+        |> Enum.reject(&is_nil/1)
+
+      %{
+        objective_id: section_resource.resource_id,
+        parent_objective_id: parent_id,
+        parent_title: parent_title,
+        title: objective_title(section_resource, objective_row),
+        row_type: if(is_nil(parent_id), do: :objective, else: :subobjective),
+        numbering: Map.get(numbering_map, section_resource.resource_id),
+        numbering_index: section_resource.numbering_index,
+        numbering_level: section_resource.numbering_level,
+        proficiency_label: proficiency_label(objective_row),
+        proficiency_distribution: proficiency_distribution(objective_row),
+        has_children: children != [],
+        children: children,
+        navigation:
+          navigation_for(
+            section_resource.resource_id,
+            parent_id,
+            if(is_nil(parent_id), do: :objective, else: :subobjective),
             scope_filter_by
           )
-        ),
-      navigation:
-        navigation_for(
-          section_resource.resource_id,
-          parent_id,
-          if(is_nil(parent_id), do: :objective, else: :subobjective),
-          scope_filter_by
-        )
-    }
+      }
+    end
   end
 
   defp navigation_for(objective_id, nil, :objective, scope_filter_by) do
@@ -301,7 +316,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
       %{},
       all_objective_resources_by_id,
       effective_children_map,
-      nil
+      nil,
+      MapSet.new()
     )
   end
 
@@ -310,9 +326,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
          numbering_map,
          all_objective_resources_by_id,
          effective_children_map,
-         prefix
+         prefix,
+         visited_ids
        ) do
     resources
+    |> Enum.reject(&MapSet.member?(visited_ids, &1.resource_id))
     |> Enum.with_index(1)
     |> Enum.reduce(numbering_map, fn {resource, index}, acc ->
       numbering =
@@ -320,6 +338,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
           nil -> Integer.to_string(index)
           prefix -> "#{prefix}.#{index}"
         end
+
+      visited_ids = MapSet.put(visited_ids, resource.resource_id)
 
       child_resources =
         effective_children_map
@@ -335,7 +355,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
         updated_acc,
         all_objective_resources_by_id,
         effective_children_map,
-        numbering
+        numbering,
+        visited_ids
       )
     end)
   end
@@ -353,10 +374,14 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
 
   defp meaningful_data?(objective_rows) do
     Enum.any?(objective_rows, fn row ->
-      Enum.any?(
-        @meaningful_proficiency_levels,
-        &(Map.get(row.proficiency_distribution, &1, 0) > 0)
-      )
+      row.proficiency_distribution
+      |> normalize_proficiency_distribution()
+      |> then(fn proficiency_distribution ->
+        Enum.any?(
+          @meaningful_proficiency_levels,
+          &(Map.get(proficiency_distribution, &1, 0) > 0)
+        )
+      end)
     end)
   end
 
@@ -381,6 +406,27 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
       _ -> 3
     end
   end
+
+  defp normalize_proficiency_distribution(proficiency_distribution)
+       when proficiency_distribution in [%{}, nil],
+       do: %{}
+
+  defp normalize_proficiency_distribution(proficiency_distribution) do
+    Enum.into(proficiency_distribution, %{}, fn {label, count} ->
+      {normalize_proficiency_label(label), count}
+    end)
+  end
+
+  defp normalize_proficiency_label(label) when is_binary(label) do
+    case String.downcase(label) do
+      "low" -> "Low"
+      "medium" -> "Medium"
+      "high" -> "High"
+      other -> other
+    end
+  end
+
+  defp normalize_proficiency_label(label), do: label
 
   defp log_missing_section_resources(qualifying_ids, section_resources_by_id, section_id) do
     missing_ids = Enum.reject(qualifying_ids, &Map.has_key?(section_resources_by_id, &1))
