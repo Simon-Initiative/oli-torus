@@ -255,6 +255,8 @@ sequenceDiagram
   - `tutorMessage` exists in the schema but is not currently represented in the raw-events event family list, runtime Lambda transform, or backfill SQL builder.
   - The development-only direct uploader in `lib/oli/analytics/xapi/clickhouse_uploader.ex` has drifted from the canonical Lambda/backfill mappings and should either be updated alongside the schema revision or explicitly documented as a non-production debug path with lower fidelity guarantees.
   - The backfill SQL builder currently extracts some video fields from the wrong xAPI locations and does not preserve `verb_id`, so it cannot remain unchanged once the raw-events schema is revised.
+- Phase 3 implementation decision:
+  - `tutorMessage` remains deferred follow-up work for this epic. Current repository-owned ingestion continues to classify unsupported families as out of scope for `raw_events` rather than inventing partial sink columns for message payloads. The deferral is explicit so `verb_id` and video-fidelity changes can land without expanding the sink contract beyond producer-backed fields already covered by current analytics consumers.
 
 ## 7. Consistency & Transactions
 

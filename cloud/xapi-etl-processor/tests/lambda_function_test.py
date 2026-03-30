@@ -673,6 +673,126 @@ class LambdaFunctionTests(TestCase):
         self.assertEqual(transformed["source_etag"], "etag")
         self.assertEqual(transformed["event_hash"], hashlib.sha256(raw_line).hexdigest())
 
+    def test_transform_xapi_statement_preserves_verb_id_and_canonical_video_fields(self):
+        shared_context_extensions = {
+            "http://oli.cmu.edu/extensions/section_id": 2161,
+            "http://oli.cmu.edu/extensions/project_id": 1719,
+            "http://oli.cmu.edu/extensions/publication_id": 8625,
+            "http://oli.cmu.edu/extensions/page_id": 81181,
+            "http://oli.cmu.edu/extensions/content_element_id": "video-1",
+        }
+
+        cases = [
+            (
+                "played",
+                "https://w3id.org/xapi/video/verbs/played",
+                {
+                    "https://w3id.org/xapi/video/extensions/time": 12.5,
+                },
+                {
+                    "video_time": 12.5,
+                    "video_length": 98.0,
+                    "video_progress": None,
+                    "video_played_segments": None,
+                    "video_seek_from": None,
+                    "video_seek_to": None,
+                },
+            ),
+            (
+                "paused",
+                "https://w3id.org/xapi/video/verbs/paused",
+                {
+                    "https://w3id.org/xapi/video/extensions/time": 18.25,
+                    "https://w3id.org/xapi/video/extensions/progress": 33.0,
+                    "https://w3id.org/xapi/video/extensions/played-segments": ["0[.]18.25"],
+                },
+                {
+                    "video_time": 18.25,
+                    "video_length": 98.0,
+                    "video_progress": 33.0,
+                    "video_played_segments": json.dumps(["0[.]18.25"]),
+                    "video_seek_from": None,
+                    "video_seek_to": None,
+                },
+            ),
+            (
+                "seeked",
+                "https://w3id.org/xapi/video/verbs/seeked",
+                {
+                    "https://w3id.org/xapi/video/extensions/time-from": 18.25,
+                    "https://w3id.org/xapi/video/extensions/time-to": 42.0,
+                },
+                {
+                    "video_time": None,
+                    "video_length": 98.0,
+                    "video_progress": None,
+                    "video_played_segments": None,
+                    "video_seek_from": 18.25,
+                    "video_seek_to": 42.0,
+                },
+            ),
+            (
+                "completed",
+                "https://w3id.org/xapi/video/verbs/completed",
+                {
+                    "https://w3id.org/xapi/video/extensions/time": 98.0,
+                    "https://w3id.org/xapi/video/extensions/progress": 100.0,
+                    "https://w3id.org/xapi/video/extensions/played-segments": "0[.]98",
+                },
+                {
+                    "video_time": 98.0,
+                    "video_length": 98.0,
+                    "video_progress": 100.0,
+                    "video_played_segments": "0[.]98",
+                    "video_seek_from": None,
+                    "video_seek_to": None,
+                },
+            ),
+        ]
+
+        for label, verb_id, result_extensions, expected in cases:
+            with self.subTest(label=label):
+                event = {
+                    "actor": {
+                        "account": {
+                            "homePage": "https://proton.oli.cmu.edu",
+                            "name": "student-1",
+                        },
+                        "objectType": "Agent",
+                    },
+                    "context": {"extensions": shared_context_extensions},
+                    "object": {
+                        "id": "https://cdn.example.edu/video.mp4",
+                        "definition": {
+                            "type": "https://w3id.org/xapi/video/activity-type/video",
+                            "extensions": {
+                                "https://w3id.org/xapi/video/extensions/length": 98.0,
+                            },
+                        },
+                    },
+                    "result": {"extensions": result_extensions},
+                    "timestamp": "2025-05-21T13:41:06Z",
+                    "verb": {"id": verb_id},
+                }
+
+                transformed = lambda_function.transform_xapi_statement(
+                    event,
+                    raw_bytes=json.dumps(event).encode("utf-8"),
+                    bucket="bucket",
+                    key=f"path/to/{label}.jsonl",
+                    etag='"etag"',
+                    line_number=1,
+                )
+
+                self.assertEqual(transformed["event_type"], "video")
+                self.assertEqual(transformed["verb_id"], verb_id)
+                self.assertEqual(transformed["video_url"], "https://cdn.example.edu/video.mp4")
+                self.assertEqual(transformed["content_element_id"], "video-1")
+                self.assertNotIn("video_play_time", transformed)
+
+                for field_name, field_value in expected.items():
+                    self.assertEqual(transformed[field_name], field_value)
+
     def test_build_insert_query_uses_default_columns(self):
         with mock.patch.dict(
             os.environ,
@@ -686,6 +806,8 @@ class LambdaFunctionTests(TestCase):
 
         self.assertTrue(query.startswith("INSERT INTO `db`.`raw_events`"))
         self.assertIn("`user_id`", query)
+        self.assertIn("`verb_id`", query)
+        self.assertNotIn("`video_play_time`", query)
         self.assertNotIn("`attempt_guid`", query)
         self.assertTrue(query.endswith("FORMAT Parquet"))
 

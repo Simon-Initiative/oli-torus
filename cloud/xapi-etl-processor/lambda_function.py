@@ -139,6 +139,7 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "publication_id",
     "timestamp",
     "event_type",
+    "verb_id",
     "page_id",
     "content_element_id",
     "video_url",
@@ -146,7 +147,6 @@ DEFAULT_CLICKHOUSE_INSERT_COLUMNS: List[str] = [
     "video_length",
     "video_progress",
     "video_played_segments",
-    "video_play_time",
     "video_seek_from",
     "video_seek_to",
     "activity_attempt_guid",
@@ -890,6 +890,7 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
             "publication_id": pa.uint64(),
             "timestamp": pa.timestamp("ms", tz="UTC"),
             "event_type": pa.string(),
+            "verb_id": pa.string(),
             "page_id": pa.uint64(),
             "content_element_id": pa.string(),
             "video_url": pa.string(),
@@ -897,7 +898,6 @@ def _get_clickhouse_type_map() -> Dict[str, "pa.DataType"]:
             "video_length": pa.float64(),
             "video_progress": pa.float64(),
             "video_played_segments": pa.string(),
-            "video_play_time": pa.float64(),
             "video_seek_from": pa.float64(),
             "video_seek_to": pa.float64(),
             "activity_attempt_guid": pa.string(),
@@ -1039,6 +1039,7 @@ def transform_xapi_statement(
         "publication_id": publication_id,
         "timestamp": timestamp_raw,
         "event_type": event_type,
+        "verb_id": verb_id,
         "page_id": _safe_int(extensions.get("http://oli.cmu.edu/extensions/page_id")),
         "content_element_id": content_element_id,
         "video_url": video_url,
@@ -1052,7 +1053,6 @@ def transform_xapi_statement(
             result_extensions.get("https://w3id.org/xapi/video/extensions/progress")
         ),
         "video_played_segments": video_played_segments,
-        "video_play_time": _safe_float(result_extensions.get("video_play_time")),
         "video_seek_from": _safe_float(
             result_extensions.get("https://w3id.org/xapi/video/extensions/time-from")
         ),

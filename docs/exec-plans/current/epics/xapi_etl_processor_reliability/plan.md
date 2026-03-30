@@ -82,15 +82,15 @@ Deliver the selected single-pipeline hardening strategy for xAPI ingestion:
 
 - Goal: Align the ClickHouse raw-events contract with the canonical xAPI schema and the actual Torus producers so every retained column can be populated with real data and exact verb identity is preserved.
 - Tasks:
-  - [ ] Audit `priv/schemas/xapi/v0-1-0/statement.schema.json`, the Torus xAPI event builders under `lib/oli/analytics/xapi/events/**`, and the frontend video emitters under `assets/src/components/**` to finalize the supported raw-events field set.
-  - [ ] Add a `verb_id` column to the ClickHouse `raw_events` schema and propagate it through `cloud/xapi-etl-processor/lambda_function.py`, `lib/oli/analytics/backfill/query_builder.ex`, and any repository-owned direct-ingest helpers that must stay schema-compatible.
-  - [ ] Rework the raw-events video column set so only canonical producer-backed fields remain, removing `video_play_time` and keeping `video_time`, `video_length`, `video_progress`, `video_played_segments`, `video_seek_from`, and `video_seek_to` mapped from actual statement locations.
-  - [ ] Resolve identified schema-vs-raw-events gaps, including explicitly deciding whether schema-defined but currently unsupported families such as `tutorMessage` are implemented now or documented as deferred follow-up work.
-  - [ ] Ensure the ClickHouse migration strategy preserves operability for existing data and documents any one-time migration or backfill implications of the column changes.
+  - [x] Audit `priv/schemas/xapi/v0-1-0/statement.schema.json`, the Torus xAPI event builders under `lib/oli/analytics/xapi/events/**`, and the frontend video emitters under `assets/src/components/**` to finalize the supported raw-events field set.
+  - [x] Add a `verb_id` column to the ClickHouse `raw_events` schema and propagate it through `cloud/xapi-etl-processor/lambda_function.py`, `lib/oli/analytics/backfill/query_builder.ex`, and any repository-owned direct-ingest helpers that must stay schema-compatible.
+  - [x] Rework the raw-events video column set so only canonical producer-backed fields remain, removing `video_play_time` and keeping `video_time`, `video_length`, `video_progress`, `video_played_segments`, `video_seek_from`, and `video_seek_to` mapped from actual statement locations.
+  - [x] Resolve identified schema-vs-raw-events gaps, including explicitly deciding whether schema-defined but currently unsupported families such as `tutorMessage` are implemented now or documented as deferred follow-up work.
+  - [x] Ensure the ClickHouse migration strategy preserves operability for existing data and documents any one-time migration or backfill implications of the column changes.
 - Testing Tasks:
-  - [ ] Add Python tests proving `verb_id` and the retained video fields are populated correctly for `played`, `paused`, `seeked`, and `completed` statements.
-  - [ ] Add ExUnit coverage for `Oli.Analytics.Backfill.QueryBuilder` so the bulk backfill path uses the same `verb_id` and video-field mappings as the Lambda path.
-  - [ ] Add targeted coverage or assertions for any retained repository-owned direct-ingest helper that must continue to produce raw-events-compatible rows.
+  - [x] Add Python tests proving `verb_id` and the retained video fields are populated correctly for `played`, `paused`, `seeked`, and `completed` statements.
+  - [x] Add ExUnit coverage for `Oli.Analytics.Backfill.QueryBuilder` so the bulk backfill path uses the same `verb_id` and video-field mappings as the Lambda path.
+  - [x] Add targeted coverage or assertions for any retained repository-owned direct-ingest helper that must continue to produce raw-events-compatible rows.
   - Command(s): `cloud/xapi-etl-processor/.venv/bin/python -m pytest cloud/xapi-etl-processor/tests/lambda_function_test.py`
   - Command(s): `mix test test/oli/analytics/backfill`
 - Definition of Done:
