@@ -188,22 +188,58 @@ defmodule Oli.ClickHouse.Tasks do
     # Test connection first
     case test_clickhouse_connection(config) do
       :ok ->
-        # Create database if it doesn't exist
-        create_database_if_needed(config)
+        with :ok <- create_database_if_needed(config) do
+          # Create migrations directory if it doesn't exist
+          ensure_migrations_directory()
 
-        # Create migrations directory if it doesn't exist
-        ensure_migrations_directory()
+          # Run all migrations
+          IO.puts("📦 Running all migrations...")
+          run_migrate_command("up", config)
 
-        # Run all migrations
-        IO.puts("📦 Running all migrations...")
-        run_migrate_command("up", config)
-
-        IO.puts("✅ ClickHouse database setup completed successfully!")
-        :ok
+          IO.puts("✅ ClickHouse database setup completed successfully!")
+          :ok
+        else
+          :error ->
+            raise "❌ Failed to create ClickHouse database before setup"
+        end
 
       :error ->
         raise """
         ❌ Cannot connect to ClickHouse for setup
+
+        Please ensure:
+        1. ClickHouse is running: docker-compose up -d clickhouse
+        2. ClickHouse is accessible at #{config.host}:#{config.http_port}
+        3. User '#{config.user}' has proper permissions
+        """
+    end
+  end
+
+  defp reset_database(config) do
+    IO.puts("🔥 Resetting ClickHouse database...")
+
+    # Test connection first
+    case test_clickhouse_connection(config) do
+      :ok ->
+        with :ok <- drop_database(config),
+             :ok <- create_database_if_needed(config) do
+          # Create migrations directory if it doesn't exist
+          ensure_migrations_directory()
+
+          # Run all migrations
+          IO.puts("📦 Running all migrations...")
+          run_migrate_command("up", config)
+
+          IO.puts("✅ ClickHouse database reset completed successfully!")
+          :ok
+        else
+          :error ->
+            raise "❌ Failed to reset ClickHouse database because the drop or create step did not succeed"
+        end
+
+      :error ->
+        raise """
+        ❌ Cannot connect to ClickHouse for reset
 
         Please ensure:
         1. ClickHouse is running: docker-compose up -d clickhouse
@@ -219,21 +255,21 @@ defmodule Oli.ClickHouse.Tasks do
     # Test connection first
     case test_clickhouse_connection(config) do
       :ok ->
-        # Drop database without confirmation
-        drop_database_force(config)
+        with :ok <- drop_database_force(config),
+             :ok <- create_database_if_needed(config) do
+          # Create migrations directory if it doesn't exist
+          ensure_migrations_directory()
 
-        # Create database
-        create_database_if_needed(config)
+          # Run all migrations
+          IO.puts("📦 Running all migrations...")
+          run_migrate_command("up", config)
 
-        # Create migrations directory if it doesn't exist
-        ensure_migrations_directory()
-
-        # Run all migrations
-        IO.puts("📦 Running all migrations...")
-        run_migrate_command("up", config)
-
-        IO.puts("✅ ClickHouse database reset completed successfully!")
-        :ok
+          IO.puts("✅ ClickHouse database reset completed successfully!")
+          :ok
+        else
+          :error ->
+            raise "❌ Failed to force reset ClickHouse database because the drop or create step did not succeed"
+        end
 
       :error ->
         raise """
@@ -363,7 +399,7 @@ defmodule Oli.ClickHouse.Tasks do
 
         {:ok, %HTTPoison.Response{status_code: code, body: body}} ->
           IO.puts("⚠️  Query responded with status #{code}: #{body}")
-          :ok
+          :error
 
         {:error, %HTTPoison.Error{reason: reason}} ->
           IO.puts("❌ Query execution failed: #{reason}")

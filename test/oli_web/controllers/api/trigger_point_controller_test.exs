@@ -196,7 +196,8 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         })
         |> Oli.Repo.update!()
 
-      topic = "trigger:#{map.user1.id}:#{map.section.id}:#{adaptive_revision.resource_id}"
+      # The broadcast topic uses the containing page's resource_id, not the activity's
+      topic = "trigger:#{map.user1.id}:#{map.section.id}:#{map.adaptive_page_resource.id}"
       :ok = PubSub.subscribe(Oli.PubSub, topic)
 
       trigger = %{
@@ -265,7 +266,8 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         })
         |> Oli.Repo.update!()
 
-      topic = "trigger:#{map.user1.id}:#{map.section.id}:#{adaptive_revision.resource_id}"
+      # The broadcast topic uses the containing page's resource_id, not the activity's
+      topic = "trigger:#{map.user1.id}:#{map.section.id}:#{map.adaptive_page_resource.id}"
       :ok = PubSub.subscribe(Oli.PubSub, topic)
 
       trigger = %{

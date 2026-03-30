@@ -117,6 +117,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
              ),
            dragging: nil,
            creating_page: false,
+           creating_container: false,
            page_title: "Curriculum | " <> project.title,
            options_modal_assigns: nil
          )
@@ -542,11 +543,13 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("add", %{"type" => type, "scored" => scored} = params, socket) do
-    if socket.assigns.creating_page do
+    creating_assign = creating_assign(type)
+
+    if socket.assigns[creating_assign] do
       {:noreply, socket}
     else
       adaptive_mode = Map.get(params, "adaptive_mode")
-      socket = assign(socket, :creating_page, true)
+      socket = assign(socket, creating_assign, true)
 
       case ContainerEditor.add_new(
              socket.assigns.container,
@@ -563,7 +566,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
         {:error, %Ecto.Changeset{} = _changeset} ->
           {:noreply,
            socket
-           |> assign(:creating_page, false)
+           |> assign(creating_assign, false)
            |> put_flash(:error, "Could not create new item")}
       end
     end
@@ -587,14 +590,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     values = %{"type" => type, "scored" => scored}
     values = if adaptive_mode, do: Map.put(values, "adaptive_mode", adaptive_mode), else: values
 
-    JS.set_attribute(
-      {"disabled", "disabled"},
-      to: "#curriculum-create-actions [data-create-page-action='true']"
-    )
-    |> JS.add_class(
-      "pointer-events-none opacity-50",
-      to: "#curriculum-create-actions [data-create-page-action='true']"
-    )
+    disable_create_action(type)
     |> JS.push("add", value: values)
   end
 
@@ -638,7 +634,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   defp handle_created_revision(socket, "Container", _slug, _adaptive_mode) do
     {:noreply,
      assign(socket,
-       creating_page: false,
+       creating_container: false,
        numberings:
          Numbering.number_full_tree(
            Oli.Publishing.AuthoringResolver,
@@ -653,6 +649,30 @@ defmodule OliWeb.Curriculum.ContainerLive do
      redirect(socket,
        to: Routes.resource_path(socket, :edit, socket.assigns.project.slug, slug)
      )}
+  end
+
+  defp creating_assign("Container"), do: :creating_container
+  defp creating_assign(_type), do: :creating_page
+
+  defp create_action_selector("Container"),
+    do: "[data-create-container-action='true']"
+
+  defp create_action_selector(_type),
+    do: "#curriculum-create-actions [data-create-page-action='true']"
+
+  defp disable_create_action("Container"), do: %JS{}
+
+  defp disable_create_action(type) do
+    selector = create_action_selector(type)
+
+    JS.set_attribute(
+      {"disabled", "disabled"},
+      to: selector
+    )
+    |> JS.add_class(
+      "pointer-events-none opacity-50",
+      to: selector
+    )
   end
 
   defp notify_not_empty(socket, container, project, author, item) do

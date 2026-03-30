@@ -103,6 +103,7 @@ defmodule Oli.Delivery.Sections do
         create_hidden_instructor(section_id)
 
       [user | _rest] ->
+        user = ensure_hidden_user_research_opt_out(user)
         token = Oli.Accounts.generate_user_session_token(user)
         {:ok, %{user: user, token: token, outcome: :reused}}
     end
@@ -119,6 +120,7 @@ defmodule Oli.Delivery.Sections do
           name: "Admin",
           given_name: "Admin",
           family_name: "User",
+          research_opt_out: true,
           email_confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second),
           email_verified: true,
           age_verified: true
@@ -138,6 +140,17 @@ defmodule Oli.Delivery.Sections do
       # Return the created user and session token
       %{user: user, token: token, outcome: :created}
     end)
+  end
+
+  defp ensure_hidden_user_research_opt_out(%User{research_opt_out: true} = user), do: user
+
+  defp ensure_hidden_user_research_opt_out(%User{} = user) do
+    {:ok, user} =
+      user
+      |> Ecto.Changeset.change(research_opt_out: true)
+      |> Repo.update()
+
+    user
   end
 
   @valid_contexts ~w(context_administrator context_content_developer context_instructor context_learner context_mentor context_manager context_member context_officer)a

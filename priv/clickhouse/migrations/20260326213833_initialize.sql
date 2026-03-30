@@ -1,14 +1,12 @@
 -- +goose Up
 -- Raw events table for all XAPI event types
--- This table consolidates all event types into a single table for better performance and simplified queries
 CREATE TABLE IF NOT EXISTS raw_events (
-    -- Core event fields (required for all events)
-    event_id String,
-    user_id String,
-    host_name String,
-    section_id UInt64,
-    project_id UInt64,
-    publication_id UInt64,
+    -- Core event fields
+    user_id Nullable(String),
+    home_page Nullable(String),
+    section_id Nullable(UInt64),
+    project_id Nullable(UInt64),
+    publication_id Nullable(UInt64),
     timestamp DateTime64(3),
     event_type LowCardinality(String), -- 'video', 'activity_attempt', 'page_attempt', 'page_viewed', 'part_attempt'
     verb_id LowCardinality(String),
@@ -68,14 +66,9 @@ PARTITION BY toYYYYMM(timestamp)
 SETTINGS allow_nullable_key = 0, index_granularity = 8192, insert_deduplicate = 1;
 
 -- Create indexes for common query patterns
--- Index on section_id for section-specific queries
-ALTER TABLE raw_events ADD INDEX idx_section_id section_id TYPE minmax GRANULARITY 1;
-
--- Index on event_type for filtering by event type
-ALTER TABLE raw_events ADD INDEX idx_event_type event_type TYPE set(0) GRANULARITY 1;
-
--- Index on user_id for user-specific queries
-ALTER TABLE raw_events ADD INDEX idx_user_id user_id TYPE bloom_filter() GRANULARITY 1;
+ALTER TABLE raw_events ADD INDEX IF NOT EXISTS idx_section_id section_id TYPE minmax GRANULARITY 1;
+ALTER TABLE raw_events ADD INDEX IF NOT EXISTS idx_event_type event_type TYPE set(0) GRANULARITY 1;
+ALTER TABLE raw_events ADD INDEX IF NOT EXISTS idx_user_id user_id TYPE bloom_filter() GRANULARITY 1;
 
 -- +goose Down
 DROP TABLE IF EXISTS raw_events;
