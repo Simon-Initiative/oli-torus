@@ -7,6 +7,8 @@ defmodule Oli.Analytics.Backfill.WorkerTest do
   alias Oli.Repo
 
   defmodule DryRunAnalytics do
+    def raw_events_table, do: "analytics.raw_events"
+
     def execute_query(_query, _desc, _opts) do
       body = ~s({"data":[{"total_rows":"5","total_bytes":"250"}]})
 
@@ -22,6 +24,8 @@ defmodule Oli.Analytics.Backfill.WorkerTest do
   end
 
   defmodule InsertAnalytics do
+    def raw_events_table, do: "analytics.raw_events"
+
     def execute_query(_query, _desc, _opts) do
       {:ok, %{body: "", execution_time_ms: 80.0}}
     end
@@ -39,7 +43,58 @@ defmodule Oli.Analytics.Backfill.WorkerTest do
     end
   end
 
+  defmodule OptimizeAnalytics do
+    alias Oli.Analytics.Backfill.BackfillRun
+    alias Oli.Repo
+
+    def raw_events_table, do: "analytics.raw_events"
+
+    def execute_query(query, _desc, opts) do
+      if String.starts_with?(query, "OPTIMIZE TABLE") do
+        run_id = Process.get(:backfill_run_id)
+        send(self(), {:optimize_run_status, Repo.get!(BackfillRun, run_id).status})
+        Process.put(:optimize_query_id, extract_query_id(opts))
+      end
+
+      {:ok, %{body: "", execution_time_ms: 80.0}}
+    end
+
+    def query_status(query_id, _opts) do
+      optimize_query_id = Process.get(:optimize_query_id)
+
+      cond do
+        query_id == optimize_query_id and Process.get(:optimize_should_fail, false) ->
+          {:ok, %{status: :failed, error: "optimize failed", query_duration_ms: 2_000}}
+
+        query_id == optimize_query_id ->
+          {:ok, %{status: :completed, query_duration_ms: 2_000}}
+
+        true ->
+          {:ok,
+           %{
+             status: :completed,
+             rows_read: 1_000,
+             rows_written: 980,
+             bytes_read: 65_536,
+             bytes_written: 32_768,
+             query_duration_ms: 4_200
+           }}
+      end
+    end
+
+    defp extract_query_id(opts) do
+      opts
+      |> Keyword.get(:headers, [])
+      |> Enum.find_value(fn
+        {"X-ClickHouse-Query-Id", value} -> value
+        _ -> nil
+      end)
+    end
+  end
+
   defmodule ErrorAnalytics do
+    def raw_events_table, do: "analytics.raw_events"
+
     def execute_query(_query, _desc, _opts), do: {:error, "boom"}
     def query_status(_query_id, _opts), do: {:error, :not_called}
   end
@@ -116,7 +171,7 @@ defmodule Oli.Analytics.Backfill.WorkerTest do
     test "completes insert run and captures query status metrics" do
       Application.put_env(:oli, :clickhouse_analytics_module, InsertAnalytics)
 
-      run = insert_run(%{dry_run: false})
+      run = insert_run(%{dry_run: false, target_table: "analytics.custom_events"})
 
       assert :ok = Worker.perform(%Oban.Job{args: %{"run_id" => run.id}})
 
@@ -128,6 +183,44 @@ defmodule Oli.Analytics.Backfill.WorkerTest do
       assert run.bytes_written == 32_768
       assert run.duration_ms == 4_200
       assert %{"query_id" => _} = run.metadata
+    end
+
+    test "transitions eligible runs through optimizing before completion" do
+      Application.put_env(:oli, :clickhouse_analytics_module, OptimizeAnalytics)
+
+      run = insert_run(%{dry_run: false})
+      Process.put(:backfill_run_id, run.id)
+
+      assert :ok = Worker.perform(%Oban.Job{args: %{"run_id" => run.id}})
+      assert_receive {:optimize_run_status, :optimizing}
+
+      run = Repo.get!(BackfillRun, run.id)
+      optimization = run.metadata["optimization"] || %{}
+
+      assert run.status == :completed
+      assert optimization["status"] == "completed"
+      assert optimization["query_id"]
+      assert optimization["query_id"] != run.query_id
+      assert optimization["duration_ms"] == 2_000
+    end
+
+    test "records optimization failure explicitly" do
+      Application.put_env(:oli, :clickhouse_analytics_module, OptimizeAnalytics)
+
+      run = insert_run(%{dry_run: false})
+      Process.put(:backfill_run_id, run.id)
+      Process.put(:optimize_should_fail, true)
+
+      assert {:error, error} = Worker.perform(%Oban.Job{args: %{"run_id" => run.id}})
+      assert error =~ "optimize failed"
+
+      run = Repo.get!(BackfillRun, run.id)
+      optimization = run.metadata["optimization"] || %{}
+
+      assert run.status == :failed
+      assert run.error =~ "optimize failed"
+      assert optimization["status"] == "failed"
+      assert optimization["error"] =~ "optimize failed"
     end
 
     test "marks run as failed when ClickHouse returns an error" do

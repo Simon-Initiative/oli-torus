@@ -110,14 +110,14 @@ Deliver the selected single-pipeline hardening strategy for xAPI ingestion:
 
 - Goal: Extend Torus backfills so the app owns the one-time post-backfill optimization phase and exposes it in the admin UI.
 - Tasks:
-  - [ ] Update the backfill domain boundary in `lib/oli/analytics/backfill.ex`, `lib/oli/analytics/backfill/worker.ex`, and related modules to trigger `OPTIMIZE TABLE ... FINAL` after successful eligible non-dry-run backfills.
-  - [ ] Add an explicit optimization-aware lifecycle for `BackfillRun`, preferably a first-class status such as `:optimizing`, so the process does not move directly from running to completed.
-  - [ ] Update `lib/oli_web/live/admin/clickhouse_backfill_live.ex` to show optimization as the final in-progress step and surface optimization failure explicitly.
-  - [ ] Ensure optimization is treated as an operationally expensive one-time cleanup step and is not introduced into steady-state ETL paths.
+  - [x] Update the backfill domain boundary in `lib/oli/analytics/backfill.ex`, `lib/oli/analytics/backfill/worker.ex`, and related modules to trigger `OPTIMIZE TABLE ... FINAL` after successful eligible non-dry-run backfills.
+  - [x] Add an explicit optimization-aware lifecycle for `BackfillRun`, preferably a first-class status such as `:optimizing`, so the process does not move directly from running to completed.
+  - [x] Update `lib/oli_web/live/admin/clickhouse_backfill_live.ex` to show optimization as the final in-progress step and surface optimization failure explicitly.
+  - [x] Ensure optimization is treated as an operationally expensive one-time cleanup step and is not introduced into steady-state ETL paths.
 - Testing Tasks:
-  - [ ] Add targeted ExUnit coverage for successful backfill -> optimizing -> completed transitions.
-  - [ ] Add failure-path tests proving optimization errors are recorded distinctly and do not silently mark the run complete.
-  - [ ] Add LiveView tests verifying the admin UI renders the optimization phase as the final in-progress step.
+  - [x] Add targeted ExUnit coverage for successful backfill -> optimizing -> completed transitions.
+  - [x] Add failure-path tests proving optimization errors are recorded distinctly and do not silently mark the run complete.
+  - [x] Add LiveView tests verifying the admin UI renders the optimization phase as the final in-progress step.
   - Command(s): `mix test test/oli/analytics` `mix test test/oli_web/live/admin`
 - Definition of Done:
   - Eligible Torus backfills do not report full completion until the optimization phase has succeeded.

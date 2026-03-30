@@ -127,7 +127,7 @@ defmodule Oli.Analytics.Backfill do
   def refresh_running_runs do
     :ok = Inventory.recover_inflight_batches()
 
-    from(run in BackfillRun, where: run.status in [:running, :pending])
+    from(run in BackfillRun, where: run.status in [:running, :pending, :optimizing])
     |> Repo.all()
     |> Enum.each(&refresh_run_status/1)
 
@@ -152,6 +152,7 @@ defmodule Oli.Analytics.Backfill do
   end
 
   @terminal_statuses [:completed, :failed, :cancelled]
+  @optimization_metadata_key "optimization"
 
   @doc """
   Ensure the run has an associated ClickHouse query identifier, generating and
@@ -165,6 +166,98 @@ defmodule Oli.Analytics.Backfill do
   def ensure_query_id(%BackfillRun{} = run) do
     query_id = generate_query_id(run)
     transition_to(run, run.status, %{query_id: query_id})
+  end
+
+  @doc """
+  Returns true when the run should perform the one-time post-backfill optimization.
+  """
+  @spec optimization_required?(BackfillRun.t()) :: boolean()
+  def optimization_required?(%BackfillRun{dry_run: true}), do: false
+
+  def optimization_required?(%BackfillRun{target_table: target_table})
+      when is_binary(target_table) do
+    String.trim(target_table) == default_target_table()
+  end
+
+  def optimization_required?(_), do: false
+
+  @doc """
+  Generate a deterministic ClickHouse query identifier for a run's optimize phase.
+  """
+  @spec generate_optimization_query_id(BackfillRun.t()) :: String.t()
+  def generate_optimization_query_id(%BackfillRun{id: id}) do
+    "torus_backfill__run_#{id}_optimize_#{UUID.uuid4()}"
+  end
+
+  @doc """
+  Marks the run as entering the post-backfill optimization phase.
+  """
+  @spec start_optimization(BackfillRun.t(), String.t(), map()) ::
+          {:ok, BackfillRun.t()} | {:error, Ecto.Changeset.t()}
+  def start_optimization(%BackfillRun{} = run, query_id, attrs \\ %{}) when is_binary(query_id) do
+    optimization =
+      build_optimization_metadata(run, %{
+        "status" => "running",
+        "query_id" => query_id,
+        "started_at" => now_iso8601(),
+        "error" => nil
+      })
+
+    attrs =
+      attrs
+      |> normalize_attrs()
+      |> Map.put(
+        :metadata,
+        merge_metadata(run.metadata, %{@optimization_metadata_key => optimization})
+      )
+      |> Map.put(:error, nil)
+
+    transition_to(run, :optimizing, attrs)
+  end
+
+  @doc """
+  Marks the optimization phase as successfully completed.
+  """
+  @spec complete_optimization(BackfillRun.t(), map(), map()) ::
+          {:ok, BackfillRun.t()} | {:error, Ecto.Changeset.t()}
+  def complete_optimization(%BackfillRun{} = run, optimization_updates, attrs \\ %{}) do
+    optimization =
+      build_optimization_metadata(run, optimization_updates)
+      |> Map.merge(%{
+        "status" => "completed",
+        "finished_at" => now_iso8601(),
+        "error" => nil
+      })
+
+    attrs =
+      attrs
+      |> Map.put(
+        :metadata,
+        merge_metadata(run.metadata, %{@optimization_metadata_key => optimization})
+      )
+      |> Map.delete(:error)
+
+    transition_to(run, :completed, attrs)
+  end
+
+  @doc """
+  Marks the optimization phase as failed and records the failure explicitly.
+  """
+  @spec fail_optimization(BackfillRun.t(), String.t(), map()) ::
+          {:ok, BackfillRun.t()} | {:error, Ecto.Changeset.t()}
+  def fail_optimization(%BackfillRun{} = run, error_message, optimization_updates \\ %{}) do
+    optimization =
+      build_optimization_metadata(run, optimization_updates)
+      |> Map.merge(%{
+        "status" => "failed",
+        "finished_at" => now_iso8601(),
+        "error" => error_message
+      })
+
+    transition_to(run, :failed, %{
+      metadata: merge_metadata(run.metadata, %{@optimization_metadata_key => optimization}),
+      error: error_message
+    })
   end
 
   @doc """
@@ -308,6 +401,13 @@ defmodule Oli.Analytics.Backfill do
     end
   end
 
+  defp refresh_run_status(%BackfillRun{status: :optimizing} = run) do
+    case optimization_query_id(run) do
+      nil -> :ok
+      query_id -> refresh_optimization_status(run, query_id)
+    end
+  end
+
   defp refresh_run_status(%BackfillRun{query_id: nil}), do: :ok
 
   defp refresh_run_status(%BackfillRun{} = run) do
@@ -418,6 +518,70 @@ defmodule Oli.Analytics.Backfill do
 
   defp maybe_put_metric(acc, key, value), do: Map.put(acc, key, value)
 
+  defp refresh_optimization_status(%BackfillRun{} = run, query_id) do
+    case analytics_module().query_status(query_id, credential: :admin) do
+      {:ok, %{status: :completed} = info} ->
+        optimization =
+          optimization_metadata(run)
+          |> Map.put("query_status", stringify_keys(info))
+          |> Map.put("duration_ms", info[:query_duration_ms])
+
+        _ = complete_optimization(run, optimization)
+        :ok
+
+      {:ok, %{status: :failed} = info} ->
+        error_message =
+          info[:error] ||
+            info[:exception] ||
+            "Backfill optimization failed"
+
+        optimization =
+          optimization_metadata(run)
+          |> Map.put("query_status", stringify_keys(info))
+          |> Map.put("duration_ms", info[:query_duration_ms])
+
+        _ = fail_optimization(run, error_message, optimization)
+        :ok
+
+      {:ok, _info} ->
+        :ok
+
+      {:error, reason} ->
+        metadata =
+          run.metadata
+          |> merge_metadata(%{
+            @optimization_metadata_key =>
+              optimization_metadata(run)
+              |> Map.put("query_status_error", format_error(reason))
+          })
+
+        _ = transition_to(run, run.status, %{metadata: metadata})
+        :ok
+    end
+  end
+
+  defp optimization_query_id(%BackfillRun{} = run) do
+    run
+    |> optimization_metadata()
+    |> Map.get("query_id")
+  end
+
+  defp optimization_metadata(%BackfillRun{metadata: metadata}) when is_map(metadata) do
+    case Map.get(metadata, @optimization_metadata_key) do
+      value when is_map(value) -> value
+      _ -> %{}
+    end
+  end
+
+  defp optimization_metadata(_), do: %{}
+
+  defp build_optimization_metadata(%BackfillRun{} = run, additions) do
+    run
+    |> optimization_metadata()
+    |> Map.put_new("target_table", run.target_table)
+    |> Map.merge(additions)
+  end
+
   defp stringify_keys(info) when is_map(info) do
     info
     |> Enum.reduce(%{}, fn {key, value}, acc ->
@@ -435,6 +599,12 @@ defmodule Oli.Analytics.Backfill do
         Map.put(acc, key, value)
       end
     end)
+  end
+
+  defp now_iso8601 do
+    DateTime.utc_now()
+    |> DateTime.truncate(:second)
+    |> DateTime.to_iso8601()
   end
 
   defp format_error({:error, reason}), do: format_error(reason)

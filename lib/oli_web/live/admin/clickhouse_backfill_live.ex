@@ -710,9 +710,20 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                       <span class={status_badge_classes(run.status)}>
                         {Phoenix.Naming.humanize(run.status)}
                       </span>
+                      <p
+                        :if={backfill_phase_text(run)}
+                        class="mt-2 text-xs text-gray-500 dark:text-gray-400"
+                      >
+                        {backfill_phase_text(run)}
+                      </p>
                       <%= if run.query_id do %>
                         <div class="mt-2 text-xs text-gray-500 break-all">
                           Query ID: {run.query_id}
+                        </div>
+                      <% end %>
+                      <%= if optimization_query_id = backfill_optimization_query_id(run) do %>
+                        <div class="mt-1 text-xs text-gray-500 break-all">
+                          Optimize Query ID: {optimization_query_id}
                         </div>
                       <% end %>
                       <% progress_value = progress_percent(run) %>
@@ -2138,7 +2149,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     do:
       "inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800"
 
-  defp status_badge_classes(status) when status in [:running, :preparing],
+  defp status_badge_classes(status) when status in [:running, :preparing, :optimizing],
     do:
       "inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800"
 
@@ -2198,6 +2209,37 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   end
 
   defp progress_metadata(_), do: %{}
+
+  defp backfill_phase_text(%BackfillRun{status: :optimizing}) do
+    "Final step: running OPTIMIZE TABLE ... FINAL"
+  end
+
+  defp backfill_phase_text(%BackfillRun{} = run) do
+    case backfill_optimization_metadata(run) do
+      %{"status" => "completed"} -> "Final step completed: OPTIMIZE TABLE ... FINAL"
+      %{"status" => "failed"} -> "Optimization failed"
+      _ -> nil
+    end
+  end
+
+  defp backfill_phase_text(_), do: nil
+
+  defp backfill_optimization_query_id(%BackfillRun{} = run) do
+    run
+    |> backfill_optimization_metadata()
+    |> Map.get("query_id")
+  end
+
+  defp backfill_optimization_query_id(_), do: nil
+
+  defp backfill_optimization_metadata(%BackfillRun{metadata: metadata}) when is_map(metadata) do
+    case Map.get(metadata, "optimization") do
+      value when is_map(value) -> value
+      _ -> %{}
+    end
+  end
+
+  defp backfill_optimization_metadata(_), do: %{}
 
   defp progress_percent(run) do
     progress_metadata(run)

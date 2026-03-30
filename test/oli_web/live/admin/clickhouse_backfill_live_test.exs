@@ -478,6 +478,64 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert html =~ "Rows: 425 / 1000 (42.5%)"
     end
 
+    test "shows optimization as the final in-progress step", %{conn: conn} do
+      Repo.delete_all(BackfillRun)
+
+      Repo.insert!(%BackfillRun{
+        target_table: "analytics.raw_events",
+        s3_pattern: "s3://bucket/path/**/*.jsonl",
+        format: "JSONAsString",
+        status: :optimizing,
+        dry_run: false,
+        query_id: "insert-query",
+        metadata: %{
+          "optimization" => %{
+            "status" => "running",
+            "query_id" => "optimize-query"
+          }
+        }
+      })
+
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      html = render(view)
+
+      assert html =~ "Optimizing"
+      assert html =~ "Final step: running OPTIMIZE TABLE ... FINAL"
+      assert html =~ "Optimize Query ID: optimize-query"
+      refute html =~ ">Completed<"
+    end
+
+    test "surfaces optimization failure explicitly", %{conn: conn} do
+      Repo.delete_all(BackfillRun)
+
+      Repo.insert!(%BackfillRun{
+        target_table: "analytics.raw_events",
+        s3_pattern: "s3://bucket/path/**/*.jsonl",
+        format: "JSONAsString",
+        status: :failed,
+        dry_run: false,
+        query_id: "insert-query",
+        error: "optimize failed",
+        metadata: %{
+          "optimization" => %{
+            "status" => "failed",
+            "query_id" => "optimize-query",
+            "error" => "optimize failed"
+          }
+        }
+      })
+
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      html = render(view)
+
+      assert html =~ "Optimization failed"
+      assert html =~ "optimize failed"
+    end
+
     test "retry inventory batch enqueues job", %{conn: conn} do
       clear_oban_jobs()
 
