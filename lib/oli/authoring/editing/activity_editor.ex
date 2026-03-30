@@ -36,6 +36,15 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     "media/webcontent/custom_activity/",
     "webcontent/custom_activity/"
   ]
+  @embedded_bundle_repair_overlay_keys [
+    "base",
+    "src",
+    "title",
+    "stem",
+    "authoring",
+    "bibrefs",
+    "scoringStrategy"
+  ]
 
   # Filters out objective ids that are no longer present in the list of all objectives
   @doc """
@@ -115,11 +124,18 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   def repair_embedded_bundle(project_slug, activity_id, author, model) when is_map(model) do
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
-         {:ok, _revision} <-
+         {:ok, revision} <-
            AuthoringResolver.from_resource_id(project_slug, activity_id) |> trap_nil() do
-      case repairable_embedded_bundle?(model) do
-        true -> clone_embedded_bundle(model)
-        false -> {:error, {:invalid_request, "Bundle repair is not available for this activity."}}
+      persisted_model = revision.content
+
+      case repairable_embedded_bundle?(persisted_model) do
+        true ->
+          persisted_model
+          |> clone_embedded_bundle()
+          |> apply_embedded_bundle_repair_overlay(model)
+
+        false ->
+          {:error, {:invalid_request, "Bundle repair is not available for this activity."}}
       end
     else
       error -> error
@@ -1727,6 +1743,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
        |> Map.put("resourceVerification", %{})}
     end
   end
+
+  defp apply_embedded_bundle_repair_overlay({:ok, repaired_model}, client_model)
+       when is_map(client_model) do
+    {:ok, Map.merge(repaired_model, Map.take(client_model, @embedded_bundle_repair_overlay_keys))}
+  end
+
+  defp apply_embedded_bundle_repair_overlay(result, _client_model), do: result
 
   defp annotate_embedded_bundle_fallback(model, reason) when is_map(model) do
     Map.put(model, "bundleStatus", %{

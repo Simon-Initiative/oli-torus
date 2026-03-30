@@ -3,12 +3,9 @@ defmodule Oli.Interop.CustomActivities.PreviewSessions do
 
   @cache_name :embedded_preview_sessions
   @ttl_ms :timer.hours(2)
-  @cache_opts [name: @cache_name, limit: 10_000, policy: Cachex.Policy.LRW]
 
   @spec put(String.t(), map()) :: {:ok, map()} | {:error, term()}
   def put(session_guid, session) when is_binary(session_guid) and is_map(session) do
-    ensure_cache_started()
-
     case Cachex.put(@cache_name, session_guid, session, ttl: @ttl_ms) do
       {:ok, true} -> {:ok, session}
       other -> {:error, {:cache_put_failed, other}}
@@ -17,8 +14,6 @@ defmodule Oli.Interop.CustomActivities.PreviewSessions do
 
   @spec get(String.t()) :: {:ok, map()} | {:error, :not_found | term()}
   def get(session_guid) when is_binary(session_guid) do
-    ensure_cache_started()
-
     case Cachex.get(@cache_name, session_guid) do
       {:ok, nil} -> {:error, :not_found}
       {:ok, session} -> {:ok, session}
@@ -28,8 +23,6 @@ defmodule Oli.Interop.CustomActivities.PreviewSessions do
 
   @spec update(String.t(), (map() -> map())) :: {:ok, map()} | {:error, :not_found | term()}
   def update(session_guid, updater) when is_binary(session_guid) and is_function(updater, 1) do
-    ensure_cache_started()
-
     case Cachex.transaction(@cache_name, [session_guid], fn worker ->
            case Cachex.get(worker, session_guid) do
              {:ok, nil} ->
@@ -49,20 +42,6 @@ defmodule Oli.Interop.CustomActivities.PreviewSessions do
          end) do
       {:ok, result} -> result
       other -> {:error, {:cache_transaction_failed, other}}
-    end
-  end
-
-  defp ensure_cache_started() do
-    case Process.whereis(@cache_name) do
-      nil ->
-        case Cachex.start_link(@cache_opts) do
-          {:ok, _pid} -> :ok
-          {:error, {:already_started, _pid}} -> :ok
-          _other -> :ok
-        end
-
-      _pid ->
-        :ok
     end
   end
 end

@@ -56,6 +56,8 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     'btn btn-sm btn-dark dark:!bg-slate-100 dark:!text-slate-900 dark:hover:!bg-white dark:!border-slate-100';
   const infoAlertClass =
     'alert alert-info dark:!bg-slate-800 dark:!border-slate-600 dark:!text-gray-100';
+  const wrappedCodeClass = 'd-inline-block text-break';
+  const wrappedCodeStyle = { overflowWrap: 'anywhere' as const, wordBreak: 'break-word' as const };
 
   const display = (c: any, id: string) => {
     let element = document.querySelector('#' + id);
@@ -574,21 +576,27 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
       <input
         id={id}
-        style={{ display: 'none' }}
+        className="sr-only"
         disabled={actionsDisabled}
         multiple
         onChange={({ target: { files } }) => onFileUpload(files as FileList)}
         type="file"
       />
+      <label className="sr-only" htmlFor={id}>
+        Upload supporting files
+      </label>
 
       <input
         id={packageImportId}
-        style={{ display: 'none' }}
+        className="sr-only"
         disabled={actionsDisabled}
         onChange={({ target: { files } }) => onPackageImport(files as FileList)}
         type="file"
         accept=".zip,application/zip"
       />
+      <label className="sr-only" htmlFor={packageImportId}>
+        Import embedded activity package
+      </label>
 
       <div className="card mt-3">
         <div className="card-body">
@@ -652,7 +660,11 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
                 {verificationPending || isVerifyingStorage ? (
                   <div className={`${infoAlertClass} mt-3`}>
-                    Checking supporting files in storage relative to <code>{resourceBase}</code>.
+                    Checking supporting files in storage relative to{' '}
+                    <code className={wrappedCodeClass} style={wrappedCodeStyle}>
+                      {resourceBase}
+                    </code>
+                    .
                   </div>
                 ) : null}
 
@@ -675,7 +687,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                         className="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2"
                         key={reference}
                       >
-                        <code>{reference}</code>
+                        <code className={wrappedCodeClass} style={wrappedCodeStyle}>
+                          {reference}
+                        </code>
                         <div className="d-flex flex-wrap gap-2">
                           <span
                             className={`badge ${
@@ -756,23 +770,33 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                 <div className="row mt-3">
                   <div className="col-md-6 mb-2">
                     <div className={`small ${mutedTextClass}`}>Iframe base</div>
-                    <code>{iframeBase}</code>
+                    <code className={wrappedCodeClass} style={wrappedCodeStyle}>
+                      {iframeBase}
+                    </code>
                   </div>
                   <div className="col-md-6 mb-2">
                     <div className={`small ${mutedTextClass}`}>Iframe source page</div>
-                    <code>{iframeSource}</code>
+                    <code className={wrappedCodeClass} style={wrappedCodeStyle}>
+                      {iframeSource}
+                    </code>
                   </div>
                   <div className="col-md-6 mb-2">
                     <div className={`small ${mutedTextClass}`}>resourceBase</div>
-                    <code>{resourceBase}</code>
+                    <code className={wrappedCodeClass} style={wrappedCodeStyle}>
+                      {resourceBase}
+                    </code>
                   </div>
                   <div className="col-md-6 mb-2">
                     <div className={`small ${mutedTextClass}`}>Upload destination</div>
-                    <code>{uploadLocation}</code>
+                    <code className={wrappedCodeClass} style={wrappedCodeStyle}>
+                      {uploadLocation}
+                    </code>
                   </div>
                   <div className="col-md-12 mb-2">
                     <div className={`small ${mutedTextClass}`}>Runtime asset base</div>
-                    <code>{runtimeAssetBase}</code>
+                    <code className={wrappedCodeClass} style={wrappedCodeStyle}>
+                      {runtimeAssetBase}
+                    </code>
                   </div>
                 </div>
               </>
@@ -823,7 +847,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                         <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
                           <div>
                             <div>
-                              <code>{resource.relativePath}</code>
+                              <code className={wrappedCodeClass} style={wrappedCodeStyle}>
+                                {resource.relativePath}
+                              </code>
                             </div>
                             <div className={`small ${mutedTextClass}`}>
                               {resource.url || 'Not tracked in resourceURLs'}
@@ -1005,7 +1031,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
                 <div className="container">
                   {authoringParts.map((part, i) => (
-                    <div className="row mb-2" key={i}>
+                    <div className="row mb-2" key={part.id}>
                       <div className="col sm:col-span-2">Part {i + 1}</div>
                       <div className="col lg:col-span-3">
                         <div>

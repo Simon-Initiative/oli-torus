@@ -12,6 +12,10 @@ defmodule Oli.Interop.CustomActivities.Package do
   @default_max_archive_uncompressed_bytes 50_000_000
   @default_max_archive_entry_bytes 10_000_000
   @default_s3_operation_concurrency 8
+  @default_s3_operation_timeout_ms 15_000
+  @supporting_file_reference_regex Regex.compile!(
+                                     "\\b(?:webcontent|media|super_media|bundles)/[A-Za-z0-9_./-]+\\.[A-Za-z0-9]{1,8}(?:[?#][^<>\"'\\s]*)?"
+                                   )
 
   def export(%{} = model, resource_base) do
     manifest_xml = Map.get(model, "modelXml", "")
@@ -95,6 +99,7 @@ defmodule Oli.Interop.CustomActivities.Package do
          {:ok, manifest_xml} <- fetch_binary_entry(entries, manifest_file),
          supporting_files_path <-
            Map.get(package_model, "supportingFilesPath", @supporting_files_path),
+         :ok <- validate_archive_entry_paths(entries, manifest_file, supporting_files_path),
          :ok <- validate_manifest_references(entries, manifest_xml, supporting_files_path),
          {:ok, {resource_base, resource_urls}} <-
            upload_supporting_files(entries, supporting_files_path, resource_base) do
@@ -365,26 +370,27 @@ defmodule Oli.Interop.CustomActivities.Package do
       fn key -> delete_object(bucket_name, key) end,
       max_concurrency: s3_operation_concurrency(),
       ordered: false,
-      timeout: :infinity
+      timeout: s3_operation_timeout_ms(),
+      on_timeout: :kill_task
     )
     |> Stream.run()
   end
 
-  defp list_existing_destination_keys(bucket_name, resource_base, supporting_objects) do
-    prefix = Path.join(["media", resource_base]) <> "/"
-    destination_keys = supporting_objects |> Enum.map(& &1.destination_key) |> MapSet.new()
+  defp list_existing_destination_keys(bucket_name, _resource_base, supporting_objects) do
+    supporting_objects
+    |> parallel_s3_map(fn %{destination_key: destination_key} ->
+      case object_exists(bucket_name, destination_key) do
+        {:ok, true} -> {:ok, destination_key}
+        {:ok, false} -> {:ok, nil}
+        {:error, reason} -> {:error, {:backup_lookup_failed, destination_key, reason}}
+      end
+    end)
+    |> case do
+      {:ok, keys} ->
+        {:ok, keys |> Enum.reject(&is_nil/1) |> MapSet.new()}
 
-    case S3.list_objects(bucket_name, prefix: prefix) |> HTTP.aws().request() do
-      {:ok, %{status_code: 200, body: %{contents: contents}}} ->
-        {:ok,
-         contents
-         |> Enum.map(fn content -> Map.get(content, :key) || Map.get(content, "Key") end)
-         |> Enum.filter(&is_binary/1)
-         |> Enum.filter(&MapSet.member?(destination_keys, &1))
-         |> MapSet.new()}
-
-      error ->
-        {:error, {:backup_lookup_failed, prefix, error}}
+      {:error, reason, _keys} ->
+        {:error, reason}
     end
   end
 
@@ -394,7 +400,8 @@ defmodule Oli.Interop.CustomActivities.Package do
       mapper,
       max_concurrency: s3_operation_concurrency(),
       ordered: true,
-      timeout: :infinity
+      timeout: s3_operation_timeout_ms(),
+      on_timeout: :kill_task
     )
     |> Enum.reduce({[], nil}, fn
       {:ok, {:ok, value}}, {results, error} ->
@@ -404,6 +411,12 @@ defmodule Oli.Interop.CustomActivities.Package do
         {results, reason}
 
       {:ok, {:error, _reason}}, {results, error} ->
+        {results, error}
+
+      {:exit, :timeout}, {results, nil} ->
+        {results, {:s3_operation_timeout, s3_operation_timeout_ms()}}
+
+      {:exit, :timeout}, {results, error} ->
         {results, error}
 
       {:exit, reason}, {results, nil} ->
@@ -465,6 +478,11 @@ defmodule Oli.Interop.CustomActivities.Package do
   defp s3_operation_concurrency do
     config = Application.get_env(:oli, __MODULE__, [])
     Keyword.get(config, :s3_operation_concurrency, @default_s3_operation_concurrency)
+  end
+
+  defp s3_operation_timeout_ms do
+    config = Application.get_env(:oli, __MODULE__, [])
+    Keyword.get(config, :s3_operation_timeout_ms, @default_s3_operation_timeout_ms)
   end
 
   defp archive_table(upload_path) do
@@ -590,6 +608,37 @@ defmodule Oli.Interop.CustomActivities.Package do
     end
   end
 
+  defp validate_archive_entry_paths(entries, manifest_file, supporting_files_path) do
+    supporting_prefix = normalize_supporting_path(supporting_files_path)
+
+    entries
+    |> Map.keys()
+    |> Enum.reject(&allowed_archive_metadata_path?(&1, manifest_file))
+    |> Enum.reduce_while(:ok, fn path, :ok ->
+      case validate_archive_entry_path(path, supporting_prefix) do
+        :ok -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp allowed_archive_metadata_path?(path, manifest_file) do
+    path in [@model_file, manifest_file]
+  end
+
+  defp validate_archive_entry_path(path, supporting_prefix) do
+    cond do
+      not String.starts_with?(path, supporting_prefix) ->
+        {:error, {:invalid_archive_entry_path, path}}
+
+      unsafe_path?(path) ->
+        {:error, {:invalid_archive_entry_path, path}}
+
+      true ->
+        :ok
+    end
+  end
+
   defp validate_manifest_references(entries, manifest_xml, supporting_files_path) do
     normalized_supporting_path = normalize_supporting_path(supporting_files_path)
 
@@ -660,10 +709,7 @@ defmodule Oli.Interop.CustomActivities.Package do
   end
 
   defp extract_supporting_file_references(model_xml) when is_binary(model_xml) do
-    Regex.compile!(
-      "\\b(?:webcontent|media|super_media|bundles)/[A-Za-z0-9_./-]+\\.[A-Za-z0-9]{1,8}(?:[?#][^<>\"'\\s]*)?"
-    )
-    |> Regex.scan(model_xml)
+    Regex.scan(@supporting_file_reference_regex, model_xml)
     |> Enum.map(&List.first/1)
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
@@ -738,14 +784,24 @@ defmodule Oli.Interop.CustomActivities.Package do
   end
 
   defp unsafe_path?(path) do
-    path
-    |> String.split("/", trim: true)
-    |> Enum.any?(&(&1 == ".."))
+    String.contains?(path, "\\") or
+      String.starts_with?(path, "/") or
+      path
+      |> String.split("/", trim: true)
+      |> Enum.any?(&(&1 == ".."))
   end
 
   defp copy_object(bucket_name, destination_key, source_key) do
     S3.put_object_copy(bucket_name, destination_key, bucket_name, source_key, acl: :public_read)
     |> HTTP.aws().request()
+  end
+
+  defp object_exists(bucket_name, key) do
+    case S3.head_object(bucket_name, key) |> HTTP.aws().request() do
+      {:ok, %{status_code: 200}} -> {:ok, true}
+      {:error, {:http_error, 404, _response}} -> {:ok, false}
+      other -> {:error, other}
+    end
   end
 
   defp delete_object(bucket_name, key) do

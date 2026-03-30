@@ -31,6 +31,7 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Lti_1p3.Roles.ContextRoles
 
   @default_preview_max_file_bytes 1_000_000
+  @default_preview_model_max_bytes 100_000
   @preview_file_storage_prefix "preview-save-files"
 
   defmodule LegacySuperactivityContext do
@@ -72,12 +73,19 @@ defmodule OliWeb.LegacySuperactivityController do
         conn,
         %{"attemptGuid" => attempt_guid, "model" => model, "context" => activity_context}
       ) do
-    case init_preview_session(conn, attempt_guid, model, activity_context) do
-      {:ok, context} ->
-        json(conn, context_response(conn.host, context))
-
+    with {:ok, sanitized_model} <- sanitize_preview_model(model),
+         {:ok, context} <-
+           init_preview_session(conn, attempt_guid, sanitized_model, activity_context) do
+      json(conn, context_response(conn.host, context))
+    else
       {:error, :unauthorized} ->
         error(conn, 403, "Unauthorized")
+
+      {:error, :preview_model_too_large} ->
+        error(conn, 400, "Preview model is too large")
+
+      {:error, :invalid_preview_model} ->
+        error(conn, 400, "Invalid preview model")
 
       {:error, reason} ->
         Logger.error("Could not create embedded preview session: #{inspect(reason)}")
@@ -159,23 +167,30 @@ defmodule OliWeb.LegacySuperactivityController do
 
       existing_keys =
         resolved_references
-        |> Enum.map(&elem(&1, 1))
-        |> Enum.group_by(&media_lookup_prefix/1)
-        |> Enum.reduce_while({:ok, MapSet.new()}, fn {prefix, keys}, {:ok, acc} ->
-          case list_media_keys(bucket_name, prefix) do
-            {:ok, listed_keys} ->
-              keys_set = MapSet.new(keys)
+        |> Task.async_stream(
+          fn {_reference, resolved_key} ->
+            case media_object_exists(bucket_name, resolved_key) do
+              {:ok, true} -> {:ok, resolved_key}
+              {:ok, false} -> {:ok, nil}
+              {:error, reason} -> {:error, {:media_lookup_failed, resolved_key, reason}}
+            end
+          end,
+          max_concurrency: 8,
+          ordered: false,
+          timeout: :infinity
+        )
+        |> Enum.reduce_while({:ok, MapSet.new()}, fn
+          {:ok, {:ok, nil}}, {:ok, acc} ->
+            {:cont, {:ok, acc}}
 
-              existing_keys =
-                listed_keys
-                |> Enum.filter(&MapSet.member?(keys_set, &1))
-                |> Enum.reduce(acc, &MapSet.put(&2, &1))
+          {:ok, {:ok, resolved_key}}, {:ok, acc} ->
+            {:cont, {:ok, MapSet.put(acc, resolved_key)}}
 
-              {:cont, {:ok, existing_keys}}
+          {:ok, {:error, reason}}, _acc ->
+            {:halt, {:error, reason}}
 
-            {:error, reason} ->
-              {:halt, {:error, {:media_lookup_failed, prefix, reason}}}
-          end
+          {:exit, reason}, _acc ->
+            {:halt, {:error, {:media_lookup_failed, :task, {:task_exit, reason}}}}
         end)
 
       case existing_keys do
@@ -190,7 +205,7 @@ defmodule OliWeb.LegacySuperactivityController do
 
           json(conn, %{statuses: statuses})
 
-        {:error, {:media_lookup_failed, _prefix, reason}} ->
+        {:error, {:media_lookup_failed, _key, reason}} ->
           Logger.error("Could not verify embedded activity media: #{inspect(reason)}")
           error(conn, 500, "Unable to verify supporting files")
       end
@@ -361,23 +376,12 @@ defmodule OliWeb.LegacySuperactivityController do
     ExAws.S3.put_object(bucket, file_name, contents, options) |> aws_client().request()
   end
 
-  defp list_media_keys(bucket_name, prefix) do
-    case ExAws.S3.list_objects(bucket_name, prefix: prefix) |> aws_client().request() do
-      {:ok, %{status_code: 200, body: %{contents: contents}}} ->
-        {:ok,
-         contents
-         |> Enum.map(fn content -> Map.get(content, :key) || Map.get(content, "Key") end)
-         |> Enum.filter(&is_binary/1)}
-
-      error ->
-        error
+  defp media_object_exists(bucket_name, key) do
+    case ExAws.S3.head_object(bucket_name, key) |> aws_client().request() do
+      {:ok, %{status_code: 200}} -> {:ok, true}
+      {:error, {:http_error, 404, _response}} -> {:ok, false}
+      other -> {:error, other}
     end
-  end
-
-  defp media_lookup_prefix(key) do
-    key
-    |> Path.dirname()
-    |> Kernel.<>("/")
   end
 
   defp normalize_directory(nil), do: ""
@@ -394,6 +398,110 @@ defmodule OliWeb.LegacySuperactivityController do
   defp preview_max_file_bytes do
     config = Application.get_env(:oli, __MODULE__, [])
     Keyword.get(config, :preview_max_file_bytes, @default_preview_max_file_bytes)
+  end
+
+  defp preview_max_model_bytes do
+    config = Application.get_env(:oli, __MODULE__, [])
+    Keyword.get(config, :preview_max_model_bytes, @default_preview_model_max_bytes)
+  end
+
+  defp sanitize_preview_model(model) when is_map(model) do
+    with {:ok, encoded} <- Jason.encode(model),
+         true <- byte_size(encoded) <= preview_max_model_bytes() do
+      {:ok,
+       %{
+         "base" => sanitize_preview_string(Map.get(model, "base"), "embedded"),
+         "src" => sanitize_preview_string(Map.get(model, "src"), "index.html"),
+         "title" => sanitize_preview_string(Map.get(model, "title"), "Embedded activity"),
+         "modelXml" => sanitize_preview_string(Map.get(model, "modelXml"), ""),
+         "resourceBase" => sanitize_preview_string(Map.get(model, "resourceBase"), ""),
+         "stem" => sanitize_preview_map(Map.get(model, "stem"), %{}),
+         "authoring" => sanitize_preview_authoring(Map.get(model, "authoring")),
+         "bibrefs" => sanitize_preview_list(Map.get(model, "bibrefs"), [])
+       }
+       |> maybe_put_preview_string(model, "scoringStrategy")
+       |> maybe_put_preview_string_list(model, "resourceURLs")
+       |> maybe_put_preview_string_map(model, "resourceVerification")
+       |> maybe_put_preview_map(model, "bundleStatus")}
+    else
+      {:error, _reason} ->
+        {:error, :invalid_preview_model}
+
+      false ->
+        {:error, :preview_model_too_large}
+    end
+  end
+
+  defp sanitize_preview_model(_), do: {:error, :invalid_preview_model}
+
+  defp sanitize_preview_authoring(authoring) when is_map(authoring) do
+    %{
+      "parts" => sanitize_preview_parts(Map.get(authoring, "parts")),
+      "previewText" => sanitize_preview_string(Map.get(authoring, "previewText"), "")
+    }
+  end
+
+  defp sanitize_preview_authoring(_), do: %{"parts" => [], "previewText" => ""}
+
+  defp sanitize_preview_parts(parts) when is_list(parts) do
+    Enum.map(parts, fn
+      %{} = part -> %{"id" => sanitize_preview_string(Map.get(part, "id"), "preview-part")}
+      _ -> %{"id" => "preview-part"}
+    end)
+  end
+
+  defp sanitize_preview_parts(_), do: []
+
+  defp sanitize_preview_string(value, _default) when is_binary(value), do: value
+  defp sanitize_preview_string(_value, default), do: default
+
+  defp sanitize_preview_list(value, _default) when is_list(value), do: value
+  defp sanitize_preview_list(_value, default), do: default
+
+  defp sanitize_preview_map(value, _default) when is_map(value), do: value
+  defp sanitize_preview_map(_value, default), do: default
+
+  defp maybe_put_preview_string(model, source, key) do
+    case Map.get(source, key) do
+      value when is_binary(value) -> Map.put(model, key, value)
+      _ -> model
+    end
+  end
+
+  defp maybe_put_preview_string_list(model, source, key) do
+    case Map.get(source, key) do
+      values when is_list(values) ->
+        model
+        |> Map.put(key, Enum.filter(values, &is_binary/1))
+
+      _ ->
+        model
+    end
+  end
+
+  defp maybe_put_preview_string_map(model, source, key) do
+    case Map.get(source, key) do
+      %{} = values ->
+        model
+        |> Map.put(
+          key,
+          values
+          |> Enum.filter(fn {map_key, map_value} ->
+            is_binary(map_key) and is_binary(map_value)
+          end)
+          |> Map.new()
+        )
+
+      _ ->
+        model
+    end
+  end
+
+  defp maybe_put_preview_map(model, source, key) do
+    case Map.get(source, key) do
+      %{} = value -> Map.put(model, key, value)
+      _ -> model
+    end
   end
 
   defp preview_storage_key(attempt_guid, attempt_number, file_name) do
@@ -1544,9 +1652,10 @@ defmodule OliWeb.LegacySuperactivityController do
 
   defp import_error(conn, reason) do
     payload = import_error_payload(reason)
+    status = Map.get(payload, :status, 400)
 
     conn
-    |> Plug.Conn.put_status(400)
+    |> Plug.Conn.put_status(status)
     |> json(payload)
     |> Plug.Conn.halt()
   end
@@ -1596,6 +1705,16 @@ defmodule OliWeb.LegacySuperactivityController do
       code: "missing_referenced_files",
       message: "The package manifest references files that are missing from the ZIP archive.",
       details: %{missing_files: missing_files}
+    }
+  end
+
+  defp import_error_payload({:invalid_archive_entry_path, path}) do
+    %{
+      type: "error",
+      result: "failure",
+      code: "invalid_archive_entry_path",
+      message: "The ZIP archive contains an invalid supporting file path.",
+      details: %{path: path}
     }
   end
 
@@ -1720,6 +1839,10 @@ defmodule OliWeb.LegacySuperactivityController do
 
   defp serialize_import_reason({:rollback_missing_backup_record, destination_key}) do
     %{code: "rollback_missing_backup_record", destination_key: destination_key}
+  end
+
+  defp serialize_import_reason({:s3_operation_timeout, timeout_ms}) do
+    %{code: "s3_operation_timeout", timeout_ms: timeout_ms}
   end
 
   defp serialize_import_reason({:ok, value}), do: %{code: "ok", value: inspect(value)}

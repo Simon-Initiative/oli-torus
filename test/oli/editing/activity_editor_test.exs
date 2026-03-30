@@ -202,8 +202,10 @@ defmodule Oli.ActivityEditingTest do
           </assets>
         </embed_activity>
         """,
-        "resourceBase" => "bundles/existing-bundle",
-        "resourceURLs" => [],
+        "resourceBase" => "1234",
+        "resourceURLs" => [
+          "#{media_url}/media/bundles/1234/webcontent/uploads/existing.css"
+        ],
         "authoring" => %{
           "parts" => [
             %{
@@ -217,19 +219,40 @@ defmodule Oli.ActivityEditingTest do
         }
       }
 
+      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+        assert op.http_method == :get
+        {:error, :timeout}
+      end)
+
       {:ok, {revision, _}} =
         ActivityEditor.create(project.slug, "oli_embedded", author, content, [])
 
+      assert revision.content["bundleStatus"] == %{
+               "code" => "missing_starter_bundle_source",
+               "message" =>
+                 "Starter bundle files were not found in the media bucket. Ensure the default embedded bundle exists under media/webcontent/custom_activity/."
+             }
+
       repair_model =
         revision.content
-        |> Map.put("resourceBase", "1234")
-        |> Map.put("bundleStatus", %{
-          "code" => "missing_starter_bundle_source",
-          "message" => "Starter bundle files were not found in the media bucket."
-        })
+        |> Map.put("title", "Unsaved title change")
+        |> Map.put("resourceBase", "bundles/foreign-bundle")
         |> Map.put("resourceURLs", [
-          "#{media_url}/media/bundles/1234/webcontent/uploads/existing.css"
+          "#{media_url}/media/bundles/foreign-bundle/webcontent/uploads/existing.css"
         ])
+        |> Map.put(
+          "modelXml",
+          """
+          <embed_activity id="custom_side" width="670" height="300">
+            <title>Forged Activity</title>
+            <source>webcontent/custom_activity/customactivity.js</source>
+            <assets>
+              <asset name="layout">webcontent/custom_activity/layout.html</asset>
+              <asset name="uploaded">bundles/foreign-bundle/webcontent/uploads/existing.css</asset>
+            </assets>
+          </embed_activity>
+          """
+        )
 
       expect(Oli.Test.MockAws, :request, 4, fn %ExAws.Operation.S3{} = op ->
         case op.http_method do
@@ -267,8 +290,10 @@ defmodule Oli.ActivityEditingTest do
                  repair_model
                )
 
+      assert repaired_model["title"] == "Unsaved title change"
       assert repaired_model["resourceBase"] =~ ~r/^bundles\//
       assert repaired_model["resourceBase"] != "1234"
+      assert repaired_model["resourceBase"] != "bundles/foreign-bundle"
 
       assert repaired_model["resourceURLs"] == [
                "#{media_url}/media/#{repaired_model["resourceBase"]}/webcontent/uploads/existing.css"
@@ -276,6 +301,9 @@ defmodule Oli.ActivityEditingTest do
 
       assert repaired_model["modelXml"] =~ "webcontent/uploads/existing.css"
       refute repaired_model["modelXml"] =~ "bundles/1234/webcontent/uploads/existing.css"
+
+      refute repaired_model["modelXml"] =~
+               "bundles/foreign-bundle/webcontent/uploads/existing.css"
     end
 
     test "repair_embedded_bundle/4 rejects legacy embedded models without bundle fallback status",

@@ -20,6 +20,18 @@ export type CreateActivityProps = {
   allowTriggers: boolean;
 };
 
+const safePersistedModel = (persistedContent: unknown, fallbackModel: any) => {
+  if (
+    persistedContent &&
+    typeof persistedContent === 'object' &&
+    Array.isArray((persistedContent as any).authoring?.parts)
+  ) {
+    return persistedContent;
+  }
+
+  return fallbackModel;
+};
+
 const create = (
   projectSlug: string,
   editorDesc: EditorDesc,
@@ -33,7 +45,7 @@ const create = (
       return Persistence.createBanked(projectSlug, editorDesc.slug, createdModel, []);
     })
     .then((result: Persistence.Created) => {
-      const persistedModel = result.content || model;
+      const persistedModel = safePersistedModel(result.content, model);
       const objectives = persistedModel.authoring.parts
         .map((p: any) => {
           return p.id;
