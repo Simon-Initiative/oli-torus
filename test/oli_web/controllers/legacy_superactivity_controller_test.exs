@@ -4,6 +4,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
   import Mox
 
   alias Oli.Delivery.Sections
+  alias Oli.Interop.CustomActivities.Package
   alias Oli.Seeder
 
   alias Oli.Delivery.Attempts.Core, as: Attempts
@@ -839,6 +840,275 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
                "/media/#{existing_resource_base}/webcontent/custom_activity/assets/images/hero.png",
                "/media/#{existing_resource_base}/webcontent/custom_activity/styles/main.css"
              ]
+    end
+
+    test "rejects a package when the manifest references files missing from the archive", %{
+      conn: conn,
+      author: author
+    } do
+      zip_binary =
+        Oli.Utils.zip(
+          [
+            {~c"model.json",
+             Jason.encode!(%{
+               "version" => 1,
+               "activityType" => "oli_embedded",
+               "base" => "embedded",
+               "src" => "index.html",
+               "manifestXmlFile" => "manifest.xml",
+               "supportingFilesPath" => "webcontent/",
+               "title" => "Imported Embedded Activity",
+               "stem" => %{"id" => "stem-id", "content" => []},
+               "authoring" => %{"parts" => [], "previewText" => ""},
+               "bibrefs" => []
+             })},
+            {~c"manifest.xml",
+             """
+             <embed_activity>
+               <source>webcontent/custom_activity/app.js</source>
+               <assets>
+                 <asset name="styles">webcontent/custom_activity/styles.css</asset>
+               </assets>
+             </embed_activity>
+             """},
+            {~c"webcontent/custom_activity/app.js", "console.log('imported');"}
+          ],
+          "embedded_activity_package.zip"
+        )
+
+      upload_path =
+        Path.join(
+          System.tmp_dir!(),
+          "embedded_activity_package_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(upload_path, zip_binary)
+      on_exit(fn -> File.rm_rf(upload_path) end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/package/import", %{
+          "resourceBase" => "bundles/existing-embedded-activity",
+          "upload" => %Plug.Upload{
+            content_type: "application/zip",
+            filename: "embedded_activity_package.zip",
+            path: upload_path
+          }
+        })
+
+      assert response(conn, 400) == "Unable to import embedded activity package"
+    end
+
+    test "rejects a package when the archive contains too many files", %{
+      conn: conn,
+      author: author
+    } do
+      previous_limits = Application.get_env(:oli, Package, [])
+
+      Application.put_env(
+        :oli,
+        Package,
+        Keyword.merge(previous_limits,
+          max_archive_file_count: 2,
+          max_archive_uncompressed_bytes: 50_000,
+          max_archive_entry_bytes: 50_000
+        )
+      )
+
+      on_exit(fn -> Application.put_env(:oli, Package, previous_limits) end)
+
+      zip_binary =
+        Oli.Utils.zip(
+          [
+            {~c"model.json",
+             Jason.encode!(%{
+               "version" => 1,
+               "activityType" => "oli_embedded",
+               "base" => "embedded",
+               "src" => "index.html",
+               "manifestXmlFile" => "manifest.xml",
+               "supportingFilesPath" => "webcontent/",
+               "title" => "Imported Embedded Activity",
+               "stem" => %{"id" => "stem-id", "content" => []},
+               "authoring" => %{"parts" => [], "previewText" => ""},
+               "bibrefs" => []
+             })},
+            {~c"manifest.xml",
+             "<embed_activity><source>webcontent/custom_activity/app.js</source></embed_activity>"},
+            {~c"webcontent/custom_activity/app.js", "console.log('imported');"}
+          ],
+          "embedded_activity_package.zip"
+        )
+
+      upload_path =
+        Path.join(
+          System.tmp_dir!(),
+          "embedded_activity_package_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(upload_path, zip_binary)
+      on_exit(fn -> File.rm_rf(upload_path) end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/package/import", %{
+          "resourceBase" => "bundles/existing-embedded-activity",
+          "upload" => %Plug.Upload{
+            content_type: "application/zip",
+            filename: "embedded_activity_package.zip",
+            path: upload_path
+          }
+        })
+
+      assert response(conn, 400) == "Unable to import embedded activity package"
+    end
+
+    test "rejects a package when an archive entry exceeds the size limit", %{
+      conn: conn,
+      author: author
+    } do
+      previous_limits = Application.get_env(:oli, Package, [])
+
+      Application.put_env(
+        :oli,
+        Package,
+        Keyword.merge(previous_limits,
+          max_archive_file_count: 50,
+          max_archive_uncompressed_bytes: 50_000,
+          max_archive_entry_bytes: 1_000
+        )
+      )
+
+      on_exit(fn -> Application.put_env(:oli, Package, previous_limits) end)
+
+      zip_binary =
+        Oli.Utils.zip(
+          [
+            {~c"model.json",
+             Jason.encode!(%{
+               "version" => 1,
+               "activityType" => "oli_embedded",
+               "base" => "embedded",
+               "src" => "index.html",
+               "manifestXmlFile" => "manifest.xml",
+               "supportingFilesPath" => "webcontent/",
+               "title" => "Imported Embedded Activity",
+               "stem" => %{"id" => "stem-id", "content" => []},
+               "authoring" => %{"parts" => [], "previewText" => ""},
+               "bibrefs" => []
+             })},
+            {~c"manifest.xml",
+             "<embed_activity><source>webcontent/custom_activity/app.js</source></embed_activity>"},
+            {~c"webcontent/custom_activity/app.js", String.duplicate("x", 1_001)}
+          ],
+          "embedded_activity_package.zip"
+        )
+
+      upload_path =
+        Path.join(
+          System.tmp_dir!(),
+          "embedded_activity_package_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(upload_path, zip_binary)
+      on_exit(fn -> File.rm_rf(upload_path) end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/package/import", %{
+          "resourceBase" => "bundles/existing-embedded-activity",
+          "upload" => %Plug.Upload{
+            content_type: "application/zip",
+            filename: "embedded_activity_package.zip",
+            path: upload_path
+          }
+        })
+
+      assert response(conn, 400) == "Unable to import embedded activity package"
+    end
+
+    test "rejects a package when total uncompressed archive size exceeds the limit", %{
+      conn: conn,
+      author: author
+    } do
+      previous_limits = Application.get_env(:oli, Package, [])
+
+      Application.put_env(
+        :oli,
+        Package,
+        Keyword.merge(previous_limits,
+          max_archive_file_count: 50,
+          max_archive_uncompressed_bytes: 1_500,
+          max_archive_entry_bytes: 1_000
+        )
+      )
+
+      on_exit(fn -> Application.put_env(:oli, Package, previous_limits) end)
+
+      zip_binary =
+        Oli.Utils.zip(
+          [
+            {~c"model.json",
+             Jason.encode!(%{
+               "version" => 1,
+               "activityType" => "oli_embedded",
+               "base" => "embedded",
+               "src" => "index.html",
+               "manifestXmlFile" => "manifest.xml",
+               "supportingFilesPath" => "webcontent/",
+               "title" => "Imported Embedded Activity",
+               "stem" => %{"id" => "stem-id", "content" => []},
+               "authoring" => %{"parts" => [], "previewText" => ""},
+               "bibrefs" => []
+             })},
+            {~c"manifest.xml",
+             """
+             <embed_activity>
+               <source>webcontent/custom_activity/app.js</source>
+               <assets>
+                 <asset name="styles">webcontent/custom_activity/styles.css</asset>
+               </assets>
+             </embed_activity>
+             """},
+            {~c"webcontent/custom_activity/app.js", String.duplicate("a", 700)},
+            {~c"webcontent/custom_activity/styles.css", String.duplicate("b", 700)}
+          ],
+          "embedded_activity_package.zip"
+        )
+
+      upload_path =
+        Path.join(
+          System.tmp_dir!(),
+          "embedded_activity_package_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(upload_path, zip_binary)
+      on_exit(fn -> File.rm_rf(upload_path) end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/package/import", %{
+          "resourceBase" => "bundles/existing-embedded-activity",
+          "upload" => %Plug.Upload{
+            content_type: "application/zip",
+            filename: "embedded_activity_package.zip",
+            path: upload_path
+          }
+        })
+
+      assert response(conn, 400) == "Unable to import embedded activity package"
     end
   end
 

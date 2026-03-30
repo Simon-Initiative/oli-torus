@@ -34,6 +34,9 @@ const store = configureStore();
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   const { dispatch, model, editMode, onEdit, onCustomEvent, activityId } =
     useAuthoringElementContext<OliEmbeddedModelSchema>();
+  const [processingAction, setProcessingAction] = React.useState<
+    'upload' | 'import' | 'export' | null
+  >(null);
   const [copyNotice, setCopyNotice] = React.useState<string | null>(null);
   const [verificationError, setVerificationError] = React.useState<string | null>(null);
   const [isVerifyingStorage, setIsVerifyingStorage] = React.useState(false);
@@ -70,6 +73,10 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   }, []);
 
   const onFileUpload = (files: FileList) => {
+    if (processingAction !== null) {
+      return;
+    }
+
     const fileList: File[] = [];
     for (let i = 0; i < files.length; i = i + 1) {
       const file = files[i];
@@ -81,6 +88,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     }
 
     const directory = buildUploadDirectory(model.resourceBase);
+    setProcessingAction('upload');
     uploadSuperActivityFiles(directory, fileList)
       .then((result: any) => {
         result.forEach((i: any) => {
@@ -90,6 +98,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       .catch((reason: any) => {
         const id = 'upload_error';
         display(errorModal(reason.message, id), id);
+      })
+      .finally(() => {
+        setProcessingAction(null);
       });
   };
 
@@ -130,20 +141,33 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   };
 
   const onUploadClick = (id: string) => {
+    if (processingAction !== null) {
+      return;
+    }
+
     (window as any).$('#' + id).trigger('click');
   };
 
   const onPackageImportClick = (id: string) => {
+    if (processingAction !== null) {
+      return;
+    }
+
     (window as any).$('#' + id).trigger('click');
   };
 
   const onPackageImport = (files: FileList) => {
+    if (processingAction !== null) {
+      return;
+    }
+
     const file = files.item(0);
 
     if (!file) {
       return;
     }
 
+    setProcessingAction('import');
     importSuperActivityPackage(file, model.resourceBase)
       .then((result: any) => {
         onEdit(result.model as OliEmbeddedModelSchema);
@@ -156,10 +180,18 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       .catch((reason: any) => {
         const id = 'package_import_error';
         display(errorModal(reason.message, id), id);
+      })
+      .finally(() => {
+        setProcessingAction(null);
       });
   };
 
   const exportPackage = () => {
+    if (processingAction !== null) {
+      return;
+    }
+
+    setProcessingAction('export');
     exportSuperActivityPackage(model)
       .then((result: any) => {
         const url = window.URL.createObjectURL(result.blob);
@@ -174,6 +206,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       .catch((reason: any) => {
         const id = 'package_export_error';
         display(errorModal(reason.message, id), id);
+      })
+      .finally(() => {
+        setProcessingAction(null);
       });
   };
 
@@ -232,6 +267,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   const verificationPending =
     verificationTargets.length > 0 &&
     verificationTargets.some((path) => verificationStatuses[path] === undefined);
+  const actionsDisabled = !editMode || processingAction !== null;
 
   React.useEffect(() => {
     if (verificationTargets.length === 0) {
@@ -350,26 +386,46 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
               <button
                 type="button"
                 className="btn btn-primary media-toolbar-item upload"
-                disabled={!editMode}
+                disabled={actionsDisabled}
                 onClick={() => onUploadClick(id)}
               >
-                <i className="fa fa-upload" /> Upload File
+                {processingAction === 'upload' ? (
+                  <>
+                    <i className="fa fa-spinner fa-spin" /> Uploading...
+                  </>
+                ) : (
+                  <>
+                    <i className="fa fa-upload" /> Upload File
+                  </>
+                )}
               </button>
               <button
                 type="button"
                 className={secondaryButtonClass}
-                disabled={!editMode}
+                disabled={actionsDisabled}
                 onClick={() => onPackageImportClick(packageImportId)}
               >
-                Import ZIP
+                {processingAction === 'import' ? (
+                  <>
+                    <i className="fa fa-spinner fa-spin" /> Importing...
+                  </>
+                ) : (
+                  'Import ZIP'
+                )}
               </button>
               <button
                 type="button"
                 className={secondaryButtonClass}
-                disabled={!editMode}
+                disabled={actionsDisabled}
                 onClick={() => exportPackage()}
               >
-                Export ZIP
+                {processingAction === 'export' ? (
+                  <>
+                    <i className="fa fa-spinner fa-spin" /> Exporting...
+                  </>
+                ) : (
+                  'Export ZIP'
+                )}
               </button>
             </div>
           </div>
@@ -389,6 +445,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       <input
         id={id}
         style={{ display: 'none' }}
+        disabled={actionsDisabled}
         multiple
         onChange={({ target: { files } }) => onFileUpload(files as FileList)}
         type="file"
@@ -397,6 +454,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       <input
         id={packageImportId}
         style={{ display: 'none' }}
+        disabled={actionsDisabled}
         onChange={({ target: { files } }) => onPackageImport(files as FileList)}
         type="file"
         accept=".zip,application/zip"

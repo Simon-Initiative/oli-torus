@@ -8,6 +8,9 @@ defmodule Oli.Interop.CustomActivities.Package do
   @model_file "model.json"
   @manifest_file "manifest.xml"
   @supporting_files_path "webcontent/"
+  @default_max_archive_file_count 250
+  @default_max_archive_uncompressed_bytes 50_000_000
+  @default_max_archive_entry_bytes 10_000_000
 
   def export(%{} = model) do
     manifest_xml = Map.get(model, "modelXml", "")
@@ -49,13 +52,15 @@ defmodule Oli.Interop.CustomActivities.Package do
   def import(upload_path, resource_base \\ nil)
 
   def import(upload_path, resource_base) when is_binary(upload_path) do
-    with {:ok, entries} <- unzip(upload_path),
+    with :ok <- validate_archive_limits(upload_path),
+         {:ok, entries} <- unzip(upload_path),
          {:ok, package_model} <- fetch_json_entry(entries, @model_file),
          :ok <- validate_package_model(package_model),
          manifest_file <- Map.get(package_model, "manifestXmlFile", @manifest_file),
          {:ok, manifest_xml} <- fetch_binary_entry(entries, manifest_file),
          supporting_files_path <-
            Map.get(package_model, "supportingFilesPath", @supporting_files_path),
+         :ok <- validate_manifest_references(entries, manifest_xml, supporting_files_path),
          {:ok, {resource_base, resource_urls}} <-
            upload_supporting_files(entries, supporting_files_path, resource_base) do
       {:ok, build_imported_model(package_model, manifest_xml, resource_base, resource_urls)}
@@ -169,6 +174,86 @@ defmodule Oli.Interop.CustomActivities.Package do
     end
   end
 
+  defp validate_archive_limits(upload_path) do
+    limits = archive_limits()
+
+    with {:ok, table} <- archive_table(upload_path),
+         file_entries <- archive_file_entries(table),
+         :ok <- validate_archive_file_count(file_entries, limits.max_file_count),
+         :ok <- validate_archive_entry_sizes(file_entries, limits.max_entry_bytes),
+         :ok <- validate_archive_total_size(file_entries, limits.max_uncompressed_bytes) do
+      :ok
+    end
+  end
+
+  defp archive_limits do
+    config = Application.get_env(:oli, __MODULE__, [])
+
+    %{
+      max_file_count:
+        Keyword.get(config, :max_archive_file_count, @default_max_archive_file_count),
+      max_uncompressed_bytes:
+        Keyword.get(
+          config,
+          :max_archive_uncompressed_bytes,
+          @default_max_archive_uncompressed_bytes
+        ),
+      max_entry_bytes:
+        Keyword.get(config, :max_archive_entry_bytes, @default_max_archive_entry_bytes)
+    }
+  end
+
+  defp archive_table(upload_path) do
+    case :zip.table(String.to_charlist(upload_path)) do
+      {:ok, table} -> {:ok, table}
+      _ -> {:error, :invalid_package}
+    end
+  end
+
+  defp archive_file_entries(table) do
+    table
+    |> Enum.flat_map(fn
+      {:zip_file, path,
+       {:file_info, size, type, _access, _atime, _mtime, _ctime, _mode, _links, _major_device,
+        _minor_device, _inode, _uid, _gid}, _comment, _offset, _comp_size}
+      when type != :directory ->
+        [%{path: List.to_string(path), size: size}]
+
+      _ ->
+        []
+    end)
+  end
+
+  defp validate_archive_file_count(file_entries, max_file_count) do
+    if length(file_entries) > max_file_count do
+      {:error, {:archive_file_count_exceeded, length(file_entries), max_file_count}}
+    else
+      :ok
+    end
+  end
+
+  defp validate_archive_entry_sizes(file_entries, max_entry_bytes) do
+    case Enum.find(file_entries, fn %{size: size} -> size > max_entry_bytes end) do
+      nil ->
+        :ok
+
+      %{path: path, size: size} ->
+        {:error, {:archive_entry_too_large, path, size, max_entry_bytes}}
+    end
+  end
+
+  defp validate_archive_total_size(file_entries, max_uncompressed_bytes) do
+    total_uncompressed_bytes =
+      Enum.reduce(file_entries, 0, fn %{size: size}, total -> total + size end)
+
+    if total_uncompressed_bytes > max_uncompressed_bytes do
+      {:error,
+       {:archive_uncompressed_size_exceeded, total_uncompressed_bytes, max_uncompressed_bytes}}
+    else
+      :ok
+    end
+  end
+
   defp normalize_entry_root(entries) do
     if Map.has_key?(entries, @model_file) do
       entries
@@ -238,6 +323,29 @@ defmodule Oli.Interop.CustomActivities.Package do
       normalized == "" -> @supporting_files_path
       String.ends_with?(normalized, "/") -> normalized
       true -> normalized <> "/"
+    end
+  end
+
+  defp validate_manifest_references(entries, manifest_xml, supporting_files_path) do
+    normalized_supporting_path = normalize_supporting_path(supporting_files_path)
+
+    manifest_references =
+      referenced_supporting_files(manifest_xml, nil)
+      |> Enum.filter(&String.starts_with?(&1, normalized_supporting_path))
+
+    entry_paths =
+      entries
+      |> Map.keys()
+      |> Enum.map(&normalize_reference(&1, nil))
+      |> MapSet.new()
+
+    missing_references =
+      manifest_references
+      |> Enum.reject(&MapSet.member?(entry_paths, &1))
+
+    case missing_references do
+      [] -> :ok
+      missing -> {:error, {:missing_referenced_files, missing}}
     end
   end
 
