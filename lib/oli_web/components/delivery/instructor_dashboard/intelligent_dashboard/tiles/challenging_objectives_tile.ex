@@ -101,13 +101,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         <span class="min-w-[40px] pt-1 text-right text-sm font-semibold leading-4 text-Text-text-low-alpha">
           {objective_display_number(@row)}
         </span>
-        <a
-          href={@link_path}
+        <.link
+          navigate={@link_path}
           aria-label={objective_link_aria_label(@row.title, :objective)}
           class="min-w-0 flex-1 text-base font-semibold leading-6 text-Text-text-high hover:text-Text-text-high hover:underline"
         >
           {@row.title}
-        </a>
+        </.link>
       </div>
       <details class="mt-1 [&[open]_.tile-chevron]:rotate-180">
         <summary
@@ -152,13 +152,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           <span class="min-w-[40px] pt-1 text-right text-sm font-semibold leading-4 text-Text-text-low-alpha">
             {objective_display_number(@row)}
           </span>
-          <a
-            href={@link_path}
+          <.link
+            navigate={@link_path}
             aria-label={objective_link_aria_label(@row.title, @row.row_type)}
             class="min-w-0 flex-1 text-base font-semibold leading-6 text-Text-text-high hover:text-Text-text-high hover:underline"
           >
             {@row.title}
-          </a>
+          </.link>
         </div>
       <% end %>
     </div>
@@ -182,13 +182,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         {@row.display_number}
       </span>
       <div class="flex min-w-0 flex-1 items-start gap-4">
-        <a
-          href={@link_path}
+        <.link
+          navigate={@link_path}
           aria-label={objective_link_aria_label(@row.title, :subobjective)}
           class="min-w-0 flex-1 text-base font-normal leading-6 text-Text-text-high hover:text-Text-text-high hover:underline"
         >
           {@row.title}
-        </a>
+        </.link>
         <span class="inline-flex shrink-0 items-center rounded-full bg-Fill-fill-danger px-4 py-1 text-base font-semibold leading-6 text-Text-text-danger shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]">
           {@row.proficiency_label}
         </span>
@@ -206,13 +206,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assign(assigns, :path, learning_objectives_path(assigns.section_slug, assigns.navigation))
 
     ~H"""
-    <a
-      href={@path}
+    <.link
+      navigate={@path}
       aria-label="View Learning Objectives for this scope. Navigates to Learning Objectives."
       class={["text-sm font-bold leading-4 text-Text-text-button hover:underline", @class]}
     >
       View Learning Objectives
-    </a>
+    </.link>
     """
   end
 

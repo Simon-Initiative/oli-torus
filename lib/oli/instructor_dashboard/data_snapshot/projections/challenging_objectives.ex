@@ -71,6 +71,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
         all_objective_resources_by_id = Map.new(all_objective_resources, &{&1.resource_id, &1})
         effective_children_map = effective_children_map(all_objective_resources)
         parent_map = parent_map(effective_children_map)
+        numbering_map = curriculum_numbering_map(all_objective_resources, effective_children_map)
 
         render_ids =
           qualifying_ids
@@ -98,11 +99,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
               all_objective_resources_by_id,
               effective_children_map,
               objective_rows_by_id,
+              numbering_map,
               parent_map,
               scope_filter_by
             )
           )
-          |> apply_curriculum_numbering()
 
         {state, rows, length(qualifying_ids)}
     end
@@ -210,6 +211,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
          all_objective_resources_by_id,
          effective_children_map,
          objective_rows_by_id,
+         numbering_map,
          parent_map,
          scope_filter_by
        ) do
@@ -236,7 +238,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
       parent_title: parent_title,
       title: objective_title(section_resource, objective_row),
       row_type: if(is_nil(parent_id), do: :objective, else: :subobjective),
-      numbering: nil,
+      numbering: Map.get(numbering_map, section_resource.resource_id),
       numbering_index: section_resource.numbering_index,
       numbering_level: section_resource.numbering_level,
       proficiency_label: proficiency_label(objective_row),
@@ -253,6 +255,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
             all_objective_resources_by_id,
             effective_children_map,
             objective_rows_by_id,
+            numbering_map,
             parent_map,
             scope_filter_by
           )
@@ -270,7 +273,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   defp navigation_for(objective_id, nil, :objective, scope_filter_by) do
     navigation_for_scope(scope_filter_by)
     |> Map.merge(%{
-      selected_card_value: :low_proficiency_outcomes,
       objective_id: objective_id
     })
   end
@@ -278,7 +280,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   defp navigation_for(objective_id, parent_objective_id, :subobjective, scope_filter_by) do
     navigation_for_scope(scope_filter_by)
     |> Map.merge(%{
-      selected_card_value: :low_proficiency_skills,
       objective_id: parent_objective_id || objective_id,
       subobjective_id: objective_id
     })
@@ -289,21 +290,53 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   defp navigation_for_scope(filter_by),
     do: %{filter_by: filter_by, navigation_source: "challenging_objectives_tile"}
 
-  defp apply_curriculum_numbering(rows), do: apply_curriculum_numbering(rows, nil)
+  defp curriculum_numbering_map(all_objective_resources, effective_children_map) do
+    all_objective_resources_by_id = Map.new(all_objective_resources, &{&1.resource_id, &1})
+    parent_map = parent_map(effective_children_map)
 
-  defp apply_curriculum_numbering(rows, prefix) do
-    rows
+    all_objective_resources
+    |> Enum.reject(&Map.has_key?(parent_map, &1.resource_id))
+    |> Enum.sort_by(&{&1.numbering_index, &1.resource_id})
+    |> assign_curriculum_numbering(
+      %{},
+      all_objective_resources_by_id,
+      effective_children_map,
+      nil
+    )
+  end
+
+  defp assign_curriculum_numbering(
+         resources,
+         numbering_map,
+         all_objective_resources_by_id,
+         effective_children_map,
+         prefix
+       ) do
+    resources
     |> Enum.with_index(1)
-    |> Enum.map(fn {row, index} ->
+    |> Enum.reduce(numbering_map, fn {resource, index}, acc ->
       numbering =
         case prefix do
           nil -> Integer.to_string(index)
           prefix -> "#{prefix}.#{index}"
         end
 
-      row
-      |> Map.put(:numbering, numbering)
-      |> Map.update!(:children, &apply_curriculum_numbering(&1, numbering))
+      child_resources =
+        effective_children_map
+        |> Map.get(resource.resource_id, [])
+        |> Enum.map(&Map.get(all_objective_resources_by_id, &1))
+        |> Enum.reject(&is_nil/1)
+        |> Enum.sort_by(&{&1.numbering_index, &1.resource_id})
+
+      updated_acc = Map.put(acc, resource.resource_id, numbering)
+
+      assign_curriculum_numbering(
+        child_resources,
+        updated_acc,
+        all_objective_resources_by_id,
+        effective_children_map,
+        numbering
+      )
     end)
   end
 

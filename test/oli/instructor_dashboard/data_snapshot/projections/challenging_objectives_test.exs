@@ -50,7 +50,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
                  navigation: %{
                    filter_by: filter_by,
                    objective_id: objective_navigation_id,
-                   selected_card_value: :low_proficiency_outcomes
+                   navigation_source: "challenging_objectives_tile"
                  },
                  children: [
                    %{
@@ -153,7 +153,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
                      navigation: %{
                        filter_by: filter_by,
                        objective_id: navigation_objective_id,
-                       selected_card_value: :low_proficiency_skills,
+                       navigation_source: "challenging_objectives_tile",
                        subobjective_id: navigation_subobjective_id
                      }
                    }
@@ -214,11 +214,44 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
       assert parent_id == parent.resource_id
       assert child_id == child.resource_id
     end
+
+    test "preserves curriculum numbering from the full objective tree" do
+      %{section: section, unit: unit, parent: parent, child: child} =
+        setup_projection_resources(extra_root_before?: true)
+
+      snapshot =
+        snapshot_fixture(section.id, unit.resource_id, [
+          %{
+            objective_id: parent.resource_id,
+            title: parent.title,
+            proficiency_distribution: %{"Low" => 2}
+          },
+          %{
+            objective_id: child.resource_id,
+            title: child.title,
+            proficiency_distribution: %{"Low" => 2}
+          }
+        ])
+
+      assert {:ok, projection} = ChallengingObjectives.derive(snapshot, [])
+
+      assert [
+               %{
+                 objective_id: parent_id,
+                 numbering: "2",
+                 children: [%{objective_id: child_id, numbering: "2.1"}]
+               }
+             ] = projection.rows
+
+      assert parent_id == parent.resource_id
+      assert child_id == child.resource_id
+    end
   end
 
   defp setup_projection_resources(opts \\ []) do
     objective_type_id = ResourceType.id_for_objective()
     children_on_section_resource? = Keyword.get(opts, :children_on_section_resource?, true)
+    extra_root_before? = Keyword.get(opts, :extra_root_before?, false)
 
     section = insert(:section)
     project = insert(:project)
@@ -282,11 +315,35 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
         numbering_level: 3
       })
 
+    extra_root =
+      if extra_root_before? do
+        extra_root_resource = insert(:resource)
+
+        extra_root_revision =
+          insert(:revision, resource: extra_root_resource, resource_type_id: objective_type_id)
+
+        extra_root =
+          insert(:section_resource, %{
+            section: section,
+            project: project,
+            resource_id: extra_root_resource.id,
+            revision_id: extra_root_revision.id,
+            resource_type_id: objective_type_id,
+            title: "Objective Before",
+            slug: "objective-before",
+            numbering_index: 5,
+            numbering_level: 2
+          })
+
+        SectionResourceDepot.update_section_resource(extra_root)
+        extra_root
+      end
+
     SectionResourceDepot.update_section_resource(unit)
     SectionResourceDepot.update_section_resource(parent)
     SectionResourceDepot.update_section_resource(child)
 
-    %{section: section, unit: unit, parent: parent, child: child}
+    %{section: section, unit: unit, parent: parent, child: child, extra_root: extra_root}
   end
 
   defp snapshot_fixture(section_id, container_id, objective_rows) do

@@ -30,8 +30,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assert html =~ "Low"
       assert html =~ "filter_by=100"
       assert html =~ "navigation_source=challenging_objectives_tile"
-      assert html =~ "selected_card_value=low_proficiency_outcomes"
-      assert html =~ "selected_card_value=low_proficiency_skills"
+      refute html =~ "selected_card_value="
       assert html =~ "subobjective_id=12"
       assert html =~ "Navigates to Learning Objectives."
       assert html =~ ~s(id="learning-dashboard-challenging-objectives-token-1")
@@ -115,7 +114,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           navigation: %{
             filter_by: "100",
             navigation_source: "challenging_objectives_tile",
-            selected_card_value: :low_proficiency_outcomes,
             objective_id: 11
           },
           children: [
@@ -131,7 +129,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               navigation: %{
                 filter_by: "100",
                 navigation_source: "challenging_objectives_tile",
-                selected_card_value: :low_proficiency_skills,
                 objective_id: 11,
                 subobjective_id: 12
               },
