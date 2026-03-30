@@ -204,6 +204,25 @@ defmodule Oli.Analytics.Backfill.WorkerTest do
       assert optimization["duration_ms"] == 2_000
     end
 
+    test "skips optimization when the run disables post-backfill optimize" do
+      Application.put_env(:oli, :clickhouse_analytics_module, OptimizeAnalytics)
+
+      run =
+        insert_run(%{
+          dry_run: false,
+          metadata: %{"optimize_after_backfill" => false}
+        })
+
+      assert :ok = Worker.perform(%Oban.Job{args: %{"run_id" => run.id}})
+      refute_received {:optimize_run_status, :optimizing}
+
+      run = Repo.get!(BackfillRun, run.id)
+
+      assert run.status == :completed
+      assert run.metadata["query_id"]
+      refute Map.has_key?(run.metadata, "optimization")
+    end
+
     test "records optimization failure explicitly" do
       Application.put_env(:oli, :clickhouse_analytics_module, OptimizeAnalytics)
 

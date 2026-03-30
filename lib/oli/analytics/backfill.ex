@@ -153,6 +153,7 @@ defmodule Oli.Analytics.Backfill do
 
   @terminal_statuses [:completed, :failed, :cancelled]
   @optimization_metadata_key "optimization"
+  @optimize_after_backfill_key "optimize_after_backfill"
 
   @doc """
   Ensure the run has an associated ClickHouse query identifier, generating and
@@ -174,12 +175,27 @@ defmodule Oli.Analytics.Backfill do
   @spec optimization_required?(BackfillRun.t()) :: boolean()
   def optimization_required?(%BackfillRun{dry_run: true}), do: false
 
-  def optimization_required?(%BackfillRun{target_table: target_table})
-      when is_binary(target_table) do
-    String.trim(target_table) == default_target_table()
+  def optimization_required?(%BackfillRun{} = run) do
+    is_binary(run.target_table) and
+      String.trim(run.target_table) == default_target_table() and
+      optimize_after_backfill_enabled?(run)
   end
 
   def optimization_required?(_), do: false
+
+  @doc """
+  Returns whether the run metadata allows the optional post-backfill optimization.
+  Defaults to true when the flag has not been set.
+  """
+  @spec optimize_after_backfill_enabled?(BackfillRun.t()) :: boolean()
+  def optimize_after_backfill_enabled?(%BackfillRun{metadata: metadata}) when is_map(metadata) do
+    case Map.get(metadata, @optimize_after_backfill_key) do
+      value when value in [false, "false", 0, "0"] -> false
+      _ -> true
+    end
+  end
+
+  def optimize_after_backfill_enabled?(_), do: true
 
   @doc """
   Generate a deterministic ClickHouse query identifier for a run's optimize phase.

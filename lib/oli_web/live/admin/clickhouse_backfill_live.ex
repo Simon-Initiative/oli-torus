@@ -594,6 +594,22 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
               <span>Dry run (count rows only)</span>
             </label>
 
+            <label class="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <input
+                type="hidden"
+                name="backfill[optimize_after_backfill]"
+                value="false"
+              />
+              <input
+                type="checkbox"
+                name="backfill[optimize_after_backfill]"
+                value="true"
+                checked={truthy?(@form_inputs.optimize_after_backfill)}
+                class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary"
+              />
+              <span>Run `OPTIMIZE TABLE ... FINAL` after backfill is completed</span>
+            </label>
+
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 ClickHouse Settings (JSON object)
@@ -701,6 +717,11 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                       <div class="text-xs text-gray-500 dark:text-gray-400">Format: {run.format}</div>
                       <div class="text-xs text-gray-500 dark:text-gray-400">
                         Dry run: {if run.dry_run, do: "Yes", else: "No"}
+                      </div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                        Post-backfill optimize: {if Backfill.optimize_after_backfill_enabled?(run),
+                          do: "Yes",
+                          else: "No"}
                       </div>
                       <div class="text-xs text-gray-500 dark:text-gray-400">
                         Initiator: {format_initiator(run.initiated_by)}
@@ -1279,6 +1300,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
       format = params |> Map.get("format", "JSONAsString") |> String.trim()
       dry_run = truthy?(Map.get(params, "dry_run"))
+      optimize_after_backfill = truthy?(Map.get(params, "optimize_after_backfill", true))
       settings_raw = params |> Map.get("clickhouse_settings", "") |> String.trim()
       options_raw = params |> Map.get("options", "") |> String.trim()
 
@@ -1292,6 +1314,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             s3_pattern: s3_pattern,
             format: format,
             dry_run: dry_run,
+            metadata: %{"optimize_after_backfill" => optimize_after_backfill},
             clickhouse_settings: settings_map,
             options: options_map
           }
@@ -1301,6 +1324,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             target_table: target_table,
             format: format,
             dry_run: dry_run,
+            optimize_after_backfill: optimize_after_backfill,
             clickhouse_settings: settings_raw,
             options: options_raw
           }
@@ -1313,6 +1337,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             s3_pattern: s3_pattern,
             format: format,
             dry_run: dry_run,
+            metadata: %{"optimize_after_backfill" => optimize_after_backfill},
             clickhouse_settings: %{},
             options: options_map
           }
@@ -1322,6 +1347,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             target_table: target_table,
             format: format,
             dry_run: dry_run,
+            optimize_after_backfill: optimize_after_backfill,
             clickhouse_settings: settings_raw,
             options: options_raw
           }
@@ -1334,6 +1360,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             s3_pattern: s3_pattern,
             format: format,
             dry_run: dry_run,
+            metadata: %{"optimize_after_backfill" => optimize_after_backfill},
             clickhouse_settings: settings_map,
             options: %{}
           }
@@ -1343,6 +1370,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             target_table: target_table,
             format: format,
             dry_run: dry_run,
+            optimize_after_backfill: optimize_after_backfill,
             clickhouse_settings: settings_raw,
             options: options_raw
           }
@@ -1355,6 +1383,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             s3_pattern: s3_pattern,
             format: format,
             dry_run: dry_run,
+            metadata: %{"optimize_after_backfill" => optimize_after_backfill},
             clickhouse_settings: %{},
             options: %{}
           }
@@ -1364,6 +1393,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             target_table: target_table,
             format: format,
             dry_run: dry_run,
+            optimize_after_backfill: optimize_after_backfill,
             clickhouse_settings: settings_raw,
             options: options_raw
           }
@@ -1487,7 +1517,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     |> BackfillRun.changeset(%{
       target_table: Backfill.default_target_table(),
       format: "JSONAsString",
-      dry_run: true
+      dry_run: true,
+      metadata: %{"optimize_after_backfill" => true}
     })
   end
 
@@ -1497,6 +1528,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       target_table: Backfill.default_target_table(),
       format: "JSONAsString",
       dry_run: true,
+      optimize_after_backfill: true,
       clickhouse_settings: "",
       options: ""
     }
@@ -1511,6 +1543,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         Map.get(params, "target_table", Backfill.default_target_table()) |> String.trim(),
       format: Map.get(params, "format", "JSONAsString") |> String.trim(),
       dry_run: truthy?(Map.get(params, "dry_run")),
+      optimize_after_backfill: truthy?(Map.get(params, "optimize_after_backfill", true)),
       clickhouse_settings: Map.get(params, "clickhouse_settings", "") |> String.trim(),
       options: Map.get(params, "options", "") |> String.trim()
     }

@@ -96,6 +96,20 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert rendered =~ "Recent Runs"
     end
 
+    test "manual backfill form enables post-backfill optimize by default", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      html = render(view)
+
+      assert html =~ "Run `OPTIMIZE TABLE ... FINAL` after backfill is completed"
+
+      assert has_element?(
+               view,
+               "input[name=\"backfill[optimize_after_backfill]\"][checked]"
+             )
+    end
+
     test "respects active_tab param", %{conn: conn} do
       {:ok, _view, html} = live(conn, @route <> "?active_tab=manual")
 
@@ -334,8 +348,34 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert [%BackfillRun{} = run] = Repo.all(BackfillRun)
       assert run.s3_pattern == "s3://bucket/**/*.jsonl"
       assert run.dry_run
+      assert run.metadata["optimize_after_backfill"]
 
       assert_enqueued(worker: Oli.Analytics.Backfill.Worker, args: %{"run_id" => run.id})
+    end
+
+    test "can disable post-backfill optimize when scheduling a backfill", %{conn: conn} do
+      Repo.delete_all(BackfillRun)
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "s3_pattern" => "s3://bucket/**/*.jsonl",
+        "target_table" => "analytics.raw_events",
+        "format" => "JSONAsString",
+        "optimize_after_backfill" => "false"
+      }
+
+      view |> open_manual_tab()
+
+      view
+      |> form("form[phx-submit=\"schedule\"]", %{"backfill" => params})
+      |> render_submit()
+
+      assert [%BackfillRun{} = run] = Repo.all(BackfillRun)
+      assert run.metadata["optimize_after_backfill"] == false
+
+      html = render(view)
+      assert html =~ "Post-backfill optimize: No"
     end
 
     test "shows an error when admin credentials are not configured for manual backfill", %{
