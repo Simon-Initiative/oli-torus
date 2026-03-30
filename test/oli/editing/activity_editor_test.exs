@@ -137,6 +137,12 @@ defmodule Oli.ActivityEditingTest do
 
       assert revision.content["resourceBase"] == "1234"
       assert revision.content["modelXml"] == content["modelXml"]
+
+      assert revision.content["bundleStatus"] == %{
+               "code" => "missing_starter_bundle_source",
+               "message" =>
+                 "Starter bundle files were not found in the media bucket. Ensure the default embedded bundle exists under media/webcontent/custom_activity/."
+             }
     end
 
     test "create/4 preserves an existing oli_embedded bundle resourceBase", %{
@@ -173,6 +179,99 @@ defmodule Oli.ActivityEditingTest do
         ActivityEditor.create(project.slug, "oli_embedded", author, content, [])
 
       assert revision.content["resourceBase"] == "bundles/existing-bundle"
+    end
+
+    test "repair_embedded_bundle/4 clones a starter bundle for an existing embedded activity", %{
+      author: author,
+      project: project
+    } do
+      media_url = Application.fetch_env!(:oli, :media_url)
+
+      content = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+          <assets>
+            <asset name="layout">webcontent/custom_activity/layout.html</asset>
+            <asset name="uploaded">bundles/1234/webcontent/uploads/existing.css</asset>
+          </assets>
+        </embed_activity>
+        """,
+        "resourceBase" => "bundles/existing-bundle",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_embedded", author, content, [])
+
+      repair_model =
+        revision.content
+        |> Map.put("resourceBase", "1234")
+        |> Map.put("resourceURLs", [
+          "#{media_url}/media/bundles/1234/webcontent/uploads/existing.css"
+        ])
+
+      expect(Oli.Test.MockAws, :request, 4, fn %ExAws.Operation.S3{} = op ->
+        case op.http_method do
+          :get ->
+            assert op.params["prefix"] == "media/webcontent/custom_activity/"
+
+            {:ok,
+             %{
+               status_code: 200,
+               body: %{
+                 contents: [
+                   %{key: "media/webcontent/custom_activity/customactivity.js"},
+                   %{key: "media/webcontent/custom_activity/layout.html"}
+                 ]
+               }
+             }}
+
+          :put ->
+            assert String.starts_with?(op.path, "media/bundles/")
+
+            if String.contains?(op.path, "/webcontent/uploads/existing.css") do
+              assert op.headers["x-amz-copy-source"] ==
+                       "/torus-media-test/media/bundles/1234/webcontent/uploads/existing.css"
+            end
+
+            {:ok, %{status_code: 200}}
+        end
+      end)
+
+      assert {:ok, repaired_model} =
+               ActivityEditor.repair_embedded_bundle(
+                 project.slug,
+                 revision.resource_id,
+                 author,
+                 repair_model
+               )
+
+      assert repaired_model["resourceBase"] =~ ~r/^bundles\//
+      assert repaired_model["resourceBase"] != "1234"
+
+      assert repaired_model["resourceURLs"] == [
+               "#{media_url}/media/#{repaired_model["resourceBase"]}/webcontent/uploads/existing.css"
+             ]
+
+      assert repaired_model["modelXml"] =~ "webcontent/uploads/existing.css"
+      refute repaired_model["modelXml"] =~ "bundles/1234/webcontent/uploads/existing.css"
     end
 
     test "create/4 creates an activity revision with objectives", %{

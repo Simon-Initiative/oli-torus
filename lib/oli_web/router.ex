@@ -431,6 +431,7 @@ defmodule OliWeb.Router do
     pipe_through([:api, :authoring_protected])
     post("/export", LegacySuperactivityController, :export_package)
     post("/import", LegacySuperactivityController, :import_package)
+    post("/repair", LegacySuperactivityController, :repair_bundle)
   end
 
   scope "/", OliWeb do

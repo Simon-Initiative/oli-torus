@@ -781,6 +781,91 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
                Oli.Interop.CustomActivities.Package.export(model, nil)
     end
 
+    test "repairs a non-bundle-backed embedded activity model", %{
+      conn: conn,
+      author: author,
+      content: content,
+      project: project,
+      activity_id: activity_id
+    } do
+      media_url = Application.fetch_env!(:oli, :media_url)
+
+      repair_model =
+        content
+        |> Map.put("resourceBase", "1234")
+        |> Map.put(
+          "modelXml",
+          """
+          <embed_activity>
+            <source>webcontent/custom_activity/customactivity.js</source>
+            <asset>bundles/1234/webcontent/uploads/existing.css</asset>
+          </embed_activity>
+          """
+        )
+        |> Map.put("resourceURLs", [
+          "#{media_url}/media/bundles/1234/webcontent/uploads/existing.css"
+        ])
+
+      expect(Oli.Test.MockAws, :request, 4, fn %ExAws.Operation.S3{} = op ->
+        case op.http_method do
+          :get ->
+            assert op.params["prefix"] == "media/webcontent/custom_activity/"
+
+            {:ok,
+             %{
+               status_code: 200,
+               body: %{
+                 contents: [
+                   %{key: "media/webcontent/custom_activity/customactivity.js"},
+                   %{key: "media/webcontent/custom_activity/layout.html"}
+                 ]
+               }
+             }}
+
+          :put ->
+            assert String.starts_with?(op.path, "media/bundles/")
+
+            if String.contains?(op.path, "/webcontent/uploads/existing.css") do
+              assert op.headers["x-amz-copy-source"] ==
+                       "/torus-media-test/media/bundles/1234/webcontent/uploads/existing.css"
+            end
+
+            {:ok, %{status_code: 200}}
+        end
+      end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/package/repair", %{
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
+          "model" => repair_model
+        })
+
+      assert %{
+               "type" => "success",
+               "model" => %{
+                 "resourceBase" => resource_base,
+                 "resourceURLs" => resource_urls,
+                 "modelXml" => model_xml
+               }
+             } =
+               json_response(conn, 200)
+
+      assert resource_base =~ ~r/^bundles\//
+      assert resource_base != "1234"
+
+      assert resource_urls == [
+               "#{media_url}/media/#{resource_base}/webcontent/uploads/existing.css"
+             ]
+
+      assert model_xml =~ "webcontent/uploads/existing.css"
+      refute model_xml =~ "bundles/1234/webcontent/uploads/existing.css"
+    end
+
     test "imports an embedded activity package zip", %{
       conn: conn,
       author: author,

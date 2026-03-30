@@ -61,7 +61,7 @@ export function buildUploadDirectory(resourceBase: string): string {
     return '';
   }
 
-  return isBundleResourceBase(normalized) ? normalized : `bundles/${normalized}`;
+  return isBundleResourceBase(normalized) ? normalized : '';
 }
 
 export function buildUploadLocation(resourceBase: string): string {

@@ -21,6 +21,7 @@ import { Modal } from 'components/modal/Modal';
 import {
   exportSuperActivityPackage,
   importSuperActivityPackage,
+  repairSuperActivityBundle,
   verifySuperActivityMedia,
 } from 'data/persistence/media';
 import { configureStore } from 'state/store';
@@ -35,7 +36,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   const { dispatch, model, editMode, onEdit, onCustomEvent, activityId, projectSlug } =
     useAuthoringElementContext<OliEmbeddedModelSchema>();
   const [processingAction, setProcessingAction] = React.useState<
-    'upload' | 'import' | 'export' | null
+    'upload' | 'import' | 'export' | 'repair' | null
   >(null);
   const [copyNotice, setCopyNotice] = React.useState<string | null>(null);
   const [verificationError, setVerificationError] = React.useState<string | null>(null);
@@ -51,6 +52,8 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     'btn btn-outline-secondary dark:!border-gray-500 dark:!text-gray-100 dark:hover:!bg-gray-700 dark:hover:!border-gray-400';
   const secondarySmallButtonClass =
     'btn btn-sm btn-outline-secondary dark:!border-gray-500 dark:!text-gray-100 dark:hover:!bg-gray-700 dark:hover:!border-gray-400';
+  const warningActionButtonClass =
+    'btn btn-sm btn-dark dark:!bg-slate-100 dark:!text-slate-900 dark:hover:!bg-white dark:!border-slate-100';
   const infoAlertClass =
     'alert alert-info dark:!bg-slate-800 dark:!border-slate-600 dark:!text-gray-100';
 
@@ -176,8 +179,45 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       return;
     }
 
+    const requestActivityRefresh = () => {
+      if (onCustomEvent && activityId !== undefined) {
+        window.setTimeout(() => {
+          void onCustomEvent('refreshActivity', { activityId });
+        }, 0);
+      }
+    };
+
     setProcessingAction('import');
     importSuperActivityPackage(file, projectSlug, activityId)
+      .then((result: any) => {
+        onEdit(result.model as OliEmbeddedModelSchema);
+        requestActivityRefresh();
+      })
+      .catch((reason: any) => {
+        const id = 'package_import_error';
+        display(errorModal(formatPackageImportError(reason), id), id);
+      })
+      .finally(() => {
+        setProcessingAction(null);
+      });
+  };
+
+  const repairBundle = () => {
+    if (processingAction !== null) {
+      return;
+    }
+
+    if (activityId === undefined || Number.isNaN(activityId) || !projectSlug) {
+      const id = 'bundle_repair_error';
+      display(
+        errorModal('Unable to repair bundle because the current activity context is missing.', id),
+        id,
+      );
+      return;
+    }
+
+    setProcessingAction('repair');
+    repairSuperActivityBundle(projectSlug, activityId, model)
       .then((result: any) => {
         onEdit(result.model as OliEmbeddedModelSchema);
         if (onCustomEvent && activityId !== undefined) {
@@ -187,8 +227,8 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         }
       })
       .catch((reason: any) => {
-        const id = 'package_import_error';
-        display(errorModal(formatPackageImportError(reason), id), id);
+        const id = 'bundle_repair_error';
+        display(errorModal(reason.message || 'Unable to repair the activity bundle.', id), id);
       })
       .finally(() => {
         setProcessingAction(null);
@@ -260,6 +300,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     url,
     relativePath: lastPart(model.resourceBase, url),
   }));
+  const uploadedResourceMap = new Map(
+    uploadedResources.map((resource) => [resource.relativePath, resource.url]),
+  );
   const diagnostics = analyzeEmbeddedXml(
     model.modelXml,
     uploadedResources.map((resource) => resource.relativePath),
@@ -278,7 +321,13 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     verificationTargets.filter((path) => verificationStatuses[path] === 'missing'),
   );
   const unusedUploadSet = new Set(diagnostics.unusedUploads);
+  const supportingFileRows = verificationTargets.map((relativePath) => ({
+    relativePath,
+    url: uploadedResourceMap.get(relativePath),
+    uploaded: uploadedResourceMap.has(relativePath),
+  }));
   const bundleBacked = isBundleResourceBase(model.resourceBase);
+  const bundleStatus = model.bundleStatus;
   const uploadLocation = buildUploadLocation(model.resourceBase);
   const runtimeAssetBase = buildRuntimeAssetBase(model.resourceBase);
   const verifiedXmlReferences = diagnostics.references.filter(
@@ -664,10 +713,27 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                       Uploads are bundle-scoped and will resolve relative to this activity instance.
                     </>
                   ) : (
-                    <>
-                      This activity is not bundle-backed. Uploaded files go to shared media storage,
-                      so XML references need extra care.
-                    </>
+                    <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                      <div>
+                        <div>
+                          This activity is not bundle-backed. Uploaded files go to shared media
+                          storage, so XML references need extra care.
+                        </div>
+                        {bundleStatus?.message ? (
+                          <div className="small mt-1">
+                            Starter bundle setup issue: {bundleStatus.message}
+                          </div>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        className={warningActionButtonClass}
+                        disabled={actionsDisabled}
+                        onClick={repairBundle}
+                      >
+                        {processingAction === 'repair' ? 'Repairing...' : 'Repair Bundle'}
+                      </button>
+                    </div>
                   )}
                 </div>
                 <div className="row mt-3">
@@ -721,11 +787,13 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           </div>
           <div id={supportingFilesPanelId} hidden={!showSupportingFiles}>
             {showSupportingFiles ? (
-              uploadedResources.length === 0 ? (
-                <div className={`${mutedTextClass} mt-3`}>No supporting files uploaded yet.</div>
+              supportingFileRows.length === 0 ? (
+                <div className={`${mutedTextClass} mt-3`}>
+                  No supporting files referenced or uploaded yet.
+                </div>
               ) : (
                 <ul className="list-group mt-3">
-                  {uploadedResources.map((resource) => {
+                  {supportingFileRows.map((resource) => {
                     const assetTag = `<asset name="${suggestAssetName(resource.relativePath)}">${
                       resource.relativePath
                     }</asset>`;
@@ -734,15 +802,24 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                     const storageStatus = verificationStatuses[resource.relativePath];
 
                     return (
-                      <li className="list-group-item" key={resource.url}>
+                      <li className="list-group-item" key={resource.relativePath}>
                         <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
                           <div>
                             <div>
                               <code>{resource.relativePath}</code>
                             </div>
-                            <div className={`small ${mutedTextClass}`}>{resource.url}</div>
+                            <div className={`small ${mutedTextClass}`}>
+                              {resource.url || 'Not tracked in resourceURLs'}
+                            </div>
                           </div>
                           <div className="d-flex flex-wrap gap-2">
+                            <span
+                              className={`badge ${
+                                resource.uploaded ? 'bg-primary' : 'bg-secondary'
+                              }`}
+                            >
+                              {resource.uploaded ? 'uploaded' : 'not uploaded'}
+                            </span>
                             <span
                               className={`badge ${
                                 storageStatus === 'missing'
@@ -791,17 +868,22 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                             <button
                               type="button"
                               className={secondarySmallButtonClass}
-                              onClick={() => copyText(resource.url, 'URL')}
+                              disabled={!resource.url}
+                              onClick={() => resource.url && copyText(resource.url, 'URL')}
                             >
                               Copy URL
                             </button>
-                            <CloseButton
-                              className="pl-3 pr-1"
-                              editMode={props.editMode}
-                              onClick={() =>
-                                dispatch(OliEmbeddedActions.removeResourceURL(resource.url))
-                              }
-                            />
+                            {resource.url ? (
+                              <CloseButton
+                                className="pl-3 pr-1"
+                                editMode={props.editMode}
+                                onClick={() =>
+                                  dispatch(
+                                    OliEmbeddedActions.removeResourceURL(resource.url as string),
+                                  )
+                                }
+                              />
+                            ) : null}
                           </div>
                         </div>
                       </li>

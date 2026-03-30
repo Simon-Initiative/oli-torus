@@ -17,6 +17,7 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course
   alias Oli.Activities
+  alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.ActivityLifecycle
@@ -239,6 +240,41 @@ defmodule OliWeb.LegacySuperactivityController do
 
   def export_package(conn, _params), do: error(conn, 400, "invalid embedded activity export")
 
+  def repair_bundle(
+        conn,
+        %{"model" => model, "projectSlug" => project_slug, "activityId" => activity_id}
+      )
+      when is_map(model) do
+    with %Author{} = author <- conn.assigns[:current_author],
+         {:ok, parsed_activity_id} <- parse_activity_id(activity_id),
+         {:ok, repaired_model} <-
+           ActivityEditor.repair_embedded_bundle(project_slug, parsed_activity_id, author, model) do
+      json(conn, %{type: "success", model: repaired_model})
+    else
+      {:error, {:invalid_request, message}} ->
+        error(conn, 400, message)
+
+      {:error, {:invalid_update_field}} ->
+        error(conn, 400, "invalid embedded activity bundle repair")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "Unauthorized")
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "Activity not found")
+
+      {:error, reason} ->
+        Logger.error("Could not repair embedded activity bundle: #{inspect(reason)}")
+        error(conn, 500, "Unable to repair embedded activity bundle")
+
+      _ ->
+        error(conn, 403, "Unauthorized")
+    end
+  end
+
+  def repair_bundle(conn, _params),
+    do: error(conn, 400, "invalid embedded activity bundle repair")
+
   def import_package(
         conn,
         %{
@@ -351,7 +387,7 @@ defmodule OliWeb.LegacySuperactivityController do
     case normalize_directory(directory) do
       "" -> ""
       "bundles/" <> _rest = normalized -> normalized
-      normalized -> Path.join("bundles", normalized)
+      _normalized -> ""
     end
   end
 

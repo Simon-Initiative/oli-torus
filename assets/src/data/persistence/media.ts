@@ -24,6 +24,11 @@ export type SuperActivityPackageImport = {
   model: any;
 };
 
+export type SuperActivityBundleRepair = {
+  type: 'success';
+  model: any;
+};
+
 export type SuperActivityPackageImportError = ServerError & {
   code?: string;
   details?: Record<string, any>;
@@ -230,6 +235,24 @@ export function importSuperActivityPackage(
         } as SuperActivityPackageImportError),
       );
   });
+}
+
+export function repairSuperActivityBundle(
+  projectSlug: string,
+  activityId: number,
+  model: object,
+): Promise<SuperActivityBundleRepair | ServerError> {
+  const params = {
+    method: 'POST',
+    body: JSON.stringify({
+      projectSlug,
+      activityId,
+      model,
+    }),
+    url: '/superactivity/package/repair',
+  };
+
+  return makeRequest<SuperActivityBundleRepair>(params);
 }
 
 export function deleteMedia(
