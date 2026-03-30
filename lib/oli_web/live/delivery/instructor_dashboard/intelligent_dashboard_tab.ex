@@ -78,6 +78,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     end)
     |> assign_new(:dashboard_bundle_state, fn -> nil end)
     |> assign_new(:dashboard_oracle_results, fn -> %{} end)
+    |> assign_new(:dashboard_inflight_oracles, fn -> MapSet.new() end)
     |> assign_new(:dashboard_timeout_refs, fn -> %{} end)
   end
 
@@ -700,6 +701,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     |> assign(:dashboard_request_token, request_token)
     |> assign(:dashboard_bundle_state, nil)
     |> assign(:dashboard_oracle_results, %{})
+    |> assign(:dashboard_inflight_oracles, MapSet.new())
   end
 
   defp apply_dashboard_coordinator_action(
@@ -712,6 +714,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     |> assign(:dashboard_request_token, request_token)
     |> assign(:dashboard_bundle_state, nil)
     |> assign(:dashboard_oracle_results, %{})
+    |> assign(:dashboard_inflight_oracles, MapSet.new())
   end
 
   defp apply_dashboard_coordinator_action(
@@ -783,13 +786,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
          context,
          dependency_profile
        ) do
-    start_dashboard_runtime_loads(
-      request_token,
-      misses ++ Map.get(dependency_profile, :optional, []),
-      context
-    )
+    {started_oracles, _task} =
+      start_dashboard_runtime_loads(
+        request_token,
+        misses ++ Map.get(dependency_profile, :optional, []),
+        context
+      )
 
-    socket
+    update(socket, :dashboard_inflight_oracles, &MapSet.union(&1, MapSet.new(started_oracles)))
   end
 
   defp apply_dashboard_coordinator_action(
@@ -807,6 +811,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     # deferring unrelated projection work until the affected capability changes.
     socket
     |> update(:dashboard_oracle_results, &Map.put(&1, oracle_key, oracle_result))
+    |> update(:dashboard_inflight_oracles, &MapSet.delete(&1, oracle_key))
     |> maybe_assign_incremental_dashboard_bundle(context, dependency_profile, oracle_key)
   end
 
@@ -825,6 +830,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     if active_dashboard_request?(socket, request_token) do
       socket
       |> update(:dashboard_oracle_results, &Map.put(&1, oracle_key, oracle_result))
+      |> update(:dashboard_inflight_oracles, &MapSet.delete(&1, oracle_key))
       |> maybe_assign_incremental_dashboard_bundle(context, dependency_profile, oracle_key)
     else
       socket
@@ -841,6 +847,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     # publish the fully resolved dashboard payload.
     socket
     |> cancel_dashboard_timeout(request_token)
+    |> assign(:dashboard_inflight_oracles, MapSet.new())
     |> maybe_assign_dashboard_bundle(request_token, context, dependency_profile)
     |> assign(:dashboard_revisit_hydrated?, true)
   end
@@ -1114,12 +1121,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     required = Map.get(dependency_profile, :required, [])
     optional = Map.get(dependency_profile, :optional, [])
     loaded_oracles = socket.assigns.dashboard_oracle_results |> Map.keys() |> MapSet.new()
+    inflight_oracles = socket.assigns.dashboard_inflight_oracles
 
     if Enum.all?(required, &MapSet.member?(loaded_oracles, &1)) do
-      start_dashboard_runtime_loads(request_token, optional, context, loaded_oracles)
-    end
+      {started_oracles, _task} =
+        start_dashboard_runtime_loads(
+          request_token,
+          optional,
+          context,
+          MapSet.union(loaded_oracles, inflight_oracles)
+        )
 
-    socket
+      update(socket, :dashboard_inflight_oracles, &MapSet.union(&1, MapSet.new(started_oracles)))
+    else
+      socket
+    end
   end
 
   defp start_dashboard_runtime_loads(request_token, oracle_keys, context, already_loaded \\ []) do
@@ -1131,25 +1147,29 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       |> Enum.uniq()
       |> Enum.reject(&MapSet.member?(already_loaded, &1))
 
-    Task.start(fn ->
-      oracle_keys
-      |> Task.async_stream(
-        fn oracle_key -> {oracle_key, dashboard_runtime_result(oracle_key, context)} end,
-        max_concurrency: dashboard_runtime_max_concurrency(),
-        ordered: false,
-        timeout: :infinity
-      )
-      |> Enum.each(fn
-        {:ok, {oracle_key, oracle_result}} ->
-          send(
-            live_view_pid,
-            {:dashboard_runtime_oracle_result, request_token, context, oracle_key, oracle_result}
-          )
+    task =
+      Task.start(fn ->
+        oracle_keys
+        |> Task.async_stream(
+          fn oracle_key -> {oracle_key, dashboard_runtime_result(oracle_key, context)} end,
+          max_concurrency: dashboard_runtime_max_concurrency(),
+          ordered: false,
+          timeout: :infinity
+        )
+        |> Enum.each(fn
+          {:ok, {oracle_key, oracle_result}} ->
+            send(
+              live_view_pid,
+              {:dashboard_runtime_oracle_result, request_token, context, oracle_key,
+               oracle_result}
+            )
 
-        {:exit, _reason} ->
-          :ok
+          {:exit, _reason} ->
+            :ok
+        end)
       end)
-    end)
+
+    {oracle_keys, task}
   end
 
   defp dashboard_runtime_max_concurrency, do: 4

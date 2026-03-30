@@ -142,10 +142,13 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressBins do
 
   defp build_bins(learner_ids, progress_by_learner, has_progress_source?) do
     if has_progress_source? do
-      Enum.reduce(learner_ids, empty_bins(), fn learner_id, bins_acc ->
-        ratio = Map.get(progress_by_learner, learner_id, 0.0)
+      missing_learners = max(length(learner_ids) - map_size(progress_by_learner), 0)
+
+      progress_by_learner
+      |> Enum.reduce(empty_bins(), fn {_learner_id, ratio}, bins_acc ->
         Map.update!(bins_acc, bin_for_progress(ratio), &(&1 + 1))
       end)
+      |> Map.update!(0, &(&1 + missing_learners))
     else
       empty_bins()
     end

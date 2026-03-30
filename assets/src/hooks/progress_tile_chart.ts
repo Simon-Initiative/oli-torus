@@ -25,6 +25,18 @@ function finalizeView(hook: Hook<ProgressTileChartState>) {
   hook.__progressTileView = null;
 }
 
+function disconnectResizeObserver(hook: Hook<ProgressTileChartState>) {
+  hook.__progressTileResizeObserver?.disconnect();
+  hook.__progressTileResizeObserver = null;
+}
+
+function clearChart(hook: Hook<ProgressTileChartState>) {
+  disconnectResizeObserver(hook);
+  finalizeView(hook);
+  hook.__progressTileSpec = null;
+  chartTarget(hook).innerHTML = '';
+}
+
 function readSpec(rawSpec: string | undefined): VisualizationSpec | null {
   if (!rawSpec) {
     return null;
@@ -39,7 +51,7 @@ function readSpec(rawSpec: string | undefined): VisualizationSpec | null {
 }
 
 function observeResize(hook: Hook<ProgressTileChartState>) {
-  hook.__progressTileResizeObserver?.disconnect();
+  disconnectResizeObserver(hook);
 
   if (typeof ResizeObserver === 'undefined') {
     return;
@@ -56,9 +68,7 @@ async function renderChart(hook: Hook<ProgressTileChartState>) {
   const rawSpec = hook.el.dataset.spec;
 
   if (!rawSpec) {
-    finalizeView(hook);
-    hook.__progressTileSpec = null;
-    chartTarget(hook).innerHTML = '';
+    clearChart(hook);
     return;
   }
 
@@ -69,9 +79,7 @@ async function renderChart(hook: Hook<ProgressTileChartState>) {
   const spec = readSpec(rawSpec);
 
   if (!spec) {
-    finalizeView(hook);
-    hook.__progressTileSpec = null;
-    chartTarget(hook).innerHTML = '';
+    clearChart(hook);
     return;
   }
 
@@ -94,7 +102,10 @@ async function renderChart(hook: Hook<ProgressTileChartState>) {
     hook.__progressTileView = result.view;
     observeResize(hook);
   } catch (error) {
-    hook.__progressTileSpec = null;
+    if (hook.__progressTileRenderToken === renderToken) {
+      clearChart(hook);
+    }
+
     console.warn('[ProgressTileChart] Failed to render chart', error);
   }
 }
@@ -112,8 +123,7 @@ export const ProgressTileChart: Hook<ProgressTileChartState> = {
 };
 
 function hookCleanup(hook: Hook<ProgressTileChartState>) {
-  hook.__progressTileResizeObserver?.disconnect();
-  hook.__progressTileResizeObserver = null;
+  disconnectResizeObserver(hook);
   finalizeView(hook);
   hook.__progressTileSpec = null;
 }

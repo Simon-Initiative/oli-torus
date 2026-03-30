@@ -154,6 +154,9 @@ defmodule OliWeb.Icons do
   attr :class, :string, default: ""
 
   def progress_arrow(assigns) do
+    assigns =
+      assign(assigns, :clip_path_id, "progress_arrow_clip_#{System.unique_integer([:positive])}")
+
     ~H"""
     <svg
       width="20"
@@ -163,7 +166,7 @@ defmodule OliWeb.Icons do
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
     >
-      <g clip-path="url(#progress_arrow_clip)">
+      <g clip-path={"url(##{@clip_path_id})"}>
         <path
           d="M15 4.1665L17.5 6.6665M17.5 6.6665L15 9.1665M17.5 6.6665H12.5L6.66667 14.9998H2.5"
           stroke="currentColor"
@@ -173,7 +176,7 @@ defmodule OliWeb.Icons do
         />
       </g>
       <defs>
-        <clipPath id="progress_arrow_clip">
+        <clipPath id={@clip_path_id}>
           <rect width="20" height="20" rx="3" fill="white" />
         </clipPath>
       </defs>

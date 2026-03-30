@@ -91,10 +91,12 @@ defmodule Oli.InstructorDashboard.Oracles.SchedulePosition do
       {section_resource.resource_id, normalize_range(section_resource)}
     end)
     |> Enum.reject(fn {_resource_id, range} -> is_nil(range) end)
-    |> Enum.sort_by(fn {resource_id, range} ->
-      {selection_bucket(range, now), selection_distance(range, now), resource_id}
-    end)
-    |> List.first()
+    |> Enum.min_by(
+      fn {resource_id, range} ->
+        {selection_bucket(range, now), selection_distance(range, now), resource_id}
+      end,
+      fn -> nil end
+    )
     |> case do
       {resource_id, _range} -> resource_id
       nil -> nil
