@@ -64,6 +64,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
           form: to_form(changeset, as: :backfill),
           inventory_form: inventory_form,
           inventory_form_inputs: inventory_form_inputs,
+          inventory_run_settings_form:
+            to_form(inventory_run_settings_changeset(%{}),
+              as: :inventory_run_settings
+            ),
+          inventory_run_settings_inputs: %{},
+          editing_inventory_run_id: nil,
           inventory_config: inventory_config,
           active_tab: active_tab,
           user_token: user_token
@@ -263,6 +269,113 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
          socket
          |> put_flash(:error, format_error(reason))
          |> refresh_runs()}
+    end
+  rescue
+    Ecto.NoResultsError ->
+      {:noreply, put_flash(socket, :error, "Run not found")}
+  end
+
+  def handle_event("edit_inventory_run_settings", %{"id" => id}, socket) do
+    with {run_id, _} <- Integer.parse(to_string(id)),
+         run <- Inventory.get_run!(run_id),
+         true <- editable_inventory_run_settings?(run) do
+      inputs = inventory_run_settings_inputs(run, socket.assigns.inventory_config)
+      changeset = inventory_run_settings_changeset(inputs)
+
+      {:noreply,
+       assign(socket,
+         editing_inventory_run_id: run_id,
+         inventory_run_settings_form: to_form(changeset, as: :inventory_run_settings),
+         inventory_run_settings_inputs: inputs
+       )}
+    else
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid run identifier")}
+
+      false ->
+        {:noreply, put_flash(socket, :info, "Run #{id} settings cannot be edited.")}
+    end
+  rescue
+    Ecto.NoResultsError ->
+      {:noreply, put_flash(socket, :error, "Run not found")}
+  end
+
+  def handle_event("cancel_inventory_run_settings", _params, socket) do
+    {:noreply,
+     assign(socket,
+       editing_inventory_run_id: nil,
+       inventory_run_settings_form:
+         to_form(inventory_run_settings_changeset(%{}),
+           as: :inventory_run_settings
+         ),
+       inventory_run_settings_inputs: %{}
+     )}
+  end
+
+  def handle_event(
+        "validate_inventory_run_settings",
+        %{"inventory_run_settings" => params},
+        socket
+      ) do
+    changeset =
+      params
+      |> inventory_run_settings_changeset()
+      |> Map.put(:action, :validate)
+
+    {:noreply,
+     assign(socket,
+       inventory_run_settings_form: to_form(changeset, as: :inventory_run_settings),
+       inventory_run_settings_inputs: inventory_run_settings_form_values(params)
+     )}
+  end
+
+  def handle_event(
+        "save_inventory_run_settings",
+        %{"id" => id, "inventory_run_settings" => params},
+        socket
+      ) do
+    changeset = inventory_run_settings_changeset(params)
+
+    with {run_id, _} <- Integer.parse(to_string(id)),
+         run <- Inventory.get_run!(run_id),
+         true <- editable_inventory_run_settings?(run),
+         true <- changeset.valid?,
+         attrs <- Ecto.Changeset.apply_changes(changeset),
+         {:ok, _run} <- Inventory.update_run_execution_settings(run, attrs) do
+      {:noreply,
+       socket
+       |> refresh_runs()
+       |> put_flash(:info, "Run #{run_id} settings updated.")
+       |> assign(
+         editing_inventory_run_id: nil,
+         inventory_run_settings_form:
+           to_form(inventory_run_settings_changeset(%{}), as: :inventory_run_settings),
+         inventory_run_settings_inputs: %{}
+       )}
+    else
+      :error ->
+        {:noreply, put_flash(socket, :error, "Invalid run identifier")}
+
+      false ->
+        {:noreply,
+         assign(socket,
+           inventory_run_settings_form:
+             to_form(Map.put(changeset, :action, :validate), as: :inventory_run_settings),
+           inventory_run_settings_inputs: inventory_run_settings_form_values(params)
+         )}
+
+      {:error, :run_not_editable} ->
+        {:noreply, put_flash(socket, :info, "Run #{id} settings cannot be edited.")}
+
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, format_error(reason))
+         |> assign(
+           inventory_run_settings_form:
+             to_form(Map.put(changeset, :action, :insert), as: :inventory_run_settings),
+           inventory_run_settings_inputs: inventory_run_settings_form_values(params)
+         )}
     end
   rescue
     Ecto.NoResultsError ->
@@ -1085,6 +1198,16 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     do: "Yes",
                     else: "No"}
                 </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Chunk size: {format_int(run.metadata["batch_chunk_size"])} · Manifest page size: {format_int(
+                    run.metadata["manifest_page_size"]
+                  )}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Max simultaneous batches: {format_int(run.metadata["max_simultaneous_batches"])} · Max batch retries: {format_int(
+                    run.metadata["max_batch_retries"]
+                  )}
+                </div>
                 <div
                   :if={inventory_skipped_objects(run) > 0}
                   class="text-xs text-gray-500 dark:text-gray-400"
@@ -1127,6 +1250,14 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     Cancel
                   </.button>
                   <.button
+                    :if={editable_inventory_run_settings?(run)}
+                    phx-click="edit_inventory_run_settings"
+                    phx-value-id={run.id}
+                    class="btn-secondary btn-xs"
+                  >
+                    Edit Settings
+                  </.button>
+                  <.button
                     :if={deletable_inventory_run?(run)}
                     phx-click="delete_inventory_run"
                     phx-value-id={run.id}
@@ -1151,6 +1282,71 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div
+              :if={@editing_inventory_run_id == run.id}
+              class="rounded border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-800/40"
+            >
+              <div class="space-y-1 mb-3">
+                <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Edit Execution Settings
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  Changes apply to future resumed or retried work for this run. Completed work is unchanged.
+                </p>
+              </div>
+
+              <.form
+                for={@inventory_run_settings_form}
+                phx-change="validate_inventory_run_settings"
+                phx-submit="save_inventory_run_settings"
+                phx-value-id={run.id}
+                class="space-y-4"
+              >
+                <div class="grid gap-3 md:grid-cols-2">
+                  <.input
+                    field={@inventory_run_settings_form[:batch_chunk_size]}
+                    type="number"
+                    min="1"
+                    label="Chunk Size (files per insert)"
+                    value={@inventory_run_settings_inputs.batch_chunk_size}
+                  />
+                  <.input
+                    field={@inventory_run_settings_form[:manifest_page_size]}
+                    type="number"
+                    min="1"
+                    label="Manifest Page Size (records)"
+                    value={@inventory_run_settings_inputs.manifest_page_size}
+                  />
+                  <.input
+                    field={@inventory_run_settings_form[:max_simultaneous_batches]}
+                    type="number"
+                    min="1"
+                    label="Max Simultaneous Batches"
+                    value={@inventory_run_settings_inputs.max_simultaneous_batches}
+                  />
+                  <.input
+                    field={@inventory_run_settings_form[:max_batch_retries]}
+                    type="number"
+                    min="1"
+                    label="Max Batch Retries"
+                    value={@inventory_run_settings_inputs.max_batch_retries}
+                  />
+                </div>
+                <div class="flex items-center justify-end gap-2">
+                  <.button
+                    type="button"
+                    phx-click="cancel_inventory_run_settings"
+                    class="btn-secondary btn-sm"
+                  >
+                    Cancel
+                  </.button>
+                  <.button type="submit" class="btn-primary btn-sm">
+                    Save Settings
+                  </.button>
+                </div>
+              </.form>
             </div>
 
             <div class="grid gap-4 md:grid-cols-4 text-xs text-gray-600 dark:text-gray-300">
@@ -1691,6 +1887,23 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     |> Ecto.Changeset.validate_number(:max_batch_retries, greater_than: 0)
   end
 
+  defp inventory_run_settings_changeset(attrs) do
+    types = %{
+      batch_chunk_size: :integer,
+      manifest_page_size: :integer,
+      max_simultaneous_batches: :integer,
+      max_batch_retries: :integer
+    }
+
+    {%{}, types}
+    |> Ecto.Changeset.cast(attrs, Map.keys(types))
+    |> Ecto.Changeset.validate_required(Map.keys(types))
+    |> Ecto.Changeset.validate_number(:batch_chunk_size, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:manifest_page_size, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:max_simultaneous_batches, greater_than: 0)
+    |> Ecto.Changeset.validate_number(:max_batch_retries, greater_than: 0)
+  end
+
   defp inventory_chunk_size(config) do
     config
     |> inventory_config_value(:batch_chunk_size, 25)
@@ -1863,6 +2076,41 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     }
   end
 
+  defp inventory_run_settings_inputs(%InventoryRun{} = run, config) do
+    metadata = Map.new(run.metadata || %{})
+
+    %{
+      batch_chunk_size:
+        metadata
+        |> fetch_first(["batch_chunk_size", :batch_chunk_size])
+        |> parse_positive_integer(inventory_chunk_size(config)),
+      manifest_page_size:
+        metadata
+        |> fetch_first(["manifest_page_size", :manifest_page_size])
+        |> parse_positive_integer(inventory_manifest_page_size(config)),
+      max_simultaneous_batches:
+        metadata
+        |> fetch_first(["max_simultaneous_batches", :max_simultaneous_batches])
+        |> parse_positive_integer(inventory_max_simultaneous_batches(config)),
+      max_batch_retries:
+        metadata
+        |> fetch_first(["max_batch_retries", :max_batch_retries])
+        |> parse_positive_integer(inventory_max_batch_retries(config))
+    }
+  end
+
+  defp inventory_run_settings_form_values(params) do
+    params = Map.new(params || %{})
+
+    %{
+      batch_chunk_size: params |> Map.get("batch_chunk_size", "") |> format_integer_input(),
+      manifest_page_size: params |> Map.get("manifest_page_size", "") |> format_integer_input(),
+      max_simultaneous_batches:
+        params |> Map.get("max_simultaneous_batches", "") |> format_integer_input(),
+      max_batch_retries: params |> Map.get("max_batch_retries", "") |> format_integer_input()
+    }
+  end
+
   defp inventory_percent(%InventoryRun{} = run) do
     total = run.total_batches || 0
     completed = run.completed_batches || 0
@@ -1928,6 +2176,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
   defp resumable_run?(_), do: false
 
+  defp editable_inventory_run_settings?(%InventoryRun{status: status})
+       when status in [:paused, :failed],
+       do: true
+
+  defp editable_inventory_run_settings?(_), do: false
+
   defp append_segment(segments, false, _value), do: segments
   defp append_segment(segments, true, value), do: segments ++ [value]
 
@@ -1935,6 +2189,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     metadata = Map.new(metadata || %{})
     Map.get(metadata, key) || Map.get(metadata, Atom.to_string(key))
   end
+
+  defp fetch_first(map, keys) when is_map(map) and is_list(keys) do
+    Enum.find_value(keys, fn key -> Map.get(map, key) end)
+  end
+
+  defp fetch_first(_, _), do: nil
 
   defp update_inventory_run_assign(socket, run_id) do
     try do

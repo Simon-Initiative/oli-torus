@@ -677,6 +677,47 @@ defmodule Oli.Analytics.Backfill.Inventory do
   end
 
   @doc """
+  Update execution settings for a paused or failed run so future resumed or retried work
+  uses the new values without recreating the run.
+  """
+  @spec update_run_execution_settings(InventoryRun.t(), map()) ::
+          {:ok, InventoryRun.t()} | {:error, term()}
+  def update_run_execution_settings(%InventoryRun{} = run, attrs) when is_map(attrs) do
+    if run.status in [:paused, :failed] do
+      metadata = ensure_map(run.metadata)
+
+      updated_metadata =
+        metadata
+        |> Map.put(
+          "batch_chunk_size",
+          parse_positive_integer(Map.get(attrs, :batch_chunk_size), default_batch_chunk_size())
+        )
+        |> Map.put(
+          "manifest_page_size",
+          parse_positive_integer(
+            Map.get(attrs, :manifest_page_size),
+            default_manifest_page_size()
+          )
+        )
+        |> Map.put(
+          "max_simultaneous_batches",
+          parse_positive_integer(
+            Map.get(attrs, :max_simultaneous_batches),
+            default_max_simultaneous_batches()
+          )
+        )
+        |> Map.put(
+          "max_batch_retries",
+          parse_positive_integer(Map.get(attrs, :max_batch_retries), default_max_batch_retries())
+        )
+
+      update_run(run, %{metadata: updated_metadata})
+    else
+      {:error, :run_not_editable}
+    end
+  end
+
+  @doc """
   Request that a batch pause processing. Running batches mark themselves for pause,
   while queued or pending batches transition immediately to `:paused`.
   """

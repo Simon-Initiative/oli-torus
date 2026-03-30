@@ -793,6 +793,60 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert render(view) =~ "retry queued"
     end
 
+    test "can edit execution settings for a paused inventory run", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-01],
+          inventory_prefix: "torus/inventory/2024-07-01",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :paused,
+          dry_run: false,
+          metadata: %{
+            "batch_chunk_size" => 1000,
+            "manifest_page_size" => 20_000,
+            "max_simultaneous_batches" => 1,
+            "max_batch_retries" => 1
+          }
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-click=\"edit_inventory_run_settings\"][phx-value-id=\"#{run.id}\"]")
+      |> render_click()
+
+      assert render(view) =~ "Edit Execution Settings"
+
+      params = %{
+        "batch_chunk_size" => "100",
+        "manifest_page_size" => "2000",
+        "max_simultaneous_batches" => "2",
+        "max_batch_retries" => "3"
+      }
+
+      view
+      |> form(
+        "form[phx-submit=\"save_inventory_run_settings\"][phx-value-id=\"#{run.id}\"]",
+        %{"inventory_run_settings" => params}
+      )
+      |> render_submit()
+
+      run = Repo.get!(InventoryRun, run.id)
+
+      assert run.metadata["batch_chunk_size"] == 100
+      assert run.metadata["manifest_page_size"] == 2000
+      assert run.metadata["max_simultaneous_batches"] == 2
+      assert run.metadata["max_batch_retries"] == 3
+
+      rendered = render(view)
+      assert rendered =~ "Run #{run.id} settings updated."
+      refute rendered =~ "Edit Execution Settings"
+    end
+
     test "cancel inventory run transitions status to cancelled", %{conn: conn} do
       run =
         %InventoryRun{
