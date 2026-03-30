@@ -79,6 +79,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
   describe "objectives" do
     setup [:instructor_conn, :create_project_with_objectives]
 
+    test "deep-link params load learning objectives without normalizing the url", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      obj_revision_1: obj_revision_1
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.update_section(section, %{v25_migration: :not_started})
+
+      params = %{
+        "objective_id" => Integer.to_string(obj_revision_1.resource_id),
+        "navigation_source" => "challenging_objectives_tile"
+      }
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+
+      assert has_element?(view, "h4", "Learning Objectives")
+      expected_row_id = "row_#{obj_revision_1.resource_id}"
+
+      assert_push_event(view, "learning-objectives-scroll", %{
+        id: ^expected_row_id
+      })
+    end
+
     test "loads correctly when there are no objectives", %{
       conn: conn,
       instructor: instructor
@@ -485,6 +509,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
   describe "deep-link initialization" do
     setup [:instructor_conn, :create_full_project_with_objectives]
 
+    test "subobjective deep links expand the selected subobjective row", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.rebuild_contained_objectives(section)
+
+      params = %{
+        "objective_id" => Integer.to_string(revisions.obj_revision_c.resource_id),
+        "subobjective_id" => Integer.to_string(revisions.obj_revision_c1.resource_id),
+        "navigation_source" => "challenging_objectives_tile"
+      }
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+      expected_row_id = "row_#{revisions.obj_revision_c1.resource_id}"
+
+      assert_push_event(view, "learning-objectives-scroll", %{
+        id: ^expected_row_id
+      })
+
+      assert has_element?(
+               view,
+               "[id^='expanded-objective-row_#{revisions.obj_revision_c1.resource_id}_']"
+             )
+    end
+
     test "invalid deep-link ids fall back without crashing or forcing expansion", %{
       conn: conn,
       instructor: instructor,
@@ -499,7 +551,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
           live_view_learning_objectives_route(section.slug, %{
             objective_id: 999_999,
             subobjective_id: 999_998,
-            selected_card_value: :low_proficiency_skills
+            navigation_source: "challenging_objectives_tile"
           })
         )
 

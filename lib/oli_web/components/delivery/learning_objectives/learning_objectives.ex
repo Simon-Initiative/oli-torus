@@ -1,8 +1,6 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives do
   use OliWeb, :live_component
 
-  require Logger
-
   alias OliWeb.Common.{Params, StripedPagedTable, SearchInput}
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.Content.MultiSelect
@@ -10,6 +8,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
+  import Phoenix.LiveView, only: [push_event: 3, push_patch: 2]
 
   @default_params %{
     offset: 0,
@@ -45,8 +44,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     scoped_objectives = scoped_objectives(objectives_tab.objectives, params)
     socket = maybe_handle_tile_navigation(socket, scoped_objectives, params)
 
-    {total_count, rows, filtered_objectives} =
-      apply_filters(objectives_tab.objectives, params, assigns[:patch_url_type])
+    {total_count, rows, _filtered_objectives} =
+      apply_filters(
+        objectives_tab.objectives,
+        params,
+        params,
+        assigns[:patch_url_type]
+      )
 
     indexed_rows =
       Enum.with_index(rows)
@@ -57,16 +61,11 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     {:ok, objectives_table_model} =
       ObjectivesTableModel.new(indexed_rows, assigns[:patch_url_type])
 
-    expanded_objectives = socket.assigns[:expanded_objectives] || MapSet.new()
+    expanded_objectives = starting_expanded_objectives(socket, params)
 
     expanded_objectives =
       expanded_objectives
       |> MapSet.union(initial_expanded_rows(scoped_objectives, params))
-      |> maybe_expand_for_matching_subobjectives(
-        filtered_objectives,
-        params,
-        assigns[:patch_url_type]
-      )
 
     objectives_table_model =
       Map.merge(objectives_table_model, %{
@@ -539,20 +538,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end
   end
 
-  defp apply_filters(objectives, params, patch_url_type) do
+  defp apply_filters(objectives, params, _navigation_params, _patch_url_type) do
     scoped_objectives = scoped_objectives(objectives, params)
     filtered_objectives = filtered_objectives(scoped_objectives, params)
 
     table_objectives =
-      case patch_url_type do
-        :instructor_dashboard ->
-          parent_objectives_from(filtered_objectives, scoped_objectives)
-          |> sort_by(params.sort_by, params.sort_order)
-
-        _ ->
-          filtered_objectives
-          |> sort_by(params.sort_by, params.sort_order)
-      end
+      filtered_objectives
+      |> sort_by(params.sort_by, params.sort_order)
 
     total_count = length(table_objectives)
 
@@ -572,27 +564,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     |> maybe_filter_by_card(params.selected_card_value)
   end
 
-  defp maybe_expand_for_matching_subobjectives(
-         expanded_rows,
-         filtered_objectives,
-         params,
-         :instructor_dashboard
-       ) do
-    filtered_objectives
-    |> filtered_subobjectives(params)
-    |> Enum.reduce(expanded_rows, fn obj, acc ->
-      MapSet.put(acc, "row_#{parent_id(obj)}")
-    end)
-  end
-
-  defp maybe_expand_for_matching_subobjectives(
-         expanded_rows,
-         _objectives,
-         _params,
-         _patch_url_type
-       ),
-       do: expanded_rows
-
   @doc false
   def initial_expanded_rows(scoped_objectives, params) do
     case resolve_deep_link_parent_id(scoped_objectives, params) do
@@ -601,81 +572,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end
   end
 
-  defp filtered_subobjectives(filtered_objectives, params) do
-    if subobjective_filters_active?(params) do
-      filtered_objectives
-      |> Enum.filter(&subobjective?/1)
-      |> maybe_filter_by_subobjective_text(params.text_search)
-      |> maybe_filter_by_subobjective_proficiency(params.selected_proficiency_ids)
-      |> maybe_filter_by_subobjective_card(params.selected_card_value)
-    else
-      []
-    end
-  end
-
-  defp subobjective_filters_active?(params) do
-    (not is_nil(params.text_search) and params.text_search != "") or
-      params.selected_proficiency_ids != [] or
-      params.selected_card_value == :low_proficiency_skills
-  end
-
-  defp maybe_filter_by_subobjective_text(objectives, nil), do: objectives
-  defp maybe_filter_by_subobjective_text(objectives, ""), do: objectives
-
-  defp maybe_filter_by_subobjective_text(objectives, text_search) do
-    text = String.downcase(text_search)
-
-    Enum.filter(objectives, fn obj ->
-      String.contains?(String.downcase(to_string(obj.subobjective || "")), text)
-    end)
-  end
-
-  defp maybe_filter_by_subobjective_proficiency(objectives, []), do: objectives
-
-  defp maybe_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids) do
-    do_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids)
-  end
-
-  defp do_filter_by_subobjective_proficiency(objectives, selected_proficiency_ids) do
-    mapper_ids =
-      Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
-        case id do
-          1 -> ["Low" | acc]
-          2 -> ["Medium" | acc]
-          3 -> ["High" | acc]
-          _ -> acc
-        end
-      end)
-
-    if mapper_ids == [] do
-      objectives
-    else
-      Enum.filter(objectives, fn objective ->
-        objective.student_proficiency_subobj in mapper_ids
-      end)
-    end
-  end
-
-  defp maybe_filter_by_subobjective_card(objectives, :low_proficiency_skills),
-    do: Enum.filter(objectives, &(&1.student_proficiency_subobj == "Low"))
-
-  defp maybe_filter_by_subobjective_card(objectives, _), do: objectives
-
   # Unit/Module scope filter defines base set (unordered) of objectives/subobjectives for the view
   defp scoped_objectives(objectives, params) do
     objectives
     |> maybe_filter_by_option(params.filter_by)
-  end
-
-  defp parent_objectives_from(filtered_objectives, scoped_objectives) do
-    parent_ids =
-      filtered_objectives
-      |> Enum.map(&parent_id/1)
-      |> MapSet.new()
-
-    Enum.filter(scoped_objectives, fn obj ->
-      top_level_objective?(obj) and MapSet.member?(parent_ids, obj.resource_id)
-    end)
   end
 
   @proficiency_rank ["High", "Medium", "Low", "Not enough data"]
@@ -813,7 +713,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   defp route_for(socket, new_params, :instructor_dashboard) do
     base_params =
-      Map.drop(socket.assigns.params, ["objective_id", "subobjective_id", "navigation_source"])
+      Map.drop(socket.assigns.params, [
+        "objective_id",
+        "subobjective_id",
+        "navigation_source",
+        "target_row"
+      ])
 
     Routes.live_path(
       socket,
@@ -827,7 +732,12 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   defp route_for(socket, new_params, :student_dashboard) do
     base_params =
-      Map.drop(socket.assigns.params, ["objective_id", "subobjective_id", "navigation_source"])
+      Map.drop(socket.assigns.params, [
+        "objective_id",
+        "subobjective_id",
+        "navigation_source",
+        "target_row"
+      ])
 
     Routes.live_path(
       socket,
@@ -873,13 +783,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end
   end
 
-  defp parent_id(objective),
-    do:
-      if(top_level_objective?(objective),
-        do: objective.resource_id,
-        else: objective.objective_resource_id
-      )
-
   # Returns true if the filter by module feature is disabled for the section.
   # This happens when the contained objectives for the section were not yet created.
   defp filter_by_module_disabled?(v25_migration)
@@ -896,6 +799,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         numbering_index: -1
       }
     ] ++ navigator_items
+  end
+
+  @doc false
+  def starting_expanded_objectives(_socket, %{navigation_source: "challenging_objectives_tile"}) do
+    MapSet.new()
+  end
+
+  def starting_expanded_objectives(socket, _params) do
+    socket.assigns[:expanded_objectives] || MapSet.new()
   end
 
   defp maybe_handle_tile_navigation(
@@ -918,25 +830,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         }
       )
 
-      maybe_log_unresolved_deep_link(scoped_objectives, params)
-
-      assign(socket, :challenging_objectives_navigation_signature, signature)
+      socket
+      |> assign(:challenging_objectives_navigation_signature, signature)
+      |> maybe_push_scroll_to_navigation_target(scoped_objectives, params)
     end
   end
 
   defp maybe_handle_tile_navigation(socket, _scoped_objectives, _params), do: socket
-
-  defp maybe_log_unresolved_deep_link(scoped_objectives, params) do
-    if deep_link_target?(params) and
-         is_nil(resolve_deep_link_parent_id(scoped_objectives, params)) do
-      Logger.warning(
-        "challenging_objectives_tile.unresolved_deep_link objective_id=#{inspect(params.objective_id)} subobjective_id=#{inspect(params.subobjective_id)} filter_by=#{inspect(params.filter_by)}"
-      )
-    end
-  end
-
-  defp deep_link_target?(%{objective_id: objective_id, subobjective_id: subobjective_id}),
-    do: is_integer(objective_id) or is_integer(subobjective_id)
 
   defp navigation_signature(params) do
     Enum.join(
@@ -979,15 +879,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         nil
 
       subobjective ->
-        parent_id = parent_id(subobjective)
+        subobjective.resource_id
+    end
+  end
 
-        case Enum.find(
-               scoped_objectives,
-               &(&1.resource_id == parent_id and top_level_objective?(&1))
-             ) do
-          nil -> nil
-          parent -> parent.resource_id
-        end
+  defp maybe_push_scroll_to_navigation_target(socket, scoped_objectives, params) do
+    case resolve_deep_link_parent_id(scoped_objectives, params) do
+      nil ->
+        socket
+
+      resource_id ->
+        push_event(socket, "learning-objectives-scroll", %{
+          id: "row_#{resource_id}",
+          scroll_delay: 150
+        })
     end
   end
 end

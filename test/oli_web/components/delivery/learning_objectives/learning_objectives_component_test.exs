@@ -7,9 +7,10 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
   alias OliWeb.Components.Delivery.LearningObjectives
 
   describe "LearningObjectives component" do
-    test "renders only top-level objectives in instructor table and counts respect filters", %{
-      conn: conn
-    } do
+    test "renders objectives and sub-objectives in the instructor table and counts respect filters",
+         %{
+           conn: conn
+         } do
       objectives = [
         %{
           resource_id: 1,
@@ -111,12 +112,98 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
       html = render(view)
 
       assert html =~ "LO.02"
-      refute html =~ "Sub.LO.2a"
-      refute html =~ "Sub.LO.2b"
-      refute html =~ "Sub.LO.2c"
+      assert html =~ "Sub.LO.2a"
+      assert html =~ "Sub.LO.2b"
+      assert html =~ "Sub.LO.2c"
 
       assert card_text(html, "low_proficiency_outcomes") =~ "1"
       assert card_text(html, "low_proficiency_skills") =~ "1"
+    end
+
+    test "keeps the targeted parent objective visible for tile deep-link context", %{conn: conn} do
+      objectives = [
+        %{
+          resource_id: 1,
+          title: "Objective 1",
+          objective: "Objective 1",
+          subobjective: nil,
+          student_proficiency_obj: "Medium",
+          student_proficiency_subobj: nil,
+          student_proficiency_obj_dist: %{},
+          container_ids: [10],
+          related_activities_count: 0
+        },
+        %{
+          resource_id: 2,
+          title: "Sub-Objective 1.3",
+          objective: "Objective 1",
+          objective_resource_id: 1,
+          subobjective: "Sub-Objective 1.3",
+          student_proficiency_obj: "Medium",
+          student_proficiency_subobj: "Low",
+          student_proficiency_obj_dist: %{},
+          student_proficiency_subobj_dist: %{},
+          container_ids: [10],
+          related_activities_count: 0
+        }
+      ]
+
+      {:ok, view, _html} =
+        live_component_isolated(conn, LearningObjectives, %{
+          id: "learning-objectives-deep-link-parent",
+          objectives_tab: %{objectives: objectives, navigator_items: []},
+          params: %{
+            "filter_by" => "10",
+            "objective_id" => "1",
+            "navigation_source" => "challenging_objectives_tile"
+          },
+          section_slug: "test-section",
+          section_id: 1,
+          section_title: "Test Section",
+          current_user: %{email: "instructor@example.edu"},
+          patch_url_type: :instructor_dashboard,
+          student_id: nil,
+          view: :insights,
+          v25_migration: :done
+        })
+
+      assert render(view) =~ "Objective 1"
+    end
+
+    test "update seeds expanded rows for tile navigation handoff" do
+      objectives = objectives_with_subobjective()
+
+      socket =
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            __changed__: %{},
+            myself: %Phoenix.LiveComponent.CID{cid: 1}
+          }
+        }
+
+      assigns = %{
+        id: "learning-objectives-update-test",
+        objectives_tab: %{objectives: objectives, navigator_items: []},
+        params: %{
+          "filter_by" => "10",
+          "objective_id" => "1",
+          "navigation_source" => "challenging_objectives_tile"
+        },
+        section_slug: "test-section",
+        section_id: 1,
+        section_title: "Test Section",
+        current_user: %{email: "instructor@example.edu"},
+        patch_url_type: :instructor_dashboard,
+        student_id: nil,
+        view: :insights,
+        v25_migration: :done
+      }
+
+      assert {:ok, updated_socket} = LearningObjectives.update(assigns, socket)
+      assert updated_socket.assigns.expanded_objectives == MapSet.new(["row_1"])
+
+      assert updated_socket.assigns.table_model.data.expanded_rows ==
+               MapSet.new(["row_1"])
     end
 
     test "initial_expanded_rows expands the targeted parent objective" do
@@ -128,13 +215,50 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
              }) == MapSet.new(["row_1"])
     end
 
-    test "initial_expanded_rows expands the parent for a subobjective deep link" do
+    test "initial_expanded_rows expands the subobjective row for a subobjective deep link" do
       scoped_objectives = objectives_with_subobjective()
 
       assert LearningObjectives.initial_expanded_rows(scoped_objectives, %{
                objective_id: 1,
                subobjective_id: 2
-             }) == MapSet.new(["row_1"])
+             }) == MapSet.new(["row_2"])
+    end
+
+    test "update seeds expanded rows for subobjective tile navigation handoff" do
+      objectives = objectives_with_subobjective()
+
+      socket =
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            __changed__: %{},
+            myself: %Phoenix.LiveComponent.CID{cid: 1}
+          }
+        }
+
+      assigns = %{
+        id: "learning-objectives-update-subobjective-test",
+        objectives_tab: %{objectives: objectives, navigator_items: []},
+        params: %{
+          "filter_by" => "10",
+          "objective_id" => "1",
+          "subobjective_id" => "2",
+          "navigation_source" => "challenging_objectives_tile"
+        },
+        section_slug: "test-section",
+        section_id: 1,
+        section_title: "Test Section",
+        current_user: %{email: "instructor@example.edu"},
+        patch_url_type: :instructor_dashboard,
+        student_id: nil,
+        view: :insights,
+        v25_migration: :done
+      }
+
+      assert {:ok, updated_socket} = LearningObjectives.update(assigns, socket)
+      assert updated_socket.assigns.expanded_objectives == MapSet.new(["row_2"])
+
+      assert updated_socket.assigns.table_model.data.expanded_rows ==
+               MapSet.new(["row_2"])
     end
 
     test "initial_expanded_rows ignores unresolved deep-link ids" do
@@ -144,6 +268,21 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
                objective_id: 99,
                subobjective_id: 999
              }) == MapSet.new()
+    end
+
+    test "starting_expanded_objectives resets prior expansion state for tile navigation" do
+      socket = %Phoenix.LiveView.Socket{assigns: %{expanded_objectives: MapSet.new(["row_1"])}}
+
+      assert LearningObjectives.starting_expanded_objectives(socket, %{
+               navigation_source: "challenging_objectives_tile"
+             }) == MapSet.new()
+    end
+
+    test "starting_expanded_objectives preserves prior expansion state outside tile navigation" do
+      existing = MapSet.new(["row_1"])
+      socket = %Phoenix.LiveView.Socket{assigns: %{expanded_objectives: existing}}
+
+      assert LearningObjectives.starting_expanded_objectives(socket, %{}) == existing
     end
 
     test "emits navigation telemetry when arriving from challenging objectives tile", %{
