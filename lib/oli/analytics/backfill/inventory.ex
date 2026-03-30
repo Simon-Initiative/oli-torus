@@ -1315,6 +1315,10 @@ defmodule Oli.Analytics.Backfill.Inventory do
         attrs
         |> fetch_value(:metadata, %{})
         |> ensure_map()
+        |> Map.put(
+          "optimize_after_backfill",
+          truthy?(fetch_value(attrs, :optimize_after_backfill, true))
+        )
         |> Map.put_new("batch_chunk_size", config[:batch_chunk_size])
         |> Map.put_new("manifest_page_size", config[:manifest_page_size])
         |> Map.put("max_simultaneous_batches", max_simultaneous)

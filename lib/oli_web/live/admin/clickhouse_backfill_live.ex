@@ -594,7 +594,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
               <span>Dry run (count rows only)</span>
             </label>
 
-            <label class="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               <input
                 type="hidden"
                 name="backfill[optimize_after_backfill]"
@@ -607,7 +607,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 checked={truthy?(@form_inputs.optimize_after_backfill)}
                 class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary"
               />
-              <span>Run `OPTIMIZE TABLE ... FINAL` after backfill is completed</span>
+              <span>Run final table optimization after backfill is completed</span>
             </label>
 
             <div>
@@ -980,6 +980,24 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
               </label>
             </div>
 
+            <div>
+              <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 md:col-span-4">
+                <input
+                  type="hidden"
+                  name="inventory[optimize_after_backfill]"
+                  value="false"
+                />
+                <input
+                  type="checkbox"
+                  name="inventory[optimize_after_backfill]"
+                  value="true"
+                  checked={truthy?(@inventory_form_inputs.optimize_after_backfill)}
+                  class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary"
+                />
+                <span>Run final table optimization after backfill is completed</span>
+              </label>
+            </div>
+
             <div class="flex items-center justify-end gap-3">
               <.button type="submit" class="btn-primary">
                 Run Backfill
@@ -1017,6 +1035,11 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
                   Dry run: {if run.dry_run, do: "Yes", else: "No"}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Post-backfill optimize: {if truthy?(run.metadata["optimize_after_backfill"]),
+                    do: "Yes",
+                    else: "No"}
                 </div>
                 <div
                   :if={inventory_skipped_objects(run) > 0}
@@ -1558,6 +1581,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       inventory_date: default_date,
       target_table: Backfill.default_target_table(),
       dry_run: false,
+      optimize_after_backfill: true,
       date_range_start: nil,
       date_range_end: nil,
       batch_chunk_size: inventory_chunk_size(config),
@@ -1574,6 +1598,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       inventory_date: :date,
       target_table: :string,
       dry_run: :boolean,
+      optimize_after_backfill: :boolean,
       date_range_start: :string,
       date_range_end: :string,
       batch_chunk_size: :integer,
@@ -1683,6 +1708,11 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         |> Map.get(:dry_run)
         |> Kernel.||(Map.get(inputs, "dry_run"))
         |> truthy?(),
+      optimize_after_backfill:
+        inputs
+        |> Map.get(:optimize_after_backfill)
+        |> Kernel.||(Map.get(inputs, "optimize_after_backfill"))
+        |> truthy?(),
       date_range_start:
         inputs
         |> Map.get(:date_range_start)
@@ -1727,6 +1757,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     date = params |> Map.get("inventory_date", "") |> String.trim()
     target = params |> Map.get("target_table", "") |> String.trim()
     dry_run = truthy?(Map.get(params, "dry_run"))
+    optimize_after_backfill = truthy?(Map.get(params, "optimize_after_backfill", true))
     range_start = params |> Map.get("date_range_start", "") |> String.trim()
     range_end = params |> Map.get("date_range_end", "") |> String.trim()
     chunk_size = params |> Map.get("batch_chunk_size", "") |> String.trim()
@@ -1738,6 +1769,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       inventory_date: date,
       target_table: if(target == "", do: Backfill.default_target_table(), else: target),
       dry_run: dry_run,
+      optimize_after_backfill: optimize_after_backfill,
       date_range_start: range_start,
       date_range_end: range_end,
       batch_chunk_size: if(chunk_size == "", do: defaults.batch_chunk_size, else: chunk_size),

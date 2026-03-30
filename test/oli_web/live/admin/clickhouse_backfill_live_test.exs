@@ -102,7 +102,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       html = render(view)
 
-      assert html =~ "Run `OPTIMIZE TABLE ... FINAL` after backfill is completed"
+      assert html =~ "Run final table optimization after backfill is completed"
 
       assert has_element?(
                view,
@@ -133,6 +133,15 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         |> Date.to_iso8601()
 
       assert html =~ "value=\"#{yesterday}\""
+    end
+
+    test "inventory backfill form enables post-backfill optimize by default", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+
+      assert has_element?(
+               view,
+               "input[name=\"inventory[optimize_after_backfill]\"][checked]"
+             )
     end
 
     test "shows batch progress", %{conn: conn} do
@@ -183,6 +192,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
       assert run.dry_run
       assert run.metadata["dry_run"]
+      assert run.metadata["optimize_after_backfill"]
       assert run.metadata["max_simultaneous_batches"] == 1
       assert run.metadata["max_batch_retries"] == 1
 
@@ -209,10 +219,34 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
       assert run.metadata["max_simultaneous_batches"] == 1
       assert run.metadata["max_batch_retries"] == 1
+      assert run.metadata["optimize_after_backfill"]
       refute run.dry_run
 
       rendered = render(view)
       assert rendered =~ "Inventory batch run has been enqueued"
+    end
+
+    test "inventory scheduling can disable post-backfill optimize", %{conn: conn} do
+      Repo.delete_all(InventoryRun)
+      clear_oban_jobs()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-04",
+        "target_table" => "analytics.raw_events",
+        "optimize_after_backfill" => "false"
+      }
+
+      view
+      |> form("form[phx-submit=\"inventory_schedule\"]", %{"inventory" => params})
+      |> render_submit()
+
+      assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
+      assert run.metadata["optimize_after_backfill"] == false
+
+      rendered = render(view)
+      assert rendered =~ "Post-backfill optimize: No"
     end
 
     test "inventory scheduling records date range filters", %{conn: conn} do
