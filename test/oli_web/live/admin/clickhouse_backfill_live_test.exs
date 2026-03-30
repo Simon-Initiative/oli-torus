@@ -96,7 +96,9 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert rendered =~ "Recent Runs"
     end
 
-    test "manual backfill form enables post-backfill optimize by default", %{conn: conn} do
+    test "manual dry-run form shows post-backfill optimize unchecked and disabled by default", %{
+      conn: conn
+    } do
       {:ok, view, _html} = live(conn, @route)
       view |> open_manual_tab()
 
@@ -104,9 +106,14 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       assert html =~ "Run final table optimization after backfill is completed"
 
+      refute has_element?(
+               view,
+               "#backfill-optimize-after-backfill-disabled[checked]"
+             )
+
       assert has_element?(
                view,
-               "input[name=\"backfill[optimize_after_backfill]\"][checked]"
+               "#backfill-optimize-after-backfill-disabled[disabled]"
              )
     end
 
@@ -140,8 +147,91 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       assert has_element?(
                view,
-               "input[name=\"inventory[optimize_after_backfill]\"][checked]"
+               "#inventory-optimize-after-backfill-enabled[checked]"
              )
+
+      refute has_element?(
+               view,
+               "#inventory-optimize-after-backfill-enabled[disabled]"
+             )
+    end
+
+    test "inventory dry run disables and unchecks post-backfill optimize", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-01",
+        "target_table" => "analytics.raw_events",
+        "dry_run" => "true"
+      }
+
+      render_change(view, "inventory_validate", %{"inventory" => params})
+
+      refute has_element?(
+               view,
+               "#inventory-optimize-after-backfill-disabled[checked]"
+             )
+
+      assert has_element?(
+               view,
+               "#inventory-optimize-after-backfill-disabled[disabled]"
+             )
+    end
+
+    test "inventory restores optimize preference after dry run is turned off", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-01",
+        "target_table" => "analytics.raw_events",
+        "dry_run" => "true"
+      }
+
+      render_change(view, "inventory_validate", %{"inventory" => params})
+
+      refute has_element?(
+               view,
+               "#inventory-optimize-after-backfill-disabled[checked]"
+             )
+
+      params =
+        params
+        |> Map.delete("dry_run")
+        |> Map.put("optimize_after_backfill_preference", "true")
+
+      render_change(view, "inventory_validate", %{"inventory" => params})
+
+      assert has_element?(
+               view,
+               "#inventory-optimize-after-backfill-enabled[checked]"
+             )
+
+      refute has_element?(
+               view,
+               "#inventory-optimize-after-backfill-enabled[disabled]"
+             )
+    end
+
+    test "changing inventory checkbox does not open advanced section", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+
+      refute has_element?(view, "details[open] summary", "Advanced")
+
+      params = %{
+        "inventory_date" => "2024-07-01",
+        "target_table" => "analytics.raw_events",
+        "optimize_after_backfill_preference" => "false"
+      }
+
+      render_change(view, "inventory_validate", %{"inventory" => params})
+
+      refute has_element?(view, "details[open] summary", "Advanced")
+
+      advanced_params = Map.put(params, "batch_chunk_size", "25")
+
+      render_change(view, "inventory_validate", %{"inventory" => advanced_params})
+
+      assert has_element?(view, "details[open] summary", "Advanced")
     end
 
     test "shows batch progress", %{conn: conn} do
@@ -192,7 +282,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert [%InventoryRun{} = run] = Repo.all(InventoryRun)
       assert run.dry_run
       assert run.metadata["dry_run"]
-      assert run.metadata["optimize_after_backfill"]
+      assert run.metadata["optimize_after_backfill"] == false
       assert run.metadata["max_simultaneous_batches"] == 1
       assert run.metadata["max_batch_retries"] == 1
 
@@ -235,7 +325,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       params = %{
         "inventory_date" => "2024-07-04",
         "target_table" => "analytics.raw_events",
-        "optimize_after_backfill" => "false"
+        "optimize_after_backfill_preference" => "false"
       }
 
       view
@@ -382,7 +472,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert [%BackfillRun{} = run] = Repo.all(BackfillRun)
       assert run.s3_pattern == "s3://bucket/**/*.jsonl"
       assert run.dry_run
-      assert run.metadata["optimize_after_backfill"]
+      assert run.metadata["optimize_after_backfill"] == false
 
       assert_enqueued(worker: Oli.Analytics.Backfill.Worker, args: %{"run_id" => run.id})
     end
@@ -396,10 +486,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
         "s3_pattern" => "s3://bucket/**/*.jsonl",
         "target_table" => "analytics.raw_events",
         "format" => "JSONAsString",
-        "optimize_after_backfill" => "false"
+        "optimize_after_backfill_preference" => "false"
       }
 
       view |> open_manual_tab()
+
+      render_change(view, "validate", %{"backfill" => params})
 
       view
       |> form("form[phx-submit=\"schedule\"]", %{"backfill" => params})
@@ -410,6 +502,42 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       html = render(view)
       assert html =~ "Post-backfill optimize: No"
+    end
+
+    test "manual form restores optimize preference after dry run is turned off", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @route)
+      view |> open_manual_tab()
+
+      params = %{
+        "s3_pattern" => "s3://bucket/**/*.jsonl",
+        "target_table" => "analytics.raw_events",
+        "format" => "JSONAsString",
+        "dry_run" => "true"
+      }
+
+      render_change(view, "validate", %{"backfill" => params})
+
+      refute has_element?(
+               view,
+               "#backfill-optimize-after-backfill-disabled[checked]"
+             )
+
+      params =
+        params
+        |> Map.delete("dry_run")
+        |> Map.put("optimize_after_backfill_preference", "true")
+
+      render_change(view, "validate", %{"backfill" => params})
+
+      assert has_element?(
+               view,
+               "#backfill-optimize-after-backfill-enabled[checked]"
+             )
+
+      refute has_element?(
+               view,
+               "#backfill-optimize-after-backfill-enabled[disabled]"
+             )
     end
 
     test "shows an error when admin credentials are not configured for manual backfill", %{

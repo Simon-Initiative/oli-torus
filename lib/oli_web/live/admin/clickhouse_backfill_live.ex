@@ -65,7 +65,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
           inventory_form: inventory_form,
           inventory_form_inputs: inventory_form_inputs,
           inventory_config: inventory_config,
-          inventory_advanced_touched?: false,
           active_tab: active_tab,
           user_token: user_token
         )
@@ -287,6 +286,10 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       if changeset.valid? do
         changeset
         |> Ecto.Changeset.apply_changes()
+        |> Map.put(
+          :optimize_after_backfill_preference,
+          parse_optimize_after_backfill_preference(params, true)
+        )
         |> inventory_form_values(socket.assigns.inventory_config)
       else
         inventory_inputs_from_params(params, socket.assigns.inventory_config)
@@ -295,8 +298,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     {:noreply,
      assign(socket,
        inventory_form: to_form(changeset, as: :inventory),
-       inventory_form_inputs: form_inputs,
-       inventory_advanced_touched?: true
+       inventory_form_inputs: form_inputs
      )}
   end
 
@@ -312,6 +314,13 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         |> Ecto.Changeset.apply_changes()
         |> Map.put(:format, "JSONAsString")
         |> Map.update(:dry_run, false, &truthy?/1)
+        |> Map.put(
+          :optimize_after_backfill,
+          effective_optimize_after_backfill(
+            truthy?(Map.get(params, "dry_run")),
+            parse_optimize_after_backfill_preference(params, true)
+          )
+        )
 
       case Inventory.schedule_run(attrs, socket.assigns[:current_author]) do
         {:ok, _run} ->
@@ -327,7 +336,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                 ),
               inventory_form_inputs:
                 inventory_form_values(defaults, socket.assigns.inventory_config),
-              inventory_advanced_touched?: false,
               active_tab: :inventory
             )
             |> put_flash(:info, "Inventory batch run has been enqueued.")
@@ -336,47 +344,45 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
         {:error, %Ecto.Changeset{} = error_changeset} ->
           error_changeset = Map.put(error_changeset, :action, :insert)
+          form_inputs = inventory_inputs_from_params(params, socket.assigns.inventory_config)
 
           {:noreply,
            assign(socket,
              inventory_form: to_form(error_changeset, as: :inventory),
-             inventory_form_inputs:
-               inventory_inputs_from_params(params, socket.assigns.inventory_config),
-             inventory_advanced_touched?: true
+             inventory_form_inputs: form_inputs
            )}
 
         {:error, reason} ->
+          form_inputs = inventory_inputs_from_params(params, socket.assigns.inventory_config)
+
           {:noreply,
            socket
            |> put_flash(:error, format_error(reason))
            |> assign(
              inventory_form: to_form(Map.put(changeset, :action, :insert), as: :inventory),
-             inventory_form_inputs:
-               inventory_inputs_from_params(params, socket.assigns.inventory_config),
-             inventory_advanced_touched?: true
+             inventory_form_inputs: form_inputs
            )}
       end
     else
       false ->
         changeset = Map.put(changeset, :action, :validate)
+        form_inputs = inventory_inputs_from_params(params, socket.assigns.inventory_config)
 
         {:noreply,
          assign(socket,
            inventory_form: to_form(changeset, as: :inventory),
-           inventory_form_inputs:
-             inventory_inputs_from_params(params, socket.assigns.inventory_config),
-           inventory_advanced_touched?: true
+           inventory_form_inputs: form_inputs
          )}
 
       {:error, reason} ->
+        form_inputs = inventory_inputs_from_params(params, socket.assigns.inventory_config)
+
         {:noreply,
          socket
          |> put_flash(:error, format_error(reason))
          |> assign(
            inventory_form: to_form(Map.put(changeset, :action, :insert), as: :inventory),
-           inventory_form_inputs:
-             inventory_inputs_from_params(params, socket.assigns.inventory_config),
-           inventory_advanced_touched?: true
+           inventory_form_inputs: form_inputs
          )}
     end
   end
@@ -596,18 +602,38 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
             <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               <input
+                :if={truthy?(@form_inputs.dry_run)}
                 type="hidden"
-                name="backfill[optimize_after_backfill]"
+                name="backfill[optimize_after_backfill_preference]"
+                value={to_string(truthy?(@form_inputs.optimize_after_backfill_preference))}
+              />
+              <input
+                :if={not truthy?(@form_inputs.dry_run)}
+                type="hidden"
+                name="backfill[optimize_after_backfill_preference]"
                 value="false"
               />
               <input
+                :if={truthy?(@form_inputs.dry_run)}
+                id="backfill-optimize-after-backfill-disabled"
                 type="checkbox"
-                name="backfill[optimize_after_backfill]"
                 value="true"
-                checked={truthy?(@form_inputs.optimize_after_backfill)}
-                class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary"
+                checked={false}
+                disabled
+                class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary disabled:opacity-60 disabled:cursor-not-allowed"
               />
-              <span>Run final table optimization after backfill is completed</span>
+              <input
+                :if={not truthy?(@form_inputs.dry_run)}
+                id="backfill-optimize-after-backfill-enabled"
+                type="checkbox"
+                name="backfill[optimize_after_backfill_preference]"
+                value="true"
+                checked={truthy?(@form_inputs.optimize_after_backfill_preference)}
+                class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary disabled:opacity-60 disabled:cursor-not-allowed"
+              />
+              <span class={if truthy?(@form_inputs.dry_run), do: "opacity-60 cursor-not-allowed"}>
+                Run final table optimization after backfill is completed
+              </span>
             </label>
 
             <div>
@@ -897,14 +923,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             </details>
 
             <details
-              open={
-                batch_settings_open?(
-                  @inventory_form_inputs,
-                  @inventory_form,
-                  @inventory_config,
-                  @inventory_advanced_touched?
-                )
-              }
+              open={batch_settings_open?(@inventory_form_inputs, @inventory_form, @inventory_config)}
+              phx-mounted={JS.ignore_attributes("open")}
               class="rounded border border-gray-200 dark:border-gray-700 px-4 py-3"
             >
               <summary class="text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer">
@@ -983,18 +1003,42 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             <div>
               <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 md:col-span-4">
                 <input
+                  :if={truthy?(@inventory_form_inputs.dry_run)}
                   type="hidden"
-                  name="inventory[optimize_after_backfill]"
+                  name="inventory[optimize_after_backfill_preference]"
+                  value={
+                    to_string(truthy?(@inventory_form_inputs.optimize_after_backfill_preference))
+                  }
+                />
+                <input
+                  :if={not truthy?(@inventory_form_inputs.dry_run)}
+                  type="hidden"
+                  name="inventory[optimize_after_backfill_preference]"
                   value="false"
                 />
                 <input
+                  :if={truthy?(@inventory_form_inputs.dry_run)}
+                  id="inventory-optimize-after-backfill-disabled"
                   type="checkbox"
-                  name="inventory[optimize_after_backfill]"
                   value="true"
-                  checked={truthy?(@inventory_form_inputs.optimize_after_backfill)}
-                  class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary"
+                  checked={false}
+                  disabled
+                  class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary disabled:opacity-60 disabled:cursor-not-allowed"
                 />
-                <span>Run final table optimization after backfill is completed</span>
+                <input
+                  :if={not truthy?(@inventory_form_inputs.dry_run)}
+                  id="inventory-optimize-after-backfill-enabled"
+                  type="checkbox"
+                  name="inventory[optimize_after_backfill_preference]"
+                  value="true"
+                  checked={truthy?(@inventory_form_inputs.optimize_after_backfill_preference)}
+                  class="h-4 w-4 rounded border-gray-300 text-delivery-primary focus:ring-delivery-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+                <span class={
+                  if truthy?(@inventory_form_inputs.dry_run), do: "opacity-60 cursor-not-allowed"
+                }>
+                  Run final table optimization after backfill is completed
+                </span>
               </label>
             </div>
 
@@ -1323,7 +1367,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
       format = params |> Map.get("format", "JSONAsString") |> String.trim()
       dry_run = truthy?(Map.get(params, "dry_run"))
-      optimize_after_backfill = truthy?(Map.get(params, "optimize_after_backfill", true))
+
+      optimize_after_backfill_preference = parse_optimize_after_backfill_preference(params, true)
+
+      optimize_after_backfill =
+        effective_optimize_after_backfill(dry_run, optimize_after_backfill_preference)
+
       settings_raw = params |> Map.get("clickhouse_settings", "") |> String.trim()
       options_raw = params |> Map.get("options", "") |> String.trim()
 
@@ -1348,6 +1397,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             format: format,
             dry_run: dry_run,
             optimize_after_backfill: optimize_after_backfill,
+            optimize_after_backfill_preference: optimize_after_backfill_preference,
             clickhouse_settings: settings_raw,
             options: options_raw
           }
@@ -1371,6 +1421,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             format: format,
             dry_run: dry_run,
             optimize_after_backfill: optimize_after_backfill,
+            optimize_after_backfill_preference: optimize_after_backfill_preference,
             clickhouse_settings: settings_raw,
             options: options_raw
           }
@@ -1394,6 +1445,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             format: format,
             dry_run: dry_run,
             optimize_after_backfill: optimize_after_backfill,
+            optimize_after_backfill_preference: optimize_after_backfill_preference,
             clickhouse_settings: settings_raw,
             options: options_raw
           }
@@ -1417,6 +1469,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
             format: format,
             dry_run: dry_run,
             optimize_after_backfill: optimize_after_backfill,
+            optimize_after_backfill_preference: optimize_after_backfill_preference,
             clickhouse_settings: settings_raw,
             options: options_raw
           }
@@ -1447,6 +1500,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
 
   defp truthy?(value) when value in [true, "true", "1", 1, "on", "yes"], do: true
   defp truthy?(_), do: false
+
+  defp effective_optimize_after_backfill(true, _preference), do: false
+  defp effective_optimize_after_backfill(false, preference), do: truthy?(preference)
+
+  defp parse_optimize_after_backfill_preference(params, default),
+    do: truthy?(Map.get(params, "optimize_after_backfill_preference", default))
 
   defp normalize_s3_pattern(pattern) when is_binary(pattern) do
     trimmed = String.trim(pattern || "")
@@ -1541,7 +1600,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       target_table: Backfill.default_target_table(),
       format: "JSONAsString",
       dry_run: true,
-      metadata: %{"optimize_after_backfill" => true}
+      metadata: %{"optimize_after_backfill" => false}
     })
   end
 
@@ -1551,7 +1610,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       target_table: Backfill.default_target_table(),
       format: "JSONAsString",
       dry_run: true,
-      optimize_after_backfill: true,
+      optimize_after_backfill: false,
+      optimize_after_backfill_preference: true,
       clickhouse_settings: "",
       options: ""
     }
@@ -1560,13 +1620,19 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   defp refill_inputs(params) do
     params = Map.new(params || %{})
 
+    dry_run = truthy?(Map.get(params, "dry_run"))
+
+    optimize_after_backfill_preference = parse_optimize_after_backfill_preference(params, true)
+
     %{
       s3_pattern: Map.get(params, "s3_pattern", "") |> String.trim(),
       target_table:
         Map.get(params, "target_table", Backfill.default_target_table()) |> String.trim(),
       format: Map.get(params, "format", "JSONAsString") |> String.trim(),
-      dry_run: truthy?(Map.get(params, "dry_run")),
-      optimize_after_backfill: truthy?(Map.get(params, "optimize_after_backfill", true)),
+      dry_run: dry_run,
+      optimize_after_backfill:
+        effective_optimize_after_backfill(dry_run, optimize_after_backfill_preference),
+      optimize_after_backfill_preference: optimize_after_backfill_preference,
       clickhouse_settings: Map.get(params, "clickhouse_settings", "") |> String.trim(),
       options: Map.get(params, "options", "") |> String.trim()
     }
@@ -1582,6 +1648,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       target_table: Backfill.default_target_table(),
       dry_run: false,
       optimize_after_backfill: true,
+      optimize_after_backfill_preference: true,
       date_range_start: nil,
       date_range_end: nil,
       batch_chunk_size: inventory_chunk_size(config),
@@ -1708,11 +1775,21 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
         |> Map.get(:dry_run)
         |> Kernel.||(Map.get(inputs, "dry_run"))
         |> truthy?(),
-      optimize_after_backfill:
+      optimize_after_backfill_preference:
         inputs
-        |> Map.get(:optimize_after_backfill)
-        |> Kernel.||(Map.get(inputs, "optimize_after_backfill"))
+        |> Map.get(:optimize_after_backfill_preference)
+        |> Kernel.||(Map.get(inputs, "optimize_after_backfill_preference"))
         |> truthy?(),
+      optimize_after_backfill:
+        effective_optimize_after_backfill(
+          inputs
+          |> Map.get(:dry_run)
+          |> Kernel.||(Map.get(inputs, "dry_run"))
+          |> truthy?(),
+          inputs
+          |> Map.get(:optimize_after_backfill_preference)
+          |> Kernel.||(Map.get(inputs, "optimize_after_backfill_preference"))
+        ),
       date_range_start:
         inputs
         |> Map.get(:date_range_start)
@@ -1757,7 +1834,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     date = params |> Map.get("inventory_date", "") |> String.trim()
     target = params |> Map.get("target_table", "") |> String.trim()
     dry_run = truthy?(Map.get(params, "dry_run"))
-    optimize_after_backfill = truthy?(Map.get(params, "optimize_after_backfill", true))
+
+    optimize_after_backfill_preference = parse_optimize_after_backfill_preference(params, true)
+
+    optimize_after_backfill =
+      effective_optimize_after_backfill(dry_run, optimize_after_backfill_preference)
+
     range_start = params |> Map.get("date_range_start", "") |> String.trim()
     range_end = params |> Map.get("date_range_end", "") |> String.trim()
     chunk_size = params |> Map.get("batch_chunk_size", "") |> String.trim()
@@ -1770,6 +1852,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       target_table: if(target == "", do: Backfill.default_target_table(), else: target),
       dry_run: dry_run,
       optimize_after_backfill: optimize_after_backfill,
+      optimize_after_backfill_preference: optimize_after_backfill_preference,
       date_range_start: range_start,
       date_range_end: range_end,
       batch_chunk_size: if(chunk_size == "", do: defaults.batch_chunk_size, else: chunk_size),
@@ -2028,80 +2111,63 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
     has_value? or has_error?
   end
 
-  defp batch_settings_open?(inputs, form, config, touched?) do
-    if not touched? do
-      false
-    else
-      defaults = inventory_default_inputs(config)
+  defp batch_settings_open?(inputs, form, config) do
+    defaults = inventory_default_inputs(config)
 
-      chunk_size =
-        inputs
-        |> Map.get(:batch_chunk_size)
-        |> Kernel.||(Map.get(inputs, "batch_chunk_size"))
+    chunk_size =
+      inputs
+      |> Map.get(:batch_chunk_size)
+      |> Kernel.||(Map.get(inputs, "batch_chunk_size"))
 
-      page_size =
-        inputs
-        |> Map.get(:manifest_page_size)
-        |> Kernel.||(Map.get(inputs, "manifest_page_size"))
+    page_size =
+      inputs
+      |> Map.get(:manifest_page_size)
+      |> Kernel.||(Map.get(inputs, "manifest_page_size"))
 
-      max_simultaneous =
-        inputs
-        |> Map.get(:max_simultaneous_batches)
-        |> Kernel.||(Map.get(inputs, "max_simultaneous_batches"))
+    max_simultaneous =
+      inputs
+      |> Map.get(:max_simultaneous_batches)
+      |> Kernel.||(Map.get(inputs, "max_simultaneous_batches"))
 
-      max_retries =
-        inputs
-        |> Map.get(:max_batch_retries)
-        |> Kernel.||(Map.get(inputs, "max_batch_retries"))
+    max_retries =
+      inputs
+      |> Map.get(:max_batch_retries)
+      |> Kernel.||(Map.get(inputs, "max_batch_retries"))
 
-      raw_params = Map.new(form.params || %{})
+    has_value? =
+      Enum.any?(
+        [
+          {chunk_size, defaults.batch_chunk_size},
+          {page_size, defaults.manifest_page_size},
+          {max_simultaneous, defaults.max_simultaneous_batches},
+          {max_retries, defaults.max_batch_retries}
+        ],
+        fn {value, default} ->
+          cond do
+            present?(value) ->
+              parsed = parse_positive_integer(value, default)
+              parsed != default
 
-      has_raw_input? =
-        Enum.any?(
-          [
-            "batch_chunk_size",
-            "manifest_page_size",
-            "max_simultaneous_batches",
-            "max_batch_retries"
-          ],
-          &Map.has_key?(raw_params, &1)
-        )
-
-      has_value? =
-        Enum.any?(
-          [
-            {chunk_size, defaults.batch_chunk_size},
-            {page_size, defaults.manifest_page_size},
-            {max_simultaneous, defaults.max_simultaneous_batches},
-            {max_retries, defaults.max_batch_retries}
-          ],
-          fn {value, default} ->
-            cond do
-              present?(value) ->
-                parsed = parse_positive_integer(value, default)
-                parsed != default
-
-              true ->
-                false
-            end
+            true ->
+              false
           end
-        )
+        end
+      )
 
-      has_error? =
-        Enum.any?(
-          [
-            form[:batch_chunk_size].errors,
-            form[:manifest_page_size].errors,
-            form[:max_simultaneous_batches].errors,
-            form[:max_batch_retries].errors
-          ],
-          fn errors ->
-            match?([{_, _} | _], errors)
-          end
-        )
+    has_error? =
+      Enum.any?(
+        [
+          form[:batch_chunk_size].errors,
+          form[:manifest_page_size].errors,
+          form[:max_simultaneous_batches].errors,
+          form[:max_batch_retries].errors
+        ],
+        fn errors ->
+          match?([{_, _} | _], errors)
+        end
+      )
 
-      has_raw_input? or has_value? or has_error?
-    end
+    has_value? or has_error?
   end
 
   defp present?(value) when value in [nil, ""], do: false
