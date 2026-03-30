@@ -13,6 +13,7 @@ Deliver MER-4052 cover-image previews on Template Overview by extending the exis
 - The implementation should use `OliWeb.Components.Modal` for the new preview modal even if `DetailsLive` still carries deprecated modal support for unrelated behavior.
 - No feature flag, migration, telemetry, or background job work is required.
 - QA parity sign-off uses `375px`, `768px`, and `1280px`; Student Welcome checks at `1280px` must satisfy the runtime `hvxl` onboarding behavior.
+- The large selected preview shows the full uploaded image asset, while the three gallery thumbnails must behave as scaled full-context compositions of their learner-facing surfaces rather than responsively reflowing into narrow card widths.
 - If a reusable certificate-preview carousel helper appears during implementation and matches the requirements cleanly, it may replace a feature-specific modal body; otherwise the feature keeps its own modal content built on the shared modal primitive.
 
 ## Phase 1: Baseline the Existing Cover Image Surface
@@ -69,6 +70,7 @@ Deliver MER-4052 cover-image previews on Template Overview by extending the exis
 - Tasks:
   - [ ] Create `OliWeb.Products.ImagePreview` as the gallery and preview orchestration module.
   - [ ] Create wrapper components for My Course, Course Picker, and Student Welcome.
+  - [ ] Add explicit thumbnail preview-canvas sizing and per-context scaling so gallery previews preserve runtime layout proportions instead of reflowing into the thumbnail width.
   - [ ] Add or refactor the minimal runtime-safe seams required:
     - My Course card: suppress navigation and runtime instructor lookup in preview mode.
     - Course Picker card listing: disable selection behavior in preview mode.
@@ -80,6 +82,7 @@ Deliver MER-4052 cover-image previews on Template Overview by extending the exis
     - My Course preview renders through the runtime card path without side effects (`AC-001`, `AC-004`)
     - Course Picker preview renders through `CardListing` without selection behavior (`AC-002`, `AC-004`)
     - Student Welcome preview renders through onboarding intro (`AC-003`, `AC-004`)
+    - gallery thumbnails render as scaled full-context compositions rather than narrow responsive reflows
     - runtime default behavior is unchanged when preview mode is not used
   - Command(s): `mix test test/oli_web/live/workspaces/student_test.exs`
 - Definition of Done:

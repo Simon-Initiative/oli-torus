@@ -1,7 +1,7 @@
 # Image Preview - Functional Design Document
 
 ## 1. Executive Summary
-This design adds ticket-accurate cover-image mockups to Template Overview by extending the existing cover-image upload area in `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive` and reusing the real learner-facing rendering seams that already exist for My Course, Course Picker, and Student Welcome. The selected implementation is a small Template Overview-owned gallery and modal flow: the page renders one large selected preview plus three thumbnail previews after a cover image exists, applies the Figma hover treatment on thumbnails, and opens a modal carousel when a thumbnail is clicked. The previews themselves are not screenshot composites or duplicate mock components; they are rendered through thin preview wrappers that call the existing runtime components with preview-safe assigns and optional non-interactive behavior. No schema changes, feature flags, or new telemetry are required.
+This design adds ticket-accurate cover-image mockups to Template Overview by extending the existing cover-image upload area in `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive` and reusing the real learner-facing rendering seams that already exist for My Course, Course Picker, and Student Welcome. The selected implementation is a small Template Overview-owned gallery and modal flow: the page renders one large selected preview plus three thumbnail previews after a cover image exists, applies the Figma hover treatment on thumbnails, and opens a modal carousel when a thumbnail is clicked. The top selected preview shows the full uploaded asset, while the three context thumbnails render scaled-down full-context compositions of the learner-facing surfaces rather than allowing those surfaces to responsively reflow into the thumbnail width. The previews themselves are not screenshot composites or duplicate mock components; they are rendered through thin preview wrappers that call the existing runtime components with preview-safe assigns and optional non-interactive behavior. No schema changes, feature flags, or new telemetry are required.
 
 ## 2. Requirements & Assumptions
 - Functional requirements:
@@ -53,6 +53,7 @@ The simplest adequate design is to keep gallery and modal state in Template Over
   - Renders the large selected preview, the three thumbnails, and the modal carousel content.
   - Owns context labels and context ordering: My Course, Course Picker, Student Welcome.
   - Delegates actual context rendering to dedicated preview wrappers.
+  - Applies the fixed preview-frame sizing and scaling needed so thumbnail previews preserve runtime layout proportions instead of reflowing into the thumbnail column width.
 - New wrapper components under `OliWeb.Products.ImagePreview`
   - `MyCoursePreview`
   - `CoursePickerPreview`
@@ -77,14 +78,15 @@ This is preferred over embedding full LiveViews or building screenshot mockups b
    - modal open/closed state
    - the request context already assigned to the page
 5. `OliWeb.Products.ImagePreview` builds a fixed list of three preview items and renders:
-   - one large selected preview pane
-   - three thumbnail buttons
+   - one large selected preview pane that shows the full uploaded image asset
+   - three thumbnail buttons that each contain a scaled full-context composition of the corresponding learner-facing surface
 6. Hover styling is applied in the gallery component using the design-system classes selected to match Figma.
 7. Clicking a thumbnail updates the selected context and opens the modal when requested.
 8. The selected wrapper component maps template data to the corresponding runtime component contract:
    - My Course wrapper provides a preview-safe section-like map and disables link navigation and runtime instructor lookup.
    - Course Picker wrapper provides a one-row `model` and disables card selection click handling.
    - Student Welcome wrapper provides a section-like map with deterministic values for any conditional onboarding bullets.
+   - The gallery host provides a fixed inner preview width and scaling factor per context so those reused runtime surfaces preserve their intended proportions in thumbnail form.
 9. The modal carousel renders the same three wrapper components in modal form and uses next/previous controls plus position indicators.
 
 ### 4.3 Lifecycle & Ownership
@@ -201,6 +203,7 @@ This is preferred over embedding full LiveViews or building screenshot mockups b
   - responsive parity checks are covered at `375px`, `768px`, and `1280px` through targeted UI assertions and manual QA (`AC-012`)
 - Manual verification:
   - compare gallery and modal against Figma nodes `363:6938` and `334:4814`
+  - confirm the three gallery thumbnails behave as scaled full-context compositions rather than narrow-column responsive reflows
   - verify keyboard reachability, focus handling, escape-to-close, and accessible names in the modal and thumbnail gallery
 
 ## 14. Backwards Compatibility
@@ -212,6 +215,7 @@ This is preferred over embedding full LiveViews or building screenshot mockups b
 ## 15. Risks & Mitigations
 - Runtime components may contain hidden assumptions that make inline preview unsafe: add narrow preview-mode attrs or wrapper-owned defaults rather than forking full component markup.
 - The gallery could drift from Figma while the embedded preview content stays accurate: keep all gallery and modal structure centralized in one new `OliWeb.Products.ImagePreview` module.
+- Thumbnail previews could remain technically shared-rendering but still look wrong if they reflow to the card width: keep scaling and fixed preview-canvas sizing explicit in the gallery host instead of relying on reused runtime components to self-size correctly in narrow containers.
 - The My Course card currently performs DB lookups inline: remove or bypass that runtime-only lookup in preview mode so gallery and modal navigation stay cheap and deterministic.
 - Using the deprecated modal helper would create new cleanup debt: implement the new preview modal with `OliWeb.Components.Modal`.
 

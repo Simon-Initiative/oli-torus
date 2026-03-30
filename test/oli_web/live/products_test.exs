@@ -356,13 +356,17 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert has_element?(view, "#img-preview-gallery")
 
-      assert view
-             |> element("#selected-image-preview #current-product-img")
-             |> render() =~ "src=\"https://example.com/some-image-url.png\""
+      assert has_element?(
+               view,
+               "#selected-image-preview #current-product-img[src='https://example.com/some-image-url.png']"
+             )
 
       assert has_element?(view, "#image-preview-thumbnail-my-course")
       assert has_element?(view, "#image-preview-thumbnail-course-picker")
       assert has_element?(view, "#image-preview-thumbnail-student-welcome")
+
+      assert render(view) =~
+               "background-image: url(&#39;https://example.com/some-image-url.png&#39;);"
     end
 
     test "renders no preview gallery when there is no current image", %{
@@ -450,6 +454,8 @@ defmodule OliWeb.ProductsLiveTest do
                view,
                "#selected-image-preview #current-product-img[src='#{current_image}']"
              )
+
+      assert render(view) =~ "background-image: url(&#39;#{current_image}&#39;);"
     end
   end
 

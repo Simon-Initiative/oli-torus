@@ -105,7 +105,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert paywall_index < content_index
     end
 
-    test "renders the cover image section beneath paywall settings with helper text and gallery shell",
+    test "renders the cover image section beneath paywall settings with shared preview gallery",
          ctx do
       %{conn: conn, project: project, product: product} = ctx
 
@@ -126,15 +126,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
 
       assert has_element?(
                live,
-               "#img-preview-gallery #current-product-img[src='https://example.com/template-cover.png']"
+               "#selected-image-preview #current-product-img[src='https://example.com/template-cover.png']"
              )
 
-      assert has_element?(live, "#selected-image-preview[data-preview-context='my-course']")
+      assert render(live) =~
+               "background-image: url(&#39;https://example.com/template-cover.png&#39;);"
+
+      assert has_element?(live, "#selected-image-preview[data-preview-context='cover_image']")
       assert has_element?(live, "#image-preview-thumbnails")
       assert has_element?(live, "#image-preview-thumbnail-my-course")
       assert has_element?(live, "#image-preview-thumbnail-course-picker")
       assert has_element?(live, "#image-preview-thumbnail-student-welcome")
-      assert has_element?(live, ".image-preview-thumbnail.hover\\:shadow-lg")
+      assert has_element?(live, "#image-preview-thumbnail-my-course [data-preview-mode='true']")
+
+      assert has_element?(
+               live,
+               "#image-preview-thumbnail-course-picker [data-preview-mode='true']"
+             )
+
+      assert has_element?(live, "#image-preview-thumbnail-student-welcome", "Welcome to")
+      assert has_element?(live, ".image-preview-thumbnail .group-hover\\:shadow-lg")
 
       {paywall_index, _} = :binary.match(html, "Paywall Settings")
       {cover_image_index, _} = :binary.match(html, "Cover Image")

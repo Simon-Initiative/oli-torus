@@ -35,6 +35,8 @@ MER-4052 (`image_preview`) adds cover-image mockups to Template Overview so auth
 - The upload affordance uses the newer design-system button styling shown in Figma together with the existing drag-and-drop area.
 - When no cover image is selected, the section shows the upload affordance only and no mockup gallery.
 - After a cover image is available, the section shows a large selected mockup plus three smaller mockups representing My Course, Course Picker, and Student Welcome.
+- The large selected preview shows the full uploaded cover image asset at a readable size.
+- Each of the three context mockups presents a scaled-down full-context composition of the corresponding learner-facing surface so reviewers can see the cover image in place without the preview reflowing into a narrow-card layout.
 - Hovering a mockup applies the drop-shadow hover state shown in Figma.
 - Clicking a mockup opens a modal carousel that lets the user move across the three mockups without leaving Template Overview.
 - Preview controls and modal controls must be keyboard accessible, expose clear accessible names, and preserve visible focus treatment.
@@ -103,7 +105,7 @@ Telemetry is not required for this work item. Success is established by matching
 - Manual validation:
   - Compare preview and runtime rendering for My Course, Course Picker, and Welcome at `375px`, `768px`, and `1280px`.
   - Verify no mockups appear before a cover image is chosen.
-  - Verify the uploaded-image state matches the Figma gallery layout, including hover drop shadow on mockups.
+  - Verify the uploaded-image state matches the Figma gallery layout, including hover drop shadow on mockups and scaled full-context thumbnail compositions rather than narrow responsive reflow.
   - Verify clicking each mockup opens the modal carousel and that carousel controls move among all three mockups.
   - Verify keyboard navigation, focus treatment, and accessible labeling for preview and modal controls.
   - Verify that changes to a shared runtime rendering unit are reflected in preview without additional preview-only edits.

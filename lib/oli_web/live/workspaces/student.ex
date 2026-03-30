@@ -217,71 +217,116 @@ defmodule OliWeb.Workspaces.Student do
   attr :section, :map
   attr :params, :map
   attr :ctx, :map
+  attr :preview_mode, :boolean, default: false
 
   def course_card(assigns) do
+    instructors =
+      case Map.fetch(assigns.section, :instructors) do
+        :error -> Sections.get_instructors_for_section(assigns.section.id)
+        {:ok, instructors} -> normalize_instructors(instructors)
+      end
+
+    assigns = assign(assigns, :instructors, instructors)
+
     ~H"""
-    <.link
-      href={get_course_url(@section, @params.sidebar_expanded)}
-      phx-click={JS.add_class("opacity-0", to: "#content")}
-      phx-mounted={
-        JS.transition(
-          {"ease-out duration-300", "opacity-0 -translate-x-1/2", "opacity-100 translate-x-0"},
-          time: if(@index < 6, do: 100 + @index * 20, else: 240)
-        )
-        |> JS.remove_class("opacity-100 translate-x-0")
-      }
-      class="opacity-0 relative flex items-center self-stretch w-full bg-cover py-4 md:py-12 px-6 md:px-24 text-white hover:text-white rounded-xl shadow-lg hover:no-underline transition-all hover:translate-x-3"
-      style={"background-image: url('#{SourceImage.cover_image(@section)}');"}
-    >
+    <%= if @preview_mode do %>
+      <div
+        class="relative flex items-center self-stretch w-full bg-cover py-4 md:py-12 px-6 md:px-24 text-white rounded-xl shadow-lg"
+        style={"background-image: url('#{SourceImage.cover_image(@section)}');"}
+        data-preview-mode="true"
+      >
+        <.course_card_content
+          section={@section}
+          ctx={@ctx}
+          instructors={@instructors}
+          preview_mode={true}
+        />
+      </div>
+    <% else %>
+      <.link
+        href={get_course_url(@section, @params.sidebar_expanded)}
+        phx-click={JS.add_class("opacity-0", to: "#content")}
+        phx-mounted={
+          JS.transition(
+            {"ease-out duration-300", "opacity-0 -translate-x-1/2", "opacity-100 translate-x-0"},
+            time: if(@index < 6, do: 100 + @index * 20, else: 240)
+          )
+          |> JS.remove_class("opacity-100 translate-x-0")
+        }
+        class="opacity-0 relative flex items-center self-stretch w-full bg-cover py-4 md:py-12 px-6 md:px-24 text-white hover:text-white rounded-xl shadow-lg hover:no-underline transition-all hover:translate-x-3"
+        style={"background-image: url('#{SourceImage.cover_image(@section)}');"}
+      >
+        <.course_card_content
+          section={@section}
+          ctx={@ctx}
+          instructors={@instructors}
+          preview_mode={false}
+        />
+      </.link>
+    <% end %>
+    """
+  end
+
+  attr :section, :map, required: true
+  attr :ctx, :map, required: true
+  attr :instructors, :list, required: true
+  attr :preview_mode, :boolean, default: false
+
+  defp course_card_content(assigns) do
+    ~H"""
+    <%= if @preview_mode do %>
+      <div class="top-0 left-0 rounded-xl absolute w-full h-full bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.58)_100%),linear-gradient(90deg,rgba(0,0,0,0.45)_0%,rgba(0,0,0,0.18)_100%)]" />
+      <div class="top-0 left-0 rounded-xl absolute w-full h-full bg-black/15" />
+    <% else %>
       <div class="top-0 left-0 rounded-xl absolute w-full h-full mix-blend-difference bg-[linear-gradient(180deg,rgba(0,0,0,0.00)_0%,rgba(0,0,0,0.80)_100%),linear-gradient(90deg,rgba(0,0,0,0.80)_0%,rgba(0,0,0,0.40)_100%)]" />
       <div class="top-0 left-0 rounded-xl absolute w-full h-full bg-black/40" />
       <div class="top-0 left-0 rounded-xl absolute w-full h-full backdrop-blur-[30px] bg-[rgba(0,0,0,0.01)]" />
-      <span
-        :if={@section.progress == 100}
-        role={"complete_badge_for_section_#{@section.id}"}
-        class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
-      >
-        Complete
-      </span>
-      <div class="z-10 flex w-full items-center">
-        <div class="flex flex-col items-start gap-2">
-          <div
-            class="justify-center text-[#bab8bf] text-xs font-bold uppercase leading-3"
-            role="start_end_date"
-          >
-            {FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}")} - {FormatDateTime.to_formatted_datetime(
-              @section.end_date,
-              @ctx,
-              "{Mshort} {YYYY}"
-            )}
-          </div>
-          <h3 class="text-2xl md:text-[36px] md:leading-[49px] font-semibold drop-shadow-md">
-            {@section.title}
-          </h3>
-          <div
-            class="justify-center text-[#bab8bf] text-base font-bold leading-normal"
-            role="instructors"
-          >
-            <%= if length(Sections.get_instructors_for_section(@section.id)) == 1 do %>
-              Instructor:
-            <% else %>
-              Instructors:
-            <% end %>
-            {list_instructors(Sections.get_instructors_for_section(@section.id))}
-          </div>
-          <div
-            class="flex flex-col md:flex-row items-center drop-shadow-md md:mt-4"
-            role={"progress_for_section_#{@section.id}"}
-          >
-            <h4 class="text-sm md:text-[16px] md:leading-[32px] tracking-[1.28px] uppercase mr-9 whitespace-nowrap">
-              Course Progress
-            </h4>
-            <.progress_bar percent={@section.progress} show_percent={true} width="100px" />
-          </div>
+    <% end %>
+    <span
+      :if={@section.progress == 100}
+      role={"complete_badge_for_section_#{@section.id}"}
+      class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
+    >
+      Complete
+    </span>
+    <div class="z-10 flex w-full items-center">
+      <div class="flex flex-col items-start gap-2">
+        <div
+          class="justify-center text-[#bab8bf] text-xs font-bold uppercase leading-3"
+          role="start_end_date"
+        >
+          {FormatDateTime.to_formatted_datetime(@section.start_date, @ctx, "{Mshort} {YYYY}")} - {FormatDateTime.to_formatted_datetime(
+            @section.end_date,
+            @ctx,
+            "{Mshort} {YYYY}"
+          )}
         </div>
-        <i class="fa-solid fa-arrow-right ml-auto text-2xl p-[7px] drop-shadow-md"></i>
+        <h3 class="text-2xl md:text-[36px] md:leading-[49px] font-semibold drop-shadow-md">
+          {@section.title}
+        </h3>
+        <div
+          class="justify-center text-[#bab8bf] text-base font-bold leading-normal"
+          role="instructors"
+        >
+          <%= if length(@instructors) == 1 do %>
+            Instructor:
+          <% else %>
+            Instructors:
+          <% end %>
+          {list_instructors(@instructors)}
+        </div>
+        <div
+          class="flex flex-col md:flex-row items-center drop-shadow-md md:mt-4"
+          role={"progress_for_section_#{@section.id}"}
+        >
+          <h4 class="text-sm md:text-[16px] md:leading-[32px] tracking-[1.28px] uppercase mr-9 whitespace-nowrap">
+            Course Progress
+          </h4>
+          <.progress_bar percent={@section.progress} show_percent={true} width="100px" />
+        </div>
       </div>
-    </.link>
+      <i class="fa-solid fa-arrow-right ml-auto text-2xl p-[7px] drop-shadow-md"></i>
+    </div>
     """
   end
 
@@ -344,6 +389,16 @@ defmodule OliWeb.Workspaces.Student do
 
   defp get_course_url(%{slug: slug}, sidebar_expanded),
     do: ~p"/sections/#{slug}?#{%{sidebar_expanded: sidebar_expanded}}"
+
+  defp normalize_instructors(nil), do: []
+
+  defp normalize_instructors(instructors) when is_list(instructors) do
+    Enum.map(instructors, fn
+      %{name: _} = instructor -> instructor
+      instructor when is_binary(instructor) -> %{name: instructor}
+      _ -> %{name: "Unknown"}
+    end)
+  end
 
   defp decode_params(params) do
     %{

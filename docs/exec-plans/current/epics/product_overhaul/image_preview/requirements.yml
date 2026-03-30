@@ -10,21 +10,24 @@ requirements:
   - id: AC-001
     title: (FR-001) - Given an authorized template manager selects My Course preview,
       when the preview renders, then the cover image presentation matches the production
-      My Course surface.
+      My Course surface, including a scaled full-context composition in the gallery
+      rather than a narrow responsive reflow.
     status: proposed
     verification_method: automated
     proofs: []
   - id: AC-002
     title: (FR-001) - Given an authorized template manager selects Course Picker preview,
       when the preview renders, then the cover image presentation matches the production
-      Course Picker surface.
+      Course Picker surface, including a scaled full-context composition in the gallery
+      rather than a narrow responsive reflow.
     status: proposed
     verification_method: automated
     proofs: []
   - id: AC-003
     title: (FR-001) - Given an authorized template manager selects Welcome preview,
       when the preview renders, then the cover image presentation matches the production
-      Welcome surface.
+      Welcome surface, including a scaled full-context composition in the gallery
+      rather than a narrow responsive reflow.
     status: proposed
     verification_method: automated
     proofs: []
@@ -66,7 +69,9 @@ requirements:
   - id: AC-007
     title: (FR-004) - Given a cover image upload succeeds, when the Cover Image section
       renders, then a large selected mockup and three context mockups are shown for
-      My Course, Course Picker, and Student Welcome.
+      My Course, Course Picker, and Student Welcome, with the selected preview showing
+      the full uploaded asset and the three context mockups shown as scaled full-context
+      compositions.
     status: proposed
     verification_method: automated
     proofs: []
@@ -118,8 +123,8 @@ requirements:
     proofs: []
   - id: AC-012
     title: (FR-008) - Given the agreed desktop and mobile breakpoints, when each
-      preview context renders, then layout, spacing, and image treatment match the
-      corresponding destination surface.
+      preview context renders, then layout, spacing, image treatment, and scaled
+      full-context composition match the corresponding destination surface.
     status: proposed
     verification_method: automated
     proofs: []

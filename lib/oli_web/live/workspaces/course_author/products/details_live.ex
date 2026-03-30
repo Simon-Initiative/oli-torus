@@ -188,6 +188,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             change="change"
             cancel_upload="cancel_upload"
             updates={@updates}
+            ctx={@ctx}
           />
         </div>
       </div>

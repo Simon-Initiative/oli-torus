@@ -188,6 +188,7 @@ defmodule OliWeb.Products.DetailsView do
           change="change"
           cancel_upload="cancel_upload"
           updates={@updates}
+          ctx={@ctx}
         />
       </Overview.section>
       <Overview.section
