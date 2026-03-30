@@ -69,6 +69,8 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
   className,
 }) => {
   const [open, setOpen] = useState(false);
+  // 0 = prompt (when provided), 1..N = option labels
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,9 +88,40 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
 
   const sanitized = optionLabels.map((l) => sanitizeRichLabelHtml(l || ''));
   const sanitizedPrompt = sanitizeRichLabelHtml(prompt || '');
+  const hasPrompt = Boolean(sanitizedPrompt);
+  const totalOptions = optionLabels.length;
 
   const showPromptInButton = selectedIndex <= 0;
   const triggerHtml = showPromptInButton ? sanitizedPrompt : sanitized[selectedIndex - 1] ?? '';
+
+  const getDefaultActiveIndex = () => {
+    if (hasPrompt) {
+      return selectedIndex <= 0 ? 0 : selectedIndex;
+    }
+    // Without prompt, ensure we always point to a real option.
+    if (selectedIndex > 0) {
+      return selectedIndex;
+    }
+    return totalOptions > 0 ? 1 : -1;
+  };
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setActiveIndex((prev) => (prev >= 0 ? prev : getDefaultActiveIndex()));
+    // Intentionally do not depend on selection changes while open; native <select> keeps focus on the control.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || activeIndex < 0) {
+      return;
+    }
+    const activeId =
+      activeIndex === 0 ? `${id}-option-prompt` : `${id}-option-${activeIndex}`;
+    document.getElementById(activeId)?.scrollIntoView?.({ block: 'nearest' });
+  }, [activeIndex, id, open]);
 
   return (
     <div
@@ -123,6 +156,10 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
           background-color: #6c757d;
           color: #fff;
         }
+        .janus-dropdown-rich-menu li.is-active {
+          background-color: gray;
+          color: #fff;
+        }
         .janus-dropdown-rich-menu li.is-prompt {
           color: #6c757d;
         }
@@ -141,14 +178,101 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={`${id}-listbox`}
+        aria-disabled={disabled}
+        aria-activedescendant={
+          activeIndex <= -1
+            ? undefined
+            : activeIndex === 0
+              ? `${id}-option-prompt`
+              : `${id}-option-${activeIndex}`
+        }
         onClick={() => !disabled && setOpen((o) => !o)}
         onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            setOpen(false);
+          if (disabled) {
+            return;
           }
-          if ((e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') && !open) {
+
+          if (e.key === 'Escape') {
+            if (open) {
+              e.preventDefault();
+              setOpen(false);
+            }
+            return;
+          }
+
+          if (e.key === 'Tab') {
+            if (open) {
+              setOpen(false);
+            }
+            return;
+          }
+
+          // Open interactions.
+          if (!open) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+              e.preventDefault();
+              const base = getDefaultActiveIndex();
+              if (e.key === 'ArrowDown') {
+                const next = hasPrompt ? (base === 0 ? 1 : base + 1) : base + 1;
+                setActiveIndex(Math.min(next, totalOptions || 1));
+              } else {
+                const prev = hasPrompt ? base - 1 : base - 1;
+                const min = hasPrompt ? 0 : 1;
+                setActiveIndex(Math.max(prev, min));
+              }
+              setOpen(true);
+              return;
+            }
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setOpen(true);
+              return;
+            }
+            return;
+          }
+
+          // Navigation/selection when open.
+          if (e.key === 'ArrowDown') {
             e.preventDefault();
-            setOpen(true);
+            const base = activeIndex < 0 ? getDefaultActiveIndex() : activeIndex;
+            const next = base + 1;
+            const max = hasPrompt ? totalOptions : totalOptions;
+            setActiveIndex(Math.min(next, max));
+            return;
+          }
+
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const base = activeIndex < 0 ? getDefaultActiveIndex() : activeIndex;
+            const prev = base - 1;
+            const min = hasPrompt ? 0 : 1;
+            setActiveIndex(Math.max(prev, min));
+            return;
+          }
+
+          if (e.key === 'Home') {
+            e.preventDefault();
+            setActiveIndex(hasPrompt ? 0 : totalOptions > 0 ? 1 : -1);
+            return;
+          }
+
+          if (e.key === 'End') {
+            e.preventDefault();
+            setActiveIndex(hasPrompt ? totalOptions : totalOptions);
+            return;
+          }
+
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            const base = activeIndex < 0 ? getDefaultActiveIndex() : activeIndex;
+            if (base === 0 && hasPrompt) {
+              setOpen(false);
+              return;
+            }
+            if (base > 0 && base <= totalOptions) {
+              onChange(base);
+              setOpen(false);
+            }
           }
         }}
       >
@@ -164,6 +288,13 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
           role="listbox"
           className="janus-dropdown-rich-menu"
           style={menuStyle}
+          aria-activedescendant={
+            activeIndex <= -1
+              ? undefined
+              : activeIndex === 0
+                ? `${id}-option-prompt`
+                : `${id}-option-${activeIndex}`
+          }
         >
           {/* Prompt as first item — mirrors native disabled first <option> */}
           {sanitizedPrompt ? (
@@ -171,7 +302,8 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
               role="option"
               aria-selected={false}
               aria-disabled
-              className="is-prompt"
+              className={activeIndex === 0 ? 'is-prompt is-active' : 'is-prompt'}
+              id={`${id}-option-prompt`}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => setOpen(false)}
             >
@@ -190,10 +322,14 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
                 key={oneBased}
                 role="option"
                 aria-selected={isSelected}
-                className={isSelected ? 'is-selected' : ''}
+                className={
+                  isSelected ? 'is-selected' : activeIndex === oneBased ? 'is-active' : ''
+                }
+                id={`${id}-option-${oneBased}`}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   setOpen(false);
+                  setActiveIndex(oneBased);
                   onChange(oneBased);
                 }}
               >
