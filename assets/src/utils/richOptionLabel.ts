@@ -29,7 +29,10 @@ export function htmlToPlainText(html: string): string {
     div.innerHTML = sanitized;
     return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
   }
-  return sanitized.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  return sanitized
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**

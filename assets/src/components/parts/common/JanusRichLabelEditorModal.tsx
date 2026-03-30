@@ -58,7 +58,10 @@ export const JanusRichLabelEditorModal: React.FC<JanusRichLabelEditorModalProps>
 
   const modules = useMemo(
     () => ({
-      toolbar: [['bold', 'italic'], [{ script: 'sub' }, { script: 'super' }]],
+      toolbar: [
+        ['bold', 'italic'],
+        [{ script: 'sub' }, { script: 'super' }],
+      ],
     }),
     [],
   );

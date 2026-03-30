@@ -251,9 +251,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     const optionLabel = optionLabels[newIndex - 1];
     setSelectedIndex(newIndex);
     setSelectedItem(optionLabel);
-    setLiveAnnouncement(
-      `${htmlToPlainText(optionLabel)} selected ${newIndex} of ${totalOptions}`,
-    );
+    setLiveAnnouncement(`${htmlToPlainText(optionLabel)} selected ${newIndex} of ${totalOptions}`);
     saveState({
       selectedIndex: newIndex,
       selectedItem: optionLabel,
@@ -278,9 +276,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     const optionLabel = optionLabels[newIndex - 1];
     setSelectedIndex(newIndex);
     setSelectedItem(optionLabel);
-    setLiveAnnouncement(
-      `${htmlToPlainText(optionLabel)} selected ${newIndex} of ${totalOptions}`,
-    );
+    setLiveAnnouncement(`${htmlToPlainText(optionLabel)} selected ${newIndex} of ${totalOptions}`);
     saveState({
       selectedIndex: newIndex,
       selectedItem: optionLabel,

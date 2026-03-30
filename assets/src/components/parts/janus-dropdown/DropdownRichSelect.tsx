@@ -118,8 +118,7 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
     if (!open || activeIndex < 0) {
       return;
     }
-    const activeId =
-      activeIndex === 0 ? `${id}-option-prompt` : `${id}-option-${activeIndex}`;
+    const activeId = activeIndex === 0 ? `${id}-option-prompt` : `${id}-option-${activeIndex}`;
     document.getElementById(activeId)?.scrollIntoView?.({ block: 'nearest' });
   }, [activeIndex, id, open]);
 
@@ -185,8 +184,8 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
           activeIndex <= -1
             ? undefined
             : activeIndex === 0
-              ? `${id}-option-prompt`
-              : `${id}-option-${activeIndex}`
+            ? `${id}-option-prompt`
+            : `${id}-option-${activeIndex}`
         }
         onClick={() => !disabled && setOpen((o) => !o)}
         onKeyDown={(e) => {
@@ -294,8 +293,8 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
             activeIndex <= -1
               ? undefined
               : activeIndex === 0
-                ? `${id}-option-prompt`
-                : `${id}-option-${activeIndex}`
+              ? `${id}-option-prompt`
+              : `${id}-option-${activeIndex}`
           }
         >
           {/* Prompt as first item — mirrors native disabled first <option> */}
@@ -324,9 +323,7 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
                 key={oneBased}
                 role="option"
                 aria-selected={isSelected}
-                className={
-                  isSelected ? 'is-selected' : activeIndex === oneBased ? 'is-active' : ''
-                }
+                className={isSelected ? 'is-selected' : activeIndex === oneBased ? 'is-active' : ''}
                 id={`${id}-option-${oneBased}`}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
