@@ -793,6 +793,10 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       repair_model =
         content
         |> Map.put("resourceBase", "1234")
+        |> Map.put("bundleStatus", %{
+          "code" => "missing_starter_bundle_source",
+          "message" => "Starter bundle files were not found in the media bucket."
+        })
         |> Map.put(
           "modelXml",
           """

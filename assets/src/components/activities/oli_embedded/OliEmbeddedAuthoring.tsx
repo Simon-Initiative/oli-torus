@@ -90,7 +90,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       return;
     }
 
-    const directory = buildUploadDirectory(model.resourceBase);
+    const directory = buildUploadDirectory(resourceBase);
     setProcessingAction('upload');
     uploadSuperActivityFiles(directory, fileList)
       .then((result: any) => {
@@ -207,6 +207,10 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       return;
     }
 
+    if (!bundleRepairAvailable) {
+      return;
+    }
+
     if (activityId === undefined || Number.isNaN(activityId) || !projectSlug) {
       const id = 'bundle_repair_error';
       display(
@@ -278,7 +282,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   };
 
   const removePart = (partId: string) => {
-    if (model.authoring.parts.length <= 1) {
+    if (authoringParts.length <= 1) {
       return;
     }
 
@@ -289,6 +293,13 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     dispatch(OliEmbeddedActions.addNewPart());
   };
 
+  const resourceBase = typeof model.resourceBase === 'string' ? model.resourceBase : '';
+  const modelXml = typeof model.modelXml === 'string' ? model.modelXml : '';
+  const iframeBase = typeof model.base === 'string' ? model.base : '';
+  const iframeSource = typeof model.src === 'string' ? model.src : '';
+  const resourceURLs = Array.isArray(model.resourceURLs) ? model.resourceURLs : [];
+  const authoringParts = Array.isArray(model.authoring?.parts) ? model.authoring.parts : [];
+
   const id = guid();
   const packageImportId = guid();
   const manifestDiagnosticsPanelId = `oli-embedded-manifest-diagnostics-${activityId ?? 'new'}`;
@@ -296,15 +307,15 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   const supportingFilesPanelId = `oli-embedded-supporting-files-${activityId ?? 'new'}`;
   const partsPanelId = `oli-embedded-parts-${activityId ?? 'new'}`;
   const partsGuidancePanelId = `oli-embedded-parts-guidance-${activityId ?? 'new'}`;
-  const uploadedResources = model.resourceURLs.map((url) => ({
+  const uploadedResources = resourceURLs.map((url) => ({
     url,
-    relativePath: lastPart(model.resourceBase, url),
+    relativePath: lastPart(resourceBase, url),
   }));
   const uploadedResourceMap = new Map(
     uploadedResources.map((resource) => [resource.relativePath, resource.url]),
   );
   const diagnostics = analyzeEmbeddedXml(
-    model.modelXml,
+    modelXml,
     uploadedResources.map((resource) => resource.relativePath),
   );
   const verificationStatuses = model.resourceVerification || {};
@@ -326,10 +337,15 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     url: uploadedResourceMap.get(relativePath),
     uploaded: uploadedResourceMap.has(relativePath),
   }));
-  const bundleBacked = isBundleResourceBase(model.resourceBase);
+  const bundleBacked = isBundleResourceBase(resourceBase);
   const bundleStatus = model.bundleStatus;
-  const uploadLocation = buildUploadLocation(model.resourceBase);
-  const runtimeAssetBase = buildRuntimeAssetBase(model.resourceBase);
+  const uploadLocation = buildUploadLocation(resourceBase);
+  const runtimeAssetBase = buildRuntimeAssetBase(resourceBase);
+  const bundleRepairAvailable =
+    !bundleBacked &&
+    !!bundleStatus &&
+    typeof bundleStatus.code === 'string' &&
+    typeof bundleStatus.message === 'string';
   const verifiedXmlReferences = diagnostics.references.filter(
     (reference) => verificationStatuses[reference] === 'verified',
   );
@@ -396,7 +412,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [activityId, dispatch, projectSlug, model.resourceBase, verificationTargets.join('|')]);
+  }, [activityId, dispatch, projectSlug, resourceBase, verificationTargets.join('|')]);
 
   const dismiss = (id: string) => {
     const element = document.querySelector('#' + id);
@@ -483,7 +499,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                 onClick={() =>
                   dispatch(
                     OliEmbeddedActions.editActivityXml(
-                      prettyPrintXml(model.modelXml, { indent: 2, inlineTextMax: 80 }),
+                      prettyPrintXml(modelXml, { indent: 2, inlineTextMax: 80 }),
                     ),
                   )
                 }
@@ -550,7 +566,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       </div>
 
       <WrappedMonaco
-        model={prettyPrintXml(model.modelXml, { indent: 2, inlineTextMax: 80 })}
+        model={prettyPrintXml(modelXml, { indent: 2, inlineTextMax: 80 })}
         editMode={editMode}
         language="XML"
         onEdit={(s: string) => dispatch(OliEmbeddedActions.editActivityXml(s))}
@@ -636,8 +652,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
                 {verificationPending || isVerifyingStorage ? (
                   <div className={`${infoAlertClass} mt-3`}>
-                    Checking supporting files in storage relative to{' '}
-                    <code>{model.resourceBase}</code>.
+                    Checking supporting files in storage relative to <code>{resourceBase}</code>.
                   </div>
                 ) : null}
 
@@ -725,29 +740,31 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                           </div>
                         ) : null}
                       </div>
-                      <button
-                        type="button"
-                        className={warningActionButtonClass}
-                        disabled={actionsDisabled}
-                        onClick={repairBundle}
-                      >
-                        {processingAction === 'repair' ? 'Repairing...' : 'Repair Bundle'}
-                      </button>
+                      {bundleRepairAvailable ? (
+                        <button
+                          type="button"
+                          className={warningActionButtonClass}
+                          disabled={actionsDisabled}
+                          onClick={repairBundle}
+                        >
+                          {processingAction === 'repair' ? 'Repairing...' : 'Repair Bundle'}
+                        </button>
+                      ) : null}
                     </div>
                   )}
                 </div>
                 <div className="row mt-3">
                   <div className="col-md-6 mb-2">
                     <div className={`small ${mutedTextClass}`}>Iframe base</div>
-                    <code>{model.base}</code>
+                    <code>{iframeBase}</code>
                   </div>
                   <div className="col-md-6 mb-2">
                     <div className={`small ${mutedTextClass}`}>Iframe source page</div>
-                    <code>{model.src}</code>
+                    <code>{iframeSource}</code>
                   </div>
                   <div className="col-md-6 mb-2">
                     <div className={`small ${mutedTextClass}`}>resourceBase</div>
-                    <code>{model.resourceBase}</code>
+                    <code>{resourceBase}</code>
                   </div>
                   <div className="col-md-6 mb-2">
                     <div className={`small ${mutedTextClass}`}>Upload destination</div>
@@ -902,7 +919,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
             <div>
               <h3 className="card-title h5 mb-1">Parts</h3>
               <div className={`${mutedTextClass} small d-flex flex-wrap gap-3`}>
-                <span>{model.authoring.parts.length} defined</span>
+                <span>{authoringParts.length} defined</span>
                 <span>
                   Copy part ids into your embedded runtime to connect scoring, state, and saved
                   responses to the correct Torus part.
@@ -987,7 +1004,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                 </div>
 
                 <div className="container">
-                  {model.authoring.parts.map((part, i) => (
+                  {authoringParts.map((part, i) => (
                     <div className="row mb-2" key={i}>
                       <div className="col sm:col-span-2">Part {i + 1}</div>
                       <div className="col lg:col-span-3">
@@ -1026,7 +1043,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                         </button>
                       </div>
                       <div className="col-md-auto">
-                        {model.authoring.parts.length > 1 ? (
+                        {authoringParts.length > 1 ? (
                           <button
                             onClick={() => removePart(part.id)}
                             type="button"

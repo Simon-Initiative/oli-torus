@@ -117,9 +117,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok} <- authorize_user(author, project),
          {:ok, _revision} <-
            AuthoringResolver.from_resource_id(project_slug, activity_id) |> trap_nil() do
-      case should_clone_embedded_bundle?(model) do
+      case repairable_embedded_bundle?(model) do
         true -> clone_embedded_bundle(model)
-        false -> {:ok, model}
+        false -> {:error, {:invalid_request, "Bundle repair is not available for this activity."}}
       end
     else
       error -> error
@@ -1683,6 +1683,17 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
     is_binary(resource_base) and not String.starts_with?(resource_base, "bundles/") and
       is_binary(model_xml) and String.contains?(model_xml, "webcontent/custom_activity/")
+  end
+
+  defp repairable_embedded_bundle?(model) do
+    should_clone_embedded_bundle?(model) and fallback_embedded_bundle_status?(model)
+  end
+
+  defp fallback_embedded_bundle_status?(model) do
+    case Map.get(model, "bundleStatus") do
+      %{"code" => code, "message" => message} when is_binary(code) and is_binary(message) -> true
+      _ -> false
+    end
   end
 
   defp clone_embedded_bundle(model) do

@@ -56,9 +56,9 @@ describe('oli embedded bundle helpers', () => {
     expect(buildRuntimeAssetBase('bundles/abc123')).toBe('/super_media/bundles/abc123/');
   });
 
-  it('normalizes upload paths into the activity bundle location', () => {
-    expect(buildUploadDirectory('abc123')).toBe('bundles/abc123');
-    expect(buildUploadLocation('abc123')).toBe('/media/bundles/abc123/webcontent/...');
+  it('uses shared media upload paths for non-bundle-backed activities', () => {
+    expect(buildUploadDirectory('abc123')).toBe('');
+    expect(buildUploadLocation('abc123')).toBe('/media/webcontent/...');
   });
 
   it('normalizes suggested asset names', () => {

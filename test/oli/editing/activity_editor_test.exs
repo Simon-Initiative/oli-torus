@@ -223,6 +223,10 @@ defmodule Oli.ActivityEditingTest do
       repair_model =
         revision.content
         |> Map.put("resourceBase", "1234")
+        |> Map.put("bundleStatus", %{
+          "code" => "missing_starter_bundle_source",
+          "message" => "Starter bundle files were not found in the media bucket."
+        })
         |> Map.put("resourceURLs", [
           "#{media_url}/media/bundles/1234/webcontent/uploads/existing.css"
         ])
@@ -272,6 +276,75 @@ defmodule Oli.ActivityEditingTest do
 
       assert repaired_model["modelXml"] =~ "webcontent/uploads/existing.css"
       refute repaired_model["modelXml"] =~ "bundles/1234/webcontent/uploads/existing.css"
+    end
+
+    test "repair_embedded_bundle/4 rejects legacy embedded models without bundle fallback status",
+         %{
+           author: author,
+           project: project
+         } do
+      stored_model = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+        </embed_activity>
+        """,
+        "resourceBase" => "bundles/existing-bundle",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      legacy_model = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+        </embed_activity>
+        """,
+        "resourceBase" => "1234",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_embedded", author, stored_model, [])
+
+      assert {:error, {:invalid_request, "Bundle repair is not available for this activity."}} =
+               ActivityEditor.repair_embedded_bundle(
+                 project.slug,
+                 revision.resource_id,
+                 author,
+                 legacy_model
+               )
     end
 
     test "create/4 creates an activity revision with objectives", %{
