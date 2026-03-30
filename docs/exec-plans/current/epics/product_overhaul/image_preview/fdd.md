@@ -1,12 +1,12 @@
 # Image Preview - Functional Design Document
 
 ## 1. Executive Summary
-This design adds ticket-accurate cover-image mockups to Template Overview by extending the existing cover-image upload area in `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive` and reusing the real learner-facing rendering seams that already exist for My Course, Course Picker, and Student Welcome. The selected implementation is a small Template Overview-owned gallery and modal flow: the page renders one large selected preview plus three thumbnail previews after a cover image exists, applies the Figma hover treatment on thumbnails, and opens a modal carousel when a thumbnail is clicked. The top selected preview shows the full uploaded asset, while the three context thumbnails render scaled-down full-context compositions of the learner-facing surfaces rather than allowing those surfaces to responsively reflow into the thumbnail width. The previews themselves are not screenshot composites or duplicate mock components; they are rendered through thin preview wrappers that call the existing runtime components with preview-safe assigns and optional non-interactive behavior. No schema changes, feature flags, or new telemetry are required.
+This design adds ticket-accurate cover-image mockups to Template Overview by extending the existing cover-image upload area in `OliWeb.Workspaces.CourseAuthor.Products.DetailsLive` and reusing the real learner-facing rendering seams that already exist for the image-bearing portions of My Course, Course Picker, and Student Welcome. The selected implementation is a small Template Overview-owned gallery and modal flow: the page renders one large selected preview plus three thumbnail previews after a cover image exists, applies the Figma hover treatment on thumbnails, and opens a modal carousel when a thumbnail is clicked. The top selected preview shows the full uploaded asset, while the three context thumbnails render scaled-down full-context compositions of the learner-facing surfaces rather than allowing those surfaces to responsively reflow into the thumbnail width. The previews are a hybrid: reused runtime image-bearing components sit inside thin preview wrappers and a maintained preview shell that supplies representative surrounding page chrome, inert behavior, and scrolled framing where fully mounting the destination page would be brittle or impractical. No schema changes, feature flags, or new telemetry are required.
 
 ## 2. Requirements & Assumptions
 - Functional requirements:
-  - `FR-001` (`AC-001`, `AC-002`, `AC-003`): render cover-image previews for My Course, Course Picker, and Student Welcome using production-equivalent presentation.
-  - `FR-002` (`AC-004`): reuse shared runtime rendering units so preview and destination surfaces remain synchronized.
+  - `FR-001` (`AC-001`, `AC-002`, `AC-003`): render cover-image previews for My Course, Course Picker, and Student Welcome using production-equivalent image presentation within a representative page context.
+  - `FR-002` (`AC-004`): reuse shared runtime rendering units for the image-bearing regions so preview and destination surfaces remain synchronized where it matters most.
   - `FR-003` (`AC-005`): place the Cover Image section below Paywall Settings and use the MER-4052 upload affordance styling.
   - `FR-004` (`AC-006`, `AC-007`): render no preview gallery before upload and a three-preview gallery after upload.
   - `FR-005` (`AC-008`): apply the Figma hover-state drop shadow to preview thumbnails.
@@ -66,7 +66,7 @@ The simplest adequate design is to keep gallery and modal state in Template Over
 - Modal primitive:
   - New preview modal work should use `OliWeb.Components.Modal`, even if `DetailsLive` still carries deprecated modal support for unrelated behavior.
 
-This is preferred over embedding full LiveViews or building screenshot mockups because it keeps the preview surface inside the authoring page while still sourcing markup from the real learner-facing components.
+This is preferred over embedding full LiveViews or building screenshot mockups because it keeps the preview surface inside the authoring page while still sourcing the most important markup from the real learner-facing components. Full page-level reuse is not the target because the inline preview must be scaled, inert, and embedded outside the destination page's native routing, viewport, and CSS context.
 
 ### 4.2 State & Data Flow
 1. `DetailsLive.mount/3` loads the template section as it does today.
@@ -87,6 +87,7 @@ This is preferred over embedding full LiveViews or building screenshot mockups b
    - Course Picker wrapper provides a one-row `model` and disables card selection click handling.
    - Student Welcome wrapper provides a section-like map with deterministic values for any conditional onboarding bullets.
    - The gallery host provides a fixed inner preview width and scaling factor per context so those reused runtime surfaces preserve their intended proportions in thumbnail form.
+   - The gallery host may also provide representative surrounding shell markup, scroll positioning, and inert control chrome where those concerns are needed to frame the reused image-bearing component realistically without mounting the full runtime page.
 9. The modal carousel renders the same three wrapper components in modal form and uses next/previous controls plus position indicators.
 
 ### 4.3 Lifecycle & Ownership
@@ -95,7 +96,8 @@ This is preferred over embedding full LiveViews or building screenshot mockups b
   - `OliWeb.Products.ImagePreview` owns presentation logic for the gallery and modal but not page authorization or uploads.
 - Data ownership:
   - The template section record remains the source of truth for title, description, welcome text, image, and related display values.
-  - Preview wrappers may derive deterministic placeholder values only for runtime-only fields that are not meaningfully available in Template Overview, such as instructor label or progress.
+- Preview wrappers may derive deterministic placeholder values only for runtime-only fields that are not meaningfully available in Template Overview, such as instructor label or progress.
+- Preview wrappers may also provide representative shell-only values for surrounding page furniture that is helpful for context but not the source of truth for image fidelity.
 - Lifecycle:
   - No new OTP processes, PubSub subscriptions, cache layers, or background jobs.
   - Preview state lives only for the duration of the Template Overview LiveView session.
@@ -131,8 +133,8 @@ This is preferred over embedding full LiveViews or building screenshot mockups b
     - gallery markup, thumbnail controls, and modal markup
 - Preview wrapper interfaces:
   - `MyCoursePreview.render/1`: accepts a section-like preview struct plus `ctx`; suppresses navigation and runtime-only lookup.
-  - `CoursePickerPreview.render/1`: accepts a one-row `model`, `ctx`, and a no-op or disabled `selected` action.
-  - `StudentWelcomePreview.render/1`: accepts a section-like preview struct.
+- `CoursePickerPreview.render/1`: accepts a one-row `model`, `ctx`, and a no-op or disabled `selected` action.
+- `StudentWelcomePreview.render/1`: accepts a section-like preview struct.
 - Expected runtime seams needing small changes:
   - `OliWeb.Workspaces.Student.course_card/1` likely needs optional attrs to disable `href` navigation and use precomputed instructors rather than calling `Sections.get_instructors_for_section/1`.
   - `OliWeb.Common.CardListing.render/1` likely needs an optional disabled-preview mode so cards can render as buttons or inert containers instead of clickable selectors.
@@ -209,6 +211,7 @@ This is preferred over embedding full LiveViews or building screenshot mockups b
 ## 14. Backwards Compatibility
 - Existing template upload/edit behavior remains unchanged.
 - Existing learner-facing routes and components remain the source of truth for their own runtime views.
+- The preview shell around those reused components is intentionally maintained preview code and is not expected to inherit every surrounding runtime-page change automatically.
 - Any new attrs added to reused runtime components must be optional and preserve existing runtime behavior by default.
 - No feature-flag or migration rollout is required; normal deployment is sufficient.
 
@@ -218,6 +221,7 @@ This is preferred over embedding full LiveViews or building screenshot mockups b
 - Thumbnail previews could remain technically shared-rendering but still look wrong if they reflow to the card width: keep scaling and fixed preview-canvas sizing explicit in the gallery host instead of relying on reused runtime components to self-size correctly in narrow containers.
 - The My Course card currently performs DB lookups inline: remove or bypass that runtime-only lookup in preview mode so gallery and modal navigation stay cheap and deterministic.
 - Using the deprecated modal helper would create new cleanup debt: implement the new preview modal with `OliWeb.Components.Modal`.
+- Exact full-page parity can drift because the preview cannot realistically mount every destination route, viewport breakpoint, and interactive control inside Template Overview: isolate that unavoidable approximation to a small preview shell and keep the image-bearing seams shared.
 
 ## 16. Open Questions & Follow-ups
 - Confirm whether the learner-facing My Course card should be adapted with preview attrs or whether its preview should be factored into a lower-level shared component during implementation.

@@ -10,36 +10,37 @@ requirements:
   - id: AC-001
     title: (FR-001) - Given an authorized template manager selects My Course preview,
       when the preview renders, then the cover image presentation matches the production
-      My Course surface, including a scaled full-context composition in the gallery
-      rather than a narrow responsive reflow.
+      My Course surface in the image-bearing region, including a scaled full-context
+      composition in the gallery rather than a narrow responsive reflow.
     status: proposed
     verification_method: automated
     proofs: []
   - id: AC-002
     title: (FR-001) - Given an authorized template manager selects Course Picker preview,
       when the preview renders, then the cover image presentation matches the production
-      Course Picker surface, including a scaled full-context composition in the gallery
-      rather than a narrow responsive reflow.
+      Course Picker surface in the image-bearing region, including a scaled full-context
+      composition in the gallery rather than a narrow responsive reflow.
     status: proposed
     verification_method: automated
     proofs: []
   - id: AC-003
     title: (FR-001) - Given an authorized template manager selects Welcome preview,
       when the preview renders, then the cover image presentation matches the production
-      Welcome surface, including a scaled full-context composition in the gallery
-      rather than a narrow responsive reflow.
+      Welcome surface in the image-bearing region, including a scaled full-context
+      composition in the gallery rather than a narrow responsive reflow.
     status: proposed
     verification_method: automated
     proofs: []
 - id: FR-002
-  title: System SHALL reuse shared runtime rendering units for each supported context
-    so preview and destination surfaces stay synchronized by construction.
+  title: System SHALL reuse shared runtime rendering units for each supported context's
+    image-bearing region so preview and destination surfaces stay synchronized where
+    image fidelity matters most.
   status: proposed
   acceptance_criteria:
   - id: AC-004
     title: (FR-002) - Given a supported context's shared rendering unit changes, when
-      tests run, then both the destination surface and preview reflect the same markup
-      change without a second preview-only update.
+      tests run, then both the destination surface and preview reflect the same image-bearing
+      markup change without a second preview-only update.
     status: proposed
     verification_method: automated
     proofs: []
@@ -124,7 +125,8 @@ requirements:
   - id: AC-012
     title: (FR-008) - Given the agreed desktop and mobile breakpoints, when each
       preview context renders, then layout, spacing, image treatment, and scaled
-      full-context composition match the corresponding destination surface.
+      full-context composition in and around the image-bearing region match the corresponding
+      destination surface, while surrounding shell chrome may be representative.
     status: proposed
     verification_method: automated
     proofs: []

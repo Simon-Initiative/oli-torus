@@ -21,7 +21,7 @@ defmodule OliWeb.Common.CardListing do
               class="course-card-link mb-2 no-underline hover:no-underline"
               data-preview-mode="true"
             >
-              <.card_listing_card item={item} ctx={@ctx} />
+              <.card_listing_card item={item} ctx={@ctx} preview_mode={true} />
             </article>
           <% else %>
             <a
@@ -40,10 +40,18 @@ defmodule OliWeb.Common.CardListing do
 
   attr :item, :map, required: true
   attr :ctx, :map, required: true
+  attr :preview_mode, :boolean, default: false
 
   defp card_listing_card(assigns) do
     ~H"""
-    <div class={"card mb-2 mr-1 ml-1 h-100 " <> if Map.get(@item, :selected), do: "!bg-delivery-primary-100 shadow-inner !border-none", else: ""}>
+    <div class={[
+      "card mb-2 mr-1 ml-1 h-100",
+      if(Map.get(@item, :selected),
+        do: "!bg-delivery-primary-100 shadow-inner !border-none",
+        else: ""
+      ),
+      if(@preview_mode, do: "w-[16.8em] h-[23em] select-none")
+    ]}>
       <img src={cover_image(@item)} class="card-img-top" alt="course image" />
       <div class="card-body">
         <h5 class="card-title mb-1 !whitespace-normal" title={render_title_column(@item)}>
