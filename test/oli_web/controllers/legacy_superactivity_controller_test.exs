@@ -497,12 +497,18 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       assert response(conn, 413) == "file too large"
     end
 
-    test "verifies supporting files relative to resourceBase", %{conn: conn, author: author} do
+    test "verifies supporting files for the authorized activity bundle", %{
+      conn: conn,
+      author: author,
+      project: project,
+      activity_id: activity_id
+    } do
       expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} = op ->
         assert op.http_method == :get
         send(self(), {:aws_verify_request, op.params["prefix"]})
 
-        assert op.params["prefix"] == "media/bundles/verified-bundle/webcontent/custom_activity/"
+        assert op.params["prefix"] ==
+                 "media/bundles/existing-embedded-activity/webcontent/custom_activity/"
 
         {:ok,
          %{
@@ -510,7 +516,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
            body: %{
              contents: [
                %{
-                 key: "media/bundles/verified-bundle/webcontent/custom_activity/customactivity.js"
+                 key:
+                   "media/bundles/existing-embedded-activity/webcontent/custom_activity/customactivity.js"
                }
              ]
            }
@@ -523,7 +530,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         post(conn, "/api/v1/superactivity/media/verify", %{
-          "directory" => "bundles/verified-bundle",
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
           "references" => [
             "webcontent/custom_activity/customactivity.js",
             "webcontent/custom_activity/missing.css"
@@ -531,7 +539,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         })
 
       assert_received {:aws_verify_request,
-                       "media/bundles/verified-bundle/webcontent/custom_activity/"}
+                       "media/bundles/existing-embedded-activity/webcontent/custom_activity/"}
 
       assert json_response(conn, 200) == %{
                "statuses" => %{
@@ -544,18 +552,20 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
     test "exports an embedded activity package zip", %{
       conn: conn,
       author: author,
-      content: content
+      content: content,
+      project: project,
+      activity_id: activity_id
     } do
       model =
         content
-        |> Map.put("resourceBase", "bundles/export-bundle")
+        |> Map.put("resourceBase", "bundles/attacker-controlled-bundle")
         |> Map.put(
           "modelXml",
           """
           <embed_activity>
-            <source>/super_media/bundles/export-bundle/webcontent/custom_activity/customactivity.js</source>
+            <source>webcontent/custom_activity/customactivity.js</source>
             <assets>
-              <asset name="styles">/media/bundles/export-bundle/webcontent/custom_activity/styles.css?v=1</asset>
+              <asset name="styles">webcontent/custom_activity/styles.css?v=1</asset>
             </assets>
           </embed_activity>
           """
@@ -563,10 +573,11 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
         case {op.http_method, op.path} do
-          {:get, "media/bundles/export-bundle/webcontent/custom_activity/customactivity.js"} ->
+          {:get,
+           "media/bundles/existing-embedded-activity/webcontent/custom_activity/customactivity.js"} ->
             {:ok, %{status_code: 200, body: "console.log('boot');"}}
 
-          {:get, "media/bundles/export-bundle/webcontent/custom_activity/styles.css"} ->
+          {:get, "media/bundles/existing-embedded-activity/webcontent/custom_activity/styles.css"} ->
             {:ok, %{status_code: 200, body: "body { color: red; }"}}
         end
       end)
@@ -575,7 +586,12 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         recycle(conn)
         |> log_in_author(author)
 
-      conn = post(conn, "/api/v1/superactivity/package/export", %{"model" => model})
+      conn =
+        post(conn, "/api/v1/superactivity/package/export", %{
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
+          "model" => model
+        })
 
       [disposition] = get_resp_header(conn, "content-disposition")
       assert disposition =~ "embedded_activity_package.zip"
@@ -608,11 +624,13 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
     test "exports supporting files referenced by ctat-style manifest xml", %{
       conn: conn,
       author: author,
-      content: content
+      content: content,
+      project: project,
+      activity_id: activity_id
     } do
       model =
         content
-        |> Map.put("resourceBase", "bundles/export-bundle")
+        |> Map.put("resourceBase", "bundles/foreign-bundle")
         |> Map.put(
           "modelXml",
           """
@@ -629,10 +647,11 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
         case {op.http_method, op.path} do
-          {:get, "media/bundles/export-bundle/webcontent/PopGenHWE/sequence.xml"} ->
+          {:get, "media/bundles/existing-embedded-activity/webcontent/PopGenHWE/sequence.xml"} ->
             {:ok, %{status_code: 200, body: "<sequence />"}}
 
-          {:get, "media/bundles/export-bundle/webcontent/PopGenHWE/HTML/PopulationGenetics2.html"} ->
+          {:get,
+           "media/bundles/existing-embedded-activity/webcontent/PopGenHWE/HTML/PopulationGenetics2.html"} ->
             {:ok, %{status_code: 200, body: "<html>CTAT</html>"}}
         end
       end)
@@ -641,7 +660,12 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         recycle(conn)
         |> log_in_author(author)
 
-      conn = post(conn, "/api/v1/superactivity/package/export", %{"model" => model})
+      conn =
+        post(conn, "/api/v1/superactivity/package/export", %{
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
+          "model" => model
+        })
 
       entries =
         unzip_to_memory(conn.resp_body)
@@ -652,7 +676,117 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       refute Map.has_key?(entries, "webcontent/PopGenHWE/unused.json")
     end
 
-    test "imports an embedded activity package zip", %{conn: conn, author: author} do
+    test "rejects verification references outside the authorized bundle", %{
+      conn: conn,
+      author: author,
+      project: project,
+      activity_id: activity_id
+    } do
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/media/verify", %{
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
+          "references" => [
+            "media/bundles/foreign-bundle/webcontent/custom_activity/customactivity.js"
+          ]
+        })
+
+      assert response(conn, 400) == "invalid verification request"
+    end
+
+    test "returns 500 when media verification lookup fails", %{
+      conn: conn,
+      author: author,
+      project: project,
+      activity_id: activity_id
+    } do
+      expect(Oli.Test.MockAws, :request, 1, fn %ExAws.Operation.S3{} = op ->
+        assert op.http_method == :get
+
+        assert op.params["prefix"] ==
+                 "media/bundles/existing-embedded-activity/webcontent/custom_activity/"
+
+        {:error, :timeout}
+      end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/media/verify", %{
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
+          "references" => [
+            "webcontent/custom_activity/customactivity.js"
+          ]
+        })
+
+      assert response(conn, 500) == "Unable to verify supporting files"
+    end
+
+    test "rejects export references outside the authorized bundle", %{
+      conn: conn,
+      author: author,
+      content: content,
+      project: project,
+      activity_id: activity_id
+    } do
+      model =
+        content
+        |> Map.put(
+          "modelXml",
+          """
+          <embed_activity>
+            <source>/media/bundles/foreign-bundle/webcontent/custom_activity/customactivity.js</source>
+          </embed_activity>
+          """
+        )
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/package/export", %{
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
+          "model" => model
+        })
+
+      assert response(conn, 400) == "Unable to export embedded activity package"
+    end
+
+    test "fails export when supporting files are referenced but the activity bundle is missing",
+         %{
+           content: content
+         } do
+      model =
+        content
+        |> Map.delete("resourceBase")
+        |> Map.put(
+          "modelXml",
+          """
+          <embed_activity>
+            <source>webcontent/custom_activity/customactivity.js</source>
+          </embed_activity>
+          """
+        )
+
+      assert {:error, :missing_resource_base} =
+               Oli.Interop.CustomActivities.Package.export(model, nil)
+    end
+
+    test "imports an embedded activity package zip", %{
+      conn: conn,
+      author: author,
+      project: project,
+      activity_id: activity_id
+    } do
       existing_resource_base = "bundles/existing-embedded-activity"
 
       zip_binary =
@@ -706,7 +840,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         post(conn, "/api/v1/superactivity/package/import", %{
-          "resourceBase" => existing_resource_base,
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
+          "resourceBase" => "bundles/attacker-controlled-bundle",
           "upload" => %Plug.Upload{
             content_type: "application/zip",
             filename: "embedded_activity_package.zip",
@@ -741,7 +877,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     test "imports an embedded activity package zip wrapped in a single root directory", %{
       conn: conn,
-      author: author
+      author: author,
+      project: project,
+      activity_id: activity_id
     } do
       existing_resource_base = "bundles/existing-embedded-activity"
 
@@ -798,7 +936,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         post(conn, "/api/v1/superactivity/package/import", %{
-          "resourceBase" => existing_resource_base,
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
           "upload" => %Plug.Upload{
             content_type: "application/zip",
             filename: "embedded_activity_package.zip",
@@ -819,7 +958,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     test "imports every file in the webcontent tree into the current activity bundle", %{
       conn: conn,
-      author: author
+      author: author,
+      project: project,
+      activity_id: activity_id
     } do
       existing_resource_base = "bundles/existing-embedded-activity"
 
@@ -878,7 +1019,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         post(conn, "/api/v1/superactivity/package/import", %{
-          "resourceBase" => existing_resource_base,
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
           "upload" => %Plug.Upload{
             content_type: "application/zip",
             filename: "embedded_activity_package.zip",
@@ -906,7 +1048,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     test "rolls back promoted files when promotion fails partway through import", %{
       conn: conn,
-      author: author
+      author: author,
+      project: project,
+      activity_id: activity_id
     } do
       existing_resource_base = "bundles/existing-embedded-activity"
 
@@ -953,14 +1097,12 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       operations = Agent.start_link(fn -> [] end)
       {:ok, operations} = operations
       existing_app_js = "media/#{existing_resource_base}/webcontent/custom_activity/app.js"
+      existing_bundle_prefix = "media/#{existing_resource_base}/"
 
       expected_destination_key =
         "media/#{existing_resource_base}/webcontent/custom_activity/styles.css"
 
-      existing_styles_css =
-        "media/#{existing_resource_base}/webcontent/custom_activity/styles.css"
-
-      expect(Oli.Test.MockAws, :request, 11, fn %ExAws.Operation.S3{} = op ->
+      expect(Oli.Test.MockAws, :request, 10, fn %ExAws.Operation.S3{} = op ->
         normalized_path = normalize_s3_path(op.path)
         Agent.update(operations, &[{op.http_method, normalized_path, op.headers, op.params} | &1])
 
@@ -971,7 +1113,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
           op.http_method == :get ->
             case op.params["prefix"] do
-              ^existing_app_js ->
+              ^existing_bundle_prefix ->
                 {:ok,
                  %{
                    status_code: 200,
@@ -979,9 +1121,6 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
                      contents: [%{key: existing_app_js}]
                    }
                  }}
-
-              ^existing_styles_css ->
-                {:ok, %{status_code: 200, body: %{contents: []}}}
             end
 
           op.http_method == :put and Map.has_key?(op.headers, "x-amz-copy-source") ->
@@ -1014,7 +1153,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         post(conn, "/api/v1/superactivity/package/import", %{
-          "resourceBase" => existing_resource_base,
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
           "upload" => %Plug.Upload{
             content_type: "application/zip",
             filename: "embedded_activity_package.zip",
@@ -1061,7 +1201,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     test "rejects a package when the manifest references files missing from the archive", %{
       conn: conn,
-      author: author
+      author: author,
+      project: project,
+      activity_id: activity_id
     } do
       zip_binary =
         Oli.Utils.zip(
@@ -1108,7 +1250,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         post(conn, "/api/v1/superactivity/package/import", %{
-          "resourceBase" => "bundles/existing-embedded-activity",
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
           "upload" => %Plug.Upload{
             content_type: "application/zip",
             filename: "embedded_activity_package.zip",
@@ -1130,7 +1273,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     test "rejects a package when the archive contains too many files", %{
       conn: conn,
-      author: author
+      author: author,
+      project: project,
+      activity_id: activity_id
     } do
       previous_limits = Application.get_env(:oli, Package, [])
 
@@ -1184,7 +1329,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         post(conn, "/api/v1/superactivity/package/import", %{
-          "resourceBase" => "bundles/existing-embedded-activity",
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
           "upload" => %Plug.Upload{
             content_type: "application/zip",
             filename: "embedded_activity_package.zip",
@@ -1203,7 +1349,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     test "rejects a package when an archive entry exceeds the size limit", %{
       conn: conn,
-      author: author
+      author: author,
+      project: project,
+      activity_id: activity_id
     } do
       previous_limits = Application.get_env(:oli, Package, [])
 
@@ -1257,7 +1405,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         post(conn, "/api/v1/superactivity/package/import", %{
-          "resourceBase" => "bundles/existing-embedded-activity",
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
           "upload" => %Plug.Upload{
             content_type: "application/zip",
             filename: "embedded_activity_package.zip",
@@ -1280,7 +1429,9 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     test "rejects a package when total uncompressed archive size exceeds the limit", %{
       conn: conn,
-      author: author
+      author: author,
+      project: project,
+      activity_id: activity_id
     } do
       previous_limits = Application.get_env(:oli, Package, [])
 
@@ -1342,7 +1493,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         post(conn, "/api/v1/superactivity/package/import", %{
-          "resourceBase" => "bundles/existing-embedded-activity",
+          "projectSlug" => project.slug,
+          "activityId" => activity_id,
           "upload" => %Plug.Upload{
             content_type: "application/zip",
             filename: "embedded_activity_package.zip",
@@ -1361,7 +1513,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
   end
 
   defp expect_staged_import_without_existing_objects(file_count, promoted_paths \\ nil) do
-    expect(Oli.Test.MockAws, :request, file_count * 4, fn %ExAws.Operation.S3{} = op ->
+    expect(Oli.Test.MockAws, :request, file_count * 3 + 1, fn %ExAws.Operation.S3{} = op ->
       normalized_path = normalize_s3_path(op.path)
 
       cond do
@@ -1373,6 +1525,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         op.http_method == :get ->
           assert op.path == "/"
           assert String.starts_with?(op.params["prefix"], "media/bundles/")
+          assert String.ends_with?(op.params["prefix"], "/")
           refute String.contains?(op.params["prefix"], ".import-")
           {:ok, %{status_code: 200, body: %{contents: []}}}
 
@@ -1439,7 +1592,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         ],
         "previewText" => ""
       },
-      "resourceBase" => "4083472489",
+      "resourceBase" => "bundles/existing-embedded-activity",
       "resourceURLs" => []
     }
 

@@ -181,6 +181,8 @@ defmodule OliWeb.Api.ActivityController do
     author = conn.assigns[:current_author]
 
     scope = Map.get(conn.body_params, "scope", "embedded")
+    include_content = Map.get(conn.body_params, "includeContent", false)
+    include_metadata = Map.get(conn.body_params, "includeMetadata", false)
 
     case ActivityEditor.create(
            project_slug,
@@ -195,15 +197,17 @@ defmodule OliWeb.Api.ActivityController do
            Map.get(conn, "tags", [])
          ) do
       {:ok, {%{slug: slug, resource_id: resource_id} = activity, _}} ->
-        json(conn, %{
-          "type" => "success",
-          "revisionSlug" => slug,
-          "resourceId" => resource_id,
-          "title" => activity.title,
-          "objectives" => activity.objectives,
-          "tags" => activity.tags,
-          "content" => activity.content
-        })
+        json(
+          conn,
+          %{
+            "type" => "success",
+            "revisionSlug" => slug,
+            "resourceId" => resource_id,
+            "title" => activity.title
+          }
+          |> maybe_put_metadata(activity, include_metadata)
+          |> maybe_put_content(activity, include_content)
+        )
 
       {:error, {:not_found}} ->
         error(conn, 404, "not found")
@@ -216,6 +220,20 @@ defmodule OliWeb.Api.ActivityController do
         error(conn, 500, msg)
     end
   end
+
+  defp maybe_put_metadata(response, _activity, false), do: response
+
+  defp maybe_put_metadata(response, activity, true) do
+    Map.merge(response, %{
+      "objectives" => activity.objectives,
+      "tags" => activity.tags
+    })
+  end
+
+  defp maybe_put_content(response, _activity, false), do: response
+
+  defp maybe_put_content(response, activity, true),
+    do: Map.put(response, "content", activity.content)
 
   @doc false
   def create_bulk(conn, %{

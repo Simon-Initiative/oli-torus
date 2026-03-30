@@ -35,6 +35,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
 
   const [context, setContext] = useState<Context>();
   const [preview, setPreview] = useState<boolean>(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [iframeHeight, setIframeHeight] = useState(500);
 
   const dispatch = useDispatch();
@@ -78,11 +79,15 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
     })
       .then((response) => response.json())
       .then((json) => {
+        setPreviewError(null);
         configDefaults(json);
         setContext(json);
       })
       .catch((error) => {
-        // :TODO: display error somehow
+        console.error(error);
+        setPreviewError(
+          'Unable to initialize the embedded activity context. Reload the page and try again.',
+        );
         setPreview(true);
       });
   };
@@ -107,11 +112,15 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
         return response.json();
       })
       .then((json) => {
+        setPreviewError(null);
         configDefaults(json);
         setContext(json);
       })
       .catch((error) => {
         console.error(error);
+        setPreviewError(
+          'Unable to initialize embedded preview. Retry the preview, or reload the page and try again.',
+        );
         setPreview(true);
       });
   };
@@ -161,6 +170,11 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
 
   return (
     <>
+      {previewError ? (
+        <div className="alert alert-warning" role="alert">
+          {previewError}
+        </div>
+      ) : null}
       {context && (
         <iframe
           id={activityState.attemptGuid}
@@ -181,7 +195,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           data-mode="oli"
         ></iframe>
       )}
-      {preview && <h4>OLI Embedded activity does not yet support preview</h4>}
+      {preview && !context && <h4>OLI Embedded activity does not yet support preview</h4>}
     </>
   );
 };

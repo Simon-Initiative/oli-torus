@@ -32,7 +32,7 @@ import { WrappedMonaco } from '../common/variables/WrappedMonaco';
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
-  const { dispatch, model, editMode, onEdit, onCustomEvent, activityId } =
+  const { dispatch, model, editMode, onEdit, onCustomEvent, activityId, projectSlug } =
     useAuthoringElementContext<OliEmbeddedModelSchema>();
   const [processingAction, setProcessingAction] = React.useState<
     'upload' | 'import' | 'export' | null
@@ -167,8 +167,14 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       return;
     }
 
+    if (activityId === undefined || Number.isNaN(activityId) || !projectSlug) {
+      const id = 'package_import_error';
+      display(errorModal('Unable to import package because the current activity context is missing.', id), id);
+      return;
+    }
+
     setProcessingAction('import');
-    importSuperActivityPackage(file, model.resourceBase)
+    importSuperActivityPackage(file, projectSlug, activityId)
       .then((result: any) => {
         onEdit(result.model as OliEmbeddedModelSchema);
         if (onCustomEvent && activityId !== undefined) {
@@ -191,8 +197,14 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       return;
     }
 
+    if (activityId === undefined || Number.isNaN(activityId) || !projectSlug) {
+      const id = 'package_export_error';
+      display(errorModal('Unable to export package because the current activity context is missing.', id), id);
+      return;
+    }
+
     setProcessingAction('export');
-    exportSuperActivityPackage(model)
+    exportSuperActivityPackage(projectSlug, activityId, model)
       .then((result: any) => {
         const url = window.URL.createObjectURL(result.blob);
         const link = document.createElement('a');
@@ -295,9 +307,14 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     setVerificationError(null);
 
     const timeoutId = window.setTimeout(() => {
+      if (activityId === undefined || Number.isNaN(activityId) || !projectSlug) {
+        setIsVerifyingStorage(false);
+        return;
+      }
+
       setIsVerifyingStorage(true);
 
-      verifySuperActivityMedia(buildUploadDirectory(model.resourceBase), verificationTargets)
+      verifySuperActivityMedia(projectSlug, activityId, verificationTargets)
         .then((result: any) => {
           if (cancelled) {
             return;
@@ -324,7 +341,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [dispatch, model.resourceBase, verificationTargets.join('|')]);
+  }, [activityId, dispatch, projectSlug, model.resourceBase, verificationTargets.join('|')]);
 
   const dismiss = (id: string) => {
     const element = document.querySelector('#' + id);
@@ -397,7 +414,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         <div className="card-body">
           <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
             <div>
-              <div className="card-title mb-1">Manifest XML</div>
+              <h3 className="card-title h5 mb-1">Manifest XML</h3>
               <div className={`${mutedTextClass} small`}>
                 Manifest XML is the launch manifest for your embedded activity. It should list all
                 supporting files the runtime needs to load and tell the runtime how to initialize.
@@ -506,7 +523,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         <div className="card-body">
           <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
             <div>
-              <div className="card-title mb-1">Manifest Diagnostics</div>
+              <h3 className="card-title h5 mb-1">Manifest Diagnostics</h3>
               <div className={`${mutedTextClass} small d-flex flex-wrap gap-3`}>
                 <span>{diagnostics.isWellFormed ? 'well-formed XML' : 'XML parse error'}</span>
                 <span>{diagnostics.references.length} references</span>
@@ -619,7 +636,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       <div className="card mt-3">
         <div className="card-body">
           <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
-            <div className="card-title mb-0">Bundle Runtime</div>
+            <h3 className="card-title h5 mb-0">Bundle Runtime</h3>
             <button
               type="button"
               className={secondarySmallButtonClass}
@@ -679,7 +696,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         <div className="card-body">
           <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
             <div>
-              <div className="card-title mb-1">Supporting Files</div>
+              <h3 className="card-title h5 mb-1">Supporting Files</h3>
               <div className={`${mutedTextClass} small d-flex flex-wrap gap-3`}>
                 <span>{uploadedResources.length} tracked</span>
                 <span>{verifiedXmlReferences.length} referenced and present</span>
@@ -795,7 +812,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         <div className="card-body">
           <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
             <div>
-              <div className="card-title mb-1">Parts</div>
+              <h3 className="card-title h5 mb-1">Parts</h3>
               <div className={`${mutedTextClass} small d-flex flex-wrap gap-3`}>
                 <span>{model.authoring.parts.length} defined</span>
                 <span>
@@ -936,7 +953,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                     </div>
                   ))}
                 </div>
-                <button className="btn btn-primary" onClick={() => addNewPart()}>
+                <button type="button" className="btn btn-primary" onClick={() => addNewPart()}>
                   Add Part
                 </button>
               </>

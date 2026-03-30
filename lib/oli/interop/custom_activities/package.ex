@@ -13,42 +13,76 @@ defmodule Oli.Interop.CustomActivities.Package do
   @default_max_archive_entry_bytes 10_000_000
   @default_s3_operation_concurrency 8
 
-  def export(%{} = model) do
+  def export(%{} = model, resource_base) do
     manifest_xml = Map.get(model, "modelXml", "")
-    resource_base = Map.get(model, "resourceBase")
-    manifest_references = referenced_supporting_files(manifest_xml, resource_base)
+    verified_references = verified_supporting_files(Map.get(model, "resourceVerification"), nil)
+    normalized_resource_base = normalize_media_directory(resource_base)
+    extracted_references = extract_supporting_file_references(manifest_xml)
 
-    verified_references =
-      verified_supporting_files(Map.get(model, "resourceVerification"), resource_base)
+    with :ok <- validate_export_resource_base(normalized_resource_base, extracted_references),
+         {:ok, manifest_references} <-
+           resolve_referenced_supporting_files(manifest_xml, normalized_resource_base) do
+      referenced_files =
+        case {MapSet.size(manifest_references), MapSet.size(verified_references)} do
+          {0, verified_count} when verified_count > 0 ->
+            verified_references
 
-    referenced_files =
-      case {MapSet.size(manifest_references), MapSet.size(verified_references)} do
-        {0, verified_count} when verified_count > 0 ->
-          verified_references
+          {_, verified_count} when verified_count > 0 ->
+            MapSet.intersection(manifest_references, verified_references)
 
-        {_, verified_count} when verified_count > 0 ->
-          MapSet.intersection(manifest_references, verified_references)
+          _ ->
+            manifest_references
+        end
 
-        _ ->
-          manifest_references
+      with {:ok, supporting_files} <-
+             load_supporting_files(normalized_resource_base, referenced_files) do
+        package_model = build_package_model(model)
+
+        entries =
+          [
+            {String.to_charlist(@model_file), Utils.pretty(package_model)},
+            {String.to_charlist(@manifest_file), manifest_xml}
+          ] ++
+            Enum.map(supporting_files, fn {path, content} ->
+              {String.to_charlist(path), content}
+            end)
+
+        {:ok, Utils.zip(entries, "embedded_activity_package.zip")}
       end
-
-    with {:ok, supporting_files} <-
-           load_supporting_files(resource_base, referenced_files) do
-      package_model = build_package_model(model)
-
-      entries =
-        [
-          {String.to_charlist(@model_file), Utils.pretty(package_model)},
-          {String.to_charlist(@manifest_file), manifest_xml}
-        ] ++
-          Enum.map(supporting_files, fn {path, content} ->
-            {String.to_charlist(path), content}
-          end)
-
-      {:ok, Utils.zip(entries, "embedded_activity_package.zip")}
     end
   end
+
+  defp validate_export_resource_base(normalized_resource_base, extracted_references) do
+    cond do
+      normalized_resource_base == "" and extracted_references != [] ->
+        {:error, :missing_resource_base}
+
+      true ->
+        :ok
+    end
+  end
+
+  def resolve_bundle_media_reference(reference, resource_base) when is_binary(reference) do
+    normalized_directory = normalize_media_directory(resource_base)
+
+    with true <- normalized_directory != "",
+         {:ok, cleaned_reference} <- sanitize_reference(reference),
+         {:ok, relative_path} <-
+           resolve_relative_supporting_path(cleaned_reference, normalized_directory) do
+      {:ok,
+       %{
+         reference: reference,
+         relative_path: relative_path,
+         key: Path.join(["media", normalized_directory, relative_path])
+       }}
+    else
+      false -> {:error, {:invalid_reference, reference}}
+      {:error, _reason} -> {:error, {:invalid_reference, reference}}
+    end
+  end
+
+  def resolve_bundle_media_reference(reference, _resource_base),
+    do: {:error, {:invalid_reference, reference}}
 
   def import(upload_path, resource_base \\ nil)
 
@@ -99,31 +133,34 @@ defmodule Oli.Interop.CustomActivities.Package do
   end
 
   defp load_supporting_files(resource_base, referenced_files) do
-    normalized_directory = normalize_media_directory(resource_base)
+    normalized_resource_base = normalize_media_directory(resource_base)
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
-    if normalized_directory == "" do
-      {:ok, []}
-    else
-      bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+    cond do
+      normalized_resource_base == "" and MapSet.size(referenced_files) > 0 ->
+        {:error, :missing_resource_base}
 
-      referenced_files
-      |> Enum.sort()
-      |> Enum.reduce_while({:ok, []}, fn reference, {:ok, acc} ->
-        key = resolve_media_key(reference, normalized_directory)
-        zip_path = normalize_reference(reference, nil)
-
-        case S3.get_object(bucket_name, key) |> HTTP.aws().request() do
-          {:ok, %{status_code: 200, body: body}} ->
+      true ->
+        referenced_files
+        |> Enum.sort()
+        |> Enum.reduce_while({:ok, []}, fn reference, {:ok, acc} ->
+          with {:ok, %{key: key, relative_path: zip_path}} <-
+                 resolve_bundle_media_reference(reference, normalized_resource_base),
+               {:ok, %{status_code: 200, body: body}} <-
+                 S3.get_object(bucket_name, key) |> HTTP.aws().request() do
             {:cont, {:ok, [{zip_path, body} | acc]}}
+          else
+            {:error, _reason} = error ->
+              {:halt, error}
 
-          _ ->
-            {:halt, {:error, :supporting_file_download_failed}}
+            _ ->
+              {:halt, {:error, :supporting_file_download_failed}}
+          end
+        end)
+        |> case do
+          {:ok, entries} -> {:ok, Enum.reverse(entries)}
+          error -> error
         end
-      end)
-      |> case do
-        {:ok, entries} -> {:ok, Enum.reverse(entries)}
-        error -> error
-      end
     end
   end
 
@@ -157,6 +194,7 @@ defmodule Oli.Interop.CustomActivities.Package do
         case backup_existing_destination_objects(
                bucket_name,
                supporting_objects,
+               resource_base,
                backup_resource_base
              ) do
           {:ok, backup_records} ->
@@ -224,26 +262,43 @@ defmodule Oli.Interop.CustomActivities.Package do
     end
   end
 
-  defp backup_existing_destination_objects(bucket_name, supporting_objects, backup_resource_base) do
+  defp backup_existing_destination_objects(
+         bucket_name,
+         supporting_objects,
+         resource_base,
+         backup_resource_base
+       ) do
+    with {:ok, existing_keys} <-
+           list_existing_destination_keys(bucket_name, resource_base, supporting_objects) do
+      copy_existing_destination_objects(
+        bucket_name,
+        supporting_objects,
+        backup_resource_base,
+        existing_keys
+      )
+    end
+  end
+
+  defp copy_existing_destination_objects(
+         bucket_name,
+         supporting_objects,
+         backup_resource_base,
+         existing_keys
+       ) do
     supporting_objects
     |> parallel_s3_map(fn %{destination_key: destination_key, relative_path: path} ->
-      case object_exists?(bucket_name, destination_key) do
-        {:ok, false} ->
-          {:ok, %{destination_key: destination_key, existed?: false}}
+      if MapSet.member?(existing_keys, destination_key) do
+        backup_key = Path.join(["media", backup_resource_base, path])
 
-        {:ok, true} ->
-          backup_key = Path.join(["media", backup_resource_base, path])
+        case copy_object(bucket_name, backup_key, destination_key) do
+          {:ok, %{status_code: 200}} ->
+            {:ok, %{destination_key: destination_key, existed?: true, backup_key: backup_key}}
 
-          case copy_object(bucket_name, backup_key, destination_key) do
-            {:ok, %{status_code: 200}} ->
-              {:ok, %{destination_key: destination_key, existed?: true, backup_key: backup_key}}
-
-            _ ->
-              {:error, {:backup_copy_failed, destination_key}}
-          end
-
-        {:error, reason} ->
-          {:error, {:backup_lookup_failed, destination_key, reason}}
+          _ ->
+            {:error, {:backup_copy_failed, destination_key}}
+        end
+      else
+        {:ok, %{destination_key: destination_key, existed?: false}}
       end
     end)
     |> case do
@@ -254,21 +309,18 @@ defmodule Oli.Interop.CustomActivities.Package do
 
   defp promote_staged_objects(bucket_name, supporting_objects) do
     supporting_objects
-    |> Enum.reduce_while({:ok, []}, fn %{staged_key: staged_key, destination_key: destination_key},
-                                       {:ok, promoted_keys} ->
+    |> parallel_s3_map(fn %{staged_key: staged_key, destination_key: destination_key} ->
       case copy_object(bucket_name, destination_key, staged_key) do
         {:ok, %{status_code: 200}} ->
-          {:cont, {:ok, [destination_key | promoted_keys]}}
+          {:ok, destination_key}
 
         _ ->
-          {:halt,
-           {:error, {:promote_copy_failed, destination_key, staged_key},
-            Enum.reverse(promoted_keys)}}
+          {:error, {:promote_copy_failed, destination_key, staged_key}}
       end
     end)
     |> case do
-      {:ok, promoted_keys} -> {:ok, Enum.reverse(promoted_keys)}
-      error -> error
+      {:ok, promoted_keys} -> {:ok, promoted_keys}
+      {:error, reason, promoted_keys} -> {:error, reason, promoted_keys}
     end
   end
 
@@ -316,6 +368,24 @@ defmodule Oli.Interop.CustomActivities.Package do
       timeout: :infinity
     )
     |> Stream.run()
+  end
+
+  defp list_existing_destination_keys(bucket_name, resource_base, supporting_objects) do
+    prefix = Path.join(["media", resource_base]) <> "/"
+    destination_keys = supporting_objects |> Enum.map(& &1.destination_key) |> MapSet.new()
+
+    case S3.list_objects(bucket_name, prefix: prefix) |> HTTP.aws().request() do
+      {:ok, %{status_code: 200, body: %{contents: contents}}} ->
+        {:ok,
+         contents
+         |> Enum.map(fn content -> Map.get(content, :key) || Map.get(content, "Key") end)
+         |> Enum.filter(&is_binary/1)
+         |> Enum.filter(&MapSet.member?(destination_keys, &1))
+         |> MapSet.new()}
+
+      error ->
+        {:error, {:backup_lookup_failed, prefix, error}}
+    end
   end
 
   defp parallel_s3_map(items, mapper) do
@@ -544,12 +614,8 @@ defmodule Oli.Interop.CustomActivities.Package do
   end
 
   defp referenced_supporting_files(model_xml, resource_base) when is_binary(model_xml) do
-    Regex.compile!(
-      "\\b(?:webcontent|media|super_media|bundles)/[A-Za-z0-9_./-]+\\.[A-Za-z0-9]{1,8}(?:[?#][^<>\"'\\s]*)?"
-    )
-    |> Regex.scan(model_xml)
-    |> Enum.map(&List.first/1)
-    |> Enum.reject(&is_nil/1)
+    model_xml
+    |> extract_supporting_file_references()
     |> Enum.map(&normalize_reference(&1, resource_base))
     |> MapSet.new()
   end
@@ -579,38 +645,102 @@ defmodule Oli.Interop.CustomActivities.Package do
     end
   end
 
-  defp resolve_media_key(reference, normalized_directory) do
-    normalized_reference = normalize_reference(reference, normalized_directory)
+  defp resolve_referenced_supporting_files(model_xml, resource_base) do
+    model_xml
+    |> extract_supporting_file_references()
+    |> Enum.reduce_while({:ok, MapSet.new()}, fn reference, {:ok, acc} ->
+      case resolve_bundle_media_reference(reference, resource_base) do
+        {:ok, %{relative_path: relative_path}} ->
+          {:cont, {:ok, MapSet.put(acc, relative_path)}}
+
+        {:error, _reason} = error ->
+          {:halt, error}
+      end
+    end)
+  end
+
+  defp extract_supporting_file_references(model_xml) when is_binary(model_xml) do
+    Regex.compile!(
+      "\\b(?:webcontent|media|super_media|bundles)/[A-Za-z0-9_./-]+\\.[A-Za-z0-9]{1,8}(?:[?#][^<>\"'\\s]*)?"
+    )
+    |> Regex.scan(model_xml)
+    |> Enum.map(&List.first/1)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+  end
+
+  defp extract_supporting_file_references(_), do: []
+
+  defp sanitize_reference(reference) do
+    cleaned_reference =
+      reference
+      |> String.trim()
+      |> String.trim_leading("/")
+      |> String.replace(~r/[?#].*$/, "")
 
     cond do
-      String.starts_with?(normalized_reference, "media/") ->
-        normalized_reference
+      cleaned_reference == "" ->
+        {:error, :empty_reference}
 
-      String.starts_with?(normalized_reference, "bundles/") ->
-        Path.join(["media", normalized_reference])
-
-      normalized_directory != "" ->
-        Path.join(["media", normalized_directory, normalized_reference])
+      unsafe_path?(cleaned_reference) ->
+        {:error, :unsafe_reference}
 
       true ->
-        Path.join(["media", normalized_reference])
+        {:ok, cleaned_reference}
     end
   end
 
-  defp object_exists?(bucket_name, key) do
-    case S3.list_objects(bucket_name, prefix: key, max_keys: 1) |> HTTP.aws().request() do
-      {:ok, %{status_code: 200, body: %{contents: contents}}} ->
-        {:ok,
-         Enum.any?(contents, fn content ->
-           case Map.get(content, :key) || Map.get(content, "Key") do
-             ^key -> true
-             _ -> false
-           end
-         end)}
+  defp resolve_relative_supporting_path(cleaned_reference, normalized_directory) do
+    cond do
+      String.starts_with?(cleaned_reference, @supporting_files_path) ->
+        validate_supporting_path(cleaned_reference)
 
-      error ->
-        {:error, error}
+      String.starts_with?(cleaned_reference, normalized_directory <> "/") ->
+        cleaned_reference
+        |> String.replace_prefix(normalized_directory <> "/", "")
+        |> validate_supporting_path()
+
+      String.starts_with?(cleaned_reference, "media/" <> normalized_directory <> "/") ->
+        cleaned_reference
+        |> String.replace_prefix("media/" <> normalized_directory <> "/", "")
+        |> validate_supporting_path()
+
+      String.starts_with?(cleaned_reference, "super_media/" <> normalized_directory <> "/") ->
+        cleaned_reference
+        |> String.replace_prefix("super_media/" <> normalized_directory <> "/", "")
+        |> validate_supporting_path()
+
+      String.starts_with?(cleaned_reference, "bundles/") ->
+        {:error, :foreign_bundle_reference}
+
+      String.starts_with?(cleaned_reference, "media/") ->
+        {:error, :foreign_media_reference}
+
+      String.starts_with?(cleaned_reference, "super_media/") ->
+        {:error, :foreign_super_media_reference}
+
+      true ->
+        {:error, :unsupported_reference}
     end
+  end
+
+  defp validate_supporting_path(path) do
+    cond do
+      not String.starts_with?(path, @supporting_files_path) ->
+        {:error, :invalid_supporting_path}
+
+      unsafe_path?(path) ->
+        {:error, :unsafe_reference}
+
+      true ->
+        {:ok, path}
+    end
+  end
+
+  defp unsafe_path?(path) do
+    path
+    |> String.split("/", trim: true)
+    |> Enum.any?(&(&1 == ".."))
   end
 
   defp copy_object(bucket_name, destination_key, source_key) do

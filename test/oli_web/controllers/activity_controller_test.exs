@@ -262,7 +262,8 @@ defmodule OliWeb.ActivityControllerTest do
     conn =
       post(conn, Routes.activity_path(conn, :create, project.slug, "oli_embedded"), %{
         "model" => content,
-        "objectives" => []
+        "objectives" => [],
+        "includeContent" => true
       })
 
     assert %{
@@ -272,6 +273,32 @@ defmodule OliWeb.ActivityControllerTest do
 
     assert resource_base =~ ~r/^bundles\//
     assert resource_base != "1234"
+  end
+
+  test "create omits heavy activity fields by default", %{conn: conn, project: project} do
+    content = %{
+      "stem" => %{"content" => []},
+      "authoring" => %{"parts" => [%{"id" => "1"}]}
+    }
+
+    conn =
+      post(conn, Routes.activity_path(conn, :create, project.slug, "oli_short_answer"), %{
+        "model" => content,
+        "objectives" => []
+      })
+
+    response = json_response(conn, 200)
+
+    assert %{
+             "type" => "success",
+             "revisionSlug" => _slug,
+             "resourceId" => _resource_id,
+             "title" => _title
+           } = response
+
+    refute Map.has_key?(response, "content")
+    refute Map.has_key?(response, "objectives")
+    refute Map.has_key?(response, "tags")
   end
 
   describe "get resource" do

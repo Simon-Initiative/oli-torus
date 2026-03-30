@@ -114,13 +114,15 @@ export function createSuperActivityMedia(
 }
 
 export function verifySuperActivityMedia(
-  directory: string,
+  projectSlug: string,
+  activityId: number,
   references: string[],
 ): Promise<SuperActivityMediaVerification | ServerError> {
   const params = {
     method: 'POST',
     body: JSON.stringify({
-      directory,
+      projectSlug,
+      activityId,
       references,
     }),
     url: '/superactivity/media/verify',
@@ -130,13 +132,15 @@ export function verifySuperActivityMedia(
 }
 
 export function exportSuperActivityPackage(
+  projectSlug: string,
+  activityId: number,
   model: object,
 ): Promise<SuperActivityPackageExport | ServerError> {
   return new Promise((resolve, reject) => {
     return fetch(getBaseURL() + '/superactivity/package/export', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model }),
+      body: JSON.stringify({ projectSlug, activityId, model }),
     })
       .then((response: Response) => {
         if (!response.ok) {
@@ -177,13 +181,13 @@ export function exportSuperActivityPackage(
 
 export function importSuperActivityPackage(
   file: File,
-  resourceBase?: string,
+  projectSlug: string,
+  activityId: number,
 ): Promise<SuperActivityPackageImport | ServerError> {
   const body = new FormData();
   body.append('upload', file, file.name);
-  if (resourceBase) {
-    body.append('resourceBase', resourceBase);
-  }
+  body.append('projectSlug', projectSlug);
+  body.append('activityId', String(activityId));
 
   return new Promise((resolve, reject) => {
     return fetch(getBaseURL() + '/superactivity/package/import', {

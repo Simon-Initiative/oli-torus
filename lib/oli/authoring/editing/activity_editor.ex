@@ -1638,8 +1638,21 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp prepare_creation_model("oli_embedded", model) when is_map(model) do
     case should_clone_embedded_bundle?(model) do
-      true -> clone_embedded_bundle(model)
-      false -> {:ok, model}
+      true ->
+        case clone_embedded_bundle(model) do
+          {:ok, cloned_model} ->
+            {:ok, cloned_model}
+
+          {:error, reason} ->
+            Logger.warning(
+              "Could not clone starter embedded bundle during activity creation, continuing with original model: #{inspect(reason)}"
+            )
+
+            {:ok, model}
+        end
+
+      false ->
+        {:ok, model}
     end
   end
 

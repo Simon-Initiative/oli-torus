@@ -15,6 +15,7 @@ defmodule OliWeb.LegacySuperactivityController do
   }
 
   alias Oli.Accounts.{Author, User}
+  alias Oli.Authoring.Course
   alias Oli.Activities
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
@@ -24,6 +25,7 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Activities.Model.Feedback
   alias Oli.Delivery.Attempts.ActivityLifecycle
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Repo
   alias Lti_1p3.Roles.ContextRoles
 
@@ -144,51 +146,90 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  def verify_media(conn, %{"directory" => directory, "references" => references})
+  def verify_media(
+        conn,
+        %{"projectSlug" => project_slug, "activityId" => activity_id, "references" => references}
+      )
       when is_list(references) do
-    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+    with {:ok, resource_base} <- resolve_authorized_resource_base(conn, project_slug, activity_id),
+         {:ok, resolved_references} <-
+           resolve_verified_media_references(references, resource_base) do
+      bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
-    resolved_references =
-      references
-      |> Enum.filter(&is_binary/1)
-      |> Enum.uniq()
-      |> Enum.map(fn reference -> {reference, resolve_media_key(reference, directory)} end)
+      existing_keys =
+        resolved_references
+        |> Enum.map(&elem(&1, 1))
+        |> Enum.group_by(&media_lookup_prefix/1)
+        |> Enum.reduce_while({:ok, MapSet.new()}, fn {prefix, keys}, {:ok, acc} ->
+          case list_media_keys(bucket_name, prefix) do
+            {:ok, listed_keys} ->
+              keys_set = MapSet.new(keys)
 
-    existing_keys =
-      resolved_references
-      |> Enum.map(&elem(&1, 1))
-      |> Enum.group_by(&media_lookup_prefix/1)
-      |> Enum.reduce(MapSet.new(), fn {prefix, keys}, acc ->
-        case list_media_keys(bucket_name, prefix) do
-          {:ok, listed_keys} ->
-            keys_set = MapSet.new(keys)
+              existing_keys =
+                listed_keys
+                |> Enum.filter(&MapSet.member?(keys_set, &1))
+                |> Enum.reduce(acc, &MapSet.put(&2, &1))
 
-            listed_keys
-            |> Enum.filter(&MapSet.member?(keys_set, &1))
-            |> Enum.reduce(acc, &MapSet.put(&2, &1))
+              {:cont, {:ok, existing_keys}}
 
-          {:error, _reason} ->
-            acc
-        end
-      end)
+            {:error, reason} ->
+              {:halt, {:error, {:media_lookup_failed, prefix, reason}}}
+          end
+        end)
 
-    statuses =
-      resolved_references
-      |> Enum.map(fn {reference, resolved_key} ->
-        {reference,
-         if(MapSet.member?(existing_keys, resolved_key), do: "verified", else: "missing")}
-      end)
-      |> Enum.into(%{})
+      case existing_keys do
+        {:ok, existing_keys} ->
+          statuses =
+            resolved_references
+            |> Enum.map(fn {reference, resolved_key} ->
+              {reference,
+               if(MapSet.member?(existing_keys, resolved_key), do: "verified", else: "missing")}
+            end)
+            |> Enum.into(%{})
 
-    json(conn, %{statuses: statuses})
+          json(conn, %{statuses: statuses})
+
+        {:error, {:media_lookup_failed, _prefix, reason}} ->
+          Logger.error("Could not verify embedded activity media: #{inspect(reason)}")
+          error(conn, 500, "Unable to verify supporting files")
+      end
+    else
+      {:error, :not_authorized} ->
+        error(conn, 403, "Unauthorized")
+
+      {:error, :not_found} ->
+        error(conn, 404, "Activity not found")
+
+      {:error, {:invalid_request, message}} ->
+        error(conn, 400, message)
+
+      {:error, _reason} ->
+        error(conn, 400, "invalid verification request")
+    end
   end
 
   def verify_media(conn, _params), do: error(conn, 400, "invalid verification request")
 
-  def export_package(conn, %{"model" => model}) when is_map(model) do
-    case Package.export(model) do
-      {:ok, zip_binary} ->
-        send_download(conn, {:binary, zip_binary}, filename: "embedded_activity_package.zip")
+  def export_package(
+        conn,
+        %{"model" => model, "projectSlug" => project_slug, "activityId" => activity_id}
+      )
+      when is_map(model) do
+    with {:ok, resource_base} <- resolve_authorized_resource_base(conn, project_slug, activity_id),
+         {:ok, zip_binary} <- Package.export(model, resource_base) do
+      send_download(conn, {:binary, zip_binary}, filename: "embedded_activity_package.zip")
+    else
+      {:error, :not_authorized} ->
+        error(conn, 403, "Unauthorized")
+
+      {:error, :not_found} ->
+        error(conn, 404, "Activity not found")
+
+      {:error, :missing_resource_base} ->
+        error(conn, 400, "Embedded activity bundle is missing")
+
+      {:error, {:invalid_request, message}} ->
+        error(conn, 400, message)
 
       {:error, reason} ->
         Logger.error("Could not export embedded activity package: #{inspect(reason)}")
@@ -198,17 +239,18 @@ defmodule OliWeb.LegacySuperactivityController do
 
   def export_package(conn, _params), do: error(conn, 400, "invalid embedded activity export")
 
-  def import_package(conn, %{"upload" => %Plug.Upload{path: path}} = params) do
-    resource_base =
-      case Map.get(params, "resourceBase") do
-        value when is_binary(value) and value != "" -> value
-        _ -> nil
-      end
-
-    case Package.import(path, resource_base) do
-      {:ok, model} ->
-        json(conn, %{type: "success", model: model})
-
+  def import_package(
+        conn,
+        %{
+          "upload" => %Plug.Upload{path: path},
+          "projectSlug" => project_slug,
+          "activityId" => activity_id
+        }
+      ) do
+    with {:ok, resource_base} <- resolve_authorized_resource_base(conn, project_slug, activity_id),
+         {:ok, model} <- Package.import(path, resource_base) do
+      json(conn, %{type: "success", model: model})
+    else
       {:error, reason} ->
         Logger.error("Could not import embedded activity package: #{inspect(reason)}")
         import_error(conn, reason)
@@ -217,6 +259,59 @@ defmodule OliWeb.LegacySuperactivityController do
 
   def import_package(conn, _params),
     do: import_error(conn, {:invalid_request, "invalid embedded activity package"})
+
+  defp resolve_authorized_resource_base(conn, project_slug, activity_id) do
+    with %Author{} = author <- conn.assigns[:current_author],
+         %{} = project <- Course.get_project_by_slug(project_slug),
+         true <- Oli.Accounts.can_access?(author, project),
+         {:ok, parsed_activity_id} <- parse_activity_id(activity_id),
+         revision when not is_nil(revision) <-
+           AuthoringResolver.from_resource_id(project_slug, parsed_activity_id) do
+      {:ok,
+       case revision.content["resourceBase"] do
+         value when is_binary(value) ->
+           if String.starts_with?(value, "bundles/"), do: value, else: nil
+
+         _ ->
+           nil
+       end}
+    else
+      nil -> {:error, :not_found}
+      false -> {:error, :not_authorized}
+      {:error, _reason} = error -> error
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp parse_activity_id(value) when is_integer(value), do: {:ok, value}
+
+  defp parse_activity_id(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {parsed, ""} -> {:ok, parsed}
+      _ -> {:error, {:invalid_request, "invalid activity id"}}
+    end
+  end
+
+  defp parse_activity_id(_), do: {:error, {:invalid_request, "invalid activity id"}}
+
+  defp resolve_verified_media_references(references, resource_base) do
+    references
+    |> Enum.filter(&is_binary/1)
+    |> Enum.uniq()
+    |> Enum.reduce_while({:ok, []}, fn reference, {:ok, acc} ->
+      case Package.resolve_bundle_media_reference(reference, resource_base) do
+        {:ok, %{key: key}} ->
+          {:cont, {:ok, [{reference, key} | acc]}}
+
+        {:error, _reason} ->
+          {:halt, {:error, {:invalid_request, "invalid verification request"}}}
+      end
+    end)
+    |> case do
+      {:ok, resolved_references} -> {:ok, Enum.reverse(resolved_references)}
+      error -> error
+    end
+  end
 
   defp upload_file(bucket, file_name, contents) do
     mime_type = MIME.from_path(file_name)
@@ -247,25 +342,6 @@ defmodule OliWeb.LegacySuperactivityController do
     key
     |> Path.dirname()
     |> Kernel.<>("/")
-  end
-
-  defp resolve_media_key(reference, directory) do
-    normalized_reference = String.trim_leading(reference, "/")
-    normalized_directory = normalize_media_directory(directory)
-
-    cond do
-      String.starts_with?(normalized_reference, "media/") ->
-        normalized_reference
-
-      String.starts_with?(normalized_reference, "bundles/") ->
-        Path.join(["media", normalized_reference])
-
-      normalized_directory != "" ->
-        Path.join(["media", normalized_directory, normalized_reference])
-
-      true ->
-        Path.join(["media", normalized_reference])
-    end
   end
 
   defp normalize_directory(nil), do: ""
@@ -328,21 +404,21 @@ defmodule OliWeb.LegacySuperactivityController do
       nil ->
         fetch_preview_context(conn, attempt_guid)
 
-      _attempt ->
+      activity_attempt ->
         {:ok,
          fetch_delivery_context(
            conn.host,
            conn.assigns.current_user,
-           attempt_guid,
+           activity_attempt,
            datashop_session_id
          )}
     end
   end
 
-  defp fetch_delivery_context(host, user, attempt_guid, datashop_session_id) do
+  defp fetch_delivery_context(host, user, activity_attempt, datashop_session_id)
+       when is_map(activity_attempt) do
     activity_attempt =
-      Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
-      |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
+      Repo.preload(activity_attempt, [:part_attempts, revision: [:scoring_strategy]])
 
     %{"base" => base, "src" => src, "resourceBase" => resource_base} =
       activity_attempt.revision.content
@@ -389,6 +465,12 @@ defmodule OliWeb.LegacySuperactivityController do
       base: base,
       src: src
     }
+  end
+
+  defp fetch_delivery_context(host, user, attempt_guid, datashop_session_id)
+       when is_binary(attempt_guid) do
+    activity_attempt = Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
+    fetch_delivery_context(host, user, activity_attempt, datashop_session_id)
   end
 
   defp init_preview_session(conn, attempt_guid, model, activity_context) do
@@ -1431,6 +1513,24 @@ defmodule OliWeb.LegacySuperactivityController do
     |> Plug.Conn.put_status(400)
     |> json(payload)
     |> Plug.Conn.halt()
+  end
+
+  defp import_error_payload(:not_authorized) do
+    %{
+      code: "not_authorized",
+      message: "You are not authorized to modify this activity.",
+      status: 403,
+      details: %{}
+    }
+  end
+
+  defp import_error_payload(:not_found) do
+    %{
+      code: "activity_not_found",
+      message: "The target activity could not be found.",
+      status: 404,
+      details: %{}
+    }
   end
 
   defp import_error_payload(:invalid_package) do

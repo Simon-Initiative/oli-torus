@@ -97,6 +97,48 @@ defmodule Oli.ActivityEditingTest do
       assert_received {:aws_request, %ExAws.Operation.S3{http_method: :put}}
     end
 
+    test "create/4 falls back to the original embedded model when bundle cloning fails", %{
+      author: author,
+      project: project
+    } do
+      content = %{
+        "base" => "embedded",
+        "src" => "index.html",
+        "title" => "Embedded activity",
+        "stem" => %{"content" => []},
+        "modelXml" => """
+        <embed_activity id="custom_side" width="670" height="300">
+          <title>Custom Activity</title>
+          <source>webcontent/custom_activity/customactivity.js</source>
+        </embed_activity>
+        """,
+        "resourceBase" => "1234",
+        "resourceURLs" => [],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [],
+              "hints" => [],
+              "scoringStrategy" => "average"
+            }
+          ],
+          "previewText" => ""
+        }
+      }
+
+      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+        assert op.http_method == :get
+        {:error, :timeout}
+      end)
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_embedded", author, content, [])
+
+      assert revision.content["resourceBase"] == "1234"
+      assert revision.content["modelXml"] == content["modelXml"]
+    end
+
     test "create/4 preserves an existing oli_embedded bundle resourceBase", %{
       author: author,
       project: project
