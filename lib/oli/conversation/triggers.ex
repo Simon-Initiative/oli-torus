@@ -172,7 +172,8 @@ defmodule Oli.Conversation.Triggers do
   def invoke(section_id, current_user_id, trigger) do
     case maybe_admit_adaptive_trigger(trigger) do
       :ok ->
-        topic = "trigger:#{current_user_id}:#{section_id}:#{trigger.resource_id}"
+        broadcast_resource_id = trigger.page_resource_id || trigger.resource_id
+        topic = "trigger:#{current_user_id}:#{section_id}:#{broadcast_resource_id}"
 
         Logger.info("Invoking trigger for topic: #{topic}")
 
@@ -279,10 +280,13 @@ defmodule Oli.Conversation.Triggers do
          {:ok, part} <- find_adaptive_trigger_part(parts_layout, trigger.data),
          {:ok, prompt} <- resolve_adaptive_prompt(trigger.trigger_type, part),
          {:ok, prompt} <- validate_adaptive_prompt(prompt) do
+      page_resource_id = find_containing_page_resource_id(section_id, resource_id)
+
       {:ok,
        %{
          trigger
          | resource_id: resource_id,
+           page_resource_id: page_resource_id,
            prompt: prompt,
            data: %{
              "component_id" => normalize_component_id(part_id(part), "unknown"),
@@ -293,6 +297,30 @@ defmodule Oli.Conversation.Triggers do
       nil -> {:error, :invalid_trigger}
       {:error, _reason} = error -> error
     end
+  end
+
+  # Finds the page resource_id that contains the given activity resource_id.
+  # In adaptive delivery, the page revision's content model holds activity-reference
+  # nodes with the activity_id. We join section_resources to revisions and search
+  # the JSON content for a matching activity_id.
+  defp find_containing_page_resource_id(section_id, activity_resource_id) do
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
+
+    Oli.Delivery.Sections.SectionResource
+    |> join(:inner, [sr], r in Revision, on: r.id == sr.revision_id)
+    |> where(
+      [sr, r],
+      sr.section_id == ^section_id and
+        sr.resource_type_id == ^page_type_id and
+        fragment(
+          "EXISTS (SELECT 1 FROM jsonb_array_elements(?->'model') elem, jsonb_array_elements(elem->'children') child WHERE (child->>'activity_id')::bigint = ?)",
+          r.content,
+          ^activity_resource_id
+        )
+    )
+    |> select([sr], sr.resource_id)
+    |> limit(1)
+    |> Repo.one()
   end
 
   defp normalize_adaptive_resource_id(resource_id) when is_integer(resource_id),
