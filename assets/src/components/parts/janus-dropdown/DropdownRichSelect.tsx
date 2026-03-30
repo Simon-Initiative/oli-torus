@@ -173,12 +173,14 @@ export const DropdownRichSelect: React.FC<DropdownRichSelectProps> = ({
         type="button"
         id={`${id}-select`}
         className="janus-dropdown-rich-trigger"
+        role="combobox"
         style={triggerStyle}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={`${id}-listbox`}
         aria-disabled={disabled}
+        aria-autocomplete="none"
         aria-activedescendant={
           activeIndex <= -1
             ? undefined
