@@ -43,6 +43,9 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
 }) => {
   const dispatch = useDispatch();
   const [isReady, setIsReady] = useState(false);
+  const [refreshNonce, setRefreshNonce] = useState(0);
+  const [pendingRefresh, setPendingRefresh] = useState(false);
+  const previousActivityModelRef = useRef(activityModel);
 
   const selectedPartId = useSelector(selectCurrentSelection);
   const projectSlug = useSelector(selectProjectSlug);
@@ -60,6 +63,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   };
 
   const elementProps = {
+    key: `activity-${activityModel.id}-${refreshNonce}`,
     id: `activity-${activityModel.id}`,
     ref,
     model: JSON.stringify(activityModel),
@@ -128,6 +132,10 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         if (payload.eventName === 'cancelConfigurePart' && onCancelConfigurePart) {
           result = await onCancelConfigurePart(payload.payload.partId);
         }
+        if (payload.eventName === 'refreshActivity') {
+          setPendingRefresh(true);
+          result = true;
+        }
 
         // DEPRECATED
         if (payload.eventName === 'dragPart' && onPartChangePosition) {
@@ -166,6 +174,17 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       document.removeEventListener('modelUpdated', handleActivityEdit);
     };
   }, [elementProps.id, activityModel]);
+
+  useEffect(() => {
+    const activityModelChanged = previousActivityModelRef.current !== activityModel;
+
+    if (pendingRefresh && activityModelChanged) {
+      setRefreshNonce((value) => value + 1);
+      setPendingRefresh(false);
+    }
+
+    previousActivityModelRef.current = activityModel;
+  }, [pendingRefresh, activityModel]);
 
   if (!activityModel.authoring || !activityModel.activityType) {
     console.warn('Bad Activity Data', activityModel);

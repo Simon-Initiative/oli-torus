@@ -10,7 +10,8 @@ defmodule OliWeb.LegacySuperactivityController do
     AttemptHistory,
     FileRecord,
     FileDirectory,
-    PreviewSessions
+    PreviewSessions,
+    Package
   }
 
   alias Oli.Accounts.{Author, User}
@@ -167,9 +168,47 @@ defmodule OliWeb.LegacySuperactivityController do
 
   def verify_media(conn, _params), do: error(conn, 400, "invalid verification request")
 
+  def export_package(conn, %{"model" => model}) when is_map(model) do
+    case Package.export(model) do
+      {:ok, zip_binary} ->
+        send_download(conn, {:binary, zip_binary}, filename: "embedded_activity_package.zip")
+
+      {:error, reason} ->
+        Logger.error("Could not export embedded activity package: #{inspect(reason)}")
+        error(conn, 400, "Unable to export embedded activity package")
+    end
+  end
+
+  def export_package(conn, _params), do: error(conn, 400, "invalid embedded activity export")
+
+  def import_package(conn, %{"upload" => %Plug.Upload{path: path}} = params) do
+    resource_base =
+      case Map.get(params, "resourceBase") do
+        value when is_binary(value) and value != "" -> value
+        _ -> nil
+      end
+
+    case Package.import(path, resource_base) do
+      {:ok, model} ->
+        json(conn, %{type: "success", model: model})
+
+      {:error, reason} ->
+        Logger.error("Could not import embedded activity package: #{inspect(reason)}")
+        error(conn, 400, "Unable to import embedded activity package")
+    end
+  end
+
+  def import_package(conn, _params), do: error(conn, 400, "invalid embedded activity package")
+
   defp upload_file(bucket, file_name, contents) do
     mime_type = MIME.from_path(file_name)
-    options = [{:acl, :public_read}, {:content_type, mime_type}]
+
+    options = [
+      {:acl, :public_read},
+      {:content_type, mime_type},
+      {:cache_control, "no-cache, no-store, must-revalidate"}
+    ]
+
     ExAws.S3.put_object(bucket, file_name, contents, options) |> aws_client().request()
   end
 

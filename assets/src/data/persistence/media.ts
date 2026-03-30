@@ -1,6 +1,9 @@
 import { ProjectSlug } from 'data/types';
 import { MediaItem, PaginatedResponse } from 'types/media';
 import { ServerError, makeRequest } from './common';
+import { getBaseURL } from './config';
+
+const fetch = (window as any).fetch;
 
 export type MediaItemCreated = {
   title: 'success';
@@ -14,6 +17,16 @@ export type MediaItemsDeleted = {
 
 export type SuperActivityMediaVerification = {
   statuses: Record<string, 'verified' | 'missing'>;
+};
+
+export type SuperActivityPackageImport = {
+  type: 'success';
+  model: any;
+};
+
+export type SuperActivityPackageExport = {
+  blob: Blob;
+  filename: string;
 };
 
 export function getFileName(file: File) {
@@ -109,6 +122,72 @@ export function verifySuperActivityMedia(
   };
 
   return makeRequest<SuperActivityMediaVerification>(params);
+}
+
+export function exportSuperActivityPackage(
+  model: object,
+): Promise<SuperActivityPackageExport | ServerError> {
+  return new Promise((resolve, reject) => {
+    return fetch(getBaseURL() + '/superactivity/package/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model }),
+    })
+      .then((response: Response) => {
+        if (!response.ok) {
+          response.text().then((text) => {
+            let message;
+            try {
+              message = JSON.parse(text);
+              if (message.message !== undefined) {
+                message = message.message;
+              }
+            } catch (e) {
+              message = text;
+            }
+
+            reject({
+              status: response.status,
+              statusText: response.statusText,
+              message,
+            });
+          });
+        } else {
+          const disposition = response.headers.get('content-disposition') || '';
+          const match = disposition.match(/filename="([^"]+)"/);
+          const filename = match?.[1] || 'embedded_activity_package.zip';
+
+          response.blob().then((blob) => resolve({ blob, filename }));
+        }
+      })
+      .catch((error: { status: string; statusText: string; message: string }) =>
+        reject({
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+        }),
+      );
+  });
+}
+
+export function importSuperActivityPackage(
+  file: File,
+  resourceBase?: string,
+): Promise<SuperActivityPackageImport | ServerError> {
+  const body = new FormData();
+  body.append('upload', file, file.name);
+  if (resourceBase) {
+    body.append('resourceBase', resourceBase);
+  }
+
+  const params = {
+    method: 'POST',
+    body,
+    headers: {},
+    url: '/superactivity/package/import',
+  };
+
+  return makeRequest<SuperActivityPackageImport>(params);
 }
 
 export function deleteMedia(

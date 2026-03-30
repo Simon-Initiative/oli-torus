@@ -43,9 +43,14 @@ export type EditorUpdate = {
 };
 
 // The activity editor
+type InlineActivityEditorState = {
+  refreshNonce: number;
+  pendingRefresh: boolean;
+};
+
 export class InlineActivityEditor extends React.Component<
   ActivityEditorProps,
-  Record<string, never>
+  InlineActivityEditorState
 > {
   ref: any;
 
@@ -54,6 +59,10 @@ export class InlineActivityEditor extends React.Component<
 
     this.update = this.update.bind(this);
     this.ref = React.createRef();
+    this.state = {
+      refreshNonce: 0,
+      pendingRefresh: false,
+    };
   }
 
   componentDidMount() {
@@ -83,6 +92,28 @@ export class InlineActivityEditor extends React.Component<
           }
         });
       });
+      this.ref.current.addEventListener('customEvent', (e: CustomEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const { payload, continuation } = e.detail;
+
+        if (payload?.eventName === 'refreshActivity') {
+          this.setState({ pendingRefresh: true }, () => continuation?.(true));
+          return;
+        }
+
+        continuation?.(null);
+      });
+    }
+  }
+
+  componentDidUpdate(prevProps: Readonly<ActivityEditorProps>) {
+    if (this.state.pendingRefresh && prevProps.model !== this.props.model) {
+      this.setState((state) => ({
+        refreshNonce: state.refreshNonce + 1,
+        pendingRefresh: false,
+      }));
     }
   }
 
@@ -147,7 +178,7 @@ export class InlineActivityEditor extends React.Component<
     };
 
     const webComponentProps = {
-      key: this.props.activityId,
+      key: `${this.props.activityId}-${this.state.refreshNonce}`,
       activity_id: `activity_${this.props.activityId}`,
       model: JSON.stringify(this.props.model),
       editmode: new Boolean(this.props.editMode).toString(),

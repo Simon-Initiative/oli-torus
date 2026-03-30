@@ -18,7 +18,11 @@ import { ScoringStrategy } from 'components/activities/types';
 import { uploadSuperActivityFiles } from 'components/media/manager/upload';
 import { CloseButton } from 'components/misc/CloseButton';
 import { Modal } from 'components/modal/Modal';
-import { verifySuperActivityMedia } from 'data/persistence/media';
+import {
+  exportSuperActivityPackage,
+  importSuperActivityPackage,
+  verifySuperActivityMedia,
+} from 'data/persistence/media';
 import { configureStore } from 'state/store';
 import guid from 'utils/guid';
 import { prettyPrintXml } from 'utils/xmlPretty';
@@ -28,7 +32,8 @@ import { WrappedMonaco } from '../common/variables/WrappedMonaco';
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
-  const { dispatch, model, editMode } = useAuthoringElementContext<OliEmbeddedModelSchema>();
+  const { dispatch, model, editMode, onEdit, onCustomEvent, activityId } =
+    useAuthoringElementContext<OliEmbeddedModelSchema>();
   const [copyNotice, setCopyNotice] = React.useState<string | null>(null);
   const [verificationError, setVerificationError] = React.useState<string | null>(null);
   const [isVerifyingStorage, setIsVerifyingStorage] = React.useState(false);
@@ -128,6 +133,50 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     (window as any).$('#' + id).trigger('click');
   };
 
+  const onPackageImportClick = (id: string) => {
+    (window as any).$('#' + id).trigger('click');
+  };
+
+  const onPackageImport = (files: FileList) => {
+    const file = files.item(0);
+
+    if (!file) {
+      return;
+    }
+
+    importSuperActivityPackage(file, model.resourceBase)
+      .then((result: any) => {
+        onEdit(result.model as OliEmbeddedModelSchema);
+        if (onCustomEvent && activityId !== undefined) {
+          window.setTimeout(() => {
+            void onCustomEvent('refreshActivity', { activityId });
+          }, 0);
+        }
+      })
+      .catch((reason: any) => {
+        const id = 'package_import_error';
+        display(errorModal(reason.message, id), id);
+      });
+  };
+
+  const exportPackage = () => {
+    exportSuperActivityPackage(model)
+      .then((result: any) => {
+        const url = window.URL.createObjectURL(result.blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = result.filename || 'embedded_activity_package.zip';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      })
+      .catch((reason: any) => {
+        const id = 'package_export_error';
+        display(errorModal(reason.message, id), id);
+      });
+  };
+
   const handleScoringChange = (partId: string, key: string) => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -136,6 +185,10 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   };
 
   const removePart = (partId: string) => {
+    if (model.authoring.parts.length <= 1) {
+      return;
+    }
+
     dispatch(OliEmbeddedActions.removePart(partId));
   };
 
@@ -144,6 +197,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   };
 
   const id = guid();
+  const packageImportId = guid();
   const uploadedResources = model.resourceURLs.map((url) => ({
     url,
     relativePath: lastPart(model.resourceBase, url),
@@ -274,8 +328,8 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
             <div>
               <div className="card-title mb-1">Manifest XML</div>
               <div className={`${mutedTextClass} small`}>
-                Manifest XML is the launch manifest for your embedded activity. It tells the runtime
-                what to load and how to initialize.
+                Manifest XML is the launch manifest for your embedded activity. It should list all
+                supporting files the runtime needs to load and tell the runtime how to initialize.
               </div>
             </div>
             <div className="d-flex flex-wrap gap-2">
@@ -301,6 +355,22 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
               >
                 <i className="fa fa-upload" /> Upload File
               </button>
+              <button
+                type="button"
+                className={secondaryButtonClass}
+                disabled={!editMode}
+                onClick={() => onPackageImportClick(packageImportId)}
+              >
+                Import ZIP
+              </button>
+              <button
+                type="button"
+                className={secondaryButtonClass}
+                disabled={!editMode}
+                onClick={() => exportPackage()}
+              >
+                Export ZIP
+              </button>
             </div>
           </div>
           {copyNotice ? (
@@ -324,17 +394,23 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         type="file"
       />
 
+      <input
+        id={packageImportId}
+        style={{ display: 'none' }}
+        onChange={({ target: { files } }) => onPackageImport(files as FileList)}
+        type="file"
+        accept=".zip,application/zip"
+      />
+
       <div className="card mt-3">
         <div className="card-body">
           <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
             <div>
               <div className="card-title mb-1">Manifest Diagnostics</div>
-              <div className={`${mutedTextClass} small`}>
-                <span className="me-3">
-                  {diagnostics.isWellFormed ? 'well-formed XML' : 'XML parse error'}
-                </span>
-                <span className="me-3">{diagnostics.references.length} references</span>
-                <span className="me-3">{verifiedXmlReferences.length} present</span>
+              <div className={`${mutedTextClass} small d-flex flex-wrap gap-3`}>
+                <span>{diagnostics.isWellFormed ? 'well-formed XML' : 'XML parse error'}</span>
+                <span>{diagnostics.references.length} references</span>
+                <span>{verifiedXmlReferences.length} present</span>
                 <span>{missingXmlReferences.length} missing</span>
               </div>
             </div>
@@ -496,9 +572,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
             <div>
               <div className="card-title mb-1">Supporting Files</div>
-              <div className={`${mutedTextClass} small`}>
-                <span className="me-3">{uploadedResources.length} tracked</span>
-                <span className="me-3">{verifiedXmlReferences.length} referenced and present</span>
+              <div className={`${mutedTextClass} small d-flex flex-wrap gap-3`}>
+                <span>{uploadedResources.length} tracked</span>
+                <span>{verifiedXmlReferences.length} referenced and present</span>
                 <span>{missingXmlReferences.length} missing</span>
               </div>
             </div>
@@ -606,9 +682,12 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
             <div>
               <div className="card-title mb-1">Parts</div>
-              <div className={`${mutedTextClass} small`}>
-                <span className="me-3">{model.authoring.parts.length} defined</span>
-                <span>copy part ids into your embedded runtime to wire scoring and state</span>
+              <div className={`${mutedTextClass} small d-flex flex-wrap gap-3`}>
+                <span>{model.authoring.parts.length} defined</span>
+                <span>
+                  Copy part ids into your embedded runtime to connect scoring, state, and saved
+                  responses to the correct Torus part.
+                </span>
               </div>
             </div>
             <button
@@ -719,15 +798,17 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                       </button>
                     </div>
                     <div className="col-md-auto">
-                      <button
-                        onClick={() => removePart(part.id)}
-                        type="button"
-                        className="close"
-                        data-dismiss="alert"
-                        aria-label="Close"
-                      >
-                        <i className="fa-solid fa-xmark fa-xl"></i>
-                      </button>
+                      {model.authoring.parts.length > 1 ? (
+                        <button
+                          onClick={() => removePart(part.id)}
+                          type="button"
+                          className="close"
+                          data-dismiss="alert"
+                          aria-label="Remove part"
+                        >
+                          <i className="fa-solid fa-xmark fa-xl"></i>
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 ))}

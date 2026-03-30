@@ -460,6 +460,386 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
                }
              }
     end
+
+    test "exports an embedded activity package zip", %{
+      conn: conn,
+      author: author,
+      content: content
+    } do
+      model =
+        content
+        |> Map.put("resourceBase", "bundles/export-bundle")
+        |> Map.put(
+          "modelXml",
+          """
+          <embed_activity>
+            <source>/super_media/bundles/export-bundle/webcontent/custom_activity/customactivity.js</source>
+            <assets>
+              <asset name="styles">/media/bundles/export-bundle/webcontent/custom_activity/styles.css?v=1</asset>
+            </assets>
+          </embed_activity>
+          """
+        )
+
+      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+        case {op.http_method, op.path} do
+          {:get, "media/bundles/export-bundle/webcontent/custom_activity/customactivity.js"} ->
+            {:ok, %{status_code: 200, body: "console.log('boot');"}}
+
+          {:get, "media/bundles/export-bundle/webcontent/custom_activity/styles.css"} ->
+            {:ok, %{status_code: 200, body: "body { color: red; }"}}
+        end
+      end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn = post(conn, "/api/v1/superactivity/package/export", %{"model" => model})
+
+      [disposition] = get_resp_header(conn, "content-disposition")
+      assert disposition =~ "embedded_activity_package.zip"
+
+      entries =
+        unzip_to_memory(conn.resp_body)
+        |> Enum.into(%{}, fn {name, data} -> {List.to_string(name), data} end)
+
+      assert Map.has_key?(entries, "model.json")
+      assert Map.has_key?(entries, "manifest.xml")
+      assert entries["manifest.xml"] == model["modelXml"]
+      assert entries["webcontent/custom_activity/customactivity.js"] == "console.log('boot');"
+      assert entries["webcontent/custom_activity/styles.css"] == "body { color: red; }"
+      refute Map.has_key?(entries, "webcontent/custom_activity/unused.json")
+
+      assert Jason.decode!(entries["model.json"]) == %{
+               "activityType" => "oli_embedded",
+               "authoring" => content["authoring"],
+               "base" => "embedded",
+               "bibrefs" => [],
+               "manifestXmlFile" => "manifest.xml",
+               "src" => "index.html",
+               "stem" => content["stem"],
+               "supportingFilesPath" => "webcontent/",
+               "title" => "Embedded activity",
+               "version" => 1
+             }
+    end
+
+    test "exports supporting files referenced by ctat-style manifest xml", %{
+      conn: conn,
+      author: author,
+      content: content
+    } do
+      model =
+        content
+        |> Map.put("resourceBase", "bundles/export-bundle")
+        |> Map.put(
+          "modelXml",
+          """
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE ctat PUBLIC "-//Carnegie Mellon University//DTD CTAT 1.1//EN" "http://oli.cmu.edu/dtd/cmu-ctat-tutor_1.1.dtd">
+          <ctat id="PopGenHWEseq_class" width="1000" height="700" max_attempts="-1">
+            <title>Population Genetics - Hardy-Weinberg Equilibrium (4 problems)</title>
+            <interface>webcontent/PopGenHWE/sequence.xml</interface>
+            <dataset package="null" />
+            <asset>webcontent/PopGenHWE/HTML/PopulationGenetics2.html</asset>
+          </ctat>
+          """
+        )
+
+      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+        case {op.http_method, op.path} do
+          {:get, "media/bundles/export-bundle/webcontent/PopGenHWE/sequence.xml"} ->
+            {:ok, %{status_code: 200, body: "<sequence />"}}
+
+          {:get, "media/bundles/export-bundle/webcontent/PopGenHWE/HTML/PopulationGenetics2.html"} ->
+            {:ok, %{status_code: 200, body: "<html>CTAT</html>"}}
+        end
+      end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn = post(conn, "/api/v1/superactivity/package/export", %{"model" => model})
+
+      entries =
+        unzip_to_memory(conn.resp_body)
+        |> Enum.into(%{}, fn {name, data} -> {List.to_string(name), data} end)
+
+      assert entries["webcontent/PopGenHWE/sequence.xml"] == "<sequence />"
+      assert entries["webcontent/PopGenHWE/HTML/PopulationGenetics2.html"] == "<html>CTAT</html>"
+      refute Map.has_key?(entries, "webcontent/PopGenHWE/unused.json")
+    end
+
+    test "imports an embedded activity package zip", %{conn: conn, author: author} do
+      existing_resource_base = "bundles/existing-embedded-activity"
+
+      zip_binary =
+        Oli.Utils.zip(
+          [
+            {~c"model.json",
+             Jason.encode!(%{
+               "version" => 1,
+               "activityType" => "oli_embedded",
+               "base" => "embedded",
+               "src" => "index.html",
+               "manifestXmlFile" => "manifest.xml",
+               "supportingFilesPath" => "webcontent/",
+               "title" => "Imported Embedded Activity",
+               "stem" => %{"id" => "stem-id", "content" => []},
+               "authoring" => %{
+                 "parts" => [
+                   %{
+                     "id" => "part-1",
+                     "hints" => [],
+                     "responses" => [],
+                     "scoringStrategy" => "average"
+                   }
+                 ],
+                 "previewText" => ""
+               },
+               "bibrefs" => []
+             })},
+            {~c"manifest.xml",
+             "<embed_activity><source>webcontent/custom_activity/app.js</source></embed_activity>"},
+            {~c"webcontent/custom_activity/app.js", "console.log('imported');"},
+            {~c"webcontent/custom_activity/styles.css", "body { color: blue; }"}
+          ],
+          "embedded_activity_package.zip"
+        )
+
+      upload_path =
+        Path.join(
+          System.tmp_dir!(),
+          "embedded_activity_package_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(upload_path, zip_binary)
+      on_exit(fn -> File.rm_rf(upload_path) end)
+
+      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+        assert op.http_method == :put
+        assert String.starts_with?(op.path, "/media/bundles/")
+        assert String.contains?(op.path, "/webcontent/custom_activity/")
+        assert op.headers["cache-control"] == "no-cache, no-store, must-revalidate"
+        {:ok, %{status_code: 200}}
+      end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/package/import", %{
+          "resourceBase" => existing_resource_base,
+          "upload" => %Plug.Upload{
+            content_type: "application/zip",
+            filename: "embedded_activity_package.zip",
+            path: upload_path
+          }
+        })
+
+      assert %{
+               "type" => "success",
+               "model" => %{
+                 "base" => "embedded",
+                 "src" => "index.html",
+                 "title" => "Imported Embedded Activity",
+                 "modelXml" =>
+                   "<embed_activity><source>webcontent/custom_activity/app.js</source></embed_activity>",
+                 "resourceBase" => ^existing_resource_base,
+                 "resourceURLs" => resource_urls,
+                 "resourceVerification" => %{},
+                 "authoring" => %{"parts" => [%{"id" => "part-1"}], "previewText" => ""},
+                 "stem" => %{"id" => "stem-id", "content" => []},
+                 "bibrefs" => []
+               }
+             } = json_response(conn, 200)
+
+      assert length(resource_urls) == 2
+
+      assert Enum.all?(
+               resource_urls,
+               &String.contains?(&1, "/media/#{existing_resource_base}/webcontent/")
+             )
+    end
+
+    test "imports an embedded activity package zip wrapped in a single root directory", %{
+      conn: conn,
+      author: author
+    } do
+      existing_resource_base = "bundles/existing-embedded-activity"
+
+      zip_binary =
+        Oli.Utils.zip(
+          [
+            {~c"embedded_activity_package/model.json",
+             Jason.encode!(%{
+               "version" => 1,
+               "activityType" => "oli_embedded",
+               "base" => "embedded",
+               "src" => "index.html",
+               "manifestXmlFile" => "manifest.xml",
+               "supportingFilesPath" => "webcontent/",
+               "title" => "Imported Embedded Activity",
+               "stem" => %{"id" => "stem-id", "content" => []},
+               "authoring" => %{
+                 "parts" => [
+                   %{
+                     "id" => "part-1",
+                     "hints" => [],
+                     "responses" => [],
+                     "scoringStrategy" => "average"
+                   }
+                 ],
+                 "previewText" => ""
+               },
+               "bibrefs" => []
+             })},
+            {~c"embedded_activity_package/manifest.xml",
+             "<embed_activity><source>webcontent/custom_activity/app.js</source></embed_activity>"},
+            {~c"embedded_activity_package/webcontent/custom_activity/app.js",
+             "console.log('imported');"},
+            {~c"embedded_activity_package/webcontent/custom_activity/styles.css",
+             "body { color: blue; }"}
+          ],
+          "embedded_activity_package.zip"
+        )
+
+      upload_path =
+        Path.join(
+          System.tmp_dir!(),
+          "embedded_activity_package_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(upload_path, zip_binary)
+      on_exit(fn -> File.rm_rf(upload_path) end)
+
+      expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+        assert op.http_method == :put
+        assert String.starts_with?(op.path, "/media/bundles/")
+        assert String.contains?(op.path, "/webcontent/custom_activity/")
+        assert op.headers["cache-control"] == "no-cache, no-store, must-revalidate"
+        {:ok, %{status_code: 200}}
+      end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/package/import", %{
+          "resourceBase" => existing_resource_base,
+          "upload" => %Plug.Upload{
+            content_type: "application/zip",
+            filename: "embedded_activity_package.zip",
+            path: upload_path
+          }
+        })
+
+      assert %{
+               "type" => "success",
+               "model" => %{
+                 "resourceBase" => ^existing_resource_base,
+                 "resourceURLs" => resource_urls
+               }
+             } = json_response(conn, 200)
+
+      assert length(resource_urls) == 2
+    end
+
+    test "imports every file in the webcontent tree into the current activity bundle", %{
+      conn: conn,
+      author: author
+    } do
+      existing_resource_base = "bundles/existing-embedded-activity"
+
+      zip_binary =
+        Oli.Utils.zip(
+          [
+            {~c"model.json",
+             Jason.encode!(%{
+               "version" => 1,
+               "activityType" => "oli_embedded",
+               "base" => "embedded",
+               "src" => "index.html",
+               "manifestXmlFile" => "manifest.xml",
+               "supportingFilesPath" => "webcontent/",
+               "title" => "Imported Embedded Activity",
+               "stem" => %{"id" => "stem-id", "content" => []},
+               "authoring" => %{"parts" => [], "previewText" => ""},
+               "bibrefs" => []
+             })},
+            {~c"manifest.xml",
+             """
+             <embed_activity>
+               <source>webcontent/custom_activity/app.js</source>
+               <assets>
+                 <asset name="styles">webcontent/custom_activity/styles/main.css</asset>
+                 <asset name="image">webcontent/custom_activity/assets/images/hero.png</asset>
+                 <asset name="data">webcontent/custom_activity/assets/data/config.json</asset>
+               </assets>
+             </embed_activity>
+             """},
+            {~c"webcontent/custom_activity/app.js", "console.log('imported');"},
+            {~c"webcontent/custom_activity/styles/main.css", "body { color: blue; }"},
+            {~c"webcontent/custom_activity/assets/images/hero.png", "png-binary"},
+            {~c"webcontent/custom_activity/assets/data/config.json", ~s({"ok":true})}
+          ],
+          "embedded_activity_package.zip"
+        )
+
+      upload_path =
+        Path.join(
+          System.tmp_dir!(),
+          "embedded_activity_package_#{System.unique_integer([:positive])}.zip"
+        )
+
+      File.write!(upload_path, zip_binary)
+      on_exit(fn -> File.rm_rf(upload_path) end)
+
+      uploaded_paths = Agent.start_link(fn -> [] end)
+      {:ok, uploaded_paths} = uploaded_paths
+
+      expect(Oli.Test.MockAws, :request, 4, fn %ExAws.Operation.S3{} = op ->
+        Agent.update(uploaded_paths, &[op.path | &1])
+        assert op.http_method == :put
+        assert op.headers["cache-control"] == "no-cache, no-store, must-revalidate"
+        {:ok, %{status_code: 200}}
+      end)
+
+      conn =
+        recycle(conn)
+        |> log_in_author(author)
+
+      conn =
+        post(conn, "/api/v1/superactivity/package/import", %{
+          "resourceBase" => existing_resource_base,
+          "upload" => %Plug.Upload{
+            content_type: "application/zip",
+            filename: "embedded_activity_package.zip",
+            path: upload_path
+          }
+        })
+
+      assert %{
+               "type" => "success",
+               "model" => %{
+                 "resourceBase" => ^existing_resource_base,
+                 "resourceURLs" => resource_urls
+               }
+             } = json_response(conn, 200)
+
+      assert length(resource_urls) == 4
+
+      assert Enum.sort(Agent.get(uploaded_paths, & &1)) == [
+               "/media/#{existing_resource_base}/webcontent/custom_activity/app.js",
+               "/media/#{existing_resource_base}/webcontent/custom_activity/assets/data/config.json",
+               "/media/#{existing_resource_base}/webcontent/custom_activity/assets/images/hero.png",
+               "/media/#{existing_resource_base}/webcontent/custom_activity/styles/main.css"
+             ]
+    end
   end
 
   defp setup_session(%{conn: conn}) do

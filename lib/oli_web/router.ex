@@ -427,6 +427,12 @@ defmodule OliWeb.Router do
     post("/verify", LegacySuperactivityController, :verify_media)
   end
 
+  scope "/api/v1/superactivity/package", OliWeb do
+    pipe_through([:api, :authoring_protected])
+    post("/export", LegacySuperactivityController, :export_package)
+    post("/import", LegacySuperactivityController, :import_package)
+  end
+
   scope "/", OliWeb do
     pipe_through([:browser, :delivery_protected])
 
