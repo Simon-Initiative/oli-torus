@@ -3558,6 +3558,34 @@ defmodule Oli.Delivery.SectionsTest do
       # Objective with no activities should have 0 related activities
       assert no_activities_obj.related_activities_count == 0
     end
+
+    test "falls back to revision children when objective section resources do not store hierarchy",
+         %{
+           section: section,
+           objectives: %{objective_a: objective_a}
+         } do
+      objective_type_id = ResourceType.id_for_objective()
+
+      from(sr in SectionResource,
+        where:
+          sr.section_id == ^section.id and
+            sr.resource_type_id == ^objective_type_id and
+            sr.resource_id == ^objective_a.resource_id
+      )
+      |> Oli.Repo.update_all(set: [children: []])
+
+      result = Sections.get_objectives_and_subobjectives(section)
+
+      top_level_a = Enum.find(result, &(&1.objective_resource_id == objective_a.resource_id))
+      sub_a1 = Enum.find(result, &(&1.subobjective == "Sub-objective A.1"))
+      sub_a2 = Enum.find(result, &(&1.subobjective == "Sub-objective A.2"))
+
+      assert top_level_a != nil
+      assert sub_a1 != nil
+      assert sub_a1.objective_resource_id == objective_a.resource_id
+      assert sub_a2 != nil
+      assert sub_a2.objective_resource_id == objective_a.resource_id
+    end
   end
 
   describe "get_section_by_slug_with_base_project/1" do

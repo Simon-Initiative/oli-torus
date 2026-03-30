@@ -5583,16 +5583,38 @@ defmodule Oli.Delivery.Sections do
         Map.put(acc, sr.id, sr.resource_id)
       end)
 
+    revision_children_by_id =
+      objectives_section_resources
+      |> Enum.filter(&(List.wrap(&1.children) == []))
+      |> Enum.map(& &1.revision_id)
+      |> case do
+        [] ->
+          %{}
+
+        revision_ids ->
+          from(r in Revision,
+            where: r.id in ^revision_ids,
+            select: {r.id, r.children}
+          )
+          |> Repo.all()
+          |> Map.new()
+      end
+
     objectives =
       objectives_section_resources
       |> Enum.map(fn sr ->
-        # Convert children from section_resource_ids to resource_ids
         children =
-          (sr.children || [])
-          |> Enum.map(fn section_resource_id ->
-            section_resource_id_to_resource_id[section_resource_id]
-          end)
-          |> Enum.filter(&(&1 != nil))
+          case sr.children || [] do
+            [] ->
+              Map.get(revision_children_by_id, sr.revision_id, [])
+
+            section_resource_children ->
+              section_resource_children
+              |> Enum.map(fn section_resource_id ->
+                section_resource_id_to_resource_id[section_resource_id]
+              end)
+              |> Enum.filter(&(&1 != nil))
+          end
 
         %{
           title: sr.title,
