@@ -169,7 +169,10 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
     if (activityId === undefined || Number.isNaN(activityId) || !projectSlug) {
       const id = 'package_import_error';
-      display(errorModal('Unable to import package because the current activity context is missing.', id), id);
+      display(
+        errorModal('Unable to import package because the current activity context is missing.', id),
+        id,
+      );
       return;
     }
 
@@ -199,7 +202,10 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
     if (activityId === undefined || Number.isNaN(activityId) || !projectSlug) {
       const id = 'package_export_error';
-      display(errorModal('Unable to export package because the current activity context is missing.', id), id);
+      display(
+        errorModal('Unable to export package because the current activity context is missing.', id),
+        id,
+      );
       return;
     }
 
