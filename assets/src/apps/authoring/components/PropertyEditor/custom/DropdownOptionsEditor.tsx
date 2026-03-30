@@ -45,6 +45,22 @@ export const DropdownOptionsEditor: React.FC<Props> = ({ id, value, onChange, on
 
   return (
     <div>
+      <style>{`
+        .dropdown-options-editor-label {
+          display: flex;
+          align-items: center;
+          min-height: 38px;
+        }
+        .dropdown-options-editor-preview,
+        .dropdown-options-editor-preview p,
+        .dropdown-options-editor-preview div {
+          margin: 0;
+        }
+        .dropdown-options-editor-preview p,
+        .dropdown-options-editor-preview div {
+          line-height: 1.5;
+        }
+      `}</style>
       <label className="form-label">Options</label>
       <div>
         {value.map((option, index) => (
@@ -89,12 +105,14 @@ const OptionsEditor: React.FC<{
   return (
     <div className="flex mb-1 align-items-center gap-1">
       <div
-        className="flex-1 form-control d-flex align-items-center"
-        style={{ minHeight: 38 }}
+        className="flex-1 form-control dropdown-options-editor-label"
         onFocus={onFocus}
         tabIndex={0}
       >
-        <span dangerouslySetInnerHTML={{ __html: sanitized || '&nbsp;' }} />
+        <span
+          className="dropdown-options-editor-preview"
+          dangerouslySetInnerHTML={{ __html: sanitized || '&nbsp;' }}
+        />
       </div>
       <div className="flex-none">
         <button
