@@ -528,88 +528,88 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           <div id={manifestDiagnosticsPanelId} hidden={!showManifestDiagnostics}>
             {showManifestDiagnostics ? (
               <>
-              <div
-                className={`alert mt-3 ${
-                  diagnostics.isWellFormed ? 'alert-success' : 'alert-danger'
-                }`}
-              >
-                {diagnostics.isWellFormed ? (
-                  <>XML is well-formed.</>
-                ) : (
-                  <>
-                    <div className="fw-bold">XML parse error</div>
-                    <div>{diagnostics.parseError}</div>
-                  </>
-                )}
-              </div>
-
-              <div className="row">
-                <div className="col-md-4 mb-2">
-                  <div className={`small ${mutedTextClass}`}>Detected references</div>
-                  <div className="fw-bold">{diagnostics.references.length}</div>
+                <div
+                  className={`alert mt-3 ${
+                    diagnostics.isWellFormed ? 'alert-success' : 'alert-danger'
+                  }`}
+                >
+                  {diagnostics.isWellFormed ? (
+                    <>XML is well-formed.</>
+                  ) : (
+                    <>
+                      <div className="fw-bold">XML parse error</div>
+                      <div>{diagnostics.parseError}</div>
+                    </>
+                  )}
                 </div>
-                <div className="col-md-4 mb-2">
-                  <div className={`small ${mutedTextClass}`}>Verified in storage</div>
-                  <div className="fw-bold">{verifiedXmlReferences.length}</div>
-                </div>
-                <div className="col-md-4 mb-2">
-                  <div className={`small ${mutedTextClass}`}>Missing in storage</div>
-                  <div className="fw-bold">{missingXmlReferences.length}</div>
-                </div>
-              </div>
 
-              {verificationError ? (
-                <div className="alert alert-warning mt-3">{verificationError}</div>
-              ) : null}
-
-              {verificationPending || isVerifyingStorage ? (
-                <div className={`${infoAlertClass} mt-3`}>
-                  Checking supporting files in storage relative to <code>{model.resourceBase}</code>
-                  .
+                <div className="row">
+                  <div className="col-md-4 mb-2">
+                    <div className={`small ${mutedTextClass}`}>Detected references</div>
+                    <div className="fw-bold">{diagnostics.references.length}</div>
+                  </div>
+                  <div className="col-md-4 mb-2">
+                    <div className={`small ${mutedTextClass}`}>Verified in storage</div>
+                    <div className="fw-bold">{verifiedXmlReferences.length}</div>
+                  </div>
+                  <div className="col-md-4 mb-2">
+                    <div className={`small ${mutedTextClass}`}>Missing in storage</div>
+                    <div className="fw-bold">{missingXmlReferences.length}</div>
+                  </div>
                 </div>
-              ) : null}
 
-              {missingXmlReferences.length > 0 ? (
-                <div className="alert alert-warning mt-3">
-                  Some XML references are missing from storage for this activity instance.
-                </div>
-              ) : null}
+                {verificationError ? (
+                  <div className="alert alert-warning mt-3">{verificationError}</div>
+                ) : null}
 
-              {diagnostics.unusedUploads.length > 0 ? (
-                <div className="alert alert-secondary mt-3">
-                  Some supporting files are not referenced by the current Manifest XML.
-                </div>
-              ) : null}
+                {verificationPending || isVerifyingStorage ? (
+                  <div className={`${infoAlertClass} mt-3`}>
+                    Checking supporting files in storage relative to{' '}
+                    <code>{model.resourceBase}</code>.
+                  </div>
+                ) : null}
 
-              {diagnostics.references.length > 0 ? (
-                <ul className="list-group mt-3">
-                  {diagnostics.references.map((reference) => (
-                    <li
-                      className="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2"
-                      key={reference}
-                    >
-                      <code>{reference}</code>
-                      <div className="d-flex flex-wrap gap-2">
-                        <span
-                          className={`badge ${
-                            missingReferenceSet.has(reference)
-                              ? 'bg-warning text-dark'
+                {missingXmlReferences.length > 0 ? (
+                  <div className="alert alert-warning mt-3">
+                    Some XML references are missing from storage for this activity instance.
+                  </div>
+                ) : null}
+
+                {diagnostics.unusedUploads.length > 0 ? (
+                  <div className="alert alert-secondary mt-3">
+                    Some supporting files are not referenced by the current Manifest XML.
+                  </div>
+                ) : null}
+
+                {diagnostics.references.length > 0 ? (
+                  <ul className="list-group mt-3">
+                    {diagnostics.references.map((reference) => (
+                      <li
+                        className="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2"
+                        key={reference}
+                      >
+                        <code>{reference}</code>
+                        <div className="d-flex flex-wrap gap-2">
+                          <span
+                            className={`badge ${
+                              missingReferenceSet.has(reference)
+                                ? 'bg-warning text-dark'
+                                : verifiedReferenceSet.has(reference)
+                                ? 'bg-success'
+                                : 'bg-secondary'
+                            }`}
+                          >
+                            {missingReferenceSet.has(reference)
+                              ? 'missing in storage'
                               : verifiedReferenceSet.has(reference)
-                              ? 'bg-success'
-                              : 'bg-secondary'
-                          }`}
-                        >
-                          {missingReferenceSet.has(reference)
-                            ? 'missing in storage'
-                            : verifiedReferenceSet.has(reference)
-                            ? 'present in storage'
-                            : 'verification pending'}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+                              ? 'present in storage'
+                              : 'verification pending'}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </>
             ) : null}
           </div>
@@ -633,42 +633,42 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           <div id={bundleRuntimePanelId} hidden={!showBundleRuntime}>
             {showBundleRuntime ? (
               <>
-              <div
-                className={`alert ${bundleBacked ? 'alert-success' : 'alert-warning'} mb-0 mt-3`}
-              >
-                {bundleBacked ? (
-                  <>
-                    Uploads are bundle-scoped and will resolve relative to this activity instance.
-                  </>
-                ) : (
-                  <>
-                    This activity is not bundle-backed. Uploaded files go to shared media storage,
-                    so XML references need extra care.
-                  </>
-                )}
-              </div>
-              <div className="row mt-3">
-                <div className="col-md-6 mb-2">
-                  <div className={`small ${mutedTextClass}`}>Iframe base</div>
-                  <code>{model.base}</code>
+                <div
+                  className={`alert ${bundleBacked ? 'alert-success' : 'alert-warning'} mb-0 mt-3`}
+                >
+                  {bundleBacked ? (
+                    <>
+                      Uploads are bundle-scoped and will resolve relative to this activity instance.
+                    </>
+                  ) : (
+                    <>
+                      This activity is not bundle-backed. Uploaded files go to shared media storage,
+                      so XML references need extra care.
+                    </>
+                  )}
                 </div>
-                <div className="col-md-6 mb-2">
-                  <div className={`small ${mutedTextClass}`}>Iframe source page</div>
-                  <code>{model.src}</code>
+                <div className="row mt-3">
+                  <div className="col-md-6 mb-2">
+                    <div className={`small ${mutedTextClass}`}>Iframe base</div>
+                    <code>{model.base}</code>
+                  </div>
+                  <div className="col-md-6 mb-2">
+                    <div className={`small ${mutedTextClass}`}>Iframe source page</div>
+                    <code>{model.src}</code>
+                  </div>
+                  <div className="col-md-6 mb-2">
+                    <div className={`small ${mutedTextClass}`}>resourceBase</div>
+                    <code>{model.resourceBase}</code>
+                  </div>
+                  <div className="col-md-6 mb-2">
+                    <div className={`small ${mutedTextClass}`}>Upload destination</div>
+                    <code>{uploadLocation}</code>
+                  </div>
+                  <div className="col-md-12 mb-2">
+                    <div className={`small ${mutedTextClass}`}>Runtime asset base</div>
+                    <code>{runtimeAssetBase}</code>
+                  </div>
                 </div>
-                <div className="col-md-6 mb-2">
-                  <div className={`small ${mutedTextClass}`}>resourceBase</div>
-                  <code>{model.resourceBase}</code>
-                </div>
-                <div className="col-md-6 mb-2">
-                  <div className={`small ${mutedTextClass}`}>Upload destination</div>
-                  <code>{uploadLocation}</code>
-                </div>
-                <div className="col-md-12 mb-2">
-                  <div className={`small ${mutedTextClass}`}>Runtime asset base</div>
-                  <code>{runtimeAssetBase}</code>
-                </div>
-              </div>
               </>
             ) : null}
           </div>
@@ -736,7 +736,9 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                                 : 'verification pending'}
                             </span>
                             <span
-                              className={`badge ${isUnused ? 'bg-warning text-dark' : 'bg-success'}`}
+                              className={`badge ${
+                                isUnused ? 'bg-warning text-dark' : 'bg-success'
+                              }`}
                             >
                               {isUnused
                                 ? 'not referenced in Manifest XML'
@@ -816,125 +818,127 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           <div id={partsPanelId} hidden={!showParts}>
             {showParts ? (
               <>
-              <div className="d-flex flex-wrap justify-content-end gap-2 mt-3">
-                <button
-                  type="button"
-                  className={secondarySmallButtonClass}
-                  aria-expanded={showPartsGuidance}
-                  aria-controls={partsGuidancePanelId}
-                  onClick={() => setShowPartsGuidance((value) => !value)}
-                >
-                  {showPartsGuidance ? 'Hide Integration Help' : 'Show Integration Help'}
-                </button>
-              </div>
+                <div className="d-flex flex-wrap justify-content-end gap-2 mt-3">
+                  <button
+                    type="button"
+                    className={secondarySmallButtonClass}
+                    aria-expanded={showPartsGuidance}
+                    aria-controls={partsGuidancePanelId}
+                    onClick={() => setShowPartsGuidance((value) => !value)}
+                  >
+                    {showPartsGuidance ? 'Hide Integration Help' : 'Show Integration Help'}
+                  </button>
+                </div>
 
-              <div id={partsGuidancePanelId} hidden={!showPartsGuidance}>
-                {showPartsGuidance ? (
-                  <>
-                  <div className={`${infoAlertClass} mt-3`}>
-                    <div className="fw-bold mb-1">
-                      Use part ids as your superactivity integration hooks
-                    </div>
-                    <div>
-                      `oli_embedded` is interaction-agnostic. Your custom activity can tag any
-                      answerable input or scored interaction with one of the part ids below, then
-                      use the legacy superactivity APIs to save responses and state, submit scores
-                      and outcomes, emit logs, and manage attempt lifecycle.
-                    </div>
-                    <div className="mt-2">
-                      This can represent multiple choice, multi-select, true/false, dropdowns, short
-                      or long text, numeric or math inputs, fill in the blank, drag and drop,
-                      ordering, matching, categorization, hotspot, image labeling, drawing,
-                      graphing, sliders, matrices, Likert scales, audio or video response, file
-                      upload, code editors, simulations, and other custom interactions.
-                    </div>
-                  </div>
+                <div id={partsGuidancePanelId} hidden={!showPartsGuidance}>
+                  {showPartsGuidance ? (
+                    <>
+                      <div className={`${infoAlertClass} mt-3`}>
+                        <div className="fw-bold mb-1">
+                          Use part ids as your superactivity integration hooks
+                        </div>
+                        <div>
+                          `oli_embedded` is interaction-agnostic. Your custom activity can tag any
+                          answerable input or scored interaction with one of the part ids below,
+                          then use the legacy superactivity APIs to save responses and state, submit
+                          scores and outcomes, emit logs, and manage attempt lifecycle.
+                        </div>
+                        <div className="mt-2">
+                          This can represent multiple choice, multi-select, true/false, dropdowns,
+                          short or long text, numeric or math inputs, fill in the blank, drag and
+                          drop, ordering, matching, categorization, hotspot, image labeling,
+                          drawing, graphing, sliders, matrices, Likert scales, audio or video
+                          response, file upload, code editors, simulations, and other custom
+                          interactions.
+                        </div>
+                      </div>
 
-                  <div className="row mb-3">
-                    <div className="col-md-4 mb-2">
-                      <div className={`small ${mutedTextClass}`}>What To Tag</div>
-                      <div className="small">
-                        Use a part id wherever your manifest XML or bootstrap runtime identifies a
-                        user input, scored interaction, or submit target.
+                      <div className="row mb-3">
+                        <div className="col-md-4 mb-2">
+                          <div className={`small ${mutedTextClass}`}>What To Tag</div>
+                          <div className="small">
+                            Use a part id wherever your manifest XML or bootstrap runtime identifies
+                            a user input, scored interaction, or submit target.
+                          </div>
+                        </div>
+                        <div className="col-md-4 mb-2">
+                          <div className={`small ${mutedTextClass}`}>What The APIs Afford</div>
+                          <div className="small">
+                            Save and restore work, store user responses, submit scores, emit logs,
+                            and close out attempts through the matching part id.
+                          </div>
+                        </div>
+                        <div className="col-md-4 mb-2">
+                          <div className={`small ${mutedTextClass}`}>Authoring Workflow</div>
+                          <div className="small">
+                            Create parts here, copy the ids below, and wire those ids into your
+                            embedded runtime so each custom input reports to the intended Torus
+                            part.
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-md-4 mb-2">
-                      <div className={`small ${mutedTextClass}`}>What The APIs Afford</div>
-                      <div className="small">
-                        Save and restore work, store user responses, submit scores, emit logs, and
-                        close out attempts through the matching part id.
-                      </div>
-                    </div>
-                    <div className="col-md-4 mb-2">
-                      <div className={`small ${mutedTextClass}`}>Authoring Workflow</div>
-                      <div className="small">
-                        Create parts here, copy the ids below, and wire those ids into your embedded
-                        runtime so each custom input reports to the intended Torus part.
-                      </div>
-                    </div>
-                  </div>
-                  </>
-                ) : null}
-              </div>
+                    </>
+                  ) : null}
+                </div>
 
-              <div className="container">
-                {model.authoring.parts.map((part, i) => (
-                  <div className="row mb-2" key={i}>
-                    <div className="col sm:col-span-2">Part {i + 1}</div>
-                    <div className="col lg:col-span-3">
-                      <div>
-                        <code>{part.id}</code>
+                <div className="container">
+                  {model.authoring.parts.map((part, i) => (
+                    <div className="row mb-2" key={i}>
+                      <div className="col sm:col-span-2">Part {i + 1}</div>
+                      <div className="col lg:col-span-3">
+                        <div>
+                          <code>{part.id}</code>
+                        </div>
+                        <div className={`small mt-1 ${mutedTextClass}`}>
+                          Use this id to tag the custom input or interaction that should store
+                          state, score, and log as this part.
+                        </div>
                       </div>
-                      <div className={`small mt-1 ${mutedTextClass}`}>
-                        Use this id to tag the custom input or interaction that should store state,
-                        score, and log as this part.
-                      </div>
-                    </div>
-                    <div className="col lg:col-span-2">
-                      <select
-                        value={part.scoringStrategy}
-                        onChange={(e) => handleScoringChange(part.id, e.target.value)}
-                        className="custom-select custom-select-sm"
-                      >
-                        {Object.keys(ScoringStrategy).map((key: string) => (
-                          <option key={key} value={key}>
-                            {
-                              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                              // @ts-ignore
-                              ScoringStrategy[key]
-                            }
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="col-md-auto d-flex align-items-start">
-                      <button
-                        type="button"
-                        className={secondarySmallButtonClass}
-                        onClick={() => copyText(part.id, `Part ${i + 1} id`)}
-                      >
-                        Copy Part ID
-                      </button>
-                    </div>
-                    <div className="col-md-auto">
-                      {model.authoring.parts.length > 1 ? (
-                        <button
-                          onClick={() => removePart(part.id)}
-                          type="button"
-                          className="close"
-                          data-dismiss="alert"
-                          aria-label="Remove part"
+                      <div className="col lg:col-span-2">
+                        <select
+                          value={part.scoringStrategy}
+                          onChange={(e) => handleScoringChange(part.id, e.target.value)}
+                          className="custom-select custom-select-sm"
                         >
-                          <i className="fa-solid fa-xmark fa-xl"></i>
+                          {Object.keys(ScoringStrategy).map((key: string) => (
+                            <option key={key} value={key}>
+                              {
+                                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                                // @ts-ignore
+                                ScoringStrategy[key]
+                              }
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="col-md-auto d-flex align-items-start">
+                        <button
+                          type="button"
+                          className={secondarySmallButtonClass}
+                          onClick={() => copyText(part.id, `Part ${i + 1} id`)}
+                        >
+                          Copy Part ID
                         </button>
-                      ) : null}
+                      </div>
+                      <div className="col-md-auto">
+                        {model.authoring.parts.length > 1 ? (
+                          <button
+                            onClick={() => removePart(part.id)}
+                            type="button"
+                            className="close"
+                            data-dismiss="alert"
+                            aria-label="Remove part"
+                          >
+                            <i className="fa-solid fa-xmark fa-xl"></i>
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <button className="btn btn-primary" onClick={() => addNewPart()}>
-                Add Part
-              </button>
+                  ))}
+                </div>
+                <button className="btn btn-primary" onClick={() => addNewPart()}>
+                  Add Part
+                </button>
               </>
             ) : null}
           </div>
