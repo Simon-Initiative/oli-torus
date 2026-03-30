@@ -215,7 +215,7 @@ defmodule Oli.ClickHouse.Tasks do
     end
   end
 
-  defp reset_database(config, opts \\ []) do
+  defp reset_database(config, opts) do
     force? = Keyword.get(opts, :force?, false)
 
     IO.puts("🔥 Resetting ClickHouse database...")
@@ -303,7 +303,10 @@ defmodule Oli.ClickHouse.Tasks do
   end
 
   defp confirm_drop_database?(database) do
-    IO.puts("⚠️  WARNING: This will permanently delete the database '#{database}' and all its data!")
+    IO.puts(
+      "⚠️  WARNING: This will permanently delete the database '#{database}' and all its data!"
+    )
+
     IO.puts("Are you sure you want to continue? (y/N)")
 
     case IO.gets("") |> String.trim() |> String.downcase() do
