@@ -230,6 +230,99 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
                       }}
     end
 
+    test "accepts trap state trigger prompts from the client payload", %{
+      conn: conn,
+      map: map
+    } do
+      Oli.Delivery.Sections.enroll(
+        map.user1.id,
+        map.section.id,
+        [Lti_1p3.Roles.ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      Oli.Delivery.Sections.update_section!(map.section, %{
+        triggers_enabled: true,
+        assistant_enabled: true
+      })
+
+      expected_page_resource_id = map.adaptive_page_resource.id
+      page_topic = "trigger:#{map.user1.id}:#{map.section.id}:#{expected_page_resource_id}"
+
+      activity_topic =
+        "trigger:#{map.user1.id}:#{map.section.id}:#{map.adaptive_revision.resource_id}"
+
+      :ok = PubSub.subscribe(Oli.PubSub, page_topic)
+      :ok = PubSub.subscribe(Oli.PubSub, activity_topic)
+
+      trigger = %{
+        "trigger_type" => "trap_state",
+        "resource_id" => map.adaptive_revision.resource_id,
+        "data" => %{
+          "component_id" => "trap-rule-1",
+          "component_type" => "trap-state-rule"
+        },
+        "prompt" => "  Help the learner recover from this trap state.  "
+      }
+
+      conn =
+        post(
+          conn,
+          Routes.trigger_point_path(conn, :invoke, map.section.slug),
+          %{"trigger" => trigger}
+        )
+
+      assert %{"type" => "submitted"} = json_response(conn, 200)
+
+      assert_receive {:trigger,
+                      %Oli.Conversation.Trigger{
+                        trigger_type: :trap_state,
+                        prompt: "Help the learner recover from this trap state.",
+                        data: %{
+                          "component_id" => "trap-rule-1",
+                          "component_type" => "trap-state-rule"
+                        }
+                      }},
+                     1_000
+    end
+
+    test "rejects trap state triggers without a usable prompt", %{
+      conn: conn,
+      map: map
+    } do
+      Oli.Delivery.Sections.enroll(
+        map.user1.id,
+        map.section.id,
+        [Lti_1p3.Roles.ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      Oli.Delivery.Sections.update_section!(map.section, %{
+        triggers_enabled: true,
+        assistant_enabled: true
+      })
+
+      trigger = %{
+        "trigger_type" => "trap_state",
+        "resource_id" => map.adaptive_revision.resource_id,
+        "data" => %{
+          "component_id" => "trap-rule-1",
+          "component_type" => "trap-state-rule"
+        },
+        "prompt" => "   "
+      }
+
+      conn =
+        post(
+          conn,
+          Routes.trigger_point_path(conn, :invoke, map.section.slug),
+          %{"trigger" => trigger}
+        )
+
+      assert %{"type" => "failure", "reason" => "Invalid trigger point"} =
+               json_response(conn, 200)
+    end
+
     test "deduplicates repeated adaptive trigger submissions within the cooldown window", %{
       conn: conn,
       map: map

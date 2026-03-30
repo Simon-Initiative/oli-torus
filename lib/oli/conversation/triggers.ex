@@ -17,6 +17,7 @@ defmodule Oli.Conversation.Triggers do
     :page,
     :adaptive_page,
     :adaptive_component,
+    :trap_state,
     :content_group,
     :content_block,
     :correct_answer,
@@ -41,6 +42,9 @@ defmodule Oli.Conversation.Triggers do
   def description(:adaptive_component, data),
     do:
       "Activated an adaptive component trigger (type: #{sanitize_component_type(data)}, id: #{sanitize_component_id(data)})"
+
+  def description(:trap_state, data),
+    do: "Triggered a trap state rule in an adaptive lesson (id: #{sanitize_component_id(data)})"
 
   def description(:content_group, data),
     do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
@@ -154,6 +158,9 @@ defmodule Oli.Conversation.Triggers do
       type when type in [:adaptive_page, :adaptive_component] ->
         resolve_adaptive_client_trigger(section_slug, section_id, trigger)
 
+      :trap_state ->
+        resolve_trap_state_client_trigger(section_slug, section_id, trigger)
+
       _ ->
         {:ok, trigger}
     end
@@ -245,7 +252,14 @@ defmodule Oli.Conversation.Triggers do
     case trigger do
       # No additional data needed for these trigger types
       %{trigger_type: t}
-      when t in [:page, :adaptive_page, :adaptive_component, :content_group, :content_block] ->
+      when t in [
+             :page,
+             :adaptive_page,
+             :adaptive_component,
+             :trap_state,
+             :content_group,
+             :content_block
+           ] ->
         trigger
 
       # For these trigger types, we need to fetch the question model and encode it
@@ -295,6 +309,24 @@ defmodule Oli.Conversation.Triggers do
        }}
     else
       nil -> {:error, :invalid_trigger}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp resolve_trap_state_client_trigger(_section_slug, section_id, trigger) do
+    with {:ok, resource_id} <- normalize_adaptive_resource_id(trigger.resource_id),
+         {:ok, prompt} <- validate_adaptive_prompt(trigger.prompt) do
+      page_resource_id = find_containing_page_resource_id(section_id, resource_id)
+
+      {:ok,
+       %{
+         trigger
+         | resource_id: resource_id,
+           page_resource_id: page_resource_id,
+           prompt: prompt,
+           data: trigger.data || %{}
+       }}
+    else
       {:error, _reason} = error -> error
     end
   end
@@ -445,7 +477,7 @@ defmodule Oli.Conversation.Triggers do
   defp validate_adaptive_prompt(_), do: {:error, :invalid_trigger}
 
   defp maybe_admit_adaptive_trigger(%Trigger{trigger_type: type} = trigger)
-       when type in [:adaptive_page, :adaptive_component] do
+       when type in [:adaptive_page, :adaptive_component, :trap_state] do
     trigger
     |> adaptive_trigger_cache_key()
     |> AdaptiveTriggerInvocationCache.register_once(@adaptive_trigger_cooldown_ms)

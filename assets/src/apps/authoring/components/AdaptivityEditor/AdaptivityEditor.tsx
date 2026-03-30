@@ -15,7 +15,7 @@ import { selectSequence } from 'apps/delivery/store/features/groups/selectors/de
 import { clone } from 'utils/common';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
-import { selectCurrentRule } from '../../../authoring/store/app/slice';
+import { selectAllowTriggers, selectCurrentRule } from '../../../authoring/store/app/slice';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import {
   findInSequence,
@@ -23,6 +23,7 @@ import {
   getIsLayer,
 } from '../../../delivery/store/features/groups/actions/sequence';
 import { createFeedback } from '../../store/activities/actions/createFeedback';
+import ActionActivationPointEditor from './ActionActivationPointEditor';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
@@ -32,13 +33,14 @@ export interface AdaptivityEditorProps {
   content?: any;
 }
 
-export type ActionType = 'navigation' | 'mutateState' | 'feedback';
+export type ActionType = 'navigation' | 'mutateState' | 'feedback' | 'activationPoint';
 
 export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const dispatch = useDispatch();
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);
   const sequence = useSelector(selectSequence);
+  const allowTriggers = useSelector(selectAllowTriggers);
   const isLayer = getIsLayer();
   const isBank = getIsBank();
   let sequenceTypeLabel = '';
@@ -59,6 +61,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   );
   const hasFeedback = actions.find((action: any) => action.type === 'feedback');
   const hasNavigation = actions.find((action: any) => action.type === 'navigation');
+  const hasActivationPoint = actions.find((action: any) => action.type === 'activationPoint');
 
   useEffect(() => {
     if (!currentRule) return;
@@ -266,6 +269,17 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             onDelete={handleDeleteAction}
           />
         );
+      case 'activationPoint':
+        return (
+          <ActionActivationPointEditor
+            key={index}
+            action={action}
+            onChange={(changes: any) => {
+              handleActionChange(action, changes);
+            }}
+            onDelete={handleDeleteAction}
+          />
+        );
     }
   };
 
@@ -292,6 +306,14 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             target: 'stage.',
             targetType: CapiVariableTypes.STRING,
             value: undefined,
+          },
+        };
+        break;
+      case 'activationPoint':
+        newAction = {
+          type: 'activationPoint',
+          params: {
+            prompt: '',
           },
         };
         break;
@@ -387,6 +409,11 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
                 <Dropdown.Item onClick={() => handleAddAction('mutateState')}>
                   <i className="fa fa-crosshairs mr-2" /> Mutate State
                 </Dropdown.Item>
+                {allowTriggers && !hasActivationPoint && (
+                  <Dropdown.Item onClick={() => handleAddAction('activationPoint')}>
+                    <i className="fa fa-bolt mr-2" /> Activation Point
+                  </Dropdown.Item>
+                )}
               </Dropdown.Menu>
             </Dropdown>
             <div className="d-flex flex-column">

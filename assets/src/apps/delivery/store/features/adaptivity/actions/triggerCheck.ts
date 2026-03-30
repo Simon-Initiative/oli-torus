@@ -1,5 +1,6 @@
 import { EntityId, createAsyncThunk } from '@reduxjs/toolkit';
 import { PartResponse } from 'components/activities/types';
+import { hasAiTriggerPrompt, invokeAdaptiveAiTrigger } from 'components/parts/aiTrigger';
 import {
   checkIfFirstEventHasNavigation,
   processResults,
@@ -340,6 +341,32 @@ export const triggerCheck = createAsyncThunk(
     const actionsByType = processResults(checkResult);
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
+
+    const firstActivationPointEvent = checkResult.find((event: any) =>
+      event?.params?.actions?.some(
+        (action: any) =>
+          action.type === 'activationPoint' && hasAiTriggerPrompt(action?.params?.prompt),
+      ),
+    );
+    const firstActivationPoint = firstActivationPointEvent?.params?.actions?.find(
+      (action: any) =>
+        action.type === 'activationPoint' && hasAiTriggerPrompt(action?.params?.prompt),
+    );
+
+    // Fire activation point triggers (trap state DOT invocation)
+    if (firstActivationPoint && !isPreviewMode && !isReviewMode) {
+      void invokeAdaptiveAiTrigger({
+        sectionSlug,
+        resourceId: currentActivity.resourceId,
+        triggerType: 'trap_state',
+        prompt: firstActivationPoint.params.prompt,
+        data: {
+          component_id: firstActivationPointEvent?.type || currentActivity.id || 'trap-state',
+          component_type: 'trap-state-rule',
+          rule_name: firstActivationPointEvent?.type || 'trap-state',
+        },
+      });
+    }
     let expectedResumeActivityId: EntityId = currentActivity.id;
     //check if the check result have any navigation else don't do anything
     if (checkResult.length && hasNavigation) {
