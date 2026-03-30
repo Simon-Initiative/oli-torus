@@ -32,6 +32,7 @@ defmodule OliWeb.LegacySuperactivityController do
 
   @default_preview_max_file_bytes 1_000_000
   @default_preview_model_max_bytes 100_000
+  @default_media_lookup_timeout_ms 15_000
   @preview_file_storage_prefix "preview-save-files"
 
   defmodule LegacySuperactivityContext do
@@ -177,7 +178,8 @@ defmodule OliWeb.LegacySuperactivityController do
           end,
           max_concurrency: 8,
           ordered: false,
-          timeout: :infinity
+          timeout: media_lookup_timeout_ms(),
+          on_timeout: :kill_task
         )
         |> Enum.reduce_while({:ok, MapSet.new()}, fn
           {:ok, {:ok, nil}}, {:ok, acc} ->
@@ -403,6 +405,11 @@ defmodule OliWeb.LegacySuperactivityController do
   defp preview_max_model_bytes do
     config = Application.get_env(:oli, __MODULE__, [])
     Keyword.get(config, :preview_max_model_bytes, @default_preview_model_max_bytes)
+  end
+
+  defp media_lookup_timeout_ms do
+    config = Application.get_env(:oli, __MODULE__, [])
+    Keyword.get(config, :media_lookup_timeout_ms, @default_media_lookup_timeout_ms)
   end
 
   defp sanitize_preview_model(model) when is_map(model) do

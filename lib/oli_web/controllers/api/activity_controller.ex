@@ -181,8 +181,8 @@ defmodule OliWeb.Api.ActivityController do
     author = conn.assigns[:current_author]
 
     scope = Map.get(conn.body_params, "scope", "embedded")
-    include_content = Map.get(conn.body_params, "includeContent", false)
-    include_metadata = Map.get(conn.body_params, "includeMetadata", false)
+    include_content = parse_boolean_flag(Map.get(conn.body_params, "includeContent", false))
+    include_metadata = parse_boolean_flag(Map.get(conn.body_params, "includeMetadata", false))
 
     case ActivityEditor.create(
            project_slug,
@@ -234,6 +234,10 @@ defmodule OliWeb.Api.ActivityController do
 
   defp maybe_put_content(response, activity, true),
     do: Map.put(response, "content", activity.content)
+
+  defp parse_boolean_flag(true), do: true
+  defp parse_boolean_flag("true"), do: true
+  defp parse_boolean_flag(_value), do: false
 
   @doc false
   def create_bulk(conn, %{

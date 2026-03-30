@@ -301,6 +301,28 @@ defmodule OliWeb.ActivityControllerTest do
     refute Map.has_key?(response, "tags")
   end
 
+  test "create accepts string include flags without crashing", %{conn: conn, project: project} do
+    content = %{
+      "stem" => %{"content" => []},
+      "authoring" => %{"parts" => [%{"id" => "1"}]}
+    }
+
+    conn =
+      post(conn, Routes.activity_path(conn, :create, project.slug, "oli_short_answer"), %{
+        "model" => content,
+        "objectives" => [],
+        "includeContent" => "true",
+        "includeMetadata" => "true"
+      })
+
+    assert %{
+             "type" => "success",
+             "content" => ^content,
+             "objectives" => %{"1" => []},
+             "tags" => []
+           } = json_response(conn, 200)
+  end
+
   describe "get resource" do
     test "retrieves the unpublished activity", %{
       conn: conn,
