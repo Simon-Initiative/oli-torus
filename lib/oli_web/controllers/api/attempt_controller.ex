@@ -549,7 +549,13 @@ defmodule OliWeb.Api.AttemptController do
   # Scans evaluation results for activation point actions with kind "feedback".
   # If found and AI is enabled for the section, synchronously invokes GenAI
   # to generate personalized feedback text.
-  defp maybe_generate_llm_feedback(evaluations, part_inputs, section, activity_attempt_guid, user_id)
+  defp maybe_generate_llm_feedback(
+         evaluations,
+         part_inputs,
+         section,
+         activity_attempt_guid,
+         user_id
+       )
        when is_map(evaluations) do
     if section != nil and section.triggers_enabled and section.assistant_enabled do
       case LLMFeedback.find_llm_feedback_prompt(evaluations) do

@@ -34,7 +34,12 @@ export interface AdaptivityEditorProps {
   content?: any;
 }
 
-export type ActionType = 'navigation' | 'mutateState' | 'feedback' | 'activationPoint' | 'llmFeedback';
+export type ActionType =
+  | 'navigation'
+  | 'mutateState'
+  | 'feedback'
+  | 'activationPoint'
+  | 'llmFeedback';
 
 export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const dispatch = useDispatch();

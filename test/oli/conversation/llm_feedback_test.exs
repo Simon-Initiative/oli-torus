@@ -190,7 +190,8 @@ defmodule Oli.Conversation.LLMFeedbackTest do
         }
       ]
 
-      assert "The mitochondria is the powerhouse" == LLMFeedback.extract_student_input(part_inputs)
+      assert "The mitochondria is the powerhouse" ==
+               LLMFeedback.extract_student_input(part_inputs)
     end
 
     test "extracts multiple values from single input joined by semicolons" do
