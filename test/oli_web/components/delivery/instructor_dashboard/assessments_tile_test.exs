@@ -139,6 +139,26 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AssessmentsTileTest do
                "No students currently need this message. You can review the draft, but sending stays disabled until at least one recipient is available."
              )
     end
+
+    test "ignores out-of-scope assessment ids when opening the email modal", %{conn: conn} do
+      {:ok, component, _html} =
+        live_component_isolated(conn, AssessmentsTile, %{
+          id: "assessments_tile",
+          ctx: ctx(),
+          projection: projection(),
+          status: "Loading...",
+          section_id: 123,
+          expanded_assessment_id: 2
+        })
+
+      refute has_element?(component, "#student_support_email_modal_assessments_tile")
+
+      component
+      |> element("button[phx-click='open_assessment_email_modal'][phx-value-assessment_id='2']")
+      |> render_click(%{"assessment_id" => "999"})
+
+      refute has_element?(component, "#student_support_email_modal_assessments_tile")
+    end
   end
 
   defp projection do

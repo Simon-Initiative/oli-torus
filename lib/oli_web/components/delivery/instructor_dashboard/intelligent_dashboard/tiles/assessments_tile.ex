@@ -364,14 +364,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   @impl Phoenix.LiveComponent
   def handle_event("open_assessment_email_modal", %{"assessment_id" => assessment_id}, socket) do
     with {parsed_assessment_id, ""} <- Integer.parse(assessment_id),
-         true <- is_integer(socket.assigns[:section_id]) do
-      assessment =
-        Enum.find(socket.assigns.rows, &(&1.assessment_id == parsed_assessment_id)) ||
-          %{
-            assessment_id: parsed_assessment_id,
-            title: "Assessment #{parsed_assessment_id}"
-          }
-
+         true <- is_integer(socket.assigns[:section_id]),
+         assessment when not is_nil(assessment) <-
+           Enum.find(socket.assigns.rows, &(&1.assessment_id == parsed_assessment_id)) do
       case Grades.students_without_attempt_emails(
              socket.assigns.section_id,
              parsed_assessment_id
@@ -394,6 +389,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       end
     else
       false ->
+        {:noreply, socket}
+
+      nil ->
         {:noreply, socket}
 
       _ ->

@@ -32,7 +32,7 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
           {:ok,
            %{
              course_title: section.title,
-             items: build_items(node.children || [], [], section.customizations, page_type_id)
+             items: build_items(node.children || [], nil, section.customizations, page_type_id)
            }}
       end
     end
@@ -57,27 +57,27 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
     end
   end
 
-  defp build_items(children, ancestor_labels, customizations, page_type_id) do
+  defp build_items(children, context_label, customizations, page_type_id) do
     Enum.flat_map(children, fn child ->
       item = %{
         resource_id: child.resource_id,
         resource_type_id: child.revision.resource_type_id,
         title: child.revision.title,
-        context_label: join_context_labels(Enum.reverse(ancestor_labels))
+        context_label: context_label
       }
 
-      next_ancestor_labels =
+      next_context_label =
         case child.revision.resource_type_id == page_type_id do
           true ->
-            ancestor_labels
+            context_label
 
           false ->
-            [container_label(child, customizations) | ancestor_labels]
+            append_context_label(context_label, container_label(child, customizations))
         end
 
       [
         item
-        | build_items(child.children || [], next_ancestor_labels, customizations, page_type_id)
+        | build_items(child.children || [], next_context_label, customizations, page_type_id)
       ]
     end)
   end
@@ -92,6 +92,6 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
     )
   end
 
-  defp join_context_labels([]), do: nil
-  defp join_context_labels(labels), do: Enum.join(labels, " > ")
+  defp append_context_label(nil, label), do: label
+  defp append_context_label(context_label, label), do: context_label <> " > " <> label
 end
