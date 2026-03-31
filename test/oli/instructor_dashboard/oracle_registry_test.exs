@@ -11,7 +11,12 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
 
   describe "registry wrapper APIs" do
     test "returns deterministic known consumers" do
-      assert [:legacy_section_analytics, :progress_summary, :support_summary] =
+      assert [
+               :assessments_summary,
+               :legacy_section_analytics,
+               :progress_summary,
+               :support_summary
+             ] =
                OracleRegistry.known_consumers()
     end
 

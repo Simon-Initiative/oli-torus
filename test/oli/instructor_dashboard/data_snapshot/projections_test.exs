@@ -40,7 +40,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert Enum.find(projections.student_support.support.buckets, &(&1.id == "struggling")).count ==
                1
 
-      assert projections.assessments.analytics == %{metric: :assessment}
+      assert projections.assessments.assessments.has_assessments?
+      assert projections.assessments.assessments.total_rows == 1
+      assert Enum.at(projections.assessments.assessments.rows, 0).assessment_id == 42
 
       assert projections.summary.required_oracles.oracle_instructor_progress == %{
                metric: :progress
@@ -55,9 +57,15 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
                  :progress,
                  :summary,
                  :challenging_objectives,
-                 :assessments,
                  :ai_context
                ])
+
+      assert Enum.sort(InstructorProjections.affected_capabilities(:oracle_instructor_grades)) ==
+               [:assessments]
+
+      assert Enum.sort(
+               InstructorProjections.affected_capabilities(:oracle_instructor_scope_resources)
+             ) == [:assessments]
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_proficiency) ==
                [:student_support]
@@ -80,6 +88,31 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
         metadata: %{timezone: "UTC"},
         oracles: %{
           oracle_instructor_progress: %{metric: :progress},
+          oracle_instructor_grades: %{
+            grades: [
+              %{
+                page_id: 42,
+                title: "Quiz 1",
+                minimum: 10.0,
+                median: 70.0,
+                mean: 72.5,
+                maximum: 100.0,
+                standard_deviation: 12.0,
+                histogram: %{"70-80" => 1},
+                completed_count: 1,
+                total_students: 1
+              }
+            ]
+          },
+          oracle_instructor_scope_resources: %{
+            items: [
+              %{
+                resource_id: 42,
+                title: "Quiz 1",
+                context_label: "Module 1"
+              }
+            ]
+          },
           oracle_instructor_progress_proficiency: [
             %{student_id: 1, progress_pct: 25.0, proficiency_pct: 30.0}
           ],
@@ -96,6 +129,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
         },
         oracle_statuses: %{
           oracle_instructor_progress: %{status: :ready},
+          oracle_instructor_grades: %{status: :ready},
+          oracle_instructor_scope_resources: %{status: :ready},
           oracle_instructor_progress_proficiency: %{status: :ready},
           oracle_instructor_student_info: %{status: :ready},
           oracle_instructor_section_analytics: %{status: :ready}
