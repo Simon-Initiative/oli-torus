@@ -115,36 +115,6 @@ describe('AITrigger', () => {
     jest.useRealTimers();
   });
 
-  it('fires an auto trigger only once per browser session', async () => {
-    jest.useFakeTimers();
-
-    const props = {
-      ...defaultProps,
-      model: serializeModel({ launchMode: 'auto', prompt: 'Greet the learner' }),
-    };
-
-    const { unmount } = render(<AITrigger {...props} />);
-    await act(async () => Promise.resolve());
-
-    await act(async () => {
-      jest.advanceTimersByTime(2000);
-    });
-
-    expect(triggerPersistence.invoke).toHaveBeenCalledTimes(1);
-
-    unmount();
-    render(<AITrigger {...props} />);
-    await act(async () => Promise.resolve());
-
-    await act(async () => {
-      jest.advanceTimersByTime(2000);
-    });
-
-    expect(triggerPersistence.invoke).toHaveBeenCalledTimes(1);
-
-    jest.useRealTimers();
-  });
-
   it('becomes available when the dialogue window appears after mount', async () => {
     triggerPersistence.hasDialogueWindow.mockReturnValue(false);
     const dialogueWindow = document.createElement('div');

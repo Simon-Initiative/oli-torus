@@ -34,5 +34,21 @@ export function invoke(
 }
 
 export function hasDialogueWindow(): boolean {
-  return document.getElementById('ai_bot') !== null;
+  if (document.getElementById('ai_bot') !== null) {
+    return true;
+  }
+
+  // Adaptive delivery runs inside an iframe; the DOT dialogue window
+  // lives in the parent frame. Check same-origin parent when available.
+  try {
+    if (window.parent !== window) {
+      if (window.parent.document.getElementById('ai_bot') !== null) {
+        return true;
+      }
+    }
+  } catch (_e) {
+    // Cross-origin access denied — ignore.
+  }
+
+  return false;
 }
