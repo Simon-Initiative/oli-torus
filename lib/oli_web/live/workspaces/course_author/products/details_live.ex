@@ -20,6 +20,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
   alias OliWeb.Products.Details.ImageUpload
+  alias OliWeb.Products.ImagePreviewState
   alias OliWeb.Products.Payments.Discounts.ProductsIndexView
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Projects.RequiredSurvey
@@ -78,7 +79,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
              show_confirm: false,
              preview_launching?: false,
              preview_url: nil,
-             image_preview_selected_context: :student_welcome,
+             image_preview_selected_context: ImagePreviewState.default_context(),
              image_preview_modal_open: false,
              base_project: base_project,
              resource_slug: project.slug,
@@ -415,36 +416,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   end
 
   def handle_event("select_image_preview_context", %{"context" => context}, socket) do
-    {:noreply,
-     assign(socket, image_preview_selected_context: parse_image_preview_context(context))}
+    {:noreply, ImagePreviewState.select_context(socket, context)}
   end
 
   def handle_event("open_image_preview_modal", %{"context" => context}, socket) do
-    {:noreply,
-     assign(socket,
-       image_preview_selected_context: parse_image_preview_context(context),
-       image_preview_modal_open: true
-     )}
+    {:noreply, ImagePreviewState.open_modal(socket, context)}
   end
 
   def handle_event("close_image_preview_modal", _, socket) do
-    {:noreply, assign(socket, image_preview_modal_open: false)}
+    {:noreply, ImagePreviewState.close_modal(socket)}
   end
 
   def handle_event("show_next_image_preview", _, socket) do
-    {:noreply,
-     assign(socket,
-       image_preview_selected_context:
-         next_image_preview_context(socket.assigns.image_preview_selected_context)
-     )}
+    {:noreply, ImagePreviewState.show_next(socket)}
   end
 
   def handle_event("show_previous_image_preview", _, socket) do
-    {:noreply,
-     assign(socket,
-       image_preview_selected_context:
-         previous_image_preview_context(socket.assigns.image_preview_selected_context)
-     )}
+    {:noreply, ImagePreviewState.show_previous(socket)}
   end
 
   def handle_event("_bsmodal.unmount", _, socket) do
@@ -636,21 +624,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   defp preview_launch_url(socket, _section_slug, :hidden_instructor) do
     ~p"/authoring/products/#{socket.assigns.product.slug}/preview_launch"
   end
-
-  defp parse_image_preview_context("student_welcome"), do: :student_welcome
-  defp parse_image_preview_context("my_course"), do: :my_course
-  defp parse_image_preview_context("course_picker"), do: :course_picker
-  defp parse_image_preview_context(_), do: :student_welcome
-
-  defp next_image_preview_context(:student_welcome), do: :my_course
-  defp next_image_preview_context(:my_course), do: :course_picker
-  defp next_image_preview_context(:course_picker), do: :course_picker
-  defp next_image_preview_context(_), do: :student_welcome
-
-  defp previous_image_preview_context(:student_welcome), do: :student_welcome
-  defp previous_image_preview_context(:my_course), do: :student_welcome
-  defp previous_image_preview_context(:course_picker), do: :my_course
-  defp previous_image_preview_context(_), do: :student_welcome
 
   defp filter_paywall_params(params, true), do: params
 
