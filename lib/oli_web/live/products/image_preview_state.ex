@@ -9,6 +9,17 @@ defmodule OliWeb.Products.ImagePreviewState do
     Component.assign(socket, image_preview_selected_context: parse_context(context))
   end
 
+  def open_modal(socket, %{"context" => context} = params) do
+    case Map.get(params, "key") do
+      nil -> open_modal(socket, context)
+      "Enter" -> open_modal(socket, context)
+      " " -> open_modal(socket, context)
+      "Space" -> open_modal(socket, context)
+      "Spacebar" -> open_modal(socket, context)
+      _ -> socket
+    end
+  end
+
   def open_modal(socket, context) do
     Component.assign(socket,
       image_preview_selected_context: parse_context(context),

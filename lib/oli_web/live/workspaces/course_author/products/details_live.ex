@@ -419,8 +419,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     {:noreply, ImagePreviewState.select_context(socket, context)}
   end
 
-  def handle_event("open_image_preview_modal", %{"context" => context}, socket) do
-    {:noreply, ImagePreviewState.open_modal(socket, context)}
+  def handle_event("open_image_preview_modal", params, socket) do
+    {:noreply, ImagePreviewState.open_modal(socket, params)}
   end
 
   def handle_event("close_image_preview_modal", _, socket) do

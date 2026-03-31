@@ -60,18 +60,18 @@ defmodule OliWeb.Products.ImagePreview do
         <%= for context <- @contexts do %>
           <div
             id={"image-preview-thumbnail-#{context_id(context.id)}"}
-            class="image-preview-thumbnail flex cursor-pointer justify-start rounded-sm text-left"
+            class="image-preview-thumbnail group flex cursor-pointer justify-start rounded-sm text-left focus:outline-none"
             data-preview-context={context.id}
             role="button"
             aria-label={context.label}
             tabindex="0"
             phx-click="open_image_preview_modal"
             phx-keyup="open_image_preview_modal"
-            phx-key="Enter"
+            phx-keydown="open_image_preview_modal"
             phx-value-context={context.id}
           >
             <div
-              class="group rounded-sm border border-transparent transition-shadow duration-150 hover:border-Border-border-hover hover:shadow-[0_12px_32px_rgba(15,13,15,0.24)]"
+              class="rounded-sm border border-transparent transition-shadow duration-150 hover:border-Border-border-hover hover:shadow-[0_12px_32px_rgba(15,13,15,0.24)] group-focus-visible:border-Border-border-hover group-focus-visible:shadow-[0_12px_32px_rgba(15,13,15,0.24)]"
               style={"width: #{context.width * context.scale}px; height: #{context.height * context.scale}px;"}
             >
               <div class="h-full w-full overflow-hidden">
@@ -171,6 +171,7 @@ defmodule OliWeb.Products.ImagePreview do
                   phx-click="select_image_preview_context"
                   phx-value-context={context.id}
                   aria-label={modal_title(context.id)}
+                  aria-pressed={to_string(context.id == @selected_context)}
                 />
               <% end %>
             </div>

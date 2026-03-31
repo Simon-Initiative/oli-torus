@@ -221,9 +221,14 @@ defmodule OliWeb.Workspaces.Student do
 
   def course_card(assigns) do
     instructors =
-      case Map.fetch(assigns.section, :instructors) do
-        :error -> Sections.get_instructors_for_section(assigns.section.id)
-        {:ok, instructors} -> normalize_instructors(instructors)
+      case Map.get(assigns.section, :instructors, :missing) do
+        instructors when is_list(instructors) ->
+          normalize_instructors(instructors)
+
+        _ ->
+          assigns.section.id
+          |> Sections.get_instructors_for_section()
+          |> normalize_instructors()
       end
 
     assigns = assign(assigns, :instructors, instructors)
