@@ -397,6 +397,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                   selected_bucket_id={@selected_bucket_id}
                   show_modal={@show_email_modal}
                   email_handler_id={@id}
+                  modal_dom_id={"student_support_email_modal_#{@id}"}
                 />
               </div>
             </div>

@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
     assigns = assign(assigns, :show_prototype_validation_ui, show_prototype_validation_ui?())
 
     ~H"""
-    <div id="learning-dashboard" class="container mx-auto mb-10">
+    <div id="learning-dashboard" class="container mx-auto mb-10" phx-hook="Scroller">
       <div class="mb-4">
         <div class="flex flex-col items-center gap-3">
           <.live_component
@@ -112,6 +112,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
         |> normalize_tile_support_params()
         |> Map.drop(["bucket", "page"])
       end)
+      |> Map.delete("tile_assessments")
     end)
   end
 
@@ -171,10 +172,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
 
   defp render_dashboard_section(assigns, %{id: "content"} = section) do
     section_slug = assigns.section.slug
+    course_section_id = assigns.section.id
+    section_title = assigns.section.title
 
     assigns =
       assigns
       |> assign(:section_slug, section_slug)
+      |> assign(:course_section_id, course_section_id)
+      |> assign(:section_title, section_title)
+      |> assign(:instructor_email, instructor_email(assigns))
+      |> assign(:instructor_name, instructor_name(assigns))
       |> assign(:section, section)
       |> assign(:show_move_handle, length(assigns.dashboard_visible_sections) > 1)
 
@@ -184,6 +191,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       show_move_handle={@show_move_handle}
       objectives_status={tile_status(@dashboard, :objectives_text)}
       assessments_status={tile_status(@dashboard, :assessments_text)}
+      assessments_projection={Map.get(@dashboard, :assessments_projection, %{})}
+      assessments_tile_state={Map.get(assigns, :assessments_tile_state, %{})}
+      ctx={Map.get(assigns, :ctx)}
+      section_slug={@section_slug}
+      section_id={@course_section_id}
+      section_title={@section_title}
+      instructor_email={@instructor_email}
+      instructor_name={@instructor_name}
       show_objectives_tile={section_has_tile?(@section, "objectives")}
       show_assessments_tile={section_has_tile?(@section, "assessments")}
     />

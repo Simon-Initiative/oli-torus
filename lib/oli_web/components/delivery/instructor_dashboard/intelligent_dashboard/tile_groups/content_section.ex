@@ -27,6 +27,14 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :show_move_handle, :boolean, default: true
   attr :objectives_status, :string, default: "Waiting for scoped data"
   attr :assessments_status, :string, default: "Waiting for scoped data"
+  attr :assessments_projection, :map, default: %{}
+  attr :assessments_tile_state, :map, default: %{}
+  attr :ctx, :map, default: nil
+  attr :section_slug, :string, default: nil
+  attr :section_id, :integer, default: nil
+  attr :section_title, :string, default: nil
+  attr :instructor_email, :string, default: nil
+  attr :instructor_name, :string, default: nil
   attr :show_objectives_tile, :boolean, default: true
   attr :show_assessments_tile, :boolean, default: true
 
@@ -52,7 +60,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         data-section-layout={if @tile_count == 1, do: "single", else: "multi"}
       >
         <ChallengingObjectivesTile.tile :if={@show_objectives_tile} status={@objectives_status} />
-        <AssessmentsTile.tile :if={@show_assessments_tile} status={@assessments_status} />
+        <.live_component
+          :if={@show_assessments_tile}
+          module={AssessmentsTile}
+          id="assessments_tile"
+          projection={@assessments_projection}
+          expanded_assessment_id={Map.get(@assessments_tile_state, :expanded_assessment_id)}
+          status={@assessments_status}
+          ctx={@ctx}
+          section_slug={@section_slug}
+          section_id={@section_id}
+          section_title={@section_title}
+          instructor_email={@instructor_email}
+          instructor_name={@instructor_name}
+        />
       </div>
     </DashboardSectionChrome.section>
     """

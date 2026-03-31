@@ -5,9 +5,10 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Assessments do
 
   alias Oli.Dashboard.Snapshot.Contract
   alias Oli.InstructorDashboard.DataSnapshot.Projections.Helpers
+  alias Oli.InstructorDashboard.DataSnapshot.Projections.Assessments.Projector
 
-  @required_oracles [:oracle_instructor_section_analytics]
-  @optional_oracles [:oracle_instructor_progress]
+  @required_oracles [:oracle_instructor_grades, :oracle_instructor_scope_resources]
+  @optional_oracles []
 
   @spec required_oracles() :: [atom()]
   def required_oracles, do: @required_oracles
@@ -17,14 +18,22 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.Assessments do
 
   @spec derive(Contract.t(), keyword()) ::
           {:ok, map()} | {:partial, map(), term()} | {:error, term()}
-  def derive(%Contract{} = snapshot, _opts) do
+  def derive(%Contract{} = snapshot, opts) do
     with {:ok, required} <- Helpers.require_oracles(snapshot, @required_oracles) do
       optional = Helpers.optional_oracles(snapshot, @optional_oracles)
       missing_optional = Helpers.missing_optional_oracles(snapshot, @optional_oracles)
 
+      assessments_projection =
+        Projector.build(
+          Map.get(required, :oracle_instructor_grades, %{}) |> Map.get(:grades, []),
+          scope_resource_items:
+            Map.get(required, :oracle_instructor_scope_resources, %{}) |> Map.get(:items, []),
+          completion_threshold_pct: Keyword.get(opts, :completion_threshold_pct, 50)
+        )
+
       projection =
         Helpers.projection_base(snapshot, :assessments, %{
-          analytics: Map.get(required, :oracle_instructor_section_analytics),
+          assessments: assessments_projection,
           optional_oracles: optional
         })
 
