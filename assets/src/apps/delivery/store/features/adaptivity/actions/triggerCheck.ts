@@ -359,11 +359,10 @@ export const triggerCheck = createAsyncThunk(
         sectionSlug,
         resourceId: currentActivity.resourceId,
         triggerType: 'trap_state',
-        prompt: firstActivationPoint.params.prompt,
         data: {
           component_id: firstActivationPointEvent?.type || currentActivity.id || 'trap-state',
           component_type: 'trap-state-rule',
-          rule_name: firstActivationPointEvent?.type || 'trap-state',
+          rule_id: firstActivationPointEvent?.type,
         },
       });
     }

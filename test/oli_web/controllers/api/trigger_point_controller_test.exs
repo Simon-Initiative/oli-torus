@@ -230,7 +230,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
                       }}
     end
 
-    test "accepts trap state trigger prompts from the client payload", %{
+    test "resolves trap state prompt from server-side authoring rules, not client payload", %{
       conn: conn,
       map: map
     } do
@@ -245,6 +245,38 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         triggers_enabled: true,
         assistant_enabled: true
       })
+
+      # Set up authoring rules with an activation point action
+      existing_content = map.adaptive_revision.content || %{}
+
+      map.adaptive_revision
+      |> Revision.changeset(%{
+        content:
+          Map.put(existing_content, "authoring", %{
+            "rules" => [
+              %{
+                "id" => "r:trap-rule-1.incorrect",
+                "name" => "incorrect",
+                "correct" => false,
+                "event" => %{
+                  "type" => "r:trap-rule-1.incorrect",
+                  "params" => %{
+                    "actions" => [
+                      %{
+                        "type" => "activationPoint",
+                        "params" => %{
+                          "prompt" => "  Help the learner recover from this trap state.  "
+                        }
+                      }
+                    ]
+                  }
+                },
+                "conditions" => %{"all" => []}
+              }
+            ]
+          })
+      })
+      |> Oli.Repo.update!()
 
       expected_page_resource_id = map.adaptive_page_resource.id
       page_topic = "trigger:#{map.user1.id}:#{map.section.id}:#{expected_page_resource_id}"
@@ -260,9 +292,11 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         "resource_id" => map.adaptive_revision.resource_id,
         "data" => %{
           "component_id" => "trap-rule-1",
-          "component_type" => "trap-state-rule"
+          "component_type" => "trap-state-rule",
+          "rule_id" => "r:trap-rule-1.incorrect"
         },
-        "prompt" => "  Help the learner recover from this trap state.  "
+        # Client-sent prompt should be ignored
+        "prompt" => "Tampered prompt from malicious client"
       }
 
       conn =
@@ -274,19 +308,21 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
 
       assert %{"type" => "submitted"} = json_response(conn, 200)
 
+      # The prompt should come from the server-side authoring rules, not the client payload
       assert_receive {:trigger,
                       %Oli.Conversation.Trigger{
                         trigger_type: :trap_state,
                         prompt: "Help the learner recover from this trap state.",
                         data: %{
                           "component_id" => "trap-rule-1",
-                          "component_type" => "trap-state-rule"
+                          "component_type" => "trap-state-rule",
+                          "rule_id" => "r:trap-rule-1.incorrect"
                         }
                       }},
                      1_000
     end
 
-    test "rejects trap state triggers without a usable prompt", %{
+    test "rejects trap state triggers without a matching rule_id", %{
       conn: conn,
       map: map
     } do
@@ -308,8 +344,7 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         "data" => %{
           "component_id" => "trap-rule-1",
           "component_type" => "trap-state-rule"
-        },
-        "prompt" => "   "
+        }
       }
 
       conn =

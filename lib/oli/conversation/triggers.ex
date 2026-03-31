@@ -315,7 +315,10 @@ defmodule Oli.Conversation.Triggers do
 
   defp resolve_trap_state_client_trigger(_section_slug, section_id, trigger) do
     with {:ok, resource_id} <- normalize_adaptive_resource_id(trigger.resource_id),
-         {:ok, prompt} <- validate_adaptive_prompt(trigger.prompt) do
+         {:ok, rule_id} <- extract_rule_id(trigger.data),
+         rules when is_list(rules) <- get_adaptive_authoring_rules(section_id, resource_id),
+         prompt when is_binary(prompt) <- find_activation_point_prompt(rules, rule_id),
+         {:ok, prompt} <- validate_adaptive_prompt(prompt) do
       page_resource_id = find_containing_page_resource_id(section_id, resource_id)
 
       {:ok,
@@ -327,6 +330,7 @@ defmodule Oli.Conversation.Triggers do
            data: trigger.data || %{}
        }}
     else
+      nil -> {:error, :invalid_trigger}
       {:error, _reason} = error -> error
     end
   end
@@ -354,6 +358,71 @@ defmodule Oli.Conversation.Triggers do
     |> limit(1)
     |> Repo.one()
   end
+
+  defp extract_rule_id(data) when is_map(data) do
+    case Map.get(data, "rule_id") do
+      value when is_binary(value) and byte_size(value) > 0 and byte_size(value) <= 200 ->
+        {:ok, value}
+
+      _ ->
+        {:error, :invalid_trigger}
+    end
+  end
+
+  defp extract_rule_id(_), do: {:error, :invalid_trigger}
+
+  defp get_adaptive_authoring_rules(section_id, resource_id) do
+    case SectionResourceDepot.get_section_resource(section_id, resource_id) do
+      %{revision_id: revision_id} ->
+        get_authoring_rules_by_revision_id(revision_id)
+
+      _ ->
+        Repo.one(
+          from(spp in SectionsProjectsPublications,
+            where: spp.section_id == ^section_id,
+            join: pr in PublishedResource,
+            on: pr.publication_id == spp.publication_id,
+            where: pr.resource_id == ^resource_id,
+            join: rev in Revision,
+            on: rev.id == pr.revision_id,
+            select: fragment("?->'authoring'->'rules'", rev.content),
+            limit: 1
+          )
+        )
+    end
+  end
+
+  defp get_authoring_rules_by_revision_id(revision_id) do
+    Repo.one(
+      from(r in Revision,
+        where: r.id == ^revision_id,
+        select: fragment("?->'authoring'->'rules'", r.content)
+      )
+    )
+  end
+
+  defp find_activation_point_prompt(rules, rule_id) when is_list(rules) do
+    Enum.find_value(rules, fn rule ->
+      if get_in(rule, ["event", "type"]) == rule_id do
+        case get_in(rule, ["event", "params", "actions"]) do
+          actions when is_list(actions) ->
+            Enum.find_value(actions, fn
+              %{"type" => "activationPoint", "params" => %{"prompt" => prompt}}
+              when is_binary(prompt) ->
+                prompt
+
+              _ ->
+                nil
+            end)
+
+          _ ->
+            nil
+        end
+      end
+    end)
+  end
+
+  defp find_activation_point_prompt(_, _), do: nil
 
   defp normalize_adaptive_resource_id(resource_id) when is_integer(resource_id),
     do: {:ok, resource_id}
