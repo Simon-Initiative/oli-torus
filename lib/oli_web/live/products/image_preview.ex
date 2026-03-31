@@ -520,7 +520,7 @@ defmodule OliWeb.Products.ImagePreview do
     |> Map.put(:start_date, section.start_date || ~U[2025-01-01 00:00:00Z])
     |> Map.put(:end_date, section.end_date || ~U[2025-12-31 00:00:00Z])
     |> Map.put(:progress, Map.get(section, :progress, 72))
-    |> Map.put(:instructors, Map.get(section, :instructors, [%{name: "Preview Instructor"}]))
+    |> Map.put(:instructors, [%{name: "Preview Instructor"}])
   end
 
   defp student_welcome_section(section) do
