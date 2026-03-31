@@ -4,50 +4,91 @@ requirements:
     launch state storage when the LMS advertises the required capability for an embedded
     LTI 1.3 launch.
   id: FR-001
+- title: Torus shall implement the client-side OIDC login and request-construction
+    flow in application code while continuing to use lower-level `lti_1p3` facilities
+    for launch validation, registration lookup, and related protocol enforcement
+    where practical.
+  id: FR-002
 - title: Torus shall preserve the current server-session-based LTI launch path for
     platforms and browsers that do not use the client-side OIDC storage path.
-  id: FR-002
+  id: FR-003
 - title: Torus shall provide a deterministic recovery or terminal error path when
     cookie-backed launch state is unavailable, blocked, or mismatched during launch
     validation.
-  id: FR-003
+  id: FR-004
+- title: Torus shall detect and classify embedded launch failures that are likely
+    caused by blocked or unavailable browser cookie or storage state and present
+    recovery guidance that generically instructs the user to allow cookies or ask
+    their LMS administrator to configure Torus to open in a new tab when storage-safe
+    fallback methods are unavailable.
+  id: FR-005
 - title: Torus shall emit structured operational diagnostics for launch-path selection
     and launch-state validation outcomes without logging sensitive token or cookie
     values.
-  id: FR-004
+  id: FR-006
 - title: User-facing LTI launch failures caused by browser privacy or cookie restrictions
     shall present stable, actionable error messaging instead of ambiguous or masked
     failures.
-  id: FR-005
+  id: FR-007
+- title: Torus shall render LTI launch validation and launch-handling failures as
+    stable, visible error pages that do not redirect to unrelated 404 states or
+    otherwise obscure the failure reason, while sanitizing sensitive launch details
+    from the user-facing message.
+  id: FR-008
+- title: Torus shall use the current validated launch context for immediate post-launch
+    routing and section-resolution decisions instead of relying on a user's latest
+    persisted LTI params record when current launch claims are available.
+  id: FR-009
 - title: The hardened launch flow shall preserve existing registration, deployment,
     authorization, enrollment, and section-resolution boundaries.
-  id: FR-006
+  id: FR-010
 acceptance_criteria:
 - title: Given an LMS launch advertises the required browser-storage capability, when
     a user launches Torus from an embedded placement, then Torus completes the launch
     without requiring the server-side session cookie to carry the only copy of launch
     state.
   id: AC-001
+- title: Given Torus executes the client-side OIDC path, when it constructs the
+    login request and later validates the launch, then Torus owns the login/request-construction
+    step in application code while still succeeding through the lower-level `lti_1p3`
+    validation boundary without requiring a broad library rewrite.
+  id: AC-002
 - title: Given an LMS launch does not advertise the browser-storage capability, when
     a compatible browser submits the launch, then Torus continues to use the current
     server-session path and preserves current successful behavior.
-  id: AC-002
+  id: AC-003
 - title: Given the browser blocks or drops the session cookie needed for the legacy
     launch path, when Torus cannot validate launch state, then it executes the hardened
     recovery flow if supported and otherwise shows a stable browser-settings-oriented
     error message.
-  id: AC-003
+  id: AC-004
+- title: Given Torus detects an embedded launch failure consistent with blocked browser
+    cookie or storage access, when the standards-based recovery path is unavailable
+    or unsuccessful, then it renders a stable recovery page that explains the likely
+    cause and generically instructs the user to allow cookies or ask their LMS administrator
+    to configure Torus to open in a new tab.
+  id: AC-005
 - title: Given launch validation fails, when operational logs or telemetry are inspected,
     then the failure is classified into a concrete category such as missing state,
     mismatched state, unsupported storage capability, recovery failure, or LMS configuration
     failure.
-  id: AC-004
+  id: AC-006
+- title: Given LTI launch validation or launch handling fails, when Torus renders
+    the user-facing response, then the user sees a stable error page that preserves
+    the failure category without redirecting to a generic 404 and without exposing
+    raw tokens, cookies, session values, stack traces, or other sensitive internals.
+  id: AC-007
+- title: Given a user has multiple persisted LTI launch records or contexts, when
+    a new validated launch completes, then Torus routes the user according to the
+    current validated launch context rather than whichever persisted launch record
+    was most recently updated.
+  id: AC-008
 - title: Given a hardened launch attempt succeeds or fails, when telemetry is emitted,
     then the event records which launch path was used and excludes raw id tokens,
     cookie contents, and other sensitive payload data.
-  id: AC-005
+  id: AC-009
 - title: Given a valid LTI launch reaches authorization and section resolution, when
     the hardened flow is enabled, then the user is still resolved into the correct
     registration, deployment, user account, and section context without cross-tenant
     leakage.
-  id: AC-006
+  id: AC-010
