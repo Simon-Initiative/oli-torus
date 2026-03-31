@@ -142,6 +142,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {
   optionLabels: {
+    'ui:widget': 'DropdownOptionsEditor',
     items: {
       'ui:emptyValue': '',
     },
