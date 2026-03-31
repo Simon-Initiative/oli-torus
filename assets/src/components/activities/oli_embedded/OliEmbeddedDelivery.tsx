@@ -199,8 +199,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
     };
   };
 
-  const shouldShowLoadingState =
-    !previewError && (initializing || (!!context && !iframeReady));
+  const shouldShowLoadingState = !previewError && (initializing || (!!context && !iframeReady));
   const containerHeight = Math.max(220, iframeHeight);
 
   useEffect(() => {
