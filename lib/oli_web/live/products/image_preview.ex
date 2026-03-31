@@ -22,14 +22,18 @@ defmodule OliWeb.Products.ImagePreview do
   attr :modal_open?, :boolean, default: false
 
   def render(assigns) do
+    selected_context = normalize_context(assigns.selected_context)
+    preview_section = preview_section(assigns.section)
+
     assigns =
       assigns
       |> assign(:contexts, @contexts)
-      |> assign(:preview_section, preview_section(assigns.section))
-      |> assign(:selected_context, normalize_context(assigns.selected_context))
-      |> assign(:modal_title, modal_title(assigns.selected_context))
-      |> assign(:has_previous?, has_previous_context?(assigns.selected_context))
-      |> assign(:has_next?, has_next_context?(assigns.selected_context))
+      |> assign(:preview_section, preview_section)
+      |> assign(:selected_context, selected_context)
+      |> assign(:modal_title, modal_title(selected_context))
+      |> assign(:has_previous?, has_previous_context?(selected_context))
+      |> assign(:has_next?, has_next_context?(selected_context))
+      |> assign(:course_picker_model, preview_table_model(preview_section, assigns.ctx))
 
     ~H"""
     <div id="img-preview-gallery" class="col-span-12 flex flex-col gap-4">
@@ -58,10 +62,12 @@ defmodule OliWeb.Products.ImagePreview do
             id={"image-preview-thumbnail-#{context_id(context.id)}"}
             class="image-preview-thumbnail flex cursor-pointer justify-start rounded-sm text-left"
             data-preview-context={context.id}
-            role="listitem"
+            role="button"
             aria-label={context.label}
             tabindex="0"
             phx-click="open_image_preview_modal"
+            phx-keyup="open_image_preview_modal"
+            phx-key="Enter"
             phx-value-context={context.id}
           >
             <div
@@ -71,9 +77,16 @@ defmodule OliWeb.Products.ImagePreview do
               <div class="h-full w-full overflow-hidden">
                 <div
                   class="origin-top-left pointer-events-none select-none"
+                  inert
+                  aria-hidden="true"
                   style={"width: #{context.width}px; transform: scale(#{context.scale}); transform-origin: top left;"}
                 >
-                  <.preview_content section={@preview_section} ctx={@ctx} context={context.id} />
+                  <.preview_content
+                    section={@preview_section}
+                    ctx={@ctx}
+                    context={context.id}
+                    course_picker_model={@course_picker_model}
+                  />
                 </div>
               </div>
             </div>
@@ -113,9 +126,16 @@ defmodule OliWeb.Products.ImagePreview do
           >
             <div
               class="origin-top-left"
+              inert
+              aria-hidden="true"
               style={"width: #{context_dimensions(@selected_context).width}px; transform: scale(#{modal_scale(@selected_context)}); transform-origin: top left;"}
             >
-              <.preview_content section={@preview_section} ctx={@ctx} context={@selected_context} />
+              <.preview_content
+                section={@preview_section}
+                ctx={@ctx}
+                context={@selected_context}
+                course_picker_model={@course_picker_model}
+              />
             </div>
           </div>
 
@@ -164,6 +184,7 @@ defmodule OliWeb.Products.ImagePreview do
   attr :section, :map, required: true
   attr :ctx, :map, required: true
   attr :context, :atom, required: true
+  attr :course_picker_model, :any, default: nil
 
   def preview_content(%{context: :my_course} = assigns) do
     ~H"""
@@ -228,6 +249,13 @@ defmodule OliWeb.Products.ImagePreview do
   end
 
   def preview_content(%{context: :course_picker} = assigns) do
+    assigns =
+      if is_nil(assigns.course_picker_model) do
+        assign(assigns, :course_picker_model, preview_table_model(assigns.section, assigns.ctx))
+      else
+        assigns
+      end
+
     ~H"""
     <div
       class="relative h-[628px] w-[1200px] overflow-hidden text-gray-900 dark:text-white"
@@ -328,12 +356,14 @@ defmodule OliWeb.Products.ImagePreview do
                     <div class="pb-5">
                       <div>Showing all results (1 total)</div>
                       <br />
-                      <CardListing.render
-                        model={preview_table_model(@section, @ctx)}
-                        selected="source_selection"
-                        ctx={@ctx}
-                        preview_mode={true}
-                      />
+                      <%= if @course_picker_model do %>
+                        <CardListing.render
+                          model={@course_picker_model}
+                          selected="source_selection"
+                          ctx={@ctx}
+                          preview_mode={true}
+                        />
+                      <% end %>
                     </div>
                   </div>
                 </div>
@@ -400,7 +430,10 @@ defmodule OliWeb.Products.ImagePreview do
   end
 
   defp preview_table_model(section, ctx) do
-    TableModel.new([section], ctx) |> elem(1)
+    case TableModel.new([section], ctx) do
+      {:ok, model} -> model
+      _ -> nil
+    end
   end
 
   defp context_dimensions(context) do
