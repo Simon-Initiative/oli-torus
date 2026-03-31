@@ -19,9 +19,11 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Activities
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Settings
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
+  alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.Core.ClientEvaluation
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Activities.Model.Feedback
@@ -569,7 +571,10 @@ defmodule OliWeb.LegacySuperactivityController do
   defp fetch_delivery_context(host, user, activity_attempt, datashop_session_id)
        when is_map(activity_attempt) do
     activity_attempt =
-      Repo.preload(activity_attempt, [:part_attempts, revision: [:scoring_strategy]])
+      Repo.preload(activity_attempt, [
+        :part_attempts,
+        revision: [:scoring_strategy, :activity_type]
+      ])
 
     %{"base" => base, "src" => src, "resourceBase" => resource_base} =
       activity_attempt.revision.content
@@ -806,6 +811,8 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp context_response(host, %LegacySuperactivityContext{} = context) do
+    auto_finalize_page = auto_finalize_single_embedded_page?(context)
+
     %{
       attempt_guid: context.activity_attempt.attempt_guid,
       src_url: "https://#{host}/superactivity/#{context.base}/#{context.src}",
@@ -813,7 +820,14 @@ defmodule OliWeb.LegacySuperactivityController do
       server_url: "https://#{host}/jcourse/superactivity/server",
       user_guid: context.user.id,
       mode: "delivery",
-      part_ids: Enum.map(context.activity_attempt.part_attempts, & &1.part_id)
+      part_ids: Enum.map(context.activity_attempt.part_attempts, & &1.part_id),
+      auto_finalize_page: auto_finalize_page,
+      auto_finalize_redirect_url: auto_finalize_redirect_url(context),
+      revision_slug:
+        if(auto_finalize_page, do: context.resource_attempt.revision.slug, else: nil),
+      section_slug: context.section.slug,
+      page_attempt_guid:
+        if(auto_finalize_page, do: context.resource_attempt.attempt_guid, else: nil)
     }
   end
 
@@ -1020,6 +1034,14 @@ defmodule OliWeb.LegacySuperactivityController do
     else
       case finalize_activity_attempt(context) do
         {:ok, _} ->
+          case maybe_finalize_parent_resource_attempt(context) do
+            :ok ->
+              :ok
+
+            {:error, reason} ->
+              Logger.error("Error when auto-finalizing page attempt #{inspect(reason)}")
+          end
+
           attempt_history(
             fetch_delivery_context(
               context.host,
@@ -1175,6 +1197,73 @@ defmodule OliWeb.LegacySuperactivityController do
   defp process_command(_command_name, %LegacySuperactivityContext{} = _context, _params) do
     {:error, "command not supported", 400}
   end
+
+  defp maybe_finalize_parent_resource_attempt(%LegacySuperactivityContext{} = context) do
+    if auto_finalize_single_embedded_page?(context) do
+      case PageLifecycle.finalize(
+             context.section.slug,
+             context.resource_attempt.attempt_guid,
+             context.datashop_session_id
+           ) do
+        {:ok, _} -> :ok
+        {:error, {:already_submitted}} -> :ok
+        {:error, reason} -> {:error, reason}
+      end
+    else
+      :ok
+    end
+  end
+
+  defp auto_finalize_single_embedded_page?(
+         %LegacySuperactivityContext{
+           resource_attempt: %Oli.Delivery.Attempts.Core.ResourceAttempt{}
+         } = context
+       ) do
+    effective_settings = Settings.get_combined_settings(context.resource_attempt)
+
+    activities =
+      context.resource_attempt.revision.content
+      |> Oli.Resources.PageContent.flat_filter(fn item ->
+        item["type"] == "activity-reference"
+      end)
+
+    context.resource_attempt.revision.graded &&
+      effective_settings.batch_scoring &&
+      length(activities) == 1 &&
+      context.activity_attempt.lifecycle_state == :active &&
+      context.activity_attempt.revision.activity_type.slug == "oli_embedded"
+  end
+
+  defp auto_finalize_single_embedded_page?(_), do: false
+
+  defp auto_finalize_redirect_url(
+         %LegacySuperactivityContext{
+           resource_attempt: %Oli.Delivery.Attempts.Core.ResourceAttempt{}
+         } = context
+       ) do
+    effective_settings = Settings.get_combined_settings(context.resource_attempt)
+
+    case effective_settings.review_submission do
+      :allow ->
+        Routes.page_delivery_path(
+          OliWeb.Endpoint,
+          :review_attempt,
+          context.section.slug,
+          context.resource_attempt.revision.slug,
+          context.resource_attempt.attempt_guid
+        )
+
+      _ ->
+        Routes.page_delivery_path(
+          OliWeb.Endpoint,
+          :page,
+          context.section.slug,
+          context.resource_attempt.revision.slug
+        )
+    end
+  end
+
+  defp auto_finalize_redirect_url(_), do: nil
 
   defp preview_start_attempt(%LegacySuperactivityContext{} = context, _params) do
     case context.activity_attempt.date_evaluated do
