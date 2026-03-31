@@ -6,6 +6,7 @@ defmodule OliWeb.Products.ImagePreview do
   alias OliWeb.Common.CardListing
   alias OliWeb.Delivery.NewCourse.TableModel
   alias OliWeb.Delivery.StudentOnboarding.Intro
+  alias OliWeb.Delivery.StudentOnboarding.Wizard
   alias OliWeb.Icons
   alias OliWeb.Workspaces.Student
   alias Phoenix.LiveView.JS
@@ -425,7 +426,7 @@ defmodule OliWeb.Products.ImagePreview do
               </div>
               <div class="flex items-center justify-end bg-gray-100/50 p-3 dark:bg-black/40">
                 <button class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center">
-                  Start Survey
+                  {student_welcome_button_label(@section)}
                 </button>
               </div>
             </div>
@@ -525,8 +526,16 @@ defmodule OliWeb.Products.ImagePreview do
 
   defp student_welcome_section(section) do
     section
-    |> Map.put(:contains_explorations, true)
-    |> Map.put(:required_survey_resource_id, Map.get(section, :required_survey_resource_id) || -1)
+  end
+
+  defp student_welcome_button_label(section) do
+    section = student_welcome_section(section)
+
+    cond do
+      Wizard.has_required_survey(section) -> "Start Survey"
+      Wizard.has_explorations(section) -> "Let's Begin"
+      true -> "Go to course"
+    end
   end
 
   defp normalize_context(context) when context in [:my_course, :course_picker, :student_welcome],
