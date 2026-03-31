@@ -399,8 +399,12 @@ defmodule OliWeb.Workspaces.Student do
 
   defp normalize_instructors(instructors) when is_list(instructors) do
     Enum.map(instructors, fn
-      %{name: _} = instructor -> instructor
-      instructor when is_binary(instructor) -> %{name: instructor}
+      %{name: _} = instructor ->
+        instructor
+
+      instructor when is_binary(instructor) ->
+        %{name: instructor}
+
       %{given_name: given_name, family_name: family_name}
       when is_binary(given_name) and is_binary(family_name) ->
         %{name: String.trim("#{given_name} #{family_name}")}
@@ -411,7 +415,8 @@ defmodule OliWeb.Workspaces.Student do
       %{family_name: family_name} when is_binary(family_name) and family_name != "" ->
         %{name: family_name}
 
-      _ -> %{name: "Unknown"}
+      _ ->
+        %{name: "Unknown"}
     end)
   end
 
