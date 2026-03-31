@@ -13,20 +13,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  minio:
-    image: minio/minio
-    container_name: oli_minio
-    env_file: ./oli.env
-    entrypoint: /bin/sh
-    ports:
-      - 9000:9000
-      - 9001:9001
-    volumes:
-      - minio_data:/data
-    command:
-      - -c
-      - exec env MINIO_ROOT_USER="$$AWS_ACCESS_KEY_ID" MINIO_ROOT_PASSWORD="$$AWS_SECRET_ACCESS_KEY" minio server --console-address :9001 /data
-
   clickhouse:
     image: clickhouse/clickhouse-server:latest
     container_name: oli_clickhouse
