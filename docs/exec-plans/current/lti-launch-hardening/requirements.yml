@@ -37,7 +37,9 @@ requirements:
   id: FR-008
 - title: Torus shall use the current validated launch context for immediate post-launch
     routing and section-resolution decisions instead of relying on a user's latest
-    persisted LTI params record when current launch claims are available.
+    persisted LTI params record when current launch claims are available, including
+    eliminating runtime dependence on `get_latest_user_lti_params/1` for the LTI
+    launch redirect flow.
   id: FR-009
 - title: The hardened launch flow shall preserve existing registration, deployment,
     authorization, enrollment, and section-resolution boundaries.
@@ -81,7 +83,7 @@ acceptance_criteria:
 - title: Given a user has multiple persisted LTI launch records or contexts, when
     a new validated launch completes, then Torus routes the user according to the
     current validated launch context rather than whichever persisted launch record
-    was most recently updated.
+    was most recently updated, and the launch redirect flow does not consult `get_latest_user_lti_params/1`.
   id: AC-008
 - title: Given a hardened launch attempt succeeds or fails, when telemetry is emitted,
     then the event records which launch path was used and excludes raw id tokens,

@@ -21,6 +21,7 @@ Torus also persists broad LTI launch payloads in ways that are not tightly align
 - Emit actionable logs and telemetry so support can identify privacy-related launch failures quickly.
 - Ensure LTI launch failures render as clear, stable error pages that explain the failure category without exposing sensitive launch details or redirecting into unrelated 404 pages.
 - Eliminate routing decisions that depend on recalling a user's latest persisted launch blob when the current validated launch context is available.
+- Eliminate use of `get_latest_user_lti_params/1` in the LTI launch redirect path so the current request's validated launch context, not the user's most recently updated launch record, determines post-launch routing.
 - Preserve existing LTI registration, deployment, authorization, and enrollment behavior for unaffected launches.
 
 ### Non-Goals
@@ -75,6 +76,7 @@ Requirements are found in requirements.yml
 - New operational events should include launch outcome classification, flow path used, platform-storage availability, embedded-versus-top-level context signals where detectable, recovery-page presentation, and state-validation outcome without including sensitive token payloads.
 - The implementation depends on preserving static LTI error rendering through the existing Phoenix controller/template boundary rather than allowing downstream UI behavior to replace launch errors with unrelated 404 states.
 - The implementation should normalize persisted launch context around the claims Torus actually needs for durable behavior, such as issuer, client identifier, deployment, context, resource link, roles, expiration, and platform service endpoints, rather than relying on a raw launch blob as the primary durable artifact.
+- The implementation should remove runtime dependence on user-global "latest launch" lookups for immediate LTI redirect behavior while preserving context-scoped persisted launch data needed for admin observability and section-creation workflows.
 
 ## 10. Repository & Platform Considerations
 
@@ -138,7 +140,8 @@ No feature flags present in this work item
   - Coverage confirming the client-side OIDC path uses Torus-owned login/request construction while still succeeding through the existing lower-level `lti_1p3` validation boundary.
   - Negative tests for missing state, mismatched state, recovery path failure, unsupported platform-storage capability, and embedded cookie-loss cases that must render the top-level-launch recovery page.
   - Regression tests confirming stable user-facing error rendering, sanitized LTI error copy, and no redirect from launch errors into unrelated 404 pages.
-  - Regression tests confirming immediate post-launch routing uses the current validated launch context rather than a recalled latest-user launch blob.
+- Regression tests confirming immediate post-launch routing uses the current validated launch context rather than a recalled latest-user launch blob.
+- Regression tests confirming the LTI launch redirect path no longer consults `get_latest_user_lti_params/1`.
 - Manual validation:
   - Launch from at least one LMS/browser combination that supports embedded storage-assisted launches.
   - Launch from a browser/privacy configuration that blocks third-party cookies and confirm the recovery page explains the browser-storage failure and generically instructs the user to allow cookies or ask their LMS administrator to configure Torus to open in a new tab.
