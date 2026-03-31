@@ -192,13 +192,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
         element(live, "#image-preview-modal button[phx-click='show_next_image_preview']")
       )
 
-      assert has_element?(live, "#image-preview-modal", "My Courses")
+      assert has_element?(live, "#image-preview-modal", "Student My Courses Page")
 
       render_click(
         element(live, "#image-preview-modal button[phx-click='show_next_image_preview']")
       )
 
-      assert has_element?(live, "#image-preview-modal", "Course Picker")
+      assert has_element?(live, "#image-preview-modal", "Instructor Course Builder")
 
       assert has_element?(
                live,

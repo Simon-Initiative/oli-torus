@@ -548,8 +548,8 @@ defmodule OliWeb.Products.ImagePreview do
   defp context_id(:student_welcome), do: "student-welcome"
 
   defp modal_title(:student_welcome), do: "Student Course Introduction"
-  defp modal_title(:my_course), do: "My Courses"
-  defp modal_title(:course_picker), do: "Course Picker"
+  defp modal_title(:my_course), do: "Student My Courses Page"
+  defp modal_title(:course_picker), do: "Instructor Course Builder"
   defp modal_title(_), do: "Student My Courses"
 
   defp has_previous_context?(:student_welcome), do: false

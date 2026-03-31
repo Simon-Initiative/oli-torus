@@ -467,7 +467,7 @@ defmodule OliWeb.ProductsLiveTest do
       render_click(element(view, "#image-preview-thumbnail-course-picker"))
 
       assert has_element?(view, "#image-preview-modal.block")
-      assert has_element?(view, "#image-preview-modal", "Course Picker")
+      assert has_element?(view, "#image-preview-modal", "Instructor Course Builder")
     end
   end
 
