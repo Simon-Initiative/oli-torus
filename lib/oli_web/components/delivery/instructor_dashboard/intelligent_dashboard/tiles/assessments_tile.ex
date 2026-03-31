@@ -10,6 +10,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   alias OliWeb.Components.DesignTokens.Primitives.Button
 
   alias OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportEmailModal
+  alias OliWeb.Delivery.ScoreDisplay
   alias OliWeb.Delivery.ScheduleDisplay
 
   alias OliWeb.Icons
@@ -252,7 +253,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                             <.metric
                               label="Mean"
                               value={format_metric(row.metrics.mean)}
-                              accent_class={metric_card_class(:mean, row.completion.status)}
+                              accent_class={metric_card_class(:mean, row.metrics.mean)}
                             />
                             <.metric
                               label="Maximum"
@@ -422,13 +423,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   defp completion_chip_class(:bad), do: "border border-Icon-icon-danger bg-Fill-fill-danger"
   defp completion_chip_class(_status), do: "border border-Border-border-subtle bg-Fill-Chip-Gray"
 
-  defp metric_card_class(:mean, :good),
-    do: "border-Fill-Accent-fill-accent-green-bold bg-Fill-Chip-Green"
-
-  defp metric_card_class(:mean, :bad), do: "border-Icon-icon-danger bg-Fill-fill-danger"
-
-  defp metric_card_class(:mean, _status),
-    do: "border-Border-border-subtle bg-Specially-Tokens-Border-border-card-completed"
+  defp metric_card_class(:mean, mean_score) do
+    case ScoreDisplay.score_status_from_percentage(mean_score) do
+      :good -> "border-Fill-Accent-fill-accent-green-bold bg-Fill-Chip-Green"
+      :bad -> "border-Icon-icon-danger bg-Fill-fill-danger"
+      _status -> "border-Border-border-subtle bg-Specially-Tokens-Border-border-card-completed"
+    end
+  end
 
   defp metric_card_class(_metric, _status),
     do: "border-Border-border-subtle bg-Specially-Tokens-Border-border-card-completed"

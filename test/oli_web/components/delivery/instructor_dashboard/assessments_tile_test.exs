@@ -53,6 +53,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.AssessmentsTileTest do
                component,
                "[role='img'][aria-label='Score distribution for Quiz 2. 0-10 percent: 1 students, 40-50 percent: 2 students, 50-60 percent: 1 students.']"
              )
+
+      html = render(component)
+      assert html =~ "border-Icon-icon-danger bg-Fill-fill-danger"
+      assert html =~ "border-Fill-Accent-fill-accent-green-bold bg-Fill-Chip-Green"
     end
 
     test "renders the assessment scores navigation when section slug is present", %{conn: conn} do
