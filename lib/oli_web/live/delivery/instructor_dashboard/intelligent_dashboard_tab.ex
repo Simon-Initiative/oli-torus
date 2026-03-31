@@ -1238,10 +1238,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
     %{
       runtime_status_text: Enum.join(status_lines, "\n"),
-      progress_text: inspect(progress_projection, pretty: true, limit: :infinity),
-      student_support_text: inspect(support_projection, pretty: true, limit: :infinity),
+      progress_text: inspect(progress_projection, pretty: true, limit: 5),
+      student_support_text: inspect(support_projection, pretty: true, limit: 5),
       student_support_projection: Map.get(support_projection, :support, %{}),
-      assessments_text: inspect(assessments_projection, pretty: true, limit: :infinity),
+      assessments_text: inspect(assessments_projection, pretty: true, limit: 5),
       assessments_projection: Map.get(assessments_projection, :assessments, %{}),
       objectives_text: "Waiting for scoped data"
     }

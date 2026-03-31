@@ -199,12 +199,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                                 <div class="absolute inset-x-0 bottom-[34px] border-t border-Border-border-hover">
                                 </div>
 
+                                <% histogram_max_count = histogram_max_count(row.histogram_bins) %>
                                 <div class="grid h-[242px] grid-cols-10 items-end gap-[4px] pb-[19px]">
                                   <%= for bin <- row.histogram_bins do %>
                                     <div class="relative flex h-full items-end justify-center">
                                       <div
                                         class="relative flex w-full items-end justify-center"
-                                        style={bar_style(bin.count, row.histogram_bins)}
+                                        style={bar_style(bin.count, histogram_max_count)}
                                       >
                                         <p
                                           :if={bin.count > 0}
@@ -492,12 +493,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     end
   end
 
-  defp bar_style(count, histogram_bins) do
-    max_count =
-      histogram_bins
-      |> Enum.map(&Map.get(&1, :count, 0))
-      |> Enum.max(fn -> 0 end)
+  defp histogram_max_count(histogram_bins) do
+    histogram_bins
+    |> Enum.map(&Map.get(&1, :count, 0))
+    |> Enum.max(fn -> 0 end)
+  end
 
+  defp bar_style(count, max_count) do
     height_pct =
       case max_count do
         0 -> 0

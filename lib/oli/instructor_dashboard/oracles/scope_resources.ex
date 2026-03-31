@@ -63,7 +63,7 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
         resource_id: child.resource_id,
         resource_type_id: child.revision.resource_type_id,
         title: child.revision.title,
-        context_label: join_context_labels(ancestor_labels)
+        context_label: join_context_labels(Enum.reverse(ancestor_labels))
       }
 
       next_ancestor_labels =
@@ -72,7 +72,7 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
             ancestor_labels
 
           false ->
-            ancestor_labels ++ [container_label(child, customizations)]
+            [container_label(child, customizations) | ancestor_labels]
         end
 
       [
@@ -83,9 +83,11 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
   end
 
   defp container_label(child, customizations) do
+    numbering = Map.get(child, :numbering, %{})
+
     Sections.get_container_label_and_numbering(
-      child.numbering.level || 0,
-      child.numbering.index || 0,
+      Map.get(numbering, :level, 0),
+      Map.get(numbering, :index, 0),
       customizations
     )
   end

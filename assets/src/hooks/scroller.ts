@@ -140,8 +140,8 @@ export const Scroller = {
               } else if (rect.bottom > visibleBottom) {
                 targetTop = window.scrollY + (rect.bottom - visibleBottom);
               }
-            } else if (rect.top < visibleTop) {
-              // Oversized content cannot fully fit; preserve the current viewport unless its top is hidden.
+            } else if (rect.top < visibleTop || rect.bottom > visibleBottom) {
+              // Oversized content cannot fully fit, so align its top when it falls outside the visible region.
               targetTop = absoluteTop - offset;
             }
 
@@ -152,7 +152,7 @@ export const Scroller = {
             window.scrollTo({ top: absoluteTop - offset, behavior: scrollBehavior });
           }
         }
-      }, detail.scroll_delay || 400);
+      }, detail.scroll_delay ?? 400);
 
       if (detail.pulse) {
         setTimeout(() => {
