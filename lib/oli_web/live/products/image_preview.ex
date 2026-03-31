@@ -68,7 +68,6 @@ defmodule OliWeb.Products.ImagePreview do
             tabindex="0"
             phx-click="open_image_preview_modal"
             phx-keyup="open_image_preview_modal"
-            phx-keydown="open_image_preview_modal"
             phx-value-context={context.id}
           >
             <div

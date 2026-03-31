@@ -401,6 +401,16 @@ defmodule OliWeb.Workspaces.Student do
     Enum.map(instructors, fn
       %{name: _} = instructor -> instructor
       instructor when is_binary(instructor) -> %{name: instructor}
+      %{given_name: given_name, family_name: family_name}
+      when is_binary(given_name) and is_binary(family_name) ->
+        %{name: String.trim("#{given_name} #{family_name}")}
+
+      %{given_name: given_name} when is_binary(given_name) and given_name != "" ->
+        %{name: given_name}
+
+      %{family_name: family_name} when is_binary(family_name) and family_name != "" ->
+        %{name: family_name}
+
       _ -> %{name: "Unknown"}
     end)
   end
