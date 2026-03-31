@@ -125,15 +125,19 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
           oracle_instructor_section_analytics: %{metric: :assessment},
           oracle_instructor_scope_resources: %{
             course_title: "Intro to Testing",
+            scope_label: "Unit 777",
             items: []
           },
-          oracle_instructor_objectives_proficiency: [
-            %{
-              objective_id: 7001,
-              title: "Objective 7001",
-              proficiency_distribution: %{"High" => 2}
-            }
-          ]
+          oracle_instructor_objectives_proficiency: %{
+            objective_rows: [
+              %{
+                objective_id: 7001,
+                title: "Objective 7001",
+                proficiency_distribution: %{"High" => 2}
+              }
+            ],
+            objective_resources: []
+          }
         },
         oracle_statuses: %{
           oracle_instructor_progress: %{status: :ready},

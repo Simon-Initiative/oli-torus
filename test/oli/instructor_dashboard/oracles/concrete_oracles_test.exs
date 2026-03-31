@@ -156,6 +156,7 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
 
       assert {:ok, payload} = ScopeResources.load(context, [])
       assert payload.course_title == map.section.title
+      assert payload.scope_label == "Unit 1"
 
       resource_ids = payload.items |> Enum.map(& &1.resource_id) |> Enum.sort()
       assert resource_ids == Enum.sort([map.mod1_resource.id, map.mod2_resource.id])
@@ -369,8 +370,12 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
           %{container_type: :container, container_id: map.mod1_resource.id}
         )
 
-      assert {:ok, rows} = ObjectivesProficiency.load(context, [])
+      assert {:ok, payload} = ObjectivesProficiency.load(context, [])
+      rows = payload.objective_rows
+
       assert Enum.count(rows) == 2
+      assert Enum.any?(payload.objective_resources, &(&1.resource_id == objective_1.id))
+      assert Enum.any?(payload.objective_resources, &(&1.resource_id == objective_2.id))
 
       objective_1_row = Enum.find(rows, &(&1.objective_id == objective_1.id))
       objective_2_row = Enum.find(rows, &(&1.objective_id == objective_2.id))

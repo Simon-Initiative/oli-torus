@@ -48,9 +48,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     {total_count, rows, _filtered_objectives} =
       apply_filters(
         objectives_tab.objectives,
-        params,
-        params,
-        assigns[:patch_url_type]
+        params
       )
 
     indexed_rows =
@@ -539,7 +537,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end
   end
 
-  defp apply_filters(objectives, params, _navigation_params, _patch_url_type) do
+  defp apply_filters(objectives, params) do
     scoped_objectives = scoped_objectives(objectives, params)
     filtered_objectives = filtered_objectives(scoped_objectives, params)
 

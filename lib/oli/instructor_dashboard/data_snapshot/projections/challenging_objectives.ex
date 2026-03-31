@@ -3,15 +3,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   Instructor challenging-objectives projection.
   """
 
-  import Ecto.Query, warn: false
-
-  require Logger
-
   alias Oli.Dashboard.Snapshot.Contract
-  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.InstructorDashboard.DataSnapshot.Projections.Helpers
-  alias Oli.Repo
-  alias Oli.Resources.Revision
 
   @meaningful_proficiency_levels ["Low", "Medium", "High"]
   @required_oracles [
@@ -28,11 +21,14 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   @spec derive(Contract.t(), keyword()) :: {:ok, map()} | {:error, term()}
   def derive(%Contract{} = snapshot, _opts) do
     with {:ok, required} <- Helpers.require_oracles(snapshot, @required_oracles) do
-      section_id = snapshot.metadata.dashboard_context_id
-      scope = scope_data(snapshot, required, section_id)
-      objective_rows = Map.get(required, :oracle_instructor_objectives_proficiency, [])
+      scope = scope_data(snapshot, required)
+      objective_payload = Map.get(required, :oracle_instructor_objectives_proficiency, %{})
+      objective_rows = objective_rows(objective_payload)
+      all_objective_resources = objective_resources(objective_payload)
       scope_filter_by = scope_filter_by(snapshot.scope)
-      {state, rows, low_row_count} = build_rows(section_id, objective_rows, scope_filter_by)
+
+      {state, rows, low_row_count} =
+        build_rows(all_objective_resources, objective_rows, scope_filter_by)
 
       {:ok,
        Helpers.projection_base(snapshot, :challenging_objectives, %{
@@ -48,7 +44,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
     end
   end
 
-  defp build_rows(section_id, objective_rows, scope_filter_by) do
+  defp build_rows(all_objective_resources, objective_rows, scope_filter_by) do
     objective_rows_by_id = Map.new(objective_rows, &{&1.objective_id, &1})
 
     qualifying_rows =
@@ -67,7 +63,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
 
       _ ->
         qualifying_ids = Enum.map(qualifying_rows, & &1.objective_id)
-        all_objective_resources = SectionResourceDepot.objectives(section_id)
         all_objective_resources_by_id = Map.new(all_objective_resources, &{&1.resource_id, &1})
         effective_children_map = effective_children_map(all_objective_resources)
         parent_map = parent_map(effective_children_map)
@@ -78,10 +73,12 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
           |> expand_with_ancestor_ids(parent_map)
           |> Enum.uniq()
 
-        section_resources = SectionResourceDepot.get_resources_by_ids(section_id, render_ids)
-        section_resources_by_id = Map.new(section_resources, &{&1.resource_id, &1})
+        render_id_set = MapSet.new(render_ids)
 
-        log_missing_section_resources(render_ids, section_resources_by_id, section_id)
+        section_resources =
+          Enum.filter(all_objective_resources, &MapSet.member?(render_id_set, &1.resource_id))
+
+        section_resources_by_id = Map.new(section_resources, &{&1.resource_id, &1})
 
         rows =
           section_resources
@@ -109,13 +106,13 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
     end
   end
 
-  defp scope_data(snapshot, required, section_id) do
+  defp scope_data(snapshot, required) do
     scope = snapshot.scope
     scope_resources = Map.get(required, :oracle_instructor_scope_resources, %{})
 
     %{
       selector: scope_selector(scope),
-      label: scope_label(scope, section_id),
+      label: Map.get(scope_resources, :scope_label, scope_label(scope)),
       course_title: Map.get(scope_resources, :course_title),
       items: Map.get(scope_resources, :items, [])
     }
@@ -126,14 +123,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
 
   defp scope_selector(_scope), do: "course"
 
-  defp scope_label(%{container_type: :course}, _section_id), do: "Entire Course"
-
-  defp scope_label(%{container_type: :container, container_id: container_id}, section_id) do
-    case SectionResourceDepot.get_section_resource(section_id, container_id) do
-      nil -> "Selected Scope"
-      resource -> resource.title
-    end
-  end
+  defp scope_label(%{container_type: :course}), do: "Entire Course"
+  defp scope_label(%{container_type: :container}), do: "Selected Scope"
+  defp scope_label(_scope), do: "Selected Scope"
 
   defp scope_filter_by(%{container_type: :container, container_id: container_id}),
     do: Integer.to_string(container_id)
@@ -149,39 +141,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   end
 
   defp effective_children_map(section_resources) do
-    objective_resource_ids = MapSet.new(Enum.map(section_resources, & &1.resource_id))
-
-    revision_children_by_resource_id =
-      section_resources
-      |> Enum.map(& &1.revision_id)
-      |> revision_children_by_resource_id(objective_resource_ids)
-
     Enum.into(section_resources, %{}, fn section_resource ->
-      children =
-        case section_resource.children || [] do
-          [] -> Map.get(revision_children_by_resource_id, section_resource.resource_id, [])
-          child_ids -> child_ids
-        end
-
-      {section_resource.resource_id, children}
-    end)
-  end
-
-  defp revision_children_by_resource_id([], _objective_resource_ids), do: %{}
-
-  defp revision_children_by_resource_id(revision_ids, objective_resource_ids) do
-    from(r in Revision,
-      where: r.id in ^revision_ids,
-      select: {r.resource_id, r.children}
-    )
-    |> Repo.all()
-    |> Enum.into(%{}, fn {resource_id, children} ->
-      effective_children =
-        children
-        |> List.wrap()
-        |> Enum.filter(&MapSet.member?(objective_resource_ids, &1))
-
-      {resource_id, effective_children}
+      {section_resource.resource_id, section_resource.children || []}
     end)
   end
 
@@ -428,13 +389,12 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
 
   defp normalize_proficiency_label(label), do: label
 
-  defp log_missing_section_resources(qualifying_ids, section_resources_by_id, section_id) do
-    missing_ids = Enum.reject(qualifying_ids, &Map.has_key?(section_resources_by_id, &1))
+  defp objective_rows(%{objective_rows: rows}) when is_list(rows), do: rows
+  defp objective_rows(rows) when is_list(rows), do: rows
+  defp objective_rows(_), do: []
 
-    if missing_ids != [] do
-      Logger.warning(
-        "challenging_objectives_projection.missing_section_resources section_id=#{section_id} missing_ids=#{inspect(missing_ids)}"
-      )
-    end
-  end
+  defp objective_resources(%{objective_resources: resources}) when is_list(resources),
+    do: resources
+
+  defp objective_resources(_), do: []
 end

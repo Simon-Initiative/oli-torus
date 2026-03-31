@@ -399,6 +399,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
   end
 
   defp snapshot_fixture(section_id, container_id, objective_rows) do
+    objective_resources = SectionResourceDepot.objectives_with_effective_children(section_id)
+
     {:ok, snapshot} =
       Contract.new_snapshot(%{
         request_token: "challenging-objectives-phase-1",
@@ -412,9 +414,13 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.ChallengingObjectives
         oracles: %{
           oracle_instructor_scope_resources: %{
             course_title: "Course Title",
+            scope_label: "Unit 1",
             items: []
           },
-          oracle_instructor_objectives_proficiency: objective_rows
+          oracle_instructor_objectives_proficiency: %{
+            objective_rows: objective_rows,
+            objective_resources: objective_resources
+          }
         },
         oracle_statuses: %{
           oracle_instructor_scope_resources: %{status: :ready},

@@ -13,7 +13,7 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
   def key, do: :oracle_instructor_scope_resources
 
   @impl true
-  def version, do: 1
+  def version, do: 2
 
   @impl true
   def load(%OracleContext{} = context, _opts) do
@@ -29,6 +29,7 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
           {:ok,
            %{
              course_title: section.title,
+             scope_label: scope_label(scope.container_type, node),
              items: build_items(node.children || [])
            }}
       end
@@ -53,6 +54,10 @@ defmodule Oli.InstructorDashboard.Oracles.ScopeResources do
         end)
     end
   end
+
+  defp scope_label(:course, _node), do: "Entire Course"
+  defp scope_label(:container, node), do: node.revision.title
+  defp scope_label(_container_type, _node), do: "Selected Scope"
 
   defp build_items(children) do
     Enum.map(children, fn child ->

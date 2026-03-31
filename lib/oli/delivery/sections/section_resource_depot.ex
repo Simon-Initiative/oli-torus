@@ -188,6 +188,18 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Returns objective SectionResource records with `children` normalized to objective resource ids.
+
+  When the depot record does not store objective hierarchy directly, falls back to the
+  corresponding revision children for the objective tree.
+  """
+  def objectives_with_effective_children(section_id, additional_query_conditions \\ []) do
+    section_id
+    |> objectives(additional_query_conditions)
+    |> hydrate_objective_children()
+  end
+
+  @doc """
   Access the SectionResource records pertaining to the course schedule.
   """
   def retrieve_schedule(section_id, filter_resource_type \\ false) do
@@ -295,6 +307,45 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     results = Repo.all(query)
 
     Depot.clear_and_set(@depot_desc, section_id, results)
+  end
+
+  defp hydrate_objective_children(objectives_section_resources) do
+    section_resource_id_to_resource_id =
+      Enum.reduce(objectives_section_resources, %{}, fn sr, acc ->
+        Map.put(acc, sr.id, sr.resource_id)
+      end)
+
+    revision_children_by_id =
+      objectives_section_resources
+      |> Enum.filter(&(List.wrap(&1.children) == []))
+      |> Enum.map(& &1.revision_id)
+      |> case do
+        [] ->
+          %{}
+
+        revision_ids ->
+          from(r in Oli.Resources.Revision,
+            where: r.id in ^revision_ids,
+            select: {r.id, r.children}
+          )
+          |> Repo.all()
+          |> Map.new()
+      end
+
+    Enum.map(objectives_section_resources, fn sr ->
+      children =
+        case sr.children || [] do
+          [] ->
+            Map.get(revision_children_by_id, sr.revision_id, [])
+
+          section_resource_children ->
+            section_resource_children
+            |> Enum.map(&Map.get(section_resource_id_to_resource_id, &1, &1))
+            |> Enum.filter(&(&1 != nil))
+        end
+
+      %{sr | children: children}
+    end)
   end
 
   def fetch_recently_active_sections() do
