@@ -230,113 +230,126 @@ defmodule OliWeb.Products.ImagePreview do
   def preview_content(%{context: :course_picker} = assigns) do
     ~H"""
     <div
-      class="h-[628px] w-[1200px] overflow-hidden bg-[#f8fafc] text-gray-900 dark:bg-[#111827] dark:text-white"
+      class="relative h-[628px] w-[1200px] overflow-hidden text-gray-900 dark:text-white"
       data-preview-mode="true"
     >
       <.preview_top_bar user_name={preview_user_name(@ctx)} section={@section} />
-      <div class="flex h-[calc(100%-56px)] w-full">
-        <div class="w-2/5 bg-blue-700 px-10 py-12 text-white">
-          <div class="flex flex-col gap-[42px]">
-            <div class="gap-6 items-center justify-between flex">
-              <div class="flex flex-col text-white">
-                <h4 class="font-bold text-[20px] tracking-[0.02px] leading-5 mb-[9px]">
-                  Select your source materials
-                </h4>
-                <p class="font-normal text-[16px] tracking-[0.02px] leading-[24px]">
-                  Select the source of materials to base your course curriculum on.
-                </p>
-              </div>
-              <div class="flex self-start shrink-0 items-center justify-center font-extrabold text-xl h-[60px] w-[60px] rounded-full shadow-sm bg-primary text-white">
-                1
-              </div>
+      <div class="relative h-[calc(100%-56px)] w-full">
+        <div class="absolute inset-0 flex">
+          <div class="h-full w-2/5 bg-blue-700 dark:bg-black" />
+          <div class="h-full w-3/5 bg-[#f8fafc] dark:bg-[#111827]" />
+        </div>
+
+        <div class="absolute inset-0 flex px-10 py-6">
+          <div class="z-20 my-auto w-[34%]">
+            <div class="flex flex-col gap-[34px] -mr-[34px]">
+              <.preview_step_item
+                index={1}
+                title="Select your source materials"
+                description="Select the source of materials to base your course curriculum on."
+                active={true}
+              />
+              <.preview_step_item
+                index={2}
+                title="Name your course"
+                description="Give your course section a name, a number, and tell us how you meet."
+                active={false}
+              />
+              <.preview_step_item
+                index={3}
+                title="Course details"
+                description="Set meeting days plus the start and end dates for your course."
+                active={false}
+              />
             </div>
           </div>
-        </div>
-        <div class="my-6 mr-6 flex w-3/5 flex-col overflow-hidden bg-white shadow-xl dark:bg-[#0B0C11] dark:shadow-none">
-          <div class="px-9 py-4 border-b border-gray-200 text-sm font-semibold dark:border-gray-700">
-            New Course Setup
-          </div>
-          <div class="flex-1 overflow-hidden">
-            <div class="flex h-full flex-col overflow-hidden">
-              <div class="-mt-56 flex flex-col items-center gap-3 pr-9 pl-16 py-6">
-                <h2>Select source</h2>
-                <div class="w-full">
-                  <div class="mb-3 w-full">
-                    <h3 class="pb-2 text-[28px] font-semibold">Select Curriculum</h3>
-                    <div>
-                      <p class="mt-1 mb-4">
-                        Select a curriculum source to create your course section.
-                      </p>
-                      <div class="filter-opts flex flex-wrap items-center gap-2">
-                        <div class="w-full">
-                          <div class="input-group search-input flex gap-2">
-                            <div class="relative flex flex-1 items-center">
-                              <input
-                                type="text"
-                                class="form-control h-full pr-6 dark:!bg-[#111827] dark:!text-white dark:!border-gray-600"
-                                placeholder="Search..."
-                              />
+
+          <div class="mb-12 mt-2 flex w-[66%] flex-col overflow-hidden bg-white shadow-xl dark:bg-[#0B0C11] dark:shadow-none">
+            <div class="border-b border-gray-200 px-9 py-4 text-sm font-semibold dark:border-gray-700">
+              New Course Setup
+            </div>
+            <div class="flex-1 overflow-hidden">
+              <div class="flex h-full flex-col overflow-hidden">
+                <div class="-mt-60 flex flex-col items-center gap-3 py-6 pl-16 pr-9">
+                  <h2>Select source</h2>
+                  <div class="w-full">
+                    <div class="mb-3 w-full">
+                      <h3 class="pb-2 text-[28px] font-semibold">Select Curriculum</h3>
+                      <div>
+                        <p class="mb-4 mt-1">
+                          Select a curriculum source to create your course section.
+                        </p>
+                        <div class="filter-opts flex flex-wrap items-center gap-2">
+                          <div class="w-full">
+                            <div class="input-group search-input flex gap-2">
+                              <div class="relative flex flex-1 items-center">
+                                <input
+                                  type="text"
+                                  class="form-control h-full pr-6 dark:!bg-[#111827] dark:!text-white dark:!border-gray-600"
+                                  placeholder="Search..."
+                                />
+                                <button
+                                  type="button"
+                                  class="absolute right-2 my-auto h-6 w-6 rounded-full"
+                                  tabindex="-1"
+                                >
+                                  <i class="fa-solid fa-xmark" />
+                                </button>
+                              </div>
                               <button
+                                class="btn btn-outline-secondary border-none bg-delivery-primary text-white"
                                 type="button"
-                                class="absolute my-auto right-2 h-6 w-6 rounded-full"
-                                tabindex="-1"
                               >
-                                <i class="fa-solid fa-xmark" />
+                                Search
                               </button>
                             </div>
-                            <button
-                              class="btn btn-outline-secondary border-none text-white bg-delivery-primary"
-                              type="button"
-                            >
-                              Search
-                            </button>
                           </div>
-                        </div>
-                        <div class="flex w-full items-center gap-3">
-                          <div class="flex min-w-0 flex-1 items-center gap-2">
-                            <div class="flex h-10 min-w-0 flex-1 items-center rounded border border-gray-300 bg-white px-3 text-sm text-gray-700 shadow-sm dark:border-gray-600 dark:bg-[#111827] dark:text-white">
-                              Title
+                          <div class="flex w-full items-center gap-3">
+                            <div class="flex min-w-0 flex-1 items-center gap-2">
+                              <div class="flex h-10 min-w-0 flex-1 items-center rounded border border-gray-300 bg-white px-3 text-sm text-gray-700 shadow-sm dark:border-gray-600 dark:bg-[#111827] dark:text-white">
+                                Title
+                              </div>
+                              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-gray-300 bg-white text-gray-700 shadow-sm dark:border-gray-600 dark:bg-[#111827] dark:text-white">
+                                <i class="fa fa-sort-amount-down" />
+                              </div>
                             </div>
-                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-gray-300 bg-white text-gray-700 shadow-sm dark:border-gray-600 dark:bg-[#111827] dark:text-white">
-                              <i class="fa fa-sort-amount-down" />
-                            </div>
-                          </div>
-                          <div class="flex shrink-0 items-center overflow-hidden rounded border border-gray-300 shadow-sm dark:border-gray-600">
-                            <div class="flex h-10 w-10 items-center justify-center bg-white text-gray-600 dark:bg-[#111827] dark:text-white">
-                              <i class="fa fa-list" />
-                            </div>
-                            <div class="flex h-10 w-10 items-center justify-center bg-delivery-primary-100 text-delivery-primary dark:bg-gray-700 dark:text-white">
-                              <i class="fa fa-th" />
+                            <div class="flex shrink-0 items-center overflow-hidden rounded border border-gray-300 shadow-sm dark:border-gray-600">
+                              <div class="flex h-10 w-10 items-center justify-center bg-white text-gray-600 dark:bg-[#111827] dark:text-white">
+                                <i class="fa fa-list" />
+                              </div>
+                              <div class="flex h-10 w-10 items-center justify-center bg-delivery-primary-100 text-delivery-primary dark:bg-gray-700 dark:text-white">
+                                <i class="fa fa-th" />
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="pb-5">
-                    <div>Showing all results (1 total)</div>
-                    <br />
-                    <CardListing.render
-                      model={preview_table_model(@section, @ctx)}
-                      selected="source_selection"
-                      ctx={@ctx}
-                      preview_mode={true}
-                    />
+                    <div class="pb-5">
+                      <div>Showing all results (1 total)</div>
+                      <br />
+                      <CardListing.render
+                        model={preview_table_model(@section, @ctx)}
+                        selected="source_selection"
+                        ctx={@ctx}
+                        preview_mode={true}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div class="p-3 flex items-center justify-between bg-gray-100/50 dark:bg-black/40">
-            <button class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center dark:!text-white dark:!bg-black dark:hover:!bg-gray-900">
-              Cancel
-            </button>
-            <button
-              class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center"
-              disabled
-            >
-              Next step
-            </button>
+            <div class="flex items-center justify-between bg-gray-100/50 p-3 dark:bg-black/40">
+              <button class="torus-button secondary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center dark:!text-white dark:!bg-black dark:hover:!bg-gray-900">
+                Cancel
+              </button>
+              <button
+                class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center"
+                disabled
+              >
+                Next step
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -408,6 +421,31 @@ defmodule OliWeb.Products.ImagePreview do
   defp modal_frame_height(context) do
     dims = context_dimensions(context)
     dims.height * modal_scale(context)
+  end
+
+  attr :index, :integer, required: true
+  attr :title, :string, required: true
+  attr :description, :string, required: true
+  attr :active, :boolean, required: true
+
+  defp preview_step_item(assigns) do
+    ~H"""
+    <div class="flex items-center justify-between gap-6 shrink-0">
+      <div class={["flex flex-col text-white", if(!@active, do: "opacity-50")]}>
+        <h4 class="mb-[9px] text-[20px] font-bold leading-5 tracking-[0.02px]">{@title}</h4>
+        <p class="text-[16px] font-normal leading-[24px] tracking-[0.02px]">{@description}</p>
+      </div>
+      <div class={[
+        "flex h-[60px] w-[60px] shrink-0 self-start items-center justify-center rounded-full text-xl font-extrabold shadow-sm",
+        if(@active,
+          do: "bg-primary text-white",
+          else: "border border-gray-300 bg-white text-gray-400 dark:border-gray-600 dark:bg-black"
+        )
+      ]}>
+        {@index}
+      </div>
+    </div>
+    """
   end
 
   attr :user_name, :string, required: true
