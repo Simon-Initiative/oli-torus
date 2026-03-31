@@ -28,6 +28,8 @@ defmodule Oli.ActivityEditingTest do
       author: author,
       project: project
     } do
+      test_pid = self()
+
       content = %{
         "base" => "embedded",
         "src" => "index.html",
@@ -59,7 +61,7 @@ defmodule Oli.ActivityEditingTest do
       }
 
       expect(Oli.Test.MockAws, :request, 3, fn %ExAws.Operation.S3{} = op ->
-        send(self(), {:aws_request, op})
+        send(test_pid, {:aws_request, op})
 
         case op.http_method do
           :get ->

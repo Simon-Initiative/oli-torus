@@ -161,15 +161,15 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     (window as any).$('#' + id).trigger('click');
   };
 
-  const onPackageImport = (files: FileList) => {
+  const onPackageImport = (files: FileList | null) => {
     if (processingAction !== null) {
-      return;
+      return Promise.resolve();
     }
 
-    const file = files.item(0);
+    const file = files?.item(0);
 
     if (!file) {
-      return;
+      return Promise.resolve();
     }
 
     if (activityId === undefined || Number.isNaN(activityId) || !projectSlug) {
@@ -178,7 +178,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         errorModal('Unable to import package because the current activity context is missing.', id),
         id,
       );
-      return;
+      return Promise.resolve();
     }
 
     const requestActivityRefresh = () => {
@@ -190,7 +190,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     };
 
     setProcessingAction('import');
-    importSuperActivityPackage(file, projectSlug, activityId)
+    return importSuperActivityPackage(file, projectSlug, activityId)
       .then((result: any) => {
         onEdit(result.model as OliEmbeddedModelSchema);
         requestActivityRefresh();
@@ -590,7 +590,12 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         id={packageImportId}
         className="sr-only"
         disabled={actionsDisabled}
-        onChange={({ target: { files } }) => onPackageImport(files as FileList)}
+        onChange={(e) => {
+          const { files } = e.target;
+          void onPackageImport(files).finally(() => {
+            e.target.value = '';
+          });
+        }}
         type="file"
         accept=".zip,application/zip"
       />

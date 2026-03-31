@@ -32,6 +32,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   @adaptive_ai_trigger_part_type "janus-ai-trigger"
   @adaptive_ai_triggerable_part_types MapSet.new(["janus-image", "janus-navigation-button"])
+  @default_embedded_bundle_s3_concurrency 8
+  @default_embedded_bundle_s3_timeout_ms 15_000
   @embedded_bundle_source_prefixes [
     "media/webcontent/custom_activity/",
     "webcontent/custom_activity/"
@@ -1805,7 +1807,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     media_url = Application.fetch_env!(:oli, :media_url)
 
     resource_urls
-    |> Enum.reduce_while({:ok, []}, fn url, {:ok, acc} ->
+    |> parallel_embedded_bundle_map(fn url ->
       with {:ok, source_key} <- media_key_from_url(url),
            {:ok, relative_path} <- tracked_relative_path(source_key, old_directory),
            destination_key <- Path.join(["media", new_resource_base, relative_path]),
@@ -1814,25 +1816,22 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                acl: :public_read
              )
              |> Oli.HTTP.aws().request() do
-        {:cont,
-         {:ok, [%{url: "#{media_url}/#{destination_key}", relative_path: relative_path} | acc]}}
+        {:ok, %{url: "#{media_url}/#{destination_key}", relative_path: relative_path}}
       else
         _ ->
-          {:halt, {:error, :embedded_resource_migration_failed}}
+          {:error, :embedded_resource_migration_failed}
       end
     end)
     |> case do
       {:ok, migrated_resources} ->
-        migrated_resources = Enum.reverse(migrated_resources)
-
         {:ok,
          %{
            urls: Enum.map(migrated_resources, & &1.url),
            relative_paths: Enum.map(migrated_resources, & &1.relative_path)
          }}
 
-      error ->
-        error
+      {:error, _reason, _results} ->
+        {:error, :embedded_resource_migration_failed}
     end
   end
 
@@ -1940,7 +1939,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   defp copy_embedded_bundle_objects(bucket_name, resource_base, source_prefix, object_keys) do
     destination_prefix = "media/#{resource_base}/"
 
-    Enum.reduce_while(object_keys, :ok, fn source_key, :ok ->
+    object_keys
+    |> parallel_embedded_bundle_map(fn source_key ->
       destination_key =
         case source_prefix do
           "media/" <> _rest -> String.replace_prefix(source_key, "media/", destination_prefix)
@@ -1951,10 +1951,61 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
              acl: :public_read
            )
            |> Oli.HTTP.aws().request() do
-        {:ok, %{status_code: 200}} -> {:cont, :ok}
-        _ -> {:halt, {:error, :embedded_bundle_copy_failed}}
+        {:ok, %{status_code: 200}} -> {:ok, destination_key}
+        _ -> {:error, :embedded_bundle_copy_failed}
       end
     end)
+    |> case do
+      {:ok, _copied_keys} -> :ok
+      {:error, _reason, _results} -> {:error, :embedded_bundle_copy_failed}
+    end
+  end
+
+  defp embedded_bundle_s3_concurrency do
+    config = Application.get_env(:oli, __MODULE__, [])
+    Keyword.get(config, :embedded_bundle_s3_concurrency, @default_embedded_bundle_s3_concurrency)
+  end
+
+  defp embedded_bundle_s3_timeout_ms do
+    config = Application.get_env(:oli, __MODULE__, [])
+    Keyword.get(config, :embedded_bundle_s3_timeout_ms, @default_embedded_bundle_s3_timeout_ms)
+  end
+
+  defp parallel_embedded_bundle_map(items, mapper) do
+    items
+    |> Task.async_stream(
+      mapper,
+      max_concurrency: embedded_bundle_s3_concurrency(),
+      ordered: true,
+      timeout: embedded_bundle_s3_timeout_ms(),
+      on_timeout: :kill_task
+    )
+    |> Enum.reduce({[], nil}, fn
+      {:ok, {:ok, value}}, {results, error} ->
+        {[value | results], error}
+
+      {:ok, {:error, reason}}, {results, nil} ->
+        {results, reason}
+
+      {:ok, {:error, _reason}}, {results, error} ->
+        {results, error}
+
+      {:exit, :timeout}, {results, nil} ->
+        {results, :embedded_bundle_s3_timeout}
+
+      {:exit, :timeout}, {results, error} ->
+        {results, error}
+
+      {:exit, _reason}, {results, nil} ->
+        {results, :embedded_bundle_s3_failed}
+
+      {:exit, _reason}, {results, error} ->
+        {results, error}
+    end)
+    |> case do
+      {results, nil} -> {:ok, Enum.reverse(results)}
+      {results, error} -> {:error, error, Enum.reverse(results)}
+    end
   end
 
   @spec create_context(any, any, any, any) ::

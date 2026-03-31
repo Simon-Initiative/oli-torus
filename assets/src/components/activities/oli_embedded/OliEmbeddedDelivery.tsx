@@ -195,7 +195,9 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           data-mode="oli"
         ></iframe>
       )}
-      {preview && !context && <h4>OLI Embedded activity does not yet support preview</h4>}
+      {preview && !context && !previewError && (
+        <h4>OLI Embedded activity does not yet support preview</h4>
+      )}
     </>
   );
 };
