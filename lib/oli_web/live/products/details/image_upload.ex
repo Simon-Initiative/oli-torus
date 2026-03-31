@@ -113,7 +113,7 @@ defmodule OliWeb.Products.Details.ImageUpload do
                 <% end %>
               <% else %>
                 <%= if @has_cover_image? do %>
-                  <ImagePreview.render
+                  <.image_preview
                     section={@product}
                     ctx={@ctx}
                     selected_context={@selected_context}
@@ -149,6 +149,13 @@ defmodule OliWeb.Products.Details.ImageUpload do
     </script>
     """
   end
+
+  attr :section, :map, required: true
+  attr :ctx, :map, required: true
+  attr :selected_context, :atom, default: :student_welcome
+  attr :modal_open?, :boolean, default: false
+
+  defp image_preview(assigns), do: ImagePreview.render(assigns)
 
   defp upload_has_entries?(upload) do
     upload.entries != []
