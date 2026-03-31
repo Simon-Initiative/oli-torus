@@ -399,7 +399,7 @@ defmodule Oli.Interop.CustomActivities.Package do
     |> Task.async_stream(
       mapper,
       max_concurrency: s3_operation_concurrency(),
-      ordered: true,
+      ordered: false,
       timeout: s3_operation_timeout_ms(),
       on_timeout: :kill_task
     )
