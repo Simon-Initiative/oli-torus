@@ -28,6 +28,17 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
       assert binding.optional_oracles == %{engagement: :oracle_instructor_engagement}
     end
 
+    test "resolves the assessments summary consumer binding" do
+      assert {:ok, binding} = OracleBindings.binding_for(:assessments_summary)
+
+      assert binding.required_oracles == %{
+               grades: :oracle_instructor_grades,
+               scope_resources: :oracle_instructor_scope_resources
+             }
+
+      assert binding.optional_oracles == %{}
+    end
+
     test "returns deterministic error for unknown consumers" do
       assert {:error, {:unknown_consumer, :unknown_consumer}} =
                OracleBindings.binding_for(:unknown_consumer)
@@ -47,6 +58,13 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
              ]
 
       assert profiles.support_summary.optional == []
+
+      assert profiles.assessments_summary.required == [
+               :oracle_instructor_grades,
+               :oracle_instructor_scope_resources
+             ]
+
+      assert profiles.assessments_summary.optional == []
     end
 
     test "extending one consumer binding does not mutate unrelated consumer profiles" do

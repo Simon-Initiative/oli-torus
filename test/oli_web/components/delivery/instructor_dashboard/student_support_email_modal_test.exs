@@ -153,6 +153,50 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportEmailModa
       assert email.to == [{"", "student2@example.edu"}]
       assert email.reply_to == {"Instructor Example", "instructor@example.edu"}
     end
+
+    test "uses custom modal_dom_id and default draft content overrides", %{conn: conn} do
+      {:ok, view, _html} =
+        live_component_isolated(
+          conn,
+          StudentSupportEmailModal,
+          base_attrs(%{
+            show_modal: true,
+            modal_dom_id: "assessments_email_modal",
+            default_subject: "Checking in about Quiz 2",
+            default_body: "Please finish Quiz 2 before Friday."
+          })
+        )
+
+      html = render(view)
+
+      assert html =~ ~s(id="assessments_email_modal")
+      assert html =~ "Checking in about Quiz 2"
+      assert html =~ "Please finish Quiz 2 before Friday."
+
+      view
+      |> element("#student_support_send_button")
+      |> render_click()
+
+      jobs = Repo.all(Oban.Job)
+      emails = Enum.map(jobs, &SendEmailWorker.deserialize_email(&1.args["email"]))
+
+      assert length(emails) == 2
+
+      assert Enum.map(emails, & &1.subject) == [
+               "Checking in about Quiz 2",
+               "Checking in about Quiz 2"
+             ]
+
+      assert Enum.map(emails, & &1.text_body) == [
+               "Please finish Quiz 2 before Friday.",
+               "Please finish Quiz 2 before Friday."
+             ]
+
+      assert Enum.map(emails, & &1.to) == [
+               [{"", "student1@example.edu"}],
+               [{"", "student2@example.edu"}]
+             ]
+    end
   end
 
   defp base_attrs(overrides) do
