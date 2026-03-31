@@ -1,0 +1,14 @@
+requirements:
+  - title: Torus shall support standards-aligned client-side OIDC and postMessage-backed launch state storage when the LMS advertises the required capability for an embedded LTI 1.3 launch.
+  - title: Torus shall preserve the current server-session-based LTI launch path for platforms and browsers that do not use the client-side OIDC storage path.
+  - title: Torus shall provide a deterministic recovery or terminal error path when cookie-backed launch state is unavailable, blocked, or mismatched during launch validation.
+  - title: Torus shall emit structured operational diagnostics for launch-path selection and launch-state validation outcomes without logging sensitive token or cookie values.
+  - title: User-facing LTI launch failures caused by browser privacy or cookie restrictions shall present stable, actionable error messaging instead of ambiguous or masked failures.
+  - title: The hardened launch flow shall preserve existing registration, deployment, authorization, enrollment, and section-resolution boundaries.
+acceptance_criteria:
+  - title: Given an LMS launch advertises the required browser-storage capability, when a user launches Torus from an embedded placement, then Torus completes the launch without requiring the server-side session cookie to carry the only copy of launch state.
+  - title: Given an LMS launch does not advertise the browser-storage capability, when a compatible browser submits the launch, then Torus continues to use the current server-session path and preserves current successful behavior.
+  - title: Given the browser blocks or drops the session cookie needed for the legacy launch path, when Torus cannot validate launch state, then it executes the hardened recovery flow if supported and otherwise shows a stable browser-settings-oriented error message.
+  - title: Given launch validation fails, when operational logs or telemetry are inspected, then the failure is classified into a concrete category such as missing state, mismatched state, unsupported storage capability, recovery failure, or LMS configuration failure.
+  - title: Given a hardened launch attempt succeeds or fails, when telemetry is emitted, then the event records which launch path was used and excludes raw id tokens, cookie contents, and other sensitive payload data.
+  - title: Given a valid LTI launch reaches authorization and section resolution, when the hardened flow is enabled, then the user is still resolved into the correct registration, deployment, user account, and section context without cross-tenant leakage.
