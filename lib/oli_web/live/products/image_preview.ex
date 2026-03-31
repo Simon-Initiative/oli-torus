@@ -391,37 +391,43 @@ defmodule OliWeb.Products.ImagePreview do
   def preview_content(%{context: :student_welcome} = assigns) do
     ~H"""
     <div
-      class="h-[628px] w-[1200px] overflow-hidden bg-[#f8fafc] text-gray-900 dark:bg-[#111827] dark:text-white"
+      class="relative h-[628px] w-[1200px] overflow-hidden text-gray-900 dark:text-white"
       data-preview-mode="true"
     >
       <.preview_top_bar user_name={preview_user_name(@ctx)} section={@section} />
-      <div class="h-[calc(100%-56px)]">
-        <div class="flex h-full w-full">
-          <div class="w-2/5 bg-blue-700 px-10 py-12 text-white">
-            <div class="flex flex-col gap-[42px]">
-              <div class="gap-6 items-center justify-between flex">
-                <div class="flex flex-col text-white">
-                  <h4 class="font-bold text-[20px] tracking-[0.02px] leading-5 mb-[9px]">
-                    Introduction
-                  </h4>
-                  <p class="font-normal text-[16px] tracking-[0.02px] leading-[24px]">
-                    Welcome to {@section.title}! Here's what you can expect during this set up process.
-                  </p>
-                </div>
-                <div class="flex self-start shrink-0 items-center justify-center font-extrabold text-xl h-[60px] w-[60px] rounded-full shadow-sm bg-primary text-white">
-                  1
-                </div>
+      <div class="relative h-[calc(100%-56px)] w-full">
+        <div class="absolute inset-0 flex">
+          <div class="h-full w-2/5 bg-blue-700 dark:bg-black" />
+          <div class="h-full w-3/5 bg-[#f8fafc] dark:bg-[#111827]" />
+        </div>
+
+        <div class="absolute inset-0 flex px-10 py-6">
+          <div class="z-20 my-auto w-[34%]">
+            <div class="flex items-center">
+              <div class="flex max-w-[280px] flex-col text-white">
+                <h4 class="mb-[9px] text-[20px] font-bold leading-5 tracking-[0.02px]">
+                  Introduction
+                </h4>
+                <p class="text-[16px] font-normal leading-[24px] tracking-[0.02px]">
+                  Welcome to {@section.title}! Here's what you can expect during this set up process.
+                </p>
               </div>
             </div>
           </div>
-          <div class="my-6 mr-6 flex w-3/5 flex-col overflow-hidden bg-white shadow-xl dark:bg-[#0B0C11] dark:shadow-none">
-            <div class="flex-1 overflow-hidden [&_img]:!block [&_img]:!h-[150px] [&_img]:!w-full">
-              <Intro.render section={student_welcome_section(@section)} />
+
+          <div class="relative my-auto w-[66%]">
+            <div class="absolute left-0 top-1/2 z-20 flex h-[60px] w-[60px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-xl font-extrabold text-white shadow-sm">
+              1
             </div>
-            <div class="p-3 flex items-center justify-end bg-gray-100/50 dark:bg-black/40">
-              <button class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center">
-                Start Survey
-              </button>
+            <div class="flex flex-col overflow-hidden bg-white shadow-xl dark:bg-[#0B0C11] dark:shadow-none">
+              <div class="flex-1 overflow-hidden [&_img]:!block [&_img]:!h-[150px] [&_img]:!w-full">
+                <Intro.render section={student_welcome_section(@section)} />
+              </div>
+              <div class="flex items-center justify-end bg-gray-100/50 p-3 dark:bg-black/40">
+                <button class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center">
+                  Start Survey
+                </button>
+              </div>
             </div>
           </div>
         </div>
