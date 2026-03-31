@@ -10,6 +10,7 @@ import {
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
+import { finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 
@@ -23,6 +24,9 @@ interface Context {
   part_ids: string;
   auto_finalize_page?: boolean;
   auto_finalize_redirect_url?: string;
+  revision_slug?: string;
+  section_slug?: string;
+  page_attempt_guid?: string;
 }
 
 const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
@@ -299,6 +303,23 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
 
         finalizeRequested = true;
         setPageFinalizeError(null);
+
+        if (context.section_slug && context.revision_slug && context.page_attempt_guid) {
+          const finalizeResult = await finalizePageAttempt(
+            context.section_slug,
+            context.revision_slug,
+            context.page_attempt_guid,
+          );
+
+          if (
+            'redirectTo' in finalizeResult &&
+            typeof finalizeResult.redirectTo === 'string' &&
+            finalizeResult.redirectTo.length > 0
+          ) {
+            window.location.href = finalizeResult.redirectTo;
+            return;
+          }
+        }
 
         if (context.auto_finalize_redirect_url) {
           window.location.href = context.auto_finalize_redirect_url;

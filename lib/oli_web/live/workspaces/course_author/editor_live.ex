@@ -316,6 +316,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   attr(:preview_enabled, :boolean, required: true)
   attr(:lock_controls_enabled, :boolean, required: true)
   attr(:authoring_notice, :string, default: nil)
+  attr(:graded, :boolean, required: true)
 
   def authoring_header(assigns) do
     ~H"""
@@ -358,20 +359,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
                     </div>
                   </.form>
                 <% else %>
-                  <h1 style="display: inline-block; white-space: normal; text-align: left; font-weight: normal; font-size: 1.5rem; margin: 0;">
-                    {@title}
-                  </h1>
-                  <button
-                    type="button"
-                    class={[
-                      "btn btn-link btn-sm",
-                      if(!@title_editable, do: "disabled opacity-60 cursor-not-allowed")
-                    ]}
-                    phx-click="begin_title_edit"
-                    disabled={!@title_editable}
-                  >
-                    Edit Title
-                  </button>
+                  <div class="d-flex align-items-center flex-wrap gap-2 min-w-0">
+                    <.page_identity_badges graded={@graded} />
+                    <h1 style="display: inline-block; white-space: normal; text-align: left; font-weight: normal; font-size: 1.5rem; margin: 0;">
+                      {@title}
+                    </h1>
+                    <button
+                      type="button"
+                      class={[
+                        "btn btn-link btn-sm",
+                        if(!@title_editable, do: "disabled opacity-60 cursor-not-allowed")
+                      ]}
+                      phx-click="begin_title_edit"
+                      disabled={!@title_editable}
+                    >
+                      Edit Title
+                    </button>
+                  </div>
                 <% end %>
               </div>
               <div class="d-flex shrink-0 items-center gap-3 whitespace-nowrap">
@@ -420,6 +424,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
           </button>
         </div>
       </div>
+    </div>
+    """
+  end
+
+  attr(:graded, :boolean, required: true)
+
+  def page_identity_badges(assigns) do
+    ~H"""
+    <div
+      class="d-inline-flex flex-wrap items-center gap-2"
+      aria-label={"Currently editing #{page_kind_label(@graded)}"}
+    >
+      <span class="badge rounded-pill px-3 py-2 text-xs font-semibold bg-secondary text-white">
+        {page_kind_label(@graded)}
+      </span>
     </div>
     """
   end
@@ -686,6 +705,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       "/authoring/project/#{socket.assigns.project_slug}/preview/#{socket.assigns.revision_slug}"
 
   defp preview_window_name(socket), do: "preview-#{socket.assigns.project_slug}"
+
+  defp page_kind_label(true), do: "Scored"
+  defp page_kind_label(false), do: "Practice"
 
   defp maybe_enable_preview_after_scripts_load(socket) do
     if socket.assigns.is_advanced_authoring do
