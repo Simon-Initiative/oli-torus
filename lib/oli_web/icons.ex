@@ -1097,6 +1097,54 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: ""
+
+  def circle_chevron_left_blue(assigns) do
+    ~H"""
+    <svg
+      class={@class}
+      width="36"
+      height="36"
+      viewBox="0 0 36 36"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="18" cy="18" r="17" fill="white" stroke="#0080FF" stroke-width="2" />
+      <path
+        d="M20.25 11.25L13.5 18L20.25 24.75"
+        stroke="#0080FF"
+        stroke-width="2.25"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: ""
+
+  def circle_chevron_right_blue(assigns) do
+    ~H"""
+    <svg
+      class={@class}
+      width="36"
+      height="36"
+      viewBox="0 0 36 36"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="18" cy="18" r="17" fill="white" stroke="#0080FF" stroke-width="2" />
+      <path
+        d="M15.75 11.25L22.5 18L15.75 24.75"
+        stroke="#0080FF"
+        stroke-width="2.25"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   attr :class, :string,
     default: "stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
 

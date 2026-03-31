@@ -11,6 +11,8 @@ defmodule OliWeb.Products.Details.ImageUpload do
   attr(:change, :any, required: true)
   attr(:cancel_upload, :any, required: true)
   attr(:ctx, :map, required: true)
+  attr(:selected_context, :atom, default: :student_welcome)
+  attr(:modal_open?, :boolean, default: false)
 
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(assigns) do
@@ -111,7 +113,12 @@ defmodule OliWeb.Products.Details.ImageUpload do
                 <% end %>
               <% else %>
                 <%= if @has_cover_image? do %>
-                  <ImagePreview.render section={@product} ctx={@ctx} />
+                  <ImagePreview.render
+                    section={@product}
+                    ctx={@ctx}
+                    selected_context={@selected_context}
+                    modal_open?={@modal_open?}
+                  />
                 <% end %>
               <% end %>
             </section>

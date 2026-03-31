@@ -457,6 +457,18 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert render(view) =~ "background-image: url(&#39;#{current_image}&#39;);"
     end
+
+    test "opens the image preview modal from the admin product details page", %{conn: conn} do
+      product =
+        insert(:section, type: :blueprint, cover_image: "https://example.com/some-image-url.png")
+
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      render_click(element(view, "#image-preview-thumbnail-course-picker"))
+
+      assert has_element?(view, "#image-preview-modal.block")
+      assert has_element?(view, "#image-preview-modal", "Course Picker")
+    end
   end
 
   describe "user cannot create product until after project is published" do

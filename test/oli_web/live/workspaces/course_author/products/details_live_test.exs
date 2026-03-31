@@ -145,7 +145,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
              )
 
       assert has_element?(live, "#image-preview-thumbnail-student-welcome", "Welcome to")
-      assert has_element?(live, ".image-preview-thumbnail .group-hover\\:shadow-lg")
+
+      assert has_element?(
+               live,
+               ".image-preview-thumbnail .hover\\:shadow-\\[0_12px_32px_rgba\\(15\\,13\\,15\\,0\\.24\\)\\]"
+             )
 
       {paywall_index, _} = :binary.match(html, "Paywall Settings")
       {cover_image_index, _} = :binary.match(html, "Cover Image")
@@ -162,6 +166,53 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
 
       refute has_element?(live, "#img-preview-gallery")
       refute has_element?(live, "#current-product-img")
+    end
+
+    test "opens the image preview modal and cycles through the three preview labels", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, product} =
+        Oli.Delivery.Sections.update_section(product, %{
+          cover_image: "https://example.com/template-cover.png"
+        })
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      render_click(element(live, "#image-preview-thumbnail-student-welcome"))
+
+      assert has_element?(live, "#image-preview-modal.block")
+      assert has_element?(live, "#image-preview-modal", "Student Course Introduction")
+
+      assert has_element?(
+               live,
+               "#image-preview-modal button[phx-click='show_previous_image_preview'][disabled]"
+             )
+
+      render_click(
+        element(live, "#image-preview-modal button[phx-click='show_next_image_preview']")
+      )
+
+      assert has_element?(live, "#image-preview-modal", "My Courses")
+
+      render_click(
+        element(live, "#image-preview-modal button[phx-click='show_next_image_preview']")
+      )
+
+      assert has_element?(live, "#image-preview-modal", "Course Picker")
+
+      assert has_element?(
+               live,
+               "#image-preview-modal button[phx-click='show_next_image_preview'][disabled]"
+             )
+
+      render_click(
+        element(
+          live,
+          "#image-preview-modal button[aria-label='close']"
+        )
+      )
+
+      refute has_element?(live, "#image-preview-modal.block")
     end
 
     test "places tags between description and welcome message title", ctx do
