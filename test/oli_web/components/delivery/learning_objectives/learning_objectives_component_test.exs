@@ -261,6 +261,79 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
                MapSet.new(["row_2"])
     end
 
+    test "tile navigation adjusts pagination so the targeted objective is present" do
+      objectives = paginated_objectives_fixture()
+
+      socket =
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            __changed__: %{},
+            myself: %Phoenix.LiveComponent.CID{cid: 1}
+          }
+        }
+
+      assigns = %{
+        id: "learning-objectives-update-paginated-objective-test",
+        objectives_tab: %{objectives: objectives, navigator_items: []},
+        params: %{
+          "limit" => "1",
+          "offset" => "0",
+          "objective_id" => "3",
+          "navigation_source" => "challenging_objectives_tile"
+        },
+        section_slug: "test-section",
+        section_id: 1,
+        section_title: "Test Section",
+        current_user: %{email: "instructor@example.edu"},
+        patch_url_type: :instructor_dashboard,
+        student_id: nil,
+        view: :insights,
+        v25_migration: :done
+      }
+
+      assert {:ok, updated_socket} = LearningObjectives.update(assigns, socket)
+      assert updated_socket.assigns.params.offset == 2
+      assert Enum.map(updated_socket.assigns.table_model.rows, & &1.resource_id) == [3]
+      assert updated_socket.assigns.expanded_objectives == MapSet.new(["row_3"])
+    end
+
+    test "tile navigation adjusts pagination so the targeted subobjective is present" do
+      objectives = paginated_objectives_fixture()
+
+      socket =
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            __changed__: %{},
+            myself: %Phoenix.LiveComponent.CID{cid: 1}
+          }
+        }
+
+      assigns = %{
+        id: "learning-objectives-update-paginated-subobjective-test",
+        objectives_tab: %{objectives: objectives, navigator_items: []},
+        params: %{
+          "limit" => "1",
+          "offset" => "0",
+          "objective_id" => "1",
+          "subobjective_id" => "4",
+          "navigation_source" => "challenging_objectives_tile"
+        },
+        section_slug: "test-section",
+        section_id: 1,
+        section_title: "Test Section",
+        current_user: %{email: "instructor@example.edu"},
+        patch_url_type: :instructor_dashboard,
+        student_id: nil,
+        view: :insights,
+        v25_migration: :done
+      }
+
+      assert {:ok, updated_socket} = LearningObjectives.update(assigns, socket)
+      assert updated_socket.assigns.params.offset == 3
+      assert Enum.map(updated_socket.assigns.table_model.rows, & &1.resource_id) == [4]
+      assert updated_socket.assigns.expanded_objectives == MapSet.new(["row_4"])
+    end
+
     test "initial_expanded_rows ignores unresolved deep-link ids" do
       scoped_objectives = objectives_with_subobjective()
 
@@ -357,6 +430,57 @@ defmodule OliWeb.Components.Delivery.LearningObjectives.ComponentTest do
         objective: "LO.01",
         objective_resource_id: 1,
         subobjective: "Sub.LO.01a",
+        student_proficiency_obj: "Low",
+        student_proficiency_subobj: "Low",
+        student_proficiency_obj_dist: %{},
+        student_proficiency_subobj_dist: %{},
+        container_ids: [10],
+        related_activities_count: 0
+      }
+    ]
+  end
+
+  defp paginated_objectives_fixture do
+    [
+      %{
+        resource_id: 1,
+        title: "Objective 1",
+        objective: "Objective 1",
+        subobjective: nil,
+        student_proficiency_obj: "Low",
+        student_proficiency_subobj: nil,
+        student_proficiency_obj_dist: %{},
+        container_ids: [10],
+        related_activities_count: 0
+      },
+      %{
+        resource_id: 2,
+        title: "Objective 2",
+        objective: "Objective 2",
+        subobjective: nil,
+        student_proficiency_obj: "Low",
+        student_proficiency_subobj: nil,
+        student_proficiency_obj_dist: %{},
+        container_ids: [10],
+        related_activities_count: 0
+      },
+      %{
+        resource_id: 3,
+        title: "Objective 3",
+        objective: "Objective 3",
+        subobjective: nil,
+        student_proficiency_obj: "Low",
+        student_proficiency_subobj: nil,
+        student_proficiency_obj_dist: %{},
+        container_ids: [10],
+        related_activities_count: 0
+      },
+      %{
+        resource_id: 4,
+        title: "Sub-Objective 3.1",
+        objective: "Objective 3",
+        objective_resource_id: 3,
+        subobjective: "Sub-Objective 3.1",
         student_proficiency_obj: "Low",
         student_proficiency_subobj: "Low",
         student_proficiency_obj_dist: %{},

@@ -41,6 +41,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
         socket
       ) do
     params = decode_params(params)
+    params = maybe_adjust_params_for_navigation(objectives_tab.objectives, params)
     scoped_objectives = scoped_objectives(objectives_tab.objectives, params)
     socket = maybe_handle_tile_navigation(socket, scoped_objectives, params)
 
@@ -555,6 +556,44 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
     {total_count, rows, filtered_objectives}
   end
+
+  defp maybe_adjust_params_for_navigation(
+         objectives,
+         %{navigation_source: "challenging_objectives_tile"} = params
+       ) do
+    scoped_objectives = scoped_objectives(objectives, params)
+
+    sorted_objectives =
+      scoped_objectives
+      |> filtered_objectives(params)
+      |> sort_by(params.sort_by, params.sort_order)
+
+    case navigation_target_index(sorted_objectives, params) do
+      nil ->
+        params
+
+      index ->
+        if index in params.offset..(params.offset + max(params.limit - 1, 0)) do
+          params
+        else
+          %{params | offset: div(index, params.limit) * params.limit}
+        end
+    end
+  end
+
+  defp maybe_adjust_params_for_navigation(_objectives, params), do: params
+
+  defp navigation_target_index(objectives, %{subobjective_id: subobjective_id})
+       when is_integer(subobjective_id) do
+    Enum.find_index(objectives, &(&1.resource_id == subobjective_id and subobjective?(&1)))
+  end
+
+  defp navigation_target_index(objectives, %{objective_id: objective_id})
+       when is_integer(objective_id) do
+    Enum.find_index(objectives, &(&1.resource_id == objective_id and top_level_objective?(&1)))
+  end
+
+  defp navigation_target_index(_objectives, _params), do: nil
 
   @doc false
   def filtered_objectives(objectives, params) do
