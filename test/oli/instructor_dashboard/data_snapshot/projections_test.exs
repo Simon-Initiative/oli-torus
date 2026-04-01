@@ -68,8 +68,10 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_bins) ==
                [:progress]
 
-      assert InstructorProjections.affected_capabilities(:oracle_instructor_scope_resources) ==
-               [:progress]
+      assert Enum.sort(
+               InstructorProjections.affected_capabilities(:oracle_instructor_scope_resources)
+             ) ==
+               Enum.sort([:progress, :challenging_objectives])
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_proficiency) ==
                [:student_support]
@@ -77,9 +79,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert InstructorProjections.affected_capabilities(
                :oracle_instructor_objectives_proficiency
              ) == [:challenging_objectives]
-
-      assert InstructorProjections.affected_capabilities(:oracle_instructor_scope_resources) ==
-               [:challenging_objectives]
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_student_info) ==
                [:student_support]
@@ -124,6 +123,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
             }
           },
           oracle_instructor_scope_resources: %{
+            course_title: "Intro to Testing",
+            scope_label: "Unit 777",
             items: [
               %{
                 resource_id: 777,
@@ -145,11 +146,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
             }
           ],
           oracle_instructor_section_analytics: %{metric: :assessment},
-          oracle_instructor_scope_resources: %{
-            course_title: "Intro to Testing",
-            scope_label: "Unit 777",
-            items: []
-          },
           oracle_instructor_objectives_proficiency: %{
             objective_rows: [
               %{
@@ -168,7 +164,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
           oracle_instructor_progress_proficiency: %{status: :ready},
           oracle_instructor_student_info: %{status: :ready},
           oracle_instructor_section_analytics: %{status: :ready},
-          oracle_instructor_scope_resources: %{status: :ready},
           oracle_instructor_objectives_proficiency: %{status: :ready}
         }
       })

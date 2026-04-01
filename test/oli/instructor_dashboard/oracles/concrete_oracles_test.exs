@@ -224,7 +224,7 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
            map: map
          } do
       direct_course_page =
-        add_direct_page_child(map, map.section.root_section_resource_id, "Acknowledgements")
+        add_direct_page_child(map, map.container.resource.id, "Acknowledgements")
 
       [unit1_page_1 | _] = map.mod1_pages
       now = ~U[2026-03-27 12:00:00Z]
