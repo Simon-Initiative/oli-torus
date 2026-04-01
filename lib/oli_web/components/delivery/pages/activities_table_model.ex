@@ -54,15 +54,16 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   end
 
   def render_question_column(assigns, %{content: content} = activity, _) do
-    title =
+    subtitle =
       Map.get(content, "stem", %{"content" => []})
       |> Map.get("content", [%{"type" => "p", "children" => [%{"text" => "Unknown stem"}]}])
       |> best_effort_stem_extract()
+      |> normalize_subtitle(activity)
 
     assigns =
       Map.merge(assigns, %{
         header: activity.title,
-        title: title,
+        subtitle: subtitle,
         resource_id: activity.resource_id,
         has_lti_activity: activity.has_lti_activity
       })
@@ -77,10 +78,10 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         class="flex items-center gap-2"
       >
         <Icons.plug />
-        <.question_text header={@header} title={@title} />
+        <.question_text header={@header} subtitle={@subtitle} />
       </div>
     <% else %>
-      <.question_text header={@header} title={@title} />
+      <.question_text header={@header} subtitle={@subtitle} />
     <% end %>
     """
   end
@@ -115,6 +116,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   # RENDER EXPANDED DETAILS FOR STRIPED TABLE
   def render_assessment_details(assigns, assessment) do
     selected_activities = assigns.model.data.selected_activities
+    expanded_activity_ids = Map.get(assigns.model.data, :expanded_activity_ids, MapSet.new())
 
     # Find the specific activity data for this assessment
     current_activity =
@@ -122,30 +124,34 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
       |> Enum.reject(&is_nil/1)
       |> Enum.find(&(&1.resource_id == assessment.resource_id))
 
-    # Only show details if this specific activity is selected/expanded
-    should_show_details = current_activity != nil
+    should_show_details = MapSet.member?(expanded_activity_ids, assessment.resource_id)
+    has_loaded_activity = not is_nil(current_activity)
 
     assigns =
       Map.merge(assigns, %{
         id: assessment.resource_id,
         current_activity: current_activity,
         activity_types_map: assigns[:activity_types_map],
-        should_show_details: should_show_details
+        should_show_details: should_show_details,
+        has_loaded_activity: has_loaded_activity,
+        detail_label:
+          if(adaptive_screen?(assessment), do: "Screen details", else: "Question details")
       })
 
     ~H"""
-    <%= if @should_show_details do %>
+    <%= if @has_loaded_activity do %>
       <div class="p-6" id={"details-#{@id}"}>
         <div
           role="activity_title"
           class="bg-white dark:bg-gray-800 dark:text-white w-min whitespace-nowrap rounded-t-md block font-medium text-sm leading-tight uppercase border-x-1 border-t-1 border-b-0 border-gray-300 px-6 py-4"
         >
-          Question details
+          {@detail_label}
         </div>
         <div
           class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
           id={"activity_detail_#{@id}"}
           phx-hook="LoadSurveyScripts"
+          data-preview-activity-bridge="true"
           phx-update="ignore"
         >
           <%= if Map.get(@current_activity, :preview_rendered) != nil do %>
@@ -187,7 +193,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     ~H"""
     <div class="flex flex-col">
       <span class="font-bold">{@header}:</span>
-      <span class="text-ellipsis">{@title}</span>
+      <span :if={@subtitle} class="text-ellipsis">{@subtitle}</span>
     </div>
     """
   end
@@ -259,6 +265,23 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   defp best_effort_stem_extract([]), do: "[Empty]"
   defp best_effort_stem_extract([item | _]), do: extract(item)
   defp best_effort_stem_extract(_), do: "[Empty]"
+
+  defp normalize_subtitle("[Empty]", activity) do
+    if adaptive_screen?(activity), do: nil, else: "[Empty]"
+  end
+
+  defp normalize_subtitle("Unknown stem", activity) do
+    if adaptive_screen?(activity), do: nil, else: "Unknown stem"
+  end
+
+  defp normalize_subtitle("", activity) do
+    if adaptive_screen?(activity), do: nil, else: ""
+  end
+
+  defp normalize_subtitle(value, _activity), do: value
+
+  defp adaptive_screen?(%{content: %{"partsLayout" => _}}), do: true
+  defp adaptive_screen?(_), do: false
 
   defp extract(%{"type" => "p", "children" => children}) do
     Enum.reduce(children, "", fn c, s ->

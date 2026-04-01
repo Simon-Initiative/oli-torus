@@ -31,6 +31,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.ManualGrading.TableModel
   alias OliWeb.ManualGrading.RenderedActivity
+  alias OliWeb.ManualGrading.SelectedSubmission
+  alias OliWeb.ManualGrading.SelectedSubmissionBuilder
   alias OliWeb.ManualGrading.Filters
   alias OliWeb.ManualGrading.Tabs
   alias OliWeb.ManualGrading.ScoreFeedback
@@ -303,16 +305,52 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
       <%= if !is_nil(@attempt) do %>
         <Group.render>
-          <Tabs.render active={@active_tab} changed="change_tab" />
-          <%= if @active_tab == :review do %>
-            <RenderedActivity.render rendered_activity={@review_rendered} />
-          <% else %>
-            <RenderedActivity.render rendered_activity={@preview_rendered} />
-          <% end %>
-        </Group.render>
-        <Group.render>
-          {render_parts(assigns)}
-          <Apply.render disabled={scoring_remains(assigns)} apply="apply" />
+          <div class="rounded-2xl border border-Border-border-default bg-Surface-surface-primary p-4 shadow-[0px_8px_30px_0px_rgba(0,50,99,0.10)]">
+            <div class="rounded-xl bg-Surface-surface-secondary px-4 py-4">
+              <div class="mb-4 rounded-lg bg-Surface-surface-secondary-muted px-4 py-3">
+                <div class="text-sm font-semibold text-Text-text-high">Selected Attempt</div>
+                <div class="mt-1 text-sm text-Text-text-low">
+                  The panels below belong to the currently selected manual grading row.
+                </div>
+              </div>
+
+              <Tabs.render active={@active_tab} changed="change_tab" />
+
+              <%= if @active_tab == :review do %>
+                <SelectedSubmission.render submission={selected_submission(assigns)} class="mt-4" />
+              <% else %>
+                <div class="mt-4 rounded-xl bg-Surface-surface-primary px-4 py-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+                  <RenderedActivity.render rendered_activity={@preview_rendered} />
+                </div>
+              <% end %>
+
+              <div class="mt-4 space-y-4">
+                <%= if stale_attempt?(assigns) do %>
+                  <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
+                    <div class="text-sm font-semibold text-Text-text-high">Stale Attempt State</div>
+                    <div class="mt-1 text-sm text-Text-text-low">
+                      This activity is still queued for manual grading, but there are no remaining manual inputs to score.
+                    </div>
+                    <button
+                      class="mt-3 inline-flex h-8 items-center justify-center rounded-md bg-Fill-Buttons-fill-primary px-4 text-sm font-semibold text-Text-text-white hover:bg-Fill-Buttons-fill-primary-hover"
+                      phx-click="resolve_stale_attempt"
+                    >
+                      Resolve Attempt State
+                    </button>
+                  </div>
+                <% end %>
+
+                <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
+                  <div class="mb-4 text-sm font-semibold text-Text-text-high">Input Scoring</div>
+                  {render_parts(assigns)}
+                </div>
+
+                <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
+                  <Apply.render disabled={scoring_remains(assigns)} apply="apply" />
+                </div>
+              </div>
+            </div>
+          </div>
         </Group.render>
       <% else %>
         <div style="margin-top: 200px;" class="d-flex justify-content-center">
@@ -329,31 +367,35 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
   def render_parts(assigns) do
     ~H"""
-    <%= for pa <- @part_attempts do %>
-      <PartScoring.render
-        part_attempt={pa}
-        part_scoring={@score_feedbacks[pa.attempt_guid]}
-        feedback_changed="feedback_changed"
-        score_changed="score_changed"
-      />
-      <hr />
-    <% end %>
+    <div class="space-y-3">
+      <%= for pa <- @part_attempts do %>
+        <div>
+          <PartScoring.render
+            part_attempt={pa}
+            part_scoring={@score_feedbacks[pa.attempt_guid]}
+            feedback_changed="feedback_changed"
+            score_changed="score_changed"
+            selected={@selected_part_attempt_guid == pa.attempt_guid}
+            selected_changed="select_part"
+          />
+        </div>
+      <% end %>
+    </div>
     """
   end
 
   # Determines if any scoring or feedbacks remain to be entered for the part attempts
   # of the currently selected activity attempt
   defp scoring_remains(assigns) do
-    attempt_guids =
-      Enum.filter(assigns.part_attempts, fn pa -> pa.grading_approach == :manual end)
-      |> Enum.map(fn pa -> pa.attempt_guid end)
-      |> MapSet.new()
+    Enum.filter(assigns.part_attempts, fn pa -> pa.grading_approach == :manual end)
+    |> Enum.any?(fn pa ->
+      case Map.get(assigns.score_feedbacks, pa.attempt_guid) do
+        %{score: score, feedback: feedback} ->
+          is_nil(score) or is_nil(blank_to_nil(feedback))
 
-    Map.keys(assigns.score_feedbacks)
-    |> Enum.filter(fn guid -> MapSet.member?(attempt_guids, guid) end)
-    |> Enum.any?(fn guid ->
-      sf = Map.get(assigns.score_feedbacks, guid)
-      is_nil(sf.score) or is_nil(sf.feedback)
+        _ ->
+          true
+      end
     end)
   end
 
@@ -363,6 +405,17 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     |> Enum.any?(fn sf ->
       !is_nil(sf.score) or !is_nil(sf.feedback)
     end)
+  end
+
+  defp stale_attempt?(%{attempt: nil}), do: false
+  defp stale_attempt?(%{part_attempts: nil}), do: false
+
+  defp stale_attempt?(assigns) do
+    assigns.attempt.lifecycle_state == :submitted and
+      assigns.part_attempts != [] and
+      !Enum.any?(assigns.part_attempts, fn pa ->
+        pa.grading_approach == :manual and pa.lifecycle_state != :evaluated
+      end)
   end
 
   defp determine_out_of(%Oli.Delivery.Attempts.Core.PartAttempt{part_id: part_id}, parts_map) do
@@ -402,10 +455,24 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   end
 
   defp build_state_for_selection(%{selected: nil}, _),
-    do: [attempt: nil, part_attempts: nil, review_rendered: nil, preview_rendered: nil]
+    do: [
+      attempt: nil,
+      part_attempts: nil,
+      preview_rendered: nil,
+      selected_part_attempt_guid: nil,
+      selected_part_id: nil,
+      parts_map: %{}
+    ]
 
   defp build_state_for_selection(%{selected: ""}, _),
-    do: [attempt: nil, part_attempts: nil, review_rendered: nil, preview_rendered: nil]
+    do: [
+      attempt: nil,
+      part_attempts: nil,
+      preview_rendered: nil,
+      selected_part_attempt_guid: nil,
+      selected_part_id: nil,
+      parts_map: %{}
+    ]
 
   defp build_state_for_selection(table_model, assigns) do
     activity_attempt =
@@ -423,22 +490,22 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
           assigns.section
         )
 
-      review_rendered = OliWeb.ManualGrading.Rendering.render(rendering_context, :review)
-
       preview_rendered =
         OliWeb.ManualGrading.Rendering.render(rendering_context, :instructor_preview)
 
       {:ok, model} = Oli.Activities.Model.parse(activity_attempt.revision.content)
       parts_map = Enum.reduce(model.parts, %{}, fn p, m -> Map.put(m, p.id, p) end)
+      selected_part_attempt = List.first(part_attempts)
 
       [
         attempt: activity_attempt,
         part_attempts: part_attempts,
-        review_rendered: review_rendered,
         preview_rendered: preview_rendered,
         score_feedbacks:
           ensure_score_feedbacks_exist(assigns.score_feedbacks, part_attempts, parts_map),
-        parts_map: parts_map
+        parts_map: parts_map,
+        selected_part_attempt_guid: selected_part_attempt && selected_part_attempt.attempt_guid,
+        selected_part_id: selected_part_attempt && selected_part_attempt.part_id
       ]
     else
       []
@@ -447,7 +514,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
   def ensure_score_feedbacks_exist(score_feedbacks, part_attempts, parts_map) do
     Enum.reduce(part_attempts, score_feedbacks, fn pa, m ->
-      if Map.has_key?(m, pa.attempt_guid) do
+      if pa.grading_approach != :manual or Map.has_key?(m, pa.attempt_guid) do
         m
       else
         Map.put(m, pa.attempt_guid, %ScoreFeedback{
@@ -491,6 +558,18 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
      )}
   end
 
+  def handle_event(
+        "select_part",
+        %{"attempt_guid" => attempt_guid, "part_id" => part_id},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       selected_part_attempt_guid: attempt_guid,
+       selected_part_id: part_id
+     )}
+  end
+
   def handle_event("apply", _, socket) do
     %{
       section: section,
@@ -516,13 +595,33 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     end
   end
 
+  def handle_event("resolve_stale_attempt", _, socket) do
+    case ManualGrading.resolve_stale_attempt(socket.assigns.section, socket.assigns.attempt) do
+      {:ok, :ok} ->
+        socket =
+          socket
+          |> put_flash(:info, "Stale attempt resolved.")
+          |> refresh_after_attempt_removed()
+
+        {:noreply, socket}
+
+      _ ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "There was a problem resolving this stale attempt."
+         )}
+    end
+  end
+
   def handle_event(
         "feedback_changed",
         %{"id" => "feedback_" <> attempt_guid, "value" => feedback},
         socket
       ) do
-    sf = Map.get(socket.assigns.score_feedbacks, attempt_guid)
-    sf = %{sf | feedback: feedback}
+    sf = score_feedback_for(socket.assigns, attempt_guid)
+    sf = %{sf | feedback: blank_to_nil(feedback)}
 
     score_feedbacks = Map.put(socket.assigns.score_feedbacks, attempt_guid, sf)
 
@@ -536,18 +635,28 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         score -> score
       end
 
-    case Float.parse(score) do
-      :error ->
-        {:noreply, socket}
-
-      {score, _} ->
-        score = ensure_valid_score(score, attempt_guid, socket.assigns)
-
-        sf = Map.get(socket.assigns.score_feedbacks, attempt_guid)
-        sf = %{sf | score: score}
+    case blank_to_nil(score) do
+      nil ->
+        sf = score_feedback_for(socket.assigns, attempt_guid)
+        sf = %{sf | score: nil}
         score_feedbacks = Map.put(socket.assigns.score_feedbacks, attempt_guid, sf)
 
         {:noreply, assign(socket, score_feedbacks: score_feedbacks)}
+
+      score ->
+        case Float.parse(score) do
+          :error ->
+            {:noreply, socket}
+
+          {score, _} ->
+            score = ensure_valid_score(score, attempt_guid, socket.assigns)
+
+            sf = score_feedback_for(socket.assigns, attempt_guid)
+            sf = %{sf | score: score}
+            score_feedbacks = Map.put(socket.assigns.score_feedbacks, attempt_guid, sf)
+
+            {:noreply, assign(socket, score_feedbacks: score_feedbacks)}
+        end
     end
   end
 
@@ -573,6 +682,97 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       end)
 
     {:noreply, assign(socket, score_feedbacks: score_feedbacks)}
+  end
+
+  defp score_feedback_for(assigns, attempt_guid) do
+    Map.get(assigns.score_feedbacks, attempt_guid) ||
+      case Enum.find(assigns.part_attempts || [], fn pa -> pa.attempt_guid == attempt_guid end) do
+        nil ->
+          %ScoreFeedback{score: nil, feedback: nil, out_of: 1.0}
+
+        pa ->
+          %ScoreFeedback{
+            score: nil,
+            feedback: nil,
+            out_of: determine_out_of(pa, assigns.parts_map || %{})
+          }
+      end
+  end
+
+  defp blank_to_nil(nil), do: nil
+
+  defp blank_to_nil(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp blank_to_nil(value), do: value
+
+  defp selected_submission(%{attempt: nil}), do: nil
+  defp selected_submission(%{part_attempts: nil}), do: nil
+  defp selected_submission(%{selected_part_attempt_guid: nil}), do: nil
+
+  defp selected_submission(assigns) do
+    SelectedSubmissionBuilder.build(
+      assigns.attempt,
+      assigns.part_attempts,
+      assigns.selected_part_attempt_guid,
+      assigns.activity_types_map
+    )
+  end
+
+  defp refresh_after_attempt_removed(socket) do
+    attempts =
+      ManualGrading.browse_submitted_attempts(
+        socket.assigns.section,
+        %Paging{offset: socket.assigns.offset, limit: socket.assigns.limit},
+        %Sorting{
+          direction: socket.assigns.table_model.sort_order,
+          field: socket.assigns.table_model.sort_by_spec.name
+        },
+        socket.assigns.options
+      )
+
+    selected =
+      next_selected_after_removal(
+        socket.assigns.table_model.rows,
+        socket.assigns.table_model.selected,
+        attempts
+      )
+
+    table_model =
+      socket.assigns.table_model
+      |> Map.put(:rows, attempts)
+      |> Map.put(:selected, selected)
+
+    socket
+    |> assign(
+      table_model: table_model,
+      total_count: determine_total(attempts)
+    )
+    |> assign(build_state_for_selection(table_model, socket.assigns))
+  end
+
+  defp next_selected_after_removal(_current_rows, _current_selected, []), do: nil
+
+  defp next_selected_after_removal(current_rows, current_selected, refreshed_rows) do
+    index =
+      Enum.find_index(current_rows, fn row ->
+        Integer.to_string(row.id) == current_selected
+      end)
+
+    cond do
+      is_nil(index) ->
+        refreshed_rows |> hd() |> Map.fetch!(:id) |> Integer.to_string()
+
+      index >= length(refreshed_rows) ->
+        refreshed_rows |> List.last() |> Map.fetch!(:id) |> Integer.to_string()
+
+      true ->
+        refreshed_rows |> Enum.at(index) |> Map.fetch!(:id) |> Integer.to_string()
+    end
   end
 
   # After a score is applied for an attempt, we need to determine what is the next

@@ -14,6 +14,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Rendering.Context
   alias Oli.Activities.State.ActivityState
+  alias OliWeb.Components.Delivery.AdaptiveIFrame
+  alias Phoenix.LiveView.JS
 
   @doc """
   Returns a list of summarizing details for all activities that have been attempted for a given course
@@ -159,6 +161,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         graded: graded,
         title: revision.title,
         revision: revision,
+        resource_summaries: Map.get(grouped_by_activity_id, activity_id, []),
         transformed_model: nil,
         first_attempt_pct: first_attempt_pct,
         all_attempt_pct: all_attempt_pct,
@@ -179,8 +182,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         :preview_rendered,
         fast_preview_render(
           section,
+          page_revision,
           activity.revision,
-          page_id,
           activity_types_map,
           ordinal,
           student_responses
@@ -191,44 +194,53 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp fast_preview_render(
          %Section{slug: section_slug},
+         page_revision,
          revision,
-         page_id,
          activity_types_map,
          ordinal,
          student_responses
        ) do
     type = Map.get(activity_types_map, revision.activity_type_id)
-    state = ActivityState.create_preview_state(revision.content)
 
-    summary = %Oli.Rendering.Activity.ActivitySummary{
-      id: revision.resource_id,
-      attempt_guid: "fake_attempt_guid",
-      unencoded_model: revision.content,
-      model: ActivityContext.prepare_model(revision.content, prune: false),
-      state: ActivityContext.prepare_state(state),
-      lifecycle_state: :evaluated,
-      delivery_element: type.delivery_element,
-      authoring_element: type.authoring_element,
-      script: type.delivery_script,
-      graded: false,
-      bib_refs: [],
-      ordinal: ordinal,
-      variables: %{}
-    }
+    case type.slug do
+      "oli_adaptive" ->
+        AdaptiveIFrame.insights_preview(section_slug, page_revision, revision)
 
-    %Context{
-      user: %Oli.Accounts.User{},
-      section_slug: section_slug,
-      revision_slug: revision.slug,
-      page_id: page_id,
-      mode: :review,
-      activity_map: Map.put(%{}, revision.resource_id, summary),
-      activity_types_map: activity_types_map,
-      resource_attempt: %Oli.Delivery.Attempts.Core.ResourceAttempt{},
-      is_liveview: true,
-      student_responses: student_responses
-    }
-    |> OliWeb.ManualGrading.Rendering.render(:instructor_preview)
+      _ ->
+        page_id = page_revision.resource_id
+        state = ActivityState.create_preview_state(revision.content)
+
+        summary = %Oli.Rendering.Activity.ActivitySummary{
+          id: revision.resource_id,
+          attempt_guid: "fake_attempt_guid",
+          unencoded_model: revision.content,
+          model: ActivityContext.prepare_model(revision.content, prune: false),
+          state: ActivityContext.prepare_state(state),
+          lifecycle_state: :evaluated,
+          delivery_element: type.delivery_element,
+          authoring_element: type.authoring_element,
+          script: type.delivery_script,
+          graded: false,
+          bib_refs: [],
+          ordinal: ordinal,
+          variables: %{}
+        }
+
+        context = %Context{
+          user: %Oli.Accounts.User{},
+          section_slug: section_slug,
+          revision_slug: revision.slug,
+          page_id: page_id,
+          mode: :review,
+          activity_map: Map.put(%{}, revision.resource_id, summary),
+          activity_types_map: activity_types_map,
+          resource_attempt: %Oli.Delivery.Attempts.Core.ResourceAttempt{},
+          is_liveview: true,
+          student_responses: student_responses
+        }
+
+        OliWeb.ManualGrading.Rendering.render(context, :instructor_preview)
+    end
   end
 
   defp build_ordinal_mapping(revision) do
@@ -271,8 +283,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     likert_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
 
+    adaptive_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} ->
+        if Map.get(v, :slug) == "oli_adaptive", do: k
+      end)
+
     Enum.map(activities, fn a ->
       case a.revision.activity_type_id do
+        ^adaptive_type_id ->
+          add_adaptive_input_details(a, response_summaries)
+
         ^multiple_choice_type_id ->
           add_choices_frequencies(a, response_summaries)
 
@@ -299,6 +319,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   def rendered_activity(assigns) do
     case Map.get(assigns.activity_types_map, assigns.activity.revision.activity_type_id) do
+      %{slug: "oli_adaptive"} ->
+        render_adaptive(assigns)
+
       %{slug: "oli_likert"} ->
         render_likert(assigns)
 
@@ -542,6 +565,126 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       rendered_activity={@activity.preview_rendered}
     />
     """
+  end
+
+  defp render_adaptive(assigns) do
+    responses_tab_id = "adaptive-responses-tab-#{assigns.activity.id}"
+    responses_panel_id = "adaptive-responses-panel-#{assigns.activity.id}"
+    preview_tab_id = "adaptive-preview-tab-#{assigns.activity.id}"
+    preview_panel_id = "adaptive-preview-panel-#{assigns.activity.id}"
+
+    assigns =
+      assign(assigns,
+        preview_tab_id: preview_tab_id,
+        responses_tab_id: responses_tab_id,
+        preview_panel_id: preview_panel_id,
+        responses_panel_id: responses_panel_id,
+        input_summaries: Map.get(assigns.activity, :adaptive_input_summaries, [])
+      )
+
+    ~H"""
+    <div class="pt-6">
+      <div class="flex gap-6 border-b border-gray-300 dark:border-gray-700">
+        <button
+          id={@responses_tab_id}
+          type="button"
+          class="border-b-2 border-blue-500 px-1 py-3 text-sm font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400"
+          phx-click={
+            adaptive_tab_js(
+              @responses_tab_id,
+              @preview_tab_id,
+              @responses_panel_id,
+              @preview_panel_id
+            )
+          }
+        >
+          Student Responses
+        </button>
+        <button
+          id={@preview_tab_id}
+          type="button"
+          class="border-b-2 border-transparent px-1 py-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+          phx-click={
+            adaptive_tab_js(
+              @preview_tab_id,
+              @responses_tab_id,
+              @preview_panel_id,
+              @responses_panel_id
+            )
+          }
+        >
+          Screen Preview
+        </button>
+      </div>
+
+      <div id={@responses_panel_id} class="pt-6">
+        <%= if Enum.empty?(@input_summaries) do %>
+          <p class="text-sm text-gray-600 dark:text-gray-300">
+            No student response summary is available for this screen.
+          </p>
+        <% else %>
+          <div class="grid gap-4">
+            <%= for summary <- @input_summaries do %>
+              <div class="rounded border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/30">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <div class="font-semibold text-gray-900 dark:text-white">{summary.label}</div>
+                    <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      {summary.component_type}
+                    </div>
+                  </div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">{summary.part_id}</div>
+                </div>
+                <div class="mt-3 flex gap-8 text-sm text-gray-700 dark:text-gray-200">
+                  <div><span class="font-semibold">{summary.response_count}</span> Responses</div>
+                  <div><span class="font-semibold">{summary.student_count}</span> Students</div>
+                  <div><span class="font-semibold">{summary.attempt_count}</span> Attempts</div>
+                </div>
+                <div class="mt-4 flex flex-wrap gap-x-10 gap-y-4">
+                  <.percentage_bar
+                    id={"adaptive_#{@activity.id}_#{summary.part_id}_first_try_correct"}
+                    value={summary.first_attempt_pct}
+                    label="First Try Correct"
+                  />
+                  <.percentage_bar
+                    id={"adaptive_#{@activity.id}_#{summary.part_id}_eventually_correct"}
+                    value={summary.all_attempt_pct}
+                    label="Eventually Correct"
+                  />
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <div id={@preview_panel_id} class="hidden pt-6">
+        <RenderedActivity.render
+          id={"activity_#{@activity.id}"}
+          rendered_activity={@activity.preview_rendered}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  defp adaptive_tab_js(active_tab_id, inactive_tab_id, active_panel_id, inactive_panel_id) do
+    JS.remove_class("hidden", to: "##{active_panel_id}")
+    |> JS.add_class("hidden", to: "##{inactive_panel_id}")
+    |> JS.remove_class("border-transparent text-gray-500 dark:text-gray-400",
+      to: "##{active_tab_id}"
+    )
+    |> JS.add_class(
+      "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400",
+      to: "##{active_tab_id}"
+    )
+    |> JS.remove_class(
+      "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400",
+      to: "##{inactive_tab_id}"
+    )
+    |> JS.add_class("border-transparent text-gray-500 dark:text-gray-400",
+      to: "##{inactive_tab_id}"
+    )
   end
 
   defp add_single_response_details(activity_attempt, response_summaries) do
@@ -857,6 +1000,77 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         end
       end
     )
+  end
+
+  defp add_adaptive_input_details(activity_attempt, response_summaries) do
+    parts_layout = activity_attempt.revision.content["partsLayout"] || []
+    resource_summaries = Map.get(activity_attempt, :resource_summaries, [])
+
+    input_summaries =
+      parts_layout
+      |> Enum.with_index(1)
+      |> Enum.map(fn {part, index} ->
+        part_id = Map.get(part, "id")
+        resource_summary = Enum.find(resource_summaries, &(&1.part_id == part_id))
+
+        responses =
+          Enum.filter(response_summaries, fn response_summary ->
+            response_summary.activity_id == activity_attempt.resource_id and
+              response_summary.part_id == part_id
+          end)
+
+        users =
+          responses
+          |> Enum.flat_map(&Map.get(&1, :users, []))
+          |> Enum.uniq_by(&Map.get(&1, :id, OliWeb.Common.Utils.name(&1)))
+
+        %{
+          part_id: part_id,
+          label: adaptive_part_label(part, index),
+          component_type: adaptive_component_type_label(Map.get(part, "type")),
+          response_count: Enum.reduce(responses, 0, &(&1.count + &2)),
+          student_count: Enum.count(users),
+          attempt_count: Map.get(resource_summary || %{}, :num_attempts, 0),
+          first_attempt_pct:
+            safe_percentage(resource_summary, :num_first_attempts_correct, :num_first_attempts),
+          all_attempt_pct: safe_percentage(resource_summary, :num_correct, :num_attempts),
+          order: index
+        }
+      end)
+      |> Enum.reject(&is_nil(&1.part_id))
+      |> Enum.reject(
+        &(&1.response_count == 0 and &1.student_count == 0 and &1.attempt_count == 0)
+      )
+
+    Map.put(activity_attempt, :adaptive_input_summaries, input_summaries)
+  end
+
+  defp safe_percentage(nil, _numerator_key, _denominator_key), do: 0
+
+  defp safe_percentage(summary, numerator_key, denominator_key) do
+    numerator = Map.get(summary, numerator_key, 0)
+    denominator = Map.get(summary, denominator_key, 0)
+
+    if denominator > 0, do: numerator / denominator, else: 0
+  end
+
+  defp adaptive_part_label(part, index) do
+    custom = Map.get(part, "custom", %{})
+
+    Map.get(custom, "title") ||
+      Map.get(custom, "name") ||
+      Map.get(custom, "prompt") ||
+      "Input #{index}"
+  end
+
+  defp adaptive_component_type_label(nil), do: "Input"
+
+  defp adaptive_component_type_label(type) do
+    type
+    |> String.replace_prefix("janus-", "")
+    |> String.replace("-", " ")
+    |> String.split()
+    |> Enum.map_join(" ", &String.capitalize/1)
   end
 
   # This is only used by the multi-input

@@ -1,8 +1,8 @@
 defmodule OliWeb.Delivery.ActivityHelpersTest do
   use ExUnit.Case, async: true
 
-  alias OliWeb.Delivery.ActivityHelpers
   alias Oli.Accounts.User
+  alias OliWeb.Delivery.ActivityHelpers
 
   describe "stage_performance_details/3 for check-all-that-apply" do
     test "marks only non-negated choices as correct and aggregates counts per choice" do
@@ -41,7 +41,6 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
         %{activity_id: 10, response: "choice_a choice_b", count: 2},
         %{activity_id: 10, response: "choice_b", count: 1},
         %{activity_id: 10, response: "choice_c", count: 3},
-        # different activity id should be ignored
         %{activity_id: 11, response: "choice_a", count: 5}
       ]
 
@@ -132,6 +131,102 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                  "part_id" => "part_mc"
                }
              ] = responses
+    end
+  end
+
+  describe "stage_performance_details/3 for adaptive screens" do
+    test "adds per-input response summaries for adaptive parts" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 50,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_text",
+                  "type" => "janus-fill-blanks",
+                  "custom" => %{"title" => "Blank 1"}
+                },
+                %{"id" => "part_dropdown", "type" => "janus-dropdown"}
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_text",
+              num_first_attempts_correct: 3,
+              num_first_attempts: 5,
+              num_correct: 4,
+              num_attempts: 5
+            },
+            %{
+              part_id: "part_dropdown",
+              num_first_attempts_correct: 1,
+              num_first_attempts: 4,
+              num_correct: 2,
+              num_attempts: 4
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{
+          activity_id: 50,
+          part_id: "part_text",
+          count: 3,
+          users: [%User{id: 1, given_name: "Ann", family_name: "Smith"}]
+        },
+        %{
+          activity_id: 50,
+          part_id: "part_text",
+          count: 2,
+          users: [%User{id: 2, given_name: "Bob", family_name: "Jones"}]
+        },
+        %{
+          activity_id: 50,
+          part_id: "part_dropdown",
+          count: 4,
+          users: [%User{id: 1, given_name: "Ann", family_name: "Smith"}]
+        },
+        %{activity_id: 51, part_id: "ignored", count: 99, users: []}
+      ]
+
+      [%{adaptive_input_summaries: summaries}] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          response_summaries
+        )
+
+      assert [
+               %{
+                 part_id: "part_text",
+                 label: "Blank 1",
+                 component_type: "Fill Blanks",
+                 response_count: 5,
+                 student_count: 2,
+                 attempt_count: 5,
+                 first_attempt_pct: 0.6,
+                 all_attempt_pct: 0.8,
+                 order: 1
+               },
+               %{
+                 part_id: "part_dropdown",
+                 label: "Input 2",
+                 component_type: "Dropdown",
+                 response_count: 4,
+                 student_count: 1,
+                 attempt_count: 4,
+                 first_attempt_pct: 0.25,
+                 all_attempt_pct: 0.5,
+                 order: 2
+               }
+             ] = summaries
     end
   end
 
@@ -226,14 +321,12 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                %{text: "Hello world", users: ["Lee, Casey"], type: "text", part_id: "text_part"}
              ] = responses
 
-      # dropdown counts plus blank responses
       assert [
                %{"frequency" => 1, "content" => [%{"children" => [%{"text" => _}]} | _]},
                %{"id" => "1", "frequency" => 2},
                %{"id" => "2", "frequency" => 0}
              ] = content["choices"]
 
-      # ensures "0" placeholder added
       dropdown = content["inputs"] |> Enum.find(&(&1["inputType"] == "dropdown"))
       assert ["1", "2", "0"] = dropdown["choiceIds"]
     end

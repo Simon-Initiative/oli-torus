@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   alias Oli.Delivery.Attempts.Core
 
   alias Oli.Delivery.Attempts.ActivityLifecycle.ApplyClientEvaluation
+  alias Oli.Delivery.Attempts.ActivityLifecycle.RollUp
 
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
@@ -249,6 +250,14 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
         score_feedbacks_map
       ) do
     part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+
+    manual_part_attempt_guids =
+      part_attempts
+      |> Enum.filter(fn pa ->
+        pa.grading_approach == :manual and pa.lifecycle_state == :submitted
+      end)
+      |> Enum.map(& &1.attempt_guid)
+
     datashop_session_id = hd(part_attempts).datashop_session_id
     client_evaluations = to_client_evaluations(part_attempts, score_feedbacks_map)
 
@@ -278,10 +287,37 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
           maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
 
-          Enum.map(mocked_part_attempts, & &1.attempt_guid)
+          manual_part_attempt_guids
 
         {:error, error} ->
           Repo.rollback(error)
+      end
+    end)
+  end
+
+  @doc """
+  Repairs a stale manual grading item whose part attempts have already been evaluated,
+  but whose activity attempt is still marked as submitted.
+  """
+  def resolve_stale_attempt(
+        %Section{} = section,
+        %{
+          attempt_guid: activity_attempt_guid,
+          graded: graded,
+          resource_attempt_guid: resource_attempt_guid
+        }
+      ) do
+    Oli.Repo.transaction(fn ->
+      case RollUp.rollup_evaluated(activity_attempt_guid) do
+        :ok ->
+          maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
+          :ok
+
+        :error ->
+          Repo.rollback(:rollup_failed)
+
+        other ->
+          Repo.rollback(other)
       end
     end)
   end

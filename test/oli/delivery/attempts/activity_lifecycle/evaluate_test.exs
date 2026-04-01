@@ -312,4 +312,16 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.EvaluateTest do
       assert updated_attempt.out_of == 8.0
     end
   end
+
+  describe "calculate_manual_max_score/1" do
+    test "sums manual part out_of values and treats nil as zero" do
+      part_attempts = [
+        build(:part_attempt, out_of: nil),
+        build(:part_attempt, out_of: 2),
+        build(:part_attempt, out_of: 3.5)
+      ]
+
+      assert Evaluate.calculate_manual_max_score(part_attempts) == 5.5
+    end
+  end
 end

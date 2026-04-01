@@ -130,6 +130,7 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
             class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-6 -mt-5"
             id={"activity_detail_#{activity.id}"}
             phx-hook="LoadSurveyScripts"
+            data-preview-activity-bridge="true"
             phx-update="ignore"
           >
             <%= if Map.get(activity, :preview_rendered) != nil do %>

@@ -150,7 +150,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               max_score =
                 case is_manually_graded do
                   true ->
-                    manual_max = Enum.reduce(part_attempts, fn sum, pa -> sum + pa.out_of end)
+                    manual_max = calculate_manual_max_score(part_attempts)
                     Map.get(custom, "maxScore", manual_max)
 
                   false ->
@@ -646,5 +646,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       |> Repo.preload(resource_attempt: [:revision], revision: [])
 
     do_evaluate_submissions(activity_attempt, part_inputs, part_attempts)
+  end
+
+  @doc false
+  def calculate_manual_max_score(part_attempts) do
+    Enum.reduce(part_attempts, 0, fn pa, sum ->
+      sum + (pa.out_of || 0)
+    end)
   end
 end

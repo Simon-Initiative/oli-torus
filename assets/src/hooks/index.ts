@@ -36,6 +36,7 @@ import { ListNavigatorDropdown } from './list_navigator_dropdown';
 import { LiveModal } from './live_modal';
 import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
+import { ManualGradingScoreInput } from './manual_grading_score_input';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
 import { OnMountAndUpdate } from './on_mount_and_update';
@@ -104,6 +105,7 @@ export const Hooks = {
   BeforeUnloadListener,
   ThemeToggle,
   LtiConnectInstructions,
+  ManualGradingScoreInput,
   HierarchySelector,
   TextareaListener,
   LiveReact,

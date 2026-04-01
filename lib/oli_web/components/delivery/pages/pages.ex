@@ -51,7 +51,14 @@ defmodule OliWeb.Components.Delivery.Pages do
   ]
 
   def mount(socket) do
-    {:ok, assign(socket, scripts_loaded: false, table_model: nil, current_page: nil)}
+    {:ok,
+     assign(socket,
+       scripts_loaded: false,
+       table_model: nil,
+       current_page: nil,
+       loaded_activity_summaries: %{},
+       expanded_activity_ids: MapSet.new()
+     )}
   end
 
   def update(assigns, socket) do
@@ -132,11 +139,13 @@ defmodule OliWeb.Components.Delivery.Pages do
          assign(socket,
            table_model: table_model,
            total_count: total_count,
-           current_page: nil,
-           card_props: card_props,
-           attempts_options: attempts_options,
-           selected_attempts_options: selected_attempts_options,
-           selected_attempts_ids: selected_attempts_ids
+            current_page: nil,
+            loaded_activity_summaries: %{},
+            expanded_activity_ids: MapSet.new(),
+            card_props: card_props,
+            attempts_options: attempts_options,
+            selected_attempts_options: selected_attempts_options,
+            selected_attempts_ids: selected_attempts_ids
          )}
 
       resource_id ->
@@ -212,9 +221,34 @@ defmodule OliWeb.Components.Delivery.Pages do
 
             {total_count, rows} = apply_filters(activities_with_order, params)
 
-            selected_activities = params[:selected_activities]
-
             {:ok, table_model} = ActivitiesTableModel.new(rows)
+
+            page_revision =
+              DeliveryResolver.from_resource_id(
+                assigns.section.slug,
+                current_page.resource_id
+              )
+
+            socket =
+              socket
+              |> maybe_reset_activity_detail_state(current_page.resource_id)
+              |> assign(
+                current_page: current_page,
+                page_revision: page_revision,
+                activities: rows,
+                total_count: total_count,
+                students_with_attempts_count: Enum.count(students_with_attempts),
+                student_emails_without_attempts: student_emails_without_attempts,
+                total_attempts_count: count_attempts(current_page, assigns.section, student_ids),
+                rendered_activity_id: UUID.uuid4(),
+                card_activity_props: card_activity_props,
+                attempts_options: attempts_options,
+                selected_attempts_options: selected_attempts_options,
+                selected_attempts_ids: selected_attempts_ids,
+                avg_score_percentage: percentage_score
+                # this dynamic id is used to force the liveview to reload the activity details.
+                # Without it the activity details will not be rendered correctly when the applied card filters change
+              )
 
             table_model =
               table_model
@@ -224,31 +258,7 @@ defmodule OliWeb.Components.Delivery.Pages do
               })
               |> SortableTableModel.update_sort_params(params.sort_by)
 
-            {:ok,
-             assign(socket,
-               current_page: current_page,
-               page_revision:
-                 DeliveryResolver.from_resource_id(
-                   assigns.section.slug,
-                   current_page.resource_id
-                 ),
-               activities: rows,
-               table_model: table_model,
-               total_count: total_count,
-               students_with_attempts_count: Enum.count(students_with_attempts),
-               student_emails_without_attempts: student_emails_without_attempts,
-               total_attempts_count: count_attempts(current_page, assigns.section, student_ids),
-               rendered_activity_id: UUID.uuid4(),
-               card_activity_props: card_activity_props,
-               attempts_options: attempts_options,
-               selected_attempts_options: selected_attempts_options,
-               selected_attempts_ids: selected_attempts_ids,
-               avg_score_percentage: percentage_score,
-               selected_activities: selected_activities
-               # this dynamic id is used to force the liveview to reload the activity details.
-               # Without it the activity details will not be rendered correctly when the applied card filters change
-             )
-             |> assign_selected_activities(selected_activities)}
+            {:ok, assign_activity_details_state(assign(socket, table_model: table_model))}
         end
     end
   end
@@ -561,23 +571,22 @@ defmodule OliWeb.Components.Delivery.Pages do
   def handle_event("paged_table_selection_change", %{"id" => activity_resource_id}, socket)
       when not is_nil(socket.assigns.current_page) do
     activity_id = String.to_integer("#{activity_resource_id}")
-    current_selected = socket.assigns.params.selected_activities
+    expanded_activity_ids = socket.assigns.expanded_activity_ids
 
-    selected_activities =
-      if activity_id in current_selected,
-        do: current_selected,
-        else: [activity_id | current_selected]
+    if MapSet.member?(expanded_activity_ids, activity_id) do
+      {:noreply,
+       socket
+       |> assign(expanded_activity_ids: MapSet.delete(expanded_activity_ids, activity_id))
+       |> assign_activity_details_state()}
+    else
+      socket =
+        socket
+        |> maybe_load_activity_summary(activity_id)
+        |> assign(expanded_activity_ids: MapSet.put(expanded_activity_ids, activity_id))
+        |> assign_activity_details_state()
 
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_to(
-           socket,
-           update_params(socket.assigns.params, %{
-             selected_activities: selected_activities
-           })
-         )
-     )}
+      {:noreply, socket}
+    end
   end
 
   def handle_event("paged_table_selection_change", %{"id" => selected_resource_id}, socket) do
@@ -715,75 +724,109 @@ defmodule OliWeb.Components.Delivery.Pages do
     {:noreply, push_patch(socket, to: route_to(socket, updated_params))}
   end
 
-  defp assign_selected_activities(socket, selected_activities)
-       when selected_activities == [] do
-    case socket.assigns.table_model.rows do
-      [] ->
-        socket
+  defp assign_activity_details_state(%{assigns: %{table_model: nil}} = socket), do: socket
 
-      rows ->
-        assign_selected_activities(socket, [hd(rows).resource_id])
-    end
-  end
-
-  defp assign_selected_activities(socket, selected_activities) do
-    selected_activities =
-      Enum.filter(socket.assigns.activities, fn a -> a.resource_id in selected_activities end)
-
+  defp assign_activity_details_state(socket) do
     %{
-      section: section,
-      page_revision: page_revision,
-      students: students,
-      activity_types_map: activity_types_map,
-      scripts: scripts
+      table_model: table_model,
+      loaded_activity_summaries: loaded_activity_summaries,
+      expanded_activity_ids: expanded_activity_ids,
+      scripts: scripts,
+      activity_types_map: activity_types_map
     } = socket.assigns
 
-    # Extract resource_ids for batch query
-    resource_ids = Enum.map(selected_activities, & &1.resource_id)
-
-    # Single query for all selected activities
-    activity_summaries =
-      ActivityHelpers.summarize_activity_performance(
-        section,
-        page_revision,
-        activity_types_map,
-        students,
-        resource_ids
-      )
-
-    # Create a lookup map for O(1) access
-    summary_map = Map.new(activity_summaries, &{&1.resource_id, &1})
-
-    # Map back to selected activities with their summaries
     selected_activities =
-      Enum.map(selected_activities, fn a ->
-        Map.get(summary_map, a.resource_id, a)
-      end)
+      loaded_activity_summaries
+      |> Map.values()
+      |> Enum.sort_by(& &1.order)
+
+    expanded_rows =
+      expanded_activity_ids
+      |> Enum.map(&"row_#{&1}")
+      |> MapSet.new()
 
     table_model =
-      socket.assigns.table_model
+      table_model
       |> Map.update!(:data, fn data ->
         Map.merge(data, %{
           selected_activities: selected_activities,
+          expanded_activity_ids: expanded_activity_ids,
+          expanded_rows: expanded_rows,
           scripts: scripts,
           activity_types_map: activity_types_map,
           target: socket.assigns.myself
         })
       end)
 
-    socket
-    |> assign(
-      table_model: table_model,
-      selected_activities: selected_activities
-    )
-    |> case do
-      %{assigns: %{scripts_loaded: true}} = socket ->
+    socket =
+      assign(socket,
+        table_model: table_model,
+        selected_activities: selected_activities
+      )
+
+    if socket.assigns.scripts_loaded do
+      socket
+    else
+      push_event(socket, "load_survey_scripts", %{
+        script_sources: socket.assigns.scripts
+      })
+    end
+  end
+
+  defp maybe_load_activity_summary(
+         %{assigns: %{loaded_activity_summaries: loaded_activity_summaries}} = socket,
+         activity_id
+       )
+       when is_map_key(loaded_activity_summaries, activity_id),
+       do: socket
+
+  defp maybe_load_activity_summary(socket, activity_id) do
+    %{
+      activities: activities,
+      section: section,
+      page_revision: page_revision,
+      students: students,
+      activity_types_map: activity_types_map
+    } = socket.assigns
+
+    case Enum.find(activities, &(&1.resource_id == activity_id)) do
+      nil ->
         socket
 
-      socket ->
-        push_event(socket, "load_survey_scripts", %{
-          script_sources: socket.assigns.scripts
-        })
+      activity ->
+        summary =
+          ActivityHelpers.summarize_activity_performance(
+            section,
+            page_revision,
+            activity_types_map,
+            students,
+            [activity_id]
+          )
+          |> List.first()
+          |> case do
+            nil -> activity
+            summary -> Map.put(summary, :order, activity.order)
+          end
+
+        assign(
+          socket,
+          :loaded_activity_summaries,
+          Map.put(socket.assigns.loaded_activity_summaries, activity_id, summary)
+        )
+    end
+  end
+
+  defp maybe_reset_activity_detail_state(socket, current_page_resource_id) do
+    case socket.assigns[:current_page] do
+      %{resource_id: ^current_page_resource_id} ->
+        socket
+
+      _ ->
+        assign(socket,
+          loaded_activity_summaries: %{},
+          expanded_activity_ids: MapSet.new(),
+          selected_activities: []
+        )
     end
   end
 

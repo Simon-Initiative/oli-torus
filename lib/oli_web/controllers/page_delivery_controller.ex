@@ -1038,42 +1038,50 @@ defmodule OliWeb.PageDeliveryController do
           user ->
             activity_types = Activities.activities_for_section()
 
-            conn
-            |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
-            |> put_view(OliWeb.ResourceView)
-            |> render("advanced_page_preview.html",
-              user: user,
-              additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
-              activity_types: activity_types,
-              scripts: Activities.get_activity_scripts(:delivery_script),
-              part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
-              user: user,
-              project_slug: section_slug,
-              title: revision.title,
-              preview_mode: true,
-              display_curriculum_item_numbering: true,
-              app_params: %{
-                activityTypes: activity_types,
-                resourceId: revision.resource_id,
-                sectionSlug: section_slug,
-                userId: user.id,
-                pageSlug: revision.slug,
-                pageTitle: revision.title,
-                content: revision.content,
-                graded: revision.graded,
-                resourceAttemptState: nil,
-                resourceAttemptGuid: nil,
-                activityGuidMapping: nil,
-                previousPageURL: nil,
-                nextPageURL: nil,
-                previewMode: true,
-                isInstructor: true
-              }
+            render_advanced_page_preview(
+              conn,
+              section_slug,
+              revision,
+              user,
+              revision.content,
+              revision.graded,
+              activity_types
             )
         end
 
       revision ->
         render_page_preview(conn, section_slug, revision)
+    end
+  end
+
+  def adaptive_screen_preview(
+        conn,
+        %{
+          "section_slug" => section_slug,
+          "page_revision_slug" => page_revision_slug,
+          "revision_slug" => revision_slug
+        }
+      ) do
+    activity_types = Activities.activities_for_section()
+
+    with %{activity_type_id: activity_type_id} = screen_revision <-
+           Resolver.from_revision_slug(section_slug, revision_slug),
+         %{slug: "oli_adaptive"} <- Enum.find(activity_types, &(&1.id == activity_type_id)),
+         %{content: %{"advancedDelivery" => true}} = page_revision <-
+           Resolver.from_revision_slug(section_slug, page_revision_slug),
+         user when not is_nil(user) <- current_preview_user(conn) do
+      render_advanced_page_preview(
+        conn,
+        section_slug,
+        page_revision,
+        user,
+        build_adaptive_screen_preview_content(page_revision, screen_revision),
+        page_revision.graded,
+        activity_types
+      )
+    else
+      _ ->
+        render(conn, "error.html")
     end
   end
 
@@ -1206,6 +1214,74 @@ defmodule OliWeb.PageDeliveryController do
       }
     )
   end
+
+  defp render_advanced_page_preview(
+         conn,
+         section_slug,
+         revision,
+         user,
+         content,
+         graded,
+         activity_types
+       ) do
+    conn
+    |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
+    |> put_view(OliWeb.ResourceView)
+    |> render("advanced_page_preview.html",
+      user: user,
+      additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
+      activity_types: activity_types,
+      scripts: Activities.get_activity_scripts(:delivery_script),
+      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
+      project_slug: section_slug,
+      title: revision.title,
+      preview_mode: true,
+      display_curriculum_item_numbering: true,
+      app_params: %{
+        activityTypes: activity_types,
+        resourceId: revision.resource_id,
+        sectionSlug: section_slug,
+        userId: user.id,
+        pageSlug: revision.slug,
+        pageTitle: revision.title,
+        content: content,
+        graded: graded,
+        resourceAttemptState: nil,
+        resourceAttemptGuid: nil,
+        activityGuidMapping: nil,
+        previousPageURL: nil,
+        nextPageURL: nil,
+        previewMode: true,
+        isInstructor: true
+      }
+    )
+  end
+
+  defp build_adaptive_screen_preview_content(page_revision, screen_revision) do
+    page_revision.content
+    |> Map.update("custom", %{"insightsStageOnlyPreview" => true}, fn custom ->
+      Map.put(custom, "insightsStageOnlyPreview", true)
+    end)
+    |> Map.put("model", [
+      %{
+        "type" => "group",
+        "layout" => "deck",
+        "children" => [
+          %{
+            "type" => "activity-reference",
+            "activity_id" => screen_revision.resource_id,
+            "custom" => %{
+              "sequenceId" => "insights-screen-#{screen_revision.resource_id}",
+              "sequenceName" => screen_revision.title
+            }
+          }
+        ]
+      }
+    ])
+  end
+
+  defp current_preview_user(conn),
+    do: conn.assigns[:current_user] || conn.assigns[:current_author]
 
   # ----------------------------------------------------------
   # END PREVIEW

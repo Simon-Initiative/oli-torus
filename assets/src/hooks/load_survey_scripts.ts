@@ -23,7 +23,12 @@ export const LoadSurveyScripts = {
       );
       Promise.all(scriptPromises)
         .then(() => {
-          window.OLI.initActivityBridge(elem.id);
+          const usePreviewActivityBridge = elem.dataset.previewActivityBridge === 'true';
+          const initBridge = usePreviewActivityBridge
+            ? window.OLI.initPreviewActivityBridge
+            : window.OLI.initActivityBridge;
+
+          initBridge(elem.id);
           this.pushEventTo(`#${elem.id}`, 'survey_scripts_loaded');
         })
         .catch(() => {

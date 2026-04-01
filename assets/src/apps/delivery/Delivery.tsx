@@ -207,6 +207,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   const dialogImageUrl = content?.custom?.logoutPanelImageURL;
   const dialogMessage = content?.custom?.logoutMessage;
   const fullscreen = !content?.displayApplicationChrome;
+  const insightsStageOnlyPreview = !!content?.custom?.insightsStageOnlyPreview;
   const adaptiveDialogueBridgeEnabled =
     !!content?.advancedDelivery &&
     !!content?.displayApplicationChrome &&
@@ -228,7 +229,8 @@ const Delivery: React.FC<DeliveryProps> = ({
         activityAttemptGuid={currentActivityAttemptGuid}
         enabled={adaptiveDialogueBridgeEnabled}
       />
-      {(previewMode || (reviewMode && (isInstructor || isAdmin || isAuthor))) && (
+      {!insightsStageOnlyPreview &&
+      (previewMode || (reviewMode && (isInstructor || isAdmin || isAuthor))) && (
         <PreviewTools reviewMode={reviewMode} isInstructor={isInstructor} model={content?.model} />
       )}
       <div className="mainView" role="main" style={{ width: windowWidth }}>

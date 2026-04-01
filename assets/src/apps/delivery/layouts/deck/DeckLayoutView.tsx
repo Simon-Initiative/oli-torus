@@ -51,6 +51,7 @@ const InjectedStyles: React.FC<{ css?: string }> = (props) => {
 
 const sharedActivityInit = new Map();
 let sharedActivityPromise: any;
+const insightsPreviewInset = 16;
 
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
@@ -68,6 +69,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const reviewMode = useSelector(selectReviewMode);
   const isEnd = useSelector(selectLessonEnd);
   const sequence = useSelector(selectSequence);
+  const insightsStageOnlyPreview = !!pageContent?.custom?.insightsStageOnlyPreview;
   const defaultClasses: any[] = useMemo(
     () => ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'],
     [previewMode],
@@ -852,26 +854,41 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }
     >
       <style>{`style { display: none !important; }`}</style>
-      <DeckLayoutHeader
-        pageName={pageTitle}
-        backUrl={pageContent?.backUrl}
-        userName={currentUserName}
-        activityName=""
-        showScore={true}
-        themeId={pageContent?.custom?.themeId}
-      />
-      <div className={backgroundClasses.join(' ')} style={backgroundStyles} />
+      {pageContent ? <InjectedStyles css={pageContent?.customCss} /> : null}
       {pageContent ? (
-        <div className="stageContainer columnRestriction" style={lessonStyles}>
-          <InjectedStyles css={pageContent?.customCss} />
-          <div id="stage-stage">
+        insightsStageOnlyPreview ? (
+          <div
+            style={{
+              padding: `${insightsPreviewInset}px`,
+              boxSizing: 'border-box',
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
             <div className="stage-content-wrapper">{renderActivities()}</div>
           </div>
-        </div>
+        ) : (
+          <>
+            <DeckLayoutHeader
+              pageName={pageTitle}
+              backUrl={pageContent?.backUrl}
+              userName={currentUserName}
+              activityName=""
+              showScore={true}
+              themeId={pageContent?.custom?.themeId}
+            />
+            <div className={backgroundClasses.join(' ')} style={backgroundStyles} />
+            <div className="stageContainer columnRestriction" style={lessonStyles}>
+              <div id="stage-stage">
+                <div className="stage-content-wrapper">{renderActivities()}</div>
+              </div>
+            </div>
+            <DeckLayoutFooter />
+          </>
+        )
       ) : (
         <div>loading...</div>
       )}
-      <DeckLayoutFooter />
     </div>
   );
 };
