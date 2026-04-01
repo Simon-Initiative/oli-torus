@@ -61,6 +61,43 @@ type TextStyleOption = 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'caption';
 const STYLE_DIVIDER_VALUE = '__style-divider__';
 const NORMAL_FONT_CODE = getFontName('Open Sans');
 const NORMAL_FONT_SIZE = '16px';
+const QUILL_COLOR_PALETTE = [
+  '#000000',
+  '#e60000',
+  '#ff9900',
+  '#ffff00',
+  '#008a00',
+  '#0066cc',
+  '#9933ff',
+  '#ffffff',
+  '#facccc',
+  '#ffebcc',
+  '#ffffcc',
+  '#cce8cc',
+  '#cce0f5',
+  '#ebd6ff',
+  '#bbbbbb',
+  '#f06666',
+  '#ffc266',
+  '#ffff66',
+  '#66b966',
+  '#66a3e0',
+  '#c285ff',
+  '#888888',
+  '#a10000',
+  '#b26b00',
+  '#b2b200',
+  '#006100',
+  '#0047b2',
+  '#6b24b2',
+  '#444444',
+  '#5c0000',
+  '#663d00',
+  '#666600',
+  '#003700',
+  '#002966',
+  '#3d1466',
+];
 const textStyleDefaults: Record<
   Exclude<TextStyleOption, 'normal'>,
   { font: string; size: string; header: number | false }
@@ -134,6 +171,74 @@ const applyTextStyle = (editor: any, rawStyleValue: string) => {
 
   editor.format('font', defaults.font, 'user');
   editor.format('size', defaults.size, 'user');
+};
+
+const normalizeHexColor = (rawInput: string): string | null => {
+  const trimmed = rawInput.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const candidate = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+  const shortHexMatch = candidate.match(/^#([0-9a-fA-F]{3})$/);
+  if (shortHexMatch) {
+    const [r, g, b] = shortHexMatch[1].split('');
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+
+  const fullHexMatch = candidate.match(/^#([0-9a-fA-F]{6})$/);
+  if (fullHexMatch) {
+    return `#${fullHexMatch[1].toLowerCase()}`;
+  }
+
+  return null;
+};
+
+const attachInlineCustomColorControl = (
+  pickerEl: Element,
+  format: 'color' | 'background',
+  applyColor: (format: 'color' | 'background', color: string) => void,
+) => {
+  const optionsEl = pickerEl.querySelector('.ql-picker-options');
+  if (!optionsEl || optionsEl.querySelector('.ql-custom-color-row')) {
+    return;
+  }
+
+  const row = document.createElement('div');
+  row.className = 'ql-custom-color-row';
+
+  const label = document.createElement('span');
+  label.className = 'ql-custom-color-label';
+  label.textContent = 'Custom';
+
+  const input = document.createElement('input');
+  input.className = 'ql-custom-color-input';
+  input.type = 'text';
+  input.placeholder = '#1a73e8';
+  input.setAttribute('aria-label', `Custom ${format} hex color`);
+
+  const applyIfValid = () => {
+    const normalizedHex = normalizeHexColor(input.value);
+    if (!normalizedHex) {
+      return;
+    }
+    applyColor(format, normalizedHex);
+    input.value = normalizedHex;
+  };
+
+  input.addEventListener('mousedown', (event) => event.stopPropagation());
+  input.addEventListener('click', (event) => event.stopPropagation());
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      applyIfValid();
+    }
+  });
+  input.addEventListener('blur', () => applyIfValid());
+
+  row.appendChild(label);
+  row.appendChild(input);
+  optionsEl.appendChild(row);
 };
 
 const BaseImage = Quill.import('formats/image');
@@ -215,6 +320,43 @@ const fontStyles = `${getCssForFonts(supportedFonts)}
 .ql-snow .ql-picker.ql-font .ql-picker-item[data-value="__font-divider__"]::before,
 .ql-snow .ql-picker.ql-textStyle .ql-picker-item[data-value="${STYLE_DIVIDER_VALUE}"]::before {
   content: '';
+}
+.ql-snow .ql-picker.ql-color.ql-expanded .ql-picker-options,
+.ql-snow .ql-picker.ql-background.ql-expanded .ql-picker-options {
+  display: flow-root;
+  white-space: normal;
+}
+.ql-snow .ql-custom-color-row {
+  clear: both;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 4px 3px;
+  border-top: 1px solid #d0d7de;
+  box-sizing: border-box;
+}
+.ql-snow .ql-custom-color-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #444;
+  line-height: 20px;
+  white-space: nowrap;
+}
+.ql-snow .ql-custom-color-input {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  border: 1px solid #d0d7de;
+  border-radius: 3px;
+  padding: 0 5px;
+  font-size: 12px;
+  line-height: 22px;
+  box-sizing: border-box;
+}
+.ql-snow .ql-custom-color-input:focus {
+  outline: none;
+  border-color: #0969da;
 }
 .ql-snow .ql-picker.ql-textStyle {
   width: 116px;
@@ -544,9 +686,48 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
       root.removeEventListener('click', onEditorClick, true);
     };
   }, [openLinkDialog]);
+  const applyColorFormat = React.useCallback(
+    (format: 'color' | 'background', value: string) => {
+      const editor = quill?.current?.getEditor();
+      if (!editor) {
+        return;
+      }
+      editor.format(format, value, 'user');
+    },
+    [quill],
+  );
+
+  useEffect(() => {
+    const editor = quill?.current?.getEditor();
+    if (!editor) {
+      return;
+    }
+
+    const toolbarContainer = editor.getModule('toolbar')?.container as HTMLElement | undefined;
+    if (!toolbarContainer) {
+      return;
+    }
+
+    const colorPicker = toolbarContainer.querySelector('.ql-picker.ql-color');
+    const backgroundPicker = toolbarContainer.querySelector('.ql-picker.ql-background');
+
+    if (colorPicker) {
+      attachInlineCustomColorControl(colorPicker, 'color', applyColorFormat);
+    }
+    if (backgroundPicker) {
+      attachInlineCustomColorControl(backgroundPicker, 'background', applyColorFormat);
+    }
+  }, [applyColorFormat]);
+
   const customHandlers = {
     textStyle: function (value: string) {
       applyTextStyle(this.quill, value);
+    },
+    color: function (value: string) {
+      this.quill.format('color', value, 'user');
+    },
+    background: function (value: string) {
+      this.quill.format('background', value, 'user');
     },
     adaptivity: function (value: string) {
       const range = this.quill.getSelection();
@@ -728,46 +909,10 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         [{ textStyle: ['normal', STYLE_DIVIDER_VALUE, 'h1', 'h2', 'h3', 'h4', 'caption'] }],
         [
           {
-            color: [
-              '#000000',
-              '#e60000',
-              '#ff9900',
-              '#ffff00',
-              '#008a00',
-              '#0066cc',
-              '#9933ff',
-              '#ffffff',
-              '#facccc',
-              '#ffebcc',
-              '#ffffcc',
-              '#cce8cc',
-              '#cce0f5',
-              '#ebd6ff',
-              '#bbbbbb',
-              '#f06666',
-              '#ffc266',
-              '#ffff66',
-              '#66b966',
-              '#66a3e0',
-              '#c285ff',
-              '#888888',
-              '#a10000',
-              '#b26b00',
-              '#b2b200',
-              '#006100',
-              '#0047b2',
-              '#6b24b2',
-              '#444444',
-              '#5c0000',
-              '#663d00',
-              '#666600',
-              '#003700',
-              '#002966',
-              '#3d1466',
-            ],
+            color: QUILL_COLOR_PALETTE,
           },
-          { background: [] },
-        ], // dropdown with defaults from theme
+          { background: QUILL_COLOR_PALETTE },
+        ],
         [
           {
             font: [
