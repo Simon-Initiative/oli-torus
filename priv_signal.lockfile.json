@@ -3515,6 +3515,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_12ac95ee0854a716",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "enrolled_learner_count/1",
+        "module": "Oli.InstructorDashboard.Oracles.Grades",
+        "lines": [
+          256
+        ],
+        "file_path": "lib/oli/instructor_dashboard/oracles/grades.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_12acff9dd470f903",
       "node_type": "source",
       "role": {
@@ -4372,7 +4391,7 @@
         "function": "graded_pages_query/1",
         "module": "Oli.InstructorDashboard.Oracles.Grades",
         "lines": [
-          193
+          213
         ],
         "file_path": "lib/oli/instructor_dashboard/oracles/grades.ex"
       },
@@ -7617,7 +7636,7 @@
         "function": "students_without_attempt_emails/2",
         "module": "Oli.InstructorDashboard.Oracles.Grades",
         "lines": [
-          129
+          149
         ],
         "file_path": "lib/oli/instructor_dashboard/oracles/grades.ex"
       },
@@ -10536,17 +10555,17 @@
       },
       "evidence": [
         {
-          "line": 325,
+          "line": 356,
           "signal": "key_match",
           "rule": "telemetry_prd",
-          "finding_id": "54590768d5e5f880",
+          "finding_id": "e6f13c715c98ea9b",
           "ast_kind": "key_match"
         },
         {
-          "line": 325,
+          "line": 356,
           "signal": "token_match",
           "rule": "telemetry_prd",
-          "finding_id": "54590768d5e5f880",
+          "finding_id": "e6f13c715c98ea9b",
           "ast_kind": "token"
         }
       ],
@@ -10555,7 +10574,7 @@
         "function": "emit_execute_error/4",
         "module": "Oli.InstructorDashboard.Oracles.Grades",
         "lines": [
-          325
+          356
         ],
         "file_path": "lib/oli/instructor_dashboard/oracles/grades.ex"
       },
@@ -21021,7 +21040,7 @@
         "function": "graded_pages_in_scope/2",
         "module": "Oli.InstructorDashboard.Oracles.Grades",
         "lines": [
-          180
+          200
         ],
         "file_path": "lib/oli/instructor_dashboard/oracles/grades.ex"
       },
@@ -25883,17 +25902,17 @@
       },
       "evidence": [
         {
-          "line": 154,
+          "line": 155,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "ab1e0e196dff2807",
+          "finding_id": "40bc0deb2e463afe",
           "ast_kind": "token"
         },
         {
-          "line": 154,
+          "line": 155,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "ab1e0e196dff2807",
+          "finding_id": "40bc0deb2e463afe",
           "ast_kind": "unknown"
         }
       ],
@@ -25902,7 +25921,7 @@
         "function": "handle_params/3",
         "module": "OliWeb.Delivery.Student.LearnLive",
         "lines": [
-          154
+          155
         ],
         "file_path": "lib/oli_web/live/delivery/student/learn_live.ex"
       },
@@ -29798,17 +29817,17 @@
       },
       "evidence": [
         {
-          "line": 311,
+          "line": 342,
           "signal": "key_match",
           "rule": "telemetry_prd",
-          "finding_id": "cb092bc96b1c727b",
+          "finding_id": "4d77928edd5b7d6a",
           "ast_kind": "key_match"
         },
         {
-          "line": 311,
+          "line": 342,
           "signal": "token_match",
           "rule": "telemetry_prd",
-          "finding_id": "cb092bc96b1c727b",
+          "finding_id": "4d77928edd5b7d6a",
           "ast_kind": "token"
         }
       ],
@@ -29817,7 +29836,7 @@
         "function": "emit_execute_telemetry/6",
         "module": "Oli.InstructorDashboard.Oracles.Grades",
         "lines": [
-          311
+          342
         ],
         "file_path": "lib/oli/instructor_dashboard/oracles/grades.ex"
       },
@@ -30156,7 +30175,7 @@
         "function": "scores_by_page/2",
         "module": "Oli.InstructorDashboard.Oracles.Grades",
         "lines": [
-          224
+          244
         ],
         "file_path": "lib/oli/instructor_dashboard/oracles/grades.ex"
       },
@@ -34710,17 +34729,17 @@
       },
       "evidence": [
         {
-          "line": 418,
+          "line": 427,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "798424a4e5cbf629",
+          "finding_id": "8db0952d00fcbdaf",
           "ast_kind": "token"
         },
         {
-          "line": 418,
+          "line": 427,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "798424a4e5cbf629",
+          "finding_id": "8db0952d00fcbdaf",
           "ast_kind": "unknown"
         }
       ],
@@ -34729,7 +34748,7 @@
         "function": "assign_dashboard_tab/3",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          418
+          427
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -44622,7 +44641,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "f8a6192a14ee8522f3b4f0d1d4d92f5712f2b1f7"
+    "commit": "389e4f3f5772fb90cd2147693a55025eb1283a82"
   },
   "schema_version": "1",
   "summary": {
@@ -44633,9 +44652,9 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1608,
-    "scan_duration_ms": 1786,
-    "node_count": 1532,
+    "files_scanned": 1611,
+    "scan_duration_ms": 1831,
+    "node_count": 1533,
     "data_node_count": 122,
     "flow_count": 781,
     "scan_error_count": 0,
@@ -44644,14 +44663,14 @@
     "proto_flows_enabled": true,
     "node_type_counts": {
       "sink": 611,
-      "source": 921
+      "source": 922
     },
     "boundary_counts": {
       "external": 481,
       "internal": 300
     },
     "confirmed_count": 162,
-    "possible_count": 1370
+    "possible_count": 1371
   },
   "flows": [
     {
