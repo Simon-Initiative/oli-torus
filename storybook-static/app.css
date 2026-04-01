@@ -3992,6 +3992,10 @@ select {
   color: #218358;
 }
 
+.border-Fill-Accent-fill-accent-green-bold {
+  border-color: #218358;
+}
+
 .dark .border-Fill-Accent-fill-accent-green-bold {
   border-color: #218358;
 }
@@ -5002,6 +5006,10 @@ select {
 
 .dark .text-Border-border-hover {
   color: #524D59;
+}
+
+.border-Border-border-hover {
+  border-color: #8AB8E5;
 }
 
 .dark .border-Border-border-hover {
@@ -8324,6 +8332,10 @@ select {
   color: #FF8787;
 }
 
+.border-Icon-icon-danger {
+  border-color: #CE2C31;
+}
+
 .dark .border-Icon-icon-danger {
   border-color: #FF8787;
 }
@@ -10150,6 +10162,10 @@ select {
 
 .dark .focus-visible-ring-Specially-Tokens-Border-border-input-focused:focus-visible {
   box-shadow: 0 0 0 4px #3B3740;
+}
+
+.bg-Specially-Tokens-Border-border-card-completed {
+  background-color: #E6E9F2;
 }
 
 .dark .bg-Specially-Tokens-Border-border-card-completed {
@@ -15432,8 +15448,16 @@ table.table-striped tbody tr:nth-child(even) {
   bottom: 1rem;
 }
 
+.bottom-\[34px\] {
+  bottom: 34px;
+}
+
 .bottom-\[calc\(100\%\+8px\)\] {
   bottom: calc(100% + 8px);
+}
+
+.bottom-full {
+  bottom: 100%;
 }
 
 .left-0 {
@@ -15999,6 +16023,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: 0.5rem !important;
 }
 
+.-mb-px {
+  margin-bottom: -1px;
+}
+
 .-ml-10 {
   margin-left: -2.5rem;
 }
@@ -16117,6 +16145,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .mb-\[10px\] {
   margin-bottom: 10px;
+}
+
+.mb-\[6px\] {
+  margin-bottom: 6px;
 }
 
 .mb-\[9px\] {
@@ -16647,6 +16679,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 120px;
 }
 
+.h-\[138px\] {
+  height: 138px;
+}
+
 .h-\[160px\] {
   height: 160px;
 }
@@ -16681,6 +16717,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[22px\] {
   height: 22px;
+}
+
+.h-\[242px\] {
+  height: 242px;
 }
 
 .h-\[247px\] {
@@ -16801,6 +16841,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[64px\] {
   height: 64px;
+}
+
+.h-\[68px\] {
+  height: 68px;
 }
 
 .h-\[6px\] {
@@ -16968,12 +17012,20 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 100vh;
 }
 
+.min-h-\[112px\] {
+  min-height: 112px;
+}
+
 .min-h-\[150px\] {
   min-height: 150px;
 }
 
 .min-h-\[20rem\] {
   min-height: 20rem;
+}
+
+.min-h-\[22px\] {
+  min-height: 22px;
 }
 
 .min-h-\[300px\] {
@@ -17296,6 +17348,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 18px;
 }
 
+.w-\[19px\] {
+  width: 19px;
+}
+
 .w-\[1px\] {
   width: 1px;
 }
@@ -17424,6 +17480,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 65rem;
 }
 
+.w-\[68px\] {
+  width: 68px;
+}
+
 .w-\[70px\] {
   width: 70px;
 }
@@ -17539,6 +17599,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: 180px;
 }
 
+.min-w-\[181px\] {
+  min-width: 181px;
+}
+
 .min-w-\[200px\] {
   min-width: 200px;
 }
@@ -17549,6 +17613,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-w-\[220px\] {
   min-width: 220px;
+}
+
+.min-w-\[26px\] {
+  min-width: 26px;
 }
 
 .min-w-\[2rem\] {
@@ -17684,8 +17752,16 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 535px;
 }
 
+.max-w-\[583px\] {
+  max-width: 583px;
+}
+
 .max-w-\[600px\] {
   max-width: 600px;
+}
+
+.max-w-\[666px\] {
+  max-width: 666px;
 }
 
 .max-w-\[760px\] {
@@ -17936,6 +18012,11 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.rotate-\[-90deg\] {
+  --tw-rotate: -90deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .scale-100 {
   --tw-scale-x: 1;
   --tw-scale-y: 1;
@@ -18136,6 +18217,14 @@ table.table-striped tbody tr:nth-child(even) {
 
 .grid-cols-1 {
   grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-cols-10 {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+
+.grid-cols-11 {
+  grid-template-columns: repeat(11, minmax(0, 1fr));
 }
 
 .grid-cols-12 {
@@ -18366,6 +18455,10 @@ table.table-striped tbody tr:nth-child(even) {
   gap: 42px;
 }
 
+.gap-\[4px\] {
+  gap: 4px;
+}
+
 .gap-\[50px\] {
   gap: 50px;
 }
@@ -18554,6 +18647,18 @@ table.table-striped tbody tr:nth-child(even) {
   --tw-space-y-reverse: 0;
   margin-top: calc(2rem * calc(1 - var(--tw-space-y-reverse)));
   margin-bottom: calc(2rem * var(--tw-space-y-reverse));
+}
+
+.space-y-\[10px\] > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(10px * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(10px * var(--tw-space-y-reverse));
+}
+
+.space-y-\[6px\] > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(6px * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(6px * var(--tw-space-y-reverse));
 }
 
 .divide-x > :not([hidden]) ~ :not([hidden]) {
@@ -18858,6 +18963,11 @@ table.table-striped tbody tr:nth-child(even) {
 .rounded-t-3xl {
   border-top-left-radius: 1.5rem;
   border-top-right-radius: 1.5rem;
+}
+
+.rounded-t-\[3px\] {
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
 }
 
 .rounded-t-\[4px\] {
@@ -20783,6 +20893,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 11px;
 }
 
+.px-\[15px\] {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
 .px-\[20px\] {
   padding-left: 20px;
   padding-right: 20px;
@@ -20918,6 +21033,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 10px;
 }
 
+.py-\[15px\] {
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+
 .py-\[3px\] {
   padding-top: 3px;
   padding-bottom: 3px;
@@ -21008,8 +21128,16 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 2rem;
 }
 
+.pb-\[19px\] {
+  padding-bottom: 19px;
+}
+
 .pb-\[20px\] {
   padding-bottom: 20px;
+}
+
+.pb-\[34px\] {
+  padding-bottom: 34px;
 }
 
 .pb-\[3px\] {
@@ -21110,6 +21238,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pl-\[3\.12px\] {
   padding-left: 3.12px;
+}
+
+.pl-\[40px\] {
+  padding-left: 40px;
 }
 
 .pl-\[5px\] {
@@ -21260,12 +21392,20 @@ table.table-striped tbody tr:nth-child(even) {
   padding-top: 27px;
 }
 
+.pt-\[2px\] {
+  padding-top: 2px;
+}
+
 .pt-\[30px\] {
   padding-top: 30px;
 }
 
 .pt-\[5px\] {
   padding-top: 5px;
+}
+
+.pt-\[6px\] {
+  padding-top: 6px;
 }
 
 .pt-\[7px\] {
@@ -22498,6 +22638,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow-\[0px_1px_0px_0px_rgba\(245\2c 245\2c 245\2c 1\.00\)\] {
   --tw-shadow: 0px 1px 0px 0px rgba(245,245,245,1.00);
   --tw-shadow-colored: 0px 1px 0px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-\[0px_1px_2px_0px_rgba\(0\2c 0\2c 0\2c 0\.18\)\] {
+  --tw-shadow: 0px 1px 2px 0px rgba(0,0,0,0.18);
+  --tw-shadow-colored: 0px 1px 2px 0px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -29252,6 +29398,10 @@ Not supports in Firefox and IE */
 
 .focus-visible\:outline-offset-2:focus-visible {
   outline-offset: 2px;
+}
+
+.focus-visible\:outline-offset-\[-2px\]:focus-visible {
+  outline-offset: -2px;
 }
 
 .focus-visible\:outline-delivery-primary:focus-visible {
