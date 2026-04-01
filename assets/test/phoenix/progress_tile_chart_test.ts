@@ -1,7 +1,7 @@
-jest.mock('vega-embed', () => jest.fn());
-
 import embed from 'vega-embed';
 import { ProgressTileChart } from 'hooks/progress_tile_chart';
+
+jest.mock('vega-embed', () => jest.fn());
 
 describe('ProgressTileChart hook', () => {
   const embedMock = embed as jest.MockedFunction<typeof embed>;
@@ -93,16 +93,14 @@ describe('ProgressTileChart hook', () => {
   });
 
   it('does not clear the current spec when a stale render fails after a newer render succeeds', async () => {
-    let rejectFirstRender:
-      | ((reason?: unknown) => void)
-      | undefined;
+    let rejectFirstRender: ((reason?: unknown) => void) | undefined;
 
     embedMock
       .mockImplementationOnce(
         () =>
           new Promise((_, reject) => {
             rejectFirstRender = reject;
-          }) as any
+          }) as any,
       )
       .mockResolvedValueOnce({
         view: { finalize: jest.fn(), resize: jest.fn(() => ({ run: jest.fn() })) },
