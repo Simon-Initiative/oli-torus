@@ -1090,6 +1090,10 @@ select {
   box-shadow: 0 0 0 4px #1B191F;
 }
 
+.bg-Surface-surface-transparent {
+  background-color: #FFFFFFCC;
+}
+
 .dark .bg-Surface-surface-transparent {
   background-color: #1B191F80;
 }
@@ -5682,6 +5686,10 @@ select {
 
 .dark .ring-Text-text-white {
   --tw-ring-color: #FFFFFF;
+}
+
+.fill-Text-text-white {
+  fill: #FFFFFF;
 }
 
 .dark .fill-Text-text-white {
@@ -17522,6 +17530,14 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: 300px;
 }
 
+.min-w-\[30px\] {
+  min-width: 30px;
+}
+
+.min-w-\[40px\] {
+  min-width: 40px;
+}
+
 .min-w-\[48px\] {
   min-width: 48px;
 }
@@ -27692,6 +27708,14 @@ Not supports in Firefox and IE */
   outline-color: #0062F2;
 }
 
+.focus-visible\:ring-Fill-Buttons-fill-primary:focus-visible {
+  --tw-ring-color: #0062F2;
+}
+
+.dark .focus-visible\:ring-Fill-Buttons-fill-primary:focus-visible {
+  --tw-ring-color: #0062F2;
+}
+
 .active\:bg-Surface-surface-secondary:active {
   background-color: #FFFFFF;
 }
@@ -33089,4 +33113,9 @@ Not supports in Firefox and IE */
 
 .\[\&\>path\]\:stroke-current>path {
   stroke: currentColor;
+}
+
+.\[\&\[open\]_\.tile-chevron\]\:rotate-180[open] .tile-chevron {
+  --tw-rotate: 180deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
