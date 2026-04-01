@@ -201,7 +201,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       assessments_projection={Map.get(@dashboard, :assessments_projection, %{})}
       assessments_tile_state={Map.get(assigns, :assessments_tile_state, %{})}
       ctx={Map.get(assigns, :ctx)}
-      section_slug={@section_slug}
       section_id={@course_section_id}
       section_title={@section_title}
       instructor_email={@instructor_email}
