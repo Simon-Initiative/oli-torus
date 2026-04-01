@@ -55,6 +55,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
           page: pos_integer(),
           visible_count: pos_integer()
         }
+  @type assessments_tile_state :: %{
+          expanded_assessment_id: pos_integer() | nil
+        }
   @type progress_tile_state :: %{
           completion_threshold: 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100,
           y_axis_mode: :count | :percent,
@@ -409,9 +412,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
     {socket, dashboard_navigator_items} = ensure_dashboard_navigator_items(socket)
     layout_state = current_layout_state(socket)
     student_support_tile_state = parse_student_support_tile_state(params)
+    assessments_tile_state = parse_assessments_tile_state(params)
     progress_tile_state = parse_progress_tile_state(params)
     previous_scope = Map.get(socket.assigns, :dashboard_scope)
     current_projection = get_in(socket.assigns, [:dashboard, :progress_projection])
+
+    previous_expanded_assessment_id =
+      socket.assigns
+      |> Map.get(:assessments_tile_state, %{})
+      |> Map.get(:expanded_assessment_id)
 
     socket =
       socket
@@ -423,9 +432,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         instructor_enrollment: socket.assigns.instructor_enrollment,
         dashboard_navigator_items: dashboard_navigator_items,
         student_support_tile_state: student_support_tile_state,
+        assessments_tile_state: assessments_tile_state,
         progress_tile_state: progress_tile_state
       )
       |> assign_dashboard_sections(layout_state)
+      |> maybe_push_assessment_scroll(
+        previous_expanded_assessment_id,
+        assessments_tile_state.expanded_assessment_id
+      )
 
     if reload_dashboard?(previous_scope, current_projection, scope_selector) do
       socket
@@ -602,6 +616,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   def parse_student_support_tile_state(_), do: parse_student_support_tile_state(%{})
 
   @doc """
+  Parses the namespaced URL-backed state for the Assessments tile.
+  """
+  @spec parse_assessments_tile_state(map()) :: assessments_tile_state()
+  def parse_assessments_tile_state(params) when is_map(params) do
+    tile_params =
+      case Map.get(params, "tile_assessments", %{}) do
+        value when is_map(value) -> value
+        _ -> %{}
+      end
+
+    %{
+      expanded_assessment_id: normalize_assessment_id(Map.get(tile_params, "expanded"))
+    }
+  end
+
+  def parse_assessments_tile_state(_), do: parse_assessments_tile_state(%{})
+
+  @doc """
   Parses the namespaced URL-backed state for the Progress tile.
   """
   @spec parse_progress_tile_state(map()) :: progress_tile_state()
@@ -645,17 +677,31 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   @doc """
+  Builds a dashboard path with merged Assessments tile params.
+  """
+  @spec assessments_path(socket(), map()) :: String.t()
+  def assessments_path(socket, updates) when is_map(updates) do
+    scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
+    params = dashboard_base_params(socket, scope_selector)
+    current = Map.get(params, "tile_assessments", %{})
+
+    merged_tile_params =
+      current
+      |> Map.merge(stringify_keys(updates))
+      |> normalize_assessments_path_params()
+
+    params = put_assessments_params(params, merged_tile_params)
+
+    path_for_section(socket.assigns.section.slug, scope_selector, params)
+  end
+
+  @doc """
   Builds a dashboard path with merged Progress tile params.
   """
   @spec progress_tile_path(socket(), map()) :: String.t()
   def progress_tile_path(socket, updates) when is_map(updates) do
     scope_selector = Map.get(socket.assigns, :dashboard_scope, "course")
-
-    params =
-      socket.assigns
-      |> Map.get(:params, %{})
-      |> dashboard_navigation_params(scope_selector)
-
+    params = dashboard_base_params(socket, scope_selector)
     current = Map.get(params, "tile_progress", %{})
 
     merged_tile_params =
@@ -663,7 +709,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       |> Map.merge(stringify_keys(updates))
       |> normalize_progress_path_params()
 
-    path(socket, scope_selector, %{"tile_progress" => merged_tile_params})
+    path_for_section(
+      socket.assigns.section.slug,
+      scope_selector,
+      put_progress_tile_params(params, merged_tile_params)
+    )
   end
 
   defp persist_revisit_cache(nil, _context, _scope, _oracles), do: :ok
@@ -1012,6 +1062,36 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
         Map.get(payload, :student_support_projection),
         :student_support in Map.keys(projections)
       )
+      |> maybe_put_dashboard_field(
+        :objectives_text,
+        Map.get(payload, :objectives_text),
+        :challenging_objectives in Map.keys(projections)
+      )
+      |> maybe_put_dashboard_field(
+        :objectives_projection,
+        Map.get(payload, :objectives_projection),
+        :challenging_objectives in Map.keys(projections)
+      )
+      |> maybe_put_dashboard_field(
+        :objectives_projection_status,
+        Map.get(payload, :objectives_projection_status),
+        :challenging_objectives in Map.keys(projections)
+      )
+      |> maybe_put_dashboard_field(
+        :objectives_projection_identity,
+        Map.get(payload, :objectives_projection_identity),
+        :challenging_objectives in Map.keys(projections)
+      )
+      |> maybe_put_dashboard_field(
+        :assessments_text,
+        Map.get(payload, :assessments_text),
+        :assessments in Map.keys(projections)
+      )
+      |> maybe_put_dashboard_field(
+        :assessments_projection,
+        Map.get(payload, :assessments_projection),
+        :assessments in Map.keys(projections)
+      )
     end)
   end
 
@@ -1175,7 +1255,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp dashboard_runtime_max_concurrency, do: 4
 
   defp dashboard_dependency_profile do
-    consumers = [:progress_summary, :support_summary, :challenging_objectives]
+    consumers = [
+      :progress_summary,
+      :support_summary,
+      :challenging_objectives,
+      :assessments_summary
+    ]
 
     with {:ok, profiles} <- dependency_profiles_for(consumers) do
       {:ok,
@@ -1255,6 +1340,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp build_dashboard_payload(bundle, revisit_hydration) do
     progress_projection = Map.get(bundle.projections, :progress, %{})
     support_projection = Map.get(bundle.projections, :student_support, %{})
+    assessments_projection = Map.get(bundle.projections, :assessments, %{})
     objectives_projection = Map.get(bundle.projections, :challenging_objectives)
 
     objectives_projection_status =
@@ -1292,16 +1378,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
 
     %{
       runtime_status_text: Enum.join(status_lines, "\n"),
-      progress_text: inspect(progress_projection, pretty: true, limit: :infinity),
+      progress_text: inspect(progress_projection, pretty: true, limit: 5),
       progress_projection: Map.get(progress_projection, :progress_tile, %{}),
-      student_support_text: inspect(support_projection, pretty: true, limit: :infinity),
+      student_support_text: inspect(support_projection, pretty: true, limit: 5),
       student_support_projection: Map.get(support_projection, :support, %{}),
-      objectives_text: inspect(objectives_projection, pretty: true, limit: :infinity),
+      objectives_text: inspect(objectives_projection, pretty: true, limit: 5),
       objectives_projection: objectives_projection,
       objectives_projection_status: objectives_projection_status,
       objectives_projection_identity:
         "challenging_objectives:#{bundle.request_token}:#{scope_selector(bundle.scope)}",
-      assessments_text: "Waiting for scoped data"
+      assessments_text: inspect(assessments_projection, pretty: true, limit: 5),
+      assessments_projection: Map.get(assessments_projection, :assessments, %{})
     }
   end
 
@@ -1410,7 +1497,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       objectives_projection: nil,
       objectives_projection_status: %{status: :loading},
       objectives_projection_identity: "challenging_objectives:loading",
-      assessments_text: "Loading..."
+      assessments_text: "Loading...",
+      assessments_projection: %{}
     }
   end
 
@@ -1425,7 +1513,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       objectives_projection: nil,
       objectives_projection_status: %{status: :unavailable, reason_code: reason},
       objectives_projection_identity: "challenging_objectives:error",
-      assessments_text: "unavailable"
+      assessments_text: "unavailable",
+      assessments_projection: %{}
     }
   end
 
@@ -1454,6 +1543,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       case normalize_student_support_path_params(Map.get(params, "tile_support")) do
         tile_support when map_size(tile_support) == 0 -> Map.delete(params, "tile_support")
         tile_support -> Map.put(params, "tile_support", tile_support)
+      end
+    end)
+    |> then(fn params ->
+      case normalize_assessments_path_params(Map.get(params, "tile_assessments")) do
+        tile_assessments when map_size(tile_assessments) == 0 ->
+          Map.delete(params, "tile_assessments")
+
+        tile_assessments ->
+          Map.put(params, "tile_assessments", tile_assessments)
       end
     end)
     |> then(fn params ->
@@ -1501,6 +1599,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       "tile_support", left, right when is_map(left) and is_map(right) ->
         Map.merge(left, right)
 
+      "tile_assessments", left, right when is_map(left) and is_map(right) ->
+        Map.merge(left, right)
+
       "tile_progress", left, right when is_map(left) and is_map(right) ->
         Map.merge(left, right)
 
@@ -1514,6 +1615,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       Map.delete(params, "tile_support")
     else
       Map.put(params, "tile_support", tile_support)
+    end
+  end
+
+  defp put_assessments_params(params, tile_assessments) when is_map(tile_assessments) do
+    if map_size(tile_assessments) == 0 do
+      Map.delete(params, "tile_assessments")
+    else
+      Map.put(params, "tile_assessments", tile_assessments)
+    end
+  end
+
+  defp put_progress_tile_params(params, tile_progress) when is_map(tile_progress) do
+    if map_size(tile_progress) == 0 do
+      Map.delete(params, "tile_progress")
+    else
+      Map.put(params, "tile_progress", tile_progress)
     end
   end
 
@@ -1553,6 +1670,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   defp normalize_student_support_path_params(_), do: %{}
+
+  defp normalize_assessments_path_params(nil), do: %{}
+
+  defp normalize_assessments_path_params(tile_params) when is_map(tile_params) do
+    tile_params
+    |> stringify_keys()
+    |> Enum.reduce(%{}, fn
+      {"expanded", value}, acc ->
+        case normalize_assessment_id(value) do
+          nil -> acc
+          assessment_id -> Map.put(acc, "expanded", Integer.to_string(assessment_id))
+        end
+
+      {_key, _value}, acc ->
+        acc
+    end)
+  end
+
+  defp normalize_assessments_path_params(_), do: %{}
 
   defp normalize_progress_path_params(nil), do: %{}
 
@@ -1623,6 +1759,31 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   end
 
   defp normalize_positive_integer(_, fallback), do: fallback
+
+  defp normalize_assessment_id(value), do: normalize_positive_integer(value, nil)
+
+  defp maybe_push_assessment_scroll(
+         socket,
+         previous_expanded_assessment_id,
+         expanded_assessment_id
+       )
+       when is_integer(expanded_assessment_id) and
+              previous_expanded_assessment_id != expanded_assessment_id do
+    Phoenix.LiveView.push_event(socket, "scroll-y-to-target", %{
+      id: "learning-dashboard-assessment-card-#{expanded_assessment_id}",
+      offset: 6,
+      scroll_mode: "contain",
+      scroll_delay: 120,
+      offset_target_id: "instructor-dashboard-header"
+    })
+  end
+
+  defp maybe_push_assessment_scroll(
+         socket,
+         _previous_expanded_assessment_id,
+         _expanded_assessment_id
+       ),
+       do: socket
 
   defp stringify_keys(map) when is_map(map) do
     Enum.into(map, %{}, fn {key, value} ->

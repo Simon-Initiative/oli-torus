@@ -13,6 +13,7 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
   describe "registry wrapper APIs" do
     test "returns deterministic known consumers" do
       assert [
+               :assessments_summary,
                :challenging_objectives,
                :legacy_section_analytics,
                :progress_summary,
@@ -51,6 +52,15 @@ defmodule Oli.InstructorDashboard.OracleRegistryTest do
                 ],
                 optional: []
               }} = OracleRegistry.dependencies_for(:challenging_objectives)
+
+      assert {:ok,
+              %{
+                required: [
+                  :oracle_instructor_grades,
+                  :oracle_instructor_scope_resources
+                ],
+                optional: []
+              }} = OracleRegistry.dependencies_for(:assessments_summary)
     end
 
     test "resolves oracle modules for known keys" do

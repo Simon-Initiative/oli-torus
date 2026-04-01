@@ -863,6 +863,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       module={Shell}
       id="learning_dashboard"
       containers={@dashboard_navigator_items}
+      ctx={@ctx}
       current_author={@current_author}
       current_user={@current_user}
       dashboard={@dashboard}
@@ -871,6 +872,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       params={@params}
       progress_tile_state={@progress_tile_state}
       section={@section}
+      assessments_tile_state={@assessments_tile_state}
       student_support_tile_state={@student_support_tile_state}
     />
     """
@@ -1210,6 +1212,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           show_email_modal: false
         )
 
+        send_update(
+          OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.AssessmentsTile,
+          id: email_handler_id || "assessments_tile",
+          show_email_modal: false
+        )
+
       _ ->
         :ok
     end
@@ -1354,6 +1362,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     {:noreply,
      push_patch(socket,
        to: IntelligentDashboardTab.student_support_path(socket, %{page: current_page + 1})
+     )}
+  end
+
+  def handle_event("assessment_row_toggled", %{"assessment_id" => assessment_id}, socket) do
+    current_expanded_assessment_id =
+      socket.assigns
+      |> Map.get(:assessments_tile_state, %{})
+      |> Map.get(:expanded_assessment_id)
+
+    expanded_assessment_id =
+      case Integer.parse(assessment_id) do
+        {parsed_id, ""} when current_expanded_assessment_id == parsed_id -> nil
+        {parsed_id, ""} -> parsed_id
+        _ -> current_expanded_assessment_id
+      end
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         IntelligentDashboardTab.assessments_path(socket, %{
+           expanded: expanded_assessment_id
+         })
      )}
   end
 

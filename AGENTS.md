@@ -119,6 +119,17 @@ Example activity types: Multiple Choice, Short Answer, File Upload, Multi-Input,
 - Integration tests for critical workflows
 - Always run tests before committing
 
+## UI Workflow
+
+When a task includes implementing, reconciling, or validating UI against a Figma design, route the work through the repo-local `ui_workflow` skill documented at `.agents/ui-workflow/README.md`.
+
+Treat that workflow as the canonical path for Figma-backed UI implementation.
+
+Important:
+
+- Keep per-iteration workflow memory outside the repo under `~/.codex/memories/oli-torus-ng/ui-work/`.
+- Only promote durable learnings and workflow changes back into the repo.
+
 ## Code Reviews
 
 When a code review is requested (e.g., with @codex review), the review must always consult the guidelines in the .review directory.

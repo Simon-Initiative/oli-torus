@@ -334,7 +334,7 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
   end
 
   describe "ScopeResources oracle" do
-    test "returns course title and direct child items for the selected scope", %{map: map} do
+    test "returns scoped descendant items with relative context labels", %{map: map} do
       context =
         build_context(
           map.section.id,
@@ -347,12 +347,34 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       assert payload.scope_label == "Unit 1"
 
       resource_ids = payload.items |> Enum.map(& &1.resource_id) |> Enum.sort()
-      assert resource_ids == Enum.sort([map.mod1_resource.id, map.mod2_resource.id])
+
+      assert Enum.sort([map.mod1_resource.id, map.mod2_resource.id]) -- resource_ids == []
+
+      page_item =
+        Enum.find(payload.items, &(&1.resource_id == hd(map.mod1_pages).resource.id))
+
+      assert page_item.context_label == "Module 1"
+    end
+
+    test "returns course-scoped descendant items with full ancestor chains", %{map: map} do
+      context =
+        build_context(
+          map.section.id,
+          map.instructor.id,
+          %{container_type: :course}
+        )
+
+      assert {:ok, payload} = ScopeResources.load(context, [])
+
+      page_item =
+        Enum.find(payload.items, &(&1.resource_id == hd(map.mod1_pages).resource.id))
+
+      assert page_item.context_label == "Unit 1 > Module 1"
     end
   end
 
   describe "Grades oracle" do
-    test "returns per-page aggregate stats, histograms, schedule metadata, and no-attempt helper",
+    test "returns per-page aggregate stats, histograms, schedule metadata, and not-completed helper",
          %{map: map} do
       [page_1, page_2, _page_3] = map.mod1_pages
 
@@ -411,10 +433,37 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       assert_in_delta page_2_row.mean, 100.0, 0.0001
       assert page_2_row.histogram["90-100"] == 1
 
-      assert {:ok, emails} =
+      assert {:ok, students} =
                Grades.students_without_attempt_emails(map.section.id, page_2.resource.id)
 
-      assert emails == [map.student_a.email]
+      assert [
+               %{id: student_id, email: student_email, display_name: display_name}
+             ] = students
+
+      assert student_id == map.student_a.id
+      assert student_email == map.student_a.email
+      assert is_binary(display_name)
+    end
+
+    test "students_without_attempt_emails includes learners who started but did not complete", %{
+      map: map
+    } do
+      [page_1, _page_2, _page_3] = map.mod1_pages
+
+      mark_page_graded(map.section.id, page_1.resource.id, nil, nil)
+      set_grade(map.section.id, page_1.resource.id, map.student_a.id, 8.0, 10.0)
+      set_started_access(map.section.id, page_1.resource.id, map.student_b.id)
+
+      assert {:ok, students} =
+               Grades.students_without_attempt_emails(map.section.id, page_1.resource.id)
+
+      assert [
+               %{id: student_id, email: student_email, display_name: display_name}
+             ] = students
+
+      assert student_id == map.student_b.id
+      assert student_email == map.student_b.email
+      assert is_binary(display_name)
     end
 
     test "students_without_attempt_emails returns empty list when all enrolled learners attempted",
@@ -427,10 +476,10 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       set_grade(map.section.id, page_1.resource.id, map.student_a.id, 8.0, 10.0)
       set_grade(map.section.id, page_1.resource.id, map.student_b.id, 9.0, 10.0)
 
-      assert {:ok, emails} =
+      assert {:ok, students} =
                Grades.students_without_attempt_emails(map.section.id, page_1.resource.id)
 
-      assert emails == []
+      assert students == []
     end
 
     test "emits telemetry with latency and row counts for load and no-attempt helper", %{map: map} do
@@ -449,7 +498,7 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
 
       assert {:ok, _payload} = Grades.load(context, [])
 
-      assert {:ok, _emails} =
+      assert {:ok, _students} =
                Grades.students_without_attempt_emails(map.section.id, page_1.resource.id)
 
       assert_receive {:telemetry_event, @grades_execute_event, load_measurements,
@@ -609,6 +658,17 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       user_id: user_id,
       score: score,
       out_of: out_of
+    }
+    |> Repo.insert!()
+  end
+
+  defp set_started_access(section_id, page_id, user_id) do
+    %ResourceAccess{
+      access_count: 1,
+      section_id: section_id,
+      resource_id: page_id,
+      user_id: user_id,
+      progress: 0.1
     }
     |> Repo.insert!()
   end

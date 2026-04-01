@@ -11,6 +11,7 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
       assert Map.has_key?(bindings, :oracles)
       assert Map.has_key?(bindings.consumers, :progress_summary)
       assert Map.has_key?(bindings.consumers, :support_summary)
+      assert Map.has_key?(bindings.consumers, :assessments_summary)
       assert Map.has_key?(bindings.consumers, :challenging_objectives)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress)
       assert Map.has_key?(bindings.oracles, :oracle_instructor_progress_bins)
@@ -43,6 +44,17 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
 
       assert binding.required_oracles == %{
                objectives_proficiency: :oracle_instructor_objectives_proficiency,
+               scope_resources: :oracle_instructor_scope_resources
+             }
+
+      assert binding.optional_oracles == %{}
+    end
+
+    test "resolves the assessments summary consumer binding" do
+      assert {:ok, binding} = OracleBindings.binding_for(:assessments_summary)
+
+      assert binding.required_oracles == %{
+               grades: :oracle_instructor_grades,
                scope_resources: :oracle_instructor_scope_resources
              }
 
@@ -82,6 +94,13 @@ defmodule Oli.InstructorDashboard.OracleBindingsTest do
              ]
 
       assert profiles.challenging_objectives.optional == []
+
+      assert profiles.assessments_summary.required == [
+               :oracle_instructor_grades,
+               :oracle_instructor_scope_resources
+             ]
+
+      assert profiles.assessments_summary.optional == []
     end
 
     test "extending one consumer binding does not mutate unrelated consumer profiles" do

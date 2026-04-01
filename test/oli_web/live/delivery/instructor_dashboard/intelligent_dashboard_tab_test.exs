@@ -96,6 +96,24 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
     end
   end
 
+  describe "parse_assessments_tile_state/1" do
+    test "normalizes tile-local dashboard params" do
+      assert IntelligentDashboardTab.parse_assessments_tile_state(%{
+               "tile_assessments" => %{"expanded" => "123"}
+             }) == %{
+               expanded_assessment_id: 123
+             }
+    end
+
+    test "falls back safely when tile_assessments is not a map" do
+      assert IntelligentDashboardTab.parse_assessments_tile_state(%{
+               "tile_assessments" => "bad"
+             }) == %{
+               expanded_assessment_id: nil
+             }
+    end
+  end
+
   describe "student_support_path/2" do
     test "preserves only dashboard and namespaced tile params" do
       socket = %Phoenix.LiveView.Socket{
@@ -114,6 +132,27 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTabTest do
 
       assert IntelligentDashboardTab.student_support_path(socket, %{bucket: "on_track", page: 1}) ==
                "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_support[bucket]=on_track&tile_support[filter]=inactive"
+    end
+  end
+
+  describe "assessments_path/2" do
+    test "preserves only dashboard and namespaced tile params" do
+      socket = %Phoenix.LiveView.Socket{
+        assigns: %{
+          section: %{slug: "elixir_30"},
+          dashboard_scope: "course",
+          params: %{
+            "view" => "insights",
+            "active_tab" => "dashboard",
+            "section_slug" => "elixir_30",
+            "dashboard_scope" => "course",
+            "tile_support" => %{"filter" => "inactive"}
+          }
+        }
+      }
+
+      assert IntelligentDashboardTab.assessments_path(socket, %{expanded: 456}) ==
+               "/sections/elixir_30/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_assessments[expanded]=456&tile_support[filter]=inactive"
     end
   end
 

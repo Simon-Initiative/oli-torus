@@ -5,8 +5,9 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Delivery.{Certificates, Metrics, Settings}
-  alias OliWeb.Common.{FormatDateTime, SessionContext}
+  alias OliWeb.Common.SessionContext
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
+  alias OliWeb.Delivery.ScheduleDisplay
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
   alias OliWeb.Components.Utils, as: ComponentsUtils
@@ -190,7 +191,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         class="w-full flex-col pt-2 border-b border-[#ced1d9] dark:border-[#3a3740] justify-between items-center text-Text-text-low text-sm font-medium leading-none"
       >
         <ComponentsUtils.timezone_info timezone={
-          FormatDateTime.tz_preference_or_default(@ctx.author, @ctx.user, @ctx.browser_timezone)
+          OliWeb.Common.FormatDateTime.tz_preference_or_default(
+            @ctx.author,
+            @ctx.user,
+            @ctx.browser_timezone
+          )
         } />
         <div class="flex w-full h-11 justify-between items-center inline-flex">
           <div class="justify-end items-center gap-2 flex">
@@ -290,16 +295,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           class="text-Text-text-low dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate"
         >
           <span>
-            Available:
-            <%= if @assignment.start_date do %>
-              {FormatDateTime.to_formatted_datetime(
-                @assignment.start_date,
-                @ctx,
-                "{WDshort} {Mshort} {D}, {YYYY}"
-              )}
-            <% else %>
-              Now
-            <% end %>
+            Available: {ScheduleDisplay.available_date(@assignment.start_date, @ctx)}
           </span>
           <span class="ml-6">
             {Utils.label_for_scheduling_type(@assignment.scheduling_type)}
@@ -511,8 +507,6 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       certificate.assessments_apply_to == :all or
         assignment.id in certificate.custom_assessments
 
-  defp format_date(nil, _ctx, _format), do: "None"
-
   defp format_date(date, ctx, _format),
-    do: FormatDateTime.to_formatted_datetime(date, ctx, "{WDshort} {Mshort} {D}, {YYYY}")
+    do: ScheduleDisplay.due_date(date, ctx)
 end
