@@ -2924,8 +2924,16 @@ select {
   --tw-ring-color: #524D59;
 }
 
+.fill-Fill-Buttons-fill-muted-hover {
+  fill: #DEECFF;
+}
+
 .dark .fill-Fill-Buttons-fill-muted-hover {
   fill: #524D59;
+}
+
+.stroke-Fill-Buttons-fill-muted-hover {
+  stroke: #DEECFF;
 }
 
 .dark .stroke-Fill-Buttons-fill-muted-hover {
@@ -3026,10 +3034,6 @@ select {
 
 .dark .focus-visible-ring-Fill-Accent-fill-accent-muted:focus-visible {
   box-shadow: 0 0 0 4px #2F2C33;
-}
-
-.bg-Fill-Accent-fill-accent-grey-muted {
-  background-color: #B0B4BF;
 }
 
 .dark .bg-Fill-Accent-fill-accent-grey-muted {
@@ -10108,6 +10112,10 @@ select {
   color: #3B3740;
 }
 
+.border-Specially-Tokens-Border-border-input-focused {
+  border-color: #CED1D9;
+}
+
 .dark .border-Specially-Tokens-Border-border-input-focused {
   border-color: #3B3740;
 }
@@ -10442,6 +10450,10 @@ select {
 
 .dark .\!text-Specially-Tokens-Text-text-button-pill-muted {
   color: #FFFFFF !important;
+}
+
+.border-Specially-Tokens-Text-text-button-pill-muted {
+  border-color: #353740;
 }
 
 .dark .border-Specially-Tokens-Text-text-button-pill-muted {
@@ -15262,6 +15274,11 @@ table.table-striped tbody tr:nth-child(even) {
   right: 0px;
 }
 
+.inset-x-1 {
+  left: 0.25rem;
+  right: 0.25rem;
+}
+
 .inset-y-0 {
   top: 0px;
   bottom: 0px;
@@ -15413,6 +15430,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bottom-4 {
   bottom: 1rem;
+}
+
+.bottom-\[calc\(100\%\+8px\)\] {
+  bottom: calc(100% + 8px);
 }
 
 .left-0 {
@@ -15605,6 +15626,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .top-8 {
   top: 2rem;
+}
+
+.top-\[12px\] {
+  top: 12px;
 }
 
 .top-\[150\%\] {
@@ -16350,6 +16375,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: -1px;
 }
 
+.mt-\[1\.5px\] {
+  margin-top: 1.5px;
+}
+
 .mt-\[10px\] {
   margin-top: 10px;
 }
@@ -16516,10 +16545,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-24 {
   height: 6rem;
-}
-
-.h-28 {
-  height: 7rem;
 }
 
 .h-3 {
@@ -17506,6 +17531,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: 1024px;
 }
 
+.min-w-\[113px\] {
+  min-width: 113px;
+}
+
 .min-w-\[180px\] {
   min-width: 180px;
 }
@@ -18129,10 +18158,6 @@ table.table-striped tbody tr:nth-child(even) {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-.grid-cols-6 {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-
 .grid-cols-\[minmax\(0\2c 1fr\)_auto_auto\] {
   grid-template-columns: minmax(0,1fr) auto auto;
 }
@@ -18700,12 +18725,20 @@ table.table-striped tbody tr:nth-child(even) {
   border-radius: 12px;
 }
 
+.rounded-\[2px\] {
+  border-radius: 2px;
+}
+
 .rounded-\[3px\] {
   border-radius: 3px;
 }
 
 .rounded-\[47px\] {
   border-radius: 47px;
+}
+
+.rounded-\[4px\] {
+  border-radius: 4px;
 }
 
 .rounded-\[5px\] {
@@ -18827,6 +18860,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-top-right-radius: 1.5rem;
 }
 
+.rounded-t-\[4px\] {
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+}
+
 .rounded-t-lg {
   border-top-left-radius: 0.5rem;
   border-top-right-radius: 0.5rem;
@@ -18835,11 +18873,6 @@ table.table-striped tbody tr:nth-child(even) {
 .rounded-t-md {
   border-top-left-radius: 0.375rem;
   border-top-right-radius: 0.375rem;
-}
-
-.rounded-t-sm {
-  border-top-left-radius: 0.125rem;
-  border-top-right-radius: 0.125rem;
 }
 
 .rounded-t-xl {
@@ -19559,6 +19592,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-\[\#FEEBED\] {
   --tw-bg-opacity: 1;
   background-color: rgb(254 235 237 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#c7c4cf\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(199 196 207 / var(--tw-bg-opacity));
 }
 
 .bg-\[\#d9d9d9\] {
@@ -22499,6 +22537,12 @@ table.table-striped tbody tr:nth-child(even) {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
+.shadow-\[0px_8px_24px_0px_rgba\(0\2c 0\2c 0\2c 0\.24\)\] {
+  --tw-shadow: 0px 8px 24px 0px rgba(0,0,0,0.24);
+  --tw-shadow-colored: 0px 8px 24px 0px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
 .shadow-inner {
   --tw-shadow: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
   --tw-shadow-colored: inset 0 2px 4px 0 var(--tw-shadow-color);
@@ -23870,6 +23914,14 @@ table.table-striped tbody tr:nth-child(even) {
 
 .\[text-shadow\:_0px_1px_1px_rgb\(0_0_0_\/_0\.50\)\] {
   text-shadow: 0px 1px 1px rgb(0 0 0 / 0.50);
+}
+
+.\[transform\:rotate\(180deg\)\] {
+  transform: rotate(180deg);
+}
+
+.\[writing-mode\:vertical-rl\] {
+  writing-mode: vertical-rl;
 }
 
 .expand-down {
@@ -27580,6 +27632,14 @@ Not supports in Firefox and IE */
   color: #4CA6FF;
 }
 
+.hover\:border-Text-text-button:hover {
+  border-color: #006CD9;
+}
+
+.dark .hover\:border-Text-text-button:hover {
+  border-color: #4CA6FF;
+}
+
 .hover\:text-Text-text-button-hover:hover {
   color: #1B67B2;
 }
@@ -27634,6 +27694,14 @@ Not supports in Firefox and IE */
 
 .dark .hover\:text-Icon-icon-hover:hover {
   color: #FFFFFF;
+}
+
+.hover\:bg-Specially-Tokens-Fill-fill-input-focused:hover {
+  background-color: #F3F4F8;
+}
+
+.dark .hover\:bg-Specially-Tokens-Fill-fill-input-focused:hover {
+  background-color: #3B3740;
 }
 
 .hover\:bg-Specially-Tokens-Fill-fill-dot-message-default:hover {
@@ -27716,6 +27784,14 @@ Not supports in Firefox and IE */
   --tw-ring-color: #0062F2;
 }
 
+.focus-visible\:ring-Text-text-button:focus-visible {
+  --tw-ring-color: #006CD9;
+}
+
+.dark .focus-visible\:ring-Text-text-button:focus-visible {
+  --tw-ring-color: #4CA6FF;
+}
+
 .active\:bg-Surface-surface-secondary:active {
   background-color: #FFFFFF;
 }
@@ -27772,6 +27848,30 @@ Not supports in Firefox and IE */
   color: #BAB8BF;
 }
 
+.group[open] .group-open\:border-Border-border-default {
+  border-color: #CED1D9;
+}
+
+.dark .group[open] .group-open\:border-Border-border-default {
+  border-color: #3B3740;
+}
+
+.group[open] .group-open\:text-Text-text-high {
+  color: #353740;
+}
+
+.dark .group[open] .group-open\:text-Text-text-high {
+  color: #EEEBF5;
+}
+
+.group[open] .group-open\:fill-Icon-icon-active {
+  fill: #353740;
+}
+
+.dark .group[open] .group-open\:fill-Icon-icon-active {
+  fill: #FFFFFF;
+}
+
 .group:hover .group-hover\:bg-Fill-Chart-fill-chart-blue-active {
   background-color: #00626F;
 }
@@ -27794,6 +27894,14 @@ Not supports in Firefox and IE */
 
 .dark .group:hover .group-hover\:bg-Fill-Chart-fill-chart-orange-active {
   background-color: #FF9C54;
+}
+
+.group:hover .group-hover\:fill-Text-text-button {
+  fill: #006CD9;
+}
+
+.dark .group:hover .group-hover\:fill-Text-text-button {
+  fill: #4CA6FF;
 }
 
 .group:hover .group-hover\:stroke-Text-text-button-hover {
@@ -29377,7 +29485,20 @@ Not supports in Firefox and IE */
   background-color: rgb(239 68 68 / var(--tw-bg-opacity));
 }
 
+.group[open] .group-open\:rotate-180 {
+  --tw-rotate: 180deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.group:focus-within .group-focus-within\:block {
+  display: block;
+}
+
 .group\/item:hover .group-hover\/item\:visible {
+  visibility: visible;
+}
+
+.group:hover .group-hover\:visible {
   visibility: visible;
 }
 
@@ -33109,6 +33230,10 @@ Not supports in Firefox and IE */
   .hv2xl\:h-\[350px\] {
     height: 350px;
   }
+}
+
+.\[\&\:\:-webkit-details-marker\]\:hidden::-webkit-details-marker {
+  display: none;
 }
 
 .\[\&\>path\]\:stroke-current>path {
