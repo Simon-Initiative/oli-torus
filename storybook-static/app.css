@@ -27496,6 +27496,30 @@ Not supports in Firefox and IE */
   background-color: #201D21;
 }
 
+.focus-within\:bg-Surface-surface-secondary-hover:focus-within {
+  background-color: #F2F9FF;
+}
+
+.dark .focus-within\:bg-Surface-surface-secondary-hover:focus-within {
+  background-color: #2F2C33;
+}
+
+.focus-within\:bg-Fill-fill-hover:focus-within {
+  background-color: #0000001A;
+}
+
+.dark .focus-within\:bg-Fill-fill-hover:focus-within {
+  background-color: #FFFFFF1A;
+}
+
+.focus-within\:border-Border-border-hover:focus-within {
+  border-color: #8AB8E5;
+}
+
+.dark .focus-within\:border-Border-border-hover:focus-within {
+  border-color: #524D59;
+}
+
 .hover\:bg-Surface-surface-secondary-muted:hover {
   background-color: #F3F4F8;
 }
