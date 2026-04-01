@@ -127,7 +127,7 @@
         "function": "mount/3",
         "module": "OliWeb.Products.DetailsView",
         "lines": [
-          52
+          53
         ],
         "file_path": "lib/oli_web/live/products/details_view.ex"
       },
@@ -15099,7 +15099,7 @@
         "function": "mount/3",
         "module": "OliWeb.Workspaces.CourseAuthor.Products.DetailsLive",
         "lines": [
-          50
+          51
         ],
         "file_path": "lib/oli_web/live/workspaces/course_author/products/details_live.ex"
       },
@@ -44641,7 +44641,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "389e4f3f5772fb90cd2147693a55025eb1283a82"
+    "commit": "01be4737fa1aa630665fc8205a594731e0a84daf"
   },
   "schema_version": "1",
   "summary": {
@@ -44652,8 +44652,8 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1611,
-    "scan_duration_ms": 1831,
+    "files_scanned": 1613,
+    "scan_duration_ms": 1752,
     "node_count": 1533,
     "data_node_count": 122,
     "flow_count": 781,
