@@ -38,7 +38,9 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert statuses.ai_context.status == :partial
       assert statuses.ai_context.reason_code == :dependency_unavailable
 
-      assert projections.progress.progress == %{metric: :progress}
+      assert projections.progress.progress_tile.axis_label == "Course Modules"
+      assert projections.progress.progress_tile.class_size == 10
+      assert Enum.map(projections.progress.progress_tile.series_all, & &1.label) == ["Module 7"]
       assert projections.student_support.support.default_bucket_id == "struggling"
 
       assert Enum.find(projections.student_support.support.buckets, &(&1.id == "struggling")).count ==
@@ -58,11 +60,18 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
     test "derives affected capabilities from projection dependency metadata" do
       assert Enum.sort(InstructorProjections.affected_capabilities(:oracle_instructor_progress)) ==
                Enum.sort([
-                 :progress,
                  :summary,
                  :assessments,
                  :ai_context
                ])
+
+      assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_bins) ==
+               [:progress]
+
+      assert Enum.sort(
+               InstructorProjections.affected_capabilities(:oracle_instructor_scope_resources)
+             ) ==
+               Enum.sort([:progress, :challenging_objectives])
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_proficiency) ==
                [:student_support]
@@ -70,9 +79,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert InstructorProjections.affected_capabilities(
                :oracle_instructor_objectives_proficiency
              ) == [:challenging_objectives]
-
-      assert InstructorProjections.affected_capabilities(:oracle_instructor_scope_resources) ==
-               [:challenging_objectives]
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_student_info) ==
                [:student_support]
@@ -110,6 +116,23 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
         metadata: %{timezone: "UTC"},
         oracles: %{
           oracle_instructor_progress: %{metric: :progress},
+          oracle_instructor_progress_bins: %{
+            total_students: 10,
+            by_resource_bins: %{
+              777 => %{0 => 1, 100 => 9}
+            }
+          },
+          oracle_instructor_scope_resources: %{
+            course_title: "Intro to Testing",
+            scope_label: "Unit 777",
+            items: [
+              %{
+                resource_id: 777,
+                resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+                title: "Module 7"
+              }
+            ]
+          },
           oracle_instructor_progress_proficiency: [
             %{student_id: 1, progress_pct: 25.0, proficiency_pct: 30.0}
           ],
@@ -123,11 +146,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
             }
           ],
           oracle_instructor_section_analytics: %{metric: :assessment},
-          oracle_instructor_scope_resources: %{
-            course_title: "Intro to Testing",
-            scope_label: "Unit 777",
-            items: []
-          },
           oracle_instructor_objectives_proficiency: %{
             objective_rows: [
               %{
@@ -141,10 +159,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
         },
         oracle_statuses: %{
           oracle_instructor_progress: %{status: :ready},
+          oracle_instructor_progress_bins: %{status: :ready},
+          oracle_instructor_scope_resources: %{status: :ready},
           oracle_instructor_progress_proficiency: %{status: :ready},
           oracle_instructor_student_info: %{status: :ready},
           oracle_instructor_section_analytics: %{status: :ready},
-          oracle_instructor_scope_resources: %{status: :ready},
           oracle_instructor_objectives_proficiency: %{status: :ready}
         }
       })

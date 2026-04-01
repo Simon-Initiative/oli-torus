@@ -347,6 +347,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                "container:#{container.id}"
     end
 
+    test "scope navigator selection clears tile_progress page while preserving the rest", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {_, containers} = Helpers.get_containers(section)
+      container = hd(containers)
+
+      dashboard_path =
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_progress[mode]=percent&tile_progress[threshold]=80&tile_progress[page]=3"
+
+      {:ok, view, _html} = live(conn, dashboard_path)
+
+      view
+      |> element("button[data-list-navigator-option='true']", container.title)
+      |> render_click()
+
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A#{container.id}&tile_progress[mode]=percent&tile_progress[threshold]=80"
+      )
+    end
+
     test "scope navigator selection from container to course patches url and persists scope", %{
       instructor: instructor,
       section: section,

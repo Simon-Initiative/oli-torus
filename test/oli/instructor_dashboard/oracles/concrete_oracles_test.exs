@@ -14,6 +14,7 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
   alias Oli.InstructorDashboard.Oracles.ObjectivesProficiency
   alias Oli.InstructorDashboard.Oracles.ProgressBins
   alias Oli.InstructorDashboard.Oracles.ProgressProficiency
+  alias Oli.InstructorDashboard.Oracles.SchedulePosition
   alias Oli.InstructorDashboard.Oracles.ScopeResources
   alias Oli.InstructorDashboard.Oracles.StudentInfo
   alias Oli.Repo
@@ -71,6 +72,193 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
       assert container_bins[50] == 1
       assert container_bins[0] == 1
       assert Map.keys(container_bins) |> Enum.sort() == Enum.to_list(0..100//10)
+    end
+
+    test "returns by_resource_bins for mixed direct children without breaking by_container_bins",
+         %{
+           map: map
+         } do
+      direct_page = add_direct_page_child(map, map.unit1_resource.id, "Unit 1 extra page")
+      [page_1, _page_2, _page_3] = map.mod1_pages
+
+      set_progress(map.section.id, page_1.resource.id, map.student_a.id, 1.0)
+      set_progress(map.section.id, direct_page.resource_id, map.student_a.id, 1.0)
+
+      context =
+        build_context(
+          map.section.id,
+          map.instructor.id,
+          %{container_type: :container, container_id: map.unit1_resource.id}
+        )
+
+      assert {:ok, payload} = ProgressBins.load(context, [])
+
+      assert payload.total_students == 2
+      assert Map.has_key?(payload.by_container_bins, map.mod1_resource.id)
+      assert Map.has_key?(payload.by_resource_bins, map.mod1_resource.id)
+      assert Map.has_key?(payload.by_resource_bins, direct_page.resource_id)
+
+      module_bins = payload.by_resource_bins[map.mod1_resource.id]
+      direct_page_bins = payload.by_resource_bins[direct_page.resource_id]
+
+      assert module_bins[40] == 1
+      assert module_bins[0] == 1
+      assert direct_page_bins[100] == 1
+      assert direct_page_bins[0] == 1
+    end
+  end
+
+  describe "SchedulePosition oracle" do
+    test "returns the current unit for course scope based on scheduled descendants", %{map: map} do
+      [mod1_page_1 | _] = map.mod1_pages
+      [mod2_page_1 | _] = map.mod2_pages
+      [mod3_page_1 | _] = map.mod3_pages
+      now = ~U[2026-02-18 12:00:00Z]
+
+      schedule_resource(
+        map.section.id,
+        mod1_page_1.resource.id,
+        ~U[2026-02-09 00:00:00Z],
+        ~U[2026-02-15 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        mod2_page_1.resource.id,
+        ~U[2026-02-16 00:00:00Z],
+        ~U[2026-02-22 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        mod3_page_1.resource.id,
+        ~U[2026-03-02 00:00:00Z],
+        ~U[2026-03-08 23:59:59Z]
+      )
+
+      context = build_context(map.section.id, map.instructor.id, %{container_type: :course})
+
+      assert {:ok, payload} = SchedulePosition.load(context, now: now)
+      assert payload.has_schedule? == true
+      assert payload.current_resource_id == map.unit1_resource.id
+      assert payload.label == "Schedule: Unit 1"
+    end
+
+    test "returns the current direct child for unit scope", %{map: map} do
+      [mod1_page_1 | _] = map.mod1_pages
+      [mod2_page_1 | _] = map.mod2_pages
+      now = ~U[2026-02-18 12:00:00Z]
+
+      schedule_resource(
+        map.section.id,
+        mod1_page_1.resource.id,
+        ~U[2026-02-09 00:00:00Z],
+        ~U[2026-02-15 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        mod2_page_1.resource.id,
+        ~U[2026-02-16 00:00:00Z],
+        ~U[2026-02-22 23:59:59Z]
+      )
+
+      context =
+        build_context(
+          map.section.id,
+          map.instructor.id,
+          %{container_type: :container, container_id: map.unit1_resource.id}
+        )
+
+      assert {:ok, payload} = SchedulePosition.load(context, now: now)
+      assert payload.current_resource_id == map.mod2_resource.id
+      assert payload.label == "Schedule: Module 2"
+    end
+
+    test "returns the next scheduled page closest to today for module scope", %{map: map} do
+      [page_1, page_2, page_3] = map.mod2_pages
+      now = ~U[2026-02-18 12:00:00Z]
+
+      schedule_resource(
+        map.section.id,
+        page_1.resource.id,
+        ~U[2026-02-16 00:00:00Z],
+        ~U[2026-02-16 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        page_2.resource.id,
+        ~U[2026-02-20 00:00:00Z],
+        ~U[2026-02-20 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        page_3.resource.id,
+        ~U[2026-02-24 00:00:00Z],
+        ~U[2026-02-24 23:59:59Z]
+      )
+
+      context =
+        build_context(
+          map.section.id,
+          map.instructor.id,
+          %{container_type: :container, container_id: map.mod2_resource.id}
+        )
+
+      assert {:ok, payload} = SchedulePosition.load(context, now: now)
+      assert payload.current_resource_id == page_2.resource.id
+      assert payload.label == "Schedule: Page 2"
+    end
+
+    test "returns has_schedule false when the section has no scheduled resources", %{map: map} do
+      context = build_context(map.section.id, map.instructor.id, %{container_type: :course})
+
+      assert {:ok, %{has_schedule?: false}} =
+               SchedulePosition.load(context, now: ~U[2026-02-18 12:00:00Z])
+    end
+
+    test "does not project a schedule marker into scopes that do not contain the global position",
+         %{
+           map: map
+         } do
+      direct_course_page =
+        add_direct_page_child(map, map.container.resource.id, "Acknowledgements")
+
+      [unit1_page_1 | _] = map.mod1_pages
+      now = ~U[2026-03-27 12:00:00Z]
+
+      schedule_resource(
+        map.section.id,
+        unit1_page_1.resource.id,
+        ~U[2026-02-09 00:00:00Z],
+        ~U[2026-02-15 23:59:59Z]
+      )
+
+      schedule_resource(
+        map.section.id,
+        direct_course_page.resource_id,
+        ~U[2026-02-20 00:00:00Z],
+        ~U[2026-02-20 23:59:59Z]
+      )
+
+      course_context =
+        build_context(map.section.id, map.instructor.id, %{container_type: :course})
+
+      assert {:ok, course_payload} = SchedulePosition.load(course_context, now: now)
+      assert course_payload.current_resource_id == direct_course_page.resource_id
+
+      unit_context =
+        build_context(
+          map.section.id,
+          map.instructor.id,
+          %{container_type: :container, container_id: map.unit1_resource.id}
+        )
+
+      assert {:ok, unit_payload} = SchedulePosition.load(unit_context, now: now)
+      assert unit_payload.has_schedule? == true
+      refute Map.has_key?(unit_payload, :current_resource_id)
     end
   end
 
@@ -460,5 +648,60 @@ defmodule Oli.InstructorDashboard.Oracles.ConcreteOraclesTest do
     )
 
     handler_id
+  end
+
+  defp add_direct_page_child(map, parent_resource_id, title) do
+    page_type_id = ResourceType.id_for_page()
+
+    revision =
+      insert(:revision, %{
+        resource_type_id: page_type_id,
+        title: title,
+        graded: false,
+        content: %{"advancedDelivery" => true}
+      })
+
+    section_resource =
+      insert(:section_resource, %{
+        section: map.section,
+        project: map.project,
+        resource_id: revision.resource_id,
+        revision_id: revision.id,
+        resource_type_id: page_type_id,
+        title: title,
+        slug: "progress-direct-page-#{revision.resource_id}"
+      })
+
+    parent_section_resource =
+      Repo.get_by!(SectionResource, section_id: map.section.id, resource_id: parent_resource_id)
+
+    {:ok, _updated_parent} =
+      Sections.update_section_resource(parent_section_resource, %{
+        children: parent_section_resource.children ++ [section_resource.id]
+      })
+
+    SectionResourceDepot.update_section_resource(section_resource)
+    {:ok, _} = Sections.rebuild_contained_pages(map.section)
+
+    section_resource
+  end
+
+  defp schedule_resource(section_id, resource_id, start_date, end_date) do
+    from(sr in SectionResource,
+      where: sr.section_id == ^section_id and sr.resource_id == ^resource_id
+    )
+    |> Repo.update_all(
+      set: [
+        start_date: start_date,
+        end_date: end_date,
+        removed_from_schedule: false,
+        hidden: false
+      ]
+    )
+
+    section_resource =
+      Repo.get_by!(SectionResource, section_id: section_id, resource_id: resource_id)
+
+    SectionResourceDepot.update_section_resource(section_resource)
   end
 end
