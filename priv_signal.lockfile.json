@@ -937,7 +937,7 @@
         "function": "get_last_completed_or_started_assignments/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5270
+          5301
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -3299,7 +3299,7 @@
         "function": "get_revision_by_index/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6147
+          6200
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -3759,7 +3759,7 @@
         "function": "get_next_activities_for_student/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5403
+          5434
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -3877,7 +3877,7 @@
         "function": "fetch_recently_active_sections/0",
         "module": "Oli.Delivery.Sections.SectionResourceDepot",
         "lines": [
-          315
+          366
         ],
         "file_path": "lib/oli/delivery/sections/section_resource_depot.ex"
       },
@@ -8195,17 +8195,17 @@
       },
       "evidence": [
         {
-          "line": 363,
+          "line": 464,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "3c39766e95b18935",
+          "finding_id": "44ece14fe262178d",
           "ast_kind": "field_access"
         },
         {
-          "line": 363,
+          "line": 464,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "3c39766e95b18935",
+          "finding_id": "44ece14fe262178d",
           "ast_kind": "token"
         }
       ],
@@ -8214,7 +8214,7 @@
         "function": "get_parts_layout_by_revision_id/1",
         "module": "Oli.Conversation.Triggers",
         "lines": [
-          363
+          464
         ],
         "file_path": "lib/oli/conversation/triggers.ex"
       },
@@ -8752,7 +8752,7 @@
         "function": "load/1",
         "module": "Oli.Delivery.Sections.SectionResourceDepot",
         "lines": [
-          295
+          307
         ],
         "file_path": "lib/oli/delivery/sections/section_resource_depot.ex"
       },
@@ -9374,7 +9374,7 @@
         "function": "get_graded_pages/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5441
+          5472
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -11636,7 +11636,7 @@
         "function": "get_pages/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5063
+          5094
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -11767,7 +11767,7 @@
         "function": "section_resource_titles/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6289
+          6342
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -11833,6 +11833,25 @@
           "class": "behavioral_signal"
         }
       ]
+    },
+    {
+      "id": "psn_44e802ab13570451",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "hydrate_objective_children/1",
+        "module": "Oli.Delivery.Sections.SectionResourceDepot",
+        "lines": [
+          331
+        ],
+        "file_path": "lib/oli/delivery/sections/section_resource_depot.ex"
+      },
+      "data_refs": []
     },
     {
       "id": "psn_450e6989555d59d3",
@@ -14095,7 +14114,7 @@
         "function": "update_project_required_survey_resource_id/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6024
+          6077
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -14415,7 +14434,7 @@
         "function": "find_containing_page_resource_id/2",
         "module": "Oli.Conversation.Triggers",
         "lines": [
-          323
+          359
         ],
         "file_path": "lib/oli/conversation/triggers.ex"
       },
@@ -15148,7 +15167,7 @@
         "function": "get_survey/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6018
+          6071
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -20509,7 +20528,7 @@
         "function": "get_units_and_modules_from_a_section/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5935
+          5988
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21183,7 +21202,7 @@
         "function": "get_last_open_and_unfinished_page/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5187
+          5218
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21414,7 +21433,7 @@
         "function": "get_section_resources_with_lti_activities/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6398
+          6451
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21433,7 +21452,7 @@
         "function": "get_section_resources_with_lti_activities/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6409
+          6462
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21452,7 +21471,7 @@
         "function": "get_section_resources_with_lti_activities/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6427
+          6480
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -21506,7 +21525,7 @@
         "function": "get_learning_objectives_for_container_id/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4037
+          4068
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -22109,6 +22128,69 @@
         "file_path": "lib/oli/delivery/sections.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_83a409546cddaf69",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [
+        {
+          "line": 380,
+          "signal": "direct_field_access",
+          "rule": "database_read_prd",
+          "finding_id": "89e9a610ba5c9494",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 380,
+          "signal": "token_match",
+          "rule": "database_read_prd",
+          "finding_id": "89e9a610ba5c9494",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "get_adaptive_authoring_rules/2",
+        "module": "Oli.Conversation.Triggers",
+        "lines": [
+          380
+        ],
+        "file_path": "lib/oli/conversation/triggers.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Conversation Message Content",
+          "sensitive": true,
+          "reference": "Oli.Conversation.ConversationMessage.content",
+          "key": "conversation_message_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Activity Attempt Save File Content",
+          "sensitive": true,
+          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+          "key": "activity_attempt_save_file_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Resource Attempt Content",
+          "sensitive": true,
+          "reference": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+          "key": "resource_attempt_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Dialogue User Input Content",
+          "sensitive": true,
+          "reference": "OliWeb.Dialogue.UserInput.content",
+          "key": "dialogue_user_input_content",
+          "class": "behavioral_signal"
+        }
+      ]
     },
     {
       "id": "psn_83ac6a2c91879229",
@@ -23026,7 +23108,7 @@
         "function": "get_resources_scheduled_dates_for_student/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5041
+          5072
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -23740,17 +23822,17 @@
       },
       "evidence": [
         {
-          "line": 6331,
+          "line": 6384,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "5727793903bd4b69",
+          "finding_id": "f96e563bd6c97d65",
           "ast_kind": "field_access"
         },
         {
-          "line": 6331,
+          "line": 6384,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "5727793903bd4b69",
+          "finding_id": "f96e563bd6c97d65",
           "ast_kind": "token"
         }
       ],
@@ -23759,7 +23841,7 @@
         "function": "get_last_attempt_per_page_id/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6331
+          6384
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -23965,7 +24047,7 @@
         "function": "get_open_and_free_active_sections_by_roles/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6373
+          6426
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -24652,17 +24734,17 @@
       },
       "evidence": [
         {
-          "line": 4431,
+          "line": 4462,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "2fe7baee94a62875",
+          "finding_id": "244d859c0250ff5e",
           "ast_kind": "field_access"
         },
         {
-          "line": 4431,
+          "line": 4462,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "2fe7baee94a62875",
+          "finding_id": "244d859c0250ff5e",
           "ast_kind": "token"
         }
       ],
@@ -24671,7 +24753,7 @@
         "function": "determine_which_project_id/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4431
+          4462
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -25365,7 +25447,7 @@
         "function": "get_revision_indexes/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6124
+          6177
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26018,7 +26100,7 @@
         "function": "build_contained_objectives/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3872
+          3873
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26037,7 +26119,7 @@
         "function": "build_contained_objectives/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3876
+          3877
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26056,7 +26138,7 @@
         "function": "build_contained_objectives/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3898
+          3899
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26075,7 +26157,26 @@
         "function": "build_contained_objectives/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3917
+          3916
+        ],
+        "file_path": "lib/oli/delivery/sections.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_971eeca617636ea6",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "build_contained_objectives/3",
+        "module": "Oli.Delivery.Sections",
+        "lines": [
+          3932
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26665,17 +26766,17 @@
       },
       "evidence": [
         {
-          "line": 6159,
+          "line": 6212,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "a8712638e33a0d8e",
+          "finding_id": "e806a8be51ef33e4",
           "ast_kind": "field_access"
         },
         {
-          "line": 6159,
+          "line": 6212,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "a8712638e33a0d8e",
+          "finding_id": "e806a8be51ef33e4",
           "ast_kind": "token"
         }
       ],
@@ -26684,7 +26785,7 @@
         "function": "get_students_for_section_with_enrollment_date/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6159
+          6212
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26928,7 +27029,7 @@
         "function": "get_section_contained_objectives/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3972
+          4003
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -26947,7 +27048,7 @@
         "function": "get_section_contained_objectives/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          3981
+          4012
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -27166,7 +27267,7 @@
         "function": "calculate_all_activity_metrics/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6592
+          6645
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -28496,17 +28597,17 @@
       },
       "evidence": [
         {
-          "line": 346,
+          "line": 447,
           "signal": "direct_field_access",
           "rule": "database_read_prd",
-          "finding_id": "72b18127f7446208",
+          "finding_id": "d30dbae819e308fe",
           "ast_kind": "field_access"
         },
         {
-          "line": 346,
+          "line": 447,
           "signal": "token_match",
           "rule": "database_read_prd",
-          "finding_id": "72b18127f7446208",
+          "finding_id": "d30dbae819e308fe",
           "ast_kind": "token"
         }
       ],
@@ -28515,7 +28616,7 @@
         "function": "get_adaptive_parts_layout/2",
         "module": "Oli.Conversation.Triggers",
         "lines": [
-          346
+          447
         ],
         "file_path": "lib/oli/conversation/triggers.ex"
       },
@@ -29804,7 +29905,7 @@
         "function": "populate_children_for_objectives/4",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4631
+          4662
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -30055,7 +30156,7 @@
         "function": "get_nearest_upcoming_lessons/4",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5361
+          5392
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -30615,7 +30716,7 @@
         "function": "get_related_resources/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4907
+          4938
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -31257,7 +31358,7 @@
         "function": "get_visited_pages/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5150
+          5181
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -32109,7 +32210,7 @@
         "function": "update_project_required_survey_resource_id/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6026
+          6079
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -33248,7 +33349,7 @@
         "function": "get_existing_slugs/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4748
+          4779
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -34575,7 +34676,7 @@
         "function": "get_base_project_survey/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6011
+          6064
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -36456,7 +36557,26 @@
         "function": "get_objectives_and_subobjectives/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5662
+          5599
+        ],
+        "file_path": "lib/oli/delivery/sections.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_d47cc4bd2592323b",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "get_objectives_and_subobjectives/2",
+        "module": "Oli.Delivery.Sections",
+        "lines": [
+          5715
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -36475,7 +36595,7 @@
         "function": "get_section_attributes/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4773
+          4804
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -36494,7 +36614,7 @@
         "function": "check_for_hint_trigger/5",
         "module": "Oli.Conversation.Triggers",
         "lines": [
-          533
+          634
         ],
         "file_path": "lib/oli/conversation/triggers.ex"
       },
@@ -36801,6 +36921,69 @@
         "file_path": "lib/oli/analytics/backfill/inventory.ex"
       },
       "data_refs": []
+    },
+    {
+      "id": "psn_d6572744f71f2f1c",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.one"
+      },
+      "evidence": [
+        {
+          "line": 396,
+          "signal": "direct_field_access",
+          "rule": "database_read_prd",
+          "finding_id": "6764e370ab8bf2bf",
+          "ast_kind": "field_access"
+        },
+        {
+          "line": 396,
+          "signal": "token_match",
+          "rule": "database_read_prd",
+          "finding_id": "6764e370ab8bf2bf",
+          "ast_kind": "token"
+        }
+      ],
+      "confidence": 1.0,
+      "code_context": {
+        "function": "get_authoring_rules_by_revision_id/1",
+        "module": "Oli.Conversation.Triggers",
+        "lines": [
+          396
+        ],
+        "file_path": "lib/oli/conversation/triggers.ex"
+      },
+      "data_refs": [
+        {
+          "label": "Conversation Message Content",
+          "sensitive": true,
+          "reference": "Oli.Conversation.ConversationMessage.content",
+          "key": "conversation_message_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Activity Attempt Save File Content",
+          "sensitive": true,
+          "reference": "Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile.content",
+          "key": "activity_attempt_save_file_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Resource Attempt Content",
+          "sensitive": true,
+          "reference": "Oli.Delivery.Attempts.Core.ResourceAttempt.content",
+          "key": "resource_attempt_content",
+          "class": "behavioral_signal"
+        },
+        {
+          "label": "Dialogue User Input Content",
+          "sensitive": true,
+          "reference": "OliWeb.Dialogue.UserInput.content",
+          "key": "dialogue_user_input_content",
+          "class": "behavioral_signal"
+        }
+      ]
     },
     {
       "id": "psn_d65aa658fade1847",
@@ -37396,7 +37579,7 @@
         "function": "apply_publication_update/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4059
+          4090
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -40092,7 +40275,7 @@
         "function": "get_pinned_project_publications/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4420
+          4451
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -40172,7 +40355,7 @@
         "function": "get_units_and_modules_containers/1",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          4956
+          4987
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -40267,7 +40450,7 @@
         "function": "get_latest_visited_page/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5124
+          5155
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -40735,7 +40918,7 @@
         "function": "has_visited_section/3",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6075
+          6128
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -41668,7 +41851,7 @@
         "function": "get_sections_by/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6216
+          6269
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -41687,7 +41870,7 @@
         "function": "get_sections_by/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6223
+          6276
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -41706,7 +41889,7 @@
         "function": "get_instructors_for_section/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          6202
+          6255
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -43133,7 +43316,7 @@
         "function": "verify_access/2",
         "module": "Oli.Conversation.Triggers",
         "lines": [
-          134
+          138
         ],
         "file_path": "lib/oli/conversation/triggers.ex"
       },
@@ -43423,7 +43606,7 @@
         "function": "get_parent_containers_map/2",
         "module": "Oli.Delivery.Sections",
         "lines": [
-          5875
+          5928
         ],
         "file_path": "lib/oli/delivery/sections.ex"
       },
@@ -44420,7 +44603,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "7f63286cd96268b3a2b1afadfe6f5d422337cb50"
+    "commit": "4ea66066e167088ac8ce277f2a75191e0271e9a0"
   },
   "schema_version": "1",
   "summary": {
@@ -44432,8 +44615,8 @@
       "sensitive_context_indicator": 18
     },
     "files_scanned": 1606,
-    "scan_duration_ms": 1726,
-    "node_count": 1526,
+    "scan_duration_ms": 1716,
+    "node_count": 1531,
     "data_node_count": 122,
     "flow_count": 781,
     "scan_error_count": 0,
@@ -44442,14 +44625,14 @@
     "proto_flows_enabled": true,
     "node_type_counts": {
       "sink": 611,
-      "source": 915
+      "source": 920
     },
     "boundary_counts": {
       "external": 481,
       "internal": 300
     },
-    "confirmed_count": 160,
-    "possible_count": 1366
+    "confirmed_count": 162,
+    "possible_count": 1369
   },
   "flows": [
     {

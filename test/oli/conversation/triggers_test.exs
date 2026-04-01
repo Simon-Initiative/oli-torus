@@ -277,4 +277,9 @@ defmodule Oli.Conversation.TriggersTest do
            }) ==
              "Activated an adaptive component trigger (type: component, id: badscriptalert1script)"
   end
+
+  test "describes trap state trigger" do
+    assert Triggers.description(:trap_state, %{"component_id" => "trap-rule-1"}) ==
+             "Triggered a trap state rule in an adaptive lesson (id: trap-rule-1)"
+  end
 end

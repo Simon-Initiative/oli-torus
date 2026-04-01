@@ -1,9 +1,13 @@
 defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
-  use ExUnit.Case, async: true
+  use Oli.DataCase
+
+  import Oli.Factory
 
   alias Oli.Dashboard.Snapshot.Contract
   alias Oli.Dashboard.Snapshot.Projections
   alias Oli.InstructorDashboard.DataSnapshot.Projections, as: InstructorProjections
+  alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Resources.ResourceType
 
   describe "instructor capability projections" do
     # @ac "AC-008"
@@ -40,6 +44,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
       assert Enum.find(projections.student_support.support.buckets, &(&1.id == "struggling")).count ==
                1
 
+      assert projections.challenging_objectives.state == :empty_low_proficiency
+      assert projections.challenging_objectives.rows == []
       assert projections.assessments.assessments.has_assessments?
       assert projections.assessments.assessments.total_rows == 1
       assert Enum.at(projections.assessments.assessments.rows, 0).assessment_id == 42
@@ -56,7 +62,6 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
                Enum.sort([
                  :progress,
                  :summary,
-                 :challenging_objectives,
                  :ai_context
                ])
 
@@ -65,10 +70,14 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
 
       assert Enum.sort(
                InstructorProjections.affected_capabilities(:oracle_instructor_scope_resources)
-             ) == [:assessments]
+             ) == Enum.sort([:assessments, :challenging_objectives])
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_progress_proficiency) ==
                [:student_support]
+
+      assert InstructorProjections.affected_capabilities(
+               :oracle_instructor_objectives_proficiency
+             ) == [:challenging_objectives]
 
       assert InstructorProjections.affected_capabilities(:oracle_instructor_student_info) ==
                [:student_support]
@@ -76,14 +85,32 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
   end
 
   defp snapshot_fixture do
+    section = insert(:section)
+    project = insert(:project)
+    unit_resource = insert(:resource)
+
+    unit =
+      insert(:section_resource, %{
+        section: section,
+        project: project,
+        resource_id: unit_resource.id,
+        resource_type_id: ResourceType.id_for_container(),
+        title: "Unit 777",
+        slug: "unit-777",
+        numbering_index: 1,
+        numbering_level: 1
+      })
+
+    SectionResourceDepot.update_section_resource(unit)
+
     {:ok, snapshot} =
       Contract.new_snapshot(%{
         request_token: "token-instructor-proj-1",
         context: %{
           dashboard_context_type: :section,
-          dashboard_context_id: 101,
+          dashboard_context_id: section.id,
           user_id: 88,
-          scope: %{container_type: :container, container_id: 777}
+          scope: %{container_type: :container, container_id: unit.resource_id}
         },
         metadata: %{timezone: "UTC"},
         oracles: %{
@@ -105,6 +132,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
             ]
           },
           oracle_instructor_scope_resources: %{
+            course_title: "Intro to Testing",
+            scope_label: "Unit 777",
             items: [
               %{
                 resource_id: 42,
@@ -125,7 +154,17 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
               last_interaction_at: ~U[2026-03-12 00:00:00Z]
             }
           ],
-          oracle_instructor_section_analytics: %{metric: :assessment}
+          oracle_instructor_section_analytics: %{metric: :assessment},
+          oracle_instructor_objectives_proficiency: %{
+            objective_rows: [
+              %{
+                objective_id: 7001,
+                title: "Objective 7001",
+                proficiency_distribution: %{"High" => 2}
+              }
+            ],
+            objective_resources: []
+          }
         },
         oracle_statuses: %{
           oracle_instructor_progress: %{status: :ready},
@@ -133,7 +172,8 @@ defmodule Oli.InstructorDashboard.DataSnapshot.ProjectionsTest do
           oracle_instructor_scope_resources: %{status: :ready},
           oracle_instructor_progress_proficiency: %{status: :ready},
           oracle_instructor_student_info: %{status: :ready},
-          oracle_instructor_section_analytics: %{status: :ready}
+          oracle_instructor_section_analytics: %{status: :ready},
+          oracle_instructor_objectives_proficiency: %{status: :ready}
         }
       })
 

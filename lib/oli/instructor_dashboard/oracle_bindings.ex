@@ -64,6 +64,13 @@ defmodule Oli.InstructorDashboard.OracleBindings do
           },
           optional_oracles: %{}
         },
+        challenging_objectives: %{
+          required_oracles: %{
+            objectives_proficiency: :oracle_instructor_objectives_proficiency,
+            scope_resources: :oracle_instructor_scope_resources
+          },
+          optional_oracles: %{}
+        },
         legacy_section_analytics: %{
           required_oracles: %{
             section_analytics: :oracle_instructor_section_analytics

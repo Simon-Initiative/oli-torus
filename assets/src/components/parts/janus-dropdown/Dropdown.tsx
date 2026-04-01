@@ -7,7 +7,13 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { parseBool } from '../../../utils/common';
+import {
+  findOptionIndexForSelectedItem,
+  htmlToPlainText,
+  optionLabelsNeedRichDropdown,
+} from '../../../utils/richOptionLabel';
 import { PartComponentProps } from '../types/parts';
+import { DropdownRichSelect } from './DropdownRichSelect';
 import { DropdownModel } from './schema';
 
 const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
@@ -97,20 +103,21 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     }
 
     const sSelectedItem = currentStateSnapshot[`stage.${id}.selectedItem`];
-    if (sSelectedItem !== undefined && sSelectedItem !== '') {
-      const selectionIndex: number = pModel.optionLabels?.findIndex((str: string) =>
-        sSelectedItem.includes(str),
-      );
-      setSelectedItem(sSelectedItem);
-      setSelectedIndex(selectionIndex + 1);
-      setTimeout(() => {
-        saveState({
-          selectedIndex: selectionIndex + 1,
-          selectedItem: sSelectedItem,
-          value: sSelectedItem,
-          enabled,
+    if (sSelectedItem !== undefined && sSelectedItem !== '' && pModel.optionLabels) {
+      const selectionIndex = findOptionIndexForSelectedItem(pModel.optionLabels, sSelectedItem);
+      if (selectionIndex >= 0) {
+        const modelLabel = pModel.optionLabels[selectionIndex];
+        setSelectedItem(modelLabel);
+        setSelectedIndex(selectionIndex + 1);
+        setTimeout(() => {
+          saveState({
+            selectedIndex: selectionIndex + 1,
+            selectedItem: modelLabel,
+            value: modelLabel,
+            enabled,
+          });
         });
-      });
+      }
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
     if (initResult.context.mode === contexts.REVIEW) {
@@ -180,10 +187,14 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     gap: '4px',
   };
 
-  const dropDownStyle: CSSProperties = {
+  const nativeDropDownStyle: CSSProperties = {
     width: '100%',
     height: 'auto',
-    minHeight: '42px',
+    minHeight: '38px',
+  };
+
+  const richDropDownStyle: CSSProperties = {
+    width: '100%',
   };
 
   useEffect(() => {
@@ -231,6 +242,24 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
 
   const totalOptions = Array.isArray(optionLabels) ? optionLabels.length : 0;
 
+  const needRich = optionLabelsNeedRichDropdown(optionLabels);
+
+  const handleRichSelectChange = (newIndex: number) => {
+    if (!optionLabels || newIndex < 1 || newIndex > optionLabels.length) {
+      return;
+    }
+    const optionLabel = optionLabels[newIndex - 1];
+    setSelectedIndex(newIndex);
+    setSelectedItem(optionLabel);
+    setLiveAnnouncement(`${htmlToPlainText(optionLabel)} selected ${newIndex} of ${totalOptions}`);
+    saveState({
+      selectedIndex: newIndex,
+      selectedItem: optionLabel,
+      value: optionLabel,
+      enabled,
+    });
+  };
+
   const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
     const newIndex = Number(value);
@@ -247,7 +276,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     const optionLabel = optionLabels[newIndex - 1];
     setSelectedIndex(newIndex);
     setSelectedItem(optionLabel);
-    setLiveAnnouncement(`${optionLabel} selected ${newIndex} of ${totalOptions}`);
+    setLiveAnnouncement(`${htmlToPlainText(optionLabel)} selected ${newIndex} of ${totalOptions}`);
     saveState({
       selectedIndex: newIndex,
       selectedItem: optionLabel,
@@ -299,21 +328,25 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
               }
 
               const sSelectedItem = changes[`stage.${id}.selectedItem`];
-              if (sSelectedItem !== undefined) {
+              if (sSelectedItem !== undefined && optionLabels) {
                 if (selectedItem !== sSelectedItem) {
-                  const selectionIndex: number = optionLabels.findIndex((str: any) =>
-                    sSelectedItem.includes(str),
+                  const selectionIndex = findOptionIndexForSelectedItem(
+                    optionLabels,
+                    sSelectedItem,
                   );
-                  setSelectedItem(sSelectedItem);
-                  setSelectedIndex(selectionIndex + 1);
-                  setTimeout(() => {
-                    saveState({
-                      selectedIndex: selectionIndex + 1,
-                      selectedItem: sSelectedItem,
-                      value: sSelectedItem,
-                      enabled,
+                  if (selectionIndex >= 0) {
+                    const modelLabel = optionLabels[selectionIndex];
+                    setSelectedItem(modelLabel);
+                    setSelectedIndex(selectionIndex + 1);
+                    setTimeout(() => {
+                      saveState({
+                        selectedIndex: selectionIndex + 1,
+                        selectedItem: modelLabel,
+                        value: modelLabel,
+                        enabled,
+                      });
                     });
-                  });
+                  }
                 }
               }
 
@@ -345,21 +378,25 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
               }
 
               const sSelectedItem = changes[`stage.${id}.selectedItem`];
-              if (sSelectedItem !== undefined) {
+              if (sSelectedItem !== undefined && optionLabels) {
                 if (selectedItem !== sSelectedItem) {
-                  const selectionIndex: number = optionLabels.findIndex((str: any) =>
-                    sSelectedItem.includes(str),
+                  const selectionIndex = findOptionIndexForSelectedItem(
+                    optionLabels,
+                    sSelectedItem,
                   );
-                  setSelectedItem(sSelectedItem);
-                  setSelectedIndex(selectionIndex + 1);
-                  setTimeout(() => {
-                    saveState({
-                      selectedIndex: selectionIndex + 1,
-                      selectedItem: sSelectedItem,
-                      value: sSelectedItem,
-                      enabled,
+                  if (selectionIndex >= 0) {
+                    const modelLabel = optionLabels[selectionIndex];
+                    setSelectedItem(modelLabel);
+                    setSelectedIndex(selectionIndex + 1);
+                    setTimeout(() => {
+                      saveState({
+                        selectedIndex: selectionIndex + 1,
+                        selectedItem: modelLabel,
+                        value: modelLabel,
+                        enabled,
+                      });
                     });
-                  });
+                  }
                 }
               }
 
@@ -406,27 +443,39 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
         {liveAnnouncement}
       </span>
       {showLabel && label ? <label htmlFor={`${id}-select`}>{label}</label> : null}
-      <select
-        id={`${id}-select`}
-        className="dropdown"
-        style={dropDownStyle}
-        value={selectedIndex > 0 ? selectedIndex : -1}
-        disabled={!enabled}
-        onChange={handleSelectChange}
-      >
-        {prompt ? (
-          <option value="-1" disabled>
-            {prompt}
-          </option>
-        ) : (
-          <option value="-1"></option>
-        )}
-        {optionLabels?.map((optionLabel: string, index: number) => (
-          <option key={index + 1} value={index + 1}>
-            {optionLabel}
-          </option>
-        ))}
-      </select>
+      {needRich ? (
+        <DropdownRichSelect
+          id={id}
+          prompt={prompt}
+          optionLabels={optionLabels || []}
+          selectedIndex={selectedIndex}
+          disabled={!enabled}
+          onChange={handleRichSelectChange}
+          style={richDropDownStyle}
+        />
+      ) : (
+        <select
+          id={`${id}-select`}
+          className="dropdown"
+          style={nativeDropDownStyle}
+          value={selectedIndex > 0 ? selectedIndex : -1}
+          disabled={!enabled}
+          onChange={handleSelectChange}
+        >
+          {prompt ? (
+            <option value="-1" disabled>
+              {prompt}
+            </option>
+          ) : (
+            <option value="-1"></option>
+          )}
+          {optionLabels?.map((optionLabel: string, index: number) => (
+            <option key={index + 1} value={index + 1}>
+              {optionLabel}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   ) : null;
 };
