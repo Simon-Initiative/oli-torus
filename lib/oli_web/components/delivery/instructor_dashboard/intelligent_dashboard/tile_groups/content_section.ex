@@ -25,7 +25,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :toggle_event, :string, default: "dashboard_section_toggled"
   attr :reorder_event, :string, default: "dashboard_sections_reordered"
   attr :show_move_handle, :boolean, default: true
-  attr :objectives_status, :string, default: "Waiting for scoped data"
+  attr :objectives_projection, :map, default: nil
+  attr :objectives_projection_status, :map, default: %{status: :loading}
+  attr :objectives_projection_identity, :string, default: "loading"
+  attr :section_slug, :string, required: true
   attr :assessments_status, :string, default: "Waiting for scoped data"
   attr :show_objectives_tile, :boolean, default: true
   attr :show_assessments_tile, :boolean, default: true
@@ -51,7 +54,13 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         ]}
         data-section-layout={if @tile_count == 1, do: "single", else: "multi"}
       >
-        <ChallengingObjectivesTile.tile :if={@show_objectives_tile} status={@objectives_status} />
+        <ChallengingObjectivesTile.tile
+          :if={@show_objectives_tile}
+          projection={@objectives_projection}
+          projection_status={@objectives_projection_status}
+          projection_identity={@objectives_projection_identity}
+          section_slug={@section_slug}
+        />
         <AssessmentsTile.tile :if={@show_assessments_tile} status={@assessments_status} />
       </div>
     </DashboardSectionChrome.section>

@@ -1051,29 +1051,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp dashboard_runtime_max_concurrency, do: 4
 
   defp dashboard_dependency_profile do
-    case OracleRegistry.dependencies_for(:progress_summary) do
-      {:ok, progress} ->
-        case OracleRegistry.dependencies_for(:support_summary) do
-          {:ok, support} ->
-            {:ok,
-             %{
-               required: Enum.uniq(progress.required ++ support.required),
-               optional: Enum.uniq(progress.optional ++ support.optional)
-             }}
+    consumers = [:progress_summary, :support_summary, :challenging_objectives]
 
-          {:error, reason} ->
-            {:error, {:dependency_profile_unavailable, :support_summary, reason}}
-
-          other ->
-            {:error, {:dependency_profile_unavailable, :support_summary, other}}
-        end
-
-      {:error, reason} ->
-        {:error, {:dependency_profile_unavailable, :progress_summary, reason}}
-
-      other ->
-        {:error, {:dependency_profile_unavailable, :progress_summary, other}}
+    with {:ok, profiles} <- dependency_profiles_for(consumers) do
+      {:ok,
+       %{
+         required: profiles |> Enum.flat_map(& &1.required) |> Enum.uniq(),
+         optional: profiles |> Enum.flat_map(& &1.optional) |> Enum.uniq()
+       }}
     end
+  end
+
+  defp dependency_profiles_for(consumers) do
+    Enum.reduce_while(consumers, {:ok, []}, fn consumer, {:ok, profiles} ->
+      case OracleRegistry.dependencies_for(consumer) do
+        {:ok, profile} ->
+          {:cont, {:ok, [profile | profiles]}}
+
+        {:error, reason} ->
+          {:halt, {:error, {:dependency_profile_unavailable, consumer, reason}}}
+
+        other ->
+          {:halt, {:error, {:dependency_profile_unavailable, consumer, other}}}
+      end
+    end)
   end
 
   defp coordinator_opts(context, cache_opts) do
@@ -1130,6 +1131,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
   defp build_dashboard_payload(bundle, revisit_hydration) do
     progress_projection = Map.get(bundle.projections, :progress, %{})
     support_projection = Map.get(bundle.projections, :student_support, %{})
+    objectives_projection = Map.get(bundle.projections, :challenging_objectives)
+
+    objectives_projection_status =
+      Map.get(bundle.projection_statuses, :challenging_objectives, %{status: :unknown})
+
     oracle_sources = dashboard_oracle_sources(bundle.snapshot.oracle_statuses)
 
     cache_stats =
@@ -1165,7 +1171,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       progress_text: inspect(progress_projection, pretty: true, limit: :infinity),
       student_support_text: inspect(support_projection, pretty: true, limit: :infinity),
       student_support_projection: Map.get(support_projection, :support, %{}),
-      objectives_text: "Waiting for scoped data",
+      objectives_text: inspect(objectives_projection, pretty: true, limit: :infinity),
+      objectives_projection: objectives_projection,
+      objectives_projection_status: objectives_projection_status,
+      objectives_projection_identity:
+        "challenging_objectives:#{bundle.request_token}:#{scope_selector(bundle.scope)}",
       assessments_text: "Waiting for scoped data"
     }
   end
@@ -1271,6 +1281,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       student_support_text: "Loading...",
       student_support_projection: %{},
       objectives_text: "Loading...",
+      objectives_projection: nil,
+      objectives_projection_status: %{status: :loading},
+      objectives_projection_identity: "challenging_objectives:loading",
       assessments_text: "Loading..."
     }
   end
@@ -1282,6 +1295,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab do
       student_support_text: "unavailable",
       student_support_projection: %{},
       objectives_text: "unavailable",
+      objectives_projection: nil,
+      objectives_projection_status: %{status: :unavailable, reason_code: reason},
+      objectives_projection_identity: "challenging_objectives:error",
       assessments_text: "unavailable"
     }
   end

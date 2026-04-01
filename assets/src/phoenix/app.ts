@@ -78,6 +78,28 @@ window.addEventListener('phx:page-loading-stop', () => {
   NProgress.done();
 });
 
+type LearningObjectivesScrollDetail = {
+  id?: unknown;
+  scroll_delay?: unknown;
+};
+
+window.addEventListener('phx:learning-objectives-scroll', (event: Event) => {
+  const detail = (event as CustomEvent<LearningObjectivesScrollDetail>).detail ?? {};
+  const targetId = typeof detail.id === 'string' ? detail.id : null;
+  if (!targetId) return;
+
+  const scrollDelay = typeof detail.scroll_delay === 'number' ? detail.scroll_delay : 0;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const scrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
+
+  setTimeout(() => {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: scrollBehavior, block: 'center' });
+  }, scrollDelay);
+});
+
 // Expose React/Redux APIs to server-side rendered templates
 function mount(Component: any, element: HTMLElement, context: any = {}) {
   ReactDOM.render(React.createElement(Component, context), element);

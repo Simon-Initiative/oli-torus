@@ -176,13 +176,20 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Sh
       assigns
       |> assign(:section_slug, section_slug)
       |> assign(:section, section)
+      # Preserve the delivery section slug before `:section` is rebound to the dashboard section config.
+      |> assign(:section_slug, section_slug)
       |> assign(:show_move_handle, length(assigns.dashboard_visible_sections) > 1)
 
     ~H"""
     <ContentSection.section
       expanded={@section.expanded}
       show_move_handle={@show_move_handle}
-      objectives_status={tile_status(@dashboard, :objectives_text)}
+      objectives_projection={Map.get(@dashboard, :objectives_projection)}
+      objectives_projection_status={
+        Map.get(@dashboard, :objectives_projection_status, %{status: :loading})
+      }
+      objectives_projection_identity={Map.get(@dashboard, :objectives_projection_identity, "loading")}
+      section_slug={@section_slug}
       assessments_status={tile_status(@dashboard, :assessments_text)}
       show_objectives_tile={section_has_tile?(@section, "objectives")}
       show_assessments_tile={section_has_tile?(@section, "assessments")}
