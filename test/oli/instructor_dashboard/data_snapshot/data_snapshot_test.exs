@@ -47,7 +47,10 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       lookup_fun = fn _context, _scope, _required ->
         {:ok,
          %{
-           hits: %{oracle_instructor_progress: %{metric: :progress}},
+           hits: %{
+             oracle_instructor_progress_bins: progress_bins_payload(),
+             oracle_instructor_scope_resources: scope_resources_payload()
+           },
            misses: [],
            source: :inprocess
          }}
@@ -58,7 +61,10 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
                  cache_module: cache_module,
                  cache_opts: [lookup_fun: lookup_fun],
                  dependency_profile: %{
-                   required: [:oracle_instructor_progress],
+                   required: [
+                     :oracle_instructor_progress_bins,
+                     :oracle_instructor_scope_resources
+                   ],
                    optional: [
                      :oracle_instructor_progress_proficiency,
                      :oracle_instructor_student_info
@@ -67,8 +73,13 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
                )
 
       assert is_binary(bundle.request_token)
-      assert bundle.snapshot.oracles.oracle_instructor_progress == %{metric: :progress}
-      assert bundle.snapshot.oracle_statuses.oracle_instructor_progress.status == :ready
+      assert bundle.snapshot.oracles.oracle_instructor_progress_bins == progress_bins_payload()
+
+      assert bundle.snapshot.oracles.oracle_instructor_scope_resources ==
+               scope_resources_payload()
+
+      assert bundle.snapshot.oracle_statuses.oracle_instructor_progress_bins.status == :ready
+      assert bundle.snapshot.oracle_statuses.oracle_instructor_scope_resources.status == :ready
 
       assert bundle.snapshot.oracle_statuses.oracle_instructor_progress_proficiency.status ==
                :unavailable
@@ -88,8 +99,18 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       end
 
       runtime_results = %{
-        oracle_instructor_progress:
-          Result.ok(:oracle_instructor_progress, %{metric: :progress_runtime}, version: 2),
+        oracle_instructor_progress_bins:
+          Result.ok(
+            :oracle_instructor_progress_bins,
+            progress_bins_payload(),
+            version: 2
+          ),
+        oracle_instructor_scope_resources:
+          Result.ok(
+            :oracle_instructor_scope_resources,
+            scope_resources_payload(),
+            version: 1
+          ),
         oracle_instructor_progress_proficiency:
           Result.ok(
             :oracle_instructor_progress_proficiency,
@@ -118,7 +139,8 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
                  cache_opts: [lookup_fun: lookup_fun],
                  dependency_profile: %{
                    required: [
-                     :oracle_instructor_progress,
+                     :oracle_instructor_progress_bins,
+                     :oracle_instructor_scope_resources,
                      :oracle_instructor_progress_proficiency,
                      :oracle_instructor_student_info
                    ],
@@ -127,7 +149,10 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
                  runtime_results: runtime_results
                )
 
-      assert bundle.snapshot.oracles.oracle_instructor_progress == %{metric: :progress_runtime}
+      assert bundle.snapshot.oracles.oracle_instructor_progress_bins == progress_bins_payload()
+
+      assert bundle.snapshot.oracles.oracle_instructor_scope_resources ==
+               scope_resources_payload()
 
       assert bundle.snapshot.oracles.oracle_instructor_progress_proficiency == [
                %{student_id: 101, progress_pct: 20.0, proficiency_pct: 30.0}
@@ -143,7 +168,8 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
                }
              ]
 
-      assert bundle.snapshot.oracle_statuses.oracle_instructor_progress.status == :ready
+      assert bundle.snapshot.oracle_statuses.oracle_instructor_progress_bins.status == :ready
+      assert bundle.snapshot.oracle_statuses.oracle_instructor_scope_resources.status == :ready
       assert bundle.projection_statuses.progress.status == :ready
       assert bundle.projection_statuses.student_support.status == :ready
     end
@@ -162,14 +188,27 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
         Agent.update(call_counter, &(&1 + 1))
 
         Map.new(misses, fn key ->
-          {key, Result.ok(key, %{from: :runtime})}
+          payload =
+            case key do
+              :oracle_instructor_progress_bins -> progress_bins_payload()
+              :oracle_instructor_scope_resources -> scope_resources_payload()
+              _ -> %{from: :runtime}
+            end
+
+          {key, Result.ok(key, payload)}
         end)
       end
 
       opts = [
         cache_module: cache_module,
         cache_opts: [lookup_fun: lookup_fun],
-        dependency_profile: %{required: [:oracle_instructor_progress], optional: []},
+        dependency_profile: %{
+          required: [
+            :oracle_instructor_progress_bins,
+            :oracle_instructor_scope_resources
+          ],
+          optional: []
+        },
         runtime_results_provider: provider,
         memoize: true
       ]
@@ -199,8 +238,14 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       end
 
       runtime_results = %{
-        oracle_instructor_progress:
-          Result.ok(:oracle_instructor_progress, %{metric: :runtime_progress}, version: 2),
+        oracle_instructor_progress_bins:
+          Result.ok(:oracle_instructor_progress_bins, progress_bins_payload(), version: 2),
+        oracle_instructor_scope_resources:
+          Result.ok(
+            :oracle_instructor_scope_resources,
+            scope_resources_payload(),
+            version: 1
+          ),
         oracle_instructor_support: Result.error(:oracle_instructor_support, :support_timeout)
       }
 
@@ -209,25 +254,41 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
                  cache_module: cache_module,
                  cache_opts: [lookup_fun: lookup_fun, write_fun: write_fun],
                  dependency_profile: %{
-                   required: [:oracle_instructor_progress],
+                   required: [
+                     :oracle_instructor_progress_bins,
+                     :oracle_instructor_scope_resources
+                   ],
                    optional: [:oracle_instructor_support]
                  },
                  runtime_results: runtime_results
                )
 
-      assert bundle.snapshot.oracles.oracle_instructor_progress == %{metric: :runtime_progress}
+      assert bundle.snapshot.oracles.oracle_instructor_progress_bins == progress_bins_payload()
+
+      assert bundle.snapshot.oracles.oracle_instructor_scope_resources ==
+               scope_resources_payload()
+
       assert bundle.snapshot.oracle_statuses.oracle_instructor_support.status == :failed
 
       writes = Agent.get(write_sink, & &1)
-      assert length(writes) == 1
+      assert length(writes) == 2
 
-      assert [%{oracle_key: :oracle_instructor_progress, payload: %{metric: :runtime_progress}}] =
-               writes
+      assert Enum.any?(writes, fn %{oracle_key: oracle_key, payload: payload, meta: meta} ->
+               oracle_key == :oracle_instructor_progress_bins and
+                 payload == progress_bins_payload() and
+                 meta.oracle_version == 2
+             end)
 
-      assert hd(writes).meta.oracle_version == 2
-      assert hd(writes).meta.dashboard_context_id == 7001
-      assert hd(writes).meta.container_type == :container
-      assert hd(writes).meta.container_id == 301
+      assert Enum.any?(writes, fn %{oracle_key: oracle_key, payload: payload, meta: meta} ->
+               oracle_key == :oracle_instructor_scope_resources and
+                 payload == scope_resources_payload() and
+                 meta.oracle_version == 1
+             end)
+
+      assert Enum.all?(writes, fn %{meta: meta} ->
+               meta.dashboard_context_id == 7001 and meta.container_type == :container and
+                 meta.container_id == 301
+             end)
     end
   end
 
@@ -268,6 +329,10 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       end
 
       runtime_results = %{
+        oracle_instructor_progress_bins:
+          Result.ok(:oracle_instructor_progress_bins, progress_bins_payload()),
+        oracle_instructor_scope_resources:
+          Result.ok(:oracle_instructor_scope_resources, scope_resources_payload()),
         oracle_instructor_progress:
           Result.ok(:oracle_instructor_progress, %{metric: :progress_runtime})
       }
@@ -276,7 +341,13 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
                DataSnapshot.get_or_build(scope_request,
                  cache_module: cache_module,
                  cache_opts: [lookup_fun: lookup_fun],
-                 dependency_profile: %{required: [:oracle_instructor_progress], optional: []},
+                 dependency_profile: %{
+                   required: [
+                     :oracle_instructor_progress_bins,
+                     :oracle_instructor_scope_resources
+                   ],
+                   optional: [:oracle_instructor_progress]
+                 },
                  runtime_results: runtime_results
                )
 
@@ -288,5 +359,29 @@ defmodule Oli.InstructorDashboard.DataSnapshotTest do
       assert {:error, {:projection_unavailable, :missing_capability, :unavailable, nil}} =
                DataSnapshot.get_projection(bundle, :missing_capability)
     end
+  end
+
+  defp progress_bins_payload do
+    %{
+      total_students: 10,
+      by_resource_bins: %{
+        301 => %{0 => 1, 100 => 9}
+      },
+      by_container_bins: %{
+        301 => %{0 => 1, 100 => 9}
+      }
+    }
+  end
+
+  defp scope_resources_payload do
+    %{
+      items: [
+        %{
+          resource_id: 301,
+          resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+          title: "Module 301"
+        }
+      ]
+    }
   end
 end

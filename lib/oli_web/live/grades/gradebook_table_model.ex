@@ -4,6 +4,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.Utils
   alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias OliWeb.Delivery.ScoreDisplay
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
 
@@ -107,6 +108,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
   def render_grade_score(assigns, row, _) do
     perc = score(row.score) / out_of_score(row.out_of) * 100
+    score_status = ScoreDisplay.score_status(row.score, row.out_of)
     has_score? = row.score != nil
     was_late = row.was_late
     score = if has_score?, do: Utils.format_score(row.score)
@@ -115,6 +117,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     assigns =
       Map.merge(assigns, %{
         perc: perc,
+        score_status: score_status,
         has_score?: has_score?,
         was_late: was_late,
         row: row,
@@ -125,7 +128,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     ~H"""
     <div>
       <a
-        class={"#{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black dark:text-gray-300"}"}
+        class={grade_score_link_class(@score_status, @has_score?)}
         href={
           Routes.live_path(
             OliWeb.Endpoint,
@@ -156,7 +159,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
       Map.values(row)
       |> Enum.count(fn elem ->
         is_resource_access?(elem) and has_score?(elem) and
-          score(elem.score) / out_of_score(elem.out_of) * 100 < 40
+          ScoreDisplay.score_status(elem.score, elem.out_of) == :bad
       end)
 
     assigns = Map.merge(assigns, %{disapproved_count: disapproved_count, row: row})
@@ -283,9 +286,15 @@ defmodule OliWeb.Grades.GradebookTableModel do
         end
 
       perc = safe_score / safe_out_of * 100
+      score_status = ScoreDisplay.score_status(score, out_of)
 
       assigns =
-        Map.merge(assigns, %{perc: perc, safe_out_of: safe_out_of, safe_score: safe_score})
+        Map.merge(assigns, %{
+          perc: perc,
+          safe_out_of: safe_out_of,
+          safe_score: safe_score,
+          score_status: score_status
+        })
 
       ~H"""
       <a href={
@@ -297,7 +306,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
           @resource_id
         )
       }>
-        <.score_badge score={@safe_score} out_of={@safe_out_of} perc={@perc} />
+        <.score_badge score={@safe_score} out_of={@safe_out_of} score_status={@score_status} />
       </a>
       <%= if @was_late do %>
         <span class="ml-2 w-11 h-5 inline-flex items-center justify-center px-2 py-1 rounded-[999px] bg-Icon-icon-danger text-white text-xs shadow-[0px_2px_4px_0px_rgba(0,52,99,0.1)]">
@@ -316,15 +325,19 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
   attr :score, :any, required: true
   attr :out_of, :any, required: true
-  attr :perc, :float, default: 0.0
+  attr :score_status, :atom, default: :none
 
   defp score_badge(assigns) do
     ~H"""
-    <%= if @perc < 50 do %>
+    <%= if @score_status == :bad do %>
       <span class="text-Text-text-danger no-underline">{@score}</span><span class="text-Text-text-high">{"/#{@out_of}"}</span>
     <% else %>
       <span class="text-Text-text-button no-underline">{@score}</span><span class="text-Text-text-high">{"/#{@out_of}"}</span>
     <% end %>
     """
   end
+
+  defp grade_score_link_class(:bad, true), do: "text-red-500"
+  defp grade_score_link_class(_score_status, true), do: "text-black dark:text-gray-300"
+  defp grade_score_link_class(_score_status, false), do: "text-black dark:text-gray-300"
 end

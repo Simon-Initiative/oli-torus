@@ -21,16 +21,18 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
 
   def render(assigns) do
     excluded_recipient_students = excluded_recipient_students(assigns)
+    modal_dom_id = Map.get(assigns, :modal_dom_id, "student_support_email_modal")
 
     assigns =
       assigns
+      |> assign(:modal_dom_id, modal_dom_id)
       |> assign(:excluded_recipient_students, excluded_recipient_students)
       |> assign(:excluded_recipient_count, length(excluded_recipient_students))
 
     ~H"""
     <div id="student_support_email_modal_wrapper">
       <Modal.modal
-        id="student_support_email_modal"
+        id={@modal_dom_id}
         class="max-w-[1048px] rounded-[12px] overflow-hidden"
         header_class="flex items-start justify-between bg-Background-bg-primary px-[38px] pt-[30px] pb-5"
         body_class="bg-Background-bg-primary px-[38px] pt-4 pb-0"
@@ -48,7 +50,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
             phx-click={
               Modal.hide_modal(
                 JS.push("close_email_modal", target: @myself),
-                "student_support_email_modal"
+                @modal_dom_id
               )
             }
           />
@@ -98,6 +100,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                 </button>
               </div>
             </div>
+            <p
+              :if={@recipient_students == []}
+              class="text-sm leading-5 text-Text-text-low-alpha"
+            >
+              No students currently need this message. You can review the draft, but sending stays disabled until at least one recipient is available.
+            </p>
             <p
               :if={@excluded_recipient_count > 0}
               class="text-sm leading-5 text-Text-text-low-alpha"
@@ -160,7 +168,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               phx-click={
                 Modal.hide_modal(
                   JS.push("close_email_modal", target: @myself),
-                  "student_support_email_modal"
+                  @modal_dom_id
                 )
               }
             >
@@ -175,7 +183,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
               phx-click={
                 Modal.hide_modal(
                   JS.push("send_email", target: @myself),
-                  "student_support_email_modal"
+                  @modal_dom_id
                 )
               }
             >
@@ -215,11 +223,17 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
     if show_modal and not was_open? do
       recipient_students = normalize_recipient_students(Map.get(assigns, :students, []))
 
+      default_subject =
+        Map.get(assigns, :default_subject) ||
+          temporary_default_subject(Map.get(assigns, :selected_bucket_id))
+
+      default_body = Map.get(assigns, :default_body) || initial_body()
+
       {:ok,
        socket
        |> assign_recipient_students(recipient_students)
-       |> assign(:subject, temporary_default_subject(Map.get(assigns, :selected_bucket_id)))
-       |> assign(:body, initial_body())
+       |> assign(:subject, default_subject)
+       |> assign(:body, default_body)
        |> assign_send_state()}
     else
       {:ok, assign_send_state(socket)}

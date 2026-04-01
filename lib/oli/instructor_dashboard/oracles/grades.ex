@@ -53,6 +53,7 @@ defmodule Oli.InstructorDashboard.Oracles.Grades do
       page_ids = Enum.map(graded_pages, & &1.resource_id)
       scores_by_page = scores_by_page(section_id, page_ids)
       schedule_by_page = schedule_by_page(section_id, graded_pages)
+      total_students = enrolled_learner_count(section_id)
 
       grades =
         Enum.map(graded_pages, fn section_resource ->
@@ -60,9 +61,12 @@ defmodule Oli.InstructorDashboard.Oracles.Grades do
           page_scores = Map.get(scores_by_page, page_id, [])
           stats = stats(page_scores)
           schedule = Map.get(schedule_by_page, page_id, section_resource)
+          completed_count = length(page_scores)
 
           %{
             page_id: page_id,
+            section_resource_id: section_resource.id,
+            title: section_resource.title,
             minimum: stats.minimum,
             median: stats.median,
             mean: stats.mean,
@@ -70,7 +74,9 @@ defmodule Oli.InstructorDashboard.Oracles.Grades do
             standard_deviation: stats.standard_deviation,
             histogram: histogram(page_scores),
             available_at: schedule.start_date,
-            due_at: schedule.end_date
+            due_at: schedule.end_date,
+            completed_count: completed_count,
+            total_students: total_students
           }
         end)
 
@@ -100,7 +106,7 @@ defmodule Oli.InstructorDashboard.Oracles.Grades do
   end
 
   @spec students_without_attempt_emails(pos_integer(), pos_integer()) ::
-          {:ok, [String.t()]} | {:error, term()}
+          {:ok, [map()]} | {:error, term()}
   def students_without_attempt_emails(section_id, resource_id) do
     Logger.debug(
       "grades_oracle.students_without_attempt_emails.start section_id=#{section_id} resource_id=#{resource_id}"
@@ -110,7 +116,7 @@ defmodule Oli.InstructorDashboard.Oracles.Grades do
     learner_role_id = Helpers.learner_role_id()
 
     try do
-      emails =
+      students =
         from(e in Enrollment,
           join: ecr in assoc(e, :context_roles),
           join: u in assoc(e, :user),
@@ -118,19 +124,33 @@ defmodule Oli.InstructorDashboard.Oracles.Grades do
           on:
             ra.section_id == e.section_id and
               ra.user_id == e.user_id and
-              ra.resource_id == ^resource_id,
+              ra.resource_id == ^resource_id and
+              not is_nil(ra.score) and
+              not is_nil(ra.out_of) and
+              ra.out_of > 0.0,
           where:
             e.section_id == ^section_id and e.status == :enrolled and ecr.id == ^learner_role_id and
               is_nil(ra.id),
-          order_by: u.email,
-          distinct: u.email,
-          select: u.email
+          order_by: [asc: u.family_name, asc: u.given_name, asc: u.email, asc: u.id],
+          distinct: u.id,
+          select: %{
+            id: u.id,
+            display_name:
+              fragment(
+                "coalesce(nullif(trim(concat(coalesce(?, ''), ' ', coalesce(?, ''))), ''), ?, concat('Student ', ?::text))",
+                u.given_name,
+                u.family_name,
+                u.email,
+                u.id
+              ),
+            email: u.email
+          }
         )
         |> Repo.all()
 
       duration_ms = duration_ms_since(started_at)
-      row_count = Enum.count(emails)
-      payload_size = payload_size(emails)
+      row_count = Enum.count(students)
+      payload_size = payload_size(students)
 
       emit_execute_telemetry(
         :students_without_attempt_emails,
@@ -149,7 +169,7 @@ defmodule Oli.InstructorDashboard.Oracles.Grades do
         row_count
       )
 
-      {:ok, emails}
+      {:ok, students}
     rescue
       error ->
         emit_execute_error(:students_without_attempt_emails, section_id, nil, error)
@@ -223,6 +243,17 @@ defmodule Oli.InstructorDashboard.Oracles.Grades do
     )
     |> Repo.all()
     |> Enum.group_by(fn {page_id, _} -> page_id end, fn {_, pct} -> pct end)
+  end
+
+  defp enrolled_learner_count(section_id) do
+    learner_role_id = Helpers.learner_role_id()
+
+    from(e in Enrollment,
+      join: ecr in assoc(e, :context_roles),
+      where: e.section_id == ^section_id and e.status == :enrolled and ecr.id == ^learner_role_id,
+      select: count(e.id, :distinct)
+    )
+    |> Repo.one()
   end
 
   defp histogram(scores) do

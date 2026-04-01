@@ -44,6 +44,7 @@ import { OverflowChipList } from './overflow_chip_list';
 import { PageContentHooks } from './page_content_hooks';
 import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
+import { ProgressTileChart } from './progress_tile_chart';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
 import { ReadMoreToggle } from './read_more_toggle';
@@ -88,6 +89,7 @@ export const Hooks = {
   ModalLaunch,
   InputAutoSelect,
   ProjectsTypeahead,
+  ProgressTileChart,
   TextInputListener,
   ReviewActivity,
   CheckboxListener,

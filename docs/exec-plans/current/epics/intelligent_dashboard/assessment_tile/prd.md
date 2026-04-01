@@ -3,9 +3,9 @@
 ## 1. Overview
 Feature Name: Assessments Tile
 
-Summary: Add a scoped Assessments tile that summarizes assessment completion and score distribution data to help instructors identify assessment-level performance patterns quickly. The tile uses aggregated oracle output and supports drill-through to assessment insights workflows.
+Summary: Add a scoped Assessments tile that summarizes assessment completion and score distribution data to help instructors identify assessment-level performance patterns quickly. The tile consumes display-ready aggregated grades-oracle output, pairs it with assessment-title metadata, and supports drill-through to assessment insights workflows.
 
-Links: `docs/epics/intelligent_dashboard/assessment_tile/informal.md`, `docs/epics/intelligent_dashboard/concrete_oracles/prd.md`, `https://eliterate.atlassian.net/browse/MER-5254`
+Links: `docs/epics/intelligent_dashboard/assessment_tile/informal.md`, `docs/epics/intelligent_dashboard/concrete_oracles/prd.md`, `https://eliterate.atlassian.net/browse/MER-5254`, `https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=895-8349&t=EfwdptDGcPWmCVAN-1`
 
 ## 2. Background & Problem Statement
 - Current behavior / limitations:
@@ -38,6 +38,7 @@ Links: `docs/epics/intelligent_dashboard/assessment_tile/informal.md`, `docs/epi
   - Tile listing/summary for in-scope assessments with aggregate metrics.
   - Visual distribution representation from score bins.
   - Empty/hidden states for scopes without graded assessments.
+  - Completion-status chip variants aligned with the Jira-linked "good status" and "bad status" examples.
 - Navigation & Entry Points:
   - Tile-level navigation affordance to deeper assessment insights as defined in UI design.
 - Accessibility:
@@ -46,7 +47,10 @@ Links: `docs/epics/intelligent_dashboard/assessment_tile/informal.md`, `docs/epi
 - Internationalization:
   - Labels, date/time representations, and numeric formats localized.
 - Screenshots/Mocks:
-  - Refer to Jira/Figma assets linked from `docs/epics/intelligent_dashboard/assessment_tile/informal.md`.
+  - `Component / Assessments Tile`: `https://www.figma.com/design/2DZreln3n2lJMNiL6av5PP/Instructor-Intelligent-Dashboard?node-id=895-8349&t=EfwdptDGcPWmCVAN-1`
+  - Jira attachments also include the "good status" and "bad status" chip examples referenced in `MER-5254`.
+  - Before implementation, run the local `implement_ui` skill against the Jira/Figma sources to map these states onto Torus tokens, icons, reusable components, and target files.
+  - `implement_ui` should explicitly confirm missing or ambiguous empty, loading, error, hover/focus, and responsive states before coding.
 
 ## 6. Functional Requirements
 Requirements are found in requirements.yml
@@ -69,11 +73,12 @@ Requirements are found in requirements.yml
 - Ecto Schemas & Migrations:
   - None.
 - Context Boundaries:
-  - Oracle consumption + projection in non-UI module.
-  - UI module for rendering summaries/distributions.
+  - Grades oracle payload is expected to arrive already aggregated and display-ready for completion, schedule, score metrics, and score-distribution values.
+  - Non-UI enrichment may pair the grades-oracle payload with content-oracle or `SectionResourceDepot` title metadata where needed for display labels.
+  - UI module renders summaries/distributions and must not re-aggregate score statistics client-side.
 - APIs / Contracts:
   - Input: grades oracle aggregate payload + content title metadata + selected scope.
-  - Output: assessment tile view model list with stats and distribution entries.
+  - Output: assessment tile render contract that uses oracle-provided stats directly, with only minimal enrichment/formatting needed for titles and presentation.
 - Permissions Matrix:
 
 | Role | Allowed Actions | Notes |
@@ -109,16 +114,20 @@ No feature flags present in this feature
 - Title/metadata mismatches -> use deterministic mapping with fallback labels and validation tests.
 - Large assessment sets in broad scopes -> cap rendered rows/paging as needed by design and test for responsiveness.
 - Confusion between empty and hidden behavior -> align with section composition rules and add explicit tests.
+- Figma-state drift or underspecified interaction states -> require `implement_ui` design brief before coding to pin token/icon/component mappings and surface missing-state decisions early.
 
 ## 14. Open Questions & Assumptions
 - Assumptions:
+  - Darren Siegel's Jira comment is authoritative for this feature's technical constraints: grades-oracle payload should already include `available_at`, `due`, and aggregated assessment statistics needed for display, with no separate stats projection required.
   - Aggregated grades oracle contract includes required statistical and schedule fields.
+  - Assessment titles may require pairing oracle results with content-oracle data or direct `SectionResourceDepot` reads.
   - Section-composition logic determines whether empty tile is shown or omitted in broader dashboard context.
 - Open Questions:
-  - None.
+  - The ticket design source currently shows the primary component state plus status-chip variants, but does not fully specify empty, loading, error, hover/focus, or responsive behavior. `implement_ui` should either map these from existing Torus patterns or flag them for product/design approval.
 
 ## 15. Timeline & Milestones (Draft)
-- Implement assessment projection contract.
+- Implement assessment render contract and title-enrichment path without re-aggregating oracle stats.
+- Produce design-mapping brief with `implement_ui` using the Jira/Figma sources before UI implementation begins.
 - Build tile rendering for summary + distribution.
 - Integrate scope updates and conditional states.
 - Complete QA and accessibility checks.
@@ -129,6 +138,7 @@ No feature flags present in this feature
   - Component tests for populated/empty/hidden states and scope update behavior.
 - Manual:
   - Verify displayed stats against fixture data.
+  - Validate implemented visual states against the Jira-linked Figma node and attachment examples for good/bad completion status.
   - Verify keyboard and non-visual labeling expectations.
 - Performance Verification: Not required for this phase.
 

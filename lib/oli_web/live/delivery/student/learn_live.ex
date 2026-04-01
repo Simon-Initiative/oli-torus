@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias OliWeb.Components.Delivery.Student
+  alias OliWeb.Delivery.ScheduleDisplay
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Common.Utils, as: CommonUtils
   alias OliWeb.Components.Common
@@ -4037,11 +4038,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     Map.get(student_available_date_exceptions_per_resource_id, resource_id, start_date)
   end
 
-  defp format_date(date, _context, _format) when date in [nil, "", "Not yet scheduled"],
-    do: "None"
-
   defp format_date(due_date, context, format) do
-    FormatDateTime.to_formatted_datetime(due_date, context, format)
+    ScheduleDisplay.due_date(due_date, context, format)
   end
 
   @doc false
@@ -4280,8 +4278,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     )
   end
 
-  defp get_available_date(date, _ctx, _format) when date in [nil, "", "Not yet scheduled"],
-    do: "Now"
-
-  defp get_available_date(start_date, ctx, format), do: format_date(start_date, ctx, format)
+  defp get_available_date(start_date, ctx, format),
+    do: ScheduleDisplay.available_date(start_date, ctx, format)
 end

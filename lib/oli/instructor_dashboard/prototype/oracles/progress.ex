@@ -17,7 +17,15 @@ defmodule Oli.InstructorDashboard.Prototype.Oracles.Progress do
 
     by_container = %{
       unit: build_container_progress(MockData.unit_ids(), student_ids),
-      module: build_container_progress(MockData.module_ids(), student_ids)
+      module: build_container_progress(MockData.module_ids(), student_ids),
+      page:
+        build_container_progress(
+          MockData.direct_page_ids() ++
+            (MockData.module_ids()
+             |> Enum.flat_map(&MockData.pages_for_module/1)
+             |> Enum.map(& &1.id)),
+          student_ids
+        )
     }
 
     {:ok,
