@@ -16,12 +16,14 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
           out_of: 10.0
         },
         part_scoring: nil,
+        input_type_label: "Input Text",
         feedback_changed: "feedback_changed",
         score_changed: "score_changed",
         selected: true,
         selected_changed: "select_part"
       })
 
+    assert html =~ "Input Text"
     assert html =~ "Enter feedback for the student..."
     assert html =~ "Score"
     assert html =~ "Out Of"
@@ -51,12 +53,14 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
           }
         },
         part_scoring: nil,
+        input_type_label: "Dropdown",
         feedback_changed: "feedback_changed",
         score_changed: "score_changed",
         selected: false,
         selected_changed: "select_part"
       })
 
+    assert html =~ "Dropdown"
     assert html =~ "System feedback"
     assert html =~ "Score: 4.0 / 5.0"
     assert html =~ "Automatically Graded"
@@ -77,12 +81,14 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
           feedback: nil
         },
         part_scoring: nil,
+        input_type_label: "Formula",
         feedback_changed: "feedback_changed",
         score_changed: "score_changed",
         selected: false,
         selected_changed: "select_part"
       })
 
+    assert html =~ "Formula"
     assert html =~ "This part was automatically graded by the system"
   end
 end

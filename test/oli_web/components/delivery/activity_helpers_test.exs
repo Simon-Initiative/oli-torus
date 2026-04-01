@@ -430,6 +430,206 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
              } = summary
     end
 
+    test "uses authored text criteria to determine correctness for automatic adaptive text inputs" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 66,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_text",
+                  "type" => "janus-input-text",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{
+                    "title" => "Text Input",
+                    "correctAnswer" => %{
+                      "mustContain" => "planet",
+                      "mustNotContain" => "star",
+                      "minimumLength" => 6
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_text",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 3,
+              num_correct: 0,
+              num_attempts: 3
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      [summary] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [
+            %{activity_id: 66, part_id: "part_text", response: "planet", count: 2, users: []},
+            %{
+              activity_id: 66,
+              part_id: "part_text",
+              response: "small star",
+              count: 1,
+              users: []
+            }
+          ]
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+
+      assert summary.first_attempt_pct == 0
+      assert summary.all_attempt_pct == 2 / 3
+
+      assert [
+               %{label: "Correct on first try", count: 0, ratio: first_try_ratio},
+               %{label: "Correct after retry", count: 2, ratio: retry_ratio},
+               %{label: "Still incorrect / incomplete", count: 1, ratio: incorrect_ratio}
+             ] =
+               Enum.map(summary.outcome_buckets, fn bucket ->
+                 %{label: bucket.label, count: bucket.count, ratio: bucket.ratio}
+               end)
+
+      assert_in_delta first_try_ratio, 0.0, 1.0e-6
+      assert_in_delta retry_ratio, 2 / 3, 1.0e-6
+      assert_in_delta incorrect_ratio, 1 / 3, 1.0e-6
+    end
+
+    test "uses authored numeric criteria to determine correctness for automatic adaptive numeric inputs" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 67,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_number",
+                  "type" => "janus-input-number",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{
+                    "title" => "Number Input",
+                    "answer" => %{
+                      "range" => true,
+                      "correctMin" => 10,
+                      "correctMax" => 20
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_number",
+              num_first_attempts_correct: 1,
+              num_first_attempts: 4,
+              num_correct: 1,
+              num_attempts: 4
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      [summary] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [
+            %{activity_id: 67, part_id: "part_number", response: "12", count: 2, users: []},
+            %{activity_id: 67, part_id: "part_number", response: "25", count: 1, users: []},
+            %{activity_id: 67, part_id: "part_number", response: "9", count: 1, users: []}
+          ]
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+
+      assert summary.first_attempt_pct == 0.25
+      assert summary.all_attempt_pct == 0.5
+
+      assert [
+               %{label: "Correct on first try", count: 1, ratio: first_try_ratio},
+               %{label: "Correct after retry", count: 1, ratio: retry_ratio},
+               %{label: "Still incorrect / incomplete", count: 2, ratio: incorrect_ratio}
+             ] =
+               Enum.map(summary.outcome_buckets, fn bucket ->
+                 %{label: bucket.label, count: bucket.count, ratio: bucket.ratio}
+               end)
+
+      assert_in_delta first_try_ratio, 0.25, 1.0e-6
+      assert_in_delta retry_ratio, 0.25, 1.0e-6
+      assert_in_delta incorrect_ratio, 0.5, 1.0e-6
+    end
+
+    test "uses minimum length criteria for automatic adaptive multiline text inputs" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 68,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_multiline",
+                  "type" => "janus-multi-line-text",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{
+                    "title" => "Written Response",
+                    "minimumLength" => 10
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_multiline",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 3,
+              num_correct: 0,
+              num_attempts: 3
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      [summary] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [
+            %{
+              activity_id: 68,
+              part_id: "part_multiline",
+              response: "long enough answer",
+              count: 2,
+              users: []
+            },
+            %{activity_id: 68, part_id: "part_multiline", response: "short", count: 1, users: []}
+          ]
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+
+      assert summary.first_attempt_pct == 0
+      assert summary.all_attempt_pct == 2 / 3
+    end
+
     test "uses graded-only analytics for manual adaptive parts when grading has been recorded" do
       adaptive_id = 99
 

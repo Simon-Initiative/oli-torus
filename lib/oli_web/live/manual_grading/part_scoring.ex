@@ -9,6 +9,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
   attr :part_scoring, :any, required: true
   attr :feedback_changed, :any, required: true
   attr :score_changed, :any, required: true
+  attr :input_type_label, :string, default: "Input"
   attr :selected, :boolean, default: false
   attr :selected_changed, :string, required: true
 
@@ -30,6 +31,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
           <div>
             <div class="flex flex-wrap items-center gap-2">
               <div class="text-sm font-semibold text-Text-text-high">Automatically Graded</div>
+              <span class={input_type_badge_classes()}>{@input_type_label}</span>
               <span :if={@selected} class={selected_badge_classes()}>Selected Input</span>
               <span :if={!@selected} class={selection_hint_classes()}>Click to inspect</span>
             </div>
@@ -69,6 +71,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
         <div class="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div class="flex flex-wrap items-center gap-2">
             <div class="text-sm font-semibold text-Text-text-high">Evaluated</div>
+            <span class={input_type_badge_classes()}>{@input_type_label}</span>
             <span :if={@selected} class={selected_badge_classes()}>Selected Input</span>
             <span :if={!@selected} class={selection_hint_classes()}>Click to inspect</span>
           </div>
@@ -102,6 +105,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div class="flex flex-wrap items-center gap-2">
             <div class="text-sm font-semibold text-Text-text-high">Manual Grading</div>
+            <span class={input_type_badge_classes()}>{@input_type_label}</span>
             <span :if={@selected} class={selected_badge_classes()}>Selected Input</span>
             <span :if={!@selected} class={selection_hint_classes()}>Click to inspect</span>
           </div>
@@ -258,6 +262,10 @@ defmodule OliWeb.ManualGrading.PartScoring do
   defp selection_hint_classes,
     do:
       "inline-flex items-center rounded-full bg-Surface-surface-primary px-2.5 py-1 text-xs font-semibold text-Text-text-low"
+
+  defp input_type_badge_classes,
+    do:
+      "inline-flex items-center rounded-full bg-Fill-Accent-fill-accent-blue-soft px-2.5 py-1 text-xs font-semibold text-Text-text-accent-blue"
 
   defp input_classes,
     do:

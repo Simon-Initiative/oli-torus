@@ -86,4 +86,80 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
     assert html =~ "Eventually Correct"
     assert html =~ "0%"
   end
+
+  test "render_assessment_details shows a repair notice while adaptive analytics refresh is in progress" do
+    assessment = %{
+      title: "Legacy Adaptive Screen",
+      resource_id: 77,
+      content: %{"partsLayout" => []}
+    }
+
+    current_activity = %{
+      resource_id: 77,
+      id: 77,
+      first_attempt_pct: 0.0,
+      all_attempt_pct: 0.0,
+      revision: %{activity_type_id: 99},
+      preview_rendered: "<div>preview</div>",
+      adaptive_input_summaries: [],
+      adaptive_summary_repair_status: :refreshing
+    }
+
+    model = %{
+      data: %{
+        selected_activities: [current_activity],
+        expanded_activity_ids: MapSet.new([77]),
+        target: nil
+      }
+    }
+
+    html =
+      render_component(fn assigns ->
+        assigns =
+          Map.merge(assigns, %{model: model, activity_types_map: %{99 => %{slug: "oli_adaptive"}}})
+
+        ActivitiesTableModel.render_assessment_details(assigns, assessment)
+      end)
+
+    assert html =~ "Refreshing adaptive analytics"
+    assert html =~ "background refresh is running"
+  end
+
+  test "render_assessment_details shows a refreshed notice after adaptive analytics finish reloading" do
+    assessment = %{
+      title: "Legacy Adaptive Screen",
+      resource_id: 78,
+      content: %{"partsLayout" => []}
+    }
+
+    current_activity = %{
+      resource_id: 78,
+      id: 78,
+      first_attempt_pct: 0.25,
+      all_attempt_pct: 0.5,
+      revision: %{activity_type_id: 99},
+      preview_rendered: "<div>preview</div>",
+      adaptive_input_summaries: [],
+      adaptive_summary_repair_status: :refreshed
+    }
+
+    model = %{
+      data: %{
+        selected_activities: [current_activity],
+        expanded_activity_ids: MapSet.new([78]),
+        target: nil
+      }
+    }
+
+    html =
+      render_component(fn assigns ->
+        assigns =
+          Map.merge(assigns, %{model: model, activity_types_map: %{99 => %{slug: "oli_adaptive"}}})
+
+        ActivitiesTableModel.render_assessment_details(assigns, assessment)
+      end)
+
+    assert html =~ "Adaptive analytics refreshed"
+    assert html =~ "have been reloaded"
+  end
 end

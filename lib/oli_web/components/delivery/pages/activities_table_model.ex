@@ -136,6 +136,8 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         has_loaded_activity: has_loaded_activity,
         first_attempt_pct: Map.get(current_activity || %{}, :first_attempt_pct, 0.0),
         all_attempt_pct: Map.get(current_activity || %{}, :all_attempt_pct, 0.0),
+        adaptive_summary_repair_status:
+          Map.get(current_activity || %{}, :adaptive_summary_repair_status),
         detail_label:
           if(adaptive_screen?(assessment), do: "Screen details", else: "Question details")
       })
@@ -156,6 +158,38 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
           data-preview-activity-bridge="true"
           phx-update="ignore"
         >
+          <div
+            :if={@adaptive_summary_repair_status == :refreshing}
+            class="pt-9"
+          >
+            <div class="mb-4 rounded-lg border border-Border-border-default bg-Surface-surface-secondary px-4 py-3 text-sm text-Text-text-high shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+              <div class="flex items-start gap-3">
+                <span
+                  class="spinner-border spinner-border-sm mt-0.5 h-4 w-4 text-Text-text-button"
+                  role="status"
+                  aria-hidden="true"
+                >
+                </span>
+                <div>
+                  <div class="font-semibold">Refreshing adaptive analytics</div>
+                  <div class="mt-1 text-Text-text-low">
+                    Legacy adaptive analytics were detected for this screen. A background refresh is running and these aggregates will update automatically when it completes.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            :if={@adaptive_summary_repair_status == :refreshed}
+            class="pt-9"
+          >
+            <div class="mb-4 rounded-lg border border-Border-border-default bg-Surface-surface-secondary px-4 py-3 text-sm shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+              <div class="font-semibold text-Text-text-high">Adaptive analytics refreshed</div>
+              <div class="mt-1 text-Text-text-low">
+                Legacy summary data for this screen was repaired and the insight aggregates shown below have been reloaded.
+              </div>
+            </div>
+          </div>
           <%= if Map.get(@current_activity, :preview_rendered) != nil do %>
             <ActivityHelpers.rendered_activity
               activity={@current_activity}

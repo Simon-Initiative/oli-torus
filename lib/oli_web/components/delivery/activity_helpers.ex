@@ -2117,7 +2117,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          _grading_mode,
          _manual_analytics
        ) do
-    case adaptive_choice_correct_count(part, responses) do
+    case adaptive_recorded_correct_count(part, responses) do
       nil ->
         %{
           first_attempt_pct:
@@ -2133,7 +2133,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           grading_pending_message: nil
         }
 
-      correct_count ->
+      {source, correct_count} ->
         attempt_count =
           max(
             Map.get(resource_summary || %{}, :num_attempts, 0),
@@ -2146,17 +2146,17 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             total -> total
           end
 
-        {first_try_count, correct_count} =
-          if adaptive_auto_choice_missing_correctness?(part) do
-            {first_attempt_total, attempt_count}
-          else
-            first_try_count =
-              Map.get(resource_summary || %{}, :num_first_attempts_correct, 0)
-              |> min(correct_count)
-              |> min(first_attempt_total)
+        correct_count = min(correct_count, attempt_count)
 
-            {first_try_count, min(correct_count, attempt_count)}
-          end
+        first_try_count =
+          adaptive_first_attempt_correct_count(
+            part,
+            resource_summary,
+            source,
+            correct_count,
+            first_attempt_total,
+            attempt_count
+          )
 
         retry_correct_count = max(correct_count - first_try_count, 0)
         incorrect_count = max(attempt_count - correct_count, 0)
@@ -2191,6 +2191,57 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           grading_pending: false,
           grading_pending_message: nil
         }
+    end
+  end
+
+  defp adaptive_recorded_correct_count(part, responses) do
+    case adaptive_choice_correct_count(part, responses) do
+      nil ->
+        case adaptive_open_ended_correct_count(part, responses) do
+          nil -> nil
+          correct_count -> {:open_ended, correct_count}
+        end
+
+      correct_count ->
+        {:choice, correct_count}
+    end
+  end
+
+  defp adaptive_first_attempt_correct_count(
+         part,
+         resource_summary,
+         :choice,
+         correct_count,
+         first_attempt_total,
+         attempt_count
+       ) do
+    if adaptive_auto_choice_missing_correctness?(part) do
+      first_attempt_total
+    else
+      resource_summary
+      |> Map.get(:num_first_attempts_correct, 0)
+      |> min(correct_count)
+      |> min(first_attempt_total)
+      |> min(attempt_count)
+    end
+  end
+
+  defp adaptive_first_attempt_correct_count(
+         _part,
+         resource_summary,
+         :open_ended,
+         correct_count,
+         first_attempt_total,
+         _attempt_count
+       ) do
+    case resource_summary do
+      %{num_first_attempts_correct: first_attempt_correct_count} ->
+        first_attempt_correct_count
+        |> min(correct_count)
+        |> min(first_attempt_total)
+
+      _ ->
+        min(correct_count, first_attempt_total)
     end
   end
 
@@ -2256,6 +2307,216 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         nil
     end
   end
+
+  defp adaptive_open_ended_correct_count(part, responses) do
+    with :automatic <- adaptive_part_grading_mode(part),
+         criteria when not is_nil(criteria) <- adaptive_open_ended_criteria(part) do
+      Enum.reduce(responses, 0, fn response_summary, acc ->
+        if adaptive_open_ended_response_correct?(criteria, response_summary) do
+          acc + response_summary.count
+        else
+          acc
+        end
+      end)
+    else
+      _ -> nil
+    end
+  end
+
+  defp adaptive_open_ended_criteria(part) do
+    custom = Map.get(part, "custom", %{})
+
+    case Map.get(part, "type") do
+      "janus-input-text" ->
+        build_adaptive_text_criteria(Map.get(custom, "correctAnswer", %{}))
+
+      "janus-multi-line-text" ->
+        build_adaptive_multiline_criteria(custom)
+
+      "janus-input-number" ->
+        build_adaptive_numeric_criteria(Map.get(custom, "answer"))
+
+      "janus-slider" ->
+        build_adaptive_numeric_criteria(Map.get(custom, "answer"))
+
+      "janus-text-slider" ->
+        build_adaptive_numeric_criteria(Map.get(custom, "answer"))
+
+      _ ->
+        nil
+    end
+  end
+
+  defp build_adaptive_text_criteria(correct_answer) when is_map(correct_answer) do
+    required_terms =
+      correct_answer
+      |> Map.get("mustContain", "")
+      |> split_adaptive_text_criteria_terms()
+
+    forbidden_terms =
+      correct_answer
+      |> Map.get("mustNotContain", "")
+      |> split_adaptive_text_criteria_terms()
+
+    minimum_length =
+      correct_answer
+      |> Map.get("minimumLength", 0)
+      |> normalize_adaptive_integer()
+      |> Kernel.||(0)
+
+    if required_terms == [] and forbidden_terms == [] and minimum_length <= 0 do
+      nil
+    else
+      %{
+        kind: :text,
+        required_terms: required_terms,
+        forbidden_terms: forbidden_terms,
+        minimum_length: minimum_length
+      }
+    end
+  end
+
+  defp build_adaptive_text_criteria(_), do: nil
+
+  defp build_adaptive_multiline_criteria(custom) when is_map(custom) do
+    minimum_length =
+      custom
+      |> Map.get("minimumLength", 0)
+      |> normalize_adaptive_integer()
+      |> Kernel.||(0)
+
+    if minimum_length > 0 do
+      %{kind: :multiline, minimum_length: minimum_length}
+    else
+      nil
+    end
+  end
+
+  defp build_adaptive_multiline_criteria(_), do: nil
+
+  defp build_adaptive_numeric_criteria(answer) when is_map(answer) do
+    cond do
+      Map.get(answer, "range") == true ->
+        min_value = normalize_adaptive_float(Map.get(answer, "correctMin"))
+        max_value = normalize_adaptive_float(Map.get(answer, "correctMax"))
+
+        if is_nil(min_value) or is_nil(max_value) do
+          nil
+        else
+          %{kind: :numeric_range, min: min_value, max: max_value}
+        end
+
+      true ->
+        case normalize_adaptive_float(Map.get(answer, "correctAnswer")) do
+          nil -> nil
+          value -> %{kind: :numeric_exact, value: value}
+        end
+    end
+  end
+
+  defp build_adaptive_numeric_criteria(_), do: nil
+
+  defp adaptive_open_ended_response_correct?(%{kind: :text} = criteria, response_summary) do
+    case adaptive_text_response_value(response_summary) do
+      nil ->
+        false
+
+      response ->
+        String.length(response) >= criteria.minimum_length and
+          Enum.all?(criteria.required_terms, &String.contains?(response, &1)) and
+          Enum.all?(criteria.forbidden_terms, &(not String.contains?(response, &1)))
+    end
+  end
+
+  defp adaptive_open_ended_response_correct?(%{kind: :multiline} = criteria, response_summary) do
+    case adaptive_text_response_value(response_summary) do
+      nil -> false
+      response -> String.length(response) >= criteria.minimum_length
+    end
+  end
+
+  defp adaptive_open_ended_response_correct?(
+         %{kind: :numeric_exact, value: expected},
+         response_summary
+       ) do
+    case adaptive_numeric_response_value(response_summary) do
+      nil -> false
+      value -> abs(value - expected) < 1.0e-9
+    end
+  end
+
+  defp adaptive_open_ended_response_correct?(
+         %{kind: :numeric_range, min: min_value, max: max_value},
+         response_summary
+       ) do
+    case adaptive_numeric_response_value(response_summary) do
+      nil -> false
+      value -> value >= min_value and value <= max_value
+    end
+  end
+
+  defp split_adaptive_text_criteria_terms(value) when is_binary(value) do
+    value
+    |> String.split(",")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  defp split_adaptive_text_criteria_terms(_), do: []
+
+  defp adaptive_text_response_value(response_summary) do
+    first_present([
+      blank_to_nil(Map.get(response_summary, :response)),
+      blank_to_nil(Map.get(response_summary, :label))
+    ])
+  end
+
+  defp adaptive_numeric_response_value(response_summary) do
+    first_present([
+      blank_to_nil(Map.get(response_summary, :response)),
+      blank_to_nil(Map.get(response_summary, :label))
+    ])
+    |> case do
+      nil ->
+        nil
+
+      value ->
+        value
+        |> String.replace(~r/[,%]/, "")
+        |> Float.parse()
+        |> case do
+          {numeric_value, ""} -> numeric_value
+          _ -> nil
+        end
+    end
+  end
+
+  defp normalize_adaptive_integer(value) when is_integer(value), do: value
+
+  defp normalize_adaptive_integer(value) when is_float(value) do
+    trunc(value)
+  end
+
+  defp normalize_adaptive_integer(value) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {parsed, ""} -> parsed
+      _ -> nil
+    end
+  end
+
+  defp normalize_adaptive_integer(_), do: nil
+
+  defp normalize_adaptive_float(value) when is_integer(value), do: value * 1.0
+  defp normalize_adaptive_float(value) when is_float(value), do: value
+
+  defp normalize_adaptive_float(value) when is_binary(value) do
+    case Float.parse(String.trim(value)) do
+      {parsed, ""} -> parsed
+      _ -> nil
+    end
+  end
+
+  defp normalize_adaptive_float(_), do: nil
 
   defp adaptive_mcq_has_correctness_metadata?(correct_answers) do
     correct_answers

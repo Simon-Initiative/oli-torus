@@ -32,6 +32,19 @@ defmodule OliWeb.ManualGrading.SelectedSubmissionBuilder do
     end
   end
 
+  def input_type_label(nil, _part_attempt, _activity_types_map), do: "Input"
+  def input_type_label(_attempt, nil, _activity_types_map), do: "Input"
+
+  def input_type_label(attempt, part_attempt, activity_types_map) do
+    activity_slug = activity_slug(attempt, activity_types_map)
+    metadata = part_metadata(attempt, part_attempt, activity_slug)
+
+    case metadata do
+      %{type: type} when is_binary(type) -> component_type_label(type)
+      _ -> activity_type_label(activity_slug)
+    end
+  end
+
   defp activity_slug(attempt, activity_types_map) do
     activity_types_map
     |> Map.get(attempt.activity_type_id, %{})

@@ -373,6 +373,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
           <PartScoring.render
             part_attempt={pa}
             part_scoring={@score_feedbacks[pa.attempt_guid]}
+            input_type_label={input_type_label(@attempt, pa, @activity_types_map)}
             feedback_changed="feedback_changed"
             score_changed="score_changed"
             selected={@selected_part_attempt_guid == pa.attempt_guid}
@@ -388,6 +389,10 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   # of the currently selected activity attempt
   defp scoring_remains(assigns) do
     not manual_scoring_ready?(assigns.part_attempts, assigns.score_feedbacks)
+  end
+
+  defp input_type_label(attempt, part_attempt, activity_types_map) do
+    SelectedSubmissionBuilder.input_type_label(attempt, part_attempt, activity_types_map)
   end
 
   def manual_scoring_ready?(part_attempts, score_feedbacks) do

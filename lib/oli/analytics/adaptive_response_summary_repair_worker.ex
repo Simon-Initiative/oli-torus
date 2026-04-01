@@ -10,9 +10,14 @@ defmodule Oli.Analytics.AdaptiveResponseSummaryRepairWorker do
 
   require Logger
 
+  import Ecto.Query
+
   alias Oli.Analytics.Summary
+  alias Oli.Repo
+  alias Oban.Job
 
   @repair_version 1
+  @active_states ~w(available scheduled executing retryable)
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"activity_resource_id" => activity_resource_id}}) do
@@ -36,5 +41,22 @@ defmodule Oli.Analytics.AdaptiveResponseSummaryRepairWorker do
     }
     |> new()
     |> Oban.insert()
+  end
+
+  def in_progress?(activity_resource_id) when is_integer(activity_resource_id) do
+    from(j in Job,
+      where: j.worker == ^to_string(__MODULE__),
+      where: j.state in ^@active_states,
+      where:
+        fragment(
+          "?->>'activity_resource_id' = ?",
+          j.args,
+          ^Integer.to_string(activity_resource_id)
+        ),
+      where: fragment("?->>'repair_version' = ?", j.args, ^Integer.to_string(@repair_version)),
+      select: 1,
+      limit: 1
+    )
+    |> Repo.exists?()
   end
 end
