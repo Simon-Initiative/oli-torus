@@ -1140,6 +1140,13 @@ defmodule Oli.Delivery.Sections do
     issuer = lti_params["iss"]
     client_id = LtiParams.peek_client_id(lti_params)
 
+    get_section_from_lti_context(issuer, client_id, context_id)
+  end
+
+  @doc """
+  Gets a section using the normalized LTI context tuple.
+  """
+  def get_section_from_lti_context(issuer, client_id, context_id) do
     Repo.all(
       from(s in Section,
         join: d in Deployment,

@@ -1,6 +1,14 @@
-<h3 class="my-3">Something Went Wrong</h3>
+<h3 class="my-3">{assigns[:title] || "Something Went Wrong"}</h3>
 
-<p>Reason: <span class="text-danger">{@reason}</span></p>
+<p class="text-danger">{assigns[:message] || @reason}</p>
+
+<%= if assigns[:guidance] do %>
+  <p>{@guidance}</p>
+<% end %>
+
+<%= if assigns[:request_id] do %>
+  <p class="text-muted">Request ID: {@request_id}</p>
+<% end %>
 
 <p>
   If you need help configuring your LTI connection, please

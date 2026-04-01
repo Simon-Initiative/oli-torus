@@ -8,8 +8,13 @@ defmodule OliWeb.LtiController do
   alias Oli.Institutions.PendingRegistration
   alias Oli.Predefined
   alias Oli.Slack
+  alias Oli.Lti.LaunchContext
+  alias Oli.Lti.LaunchErrors
+  alias Oli.Lti.LaunchState
+  alias Oli.Lti.LaunchTelemetry
   alias Oli.Lti.LtiParams
   alias Oli.Lti.PlatformInstances
+  alias Oli.Utils.Appsignal
   alias OliWeb.UserAuth
   alias OliWeb.Common.Utils
   alias OliWeb.DeliveryWeb
@@ -28,11 +33,14 @@ defmodule OliWeb.LtiController do
 
   ## LTI 1.3
   def login(conn, params) do
-    case Lti_1p3.Tool.OidcLogin.oidc_login_redirect_url(params) do
-      {:ok, state, redirect_url} ->
+    request_id = LaunchState.request_id(conn)
+
+    case build_login_redirect(params, request_id) do
+      {:ok, launch_state, registration, redirect_url} ->
         conn
-        |> put_session("state", state)
-        |> redirect(external: redirect_url)
+        |> maybe_put_legacy_state(launch_state)
+        |> emit_login_start(launch_state, params)
+        |> maybe_render_launch_helper(launch_state, registration, redirect_url)
 
       {:error,
        %{
@@ -44,39 +52,38 @@ defmodule OliWeb.LtiController do
        }} ->
         handle_invalid_registration(conn, issuer, client_id, lti_deployment_id)
 
-      {:error, reason} ->
-        render(conn, "lti_error.html", reason: reason)
+      {:error, error} ->
+        render_launch_error(conn, LaunchErrors.classify(error), request_id: request_id)
     end
   end
 
   def launch(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
 
-    case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
-      {:ok, lti_params} ->
-        case handle_valid_lti_1p3_launch(lti_params) do
-          {:ok, user} ->
-            # sign in LTI user and redirect to appropriate route
-            conn
-            |> UserAuth.create_session(user)
-            |> assign(:current_user, user)
-            |> DeliveryWeb.redirect_user(allow_new_section_creation: true)
+    with {:ok, launch_state} <- LaunchState.resolve(params, session_state),
+         :ok <- emit_launch_start(launch_state, params),
+         {:ok, lti_params} <- validate_launch(params, launch_state) do
+      emit_launch_validated(launch_state, lti_params)
 
-          {:error, :independent_learner_not_allowed} ->
-            conn
-            |> put_status(:bad_request)
-            |> render("lti_error.html", reason: "This course must be accessed through the LMS.")
+      case handle_valid_lti_1p3_launch(lti_params) do
+        {:ok, user} ->
+          case LaunchContext.from_claims(lti_params) do
+            {:ok, launch_context} ->
+              conn
+              |> UserAuth.create_session(user)
+              |> assign(:current_user, user)
+              |> DeliveryWeb.redirect_user_from_launch(launch_context,
+                allow_new_section_creation: true
+              )
 
-          {:error, error} ->
-            # Log the error for debugging purposes
-            Logger.error("Failed to handle valid LTI 1.3 launch: #{inspect(error)}")
+            {:error, reason} ->
+              render_launch_failure(conn, reason, launch_state, params)
+          end
 
-            # render error page
-            conn
-            |> put_status(:bad_request)
-            |> render("lti_error.html", reason: "Failed to handle valid LTI 1.3 launch")
-        end
-
+        {:error, reason} ->
+          render_launch_failure(conn, reason, launch_state, params)
+      end
+    else
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
         handle_invalid_registration(conn, issuer, client_id)
 
@@ -89,8 +96,8 @@ defmodule OliWeb.LtiController do
        }} ->
         handle_invalid_deployment(conn, params, registration_id, deployment_id)
 
-      {:error, %{reason: _reason, msg: msg}} ->
-        render(conn, "lti_error.html", reason: msg)
+      {:error, reason} ->
+        render_launch_failure(conn, reason, nil, params)
     end
   end
 
@@ -219,12 +226,12 @@ defmodule OliWeb.LtiController do
   def test(conn, params) do
     session_state = Plug.Conn.get_session(conn, "state")
 
-    case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
-      {:ok, lti_params} ->
-        render(conn, "lti_test.html", lti_params: lti_params)
-
-      {:error, %{reason: _reason, msg: msg}} ->
-        render(conn, "lti_error.html", reason: msg)
+    with {:ok, launch_state} <- LaunchState.resolve(params, session_state),
+         {:ok, lti_params} <- validate_launch(params, launch_state) do
+      render(conn, "lti_test.html", lti_params: lti_params)
+    else
+      {:error, reason} ->
+        render_launch_error(conn, LaunchErrors.classify(reason))
     end
   end
 
@@ -531,6 +538,257 @@ defmodule OliWeb.LtiController do
     do: [
       Lti_1p3.Claims.Custom.custom(custom)
     ]
+
+  defp build_login_redirect(params, request_id) do
+    with {:ok, issuer} <- require_param(params, "iss", :missing_issuer),
+         {:ok, client_id} <- require_param(params, "client_id", :missing_client_id),
+         {:ok, login_hint} <- require_param(params, "login_hint", :missing_login_hint),
+         {:ok, target_link_uri} <-
+           require_param(params, "target_link_uri", :missing_target_link_uri),
+         %Lti_1p3.Tool.Registration{} = registration <-
+           Lti_1p3.Tool.get_registration_by_issuer_client_id(issuer, client_id),
+         {:ok, launch_state} <- LaunchState.issue(params, request_id: request_id) do
+      query_params =
+        %{
+          "scope" => "openid",
+          "response_type" => "id_token",
+          "response_mode" => "form_post",
+          "prompt" => "none",
+          "client_id" => client_id,
+          "redirect_uri" => target_link_uri,
+          "state" => launch_state["token"],
+          "nonce" => launch_state["nonce"],
+          "login_hint" => login_hint
+        }
+        |> maybe_put_param("lti_message_hint", params["lti_message_hint"])
+
+      redirect_url = registration.auth_login_url <> "?" <> URI.encode_query(query_params)
+      {:ok, launch_state, registration, redirect_url}
+    else
+      nil ->
+        {:error,
+         %{
+           reason: :invalid_registration,
+           msg: "Registration not found",
+           issuer: params["iss"],
+           client_id: params["client_id"],
+           lti_deployment_id: params["lti_deployment_id"]
+         }}
+
+      {:error, reason} ->
+        {:error, %{reason: reason}}
+    end
+  end
+
+  defp maybe_put_legacy_state(conn, %{"flow_mode" => "legacy_session", "token" => token}) do
+    put_session(conn, "state", token)
+  end
+
+  defp maybe_put_legacy_state(conn, _launch_state), do: conn
+
+  defp maybe_render_launch_helper(
+         conn,
+         %{"flow_mode" => "client_storage"} = launch_state,
+         registration,
+         redirect_url
+       ) do
+    payload =
+      Jason.encode!(%{
+        state: launch_state["token"],
+        nonce: launch_state["nonce"],
+        request_id: launch_state["request_id"]
+      })
+
+    conn
+    |> put_view(OliWeb.LtiHTML)
+    |> put_format("html")
+    |> render(:launch_helper,
+      auth_origin: origin(registration.auth_login_url),
+      redirect_url: redirect_url,
+      request_id: launch_state["request_id"],
+      state_key: LaunchState.state_storage_key(launch_state),
+      state_payload: payload,
+      storage_target: launch_state["storage_target"] || "_parent"
+    )
+  end
+
+  defp maybe_render_launch_helper(conn, _launch_state, _registration, redirect_url) do
+    redirect(conn, external: redirect_url)
+  end
+
+  defp validate_launch(params, %{"token" => state_token} = launch_state) do
+    with {:ok, claims} <- Lti_1p3.Tool.LaunchValidation.validate(params, state_token),
+         :ok <- validate_launch_state_claims(launch_state, claims) do
+      {:ok, claims}
+    end
+  end
+
+  defp render_launch_failure(conn, reason, launch_state, params) do
+    classification = LaunchErrors.classify(reason, launch_failure_context(launch_state, params))
+
+    metadata =
+      telemetry_metadata(launch_state, params) |> Map.put(:classification, classification)
+
+    Logger.warning("LTI launch failed", Map.to_list(metadata))
+    LaunchTelemetry.emit_failure(metadata)
+
+    case classification do
+      :embedded_storage_blocked ->
+        LaunchTelemetry.emit_recovery(metadata)
+        render_launch_recovery(conn, classification, metadata)
+
+      :missing_state ->
+        if Map.get(metadata, :storage_supported) do
+          LaunchTelemetry.emit_recovery(metadata)
+          render_launch_recovery(conn, classification, metadata)
+        else
+          render_launch_error(conn, classification, request_id: metadata[:request_id])
+        end
+
+      :invalid_registration ->
+        claims = peek_launch_claims(params)
+        handle_invalid_registration(conn, claims["iss"], LtiParams.peek_client_id(claims))
+
+      :invalid_deployment ->
+        deployment_id =
+          peek_launch_claims(params)["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+
+        handle_invalid_deployment(conn, params, nil, deployment_id)
+
+      :launch_handler_failure ->
+        Appsignal.capture_error("Failed to handle valid LTI launch", metadata)
+        render_launch_error(conn, classification, request_id: metadata[:request_id])
+
+      _ ->
+        render_launch_error(conn, classification, request_id: metadata[:request_id])
+    end
+  end
+
+  defp render_launch_error(conn, classification, opts \\ []) do
+    details = LaunchErrors.details(classification)
+
+    conn
+    |> put_status(Keyword.get(opts, :status, :bad_request))
+    |> render("lti_error.html",
+      guidance: details.guidance,
+      message: details.message,
+      request_id: Keyword.get(opts, :request_id),
+      title: details.title
+    )
+  end
+
+  defp render_launch_recovery(conn, classification, metadata) do
+    details = LaunchErrors.details(classification)
+
+    conn
+    |> put_status(:bad_request)
+    |> render("lti_recovery.html",
+      guidance: details.guidance,
+      message: details.message,
+      request_id: metadata[:request_id],
+      title: details.title
+    )
+  end
+
+  defp emit_login_start(conn, launch_state, params) do
+    LaunchTelemetry.emit_start(telemetry_metadata(launch_state, params))
+    conn
+  end
+
+  defp emit_launch_start(launch_state, params) do
+    LaunchTelemetry.emit_start(telemetry_metadata(launch_state, params))
+    :ok
+  end
+
+  defp emit_launch_validated(launch_state, lti_params) do
+    launch_context =
+      Map.put(
+        telemetry_metadata(launch_state, lti_params),
+        :deployment_id,
+        lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+      )
+
+    LaunchTelemetry.emit_validated(launch_context)
+  end
+
+  defp telemetry_metadata(launch_state, params) do
+    claims = peek_launch_claims(params)
+
+    %{
+      client_id: params["client_id"] || LtiParams.peek_client_id(claims),
+      deployment_id: claims["https://purl.imsglobal.org/spec/lti/claim/deployment_id"],
+      embedded_context: embedded_context?(params, claims),
+      flow_mode: (launch_state && launch_state["flow_mode"]) || LaunchState.flow_mode(params),
+      issuer: params["iss"] || claims["iss"],
+      message_type: claims["https://purl.imsglobal.org/spec/lti/claim/message_type"],
+      request_id: launch_state && launch_state["request_id"],
+      storage_supported:
+        if(launch_state,
+          do: launch_state["storage_supported"],
+          else: LaunchState.storage_supported?(params)
+        )
+    }
+  end
+
+  defp launch_failure_context(launch_state, params) do
+    %{
+      flow_mode: (launch_state && launch_state["flow_mode"]) || LaunchState.flow_mode(params),
+      storage_supported:
+        if(launch_state,
+          do: launch_state["storage_supported"],
+          else: LaunchState.storage_supported?(params)
+        )
+    }
+  end
+
+  defp embedded_context?(params, claims) do
+    LaunchState.storage_supported?(params) ||
+      get_in(claims, [
+        "https://purl.imsglobal.org/spec/lti/claim/launch_presentation",
+        "document_target"
+      ]) ==
+        "iframe"
+  end
+
+  defp peek_launch_claims(%{"id_token" => id_token}) when is_binary(id_token) do
+    case Lti_1p3.Utils.peek_claims(id_token) do
+      {:ok, claims} -> claims
+      _ -> %{}
+    end
+  end
+
+  defp peek_launch_claims(_params), do: %{}
+
+  defp require_param(params, key, reason) do
+    case params[key] do
+      value when is_binary(value) and value != "" -> {:ok, value}
+      _ -> {:error, reason}
+    end
+  end
+
+  defp maybe_put_param(params, _key, nil), do: params
+  defp maybe_put_param(params, key, value), do: Map.put(params, key, value)
+
+  defp validate_launch_state_claims(launch_state, claims) do
+    state_issuer = launch_state["iss"]
+    state_client_id = launch_state["client_id"]
+    claim_issuer = claims["iss"]
+    claim_client_id = LtiParams.peek_client_id(claims)
+
+    if state_issuer == claim_issuer and state_client_id == claim_client_id do
+      :ok
+    else
+      {:error, :mismatched_state}
+    end
+  end
+
+  defp origin(url) do
+    uri = URI.parse(url)
+    scheme = uri.scheme || "https"
+    host = uri.host || ""
+    port = if uri.port, do: ":#{uri.port}", else: ""
+    "#{scheme}://#{host}#{port}"
+  end
 
   @doc """
   Handles the Deep Linking response from the LTI tool.

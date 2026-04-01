@@ -4,6 +4,7 @@ defmodule OliWeb.LtiControllerTest do
   alias Lti_1p3.Platform.{LoginHint, LoginHints}
   alias Lti_1p3.Roles.ContextRoles
   alias Oli.Institutions
+  alias Oli.Lti.LaunchState
   alias Oli.Delivery.Sections
   alias Oli.Accounts.User
   alias Oli.Lti.PlatformExternalTools
@@ -75,6 +76,29 @@ defmodule OliWeb.LtiControllerTest do
       assert redirected_to(conn) =~ "state="
 
       assert get_session(conn, "state") != nil
+    end
+
+    test "login renders helper page for storage-capable launches", %{
+      conn: conn,
+      registration: registration
+    } do
+      body = %{
+        "client_id" => registration.client_id,
+        "iss" => registration.issuer,
+        "login_hint" => "some-login_hint",
+        "lti_message_hint" => "some-lti_message_hint",
+        "lti_storage_target" => "post_message_forwarding",
+        "target_link_uri" => "https://some-target_link_uri/lti/launch"
+      }
+
+      conn = post(conn, Routes.lti_path(conn, :login, body))
+      resp = html_response(conn, 200)
+
+      assert resp =~ "Continuing your LMS launch"
+      assert resp =~ "lti.put_data"
+      assert resp =~ "post_message_forwarding"
+      assert resp =~ "redirect_uri=https%3A%2F%2Fsome-target_link_uri%2Flti%2Flaunch"
+      assert get_session(conn, "state") == nil
     end
 
     test "login post fails on missing registration and redirects to register_form", %{
@@ -160,7 +184,8 @@ defmodule OliWeb.LtiControllerTest do
       # Pre-cache the keyset since we no longer fetch on-demand
       cache_keyset_for_registration(registration, platform_jwk)
 
-      state = "some-state"
+      state = issue_launch_state(registration)
+
       conn = Plug.Test.init_test_session(conn, state: state)
 
       custom_header = %{"kid" => platform_jwk.kid}
@@ -217,7 +242,8 @@ defmodule OliWeb.LtiControllerTest do
       # Pre-cache the keyset since we no longer fetch on-demand
       cache_keyset_for_registration(registration, platform_jwk)
 
-      state = "some-state"
+      state = issue_launch_state(registration)
+
       conn = Plug.Test.init_test_session(conn, state: state)
 
       custom_header = %{"kid" => platform_jwk.kid}
@@ -249,7 +275,7 @@ defmodule OliWeb.LtiControllerTest do
       # Pre-cache the keyset since we no longer fetch on-demand
       cache_keyset_for_registration(registration, platform_jwk)
 
-      state = "some-state"
+      state = issue_launch_state(registration)
       conn = Plug.Test.init_test_session(conn, state: state)
 
       custom_header = %{"kid" => platform_jwk.kid}
@@ -313,7 +339,7 @@ defmodule OliWeb.LtiControllerTest do
       # Pre-cache the keyset since we no longer fetch on-demand
       cache_keyset_for_registration(registration, platform_jwk)
 
-      state = "some-state"
+      state = issue_launch_state(registration)
       conn = Plug.Test.init_test_session(conn, state: state)
 
       custom_header = %{"kid" => platform_jwk.kid}
@@ -345,7 +371,7 @@ defmodule OliWeb.LtiControllerTest do
       # Pre-cache the keyset since we no longer fetch on-demand
       cache_keyset_for_registration(registration, platform_jwk)
 
-      state = "some-state"
+      state = issue_launch_state(registration)
       conn = Plug.Test.init_test_session(conn, state: state)
 
       custom_header = %{"kid" => platform_jwk.kid}
@@ -371,7 +397,13 @@ defmodule OliWeb.LtiControllerTest do
     test "launch handles invalid registration and redirects to registration form", %{conn: conn} do
       platform_jwk = jwk_fixture()
 
-      state = "some-state"
+      state =
+        issue_launch_state(%{
+          "iss" => "some different client_id",
+          "client_id" => "some different issuer",
+          "target_link_uri" => "https://some-target_link_uri/lti/launch"
+        })
+
       conn = Plug.Test.init_test_session(conn, state: state)
 
       custom_header = %{"kid" => platform_jwk.kid}
@@ -408,6 +440,144 @@ defmodule OliWeb.LtiControllerTest do
       assert html_response(conn, 200) =~ "Register Your Institution"
     end
 
+    test "launch succeeds without session cookie when request state is signed", %{
+      conn: conn,
+      registration: registration
+    } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+      state = issue_launch_state(registration)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert html_response(conn, 200) =~ "This course section is not available"
+    end
+
+    test "launch uses current validated context instead of latest persisted launch", %{
+      conn: conn,
+      registration: registration,
+      institution: institution,
+      deployment: deployment
+    } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+
+      section_a =
+        insert(:section, %{
+          slug: "context-a",
+          context_id: "context-a",
+          institution: institution,
+          lti_1p3_deployment: deployment
+        })
+
+      section_b =
+        insert(:section, %{
+          slug: "context-b",
+          context_id: "context-b",
+          institution: institution,
+          lti_1p3_deployment: deployment
+        })
+
+      stale_user = user_fixture(%{independent_learner: false})
+
+      {:ok, _} =
+        Oli.Lti.LtiParams.create_or_update_lti_params(
+          %{
+            "iss" => registration.issuer,
+            "aud" => registration.client_id,
+            "sub" => stale_user.sub,
+            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+            "https://purl.imsglobal.org/spec/lti/claim/context" => %{"id" => section_b.context_id},
+            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+            ],
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+          },
+          stale_user.id
+        )
+
+      state = issue_launch_state(registration)
+      conn = Plug.Test.init_test_session(conn, state: state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+        |> Map.put("sub", stale_user.sub)
+        |> Map.put("https://purl.imsglobal.org/spec/lti/claim/context", %{
+          "id" => section_a.context_id,
+          "title" => section_a.title
+        })
+        |> Map.put(
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id",
+          deployment.deployment_id
+        )
+        |> Map.put("https://purl.imsglobal.org/spec/lti/claim/roles", [
+          "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+        ])
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert redirected_to(conn) == "/sections/#{section_a.slug}/manage"
+    end
+
+    test "launch emits telemetry without leaking raw token payloads", %{
+      conn: conn,
+      registration: registration
+    } do
+      platform_jwk = jwk_fixture()
+      cache_keyset_for_registration(registration, platform_jwk)
+      state = issue_launch_state(registration)
+      conn = Plug.Test.init_test_session(conn, state: state)
+      handler_id = attach_telemetry([[:torus, :lti, :launch, :validated]])
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      _conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert_receive {:telemetry_event, [:torus, :lti, :launch, :validated], _, metadata}
+      refute Map.has_key?(metadata, :id_token)
+      refute Map.has_key?(metadata, :state)
+      assert metadata.flow_mode == "legacy_session"
+
+      :telemetry.detach(handler_id)
+    end
+
     test "authorize_redirect get successful for user", %{conn: conn} do
       user = user_fixture()
       section = insert(:section)
@@ -421,7 +591,9 @@ defmodule OliWeb.LtiControllerTest do
       target_link_uri = "some-valid-url"
       nonce = "some-nonce"
       client_id = "some-client-id"
+
       state = "some-state"
+
       lti_message_hint = "some-lti-message-hint"
 
       {:ok, {_, _, _}} =
@@ -1032,6 +1204,35 @@ defmodule OliWeb.LtiControllerTest do
       registration: registration,
       institution: institution
     }
+  end
+
+  defp issue_launch_state(%{issuer: issuer, client_id: client_id}) do
+    issue_launch_state(%{
+      "iss" => issuer,
+      "client_id" => client_id,
+      "target_link_uri" => "https://some-target_link_uri/lti/launch"
+    })
+  end
+
+  defp issue_launch_state(params) do
+    {:ok, launch_state} = LaunchState.issue(params, request_id: "test-request-id")
+    launch_state["token"]
+  end
+
+  defp attach_telemetry(events) do
+    parent = self()
+    handler_id = "lti-controller-test-#{System.unique_integer([:positive])}"
+
+    :telemetry.attach_many(
+      handler_id,
+      events,
+      fn event_name, measurements, metadata, _config ->
+        send(parent, {:telemetry_event, event_name, measurements, metadata})
+      end,
+      nil
+    )
+
+    handler_id
   end
 
   defp cache_keyset_for_registration(registration, platform_jwk) do

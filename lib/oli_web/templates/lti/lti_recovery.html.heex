@@ -1,0 +1,17 @@
+<h3 class="my-3">{@title}</h3>
+
+<p class="text-danger">{@message}</p>
+<p>{@guidance}</p>
+
+<%= if @request_id do %>
+  <p class="text-muted">Request ID: {@request_id}</p>
+<% end %>
+
+<p>
+  If you need help configuring your LTI connection, please
+  <a href="#">
+    <OliWeb.Components.Common.tech_support_link id="tech_support_lti_recovery">
+      contact support
+    </OliWeb.Components.Common.tech_support_link>
+  </a>
+</p>
