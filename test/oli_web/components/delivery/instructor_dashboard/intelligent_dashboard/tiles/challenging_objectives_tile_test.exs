@@ -39,8 +39,12 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       assert html =~ "hover:bg-Surface-surface-secondary-hover"
       assert html =~ "focus-within:bg-Surface-surface-secondary-hover"
       assert html =~ "rounded-lg px-2 py-2 transition-colors hover:bg-Fill-fill-hover"
-      assert html =~ "class=\"min-w-0 flex-1 text-base font-semibold leading-6 text-Text-text-high focus:outline-none\""
-      assert html =~ "class=\"min-w-0 flex-1 text-base font-normal leading-6 text-Text-text-high focus:outline-none\""
+
+      assert html =~
+               "class=\"min-w-0 flex-1 text-base font-semibold leading-6 text-Text-text-high focus:outline-none\""
+
+      assert html =~
+               "class=\"min-w-0 flex-1 text-base font-normal leading-6 text-Text-text-high focus:outline-none\""
     end
 
     test "renders no-data message distinctly from low-proficiency empty state" do
