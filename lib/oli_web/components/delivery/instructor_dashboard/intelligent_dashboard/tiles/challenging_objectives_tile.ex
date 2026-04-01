@@ -96,7 +96,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       |> assign(:link_path, learning_objectives_path(assigns.section_slug, row.navigation))
 
     ~H"""
-    <div class="rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+    <div class="group rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] transition-colors hover:border-Border-border-hover hover:bg-Surface-surface-secondary-hover focus-within:border-Border-border-hover focus-within:bg-Surface-surface-secondary-hover">
       <div class="flex items-start gap-2.5 px-1 py-1">
         <span class="min-w-[40px] pt-1 text-right text-sm font-semibold leading-4 text-Text-text-low-alpha">
           {objective_display_number(@row)}
@@ -104,7 +104,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         <.link
           navigate={@link_path}
           aria-label={objective_link_aria_label(@row.title, :objective)}
-          class="min-w-0 flex-1 text-base font-semibold leading-6 text-Text-text-high hover:text-Text-text-high hover:underline"
+          class="min-w-0 flex-1 text-base font-semibold leading-6 text-Text-text-high focus:outline-none"
         >
           {@row.title}
         </.link>
@@ -140,7 +140,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       )
 
     ~H"""
-    <div class="rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)]">
+    <div class="group rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary p-3 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] transition-colors hover:border-Border-border-hover hover:bg-Surface-surface-secondary-hover focus-within:border-Border-border-hover focus-within:bg-Surface-surface-secondary-hover">
       <%= if @row.row_type == :subobjective do %>
         <div class="rounded-xl border border-Border-border-subtle bg-Surface-surface-transparent p-2">
           <div class="space-y-1 px-3">
@@ -155,7 +155,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           <.link
             navigate={@link_path}
             aria-label={objective_link_aria_label(@row.title, @row.row_type)}
-            class="min-w-0 flex-1 text-base font-semibold leading-6 text-Text-text-high hover:text-Text-text-high hover:underline"
+            class="min-w-0 flex-1 text-base font-semibold leading-6 text-Text-text-high focus:outline-none"
           >
             {@row.title}
           </.link>
@@ -177,21 +177,23 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       )
 
     ~H"""
-    <div class="flex items-start gap-5 py-2">
-      <span class="min-w-[30px] pt-1 text-right text-sm font-semibold leading-4 text-Text-text-low-alpha">
-        {@row.display_number}
-      </span>
-      <div class="flex min-w-0 flex-1 items-start gap-4">
-        <.link
-          navigate={@link_path}
-          aria-label={objective_link_aria_label(@row.title, :subobjective)}
-          class="min-w-0 flex-1 text-base font-normal leading-6 text-Text-text-high hover:text-Text-text-high hover:underline"
-        >
-          {@row.title}
-        </.link>
-        <span class="inline-flex shrink-0 items-center rounded-full bg-Fill-fill-danger px-4 py-1 text-base font-semibold leading-6 text-Text-text-danger shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]">
-          {@row.proficiency_label}
+    <div class="rounded-lg px-2 py-2 transition-colors hover:bg-Fill-fill-hover focus-within:bg-Fill-fill-hover">
+      <div class="flex items-start gap-5">
+        <span class="min-w-[30px] pt-1 text-right text-sm font-semibold leading-4 text-Text-text-low-alpha">
+          {@row.display_number}
         </span>
+        <div class="flex min-w-0 flex-1 items-start gap-4">
+          <.link
+            navigate={@link_path}
+            aria-label={objective_link_aria_label(@row.title, :subobjective)}
+            class="min-w-0 flex-1 text-base font-normal leading-6 text-Text-text-high focus:outline-none"
+          >
+            {@row.title}
+          </.link>
+          <span class="inline-flex shrink-0 items-center rounded-full bg-Fill-fill-danger px-4 py-1 text-base font-semibold leading-6 text-Text-text-danger shadow-[0px_2px_4px_0px_rgba(0,52,99,0.10)]">
+            {@row.proficiency_label}
+          </span>
+        </div>
       </div>
     </div>
     """

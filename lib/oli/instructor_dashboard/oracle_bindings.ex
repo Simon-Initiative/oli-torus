@@ -18,6 +18,7 @@ defmodule Oli.InstructorDashboard.OracleBindings do
   alias Oli.InstructorDashboard.Oracles.Placeholder.Progress
   alias Oli.InstructorDashboard.Oracles.ProgressBins
   alias Oli.InstructorDashboard.Oracles.ProgressProficiency
+  alias Oli.InstructorDashboard.Oracles.SchedulePosition
   alias Oli.InstructorDashboard.Oracles.SectionAnalytics
   alias Oli.InstructorDashboard.Oracles.ScopeResources
   alias Oli.InstructorDashboard.Oracles.StudentInfo
@@ -44,10 +45,12 @@ defmodule Oli.InstructorDashboard.OracleBindings do
       consumers: %{
         progress_summary: %{
           required_oracles: %{
-            progress: :oracle_instructor_progress
+            progress_bins: :oracle_instructor_progress_bins,
+            scope_resources: :oracle_instructor_scope_resources
           },
           optional_oracles: %{
-            engagement: :oracle_instructor_engagement
+            legacy_progress: :oracle_instructor_progress,
+            schedule_position: :oracle_instructor_schedule_position
           }
         },
         support_summary: %{
@@ -83,6 +86,7 @@ defmodule Oli.InstructorDashboard.OracleBindings do
         oracle_instructor_engagement: Engagement,
         oracle_instructor_section_analytics: SectionAnalytics,
         oracle_instructor_progress_bins: ProgressBins,
+        oracle_instructor_schedule_position: SchedulePosition,
         oracle_instructor_progress_proficiency: ProgressProficiency,
         oracle_instructor_student_info: StudentInfo,
         oracle_instructor_scope_resources: ScopeResources,

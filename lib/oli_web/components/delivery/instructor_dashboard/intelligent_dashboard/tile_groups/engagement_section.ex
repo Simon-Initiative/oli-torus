@@ -23,7 +23,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :toggle_event, :string, default: "dashboard_section_toggled"
   attr :reorder_event, :string, default: "dashboard_sections_reordered"
   attr :show_move_handle, :boolean, default: true
-  attr :progress_status, :string, default: "Waiting for scoped data"
+  attr :progress_projection, :map, default: %{}
+  attr :progress_tile_state, :map, default: %{}
   attr :student_support_projection, :map, default: %{}
   attr :student_support_tile_state, :map, default: %{}
   attr :params, :map, default: %{}
@@ -56,7 +57,16 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
         ]}
         data-section-layout={if @tile_count == 1, do: "single", else: "multi"}
       >
-        <ProgressTile.tile :if={@show_progress_tile} status={@progress_status} />
+        <.live_component
+          :if={@show_progress_tile}
+          module={ProgressTile}
+          id="progress_tile"
+          projection={@progress_projection}
+          tile_state={@progress_tile_state}
+          params={@params}
+          section_slug={@section_slug}
+          dashboard_scope={@dashboard_scope}
+        />
         <.live_component
           :if={@show_student_support_tile}
           module={StudentSupportTile}

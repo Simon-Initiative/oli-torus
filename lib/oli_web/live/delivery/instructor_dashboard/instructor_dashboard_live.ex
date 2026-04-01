@@ -870,6 +870,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       dashboard_scope={@dashboard_scope}
       dashboard_visible_sections={@dashboard_visible_sections}
       params={@params}
+      progress_tile_state={@progress_tile_state}
       section={@section}
       assessments_tile_state={@assessments_tile_state}
       student_support_tile_state={@student_support_tile_state}
