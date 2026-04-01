@@ -320,7 +320,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
                     </span>
                   </div>
                   <.live_component
-                    id={"student_support_email_button_#{@id}"}
+                    id={"student_support_email_button_#{@dashboard_scope}_#{@id}"}
                     module={EmailButton}
                     variant={:minimal}
                     selected_students={@selected_student_ids}
