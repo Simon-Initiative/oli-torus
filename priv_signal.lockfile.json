@@ -1489,7 +1489,7 @@
         "function": "page_counts/2",
         "module": "Oli.InstructorDashboard.Oracles.ProgressBins",
         "lines": [
-          117
+          163
         ],
         "file_path": "lib/oli/instructor_dashboard/oracles/progress_bins.ex"
       },
@@ -25856,6 +25856,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_93d9be4790f22af5",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "page_progress_by_student/3",
+        "module": "Oli.InstructorDashboard.Oracles.ProgressBins",
+        "lines": [
+          211
+        ],
+        "file_path": "lib/oli/instructor_dashboard/oracles/progress_bins.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_94a4bb0289f95880",
       "node_type": "sink",
       "role": {
@@ -34512,6 +34531,25 @@
       "data_refs": []
     },
     {
+      "id": "psn_c47ff71a1b8f5dce",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.all"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "container_progress_by_student/3",
+        "module": "Oli.InstructorDashboard.Oracles.ProgressBins",
+        "lines": [
+          194
+        ],
+        "file_path": "lib/oli/instructor_dashboard/oracles/progress_bins.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_c4db97608656587f",
       "node_type": "source",
       "role": {
@@ -34645,25 +34683,6 @@
       "data_refs": []
     },
     {
-      "id": "psn_c591b4c4aaddd0ab",
-      "node_type": "source",
-      "role": {
-        "kind": "database_read",
-        "callee": "Repo.all"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "progress_by_student/3",
-        "module": "Oli.InstructorDashboard.Oracles.ProgressBins",
-        "lines": [
-          147
-        ],
-        "file_path": "lib/oli/instructor_dashboard/oracles/progress_bins.ex"
-      },
-      "data_refs": []
-    },
-    {
       "id": "psn_c5c37a16dbd0fa28",
       "node_type": "source",
       "role": {
@@ -34691,17 +34710,17 @@
       },
       "evidence": [
         {
-          "line": 410,
+          "line": 418,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "af357d9f0a7bf64d",
+          "finding_id": "798424a4e5cbf629",
           "ast_kind": "token"
         },
         {
-          "line": 410,
+          "line": 418,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "af357d9f0a7bf64d",
+          "finding_id": "798424a4e5cbf629",
           "ast_kind": "unknown"
         }
       ],
@@ -34710,7 +34729,7 @@
         "function": "assign_dashboard_tab/3",
         "module": "OliWeb.Delivery.InstructorDashboard.IntelligentDashboardTab",
         "lines": [
-          410
+          418
         ],
         "file_path": "lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex"
       },
@@ -44603,7 +44622,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "4ea66066e167088ac8ce277f2a75191e0271e9a0"
+    "commit": "1377e69ea4708d25530d9aa7a4d0a24a53f91f3e"
   },
   "schema_version": "1",
   "summary": {
@@ -44614,9 +44633,9 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1606,
-    "scan_duration_ms": 1716,
-    "node_count": 1531,
+    "files_scanned": 1608,
+    "scan_duration_ms": 1724,
+    "node_count": 1532,
     "data_node_count": 122,
     "flow_count": 781,
     "scan_error_count": 0,
@@ -44625,14 +44644,14 @@
     "proto_flows_enabled": true,
     "node_type_counts": {
       "sink": 611,
-      "source": 920
+      "source": 921
     },
     "boundary_counts": {
       "external": 481,
       "internal": 300
     },
     "confirmed_count": 162,
-    "possible_count": 1369
+    "possible_count": 1370
   },
   "flows": [
     {
