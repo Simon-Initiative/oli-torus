@@ -156,10 +156,15 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     setImgSrc(imageSource);
   }, [model]);
 
+  // The custom element wrapper lowercases attribute names
+  const sectionSlug = (props as any).sectionslug ?? props.sectionSlug;
+  const resourceId =
+    (props as any).resourceid != null ? Number((props as any).resourceid) : props.resourceId;
+
   const fireAiTrigger = () =>
     invokeAdaptiveAiTrigger({
-      sectionSlug: props.sectionSlug,
-      resourceId: props.resourceId,
+      sectionSlug,
+      resourceId,
       triggerType: 'adaptive_component',
       data: {
         component_id: id,

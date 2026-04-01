@@ -90,6 +90,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
     selected_card_value = Map.get(assigns.params, :selected_card_value, nil)
     students_count = students_count(students, params.filter_by)
+    selected_emails = selected_student_emails(all_students, selected_students)
 
     card_props = [
       %{
@@ -186,6 +187,7 @@ defmodule OliWeb.Components.Delivery.Students do
        certificate_pending_email_notification_count:
          (assigns[:certificate] && assigns.certificate_pending_email_notification_count) || 0,
        selected_students: socket.assigns[:selected_students] || [],
+       selected_emails: selected_emails,
        show_email_modal: false
      )}
   end
@@ -599,6 +601,7 @@ defmodule OliWeb.Components.Delivery.Students do
               id="email_button_component"
               module={OliWeb.Components.Delivery.Students.EmailButton}
               selected_students={@selected_students}
+              selected_emails={@selected_emails}
               students={@all_students}
               section_title={@section_title}
               instructor_email={issued_by_email(@current_author, @current_user)}
@@ -669,6 +672,15 @@ defmodule OliWeb.Components.Delivery.Students do
 
   defp issued_by_name(author, _user) when not is_nil(author), do: DeliveryUtils.user_name(author)
   defp issued_by_name(_author, user), do: DeliveryUtils.user_name(user)
+
+  defp selected_student_emails(all_students, selected_students) do
+    selected_student_ids = MapSet.new(selected_students)
+
+    all_students
+    |> Enum.filter(&(MapSet.member?(selected_student_ids, &1.id) and is_binary(&1.email)))
+    |> Enum.map(& &1.email)
+    |> Oli.Utils.normalize_and_join_strings(", ", unique: true)
+  end
 
   #### Add enrollments modal related stuff ####
   def add_enrollments(%{add_enrollments_step: :step_1} = assigns) do
@@ -1308,6 +1320,7 @@ defmodule OliWeb.Components.Delivery.Students do
     {:noreply,
      assign(socket,
        selected_students: selected_students,
+       selected_emails: selected_student_emails(socket.assigns.all_students, selected_students),
        table_model: table_model,
        show_email_modal: false
      )}
@@ -1356,6 +1369,7 @@ defmodule OliWeb.Components.Delivery.Students do
     {:noreply,
      assign(socket,
        selected_students: selected_students,
+       selected_emails: selected_student_emails(socket.assigns.all_students, selected_students),
        table_model: table_model,
        show_email_modal: false
      )}

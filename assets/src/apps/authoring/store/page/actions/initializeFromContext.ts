@@ -7,6 +7,7 @@ import {
 import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { setGroups } from '../../../../delivery/store/features/groups/slice';
 import { verifyFlowchartLesson } from '../../../components/Flowchart/flowchart-actions/verify-flowchart-lesson';
+import { createAlwaysGoToPath } from '../../../components/Flowchart/paths/path-factories';
 import { PageContext } from '../../../types';
 import { createNew as createNewActivity } from '../../activities/actions/createNew';
 import { selectAppMode } from '../../app/slice';
@@ -22,6 +23,7 @@ export const initializeFromContext = createAsyncThunk(
   `${PageSlice}/initializeFromContext`,
   async (params: { context: PageContext; config: any }, thunkApi) => {
     const { dispatch, getState } = thunkApi;
+    const appMode = selectAppMode(getState() as AuthoringRootState);
 
     // load the page state properties
     const pageState: Partial<PageState> = {
@@ -57,10 +59,24 @@ export const initializeFromContext = createAsyncThunk(
       // if there are any activities defined that are not in a group they will be
       // assimilated into a new group
       if (!children.length) {
-        const { payload: welcomeScreen } = await dispatch(
-          createNewActivity({ title: 'Welcome Screen', screenType: 'welcome_screen' }),
-        );
-        children.push(welcomeScreen);
+        if (appMode === 'flowchart') {
+          const { payload: welcomeScreen } = await dispatch(
+            createNewActivity({ title: 'Welcome Screen', screenType: 'welcome_screen' }),
+          );
+          const { payload: endScreen } = await dispatch(
+            createNewActivity({ title: 'End of Lesson', screenType: 'end_screen' }),
+          );
+
+          welcomeScreen.model.authoring.flowchart.paths = [
+            createAlwaysGoToPath(endScreen.activityId),
+          ];
+          children.push(welcomeScreen, endScreen);
+        } else {
+          const { payload: welcomeScreen } = await dispatch(
+            createNewActivity({ title: 'Welcome Screen', screenType: 'welcome_screen' }),
+          );
+          children.push(welcomeScreen);
+        }
       }
       // create sequence map of activities which is the group children
       const newSequence = children.map((childActivity) => {
@@ -76,6 +92,10 @@ export const initializeFromContext = createAsyncThunk(
         return entry;
       });
       const { payload: newGroup } = await dispatch(createNewGroup({ children: newSequence }));
+
+      // Replace any placeholder bootstrap group before the first persist so savePage writes the
+      // newly materialized blank-lesson structure instead of stale local-only sequence state.
+      await dispatch(setGroups({ groups: [newGroup] }));
 
       // write model to server now or else the above created activity will be orphaned
       await dispatch(savePage({ undoable: true, immiediate: true }));
@@ -137,7 +157,6 @@ export const initializeFromContext = createAsyncThunk(
 
     await dispatch(setGroups({ groups }));
 
-    const appMode = selectAppMode(getState() as AuthoringRootState);
     if (appMode === 'flowchart') {
       await dispatch(verifyFlowchartLesson({}));
     }

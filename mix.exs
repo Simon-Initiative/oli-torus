@@ -140,7 +140,7 @@ defmodule Oli.MixProject do
       {:cachex, "~> 3.5"},
       {:cloak_ecto, "~> 1.2.0"},
       {:priv_signal,
-       github: "marmot-labs/priv-signal", tag: "v0.2.2", only: [:dev, :test], runtime: false},
+       github: "marmot-labs/priv-signal", tag: "v0.3.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},

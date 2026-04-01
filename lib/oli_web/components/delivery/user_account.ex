@@ -717,6 +717,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr(:user, :map)
   attr(:size_class, :string, default: "h-8 w-8")
+  attr(:initials_text_class, :string, default: "text-sm leading-[14px]")
 
   def user_picture_icon(assigns) do
     ~H"""
@@ -725,7 +726,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <div
           role="img"
           class={[
-            "bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]",
+            "bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white font-semibold",
+            @initials_text_class,
             @size_class
           ]}
           aria-label={"#{@user.name} profile avatar"}

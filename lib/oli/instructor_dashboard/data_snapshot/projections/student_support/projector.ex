@@ -11,8 +11,11 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
     not_enough_information: "Not enough information"
   }
   @default_rules %{
-    struggling: %{any: [{:progress, :lt, 40}, {:proficiency, :lt, 40}], all: []},
-    excelling: %{any: [], all: [{:progress, :gte, 80}, {:proficiency, :gte, 80}]},
+    struggling: %{
+      any: [{:progress, :lt, 40}, {:progress, :gt, 80}],
+      all: [{:proficiency, :lt, 40}]
+    },
+    excelling: %{any: [], all: [{:progress, :gte, 60}, {:proficiency, :gte, 80}]},
     on_track: %{any: [], all: [{:progress, :gte, 40}, {:proficiency, :gte, 40}]}
   }
 
@@ -26,6 +29,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
           required(:email) => String.t() | nil,
           required(:given_name) => String.t() | nil,
           required(:family_name) => String.t() | nil,
+          optional(:picture) => String.t() | nil,
           required(:last_interaction_at) => DateTime.t() | NaiveDateTime.t() | nil
         }
 
@@ -115,13 +119,17 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
     last_interaction_at = normalize_datetime(Map.get(student_info, :last_interaction_at))
 
     %{
+      id: student_info.student_id,
       student_id: student_info.student_id,
       display_name: display_name(student_info),
+      full_name: display_name(student_info),
       email: Map.get(student_info, :email),
+      picture: Map.get(student_info, :picture),
       progress_pct: progress_pct,
       proficiency_pct: proficiency_pct,
       activity_status: activity_status(last_interaction_at, inactivity_days, now),
-      last_interaction_at: last_interaction_at
+      last_interaction_at: last_interaction_at,
+      searchable_text: searchable_text(student_info)
     }
   end
 
@@ -132,6 +140,13 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       [] -> Map.get(student_info, :email) || "Student #{student_info.student_id}"
       names -> Enum.join(names, " ")
     end
+  end
+
+  defp searchable_text(student_info) do
+    student_info
+    |> display_name()
+    |> Kernel.<>(Map.get(student_info, :email, "") || "")
+    |> String.downcase()
   end
 
   defp normalize_progress_pct(nil), do: nil
@@ -175,7 +190,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
 
   defp sort_students(students) do
     Enum.sort_by(students, fn student ->
-      {student.activity_status != :inactive, String.downcase(student.display_name)}
+      {student.activity_status != :inactive, student.searchable_text}
     end)
   end
 

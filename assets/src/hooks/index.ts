@@ -39,6 +39,7 @@ import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
 import { OnMountAndUpdate } from './on_mount_and_update';
+import { OverflowChipList } from './overflow_chip_list';
 import { PageContentHooks } from './page_content_hooks';
 import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
@@ -135,6 +136,7 @@ export const Hooks = {
   DisableSubmitted,
   Recaptcha,
   OnMountAndUpdate,
+  OverflowChipList,
   FixedNavigationBar,
   SubmitTechSupportForm,
   StickyTechSupportButton,

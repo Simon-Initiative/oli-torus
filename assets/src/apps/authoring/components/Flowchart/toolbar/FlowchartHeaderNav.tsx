@@ -8,22 +8,15 @@ import {
 import { useKeyDown } from 'hooks/useKeyDown';
 import useHover from '../../../../../components/hooks/useHover';
 import guid from '../../../../../utils/guid';
-import {
-  IActivity,
-  selectAllActivities,
-  selectCurrentActivity,
-} from '../../../../delivery/store/features/activities/slice';
+import { selectCurrentActivity } from '../../../../delivery/store/features/activities/slice';
 import {
   selectCurrentActivityTree,
   selectCurrentSequenceId,
-  selectSequence,
 } from '../../../../delivery/store/features/groups/selectors/deck';
 import {
   selectCopiedPart,
   selectPartComponentTypes,
   selectPaths,
-  selectProjectSlug,
-  selectRevisionSlug,
   setCopiedPart,
   setRightPanelActiveTab,
   setShowScoringOverview,
@@ -35,13 +28,9 @@ import { addPart } from '../../../store/parts/actions/addPart';
 import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchContextMenu';
 import ShowInformationModal from '../../Modal/ShowInformationModal';
 import { RightPanelTabs } from '../../RightMenu/RightMenu';
-import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
 import { getScreenQuestionType, isStaticQuestionType } from '../paths/path-options';
 import { isEndScreen } from '../screens/screen-utils';
-import { validateScreen } from '../screens/screen-validation';
-import { InvalidScreenWarning } from './InvalidScreenWarning';
 import PasteIcon from './PasteIcon';
-import { PreviewIcon } from './PreviewIcon';
 import { RedoIcon } from './RedoIcon';
 import { ScoringIcon } from './ScoringIcon';
 import { UndoIcon } from './UndoIcon';
@@ -65,6 +54,7 @@ const staticComponents: string[] = [
   'janus_popup',
   'janus_audio',
   'janus_capi_iframe',
+  'janus_ai_trigger',
 ];
 const questionComponents: string[] = [
   'janus_mcq',
@@ -121,19 +111,14 @@ const ToolbarOption: React.FC<{
 };
 
 export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
-  const projectSlug = useSelector(selectProjectSlug);
-  const revisionSlug = useSelector(selectRevisionSlug);
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
-  const activities = useSelector(selectAllActivities);
-  const sequence = useSelector(selectSequence);
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const dispatch = useDispatch();
   const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   const hasRedo = useSelector(selectHasRedo);
   const hasUndo = useSelector(selectHasUndo);
-  const [invalidScreens, setInvalidScreens] = React.useState<IActivity[]>([]);
   const [showPartCopyValidationWarning, setShowPartCopyValidationWarning] =
     React.useState<boolean>(false);
   const handleUndo = () => {
@@ -155,29 +140,10 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
 
   const hasQuestion = questionType !== 'none';
   const isLessonEndScreen = currentActivity ? isEndScreen(currentActivity) : false;
-  const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
-  const windowName = `preview-${projectSlug}`;
 
   useEffect(() => {
     setNewPartAddOffset(0);
   }, [currentSequenceId]);
-
-  const previewLesson = useCallback(async () => {
-    await dispatch(verifyFlowchartLesson({}));
-    const invalidScreens = activities.filter(
-      (activity) => validateScreen(activity, activities, sequence).length > 0,
-    );
-    if (invalidScreens.length > 0) {
-      setInvalidScreens(invalidScreens);
-    } else {
-      window.open(url, windowName);
-    }
-  }, [activities, dispatch, sequence, url, windowName]);
-
-  const onAcceptInvalid = useCallback(() => {
-    setInvalidScreens([]);
-    window.open(url, windowName);
-  }, [url, windowName]);
 
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {
@@ -346,19 +312,6 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
               delay={{ show: 150, hide: 150 }}
               overlay={
                 <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  Preview Lesson
-                </Tooltip>
-              }
-            >
-              <button onClick={previewLesson} className="component-button">
-                <PreviewIcon />
-              </button>
-            </OverlayTrigger>
-            <OverlayTrigger
-              placement="bottom"
-              delay={{ show: 150, hide: 150 }}
-              overlay={
-                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
                   Scoring Overview
                 </Tooltip>
               }
@@ -484,13 +437,6 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
             )}
           </div>
         </div> */}
-        {invalidScreens.length > 0 && (
-          <InvalidScreenWarning
-            screens={invalidScreens}
-            onAccept={onAcceptInvalid}
-            onCancel={() => setInvalidScreens([])}
-          />
-        )}
         <ShowInformationModal
           show={showPartCopyValidationWarning}
           title="Paste Component"

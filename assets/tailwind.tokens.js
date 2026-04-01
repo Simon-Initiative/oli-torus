@@ -162,6 +162,39 @@ module.exports = {
     light: '#218358',
     dark: '#218358',
   },
+  // Fill/Chart
+  'Fill-Chart-fill-chart-blue-active': {
+    light: '#00626F',
+    dark: '#39D3E5',
+  },
+  'Fill-Chart-fill-chart-blue-muted': {
+    light: '#129FB2',
+    dark: '#227F8A',
+  },
+  'Fill-Chart-fill-chart-purple-active': {
+    light: '#86199C',
+    dark: '#DC6DF2',
+  },
+  'Fill-Chart-fill-chart-purple-muted': {
+    light: '#CF66E4',
+    dark: '#9944AA',
+  },
+  'Fill-Chart-fill-chart-orange-active': {
+    light: '#A44A09',
+    dark: '#FF9C54',
+  },
+  'Fill-Chart-fill-chart-orange-muted': {
+    light: '#E5721F',
+    dark: '#A05925',
+  },
+  'Fill-Chart-fill-chart-red-active': {
+    light: '#B60202',
+    dark: '#FF4F4F',
+  },
+  'Fill-Chart-fill-chart-red-muted': {
+    light: '#FF5757',
+    dark: '#D01B1B',
+  },
   // Border
   'Border-border-muted': {
     light: '#F3F4F8',

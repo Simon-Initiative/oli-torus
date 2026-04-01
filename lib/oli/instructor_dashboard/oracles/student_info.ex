@@ -39,6 +39,7 @@ defmodule Oli.InstructorDashboard.Oracles.StudentInfo do
         email: u.email,
         given_name: u.given_name,
         family_name: u.family_name,
+        picture: u.picture,
         last_interaction_at: e.updated_at
       }
     )

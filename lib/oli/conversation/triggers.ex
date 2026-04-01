@@ -17,6 +17,7 @@ defmodule Oli.Conversation.Triggers do
     :page,
     :adaptive_page,
     :adaptive_component,
+    :trap_state,
     :content_group,
     :content_block,
     :correct_answer,
@@ -41,6 +42,9 @@ defmodule Oli.Conversation.Triggers do
   def description(:adaptive_component, data),
     do:
       "Activated an adaptive component trigger (type: #{sanitize_component_type(data)}, id: #{sanitize_component_id(data)})"
+
+  def description(:trap_state, data),
+    do: "Triggered a trap state rule in an adaptive lesson (id: #{sanitize_component_id(data)})"
 
   def description(:content_group, data),
     do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
@@ -154,6 +158,9 @@ defmodule Oli.Conversation.Triggers do
       type when type in [:adaptive_page, :adaptive_component] ->
         resolve_adaptive_client_trigger(section_slug, section_id, trigger)
 
+      :trap_state ->
+        resolve_trap_state_client_trigger(section_slug, section_id, trigger)
+
       _ ->
         {:ok, trigger}
     end
@@ -172,7 +179,8 @@ defmodule Oli.Conversation.Triggers do
   def invoke(section_id, current_user_id, trigger) do
     case maybe_admit_adaptive_trigger(trigger) do
       :ok ->
-        topic = "trigger:#{current_user_id}:#{section_id}:#{trigger.resource_id}"
+        broadcast_resource_id = trigger.page_resource_id || trigger.resource_id
+        topic = "trigger:#{current_user_id}:#{section_id}:#{broadcast_resource_id}"
 
         Logger.info("Invoking trigger for topic: #{topic}")
 
@@ -244,7 +252,14 @@ defmodule Oli.Conversation.Triggers do
     case trigger do
       # No additional data needed for these trigger types
       %{trigger_type: t}
-      when t in [:page, :adaptive_page, :adaptive_component, :content_group, :content_block] ->
+      when t in [
+             :page,
+             :adaptive_page,
+             :adaptive_component,
+             :trap_state,
+             :content_group,
+             :content_block
+           ] ->
         trigger
 
       # For these trigger types, we need to fetch the question model and encode it
@@ -279,10 +294,13 @@ defmodule Oli.Conversation.Triggers do
          {:ok, part} <- find_adaptive_trigger_part(parts_layout, trigger.data),
          {:ok, prompt} <- resolve_adaptive_prompt(trigger.trigger_type, part),
          {:ok, prompt} <- validate_adaptive_prompt(prompt) do
+      page_resource_id = find_containing_page_resource_id(section_id, resource_id)
+
       {:ok,
        %{
          trigger
          | resource_id: resource_id,
+           page_resource_id: page_resource_id,
            prompt: prompt,
            data: %{
              "component_id" => normalize_component_id(part_id(part), "unknown"),
@@ -294,6 +312,117 @@ defmodule Oli.Conversation.Triggers do
       {:error, _reason} = error -> error
     end
   end
+
+  defp resolve_trap_state_client_trigger(_section_slug, section_id, trigger) do
+    with {:ok, resource_id} <- normalize_adaptive_resource_id(trigger.resource_id),
+         {:ok, rule_id} <- extract_rule_id(trigger.data),
+         rules when is_list(rules) <- get_adaptive_authoring_rules(section_id, resource_id),
+         prompt when is_binary(prompt) <- find_activation_point_prompt(rules, rule_id),
+         {:ok, prompt} <- validate_adaptive_prompt(prompt) do
+      page_resource_id = find_containing_page_resource_id(section_id, resource_id)
+
+      {:ok,
+       %{
+         trigger
+         | resource_id: resource_id,
+           page_resource_id: page_resource_id,
+           prompt: prompt,
+           data: trigger.data || %{}
+       }}
+    else
+      nil -> {:error, :invalid_trigger}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  # Finds the page resource_id that contains the given activity resource_id.
+  # In adaptive delivery, the page revision's content model holds activity-reference
+  # nodes with the activity_id. We join section_resources to revisions and search
+  # the JSON content for a matching activity_id.
+  defp find_containing_page_resource_id(section_id, activity_resource_id) do
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
+
+    Oli.Delivery.Sections.SectionResource
+    |> join(:inner, [sr], r in Revision, on: r.id == sr.revision_id)
+    |> where(
+      [sr, r],
+      sr.section_id == ^section_id and
+        sr.resource_type_id == ^page_type_id and
+        fragment(
+          "EXISTS (SELECT 1 FROM jsonb_array_elements(?->'model') elem, jsonb_array_elements(elem->'children') child WHERE (child->>'activity_id')::bigint = ?)",
+          r.content,
+          ^activity_resource_id
+        )
+    )
+    |> select([sr], sr.resource_id)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  defp extract_rule_id(data) when is_map(data) do
+    case Map.get(data, "rule_id") do
+      value when is_binary(value) and byte_size(value) > 0 and byte_size(value) <= 200 ->
+        {:ok, value}
+
+      _ ->
+        {:error, :invalid_trigger}
+    end
+  end
+
+  defp extract_rule_id(_), do: {:error, :invalid_trigger}
+
+  defp get_adaptive_authoring_rules(section_id, resource_id) do
+    case SectionResourceDepot.get_section_resource(section_id, resource_id) do
+      %{revision_id: revision_id} ->
+        get_authoring_rules_by_revision_id(revision_id)
+
+      _ ->
+        Repo.one(
+          from(spp in SectionsProjectsPublications,
+            where: spp.section_id == ^section_id,
+            join: pr in PublishedResource,
+            on: pr.publication_id == spp.publication_id,
+            where: pr.resource_id == ^resource_id,
+            join: rev in Revision,
+            on: rev.id == pr.revision_id,
+            select: fragment("?->'authoring'->'rules'", rev.content),
+            limit: 1
+          )
+        )
+    end
+  end
+
+  defp get_authoring_rules_by_revision_id(revision_id) do
+    Repo.one(
+      from(r in Revision,
+        where: r.id == ^revision_id,
+        select: fragment("?->'authoring'->'rules'", r.content)
+      )
+    )
+  end
+
+  defp find_activation_point_prompt(rules, rule_id) when is_list(rules) do
+    Enum.find_value(rules, fn rule ->
+      if get_in(rule, ["event", "type"]) == rule_id do
+        case get_in(rule, ["event", "params", "actions"]) do
+          actions when is_list(actions) ->
+            Enum.find_value(actions, fn
+              %{"type" => "activationPoint", "params" => %{"prompt" => prompt}}
+              when is_binary(prompt) ->
+                prompt
+
+              _ ->
+                nil
+            end)
+
+          _ ->
+            nil
+        end
+      end
+    end)
+  end
+
+  defp find_activation_point_prompt(_, _), do: nil
 
   defp normalize_adaptive_resource_id(resource_id) when is_integer(resource_id),
     do: {:ok, resource_id}
@@ -417,7 +546,7 @@ defmodule Oli.Conversation.Triggers do
   defp validate_adaptive_prompt(_), do: {:error, :invalid_trigger}
 
   defp maybe_admit_adaptive_trigger(%Trigger{trigger_type: type} = trigger)
-       when type in [:adaptive_page, :adaptive_component] do
+       when type in [:adaptive_page, :adaptive_component, :trap_state] do
     trigger
     |> adaptive_trigger_cache_key()
     |> AdaptiveTriggerInvocationCache.register_once(@adaptive_trigger_cooldown_ms)

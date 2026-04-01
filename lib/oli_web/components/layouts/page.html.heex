@@ -1,4 +1,8 @@
 <div class="flex flex-col">
+  <Components.Delivery.Layouts.template_preview_banner
+    template_preview_mode={assigns[:template_preview_mode]}
+    template_preview_exit_path={assigns[:template_preview_exit_path]}
+  />
   <Components.Delivery.Layouts.header
     ctx={@ctx}
     is_admin={@is_admin}

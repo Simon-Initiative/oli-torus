@@ -863,6 +863,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       module={Shell}
       id="learning_dashboard"
       containers={@dashboard_navigator_items}
+      current_author={@current_author}
+      current_user={@current_user}
       dashboard={@dashboard}
       dashboard_scope={@dashboard_scope}
       dashboard_visible_sections={@dashboard_visible_sections}
@@ -1165,6 +1167,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           show_email_modal: true
         )
 
+      {:insights, :dashboard} ->
+        send_update(
+          OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportTile,
+          id: caller_assigns.email_handler_id || "student_support_tile",
+          show_email_modal: true
+        )
+
       _ ->
         :ok
     end
@@ -1190,6 +1199,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {:insights, :learning_objectives} ->
         send_update(OliWeb.Components.Delivery.LearningObjectives.StudentProficiencyList,
           id: email_handler_id,
+          show_email_modal: false
+        )
+
+      {:insights, :dashboard} ->
+        send_update(
+          OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Tiles.StudentSupportTile,
+          id: email_handler_id || "student_support_tile",
           show_email_modal: false
         )
 

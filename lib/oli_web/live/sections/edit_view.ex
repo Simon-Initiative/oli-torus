@@ -2,6 +2,7 @@ defmodule OliWeb.Sections.EditView do
   use OliWeb, :live_view
 
   alias Oli.Branding
+  alias Oli.Authoring.Course.Project
   alias OliWeb.Sections.StartEnd
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionCache
@@ -24,33 +25,24 @@ defmodule OliWeb.Sections.EditView do
   on_mount OliWeb.LiveSessionPlugs.SetRouteName
 
   defp set_breadcrumbs(_type, %{type: :blueprint} = section, socket) do
-    case Map.get(socket.assigns, :route_name) do
-      :workspaces ->
-        project = socket.assigns.project
+    route_name = socket.assigns[:route_name]
+    project = socket.assigns[:project]
 
-        [
-          Breadcrumb.new(%{
-            full_title: "Template Overview",
-            link: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}"
-          }),
-          Breadcrumb.new(%{
-            full_title: "Edit Template Details",
-            link: ~p"/workspaces/course_author/#{project.slug}/products/#{section.slug}/edit"
-          })
-        ]
+    overview_link = Breadcrumb.product_overview_link(section, route_name, project)
 
-      _ ->
-        [
-          Breadcrumb.new(%{
-            full_title: "Template Overview",
-            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
-          }),
-          Breadcrumb.new(%{
-            full_title: "Edit Template Details",
-            link: ~p"/authoring/products/#{section.slug}/edit"
-          })
-        ]
-    end
+    page_link =
+      case {route_name, project} do
+        {:workspaces, %Project{slug: project_slug}} ->
+          ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}/edit"
+
+        _ ->
+          ~p"/authoring/products/#{section.slug}/edit"
+      end
+
+    [
+      Breadcrumb.new(%{full_title: "Template Overview", link: overview_link}),
+      Breadcrumb.new(%{full_title: "Edit Template Details", link: page_link})
+    ]
   end
 
   defp set_breadcrumbs(type, section, _socket) do
@@ -73,7 +65,7 @@ defmodule OliWeb.Sections.EditView do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {type, _, section} ->
+      {user_type, _, section} ->
         available_brands =
           Branding.list_brands()
           |> Enum.sort_by(& &1.name)
@@ -97,9 +89,9 @@ defmodule OliWeb.Sections.EditView do
            brands: available_brands,
            institutions: available_institutions,
            changeset: Sections.change_section(section),
-           is_admin: type == :admin,
+           is_admin: user_type == :admin,
            is_blueprint: section.type == :blueprint,
-           mount_type: type,
+           user_type: user_type,
            section: section,
            labels: labels,
            base_project: base_project
@@ -109,7 +101,7 @@ defmodule OliWeb.Sections.EditView do
 
   def handle_params(_params, _url, socket) do
     section = socket.assigns.section
-    type = socket.assigns.mount_type
+    type = socket.assigns.user_type
 
     {:noreply, assign(socket, breadcrumbs: set_breadcrumbs(type, section, socket))}
   end

@@ -18,6 +18,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
           email: "ada@example.edu",
           given_name: "Ada",
           family_name: "Lovelace",
+          picture: "https://example.edu/ada.png",
           last_interaction_at: ~U[2026-03-01 12:00:00Z]
         },
         %{
@@ -38,6 +39,7 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       assert struggling_bucket.inactive_count == 1
       assert [ada] = struggling_bucket.students
       assert ada.display_name == "Ada Lovelace"
+      assert ada.picture == "https://example.edu/ada.png"
       assert ada.activity_status == :inactive
       assert ada.progress_pct == 25.0
       assert ada.proficiency_pct == 35.0
@@ -75,6 +77,83 @@ defmodule Oli.InstructorDashboard.DataSnapshot.Projections.StudentSupport.Projec
       assert Enum.find(projection.buckets, &(&1.id == "on_track")).count == 1
       assert Enum.find(projection.buckets, &(&1.id == "not_enough_information")).count == 1
       assert projection.has_activity_data? == true
+    end
+
+    test "classifies excelling students using 60 progress and 80 proficiency thresholds" do
+      now = ~U[2026-03-13 12:00:00Z]
+
+      progress_rows = [
+        %{student_id: 12, progress_pct: 65.0, proficiency_pct: 82.0},
+        %{student_id: 13, progress_pct: 59.0, proficiency_pct: 82.0}
+      ]
+
+      student_info_rows = [
+        %{
+          student_id: 12,
+          email: "edsger@example.edu",
+          given_name: "Edsger",
+          family_name: "Dijkstra",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        },
+        %{
+          student_id: 13,
+          email: "leslie@example.edu",
+          given_name: "Leslie",
+          family_name: "Lamport",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        }
+      ]
+
+      projection = Projector.build(progress_rows, student_info_rows, now: now)
+
+      excelling_bucket = Enum.find(projection.buckets, &(&1.id == "excelling"))
+      on_track_bucket = Enum.find(projection.buckets, &(&1.id == "on_track"))
+
+      assert Enum.map(excelling_bucket.students, & &1.display_name) == ["Edsger Dijkstra"]
+      assert Enum.map(on_track_bucket.students, & &1.display_name) == ["Leslie Lamport"]
+    end
+
+    test "struggling requires low or high progress together with low proficiency" do
+      now = ~U[2026-03-13 12:00:00Z]
+
+      progress_rows = [
+        %{student_id: 40, progress_pct: 50.0, proficiency_pct: 30.0},
+        %{student_id: 41, progress_pct: 85.0, proficiency_pct: 30.0},
+        %{student_id: 42, progress_pct: 20.0, proficiency_pct: 30.0}
+      ]
+
+      student_info_rows = [
+        %{
+          student_id: 40,
+          email: "mid_progress@example.edu",
+          given_name: "Mid",
+          family_name: "Progress",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        },
+        %{
+          student_id: 41,
+          email: "high_progress@example.edu",
+          given_name: "High",
+          family_name: "Progress",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        },
+        %{
+          student_id: 42,
+          email: "low_progress@example.edu",
+          given_name: "Low",
+          family_name: "Progress",
+          last_interaction_at: ~U[2026-03-13 08:00:00Z]
+        }
+      ]
+
+      projection = Projector.build(progress_rows, student_info_rows, now: now)
+
+      struggling_bucket = Enum.find(projection.buckets, &(&1.id == "struggling"))
+      struggling_names = Enum.map(struggling_bucket.students, & &1.display_name)
+
+      refute "Mid Progress" in struggling_names
+      assert "High Progress" in struggling_names
+      assert "Low Progress" in struggling_names
     end
 
     test "normalizes 0..1 proficiency ratios before bucket classification" do

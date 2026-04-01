@@ -18,7 +18,7 @@ defmodule Oli.Analytics.Backfill.WorkerTest do
        }}
     end
 
-    def query_status(_query_id), do: {:ok, %{status: :completed}}
+    def query_status(_query_id, _opts), do: {:ok, %{status: :completed}}
   end
 
   defmodule InsertAnalytics do
@@ -26,7 +26,7 @@ defmodule Oli.Analytics.Backfill.WorkerTest do
       {:ok, %{body: "", execution_time_ms: 80.0}}
     end
 
-    def query_status(_query_id) do
+    def query_status(_query_id, _opts) do
       {:ok,
        %{
          status: :completed,
@@ -41,7 +41,7 @@ defmodule Oli.Analytics.Backfill.WorkerTest do
 
   defmodule ErrorAnalytics do
     def execute_query(_query, _desc, _opts), do: {:error, "boom"}
-    def query_status(_query_id), do: {:error, :not_called}
+    def query_status(_query_id, _opts), do: {:error, :not_called}
   end
 
   setup do

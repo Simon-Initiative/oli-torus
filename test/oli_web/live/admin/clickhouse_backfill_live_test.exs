@@ -32,6 +32,31 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
     :ok
   end
 
+  defp stub_clickhouse_config(_) do
+    original_clickhouse = Application.get_env(:oli, :clickhouse)
+
+    Application.put_env(:oli, :clickhouse, %{
+      host: "http://localhost",
+      http_port: 8123,
+      native_port: 9000,
+      query_user: "test",
+      query_password: "secret",
+      admin_user: "admin",
+      admin_password: "admin-secret",
+      database: "analytics"
+    })
+
+    on_exit(fn ->
+      if original_clickhouse do
+        Application.put_env(:oli, :clickhouse, original_clickhouse)
+      else
+        Application.delete_env(:oli, :clickhouse)
+      end
+    end)
+
+    :ok
+  end
+
   describe "access control" do
     test "redirects unauthenticated visitor to author login", %{conn: conn} do
       assert {:error, {:redirect, %{to: "/authors/log_in"}}} = live(conn, @route)
@@ -45,7 +70,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
   end
 
   describe "system admin" do
-    setup [:admin_conn, :enable_clickhouse_feature]
+    setup [:admin_conn, :enable_clickhouse_feature, :stub_clickhouse_config]
 
     test "shows batch orchestration tab by default", %{conn: conn} do
       {:ok, _view, html} = live(conn, @route)
@@ -311,6 +336,76 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert run.dry_run
 
       assert_enqueued(worker: Oli.Analytics.Backfill.Worker, args: %{"run_id" => run.id})
+    end
+
+    test "shows an error when admin credentials are not configured for manual backfill", %{
+      conn: conn
+    } do
+      Application.put_env(:oli, :clickhouse, %{
+        host: "http://localhost",
+        http_port: 8123,
+        native_port: 9000,
+        query_user: "test",
+        query_password: "secret",
+        admin_user: nil,
+        admin_password: nil,
+        database: "analytics"
+      })
+
+      Repo.delete_all(BackfillRun)
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "s3_pattern" => "s3://bucket/**/*.jsonl",
+        "target_table" => "analytics.raw_events",
+        "format" => "JSONAsString",
+        "dry_run" => "true"
+      }
+
+      view |> open_manual_tab()
+
+      html =
+        view
+        |> form("form[phx-submit=\"schedule\"]", %{"backfill" => params})
+        |> render_submit()
+
+      assert html =~ "ClickHouse admin credentials are not configured"
+      assert Repo.all(BackfillRun) == []
+    end
+
+    test "shows an error when admin credentials are not configured for inventory backfill", %{
+      conn: conn
+    } do
+      Application.put_env(:oli, :clickhouse, %{
+        host: "http://localhost",
+        http_port: 8123,
+        native_port: 9000,
+        query_user: "test",
+        query_password: "secret",
+        admin_user: nil,
+        admin_password: nil,
+        database: "analytics"
+      })
+
+      Repo.delete_all(InventoryRun)
+      clear_oban_jobs()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      params = %{
+        "inventory_date" => "2024-07-01",
+        "target_table" => "analytics.raw_events",
+        "dry_run" => "true"
+      }
+
+      html =
+        view
+        |> form("form[phx-submit=\"inventory_schedule\"]", %{"inventory" => params})
+        |> render_submit()
+
+      assert html =~ "ClickHouse admin credentials are not configured"
+      assert Repo.all(InventoryRun) == []
     end
 
     test "normalizes https S3 URLs to s3:// notation", %{conn: conn} do

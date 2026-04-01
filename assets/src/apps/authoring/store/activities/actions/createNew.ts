@@ -5,6 +5,7 @@ import { selectState as selectPageState } from '../../../../authoring/store/page
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import { createEndOfActivityPath } from '../../../components/Flowchart/paths/path-factories';
 import { AuthoringFlowchartScreenData } from '../../../components/Flowchart/paths/path-types';
+import { notifyReadOnlyEditBlocked } from '../../../readOnlyNotifier';
 import {
   selectActivityTypes,
   selectAppMode,
@@ -81,6 +82,10 @@ export const createNew = createAsyncThunk(
       resourceId: `readonly_${Date.now()}`,
       revisionSlug: `readonly_${Date.now()}`,
     };
+
+    if (isReadOnlyMode) {
+      notifyReadOnlyEditBlocked();
+    }
 
     if (!isReadOnlyMode) {
       createResults = await create(

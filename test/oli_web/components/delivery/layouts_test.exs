@@ -92,6 +92,29 @@ defmodule OliWeb.Components.Delivery.LayoutsTest do
     end
   end
 
+  describe "template_preview_banner/1" do
+    test "renders preview banner with exit action when template preview mode is active" do
+      html =
+        render_component(&Layouts.template_preview_banner/1, %{
+          template_preview_mode: true,
+          template_preview_exit_path: "/authoring/template_preview/exit"
+        })
+
+      assert html =~ "Preview Mode"
+      assert html =~ "Exit Preview"
+      assert html =~ "/authoring/template_preview/exit"
+      assert html =~ "bg-[#deecff]"
+      assert html =~ "border-[#8ab8e5]"
+    end
+
+    test "does not render when template preview mode is inactive" do
+      assert render_component(&Layouts.template_preview_banner/1, %{
+               template_preview_mode: false,
+               template_preview_exit_path: nil
+             }) =~ ""
+    end
+  end
+
   describe "user_given_name/1" do
     test "returns 'Guest' if user is a guest" do
       ctx = %SessionContext{

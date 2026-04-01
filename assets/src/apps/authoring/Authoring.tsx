@@ -1,20 +1,25 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
 import { isFirefox } from 'utils/browser';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
-import { initAppSignal } from '../../utils/appsignal';
+import { initAppSignal, updateAppSignalMetadata } from '../../utils/appsignal';
+import { IActivity, selectAllActivities } from '../delivery/store/features/activities/slice';
+import { selectSequence } from '../delivery/store/features/groups/selectors/deck';
 import { AuthoringExpertPageEditor } from './AuthoringExpertPageEditor';
 import { AuthoringFlowchartPageEditor } from './AuthoringFlowchartPageEditor';
-import { ReadOnlyWarning } from './ReadOnlyWarning';
 import { ModalContainer } from './components/AdvancedAuthoringModal';
 import { FlowchartEditor } from './components/Flowchart/FlowchartEditor';
 import { onboardWizardComplete } from './components/Flowchart/flowchart-actions/onboard-wizard-complete';
+import { verifyFlowchartLesson } from './components/Flowchart/flowchart-actions/verify-flowchart-lesson';
 import { OnboardWizard } from './components/Flowchart/onboard-wizard/OnboardWizard';
+import { validateScreen } from './components/Flowchart/screens/screen-validation';
+import { InvalidScreenWarning } from './components/Flowchart/toolbar/InvalidScreenWarning';
 import DiagnosticsWindow from './components/Modal/DiagnosticsWindow';
 import ScoringOverview from './components/Modal/ScoringOverview';
+import { handleShellReadOnlyToggle } from './readOnlyBridge';
+import { flushPendingActivitySaves } from './store/activities/actions/saveActivity';
 import { releaseEditingLock } from './store/app/actions/locking';
-import { attemptDisableReadOnly } from './store/app/actions/readonly';
 import {
   AppConfig,
   ApplicationMode,
@@ -24,17 +29,18 @@ import {
   selectEditMode,
   selectHasEditingLock,
   selectLeftPanel,
-  selectProjectSlug,
   selectReadOnly,
-  selectRevisionSlug,
   selectRightPanel,
   selectShowDiagnosticsWindow,
   selectShowScoringOverview,
   selectTopPanel,
+  setRevisionSlug as setAppRevisionSlug,
   setInitialConfig,
   setPanelState,
 } from './store/app/slice';
 import { initializeFromContext } from './store/page/actions/initializeFromContext';
+import { flushPendingPageSave } from './store/page/actions/savePage';
+import { setRevisionSlug as setPageRevisionSlug, setTitle } from './store/page/slice';
 import { PageContext } from './types';
 
 export interface AuthoringProps {
@@ -42,6 +48,7 @@ export interface AuthoringProps {
   projectSlug: string;
   revisionSlug: string;
   content: PageContext;
+  creationModeHint?: ApplicationMode;
   activityTypes?: any[];
   partComponentTypes?: any[];
   resourceId?: number;
@@ -51,25 +58,45 @@ export interface AuthoringProps {
 }
 
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
+  const {
+    paths,
+    isAdmin,
+    projectSlug,
+    revisionSlug,
+    partComponentTypes,
+    activityTypes,
+    content,
+    resourceId,
+  } = props;
   const dispatch = useDispatch();
+  const initializedRevisionRef = useRef<string | null>(null);
+  const initializedResourceIdRef = useRef<number | undefined>(undefined);
+  const previewRequestRef = useRef<{
+    url: string;
+    windowName: string;
+    previewWindow: Window | null;
+  } | null>(null);
+  const hasEditingLockRef = useRef(false);
+  const isUnloadingRef = useRef(false);
   const allowTriggers = props.content.optionalContentTypes?.triggers === true;
 
   const [isAppVisible, setIsAppVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [invalidScreens, setInvalidScreens] = useState<IActivity[]>([]);
 
   const hasEditingLock = useSelector(selectHasEditingLock);
   const isReadOnly = useSelector(selectReadOnly);
-  const [isReadOnlyWarningDismissed, setIsReadOnlyWarningDismissed] = useState(false);
-  const [isAttemptDisableReadOnlyFailed, setIsAttemptDisableReadOnlyFailed] = useState(false);
+  const activities = useSelector(selectAllActivities);
+  const sequence = useSelector(selectSequence);
+  const hasReadonlyBootstrapActivities = activities.some(
+    (activity) =>
+      typeof activity.resourceId === 'string' &&
+      String(activity.resourceId).startsWith('readonly_'),
+  );
 
   const editingMode = useSelector(selectEditMode);
 
-  const shouldShowLockError = !hasEditingLock && !isReadOnly;
-  const shouldShowReadOnlyWarning = !isLoading && isReadOnly && !isReadOnlyWarningDismissed;
-
-  const readyToEdit = !isLoading && (hasEditingLock || isReadOnly) && !shouldShowReadOnlyWarning;
-
-  const alertSeverity = isAttemptDisableReadOnlyFailed || shouldShowLockError ? 'warning' : 'info';
+  const readyToEdit = !isLoading && (hasEditingLock || isReadOnly);
 
   const appsignal = useMemo(
     () =>
@@ -84,8 +111,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
   /* console.log('RENDER IT', {
     shouldShowEditor,
-    shouldShowLockError,
-    shouldShowReadOnlyWarning,
     isAppVisible,
     hasEditingLock,
   }); */
@@ -93,8 +118,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const showDiagnosticsWindow = useSelector(selectShowDiagnosticsWindow);
   const showScoringOverview = useSelector(selectShowScoringOverview);
 
-  const projectSlug = useSelector(selectProjectSlug);
-  const revisionSlug = useSelector(selectRevisionSlug);
   const currentRule = useSelector(selectCurrentRule);
   const leftPanelState = useSelector(selectLeftPanel);
   const rightPanelState = useSelector(selectRightPanel);
@@ -117,11 +140,21 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     top: topPanelState,
     bottom: bottomPanelState,
   };
-
-  const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
-  const windowName = `preview-${projectSlug}`;
-
   const [sidebarExpanded, setSidebarExpanded] = useState(props.initialSidebarExpanded);
+
+  const openPreviewWindow = (
+    url: string,
+    windowName: string,
+    previewWindow: Window | null = null,
+  ) => {
+    if (previewWindow && !previewWindow.closed) {
+      previewWindow.location.href = url;
+      previewWindow.focus();
+      return;
+    }
+
+    window.open(url, windowName);
+  };
 
   const handleSidebarExpanded = () => {
     setSidebarExpanded((prev) => !prev);
@@ -150,20 +183,9 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     dispatch(setPanelState({ top, right, left, bottom }));
   };
 
-  const dismissReadOnlyWarning = async ({ attemptEdit }: { attemptEdit: boolean }) => {
-    if (attemptEdit) {
-      const attemptResult = await dispatch(attemptDisableReadOnly());
-      if ((attemptResult as any).meta.requestStatus !== 'fulfilled') {
-        const errorCode = (attemptResult as any)?.payload?.error;
-        if (errorCode === 'SESSION_EXPIRED') {
-          window.location.reload();
-        }
-        setIsAttemptDisableReadOnlyFailed(true);
-        return;
-      }
-    }
-    setIsReadOnlyWarningDismissed(true);
-  };
+  const flushPendingAdaptiveSaves = useCallback(async () => {
+    await Promise.all([flushPendingPageSave(), flushPendingActivitySaves()]);
+  }, []);
 
   useEffect(() => {
     if (isAppVisible) {
@@ -189,62 +211,281 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [isAppVisible]);
 
   useEffect(() => {
-    const appConfig: AppConfig = {
-      paths: props.paths,
-      isAdmin: props.isAdmin,
-      projectSlug: props.projectSlug,
-      revisionSlug: props.revisionSlug,
-      allowTriggers,
-      partComponentTypes: props.partComponentTypes,
-      activityTypes: props.activityTypes,
-      allObjectives: props.content.allObjectives || [],
-      applicationMode:
-        props.content.content?.custom?.contentMode === 'flowchart' ? 'flowchart' : 'expert',
-    };
-    dispatch(setInitialConfig(appConfig));
-  }, [allowTriggers, dispatch, props]);
+    hasEditingLockRef.current = hasEditingLock;
+  }, [hasEditingLock]);
 
   useEffect(() => {
-    window.addEventListener('beforeunload', async () =>
-      isFirefox
-        ? setTimeout(async () => {
-            await dispatch(releaseEditingLock());
-          })
-        : await dispatch(releaseEditingLock()),
-    );
-
-    let initTimeout: any = null;
-    if (hasEditingLock || (isReadOnly && isReadOnlyWarningDismissed)) {
-      initTimeout = setTimeout(() => {
-        if (props.content) {
-          const appConfig = {
-            paths: props.paths,
-            isAdmin: props.isAdmin,
-            projectSlug: props.projectSlug,
-            revisionSlug: props.revisionSlug,
-            allowTriggers,
-            partComponentTypes: props.partComponentTypes,
-            activityTypes: props.activityTypes,
-          };
-          dispatch(initializeFromContext({ context: props.content, config: appConfig }));
-        }
-        setIsAppVisible(true);
-      }, 500);
-    }
-    const loadingTimeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-
-    return () => {
-      window.removeEventListener('beforeunload', async () => await dispatch(releaseEditingLock()));
-      if (initTimeout) {
-        clearTimeout(initTimeout);
+    const beforeUnloadHandler = () => {
+      if (!hasEditingLockRef.current) {
+        return;
       }
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
+
+      isUnloadingRef.current = true;
+      void flushPendingAdaptiveSaves();
+
+      if (isFirefox) {
+        setTimeout(() => {
+          void dispatch(releaseEditingLock());
+        });
+      } else {
+        void dispatch(releaseEditingLock());
       }
     };
-  }, [allowTriggers, props, hasEditingLock, isReadOnly, isReadOnlyWarningDismissed, dispatch]);
+
+    window.addEventListener('beforeunload', beforeUnloadHandler);
+
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnloadHandler);
+
+      if (!isUnloadingRef.current && hasEditingLockRef.current) {
+        void flushPendingAdaptiveSaves().finally(() => {
+          void dispatch(releaseEditingLock());
+        });
+      }
+    };
+  }, [dispatch, flushPendingAdaptiveSaves]);
+
+  useEffect(() => {
+    const appConfig: AppConfig = {
+      paths,
+      isAdmin,
+      projectSlug,
+      revisionSlug,
+      allowTriggers,
+      partComponentTypes,
+      activityTypes,
+      allObjectives: content.allObjectives || [],
+      applicationMode:
+        content.content?.custom?.contentMode === 'flowchart' ? 'flowchart' : 'expert',
+    };
+    dispatch(setInitialConfig(appConfig));
+  }, [
+    activityTypes,
+    allowTriggers,
+    content,
+    dispatch,
+    isAdmin,
+    partComponentTypes,
+    paths,
+    projectSlug,
+    revisionSlug,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const initialize = async () => {
+      if (!(hasEditingLock || isReadOnly)) {
+        if (!cancelled) {
+          setIsLoading(true);
+          setIsAppVisible(false);
+        }
+        return;
+      }
+
+      const shouldMaterializeReadonlyBootstrap =
+        hasEditingLock && !isReadOnly && hasReadonlyBootstrapActivities;
+
+      if (initializedRevisionRef.current === revisionSlug && !shouldMaterializeReadonlyBootstrap) {
+        if (!cancelled) {
+          setIsLoading(false);
+          setIsAppVisible(true);
+        }
+        return;
+      }
+
+      if (
+        initializedResourceIdRef.current !== undefined &&
+        initializedResourceIdRef.current === resourceId
+      ) {
+        if (shouldMaterializeReadonlyBootstrap) {
+          initializedRevisionRef.current = null;
+          initializedResourceIdRef.current = undefined;
+        } else {
+          if (!cancelled) {
+            initializedRevisionRef.current = revisionSlug;
+            setIsLoading(false);
+            setIsAppVisible(true);
+          }
+          return;
+        }
+      }
+
+      if (!cancelled) {
+        setIsLoading(true);
+      }
+
+      if (content) {
+        const appConfig = {
+          paths,
+          isAdmin,
+          projectSlug,
+          revisionSlug,
+          allowTriggers,
+          partComponentTypes,
+          activityTypes,
+        };
+
+        await dispatch(initializeFromContext({ context: content, config: appConfig }));
+      }
+
+      if (!cancelled) {
+        initializedRevisionRef.current = revisionSlug;
+        initializedResourceIdRef.current = resourceId;
+        setIsAppVisible(true);
+        setIsLoading(false);
+      }
+    };
+
+    initialize();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activityTypes,
+    allowTriggers,
+    content,
+    dispatch,
+    hasEditingLock,
+    hasReadonlyBootstrapActivities,
+    isAdmin,
+    isReadOnly,
+    partComponentTypes,
+    paths,
+    projectSlug,
+    resourceId,
+    revisionSlug,
+  ]);
+
+  useEffect(() => {
+    const editable = hasEditingLock && !isReadOnly;
+    (window as any).ReactToLiveView?.pushEvent('authoring_title_lock_state_changed', {
+      editable,
+    });
+  }, [hasEditingLock, isReadOnly]);
+
+  useEffect(() => {
+    (window as any).ReactToLiveView?.pushEvent('authoring_readonly_state_changed', {
+      readonly: isReadOnly,
+    });
+  }, [isReadOnly]);
+
+  useEffect(() => {
+    (window as any).ReactToLiveView?.pushEvent('authoring_preview_state_changed', {
+      enabled: readyToEdit && isAppVisible && !shouldShowOnboarding,
+    });
+  }, [isAppVisible, readyToEdit, shouldShowOnboarding]);
+
+  useEffect(() => {
+    const onReadOnlyToggleRequested = async (event: Event) => {
+      const detail = (event as CustomEvent).detail as { readonly: boolean };
+
+      if (detail.readonly && hasEditingLock) {
+        await flushPendingAdaptiveSaves();
+      }
+
+      const result = await handleShellReadOnlyToggle({
+        desiredReadOnly: detail.readonly,
+        hasEditingLock,
+        dispatch: dispatch as any,
+        reload: () => window.location.reload(),
+      });
+
+      if (result.sessionExpired) {
+        return;
+      }
+
+      if (result.errorMessage) {
+        (window as any).ReactToLiveView?.pushEvent('authoring_readonly_toggle_failed', {
+          message: result.errorMessage,
+          readonly: result.readonly,
+        });
+        (window as any).ReactToLiveView?.pushEvent('authoring_readonly_state_changed', {
+          readonly: result.readonly,
+        });
+      }
+    };
+    window.addEventListener('phx:adaptive_readonly_toggle_requested', onReadOnlyToggleRequested);
+    return () =>
+      window.removeEventListener(
+        'phx:adaptive_readonly_toggle_requested',
+        onReadOnlyToggleRequested,
+      );
+  }, [dispatch, flushPendingAdaptiveSaves, hasEditingLock]);
+
+  useEffect(() => {
+    const onTitleUpdated = (event: Event) => {
+      const detail = (event as CustomEvent).detail as {
+        title: string;
+        revision_slug: string;
+      };
+
+      dispatch(setTitle({ title: detail.title }));
+      dispatch(setPageRevisionSlug({ revisionSlug: detail.revision_slug }));
+      dispatch(setAppRevisionSlug({ revisionSlug: detail.revision_slug }));
+      updateAppSignalMetadata(appsignal, 'Advanced Authoring', {
+        projectSlug,
+        revisionSlug: detail.revision_slug,
+        resourceId: String(resourceId),
+      });
+    };
+
+    window.addEventListener('phx:authoring_page_title_updated', onTitleUpdated);
+    return () => window.removeEventListener('phx:authoring_page_title_updated', onTitleUpdated);
+  }, [appsignal, dispatch, projectSlug, resourceId]);
+
+  useEffect(() => {
+    const onPreviewRequested = async (event: Event) => {
+      const detail = (event as CustomEvent).detail as {
+        url: string;
+        window_name: string;
+      };
+
+      if (!isFlowchartMode) {
+        openPreviewWindow(detail.url, detail.window_name);
+        return;
+      }
+
+      const previewWindow = window.open('', detail.window_name);
+      previewRequestRef.current = {
+        url: detail.url,
+        windowName: detail.window_name,
+        previewWindow,
+      };
+
+      await dispatch(verifyFlowchartLesson({}) as any);
+
+      const nextInvalidScreens = activities.filter(
+        (activity) => validateScreen(activity, activities, sequence).length > 0,
+      );
+
+      if (nextInvalidScreens.length > 0) {
+        if (previewWindow && !previewWindow.closed) {
+          previewWindow.close();
+        }
+        setInvalidScreens(nextInvalidScreens);
+        return;
+      }
+
+      openPreviewWindow(detail.url, detail.window_name, previewWindow);
+    };
+
+    window.addEventListener('phx:authoring_preview_requested', onPreviewRequested);
+    return () => window.removeEventListener('phx:authoring_preview_requested', onPreviewRequested);
+  }, [activities, dispatch, isFlowchartMode, sequence]);
+
+  const onAcceptInvalidPreview = () => {
+    if (previewRequestRef.current) {
+      openPreviewWindow(
+        previewRequestRef.current.url,
+        previewRequestRef.current.windowName,
+        previewRequestRef.current.previewWindow,
+      );
+      previewRequestRef.current = null;
+    }
+    setInvalidScreens([]);
+  };
 
   return (
     <AppsignalContext.Provider value={appsignal}>
@@ -284,22 +525,27 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
           {shouldShowFlowchartEditor && <FlowchartEditor sidebarExpanded={sidebarExpanded} />}
 
-          {shouldShowReadOnlyWarning && (
-            <ReadOnlyWarning
-              isAttemptDisableReadOnlyFailed={isAttemptDisableReadOnlyFailed}
-              alertSeverity={alertSeverity}
-              dismissReadOnlyWarning={dismissReadOnlyWarning}
-              url={url}
-              windowName={windowName}
-            />
-          )}
-
           {showDiagnosticsWindow && <DiagnosticsWindow />}
 
           {showScoringOverview && <ScoringOverview />}
 
+          {invalidScreens.length > 0 && (
+            <InvalidScreenWarning
+              screens={invalidScreens}
+              onAccept={onAcceptInvalidPreview}
+              onCancel={() => {
+                previewRequestRef.current = null;
+                setInvalidScreens([]);
+              }}
+            />
+          )}
+
           {shouldShowOnboarding && (
-            <OnboardWizard onSetupComplete={onOnboardComplete} initialTitle={props.content.title} />
+            <OnboardWizard
+              onSetupComplete={onOnboardComplete}
+              initialTitle={props.content.title}
+              presetMode={props.creationModeHint}
+            />
           )}
         </ModalContainer>
       </ErrorBoundary>

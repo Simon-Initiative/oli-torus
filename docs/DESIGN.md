@@ -31,6 +31,8 @@ When a Torus implementation ticket includes Figma links or another concrete UI d
 
 When a Torus feature is being specced from a ticket that already includes Figma links or another concrete UI design source, `implement_ui` should also be considered during spec creation so the feature pack captures the relevant visual-system decisions early.
 
+When that work introduces or reshapes a cross-feature primitive such as a button, icon button, badge, pill, tab trigger, or simple feedback surface, `implement_ui` should also state explicitly whether the result belongs in `design_tokens/` and whether `/dev/design_tokens` must be updated as part of the implementation.
+
 ## Accessibility And Responsiveness
 
 Torus values accessible, responsive applications. UI changes should preserve or improve:
@@ -44,4 +46,5 @@ Torus values accessible, responsive applications. UI changes should preserve or 
 ## Canonical References
 
 - UI review guidance: `.review/ui.md`
+- Shared primitive adoption model: `docs/design_tokens.md`
 - work-item docs often link the relevant Figma artifacts from `informal.md`, `prd.md`, or related planning files

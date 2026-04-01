@@ -7,6 +7,8 @@ defmodule OliWeb.Products.Details.Actions do
   attr(:base_project, :map, required: true)
   attr(:has_payment_codes, :boolean, required: true)
   attr(:usage_path, :string, required: true)
+  attr(:preview_launching?, :boolean, default: false)
+  attr(:preview_url, :string, default: nil)
 
   def render(assigns) do
     ~H"""
@@ -22,7 +24,11 @@ defmodule OliWeb.Products.Details.Actions do
 
       <div class="flex items-center gap-3">
         <div>
-          <button class="btn btn-link action-button" phx-click="request_duplicate">
+          <button
+            class="btn btn-secondary action-button"
+            phx-click="request_duplicate"
+            type="button"
+          >
             Duplicate
           </button>
         </div>
@@ -51,6 +57,35 @@ defmodule OliWeb.Products.Details.Actions do
           </button>
         </div>
         <div>Allow transfer of payment codes to another template.</div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center gap-3">
+          <div>
+            <button
+              class="btn btn-primary action-button inline-flex items-center gap-2"
+              phx-click="template_preview"
+              type="button"
+              disabled={@preview_launching?}
+              aria-label="Preview Template"
+            >
+              <i class="fa-solid fa-eye" aria-hidden="true" />
+              <span>
+                {if @preview_launching?, do: "Preparing Preview...", else: "Preview Template"}
+              </span>
+            </button>
+          </div>
+          <div>Open the student delivery experience for this template in a new tab.</div>
+        </div>
+
+        <div :if={@preview_url} class="flex items-center gap-3">
+          <div>
+            <a class="btn btn-link action-button" href={@preview_url} target="_blank" rel="noopener">
+              Open Preview
+            </a>
+          </div>
+          <div>Use this if your browser blocked the automatic preview launch.</div>
+        </div>
       </div>
     </div>
     """

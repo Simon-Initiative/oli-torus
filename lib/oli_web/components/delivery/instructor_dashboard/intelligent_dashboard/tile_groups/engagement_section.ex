@@ -28,6 +28,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
   attr :student_support_tile_state, :map, default: %{}
   attr :params, :map, default: %{}
   attr :section_slug, :string, required: true
+  attr :section_title, :string, default: nil
+  attr :instructor_email, :string, default: nil
+  attr :instructor_name, :string, default: nil
   attr :dashboard_scope, :string, default: "course"
   attr :show_progress_tile, :boolean, default: true
   attr :show_student_support_tile, :boolean, default: true
@@ -47,7 +50,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
       show_move_handle={@show_move_handle}
     >
       <div
-        class={["grid grid-cols-1 gap-4", @tile_count > 1 && "xl:grid-cols-2"]}
+        class={[
+          "grid grid-cols-1 gap-4",
+          @tile_count > 1 && "xl:grid-cols-[minmax(0,0.43fr)_minmax(0,0.57fr)]"
+        ]}
         data-section-layout={if @tile_count == 1, do: "single", else: "multi"}
       >
         <ProgressTile.tile :if={@show_progress_tile} status={@progress_status} />
@@ -59,6 +65,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.IntelligentDashboard.Ti
           tile_state={@student_support_tile_state}
           params={@params}
           section_slug={@section_slug}
+          section_title={@section_title}
+          instructor_email={@instructor_email}
+          instructor_name={@instructor_name}
           dashboard_scope={@dashboard_scope}
         />
       </div>

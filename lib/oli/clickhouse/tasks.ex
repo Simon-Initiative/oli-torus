@@ -61,7 +61,11 @@ defmodule Oli.ClickHouse.Tasks do
     config = Application.get_env(:oli, :clickhouse)
 
     if config do
-      config |> Enum.into(%{})
+      config = Enum.into(config, %{})
+
+      config
+      |> Map.put(:user, Map.fetch!(config, :admin_user))
+      |> Map.put(:password, Map.fetch!(config, :admin_password))
     else
       raise "ClickHouse configuration not found. Please ensure :clickhouse config is set in :oli application."
     end
@@ -170,18 +174,20 @@ defmodule Oli.ClickHouse.Tasks do
     # Test connection first
     case test_clickhouse_connection(config) do
       :ok ->
-        # Create database if it doesn't exist
-        create_database_if_needed(config)
+        with :ok <- create_database_if_needed(config) do
+          # Create migrations directory if it doesn't exist
+          ensure_migrations_directory()
 
-        # Create migrations directory if it doesn't exist
-        ensure_migrations_directory()
+          # Run all migrations
+          IO.puts("📦 Running all migrations...")
+          run_migrate_command("up", config)
 
-        # Run all migrations
-        IO.puts("📦 Running all migrations...")
-        run_migrate_command("up", config)
-
-        IO.puts("✅ ClickHouse database setup completed successfully!")
-        :ok
+          IO.puts("✅ ClickHouse database setup completed successfully!")
+          :ok
+        else
+          :error ->
+            raise "❌ Failed to create ClickHouse database before setup"
+        end
 
       :error ->
         raise """
@@ -201,21 +207,21 @@ defmodule Oli.ClickHouse.Tasks do
     # Test connection first
     case test_clickhouse_connection(config) do
       :ok ->
-        # Drop database
-        drop_database(config)
+        with :ok <- drop_database(config),
+             :ok <- create_database_if_needed(config) do
+          # Create migrations directory if it doesn't exist
+          ensure_migrations_directory()
 
-        # Create database
-        create_database_if_needed(config)
+          # Run all migrations
+          IO.puts("📦 Running all migrations...")
+          run_migrate_command("up", config)
 
-        # Create migrations directory if it doesn't exist
-        ensure_migrations_directory()
-
-        # Run all migrations
-        IO.puts("📦 Running all migrations...")
-        run_migrate_command("up", config)
-
-        IO.puts("✅ ClickHouse database reset completed successfully!")
-        :ok
+          IO.puts("✅ ClickHouse database reset completed successfully!")
+          :ok
+        else
+          :error ->
+            raise "❌ Failed to reset ClickHouse database because the drop or create step did not succeed"
+        end
 
       :error ->
         raise """
@@ -235,21 +241,21 @@ defmodule Oli.ClickHouse.Tasks do
     # Test connection first
     case test_clickhouse_connection(config) do
       :ok ->
-        # Drop database without confirmation
-        drop_database_force(config)
+        with :ok <- drop_database_force(config),
+             :ok <- create_database_if_needed(config) do
+          # Create migrations directory if it doesn't exist
+          ensure_migrations_directory()
 
-        # Create database
-        create_database_if_needed(config)
+          # Run all migrations
+          IO.puts("📦 Running all migrations...")
+          run_migrate_command("up", config)
 
-        # Create migrations directory if it doesn't exist
-        ensure_migrations_directory()
-
-        # Run all migrations
-        IO.puts("📦 Running all migrations...")
-        run_migrate_command("up", config)
-
-        IO.puts("✅ ClickHouse database reset completed successfully!")
-        :ok
+          IO.puts("✅ ClickHouse database reset completed successfully!")
+          :ok
+        else
+          :error ->
+            raise "❌ Failed to force reset ClickHouse database because the drop or create step did not succeed"
+        end
 
       :error ->
         raise """
@@ -379,8 +385,8 @@ defmodule Oli.ClickHouse.Tasks do
     try do
       host = config[:host] || "localhost"
       port = config[:http_port] || 8123
-      user = config[:user] || "default"
-      password = config[:password] || "clickhouse"
+      user = config[:user]
+      password = config[:password]
 
       url = "http://#{user}:#{password}@#{host}:#{port}/"
 
@@ -391,7 +397,7 @@ defmodule Oli.ClickHouse.Tasks do
 
         {:ok, %HTTPoison.Response{status_code: code, body: body}} ->
           IO.puts("⚠️  Query responded with status #{code}: #{body}")
-          :ok
+          :error
 
         {:error, %HTTPoison.Error{reason: reason}} ->
           IO.puts("❌ Query execution failed: #{reason}")

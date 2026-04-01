@@ -10,6 +10,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../../../apps/delivery/components/NotificationContext';
+import { getIframePartDeliveryStyle } from '../../../../parts/janus-capi-iframe/iframeBehavior';
 import { tagName as UnknownTag } from './UnknownPart';
 
 const stubHandler = async () => {
@@ -321,7 +322,10 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   // if we pass in style then it will be controlled and so nothing else can use it
   if (!(props as AuthorProps).editMode) {
-    webComponentProps.style = componentStyle;
+    webComponentProps.style =
+      props.type === 'janus-capi-iframe'
+        ? getIframePartDeliveryStyle(componentStyle)
+        : componentStyle;
     // console.log('DELIVERY RENDER:', wcTagName, props);
   }
 

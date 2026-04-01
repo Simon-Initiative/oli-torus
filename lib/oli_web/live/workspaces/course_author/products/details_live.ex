@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Authoring.Course
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.TemplatePreview
   alias Oli.Delivery.Sections.{Blueprint, Section}
   alias Oli.Inventories
   alias OliWeb.Live.Components.Sections.SectionDefaultsHelpers
@@ -29,7 +30,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   require Logger
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount {OliWeb.UserAuth, :mount_current_user}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
+
+  @preview_fallback_timeout_ms 10_000
 
   def mount(%{"product_id" => product_slug}, _session, socket) do
     case Mount.for(product_slug, socket) do
@@ -72,6 +76,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
              changeset: changeset,
              title: "Edit Template",
              show_confirm: false,
+             preview_launching?: false,
+             preview_url: nil,
              base_project: base_project,
              resource_slug: project.slug,
              resource_title: project.title,
@@ -199,6 +205,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             changeset={to_form(@changeset)}
             save="save"
             updates={@updates}
+            source_materials_url={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/source_materials"
+            }
+            customize_url={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/remix"
+            }
+            edit_url={~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/edit"}
             schedule_url={
               ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/schedule"
             }
@@ -219,14 +232,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             currently produce a certificate.
           </div>
           <div>
-            <a
-              href={
+            <.action_link
+              navigate={
                 ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/certificate_settings"
               }
-              class="text-Text-text-button hover:text-Text-text-button-hover font-bold text-[14px] leading-[16px] py-1 whitespace-nowrap"
-            >
-              Manage certificate settings
-            </a>
+              label="Manage certificate settings"
+            />
           </div>
         </div>
       </div>
@@ -319,6 +330,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             is_admin={@is_admin}
             base_project={@base_project}
             has_payment_codes={Paywall.has_payment_codes?(@product.id)}
+            preview_launching?={@preview_launching?}
+            preview_url={@preview_url}
             usage_path={
               ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/usage"
             }
@@ -344,6 +357,52 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   def handle_event("request_duplicate", _, socket) do
     {:noreply, assign(socket, show_confirm: true)}
+  end
+
+  def handle_event("template_preview", _, %{assigns: %{preview_launching?: true}} = socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("template_preview", _, socket) do
+    socket =
+      socket
+      |> clear_flash()
+      |> assign(preview_launching?: true, preview_url: nil)
+
+    case Mount.for(socket.assigns.product.slug, socket) do
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> assign(preview_launching?: false)
+         |> put_flash(:error, "You are not allowed to preview this template")}
+
+      _ ->
+        case TemplatePreview.prepare_launch(
+               socket.assigns.product,
+               Map.get(socket.assigns, :current_user),
+               socket.assigns.current_author
+             ) do
+          {:ok, %{section_slug: section_slug, launch_identity: launch_identity}} ->
+            preview_url = preview_launch_url(socket, section_slug, launch_identity)
+
+            Process.send_after(
+              self(),
+              {:clear_preview_url, preview_url},
+              @preview_fallback_timeout_ms
+            )
+
+            {:noreply,
+             socket
+             |> assign(preview_launching?: false, preview_url: preview_url)
+             |> push_event("template-preview-open", %{url: preview_url})}
+
+          {:error, reason} ->
+            {:noreply,
+             socket
+             |> assign(preview_launching?: false)
+             |> put_flash(:error, preview_error_message(reason))}
+        end
+    end
   end
 
   def handle_event("cancel_modal", _, socket) do
@@ -483,6 +542,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     {:noreply, put_flash(socket, level, message)}
   end
 
+  def handle_info(
+        {:clear_preview_url, preview_url},
+        %{assigns: %{preview_url: preview_url}} = socket
+      ) do
+    {:noreply, assign(socket, preview_url: nil)}
+  end
+
+  def handle_info({:clear_preview_url, _preview_url}, socket) do
+    {:noreply, socket}
+  end
+
   # Component sync handlers — delegated to shared helpers
   def handle_info({:section_updated, %Section{} = updated}, socket),
     do: {:noreply, SectionDefaultsHelpers.handle_section_updated(socket, :product, updated)}
@@ -505,6 +575,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   defp decode_welcome_title(project_params) do
     Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
+  end
+
+  defp preview_error_message(:missing_delivery_identity) do
+    "Preview requires an available delivery identity"
+  end
+
+  defp preview_error_message(:section_unavailable) do
+    "Preview is unavailable for this template"
+  end
+
+  defp preview_error_message(:unauthorized) do
+    "You are not allowed to preview this template"
+  end
+
+  defp preview_error_message(_reason) do
+    "Template preview could not be prepared"
+  end
+
+  defp preview_launch_url(_socket, section_slug, :current_user), do: ~p"/sections/#{section_slug}"
+
+  defp preview_launch_url(socket, _section_slug, :hidden_instructor) do
+    ~p"/authoring/products/#{socket.assigns.product.slug}/preview_launch"
   end
 
   defp filter_paywall_params(params, true), do: params

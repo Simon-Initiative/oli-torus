@@ -1,6 +1,7 @@
 defmodule OliWeb.Products.DetailsViewTest do
   use OliWeb.ConnCase, async: true
 
+  import Ecto.Query
   import Phoenix.LiveViewTest
   import Oli.Factory
   import Oli.TestHelpers
@@ -349,6 +350,115 @@ defmodule OliWeb.Products.DetailsViewTest do
     end
   end
 
+  describe "product details page - template preview" do
+    setup [:setup_admin_conn, :create_product]
+
+    test "renders Duplicate as a button and Preview last in the actions list", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+      html = render(view)
+
+      assert has_element?(
+               view,
+               "button[phx-click='request_duplicate'].btn.btn-secondary",
+               "Duplicate"
+             )
+
+      assert has_element?(
+               view,
+               "button[phx-click='template_preview'].btn.btn-primary",
+               "Preview Template"
+             )
+
+      assert has_element?(
+               view,
+               "a[href='/authoring/products/#{product.slug}/usage']",
+               "View Usage"
+             )
+
+      assert html =~ "fa-solid fa-eye"
+
+      assert elem(:binary.match(html, "Duplicate"), 0) <
+               elem(:binary.match(html, "Preview Template"), 0)
+
+      assert elem(:binary.match(html, "View Usage"), 0) <
+               elem(:binary.match(html, "Preview Template"), 0)
+    end
+
+    test "prepares preview, creates an enrollment, and pushes a launch event", %{
+      conn: conn,
+      admin: admin,
+      product: product
+    } do
+      user = insert(:user, author: admin, email: admin.email)
+      conn = conn |> log_in_user(user) |> log_in_author(admin)
+
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+      preview_url = "/sections/#{product.slug}"
+
+      render_click(element(view, "button[phx-click='template_preview']"))
+
+      assert_push_event(view, "template-preview-open", %{url: ^preview_url})
+
+      enrollment =
+        Oli.Delivery.Sections.get_enrollment(product.slug, user.id, filter_by_status: false)
+        |> Oli.Repo.preload(:context_roles)
+
+      assert enrollment.status == :enrolled
+
+      assert Enum.any?(
+               enrollment.context_roles,
+               &(&1.id == Lti_1p3.Roles.ContextRoles.get_role(:context_learner).id)
+             )
+
+      assert has_element?(view, "a[href='/sections/#{product.slug}']", "Open Preview")
+    end
+
+    test "uses hidden instructor fallback when no current user is present", %{
+      conn: conn,
+      product: product
+    } do
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+      preview_url = "/authoring/products/#{product.slug}/preview_launch"
+
+      render_click(element(view, "button[phx-click='template_preview']"))
+
+      assert_push_event(view, "template-preview-open", %{url: ^preview_url})
+      assert has_element?(view, "a[href='#{preview_url}']", "Open Preview")
+    end
+
+    test "reuses the existing enrollment on repeated launch", %{
+      conn: conn,
+      admin: admin,
+      product: product
+    } do
+      user = insert(:user, author: admin, email: admin.email)
+      conn = conn |> log_in_user(user) |> log_in_author(admin)
+
+      {:ok, view, _html} = live(conn, product_route(product.slug))
+      preview_url = "/sections/#{product.slug}"
+
+      render_click(element(view, "button[phx-click='template_preview']"))
+      assert_push_event(view, "template-preview-open", %{url: ^preview_url})
+
+      render_click(element(view, "button[phx-click='template_preview']"))
+      assert_push_event(view, "template-preview-open", %{url: ^preview_url})
+
+      count =
+        Oli.Repo.aggregate(
+          from(e in Oli.Delivery.Sections.Enrollment,
+            where: e.user_id == ^user.id and e.section_id == ^product.id
+          ),
+          :count,
+          :id
+        )
+
+      assert count == 1
+    end
+  end
+
   describe "product details page - component interaction (stale assigns)" do
     setup [:setup_admin_conn, :create_product_with_pages]
 
@@ -358,32 +468,22 @@ defmodule OliWeb.Products.DetailsViewTest do
     } do
       {:ok, view, _html} = live(conn, product_route(product.slug))
 
-      # Both should start OFF
       notes_form_id = "notes-#{product.id}-toggle-notes"
       discussions_form_id = "discussions-#{product.id}-toggle-discussions"
 
-      # Notes toggle is OFF (0 pages with notes)
       refute has_element?(view, "##{notes_form_id}_checkbox[checked]")
 
-      # Toggle Notes ON
       view
       |> form("##{notes_form_id}", %{})
       |> render_change()
 
-      # Notes should now be ON
       assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
 
-      # Toggle Discussions ON — this triggers a parent re-render via {:section_updated}
-      # Before the fix, this would overwrite Notes' internal collab_space_pages_count
-      # with the stale parent value (0), causing the Notes toggle to revert to OFF
       view
       |> form("##{discussions_form_id}", %{})
       |> render_change()
 
-      # Discussions should be ON
       assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
-
-      # Notes should STILL be ON — not reverted by the Discussions re-render
       assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
     end
 
@@ -396,23 +496,17 @@ defmodule OliWeb.Products.DetailsViewTest do
       notes_form_id = "notes-#{product.id}-toggle-notes"
       discussions_form_id = "discussions-#{product.id}-toggle-discussions"
 
-      # Toggle Discussions ON first
       view
       |> form("##{discussions_form_id}", %{})
       |> render_change()
 
       assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
 
-      # Toggle Notes ON — this does NOT send {:section_updated} but still causes
-      # a parent re-render via {:notes_count_updated}
       view
       |> form("##{notes_form_id}", %{})
       |> render_change()
 
-      # Notes should be ON
       assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
-
-      # Discussions should STILL be ON
       assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
     end
 
@@ -426,17 +520,14 @@ defmodule OliWeb.Products.DetailsViewTest do
       discussions_form_id = "discussions-#{product.id}-toggle-discussions"
       ai_form_id = "ai-assistant-#{product.id}-toggle-assistant"
 
-      # Enable Notes and Discussions
       view |> form("##{notes_form_id}", %{}) |> render_change()
       view |> form("##{discussions_form_id}", %{}) |> render_change()
 
       assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
       assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
 
-      # Toggle AI Assistant — sends {:section_updated} which re-renders parent
       view |> form("##{ai_form_id}", %{}) |> render_change()
 
-      # Notes and Discussions should STILL be ON
       assert has_element?(view, "##{notes_form_id}_checkbox[checked]")
       assert has_element?(view, "##{discussions_form_id}_checkbox[checked]")
     end
@@ -453,7 +544,9 @@ defmodule OliWeb.Products.DetailsViewTest do
           updates: updates,
           changeset:
             Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
-          save: "save"
+          save: "save",
+          customize_url: "/authoring/products/#{product.slug}/remix",
+          source_materials_url: "/authoring/products/#{product.slug}/source_materials"
         })
 
       assert html =~ "Manage source materials"
@@ -472,12 +565,49 @@ defmodule OliWeb.Products.DetailsViewTest do
           updates: %{},
           changeset:
             Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
-          save: "save"
+          save: "save",
+          customize_url: "/authoring/products/#{product.slug}/remix"
         })
 
       refute html =~ "Manage source materials"
       refute html =~ ~s(id="manage-source-materials-updates-badge")
       refute html =~ "updates</span>"
+    end
+  end
+
+  describe "product details content component - edit template details link" do
+    test "shows edit template details link when edit_url is provided", _ctx do
+      product = build(:section, type: :blueprint, slug: "test-product")
+
+      html =
+        render_component(&Content.render/1, %{
+          product: product,
+          updates: %{},
+          changeset:
+            Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
+          save: "save",
+          customize_url: "/authoring/products/test-product/remix",
+          edit_url: "/authoring/products/test-product/edit"
+        })
+
+      assert html =~ "Edit template details"
+      assert html =~ "/authoring/products/test-product/edit"
+    end
+
+    test "does not show edit template details link when edit_url is not provided", _ctx do
+      product = build(:section, type: :blueprint)
+
+      html =
+        render_component(&Content.render/1, %{
+          product: product,
+          updates: %{},
+          changeset:
+            Phoenix.Component.to_form(Oli.Delivery.Sections.Section.changeset(product, %{})),
+          save: "save",
+          customize_url: "/authoring/products/#{product.slug}/remix"
+        })
+
+      refute html =~ "Edit template details"
     end
   end
 

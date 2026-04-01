@@ -78,6 +78,17 @@ defmodule Oli.Delivery.Sections do
   allow admins to access delivery routes.
   """
   def fetch_hidden_instructor(section_id) do
+    case ensure_hidden_instructor(section_id) do
+      {:ok, %{user: user, token: token}} -> {:ok, {user, token}}
+      error -> error
+    end
+  end
+
+  @doc """
+  Ensures a section-scoped hidden instructor exists and returns whether it was created
+  or reused. The hidden instructor is a singleton per section.
+  """
+  def ensure_hidden_instructor(section_id) do
     case from(e in Enrollment,
            join: ecr in EnrollmentContextRole,
            on: ecr.enrollment_id == e.id,
@@ -92,8 +103,9 @@ defmodule Oli.Delivery.Sections do
         create_hidden_instructor(section_id)
 
       [user | _rest] ->
+        user = ensure_hidden_user_research_opt_out(user)
         token = Oli.Accounts.generate_user_session_token(user)
-        {:ok, {user, token}}
+        {:ok, %{user: user, token: token, outcome: :reused}}
     end
   end
 
@@ -108,6 +120,7 @@ defmodule Oli.Delivery.Sections do
           name: "Admin",
           given_name: "Admin",
           family_name: "User",
+          research_opt_out: true,
           email_confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second),
           email_verified: true,
           age_verified: true
@@ -125,8 +138,19 @@ defmodule Oli.Delivery.Sections do
       token = Oli.Accounts.generate_user_session_token(user)
 
       # Return the created user and session token
-      {user, token}
+      %{user: user, token: token, outcome: :created}
     end)
+  end
+
+  defp ensure_hidden_user_research_opt_out(%User{research_opt_out: true} = user), do: user
+
+  defp ensure_hidden_user_research_opt_out(%User{} = user) do
+    {:ok, user} =
+      user
+      |> Ecto.Changeset.change(research_opt_out: true)
+      |> Repo.update()
+
+    user
   end
 
   @valid_contexts ~w(context_administrator context_content_developer context_instructor context_learner context_mentor context_manager context_member context_officer)a
@@ -711,6 +735,79 @@ defmodule Oli.Delivery.Sections do
     |> Enrollment.changeset(%{section_id: section_id, status: status})
     |> Ecto.Changeset.put_assoc(:context_roles, context_roles)
     |> Repo.insert_or_update()
+  end
+
+  @doc """
+  Ensures a user has an active learner enrollment in a section.
+
+  The enrollment row and learner role mapping are created idempotently and the
+  existing enrollment is reactivated when it is not currently `:enrolled`.
+  """
+  @spec ensure_student_enrollment(number(), number()) ::
+          {:ok, %{enrollment: Enrollment.t(), outcome: :created | :reused}}
+          | {:error, term()}
+  def ensure_student_enrollment(user_id, section_id) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    Repo.transaction(fn ->
+      {count, rows} =
+        Repo.insert_all(
+          Enrollment,
+          [
+            %{
+              user_id: user_id,
+              section_id: section_id,
+              inserted_at: now,
+              updated_at: now,
+              status: :enrolled,
+              state: %{}
+            }
+          ],
+          returning: [:id],
+          on_conflict: :nothing,
+          conflict_target: [:user_id, :section_id]
+        )
+
+      {enrollment_id, outcome} =
+        case {count, rows} do
+          {1, [%{id: id}]} ->
+            {id, :created}
+
+          _ ->
+            enrollment =
+              Repo.one!(
+                from e in Enrollment,
+                  where: e.user_id == ^user_id and e.section_id == ^section_id,
+                  lock: "FOR UPDATE"
+              )
+
+            if enrollment.status != :enrolled do
+              enrollment
+              |> Enrollment.changeset(%{status: :enrolled})
+              |> Repo.update!()
+            end
+
+            {enrollment.id, :reused}
+        end
+
+      Repo.insert_all(
+        EnrollmentContextRole,
+        [%{enrollment_id: enrollment_id, context_role_id: @student_role_id}],
+        on_conflict: :nothing,
+        conflict_target: [:enrollment_id, :context_role_id]
+      )
+
+      enrollment =
+        Enrollment
+        |> Repo.get!(enrollment_id)
+        |> Repo.preload(:context_roles)
+
+      {:ok, %{enrollment: enrollment, outcome: outcome}}
+    end)
+    |> case do
+      {:ok, {:ok, result}} -> {:ok, result}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """

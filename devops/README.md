@@ -4,10 +4,19 @@ This directory contains the infrastructure assets that support the k3s-based pre
 
 ## Structure
 
+- `clickhouse-backup/` - ClickHouse backup automation assets, including the backup script and systemd unit files used for scheduled OLAP backups on ClickHouse hosts.
 - `k8s/` – Kubernetes manifests applied cluster-wide (RBAC, policies, namespace templates). Files using `${PR_NAMESPACE}` require substitution before applying (e.g., `env PR_NAMESPACE=pr-123 envsubst < ...`). Requires GNU `envsubst` (gettext). Adjust egress ports in `policies/network-policy.yaml` to match downstream services (DB, caches, HTTP).
 - `kustomize/` – Base manifests and overlays used to render per-preview (per namespace) resources.
 - `scripts/` – Helper scripts consumed by CI and operators.
 - `default.env` – Baseline application environment consumed by the Kustomize secret generator for preview deployments.
+
+### ClickHouse Backup
+
+- `devops/clickhouse-backup/clickhouse-backup.sh` – Backup entrypoint used by systemd for scheduled ClickHouse backups.
+- `devops/clickhouse-backup/systemd/clickhouse-backup.service` – One-shot service unit that runs the installed backup script.
+- `devops/clickhouse-backup/systemd/clickhouse-backup.timer` – Daily timer that triggers the backup service at midnight UTC.
+
+These files are the repository source artifacts. Install them onto the ClickHouse host and adjust paths as needed for the target environment. The committed service file expects the installed script at `/opt/scripts/clickhouse-backup.sh`.
 
 ### Scripts
 
