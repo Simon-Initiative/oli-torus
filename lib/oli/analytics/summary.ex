@@ -13,7 +13,10 @@ defmodule Oli.Analytics.Summary do
   alias Oli.Analytics.Common.Pipeline
   alias Oli
   alias Oli.Repo
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
+  alias Oli.Delivery.Sections.Section
   alias Oli.Resources.ResourceType
+  alias Oli.Resources.Revision
 
   require Logger
 
@@ -64,22 +67,11 @@ defmodule Oli.Analytics.Summary do
     do: Pipeline.step_done(pipeline, :response_summary)
 
   def upsert_response_summaries(%Pipeline{data: attempt_group, errors: []} = pipeline) do
-    # Read all activity registrations
-    registered_activities =
-      Oli.Activities.list_activity_registrations()
-      |> Enum.reduce(%{}, fn activity_registration, map ->
-        Map.put(map, activity_registration.id, activity_registration)
-      end)
+    registered_activities = registered_activities_by_id()
 
     pipeline =
       case Oli.Repo.transaction(fn ->
-             part_attempt_tuples =
-               upsert_responses(attempt_group.part_attempts, registered_activities)
-
-             create_response_proto_records(attempt_group, part_attempt_tuples)
-             |> upsert_response_counts()
-
-             upsert_student_responses(attempt_group, part_attempt_tuples)
+             do_upsert_response_summaries(attempt_group, registered_activities)
            end) do
         {:ok, _} ->
           pipeline
@@ -92,6 +84,220 @@ defmodule Oli.Analytics.Summary do
   end
 
   def upsert_response_summaries(pipeline), do: Pipeline.step_done(pipeline, :response_summary)
+
+  @doc """
+  Rebuilds adaptive response summary tables from stored part attempts.
+
+  This is intended as a repair path for legacy adaptive summary rows that were
+  stored with `response = "unsupported"` before adaptive response labels were supported.
+  """
+  def rebuild_adaptive_response_summaries() do
+    adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
+
+    if is_nil(adaptive_registration) do
+      {:error, :adaptive_registration_not_found}
+    else
+      activity_ids = adaptive_activity_resource_ids(adaptive_registration.id)
+
+      Repo.transaction(fn ->
+        delete_adaptive_response_rows(activity_ids)
+
+        registered_activities = registered_activities_by_id()
+
+        adaptive_backfill_stream(adaptive_registration.id)
+        |> Stream.each(&do_upsert_response_summaries(&1, registered_activities))
+        |> Stream.run()
+      end)
+      |> case do
+        {:ok, _} -> {:ok, length(activity_ids)}
+        {:error, error} -> {:error, error}
+      end
+    end
+  end
+
+  @doc """
+  Rebuilds adaptive response summary tables for a specific adaptive activity resource id.
+  """
+  def rebuild_adaptive_response_summaries_for_activity(activity_resource_id)
+      when is_integer(activity_resource_id) do
+    adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
+
+    if is_nil(adaptive_registration) do
+      {:error, :adaptive_registration_not_found}
+    else
+      Repo.transaction(fn ->
+        delete_adaptive_response_rows([activity_resource_id])
+
+        registered_activities = registered_activities_by_id()
+
+        adaptive_backfill_stream_for_activity(adaptive_registration.id, activity_resource_id)
+        |> Stream.each(&do_upsert_response_summaries(&1, registered_activities))
+        |> Stream.run()
+      end)
+      |> case do
+        {:ok, _} -> {:ok, activity_resource_id}
+        {:error, error} -> {:error, error}
+      end
+    end
+  end
+
+  @doc """
+  Determines whether an adaptive activity still has legacy unsupported response summary rows
+  and should be repaired.
+  """
+  def adaptive_response_summaries_stale?(activity_resource_id)
+      when is_integer(activity_resource_id) do
+    from(rpr in ResourcePartResponse,
+      where: rpr.resource_id == ^activity_resource_id and rpr.response == "unsupported",
+      select: 1,
+      limit: 1
+    )
+    |> Repo.exists?()
+  end
+
+  defp do_upsert_response_summaries(attempt_group, registered_activities) do
+    part_attempt_tuples =
+      upsert_responses(attempt_group.part_attempts, registered_activities)
+
+    create_response_proto_records(attempt_group, part_attempt_tuples)
+    |> upsert_response_counts()
+
+    upsert_student_responses(attempt_group, part_attempt_tuples)
+  end
+
+  defp registered_activities_by_id() do
+    Oli.Activities.list_activity_registrations()
+    |> Enum.reduce(%{}, fn activity_registration, map ->
+      Map.put(map, activity_registration.id, activity_registration)
+    end)
+  end
+
+  defp adaptive_activity_resource_ids(adaptive_activity_type_id) do
+    from(r in Revision,
+      where: r.activity_type_id == ^adaptive_activity_type_id,
+      distinct: true,
+      select: r.resource_id
+    )
+    |> Repo.all()
+  end
+
+  defp delete_adaptive_response_rows([]), do: :ok
+
+  defp delete_adaptive_response_rows(activity_ids) do
+    rpr_ids =
+      from(rpr in ResourcePartResponse,
+        where: rpr.resource_id in ^activity_ids,
+        select: rpr.id
+      )
+
+    from(sr in StudentResponse, where: sr.resource_part_response_id in subquery(rpr_ids))
+    |> Repo.delete_all()
+
+    from(rs in ResponseSummary, where: rs.activity_id in ^activity_ids)
+    |> Repo.delete_all()
+
+    from(rpr in ResourcePartResponse, where: rpr.resource_id in ^activity_ids)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  defp adaptive_backfill_stream(adaptive_activity_type_id) do
+    from(pa in PartAttempt,
+      join: aa in ActivityAttempt,
+      on: aa.id == pa.activity_attempt_id,
+      join: activity_revision in Revision,
+      on: activity_revision.id == aa.revision_id,
+      join: ra in ResourceAttempt,
+      on: ra.id == aa.resource_attempt_id,
+      join: page_revision in Revision,
+      on: page_revision.id == ra.revision_id,
+      join: access in ResourceAccess,
+      on: access.id == ra.resource_access_id,
+      join: section in Section,
+      on: section.id == access.section_id,
+      where: activity_revision.activity_type_id == ^adaptive_activity_type_id,
+      where: pa.lifecycle_state in [:submitted, :evaluated],
+      order_by: [asc: pa.id],
+      select: %{
+        project_id: section.base_project_id,
+        section_id: access.section_id,
+        user_id: access.user_id,
+        page_resource_id: page_revision.resource_id,
+        part_attempt: pa,
+        activity_revision: activity_revision
+      }
+    )
+    |> Repo.stream()
+    |> Stream.map(fn %{
+                       project_id: project_id,
+                       section_id: section_id,
+                       user_id: user_id,
+                       page_resource_id: page_resource_id,
+                       part_attempt: part_attempt,
+                       activity_revision: activity_revision
+                     } ->
+      %AttemptGroup{
+        context: %{
+          project_id: project_id,
+          section_id: section_id,
+          user_id: user_id
+        },
+        resource_attempt: %{resource_id: page_resource_id},
+        part_attempts: [Map.put(part_attempt, :activity_revision, activity_revision)],
+        activity_attempts: []
+      }
+    end)
+  end
+
+  defp adaptive_backfill_stream_for_activity(adaptive_activity_type_id, activity_resource_id) do
+    from(pa in PartAttempt,
+      join: aa in ActivityAttempt,
+      on: aa.id == pa.activity_attempt_id,
+      join: activity_revision in Revision,
+      on: activity_revision.id == aa.revision_id,
+      join: ra in ResourceAttempt,
+      on: ra.id == aa.resource_attempt_id,
+      join: page_revision in Revision,
+      on: page_revision.id == ra.revision_id,
+      join: access in ResourceAccess,
+      on: access.id == ra.resource_access_id,
+      join: section in Section,
+      on: section.id == access.section_id,
+      where: activity_revision.activity_type_id == ^adaptive_activity_type_id,
+      where: activity_revision.resource_id == ^activity_resource_id,
+      where: pa.lifecycle_state in [:submitted, :evaluated],
+      order_by: [asc: pa.id],
+      select: %{
+        project_id: section.base_project_id,
+        section_id: access.section_id,
+        user_id: access.user_id,
+        page_resource_id: page_revision.resource_id,
+        part_attempt: pa,
+        activity_revision: activity_revision
+      }
+    )
+    |> Repo.stream()
+    |> Stream.map(fn %{
+                       project_id: project_id,
+                       section_id: section_id,
+                       user_id: user_id,
+                       page_resource_id: page_resource_id,
+                       part_attempt: part_attempt,
+                       activity_revision: activity_revision
+                     } ->
+      %AttemptGroup{
+        context: %{
+          project_id: project_id,
+          section_id: section_id,
+          user_id: user_id
+        },
+        resource_attempt: %{resource_id: page_resource_id},
+        part_attempts: [Map.put(part_attempt, :activity_revision, activity_revision)],
+        activity_attempts: []
+      }
+    end)
+  end
 
   defp upsert_student_responses(attempt_group, part_attempt_tuples) do
     values =

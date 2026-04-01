@@ -3,6 +3,8 @@ defmodule OliWeb.Components.Delivery.Pages do
 
   import Ecto.Query
 
+  alias Oli.Analytics.AdaptiveResponseSummaryRepairWorker
+  alias Oli.Analytics.Summary
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Analytics.Summary.ResponseSummary
   alias Oli.Delivery.Metrics
@@ -139,13 +141,13 @@ defmodule OliWeb.Components.Delivery.Pages do
          assign(socket,
            table_model: table_model,
            total_count: total_count,
-            current_page: nil,
-            loaded_activity_summaries: %{},
-            expanded_activity_ids: MapSet.new(),
-            card_props: card_props,
-            attempts_options: attempts_options,
-            selected_attempts_options: selected_attempts_options,
-            selected_attempts_ids: selected_attempts_ids
+           current_page: nil,
+           loaded_activity_summaries: %{},
+           expanded_activity_ids: MapSet.new(),
+           card_props: card_props,
+           attempts_options: attempts_options,
+           selected_attempts_options: selected_attempts_options,
+           selected_attempts_ids: selected_attempts_ids
          )}
 
       resource_id ->
@@ -794,6 +796,11 @@ defmodule OliWeb.Components.Delivery.Pages do
         socket
 
       activity ->
+        revision = Map.get(activity, :revision, activity)
+        activity_type = Map.get(activity_types_map, revision.activity_type_id)
+
+        maybe_enqueue_adaptive_summary_repair(activity_type, revision.resource_id)
+
         summary =
           ActivityHelpers.summarize_activity_performance(
             section,
@@ -804,8 +811,53 @@ defmodule OliWeb.Components.Delivery.Pages do
           )
           |> List.first()
           |> case do
-            nil -> activity
-            summary -> Map.put(summary, :order, activity.order)
+            nil ->
+              case activity_type do
+                %{slug: "oli_adaptive"} ->
+                  base_summary = %{
+                    id: revision.resource_id,
+                    resource_id: revision.resource_id,
+                    graded: page_revision.graded,
+                    title: revision.title,
+                    revision: revision,
+                    resource_summaries: [],
+                    transformed_model: nil,
+                    first_attempt_pct: 0.0,
+                    all_attempt_pct: 0.0,
+                    total_attempts_count: 0,
+                    students_with_attempts: [],
+                    students_with_attempts_count: 0,
+                    student_emails_without_attempts: Enum.map(students, & &1.email)
+                  }
+
+                  base_summary =
+                    ActivityHelpers.stage_performance_details(
+                      [base_summary],
+                      activity_types_map,
+                      []
+                    )
+                    |> List.first()
+
+                  base_summary
+                  |> Map.put(
+                    :preview_rendered,
+                    ActivityHelpers.preview_render(
+                      section,
+                      page_revision,
+                      revision,
+                      activity_types_map,
+                      Map.get(activity, :order),
+                      Map.get(base_summary, :student_responses, %{})
+                    )
+                  )
+                  |> Map.put(:order, activity.order)
+
+                _ ->
+                  activity
+              end
+
+            summary ->
+              Map.put(summary, :order, activity.order)
           end
 
         assign(
@@ -815,6 +867,16 @@ defmodule OliWeb.Components.Delivery.Pages do
         )
     end
   end
+
+  defp maybe_enqueue_adaptive_summary_repair(%{slug: "oli_adaptive"}, activity_resource_id) do
+    if Summary.adaptive_response_summaries_stale?(activity_resource_id) do
+      AdaptiveResponseSummaryRepairWorker.schedule(activity_resource_id)
+    else
+      :ok
+    end
+  end
+
+  defp maybe_enqueue_adaptive_summary_repair(_, _), do: :ok
 
   defp maybe_reset_activity_detail_state(socket, current_page_resource_id) do
     case socket.assigns[:current_page] do

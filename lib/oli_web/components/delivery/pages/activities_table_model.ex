@@ -134,6 +134,8 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         activity_types_map: assigns[:activity_types_map],
         should_show_details: should_show_details,
         has_loaded_activity: has_loaded_activity,
+        first_attempt_pct: Map.get(current_activity || %{}, :first_attempt_pct, 0.0),
+        all_attempt_pct: Map.get(current_activity || %{}, :all_attempt_pct, 0.0),
         detail_label:
           if(adaptive_screen?(assessment), do: "Screen details", else: "Question details")
       })
@@ -166,12 +168,12 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         <div class="flex mt-2 mb-10 bg-white gap-x-20 dark:bg-gray-800 dark:text-white shadow-sm px-6 py-4">
           <ActivityHelpers.percentage_bar
             id={Integer.to_string(@current_activity.id) <> "_first_try_correct"}
-            value={@current_activity.first_attempt_pct}
+            value={@first_attempt_pct}
             label="First Try Correct"
           />
           <ActivityHelpers.percentage_bar
             id={Integer.to_string(@current_activity.id) <> "_eventually_correct"}
-            value={@current_activity.all_attempt_pct}
+            value={@all_attempt_pct}
             label="Eventually Correct"
           />
         </div>

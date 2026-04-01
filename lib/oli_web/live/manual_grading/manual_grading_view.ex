@@ -387,16 +387,23 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   # Determines if any scoring or feedbacks remain to be entered for the part attempts
   # of the currently selected activity attempt
   defp scoring_remains(assigns) do
-    Enum.filter(assigns.part_attempts, fn pa -> pa.grading_approach == :manual end)
-    |> Enum.any?(fn pa ->
-      case Map.get(assigns.score_feedbacks, pa.attempt_guid) do
-        %{score: score, feedback: feedback} ->
-          is_nil(score) or is_nil(blank_to_nil(feedback))
+    not manual_scoring_ready?(assigns.part_attempts, assigns.score_feedbacks)
+  end
 
-        _ ->
-          true
-      end
-    end)
+  def manual_scoring_ready?(part_attempts, score_feedbacks) do
+    manual_part_attempts =
+      Enum.filter(part_attempts || [], fn pa -> pa.grading_approach == :manual end)
+
+    manual_part_attempts != [] and
+      Enum.all?(manual_part_attempts, fn pa ->
+        case Map.get(score_feedbacks || %{}, pa.attempt_guid) do
+          %{score: score, feedback: feedback} ->
+            not is_nil(score) and not is_nil(blank_to_nil(feedback))
+
+          _ ->
+            false
+        end
+      end)
   end
 
   # Determines if there are *any* pending changes
@@ -571,27 +578,44 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   end
 
   def handle_event("apply", _, socket) do
-    %{
-      section: section,
-      attempt: attempt,
-      score_feedbacks: score_feedbacks
-    } = socket.assigns
+    if manual_scoring_ready?(socket.assigns.part_attempts, socket.assigns.score_feedbacks) do
+      %{
+        section: section,
+        attempt: attempt,
+        score_feedbacks: score_feedbacks
+      } = socket.assigns
 
-    case ManualGrading.apply_manual_scoring(section, attempt, score_feedbacks) do
-      {:ok, finalized_part_attempt_guids} ->
-        pid = self()
+      case ManualGrading.apply_manual_scoring(section, attempt, score_feedbacks) do
+        {:ok, finalized_part_attempt_guids} ->
+          socket =
+            socket
+            |> assign(
+              :score_feedbacks,
+              purge_score_feedbacks(
+                socket.assigns.score_feedbacks,
+                finalized_part_attempt_guids
+              )
+            )
+            |> put_flash(:info, "Student attempt scored.")
+            |> refresh_after_attempt_removed()
 
-        send(
-          pid,
-          {:purge_score_feedbacks, finalized_part_attempt_guids}
-        )
+          {:noreply, socket}
 
-        put_flash(socket, :info, "Student attempt scored.")
-        |> pick_next()
-
-      _ ->
-        {:noreply,
-         put_flash(socket, :error, "There was a problem encountered while scoring this attempt.")}
+        _ ->
+          {:noreply,
+           put_flash(
+             socket,
+             :error,
+             "There was a problem encountered while scoring this attempt."
+           )}
+      end
+    else
+      {:noreply,
+       put_flash(
+         socket,
+         :error,
+         "Enter both a score and feedback for every manually graded input before applying."
+       )}
     end
   end
 
@@ -676,12 +700,11 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   end
 
   def handle_info({:purge_score_feedbacks, guids}, socket) do
-    score_feedbacks =
-      Enum.reduce(guids, socket.assigns.score_feedbacks, fn guid, sfs ->
-        Map.delete(sfs, guid)
-      end)
-
-    {:noreply, assign(socket, score_feedbacks: score_feedbacks)}
+    {:noreply,
+     assign(
+       socket,
+       score_feedbacks: purge_score_feedbacks(socket.assigns.score_feedbacks, guids)
+     )}
   end
 
   defp score_feedback_for(assigns, attempt_guid) do
@@ -755,6 +778,12 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     |> assign(build_state_for_selection(table_model, socket.assigns))
   end
 
+  defp purge_score_feedbacks(score_feedbacks, guids) do
+    Enum.reduce(guids, score_feedbacks, fn guid, sfs ->
+      Map.delete(sfs, guid)
+    end)
+  end
+
   defp next_selected_after_removal(_current_rows, _current_selected, []), do: nil
 
   defp next_selected_after_removal(current_rows, current_selected, refreshed_rows) do
@@ -773,29 +802,5 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       true ->
         refreshed_rows |> Enum.at(index) |> Map.fetch!(:id) |> Integer.to_string()
     end
-  end
-
-  # After a score is applied for an attempt, we need to determine what is the next
-  # attempt that should be selected.  We want this to emulate a 'queue' of sorts, so
-  # that the next item after the selected item becomes the next selected item. We
-  # must encode this index based selection in some way that is distinguishable from a
-  # normal Id reference, so we do that be encoding it as a negative number, with a special
-  # case of "none" for when there should not be a selection (i.e. the user has evaluated)
-  # the last attempt.
-  defp pick_next(socket) do
-    index =
-      Enum.find_index(socket.assigns.table_model.rows, fn r ->
-        Integer.to_string(r.id) == socket.assigns.table_model.selected
-      end)
-
-    selected =
-      cond do
-        is_nil(index) -> "none"
-        socket.assigns.total_count == 1 -> "none"
-        socket.assigns.total_count == index + 1 -> (index - 1) * -1
-        true -> index * -1
-      end
-
-    patch_with(socket, %{selected: selected})
   end
 end

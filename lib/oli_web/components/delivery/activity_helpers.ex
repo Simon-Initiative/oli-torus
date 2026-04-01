@@ -5,11 +5,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   """
 
   use OliWeb, :html
+  import Ecto.Query
 
   require Logger
 
   alias Oli.Analytics.Summary
+  alias Oli.Analytics.Summary.ResponseLabel
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Sections.Section
+  alias Oli.Repo
+  alias Oli.Resources.Revision
   alias OliWeb.ManualGrading.RenderedActivity
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Rendering.Context
@@ -106,6 +111,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, activity_ids)
       |> Enum.reduce(%{}, fn revision, acc -> Map.put(acc, revision.resource_id, revision) end)
 
+    adaptive_manual_analytics =
+      fetch_adaptive_manual_part_analytics(
+        section.id,
+        revisions_by_resource_id,
+        activity_types_map
+      )
+
     # NOTE: From this point forward, we make no more DB queries
 
     # Now total up the attempt numbers across all potential parts
@@ -171,7 +183,11 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         student_emails_without_attempts: student_emails_without_attempts
       }
     end)
-    |> stage_performance_details(activity_types_map, response_summaries)
+    |> stage_performance_details(
+      activity_types_map,
+      response_summaries,
+      adaptive_manual_analytics
+    )
     |> Enum.map(fn activity ->
       ordinal = Map.get(ordinal_mapping, activity.resource_id)
 
@@ -180,7 +196,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       Map.put(
         activity,
         :preview_rendered,
-        fast_preview_render(
+        preview_render(
           section,
           page_revision,
           activity.revision,
@@ -192,14 +208,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end)
   end
 
-  defp fast_preview_render(
-         %Section{slug: section_slug},
-         page_revision,
-         revision,
-         activity_types_map,
-         ordinal,
-         student_responses
-       ) do
+  def preview_render(
+        %Section{slug: section_slug},
+        page_revision,
+        revision,
+        activity_types_map,
+        ordinal,
+        student_responses
+      ) do
     type = Map.get(activity_types_map, revision.activity_type_id)
 
     case type.slug do
@@ -262,7 +278,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     mapping
   end
 
-  def stage_performance_details(activities, activity_types_map, response_summaries) do
+  def stage_performance_details(
+        activities,
+        activity_types_map,
+        response_summaries,
+        adaptive_manual_analytics \\ %{}
+      ) do
     multiple_choice_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
 
@@ -291,7 +312,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     Enum.map(activities, fn a ->
       case a.revision.activity_type_id do
         ^adaptive_type_id ->
-          add_adaptive_input_details(a, response_summaries)
+          add_adaptive_input_details(a, response_summaries, adaptive_manual_analytics)
 
         ^multiple_choice_type_id ->
           add_choices_frequencies(a, response_summaries)
@@ -625,34 +646,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         <% else %>
           <div class="grid gap-4">
             <%= for summary <- @input_summaries do %>
-              <div class="rounded border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/30">
-                <div class="flex items-start justify-between gap-4">
-                  <div>
-                    <div class="font-semibold text-gray-900 dark:text-white">{summary.label}</div>
-                    <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      {summary.component_type}
-                    </div>
-                  </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">{summary.part_id}</div>
-                </div>
-                <div class="mt-3 flex gap-8 text-sm text-gray-700 dark:text-gray-200">
-                  <div><span class="font-semibold">{summary.response_count}</span> Responses</div>
-                  <div><span class="font-semibold">{summary.student_count}</span> Students</div>
-                  <div><span class="font-semibold">{summary.attempt_count}</span> Attempts</div>
-                </div>
-                <div class="mt-4 flex flex-wrap gap-x-10 gap-y-4">
-                  <.percentage_bar
-                    id={"adaptive_#{@activity.id}_#{summary.part_id}_first_try_correct"}
-                    value={summary.first_attempt_pct}
-                    label="First Try Correct"
-                  />
-                  <.percentage_bar
-                    id={"adaptive_#{@activity.id}_#{summary.part_id}_eventually_correct"}
-                    value={summary.all_attempt_pct}
-                    label="Eventually Correct"
-                  />
-                </div>
-              </div>
+              <.adaptive_input_summary activity={@activity} summary={summary} />
             <% end %>
           </div>
         <% end %>
@@ -665,6 +659,462 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         />
       </div>
     </div>
+    """
+  end
+
+  attr :activity, :map, required: true
+  attr :summary, :map, required: true
+
+  defp adaptive_input_summary(assigns) do
+    assigns =
+      assign(assigns,
+        visualization: Map.get(assigns.summary, :visualization, %{}),
+        outcome_buckets: Map.get(assigns.summary, :outcome_buckets, [])
+      )
+
+    ~H"""
+    <div class="rounded-xl border border-gray-200 bg-gray-50 px-5 py-5 shadow-sm dark:border-gray-700 dark:bg-gray-900/30">
+      <div class="flex items-start justify-between gap-4 border-b border-gray-200 pb-4 dark:border-gray-700">
+        <div>
+          <div class="font-semibold text-gray-900 dark:text-white">{@summary.label}</div>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {@summary.component_type}
+            </div>
+            <div class={[
+              "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide",
+              adaptive_grading_badge_classes(@summary.grading_mode)
+            ]}>
+              {@summary.grading_mode_label}
+            </div>
+          </div>
+        </div>
+        <div class="text-xs text-gray-500 dark:text-gray-400">{@summary.part_id}</div>
+      </div>
+
+      <div class="mt-4">
+        <.render_adaptive_visualization summary={@summary} visualization={@visualization} />
+      </div>
+
+      <div
+        :if={@summary.grading_pending}
+        class="mt-5 rounded-xl bg-amber-50 px-4 py-4 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100"
+      >
+        {@summary.grading_pending_message}
+      </div>
+    </div>
+    """
+  end
+
+  attr :summary, :map, required: true
+  attr :visualization, :map, required: true
+
+  defp render_adaptive_visualization(
+         %{visualization: %{kind: :choice_distribution} = visualization} = assigns
+       ) do
+    assigns = assign(assigns, visualization: visualization)
+
+    ~H"""
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]">
+      <div class="rounded-xl bg-white px-4 py-4 dark:bg-gray-800/70">
+        <div class="text-sm font-semibold text-gray-900 dark:text-white">
+          {@visualization.prompt}
+        </div>
+        <div :if={@visualization.description} class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {@visualization.description}
+        </div>
+
+        <div class="mt-4 space-y-3">
+          <%= for choice <- @visualization.choices do %>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/50">
+              <div class="flex items-center justify-between gap-4 text-sm">
+                <div class="flex items-center gap-3">
+                  <div class={[
+                    "h-3 w-3 rounded-full border",
+                    adaptive_choice_marker_classes(choice)
+                  ]}>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <div class="font-medium text-gray-900 dark:text-white">{choice.label}</div>
+                    <.badge_with_tooltip
+                      :if={Map.get(choice, :native_correct) == true}
+                      class={native_key_badge_classes()}
+                      tooltip="This badge marks the authored answer key for the input. It indicates the native correct option defined in the content model."
+                    >
+                      Answer Key
+                    </.badge_with_tooltip>
+                    <.badge_with_tooltip
+                      :if={@summary.grading_mode == :manual and manual_outcome_badge_label(choice)}
+                      class={manual_outcome_badge_classes(Map.get(choice, :correctness))}
+                      tooltip={manual_outcome_badge_tooltip(Map.get(choice, :correctness))}
+                    >
+                      {manual_outcome_badge_label(choice)}
+                    </.badge_with_tooltip>
+                  </div>
+                </div>
+                <div class="text-right text-xs text-gray-500 dark:text-gray-400">
+                  <div>
+                    {choice.count} of {@visualization.denominator_count} {@visualization.denominator_label}
+                  </div>
+                  <div>{Float.round(choice.ratio * 100, 1)}%</div>
+                </div>
+              </div>
+              <div class="mt-3 h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
+                <div
+                  class={[
+                    "h-3 rounded-full transition-all",
+                    adaptive_choice_fill_classes(
+                      Map.get(choice, :correctness, Map.get(choice, :correct))
+                    )
+                  ]}
+                  style={"width: #{Float.round(choice.ratio * 100, 1)}%; min-width: #{if choice.count > 0, do: "0.5rem", else: "0"};"}
+                >
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="rounded-xl bg-white px-4 py-4 dark:bg-gray-800/70">
+        <div class="text-sm font-semibold text-gray-900 dark:text-white">Distribution Notes</div>
+        <div class="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
+          {@visualization.summary}
+        </div>
+        <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          Bar width represents the share of {@visualization.denominator_label} for this input.
+        </div>
+        <.render_adaptive_coverage summary={@summary} />
+        <.render_adaptive_outcome_breakdown summary={@summary} />
+        <div
+          :if={Map.get(@visualization, :native_key_note)}
+          class="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200"
+        >
+          {@visualization.native_key_note}
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp render_adaptive_visualization(
+         %{visualization: %{kind: :response_patterns} = visualization} = assigns
+       ) do
+    assigns = assign(assigns, visualization: visualization)
+
+    ~H"""
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]">
+      <div class="rounded-xl bg-white px-4 py-4 dark:bg-gray-800/70">
+        <div class="text-sm font-semibold text-gray-900 dark:text-white">
+          {@visualization.prompt}
+        </div>
+        <div :if={@visualization.description} class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {@visualization.description}
+        </div>
+
+        <div :if={@visualization.entries == []} class="mt-4 text-sm text-gray-600 dark:text-gray-300">
+          No submitted response patterns are available for this input yet.
+        </div>
+
+        <div :if={@visualization.entries != []} class="mt-4 space-y-3">
+          <%= for entry <- @visualization.entries do %>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/50">
+              <div class="flex items-start justify-between gap-4 text-sm">
+                <div class="min-w-0 flex-1">
+                  <div class="font-medium text-gray-900 dark:text-white">{entry.label}</div>
+                  <div
+                    :if={Map.get(entry, :supporting_text)}
+                    class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+                  >
+                    {entry.supporting_text}
+                  </div>
+                </div>
+                <div class="text-right text-xs text-gray-500 dark:text-gray-400">
+                  <div>{entry.count} of {@visualization.denominator_count} responses</div>
+                  <div>{Float.round(entry.ratio * 100, 1)}%</div>
+                </div>
+              </div>
+              <div class="mt-3 h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
+                <div
+                  class="h-3 rounded-full bg-sky-500 transition-all dark:bg-sky-400"
+                  style={"width: #{Float.round(entry.ratio * 100, 1)}%; min-width: #{if entry.count > 0, do: "0.5rem", else: "0"};"}
+                >
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="rounded-xl bg-white px-4 py-4 dark:bg-gray-800/70">
+        <div class="text-sm font-semibold text-gray-900 dark:text-white">Distribution Notes</div>
+        <div class="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
+          {@visualization.summary}
+        </div>
+        <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          Bar width represents the share of responses recorded for this input.
+        </div>
+        <.render_adaptive_coverage summary={@summary} />
+        <.render_adaptive_outcome_breakdown summary={@summary} />
+      </div>
+    </div>
+    """
+  end
+
+  defp render_adaptive_visualization(
+         %{visualization: %{kind: :numeric_distribution} = visualization} = assigns
+       ) do
+    assigns = assign(assigns, visualization: visualization)
+
+    ~H"""
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]">
+      <div class="rounded-xl bg-white px-4 py-4 dark:bg-gray-800/70">
+        <div class="text-sm font-semibold text-gray-900 dark:text-white">
+          {@visualization.prompt}
+        </div>
+        <div :if={@visualization.description} class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {@visualization.description}
+        </div>
+
+        <div :if={@visualization.entries == []} class="mt-4 text-sm text-gray-600 dark:text-gray-300">
+          No ordered numeric responses are available for this input yet.
+        </div>
+
+        <div :if={@visualization.entries != []} class="mt-4 space-y-3">
+          <%= for entry <- @visualization.entries do %>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/50">
+              <div class="flex items-center justify-between gap-4 text-sm">
+                <div class="font-medium text-gray-900 dark:text-white">{entry.label}</div>
+                <div class="text-right text-xs text-gray-500 dark:text-gray-400">
+                  <div>{entry.count} of {@visualization.denominator_count} responses</div>
+                  <div>{Float.round(entry.ratio * 100, 1)}%</div>
+                </div>
+              </div>
+              <div class="mt-3 h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
+                <div
+                  class="h-3 rounded-full bg-cyan-500 transition-all dark:bg-cyan-400"
+                  style={"width: #{Float.round(entry.ratio * 100, 1)}%; min-width: #{if entry.count > 0, do: "0.5rem", else: "0"};"}
+                >
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="rounded-xl bg-white px-4 py-4 dark:bg-gray-800/70">
+        <div class="text-sm font-semibold text-gray-900 dark:text-white">Distribution Notes</div>
+        <div class="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
+          {@visualization.summary}
+        </div>
+        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div
+            :for={stat <- @visualization.stats}
+            class="rounded-lg bg-gray-100 px-3 py-3 dark:bg-gray-900/60"
+          >
+            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {stat.label}
+            </div>
+            <div class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">{stat.value}</div>
+          </div>
+        </div>
+        <.render_adaptive_coverage summary={@summary} />
+        <.render_adaptive_outcome_breakdown summary={@summary} />
+      </div>
+    </div>
+    """
+  end
+
+  defp render_adaptive_visualization(
+         %{visualization: %{kind: :correctness_distribution} = visualization} = assigns
+       ) do
+    assigns = assign(assigns, visualization: visualization)
+
+    ~H"""
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1.2fr)]">
+      <div class="rounded-xl bg-white px-4 py-4 dark:bg-gray-800/70">
+        <div class="text-sm font-semibold text-gray-900 dark:text-white">
+          {@visualization.prompt}
+        </div>
+        <div :if={@visualization.description} class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {@visualization.description}
+        </div>
+      </div>
+
+      <div class="rounded-xl bg-white px-4 py-4 dark:bg-gray-800/70">
+        <div class="text-sm text-gray-600 dark:text-gray-300">
+          {@visualization.summary}
+        </div>
+        <.render_adaptive_coverage summary={@summary} />
+        <.render_adaptive_outcome_breakdown summary={@summary} />
+      </div>
+    </div>
+    """
+  end
+
+  defp render_adaptive_visualization(_assigns) do
+    assigns = %{}
+
+    ~H"""
+    <div class="rounded-xl bg-white px-4 py-4 text-sm text-gray-600 dark:bg-gray-800/70 dark:text-gray-300">
+      No aggregate response details are available for this input.
+    </div>
+    """
+  end
+
+  attr :summary, :map, required: true
+
+  defp render_adaptive_coverage(assigns) do
+    ~H"""
+    <div class="mt-4 rounded-lg bg-gray-100 px-3 py-3 dark:bg-gray-900/60">
+      <div class="text-sm font-semibold text-gray-900 dark:text-white">
+        {if @summary.grading_mode == :manual, do: "Graded Coverage", else: "Response Coverage"}
+      </div>
+      <div class="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        {Map.get(@summary, :coverage_student_label, "Students")}
+      </div>
+      <div class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+        {Map.get(@summary, :coverage_student_count, @summary.student_count)}
+      </div>
+    </div>
+    """
+  end
+
+  attr :summary, :map, required: true
+
+  defp render_adaptive_outcome_breakdown(%{summary: %{grading_pending: true}} = assigns) do
+    ~H""
+  end
+
+  defp render_adaptive_outcome_breakdown(assigns) do
+    outcome_buckets = Map.get(assigns.summary, :outcome_buckets, [])
+    assigns = assign(assigns, outcome_buckets: outcome_buckets)
+
+    ~H"""
+    <div class="mt-4 rounded-lg bg-gray-100 px-3 py-3 dark:bg-gray-900/60">
+      <div class="text-sm font-semibold text-gray-900 dark:text-white">
+        Outcome Breakdown
+      </div>
+      <div class="mt-4 space-y-3">
+        <%= for bucket <- @outcome_buckets do %>
+          <div>
+            <div class="flex items-center justify-between gap-3 text-sm">
+              <div class="font-medium text-gray-900 dark:text-white">{bucket.label}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400">
+                {bucket.count} of {@summary.attempt_count} attempts ({Float.round(
+                  bucket.ratio * 100,
+                  1
+                )}%)
+              </div>
+            </div>
+            <div class="mt-2 h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-900">
+              <div
+                class={["h-3 rounded-full transition-all", bucket.fill_class]}
+                style={"width: #{Float.round(bucket.ratio * 100, 1)}%; min-width: #{if bucket.count > 0, do: "0.5rem", else: "0"};"}
+              >
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <div class="mt-5 flex flex-wrap gap-x-10 gap-y-4">
+        <.percentage_bar
+          id={"adaptive_#{@summary.part_id}_first_try_correct"}
+          value={@summary.first_attempt_pct}
+          label="First Try Correct"
+        />
+        <.percentage_bar
+          id={"adaptive_#{@summary.part_id}_eventually_correct"}
+          value={@summary.all_attempt_pct}
+          label="Eventually Correct"
+        />
+      </div>
+    </div>
+    """
+  end
+
+  defp adaptive_choice_marker_classes(choice) when is_map(choice) do
+    case Map.get(choice, :native_correct) do
+      true ->
+        "border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400"
+
+      _ ->
+        adaptive_choice_marker_classes(Map.get(choice, :correctness, Map.get(choice, :correct)))
+    end
+  end
+
+  defp adaptive_choice_marker_classes(true),
+    do: "border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400"
+
+  defp adaptive_choice_marker_classes(false),
+    do: "border-red-500 bg-red-500 dark:border-red-400 dark:bg-red-400"
+
+  defp adaptive_choice_marker_classes(:partial),
+    do: "border-amber-500 bg-amber-500 dark:border-amber-400 dark:bg-amber-400"
+
+  defp adaptive_choice_marker_classes(_),
+    do: "border-slate-400 bg-slate-400 dark:border-slate-500 dark:bg-slate-500"
+
+  defp adaptive_choice_fill_classes(true), do: "bg-emerald-500 dark:bg-emerald-400"
+  defp adaptive_choice_fill_classes(false), do: "bg-red-500 dark:bg-red-400"
+  defp adaptive_choice_fill_classes(:partial), do: "bg-amber-500 dark:bg-amber-400"
+  defp adaptive_choice_fill_classes(_), do: "bg-slate-400 dark:bg-slate-500"
+
+  defp native_key_badge_classes do
+    "inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
+  end
+
+  defp manual_outcome_badge_label(%{correctness: true}), do: "Awarded Full Credit"
+  defp manual_outcome_badge_label(%{correctness: false}), do: "Awarded No Credit"
+  defp manual_outcome_badge_label(%{correctness: :partial}), do: "Awarded Partial Credit"
+  defp manual_outcome_badge_label(_), do: nil
+
+  defp manual_outcome_badge_classes(true),
+    do:
+      "inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-800 dark:bg-sky-500/20 dark:text-sky-200"
+
+  defp manual_outcome_badge_classes(false),
+    do:
+      "inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-800 dark:bg-rose-500/20 dark:text-rose-200"
+
+  defp manual_outcome_badge_classes(:partial),
+    do:
+      "inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-800 dark:bg-orange-500/20 dark:text-orange-200"
+
+  defp manual_outcome_badge_classes(_),
+    do:
+      "inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-800 dark:bg-slate-500/20 dark:text-slate-200"
+
+  defp manual_outcome_badge_tooltip(true),
+    do:
+      "Instructor grading awarded full credit for submissions associated with this option, regardless of whether it matches the native answer key."
+
+  defp manual_outcome_badge_tooltip(false),
+    do: "Instructor grading awarded no credit for submissions associated with this option."
+
+  defp manual_outcome_badge_tooltip(:partial),
+    do: "Instructor grading awarded partial credit for submissions associated with this option."
+
+  defp manual_outcome_badge_tooltip(_), do: nil
+
+  attr :class, :string, required: true
+  attr :tooltip, :string, required: true
+  slot :inner_block, required: true
+
+  defp badge_with_tooltip(assigns) do
+    ~H"""
+    <span class="group relative inline-flex">
+      <span
+        tabindex="0"
+        class={[@class, "cursor-help outline-none"]}
+        aria-label={@tooltip}
+      >
+        {render_slot(@inner_block)}
+      </span>
+      <span class="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-64 -translate-x-1/2 rounded-lg border border-Border-border-default bg-Surface-surface-background px-3 py-2 text-left text-xs font-normal normal-case tracking-normal text-Text-text-high shadow-[0px_12px_24px_0px_rgba(53,55,64,0.12)] group-hover:block group-focus-within:block">
+        {@tooltip}
+      </span>
+    </span>
     """
   end
 
@@ -1002,8 +1452,17 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     )
   end
 
-  defp add_adaptive_input_details(activity_attempt, response_summaries) do
+  defp add_adaptive_input_details(activity_attempt, response_summaries, adaptive_manual_analytics) do
     parts_layout = activity_attempt.revision.content["partsLayout"] || []
+
+    authored_parts =
+      get_in(activity_attempt.revision.content, ["authoring", "parts"]) || []
+
+    authored_parts_by_id =
+      Enum.reduce(authored_parts, %{}, fn part, acc ->
+        Map.put(acc, Map.get(part, "id"), part)
+      end)
+
     resource_summaries = Map.get(activity_attempt, :resource_summaries, [])
 
     input_summaries =
@@ -1011,38 +1470,105 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       |> Enum.with_index(1)
       |> Enum.map(fn {part, index} ->
         part_id = Map.get(part, "id")
+        part_definition = Map.merge(Map.get(authored_parts_by_id, part_id, %{}), part)
         resource_summary = Enum.find(resource_summaries, &(&1.part_id == part_id))
+        grading_mode = adaptive_part_grading_mode(part_definition)
 
-        responses =
+        manual_analytics =
+          Map.get(adaptive_manual_analytics, {activity_attempt.resource_id, part_id})
+
+        raw_responses =
           Enum.filter(response_summaries, fn response_summary ->
             response_summary.activity_id == activity_attempt.resource_id and
               response_summary.part_id == part_id
           end)
 
+        responses =
+          adaptive_summary_responses(
+            activity_attempt.resource_id,
+            part_id,
+            grading_mode,
+            response_summaries,
+            manual_analytics
+          )
+
         users =
-          responses
-          |> Enum.flat_map(&Map.get(&1, :users, []))
-          |> Enum.uniq_by(&Map.get(&1, :id, OliWeb.Common.Utils.name(&1)))
+          adaptive_summary_users(responses, grading_mode, manual_analytics)
+
+        correctness_metrics =
+          adaptive_correctness_metrics(
+            part_definition,
+            responses,
+            resource_summary,
+            grading_mode,
+            manual_analytics
+          )
 
         %{
           part_id: part_id,
-          label: adaptive_part_label(part, index),
-          component_type: adaptive_component_type_label(Map.get(part, "type")),
+          label: adaptive_part_label(part_definition, index),
+          component_type: adaptive_component_type_label(Map.get(part_definition, "type")),
+          grading_mode: adaptive_part_grading_mode(part_definition),
+          grading_mode_label: adaptive_part_grading_mode_label(part_definition),
+          prompt: adaptive_part_prompt(part_definition, index),
           response_count: Enum.reduce(responses, 0, &(&1.count + &2)),
-          student_count: Enum.count(users),
-          attempt_count: Map.get(resource_summary || %{}, :num_attempts, 0),
-          first_attempt_pct:
-            safe_percentage(resource_summary, :num_first_attempts_correct, :num_first_attempts),
-          all_attempt_pct: safe_percentage(resource_summary, :num_correct, :num_attempts),
+          submitted_response_count: Enum.reduce(raw_responses, 0, &(&1.count + &2)),
+          student_count: adaptive_student_count(users, grading_mode, manual_analytics),
+          attempt_count: adaptive_attempt_count(resource_summary, grading_mode, manual_analytics),
+          first_attempt_pct: correctness_metrics.first_attempt_pct,
+          all_attempt_pct: correctness_metrics.all_attempt_pct,
+          first_attempt_total_count: correctness_metrics.first_attempt_total_count,
+          first_attempt_correct_count: correctness_metrics.first_attempt_correct_count,
+          attempt_total_count: correctness_metrics.attempt_total_count,
+          correct_count: correctness_metrics.correct_count,
+          outcome_buckets: correctness_metrics.outcome_buckets,
+          grading_pending: correctness_metrics.grading_pending,
+          grading_pending_message: correctness_metrics.grading_pending_message,
+          coverage_response_label: coverage_response_label(grading_mode),
+          coverage_response_count:
+            coverage_response_count(
+              grading_mode,
+              Enum.reduce(responses, 0, &(&1.count + &2)),
+              correctness_metrics.first_attempt_total_count
+            ),
+          coverage_student_label: coverage_student_label(grading_mode),
+          coverage_student_count:
+            coverage_student_count(
+              grading_mode,
+              adaptive_student_count(users, grading_mode, manual_analytics),
+              manual_analytics
+            ),
+          coverage_attempt_label: coverage_attempt_label(grading_mode),
+          coverage_attempt_count:
+            coverage_attempt_count(
+              grading_mode,
+              adaptive_attempt_count(resource_summary, grading_mode, manual_analytics),
+              correctness_metrics.first_attempt_total_count
+            ),
+          visualization:
+            build_adaptive_visualization(
+              part_definition,
+              responses,
+              resource_summary,
+              adaptive_part_prompt(part_definition, index),
+              grading_mode,
+              manual_analytics
+            ),
           order: index
         }
       end)
       |> Enum.reject(&is_nil(&1.part_id))
       |> Enum.reject(
-        &(&1.response_count == 0 and &1.student_count == 0 and &1.attempt_count == 0)
+        &(&1.response_count == 0 and &1.student_count == 0 and &1.attempt_count == 0 and
+            !(&1.grading_mode == :manual and &1.submitted_response_count > 0))
       )
 
-    Map.put(activity_attempt, :adaptive_input_summaries, input_summaries)
+    aggregate_metrics = aggregate_adaptive_activity_metrics(input_summaries)
+
+    activity_attempt
+    |> Map.put(:adaptive_input_summaries, input_summaries)
+    |> Map.put(:first_attempt_pct, aggregate_metrics.first_attempt_pct)
+    |> Map.put(:all_attempt_pct, aggregate_metrics.all_attempt_pct)
   end
 
   defp safe_percentage(nil, _numerator_key, _denominator_key), do: 0
@@ -1054,6 +1580,31 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     if denominator > 0, do: numerator / denominator, else: 0
   end
 
+  defp coverage_response_label(:manual), do: "First Input Responses"
+  defp coverage_response_label(_), do: "Responses"
+
+  defp coverage_response_count(:manual, _response_count, first_attempt_total_count),
+    do: first_attempt_total_count
+
+  defp coverage_response_count(_, response_count, _first_attempt_total_count), do: response_count
+
+  defp coverage_student_label(_), do: "Uniques Students"
+
+  defp coverage_student_count(:manual, _student_count, %{first_attempt_student_ids: student_ids})
+       when is_struct(student_ids, MapSet),
+       do: MapSet.size(student_ids)
+
+  defp coverage_student_count(:manual, student_count, _manual_analytics), do: student_count
+  defp coverage_student_count(_, student_count, _manual_analytics), do: student_count
+
+  defp coverage_attempt_label(:manual), do: "First Input Attempts"
+  defp coverage_attempt_label(_), do: "Attempts"
+
+  defp coverage_attempt_count(:manual, _attempt_count, first_attempt_total_count),
+    do: first_attempt_total_count
+
+  defp coverage_attempt_count(_, attempt_count, _first_attempt_total_count), do: attempt_count
+
   defp adaptive_part_label(part, index) do
     custom = Map.get(part, "custom", %{})
 
@@ -1061,6 +1612,15 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       Map.get(custom, "name") ||
       Map.get(custom, "prompt") ||
       "Input #{index}"
+  end
+
+  defp adaptive_part_prompt(part, index) do
+    custom = Map.get(part, "custom", %{})
+
+    Map.get(custom, "label") ||
+      Map.get(custom, "title") ||
+      Map.get(custom, "prompt") ||
+      adaptive_component_type_label(Map.get(part, "type")) <> " " <> Integer.to_string(index)
   end
 
   defp adaptive_component_type_label(nil), do: "Input"
@@ -1072,6 +1632,1113 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     |> String.split()
     |> Enum.map_join(" ", &String.capitalize/1)
   end
+
+  defp adaptive_part_grading_mode(part) do
+    part
+    |> Map.get("gradingApproach", "automatic")
+    |> case do
+      "manual" -> :manual
+      :manual -> :manual
+      _ -> :automatic
+    end
+  end
+
+  defp adaptive_part_grading_mode_label(part) do
+    case adaptive_part_grading_mode(part) do
+      :manual -> "Instructor Manual Grading"
+      :automatic -> "Automatically Graded"
+    end
+  end
+
+  defp adaptive_grading_badge_classes(:manual),
+    do: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200"
+
+  defp adaptive_grading_badge_classes(_mode),
+    do: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
+
+  defp adaptive_summary_responses(
+         _activity_id,
+         _part_id,
+         :manual,
+         _response_summaries,
+         manual_analytics
+       ) do
+    case manual_analytics do
+      %{responses: responses} -> responses
+      _ -> []
+    end
+  end
+
+  defp adaptive_summary_responses(
+         activity_id,
+         part_id,
+         _grading_mode,
+         response_summaries,
+         _manual_analytics
+       ) do
+    Enum.filter(response_summaries, fn response_summary ->
+      response_summary.activity_id == activity_id and response_summary.part_id == part_id
+    end)
+  end
+
+  defp adaptive_summary_users(_responses, :manual, %{student_ids: student_ids}), do: student_ids
+  defp adaptive_summary_users(_responses, :manual, _manual_analytics), do: []
+
+  defp adaptive_summary_users(responses, _grading_mode, _manual_analytics) do
+    responses
+    |> Enum.flat_map(&Map.get(&1, :users, []))
+    |> Enum.uniq_by(&Map.get(&1, :id, OliWeb.Common.Utils.name(&1)))
+  end
+
+  defp adaptive_student_count(_users, :manual, %{student_ids: student_ids}),
+    do: MapSet.size(student_ids)
+
+  defp adaptive_student_count(_users, :manual, _manual_analytics), do: 0
+  defp adaptive_student_count(users, _grading_mode, _manual_analytics), do: Enum.count(users)
+
+  defp adaptive_attempt_count(_resource_summary, :manual, %{attempt_count: attempt_count}),
+    do: attempt_count
+
+  defp adaptive_attempt_count(_resource_summary, :manual, _manual_analytics), do: 0
+
+  defp adaptive_attempt_count(resource_summary, _grading_mode, _manual_analytics),
+    do: Map.get(resource_summary || %{}, :num_attempts, 0)
+
+  defp build_adaptive_visualization(
+         part,
+         responses,
+         resource_summary,
+         prompt,
+         grading_mode,
+         manual_analytics
+       ) do
+    case Map.get(part, "type") do
+      "janus-mcq" ->
+        build_adaptive_choice_distribution(
+          part,
+          responses,
+          prompt,
+          grading_mode,
+          manual_analytics
+        )
+
+      "janus-dropdown" ->
+        build_adaptive_dropdown_distribution(
+          part,
+          responses,
+          prompt,
+          grading_mode,
+          manual_analytics
+        )
+
+      "janus-input-number" ->
+        build_adaptive_numeric_distribution(part, responses, prompt)
+
+      "janus-slider" ->
+        build_adaptive_numeric_distribution(part, responses, prompt)
+
+      "janus-text-slider" ->
+        build_adaptive_numeric_distribution(part, responses, prompt)
+
+      "janus-input-text" ->
+        build_adaptive_response_patterns(
+          prompt,
+          responses,
+          "Most common submitted text responses",
+          "Each bar shows how often learners submitted the same text response for this input."
+        )
+
+      "janus-multi-line-text" ->
+        build_adaptive_response_patterns(
+          prompt,
+          responses,
+          "Most common submitted written responses",
+          "Each bar shows how often learners submitted the same written response for this input."
+        )
+
+      "janus-formula" ->
+        build_adaptive_response_patterns(
+          prompt,
+          responses,
+          "Most common submitted formulas",
+          "Each bar shows how often learners submitted the same formula for this input."
+        )
+
+      "janus-fill-blanks" ->
+        build_adaptive_response_patterns(
+          prompt,
+          responses,
+          "Most common submitted answer patterns",
+          "Each bar shows how often learners submitted the same answer pattern across the blanks in this input."
+        )
+
+      _ ->
+        build_adaptive_correctness_distribution(resource_summary, prompt)
+    end
+  end
+
+  defp build_adaptive_response_patterns(prompt, responses, description, summary) do
+    denominator =
+      Enum.reduce(responses, 0, fn response_summary, total -> total + response_summary.count end)
+
+    entries =
+      responses
+      |> Enum.map(fn response_summary ->
+        label = adaptive_response_display_label(response_summary)
+
+        %{
+          label: label,
+          supporting_text: adaptive_response_supporting_text(response_summary, label),
+          count: response_summary.count,
+          ratio: ratio(response_summary.count, denominator)
+        }
+      end)
+      |> Enum.sort_by(fn entry -> {-entry.count, entry.label} end)
+      |> Enum.take(6)
+
+    %{
+      kind: :response_patterns,
+      prompt: prompt,
+      description: description,
+      summary: summary,
+      denominator_count: denominator,
+      entries: entries
+    }
+  end
+
+  defp build_adaptive_numeric_distribution(part, responses, prompt) do
+    entries =
+      responses
+      |> Enum.map(fn response_summary ->
+        case adaptive_numeric_value(response_summary) do
+          nil ->
+            nil
+
+          value ->
+            %{
+              label: adaptive_numeric_label(value),
+              numeric_value: value,
+              count: response_summary.count
+            }
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.sort_by(& &1.numeric_value)
+
+    denominator = Enum.reduce(entries, 0, fn entry, total -> total + entry.count end)
+
+    if entries == [] do
+      build_adaptive_response_patterns(
+        prompt,
+        responses,
+        "Submitted value patterns",
+        "Each bar shows how often learners submitted the same value for this input."
+      )
+    else
+      weighted_values =
+        Enum.flat_map(entries, fn entry ->
+          List.duplicate(entry.numeric_value, entry.count)
+        end)
+
+      %{
+        kind: :numeric_distribution,
+        prompt: prompt,
+        description: adaptive_numeric_description(part),
+        summary: "Each bar shows how often learners submitted that numeric value.",
+        denominator_count: denominator,
+        entries:
+          Enum.map(entries, fn entry ->
+            %{
+              label: entry.label,
+              count: entry.count,
+              ratio: ratio(entry.count, denominator)
+            }
+          end),
+        stats: [
+          %{label: "Minimum", value: adaptive_numeric_label(Enum.min(weighted_values))},
+          %{
+            label: "Average",
+            value: adaptive_numeric_label(Enum.sum(weighted_values) / denominator)
+          },
+          %{label: "Maximum", value: adaptive_numeric_label(Enum.max(weighted_values))}
+        ]
+      }
+    end
+  end
+
+  defp build_adaptive_choice_distribution(part, responses, prompt, grading_mode, manual_analytics) do
+    config = Map.get(part, "custom", %{})
+    choice_labels = extract_adaptive_choice_labels(config)
+    correct_answers = Map.get(config, "correctAnswer", [])
+    multiple_selection = Map.get(config, "multipleSelection", false)
+    has_correctness_metadata = adaptive_mcq_has_correctness_metadata?(correct_answers)
+
+    counts =
+      Enum.reduce(responses, %{}, fn response_summary, acc ->
+        labels =
+          response_summary.response
+          |> decode_adaptive_response_tokens()
+          |> resolve_adaptive_choice_labels(choice_labels)
+
+        Enum.reduce(labels, acc, fn label, inner ->
+          Map.update(inner, label, response_summary.count, &(&1 + response_summary.count))
+        end)
+      end)
+
+    outcome_counts =
+      adaptive_choice_outcome_counts(
+        responses,
+        choice_labels,
+        grading_mode,
+        manual_analytics
+      )
+
+    denominator =
+      if multiple_selection do
+        Enum.reduce(counts, 0, fn {_label, count}, total -> total + count end)
+      else
+        Enum.reduce(responses, 0, fn response_summary, total -> total + response_summary.count end)
+      end
+
+    %{
+      kind: :choice_distribution,
+      prompt: prompt,
+      description:
+        if(multiple_selection,
+          do: "Selections across all responses",
+          else: "Selected choice distribution"
+        ),
+      summary:
+        if(multiple_selection,
+          do:
+            "Each bar shows how often learners included that option when responding to this input.",
+          else: "Each bar shows how many learners selected that option."
+        ),
+      denominator_count: denominator,
+      denominator_label: if(multiple_selection, do: "selections", else: "responses"),
+      native_key_note:
+        if(grading_mode == :manual and has_correctness_metadata,
+          do:
+            "Green answer-key badges show the native correct option. Credit-award badges show the recorded instructor grading decision.",
+          else: nil
+        ),
+      choices:
+        Enum.with_index(choice_labels)
+        |> Enum.map(fn {label, index} ->
+          count = Map.get(counts, label, 0)
+          native_correct = Enum.at(correct_answers, index, false) == true
+
+          correctness =
+            adaptive_choice_correctness(
+              grading_mode,
+              has_correctness_metadata,
+              native_correct,
+              Map.get(outcome_counts, label, %{})
+            )
+
+          %{
+            label: label,
+            count: count,
+            ratio: ratio(count, denominator),
+            native_correct: native_correct,
+            correctness: correctness,
+            correct: correctness == true
+          }
+        end)
+    }
+  end
+
+  defp build_adaptive_dropdown_distribution(
+         part,
+         responses,
+         prompt,
+         grading_mode,
+         manual_analytics
+       ) do
+    config = Map.get(part, "custom", %{})
+    option_labels = Map.get(config, "optionLabels", [])
+    correct_index = get_in(part, ["custom", "correctAnswer"]) |> normalize_adaptive_choice_index()
+    has_correctness_metadata = not is_nil(correct_index)
+
+    counts =
+      Enum.reduce(responses, %{}, fn response_summary, acc ->
+        labels =
+          response_summary.response
+          |> decode_adaptive_response_tokens()
+          |> resolve_adaptive_choice_labels(option_labels)
+
+        Enum.reduce(labels, acc, fn label, inner ->
+          Map.update(inner, label, response_summary.count, &(&1 + response_summary.count))
+        end)
+      end)
+
+    outcome_counts =
+      adaptive_choice_outcome_counts(
+        responses,
+        option_labels,
+        grading_mode,
+        manual_analytics
+      )
+
+    denominator =
+      Enum.reduce(responses, 0, fn response_summary, total -> total + response_summary.count end)
+
+    %{
+      kind: :choice_distribution,
+      prompt: prompt,
+      description: blank_to_nil(Map.get(config, "prompt")) || "Selected option distribution",
+      summary: "Each bar shows how many learners selected that option.",
+      denominator_count: denominator,
+      denominator_label: "responses",
+      native_key_note:
+        if(grading_mode == :manual and has_correctness_metadata,
+          do:
+            "Green answer-key badges show the native correct option. Credit-award badges show the recorded instructor grading decision.",
+          else: nil
+        ),
+      choices:
+        Enum.with_index(option_labels, 1)
+        |> Enum.map(fn {label, index} ->
+          count = Map.get(counts, label, 0)
+          native_correct = correct_index == index
+
+          correctness =
+            adaptive_choice_correctness(
+              grading_mode,
+              has_correctness_metadata,
+              native_correct,
+              Map.get(outcome_counts, label, %{})
+            )
+
+          %{
+            label: label,
+            count: count,
+            ratio: ratio(count, denominator),
+            native_correct: native_correct,
+            correctness: correctness,
+            correct: correctness == true
+          }
+        end)
+    }
+  end
+
+  defp build_adaptive_correctness_distribution(_resource_summary, prompt) do
+    %{
+      kind: :correctness_distribution,
+      prompt: prompt,
+      description: "Aggregate performance for this input",
+      summary:
+        "Use the outcome breakdown to see how often learners answer this input correctly on the first try, recover after retrying, or continue to struggle."
+    }
+  end
+
+  defp adaptive_correctness_metrics(
+         _part,
+         _responses,
+         _resource_summary,
+         :manual,
+         manual_analytics
+       ) do
+    case manual_analytics do
+      nil ->
+        %{
+          first_attempt_pct: 0,
+          all_attempt_pct: 0,
+          first_attempt_total_count: 0,
+          first_attempt_correct_count: 0,
+          attempt_total_count: 0,
+          correct_count: 0,
+          outcome_buckets: [],
+          grading_pending: true,
+          grading_pending_message:
+            "No grading has been recorded for this manually graded input yet. Metrics will appear after instructor grading is saved."
+        }
+
+      %{attempt_count: 0} ->
+        %{
+          first_attempt_pct: 0,
+          all_attempt_pct: 0,
+          first_attempt_total_count: 0,
+          first_attempt_correct_count: 0,
+          attempt_total_count: 0,
+          correct_count: 0,
+          outcome_buckets: [],
+          grading_pending: true,
+          grading_pending_message:
+            "No grading has been recorded for this manually graded input yet. Metrics will appear after instructor grading is saved."
+        }
+
+      %{
+        first_attempt_correct_count: first_attempt_correct_count,
+        first_attempt_count: first_attempt_count,
+        correct_count: correct_count,
+        attempt_count: attempt_count
+      } ->
+        retry_correct_count = max(correct_count - first_attempt_correct_count, 0)
+        incorrect_count = max(attempt_count - correct_count, 0)
+
+        %{
+          first_attempt_pct: ratio(first_attempt_correct_count, first_attempt_count),
+          all_attempt_pct: ratio(correct_count, attempt_count),
+          first_attempt_total_count: first_attempt_count,
+          first_attempt_correct_count: first_attempt_correct_count,
+          attempt_total_count: attempt_count,
+          correct_count: correct_count,
+          outcome_buckets: [
+            %{
+              label: "Correct on first try",
+              count: first_attempt_correct_count,
+              ratio: ratio(first_attempt_correct_count, attempt_count),
+              fill_class: "bg-emerald-500 dark:bg-emerald-400"
+            },
+            %{
+              label: "Correct after retry",
+              count: retry_correct_count,
+              ratio: ratio(retry_correct_count, attempt_count),
+              fill_class: "bg-violet-500 dark:bg-violet-400"
+            },
+            %{
+              label: "Still incorrect / incomplete",
+              count: incorrect_count,
+              ratio: ratio(incorrect_count, attempt_count),
+              fill_class: "bg-amber-500 dark:bg-amber-400"
+            }
+          ],
+          grading_pending: false,
+          grading_pending_message: nil
+        }
+    end
+  end
+
+  defp adaptive_correctness_metrics(
+         part,
+         responses,
+         resource_summary,
+         _grading_mode,
+         _manual_analytics
+       ) do
+    case adaptive_choice_correct_count(part, responses) do
+      nil ->
+        %{
+          first_attempt_pct:
+            safe_percentage(resource_summary, :num_first_attempts_correct, :num_first_attempts),
+          all_attempt_pct: safe_percentage(resource_summary, :num_correct, :num_attempts),
+          first_attempt_total_count: Map.get(resource_summary || %{}, :num_first_attempts, 0),
+          first_attempt_correct_count:
+            Map.get(resource_summary || %{}, :num_first_attempts_correct, 0),
+          attempt_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
+          correct_count: Map.get(resource_summary || %{}, :num_correct, 0),
+          outcome_buckets: adaptive_outcome_buckets(resource_summary),
+          grading_pending: false,
+          grading_pending_message: nil
+        }
+
+      correct_count ->
+        attempt_count =
+          max(
+            Map.get(resource_summary || %{}, :num_attempts, 0),
+            Enum.reduce(responses, 0, fn response_summary, acc -> acc + response_summary.count end)
+          )
+
+        first_attempt_total =
+          case Map.get(resource_summary || %{}, :num_first_attempts, 0) do
+            0 -> attempt_count
+            total -> total
+          end
+
+        {first_try_count, correct_count} =
+          if adaptive_auto_choice_missing_correctness?(part) do
+            {first_attempt_total, attempt_count}
+          else
+            first_try_count =
+              Map.get(resource_summary || %{}, :num_first_attempts_correct, 0)
+              |> min(correct_count)
+              |> min(first_attempt_total)
+
+            {first_try_count, min(correct_count, attempt_count)}
+          end
+
+        retry_correct_count = max(correct_count - first_try_count, 0)
+        incorrect_count = max(attempt_count - correct_count, 0)
+
+        %{
+          first_attempt_pct: ratio(first_try_count, first_attempt_total),
+          all_attempt_pct: ratio(correct_count, attempt_count),
+          first_attempt_total_count: first_attempt_total,
+          first_attempt_correct_count: first_try_count,
+          attempt_total_count: attempt_count,
+          correct_count: correct_count,
+          outcome_buckets: [
+            %{
+              label: "Correct on first try",
+              count: first_try_count,
+              ratio: ratio(first_try_count, attempt_count),
+              fill_class: "bg-emerald-500 dark:bg-emerald-400"
+            },
+            %{
+              label: "Correct after retry",
+              count: retry_correct_count,
+              ratio: ratio(retry_correct_count, attempt_count),
+              fill_class: "bg-violet-500 dark:bg-violet-400"
+            },
+            %{
+              label: "Still incorrect / incomplete",
+              count: incorrect_count,
+              ratio: ratio(incorrect_count, attempt_count),
+              fill_class: "bg-amber-500 dark:bg-amber-400"
+            }
+          ],
+          grading_pending: false,
+          grading_pending_message: nil
+        }
+    end
+  end
+
+  defp adaptive_choice_correct_count(part, responses) do
+    case {adaptive_part_grading_mode(part), Map.get(part, "type")} do
+      {:automatic, "janus-mcq"} ->
+        total_count =
+          Enum.reduce(responses, 0, fn response_summary, acc -> acc + response_summary.count end)
+
+        correct_indexes =
+          part
+          |> get_in(["custom", "correctAnswer"])
+          |> List.wrap()
+          |> Enum.with_index(1)
+          |> Enum.flat_map(fn
+            {true, index} -> [Integer.to_string(index)]
+            _ -> []
+          end)
+          |> MapSet.new()
+
+        multiple_selection = get_in(part, ["custom", "multipleSelection"]) == true
+
+        if MapSet.size(correct_indexes) == 0 do
+          total_count
+        else
+          Enum.reduce(responses, 0, fn response_summary, acc ->
+            if adaptive_mcq_response_correct?(
+                 response_summary.response,
+                 correct_indexes,
+                 multiple_selection
+               ) do
+              acc + response_summary.count
+            else
+              acc
+            end
+          end)
+        end
+
+      {:automatic, "janus-dropdown"} ->
+        total_count =
+          Enum.reduce(responses, 0, fn response_summary, acc -> acc + response_summary.count end)
+
+        correct_index =
+          part
+          |> get_in(["custom", "correctAnswer"])
+          |> normalize_adaptive_choice_index()
+
+        if is_nil(correct_index) do
+          total_count
+        else
+          Enum.reduce(responses, 0, fn response_summary, acc ->
+            tokens = decode_adaptive_response_tokens(response_summary.response)
+
+            if tokens == [Integer.to_string(correct_index)] do
+              acc + response_summary.count
+            else
+              acc
+            end
+          end)
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp adaptive_mcq_has_correctness_metadata?(correct_answers) do
+    correct_answers
+    |> List.wrap()
+    |> Enum.any?(fn answer -> answer in [true, false] end)
+  end
+
+  defp adaptive_auto_choice_missing_correctness?(part) do
+    case {adaptive_part_grading_mode(part), Map.get(part, "type")} do
+      {:automatic, "janus-mcq"} ->
+        not adaptive_mcq_has_correctness_metadata?(get_in(part, ["custom", "correctAnswer"]))
+
+      {:automatic, "janus-dropdown"} ->
+        is_nil(get_in(part, ["custom", "correctAnswer"]) |> normalize_adaptive_choice_index())
+
+      _ ->
+        false
+    end
+  end
+
+  defp adaptive_choice_outcome_counts(_responses, _labels, :automatic, _manual_analytics), do: %{}
+
+  defp adaptive_choice_outcome_counts(responses, choice_labels, :manual, _manual_analytics) do
+    Enum.reduce(responses, %{}, fn response_summary, acc ->
+      labels =
+        response_summary.response
+        |> decode_adaptive_response_tokens()
+        |> resolve_adaptive_choice_labels(choice_labels)
+
+      Enum.reduce(labels, acc, fn label, inner ->
+        Map.update(
+          inner,
+          label,
+          %{
+            correct: Map.get(response_summary, :correct_count, 0),
+            incorrect: Map.get(response_summary, :incorrect_count, 0),
+            partial: Map.get(response_summary, :partial_count, 0)
+          },
+          fn counts ->
+            %{
+              correct: counts.correct + Map.get(response_summary, :correct_count, 0),
+              incorrect: counts.incorrect + Map.get(response_summary, :incorrect_count, 0),
+              partial: counts.partial + Map.get(response_summary, :partial_count, 0)
+            }
+          end
+        )
+      end)
+    end)
+  end
+
+  defp adaptive_choice_correctness(:automatic, false, _explicit_correct, _outcome_counts),
+    do: true
+
+  defp adaptive_choice_correctness(:automatic, true, true, _outcome_counts), do: true
+  defp adaptive_choice_correctness(:automatic, true, false, _outcome_counts), do: false
+
+  defp adaptive_choice_correctness(
+         :manual,
+         _has_correctness_metadata,
+         _explicit_correct,
+         outcome_counts
+       ) do
+    correct = Map.get(outcome_counts, :correct, 0)
+    incorrect = Map.get(outcome_counts, :incorrect, 0)
+    partial = Map.get(outcome_counts, :partial, 0)
+
+    cond do
+      partial > 0 -> :partial
+      correct > 0 and incorrect > 0 -> :partial
+      correct > 0 -> true
+      incorrect > 0 -> false
+      true -> nil
+    end
+  end
+
+  defp adaptive_mcq_response_correct?(response, correct_indexes, multiple_selection) do
+    selected =
+      response
+      |> decode_adaptive_response_tokens()
+      |> MapSet.new()
+
+    if multiple_selection do
+      MapSet.equal?(selected, correct_indexes)
+    else
+      MapSet.size(selected) == 1 and MapSet.equal?(selected, correct_indexes)
+    end
+  end
+
+  defp normalize_adaptive_choice_index(value) when is_integer(value) and value > 0, do: value
+
+  defp normalize_adaptive_choice_index(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {parsed, ""} when parsed > 0 -> parsed
+      _ -> nil
+    end
+  end
+
+  defp normalize_adaptive_choice_index(_), do: nil
+
+  defp classify_manual_score(score, out_of) do
+    out_of =
+      case out_of do
+        nil -> 1.0
+        0 -> 1.0
+        value -> value
+      end
+
+    cond do
+      score <= 0 -> :incorrect
+      score >= out_of -> :correct
+      true -> :partial
+    end
+  end
+
+  defp fetch_adaptive_manual_part_analytics(
+         section_id,
+         revisions_by_resource_id,
+         activity_types_map
+       ) do
+    adaptive_type_id =
+      Enum.find_value(activity_types_map, fn {id, registration} ->
+        if Map.get(registration, :slug) == "oli_adaptive", do: id
+      end)
+
+    adaptive_activity_ids =
+      revisions_by_resource_id
+      |> Enum.filter(fn {_resource_id, revision} ->
+        revision.activity_type_id == adaptive_type_id
+      end)
+      |> Enum.map(fn {resource_id, _revision} -> resource_id end)
+
+    if adaptive_activity_ids == [] do
+      %{}
+    else
+      from(aa in ActivityAttempt,
+        join: pa1 in PartAttempt,
+        on: aa.id == pa1.activity_attempt_id,
+        left_join: pa2 in PartAttempt,
+        on:
+          pa1.activity_attempt_id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and
+            pa1.id < pa2.id,
+        join: ra in ResourceAttempt,
+        on: ra.id == aa.resource_attempt_id,
+        join: rac in ResourceAccess,
+        on: rac.id == ra.resource_access_id,
+        join: revision in Revision,
+        on: revision.id == aa.revision_id,
+        where: rac.section_id == ^section_id,
+        where: aa.resource_id in ^adaptive_activity_ids,
+        where: is_nil(pa2),
+        where: pa1.grading_approach == :manual,
+        where: pa1.lifecycle_state == :evaluated,
+        where: not is_nil(pa1.score),
+        select: %{
+          activity_id: aa.resource_id,
+          activity_attempt_number: aa.attempt_number,
+          user_id: rac.user_id,
+          part_attempt: pa1,
+          revision: revision
+        }
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn row, acc ->
+        part_attempt = Map.put(row.part_attempt, :activity_revision, row.revision)
+        response_label = ResponseLabel.build(part_attempt, "oli_adaptive")
+        key = {row.activity_id, part_attempt.part_id}
+        correct = part_attempt.score == part_attempt.out_of
+        first_attempt = part_attempt.attempt_number == 1
+        score_classification = classify_manual_score(part_attempt.score, part_attempt.out_of)
+
+        response_entry = %{
+          activity_id: row.activity_id,
+          part_id: part_attempt.part_id,
+          response: response_label.response,
+          label: response_label.label,
+          count: 1,
+          users: [],
+          correct_count: if(score_classification == :correct, do: 1, else: 0),
+          incorrect_count: if(score_classification == :incorrect, do: 1, else: 0),
+          partial_count: if(score_classification == :partial, do: 1, else: 0)
+        }
+
+        Map.update(
+          acc,
+          key,
+          %{
+            responses: [response_entry],
+            student_ids: MapSet.new([row.user_id]),
+            first_attempt_student_ids:
+              if(first_attempt, do: MapSet.new([row.user_id]), else: MapSet.new()),
+            attempt_count: 1,
+            correct_count: if(correct, do: 1, else: 0),
+            first_attempt_count: if(first_attempt, do: 1, else: 0),
+            first_attempt_correct_count: if(first_attempt and correct, do: 1, else: 0)
+          },
+          fn analytics ->
+            %{
+              analytics
+              | responses: merge_manual_response_counts(analytics.responses, response_entry),
+                student_ids: MapSet.put(analytics.student_ids, row.user_id),
+                first_attempt_student_ids:
+                  if(
+                    first_attempt,
+                    do: MapSet.put(analytics.first_attempt_student_ids, row.user_id),
+                    else: analytics.first_attempt_student_ids
+                  ),
+                attempt_count: analytics.attempt_count + 1,
+                correct_count: analytics.correct_count + if(correct, do: 1, else: 0),
+                first_attempt_count:
+                  analytics.first_attempt_count + if(first_attempt, do: 1, else: 0),
+                first_attempt_correct_count:
+                  analytics.first_attempt_correct_count +
+                    if(first_attempt and correct, do: 1, else: 0)
+            }
+          end
+        )
+      end)
+    end
+  end
+
+  defp merge_manual_response_counts(existing, incoming) do
+    case Enum.find_index(existing, &(&1.response == incoming.response)) do
+      nil ->
+        existing ++ [incoming]
+
+      index ->
+        List.update_at(existing, index, fn response ->
+          %{
+            response
+            | count: response.count + incoming.count,
+              label: Map.get(response, :label) || Map.get(incoming, :label),
+              correct_count:
+                Map.get(response, :correct_count, 0) + Map.get(incoming, :correct_count, 0),
+              incorrect_count:
+                Map.get(response, :incorrect_count, 0) + Map.get(incoming, :incorrect_count, 0),
+              partial_count:
+                Map.get(response, :partial_count, 0) + Map.get(incoming, :partial_count, 0)
+          }
+        end)
+    end
+  end
+
+  defp adaptive_outcome_buckets(resource_summary) do
+    first_try_count = Map.get(resource_summary || %{}, :num_first_attempts_correct, 0)
+    correct_count = Map.get(resource_summary || %{}, :num_correct, 0)
+    attempt_count = Map.get(resource_summary || %{}, :num_attempts, 0)
+    retry_correct_count = max(correct_count - first_try_count, 0)
+    incorrect_count = max(attempt_count - correct_count, 0)
+
+    [
+      %{
+        label: "Correct on first try",
+        count: first_try_count,
+        ratio: ratio(first_try_count, attempt_count),
+        fill_class: "bg-emerald-500 dark:bg-emerald-400"
+      },
+      %{
+        label: "Correct after retry",
+        count: retry_correct_count,
+        ratio: ratio(retry_correct_count, attempt_count),
+        fill_class: "bg-violet-500 dark:bg-violet-400"
+      },
+      %{
+        label: "Still incorrect / incomplete",
+        count: incorrect_count,
+        ratio: ratio(incorrect_count, attempt_count),
+        fill_class: "bg-amber-500 dark:bg-amber-400"
+      }
+    ]
+  end
+
+  defp aggregate_adaptive_activity_metrics(input_summaries) do
+    totals =
+      Enum.reduce(
+        input_summaries,
+        %{first_attempt_total: 0, first_attempt_correct: 0, attempts: 0, correct: 0},
+        fn summary, acc ->
+          if Map.get(summary, :grading_pending, false) do
+            acc
+          else
+            %{
+              first_attempt_total:
+                acc.first_attempt_total + Map.get(summary, :first_attempt_total_count, 0),
+              first_attempt_correct:
+                acc.first_attempt_correct + Map.get(summary, :first_attempt_correct_count, 0),
+              attempts: acc.attempts + Map.get(summary, :attempt_total_count, 0),
+              correct: acc.correct + Map.get(summary, :correct_count, 0)
+            }
+          end
+        end
+      )
+
+    %{
+      first_attempt_pct: ratio(totals.first_attempt_correct, totals.first_attempt_total),
+      all_attempt_pct: ratio(totals.correct, totals.attempts)
+    }
+  end
+
+  defp extract_adaptive_choice_labels(config) do
+    Map.get(config, "mcqItems", [])
+    |> Enum.map(fn item ->
+      item
+      |> Map.get("nodes", [])
+      |> extract_adaptive_rich_text()
+      |> blank_to_nil()
+      |> case do
+        nil -> "Option"
+        label -> label
+      end
+    end)
+  end
+
+  defp extract_adaptive_rich_text(nodes) when is_list(nodes) do
+    nodes
+    |> Enum.map(&extract_adaptive_rich_text/1)
+    |> Enum.join("")
+  end
+
+  defp extract_adaptive_rich_text(%{"text" => text}) when is_binary(text), do: text
+
+  defp extract_adaptive_rich_text(%{"children" => children}) when is_list(children),
+    do: extract_adaptive_rich_text(children)
+
+  defp extract_adaptive_rich_text(%{"nodes" => nodes}) when is_list(nodes),
+    do: extract_adaptive_rich_text(nodes)
+
+  defp extract_adaptive_rich_text(%{"content" => content}) when is_list(content),
+    do: extract_adaptive_rich_text(content)
+
+  defp extract_adaptive_rich_text(_), do: ""
+
+  defp decode_adaptive_response_tokens(nil), do: []
+
+  defp decode_adaptive_response_tokens(response) when is_binary(response) do
+    trimmed = String.trim(response)
+
+    cond do
+      trimmed == "" ->
+        []
+
+      true ->
+        case Jason.decode(trimmed) do
+          {:ok, decoded} -> normalize_adaptive_response_tokens(decoded)
+          _ -> normalize_adaptive_response_tokens(trimmed)
+        end
+    end
+  end
+
+  defp decode_adaptive_response_tokens(response),
+    do: normalize_adaptive_response_tokens(response)
+
+  defp adaptive_response_display_label(response_summary) do
+    first_present([
+      Map.get(response_summary, :label),
+      blank_to_nil(Map.get(response_summary, :response))
+    ]) || "No response"
+  end
+
+  defp adaptive_response_supporting_text(response_summary, display_label) do
+    raw_response = blank_to_nil(Map.get(response_summary, :response))
+    label = blank_to_nil(Map.get(response_summary, :label))
+
+    cond do
+      is_nil(raw_response) ->
+        nil
+
+      is_nil(label) ->
+        nil
+
+      raw_response == display_label ->
+        nil
+
+      raw_response == label ->
+        nil
+
+      true ->
+        "Recorded value: #{raw_response}"
+    end
+  end
+
+  defp adaptive_numeric_value(response_summary) do
+    response_summary
+    |> adaptive_response_display_label()
+    |> String.replace(~r/[,%]/, "")
+    |> blank_to_nil()
+    |> case do
+      nil ->
+        nil
+
+      value ->
+        case Float.parse(value) do
+          {numeric_value, ""} -> numeric_value
+          _ -> nil
+        end
+    end
+  end
+
+  defp adaptive_numeric_description(part) do
+    case Map.get(part, "type") do
+      "janus-slider" -> "Ordered slider value distribution"
+      "janus-text-slider" -> "Ordered text slider value distribution"
+      _ -> "Ordered numeric response distribution"
+    end
+  end
+
+  defp adaptive_numeric_label(value) when is_integer(value), do: Integer.to_string(value)
+
+  defp adaptive_numeric_label(value) when is_float(value) do
+    if Float.floor(value) == value do
+      value |> round() |> Integer.to_string()
+    else
+      :erlang.float_to_binary(value, decimals: 2)
+    end
+  end
+
+  defp normalize_adaptive_response_tokens(value) when is_list(value) do
+    Enum.flat_map(value, &normalize_adaptive_response_tokens/1)
+  end
+
+  defp normalize_adaptive_response_tokens(value) when is_integer(value),
+    do: [Integer.to_string(value)]
+
+  defp normalize_adaptive_response_tokens(value) when is_float(value),
+    do: [to_string(round(value))]
+
+  defp normalize_adaptive_response_tokens(value) when is_binary(value) do
+    value
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  defp normalize_adaptive_response_tokens(%{"input" => input}),
+    do: normalize_adaptive_response_tokens(input)
+
+  defp normalize_adaptive_response_tokens(%{input: input}),
+    do: normalize_adaptive_response_tokens(input)
+
+  defp normalize_adaptive_response_tokens(_), do: []
+
+  defp resolve_adaptive_choice_labels(tokens, labels) do
+    tokens
+    |> Enum.map(fn token ->
+      cond do
+        token in labels ->
+          token
+
+        is_integer_string?(token) ->
+          token
+          |> String.to_integer()
+          |> then(fn index -> Enum.at(labels, index - 1) end)
+
+        true ->
+          Enum.find(labels, fn label -> String.contains?(token, label) end)
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp is_integer_string?(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {_, ""} -> true
+      _ -> false
+    end
+  end
+
+  defp ratio(_count, denominator) when denominator <= 0, do: 0
+  defp ratio(count, denominator), do: count / denominator
+
+  defp first_present(values) do
+    Enum.find(values, fn value -> not is_nil(blank_to_nil(value)) end)
+  end
+
+  defp blank_to_nil(nil), do: nil
+
+  defp blank_to_nil(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp blank_to_nil(value), do: value
 
   # This is only used by the multi-input
   defp update_choices_frequencies(activity_attempt, response_summaries) do

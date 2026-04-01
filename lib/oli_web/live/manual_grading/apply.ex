@@ -8,7 +8,9 @@ defmodule OliWeb.ManualGrading.Apply do
     ~H"""
     <div class="flex justify-center">
       <button
-        class="inline-flex h-10 items-center justify-center rounded-md bg-Fill-Buttons-fill-primary px-5 text-sm font-semibold text-Text-text-white transition-colors hover:bg-Fill-Buttons-fill-primary-hover disabled:cursor-not-allowed disabled:bg-Icons-Icons-icon-disabled disabled:text-Text-text-disabled"
+        type="button"
+        aria-disabled={@disabled}
+        class="inline-flex h-10 items-center justify-center rounded-md bg-Fill-Buttons-fill-primary px-5 text-sm font-semibold text-Text-text-white transition-colors hover:bg-Fill-Buttons-fill-primary-hover disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50 disabled:bg-Icons-Icons-icon-disabled disabled:text-Text-text-disabled"
         disabled={@disabled}
         phx-click={@apply}
       >
