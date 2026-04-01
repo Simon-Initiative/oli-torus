@@ -1,0 +1,205 @@
+version: 1
+feature: clickhouse_bulk_backfill_improvements
+generated_from: prd.md
+requirements:
+- title: The admin UI shall enforce terminal and transitional backfill run action
+    availability based on authoritative run lifecycle state.
+  status: proposed
+  acceptance_criteria:
+  - title: Given a cancelled backfill run, when an administrator views the run details,
+      then the UI does not show a `Resume` action and does not offer `Delete Run`
+      until all background cleanup has fully settled.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given a paused backfill run, when an administrator views the run details,
+      then the UI shows `Resume` and `Cancel`.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given a run is completed, when an administrator views the run details,
+      then the UI shows `Delete Run` and does not show `Pause`, `Cancel`, or `Resume`.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given a cancelled run whose background cleanup has fully settled, when
+      an administrator views the run details, then the UI shows `Delete Run` as
+      the available terminal cleanup action.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  id: FR-001
+- title: The admin UI shall represent in-progress pause and cancel requests as disabled
+    controls until the underlying state transition completes.
+  status: proposed
+  acceptance_criteria:
+  - title: Given an administrator initiates pause on an active run, when the pause
+      request is pending, then the visible `Pause` and `Cancel` controls remain shown
+      but disabled until the run reaches a paused or terminal state.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given an administrator initiates cancel on a pausable or paused run, when
+      the cancel request is pending, then the visible action controls remain shown
+      but disabled until the run reaches a cancelled or terminal state.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  id: FR-002
+- title: Batch retry shall resume from the failed chunk and preserve already completed
+    chunk progress within the same batch.
+  status: proposed
+  acceptance_criteria:
+  - title: Given a batch fails after one or more chunks have already succeeded, when
+      an administrator retries the batch, then processing resumes at the failed chunk
+      boundary instead of restarting the batch from chunk one.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given a retried batch resumes from a failed chunk, when the batch completes,
+      then previously completed chunks are not duplicated in ClickHouse as a side
+      effect of the retry flow.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  id: FR-003
+- title: A failed batch shall not block unrelated running or future batches from continuing
+    to process within the same backfill run.
+  status: proposed
+  acceptance_criteria:
+  - title: Given one batch in a run fails, when other batches are currently running,
+      then those batches continue toward completion unless they fail independently.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given one batch in a run fails, when additional batches are eligible to
+      start later, then those batches can still be scheduled and processed without
+      requiring the failed batch to be resolved first.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  id: FR-004
+- title: The admin UI shall show authoritative batch and run statuses and sufficiently
+    current in-progress metrics for active operational monitoring.
+  status: proposed
+  acceptance_criteria:
+  - title: Given a batch is actively making progress, when an administrator observes
+      the run UI, then the status shown for that batch does not remain stale as `Queued`
+      or another contradictory state.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given a backfill run is still in progress, when rows are inserted or batches
+      advance, then run metrics update incrementally without waiting for full run
+      completion.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given chunk-level progress events are emitted while a run is active, when
+      the admin UI is open, then LiveView updates batch status and in-progress metrics
+      from those events without waiting for a full page refresh.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given the system cannot provide exact real-time metrics for a displayed
+      value, when the UI shows that metric, then the value is either refreshed within
+      the documented freshness target or clearly represented as partial or pending
+      rather than falsely precise.
+    status: proposed
+    verification_method: manual
+    proofs: []
+  id: FR-005
+- title: The admin UI shall use warning-consistent styling and safe confirmation flows
+    for operational controls.
+  status: proposed
+  acceptance_criteria:
+  - title: Given `Pause` and `Cancel` are both shown for a run, when the controls
+      are rendered, then `Pause` uses the neutral gray style and `Cancel` uses the
+      warning style.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given an administrator initiates a ClickHouse database reset from the analytics
+      dashboard, when the confirmation modal appears, then it warns about the destructive
+      action and requires the exact database name to be entered before reset can proceed.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given an administrator runs a ClickHouse database task from the analytics
+      dashboard, when the task is executing or finishes, then the UI shows detailed
+      progress, success, and error messages for that operation.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  id: FR-006
+- title: The ClickHouse analytics dashboard shall expose authorized database task
+    controls for supported operational actions.
+  status: proposed
+  acceptance_criteria:
+  - title: Given an authorized administrator opens the ClickHouse analytics dashboard,
+      when ClickHouse operational actions are available, then the dashboard shows
+      controls for migrate up, migrate down, and initialize database when needed.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given the ClickHouse database has not yet been initialized, when an authorized
+      administrator views the dashboard, then the initialize action is visibly available
+      and clearly identified as the prerequisite task.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given the ClickHouse instance is reachable and the database has not yet
+      been initialized, when an authorized administrator views the dashboard, then
+      the initialize action is enabled.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given the ClickHouse instance is unreachable or the database is already
+      initialized, when an authorized administrator views the dashboard, then the
+      initialize action is not enabled.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given an authorized administrator opens the ClickHouse analytics dashboard,
+      when the page renders available operations, then create database, drop database,
+      and reset database are not exposed in the UI.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  id: FR-007
+- title: The work item shall begin with a design audit of the bulk backfill feature
+    and job orchestration that recommends concrete improvements for reliability,
+    repeatability, observability, and a minimal but admin-tunable control dashboard.
+  status: proposed
+  acceptance_criteria:
+  - title: Given the current bulk backfill implementation and orchestration paths,
+      when the design audit is completed, then it documents concrete recommendations
+      for failure handling, retry behavior, state propagation, observability, and
+      which operator controls should remain exposed or intentionally excluded.
+    status: proposed
+    verification_method: manual
+    proofs: []
+  - title: Given the design audit recommendations, when implementation planning proceeds,
+      then the proposed admin controls remain intentionally minimal and each exposed
+      tunable control has an operational justification.
+    status: proposed
+    verification_method: manual
+    proofs: []
+  id: FR-008
+- title: The canonical task module namespace shall be `Oli.Clickhouse.Tasks`, and
+    all relevant code and documentation references shall be updated consistently.
+  status: proposed
+  acceptance_criteria:
+  - title: Given existing references to `Oli.ClickHouse.Tasks`, when this work is
+      implemented, then those references are updated to `Oli.Clickhouse.Tasks` in
+      code and relevant documentation.
+    status: proposed
+    verification_method: automated
+    proofs: []
+  - title: Given an engineer or operator reads the updated product and operational
+      documentation, when they look up the ClickHouse task module, then the documentation
+      consistently uses `Oli.Clickhouse.Tasks` as the canonical name.
+    status: proposed
+    verification_method: manual
+    proofs: []
+  id: FR-009
