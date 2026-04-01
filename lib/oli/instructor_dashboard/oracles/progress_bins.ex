@@ -23,7 +23,7 @@ defmodule Oli.InstructorDashboard.Oracles.ProgressBins do
   def key, do: :oracle_instructor_progress_bins
 
   @impl true
-  def version, do: 1
+  def version, do: 2
 
   @impl true
   def load(%OracleContext{} = context, opts) do
