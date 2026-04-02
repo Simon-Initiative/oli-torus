@@ -272,6 +272,7 @@ defmodule OliWeb.Components.Delivery.Pages do
               {:ok,
                socket
                |> assign(table_model: table_model)
+               |> maybe_preload_initial_activity_details(rows)
                |> assign_activity_details_state()
                |> maybe_schedule_repair_poll()}
           end
@@ -799,6 +800,24 @@ defmodule OliWeb.Components.Delivery.Pages do
   defp maybe_load_activity_summary(socket, activity_id) do
     load_activity_summary(socket, activity_id, maybe_enqueue_repair: true)
   end
+
+  defp maybe_preload_initial_activity_details(
+         %{assigns: %{active_tab: :practice_pages, expanded_activity_ids: expanded_activity_ids}} =
+           socket,
+         [first_activity | _]
+       ) do
+    if MapSet.size(expanded_activity_ids) == 0 do
+      socket
+      |> maybe_load_activity_summary(first_activity.resource_id)
+      |> assign(
+        expanded_activity_ids: MapSet.put(expanded_activity_ids, first_activity.resource_id)
+      )
+    else
+      socket
+    end
+  end
+
+  defp maybe_preload_initial_activity_details(socket, _rows), do: socket
 
   defp load_activity_summary(socket, activity_id, opts) do
     %{
