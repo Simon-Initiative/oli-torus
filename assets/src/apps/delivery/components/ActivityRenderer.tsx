@@ -705,7 +705,19 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   if (!isReady) {
     return null;
   }
-  return React.createElement(activity.activityType?.delivery_element, elementProps, null);
+
+  const deliveryElement = activity.activityType?.delivery_element;
+
+  if (!deliveryElement) {
+    console.warn('ActivityRenderer could not resolve delivery element', {
+      activityId: activity.id,
+      resourceId: activity.resourceId,
+      activityType: activity.activityType,
+    });
+    return null;
+  }
+
+  return React.createElement(deliveryElement, elementProps, null);
 };
 
 export default ActivityRenderer;

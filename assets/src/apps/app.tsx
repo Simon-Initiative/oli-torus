@@ -40,8 +40,6 @@ export function registerApplication(
 ) {
   // FUTURE CONSIDERATION: Currently, all apps use the same common redux store. It may become necessary to customize that in the future.
 
-  console.info('Registering OLI App', name);
-
   const target = reduxStore ? wrapWithRedux(Component, name, reduxStore) : Component;
 
   // Expose other libraries to server-side rendered templates

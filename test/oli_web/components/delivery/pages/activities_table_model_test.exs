@@ -41,6 +41,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
       data: %{
         selected_activities: [current_activity],
         expanded_activity_ids: MapSet.new([2]),
+        scripts: ["/js/janus_mcq_delivery.js"],
         target: nil
       }
     }
@@ -53,6 +54,44 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
     assert html =~ ~s(phx-hook="LoadSurveyScripts")
     assert html =~ ~s(data-preview-activity-bridge="true")
+    assert html =~ ~s(data-script-sources="[&quot;/js/janus_mcq_delivery.js&quot;]")
+  end
+
+  test "render_assessment_details falls back to cached activity summaries when selected activities are empty" do
+    assessment = %{
+      title: "Welcome Screen",
+      resource_id: 9,
+      content: %{"partsLayout" => []}
+    }
+
+    cached_activity = %{
+      resource_id: 9,
+      id: 9,
+      revision: %{activity_type_id: 1},
+      first_attempt_pct: 1.0,
+      all_attempt_pct: 0.5,
+      preview_rendered: "<div>cached preview</div>"
+    }
+
+    model = %{
+      data: %{
+        selected_activities: [],
+        activity_summary_cache: %{9 => cached_activity},
+        expanded_activity_ids: MapSet.new([9]),
+        scripts: [],
+        target: nil
+      }
+    }
+
+    html =
+      render_component(fn assigns ->
+        assigns = Map.merge(assigns, %{model: model, activity_types_map: %{}})
+        ActivitiesTableModel.render_assessment_details(assigns, assessment)
+      end)
+
+    assert html =~ "cached preview"
+    assert html =~ "100%"
+    assert html =~ "50%"
   end
 
   test "render_assessment_details defaults missing aggregate percentages to zero" do

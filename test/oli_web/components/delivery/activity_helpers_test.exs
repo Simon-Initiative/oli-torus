@@ -1113,6 +1113,65 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                end)
     end
 
+    test "handles adaptive choice inputs when per-part resource summary is missing" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 64,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_mcq",
+                  "type" => "janus-mcq",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{
+                    "title" => "Missing Summary MCQ",
+                    "correctAnswer" => [true, false],
+                    "mcqItems" => [
+                      %{"nodes" => [%{"text" => "Option 1"}]},
+                      %{"nodes" => [%{"text" => "Option 2"}]}
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [],
+          transformed_model: nil
+        }
+      ]
+
+      response_summaries = [
+        %{activity_id: 64, part_id: "part_mcq", response: "1", count: 1, users: []}
+      ]
+
+      [
+        %{
+          adaptive_input_summaries: [summary],
+          first_attempt_pct: first_attempt_pct,
+          all_attempt_pct: all_attempt_pct
+        }
+      ] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          response_summaries
+        )
+
+      assert first_attempt_pct == 0
+      assert all_attempt_pct == 1.0
+
+      assert summary.first_attempt_pct == 0
+      assert summary.all_attempt_pct == 1.0
+      assert summary.first_attempt_total_count == 1
+      assert summary.first_attempt_correct_count == 0
+      assert summary.attempt_total_count == 1
+      assert summary.correct_count == 1
+    end
+
     test "uses authoring.parts grading approach when partsLayout omits it" do
       adaptive_id = 99
 
@@ -1583,6 +1642,61 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
 
       assert html =~
                "Instructor grading awarded partial credit for submissions associated with this option."
+    end
+
+    test "renders distinct graphic colors for native answer key and awarded credit" do
+      html =
+        render_component(&ActivityHelpers.rendered_activity/1, %{
+          activity: %{
+            id: 57,
+            revision: %{activity_type_id: 99},
+            preview_rendered: "<div>preview</div>",
+            adaptive_input_summaries: [
+              %{
+                label: "Manual MCQ",
+                part_id: "part_mcq",
+                component_type: "Mcq",
+                grading_mode: :manual,
+                grading_mode_label: "Instructor Manual Grading",
+                response_count: 2,
+                student_count: 2,
+                attempt_count: 2,
+                first_attempt_pct: 1.0,
+                all_attempt_pct: 1.0,
+                grading_pending: false,
+                visualization: %{
+                  kind: :choice_distribution,
+                  prompt: "Manual MCQ",
+                  description: "Selected choice distribution",
+                  summary: "Each bar shows how many learners selected that option.",
+                  denominator_count: 2,
+                  denominator_label: "responses",
+                  choices: [
+                    %{
+                      label: "Option 1",
+                      count: 1,
+                      ratio: 0.5,
+                      native_correct: true,
+                      correctness: true
+                    },
+                    %{
+                      label: "Option 2",
+                      count: 1,
+                      ratio: 0.5,
+                      native_correct: false,
+                      correctness: true
+                    }
+                  ]
+                },
+                outcome_buckets: []
+              }
+            ]
+          },
+          activity_types_map: %{99 => %{slug: "oli_adaptive"}}
+        })
+
+      assert html =~ "from-emerald-500 to-sky-500"
+      assert html =~ "bg-sky-500 dark:bg-sky-400"
     end
 
     test "renders adaptive coverage with only unique responders" do

@@ -2,10 +2,11 @@ export const LoadSurveyScripts = {
   mounted() {
     const elem = this.el as HTMLElement;
     const head = document.querySelectorAll('head')[0];
-    this.handleEvent('load_survey_scripts', ({ script_sources }: { script_sources: string[] }) => {
-      const scriptPromises: Promise<void>[] = script_sources.map(
+
+    const loadScriptsAndInit = (scriptSources: string[], notifyLoaded: boolean) => {
+      const scriptPromises: Promise<void>[] = scriptSources.map(
         (source) =>
-          new Promise<void>((resolve, reject) => {
+          new Promise<void>((resolve) => {
             const isLoaded = Array.from(document.getElementsByTagName('script')).some((script) =>
               script.src.includes(source),
             );
@@ -21,6 +22,7 @@ export const LoadSurveyScripts = {
             }
           }),
       );
+
       Promise.all(scriptPromises)
         .then(() => {
           const usePreviewActivityBridge = elem.dataset.previewActivityBridge === 'true';
@@ -29,11 +31,30 @@ export const LoadSurveyScripts = {
             : window.OLI.initActivityBridge;
 
           initBridge(elem.id);
-          this.pushEventTo(`#${elem.id}`, 'survey_scripts_loaded');
+
+          if (notifyLoaded) {
+            this.pushEventTo(`#${elem.id}`, 'survey_scripts_loaded');
+          }
         })
         .catch(() => {
-          this.pushEventTo(`#${elem.id}`, 'survey_scripts_loaded', { error: true });
+          if (notifyLoaded) {
+            this.pushEventTo(`#${elem.id}`, 'survey_scripts_loaded', { error: true });
+          }
         });
+    };
+
+    const inlineScriptSources = elem.dataset.scriptSources;
+
+    if (inlineScriptSources) {
+      try {
+        loadScriptsAndInit(JSON.parse(inlineScriptSources), false);
+      } catch {
+        // Keep inline detail panes isolated from the parent LiveView.
+      }
+    }
+
+    this.handleEvent('load_survey_scripts', ({ script_sources }: { script_sources: string[] }) => {
+      loadScriptsAndInit(script_sources, true);
     });
   },
 };

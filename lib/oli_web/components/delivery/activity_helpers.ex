@@ -413,6 +413,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     round(value * 100)
   end
 
+  defp format_percentage_1(value) when is_integer(value) do
+    value
+    |> Kernel.*(100)
+    |> Kernel./(1)
+    |> Float.round(1)
+  end
+
+  defp format_percentage_1(value) when is_float(value) do
+    value
+    |> Kernel.*(100)
+    |> Float.round(1)
+  end
+
   def render_likert(assigns) do
     spec =
       VegaLite.from_json("""
@@ -731,7 +744,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 <div class="flex items-center gap-3">
                   <div class={[
                     "h-3 w-3 rounded-full border",
-                    adaptive_choice_marker_classes(choice)
+                    adaptive_choice_marker_classes(choice, @summary.grading_mode)
                   ]}>
                   </div>
                   <div class="flex flex-wrap items-center gap-2">
@@ -756,18 +769,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                   <div>
                     {choice.count} of {@visualization.denominator_count} {@visualization.denominator_label}
                   </div>
-                  <div>{Float.round(choice.ratio * 100, 1)}%</div>
+                  <div>{format_percentage_1(choice.ratio)}%</div>
                 </div>
               </div>
               <div class="mt-3 h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
                 <div
                   class={[
                     "h-3 rounded-full transition-all",
-                    adaptive_choice_fill_classes(
-                      Map.get(choice, :correctness, Map.get(choice, :correct))
-                    )
+                    adaptive_choice_fill_classes(choice, @summary.grading_mode)
                   ]}
-                  style={"width: #{Float.round(choice.ratio * 100, 1)}%; min-width: #{if choice.count > 0, do: "0.5rem", else: "0"};"}
+                  style={"width: #{format_percentage_1(choice.ratio)}%; min-width: #{if choice.count > 0, do: "0.5rem", else: "0"};"}
                 >
                 </div>
               </div>
@@ -831,7 +842,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 </div>
                 <div class="text-right text-xs text-gray-500 dark:text-gray-400">
                   <div>{entry.count} of {@visualization.denominator_count} responses</div>
-                  <div>{Float.round(entry.ratio * 100, 1)}%</div>
+                  <div>{format_percentage_1(entry.ratio)}%</div>
                 </div>
               </div>
               <div class="mt-3 h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
@@ -840,7 +851,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                     "h-3 rounded-full transition-all",
                     Map.get(@visualization, :fill_class, "bg-sky-500 dark:bg-sky-400")
                   ]}
-                  style={"width: #{Float.round(entry.ratio * 100, 1)}%; min-width: #{if entry.count > 0, do: "0.5rem", else: "0"};"}
+                  style={"width: #{format_percentage_1(entry.ratio)}%; min-width: #{if entry.count > 0, do: "0.5rem", else: "0"};"}
                 >
                 </div>
               </div>
@@ -909,7 +920,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                   </div>
                   <div class="text-right text-xs text-gray-500 dark:text-gray-400">
                     <div>{entry.count} selections</div>
-                    <div>{Float.round(entry.ratio * 100, 1)}%</div>
+                    <div>{format_percentage_1(entry.ratio)}%</div>
                   </div>
                 </div>
                 <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
@@ -918,7 +929,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                       "h-2 rounded-full transition-all",
                       Map.get(@visualization, :fill_class, "bg-cyan-500 dark:bg-cyan-400")
                     ]}
-                    style={"width: #{Float.round(entry.ratio * 100, 1)}%; min-width: #{if entry.count > 0, do: "0.4rem", else: "0"};"}
+                    style={"width: #{format_percentage_1(entry.ratio)}%; min-width: #{if entry.count > 0, do: "0.4rem", else: "0"};"}
                   >
                   </div>
                 </div>
@@ -945,7 +956,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 </div>
                 <div class="text-right text-xs text-gray-500 dark:text-gray-400">
                   <div>{entry.count} of {@visualization.denominator_count} responses</div>
-                  <div>{Float.round(entry.ratio * 100, 1)}%</div>
+                  <div>{format_percentage_1(entry.ratio)}%</div>
                 </div>
               </div>
               <div class="mt-3 h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
@@ -954,7 +965,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                     "h-3 rounded-full transition-all",
                     Map.get(@visualization, :fill_class, "bg-cyan-500 dark:bg-cyan-400")
                   ]}
-                  style={"width: #{Float.round(entry.ratio * 100, 1)}%; min-width: #{if entry.count > 0, do: "0.5rem", else: "0"};"}
+                  style={"width: #{format_percentage_1(entry.ratio)}%; min-width: #{if entry.count > 0, do: "0.5rem", else: "0"};"}
                 >
                 </div>
               </div>
@@ -1081,16 +1092,15 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             <div class="flex items-center justify-between gap-3 text-sm">
               <div class="font-medium text-gray-900 dark:text-white">{bucket.label}</div>
               <div class="text-xs text-gray-500 dark:text-gray-400">
-                {bucket.count} of {@summary.attempt_count} attempts ({Float.round(
-                  bucket.ratio * 100,
-                  1
+                {bucket.count} of {@summary.attempt_count} attempts ({format_percentage_1(
+                  bucket.ratio
                 )}%)
               </div>
             </div>
             <div class="mt-2 h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-900">
               <div
                 class={["h-3 rounded-full transition-all", bucket.fill_class]}
-                style={"width: #{Float.round(bucket.ratio * 100, 1)}%; min-width: #{if bucket.count > 0, do: "0.5rem", else: "0"};"}
+                style={"width: #{format_percentage_1(bucket.ratio)}%; min-width: #{if bucket.count > 0, do: "0.5rem", else: "0"};"}
               >
               </div>
             </div>
@@ -1113,15 +1123,21 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     """
   end
 
-  defp adaptive_choice_marker_classes(choice) when is_map(choice) do
-    case Map.get(choice, :native_correct) do
-      true ->
-        "border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400"
-
-      _ ->
-        adaptive_choice_marker_classes(Map.get(choice, :correctness, Map.get(choice, :correct)))
-    end
+  defp adaptive_choice_marker_classes(choice, grading_mode) when is_map(choice) do
+    choice
+    |> adaptive_choice_visual_state(grading_mode)
+    |> adaptive_choice_marker_classes()
   end
+
+  defp adaptive_choice_marker_classes(:native_and_awarded_full),
+    do:
+      "border-emerald-500 bg-sky-500 ring-2 ring-emerald-300 dark:border-emerald-400 dark:bg-sky-400 dark:ring-emerald-500/40"
+
+  defp adaptive_choice_marker_classes(:awarded_full),
+    do: "border-sky-500 bg-sky-500 dark:border-sky-400 dark:bg-sky-400"
+
+  defp adaptive_choice_marker_classes(:native_correct),
+    do: "border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400"
 
   defp adaptive_choice_marker_classes(true),
     do: "border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400"
@@ -1135,10 +1151,42 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   defp adaptive_choice_marker_classes(_),
     do: "border-slate-400 bg-slate-400 dark:border-slate-500 dark:bg-slate-500"
 
+  defp adaptive_choice_fill_classes(choice, grading_mode) when is_map(choice) do
+    choice
+    |> adaptive_choice_visual_state(grading_mode)
+    |> adaptive_choice_fill_classes()
+  end
+
+  defp adaptive_choice_fill_classes(:native_and_awarded_full),
+    do: "bg-gradient-to-r from-emerald-500 to-sky-500 dark:from-emerald-400 dark:to-sky-400"
+
+  defp adaptive_choice_fill_classes(:awarded_full), do: "bg-sky-500 dark:bg-sky-400"
+  defp adaptive_choice_fill_classes(:native_correct), do: "bg-emerald-500 dark:bg-emerald-400"
   defp adaptive_choice_fill_classes(true), do: "bg-emerald-500 dark:bg-emerald-400"
   defp adaptive_choice_fill_classes(false), do: "bg-red-500 dark:bg-red-400"
   defp adaptive_choice_fill_classes(:partial), do: "bg-amber-500 dark:bg-amber-400"
   defp adaptive_choice_fill_classes(_), do: "bg-slate-400 dark:bg-slate-500"
+
+  defp adaptive_choice_visual_state(choice, :manual) do
+    native_correct? = Map.get(choice, :native_correct) == true
+
+    case {native_correct?, Map.get(choice, :correctness)} do
+      {true, true} -> :native_and_awarded_full
+      {true, _} -> :native_correct
+      {false, true} -> :awarded_full
+      {false, false} -> false
+      {false, :partial} -> :partial
+      {false, other} -> other
+    end
+  end
+
+  defp adaptive_choice_visual_state(choice, _grading_mode) do
+    if Map.get(choice, :native_correct) == true do
+      :native_correct
+    else
+      Map.get(choice, :correctness, Map.get(choice, :correct))
+    end
+  end
 
   defp adaptive_visualization_fill_class(%{grading_pending: true}),
     do: "bg-slate-400 dark:bg-slate-500"
@@ -1926,7 +1974,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     denominator = Enum.reduce(entries, 0, fn entry, total -> total + entry.count end)
 
-    if entries == [] do
+    if entries == [] or denominator == 0 do
       build_adaptive_response_patterns(
         prompt,
         responses,
@@ -1934,11 +1982,6 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         "Each bar shows how often learners submitted the same value for this input."
       )
     else
-      weighted_values =
-        Enum.flat_map(entries, fn entry ->
-          List.duplicate(entry.numeric_value, entry.count)
-        end)
-
       %{
         kind: :numeric_distribution,
         prompt: prompt,
@@ -1956,7 +1999,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               ratio: ratio(entry.count, denominator)
             }
           end),
-        stats: adaptive_numeric_stats(part, weighted_values)
+        stats: adaptive_numeric_stats(part, entries)
       }
     end
   end
@@ -2051,25 +2094,50 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp adaptive_numeric_scale_hint(_), do: nil
 
-  defp adaptive_numeric_stats(%{"type" => "janus-text-slider"} = part, weighted_values) do
-    average = Enum.sum(weighted_values) / Enum.count(weighted_values)
+  defp adaptive_numeric_stats(%{"type" => "janus-text-slider"} = part, entries) do
+    %{minimum: minimum, maximum: maximum, average: average} = adaptive_numeric_aggregate(entries)
 
     [
-      adaptive_text_slider_stat("Lowest Selected", part, Enum.min(weighted_values)),
+      adaptive_text_slider_stat("Lowest Selected", part, minimum),
       adaptive_text_slider_stat("Average Position", part, average),
-      adaptive_text_slider_stat("Highest Selected", part, Enum.max(weighted_values))
+      adaptive_text_slider_stat("Highest Selected", part, maximum)
     ]
   end
 
-  defp adaptive_numeric_stats(_part, weighted_values) do
+  defp adaptive_numeric_stats(_part, entries) do
+    %{minimum: minimum, maximum: maximum, average: average} = adaptive_numeric_aggregate(entries)
+
     [
-      %{label: "Minimum", value: adaptive_numeric_label(Enum.min(weighted_values))},
+      %{label: "Minimum", value: adaptive_numeric_label(minimum)},
       %{
         label: "Average",
-        value: adaptive_numeric_label(Enum.sum(weighted_values) / Enum.count(weighted_values))
+        value: adaptive_numeric_label(average)
       },
-      %{label: "Maximum", value: adaptive_numeric_label(Enum.max(weighted_values))}
+      %{label: "Maximum", value: adaptive_numeric_label(maximum)}
     ]
+  end
+
+  defp adaptive_numeric_aggregate(entries) do
+    entries_with_responses = Enum.filter(entries, &(&1.count > 0))
+
+    {weighted_sum, total_count, minimum, maximum} =
+      Enum.reduce(entries_with_responses, {0.0, 0, nil, nil}, fn entry,
+                                                                 {sum, count, min_v, max_v} ->
+        numeric_value = entry.numeric_value
+
+        {
+          sum + numeric_value * entry.count,
+          count + entry.count,
+          if(is_nil(min_v), do: numeric_value, else: min(min_v, numeric_value)),
+          if(is_nil(max_v), do: numeric_value, else: max(max_v, numeric_value))
+        }
+      end)
+
+    %{
+      minimum: minimum,
+      maximum: maximum,
+      average: weighted_sum / total_count
+    }
   end
 
   defp adaptive_text_slider_stat(label, part, value) do
@@ -2491,7 +2559,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     if adaptive_auto_choice_missing_correctness?(part) do
       first_attempt_total
     else
-      resource_summary
+      (resource_summary || %{})
       |> Map.get(:num_first_attempts_correct, 0)
       |> min(correct_count)
       |> min(first_attempt_total)
@@ -2938,90 +3006,103 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     if adaptive_activity_ids == [] do
       %{}
     else
-      from(aa in ActivityAttempt,
-        join: pa1 in PartAttempt,
-        on: aa.id == pa1.activity_attempt_id,
-        left_join: pa2 in PartAttempt,
-        on:
-          pa1.activity_attempt_id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and
-            pa1.id < pa2.id,
-        join: ra in ResourceAttempt,
-        on: ra.id == aa.resource_attempt_id,
-        join: rac in ResourceAccess,
-        on: rac.id == ra.resource_access_id,
-        join: revision in Revision,
-        on: revision.id == aa.revision_id,
-        where: rac.section_id == ^section_id,
-        where: aa.resource_id in ^adaptive_activity_ids,
-        where: is_nil(pa2),
-        where: pa1.grading_approach == :manual,
-        where: pa1.lifecycle_state == :evaluated,
-        where: not is_nil(pa1.score),
-        select: %{
-          activity_id: aa.resource_id,
-          activity_attempt_number: aa.attempt_number,
-          user_id: rac.user_id,
-          part_attempt: pa1,
-          revision: revision
-        }
-      )
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn row, acc ->
-        part_attempt = Map.put(row.part_attempt, :activity_revision, row.revision)
-        response_label = ResponseLabel.build(part_attempt, "oli_adaptive")
-        key = {row.activity_id, part_attempt.part_id}
-        correct = part_attempt.score == part_attempt.out_of
-        first_attempt = part_attempt.attempt_number == 1
-        score_classification = classify_manual_score(part_attempt.score, part_attempt.out_of)
-
-        response_entry = %{
-          activity_id: row.activity_id,
-          part_id: part_attempt.part_id,
-          response: response_label.response,
-          label: response_label.label,
-          count: 1,
-          users: [],
-          correct_count: if(score_classification == :correct, do: 1, else: 0),
-          incorrect_count: if(score_classification == :incorrect, do: 1, else: 0),
-          partial_count: if(score_classification == :partial, do: 1, else: 0)
-        }
-
-        Map.update(
-          acc,
-          key,
-          %{
-            responses: [response_entry],
-            student_ids: MapSet.new([row.user_id]),
-            first_attempt_student_ids:
-              if(first_attempt, do: MapSet.new([row.user_id]), else: MapSet.new()),
-            attempt_count: 1,
-            correct_count: if(correct, do: 1, else: 0),
-            first_attempt_count: if(first_attempt, do: 1, else: 0),
-            first_attempt_correct_count: if(first_attempt and correct, do: 1, else: 0)
-          },
-          fn analytics ->
-            %{
-              analytics
-              | responses: merge_manual_response_counts(analytics.responses, response_entry),
-                student_ids: MapSet.put(analytics.student_ids, row.user_id),
-                first_attempt_student_ids:
-                  if(
-                    first_attempt,
-                    do: MapSet.put(analytics.first_attempt_student_ids, row.user_id),
-                    else: analytics.first_attempt_student_ids
-                  ),
-                attempt_count: analytics.attempt_count + 1,
-                correct_count: analytics.correct_count + if(correct, do: 1, else: 0),
-                first_attempt_count:
-                  analytics.first_attempt_count + if(first_attempt, do: 1, else: 0),
-                first_attempt_correct_count:
-                  analytics.first_attempt_correct_count +
-                    if(first_attempt and correct, do: 1, else: 0)
-            }
-          end
+      query =
+        from(aa in ActivityAttempt,
+          join: pa1 in PartAttempt,
+          on: aa.id == pa1.activity_attempt_id,
+          left_join: pa2 in PartAttempt,
+          on:
+            pa1.activity_attempt_id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and
+              pa1.id < pa2.id,
+          join: ra in ResourceAttempt,
+          on: ra.id == aa.resource_attempt_id,
+          join: rac in ResourceAccess,
+          on: rac.id == ra.resource_access_id,
+          join: revision in Revision,
+          on: revision.id == aa.revision_id,
+          where: rac.section_id == ^section_id,
+          where: aa.resource_id in ^adaptive_activity_ids,
+          where: is_nil(pa2),
+          where: pa1.grading_approach == :manual,
+          where: pa1.lifecycle_state == :evaluated,
+          where: not is_nil(pa1.score),
+          select: %{
+            activity_id: aa.resource_id,
+            activity_attempt_number: aa.attempt_number,
+            user_id: rac.user_id,
+            part_attempt: pa1,
+            revision: revision
+          }
         )
+
+      Repo.transaction(fn ->
+        query
+        |> Repo.stream()
+        |> Enum.reduce(%{}, fn row, acc ->
+          accumulate_adaptive_manual_analytics_row(acc, row)
+        end)
       end)
+      |> case do
+        {:ok, analytics} -> analytics
+        _ -> %{}
+      end
     end
+  end
+
+  defp accumulate_adaptive_manual_analytics_row(acc, row) do
+    part_attempt = Map.put(row.part_attempt, :activity_revision, row.revision)
+    response_label = ResponseLabel.build(part_attempt, "oli_adaptive")
+    key = {row.activity_id, part_attempt.part_id}
+    correct = part_attempt.score == part_attempt.out_of
+    first_attempt = part_attempt.attempt_number == 1
+    score_classification = classify_manual_score(part_attempt.score, part_attempt.out_of)
+
+    response_entry = %{
+      activity_id: row.activity_id,
+      part_id: part_attempt.part_id,
+      response: response_label.response,
+      label: response_label.label,
+      count: 1,
+      users: [],
+      correct_count: if(score_classification == :correct, do: 1, else: 0),
+      incorrect_count: if(score_classification == :incorrect, do: 1, else: 0),
+      partial_count: if(score_classification == :partial, do: 1, else: 0)
+    }
+
+    Map.update(
+      acc,
+      key,
+      %{
+        responses: [response_entry],
+        student_ids: MapSet.new([row.user_id]),
+        first_attempt_student_ids:
+          if(first_attempt, do: MapSet.new([row.user_id]), else: MapSet.new()),
+        attempt_count: 1,
+        correct_count: if(correct, do: 1, else: 0),
+        first_attempt_count: if(first_attempt, do: 1, else: 0),
+        first_attempt_correct_count: if(first_attempt and correct, do: 1, else: 0)
+      },
+      fn analytics ->
+        %{
+          analytics
+          | responses: merge_manual_response_counts(analytics.responses, response_entry),
+            student_ids: MapSet.put(analytics.student_ids, row.user_id),
+            first_attempt_student_ids:
+              if(
+                first_attempt,
+                do: MapSet.put(analytics.first_attempt_student_ids, row.user_id),
+                else: analytics.first_attempt_student_ids
+              ),
+            attempt_count: analytics.attempt_count + 1,
+            correct_count: analytics.correct_count + if(correct, do: 1, else: 0),
+            first_attempt_count:
+              analytics.first_attempt_count + if(first_attempt, do: 1, else: 0),
+            first_attempt_correct_count:
+              analytics.first_attempt_correct_count +
+                if(first_attempt and correct, do: 1, else: 0)
+        }
+      end
+    )
   end
 
   defp merge_manual_response_counts(existing, incoming) do

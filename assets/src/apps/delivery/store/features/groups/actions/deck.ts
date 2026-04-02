@@ -493,7 +493,16 @@ export const loadActivities = createAsyncThunk(
         return;
       }
       const attemptEntry = activityAttemptMapping.find((m) => m.id === sequenceEntry.activity_id);
-      const activityType = activityTypes.find((t) => t.id === result.activityType);
+      const activityType = activityTypes.find(
+        (t) => String(t.id) === String(result.activityType),
+      );
+
+      if (!activityType) {
+        console.warn(
+          `Activity type ${JSON.stringify(result.activityType)} not found for activity ${JSON.stringify(resultActivityId)}.`,
+        );
+      }
+
       let partAttempts = result.partAttempts;
       if (isPreviewMode) {
         partAttempts = result.authoring.parts.map((p: any) => {

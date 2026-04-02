@@ -71,6 +71,7 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
         activities: activities,
         activity_types_map: activity_types_map,
         students: students,
+        scripts: Map.get(assigns.model.data, :scripts, []),
         should_show_details: should_show_details
       })
 
@@ -131,6 +132,7 @@ defmodule OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel do
             id={"activity_detail_#{activity.id}"}
             phx-hook="LoadSurveyScripts"
             data-preview-activity-bridge="true"
+            data-script-sources={Jason.encode!(@scripts || [])}
             phx-update="ignore"
           >
             <%= if Map.get(activity, :preview_rendered) != nil do %>

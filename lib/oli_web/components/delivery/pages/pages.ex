@@ -58,6 +58,7 @@ defmodule OliWeb.Components.Delivery.Pages do
        scripts_loaded: false,
        table_model: nil,
        current_page: nil,
+       activity_summary_cache: %{},
        loaded_activity_summaries: %{},
        expanded_activity_ids: MapSet.new(),
        repair_poll_scheduled: false
@@ -149,6 +150,7 @@ defmodule OliWeb.Components.Delivery.Pages do
              table_model: table_model,
              total_count: total_count,
              current_page: nil,
+             activity_summary_cache: %{},
              loaded_activity_summaries: %{},
              expanded_activity_ids: MapSet.new(),
              card_props: card_props,
@@ -259,6 +261,16 @@ defmodule OliWeb.Components.Delivery.Pages do
                   avg_score_percentage: percentage_score
                   # this dynamic id is used to force the liveview to reload the activity details.
                   # Without it the activity details will not be rendered correctly when the applied card filters change
+                )
+                |> assign(
+                  activity_summary_cache:
+                    build_activity_summary_cache(
+                      assigns.section,
+                      page_revision,
+                      assigns.activity_types_map,
+                      assigns.students,
+                      rows
+                    )
                 )
 
               table_model =
@@ -747,6 +759,7 @@ defmodule OliWeb.Components.Delivery.Pages do
     %{
       table_model: table_model,
       loaded_activity_summaries: loaded_activity_summaries,
+      activity_summary_cache: activity_summary_cache,
       expanded_activity_ids: expanded_activity_ids,
       scripts: scripts,
       activity_types_map: activity_types_map
@@ -767,6 +780,7 @@ defmodule OliWeb.Components.Delivery.Pages do
       |> Map.update!(:data, fn data ->
         Map.merge(data, %{
           selected_activities: selected_activities,
+          activity_summary_cache: activity_summary_cache,
           expanded_activity_ids: expanded_activity_ids,
           expanded_rows: expanded_rows,
           scripts: scripts,
@@ -775,19 +789,10 @@ defmodule OliWeb.Components.Delivery.Pages do
         })
       end)
 
-    socket =
-      assign(socket,
-        table_model: table_model,
-        selected_activities: selected_activities
-      )
-
-    if socket.assigns.scripts_loaded do
-      socket
-    else
-      push_event(socket, "load_survey_scripts", %{
-        script_sources: socket.assigns.scripts
-      })
-    end
+    assign(socket,
+      table_model: table_model,
+      selected_activities: selected_activities
+    )
   end
 
   defp maybe_load_activity_summary(
@@ -844,14 +849,8 @@ defmodule OliWeb.Components.Delivery.Pages do
           end
 
         summary =
-          ActivityHelpers.summarize_activity_performance(
-            section,
-            page_revision,
-            activity_types_map,
-            students,
-            [activity_id]
-          )
-          |> List.first()
+          socket.assigns.activity_summary_cache
+          |> Map.get(activity_id)
           |> case do
             nil ->
               case activity_type do
@@ -910,7 +909,29 @@ defmodule OliWeb.Components.Delivery.Pages do
           :loaded_activity_summaries,
           Map.put(socket.assigns.loaded_activity_summaries, activity_id, summary)
         )
+        |> assign(
+          :activity_summary_cache,
+          Map.put(socket.assigns.activity_summary_cache, activity_id, summary)
+        )
     end
+  end
+
+  defp build_activity_summary_cache(_section, _page_revision, _activity_types_map, _students, []),
+    do: %{}
+
+  defp build_activity_summary_cache(section, page_revision, activity_types_map, students, rows) do
+    activity_ids = Enum.map(rows, & &1.resource_id)
+
+    ActivityHelpers.summarize_activity_performance(
+      section,
+      page_revision,
+      activity_types_map,
+      students,
+      activity_ids
+    )
+    |> Enum.reduce(%{}, fn summary, acc ->
+      Map.put(acc, summary.resource_id, summary)
+    end)
   end
 
   defp refresh_adaptive_repairs(socket) do

@@ -117,12 +117,17 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   def render_assessment_details(assigns, assessment) do
     selected_activities = assigns.model.data.selected_activities
     expanded_activity_ids = Map.get(assigns.model.data, :expanded_activity_ids, MapSet.new())
+    activity_summary_cache = Map.get(assigns.model.data, :activity_summary_cache, %{})
 
     # Find the specific activity data for this assessment
     current_activity =
       selected_activities
       |> Enum.reject(&is_nil/1)
       |> Enum.find(&(&1.resource_id == assessment.resource_id))
+      |> case do
+        nil -> Map.get(activity_summary_cache, assessment.resource_id)
+        activity -> activity
+      end
 
     should_show_details = MapSet.member?(expanded_activity_ids, assessment.resource_id)
     has_loaded_activity = not is_nil(current_activity)
@@ -132,6 +137,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
         id: assessment.resource_id,
         current_activity: current_activity,
         activity_types_map: assigns[:activity_types_map],
+        scripts: Map.get(assigns.model.data, :scripts, []),
         should_show_details: should_show_details,
         has_loaded_activity: has_loaded_activity,
         first_attempt_pct: Map.get(current_activity || %{}, :first_attempt_pct, 0.0),
@@ -156,6 +162,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
           id={"activity_detail_#{@id}"}
           phx-hook="LoadSurveyScripts"
           data-preview-activity-bridge="true"
+          data-script-sources={Jason.encode!(@scripts || [])}
           phx-update="ignore"
         >
           <div

@@ -33,6 +33,10 @@ export const selectCurrentSequenceId = createSelector(
 export const selectCurrentActivityTree = createSelector(
   [selectSequence, selectAllActivities, selectCurrentSequenceId],
   (sequence, activities, currentSequenceId): null | IActivity[] => {
+    if (!currentSequenceId) {
+      return null;
+    }
+
     const currentSequenceEntry = (sequence as any[]).find(
       (entry) => entry.custom.sequenceId === currentSequenceId,
     );
