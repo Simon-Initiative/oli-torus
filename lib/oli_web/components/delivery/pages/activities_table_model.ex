@@ -98,6 +98,8 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
     <.button
       id={"button_#{@id}"}
       class="flex !p-0"
+      phx-hook="PreserveScrollAnchor"
+      data-anchor-selector={~s(tr[data-row-id="row_#{@id}"])}
       phx-click={
         JS.push("paged_table_selection_change",
           value: %{id: @assessment.resource_id},
@@ -115,19 +117,11 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
 
   # RENDER EXPANDED DETAILS FOR STRIPED TABLE
   def render_assessment_details(assigns, assessment) do
-    selected_activities = assigns.model.data.selected_activities
     expanded_activity_ids = Map.get(assigns.model.data, :expanded_activity_ids, MapSet.new())
     activity_summary_cache = Map.get(assigns.model.data, :activity_summary_cache, %{})
 
     # Find the specific activity data for this assessment
-    current_activity =
-      selected_activities
-      |> Enum.reject(&is_nil/1)
-      |> Enum.find(&(&1.resource_id == assessment.resource_id))
-      |> case do
-        nil -> Map.get(activity_summary_cache, assessment.resource_id)
-        activity -> activity
-      end
+    current_activity = Map.get(activity_summary_cache, assessment.resource_id)
 
     should_show_details = MapSet.member?(expanded_activity_ids, assessment.resource_id)
     has_loaded_activity = not is_nil(current_activity)

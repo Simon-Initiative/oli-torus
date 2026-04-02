@@ -1699,6 +1699,24 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert html =~ "bg-sky-500 dark:bg-sky-400"
     end
 
+    test "lazy mounts adaptive screen preview content behind a template" do
+      html =
+        render_component(&ActivityHelpers.rendered_activity/1, %{
+          activity: %{
+            id: 60,
+            revision: %{activity_type_id: 99},
+            preview_rendered: "<div>preview</div>",
+            adaptive_input_summaries: []
+          },
+          activity_types_map: %{99 => %{slug: "oli_adaptive"}}
+        })
+
+      assert html =~ ~s(phx-hook="AdaptivePreviewPanel")
+      assert html =~ ~s(data-preview-template-id="adaptive-preview-template-60")
+      assert html =~ ~s(<template id="adaptive-preview-template-60">)
+      assert html =~ "preview"
+    end
+
     test "renders adaptive coverage with only unique responders" do
       html =
         render_component(&ActivityHelpers.rendered_activity/1, %{

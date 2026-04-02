@@ -39,7 +39,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
     model = %{
       data: %{
-        selected_activities: [current_activity],
+        activity_summary_cache: %{2 => current_activity},
         expanded_activity_ids: MapSet.new([2]),
         scripts: ["/js/janus_mcq_delivery.js"],
         target: nil
@@ -109,7 +109,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
     model = %{
       data: %{
-        selected_activities: [current_activity],
+        activity_summary_cache: %{53 => current_activity},
         expanded_activity_ids: MapSet.new([53]),
         target: nil
       }
@@ -146,7 +146,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
     model = %{
       data: %{
-        selected_activities: [current_activity],
+        activity_summary_cache: %{77 => current_activity},
         expanded_activity_ids: MapSet.new([77]),
         target: nil
       }
@@ -184,7 +184,7 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModelTest do
 
     model = %{
       data: %{
-        selected_activities: [current_activity],
+        activity_summary_cache: %{78 => current_activity},
         expanded_activity_ids: MapSet.new([78]),
         target: nil
       }

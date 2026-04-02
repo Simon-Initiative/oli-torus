@@ -602,10 +602,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   end
 
   defp render_adaptive(assigns) do
+    activity_row_id = Map.get(assigns.activity, :resource_id, assigns.activity.id)
     responses_tab_id = "adaptive-responses-tab-#{assigns.activity.id}"
     responses_panel_id = "adaptive-responses-panel-#{assigns.activity.id}"
     preview_tab_id = "adaptive-preview-tab-#{assigns.activity.id}"
     preview_panel_id = "adaptive-preview-panel-#{assigns.activity.id}"
+    preview_template_id = "adaptive-preview-template-#{assigns.activity.id}"
 
     assigns =
       assign(assigns,
@@ -613,6 +615,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         responses_tab_id: responses_tab_id,
         preview_panel_id: preview_panel_id,
         responses_panel_id: responses_panel_id,
+        preview_template_id: preview_template_id,
+        activity_row_id: activity_row_id,
         input_summaries: Map.get(assigns.activity, :adaptive_input_summaries, [])
       )
 
@@ -623,6 +627,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           id={@responses_tab_id}
           type="button"
           class="border-b-2 border-blue-500 px-1 py-3 text-sm font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400"
+          phx-hook="PreserveScrollAnchor"
+          data-anchor-selector={~s(tr[data-row-id="row_#{@activity_row_id}"])}
           phx-click={
             adaptive_tab_js(
               @responses_tab_id,
@@ -638,6 +644,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           id={@preview_tab_id}
           type="button"
           class="border-b-2 border-transparent px-1 py-3 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+          phx-hook="PreserveScrollAnchor"
+          data-anchor-selector={~s(tr[data-row-id="row_#{@activity_row_id}"])}
           phx-click={
             adaptive_tab_js(
               @preview_tab_id,
@@ -665,12 +673,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         <% end %>
       </div>
 
-      <div id={@preview_panel_id} class="hidden pt-6">
+      <div
+        id={@preview_panel_id}
+        class="hidden pt-6"
+        phx-hook="AdaptivePreviewPanel"
+        data-preview-template-id={@preview_template_id}
+      >
+      </div>
+      <template id={@preview_template_id}>
         <RenderedActivity.render
           id={"activity_#{@activity.id}"}
           rendered_activity={@activity.preview_rendered}
         />
-      </div>
+      </template>
     </div>
     """
   end

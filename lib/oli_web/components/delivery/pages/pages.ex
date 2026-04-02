@@ -779,7 +779,6 @@ defmodule OliWeb.Components.Delivery.Pages do
       table_model
       |> Map.update!(:data, fn data ->
         Map.merge(data, %{
-          selected_activities: selected_activities,
           activity_summary_cache: activity_summary_cache,
           expanded_activity_ids: expanded_activity_ids,
           expanded_rows: expanded_rows,
