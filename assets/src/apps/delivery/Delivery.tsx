@@ -230,9 +230,13 @@ const Delivery: React.FC<DeliveryProps> = ({
         enabled={adaptiveDialogueBridgeEnabled}
       />
       {!insightsStageOnlyPreview &&
-      (previewMode || (reviewMode && (isInstructor || isAdmin || isAuthor))) && (
-        <PreviewTools reviewMode={reviewMode} isInstructor={isInstructor} model={content?.model} />
-      )}
+        (previewMode || (reviewMode && (isInstructor || isAdmin || isAuthor))) && (
+          <PreviewTools
+            reviewMode={reviewMode}
+            isInstructor={isInstructor}
+            model={content?.model}
+          />
+        )}
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>

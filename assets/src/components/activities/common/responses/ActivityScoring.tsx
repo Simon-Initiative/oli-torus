@@ -23,8 +23,7 @@ interface ActivityScoreProps {
 export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptForDefault }) => {
   const { model, dispatch, editMode } = useAuthoringElementContext<HasParts>();
   const checkboxInputId = useMemo(() => guid(), []);
-  const gradingApproach =
-    getPartById(model, partId)?.gradingApproach ?? GradingApproach.automatic;
+  const gradingApproach = getPartById(model, partId)?.gradingApproach ?? GradingApproach.automatic;
   const isManualGrading = gradingApproach === GradingApproach.manual;
   const outOfPoints = getOutOfPoints(model, partId);
   const incorrectPoints = getIncorrectPoints(model, partId);
@@ -59,8 +58,8 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptFo
         <Card.Title>Scoring</Card.Title>
         <Card.Content>
           <div className="text-sm text-muted">
-            This part uses instructor manual grading. Score values are assigned later in the
-            manual grading queue, so default and custom auto-scoring settings do not apply here.
+            This part uses instructor manual grading. Score values are assigned later in the manual
+            grading queue, so default and custom auto-scoring settings do not apply here.
           </div>
         </Card.Content>
       </Card.Card>
