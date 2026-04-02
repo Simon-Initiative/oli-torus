@@ -23,7 +23,11 @@ defmodule OliWeb.ManualGrading.PartScoring do
     <form phx-submit="prevent_default">
       <div
         class={card_classes(@selected)}
+        role="button"
+        tabindex="0"
+        aria-pressed={to_string(@selected)}
         phx-click={@selected_changed}
+        phx-keydown={@selected_changed}
         phx-value-attempt_guid={@part_attempt.attempt_guid}
         phx-value-part_id={@part_attempt.part_id}
       >
@@ -64,7 +68,11 @@ defmodule OliWeb.ManualGrading.PartScoring do
     <form phx-submit="prevent_default">
       <div
         class={card_classes(@selected)}
+        role="button"
+        tabindex="0"
+        aria-pressed={to_string(@selected)}
         phx-click={@selected_changed}
+        phx-keydown={@selected_changed}
         phx-value-attempt_guid={@part_attempt.attempt_guid}
         phx-value-part_id={@part_attempt.part_id}
       >
@@ -98,7 +106,11 @@ defmodule OliWeb.ManualGrading.PartScoring do
     <form phx-submit="prevent_default">
       <div
         class={card_classes(@selected)}
+        role="button"
+        tabindex="0"
+        aria-pressed={to_string(@selected)}
         phx-click={@selected_changed}
+        phx-keydown={@selected_changed}
         phx-value-attempt_guid={@part_attempt.attempt_guid}
         phx-value-part_id={@part_attempt.part_id}
       >
@@ -126,7 +138,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
                 phx-value-change={@score_changed}
                 type="number"
                 class={input_classes()}
-                step="1"
+                step="any"
                 min="0"
                 max={@part_scoring.out_of}
                 value={@part_scoring.score}
@@ -262,11 +274,11 @@ defmodule OliWeb.ManualGrading.PartScoring do
 
   defp card_classes(true),
     do:
-      "cursor-pointer rounded-xl border border-Border-border-bold bg-Surface-surface-secondary-hover px-4 py-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] ring-1 ring-Border-border-bold transition"
+      "cursor-pointer rounded-xl border border-Border-border-bold bg-Surface-surface-secondary-hover px-4 py-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] ring-1 ring-Border-border-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-Border-border-bold focus-visible:ring-offset-2 focus-visible:ring-offset-Surface-surface-primary"
 
   defp card_classes(false),
     do:
-      "cursor-pointer rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary px-4 py-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] transition hover:border-Border-border-bold hover:bg-Surface-surface-secondary-hover hover:shadow-[0px_4px_14px_0px_rgba(0,50,99,0.08)]"
+      "cursor-pointer rounded-xl border border-Border-border-subtle bg-Surface-surface-secondary px-4 py-4 shadow-[0px_2px_10px_0px_rgba(0,50,99,0.05)] transition hover:border-Border-border-bold hover:bg-Surface-surface-secondary-hover hover:shadow-[0px_4px_14px_0px_rgba(0,50,99,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-Border-border-bold focus-visible:ring-offset-2 focus-visible:ring-offset-Surface-surface-primary"
 
   defp field_label_classes,
     do: "mb-2 block text-sm font-semibold text-Text-text-high"

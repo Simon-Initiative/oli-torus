@@ -572,14 +572,19 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
   def handle_event(
         "select_part",
-        %{"attempt_guid" => attempt_guid, "part_id" => part_id},
+        %{"attempt_guid" => attempt_guid, "part_id" => part_id} = params,
         socket
       ) do
-    {:noreply,
-     assign(socket,
-       selected_part_attempt_guid: attempt_guid,
-       selected_part_id: part_id
-     )}
+    case Map.get(params, "key") do
+      nil ->
+        select_part(socket, attempt_guid, part_id)
+
+      key when key in ["Enter", " ", "Space", "Spacebar"] ->
+        select_part(socket, attempt_guid, part_id)
+
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("apply", _, socket) do
@@ -737,6 +742,14 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   end
 
   defp blank_to_nil(value), do: value
+
+  defp select_part(socket, attempt_guid, part_id) do
+    {:noreply,
+     assign(socket,
+       selected_part_attempt_guid: attempt_guid,
+       selected_part_id: part_id
+     )}
+  end
 
   defp selected_submission(%{attempt: nil}), do: nil
   defp selected_submission(%{part_attempts: nil}), do: nil

@@ -31,10 +31,15 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
     assert html =~ "md:grid-cols-[14rem_minmax(0,1fr)]"
     assert html =~ "Selected Input"
     assert html =~ "phx-click=\"select_part\""
+    assert html =~ "phx-keydown=\"select_part\""
     assert html =~ "cursor-pointer"
+    assert html =~ "role=\"button\""
+    assert html =~ "tabindex=\"0\""
+    assert html =~ "aria-pressed=\"true\""
     assert html =~ "for=\"score_attempt-guid-1\""
     assert html =~ "for=\"out_of_attempt-guid-1\""
     assert html =~ "for=\"feedback_attempt-guid-1\""
+    assert html =~ "step=\"any\""
   end
 
   test "renders automatic parts as read-only even while submitted" do
