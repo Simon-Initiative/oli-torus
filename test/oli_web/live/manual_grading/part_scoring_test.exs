@@ -32,6 +32,9 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
     assert html =~ "Selected Input"
     assert html =~ "phx-click=\"select_part\""
     assert html =~ "cursor-pointer"
+    assert html =~ "for=\"score_attempt-guid-1\""
+    assert html =~ "for=\"out_of_attempt-guid-1\""
+    assert html =~ "for=\"feedback_attempt-guid-1\""
   end
 
   test "renders automatic parts as read-only even while submitted" do

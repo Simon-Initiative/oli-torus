@@ -1553,6 +1553,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   defp add_adaptive_input_details(activity_attempt, response_summaries, adaptive_manual_analytics) do
     parts_layout = activity_attempt.revision.content["partsLayout"] || []
 
+    response_summaries_by_activity_part =
+      group_response_summaries_by_activity_part(response_summaries)
+
     authored_parts =
       get_in(activity_attempt.revision.content, ["authoring", "parts"]) || []
 
@@ -1576,17 +1579,18 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           Map.get(adaptive_manual_analytics, {activity_attempt.resource_id, part_id})
 
         raw_responses =
-          Enum.filter(response_summaries, fn response_summary ->
-            response_summary.activity_id == activity_attempt.resource_id and
-              response_summary.part_id == part_id
-          end)
+          Map.get(
+            response_summaries_by_activity_part,
+            {activity_attempt.resource_id, part_id},
+            []
+          )
 
         responses =
           adaptive_summary_responses(
             activity_attempt.resource_id,
             part_id,
             grading_mode,
-            response_summaries,
+            response_summaries_by_activity_part,
             manual_analytics
           )
 
@@ -1778,11 +1782,15 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          activity_id,
          part_id,
          _grading_mode,
-         response_summaries,
+         response_summaries_by_activity_part,
          _manual_analytics
        ) do
-    Enum.filter(response_summaries, fn response_summary ->
-      response_summary.activity_id == activity_id and response_summary.part_id == part_id
+    Map.get(response_summaries_by_activity_part, {activity_id, part_id}, [])
+  end
+
+  defp group_response_summaries_by_activity_part(response_summaries) do
+    Enum.group_by(response_summaries, fn response_summary ->
+      {response_summary.activity_id, response_summary.part_id}
     end)
   end
 

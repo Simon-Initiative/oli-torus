@@ -114,7 +114,12 @@ defmodule OliWeb.ManualGrading.PartScoring do
         <div class="grid grid-cols-1 gap-4 md:grid-cols-[14rem_minmax(0,1fr)] md:items-start">
           <div class="w-full space-y-3 md:max-w-[14rem]">
             <div>
-              <label class={field_label_classes()}>Score</label>
+              <label
+                for={"score_" <> @part_attempt.attempt_guid}
+                class={field_label_classes()}
+              >
+                Score
+              </label>
               <input
                 id={"score_" <> @part_attempt.attempt_guid}
                 phx-hook="ManualGradingScoreInput"
@@ -129,8 +134,14 @@ defmodule OliWeb.ManualGrading.PartScoring do
             </div>
 
             <div>
-              <label class={field_label_classes()}>Out Of</label>
+              <label
+                for={"out_of_" <> @part_attempt.attempt_guid}
+                class={field_label_classes()}
+              >
+                Out Of
+              </label>
               <input
+                id={"out_of_" <> @part_attempt.attempt_guid}
                 type="text"
                 readonly
                 aria-readonly="true"
@@ -177,7 +188,12 @@ defmodule OliWeb.ManualGrading.PartScoring do
           </div>
 
           <div class="min-w-0">
-            <label class={field_label_classes()}>Feedback</label>
+            <label
+              for={"feedback_" <> @part_attempt.attempt_guid}
+              class={field_label_classes()}
+            >
+              Feedback
+            </label>
             <textarea
               id={"feedback_" <> @part_attempt.attempt_guid}
               phx-hook="TextInputListener"
