@@ -10,6 +10,17 @@ import {
 import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
 
+const modelSignature = (model: ActivityModelSchema) => {
+  const serialized = JSON.stringify(model);
+  let hash = 0;
+
+  for (let i = 0; i < serialized.length; i += 1) {
+    hash = (hash * 31 + serialized.charCodeAt(i)) >>> 0;
+  }
+
+  return hash.toString(36);
+};
+
 interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
   editMode: boolean;
@@ -43,7 +54,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
 }) => {
   const dispatch = useDispatch();
   const [isReady, setIsReady] = useState(false);
-  const [refreshNonce, setRefreshNonce] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(() => modelSignature(activityModel));
   const [pendingRefresh, setPendingRefresh] = useState(false);
   const previousActivityModelRef = useRef(activityModel);
 
@@ -63,7 +74,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   };
 
   const elementProps = {
-    key: `activity-${activityModel.id}-${refreshNonce}`,
+    key: `activity-${activityModel.id}-${refreshKey}`,
     id: `activity-${activityModel.id}`,
     ref,
     model: JSON.stringify(activityModel),
@@ -179,7 +190,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     const activityModelChanged = previousActivityModelRef.current !== activityModel;
 
     if (pendingRefresh && activityModelChanged) {
-      setRefreshNonce((value) => value + 1);
+      setRefreshKey(modelSignature(activityModel));
       setPendingRefresh(false);
     }
 
