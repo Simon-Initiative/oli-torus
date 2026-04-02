@@ -1258,7 +1258,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     phx-click="pause_inventory_run"
                     phx-value-id={run.id}
                     phx-disable-with="Pausing..."
-                    class="btn-warning btn-xs"
+                    class="btn-secondary btn-xs"
                   >
                     Pause
                   </.button>
@@ -1266,6 +1266,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     :if={resumable_run?(run)}
                     phx-click="resume_inventory_run"
                     phx-value-id={run.id}
+                    phx-disable-with="Resuming..."
                     class="btn-success btn-xs"
                   >
                     Resume
@@ -1274,7 +1275,8 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                     :if={cancellable_run?(run)}
                     phx-click="cancel_inventory_run"
                     phx-value-id={run.id}
-                    class="btn-secondary btn-xs"
+                    phx-disable-with="Cancelling..."
+                    class="btn-warning btn-xs"
                   >
                     Cancel
                   </.button>
@@ -1476,12 +1478,19 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                         </div>
                       </td>
                       <td class="px-3 py-3 space-y-1">
-                        <span class={status_badge_classes(batch.status)}>
-                          {Phoenix.Naming.humanize(batch.status)}
+                        <% display_status = batch_display_status(batch) %>
+                        <span class={status_badge_classes(display_status)}>
+                          {batch_status_label(batch)}
                         </span>
                         <%= if batch.error do %>
                           <div class="text-red-600 break-words">{batch.error}</div>
                         <% end %>
+                        <div
+                          :if={display_status != batch.status}
+                          class="text-gray-500 dark:text-gray-400 break-words"
+                        >
+                          Progress is still being applied from the latest persisted chunk update.
+                        </div>
                         <.button
                           :if={batch.status == :failed}
                           phx-click="retry_inventory_batch"
@@ -2257,18 +2266,12 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
   defp cancellable_run?(_), do: false
 
   defp pausable_run?(%InventoryRun{} = run) do
-    metadata = ensure_map(run.metadata)
-
-    run.status in [:running, :preparing, :pending] and
-      not truthy?(Map.get(metadata, "pause_requested"))
+    run.status in [:running, :preparing, :pending]
   end
 
   defp pausable_run?(_), do: false
 
-  defp resumable_run?(%InventoryRun{} = run) do
-    metadata = ensure_map(run.metadata)
-    run.status == :paused or truthy?(Map.get(metadata, "pause_requested"))
-  end
+  defp resumable_run?(%InventoryRun{} = run), do: run.status == :paused
 
   defp resumable_run?(_), do: false
 
@@ -2603,6 +2606,24 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
       end
 
     %{percent: percent, processed: processed, total: total}
+  end
+
+  defp batch_display_status(%InventoryBatch{} = batch) do
+    cond do
+      batch.status == :queued and batch_progress_visible?(batch) -> :running
+      true -> batch.status
+    end
+  end
+
+  defp batch_status_label(%InventoryBatch{} = batch) do
+    batch
+    |> batch_display_status()
+    |> Phoenix.Naming.humanize()
+  end
+
+  defp batch_progress_visible?(%InventoryBatch{} = batch) do
+    processed = batch.processed_objects || 0
+    processed > 0
   end
 
   defp deletable_backfill_run?(%BackfillRun{status: status})

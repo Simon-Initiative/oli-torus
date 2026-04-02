@@ -100,16 +100,16 @@ Deliver the FDD-selected authoritative backfill lifecycle architecture and the c
 
 - Goal: Rewire the admin backfill LiveView to the authoritative lifecycle and progress streams so controls, statuses, and metrics stay consistent during active runs.
 - Tasks:
-  - [ ] Update `OliWeb.Admin.ClickhouseBackfillLive` to render action availability from the simplified settled run states rather than inferred metadata-only rules.
-  - [ ] Render the correct post-action control set after pause/cancel requests complete, with the required neutral vs warning styling.
-  - [ ] Update run and batch rendering to use authoritative persisted counters and granular notifier/PubSub updates emitted after chunk success and lifecycle updates.
-  - [ ] Ensure batch status labels and progress indicators cannot remain stale as `Queued` or otherwise contradict visible progress.
-  - [ ] Gate `Delete Run` on fully settled cancellation or completion semantics defined in the backend.
-  - [ ] Surface operator-visible failure/progress messages for run-control actions where the user needs to distinguish requested, in-progress, completed, and failed outcomes.
+  - [x] Update `OliWeb.Admin.ClickhouseBackfillLive` to render action availability from the simplified settled run states rather than inferred metadata-only rules.
+  - [x] Render the correct post-action control set after pause/cancel requests complete, with the required neutral vs warning styling.
+  - [x] Update run and batch rendering to use authoritative persisted counters and granular notifier/PubSub updates emitted after chunk success and lifecycle updates.
+  - [x] Ensure batch status labels and progress indicators cannot remain stale as `Queued` or otherwise contradict visible progress.
+  - [x] Gate `Delete Run` on fully settled cancellation or completion semantics defined in the backend.
+  - [x] Surface operator-visible failure/progress messages for run-control actions where the user needs to distinguish requested, in-progress, completed, and failed outcomes.
 - Testing Tasks:
-  - [ ] Add LiveView tests for cancelled, paused, completed, and active states covering `AC-001` through `AC-006` and `AC-015`.
-  - [ ] Add LiveView tests for chunk-driven status and metric updates covering `AC-011`, `AC-012`, and `AC-013`, plus a manual validation note for the partial/freshness representation in `AC-014`.
-  - [ ] Command(s): `mix test test/oli_web/live/admin`
+  - [x] Add LiveView tests for cancelled, paused, completed, and active states covering `AC-001` through `AC-006` and `AC-015`.
+  - [x] Add LiveView tests for chunk-driven status and metric updates covering `AC-011`, `AC-012`, and `AC-013`, plus a manual validation note for the partial/freshness representation in `AC-014`.
+  - [x] Command(s): `mix test test/oli_web/live/admin`
 - Definition of Done:
   - The admin UI reflects authoritative lifecycle state with no invalid `Resume` or premature `Delete Run` actions.
   - In-progress controls remain visible but disabled while transitions settle.

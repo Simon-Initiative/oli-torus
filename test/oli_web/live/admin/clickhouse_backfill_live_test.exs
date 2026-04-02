@@ -6,7 +6,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
   import Oli.Factory
 
   alias Oli.Repo
-  alias Oli.Analytics.Backfill.{BackfillRun, Inventory, InventoryBatch, InventoryRun}
+  alias Oli.Analytics.Backfill.{BackfillRun, Inventory, InventoryBatch, InventoryRun, Notifier}
   alias OliWeb.Admin.ClickhouseBackfillLive
 
   @route Routes.live_path(OliWeb.Endpoint, ClickhouseBackfillLive)
@@ -1048,7 +1048,7 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert rendered =~ "Run #{run.id} resumed"
     end
 
-    test "shows resume for a cancelled run when stale pause metadata remains", %{conn: conn} do
+    test "cancelled inventory runs only show delete run", %{conn: conn} do
       run =
         %InventoryRun{
           inventory_date: ~D[2024-07-02],
@@ -1068,14 +1068,29 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       |> element("button[phx-value-tab=\"batch\"]")
       |> render_click()
 
+      refute has_element?(
+               view,
+               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
       assert has_element?(
                view,
-               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]",
-               "Resume"
+               "button[phx-click=\"delete_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Delete Run"
              )
     end
 
-    test "shows resume and cancel instead of disabled pause during a pending pause transition", %{
+    test "active inventory runs show pause and cancel but not resume", %{
       conn: conn
     } do
       run =
@@ -1097,25 +1112,25 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       |> element("button[phx-value-tab=\"batch\"]")
       |> render_click()
 
+      assert has_element?(
+               view,
+               "button.btn-secondary[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Pause"
+             )
+
       refute has_element?(
                view,
-               "button[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]"
              )
 
       assert has_element?(
                view,
-               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]",
-               "Resume"
-             )
-
-      assert has_element?(
-               view,
-               "button[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "button.btn-warning[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]",
                "Cancel"
              )
     end
 
-    test "renders pause as warning and cancel as secondary when both controls are available", %{
+    test "renders pause as neutral and cancel as warning when both controls are available", %{
       conn: conn
     } do
       run =
@@ -1138,13 +1153,13 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
 
       assert has_element?(
                view,
-               "button.btn-warning[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "button.btn-secondary[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]",
                "Pause"
              )
 
       assert has_element?(
                view,
-               "button.btn-secondary[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "button.btn-warning[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]",
                "Cancel"
              )
     end
@@ -1173,6 +1188,151 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
                "button[phx-click=\"delete_inventory_run\"][phx-value-id=\"#{run.id}\"]",
                "Delete Run"
              )
+    end
+
+    test "paused inventory runs show resume and cancel but not pause", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-06],
+          inventory_prefix: "torus/inventory/2024-07-06",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :paused
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Resume"
+             )
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Cancel"
+             )
+    end
+
+    test "completed inventory runs only show delete run", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-07],
+          inventory_prefix: "torus/inventory/2024-07-07",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :completed
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"delete_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Delete Run"
+             )
+    end
+
+    test "notifier updates refresh batch status and run metrics without full page reload", %{
+      conn: conn
+    } do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-08],
+          inventory_prefix: "torus/inventory/2024-07-08",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running,
+          total_batches: 1,
+          completed_batches: 0,
+          running_batches: 0,
+          pending_batches: 1,
+          rows_ingested: 0,
+          bytes_ingested: 0
+        }
+        |> Repo.insert!()
+
+      batch =
+        %InventoryBatch{
+          run_id: run.id,
+          sequence: 1,
+          parquet_key: "torus/path/queued.parquet",
+          status: :queued,
+          object_count: 10,
+          processed_objects: 0
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      html = render(view)
+      assert html =~ "Rows written: 0"
+      assert html =~ "Queued"
+
+      batch
+      |> InventoryBatch.changeset(%{
+        status: :queued,
+        processed_objects: 4,
+        rows_ingested: 40,
+        bytes_ingested: 400
+      })
+      |> Repo.update!()
+
+      run
+      |> InventoryRun.changeset(%{
+        rows_ingested: 40,
+        bytes_ingested: 400,
+        running_batches: 1,
+        pending_batches: 0
+      })
+      |> Repo.update!()
+
+      :ok = Notifier.broadcast(:inventory_batch, %{run_id: run.id, batch_id: batch.id})
+
+      html = render(view)
+      assert html =~ "Rows written: 40"
+      assert html =~ "Bytes written: 400"
+      assert html =~ "Processed: 4"
+      refute html =~ ">Queued<"
+      assert has_element?(view, "tbody span", "Running")
+      assert html =~ "Progress is still being applied from the latest persisted chunk update."
     end
   end
 end
