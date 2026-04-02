@@ -16,7 +16,6 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
         |> assign(
           title: "ClickHouse Analytics",
           breadcrumbs: breadcrumbs(),
-          operations: AdminOperations.list_operations(limit: 10),
           current_operation: nil
         )
         |> load_dashboard_async()
@@ -47,7 +46,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
 
           {:error, :setup_not_available} ->
             {:noreply,
-             put_flash(socket, :error, "Initialize database is not currently available.")}
+             put_flash(socket, :error, "Setup database is not currently available.")}
 
           {:error, :clickhouse_unreachable} ->
             {:noreply,
@@ -62,9 +61,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     end
   end
 
-  def handle_info({:clickhouse_admin_operation_started, _operation}, socket) do
-    {:noreply, assign(socket, operations: AdminOperations.list_operations(limit: 10))}
-  end
+  def handle_info({:clickhouse_admin_operation_started, _operation}, socket), do: {:noreply, socket}
 
   def handle_info(
         {:clickhouse_admin_operation_progress, %{operation_id: operation_id, event: event}},
@@ -81,7 +78,6 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
      |> assign(
        current_operation: merge_finished_operation(socket.assigns[:current_operation], operation)
      )
-     |> assign(operations: AdminOperations.list_operations(limit: 10))
      |> load_dashboard_async()}
   end
 
@@ -179,7 +175,34 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
             </:failed>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
+              <div class="flex h-full flex-col bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
+                <h3 class="text-lg font-semibold">Setup Database</h3>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  Required before analytics writes can use this ClickHouse database.
+                </p>
+                <div class="mt-2 flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
+                  <span class={status_indicator_class(capabilities.reachable)}>
+                    {status_indicator_icon(capabilities.reachable)} Reachable
+                  </span>
+                  <span class={status_indicator_class(capabilities.database_exists)}>
+                    {status_indicator_icon(capabilities.database_exists)} Database exists
+                  </span>
+                  <span class={status_indicator_class(capabilities.table_exists)}>
+                    {status_indicator_icon(capabilities.table_exists)} Table exists
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  phx-click="run_clickhouse_operation"
+                  phx-value-kind="setup"
+                  class="mt-auto inline-flex items-center rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!capabilities.setup_enabled}
+                >
+                  Run Setup Database
+                </button>
+              </div>
+
+              <div class="flex h-full flex-col bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
                 <h3 class="text-lg font-semibold">Migrate Up</h3>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                   Apply pending ClickHouse migrations.
@@ -188,14 +211,14 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   type="button"
                   phx-click="run_clickhouse_operation"
                   phx-value-kind="migrate_up"
-                  class="mt-4 inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  class="mt-auto inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!capabilities.reachable}
                 >
                   Run Migrate Up
                 </button>
               </div>
 
-              <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
+              <div class="flex h-full flex-col bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
                 <h3 class="text-lg font-semibold">Migrate Down</h3>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                   Roll back the most recent ClickHouse migration.
@@ -204,35 +227,13 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   type="button"
                   phx-click="run_clickhouse_operation"
                   phx-value-kind="migrate_down"
-                  class="mt-4 inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  class="mt-auto inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!capabilities.reachable}
                 >
                   Run Migrate Down
                 </button>
               </div>
 
-              <%= if not capabilities.initialized do %>
-                <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
-                  <h3 class="text-lg font-semibold">Initialize Database</h3>
-                  <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    Required before analytics writes can use this ClickHouse database.
-                  </p>
-                  <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    Reachable: {format_boolean(capabilities.reachable)} | Database exists: {format_boolean(
-                      capabilities.database_exists
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    phx-click="run_clickhouse_operation"
-                    phx-value-kind="setup"
-                    class="mt-4 inline-flex items-center rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={!capabilities.setup_enabled}
-                  >
-                    Initialize Database
-                  </button>
-                </div>
-              <% end %>
             </div>
           </.async_result>
 
@@ -287,64 +288,6 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
               </div>
             </div>
           <% end %>
-
-          <div class="mt-6">
-            <h3 class="text-lg font-semibold mb-3">Recent Operation History</h3>
-            <%= if @operations == [] do %>
-              <div class="text-sm text-gray-500 dark:text-gray-400">
-                No ClickHouse admin operations recorded yet.
-              </div>
-            <% else %>
-              <div class="space-y-4">
-                <%= for operation <- @operations do %>
-                  <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
-                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <div class="font-semibold">{operation_title(operation.kind)}</div>
-                        <div class="text-sm text-gray-500 dark:text-gray-400">
-                          Status: {operation.status} | Started: {format_timestamp(
-                            operation.started_at
-                          )}
-                          <%= if operation.finished_at do %>
-                            | Finished: {format_timestamp(operation.finished_at)}
-                          <% end %>
-                        </div>
-                      </div>
-                      <div class={operation_status_class(operation.status)}>
-                        {String.upcase(to_string(operation.status))}
-                      </div>
-                    </div>
-
-                    <%= if operation.error do %>
-                      <div class="mt-3 text-sm text-red-600 dark:text-red-400">{operation.error}</div>
-                    <% end %>
-
-                    <div class="mt-3 rounded bg-gray-50 dark:bg-gray-800 p-3">
-                      <div class="text-sm font-semibold mb-2">Events</div>
-                      <ul class="space-y-2 text-sm">
-                        <%= for event <- operation.events do %>
-                          <li>
-                            <span class="font-mono text-xs text-gray-500 dark:text-gray-400">
-                              {Map.get(event, "ts")}
-                            </span>
-                            <span class="ml-2 font-semibold">
-                              {String.upcase(Map.get(event, "level", "info"))}
-                            </span>
-                            <span class="ml-2">{Map.get(event, "message")}</span>
-                            <%= if Map.get(event, "metadata", %{}) != %{} do %>
-                              <span class="ml-2 text-gray-500 dark:text-gray-400">
-                                {inspect(Map.get(event, "metadata"))}
-                              </span>
-                            <% end %>
-                          </li>
-                        <% end %>
-                      </ul>
-                    </div>
-                  </div>
-                <% end %>
-              </div>
-            <% end %>
-          </div>
         </div>
       </div>
     </div>
@@ -461,11 +404,11 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   defp parse_operation_kind("migrate_down"), do: {:ok, :migrate_down}
   defp parse_operation_kind(_), do: :error
 
-  defp operation_started_message(:setup), do: "ClickHouse database initialization started."
+  defp operation_started_message(:setup), do: "ClickHouse database setup started."
   defp operation_started_message(:migrate_up), do: "ClickHouse migrate up started."
   defp operation_started_message(:migrate_down), do: "ClickHouse migrate down started."
 
-  defp operation_title(:setup), do: "Initialize Database"
+  defp operation_title(:setup), do: "Setup Database"
   defp operation_title(:migrate_up), do: "Migrate Up"
   defp operation_title(:migrate_down), do: "Migrate Down"
 
@@ -475,9 +418,6 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%S UTC")
 
   defp format_timestamp(value), do: to_string(value)
-
-  defp format_boolean(true), do: "yes"
-  defp format_boolean(false), do: "no"
 
   defp operation_status_class(:running),
     do: "inline-flex rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800"
@@ -508,6 +448,15 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   end
 
   defp merge_finished_operation(_current, operation), do: operation
+
+  defp status_indicator_icon(true), do: "✓"
+  defp status_indicator_icon(false), do: "✗"
+
+  defp status_indicator_class(true),
+    do: "inline-flex items-center gap-1 font-medium text-green-700 dark:text-green-400"
+
+  defp status_indicator_class(false),
+    do: "inline-flex items-center gap-1 font-medium text-red-700 dark:text-red-400"
 
   defp format_uptime_unit(0, _unit), do: nil
   defp format_uptime_unit(value, unit), do: "#{format_number(value)}#{unit}"

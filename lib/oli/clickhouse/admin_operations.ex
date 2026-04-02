@@ -3,13 +3,9 @@ defmodule Oli.Clickhouse.AdminOperations do
   Safe admin-only ClickHouse operations exposed in the analytics dashboard.
   """
 
-  import Ecto.Query, only: [from: 2]
-
   alias Oli.Accounts.Author
   alias Oli.Auditing
-  alias Oli.Auditing.LogEvent
   alias Oli.FeatureTelemetry
-  alias Oli.Repo
   alias Oli.Utils.Appsignal
   alias Phoenix.PubSub
 
@@ -24,23 +20,6 @@ defmodule Oli.Clickhouse.AdminOperations do
 
   @spec subscribe() :: :ok | {:error, term()}
   def subscribe, do: PubSub.subscribe(Oli.PubSub, @pubsub_topic)
-
-  @spec list_operations(keyword()) :: [map()]
-  def list_operations(opts \\ []) do
-    limit = Keyword.get(opts, :limit, 10)
-
-    from(event in LogEvent,
-      where: event.event_type in ^audit_event_types(),
-      order_by: [desc: event.inserted_at],
-      limit: ^limit
-    )
-    |> Repo.all()
-    |> Enum.group_by(&get_in(&1.details, ["operation_id"]))
-    |> Enum.reject(fn {operation_id, _events} -> is_nil(operation_id) end)
-    |> Enum.map(fn {_operation_id, events} -> build_operation_history(events) end)
-    |> Enum.sort_by(&sort_timestamp/1, {:desc, DateTime})
-    |> Enum.take(limit)
-  end
 
   @spec start(atom(), Author.t() | nil) :: {:ok, map()} | {:error, term()}
   def start(kind, %Author{} = author) when kind in @allowed_kinds do
@@ -177,45 +156,6 @@ defmodule Oli.Clickhouse.AdminOperations do
     }
   end
 
-  defp build_operation_history(events) do
-    sorted_events = Enum.sort_by(events, & &1.inserted_at, {:asc, DateTime})
-    latest = List.last(sorted_events)
-    operation_id = get_in(latest.details, ["operation_id"])
-    kind = parse_kind(get_in(latest.details, ["kind"]))
-    label = get_in(latest.details, ["operation_label"]) || operation_label(kind)
-
-    %{
-      id: operation_id,
-      kind: kind,
-      operation_label: label,
-      status: :initiated,
-      error: nil,
-      started_at: hd(sorted_events).inserted_at,
-      finished_at: nil,
-      events: Enum.map(sorted_events, &history_event/1),
-      initiated_by_id: latest.author_id || latest.user_id,
-      actor_name: get_in(latest.details, ["actor_name"])
-    }
-  end
-
-  defp history_event(log_event) do
-    %{
-      "ts" => log_event.inserted_at |> DateTime.to_iso8601(),
-      "level" => "info",
-      "message" =>
-        get_in(log_event.details, ["message"]) || LogEvent.event_description(log_event),
-      "metadata" =>
-        Map.drop(log_event.details || %{}, [
-          "message",
-          "actor_name",
-          "operation_id",
-          "kind",
-          "operation_label",
-          "error"
-        ])
-    }
-  end
-
   defp record_audit(author, operation) do
     Auditing.log_admin_action(author, @audit_initiated, nil, %{
       "operation_id" => operation.id,
@@ -225,13 +165,6 @@ defmodule Oli.Clickhouse.AdminOperations do
       "actor_name" => operation.actor_name
     })
   end
-
-  defp sort_timestamp(operation), do: operation.finished_at || operation.started_at
-
-  defp parse_kind("setup"), do: :setup
-  defp parse_kind("migrate_up"), do: :migrate_up
-  defp parse_kind("migrate_down"), do: :migrate_down
-  defp parse_kind(_), do: :setup
 
   defp append_event(operation, event_entry) do
     Map.update!(operation, :events, fn events -> events ++ [event_entry] end)
@@ -261,11 +194,9 @@ defmodule Oli.Clickhouse.AdminOperations do
     author.name || author.email || "Author ##{author.id}"
   end
 
-  defp operation_label(:setup), do: "Initialize database"
+  defp operation_label(:setup), do: "Setup database"
   defp operation_label(:migrate_up), do: "Migrate up"
   defp operation_label(:migrate_down), do: "Migrate down"
-
-  defp audit_event_types, do: [@audit_initiated]
 
   defp broadcast(message), do: PubSub.broadcast(Oli.PubSub, @pubsub_topic, message)
 

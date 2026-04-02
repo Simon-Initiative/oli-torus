@@ -22,7 +22,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
   setup :set_mox_global
   setup [:admin_conn, :enable_clickhouse_feature, :stub_clickhouse_config, :stub_phase_four_env]
 
-  test "shows setup when ClickHouse is reachable but uninitialized and hides dangerous operations",
+  test "shows setup card first, enabled when available, and hides dangerous operations",
        %{conn: conn} do
     stub_clickhouse_http(%{database_exists: false, raw_events_exists: false})
 
@@ -30,30 +30,44 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
     html = render_async(view)
 
+    assert String.contains?(html, "Setup Database")
+    assert String.contains?(html, "Run Setup Database")
+    assert html =~ "✓ Reachable"
+    assert html =~ "✗ Database exists"
+    assert html =~ "✗ Table exists"
     assert html =~ "Run Migrate Up"
     assert html =~ "Run Migrate Down"
-    assert html =~ "Initialize Database"
     refute html =~ "Create Database"
     refute html =~ "Drop Database"
     refute html =~ "Reset Database"
 
+    {setup_index, _} = :binary.match(html, "Setup Database")
+    {migrate_up_index, _} = :binary.match(html, "Migrate Up")
+    assert setup_index < migrate_up_index
     [button_html] = Regex.run(~r/<button[^>]*phx-value-kind="setup"[^>]*>/, html)
     refute Regex.match?(~r/\sdisabled(?:=| |>)/, button_html)
   end
 
-  test "does not render setup when the database is already initialized", %{conn: conn} do
+  test "shows setup card disabled when the database is already initialized", %{conn: conn} do
     stub_clickhouse_http(%{database_exists: true, raw_events_exists: true})
 
     {:ok, view, _html} = live(conn, @route)
 
     html = render_async(view)
 
+    assert html =~ "Setup Database"
+    assert html =~ "Run Setup Database"
+    assert html =~ "✓ Reachable"
+    assert html =~ "✓ Database exists"
+    assert html =~ "✓ Table exists"
     assert html =~ "Run Migrate Up"
     assert html =~ "Run Migrate Down"
-    refute html =~ "Initialize Database"
+
+    [button_html] = Regex.run(~r/<button[^>]*phx-value-kind="setup"[^>]*>/, html)
+    assert Regex.match?(~r/\sdisabled(?:=| |>)/, button_html)
   end
 
-  test "shows durable progress and success messages for supported operations", %{conn: conn} do
+  test "shows current-operation progress and success messages for supported operations", %{conn: conn} do
     stub_clickhouse_http(%{database_exists: false, raw_events_exists: false})
 
     {:ok, view, _html} = live(conn, @route)
@@ -68,6 +82,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     assert html =~ "migrate_up finished"
     assert html =~ "Operation completed successfully."
     assert html =~ "COMPLETED"
+    refute html =~ "Recent Operation History"
   end
 
   test "shows an error when ClickHouse health check fails", %{conn: conn} do

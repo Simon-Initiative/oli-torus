@@ -59,7 +59,7 @@ defmodule Oli.Clickhouse.AdminOperationsTest do
     :ok
   end
 
-  test "captures a single initiation audit event and lists initiation history" do
+  test "captures a single initiation audit event" do
     author = author_fixture()
 
     assert {:ok, operation} = AdminOperations.start(:setup, author)
@@ -72,13 +72,11 @@ defmodule Oli.Clickhouse.AdminOperationsTest do
     assert Enum.map(events, & &1.event_type) == [:clickhouse_admin_operation_initiated]
 
     assert Enum.all?(events, &(get_in(&1.details, ["operation_id"]) == operation.id))
-
-    [history] = AdminOperations.list_operations(limit: 10)
-    assert history.id == operation.id
-    assert history.kind == :setup
-    assert history.status == :initiated
-    refute history.finished_at
-    assert Enum.any?(history.events, &(&1["message"] == "Initialize database requested."))
+    [event] = events
+    assert event.author_id == author.id
+    assert event.details["kind"] == "setup"
+    assert event.details["operation_label"] == "Setup database"
+    assert event.details["message"] == "Setup database requested."
   end
 
   test "rejects setup when initialization is not available" do

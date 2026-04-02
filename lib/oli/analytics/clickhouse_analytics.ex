@@ -184,6 +184,7 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
        %{
          reachable: true,
          database_exists: database_exists,
+         table_exists: raw_events_exists,
          initialized: initialized,
          setup_enabled: not initialized,
          allowed_operations: allowed_operations(initialized)
