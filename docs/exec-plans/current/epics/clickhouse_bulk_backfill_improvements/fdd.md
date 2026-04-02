@@ -4,7 +4,7 @@
 
 This design keeps the current repository boundaries centered on `Oli.Analytics.Backfill.Inventory`, `Oli.Analytics.Backfill.Inventory.BatchWorker`, `OliWeb.Admin.ClickhouseBackfillLive`, and `OliWeb.Admin.ClickHouseAnalyticsView`, but replaces optimistic run-state updates with a simpler authoritative settled-state model. The selected approach keeps only settled run states for pause and cancel, preserves per-batch progress on retry instead of resetting it, prevents a single batch failure from forcing the entire run into `:failed` while other work is still eligible, and pushes chunk-driven aggregate updates back through the existing notifier and chunk-log channels so the admin UI reflects authoritative progress in near real time.
 
-The design also separates safe UI-exposed ClickHouse operations from dangerous shell-only tasks. `Oli.ClickHouse.Tasks` is renamed to `Oli.Clickhouse.Tasks`, refactored into a structured task service with event callbacks, and used in two ways: Mix or IEx continues to expose the full task set including create, drop, and reset, while the admin UI is limited to migrate up, migrate down, and `setup`. To keep operator feedback durable instead of page-local, the design adds a small persisted operation-log model for safe UI-triggered tasks. Run-scoped operation history is retained until `Delete Run` is invoked, making run deletion the explicit cleanup path rather than adding a separate automatic retention mechanism. The up-front audit requirement is satisfied by making this FDD the phase-0 design audit artifact and requiring implementation planning to follow its recommendations rather than expanding the admin surface speculatively.
+The design also separates safe UI-exposed ClickHouse operations from dangerous shell-only tasks. `Oli.ClickHouse.Tasks` is renamed to `Oli.Clickhouse.Tasks`, refactored into a structured task service with event callbacks, and used in two ways: Mix or IEx continues to expose the full task set including create, drop, and reset, while the admin UI is limited to migrate up, migrate down, and `setup`. To keep administrative traceability without a dedicated operation table, the implemented path records only operation initiation in `Oli.Auditing.LogEvent` and keeps progress plus terminal outcomes page-local through PubSub updates. The up-front audit requirement is satisfied by making this FDD the phase-0 design audit artifact and requiring implementation planning to follow its recommendations rather than expanding the admin surface speculatively.
 
 ## 2. Requirements & Assumptions
 
@@ -21,7 +21,7 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
   - `FR-009` / `AC-024` / `AC-025`: the canonical module namespace is `Oli.Clickhouse.Tasks`, and code plus docs must be updated consistently.
 - Non-functional requirements:
   - Reliability requires settled state ownership in the backend, not inferred button rules in LiveView.
-  - Observability requires chunk-level progress, run-level aggregates, operation logs, and clear terminal outcomes.
+  - Observability requires chunk-level progress, run-level aggregates, initiation auditability for admin tasks, and clear terminal outcomes in the active process.
   - Performance requires event-driven UI refresh from chunk and lifecycle updates, avoiding heavy polling loops.
   - Security requires that dangerous ClickHouse operations stay in Mix or IEx workflows rather than admin UI exposure.
   - Maintainability requires one canonical ClickHouse task namespace and one safe task execution contract.
@@ -39,7 +39,7 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
   - The current retry path in `Inventory.retry_batch/1` resets `processed_objects`, `rows_ingested`, `bytes_ingested`, `chunk_count`, and `chunk_sequence` to zero, which forces batch replay and directly conflicts with `AC-007` and `AC-008`.
   - The current batch failure path in `BatchWorker.handle_failure/3` transitions both the batch and the run to `:failed`, which directly conflicts with `AC-009` and `AC-010`.
   - The current pause path transitions a run to `:paused` immediately, even though running batches may still be draining, which explains the stale control-state problem behind `AC-005`, `AC-006`, and `AC-011`.
-  - The current ClickHouse analytics admin page is health-only and does not yet include task execution, capability gating, or durable operation logs.
+  - The current ClickHouse analytics admin page is health-only and does not yet include task execution, capability gating, or initiation audit history.
   - `lib/oli/clickhouse/tasks.ex` and `lib/mix/tasks/clickhouse_migrate.ex` already centralize the ClickHouse migration and database tasks, but the module naming is still `Oli.ClickHouse.Tasks`.
   - `docs/runbooks/clickhouse/operations.md` already documents Mix-based schema lifecycle commands and admin pages, so the rename and UI-scope restriction both need documentation updates there.
 - Unknowns to confirm:
@@ -67,11 +67,11 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
   - Exposes structured progress events so shell wrappers and the safe admin UI runner can render the same underlying task lifecycle without parsing ad hoc stdout.
 - `Oli.Clickhouse.AdminOperations`:
   - New service responsible for safe UI-exposed operations only: `:setup`, `:migrate_up`, and `:migrate_down`.
-  - Persists operation status and bounded event logs, publishes updates over PubSub, and delegates execution to `Oli.Clickhouse.Tasks`.
+  - Publishes in-flight progress over PubSub, records a single initiation audit entry in `Oli.Auditing.LogEvent`, and delegates execution to `Oli.Clickhouse.Tasks`.
 - `OliWeb.Admin.ClickHouseAnalyticsView`:
   - Expands from health-only to health plus safe task execution.
   - Uses a capability snapshot to decide whether `setup` is visible and enabled.
-  - Renders recent persisted admin operations and subscribes for live updates while a task is running.
+  - Renders recent initiation audit history and subscribes for live updates while a task is running.
 
 ### 4.2 State & Data Flow
 
@@ -109,9 +109,8 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 - ClickHouse safe task flow:
   - Admin page loads health plus capability snapshot.
   - User starts migrate up, migrate down, or `setup`.
-  - `Oli.Clickhouse.AdminOperations` creates an operation record, streams bounded step events, runs the renamed task service in a supervised async process, and persists completion or failure.
-  - LiveView renders live progress and recent operation history from persisted state.
-  - Run-scoped operation history is removed when `Delete Run` deletes the associated run.
+  - `Oli.Clickhouse.AdminOperations` creates an in-memory operation descriptor, streams bounded step events, runs the renamed task service in a supervised async process, and records only the initiation event via `Oli.Auditing.LogEvent`.
+  - LiveView renders live progress from PubSub and recent initiation history from audit state.
 
 ### 4.3 Lifecycle & Ownership
 
@@ -126,7 +125,7 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
   - Batch counters remain the source of truth for run aggregates.
   - Run aggregates are derived and persisted after each chunk success and each terminal batch transition.
 - Operation-log ownership:
-  - `Oli.Clickhouse.AdminOperations` owns persisted UI task history.
+  - `Oli.Clickhouse.AdminOperations` owns PubSub progress fanout and initiation-audit capture for UI task history.
   - `Oli.Clickhouse.Tasks` owns the task execution semantics and step emission contract.
 - Documentation ownership:
   - Product and planning docs update the canonical module name.
@@ -145,7 +144,7 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 - Selected approach:
   - Keep only settled run statuses and derive them directly from authoritative batch state.
   - Preserve batch progress on retry.
-  - Persist safe UI task operations separately from shell-only dangerous operations.
+  - Persist only safe UI task initiations for audit purposes while keeping runtime progress in-process.
   - Rename and refactor the task module once, then reuse it across UI and Mix wrappers.
 
 ## 5. Interfaces
@@ -194,21 +193,9 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
   - `clickhouse_inventory_chunk_logs`
     - Preserve logs across retries.
     - Add retry-attempt context in `metrics` rather than deleting historical logs.
-- New table:
-  - `clickhouse_admin_operations`
-    - Fields:
-      - `kind` as enum-like string: `setup`, `migrate_up`, `migrate_down`
-      - `status`: `running`, `completed`, `failed`
-      - `events` as JSON list of bounded `{ts, level, message}` entries
-      - `error` as summary string
-      - `metadata` for capability snapshot or environment details safe for admins
-      - `started_at`, `finished_at`
-      - `initiated_by_id`
-    - Purpose:
-      - survive page refreshes
-      - support “while running and after completion” feedback for `AC-016`
-      - provide a durable operator trail without turning the page into a full operations console
-      - remain eligible for explicit cleanup when `Delete Run` removes the associated run-scoped history
+- No new ClickHouse admin-operations table is required in the implemented path.
+- `audit_log_events` records the durable operator trail for operation initiation only.
+- PubSub carries in-flight step messages for the currently open admin page.
 - No caching layer is added for orchestration state; the database remains the source of truth and PubSub is only a transport.
 
 ## 7. Consistency & Transactions
@@ -229,10 +216,10 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
   - Reset only retry-safe fields.
   - Preserve progress counters and logs.
   - Re-enqueue through normal scheduling.
-- Admin task operation transaction:
-  - Create operation row first.
-  - Persist progress-event batches as the task runs.
-  - Persist terminal result exactly once.
+- Admin task operation flow:
+  - Persist the initiation audit event before spawning task execution.
+  - Broadcast progress-event batches as the task runs.
+  - Broadcast terminal result exactly once to connected processes.
 
 ## 8. Caching Strategy
 
@@ -249,7 +236,7 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
   - If recomputation becomes too heavy at scale, the fallback optimization is an incremental aggregate updater inside `Inventory`, not a caching layer.
 - Admin task operations:
   - Expected volume is low.
-  - Persisted operation logs are bounded to a small recent window and bounded event count per operation.
+  - Persisted initiation audit entries are bounded to a small recent window; in-process progress remains ephemeral by design.
 
 ## 10. Failure Modes & Resilience
 
@@ -264,7 +251,7 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 - `AC-019` / `AC-020`: `setup` button is enabled in the wrong state.
   - Mitigation: capability snapshot computes enablement from an explicit reachability plus initialization check, not from page-local assumptions.
 - `AC-016`: long-running task output is lost on refresh.
-  - Mitigation: persist safe operation logs in Postgres and stream updates over PubSub.
+  - Mitigation: persist initiation in the audit log for traceability and stream live updates over PubSub, accepting that step-by-step progress is ephemeral.
 - `AC-024` / `AC-025`: namespace rename leaves stale references.
   - Mitigation: one explicit code and doc sweep across Mix tasks, tests, PRD/FDD docs, and runbooks.
 

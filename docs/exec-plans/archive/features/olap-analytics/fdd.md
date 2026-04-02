@@ -38,7 +38,7 @@ The OLAP Analytics feature introduces a ClickHouse-backed analytics pipeline tha
 ### 4.1 Component Roles & Interactions
 
 - **ClickHouse Storage**: `raw_events` table in ClickHouse stores unified event columns for all xAPI event types.
-- **ClickHouse Migrations**: `Mix.Tasks.Clickhouse.Migrate` and `Oli.ClickHouse.Tasks` wrap `goose` to manage ClickHouse migrations.
+- **ClickHouse Migrations**: `Mix.Tasks.Clickhouse.Migrate` and `Oli.Clickhouse.Tasks` wrap `goose` to manage ClickHouse migrations.
 - **xAPI Ingestion**:
   - **S3 Uploader** (`Oli.Analytics.XAPI.S3Uploader`): writes JSONL bundles to S3.
   - **Lambda ETL** (`cloud/xapi-etl-processor/lambda_function.py`): converts JSONL to Parquet and inserts into ClickHouse.

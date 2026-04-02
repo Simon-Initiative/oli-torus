@@ -13,7 +13,7 @@ Deliver the FDD-selected authoritative backfill lifecycle architecture and the c
 - preserve per-batch progress and chunk logs across retry so retries resume from the failed chunk boundary
 - prevent one failed batch from halting unrelated current or future eligible work in the same run
 - drive batch status and in-progress metrics from chunk and lifecycle updates so the admin UI reflects authoritative progress
-- expose only safe ClickHouse admin operations in the analytics dashboard with durable progress and error feedback
+- expose only safe ClickHouse admin operations in the analytics dashboard with initiation auditability and process-local progress/error feedback
 - rename `Oli.ClickHouse.Tasks` to `Oli.Clickhouse.Tasks` across code, Mix entrypoints, tests, and docs
 - keep telemetry, performance posture, documentation, and rollout notes aligned with the operational scope defined in the PRD/FDD
 
@@ -123,24 +123,24 @@ Deliver the FDD-selected authoritative backfill lifecycle architecture and the c
 
 ## Phase 4: ClickHouse Task Service Rename and Safe Admin Operations Surface
 
-- Goal: Rename the canonical task namespace and add the minimal UI-safe ClickHouse operation service with durable progress history and capability gating.
+- Goal: Rename the canonical task namespace and add the minimal UI-safe ClickHouse operation service with initiation auditability, in-process progress feedback, and capability gating.
 - Tasks:
-  - [ ] Rename `Oli.ClickHouse.Tasks` to `Oli.Clickhouse.Tasks` across runtime code, Mix tasks, tests, and internal references.
-  - [ ] Refactor the canonical task service so task functions accept structured event sinks suitable for shell and LiveView consumers.
-  - [ ] Implement `Oli.Clickhouse.AdminOperations` for the safe operation subset: `:setup`, `:migrate_up`, and `:migrate_down`.
-  - [ ] Add the persisted `clickhouse_admin_operations` model, migration, schema, and bounded event-log persistence needed to survive refreshes and show terminal outcomes.
-  - [ ] Implement or finalize the admin capability snapshot that distinguishes reachable, database-exists, initialized, and `setup_enabled` states.
-  - [ ] Expand `OliWeb.Admin.ClickHouseAnalyticsView` to render the safe operations, current capability state, durable operation logs, and running-task updates.
-  - [ ] Explicitly exclude `create`, `drop`, and `reset` from the admin UI while preserving Mix/IEx workflows for those operations.
-  - [ ] Update telemetry/AppSignal instrumentation for admin operation starts, progress events, completions, and failures.
+  - [x] Rename `Oli.ClickHouse.Tasks` to `Oli.Clickhouse.Tasks` across runtime code, Mix tasks, tests, and internal references.
+  - [x] Refactor the canonical task service so task functions accept structured event sinks suitable for shell and LiveView consumers.
+  - [x] Implement `Oli.Clickhouse.AdminOperations` for the safe operation subset: `:setup`, `:migrate_up`, and `:migrate_down`.
+  - [x] Replace dedicated operation persistence with a single `Oli.Auditing.LogEvent` initiation audit entry, while keeping progress and terminal outcomes page-local and PubSub-driven.
+  - [x] Implement or finalize the admin capability snapshot that distinguishes reachable, database-exists, initialized, and `setup_enabled` states.
+  - [x] Expand `OliWeb.Admin.ClickHouseAnalyticsView` to render the safe operations, current capability state, initiation audit history, and running-task updates.
+  - [x] Explicitly exclude `create`, `drop`, and `reset` from the admin UI while preserving Mix/IEx workflows for those operations.
+  - [x] Update telemetry/AppSignal instrumentation for admin operation starts, progress events, completions, and failures.
 - Testing Tasks:
-  - [ ] Add ExUnit tests for task-service rename coverage, admin-operation service allowlist enforcement, operation-log persistence, and capability evaluation.
-  - [ ] Add LiveView tests for operation visibility, `setup` enablement rules, durable progress/error rendering, and dangerous-operation absence covering `AC-016` through `AC-021`.
-  - [ ] Command(s): `mix test test/oli/clickhouse`
-  - [ ] Command(s): `mix test test/oli_web/live/admin`
+  - [x] Add ExUnit tests for task-service rename coverage, admin-operation service allowlist enforcement, initiation audit capture, and capability evaluation.
+  - [x] Add LiveView tests for operation visibility, `setup` enablement rules, process-local progress/error rendering, and dangerous-operation absence covering `AC-016` through `AC-021`.
+  - [x] Command(s): `mix test test/oli/clickhouse`
+  - [x] Command(s): `mix test test/oli_web/live/admin`
 - Definition of Done:
   - `Oli.Clickhouse.Tasks` is the only canonical namespace in code paths touched by this work.
-  - The admin dashboard exposes only the intended safe operations with durable progress and error feedback.
+  - The admin dashboard exposes only the intended safe operations with initiation audit history and page-local progress/error feedback.
   - `setup` enablement is driven by an explicit capability snapshot, not page-local assumptions.
 - Gate:
   - Gate D: safe ClickHouse operations and namespace consistency are verified before documentation and release close-out.
@@ -154,18 +154,18 @@ Deliver the FDD-selected authoritative backfill lifecycle architecture and the c
 
 - Goal: Close the work item with validated traceability, updated operator/developer docs, and targeted regression coverage across all touched boundaries.
 - Tasks:
-  - [ ] Update product, engineering, and operations documentation to use `Oli.Clickhouse.Tasks` consistently, including ClickHouse runbooks and any impacted work-item artifacts.
-  - [ ] Capture rollout and operator notes for the final control surface, simplified run behavior, metric freshness expectations, and shell-only dangerous operations.
-  - [ ] Confirm telemetry and AppSignal coverage are documented where operators or future maintainers need to inspect lifecycle and admin-task behavior.
+  - [x] Update product, engineering, and operations documentation to use `Oli.Clickhouse.Tasks` consistently, including ClickHouse runbooks and any impacted work-item artifacts.
+  - [x] Capture rollout and operator notes for the final control surface, simplified run behavior, metric freshness expectations, and shell-only dangerous operations.
+  - [x] Confirm telemetry and AppSignal coverage are documented where operators or future maintainers need to inspect lifecycle and admin-task behavior.
   - [ ] Update Jira execution notes with phase completion, validation status, and any follow-up items intentionally deferred beyond this work item.
-  - [ ] Reconcile the PRD/FDD/plan if implementation detail drift is discovered during execution.
+  - [x] Reconcile the PRD/FDD/plan if implementation detail drift is discovered during execution.
 - Testing Tasks:
-  - [ ] Run the narrowest impacted backend and LiveView suites across all changed boundaries, broadening only as failures or coupling warrant.
-  - [ ] Run the required work-item trace and validation commands for plan presence and plan correctness.
-  - [ ] Command(s): `mix test test/oli/analytics/backfill test/oli/analytics test/oli/clickhouse test/oli_web/live/admin`
-  - [ ] Command(s): `python3 <skills_root>/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/clickhouse_bulk_backfill_improvements --action verify_plan`
-  - [ ] Command(s): `python3 <skills_root>/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/clickhouse_bulk_backfill_improvements --action master_validate --stage plan_present`
-  - [ ] Command(s): `python3 <skills_root>/validate/scripts/validate_work_item.py docs/exec-plans/current/epics/clickhouse_bulk_backfill_improvements --check plan`
+  - [x] Run the narrowest impacted backend and LiveView suites across all changed boundaries, broadening only as failures or coupling warrant.
+  - [x] Run the required work-item trace and validation commands for plan presence and plan correctness.
+  - [x] Command(s): `mix test test/oli/analytics/backfill test/oli/analytics test/oli/clickhouse test/oli_web/live/admin`
+  - [x] Command(s): `python3 <skills_root>/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/clickhouse_bulk_backfill_improvements --action verify_plan`
+  - [x] Command(s): `python3 <skills_root>/requirements/scripts/requirements_trace.py docs/exec-plans/current/epics/clickhouse_bulk_backfill_improvements --action master_validate --stage plan_present`
+  - [x] Command(s): `python3 <skills_root>/validate/scripts/validate_work_item.py docs/exec-plans/current/epics/clickhouse_bulk_backfill_improvements --check plan`
 - Definition of Done:
   - Requirements trace and work-item validation pass.
   - Operator and developer docs match the canonical namespace and final UI/shell boundaries.
@@ -190,5 +190,5 @@ Deliver the FDD-selected authoritative backfill lifecycle architecture and the c
 - Gate A: lifecycle, retry, and UI-control safety-net tests exist and the authoritative state contract is explicit.
 - Gate B: backend lifecycle simplification, retry-cursor preservation, and failure isolation are implemented and proven in targeted domain tests.
 - Gate C: admin backfill UI reflects authoritative state and near-real-time progress with targeted LiveView coverage.
-- Gate D: `Oli.Clickhouse.Tasks` is canonical and the ClickHouse admin page exposes only the safe, capability-gated operations with durable feedback.
+- Gate D: `Oli.Clickhouse.Tasks` is canonical and the ClickHouse admin page exposes only the safe, capability-gated operations with initiation auditability plus in-process feedback.
 - Gate E: trace validation, work-item validation, targeted regression suites, and documentation updates are all complete.

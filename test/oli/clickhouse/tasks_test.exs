@@ -1,9 +1,9 @@
-defmodule Oli.ClickHouse.TasksTest do
+defmodule Oli.Clickhouse.TasksTest do
   use ExUnit.Case, async: true
 
   import ExUnit.CaptureIO
 
-  alias Oli.ClickHouse.Tasks
+  alias Oli.Clickhouse.Tasks
 
   describe "reset/0" do
     test "requires explicit confirmation before proceeding" do
@@ -12,7 +12,9 @@ defmodule Oli.ClickHouse.TasksTest do
           assert :cancelled = Tasks.reset()
         end)
 
-      assert output =~ "WARNING! This will completely erase all data from the ClickHouse database."
+      assert output =~
+               "WARNING! This will completely erase all data from the ClickHouse database."
+
       assert output =~ "Enter RESET CLICKHOUSE to continue"
       assert output =~ "--force to bypass"
       assert output =~ "ABORTED: Operation was not confirmed by user."

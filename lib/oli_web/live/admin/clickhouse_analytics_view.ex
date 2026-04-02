@@ -2,6 +2,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   use OliWeb, :live_view
 
   alias Oli.Analytics.ClickhouseAnalytics
+  alias Oli.Clickhouse.AdminOperations
   alias Oli.Features
   alias OliWeb.Common.Breadcrumb
 
@@ -10,23 +11,78 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
 
   def mount(_, _, socket) do
     if Features.enabled?("clickhouse-olap") do
-      {:ok,
-       assign(socket,
-         title: "ClickHouse Analytics",
-         breadcrumbs: breadcrumbs()
-       )
-       |> assign_async(:health_summary, fn ->
-         case ClickhouseAnalytics.health_summary() do
-           {:ok, summary} -> {:ok, %{health_summary: summary}}
-           {:error, reason} -> {:error, reason}
-         end
-       end)}
+      socket =
+        socket
+        |> assign(
+          title: "ClickHouse Analytics",
+          breadcrumbs: breadcrumbs(),
+          operations: AdminOperations.list_operations(limit: 10),
+          current_operation: nil
+        )
+        |> load_dashboard_async()
+
+      if connected?(socket) do
+        AdminOperations.subscribe()
+      end
+
+      {:ok, socket}
     else
       {:ok,
        socket
        |> put_flash(:error, "ClickHouse analytics is not enabled.")
        |> redirect(to: ~p"/admin")}
     end
+  end
+
+  def handle_event("run_clickhouse_operation", %{"kind" => kind}, socket) do
+    case parse_operation_kind(kind) do
+      {:ok, operation_kind} ->
+        case AdminOperations.start(operation_kind, socket.assigns.current_author) do
+          {:ok, operation} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, operation_started_message(operation_kind))
+             |> assign(current_operation: operation)
+             |> load_dashboard_async()}
+
+          {:error, :setup_not_available} ->
+            {:noreply,
+             put_flash(socket, :error, "Initialize database is not currently available.")}
+
+          {:error, :clickhouse_unreachable} ->
+            {:noreply,
+             put_flash(socket, :error, "ClickHouse must be reachable before running migrations.")}
+
+          {:error, reason} ->
+            {:noreply, put_flash(socket, :error, format_error(reason))}
+        end
+
+      :error ->
+        {:noreply, put_flash(socket, :error, "Unsupported ClickHouse operation.")}
+    end
+  end
+
+  def handle_info({:clickhouse_admin_operation_started, _operation}, socket) do
+    {:noreply, assign(socket, operations: AdminOperations.list_operations(limit: 10))}
+  end
+
+  def handle_info(
+        {:clickhouse_admin_operation_progress, %{operation_id: operation_id, event: event}},
+        socket
+      ) do
+    {:noreply,
+     socket
+     |> maybe_append_current_operation_event(operation_id, event)}
+  end
+
+  def handle_info({:clickhouse_admin_operation_finished, operation}, socket) do
+    {:noreply,
+     socket
+     |> assign(
+       current_operation: merge_finished_operation(socket.assigns[:current_operation], operation)
+     )
+     |> assign(operations: AdminOperations.list_operations(limit: 10))
+     |> load_dashboard_async()}
   end
 
   def render(assigns) do
@@ -105,9 +161,210 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
             </div>
           </.async_result>
         </div>
+
+        <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+          <h2 class="text-xl font-semibold mb-2">Database Operations</h2>
+          <p class="text-gray-600 dark:text-gray-400 mb-4">
+            Safe admin operations only. Create, drop, and reset remain shell-only workflows.
+          </p>
+
+          <.async_result :let={capabilities} assign={@clickhouse_capabilities}>
+            <:loading>
+              <div class="text-gray-500 dark:text-gray-400">Loading operation capabilities...</div>
+            </:loading>
+            <:failed :let={reason}>
+              <div class="text-red-600 dark:text-red-400">
+                ClickHouse capability check failed: {format_error(reason)}
+              </div>
+            </:failed>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
+                <h3 class="text-lg font-semibold">Migrate Up</h3>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  Apply pending ClickHouse migrations.
+                </p>
+                <button
+                  type="button"
+                  phx-click="run_clickhouse_operation"
+                  phx-value-kind="migrate_up"
+                  class="mt-4 inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!capabilities.reachable}
+                >
+                  Run Migrate Up
+                </button>
+              </div>
+
+              <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
+                <h3 class="text-lg font-semibold">Migrate Down</h3>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  Roll back the most recent ClickHouse migration.
+                </p>
+                <button
+                  type="button"
+                  phx-click="run_clickhouse_operation"
+                  phx-value-kind="migrate_down"
+                  class="mt-4 inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!capabilities.reachable}
+                >
+                  Run Migrate Down
+                </button>
+              </div>
+
+              <%= if not capabilities.initialized do %>
+                <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
+                  <h3 class="text-lg font-semibold">Initialize Database</h3>
+                  <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    Required before analytics writes can use this ClickHouse database.
+                  </p>
+                  <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Reachable: {format_boolean(capabilities.reachable)} | Database exists: {format_boolean(
+                      capabilities.database_exists
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    phx-click="run_clickhouse_operation"
+                    phx-value-kind="setup"
+                    class="mt-4 inline-flex items-center rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={!capabilities.setup_enabled}
+                  >
+                    Initialize Database
+                  </button>
+                </div>
+              <% end %>
+            </div>
+          </.async_result>
+
+          <%= if @current_operation do %>
+            <div class="mt-6">
+              <h3 class="text-lg font-semibold mb-3">Current Operation</h3>
+              <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
+                <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <div class="font-semibold">{operation_title(@current_operation.kind)}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                      Status: {@current_operation.status} | Started: {format_timestamp(
+                        @current_operation.started_at
+                      )}
+                      <%= if @current_operation.finished_at do %>
+                        | Finished: {format_timestamp(@current_operation.finished_at)}
+                      <% end %>
+                    </div>
+                  </div>
+                  <div class={operation_status_class(@current_operation.status)}>
+                    {String.upcase(to_string(@current_operation.status))}
+                  </div>
+                </div>
+
+                <%= if @current_operation.error do %>
+                  <div class="mt-3 text-sm text-red-600 dark:text-red-400">
+                    {@current_operation.error}
+                  </div>
+                <% end %>
+
+                <div class="mt-3 rounded bg-gray-50 dark:bg-gray-800 p-3">
+                  <div class="text-sm font-semibold mb-2">Progress</div>
+                  <ul class="space-y-2 text-sm">
+                    <%= for event <- @current_operation.events do %>
+                      <li>
+                        <span class="font-mono text-xs text-gray-500 dark:text-gray-400">
+                          {Map.get(event, "ts")}
+                        </span>
+                        <span class="ml-2 font-semibold">
+                          {String.upcase(Map.get(event, "level", "info"))}
+                        </span>
+                        <span class="ml-2">{Map.get(event, "message")}</span>
+                        <%= if Map.get(event, "metadata", %{}) != %{} do %>
+                          <span class="ml-2 text-gray-500 dark:text-gray-400">
+                            {inspect(Map.get(event, "metadata"))}
+                          </span>
+                        <% end %>
+                      </li>
+                    <% end %>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          <% end %>
+
+          <div class="mt-6">
+            <h3 class="text-lg font-semibold mb-3">Recent Operation History</h3>
+            <%= if @operations == [] do %>
+              <div class="text-sm text-gray-500 dark:text-gray-400">
+                No ClickHouse admin operations recorded yet.
+              </div>
+            <% else %>
+              <div class="space-y-4">
+                <%= for operation <- @operations do %>
+                  <div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
+                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <div class="font-semibold">{operation_title(operation.kind)}</div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                          Status: {operation.status} | Started: {format_timestamp(
+                            operation.started_at
+                          )}
+                          <%= if operation.finished_at do %>
+                            | Finished: {format_timestamp(operation.finished_at)}
+                          <% end %>
+                        </div>
+                      </div>
+                      <div class={operation_status_class(operation.status)}>
+                        {String.upcase(to_string(operation.status))}
+                      </div>
+                    </div>
+
+                    <%= if operation.error do %>
+                      <div class="mt-3 text-sm text-red-600 dark:text-red-400">{operation.error}</div>
+                    <% end %>
+
+                    <div class="mt-3 rounded bg-gray-50 dark:bg-gray-800 p-3">
+                      <div class="text-sm font-semibold mb-2">Events</div>
+                      <ul class="space-y-2 text-sm">
+                        <%= for event <- operation.events do %>
+                          <li>
+                            <span class="font-mono text-xs text-gray-500 dark:text-gray-400">
+                              {Map.get(event, "ts")}
+                            </span>
+                            <span class="ml-2 font-semibold">
+                              {String.upcase(Map.get(event, "level", "info"))}
+                            </span>
+                            <span class="ml-2">{Map.get(event, "message")}</span>
+                            <%= if Map.get(event, "metadata", %{}) != %{} do %>
+                              <span class="ml-2 text-gray-500 dark:text-gray-400">
+                                {inspect(Map.get(event, "metadata"))}
+                              </span>
+                            <% end %>
+                          </li>
+                        <% end %>
+                      </ul>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
       </div>
     </div>
     """
+  end
+
+  defp load_dashboard_async(socket) do
+    socket
+    |> assign_async(:health_summary, fn ->
+      case ClickhouseAnalytics.health_summary() do
+        {:ok, summary} -> {:ok, %{health_summary: summary}}
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+    |> assign_async(:clickhouse_capabilities, fn ->
+      case ClickhouseAnalytics.admin_capabilities() do
+        {:ok, capabilities} -> {:ok, %{clickhouse_capabilities: capabilities}}
+        {:error, reason} -> {:error, reason}
+      end
+    end)
   end
 
   defp breadcrumbs do
@@ -198,6 +455,59 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
 
   defp format_error(reason) when is_binary(reason), do: reason
   defp format_error(reason), do: inspect(reason)
+
+  defp parse_operation_kind("setup"), do: {:ok, :setup}
+  defp parse_operation_kind("migrate_up"), do: {:ok, :migrate_up}
+  defp parse_operation_kind("migrate_down"), do: {:ok, :migrate_down}
+  defp parse_operation_kind(_), do: :error
+
+  defp operation_started_message(:setup), do: "ClickHouse database initialization started."
+  defp operation_started_message(:migrate_up), do: "ClickHouse migrate up started."
+  defp operation_started_message(:migrate_down), do: "ClickHouse migrate down started."
+
+  defp operation_title(:setup), do: "Initialize Database"
+  defp operation_title(:migrate_up), do: "Migrate Up"
+  defp operation_title(:migrate_down), do: "Migrate Down"
+
+  defp format_timestamp(nil), do: "n/a"
+
+  defp format_timestamp(%DateTime{} = value),
+    do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%S UTC")
+
+  defp format_timestamp(value), do: to_string(value)
+
+  defp format_boolean(true), do: "yes"
+  defp format_boolean(false), do: "no"
+
+  defp operation_status_class(:running),
+    do: "inline-flex rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800"
+
+  defp operation_status_class(:completed),
+    do: "inline-flex rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-800"
+
+  defp operation_status_class(:failed),
+    do: "inline-flex rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800"
+
+  defp operation_status_class(:initiated),
+    do: "inline-flex rounded bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-800"
+
+  defp maybe_append_current_operation_event(socket, operation_id, event) do
+    case socket.assigns[:current_operation] do
+      %{id: ^operation_id} = operation ->
+        assign(socket, current_operation: %{operation | events: operation.events ++ [event]})
+
+      _ ->
+        socket
+    end
+  end
+
+  defp merge_finished_operation(%{id: id, events: events} = _current, %{id: id} = operation) do
+    merged = events ++ Enum.reject(operation.events, &(&1 in events))
+
+    %{operation | events: merged}
+  end
+
+  defp merge_finished_operation(_current, operation), do: operation
 
   defp format_uptime_unit(0, _unit), do: nil
   defp format_uptime_unit(value, unit), do: "#{format_number(value)}#{unit}"

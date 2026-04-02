@@ -25,35 +25,35 @@ defmodule Mix.Tasks.Clickhouse.Migrate do
     try do
       case command do
         "up" ->
-          Oli.ClickHouse.Tasks.up()
+          Oli.Clickhouse.Tasks.up()
 
         "down" ->
-          Oli.ClickHouse.Tasks.down()
+          Oli.Clickhouse.Tasks.down()
 
         "status" ->
-          Oli.ClickHouse.Tasks.status()
+          Oli.Clickhouse.Tasks.status()
 
         "create" ->
           case positional_args do
             ["create", name] when is_binary(name) ->
-              Oli.ClickHouse.Tasks.create(name)
+              Oli.Clickhouse.Tasks.create(name)
 
             _ ->
               Mix.raise("Usage: mix clickhouse.migrate create <migration_name>")
           end
 
         "setup" ->
-          Oli.ClickHouse.Tasks.setup()
+          Oli.Clickhouse.Tasks.setup()
 
         "reset" ->
           if opts[:force] do
-            Oli.ClickHouse.Tasks.reset(%{dangerously_force: true})
+            Oli.Clickhouse.Tasks.reset(%{dangerously_force: true}, [])
           else
-            Oli.ClickHouse.Tasks.reset()
+            Oli.Clickhouse.Tasks.reset()
           end
 
         "drop" ->
-          Oli.ClickHouse.Tasks.drop()
+          Oli.Clickhouse.Tasks.drop()
 
         _ ->
           Mix.raise(

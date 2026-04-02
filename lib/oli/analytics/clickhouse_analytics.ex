@@ -170,6 +170,28 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   end
 
   @doc """
+  Returns the admin-facing ClickHouse capability snapshot used by the analytics dashboard.
+  """
+  def admin_capabilities do
+    database = clickhouse_config(:admin).database
+
+    with {:ok, _base} <- fetch_health_metadata(database),
+         {:ok, database_exists} <- fetch_database_exists(database),
+         {:ok, raw_events_exists} <- fetch_table_exists(database, "raw_events") do
+      initialized = database_exists and raw_events_exists
+
+      {:ok,
+       %{
+         reachable: true,
+         database_exists: database_exists,
+         initialized: initialized,
+         setup_enabled: not initialized,
+         allowed_operations: allowed_operations(initialized)
+       }}
+    end
+  end
+
+  @doc """
   Get comprehensive analytics for a specific section across all event types.
   """
   def comprehensive_section_analytics(section_id) when is_integer(section_id) do
@@ -444,6 +466,44 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   def execute_query(_), do: {:error, "Empty query"}
 
+  defp fetch_database_exists(database) do
+    query = """
+    SELECT count() > 0 AS exists
+    FROM system.databases
+    WHERE name = '#{escape_single_quotes(database)}'
+    """
+
+    query
+    |> execute_query("clickhouse database exists", credential: :admin)
+    |> extract_single_row()
+    |> case do
+      {:ok, %{"exists" => value}} -> {:ok, parse_truthy(value)}
+      {:ok, row} -> {:ok, parse_truthy(Map.get(row, "result"))}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp fetch_table_exists(database, table) do
+    query = """
+    SELECT count() > 0 AS exists
+    FROM system.tables
+    WHERE database = '#{escape_single_quotes(database)}'
+      AND name = '#{escape_single_quotes(table)}'
+    """
+
+    query
+    |> execute_query("clickhouse table exists", credential: :admin)
+    |> extract_single_row()
+    |> case do
+      {:ok, %{"exists" => value}} -> {:ok, parse_truthy(value)}
+      {:ok, row} -> {:ok, parse_truthy(Map.get(row, "result"))}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp allowed_operations(true), do: [:migrate_up, :migrate_down]
+  defp allowed_operations(false), do: [:setup, :migrate_up, :migrate_down]
+
   defp normalize_keyword_options(value) when is_list(value), do: value
   defp normalize_keyword_options(%{} = map), do: Enum.into(map, [])
   defp normalize_keyword_options(_), do: []
@@ -525,6 +585,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   end
 
   defp normalize_query_param_value(value), do: to_string(value)
+
+  defp parse_truthy(value) when value in [1, "1", true, "true", "TRUE"], do: true
+  defp parse_truthy(_), do: false
 
   defp escape_single_quotes(nil), do: ""
 
