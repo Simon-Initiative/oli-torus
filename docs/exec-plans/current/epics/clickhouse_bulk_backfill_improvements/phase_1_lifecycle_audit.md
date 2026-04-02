@@ -18,7 +18,7 @@ The current inventory backfill lifecycle is mutated in these backend entrypoints
 - `Oli.Analytics.Backfill.Inventory.BatchWorker.handle_failure/3`
   Marks the failed batch `:failed`, recomputes aggregates, and then forces the parent run to `:failed`.
 
-These are the mutation points Phase 2 must refactor behind reconciliation.
+These are the mutation points Phase 2 must refactor behind a simpler authoritative settled-state model.
 
 ## Canonical Lifecycle Contract For Implementation
 
@@ -26,14 +26,10 @@ The selected lifecycle contract for the remaining implementation phases is:
 
 - `:running`
   Active state. `Pause` and `Cancel` are valid controls. `Resume` and `Delete Run` are not valid.
-- `:pausing`
-  Transitional state entered immediately after a pause request while running work drains. `Pause` and `Cancel` remain visible but disabled. `Resume` is not yet valid.
 - `:paused`
   Settled paused state. `Resume` and `Cancel` are valid controls. `Pause` and `Delete Run` are not valid.
-- `:cancelling`
-  Transitional state entered immediately after a cancel request while in-flight work and cleanup settle. Visible run controls remain disabled. `Delete Run` is not yet valid.
 - `:cancelled`
-  Settled terminal state. `Resume` is never valid. `Delete Run` becomes valid only after this settled state is reached.
+  Settled terminal state. `Resume` is never valid. `Delete Run` becomes valid once the cancel request has completed and the run is authoritatively `:cancelled`.
 - `:failed`
   Settled terminal state for the run when reconciliation determines no more eligible work remains and failure is the authoritative outcome. `Delete Run` is valid.
 - `:completed`
@@ -47,17 +43,15 @@ The selected lifecycle contract for the remaining implementation phases is:
 - `:failed`
 - `:cancelled`
 
-`Delete Run` must not be available while the run is still transitioning through:
+`Delete Run` must not be available while the run is still in a non-terminal state:
 
 - `:running`
-- `:pausing`
 - `:paused`
-- `:cancelling`
 
 For cancellation specifically, the important rule is:
 
-- a cancel request does not by itself authorize deletion
-- deletion becomes available only after cleanup and in-flight work have settled and reconciliation has promoted the run from `:cancelling` to `:cancelled`
+- a successful cancel request should leave the run in the terminal `:cancelled` state
+- deletion becomes available after that authoritative transition completes
 
 ## Current UI-Derived Lifecycle Assumptions To Replace
 
@@ -66,11 +60,11 @@ The current `OliWeb.Admin.ClickhouseBackfillLive` logic contains assumptions tha
 - `resumable_run?/1`
   Treats any run with `pause_requested` metadata as resumable, even if the run is actually `:cancelled`.
 - `pausable_run?/1`
-  Hides `Pause` whenever `pause_requested` is set instead of representing an in-progress `:pausing` state with disabled controls.
+  Hides `Pause` whenever `pause_requested` is set instead of relying on authoritative settled run state.
 - `cancellable_run?/1`
-  Keys directly off the current status set `[:pending, :preparing, :running, :paused]` and has no transitional-state semantics.
+  Keys directly off the current status set `[:pending, :preparing, :running, :paused]` and must remain aligned with authoritative backend lifecycle rules.
 - `deletable_inventory_run?/1`
-  Treats `:cancelled` as immediately deletable because there is no separate settled-vs-transitioning cancellation model.
+  Must rely on authoritative terminal state rather than metadata-derived assumptions.
 - Inventory action rendering
   Renders `Pause`, `Resume`, `Cancel`, and `Delete Run` directly from helper predicates instead of from a backend-authored action contract.
 

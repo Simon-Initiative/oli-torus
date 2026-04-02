@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-This design keeps the current repository boundaries centered on `Oli.Analytics.Backfill.Inventory`, `Oli.Analytics.Backfill.Inventory.BatchWorker`, `OliWeb.Admin.ClickhouseBackfillLive`, and `OliWeb.Admin.ClickHouseAnalyticsView`, but replaces optimistic run-state updates with a reconciliation-first orchestration model. The selected approach adds explicit transitional run states for pause and cancel, preserves per-batch progress on retry instead of resetting it, prevents a single batch failure from forcing the entire run into `:failed` while other work is still eligible, and pushes chunk-driven aggregate updates back through the existing notifier and chunk-log channels so the admin UI reflects authoritative progress in near real time.
+This design keeps the current repository boundaries centered on `Oli.Analytics.Backfill.Inventory`, `Oli.Analytics.Backfill.Inventory.BatchWorker`, `OliWeb.Admin.ClickhouseBackfillLive`, and `OliWeb.Admin.ClickHouseAnalyticsView`, but replaces optimistic run-state updates with a simpler authoritative settled-state model. The selected approach keeps only settled run states for pause and cancel, preserves per-batch progress on retry instead of resetting it, prevents a single batch failure from forcing the entire run into `:failed` while other work is still eligible, and pushes chunk-driven aggregate updates back through the existing notifier and chunk-log channels so the admin UI reflects authoritative progress in near real time.
 
 The design also separates safe UI-exposed ClickHouse operations from dangerous shell-only tasks. `Oli.ClickHouse.Tasks` is renamed to `Oli.Clickhouse.Tasks`, refactored into a structured task service with event callbacks, and used in two ways: Mix or IEx continues to expose the full task set including create, drop, and reset, while the admin UI is limited to migrate up, migrate down, and `setup`. To keep operator feedback durable instead of page-local, the design adds a small persisted operation-log model for safe UI-triggered tasks. Run-scoped operation history is retained until `Delete Run` is invoked, making run deletion the explicit cleanup path rather than adding a separate automatic retention mechanism. The up-front audit requirement is satisfied by making this FDD the phase-0 design audit artifact and requiring implementation planning to follow its recommendations rather than expanding the admin surface speculatively.
 
@@ -51,19 +51,15 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 
 - `Oli.Analytics.Backfill.Inventory`:
   - Remains the domain owner for inventory-run orchestration.
-  - Gains an explicit reconciliation API that derives run state from batch state plus control intent rather than applying optimistic terminal transitions.
-  - Owns the rules for when a run is `:running`, `:pausing`, `:paused`, `:cancelling`, `:cancelled`, `:failed`, or `:completed`.
+  - Keeps aggregate recomputation and lifecycle derivation centralized in the domain context.
+  - Owns the rules for when a run is `:running`, `:paused`, `:cancelled`, `:failed`, or `:completed`.
 - `Oli.Analytics.Backfill.Inventory.BatchWorker`:
   - Remains the per-batch executor.
   - Stops forcing the parent run to `:failed` on single-batch failure.
-  - Emits aggregate progress after every successful chunk and checks pause or cancel intent at chunk boundaries.
-- `Oli.Analytics.Backfill.Inventory.ReconcileWorker`:
-  - New unique Oban worker keyed by `run_id`.
-  - Evaluates whether a run in `:pausing` or `:cancelling` has fully settled and can become `:paused` or `:cancelled`.
-  - Re-evaluates terminal state when batches fail or complete, ensuring run status is derived consistently instead of opportunistically.
+  - Emits aggregate progress after every successful chunk and checks direct paused or cancelled batch state at chunk boundaries.
 - `OliWeb.Admin.ClickhouseBackfillLive`:
   - Continues to own admin rendering and user actions.
-  - Reads action availability from settled run state and explicit transitional states, not from `pause_requested` metadata alone.
+  - Reads action availability from authoritative settled run state, not from `pause_requested` metadata alone.
   - Subscribes to more granular run and batch progress broadcasts so metrics and status labels move with chunk completion.
 - `Oli.Clickhouse.Tasks`:
   - Renamed canonical task service replacing `Oli.ClickHouse.Tasks`.
@@ -85,17 +81,15 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 - Pause flow:
   - User clicks pause.
   - LiveView calls `Inventory.pause_run/1`.
-  - Run status becomes `:pausing`.
-  - Pending and queued batches are moved to `:paused` immediately; running batches receive `pause_requested`.
-  - `Inventory.ReconcileWorker` re-runs until no running or queued batches remain, then marks the run `:paused`.
-  - Only after that settled transition does `Resume` become visible.
+  - Run status becomes `:paused`.
+  - Pending, queued, and running batches are moved to `:paused` immediately.
+  - `Resume` becomes visible after the pause request completes.
 - Cancel flow:
   - User clicks cancel.
   - LiveView calls `Inventory.cancel_run/1`.
-  - Run status becomes `:cancelling`.
-  - Pending, queued, and paused batches become `:cancelled` immediately; running batches receive `cancel_requested` and best-effort Oban cancellation.
-  - Reconcile worker waits for in-flight work to settle and only then marks the run `:cancelled`.
-  - `Delete Run` is unavailable until this settled terminal state, satisfying `AC-001` and `AC-004`.
+  - Run status becomes `:cancelled`.
+  - Pending, queued, paused, and running batches become `:cancelled` immediately with best-effort Oban cancellation.
+  - `Delete Run` becomes available after the cancellation request completes, satisfying `AC-001` and `AC-004`.
 - Chunk success flow:
   - `BatchWorker` completes a chunk.
   - Batch counters, `processed_objects`, `rows_ingested`, `bytes_ingested`, `chunk_count`, and `chunk_sequence` are updated in the same persistence step as the chunk log upsert.
@@ -111,7 +105,7 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
   - `BatchWorker.handle_failure/3` transitions only the batch to `:failed`.
   - Run aggregates are recomputed.
   - If other pending, queued, or running batches remain, the run stays active and scheduling continues.
-  - Only when no more work is eligible and failures remain unresolved does reconciliation mark the run `:failed`.
+  - Only when no more work is eligible and failures remain unresolved does aggregate derivation mark the run `:failed`.
 - ClickHouse safe task flow:
   - Admin page loads health plus capability snapshot.
   - User starts migrate up, migrate down, or `setup`.
@@ -123,12 +117,11 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 
 - Run status ownership:
   - `Inventory` owns all lifecycle transitions.
-  - UI never infers “paused enough” or “cancelled enough” from batch lists alone.
-  - New run statuses: `:pausing` and `:cancelling`.
+  - UI never infers action availability from metadata flags alone.
 - Batch status ownership:
   - `BatchWorker` owns `:running`, `:completed`, and `:failed` transitions.
   - `Inventory` owns queued, pending, paused, cancelled, and retry transitions.
-  - No new batch status is required; pause and cancel intent remains metadata-driven at the batch level.
+  - No new batch status is required.
 - Progress ownership:
   - Batch counters remain the source of truth for run aggregates.
   - Run aggregates are derived and persisted after each chunk success and each terminal batch transition.
@@ -142,15 +135,15 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 ### 4.4 Alternatives Considered
 
 - Alternative A: Keep current statuses and derive disabled buttons only from metadata flags.
-  - Rejected because the current bug pattern comes from optimistic metadata-driven state without a settled orchestration phase. It would leave `AC-005`, `AC-006`, `AC-011`, and `AC-012` fragile.
+  - Rejected because the current bug pattern comes from optimistic metadata-driven state. It would leave `AC-005`, `AC-006`, `AC-011`, and `AC-012` fragile.
 - Alternative B: Introduce new batch statuses like `:pausing`, `:retrying`, and `:cancelling`.
-  - Rejected because batch metadata and current status values already capture the needed batch behavior. The true inconsistency is at run-level reconciliation.
+  - Rejected because batch metadata and current status values already capture the needed batch behavior. The true inconsistency is at run-level lifecycle derivation.
 - Alternative C: Reset batch progress on retry but add chunk dedupe in ClickHouse.
   - Rejected because it preserves unnecessary work and makes correctness depend on downstream dedupe rather than explicit orchestration.
 - Alternative D: Expose create, drop, and reset in the admin UI behind confirmations.
   - Rejected by product scope and security posture. Shell and Mix remain the appropriate boundary for those dangerous operations.
 - Selected approach:
-  - Add run-level transitional states plus reconciliation worker.
+  - Keep only settled run statuses and derive them directly from authoritative batch state.
   - Preserve batch progress on retry.
   - Persist safe UI task operations separately from shell-only dangerous operations.
   - Rename and refactor the task module once, then reuse it across UI and Mix wrappers.
@@ -158,17 +151,12 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 ## 5. Interfaces
 
 - `Inventory.pause_run/1`:
-  - Change contract to transition runs to `:pausing`, not directly to `:paused`.
+  - Transition runs directly to `:paused` and pause eligible batches immediately.
 - `Inventory.cancel_run/1`:
-  - Change contract to transition runs to `:cancelling`, not directly to `:cancelled`.
+  - Transition runs directly to `:cancelled` and cancel eligible batches immediately.
 - `Inventory.retry_batch/1`:
   - Change contract to preserve `processed_objects`, `rows_ingested`, `bytes_ingested`, `chunk_count`, and `chunk_sequence`.
   - Clear only retryable error and terminal timestamps.
-- `Inventory.reconcile_run/1`:
-  - New function returning the settled run after recomputing aggregate counts and lifecycle state.
-- `Inventory.ReconcileWorker.perform/1`:
-  - New unique worker contract: `%{"run_id" => integer}`.
-  - Re-enqueues itself with bounded delay while a run is still settling.
 - `Oli.Clickhouse.Tasks`:
   - Canonical task API:
     - `up/1`
@@ -197,12 +185,11 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 
 - Existing tables updated semantically:
   - `clickhouse_inventory_runs`
-    - Extend `status` values with `:pausing` and `:cancelling`.
     - Continue to persist aggregate counts and timestamps.
-    - Metadata gains stable control keys such as `pause_requested_at`, `cancel_requested_at`, `last_reconciled_at`, and optional tuning settings already present for run execution.
+    - Metadata continues to store operator timestamps and optional tuning settings already present for run execution.
   - `clickhouse_inventory_batches`
     - No new status required.
-    - Metadata gains `cancel_requested`, `cancel_requested_at`, and optional retry metadata like `last_retry_at`.
+    - Metadata stores direct lifecycle timestamps and optional retry metadata like `last_retry_at`.
     - Existing `processed_objects`, `chunk_count`, and `chunk_sequence` become the preserved retry cursor.
   - `clickhouse_inventory_chunk_logs`
     - Preserve logs across retries.
@@ -234,11 +221,10 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 - Batch failure transaction:
   - Persist batch `:failed`.
   - Recompute run aggregates.
-  - Do not mark the run `:failed` unless reconciliation determines no more eligible work remains.
+  - Do not mark the run `:failed` unless aggregate derivation determines no more eligible work remains.
 - Pause and cancel request transaction:
-  - Persist the run’s transitional status and requested-at metadata.
-  - Apply immediate state changes to queued or pending batches.
-  - Schedule reconcile worker.
+  - Persist the run’s direct settled status and action timestamp metadata.
+  - Apply immediate state changes to eligible batches.
 - Retry transaction:
   - Reset only retry-safe fields.
   - Preserve progress counters and logs.
@@ -256,10 +242,10 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 ## 9. Performance & Scalability Posture
 
 - Backfill UI updates:
-  - Prefer event-driven LiveView updates off chunk completion and lifecycle reconciliation instead of coarse polling.
+  - Prefer event-driven LiveView updates off chunk completion and lifecycle recomputation instead of coarse polling.
   - Bound chunk-log history loaded initially and paginate older logs through the existing channel.
 - Aggregate recomputation:
-  - Continue using database-backed aggregate recalculation, but only trigger it at meaningful boundaries: chunk success, batch terminal transition, run control transition, reconciliation.
+  - Continue using database-backed aggregate recalculation, but only trigger it at meaningful boundaries: chunk success, batch terminal transition, and run control transition.
   - If recomputation becomes too heavy at scale, the fallback optimization is an incremental aggregate updater inside `Inventory`, not a caching layer.
 - Admin task operations:
   - Expected volume is low.
@@ -268,13 +254,13 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 ## 10. Failure Modes & Resilience
 
 - `AC-005` / `AC-006`: pause or cancel requested while a batch is mid-chunk.
-  - Mitigation: run enters transitional state immediately; worker checks flags at chunk boundaries; reconcile worker settles final run state after in-flight work stops.
+  - Mitigation: control actions persist direct batch state changes, and the worker checks authoritative paused or cancelled batch state at chunk boundaries so it stops before starting the next chunk.
 - `AC-007` / `AC-008`: retry accidentally replays successful work.
   - Mitigation: preserve `processed_objects` and chunk counters; do not delete prior chunk logs.
 - `AC-009` / `AC-010`: one failed batch halts the run.
   - Mitigation: remove run-failure side effect from `BatchWorker.handle_failure/3`; keep scheduling pending work until no eligible batches remain.
 - `AC-011` / `AC-012` / `AC-013`: UI shows stale status or metrics.
-  - Mitigation: publish aggregate updates after each chunk success and each reconciliation pass; use persisted run counters as the UI source of truth.
+  - Mitigation: publish aggregate updates after each chunk success and each lifecycle recomputation; use persisted run counters as the UI source of truth.
 - `AC-019` / `AC-020`: `setup` button is enabled in the wrong state.
   - Mitigation: capability snapshot computes enablement from an explicit reachability plus initialization check, not from page-local assumptions.
 - `AC-016`: long-running task output is lost on refresh.
@@ -285,7 +271,7 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 ## 11. Observability
 
 - Backfill telemetry and logs:
-  - Emit run lifecycle transitions including `pausing`, `paused`, `cancelling`, `cancelled`, `failed`, and `completed`.
+  - Emit run lifecycle transitions including `paused`, `cancelled`, `failed`, and `completed`.
   - Emit batch retry events with preserved cursor metadata, not just “retried”.
   - Emit chunk-success updates with rows, bytes, processed object count, chunk ordinal, and retry-attempt number.
 - UI transport:
@@ -293,7 +279,7 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
   - Continue using `OliWeb.ClickhouseChunkLogsChannel` for per-batch detail.
   - Add PubSub topics for safe ClickHouse admin operation progress.
 - AppSignal:
-  - Instrument reconcile worker and admin task runner duration and failure counts.
+  - Instrument lifecycle recomputation and admin task runner duration and failure counts.
 - Audit output:
   - This FDD records the concrete recommendations required by `AC-022` and `AC-023`, so no separate throwaway audit document is needed.
 
@@ -310,12 +296,12 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 ## 13. Testing Strategy
 
 - ExUnit:
-  - `Inventory` tests for run reconciliation covering `AC-001` through `AC-006`, `AC-009`, and `AC-010`.
+  - `Inventory` tests for direct settled run transitions covering `AC-001` through `AC-006`, `AC-009`, and `AC-010`.
   - Retry tests ensuring preserved `processed_objects`, `chunk_count`, and chunk logs for `AC-007` and `AC-008`.
   - Batch-worker tests ensuring single-batch failure no longer marks the entire run failed while pending work remains for `AC-009` and `AC-010`.
   - Task-module rename and Mix-task tests for `AC-024`.
 - LiveView:
-  - `clickhouse_backfill_live` tests for terminal and transitional button states, disabled actions, and warning styling for `AC-001` through `AC-006` and `AC-015`.
+  - `clickhouse_backfill_live` tests for terminal and active button states, correct post-request control rendering, and warning styling for `AC-001` through `AC-006` and `AC-015`.
   - `clickhouse_analytics_view` tests for safe operation visibility, `setup` enablement rules, operation-log rendering, and dangerous-operation absence for `AC-016` through `AC-021`.
 - Manual:
   - Verify partial metric freshness and honest partial-state rendering for `AC-014`.
@@ -326,7 +312,6 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 
 - Existing backfill runs:
   - Existing settled statuses remain valid.
-  - New transitional statuses are additive.
 - Existing retry behavior:
   - Behavior changes intentionally from replay-on-retry to resume-on-retry.
   - This is a correctness fix, not a compatibility break.
@@ -337,8 +322,8 @@ The design also separates safe UI-exposed ClickHouse operations from dangerous s
 
 ## 15. Risks & Mitigations
 
-- Reconciliation logic becomes another source of drift.
-  - Mitigation: keep lifecycle derivation centralized in `Inventory.reconcile_run/1` and remove competing optimistic transitions.
+- Lifecycle derivation could still drift across layers.
+  - Mitigation: keep lifecycle derivation centralized in `Inventory.recompute_run_aggregates/1` and remove competing optimistic transitions.
 - Persisted admin operation logs grow without bound.
   - Mitigation: bound event count per operation, limit the number of recent operations shown by default, and use `Delete Run` as the explicit cleanup mechanism for run-scoped history.
 - Initialize capability detection is ambiguous across environments.

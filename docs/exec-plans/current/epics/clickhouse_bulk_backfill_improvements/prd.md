@@ -12,8 +12,8 @@ The current backfill admin surface has several reliability and UX gaps that make
 
 ### Goals
 
-- Make backfill run actions reflect the true lifecycle rules for paused, cancelling, cancelled, completed, and in-progress runs.
-- Ensure pause and cancel actions present clear in-progress disabled states and resolve to the correct next available controls.
+- Make backfill run actions reflect the true lifecycle rules for paused, cancelled, completed, and in-progress runs.
+- Ensure pause and cancel actions resolve to the correct next available settled controls after each request completes.
 - Make batch retries resume from the failed chunk rather than replaying already completed chunk work.
 - Prevent one failed batch from blocking unrelated current or future batch processing within the same run.
 - Keep batch and run statuses accurate enough that the UI always reflects the real execution state operators need to act on.
@@ -44,10 +44,9 @@ The current backfill admin surface has several reliability and UX gaps that make
 
 - The run detail UI shall only show `Resume` when the run is in a paused state.
 - The run detail UI shall never show `Resume` for a cancelled run; cancellation is terminal.
-- While a pause request or cancel request is in progress, the visible action buttons shall remain present but disabled until the state transition completes.
 - A paused run shall show `Resume` and `Cancel` after the pause action completes.
 - A completed run shall show `Delete Run` as the terminal cleanup action.
-- A cancelled run shall show `Delete Run` only after all background cleanup has fully settled.
+- A cancelled run shall show `Delete Run` after the cancellation request completes.
 - When both `Pause` and `Cancel` are visible, `Pause` shall use a neutral gray treatment and `Cancel` shall use the warning treatment.
 - Batch status labels, badges, and progress indicators shall update from authoritative run state and must not show stale values that conflict with visible progress.
 - The ClickHouse analytics dashboard shall expose available ClickHouse database tasks with clear labeling for migrate up, migrate down, and initialize database.
@@ -75,7 +74,7 @@ Requirements are found in requirements.yml
 
 ## 9. Data, Interfaces & Dependencies
 
-- Backfill run and batch persistence must store enough execution state to distinguish paused, pausing, cancelling, cancelled, completed, failed, active, queued, cleanup-settling, and per-chunk retry positions where applicable.
+- Backfill run and batch persistence must store enough execution state to distinguish paused, cancelled, completed, failed, active, queued, and per-chunk retry positions where applicable.
 - Batch processing interfaces must preserve chunk-level progress markers so retries can resume at the failed chunk boundary instead of replaying earlier chunks.
 - Run metrics data must support incremental updates for in-progress runs, including rows inserted and batch counts, even when the full run has not yet completed.
 - The admin UI depends on a status propagation path that keeps LiveView and any backing jobs synchronized from the authoritative backfill execution state.
@@ -108,7 +107,7 @@ No feature flags present in this work item
 - Success signals:
   - cancelled runs no longer surface `Resume`
   - paused runs consistently surface `Resume` and `Cancel` after pause completion
-  - in-progress pause and cancel requests display disabled controls until the state transition resolves
+  - pause and cancel requests resolve to the correct next settled control set
   - failed batches no longer prevent unrelated batches from continuing
   - batch status labels remain aligned with observable progress
   - in-progress run metrics reflect accumulating inserted-row counts closely enough for active operational monitoring
@@ -119,7 +118,7 @@ No feature flags present in this work item
 
 ## 13. Risks & Mitigations
 
-- Lifecycle rules may already be encoded in multiple layers, which can create divergent UI behavior: centralize action availability around authoritative backend states and test each terminal and transitional state.
+- Lifecycle rules may already be encoded in multiple layers, which can create divergent UI behavior: centralize action availability around authoritative backend states and test each settled state transition.
 - Chunk-level retry may expose hidden assumptions about idempotency or chunk ordering: require explicit persisted retry checkpoints and targeted failure-path coverage.
 - More frequent metric updates can increase load on the admin surface or job coordination paths: define bounded refresh behavior and update only the metrics needed for operator decisions.
 - Exposing overly powerful ClickHouse operations in-product increases operator risk: keep create, drop, and reset out of the UI and rely on shell and Mix entrypoints for those workflows.
@@ -144,7 +143,7 @@ No feature flags present in this work item
 - ClickHouse database tasks exposed in the UI will be limited to authorized administrative contexts already present in Torus.
 - The UI should show detailed log and error messages for supported database tasks so operators can see what is happening and whether the operation succeeded or failed.
 - The admin UI should expose only initialize and migration tasks, while create, drop, and reset remain available through IEx shell and Mix tooling.
-- `Delete Run` should only appear after cancellation-related background cleanup has fully settled.
+- `Delete Run` should appear after the cancellation request completes and the run is authoritatively `:cancelled`.
 - Batch retry does not need an operator-visible chunk index or offset indicator in the UI.
 - The design audit should recommend a minimal set of admin-tunable controls rather than maximizing surface area.
 - `Oli.Clickhouse.Tasks` is the desired canonical module namespace and all relevant documentation should align to that spelling.
@@ -152,13 +151,13 @@ No feature flags present in this work item
 ## 15. QA Plan
 
 - Automated validation:
-  - ExUnit tests for run lifecycle transitions, terminal action availability, and pause or cancel in-progress disabled-state behavior.
-  - ExUnit tests for chunk-level retry resumption, failed-batch isolation, incremental metric accumulation during active runs, and delayed `Delete Run` availability until cleanup settlement.
+  - ExUnit tests for run lifecycle transitions, terminal action availability, and correct post-request control availability after pause and cancel.
+  - ExUnit tests for chunk-level retry resumption, failed-batch isolation, incremental metric accumulation during active runs, and `Delete Run` availability after cancellation completes.
   - LiveView tests for rendered button availability, disabled states, warning styling, status synchronization, operation-message rendering, and destructive confirmation requirements.
   - Targeted tests for ClickHouse admin task authorization, initialize availability when the instance is reachable but uninitialized, and migration task visibility and outcomes.
   - Coverage that verifies the renamed `Oli.Clickhouse.Tasks` namespace and any affected documentation or developer-facing references are updated consistently.
 - Manual validation:
-  - Exercise active, paused, pausing, cancelling, cancelled, failed, and completed runs in the admin UI and confirm the action set stays correct after refreshes.
+  - Exercise active, paused, cancelled, failed, and completed runs in the admin UI and confirm the action set stays correct after refreshes.
   - Trigger a mid-batch chunk failure and confirm retry resumes at the failed chunk rather than replaying earlier chunks.
   - Confirm a failed batch does not block other batches that are already running or later become eligible to run.
   - Observe an active backfill and confirm status labels and metrics update consistently with actual progress.

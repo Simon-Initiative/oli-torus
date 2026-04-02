@@ -254,7 +254,7 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
       assert Repo.aggregate(InventoryChunkLog, :count, :id) == 0
     end
 
-    test "retry_batch clears chunk logs and resets progress counters", %{batch: batch} do
+    test "retry_batch preserves chunk logs and progress counters", %{batch: batch} do
       metrics = %{"chunk_index" => "1", "rows_written" => 5}
       {:ok, _} = Inventory.upsert_chunk_log(batch, "1", metrics)
       {:ok, _} = Inventory.upsert_chunk_log(batch, "2", Map.put(metrics, "chunk_index", "2"))
@@ -279,16 +279,17 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
                from(log in InventoryChunkLog, where: log.batch_id == ^batch_id),
                :count,
                :id
-             ) == 0
+             ) == 2
 
       updated = Repo.get!(InventoryBatch, updated_batch.id)
-      assert updated.processed_objects == 0
-      assert updated.rows_ingested == nil
-      assert updated.bytes_ingested == nil
+      assert updated.processed_objects == 7
+      assert updated.rows_ingested == 55
+      assert updated.bytes_ingested == 550
       assert updated.started_at == nil
       assert updated.finished_at == nil
-      assert updated.metadata["chunk_count"] == 0
-      assert updated.metadata["chunk_sequence"] == 0
+      assert updated.metadata["chunk_count"] == 2
+      assert updated.metadata["chunk_sequence"] == 2
+      assert updated.metadata["last_retry_at"]
 
       assert [%Oban.Job{args: %{"batch_id" => ^batch_id}}] =
                all_enqueued(worker: Oli.Analytics.Backfill.Inventory.BatchWorker)
@@ -426,10 +427,10 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
 
       assert {:ok, %InventoryBatch{} = paused_batch} = Inventory.pause_batch(batch)
       assert paused_batch.status == :paused
-      assert Map.get(paused_batch.metadata, "pause_requested") == false
+      assert paused_batch.metadata["paused_at"]
     end
 
-    test "pause_batch on running batch sets pause flag", %{run: run} do
+    test "pause_batch on running batch pauses it directly", %{run: run} do
       batch =
         %InventoryBatch{
           run_id: run.id,
@@ -441,9 +442,8 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
         |> Repo.insert!()
 
       assert {:ok, %InventoryBatch{} = paused} = Inventory.pause_batch(batch)
-      assert paused.status == :running
-      assert Map.get(paused.metadata, "pause_requested")
-      assert Map.get(paused.metadata, "pause_requested_at")
+      assert paused.status == :paused
+      assert paused.metadata["paused_at"]
     end
 
     test "resume_batch returns paused batch to pending", %{run: run} do
@@ -453,13 +453,13 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
           sequence: 1,
           parquet_key: "inventory/1.parquet",
           status: :paused,
-          metadata: %{"pause_requested" => false}
+          metadata: %{}
         }
         |> Repo.insert!()
 
       assert {:ok, %InventoryBatch{} = resumed} = Inventory.resume_batch(batch)
       assert resumed.status in [:pending, :queued]
-      refute Map.has_key?(resumed.metadata, "pause_requested")
+      assert resumed.metadata["resumed_at"]
     end
   end
 
@@ -503,29 +503,37 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
        running_batch: running_batch}
     end
 
-    test "pause_run marks run and batches", %{
+    test "pause_run pauses the run and all pausable batches directly", %{
       run: run,
       pending_batch: pending_batch,
       running_batch: running_batch
     } do
       assert {:ok, paused_run} = Inventory.pause_run(run)
       assert paused_run.status == :paused
-      assert paused_run.metadata["pause_requested"]
 
       paused_pending = Repo.get!(InventoryBatch, pending_batch.id)
       assert paused_pending.status == :paused
 
       paused_running = Repo.get!(InventoryBatch, running_batch.id)
-      assert paused_running.status == :running
-      assert paused_running.metadata["pause_requested"]
+      assert paused_running.status == :paused
+      assert paused_running.metadata["paused_at"]
     end
 
-    test "resume_run clears pause flags and resumes batches", %{run: run} do
-      {:ok, paused_run} = Inventory.pause_run(run)
+    test "resume_run clears pause flags and resumes batches from a settled paused run", %{
+      run: run
+    } do
+      {:ok, run} = Inventory.transition_run(run, :paused)
+
+      run_batch =
+        Repo.get_by!(InventoryBatch, run_id: run.id, sequence: 1)
+        |> InventoryBatch.changeset(%{status: :paused, metadata: %{}})
+        |> Repo.update!()
+
+      paused_run = Repo.preload(run, :batches, force: true)
 
       {:ok, resumed_run} = Inventory.resume_run(paused_run)
       assert resumed_run.status in [:running, :pending]
-      refute resumed_run.metadata["pause_requested"]
+      assert resumed_run.metadata["resumed_at"]
 
       resumed_batches =
         InventoryBatch
@@ -534,10 +542,8 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
 
       assert Enum.any?(resumed_batches, &(&1.status in [:pending, :queued, :running]))
 
-      assert Enum.all?(resumed_batches, fn batch ->
-               metadata = batch.metadata || %{}
-               is_nil(metadata["pause_requested"])
-             end)
+      assert Repo.get!(InventoryBatch, run_batch.id).status in [:pending, :queued]
+      assert Repo.get!(InventoryBatch, run_batch.id).metadata["resumed_at"]
     end
 
     test "resume_run errors when run is not paused", %{run: run} do
@@ -546,7 +552,7 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
   end
 
   describe "aggregate recomputation lifecycle baseline" do
-    test "recompute_run_aggregates marks a run failed when any batch fails" do
+    test "recompute_run_aggregates keeps a run active when a batch fails but pending work remains" do
       run =
         %InventoryRun{
           inventory_date: ~D[2024-07-10],
@@ -576,12 +582,12 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
       |> Repo.insert!()
 
       assert {:ok, recomputed_run} = Inventory.recompute_run_aggregates(run)
-      assert recomputed_run.status == :failed
+      assert recomputed_run.status == :running
       assert recomputed_run.failed_batches == 1
       assert recomputed_run.pending_batches == 1
     end
 
-    test "delete_run is available immediately after cancel_run marks a run cancelled" do
+    test "delete_run is available immediately after cancellation" do
       run =
         %InventoryRun{
           inventory_date: ~D[2024-07-11],

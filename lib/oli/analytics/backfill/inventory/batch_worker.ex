@@ -19,7 +19,6 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   alias Oli.Analytics.Backfill.InventoryBatch
   alias Oli.Analytics.Backfill.InventoryRun
   alias Oli.Analytics.Backfill.QueryBuilder
-  alias Oli.Analytics.ClickhouseAnalytics
   alias Oli.Repo
 
   @status_poll_attempts 12
@@ -87,8 +86,6 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     metadata =
       summary.metadata
       |> ensure_map()
-      |> Map.delete("pause_requested")
-      |> Map.delete("pause_requested_at")
       |> Map.put("paused_at", DateTime.utc_now())
 
     attrs = %{
@@ -109,8 +106,22 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   end
 
   defp finalize_cancelled(run, batch) do
-    :ok = Inventory.maybe_enqueue_pending_batches(run)
-    {:ok, batch}
+    attrs = %{
+      error: nil,
+      metadata:
+        batch.metadata
+        |> ensure_map()
+        |> Map.put("cancelled_at", DateTime.utc_now())
+    }
+
+    with {:ok, batch} <- Inventory.transition_batch(batch, :cancelled, attrs),
+         {:ok, run} <- Inventory.recompute_run_aggregates(run),
+         :ok <- update_run_progress(run),
+         :ok <- Inventory.maybe_enqueue_pending_batches(run) do
+      {:ok, batch}
+    else
+      {:error, reason} -> handle_failure(run, batch, reason)
+    end
   end
 
   defp ensure_batch_runnable(%InventoryBatch{status: status})
@@ -141,7 +152,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         offset: sanitized_offset
       )
 
-    case ClickhouseAnalytics.execute_query(
+    case analytics_module().execute_query(
            query,
            "inventory manifest batch #{batch.id} page offset #{sanitized_offset || 0}",
            credential: :admin
@@ -426,7 +437,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   defp manifest_entry_count(%InventoryRun{} = run, %InventoryBatch{} = batch, creds) do
     query = parquet_count_sql(run, batch, creds)
 
-    case ClickhouseAnalytics.execute_query(
+    case analytics_module().execute_query(
            query,
            "inventory manifest count #{batch.id}",
            credential: :admin
@@ -578,8 +589,10 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         |> accumulate_summary(chunk_entries, metrics_with_sequence)
         |> update_summary_metadata(sequence + 1)
 
+      persisted_batch = Repo.get!(InventoryBatch, batch.id)
+
       existing_metadata =
-        batch.metadata
+        persisted_batch.metadata
         |> ensure_map()
 
       merged_metadata =
@@ -593,7 +606,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         metadata: merged_metadata
       }
 
-      case Inventory.update_batch(batch, update_attrs) do
+      case Inventory.update_batch(persisted_batch, update_attrs) do
         {:ok, updated_batch} ->
           _ = Inventory.broadcast_chunk_log_update(entry, sequence + 1, merged_metadata)
 
@@ -715,7 +728,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
     query_id = chunk_query_id(batch, chunk_index)
     options = build_query_options(run, query_id)
 
-    case ClickhouseAnalytics.execute_query(
+    case analytics_module().execute_query(
            query,
            "inventory batch #{batch.id} chunk #{chunk_index}",
            Keyword.merge(options, credential: :admin)
@@ -898,7 +911,7 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   end
 
   defp poll_query_status(query_id, attempt) do
-    case ClickhouseAnalytics.query_status(query_id, credential: :admin) do
+    case analytics_module().query_status(query_id, credential: :admin) do
       {:ok, %{status: status} = info} when status in [:completed, :failed] ->
         {:ok, info}
 
@@ -1147,8 +1160,6 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         {:error, :missing_batch}
 
       %InventoryBatch{} = refreshed ->
-        metadata = ensure_map(refreshed.metadata)
-
         cond do
           refreshed.status == :cancelled ->
             {:cancelled, refreshed}
@@ -1156,17 +1167,11 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
           refreshed.status == :paused ->
             {:paused, refreshed}
 
-          truthy?(Map.get(metadata, "pause_requested")) ->
-            {:paused, refreshed}
-
           true ->
             {:ok, refreshed}
         end
     end
   end
-
-  defp truthy?(value) when value in [true, "true", "1", 1, "on", "yes", "YES"], do: true
-  defp truthy?(_), do: false
 
   defp ensure_map(nil), do: %{}
   defp ensure_map(map) when is_map(map), do: map
@@ -1300,6 +1305,8 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
   defp handle_failure(run, batch, reason) do
     message = format_error(reason)
 
+    Logger.error("Inventory batch #{batch.id} for run #{run.id} failed: #{message}")
+
     case Inventory.transition_batch(batch, :failed, %{error: message}) do
       {:ok, _} ->
         :ok
@@ -1310,10 +1317,16 @@ defmodule Oli.Analytics.Backfill.Inventory.BatchWorker do
         )
     end
 
-    Inventory.recompute_run_aggregates(run)
-    Inventory.transition_run(run, :failed, %{error: message})
+    with {:ok, run} <- Inventory.recompute_run_aggregates(run) do
+      _ = Inventory.maybe_enqueue_pending_batches(run)
+      _ = update_run_progress(run)
+    end
 
     {:error, message}
+  end
+
+  defp analytics_module do
+    Application.get_env(:oli, :clickhouse_analytics_module, Oli.Analytics.ClickhouseAnalytics)
   end
 
   defp format_error({:error, reason}), do: format_error(reason)

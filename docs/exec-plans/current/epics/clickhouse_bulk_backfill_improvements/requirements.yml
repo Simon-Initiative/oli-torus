@@ -2,13 +2,13 @@ version: 1
 feature: clickhouse_bulk_backfill_improvements
 generated_from: prd.md
 requirements:
-- title: The admin UI shall enforce terminal and transitional backfill run action
-    availability based on authoritative run lifecycle state.
+- title: The admin UI shall enforce backfill run action availability based on authoritative
+    settled run lifecycle state without introducing separate transitional run statuses.
   status: proposed
   acceptance_criteria:
   - title: Given a cancelled backfill run, when an administrator views the run details,
-      then the UI does not show a `Resume` action and does not offer `Delete Run`
-      until all background cleanup has fully settled.
+      then the UI does not show a `Resume` action and offers `Delete Run` as the
+      available terminal cleanup action.
     id: AC-001
     status: proposed
     verification_method: automated
@@ -25,28 +25,29 @@ requirements:
     status: proposed
     verification_method: automated
     proofs: []
-  - title: Given a cancelled run whose background cleanup has fully settled, when
-      an administrator views the run details, then the UI shows `Delete Run` as
-      the available terminal cleanup action.
+  - title: Given a run has been cancelled through the admin controls, when an administrator
+      views the run details after the cancellation request completes, then the UI
+      shows `Delete Run` as the available terminal cleanup action.
     id: AC-004
     status: proposed
     verification_method: automated
     proofs: []
   id: FR-001
-- title: The admin UI shall represent in-progress pause and cancel requests as disabled
-    controls until the underlying state transition completes.
+- title: The admin UI shall update pause and cancel controls to the next valid settled
+    action set after each request completes, without relying on separate transitional
+    run statuses.
   status: proposed
   acceptance_criteria:
   - title: Given an administrator initiates pause on an active run, when the pause
-      request is pending, then the visible `Pause` and `Cancel` controls remain shown
-      but disabled until the run reaches a paused or terminal state.
+      request completes successfully, then the UI shows the paused-state controls
+      and does not continue to present `Pause` as an available action.
     id: AC-005
     status: proposed
     verification_method: automated
     proofs: []
   - title: Given an administrator initiates cancel on a pausable or paused run, when
-      the cancel request is pending, then the visible action controls remain shown
-      but disabled until the run reaches a cancelled or terminal state.
+      the cancel request completes successfully, then the UI shows the cancelled-state
+      controls and does not continue to present `Pause` or `Resume` as available actions.
     id: AC-006
     status: proposed
     verification_method: automated

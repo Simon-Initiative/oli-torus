@@ -7,12 +7,12 @@ Scope and reference artifacts:
 
 ## Scope
 
-Deliver the FDD-selected reconciliation-first backfill architecture and the constrained ClickHouse admin operations surface:
+Deliver the FDD-selected authoritative backfill lifecycle architecture and the constrained ClickHouse admin operations surface:
 
-- add authoritative run lifecycle reconciliation with explicit `:pausing` and `:cancelling` transitional states
+- keep run lifecycle state authoritative without introducing separate `:pausing` or `:cancelling` states
 - preserve per-batch progress and chunk logs across retry so retries resume from the failed chunk boundary
 - prevent one failed batch from halting unrelated current or future eligible work in the same run
-- drive batch status and in-progress metrics from chunk and reconciliation updates so the admin UI reflects authoritative progress
+- drive batch status and in-progress metrics from chunk and lifecycle updates so the admin UI reflects authoritative progress
 - expose only safe ClickHouse admin operations in the analytics dashboard with durable progress and error feedback
 - rename `Oli.ClickHouse.Tasks` to `Oli.Clickhouse.Tasks` across code, Mix entrypoints, tests, and docs
 - keep telemetry, performance posture, documentation, and rollout notes aligned with the operational scope defined in the PRD/FDD
@@ -48,7 +48,7 @@ Deliver the FDD-selected reconciliation-first backfill architecture and the cons
 - Goal: Lock the authoritative run-state model and establish regression coverage for lifecycle, retry, and failure-isolation behavior before implementation broadens the admin surface.
 - Tasks:
   - [x] Audit current backfill orchestration entrypoints in `Oli.Analytics.Backfill.Inventory` and `Inventory.BatchWorker` to confirm all places where run status, batch status, metrics, and retry state are mutated.
-  - [x] Define the canonical run-state transition contract for `:running`, `:pausing`, `:paused`, `:cancelling`, `:cancelled`, `:failed`, and `:completed`, including the exact criteria for settled `Delete Run` availability.
+  - [x] Define the canonical run-state transition contract for `:running`, `:paused`, `:cancelled`, `:failed`, and `:completed`, including the exact criteria for `Delete Run` availability.
   - [x] Identify all current optimistic or UI-derived lifecycle assumptions in `OliWeb.Admin.ClickhouseBackfillLive` that must be replaced by authoritative state reads.
   - [x] Add or extend baseline ExUnit coverage for pause, resume, cancel, retry, batch failure, and aggregate recomputation behavior so current regressions are explicit before the refactor.
   - [x] Add or extend baseline LiveView coverage for button visibility, disabled-state behavior, warning styling, and stale-status rendering gaps called out in the PRD.
@@ -68,46 +68,46 @@ Deliver the FDD-selected reconciliation-first backfill architecture and the cons
 - Parallelizable Work:
   - Domain-test expansion and LiveView-test expansion can proceed in parallel once the lifecycle matrix is agreed.
 
-## Phase 2: Backfill Reconciliation, Retry Cursor Preservation, and Failure Isolation
+## Phase 2: Backfill Lifecycle Simplification, Retry Cursor Preservation, and Failure Isolation
 
-- Goal: Implement the backend orchestration changes that make run state authoritative, preserve retry progress, and keep unrelated work moving after a single batch failure.
+- Goal: Implement the backend orchestration changes that keep run state authoritative without transitional statuses, preserve retry progress, and keep unrelated work moving after a single batch failure.
 - Tasks:
-  - [ ] Extend the run status model to include `:pausing` and `:cancelling`, with any required schema, enum, and changeset updates.
-  - [ ] Implement `Inventory.reconcile_run/1` and the new `Inventory.ReconcileWorker` so settled run state is derived from batch state plus control intent rather than optimistic mutation.
-  - [ ] Update `Inventory.pause_run/1` and `Inventory.cancel_run/1` to enter transitional states, stamp request metadata, apply immediate queued/pending batch state changes, and schedule reconciliation.
-  - [ ] Update `BatchWorker` to check pause/cancel intent at chunk boundaries and to stop forcing the parent run directly to `:failed` on single-batch failure.
-  - [ ] Change `Inventory.retry_batch/1` so it preserves `processed_objects`, `rows_ingested`, `bytes_ingested`, `chunk_count`, `chunk_sequence`, and prior chunk logs while clearing only retry-safe terminal/error state.
-  - [ ] Ensure aggregate recomputation and scheduling continue while eligible work remains after a failed batch.
-  - [ ] Emit lifecycle and retry telemetry/logging for transitional states, retry cursor metadata, batch failures, and settled terminal outcomes.
+  - [x] Remove `:pausing` and `:cancelling` from the run status model and restore a simpler settled-state lifecycle.
+  - [x] Remove reconcile-worker orchestration and simplify `Inventory.recompute_run_aggregates/1` back to direct state derivation.
+  - [x] Update `Inventory.pause_run/1` and `Inventory.cancel_run/1` to perform direct settled transitions and immediate batch state changes without transitional run statuses.
+  - [x] Update `BatchWorker` to respect paused/cancelled batch state at chunk boundaries and to stop forcing the parent run directly to `:failed` on single-batch failure.
+  - [x] Change `Inventory.retry_batch/1` so it preserves `processed_objects`, `rows_ingested`, `bytes_ingested`, `chunk_count`, `chunk_sequence`, and prior chunk logs while clearing only retry-safe terminal/error state.
+  - [x] Ensure aggregate recomputation and scheduling continue while eligible work remains after a failed batch.
+  - [x] Align lifecycle and retry telemetry/logging to the simplified settled-state model.
 - Testing Tasks:
-  - [ ] Add ExUnit coverage for reconciliation-driven state transitions, settled cancellation, delayed `Delete Run`, preserved retry cursors, chunk-log retention, and continued scheduling after single-batch failure.
-  - [ ] Add worker-level tests proving pause/cancel intent is respected at chunk boundaries and failed batches do not poison the run while eligible work remains.
-  - [ ] Command(s): `mix test test/oli/analytics/backfill`
-  - [ ] Command(s): `mix test test/oli/analytics`
+  - [x] Update ExUnit coverage for direct settled pause/cancel transitions, immediate `Delete Run` availability after cancellation, preserved retry cursors, chunk-log retention, and continued scheduling after single-batch failure.
+  - [x] Update worker-level tests so pause/cancel interruption behavior is validated against direct paused/cancelled batch states rather than transitional run state machinery.
+  - [x] Command(s): `mix test test/oli/analytics/backfill`
+  - [x] Command(s): `mix test test/oli/analytics`
 - Definition of Done:
-  - Run state is derived authoritatively in the backend and includes transitional settlement.
+  - Run state is derived authoritatively in the backend without transitional run statuses.
   - Retry no longer replays already successful chunk work.
   - Single-batch failure no longer blocks unrelated current or future eligible batches.
-  - Telemetry and structured logs exist for the main orchestration state changes.
+  - Telemetry and structured logs exist for the main lifecycle and retry state changes.
 - Gate:
-  - Gate B: backend reconciliation, retry semantics, and failure isolation are green in targeted domain tests before UI wiring depends on them.
+  - Gate B: backend lifecycle simplification, retry semantics, and failure isolation are green in targeted domain tests before UI wiring depends on them.
 - Dependencies:
   - Phase 1 Gate A.
 - Parallelizable Work:
-  - Retry-cursor preservation and reconcile-worker implementation can proceed in parallel after the state contract and persistence changes are agreed.
+  - Retry-cursor preservation and lifecycle simplification can proceed in parallel after the state contract changes are agreed.
 
 ## Phase 3: Live Backfill UI State, Metrics Freshness, and Operator Controls
 
 - Goal: Rewire the admin backfill LiveView to the authoritative lifecycle and progress streams so controls, statuses, and metrics stay consistent during active runs.
 - Tasks:
-  - [ ] Update `OliWeb.Admin.ClickhouseBackfillLive` to render action availability from settled and transitional run states rather than inferred metadata-only rules.
-  - [ ] Keep `Pause` and `Cancel` visible but disabled while pause/cancel is in progress, with the required neutral vs warning styling.
-  - [ ] Update run and batch rendering to use authoritative persisted counters and granular notifier/PubSub updates emitted after chunk success and reconciliation.
+  - [ ] Update `OliWeb.Admin.ClickhouseBackfillLive` to render action availability from the simplified settled run states rather than inferred metadata-only rules.
+  - [ ] Render the correct post-action control set after pause/cancel requests complete, with the required neutral vs warning styling.
+  - [ ] Update run and batch rendering to use authoritative persisted counters and granular notifier/PubSub updates emitted after chunk success and lifecycle updates.
   - [ ] Ensure batch status labels and progress indicators cannot remain stale as `Queued` or otherwise contradict visible progress.
   - [ ] Gate `Delete Run` on fully settled cancellation or completion semantics defined in the backend.
   - [ ] Surface operator-visible failure/progress messages for run-control actions where the user needs to distinguish requested, in-progress, completed, and failed outcomes.
 - Testing Tasks:
-  - [ ] Add LiveView tests for cancelled, cancelling, paused, pausing, completed, and active states covering `AC-001` through `AC-006` and `AC-015`.
+  - [ ] Add LiveView tests for cancelled, paused, completed, and active states covering `AC-001` through `AC-006` and `AC-015`.
   - [ ] Add LiveView tests for chunk-driven status and metric updates covering `AC-011`, `AC-012`, and `AC-013`, plus a manual validation note for the partial/freshness representation in `AC-014`.
   - [ ] Command(s): `mix test test/oli_web/live/admin`
 - Definition of Done:
@@ -155,7 +155,7 @@ Deliver the FDD-selected reconciliation-first backfill architecture and the cons
 - Goal: Close the work item with validated traceability, updated operator/developer docs, and targeted regression coverage across all touched boundaries.
 - Tasks:
   - [ ] Update product, engineering, and operations documentation to use `Oli.Clickhouse.Tasks` consistently, including ClickHouse runbooks and any impacted work-item artifacts.
-  - [ ] Capture rollout and operator notes for the final control surface, transitional run behavior, metric freshness expectations, and shell-only dangerous operations.
+  - [ ] Capture rollout and operator notes for the final control surface, simplified run behavior, metric freshness expectations, and shell-only dangerous operations.
   - [ ] Confirm telemetry and AppSignal coverage are documented where operators or future maintainers need to inspect lifecycle and admin-task behavior.
   - [ ] Update Jira execution notes with phase completion, validation status, and any follow-up items intentionally deferred beyond this work item.
   - [ ] Reconcile the PRD/FDD/plan if implementation detail drift is discovered during execution.
@@ -180,7 +180,7 @@ Deliver the FDD-selected reconciliation-first backfill architecture and the cons
 ## Parallelization Notes
 
 - Phase 1 should stay small and front-loaded; it defines the test and contract safety net the rest of the work depends on.
-- Once the lifecycle contract is stable, Phase 2 backend reconciliation work and Phase 4 namespace-sweep groundwork can proceed in parallel because they are largely disjoint.
+- Once the lifecycle contract is stable, Phase 2 backend lifecycle work and Phase 4 namespace-sweep groundwork can proceed in parallel because they are largely disjoint.
 - Phase 3 should start only after the Phase 2 event and state contracts stabilize; otherwise the LiveView work risks recoding the same lifecycle assumptions twice.
 - Phase 4 service and persistence work can be split between task-service/namespace ownership and admin-UI/capability ownership if those write sets remain separate.
 - Documentation and Jira tracking should be updated continuously, but final sign-off waits for the Phase 5 validation gate.
@@ -188,7 +188,7 @@ Deliver the FDD-selected reconciliation-first backfill architecture and the cons
 ## Phase Gate Summary
 
 - Gate A: lifecycle, retry, and UI-control safety-net tests exist and the authoritative state contract is explicit.
-- Gate B: backend reconciliation, retry-cursor preservation, and failure isolation are implemented and proven in targeted domain tests.
+- Gate B: backend lifecycle simplification, retry-cursor preservation, and failure isolation are implemented and proven in targeted domain tests.
 - Gate C: admin backfill UI reflects authoritative state and near-real-time progress with targeted LiveView coverage.
 - Gate D: `Oli.Clickhouse.Tasks` is canonical and the ClickHouse admin page exposes only the safe, capability-gated operations with durable feedback.
 - Gate E: trace validation, work-item validation, targeted regression suites, and documentation updates are all complete.
