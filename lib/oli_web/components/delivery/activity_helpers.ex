@@ -836,7 +836,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               </div>
               <div class="mt-3 h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
                 <div
-                  class="h-3 rounded-full bg-sky-500 transition-all dark:bg-sky-400"
+                  class={[
+                    "h-3 rounded-full transition-all",
+                    Map.get(@visualization, :fill_class, "bg-sky-500 dark:bg-sky-400")
+                  ]}
                   style={"width: #{Float.round(entry.ratio * 100, 1)}%; min-width: #{if entry.count > 0, do: "0.5rem", else: "0"};"}
                 >
                 </div>
@@ -850,6 +853,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         <div class="text-sm font-semibold text-gray-900 dark:text-white">Distribution Notes</div>
         <div class="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
           {@visualization.summary}
+        </div>
+        <div
+          :if={Map.get(@visualization, :explanation)}
+          class="mt-3 rounded-lg bg-gray-100 px-3 py-3 text-sm leading-6 text-gray-600 dark:bg-gray-900/60 dark:text-gray-300"
+        >
+          {@visualization.explanation}
         </div>
         <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
           Bar width represents the share of responses recorded for this input.
@@ -880,11 +889,60 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           No ordered numeric responses are available for this input yet.
         </div>
 
-        <div :if={@visualization.entries != []} class="mt-4 space-y-3">
+        <div
+          :if={@visualization.entries != [] and Map.get(@visualization, :scale_kind) == :text_slider}
+          class="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 dark:border-gray-700 dark:bg-gray-900/50"
+        >
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <%= for entry <- @visualization.entries do %>
+              <div class="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-900/80">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-100 px-2 text-[11px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                        {entry.step_label}
+                      </span>
+                      <div class="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                        {entry.label}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-right text-xs text-gray-500 dark:text-gray-400">
+                    <div>{entry.count} selections</div>
+                    <div>{Float.round(entry.ratio * 100, 1)}%</div>
+                  </div>
+                </div>
+                <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
+                  <div
+                    class={[
+                      "h-2 rounded-full transition-all",
+                      Map.get(@visualization, :fill_class, "bg-cyan-500 dark:bg-cyan-400")
+                    ]}
+                    style={"width: #{Float.round(entry.ratio * 100, 1)}%; min-width: #{if entry.count > 0, do: "0.4rem", else: "0"};"}
+                  >
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <div
+          :if={@visualization.entries != [] and Map.get(@visualization, :scale_kind) != :text_slider}
+          class="mt-4 space-y-3"
+        >
           <%= for entry <- @visualization.entries do %>
             <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-900/50">
               <div class="flex items-center justify-between gap-4 text-sm">
-                <div class="font-medium text-gray-900 dark:text-white">{entry.label}</div>
+                <div class="flex min-w-0 items-center gap-3">
+                  <span
+                    :if={Map.get(entry, :step_label)}
+                    class="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-gray-100 px-2 text-[11px] font-semibold uppercase tracking-wide text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                  >
+                    {entry.step_label}
+                  </span>
+                  <div class="font-medium text-gray-900 dark:text-white">{entry.label}</div>
+                </div>
                 <div class="text-right text-xs text-gray-500 dark:text-gray-400">
                   <div>{entry.count} of {@visualization.denominator_count} responses</div>
                   <div>{Float.round(entry.ratio * 100, 1)}%</div>
@@ -892,7 +950,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               </div>
               <div class="mt-3 h-3 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-950">
                 <div
-                  class="h-3 rounded-full bg-cyan-500 transition-all dark:bg-cyan-400"
+                  class={[
+                    "h-3 rounded-full transition-all",
+                    Map.get(@visualization, :fill_class, "bg-cyan-500 dark:bg-cyan-400")
+                  ]}
                   style={"width: #{Float.round(entry.ratio * 100, 1)}%; min-width: #{if entry.count > 0, do: "0.5rem", else: "0"};"}
                 >
                 </div>
@@ -907,6 +968,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         <div class="mt-3 text-sm leading-6 text-gray-600 dark:text-gray-300">
           {@visualization.summary}
         </div>
+        <div
+          :if={Map.get(@visualization, :scale_hint)}
+          class="mt-3 rounded-lg bg-gray-100 px-3 py-3 dark:bg-gray-900/60"
+        >
+          <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Scale Range
+          </div>
+          <div class="mt-2 flex items-center justify-between gap-3 text-sm font-medium text-gray-900 dark:text-white">
+            <span class="truncate">{@visualization.scale_hint.min_label}</span>
+            <span class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">to</span>
+            <span class="truncate text-right">{@visualization.scale_hint.max_label}</span>
+          </div>
+        </div>
         <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div
             :for={stat <- @visualization.stats}
@@ -916,6 +990,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               {stat.label}
             </div>
             <div class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">{stat.value}</div>
+            <div
+              :if={Map.get(stat, :supporting_text)}
+              class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+            >
+              {stat.supporting_text}
+            </div>
           </div>
         </div>
         <.render_adaptive_coverage summary={@summary} />
@@ -1059,6 +1139,24 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   defp adaptive_choice_fill_classes(false), do: "bg-red-500 dark:bg-red-400"
   defp adaptive_choice_fill_classes(:partial), do: "bg-amber-500 dark:bg-amber-400"
   defp adaptive_choice_fill_classes(_), do: "bg-slate-400 dark:bg-slate-500"
+
+  defp adaptive_visualization_fill_class(%{grading_pending: true}),
+    do: "bg-slate-400 dark:bg-slate-500"
+
+  defp adaptive_visualization_fill_class(%{attempt_total_count: 0}),
+    do: "bg-slate-400 dark:bg-slate-500"
+
+  defp adaptive_visualization_fill_class(%{evaluation_confidence: :inferred}),
+    do: "bg-sky-500 dark:bg-sky-400"
+
+  defp adaptive_visualization_fill_class(%{all_attempt_pct: pct}) when pct >= 1.0,
+    do: "bg-emerald-500 dark:bg-emerald-400"
+
+  defp adaptive_visualization_fill_class(%{all_attempt_pct: pct}) when pct <= 0.0,
+    do: "bg-amber-500 dark:bg-amber-400"
+
+  defp adaptive_visualization_fill_class(_),
+    do: "bg-violet-500 dark:bg-violet-400"
 
   defp native_key_badge_classes do
     "inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
@@ -1504,12 +1602,27 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             manual_analytics
           )
 
+        visualization =
+          build_adaptive_visualization(
+            part_definition,
+            responses,
+            resource_summary,
+            adaptive_part_prompt(part_definition, index),
+            grading_mode,
+            manual_analytics
+          )
+          |> Map.put(
+            :fill_class,
+            adaptive_visualization_fill_class(correctness_metrics)
+          )
+
         %{
           part_id: part_id,
           label: adaptive_part_label(part_definition, index),
           component_type: adaptive_component_type_label(Map.get(part_definition, "type")),
           grading_mode: adaptive_part_grading_mode(part_definition),
           grading_mode_label: adaptive_part_grading_mode_label(part_definition),
+          evaluation_confidence: correctness_metrics.evaluation_confidence,
           prompt: adaptive_part_prompt(part_definition, index),
           response_count: Enum.reduce(responses, 0, &(&1.count + &2)),
           submitted_response_count: Enum.reduce(raw_responses, 0, &(&1.count + &2)),
@@ -1545,15 +1658,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               adaptive_attempt_count(resource_summary, grading_mode, manual_analytics),
               correctness_metrics.first_attempt_total_count
             ),
-          visualization:
-            build_adaptive_visualization(
-              part_definition,
-              responses,
-              resource_summary,
-              adaptive_part_prompt(part_definition, index),
-              grading_mode,
-              manual_analytics
-            ),
+          visualization: visualization,
           order: index
         }
       end)
@@ -1801,29 +1906,15 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       prompt: prompt,
       description: description,
       summary: summary,
+      explanation:
+        "Responses are grouped by identical normalized submission patterns, then ranked by frequency. This view shows the most frequent patterns only, so highly varied responses may appear in the long tail rather than in the visible list.",
       denominator_count: denominator,
       entries: entries
     }
   end
 
   defp build_adaptive_numeric_distribution(part, responses, prompt) do
-    entries =
-      responses
-      |> Enum.map(fn response_summary ->
-        case adaptive_numeric_value(response_summary) do
-          nil ->
-            nil
-
-          value ->
-            %{
-              label: adaptive_numeric_label(value),
-              numeric_value: value,
-              count: response_summary.count
-            }
-        end
-      end)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.sort_by(& &1.numeric_value)
+    entries = adaptive_numeric_distribution_entries(part, responses)
 
     denominator = Enum.reduce(entries, 0, fn entry, total -> total + entry.count end)
 
@@ -1844,26 +1935,145 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         kind: :numeric_distribution,
         prompt: prompt,
         description: adaptive_numeric_description(part),
-        summary: "Each bar shows how often learners submitted that numeric value.",
+        scale_kind: adaptive_numeric_scale_kind(part),
+        summary: adaptive_numeric_summary(part),
         denominator_count: denominator,
+        scale_hint: adaptive_numeric_scale_hint(part),
         entries:
           Enum.map(entries, fn entry ->
             %{
               label: entry.label,
+              step_label: Map.get(entry, :step_label),
               count: entry.count,
               ratio: ratio(entry.count, denominator)
             }
           end),
-        stats: [
-          %{label: "Minimum", value: adaptive_numeric_label(Enum.min(weighted_values))},
-          %{
-            label: "Average",
-            value: adaptive_numeric_label(Enum.sum(weighted_values) / denominator)
-          },
-          %{label: "Maximum", value: adaptive_numeric_label(Enum.max(weighted_values))}
-        ]
+        stats: adaptive_numeric_stats(part, weighted_values)
       }
     end
+  end
+
+  defp adaptive_numeric_distribution_entries(%{"type" => "janus-text-slider"} = part, responses) do
+    labels = get_in(part, ["custom", "sliderOptionLabels"]) || []
+    minimum = get_in(part, ["custom", "minimum"]) || 0
+
+    counts_by_value =
+      Enum.reduce(responses, %{}, fn response_summary, acc ->
+        case adaptive_numeric_value(response_summary) do
+          nil -> acc
+          value -> Map.update(acc, value, response_summary.count, &(&1 + response_summary.count))
+        end
+      end)
+
+    labels
+    |> Enum.with_index(minimum)
+    |> Enum.map(fn {label, index} ->
+      numeric_value = index * 1.0
+
+      %{
+        label: label,
+        step_label: adaptive_numeric_label(index),
+        numeric_value: numeric_value,
+        count: Map.get(counts_by_value, numeric_value, 0)
+      }
+    end)
+  end
+
+  defp adaptive_numeric_distribution_entries(part, responses) do
+    responses
+    |> Enum.map(fn response_summary ->
+      case adaptive_numeric_value(response_summary) do
+        nil ->
+          nil
+
+        value ->
+          %{
+            label: adaptive_numeric_entry_label(part, value),
+            step_label: adaptive_numeric_entry_step_label(part, value),
+            numeric_value: value,
+            count: response_summary.count
+          }
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.sort_by(& &1.numeric_value)
+  end
+
+  defp adaptive_numeric_scale_kind(%{"type" => "janus-text-slider"}), do: :text_slider
+  defp adaptive_numeric_scale_kind(%{"type" => "janus-slider"}), do: :slider
+  defp adaptive_numeric_scale_kind(_), do: :numeric
+
+  defp adaptive_numeric_summary(%{"type" => "janus-text-slider"}),
+    do: "Each card shows how often learners landed on that labeled slider position."
+
+  defp adaptive_numeric_summary(%{"type" => "janus-slider"}),
+    do: "Each bar shows how often learners stopped on that slider value."
+
+  defp adaptive_numeric_summary(_),
+    do: "Each bar shows how often learners submitted that numeric value."
+
+  defp adaptive_numeric_scale_hint(%{"type" => "janus-text-slider"} = part) do
+    labels = get_in(part, ["custom", "sliderOptionLabels"]) || []
+
+    case labels do
+      [] ->
+        nil
+
+      _ ->
+        %{
+          min_label: List.first(labels),
+          max_label: List.last(labels)
+        }
+    end
+  end
+
+  defp adaptive_numeric_scale_hint(%{"type" => "janus-slider"} = part) do
+    %{
+      min_label: adaptive_numeric_label(get_in(part, ["custom", "minimum"]) || 0),
+      max_label: adaptive_numeric_label(get_in(part, ["custom", "maximum"]) || 0)
+    }
+  end
+
+  defp adaptive_numeric_scale_hint(%{"type" => "janus-input-number"} = part) do
+    %{
+      min_label: adaptive_numeric_label(get_in(part, ["custom", "minValue"]) || 0),
+      max_label: adaptive_numeric_label(get_in(part, ["custom", "maxValue"]) || 0)
+    }
+  end
+
+  defp adaptive_numeric_scale_hint(_), do: nil
+
+  defp adaptive_numeric_stats(%{"type" => "janus-text-slider"} = part, weighted_values) do
+    average = Enum.sum(weighted_values) / Enum.count(weighted_values)
+
+    [
+      adaptive_text_slider_stat("Lowest Selected", part, Enum.min(weighted_values)),
+      adaptive_text_slider_stat("Average Position", part, average),
+      adaptive_text_slider_stat("Highest Selected", part, Enum.max(weighted_values))
+    ]
+  end
+
+  defp adaptive_numeric_stats(_part, weighted_values) do
+    [
+      %{label: "Minimum", value: adaptive_numeric_label(Enum.min(weighted_values))},
+      %{
+        label: "Average",
+        value: adaptive_numeric_label(Enum.sum(weighted_values) / Enum.count(weighted_values))
+      },
+      %{label: "Maximum", value: adaptive_numeric_label(Enum.max(weighted_values))}
+    ]
+  end
+
+  defp adaptive_text_slider_stat(label, part, value) do
+    rounded_value = Float.round(value)
+
+    %{
+      label: label,
+      value:
+        adaptive_text_slider_option_label(part, rounded_value) ||
+          adaptive_numeric_label(rounded_value),
+      supporting_text: "Position #{adaptive_numeric_label(rounded_value)}"
+    }
   end
 
   defp build_adaptive_choice_distribution(part, responses, prompt, grading_mode, manual_analytics) do
@@ -2049,6 +2259,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           attempt_total_count: 0,
           correct_count: 0,
           outcome_buckets: [],
+          evaluation_confidence: :recorded,
           grading_pending: true,
           grading_pending_message:
             "No grading has been recorded for this manually graded input yet. Metrics will appear after instructor grading is saved."
@@ -2063,6 +2274,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           attempt_total_count: 0,
           correct_count: 0,
           outcome_buckets: [],
+          evaluation_confidence: :recorded,
           grading_pending: true,
           grading_pending_message:
             "No grading has been recorded for this manually graded input yet. Metrics will appear after instructor grading is saved."
@@ -2104,6 +2316,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               fill_class: "bg-amber-500 dark:bg-amber-400"
             }
           ],
+          evaluation_confidence: :recorded,
           grading_pending: false,
           grading_pending_message: nil
         }
@@ -2119,19 +2332,70 @@ defmodule OliWeb.Delivery.ActivityHelpers do
        ) do
     case adaptive_recorded_correct_count(part, responses) do
       nil ->
-        %{
-          first_attempt_pct:
-            safe_percentage(resource_summary, :num_first_attempts_correct, :num_first_attempts),
-          all_attempt_pct: safe_percentage(resource_summary, :num_correct, :num_attempts),
-          first_attempt_total_count: Map.get(resource_summary || %{}, :num_first_attempts, 0),
-          first_attempt_correct_count:
-            Map.get(resource_summary || %{}, :num_first_attempts_correct, 0),
-          attempt_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
-          correct_count: Map.get(resource_summary || %{}, :num_correct, 0),
-          outcome_buckets: adaptive_outcome_buckets(resource_summary),
-          grading_pending: false,
-          grading_pending_message: nil
-        }
+        if adaptive_open_ended_missing_correctness?(part) do
+          attempt_count =
+            max(
+              Map.get(resource_summary || %{}, :num_attempts, 0),
+              Enum.reduce(responses, 0, fn response_summary, acc ->
+                acc + response_summary.count
+              end)
+            )
+
+          first_attempt_total =
+            case Map.get(resource_summary || %{}, :num_first_attempts, 0) do
+              0 -> attempt_count
+              total -> total
+            end
+
+          retry_correct_count = max(attempt_count - first_attempt_total, 0)
+
+          %{
+            first_attempt_pct: ratio(first_attempt_total, first_attempt_total),
+            all_attempt_pct: ratio(attempt_count, attempt_count),
+            first_attempt_total_count: first_attempt_total,
+            first_attempt_correct_count: first_attempt_total,
+            attempt_total_count: attempt_count,
+            correct_count: attempt_count,
+            outcome_buckets: [
+              %{
+                label: "Correct on first try",
+                count: first_attempt_total,
+                ratio: ratio(first_attempt_total, attempt_count),
+                fill_class: "bg-sky-500 dark:bg-sky-400"
+              },
+              %{
+                label: "Correct after retry",
+                count: retry_correct_count,
+                ratio: ratio(retry_correct_count, attempt_count),
+                fill_class: "bg-cyan-500 dark:bg-cyan-400"
+              },
+              %{
+                label: "Still incorrect / incomplete",
+                count: 0,
+                ratio: 0,
+                fill_class: "bg-slate-400 dark:bg-slate-500"
+              }
+            ],
+            evaluation_confidence: :inferred,
+            grading_pending: false,
+            grading_pending_message: nil
+          }
+        else
+          %{
+            first_attempt_pct:
+              safe_percentage(resource_summary, :num_first_attempts_correct, :num_first_attempts),
+            all_attempt_pct: safe_percentage(resource_summary, :num_correct, :num_attempts),
+            first_attempt_total_count: Map.get(resource_summary || %{}, :num_first_attempts, 0),
+            first_attempt_correct_count:
+              Map.get(resource_summary || %{}, :num_first_attempts_correct, 0),
+            attempt_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
+            correct_count: Map.get(resource_summary || %{}, :num_correct, 0),
+            outcome_buckets: adaptive_outcome_buckets(resource_summary),
+            evaluation_confidence: :recorded,
+            grading_pending: false,
+            grading_pending_message: nil
+          }
+        end
 
       {source, correct_count} ->
         attempt_count =
@@ -2188,6 +2452,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               fill_class: "bg-amber-500 dark:bg-amber-400"
             }
           ],
+          evaluation_confidence: :recorded,
           grading_pending: false,
           grading_pending_message: nil
         }
@@ -2321,6 +2586,20 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     else
       _ -> nil
     end
+  end
+
+  defp adaptive_open_ended_missing_correctness?(part) do
+    adaptive_part_grading_mode(part) == :automatic and
+      Map.get(part, "type") in [
+        "janus-input-text",
+        "janus-multi-line-text",
+        "janus-input-number",
+        "janus-slider",
+        "janus-text-slider",
+        "janus-fill-blanks",
+        "janus-formula"
+      ] and
+      is_nil(adaptive_open_ended_criteria(part))
   end
 
   defp adaptive_open_ended_criteria(part) do
@@ -2931,6 +3210,34 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       :erlang.float_to_binary(value, decimals: 2)
     end
   end
+
+  defp adaptive_numeric_entry_label(part, value) do
+    case adaptive_text_slider_option_label(part, value) do
+      nil -> adaptive_numeric_label(value)
+      label -> label
+    end
+  end
+
+  defp adaptive_numeric_entry_step_label(%{"type" => "janus-slider"}, value),
+    do: "Value #{adaptive_numeric_label(value)}"
+
+  defp adaptive_numeric_entry_step_label(%{"type" => "janus-input-number"}, value),
+    do: "Value #{adaptive_numeric_label(value)}"
+
+  defp adaptive_numeric_entry_step_label(_part, _value), do: nil
+
+  defp adaptive_text_slider_option_label(%{"type" => "janus-text-slider"} = part, value) do
+    config = Map.get(part, "custom", %{})
+    labels = Map.get(config, "sliderOptionLabels", [])
+    minimum = Map.get(config, "minimum", 0)
+
+    case normalize_adaptive_integer(value) do
+      nil -> nil
+      index -> Enum.at(labels, index - minimum)
+    end
+  end
+
+  defp adaptive_text_slider_option_label(_part, _value), do: nil
 
   defp normalize_adaptive_response_tokens(value) when is_list(value) do
     Enum.flat_map(value, &normalize_adaptive_response_tokens/1)

@@ -374,6 +374,55 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
              } = summary
     end
 
+    test "treats automatic open-ended adaptive inputs without criteria as correct by default" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 70,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_formula",
+                  "type" => "janus-formula",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{"title" => "Formula Input"}
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_formula",
+              num_first_attempts_correct: 0,
+              num_first_attempts: 1,
+              num_correct: 0,
+              num_attempts: 1
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      [summary] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [
+            %{activity_id: 70, part_id: "part_formula", response: "x+1", count: 1, users: []}
+          ]
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+
+      assert summary.first_attempt_pct == 1.0
+      assert summary.all_attempt_pct == 1.0
+      assert summary.evaluation_confidence == :inferred
+      assert summary.visualization.fill_class == "bg-sky-500 dark:bg-sky-400"
+    end
+
     test "builds numeric distribution visualizations for adaptive numeric inputs" do
       adaptive_id = 99
 
@@ -425,6 +474,81 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                    %{label: "Minimum", value: "1"},
                    %{label: "Average", value: "1.75"},
                    %{label: "Maximum", value: "3"}
+                 ]
+               }
+             } = summary
+    end
+
+    test "uses authored option labels for adaptive text slider distributions" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 71,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_text_slider",
+                  "type" => "janus-text-slider",
+                  "gradingApproach" => "manual",
+                  "custom" => %{
+                    "title" => "Slider (Text)",
+                    "minimum" => 0,
+                    "sliderOptionLabels" => ["Low", "Medium", "High"]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [],
+          transformed_model: nil
+        }
+      ]
+
+      [summary] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [],
+          %{
+            {71, "part_text_slider"} => %{
+              responses: [
+                %{
+                  activity_id: 71,
+                  part_id: "part_text_slider",
+                  response: "1",
+                  count: 1,
+                  users: []
+                }
+              ],
+              student_ids: MapSet.new([1]),
+              first_attempt_student_ids: MapSet.new([1]),
+              attempt_count: 1,
+              correct_count: 1,
+              first_attempt_count: 1,
+              first_attempt_correct_count: 1
+            }
+          }
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+
+      assert %{
+               visualization: %{
+                 kind: :numeric_distribution,
+                 scale_kind: :text_slider,
+                 scale_hint: %{min_label: "Low", max_label: "High"},
+                 entries: [
+                   %{label: "Low", count: 0, ratio: 0.0, step_label: "0"},
+                   %{label: "Medium", count: 1, ratio: 1.0, step_label: "1"},
+                   %{label: "High", count: 0, ratio: 0.0, step_label: "2"}
+                 ],
+                 stats: [
+                   %{label: "Lowest Selected", value: "Medium", supporting_text: "Position 1"},
+                   %{label: "Average Position", value: "Medium", supporting_text: "Position 1"},
+                   %{label: "Highest Selected", value: "Medium", supporting_text: "Position 1"}
                  ]
                }
              } = summary
@@ -628,6 +752,64 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
 
       assert summary.first_attempt_pct == 0
       assert summary.all_attempt_pct == 2 / 3
+    end
+
+    test "colors manual open-ended response-pattern visualizations from manual grading outcomes" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 69,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_fill_blanks",
+                  "type" => "janus-fill-blanks",
+                  "gradingApproach" => "manual",
+                  "custom" => %{"title" => "Fill Blanks 5"}
+                }
+              ]
+            }
+          },
+          resource_summaries: [],
+          transformed_model: nil
+        }
+      ]
+
+      [summary] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [],
+          %{
+            {69, "part_fill_blanks"} => %{
+              responses: [
+                %{
+                  activity_id: 69,
+                  part_id: "part_fill_blanks",
+                  response: "Option 2",
+                  label: "blank1: Option 2",
+                  count: 1,
+                  users: []
+                }
+              ],
+              student_ids: MapSet.new([1]),
+              first_attempt_student_ids: MapSet.new([1]),
+              attempt_count: 1,
+              correct_count: 0,
+              first_attempt_count: 1,
+              first_attempt_correct_count: 0
+            }
+          }
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+
+      assert summary.all_attempt_pct == 0
+      assert summary.visualization.kind == :response_patterns
+      assert summary.visualization.fill_class == "bg-amber-500 dark:bg-amber-400"
     end
 
     test "uses graded-only analytics for manual adaptive parts when grading has been recorded" do
