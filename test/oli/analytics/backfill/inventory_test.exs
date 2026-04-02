@@ -254,14 +254,21 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
       assert Repo.aggregate(InventoryChunkLog, :count, :id) == 0
     end
 
-    test "retry_batch clears chunk logs and resets chunk_count", %{batch: batch} do
+    test "retry_batch clears chunk logs and resets progress counters", %{batch: batch} do
       metrics = %{"chunk_index" => "1", "rows_written" => 5}
       {:ok, _} = Inventory.upsert_chunk_log(batch, "1", metrics)
       {:ok, _} = Inventory.upsert_chunk_log(batch, "2", Map.put(metrics, "chunk_index", "2"))
 
       batch =
         batch
-        |> InventoryBatch.changeset(%{metadata: %{"chunk_count" => 2}})
+        |> InventoryBatch.changeset(%{
+          processed_objects: 7,
+          rows_ingested: 55,
+          bytes_ingested: 550,
+          started_at: DateTime.utc_now(),
+          finished_at: DateTime.utc_now(),
+          metadata: %{"chunk_count" => 2, "chunk_sequence" => 2}
+        })
         |> Repo.update!()
 
       assert {:ok, %InventoryBatch{} = updated_batch} = Inventory.retry_batch(batch)
@@ -275,7 +282,13 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
              ) == 0
 
       updated = Repo.get!(InventoryBatch, updated_batch.id)
+      assert updated.processed_objects == 0
+      assert updated.rows_ingested == nil
+      assert updated.bytes_ingested == nil
+      assert updated.started_at == nil
+      assert updated.finished_at == nil
       assert updated.metadata["chunk_count"] == 0
+      assert updated.metadata["chunk_sequence"] == 0
 
       assert [%Oban.Job{args: %{"batch_id" => ^batch_id}}] =
                all_enqueued(worker: Oli.Analytics.Backfill.Inventory.BatchWorker)
@@ -529,6 +542,70 @@ defmodule Oli.Analytics.Backfill.InventoryTest do
 
     test "resume_run errors when run is not paused", %{run: run} do
       assert {:error, :not_paused} = Inventory.resume_run(run)
+    end
+  end
+
+  describe "aggregate recomputation lifecycle baseline" do
+    test "recompute_run_aggregates marks a run failed when any batch fails" do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-10],
+          inventory_prefix: "inventory/prefix/2024-07-10",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running
+        }
+        |> Repo.insert!()
+
+      %InventoryBatch{
+        run_id: run.id,
+        sequence: 1,
+        parquet_key: "inventory/failed.parquet",
+        status: :failed
+      }
+      |> Repo.insert!()
+
+      %InventoryBatch{
+        run_id: run.id,
+        sequence: 2,
+        parquet_key: "inventory/pending.parquet",
+        status: :pending
+      }
+      |> Repo.insert!()
+
+      assert {:ok, recomputed_run} = Inventory.recompute_run_aggregates(run)
+      assert recomputed_run.status == :failed
+      assert recomputed_run.failed_batches == 1
+      assert recomputed_run.pending_batches == 1
+    end
+
+    test "delete_run is available immediately after cancel_run marks a run cancelled" do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-11],
+          inventory_prefix: "inventory/prefix/2024-07-11",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running
+        }
+        |> Repo.insert!()
+
+      %InventoryBatch{
+        run_id: run.id,
+        sequence: 1,
+        parquet_key: "inventory/running.parquet",
+        status: :running
+      }
+      |> Repo.insert!()
+
+      assert {:ok, cancelled_run} = Inventory.cancel_run(run)
+      assert cancelled_run.status == :cancelled
+      assert {:ok, _deleted_run} = Inventory.delete_run(cancelled_run)
+      refute Repo.get(InventoryRun, run.id)
     end
   end
 end

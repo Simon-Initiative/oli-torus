@@ -1047,5 +1047,132 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       rendered = render(view)
       assert rendered =~ "Run #{run.id} resumed"
     end
+
+    test "shows resume for a cancelled run when stale pause metadata remains", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-02],
+          inventory_prefix: "torus/inventory/2024-07-02",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :cancelled,
+          metadata: %{"pause_requested" => true}
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Resume"
+             )
+    end
+
+    test "shows resume and cancel instead of disabled pause during a pending pause transition", %{
+      conn: conn
+    } do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-03],
+          inventory_prefix: "torus/inventory/2024-07-03",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running,
+          metadata: %{"pause_requested" => true}
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      refute has_element?(
+               view,
+               "button[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"resume_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Resume"
+             )
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Cancel"
+             )
+    end
+
+    test "renders pause as warning and cancel as secondary when both controls are available", %{
+      conn: conn
+    } do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-04],
+          inventory_prefix: "torus/inventory/2024-07-04",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :running
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button.btn-warning[phx-click=\"pause_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Pause"
+             )
+
+      assert has_element?(
+               view,
+               "button.btn-secondary[phx-click=\"cancel_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Cancel"
+             )
+    end
+
+    test "shows delete run immediately for cancelled inventory runs", %{conn: conn} do
+      run =
+        %InventoryRun{
+          inventory_date: ~D[2024-07-05],
+          inventory_prefix: "torus/inventory/2024-07-05",
+          manifest_url: "https://example.com/manifest.json",
+          manifest_bucket: "test-inventory-bucket",
+          target_table: "analytics.raw_events",
+          format: "JSONAsString",
+          status: :cancelled
+        }
+        |> Repo.insert!()
+
+      {:ok, view, _html} = live(conn, @route)
+
+      view
+      |> element("button[phx-value-tab=\"batch\"]")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               "button[phx-click=\"delete_inventory_run\"][phx-value-id=\"#{run.id}\"]",
+               "Delete Run"
+             )
+    end
   end
 end
