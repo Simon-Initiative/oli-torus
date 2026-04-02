@@ -137,7 +137,7 @@ const applyTextStyle = (editor: any, rawStyleValue: string) => {
   editor.format('size', false, 'user');
 
   if (styleValue === 'normal') {
-    // Apply default normal font/size so the toolbar reflects Open Sans / 16px.
+    // Apply default normal font/size so the toolbar reflects Open Sans / 16px
     const linesForNormal = editor.getLines(lineRange.index, lineRange.length);
     linesForNormal.forEach((line: any) => {
       const lineIndex = editor.getIndex(line);
