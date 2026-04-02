@@ -97,18 +97,60 @@ config :oli, :cashnet_provider,
   cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
 
 # For development, we disable any cache and enable
-https_config =
-  if System.get_env("ENABLE_HTTPS", "false") == "true" do
-    [
-      https: [
-        port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
-        otp_app: :oli,
-        keyfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.key"),
-        certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt")
-      ]
-    ]
+https_enabled? =
+  case System.get_env("ENABLE_HTTPS") do
+    nil -> true
+    value when is_binary(value) -> String.downcase(value) != "false"
+    _ -> true
+  end
+
+endpoint_config = [
+  http: [
+    port: String.to_integer(System.get_env("HTTP_PORT", "80"))
+  ],
+  url: [
+    scheme: System.get_env("SCHEME", "http"),
+    host: System.get_env("HOST", "localhost"),
+    port: String.to_integer(System.get_env("PORT", "80"))
+  ],
+  https: [
+    port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
+    otp_app: :oli,
+    keyfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.key"),
+    certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt")
+  ],
+  check_origin: false,
+  code_reloader: true,
+  debug_errors: true,
+  secret_key_base: "7xBZ6iTMM2Y3Q6x9Gdr5VXYFxX1HCw5y2O+fr5jN8ZBhm5LH/alqyEtd/TjIRmV+",
+  watchers: [
+    node: [
+      "node_modules/webpack/bin/webpack.js",
+      "--mode",
+      "development",
+      "--watch",
+      "--watch-options-stdin",
+      cd: Path.expand("../assets", __DIR__)
+    ],
+    node: [
+      "node_modules/webpack/bin/webpack.js",
+      "--config",
+      "webpack.config.node.js",
+      "--mode",
+      "production",
+      "--watch",
+      "--watch-options-stdin",
+      cd: Path.expand("../assets", __DIR__)
+    ],
+    tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
+  ]
+]
+
+endpoint_config =
+  if https_enabled? do
+    endpoint_config
   else
-    []
+    Keyword.delete(endpoint_config, :https)
   end
 
 # debugging and code reloading.
@@ -116,43 +158,7 @@ https_config =
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :oli,
-       OliWeb.Endpoint,
-       [
-         http: [
-           port: String.to_integer(System.get_env("HTTP_PORT", "80"))
-         ],
-         url: [
-           scheme: System.get_env("SCHEME", "http"),
-           host: System.get_env("HOST", "localhost"),
-           port: String.to_integer(System.get_env("PORT", "80"))
-         ],
-         check_origin: false,
-         code_reloader: true,
-         debug_errors: true,
-         secret_key_base: "7xBZ6iTMM2Y3Q6x9Gdr5VXYFxX1HCw5y2O+fr5jN8ZBhm5LH/alqyEtd/TjIRmV+",
-         watchers: [
-           node: [
-             "node_modules/webpack/bin/webpack.js",
-             "--mode",
-             "development",
-             "--watch",
-             "--watch-options-stdin",
-             cd: Path.expand("../assets", __DIR__)
-           ],
-           node: [
-             "node_modules/webpack/bin/webpack.js",
-             "--config",
-             "webpack.config.node.js",
-             "--mode",
-             "production",
-             "--watch",
-             "--watch-options-stdin",
-             cd: Path.expand("../assets", __DIR__)
-           ],
-           tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
-         ]
-       ] ++ https_config
+config :oli, OliWeb.Endpoint, endpoint_config
 
 # ## SSL Support
 #
