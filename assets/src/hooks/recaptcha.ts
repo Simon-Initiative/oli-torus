@@ -8,8 +8,8 @@ const isVisible = (el: HTMLElement) => {
 
   return (
     !target.classList.contains('hidden') &&
-      target.offsetParent !== null &&
-      window.getComputedStyle(target).display !== 'none'
+    target.offsetParent !== null &&
+    window.getComputedStyle(target).display !== 'none'
   );
 };
 
