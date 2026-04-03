@@ -11,9 +11,9 @@ defmodule Oli.Analytics.Backfill.BackfillRun do
 
   @type t :: %__MODULE__{}
 
-  @status_values [:pending, :running, :completed, :failed, :cancelled]
+  @status_values [:pending, :running, :optimizing, :completed, :failed, :cancelled]
 
-  @type status :: :pending | :running | :completed | :failed | :cancelled
+  @type status :: :pending | :running | :optimizing | :completed | :failed | :cancelled
 
   schema "clickhouse_backfill_runs" do
     field :target_table, :string

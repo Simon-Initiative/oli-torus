@@ -36,7 +36,7 @@ defmodule Oli.Analytics.InventoryTest do
   end
 
   describe "cancel_batch/2" do
-    test "transitions running batch to cancelled and recomputes aggregates" do
+    test "transitions a running batch to cancelled and recomputes aggregates" do
       run_attrs = %{
         inventory_date: ~D[2025-10-05],
         inventory_prefix: "torus-xapi-prod/2025-10-05T01-00Z",
@@ -81,7 +81,7 @@ defmodule Oli.Analytics.InventoryTest do
   end
 
   describe "cancel_run/1" do
-    test "cancels run and outstanding batches" do
+    test "cancels the run and outstanding batches directly" do
       run_attrs = %{
         inventory_date: ~D[2025-10-05],
         inventory_prefix: "torus-xapi-prod/2025-10-05T01-00Z",
@@ -128,7 +128,8 @@ defmodule Oli.Analytics.InventoryTest do
       refute is_nil(reloaded_run.finished_at)
       assert reloaded_run.metadata["cancelled_at"]
 
-      assert Repo.get!(InventoryBatch, running_batch.id).status == :cancelled
+      running_batch = Repo.get!(InventoryBatch, running_batch.id)
+      assert running_batch.status == :cancelled
       assert Repo.get!(InventoryBatch, failed_batch.id).status == :failed
     end
   end

@@ -32,7 +32,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
           optional(:batch_chunk_size) => pos_integer(),
           optional(:manifest_page_size) => pos_integer(),
           optional(:max_simultaneous_batches) => pos_integer(),
-          optional(:max_batch_retries) => pos_integer()
+          optional(:max_batch_retries) => pos_integer(),
+          optional(:http_timeout_ms) => pos_integer(),
+          optional(:http_recv_timeout_ms) => pos_integer()
         }
 
   @doc """
@@ -80,6 +82,14 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
   defp default_max_batch_retries do
     inventory_config_value(:max_batch_retries, 1)
+  end
+
+  defp default_http_timeout_ms do
+    inventory_config_value(:http_timeout_ms, 30_000)
+  end
+
+  defp default_http_recv_timeout_ms do
+    inventory_config_value(:http_recv_timeout_ms, 300_000)
   end
 
   @doc """
@@ -132,18 +142,11 @@ defmodule Oli.Analytics.Backfill.Inventory do
       |> reload_run_record()
       |> Repo.preload(:batches)
 
-    {completed, failed, running, pending} =
-      Enum.reduce(run.batches, {0, 0, 0, 0}, fn batch, {comp, fail, runn, pend} ->
-        case batch.status do
-          :completed -> {comp + 1, fail, runn, pend}
-          :failed -> {comp, fail + 1, runn, pend}
-          :running -> {comp, fail, runn + 1, pend}
-          :queued -> {comp, fail, runn, pend + 1}
-          :pending -> {comp, fail, runn, pend + 1}
-          :paused -> {comp, fail, runn, pend + 1}
-          :cancelled -> {comp, fail, runn, pend}
-        end
-      end)
+    counts = Enum.frequencies_by(run.batches, & &1.status)
+    completed = Map.get(counts, :completed, 0)
+    failed = Map.get(counts, :failed, 0)
+    running = Map.get(counts, :running, 0)
+    pending = Map.get(counts, :pending, 0)
 
     total = length(run.batches)
 
@@ -152,7 +155,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
       completed_batches: completed,
       failed_batches: failed,
       running_batches: running,
-      pending_batches: pending,
+      pending_batches: pending + Map.get(counts, :queued, 0),
       rows_ingested: sum_field(run.batches, & &1.rows_ingested),
       bytes_ingested: sum_field(run.batches, & &1.bytes_ingested)
     }
@@ -166,7 +169,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
 
     attrs = Map.put(attrs, :metadata, metadata)
 
-    status = derive_run_status(run.status, total, completed, failed, running, pending)
+    status = derive_run_status(run.status, counts, total)
     attrs = maybe_put_status(attrs, status)
 
     attrs =
@@ -581,29 +584,30 @@ defmodule Oli.Analytics.Backfill.Inventory do
   """
   @spec retry_batch(InventoryBatch.t()) :: {:ok, InventoryBatch.t()} | {:error, term()}
   def retry_batch(%InventoryBatch{} = batch) do
-    reset_metadata =
+    preserved_metadata =
       batch.metadata
       |> ensure_map()
-      |> Map.put("chunk_count", 0)
-      |> Map.put("chunk_sequence", 0)
+      |> Map.delete("pause_requested")
+      |> Map.delete("pause_requested_at")
+      |> Map.delete("cancel_requested")
+      |> Map.delete("cancel_requested_at")
+      |> Map.put("last_retry_at", DateTime.utc_now())
 
     reset_attrs = %{
       error: nil,
-      processed_objects: 0,
-      rows_ingested: nil,
-      bytes_ingested: nil,
       started_at: nil,
       finished_at: nil,
-      metadata: reset_metadata
+      metadata: preserved_metadata
     }
 
-    _ = delete_chunk_logs_for_batch(batch.id)
+    Logger.info(
+      "Retrying inventory batch #{batch.id} for run #{batch.run_id} from processed_objects=#{batch.processed_objects || 0}, chunk_sequence=#{batch.metadata |> ensure_map() |> Map.get("chunk_sequence", 0)}"
+    )
 
     with {:ok, batch} <- transition_batch(batch, :pending, reset_attrs),
          batch <- Repo.preload(batch, :run),
-         :ok <- maybe_enqueue_pending_batches(batch.run) do
-      _ = maybe_recompute_run(batch.run)
-
+         {:ok, run} <- maybe_recompute_run(batch.run),
+         :ok <- maybe_enqueue_pending_batches(run) do
       reloaded_batch =
         InventoryBatch
         |> Repo.get!(batch.id)
@@ -629,15 +633,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
         {:ok, run}
 
       true ->
-        metadata =
-          run.metadata
-          |> ensure_map()
-          |> Map.put("pause_requested", true)
-          |> Map.put("pause_requested_at", DateTime.utc_now())
+        Logger.info("Pause requested for inventory run #{run.id} in status #{run.status}")
 
-        attrs = %{metadata: metadata}
-
-        with {:ok, paused_run} <- transition_run(run, :paused, attrs),
+        with {:ok, paused_run} <- transition_run(run, :paused),
              :ok <- pause_run_batches(paused_run.batches),
              {:ok, final_run} <- maybe_recompute_run(paused_run) do
           {:ok, Repo.preload(final_run, :batches)}
@@ -654,7 +652,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
     metadata = ensure_map(run.metadata)
 
     cond do
-      run.status != :paused and not truthy?(Map.get(metadata, "pause_requested")) ->
+      run.status != :paused ->
         {:error, :not_paused}
 
       true ->
@@ -677,8 +675,78 @@ defmodule Oli.Analytics.Backfill.Inventory do
   end
 
   @doc """
-  Request that a batch pause processing. Running batches mark themselves for pause,
-  while queued or pending batches transition immediately to `:paused`.
+  Update execution settings for a paused or failed run so future resumed or retried work
+  uses the new values without recreating the run.
+  """
+  @spec update_run_execution_settings(InventoryRun.t(), map()) ::
+          {:ok, InventoryRun.t()} | {:error, term()}
+  def update_run_execution_settings(%InventoryRun{} = run, attrs) when is_map(attrs) do
+    if run.status in [:paused, :failed] do
+      metadata = ensure_map(run.metadata)
+
+      updated_metadata =
+        metadata
+        |> Map.put(
+          "batch_chunk_size",
+          parse_positive_integer(Map.get(attrs, :batch_chunk_size), default_batch_chunk_size())
+        )
+        |> Map.put(
+          "manifest_page_size",
+          parse_positive_integer(
+            Map.get(attrs, :manifest_page_size),
+            default_manifest_page_size()
+          )
+        )
+        |> Map.put(
+          "max_simultaneous_batches",
+          parse_positive_integer(
+            Map.get(attrs, :max_simultaneous_batches),
+            default_max_simultaneous_batches()
+          )
+        )
+        |> Map.put(
+          "max_batch_retries",
+          parse_positive_integer(Map.get(attrs, :max_batch_retries), default_max_batch_retries())
+        )
+        |> Map.put(
+          "http_timeout_ms",
+          parse_positive_integer(Map.get(attrs, :http_timeout_ms), default_http_timeout_ms())
+        )
+        |> Map.put(
+          "http_recv_timeout_ms",
+          parse_positive_integer(
+            Map.get(attrs, :http_recv_timeout_ms),
+            default_http_recv_timeout_ms()
+          )
+        )
+
+      update_run(run, %{metadata: updated_metadata})
+    else
+      {:error, :run_not_editable}
+    end
+  end
+
+  @doc """
+  Determine the HTTP timeout options to use for ClickHouse requests issued for a run.
+  """
+  @spec clickhouse_http_options(InventoryRun.t()) :: keyword()
+  def clickhouse_http_options(%InventoryRun{} = run) do
+    metadata = ensure_map(run.metadata)
+
+    [
+      timeout:
+        metadata
+        |> fetch_first(["http_timeout_ms", :http_timeout_ms])
+        |> parse_positive_integer(default_http_timeout_ms()),
+      recv_timeout:
+        metadata
+        |> fetch_first(["http_recv_timeout_ms", :http_recv_timeout_ms])
+        |> parse_positive_integer(default_http_recv_timeout_ms())
+    ]
+  end
+
+  @doc """
+  Pause a batch immediately and prevent further processing until resumed.
   """
   @spec pause_batch(InventoryBatch.t()) :: {:ok, InventoryBatch.t()} | {:error, term()}
   def pause_batch(%InventoryBatch{} = batch) do
@@ -692,31 +760,23 @@ defmodule Oli.Analytics.Backfill.Inventory do
       batch.status == :paused ->
         {:ok, batch}
 
-      batch.status in [:pending, :queued] ->
-        metadata = ensure_map(batch.metadata)
-        metadata = Map.put(metadata, "pause_requested", false)
-
+      batch.status in [:pending, :queued, :running] ->
         _ =
-          if batch.status == :queued do
+          if batch.status in [:queued, :running] do
             cancel_batch_job(batch)
           end
+
+        metadata =
+          batch.metadata
+          |> ensure_map()
+          |> Map.delete("pause_requested")
+          |> Map.delete("pause_requested_at")
+          |> Map.put("paused_at", DateTime.utc_now())
 
         with {:ok, updated_batch} <- transition_batch(batch, :paused, %{metadata: metadata}),
              {:ok, _} <- maybe_recompute_run(run) do
           {:ok, %{updated_batch | run: run}}
           |> notify(:inventory_batch, %{action: :paused})
-        end
-
-      true ->
-        metadata =
-          batch.metadata
-          |> ensure_map()
-          |> Map.put("pause_requested", true)
-          |> Map.put("pause_requested_at", DateTime.utc_now())
-
-        with {:ok, updated_batch} <- update_batch(batch, %{metadata: metadata}) do
-          {:ok, %{updated_batch | run: run}}
-          |> notify(:inventory_batch, %{action: :pause_requested})
         end
     end
   end
@@ -754,7 +814,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
   end
 
   @doc """
-  Cancel an in-flight inventory batch and prevent further processing.
+  Cancel an inventory batch directly and prevent further processing.
   """
   @spec cancel_batch(InventoryBatch.t(), keyword()) ::
           {:ok, InventoryBatch.t()} | {:error, term()}
@@ -772,7 +832,7 @@ defmodule Oli.Analytics.Backfill.Inventory do
       }
 
       with {:ok, updated_batch} <- transition_batch(batch, :cancelled, attrs),
-           {:ok, _} <- maybe_recompute_run(batch.run, recompute?) do
+           {:ok, _run} <- maybe_recompute_run(batch.run, recompute?) do
         {:ok, %{updated_batch | run: batch.run}}
         |> notify(:inventory_batch, %{action: :cancelled})
       end
@@ -791,6 +851,8 @@ defmodule Oli.Analytics.Backfill.Inventory do
     if terminal_run_status?(run.status) do
       {:error, :not_cancellable}
     else
+      Logger.info("Cancel requested for inventory run #{run.id} in status #{run.status}")
+
       Repo.transaction(fn ->
         _ = cancel_orchestrator_job(run)
 
@@ -916,13 +978,8 @@ defmodule Oli.Analytics.Backfill.Inventory do
   """
   @spec maybe_enqueue_pending_batches(InventoryRun.t()) :: :ok | {:error, term()}
   def maybe_enqueue_pending_batches(%InventoryRun{} = run) do
-    metadata = ensure_map(run.metadata)
-
     cond do
-      run.status == :paused ->
-        :ok
-
-      truthy?(Map.get(metadata, "pause_requested")) ->
+      run.status in [:paused, :cancelled, :completed] ->
         :ok
 
       true ->
@@ -1020,19 +1077,12 @@ defmodule Oli.Analytics.Backfill.Inventory do
     batch = ensure_batch_run_preloaded(batch)
     run = batch.run
     metadata = ensure_map(batch.metadata)
-    run_metadata = ensure_map(run && run.metadata)
 
     cond do
       is_nil(run) ->
         :ok
 
       run.status in [:paused, :cancelled, :failed, :completed] ->
-        :ok
-
-      truthy?(Map.get(run_metadata, "pause_requested")) ->
-        :ok
-
-      truthy?(Map.get(metadata, "pause_requested")) ->
         :ok
 
       active_job?(metadata, boot?, job_states) ->
@@ -1189,18 +1239,26 @@ defmodule Oli.Analytics.Backfill.Inventory do
   defp maybe_put_status(attrs, nil), do: attrs
   defp maybe_put_status(attrs, status), do: Map.put(attrs, :status, status)
 
-  defp derive_run_status(current_status, 0, _completed, _failed, _running, _pending) do
+  defp derive_run_status(current_status, _counts, 0) do
     current_status
   end
 
-  defp derive_run_status(current, total, completed, failed, running, pending) do
+  defp derive_run_status(current, counts, total) do
+    completed = Map.get(counts, :completed, 0)
+    failed = Map.get(counts, :failed, 0)
+    running = Map.get(counts, :running, 0)
+    queued = Map.get(counts, :queued, 0)
+    pending = Map.get(counts, :pending, 0)
+
+    runnable = running + queued + pending
+
     cond do
       current == :cancelled -> :cancelled
       current == :paused -> :paused
-      failed > 0 -> :failed
       completed == total and total > 0 -> :completed
-      running > 0 -> :running
       current == :preparing -> :preparing
+      runnable > 0 -> :running
+      failed > 0 -> :failed
       pending > 0 -> :pending
       true -> current
     end
@@ -1311,14 +1369,38 @@ defmodule Oli.Analytics.Backfill.Inventory do
         |> fetch_value(:max_batch_retries, max_retries_default)
         |> parse_positive_integer(default_max_batch_retries())
 
+      http_timeout_default =
+        config[:http_timeout_ms]
+        |> parse_positive_integer(default_http_timeout_ms())
+
+      http_recv_timeout_default =
+        config[:http_recv_timeout_ms]
+        |> parse_positive_integer(default_http_recv_timeout_ms())
+
+      http_timeout_ms =
+        attrs
+        |> fetch_value(:http_timeout_ms, http_timeout_default)
+        |> parse_positive_integer(default_http_timeout_ms())
+
+      http_recv_timeout_ms =
+        attrs
+        |> fetch_value(:http_recv_timeout_ms, http_recv_timeout_default)
+        |> parse_positive_integer(default_http_recv_timeout_ms())
+
       metadata =
         attrs
         |> fetch_value(:metadata, %{})
         |> ensure_map()
+        |> Map.put(
+          "optimize_after_backfill",
+          truthy?(fetch_value(attrs, :optimize_after_backfill, true))
+        )
         |> Map.put_new("batch_chunk_size", config[:batch_chunk_size])
         |> Map.put_new("manifest_page_size", config[:manifest_page_size])
         |> Map.put("max_simultaneous_batches", max_simultaneous)
         |> Map.put("max_batch_retries", max_batch_retries)
+        |> Map.put("http_timeout_ms", http_timeout_ms)
+        |> Map.put("http_recv_timeout_ms", http_recv_timeout_ms)
         |> Map.put(
           "manifest",
           %{
@@ -1457,7 +1539,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
               :batch_chunk_size,
               :manifest_page_size,
               :max_simultaneous_batches,
-              :max_batch_retries
+              :max_batch_retries,
+              :http_timeout_ms,
+              :http_recv_timeout_ms
             ] do
     Map.put(acc, key, value)
   end
@@ -1508,7 +1592,9 @@ defmodule Oli.Analytics.Backfill.Inventory do
       batch_chunk_size: default_batch_chunk_size(),
       manifest_page_size: default_manifest_page_size(),
       max_simultaneous_batches: default_max_simultaneous_batches(),
-      max_batch_retries: default_max_batch_retries()
+      max_batch_retries: default_max_batch_retries(),
+      http_timeout_ms: default_http_timeout_ms(),
+      http_recv_timeout_ms: default_http_recv_timeout_ms()
     }
   end
 
