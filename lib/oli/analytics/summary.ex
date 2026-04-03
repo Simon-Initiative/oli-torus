@@ -86,41 +86,6 @@ defmodule Oli.Analytics.Summary do
   def upsert_response_summaries(pipeline), do: Pipeline.step_done(pipeline, :response_summary)
 
   @doc """
-  Rebuilds adaptive response summary tables from stored part attempts.
-
-  This is intended as a repair path for legacy adaptive summary rows that were
-  stored with `response = "unsupported"` before adaptive response labels were supported.
-  """
-  def rebuild_adaptive_response_summaries() do
-    adaptive_registration = Oli.Activities.get_registration_by_slug("oli_adaptive")
-
-    if is_nil(adaptive_registration) do
-      {:error, :adaptive_registration_not_found}
-    else
-      adaptive_activity_type_id = adaptive_registration.id
-      activity_count = adaptive_activity_resource_count(adaptive_activity_type_id)
-
-      adaptive_activity_resource_id_batches(adaptive_activity_type_id)
-      |> Enum.reduce_while(:ok, fn activity_ids, :ok ->
-        Enum.reduce_while(activity_ids, :ok, fn activity_id, :ok ->
-          case rebuild_adaptive_response_summaries_for_activity(activity_id) do
-            {:ok, _} -> {:cont, :ok}
-            {:error, error} -> {:halt, {:error, error}}
-          end
-        end)
-        |> case do
-          :ok -> {:cont, :ok}
-          {:error, error} -> {:halt, {:error, error}}
-        end
-      end)
-      |> case do
-        :ok -> {:ok, activity_count}
-        {:error, error} -> {:error, error}
-      end
-    end
-  end
-
-  @doc """
   Rebuilds adaptive response summary tables for a specific adaptive activity resource id.
   """
   def rebuild_adaptive_response_summaries_for_activity(activity_resource_id)
@@ -218,35 +183,6 @@ defmodule Oli.Analytics.Summary do
     Oli.Activities.list_activity_registrations()
     |> Enum.reduce(%{}, fn activity_registration, map ->
       Map.put(map, activity_registration.id, activity_registration)
-    end)
-  end
-
-  defp adaptive_activity_resource_count(adaptive_activity_type_id) do
-    from(r in Revision,
-      where: r.activity_type_id == ^adaptive_activity_type_id,
-      select: count(r.resource_id, :distinct)
-    )
-    |> Repo.one()
-  end
-
-  defp adaptive_activity_resource_id_batches(adaptive_activity_type_id, batch_size \\ 100) do
-    Stream.unfold(0, fn last_resource_id ->
-      batch =
-        from(r in Revision,
-          where:
-            r.activity_type_id == ^adaptive_activity_type_id and
-              r.resource_id > ^last_resource_id,
-          group_by: r.resource_id,
-          order_by: [asc: r.resource_id],
-          limit: ^batch_size,
-          select: r.resource_id
-        )
-        |> Repo.all()
-
-      case batch do
-        [] -> nil
-        ids -> {ids, List.last(ids)}
-      end
     end)
   end
 
