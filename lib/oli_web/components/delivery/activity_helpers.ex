@@ -115,9 +115,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     response_summaries_by_activity_part =
       group_response_summaries_by_activity_part(response_summaries)
 
-    adaptive_manual_analytics =
-      if Keyword.get(opts, :include_adaptive_manual_analytics, true) do
-        fetch_adaptive_manual_part_analytics(
+    include_adaptive_part_analytics =
+      Keyword.get(
+        opts,
+        :include_adaptive_part_analytics,
+        Keyword.get(opts, :include_adaptive_manual_analytics, true)
+      )
+
+    adaptive_part_analytics =
+      if include_adaptive_part_analytics do
+        fetch_adaptive_part_analytics(
           section.id,
           revisions_by_resource_id,
           activity_types_map
@@ -194,7 +201,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     |> stage_performance_details(
       activity_types_map,
       response_summaries,
-      adaptive_manual_analytics,
+      adaptive_part_analytics,
       response_summaries_by_activity_part
     )
     |> Enum.map(fn activity ->
@@ -291,7 +298,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         activities,
         activity_types_map,
         response_summaries,
-        adaptive_manual_analytics \\ %{},
+        adaptive_part_analytics \\ %{},
         response_summaries_by_activity_part \\ nil
       ) do
     multiple_choice_type_id =
@@ -342,7 +349,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           add_adaptive_input_details(
             a,
             response_summaries,
-            adaptive_manual_analytics,
+            adaptive_part_analytics,
             response_summaries_by_activity_part
           )
 
@@ -1671,7 +1678,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   defp add_adaptive_input_details(
          activity_attempt,
          _response_summaries,
-         adaptive_manual_analytics,
+         adaptive_part_analytics,
          response_summaries_by_activity_part
        ) do
     parts_layout = activity_attempt.revision.content["partsLayout"] || []
@@ -1700,8 +1707,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         resource_summary = Map.get(resource_summaries_by_part_id, part_id)
         grading_mode = adaptive_part_grading_mode(part_definition)
 
-        manual_analytics =
-          Map.get(adaptive_manual_analytics, {activity_attempt.resource_id, part_id})
+        part_analytics =
+          Map.get(adaptive_part_analytics, {activity_attempt.resource_id, part_id})
 
         raw_responses =
           Map.get(
@@ -1716,11 +1723,11 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             part_id,
             grading_mode,
             response_summaries_by_activity_part,
-            manual_analytics
+            part_analytics
           )
 
         users =
-          adaptive_summary_users(responses, grading_mode, manual_analytics)
+          adaptive_summary_users(responses, grading_mode, part_analytics)
 
         correctness_metrics =
           adaptive_correctness_metrics(
@@ -1728,7 +1735,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             responses,
             resource_summary,
             grading_mode,
-            manual_analytics
+            part_analytics
           )
 
         visualization =
@@ -1738,7 +1745,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             resource_summary,
             adaptive_part_prompt(part_definition, index),
             grading_mode,
-            manual_analytics
+            part_analytics
           )
           |> Map.put(
             :fill_class,
@@ -1755,8 +1762,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           prompt: adaptive_part_prompt(part_definition, index),
           response_count: Enum.reduce(responses, 0, &(&1.count + &2)),
           submitted_response_count: Enum.reduce(raw_responses, 0, &(&1.count + &2)),
-          student_count: adaptive_student_count(users, grading_mode, manual_analytics),
-          attempt_count: adaptive_attempt_count(resource_summary, grading_mode, manual_analytics),
+          student_count: adaptive_student_count(users, grading_mode, part_analytics),
+          attempt_count: adaptive_attempt_count(resource_summary, grading_mode, part_analytics),
           first_attempt_pct: correctness_metrics.first_attempt_pct,
           all_attempt_pct: correctness_metrics.all_attempt_pct,
           first_attempt_total_count: correctness_metrics.first_attempt_total_count,
@@ -1779,14 +1786,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           coverage_student_count:
             coverage_student_count(
               grading_mode,
-              adaptive_student_count(users, grading_mode, manual_analytics),
-              manual_analytics
+              adaptive_student_count(users, grading_mode, part_analytics),
+              part_analytics
             ),
           coverage_attempt_label: coverage_attempt_label(grading_mode),
           coverage_attempt_count:
             coverage_attempt_count(
               grading_mode,
-              adaptive_attempt_count(resource_summary, grading_mode, manual_analytics),
+              adaptive_attempt_count(resource_summary, grading_mode, part_analytics),
               correctness_metrics.first_attempt_total_count
             ),
           visualization: visualization,
@@ -1830,8 +1837,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
        when is_struct(student_ids, MapSet),
        do: MapSet.size(student_ids)
 
-  defp coverage_student_count(:manual, student_count, _manual_analytics), do: student_count
-  defp coverage_student_count(_, student_count, _manual_analytics), do: student_count
+  defp coverage_student_count(:manual, student_count, _part_analytics), do: student_count
+  defp coverage_student_count(_, student_count, _part_analytics), do: student_count
 
   defp coverage_attempt_label(:manual), do: "First Input Attempts"
   defp coverage_attempt_label(_), do: "Attempts"
@@ -1897,9 +1904,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          _part_id,
          :manual,
          _response_summaries,
-         manual_analytics
+         part_analytics
        ) do
-    case manual_analytics do
+    case part_analytics do
       %{responses: responses} -> responses
       _ -> []
     end
@@ -1910,7 +1917,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          part_id,
          _grading_mode,
          response_summaries_by_activity_part,
-         _manual_analytics
+         _part_analytics
        ) do
     Map.get(response_summaries_by_activity_part, {activity_id, part_id}, [])
   end
@@ -1922,9 +1929,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   end
 
   defp adaptive_summary_users(_responses, :manual, %{student_ids: student_ids}), do: student_ids
-  defp adaptive_summary_users(_responses, :manual, _manual_analytics), do: []
+  defp adaptive_summary_users(_responses, :manual, _part_analytics), do: []
 
-  defp adaptive_summary_users(responses, _grading_mode, _manual_analytics) do
+  defp adaptive_summary_users(responses, _grading_mode, _part_analytics) do
     responses
     |> Enum.flat_map(&Map.get(&1, :users, []))
     |> Enum.uniq_by(&Map.get(&1, :id, OliWeb.Common.Utils.name(&1)))
@@ -1934,16 +1941,16 @@ defmodule OliWeb.Delivery.ActivityHelpers do
        when is_struct(student_ids, MapSet),
        do: MapSet.size(student_ids)
 
-  defp adaptive_student_count(_users, :manual, _manual_analytics), do: 0
-  defp adaptive_student_count(users, _grading_mode, _manual_analytics), do: Enum.count(users)
+  defp adaptive_student_count(_users, :manual, _part_analytics), do: 0
+  defp adaptive_student_count(users, _grading_mode, _part_analytics), do: Enum.count(users)
 
   defp adaptive_attempt_count(_resource_summary, _grading_mode, %{attempt_count: attempt_count})
        when is_integer(attempt_count),
        do: attempt_count
 
-  defp adaptive_attempt_count(_resource_summary, :manual, _manual_analytics), do: 0
+  defp adaptive_attempt_count(_resource_summary, :manual, _part_analytics), do: 0
 
-  defp adaptive_attempt_count(resource_summary, _grading_mode, _manual_analytics),
+  defp adaptive_attempt_count(resource_summary, _grading_mode, _part_analytics),
     do: Map.get(resource_summary || %{}, :num_attempts, 0)
 
   defp build_adaptive_visualization(
@@ -1952,7 +1959,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          resource_summary,
          prompt,
          grading_mode,
-         manual_analytics
+         part_analytics
        ) do
     case Map.get(part, "type") do
       "janus-mcq" ->
@@ -1961,7 +1968,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           responses,
           prompt,
           grading_mode,
-          manual_analytics
+          part_analytics
         )
 
       "janus-dropdown" ->
@@ -1970,7 +1977,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           responses,
           prompt,
           grading_mode,
-          manual_analytics
+          part_analytics
         )
 
       "janus-input-number" ->
@@ -2240,7 +2247,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     }
   end
 
-  defp build_adaptive_choice_distribution(part, responses, prompt, grading_mode, manual_analytics) do
+  defp build_adaptive_choice_distribution(part, responses, prompt, grading_mode, part_analytics) do
     config = Map.get(part, "custom", %{})
     choice_labels = extract_adaptive_choice_labels(config)
     correct_answers = Map.get(config, "correctAnswer", [])
@@ -2264,7 +2271,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         responses,
         choice_labels,
         grading_mode,
-        manual_analytics
+        part_analytics
       )
 
     denominator =
@@ -2327,7 +2334,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          responses,
          prompt,
          grading_mode,
-         manual_analytics
+         part_analytics
        ) do
     config = Map.get(part, "custom", %{})
     option_labels = Map.get(config, "optionLabels", [])
@@ -2351,7 +2358,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         responses,
         option_labels,
         grading_mode,
-        manual_analytics
+        part_analytics
       )
 
     denominator =
@@ -2407,110 +2414,185 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   end
 
   defp adaptive_correctness_metrics(
-         _part,
-         _responses,
-         _resource_summary,
-         :manual,
-         manual_analytics
+         part,
+         responses,
+         resource_summary,
+         grading_mode,
+         part_analytics
        ) do
-    case manual_analytics do
+    cond do
+      adaptive_manual_grading_pending?(grading_mode, part_analytics) ->
+        adaptive_pending_manual_metrics()
+
+      true ->
+        student_based_metrics =
+          adaptive_student_outcome_metrics(part, grading_mode, part_analytics)
+
+        case student_based_metrics do
+          nil ->
+            adaptive_fallback_correctness_metrics(part, responses, resource_summary)
+
+          metrics ->
+            metrics
+        end
+    end
+  end
+
+  defp adaptive_manual_grading_pending?(:manual, nil), do: true
+  defp adaptive_manual_grading_pending?(:manual, %{attempt_count: 0}), do: true
+  defp adaptive_manual_grading_pending?(:manual, _part_analytics), do: false
+  defp adaptive_manual_grading_pending?(_, _part_analytics), do: false
+
+  defp adaptive_pending_manual_metrics do
+    %{
+      first_attempt_pct: 0,
+      all_attempt_pct: 0,
+      first_attempt_total_count: 0,
+      first_attempt_correct_count: 0,
+      attempt_total_count: 0,
+      correct_count: 0,
+      outcome_total_count: 0,
+      outcome_total_label: "students",
+      outcome_buckets: [],
+      evaluation_confidence: :recorded,
+      grading_pending: true,
+      grading_pending_message:
+        "No grading has been recorded for this manually graded input yet. Metrics will appear after instructor grading is saved."
+    }
+  end
+
+  defp adaptive_fallback_correctness_metrics(part, responses, resource_summary) do
+    case adaptive_recorded_correct_count(part, responses) do
       nil ->
-        %{
-          first_attempt_pct: 0,
-          all_attempt_pct: 0,
-          first_attempt_total_count: 0,
-          first_attempt_correct_count: 0,
-          attempt_total_count: 0,
-          correct_count: 0,
-          outcome_total_count: 0,
-          outcome_total_label: "students",
-          outcome_buckets: [],
-          evaluation_confidence: :recorded,
-          grading_pending: true,
-          grading_pending_message:
-            "No grading has been recorded for this manually graded input yet. Metrics will appear after instructor grading is saved."
-        }
+        if adaptive_open_ended_missing_correctness?(part) do
+          attempt_count =
+            max(
+              Map.get(resource_summary || %{}, :num_attempts, 0),
+              Enum.reduce(responses, 0, fn response_summary, acc ->
+                acc + response_summary.count
+              end)
+            )
 
-      %{attempt_count: 0} ->
-        %{
-          first_attempt_pct: 0,
-          all_attempt_pct: 0,
-          first_attempt_total_count: 0,
-          first_attempt_correct_count: 0,
-          attempt_total_count: 0,
-          correct_count: 0,
-          outcome_total_count: 0,
-          outcome_total_label: "students",
-          outcome_buckets: [],
-          evaluation_confidence: :recorded,
-          grading_pending: true,
-          grading_pending_message:
-            "No grading has been recorded for this manually graded input yet. Metrics will appear after instructor grading is saved."
-        }
-
-      %{} = manual_analytics ->
-        student_count =
-          Map.get_lazy(manual_analytics, :student_count, fn ->
-            case Map.get(manual_analytics, :student_ids) do
-              %MapSet{} = student_ids -> MapSet.size(student_ids)
-              _ -> 0
+          first_attempt_total =
+            case Map.get(resource_summary || %{}, :num_first_attempts, 0) do
+              0 -> attempt_count
+              total -> total
             end
-          end)
 
-        first_attempt_correct_count =
-          Map.get(
-            manual_analytics,
-            :first_attempt_correct_student_count,
-            Map.get(manual_analytics, :first_attempt_correct_count, 0)
+          retry_correct_count = max(attempt_count - first_attempt_total, 0)
+
+          %{
+            first_attempt_pct: ratio(first_attempt_total, first_attempt_total),
+            all_attempt_pct: ratio(attempt_count, attempt_count),
+            first_attempt_total_count: first_attempt_total,
+            first_attempt_correct_count: first_attempt_total,
+            attempt_total_count: attempt_count,
+            correct_count: attempt_count,
+            outcome_total_count: attempt_count,
+            outcome_total_label: "attempts",
+            outcome_buckets: [
+              %{
+                label: "Correct on first try",
+                count: first_attempt_total,
+                ratio: ratio(first_attempt_total, attempt_count),
+                fill_class: "bg-sky-500 dark:bg-sky-400"
+              },
+              %{
+                label: "Correct after retry",
+                count: retry_correct_count,
+                ratio: ratio(retry_correct_count, attempt_count),
+                fill_class: "bg-cyan-500 dark:bg-cyan-400"
+              },
+              %{
+                label: "Still incorrect",
+                count: 0,
+                ratio: 0,
+                fill_class: "bg-slate-400 dark:bg-slate-500"
+              }
+            ],
+            evaluation_confidence: :inferred,
+            grading_pending: false,
+            grading_pending_message: nil
+          }
+        else
+          %{
+            first_attempt_pct:
+              safe_percentage(
+                resource_summary,
+                :num_first_attempts_correct,
+                :num_first_attempts
+              ),
+            all_attempt_pct: safe_percentage(resource_summary, :num_correct, :num_attempts),
+            first_attempt_total_count: Map.get(resource_summary || %{}, :num_first_attempts, 0),
+            first_attempt_correct_count:
+              Map.get(resource_summary || %{}, :num_first_attempts_correct, 0),
+            attempt_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
+            correct_count: Map.get(resource_summary || %{}, :num_correct, 0),
+            outcome_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
+            outcome_total_label: "attempts",
+            outcome_buckets: adaptive_outcome_buckets(resource_summary),
+            evaluation_confidence: :recorded,
+            grading_pending: false,
+            grading_pending_message: nil
+          }
+        end
+
+      {source, correct_count} ->
+        attempt_count =
+          max(
+            Map.get(resource_summary || %{}, :num_attempts, 0),
+            Enum.reduce(responses, 0, fn response_summary, acc ->
+              acc + response_summary.count
+            end)
           )
 
-        correct_count =
-          Map.get(
-            manual_analytics,
-            :correct_student_count,
-            min(Map.get(manual_analytics, :correct_count, 0), student_count)
+        first_attempt_total =
+          case Map.get(resource_summary || %{}, :num_first_attempts, 0) do
+            0 -> attempt_count
+            total -> total
+          end
+
+        correct_count = min(correct_count, attempt_count)
+
+        first_try_count =
+          adaptive_first_attempt_correct_count(
+            part,
+            resource_summary,
+            source,
+            correct_count,
+            first_attempt_total,
+            attempt_count
           )
 
-        retry_correct_count =
-          Map.get(
-            manual_analytics,
-            :retry_correct_student_count,
-            max(correct_count - first_attempt_correct_count, 0)
-          )
-
-        incorrect_count =
-          Map.get(
-            manual_analytics,
-            :incorrect_student_count,
-            max(student_count - correct_count, 0)
-          )
+        retry_correct_count = max(correct_count - first_try_count, 0)
+        incorrect_count = max(attempt_count - correct_count, 0)
 
         %{
-          first_attempt_pct: ratio(first_attempt_correct_count, student_count),
-          all_attempt_pct: ratio(correct_count, student_count),
-          first_attempt_total_count: student_count,
-          first_attempt_correct_count: first_attempt_correct_count,
-          attempt_total_count: student_count,
+          first_attempt_pct: ratio(first_try_count, first_attempt_total),
+          all_attempt_pct: ratio(correct_count, attempt_count),
+          first_attempt_total_count: first_attempt_total,
+          first_attempt_correct_count: first_try_count,
+          attempt_total_count: attempt_count,
           correct_count: correct_count,
-          outcome_total_count: student_count,
-          outcome_total_label: "students",
+          outcome_total_count: attempt_count,
+          outcome_total_label: "attempts",
           outcome_buckets: [
             %{
               label: "Correct on first try",
-              count: first_attempt_correct_count,
-              ratio: ratio(first_attempt_correct_count, student_count),
+              count: first_try_count,
+              ratio: ratio(first_try_count, attempt_count),
               fill_class: "bg-emerald-500 dark:bg-emerald-400"
             },
             %{
               label: "Correct after retry",
               count: retry_correct_count,
-              ratio: ratio(retry_correct_count, student_count),
+              ratio: ratio(retry_correct_count, attempt_count),
               fill_class: "bg-violet-500 dark:bg-violet-400"
             },
             %{
               label: "Still incorrect",
               count: incorrect_count,
-              ratio: ratio(incorrect_count, student_count),
+              ratio: ratio(incorrect_count, attempt_count),
               fill_class: "bg-amber-500 dark:bg-amber-400"
             }
           ],
@@ -2521,169 +2603,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end
   end
 
-  defp adaptive_correctness_metrics(
-         part,
-         responses,
-         resource_summary,
-         grading_mode,
-         part_analytics
-       ) do
-    student_based_metrics =
-      adaptive_student_outcome_metrics(part, grading_mode, part_analytics)
-
-    case student_based_metrics do
-      nil ->
-        case adaptive_recorded_correct_count(part, responses) do
-          nil ->
-            if adaptive_open_ended_missing_correctness?(part) do
-              attempt_count =
-                max(
-                  Map.get(resource_summary || %{}, :num_attempts, 0),
-                  Enum.reduce(responses, 0, fn response_summary, acc ->
-                    acc + response_summary.count
-                  end)
-                )
-
-              first_attempt_total =
-                case Map.get(resource_summary || %{}, :num_first_attempts, 0) do
-                  0 -> attempt_count
-                  total -> total
-                end
-
-              retry_correct_count = max(attempt_count - first_attempt_total, 0)
-
-              %{
-                first_attempt_pct: ratio(first_attempt_total, first_attempt_total),
-                all_attempt_pct: ratio(attempt_count, attempt_count),
-                first_attempt_total_count: first_attempt_total,
-                first_attempt_correct_count: first_attempt_total,
-                attempt_total_count: attempt_count,
-                correct_count: attempt_count,
-                outcome_total_count: attempt_count,
-                outcome_total_label: "attempts",
-                outcome_buckets: [
-                  %{
-                    label: "Correct on first try",
-                    count: first_attempt_total,
-                    ratio: ratio(first_attempt_total, attempt_count),
-                    fill_class: "bg-sky-500 dark:bg-sky-400"
-                  },
-                  %{
-                    label: "Correct after retry",
-                    count: retry_correct_count,
-                    ratio: ratio(retry_correct_count, attempt_count),
-                    fill_class: "bg-cyan-500 dark:bg-cyan-400"
-                  },
-                  %{
-                    label: "Still incorrect",
-                    count: 0,
-                    ratio: 0,
-                    fill_class: "bg-slate-400 dark:bg-slate-500"
-                  }
-                ],
-                evaluation_confidence: :inferred,
-                grading_pending: false,
-                grading_pending_message: nil
-              }
-            else
-              %{
-                first_attempt_pct:
-                  safe_percentage(
-                    resource_summary,
-                    :num_first_attempts_correct,
-                    :num_first_attempts
-                  ),
-                all_attempt_pct: safe_percentage(resource_summary, :num_correct, :num_attempts),
-                first_attempt_total_count:
-                  Map.get(resource_summary || %{}, :num_first_attempts, 0),
-                first_attempt_correct_count:
-                  Map.get(resource_summary || %{}, :num_first_attempts_correct, 0),
-                attempt_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
-                correct_count: Map.get(resource_summary || %{}, :num_correct, 0),
-                outcome_total_count: Map.get(resource_summary || %{}, :num_attempts, 0),
-                outcome_total_label: "attempts",
-                outcome_buckets: adaptive_outcome_buckets(resource_summary),
-                evaluation_confidence: :recorded,
-                grading_pending: false,
-                grading_pending_message: nil
-              }
-            end
-
-          {source, correct_count} ->
-            attempt_count =
-              max(
-                Map.get(resource_summary || %{}, :num_attempts, 0),
-                Enum.reduce(responses, 0, fn response_summary, acc ->
-                  acc + response_summary.count
-                end)
-              )
-
-            first_attempt_total =
-              case Map.get(resource_summary || %{}, :num_first_attempts, 0) do
-                0 -> attempt_count
-                total -> total
-              end
-
-            correct_count = min(correct_count, attempt_count)
-
-            first_try_count =
-              adaptive_first_attempt_correct_count(
-                part,
-                resource_summary,
-                source,
-                correct_count,
-                first_attempt_total,
-                attempt_count
-              )
-
-            retry_correct_count = max(correct_count - first_try_count, 0)
-            incorrect_count = max(attempt_count - correct_count, 0)
-
-            %{
-              first_attempt_pct: ratio(first_try_count, first_attempt_total),
-              all_attempt_pct: ratio(correct_count, attempt_count),
-              first_attempt_total_count: first_attempt_total,
-              first_attempt_correct_count: first_try_count,
-              attempt_total_count: attempt_count,
-              correct_count: correct_count,
-              outcome_total_count: attempt_count,
-              outcome_total_label: "attempts",
-              outcome_buckets: [
-                %{
-                  label: "Correct on first try",
-                  count: first_try_count,
-                  ratio: ratio(first_try_count, attempt_count),
-                  fill_class: "bg-emerald-500 dark:bg-emerald-400"
-                },
-                %{
-                  label: "Correct after retry",
-                  count: retry_correct_count,
-                  ratio: ratio(retry_correct_count, attempt_count),
-                  fill_class: "bg-violet-500 dark:bg-violet-400"
-                },
-                %{
-                  label: "Still incorrect",
-                  count: incorrect_count,
-                  ratio: ratio(incorrect_count, attempt_count),
-                  fill_class: "bg-amber-500 dark:bg-amber-400"
-                }
-              ],
-              evaluation_confidence: :recorded,
-              grading_pending: false,
-              grading_pending_message: nil
-            }
-        end
-
-      metrics ->
-        metrics
-    end
-  end
-
   defp adaptive_student_outcome_metrics(_part, _grading_mode, nil), do: nil
-  defp adaptive_student_outcome_metrics(_part, _grading_mode, %{student_count: 0}), do: nil
 
   defp adaptive_student_outcome_metrics(part, _grading_mode, %{} = analytics) do
-    student_count = Map.get(analytics, :student_count, 0)
+    student_count = adaptive_part_student_count(analytics)
 
     if student_count <= 0 do
       nil
@@ -2768,6 +2691,15 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       }
     end
   end
+
+  defp adaptive_part_student_count(%{student_count: student_count})
+       when is_integer(student_count),
+       do: student_count
+
+  defp adaptive_part_student_count(%{student_ids: %MapSet{} = student_ids}),
+    do: MapSet.size(student_ids)
+
+  defp adaptive_part_student_count(_analytics), do: 0
 
   defp adaptive_recorded_correct_count(part, responses) do
     case adaptive_choice_correct_count(part, responses) do
@@ -3126,9 +3058,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end
   end
 
-  defp adaptive_choice_outcome_counts(_responses, _labels, :automatic, _manual_analytics), do: %{}
+  defp adaptive_choice_outcome_counts(_responses, _labels, :automatic, _part_analytics), do: %{}
 
-  defp adaptive_choice_outcome_counts(responses, choice_labels, :manual, _manual_analytics) do
+  defp adaptive_choice_outcome_counts(responses, choice_labels, :manual, _part_analytics) do
     Enum.reduce(responses, %{}, fn response_summary, acc ->
       labels =
         response_summary.response
@@ -3220,7 +3152,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end
   end
 
-  defp fetch_adaptive_manual_part_analytics(
+  defp fetch_adaptive_part_analytics(
          section_id,
          revisions_by_resource_id,
          activity_types_map
@@ -3271,9 +3203,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         query
         |> Repo.stream()
         |> Enum.reduce(%{}, fn row, acc ->
-          accumulate_adaptive_manual_analytics_row(acc, row)
+          accumulate_adaptive_part_analytics_row(acc, row)
         end)
-        |> finalize_adaptive_manual_analytics()
+        |> finalize_adaptive_part_analytics()
       end)
       |> case do
         {:ok, analytics} -> analytics
@@ -3282,7 +3214,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end
   end
 
-  defp accumulate_adaptive_manual_analytics_row(acc, row) do
+  defp accumulate_adaptive_part_analytics_row(acc, row) do
     part_attempt = Map.put(row.part_attempt, :activity_revision, row.revision)
     part = adaptive_part_definition(row.revision.content, part_attempt.part_id)
 
@@ -3437,7 +3369,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end
   end
 
-  defp finalize_adaptive_manual_analytics(analytics_by_part) do
+  defp finalize_adaptive_part_analytics(analytics_by_part) do
     Enum.into(analytics_by_part, %{}, fn {key, analytics} ->
       student_outcomes = Map.get(analytics, :student_outcomes, %{})
 

@@ -893,7 +893,7 @@ defmodule OliWeb.Components.Delivery.Pages do
       activity_types_map,
       students,
       activity_ids,
-      include_adaptive_manual_analytics: false
+      include_adaptive_part_analytics: false
     )
     |> Enum.reduce(%{}, fn summary, acc ->
       Map.put(acc, summary.resource_id, summary)
@@ -914,7 +914,7 @@ defmodule OliWeb.Components.Delivery.Pages do
            activity_types_map,
            students,
            [revision.resource_id],
-           include_adaptive_manual_analytics: true
+           include_adaptive_part_analytics: true
          ) do
       [summary | _] ->
         summary
