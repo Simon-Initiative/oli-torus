@@ -16,10 +16,10 @@ The shared Compose file is:
 Make sure `oli.env` contains:
 
 ```bash
-ENABLE_HTTPS=false
+# SCHEME should be unset or set to http
 ```
 
-HAProxy is intended to own ports `80` and `443`. If Phoenix HTTPS is enabled, Torus will also try to bind `443` and conflict with the proxy.
+HAProxy is intended to own ports `80` and `443`. In this branch, the dev HTTPS listener follows `SCHEME`, so if `SCHEME=https`, Torus will also try to bind `443` and conflict with the proxy.
 
 You also need:
 
@@ -87,16 +87,16 @@ The shared Compose file loads `oli.env` into HAProxy. Set these values there.
 Always set:
 
 ```bash
-ENABLE_HTTPS=false
 HA_PROXY_MODE=minio
 ```
 
 or
 
 ```bash
-ENABLE_HTTPS=false
 HA_PROXY_MODE=s3
 ```
+
+And for HAProxy-backed local development, keep `SCHEME` unset or set it to `http`.
 
 ### When `HA_PROXY_MODE=minio`
 

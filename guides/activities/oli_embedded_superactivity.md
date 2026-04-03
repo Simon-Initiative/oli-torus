@@ -186,7 +186,7 @@ See [`../../scripts/dev/ha-proxy/haproxy_minio_docker.cfg`](../../scripts/dev/ha
 Important settings:
 
 - `HTTP_PORT=8080`
-- `ENABLE_HTTPS=false`
+- `SCHEME` unset or `SCHEME=http`
 - MinIO S3 settings:
   - `AWS_S3_SCHEME=http`
   - `AWS_S3_HOST=localhost`
