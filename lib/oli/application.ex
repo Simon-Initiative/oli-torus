@@ -92,6 +92,10 @@ defmodule Oli.Application do
           },
           id: :adaptive_trigger_invocation_cache
         ),
+        Supervisor.child_spec(
+          {Cachex, name: :embedded_preview_sessions, limit: 10_000, policy: Cachex.Policy.LRW},
+          id: :embedded_preview_sessions
+        ),
 
         # Starts Cachex to store vr user agents
         Oli.VrLookupCache,

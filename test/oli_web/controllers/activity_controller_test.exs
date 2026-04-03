@@ -1,10 +1,13 @@
 defmodule OliWeb.ActivityControllerTest do
   use OliWeb.ConnCase
 
+  import Mox
+
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Publishing.AuthoringResolver
 
+  setup :verify_on_exit!
   setup [:project_seed]
 
   describe "bulk retrieval" do
@@ -209,6 +212,115 @@ defmodule OliWeb.ActivityControllerTest do
 
     r2 = AuthoringResolver.from_resource_id(project.slug, hd(tl(revisions))["resourceId"])
     assert r2.deleted == true
+  end
+
+  test "create returns persisted embedded content", %{conn: conn, project: project} do
+    content = %{
+      "base" => "embedded",
+      "src" => "index.html",
+      "title" => "Embedded activity",
+      "stem" => %{"content" => []},
+      "modelXml" => """
+      <embed_activity id="custom_side" width="670" height="300">
+        <title>Custom Activity</title>
+        <source>webcontent/custom_activity/customactivity.js</source>
+      </embed_activity>
+      """,
+      "resourceBase" => "1234",
+      "resourceURLs" => [],
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "responses" => [],
+            "hints" => [],
+            "scoringStrategy" => "average"
+          }
+        ],
+        "previewText" => ""
+      }
+    }
+
+    expect(Oli.Test.MockAws, :request, 2, fn %ExAws.Operation.S3{} = op ->
+      case op.http_method do
+        :get ->
+          {:ok,
+           %{
+             status_code: 200,
+             body: %{
+               contents: [
+                 %{key: "media/webcontent/custom_activity/customactivity.js"}
+               ]
+             }
+           }}
+
+        :put ->
+          {:ok, %{status_code: 200}}
+      end
+    end)
+
+    conn =
+      post(conn, Routes.activity_path(conn, :create, project.slug, "oli_embedded"), %{
+        "model" => content,
+        "objectives" => [],
+        "includeContent" => true
+      })
+
+    assert %{
+             "type" => "success",
+             "content" => %{"resourceBase" => resource_base}
+           } = json_response(conn, 200)
+
+    assert resource_base =~ ~r/^bundles\//
+    assert resource_base != "1234"
+  end
+
+  test "create omits heavy activity fields by default", %{conn: conn, project: project} do
+    content = %{
+      "stem" => %{"content" => []},
+      "authoring" => %{"parts" => [%{"id" => "1"}]}
+    }
+
+    conn =
+      post(conn, Routes.activity_path(conn, :create, project.slug, "oli_short_answer"), %{
+        "model" => content,
+        "objectives" => []
+      })
+
+    response = json_response(conn, 200)
+
+    assert %{
+             "type" => "success",
+             "revisionSlug" => _slug,
+             "resourceId" => _resource_id,
+             "title" => _title
+           } = response
+
+    refute Map.has_key?(response, "content")
+    refute Map.has_key?(response, "objectives")
+    refute Map.has_key?(response, "tags")
+  end
+
+  test "create accepts string include flags without crashing", %{conn: conn, project: project} do
+    content = %{
+      "stem" => %{"content" => []},
+      "authoring" => %{"parts" => [%{"id" => "1"}]}
+    }
+
+    conn =
+      post(conn, Routes.activity_path(conn, :create, project.slug, "oli_short_answer"), %{
+        "model" => content,
+        "objectives" => [],
+        "includeContent" => "true",
+        "includeMetadata" => "true"
+      })
+
+    assert %{
+             "type" => "success",
+             "content" => ^content,
+             "objectives" => %{"1" => []},
+             "tags" => []
+           } = json_response(conn, 200)
   end
 
   describe "get resource" do

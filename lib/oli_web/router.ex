@@ -406,6 +406,12 @@ defmodule OliWeb.Router do
     pipe_through([:api])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
 
+    post(
+      "/jcourse/superactivity/preview_context",
+      OliWeb.LegacySuperactivityController,
+      :preview_context
+    )
+
     get(
       "/jcourse/superactivity/context/:attempt_guid",
       OliWeb.LegacySuperactivityController,
@@ -418,6 +424,14 @@ defmodule OliWeb.Router do
   scope "/api/v1/superactivity/media", OliWeb do
     pipe_through([:api, :authoring_protected])
     post("/", LegacySuperactivityController, :create_media)
+    post("/verify", LegacySuperactivityController, :verify_media)
+  end
+
+  scope "/api/v1/superactivity/package", OliWeb do
+    pipe_through([:api, :authoring_protected])
+    post("/export", LegacySuperactivityController, :export_package)
+    post("/import", LegacySuperactivityController, :import_package)
+    post("/repair", LegacySuperactivityController, :repair_bundle)
   end
 
   scope "/", OliWeb do

@@ -56,11 +56,7 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
       className={`advanced-authoring flowchart-editor ${!sidebarExpanded ? '' : 'ml-[135px]'}`}
       ref={authoringContainer}
     >
-      <FlowchartHeaderNav
-        panelState={panelState}
-        isVisible={panelState.top}
-        authoringContainer={authoringContainer}
-      />
+      <FlowchartHeaderNav />
       <ScreenList onFlowchartMode={onFlowchartMode} />
       <EditingCanvas />
       <div className="fixed-right-panel">

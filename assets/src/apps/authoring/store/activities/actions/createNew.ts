@@ -96,6 +96,10 @@ export const createNew = createAsyncThunk(
       );
     }
 
+    if ((createResults as Created).content) {
+      activity.model = (createResults as Created).content;
+    }
+
     // TODO: too many ways this property is defined!
     activity.activity_id = (createResults as Created).resourceId;
     activity.activityId = activity.activity_id;

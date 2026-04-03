@@ -679,6 +679,7 @@ defmodule OliWeb.PageDeliveryController do
         title: context.page.title,
         graded: context.page.graded,
         activity_count: map_size(context.activities),
+        auto_finalize_single_embedded: auto_finalize_single_embedded?(context),
         html: html,
         objectives: context.objectives,
         slug: context.page.slug,
@@ -712,6 +713,20 @@ defmodule OliWeb.PageDeliveryController do
       }
     )
   end
+
+  defp auto_finalize_single_embedded?(%{
+         review_mode: false,
+         effective_settings: %{batch_scoring: true},
+         activities: activities
+       })
+       when is_map(activities) do
+    case Map.values(activities) do
+      [%{delivery_element: "oli-embedded-delivery", lifecycle_state: :active}] -> true
+      _ -> false
+    end
+  end
+
+  defp auto_finalize_single_embedded?(_), do: false
 
   # Renders an adaptive page fullscreen with no torus nav around it.
   #   Used in adaptive delivery full screen mode and when displayApplicationChrome is true
