@@ -180,7 +180,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                   Required before analytics writes can use this ClickHouse database.
                 </p>
-                <div class="mt-2 flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <div class="mt-2 flex flex-col items-start gap-1 text-xs text-gray-500 dark:text-gray-400">
                   <span class={status_indicator_class(capabilities.reachable)}>
                     {status_indicator_icon(capabilities.reachable)} Reachable
                   </span>
@@ -195,7 +195,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   type="button"
                   phx-click="run_clickhouse_operation"
                   phx-value-kind="setup"
-                  class="mt-auto inline-flex items-center rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  class="mt-auto self-start inline-flex items-center rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!capabilities.setup_enabled}
                 >
                   Run Setup Database
@@ -211,7 +211,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   type="button"
                   phx-click="run_clickhouse_operation"
                   phx-value-kind="migrate_up"
-                  class="mt-auto inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  class="mt-auto self-start inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!capabilities.reachable}
                 >
                   Run Migrate Up
@@ -227,7 +227,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   type="button"
                   phx-click="run_clickhouse_operation"
                   phx-value-kind="migrate_down"
-                  class="mt-auto inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  class="mt-auto self-start inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!capabilities.reachable}
                 >
                   Run Migrate Down
