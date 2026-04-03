@@ -19,6 +19,7 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
         input_type_label: "Input Text",
         feedback_changed: "feedback_changed",
         score_changed: "score_changed",
+        feedback_required: true,
         selected: true,
         selected_changed: "select_part"
       })
@@ -27,6 +28,9 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
     assert html =~ "Enter feedback for the student..."
     assert html =~ "Score"
     assert html =~ "Out Of"
+    assert html =~ "Required"
+    assert html =~ "Feedback is required before you can apply grading for this activity."
+    assert html =~ "Add feedback for this input to enable Apply Score and Feedback."
     assert html =~ "value=\"10.0\""
     assert html =~ "md:grid-cols-[14rem_minmax(0,1fr)]"
     assert html =~ "Selected Input"
@@ -40,6 +44,11 @@ defmodule OliWeb.ManualGrading.PartScoringTest do
     assert html =~ "for=\"out_of_attempt-guid-1\""
     assert html =~ "for=\"feedback_attempt-guid-1\""
     assert html =~ "step=\"any\""
+    assert html =~ "required"
+    assert html =~ "aria-required=\"true\""
+    assert html =~ "aria-invalid=\"true\""
+    assert html =~ "feedback_help_attempt-guid-1"
+    assert html =~ "feedback_error_attempt-guid-1"
   end
 
   test "renders automatic parts as read-only even while submitted" do

@@ -346,6 +346,9 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
                 </div>
 
                 <div class="rounded-xl bg-Surface-surface-secondary-muted px-4 py-4">
+                  <div :if={scoring_remains(assigns)} class="mb-4 text-sm text-Text-text-low">
+                    Apply Score and Feedback stays disabled until every manually graded input has both a score and feedback.
+                  </div>
                   <Apply.render disabled={scoring_remains(assigns)} apply="apply" />
                 </div>
               </div>
@@ -376,6 +379,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
             input_type_label={input_type_label(@attempt, pa, @activity_types_map)}
             feedback_changed="feedback_changed"
             score_changed="score_changed"
+            feedback_required={pa.grading_approach == :manual and feedback_missing?(assigns, pa)}
             selected={@selected_part_attempt_guid == pa.attempt_guid}
             selected_changed="select_part"
           />
@@ -389,6 +393,13 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   # of the currently selected activity attempt
   defp scoring_remains(assigns) do
     not manual_scoring_ready?(assigns.part_attempts, assigns.score_feedbacks)
+  end
+
+  defp feedback_missing?(assigns, pa) do
+    case Map.get(assigns.score_feedbacks || %{}, pa.attempt_guid) do
+      %{feedback: feedback} -> is_nil(blank_to_nil(feedback))
+      _ -> true
+    end
   end
 
   defp input_type_label(attempt, part_attempt, activity_types_map) do

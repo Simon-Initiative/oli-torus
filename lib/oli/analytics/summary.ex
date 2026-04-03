@@ -97,19 +97,24 @@ defmodule Oli.Analytics.Summary do
     if is_nil(adaptive_registration) do
       {:error, :adaptive_registration_not_found}
     else
-      activity_ids = adaptive_activity_resource_ids(adaptive_registration.id)
+      adaptive_activity_type_id = adaptive_registration.id
+      activity_count = adaptive_activity_resource_count(adaptive_activity_type_id)
 
-      Repo.transaction(fn ->
-        delete_adaptive_response_rows(activity_ids)
-
-        registered_activities = registered_activities_by_id()
-
-        adaptive_backfill_stream(adaptive_registration.id)
-        |> Stream.each(&do_upsert_response_summaries(&1, registered_activities))
-        |> Stream.run()
+      adaptive_activity_resource_id_batches(adaptive_activity_type_id)
+      |> Enum.reduce_while(:ok, fn activity_ids, :ok ->
+        Enum.reduce_while(activity_ids, :ok, fn activity_id, :ok ->
+          case rebuild_adaptive_response_summaries_for_activity(activity_id) do
+            {:ok, _} -> {:cont, :ok}
+            {:error, error} -> {:halt, {:error, error}}
+          end
+        end)
+        |> case do
+          :ok -> {:cont, :ok}
+          {:error, error} -> {:halt, {:error, error}}
+        end
       end)
       |> case do
-        {:ok, _} -> {:ok, length(activity_ids)}
+        :ok -> {:ok, activity_count}
         {:error, error} -> {:error, error}
       end
     end
@@ -125,20 +130,37 @@ defmodule Oli.Analytics.Summary do
     if is_nil(adaptive_registration) do
       {:error, :adaptive_registration_not_found}
     else
-      Repo.transaction(fn ->
-        delete_adaptive_response_rows([activity_resource_id])
+      case adaptive_activity_resource?(adaptive_registration.id, activity_resource_id) do
+        false ->
+          {:error, :not_adaptive_activity}
 
-        registered_activities = registered_activities_by_id()
+        true ->
+          Repo.transaction(fn ->
+            delete_adaptive_response_rows([activity_resource_id])
 
-        adaptive_backfill_stream_for_activity(adaptive_registration.id, activity_resource_id)
-        |> Stream.each(&do_upsert_response_summaries(&1, registered_activities))
-        |> Stream.run()
-      end)
-      |> case do
-        {:ok, _} -> {:ok, activity_resource_id}
-        {:error, error} -> {:error, error}
+            registered_activities = registered_activities_by_id()
+
+            adaptive_backfill_stream_for_activity(adaptive_registration.id, activity_resource_id)
+            |> Stream.each(&do_upsert_response_summaries(&1, registered_activities))
+            |> Stream.run()
+          end)
+          |> case do
+            {:ok, _} -> {:ok, activity_resource_id}
+            {:error, error} -> {:error, error}
+          end
       end
     end
+  end
+
+  defp adaptive_activity_resource?(adaptive_activity_type_id, activity_resource_id) do
+    from(r in Revision,
+      where:
+        r.resource_id == ^activity_resource_id and
+          r.activity_type_id == ^adaptive_activity_type_id,
+      select: 1,
+      limit: 1
+    )
+    |> Repo.exists?()
   end
 
   @doc """
@@ -172,16 +194,34 @@ defmodule Oli.Analytics.Summary do
     end)
   end
 
-  defp adaptive_activity_resource_ids(adaptive_activity_type_id) do
+  defp adaptive_activity_resource_count(adaptive_activity_type_id) do
     from(r in Revision,
       where: r.activity_type_id == ^adaptive_activity_type_id,
-      distinct: true,
-      select: r.resource_id
+      select: count(r.resource_id, :distinct)
     )
-    |> Repo.all()
+    |> Repo.one()
   end
 
-  defp delete_adaptive_response_rows([]), do: :ok
+  defp adaptive_activity_resource_id_batches(adaptive_activity_type_id, batch_size \\ 100) do
+    Stream.unfold(0, fn last_resource_id ->
+      batch =
+        from(r in Revision,
+          where:
+            r.activity_type_id == ^adaptive_activity_type_id and
+              r.resource_id > ^last_resource_id,
+          group_by: r.resource_id,
+          order_by: [asc: r.resource_id],
+          limit: ^batch_size,
+          select: r.resource_id
+        )
+        |> Repo.all()
+
+      case batch do
+        [] -> nil
+        ids -> {ids, List.last(ids)}
+      end
+    end)
+  end
 
   defp delete_adaptive_response_rows(activity_ids) do
     rpr_ids =
@@ -200,54 +240,6 @@ defmodule Oli.Analytics.Summary do
     |> Repo.delete_all()
 
     :ok
-  end
-
-  defp adaptive_backfill_stream(adaptive_activity_type_id) do
-    from(pa in PartAttempt,
-      join: aa in ActivityAttempt,
-      on: aa.id == pa.activity_attempt_id,
-      join: activity_revision in Revision,
-      on: activity_revision.id == aa.revision_id,
-      join: ra in ResourceAttempt,
-      on: ra.id == aa.resource_attempt_id,
-      join: page_revision in Revision,
-      on: page_revision.id == ra.revision_id,
-      join: access in ResourceAccess,
-      on: access.id == ra.resource_access_id,
-      join: section in Section,
-      on: section.id == access.section_id,
-      where: activity_revision.activity_type_id == ^adaptive_activity_type_id,
-      where: pa.lifecycle_state in [:submitted, :evaluated],
-      order_by: [asc: pa.id],
-      select: %{
-        project_id: section.base_project_id,
-        section_id: access.section_id,
-        user_id: access.user_id,
-        page_resource_id: page_revision.resource_id,
-        part_attempt: pa,
-        activity_revision: activity_revision
-      }
-    )
-    |> Repo.stream()
-    |> Stream.map(fn %{
-                       project_id: project_id,
-                       section_id: section_id,
-                       user_id: user_id,
-                       page_resource_id: page_resource_id,
-                       part_attempt: part_attempt,
-                       activity_revision: activity_revision
-                     } ->
-      %AttemptGroup{
-        context: %{
-          project_id: project_id,
-          section_id: section_id,
-          user_id: user_id
-        },
-        resource_attempt: %{resource_id: page_resource_id},
-        part_attempts: [Map.put(part_attempt, :activity_revision, activity_revision)],
-        activity_attempts: []
-      }
-    end)
   end
 
   defp adaptive_backfill_stream_for_activity(adaptive_activity_type_id, activity_resource_id) do

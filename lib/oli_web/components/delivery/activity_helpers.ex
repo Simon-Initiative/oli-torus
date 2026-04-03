@@ -1637,13 +1637,18 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     resource_summaries = Map.get(activity_attempt, :resource_summaries, [])
 
+    resource_summaries_by_part_id =
+      Enum.reduce(resource_summaries, %{}, fn resource_summary, acc ->
+        Map.put(acc, resource_summary.part_id, resource_summary)
+      end)
+
     input_summaries =
       parts_layout
       |> Enum.with_index(1)
       |> Enum.map(fn {part, index} ->
         part_id = Map.get(part, "id")
         part_definition = Map.merge(Map.get(authored_parts_by_id, part_id, %{}), part)
-        resource_summary = Enum.find(resource_summaries, &(&1.part_id == part_id))
+        resource_summary = Map.get(resource_summaries_by_part_id, part_id)
         grading_mode = adaptive_part_grading_mode(part_definition)
 
         manual_analytics =

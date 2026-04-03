@@ -41,7 +41,7 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
       )
 
     """
-    <div class="w-full overflow-x-auto p-4">
+    <div class="w-full overflow-x-auto p-4" phx-hook="IframeLoadState">
       <div
         class="flex items-center justify-center text-sm text-gray-500 min-h-[24px] mb-3"
         data-iframe-loading
@@ -54,7 +54,6 @@ defmodule OliWeb.Components.Delivery.AdaptiveIFrame do
         src="#{url}"
         class="bg-white border-0 block mx-auto"
         loading="eager"
-        onload="this.previousElementSibling?.remove();"
       ></iframe>
     </div>
     """

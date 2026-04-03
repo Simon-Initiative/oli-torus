@@ -31,6 +31,7 @@ import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { HighlightCode } from './highlight_code';
 import { HomeMobileTabs } from './home_mobile_tabs';
+import { IframeLoadState } from './iframe_load_state';
 import { InputAutoSelect } from './input_auto_select';
 import { KeepScrollAtBottom } from './keep_scroll_at_bottom';
 import { ListNavigatorDropdown } from './list_navigator_dropdown';
@@ -91,6 +92,7 @@ export const Hooks = {
   HomeMobileTabs,
   ModalLaunch,
   InputAutoSelect,
+  IframeLoadState,
   ProjectsTypeahead,
   ProgressTileChart,
   TextInputListener,

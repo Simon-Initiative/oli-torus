@@ -1,12 +1,18 @@
+type LoadSurveyScriptsHook = {
+  el: HTMLElement;
+  pushEventTo: (selector: string, event: string, payload?: Record<string, unknown>) => void;
+  handleEvent: (event: string, callback: (payload: { script_sources: string[] }) => void) => void;
+};
+
 export const LoadSurveyScripts = {
-  mounted() {
-    const elem = this.el as HTMLElement;
-    const head = document.querySelectorAll('head')[0];
+  mounted(this: LoadSurveyScriptsHook) {
+    const elem = this.el;
+    const head = document.head;
 
     const loadScriptsAndInit = (scriptSources: string[], notifyLoaded: boolean) => {
       const scriptPromises: Promise<void>[] = scriptSources.map(
         (source) =>
-          new Promise<void>((resolve) => {
+          new Promise<void>((resolve, reject) => {
             const isLoaded = Array.from(document.getElementsByTagName('script')).some((script) =>
               script.src.includes(source),
             );
@@ -15,7 +21,9 @@ export const LoadSurveyScripts = {
               script.setAttribute('type', 'text/javascript');
               script.src = source;
               script.addEventListener('load', () => resolve());
-              script.addEventListener('error', () => resolve());
+              script.addEventListener('error', () =>
+                reject(new Error(`Failed to load survey script: ${source}`)),
+              );
               head.appendChild(script);
             } else {
               resolve();

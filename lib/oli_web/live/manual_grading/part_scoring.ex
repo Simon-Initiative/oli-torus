@@ -12,6 +12,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
   attr :input_type_label, :string, default: "Input"
   attr :selected, :boolean, default: false
   attr :selected_changed, :string, required: true
+  attr :feedback_required, :boolean, default: false
 
   def render(%{part_attempt: %{grading_approach: :automatic}} = assigns) do
     assigns =
@@ -204,7 +205,10 @@ defmodule OliWeb.ManualGrading.PartScoring do
               for={"feedback_" <> @part_attempt.attempt_guid}
               class={field_label_classes()}
             >
-              Feedback
+              <span>Feedback</span>
+              <span class="ml-2 text-xs font-semibold uppercase tracking-wide text-Text-text-low">
+                Required
+              </span>
             </label>
             <textarea
               id={"feedback_" <> @part_attempt.attempt_guid}
@@ -216,7 +220,33 @@ defmodule OliWeb.ManualGrading.PartScoring do
               wrap="soft"
               maxlength="2000"
               rows="6"
+              required
+              aria-required="true"
+              aria-invalid={to_string(@feedback_required)}
+              aria-describedby={
+                Enum.join(
+                  [
+                    "feedback_help_" <> @part_attempt.attempt_guid,
+                    @feedback_required && "feedback_error_" <> @part_attempt.attempt_guid
+                  ]
+                  |> Enum.reject(&is_nil/1),
+                  " "
+                )
+              }
             ><%= @part_scoring.feedback %></textarea>
+            <p
+              id={"feedback_help_" <> @part_attempt.attempt_guid}
+              class="mt-2 text-xs text-Text-text-low"
+            >
+              Feedback is required before you can apply grading for this activity.
+            </p>
+            <p
+              :if={@feedback_required}
+              id={"feedback_error_" <> @part_attempt.attempt_guid}
+              class="mt-2 text-xs font-medium text-Text-text-error"
+            >
+              Add feedback for this input to enable Apply Score and Feedback.
+            </p>
           </div>
         </div>
       </div>
@@ -305,7 +335,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
 
   defp textarea_classes,
     do:
-      "block min-h-[10rem] w-full resize-y rounded-lg border border-Border-border-default bg-Surface-surface-primary px-3 py-3 text-sm text-Text-text-high placeholder:text-Text-text-low shadow-none focus:border-Border-border-bold-hover focus:outline-none focus:ring-0"
+      "block min-h-[10rem] w-full resize-y rounded-lg border border-Border-border-default bg-Surface-surface-primary px-3 py-3 text-sm text-Text-text-high placeholder:text-Text-text-low shadow-none focus:border-Border-border-bold-hover focus:outline-none focus:ring-0 aria-[invalid=true]:border-Border-border-error aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-Border-border-error"
 
   defp feedback_panel_classes,
     do:

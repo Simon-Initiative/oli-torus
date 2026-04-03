@@ -372,6 +372,49 @@ defmodule Oli.Analytics.Summary.UpsertTest do
 
       assert user1_attempt.response["selectedChoice"]["value"] == 1
     end
+
+    test "rebuild_adaptive_response_summaries_for_activity rejects non-adaptive activities without deleting summaries",
+         %{
+           project: project,
+           section: section,
+           page1: page1,
+           a1: a1,
+           user1: user1
+         } do
+      legacy_rpr =
+        Repo.insert!(%ResourcePartResponse{
+          resource_id: a1.resource.id,
+          part_id: "part1",
+          response: "legacy-response",
+          label: "legacy-response"
+        })
+
+      response_summary =
+        Repo.insert!(%ResponseSummary{
+          project_id: project.id,
+          section_id: section.id,
+          page_id: page1.id,
+          activity_id: a1.resource.id,
+          resource_part_response_id: legacy_rpr.id,
+          part_id: "part1",
+          count: 1
+        })
+
+      student_response =
+        Repo.insert!(%StudentResponse{
+          section_id: section.id,
+          page_id: page1.id,
+          user_id: user1.id,
+          resource_part_response_id: legacy_rpr.id
+        })
+
+      assert {:error, :not_adaptive_activity} =
+               Summary.rebuild_adaptive_response_summaries_for_activity(a1.resource.id)
+
+      assert Repo.get(ResourcePartResponse, legacy_rpr.id)
+      assert Repo.get(ResponseSummary, response_summary.id)
+      assert Repo.get(StudentResponse, student_response.id)
+    end
   end
 
   defp insert_adaptive_summary_attempt(
