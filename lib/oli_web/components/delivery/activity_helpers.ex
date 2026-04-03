@@ -3247,7 +3247,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           acc,
           key,
           %{
-            responses: [response_entry],
+            responses_by_key: %{response_entry.response => response_entry},
+            response_order: [response_entry.response],
             student_ids: MapSet.new([row.user_id]),
             first_attempt_student_ids:
               if(first_attempt, do: MapSet.new([row.user_id]), else: MapSet.new()),
@@ -3266,7 +3267,17 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           fn analytics ->
             %{
               analytics
-              | responses: merge_manual_response_counts(analytics.responses, response_entry),
+              | responses_by_key:
+                  merge_manual_response_counts(
+                    analytics.responses_by_key,
+                    response_entry
+                  ),
+                response_order:
+                  if(
+                    Map.has_key?(analytics.responses_by_key, response_entry.response),
+                    do: analytics.response_order,
+                    else: analytics.response_order ++ [response_entry.response]
+                  ),
                 student_ids: MapSet.put(analytics.student_ids, row.user_id),
                 first_attempt_student_ids:
                   if(
@@ -3388,6 +3399,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       {
         key,
         analytics
+        |> Map.put(
+          :responses,
+          Enum.map(Map.get(analytics, :response_order, []), fn response_key ->
+            Map.fetch!(analytics.responses_by_key, response_key)
+          end)
+        )
+        |> Map.delete(:responses_by_key)
+        |> Map.delete(:response_order)
         |> Map.put(:student_count, student_count)
         |> Map.put(:first_attempt_correct_student_count, first_attempt_correct_student_count)
         |> Map.put(:retry_correct_student_count, retry_correct_student_count)
@@ -3398,25 +3417,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   end
 
   defp merge_manual_response_counts(existing, incoming) do
-    case Enum.find_index(existing, &(&1.response == incoming.response)) do
-      nil ->
-        existing ++ [incoming]
-
-      index ->
-        List.update_at(existing, index, fn response ->
-          %{
-            response
-            | count: response.count + incoming.count,
-              label: Map.get(response, :label) || Map.get(incoming, :label),
-              correct_count:
-                Map.get(response, :correct_count, 0) + Map.get(incoming, :correct_count, 0),
-              incorrect_count:
-                Map.get(response, :incorrect_count, 0) + Map.get(incoming, :incorrect_count, 0),
-              partial_count:
-                Map.get(response, :partial_count, 0) + Map.get(incoming, :partial_count, 0)
-          }
-        end)
-    end
+    Map.update(existing, incoming.response, incoming, fn response ->
+      %{
+        response
+        | count: response.count + incoming.count,
+          label: Map.get(response, :label) || Map.get(incoming, :label),
+          correct_count:
+            Map.get(response, :correct_count, 0) + Map.get(incoming, :correct_count, 0),
+          incorrect_count:
+            Map.get(response, :incorrect_count, 0) + Map.get(incoming, :incorrect_count, 0),
+          partial_count:
+            Map.get(response, :partial_count, 0) + Map.get(incoming, :partial_count, 0)
+      }
+    end)
   end
 
   defp adaptive_outcome_buckets(resource_summary) do
