@@ -285,7 +285,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
 
   defp selected_badge_classes,
     do:
-      "inline-flex items-center rounded-full bg-Fill-Accent-fill-accent-blue-soft px-2.5 py-1 text-xs font-semibold text-Text-text-accent-blue"
+      "inline-flex items-center rounded-full border border-Fill-Accent-fill-accent-blue-bold bg-Fill-Accent-fill-accent-blue-bold px-2.5 py-1 text-xs font-semibold text-Text-text-white shadow-[0px_1px_4px_0px_rgba(0,50,99,0.18)]"
 
   defp selection_hint_classes,
     do:
@@ -293,7 +293,7 @@ defmodule OliWeb.ManualGrading.PartScoring do
 
   defp input_type_badge_classes,
     do:
-      "inline-flex items-center rounded-full bg-Fill-Accent-fill-accent-blue-soft px-2.5 py-1 text-xs font-semibold text-Text-text-accent-blue"
+      "inline-flex items-center rounded-full border border-Border-border-default bg-Surface-surface-primary px-2.5 py-1 text-xs font-semibold text-Text-text-high"
 
   defp input_classes,
     do:

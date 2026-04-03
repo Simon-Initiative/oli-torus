@@ -273,7 +273,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                      fill_class: "bg-violet-500 dark:bg-violet-400"
                    },
                    %{
-                     label: "Still incorrect / incomplete",
+                     label: "Still incorrect",
                      count: 2,
                      ratio: 0.4,
                      fill_class: "bg-amber-500 dark:bg-amber-400"
@@ -617,7 +617,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert [
                %{label: "Correct on first try", count: 0, ratio: first_try_ratio},
                %{label: "Correct after retry", count: 2, ratio: retry_ratio},
-               %{label: "Still incorrect / incomplete", count: 1, ratio: incorrect_ratio}
+               %{label: "Still incorrect", count: 1, ratio: incorrect_ratio}
              ] =
                Enum.map(summary.outcome_buckets, fn bucket ->
                  %{label: bucket.label, count: bucket.count, ratio: bucket.ratio}
@@ -686,7 +686,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert [
                %{label: "Correct on first try", count: 1, ratio: first_try_ratio},
                %{label: "Correct after retry", count: 1, ratio: retry_ratio},
-               %{label: "Still incorrect / incomplete", count: 2, ratio: incorrect_ratio}
+               %{label: "Still incorrect", count: 2, ratio: incorrect_ratio}
              ] =
                Enum.map(summary.outcome_buckets, fn bucket ->
                  %{label: bucket.label, count: bucket.count, ratio: bucket.ratio}
@@ -880,9 +880,192 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
                outcome_buckets: [
                  %{label: "Correct on first try", count: 1, ratio: 0.5},
                  %{label: "Correct after retry", count: 0, ratio: +0.0},
-                 %{label: "Still incorrect / incomplete", count: 1, ratio: 0.5}
+                 %{label: "Still incorrect", count: 1, ratio: 0.5}
                ]
              } = summary
+    end
+
+    test "uses student-level outcome buckets for manually graded adaptive retries" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 72,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_text",
+                  "type" => "janus-input-text",
+                  "gradingApproach" => "manual",
+                  "custom" => %{"title" => "Short Text"}
+                }
+              ]
+            }
+          },
+          resource_summaries: [],
+          transformed_model: nil
+        }
+      ]
+
+      [summary] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [],
+          %{
+            {72, "part_text"} => %{
+              responses: [
+                %{
+                  activity_id: 72,
+                  part_id: "part_text",
+                  response: "typed answer",
+                  count: 7,
+                  users: []
+                }
+              ],
+              student_ids: MapSet.new(1..6),
+              first_attempt_student_ids: MapSet.new(1..6),
+              student_outcomes: %{
+                1 => %{first_attempt_number: 1, first_correct: true, ever_correct: true},
+                2 => %{first_attempt_number: 1, first_correct: true, ever_correct: true},
+                3 => %{first_attempt_number: 1, first_correct: true, ever_correct: true},
+                4 => %{first_attempt_number: 1, first_correct: false, ever_correct: true},
+                5 => %{first_attempt_number: 1, first_correct: false, ever_correct: false},
+                6 => %{first_attempt_number: 1, first_correct: false, ever_correct: false}
+              },
+              attempt_count: 7,
+              correct_count: 4,
+              first_attempt_count: 6,
+              first_attempt_correct_count: 3,
+              student_count: 6,
+              correct_student_count: 4,
+              first_attempt_correct_student_count: 3,
+              retry_correct_student_count: 1,
+              incorrect_student_count: 2
+            }
+          }
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+
+      assert summary.student_count == 6
+      assert summary.attempt_count == 7
+      assert summary.first_attempt_total_count == 6
+      assert summary.attempt_total_count == 6
+      assert summary.first_attempt_pct == 0.5
+      assert summary.all_attempt_pct == 4 / 6
+      assert summary.outcome_total_count == 6
+      assert summary.outcome_total_label == "students"
+
+      assert [
+               %{label: "Correct on first try", count: 3, ratio: 0.5},
+               %{label: "Correct after retry", count: 1, ratio: retry_ratio},
+               %{label: "Still incorrect", count: 2, ratio: incorrect_ratio}
+             ] =
+               Enum.map(summary.outcome_buckets, fn bucket ->
+                 %{label: bucket.label, count: bucket.count, ratio: bucket.ratio}
+               end)
+
+      assert_in_delta retry_ratio, 1 / 6, 1.0e-6
+      assert_in_delta incorrect_ratio, 2 / 6, 1.0e-6
+    end
+
+    test "uses student-level outcome buckets for automatically graded adaptive retries when per-student analytics are available" do
+      adaptive_id = 99
+
+      activities = [
+        %{
+          resource_id: 73,
+          revision: %{
+            activity_type_id: adaptive_id,
+            content: %{
+              "partsLayout" => [
+                %{
+                  "id" => "part_mcq",
+                  "type" => "janus-mcq",
+                  "gradingApproach" => "automatic",
+                  "custom" => %{
+                    "title" => "MCQ 1",
+                    "correctAnswer" => [false, true, false],
+                    "mcqItems" => [
+                      %{"nodes" => [%{"text" => "Option 1"}]},
+                      %{"nodes" => [%{"text" => "Option 2"}]},
+                      %{"nodes" => [%{"text" => "Option 3"}]}
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          resource_summaries: [
+            %{
+              part_id: "part_mcq",
+              num_first_attempts_correct: 99,
+              num_first_attempts: 99,
+              num_correct: 99,
+              num_attempts: 99
+            }
+          ],
+          transformed_model: nil
+        }
+      ]
+
+      [summary] =
+        ActivityHelpers.stage_performance_details(
+          activities,
+          %{adaptive_id => %{slug: "oli_adaptive", title: "Adaptive"}},
+          [
+            %{activity_id: 73, part_id: "part_mcq", response: "2", count: 4, users: []},
+            %{activity_id: 73, part_id: "part_mcq", response: "1", count: 3, users: []}
+          ],
+          %{
+            {73, "part_mcq"} => %{
+              responses: [],
+              student_ids: MapSet.new(1..6),
+              first_attempt_student_ids: MapSet.new(1..6),
+              student_outcomes: %{
+                1 => %{first_attempt_number: 1, first_correct: true, ever_correct: true},
+                2 => %{first_attempt_number: 1, first_correct: true, ever_correct: true},
+                3 => %{first_attempt_number: 1, first_correct: true, ever_correct: true},
+                4 => %{first_attempt_number: 1, first_correct: false, ever_correct: true},
+                5 => %{first_attempt_number: 1, first_correct: false, ever_correct: false},
+                6 => %{first_attempt_number: 1, first_correct: false, ever_correct: false}
+              },
+              attempt_count: 7,
+              correct_count: 4,
+              first_attempt_count: 6,
+              first_attempt_correct_count: 3,
+              student_count: 6,
+              correct_student_count: 4,
+              first_attempt_correct_student_count: 3,
+              retry_correct_student_count: 1,
+              incorrect_student_count: 2
+            }
+          }
+        )
+        |> hd()
+        |> Map.fetch!(:adaptive_input_summaries)
+
+      assert summary.first_attempt_pct == 0.5
+      assert summary.all_attempt_pct == 4 / 6
+      assert summary.outcome_total_count == 6
+      assert summary.outcome_total_label == "students"
+      assert summary.attempt_count == 7
+      assert summary.attempt_total_count == 6
+
+      assert [
+               %{label: "Correct on first try", count: 3, ratio: 0.5},
+               %{label: "Correct after retry", count: 1, ratio: retry_ratio},
+               %{label: "Still incorrect", count: 2, ratio: incorrect_ratio}
+             ] =
+               Enum.map(summary.outcome_buckets, fn bucket ->
+                 %{label: bucket.label, count: bucket.count, ratio: bucket.ratio}
+               end)
+
+      assert_in_delta retry_ratio, 1 / 6, 1.0e-6
+      assert_in_delta incorrect_ratio, 2 / 6, 1.0e-6
     end
 
     test "derives manual choice correctness from graded scores and marks partial choices distinctly" do
@@ -1106,7 +1289,7 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert [
                %{label: "Correct on first try", count: 0, ratio: +0.0},
                %{label: "Correct after retry", count: 0, ratio: +0.0},
-               %{label: "Still incorrect / incomplete", count: 2, ratio: 1.0}
+               %{label: "Still incorrect", count: 2, ratio: 1.0}
              ] =
                Enum.map(summary.outcome_buckets, fn bucket ->
                  %{label: bucket.label, count: bucket.count, ratio: bucket.ratio}
