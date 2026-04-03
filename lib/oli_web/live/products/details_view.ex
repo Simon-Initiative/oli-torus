@@ -14,6 +14,7 @@ defmodule OliWeb.Products.DetailsView do
   alias OliWeb.Live.Components.Sections.CourseDiscussionsComponent
   alias OliWeb.Live.Components.Sections.NotesComponent
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
+  alias OliWeb.Products.ImagePreviewState
   alias OliWeb.Products.Payments.Discounts.ProductsIndexView
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Projects.RequiredSurvey
@@ -83,6 +84,8 @@ defmodule OliWeb.Products.DetailsView do
              show_confirm: false,
              preview_launching?: false,
              preview_url: nil,
+             image_preview_selected_context: ImagePreviewState.default_context(),
+             image_preview_modal_open: false,
              breadcrumbs: [
                Breadcrumb.new(%{
                  full_title: base_project.title,
@@ -188,6 +191,9 @@ defmodule OliWeb.Products.DetailsView do
           change="change"
           cancel_upload="cancel_upload"
           updates={@updates}
+          ctx={@ctx}
+          selected_context={@image_preview_selected_context}
+          modal_open?={@image_preview_modal_open}
         />
       </Overview.section>
       <Overview.section
@@ -384,6 +390,26 @@ defmodule OliWeb.Products.DetailsView do
 
   def handle_event("cancel_modal", _, socket) do
     {:noreply, socket}
+  end
+
+  def handle_event("select_image_preview_context", %{"context" => context}, socket) do
+    {:noreply, ImagePreviewState.select_context(socket, context)}
+  end
+
+  def handle_event("open_image_preview_modal", params, socket) do
+    {:noreply, ImagePreviewState.open_modal(socket, params)}
+  end
+
+  def handle_event("close_image_preview_modal", _, socket) do
+    {:noreply, ImagePreviewState.close_modal(socket)}
+  end
+
+  def handle_event("show_next_image_preview", _, socket) do
+    {:noreply, ImagePreviewState.show_next(socket)}
+  end
+
+  def handle_event("show_previous_image_preview", _, socket) do
+    {:noreply, ImagePreviewState.show_previous(socket)}
   end
 
   def handle_event("_bsmodal.unmount", _, socket) do

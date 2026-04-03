@@ -151,6 +151,39 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: ""
+
+  def progress_arrow(assigns) do
+    assigns =
+      assign(assigns, :clip_path_id, "progress_arrow_clip_#{System.unique_integer([:positive])}")
+
+    ~H"""
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class={@class}
+    >
+      <g clip-path={"url(##{@clip_path_id})"}>
+        <path
+          d="M15 4.1665L17.5 6.6665M17.5 6.6665L15 9.1665M17.5 6.6665H12.5L6.66667 14.9998H2.5"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id={@clip_path_id}>
+          <rect width="20" height="20" rx="3" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
   attr :class, :string, default: "fill-[#0CAF61] dark:fill-[#12E56A]"
 
   def square_checked(assigns) do
@@ -1092,6 +1125,54 @@ defmodule OliWeb.Icons do
       <path
         d="M8.79858 1.52555L3.93458 6.204L8.79858 10.8824L7.29382 12.3196L0.935645 6.204L7.29382 0.0883789L8.79858 1.52555Z"
         fill="#5B8FF9"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: ""
+
+  def circle_chevron_left_blue(assigns) do
+    ~H"""
+    <svg
+      class={@class}
+      width="36"
+      height="36"
+      viewBox="0 0 36 36"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="18" cy="18" r="17" fill="white" stroke="#0080FF" stroke-width="2" />
+      <path
+        d="M20.25 11.25L13.5 18L20.25 24.75"
+        stroke="#0080FF"
+        stroke-width="2.25"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: ""
+
+  def circle_chevron_right_blue(assigns) do
+    ~H"""
+    <svg
+      class={@class}
+      width="36"
+      height="36"
+      viewBox="0 0 36 36"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="18" cy="18" r="17" fill="white" stroke="#0080FF" stroke-width="2" />
+      <path
+        d="M15.75 11.25L22.5 18L15.75 24.75"
+        stroke="#0080FF"
+        stroke-width="2.25"
+        stroke-linecap="round"
+        stroke-linejoin="round"
       />
     </svg>
     """

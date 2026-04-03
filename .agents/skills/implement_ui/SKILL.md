@@ -13,6 +13,7 @@ when_not_to_use:
   - "The work is backend-only or does not materially change the UI."
   - "There is no external design reference and local code inspection alone is sufficient."
   - "The task is direct implementation after design mapping is already settled."
+  - "The task needs end-to-end Figma-backed UI implementation, iteration, and fidelity verification; use `ui_workflow` instead."
 ---
 
 ## Required Resources
@@ -54,7 +55,9 @@ It produces an implementation-ready design brief that:
 - identifies gaps that need developer confirmation
 - recommends where code should live
 
-Use it as a bridge between design references and implementation skills such as `harness-develop` or `harness-work`.
+Use it as a bridge between design references and the repo-local UI workflow, which then feeds implementation skills such as `harness-develop` or `harness-work`.
+
+In this repository, when a Figma-backed UI task needs implementation fidelity and iterative comparison against the current UI, this skill should be treated as the governed brief-generation phase inside the repo-local `ui_workflow` skill documented at `.agents/ui-workflow/README.md`, not as the full workflow by itself.
 
 ## Preferred Execution Context
 
@@ -193,6 +196,7 @@ Before finishing, verify that the brief:
 
 If the user wants implementation next:
 
-- use `harness-develop` for planned feature execution
-- use `harness-work` for smaller ticket-level execution
+- route the work through the repo-local UI workflow documented at `.agents/ui-workflow/README.md`
+- use `harness-develop` for planned feature execution after the workflow establishes the canonical brief and UI implementation path
+- use `harness-work` for smaller ticket-level execution after the workflow establishes the canonical brief and UI implementation path
 - tell the implementer to read the resulting brief before coding

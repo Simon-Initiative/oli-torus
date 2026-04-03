@@ -42,8 +42,6 @@ defmodule Oli.DeliveryTest do
     # Page 1 --> Objective A
     # Page 2 --> Objective B
     #
-    # Note: the objectives above are not considered since they are attached to the pages
-    #
     # Activity Y --> Objective C
     #           |--> SubObjective C1
     # Activity Z --> Objective D
@@ -180,11 +178,12 @@ defmodule Oli.DeliveryTest do
           context.resources.module_resource_1.id
         )
 
-      # C, C1 and D are the objectives attached to the inner activities
-      assert length(module_container_1_objectives) == 3
+      # B is attached to the page itself; C, C1 and D are attached to inner activities
+      assert length(module_container_1_objectives) == 4
 
       assert Enum.sort(module_container_1_objectives) ==
                Enum.sort([
+                 context.resources.obj_resource_b.id,
                  context.resources.obj_resource_c.id,
                  context.resources.obj_resource_c1.id,
                  context.resources.obj_resource_d.id
@@ -197,11 +196,12 @@ defmodule Oli.DeliveryTest do
           context.resources.unit_resource.id
         )
 
-      # C, C1 and D are the objectives attached to the inner activities
-      assert length(unit_container_objectives) == 3
+      # B is attached to the page itself; C, C1 and D are attached to inner activities
+      assert length(unit_container_objectives) == 4
 
       assert Enum.sort(unit_container_objectives) ==
                Enum.sort([
+                 context.resources.obj_resource_b.id,
                  context.resources.obj_resource_c.id,
                  context.resources.obj_resource_c1.id,
                  context.resources.obj_resource_d.id
@@ -227,11 +227,13 @@ defmodule Oli.DeliveryTest do
       root_container_objectives =
         Sections.get_section_contained_objectives(returned_section.id, nil)
 
-      # C, C1, D, E and F are the objectives attached to the inner activities
-      assert length(root_container_objectives) == 5
+      # A and B are attached to pages; C, C1, D, E and F are attached to inner activities
+      assert length(root_container_objectives) == 7
 
       assert Enum.sort(root_container_objectives) ==
                Enum.sort([
+                 context.resources.obj_resource_a.id,
+                 context.resources.obj_resource_b.id,
                  context.resources.obj_resource_c.id,
                  context.resources.obj_resource_c1.id,
                  context.resources.obj_resource_d.id,
@@ -287,11 +289,12 @@ defmodule Oli.DeliveryTest do
           context.resources.module_resource_1.id
         )
 
-      # C, C1 and D are the objectives attached to the inner activities
-      assert length(module_container_1_objectives) == 3
+      # B is attached to the page itself; C, C1 and D are attached to inner activities
+      assert length(module_container_1_objectives) == 4
 
       assert Enum.sort(module_container_1_objectives) ==
                Enum.sort([
+                 context.resources.obj_resource_b.id,
                  context.resources.obj_resource_c.id,
                  context.resources.obj_resource_c1.id,
                  context.resources.obj_resource_d.id
@@ -304,11 +307,12 @@ defmodule Oli.DeliveryTest do
           context.resources.unit_resource.id
         )
 
-      # C, C1 and D are the objectives attached to the inner activities
-      assert length(unit_container_objectives) == 3
+      # B is attached to the page itself; C, C1 and D are attached to inner activities
+      assert length(unit_container_objectives) == 4
 
       assert Enum.sort(unit_container_objectives) ==
                Enum.sort([
+                 context.resources.obj_resource_b.id,
                  context.resources.obj_resource_c.id,
                  context.resources.obj_resource_c1.id,
                  context.resources.obj_resource_d.id
@@ -334,11 +338,13 @@ defmodule Oli.DeliveryTest do
       root_container_objectives =
         Sections.get_section_contained_objectives(returned_section.id, nil)
 
-      # C, C1, D, E and F are the objectives attached to the inner activities
-      assert length(root_container_objectives) == 5
+      # A and B are attached to pages; C, C1, D, E and F are attached to inner activities
+      assert length(root_container_objectives) == 7
 
       assert Enum.sort(root_container_objectives) ==
                Enum.sort([
+                 context.resources.obj_resource_a.id,
+                 context.resources.obj_resource_b.id,
                  context.resources.obj_resource_c.id,
                  context.resources.obj_resource_c1.id,
                  context.resources.obj_resource_d.id,

@@ -183,7 +183,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard.StudentSupportTileTest 
         base_attrs(%{tile_state: tile_state(), show_email_modal: true})
       )
 
-      assert has_element?(component, "#student_support_email_modal")
+      assert has_element?(component, "#student_support_email_modal_student_support_tile")
       assert render(component) =~ "student1@example.edu"
     end
   end

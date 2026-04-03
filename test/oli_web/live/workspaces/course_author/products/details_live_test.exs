@@ -105,6 +105,116 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
       assert paywall_index < content_index
     end
 
+    test "renders the cover image section beneath paywall settings with shared preview gallery",
+         ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, product} =
+        Oli.Delivery.Sections.update_section(product, %{
+          cover_image: "https://example.com/template-cover.png"
+        })
+
+      {:ok, live, html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      assert has_element?(live, "h4", "Cover Image")
+
+      assert has_element?(
+               live,
+               "div",
+               "Manage the cover image for this template. Max file size is 5 MB."
+             )
+
+      assert has_element?(
+               live,
+               "#selected-image-preview #current-product-img[src='https://example.com/template-cover.png']"
+             )
+
+      assert render(live) =~
+               "background-image: url(&#39;https://example.com/template-cover.png&#39;);"
+
+      assert has_element?(live, "#selected-image-preview[data-preview-context='cover_image']")
+      assert has_element?(live, "#image-preview-thumbnails")
+      assert has_element?(live, "#image-preview-thumbnail-my-course")
+      assert has_element?(live, "#image-preview-thumbnail-course-picker")
+      assert has_element?(live, "#image-preview-thumbnail-student-welcome")
+      assert has_element?(live, "#image-preview-thumbnail-my-course [data-preview-mode='true']")
+
+      assert has_element?(
+               live,
+               "#image-preview-thumbnail-course-picker [data-preview-mode='true']"
+             )
+
+      assert has_element?(live, "#image-preview-thumbnail-student-welcome", "Welcome to")
+
+      assert has_element?(
+               live,
+               ".image-preview-thumbnail .hover\\:shadow-\\[0_12px_32px_rgba\\(15\\,13\\,15\\,0\\.24\\)\\]"
+             )
+
+      {paywall_index, _} = :binary.match(html, "Paywall Settings")
+      {cover_image_index, _} = :binary.match(html, "Cover Image")
+      {content_index, _} = :binary.match(html, "Content")
+
+      assert paywall_index < cover_image_index
+      assert cover_image_index < content_index
+    end
+
+    test "renders no preview gallery when no image is set", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      refute has_element?(live, "#img-preview-gallery")
+      refute has_element?(live, "#current-product-img")
+    end
+
+    test "opens the image preview modal and cycles through the three preview labels", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
+      {:ok, product} =
+        Oli.Delivery.Sections.update_section(product, %{
+          cover_image: "https://example.com/template-cover.png"
+        })
+
+      {:ok, live, _html} = live(conn, live_view_route(project.slug, product.slug, %{}))
+
+      render_click(element(live, "#image-preview-thumbnail-student-welcome"))
+
+      assert has_element?(live, "#image-preview-modal.block")
+      assert has_element?(live, "#image-preview-modal", "Student Course Introduction")
+
+      assert has_element?(
+               live,
+               "#image-preview-modal button[phx-click='show_previous_image_preview'][disabled]"
+             )
+
+      render_click(
+        element(live, "#image-preview-modal button[phx-click='show_next_image_preview']")
+      )
+
+      assert has_element?(live, "#image-preview-modal", "Student My Courses Page")
+
+      render_click(
+        element(live, "#image-preview-modal button[phx-click='show_next_image_preview']")
+      )
+
+      assert has_element?(live, "#image-preview-modal", "Instructor Course Builder")
+
+      assert has_element?(
+               live,
+               "#image-preview-modal button[phx-click='show_next_image_preview'][disabled]"
+             )
+
+      render_click(
+        element(
+          live,
+          "#image-preview-modal button[aria-label='close']"
+        )
+      )
+
+      refute has_element?(live, "#image-preview-modal.block")
+    end
+
     test "places tags between description and welcome message title", ctx do
       %{conn: conn, project: project, product: product} = ctx
 

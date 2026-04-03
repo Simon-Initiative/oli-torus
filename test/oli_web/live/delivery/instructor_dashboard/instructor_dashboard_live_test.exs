@@ -347,6 +347,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                "container:#{container.id}"
     end
 
+    test "scope navigator selection clears tile_progress page while preserving the rest", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {_, containers} = Helpers.get_containers(section)
+      container = hd(containers)
+
+      dashboard_path =
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_progress[mode]=percent&tile_progress[threshold]=80&tile_progress[page]=3"
+
+      {:ok, view, _html} = live(conn, dashboard_path)
+
+      view
+      |> element("button[data-list-navigator-option='true']", container.title)
+      |> render_click()
+
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=container%3A#{container.id}&tile_progress[mode]=percent&tile_progress[threshold]=80"
+      )
+    end
+
     test "scope navigator selection from container to course patches url and persists scope", %{
       instructor: instructor,
       section: section,
@@ -414,6 +438,96 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       {:ok, view, _html} = live(conn, redirected_path)
 
       assert has_element?(view, "button", "Entire Course")
+    end
+
+    test "assessments tile patches url and scrolls when expanding from the dashboard", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+      assessment_id = assessment_id_for_title(render(view), "Other test revision")
+
+      view
+      |> element(
+        "button[phx-click='assessment_row_toggled'][phx-value-assessment_id='#{assessment_id}']"
+      )
+      |> render_click()
+
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_assessments[expanded]=#{assessment_id}"
+      )
+
+      target_id = "learning-dashboard-assessment-card-#{assessment_id}"
+
+      assert_push_event(view, "scroll-y-to-target", %{
+        id: ^target_id,
+        offset: 6,
+        scroll_mode: "contain",
+        scroll_delay: 120,
+        offset_target_id: "instructor-dashboard-header"
+      })
+    end
+
+    test "assessments tile opens the draft email modal from the dashboard", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+      assessment_id = assessment_id_for_title(render(view), "Other test revision")
+
+      assert has_element?(view, "#learning-dashboard-assessments-tile")
+
+      view
+      |> element(
+        "button[phx-click='assessment_row_toggled'][phx-value-assessment_id='#{assessment_id}']"
+      )
+      |> render_click()
+
+      assert_patch(
+        view,
+        "/sections/#{section.slug}/instructor_dashboard/insights/dashboard?dashboard_scope=course&tile_assessments[expanded]=#{assessment_id}"
+      )
+
+      assert has_element?(view, "button", "Email Students Not Completed")
+
+      view
+      |> element(
+        "#learning-dashboard-assessments-tile button[phx-click='open_assessment_email_modal']"
+      )
+      |> render_click()
+
+      assert has_element?(view, "#student_support_email_modal_assessments_tile")
     end
 
     test "student support bucket selection patches the url with namespaced tile params", %{
@@ -675,7 +789,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                "#learning-dashboard-content-group [data-section-layout='single']"
              )
 
-      assert has_element?(view, "#learning-dashboard-assessments-placeholder")
+      assert has_element?(view, "#learning-dashboard-assessments-tile")
       refute has_element?(view, "#learning-dashboard-objectives-placeholder")
     end
 
@@ -763,6 +877,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
 
       assert Repo.get_by!(InstructorDashboardState, enrollment_id: enrollment.id).last_viewed_scope ==
                "course"
+    end
+  end
+
+  describe "instructor: insights > dashboard tab with objectives" do
+    setup [:instructor_conn, :create_full_project_with_objectives]
+
+    test "renders the challenging objectives tile when the section has objectives", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      dashboard_path =
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :dashboard
+        )
+
+      assert {:error, {:live_redirect, %{to: redirected_path, flash: %{}}}} =
+               live(conn, dashboard_path)
+
+      {:ok, view, _html} = live(conn, redirected_path)
+
+      assert has_element?(view, "#learning-dashboard-content-group")
+      assert has_element?(view, "[id^='learning-dashboard-challenging-objectives-']")
+      assert has_element?(view, "h3", "Challenging Objectives")
+    end
+  end
+
+  defp assessment_id_for_title(html, title) do
+    regex =
+      ~r/phx-value-assessment_id="(?<id>\d+)".*?aria-label="Expand assessment #{Regex.escape(title)}"/s
+
+    case Regex.named_captures(regex, html) do
+      %{"id" => id} -> id
+      _ -> flunk("Could not find assessment id for title #{inspect(title)}")
     end
   end
 end

@@ -30,8 +30,12 @@ export interface PageContext {
   };
 }
 
-export type ActionType = 'navigation' | 'mutateState' | 'feedback';
-export type ActionParams = NavigationActionParams | MutateStateActionParams | FeedbackActionParams;
+export type ActionType = 'navigation' | 'mutateState' | 'feedback' | 'activationPoint';
+export type ActionParams =
+  | NavigationActionParams
+  | MutateStateActionParams
+  | FeedbackActionParams
+  | ActivationPointActionParams;
 export interface AdaptiveRuleAction {
   type: ActionType;
   params: ActionParams;
@@ -65,4 +69,13 @@ export type MutateStateAction = {
 export type FeedbackAction = {
   type: 'feedback';
   params: FeedbackActionParams;
+};
+
+export interface ActivationPointActionParams {
+  prompt: string;
+}
+
+export type ActivationPointAction = {
+  type: 'activationPoint';
+  params: ActivationPointActionParams;
 };

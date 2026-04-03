@@ -2,88 +2,146 @@ version: 1
 feature: objectives_tile
 generated_from: prd.md
 requirements:
-- id: FR-001
-  title: Render `Challenging Objectives` tile for scopes where objectives exist.
-  status: proposed
-  acceptance_criteria:
-  - id: AC-001
-    title: "(FR-001, FR-002) \u2014 Given objectives exist in selected scope, when\
-      \ tile renders, then only objectives with proficiency <=40% are listed."
-    status: proposed
-    verification_method: automated
-    proofs: []
-- id: FR-003
-  title: Show parent objective numbering/order and sub-objective entries where relationships
-    exist.
-  status: proposed
-  acceptance_criteria:
-  - id: AC-002
-    title: "(FR-003, FR-004) \u2014 Given objective has sub-objectives, when row renders,\
-      \ then disclosure control is present and keyboard-operable; objectives without\
-      \ children show no disclosure control."
-    status: proposed
-    verification_method: automated
-    proofs: []
-- id: FR-005
-  title: Objective click navigates to Insights -> Learning Objectives with selected
-    objective expanded.
-  status: proposed
-  acceptance_criteria:
-  - id: AC-003
-    title: "(FR-005) \u2014 Given instructor clicks objective row, when navigation\
-      \ occurs, then Insights -> Learning Objectives opens with that objective expanded."
-    status: proposed
-    verification_method: automated
-    proofs: []
-- id: FR-006
-  title: Sub-objective click navigates to Insights -> Learning Objectives with corresponding
-    sub-objective visible/highlighted.
-  status: proposed
-  acceptance_criteria:
-  - id: AC-004
-    title: "(FR-006) \u2014 Given instructor clicks sub-objective row, when navigation\
-      \ occurs, then corresponding sub-objective is visible/highlighted in Insights\
-      \ context."
-    status: proposed
-    verification_method: automated
-    proofs: []
-- id: FR-007
-  title: '`View Learning Objectives` button navigates to all-objectives view with
-    no rows expanded.'
-  status: proposed
-  acceptance_criteria:
-  - id: AC-005
-    title: "(FR-007) \u2014 Given instructor clicks `View Learning Objectives`, when\
-      \ navigation completes, then all-objectives default view is shown with no expanded\
-      \ row."
-    status: proposed
-    verification_method: automated
-    proofs: []
-- id: FR-008
-  title: If no objectives exist, hide tile entirely; if objectives exist but none
-    qualify as low proficiency, show contextual empty-state message.
-  status: proposed
-  acceptance_criteria:
-  - id: AC-006
-    title: "(FR-008) \u2014 Given no objectives exist in course/scope, when dashboard\
-      \ renders, then tile is not displayed."
-    status: proposed
-    verification_method: automated
-    proofs: []
-  - id: AC-007
-    title: "(FR-008) \u2014 Given objectives exist but none are low proficiency, when\
-      \ tile renders, then contextual informational empty state is shown."
-    status: proposed
-    verification_method: automated
-    proofs: []
-- id: FR-009
-  title: Tile updates consistently on global scope changes without stale objective
-    rows.
-  status: proposed
-  acceptance_criteria:
-  - id: AC-008
-    title: "(FR-009) \u2014 Given rapid scope changes, when tile updates, then rows\
-      \ reflect current scope only with no stale carry-over."
-    status: proposed
-    verification_method: automated
-    proofs: []
+- title: Render the `Challenging Objectives` tile only when the current section contains
+    learning objectives relevant to the selected dashboard scope.
+  status: implemented
+  id: FR-001
+- title: Filter tile results to learning objectives and sub-objectives whose proficiency
+    is at or below the existing low-proficiency threshold of `<= 40%` for the active
+    scope.
+  status: implemented
+  id: FR-002
+- title: Preserve curriculum ordering and numbering for objectives, and expose expandable
+    hierarchy only when qualifying sub-objectives exist for a parent objective.
+  status: implemented
+  id: FR-003
+- title: Support keyboard-accessible expand/collapse behavior with programmatic expanded-state
+    semantics for objective rows that have children.
+  status: implemented
+  id: FR-004
+- title: Navigate objective clicks to `Insights -> Learning Objectives` with destination
+    context that opens the selected objective in view.
+  status: implemented
+  id: FR-005
+- title: Navigate sub-objective clicks to `Insights -> Learning Objectives` with destination
+    context that keeps the relevant sub-objective visible in its parent context.
+  status: implemented
+  id: FR-006
+- title: Provide a `View Learning Objectives` action that opens the full learning-objectives
+    view for the section without forcing a row expansion.
+  status: implemented
+  id: FR-007
+- title: Distinguish conditional rendering states for no objectives, no proficiency
+    data, and no low-proficiency objectives in the selected scope.
+  status: implemented
+  id: FR-008
+- title: Update tile content deterministically when the global course-content filter
+    changes so stale scope results are never shown.
+  status: implemented
+  id: FR-009
+acceptance_criteria:
+- title: Given the selected scope contains learning objectives, when the dashboard
+    renders, then the `Challenging Objectives` tile is shown for authorized instructor
+    contexts.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tile_groups/content_section.ex
+  - lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex
+  - test/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live_test.exs
+  id: AC-001
+- title: Given objective proficiency data for the selected scope, when the tile renders,
+    then only objectives or sub-objectives at `<= 40%` proficiency are included.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/instructor_dashboard/data_snapshot/projections/challenging_objectives.ex
+  - test/oli/instructor_dashboard/data_snapshot/projections/challenging_objectives_test.exs
+  id: AC-002
+- title: Given qualifying parent and sub-objective data, when the tile renders, then
+    objectives appear in curriculum order with numbering preserved and only parents
+    with children show disclosure controls.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/instructor_dashboard/data_snapshot/projections/challenging_objectives.ex
+  - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile.ex
+  - test/oli/instructor_dashboard/data_snapshot/projections/challenging_objectives_test.exs
+  - test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile_test.exs
+  id: AC-003
+- title: Given an objective row with children, when an instructor operates the disclosure
+    control with keyboard input, then the row expands or collapses and exposes the
+    correct accessibility state.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile.ex
+  - test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile_test.exs
+  id: AC-004
+- title: Given an instructor activates a parent objective row, when navigation completes,
+    then `Insights -> Learning Objectives` opens with that objective visible in expanded
+    context.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile.ex
+  - lib/oli_web/components/delivery/learning_objectives/learning_objectives.ex
+  - test/oli_web/components/delivery/learning_objectives/learning_objectives_component_test.exs
+  id: AC-005
+- title: Given an instructor activates a sub-objective row, when navigation completes,
+    then the destination view shows that sub-objective in the correct parent context.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile.ex
+  - lib/oli_web/components/delivery/learning_objectives/learning_objectives.ex
+  - test/oli_web/components/delivery/learning_objectives/learning_objectives_component_test.exs
+  id: AC-006
+- title: Given an instructor activates `View Learning Objectives`, when navigation
+    completes, then the destination opens the all-objectives view with no tile-driven
+    row expansion applied.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile.ex
+  - lib/oli_web/components/delivery/learning_objectives/learning_objectives.ex
+  - test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile_test.exs
+  id: AC-007
+- title: Given the course has no learning objectives, when the dashboard renders,
+    then the tile is not displayed.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tile_groups/content_section.ex
+  - test/oli_web/live/delivery/instructor_dashboard/instructor_dashboard_live_test.exs
+  id: AC-008
+- title: Given objectives exist but no proficiency data is available for the selected
+    scope, when the tile renders, then an informational no-data state is shown instead
+    of low-proficiency results.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/instructor_dashboard/data_snapshot/projections/challenging_objectives.ex
+  - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile.ex
+  - test/oli/instructor_dashboard/data_snapshot/projections/challenging_objectives_test.exs
+  - test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile_test.exs
+  id: AC-009
+- title: Given objectives exist and none are below the low-proficiency threshold,
+    when the tile renders, then a contextual empty-state message names the active
+    scope and no objective rows are shown.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli/instructor_dashboard/data_snapshot/projections/challenging_objectives.ex
+  - lib/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile.ex
+  - test/oli/instructor_dashboard/data_snapshot/projections/challenging_objectives_test.exs
+  - test/oli_web/components/delivery/instructor_dashboard/intelligent_dashboard/tiles/challenging_objectives_tile_test.exs
+  id: AC-010
+- title: Given instructors change the global scope rapidly, when tile hydration resolves,
+    then only data for the latest selected scope is rendered.
+  status: verified
+  verification_method: automated
+  proofs:
+  - lib/oli_web/live/delivery/instructor_dashboard/intelligent_dashboard_tab.ex
+  - docs/exec-plans/current/epics/intelligent_dashboard/objectives_tile/phase_2_execution_record.md
+  id: AC-011
