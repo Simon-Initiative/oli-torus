@@ -40,17 +40,6 @@ defmodule Oli.Clickhouse.AdminOperationsTest do
     end
   end
 
-  defmodule BlockingTasks do
-    def run(kind, _opts) do
-      test_pid = :persistent_term.get({__MODULE__, :test_pid})
-      send(test_pid, {:admin_operation_started, kind, self()})
-
-      receive do
-        :release_blocking_task -> :ok
-      end
-    end
-  end
-
   setup do
     original_tasks = Application.get_env(:oli, :clickhouse_tasks_module)
     original_analytics = Application.get_env(:oli, :clickhouse_admin_analytics_module)
@@ -103,23 +92,6 @@ defmodule Oli.Clickhouse.AdminOperationsTest do
 
     assert {:error, :unauthorized} = AdminOperations.start(:setup, author)
     assert Repo.aggregate(LogEvent, :count, :id) == 0
-  end
-
-  test "rejects concurrent admin operations while one is running" do
-    Application.put_env(:oli, :clickhouse_tasks_module, BlockingTasks)
-    Application.put_env(:oli, :clickhouse_admin_operations_mode, :async)
-    :persistent_term.put({BlockingTasks, :test_pid}, self())
-
-    on_exit(fn -> :persistent_term.erase({BlockingTasks, :test_pid}) end)
-
-    author = admin_author()
-
-    assert {:ok, _operation} = AdminOperations.start(:setup, author)
-    assert_receive {:admin_operation_started, :setup, task_pid}
-
-    assert {:error, :operation_in_progress} = AdminOperations.start(:migrate_up, author)
-
-    send(task_pid, :release_blocking_task)
   end
 
   defp admin_author do

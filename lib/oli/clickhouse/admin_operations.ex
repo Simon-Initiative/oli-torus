@@ -11,7 +11,6 @@ defmodule Oli.Clickhouse.AdminOperations do
   alias Phoenix.PubSub
 
   @pubsub_topic "clickhouse_admin_operations"
-  @guard_table :clickhouse_admin_operation_guards
   @allowed_kinds [:setup, :migrate_up, :migrate_down]
   @max_events 200
   @audit_initiated :clickhouse_admin_operation_initiated
@@ -28,7 +27,6 @@ defmodule Oli.Clickhouse.AdminOperations do
   def start(kind, %Author{} = author) when kind in @allowed_kinds do
     with :ok <- authorize_admin(author),
          {:ok, capabilities} <- analytics_module().admin_capabilities(),
-         :ok <- acquire_guard(),
          {:ok, _} <- validate_capabilities(kind, capabilities) do
       operation = new_operation(kind, author, capabilities)
       record_audit(author, operation)
@@ -55,12 +53,10 @@ defmodule Oli.Clickhouse.AdminOperations do
           {:ok, operation}
 
         {:error, reason} ->
-          maybe_release_guard(reason)
           {:error, reason}
       end
     else
       {:error, reason} ->
-        maybe_release_guard(reason)
         {:error, reason}
     end
   end
@@ -69,35 +65,31 @@ defmodule Oli.Clickhouse.AdminOperations do
   def start(_kind, _author), do: {:error, :unsupported_operation}
 
   defp execute_operation(operation) do
-    try do
-      action = Atom.to_string(operation.kind)
+    action = Atom.to_string(operation.kind)
 
-      FeatureTelemetry.span(
-        :clickhouse_admin_operations,
-        "phase_4",
-        action,
-        fn ->
-          sink = &handle_task_event(operation, &1)
+    FeatureTelemetry.span(
+      :clickhouse_admin_operations,
+      "phase_4",
+      action,
+      fn ->
+        sink = &handle_task_event(operation, &1)
 
-          result =
-            try do
-              case task_module().run(operation.kind, sink: sink) do
-                :ok -> :ok
-                {:ok, _} = ok -> ok
-                other -> {:error, other}
-              end
-            rescue
-              exception ->
-                {:error, Exception.message(exception)}
+        result =
+          try do
+            case task_module().run(operation.kind, sink: sink) do
+              :ok -> :ok
+              {:ok, _} = ok -> ok
+              other -> {:error, other}
             end
+          rescue
+            exception ->
+              {:error, Exception.message(exception)}
+          end
 
-          finalize_operation(operation, result)
-        end,
-        %{kind: action, operation_id: operation.id}
-      )
-    after
-      release_guard()
-    end
+        finalize_operation(operation, result)
+      end,
+      %{kind: action, operation_id: operation.id}
+    )
   end
 
   defp finalize_operation(operation, :ok), do: complete_operation(operation, nil)
@@ -268,32 +260,4 @@ defmodule Oli.Clickhouse.AdminOperations do
       Oli.Analytics.ClickhouseAnalytics
     )
   end
-
-  defp acquire_guard do
-    ensure_guard_table()
-
-    case :ets.insert_new(@guard_table, {:running, System.monotonic_time()}) do
-      true -> :ok
-      false -> {:error, :operation_in_progress}
-    end
-  end
-
-  defp release_guard do
-    ensure_guard_table()
-    :ets.delete(@guard_table, :running)
-    :ok
-  end
-
-  defp ensure_guard_table do
-    case :ets.info(@guard_table) do
-      :undefined ->
-        :ets.new(@guard_table, [:named_table, :set, :public, read_concurrency: true])
-
-      _ ->
-        @guard_table
-    end
-  end
-
-  defp maybe_release_guard(:operation_in_progress), do: :ok
-  defp maybe_release_guard(_reason), do: release_guard()
 end
