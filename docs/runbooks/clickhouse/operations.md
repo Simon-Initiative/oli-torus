@@ -84,6 +84,7 @@ Use these documents together:
 - ClickHouse backup and restore procedure: `docs/runbooks/clickhouse/backup-restore.md`
 - Backup automation assets: `devops/clickhouse-backup/clickhouse-backup.sh` and `devops/clickhouse-backup/systemd/`
 - ClickHouse schema lifecycle commands: `mix clickhouse.migrate status|up|setup|reset|drop`
+- Canonical ClickHouse task service: `Oli.Clickhouse.Tasks`
 - Admin bulk ingest UI: `/admin/clickhouse/backfill`
 - Admin health UI: `/admin/clickhouse`
 
@@ -95,6 +96,8 @@ Operational prerequisites:
 - Bulk ingest and backfill credentials can be configured with `CLICKHOUSE_ADMIN_USER` and `CLICKHOUSE_ADMIN_PASSWORD`.
 - If these env vars are unset, the application still boots, but ClickHouse query or admin operations will return configuration errors when invoked.
 - The ClickHouse database schema must exist and be current before backfills or ETL resume.
+- The admin analytics dashboard exposes only the safe ClickHouse operations: migrate up, migrate down, and initialize database when the instance is reachable but not yet initialized.
+- Dangerous database operations remain shell-only through Mix or IEx workflows. Do not expose `create`, `drop`, or `reset` through the admin UI.
 
 ## Operational Procedures
 

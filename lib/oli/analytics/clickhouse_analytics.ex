@@ -130,6 +130,79 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   defp extract_single_row({:error, reason}), do: {:error, reason}
 
+  defp fetch_pending_migration_count(database) do
+    versions = available_migration_versions()
+
+    with {:ok, applied_version} <- fetch_applied_migration_version(database) do
+      {:ok, Enum.count(versions, &(&1 > applied_version))}
+    end
+  end
+
+  defp fetch_applied_migration_version(database) do
+    with {:ok, goose_table_exists} <- fetch_table_exists(database, "goose_db_version") do
+      if goose_table_exists do
+        query = """
+        SELECT max(version_id) AS version_id
+        FROM #{escape_single_quotes(database)}.goose_db_version
+        WHERE is_applied = 1
+        """
+
+        query
+        |> execute_query("clickhouse applied migration version", credential: :admin)
+        |> case do
+          {:ok, %{parsed_body: %{"data" => [row | _]}}} when is_map(row) ->
+            {:ok, parse_migration_version(Map.get(row, "version_id"))}
+
+          {:ok, %{parsed_body: %{"data" => []}}} ->
+            {:ok, 0}
+
+          {:ok, %{parsed_body: rows}} when is_list(rows) ->
+            version_id =
+              rows
+              |> List.first()
+              |> case do
+                row when is_map(row) -> Map.get(row, "version_id")
+                _ -> nil
+              end
+
+            {:ok, parse_migration_version(version_id)}
+
+          {:ok, _} ->
+            {:ok, 0}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+      else
+        {:ok, 0}
+      end
+    end
+  end
+
+  defp available_migration_versions do
+    clickhouse_migrations_dir()
+    |> Path.join("*.sql")
+    |> Path.wildcard()
+    |> Enum.map(&migration_version_from_file/1)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.sort()
+  end
+
+  defp clickhouse_migrations_dir do
+    case :code.priv_dir(:oli) do
+      {:error, :bad_name} -> Path.join([File.cwd!(), "priv", "clickhouse", "migrations"])
+      priv_dir -> Path.join([priv_dir, "clickhouse", "migrations"])
+    end
+  end
+
+  defp migration_version_from_file(path) do
+    path
+    |> Path.basename()
+    |> String.split("_", parts: 2)
+    |> List.first()
+    |> parse_migration_version()
+  end
+
   defp ensure_table_metrics_defaults({:ok, row}, table) do
     {:ok,
      row
@@ -166,6 +239,32 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
        base
        |> Map.put(:raw_events, table)
        |> Map.put(:raw_events_parts, parts)}
+    end
+  end
+
+  @doc """
+  Returns the admin-facing ClickHouse capability snapshot used by the analytics dashboard.
+  """
+  def admin_capabilities do
+    database = clickhouse_config(:admin).database
+
+    with {:ok, _base} <- fetch_health_metadata(database),
+         {:ok, database_exists} <- fetch_database_exists(database),
+         {:ok, raw_events_exists} <- fetch_table_exists(database, "raw_events"),
+         {:ok, pending_migration_count} <- fetch_pending_migration_count(database) do
+      initialized = database_exists and raw_events_exists
+
+      {:ok,
+       %{
+         reachable: true,
+         database_exists: database_exists,
+         table_exists: raw_events_exists,
+         initialized: initialized,
+         setup_enabled: not initialized,
+         pending_migration_count: pending_migration_count,
+         migrate_up_enabled: pending_migration_count > 0,
+         allowed_operations: allowed_operations(initialized)
+       }}
     end
   end
 
@@ -444,6 +543,56 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
 
   def execute_query(_), do: {:error, "Empty query"}
 
+  defp fetch_database_exists(database) do
+    query = """
+    SELECT count() > 0 AS exists
+    FROM system.databases
+    WHERE name = '#{escape_single_quotes(database)}'
+    """
+
+    query
+    |> execute_query("clickhouse database exists", credential: :admin)
+    |> extract_single_row()
+    |> case do
+      {:ok, %{"exists" => value}} -> {:ok, parse_truthy(value)}
+      {:ok, row} -> {:ok, parse_truthy(Map.get(row, "result"))}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp fetch_table_exists(database, table) do
+    query = """
+    SELECT count() > 0 AS exists
+    FROM system.tables
+    WHERE database = '#{escape_single_quotes(database)}'
+      AND name = '#{escape_single_quotes(table)}'
+    """
+
+    query
+    |> execute_query("clickhouse table exists", credential: :admin)
+    |> extract_single_row()
+    |> case do
+      {:ok, %{"exists" => value}} -> {:ok, parse_truthy(value)}
+      {:ok, row} -> {:ok, parse_truthy(Map.get(row, "result"))}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp allowed_operations(true), do: [:migrate_up, :migrate_down]
+  defp allowed_operations(false), do: [:setup, :migrate_up, :migrate_down]
+
+  defp parse_migration_version(value) when is_integer(value) and value > 0, do: value
+  defp parse_migration_version(value) when is_integer(value), do: 0
+
+  defp parse_migration_version(value) when is_binary(value) do
+    case Integer.parse(String.trim(value)) do
+      {int, _} when int > 0 -> int
+      _ -> 0
+    end
+  end
+
+  defp parse_migration_version(_), do: 0
+
   defp normalize_keyword_options(value) when is_list(value), do: value
   defp normalize_keyword_options(%{} = map), do: Enum.into(map, [])
   defp normalize_keyword_options(_), do: []
@@ -525,6 +674,9 @@ defmodule Oli.Analytics.ClickhouseAnalytics do
   end
 
   defp normalize_query_param_value(value), do: to_string(value)
+
+  defp parse_truthy(value) when value in [1, "1", true, "true", "TRUE"], do: true
+  defp parse_truthy(_), do: false
 
   defp escape_single_quotes(nil), do: ""
 

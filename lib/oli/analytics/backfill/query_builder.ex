@@ -5,13 +5,15 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
 
   alias Oli.Analytics.Backfill.BackfillRun
 
+  @target_table_pattern ~r/^[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+$/
+
   @doc """
   Construct the INSERT ... SELECT statement used to ingest events from S3 into
   ClickHouse.
   """
   @spec insert_sql(BackfillRun.t(), map()) :: String.t()
   def insert_sql(%BackfillRun{} = run, aws_creds) do
-    target_table = sanitize_target_table(run.target_table)
+    target_table = sanitize_target_table!(run.target_table)
     s3_source = s3_source_clause(run, aws_creds)
     settings_clause = settings_clause(run.clickhouse_settings, aws_creds)
 
@@ -19,10 +21,10 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
     INSERT INTO #{target_table} (
         event_hash, event_version, source_file, source_etag, source_line, inserted_at,
         user_id, home_page, section_id, project_id, publication_id,
-        timestamp, event_type, page_id,
+        timestamp, event_type, verb_id, page_id,
         content_element_id, video_url, video_time, video_length,
-        video_progress, video_played_segments, video_play_time, video_seek_from,
-        video_seek_to, activity_attempt_guid, activity_attempt_number,
+        video_progress, video_played_segments, video_seek_from, video_seek_to,
+        activity_attempt_guid, activity_attempt_number,
         page_attempt_guid, page_attempt_number, part_attempt_guid,
         part_attempt_number, activity_id, activity_revision_id, part_id,
         page_sub_type, score, out_of, scaled_score, success, completion,
@@ -78,6 +80,8 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
           'unknown'
         ) AS event_type,
 
+        #{json_value_or_null("$.verb.id")} AS verb_id,
+
         toUInt64OrNull(#{json_value_or_null("$.context.extensions.\"http://oli.cmu.edu/extensions/page_id\"")}) AS page_id,
 
         coalesce(
@@ -103,7 +107,6 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
         ) AS video_length,
         toFloat64OrNull(#{json_value_or_null("$.result.extensions.\"https://w3id.org/xapi/video/extensions/progress\"")}) AS video_progress,
         #{json_value_or_null("$.result.extensions.\"https://w3id.org/xapi/video/extensions/played-segments\"")} AS video_played_segments,
-        toFloat64OrNull(#{json_value_or_null("$.result.extensions.video_play_time")}) AS video_play_time,
         toFloat64OrNull(#{json_value_or_null("$.result.extensions.\"https://w3id.org/xapi/video/extensions/time-from\"")}) AS video_seek_from,
         toFloat64OrNull(#{json_value_or_null("$.result.extensions.\"https://w3id.org/xapi/video/extensions/time-to\"")}) AS video_seek_to,
 
@@ -270,12 +273,20 @@ defmodule Oli.Analytics.Backfill.QueryBuilder do
 
   defp format_setting_value(value), do: "'" <> escape(to_string(value)) <> "'"
 
-  defp sanitize_target_table(table) when is_binary(table) do
+  @spec sanitize_target_table!(String.t()) :: String.t()
+  def sanitize_target_table!(table) when is_binary(table) do
     table
     |> String.trim()
     |> case do
-      "" -> raise ArgumentError, "target_table must be provided"
-      sanitized -> sanitized
+      "" ->
+        raise ArgumentError, "target_table must be provided"
+
+      sanitized ->
+        if Regex.match?(@target_table_pattern, sanitized) do
+          sanitized
+        else
+          raise ArgumentError, "invalid target_table: #{inspect(sanitized)}"
+        end
     end
   end
 
