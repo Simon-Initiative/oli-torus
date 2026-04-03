@@ -98,6 +98,7 @@
       preview_enabled={assigns[:preview_enabled]}
       lock_controls_enabled={assigns[:lock_controls_enabled]}
       authoring_notice={assigns[:authoring_notice]}
+      graded={assigns[:context] && assigns[:context].graded}
     />
     <div class={OliWeb.Workspaces.Utils.maybe_add_padding(assigns[:uri])}>
       <div class="-mt-[28px]">
@@ -121,6 +122,7 @@
         preview_enabled={assigns[:preview_enabled]}
         lock_controls_enabled={false}
         authoring_notice={assigns[:authoring_notice]}
+        graded={assigns[:context] && assigns[:context].graded}
       />
 
       {@inner_content}

@@ -86,7 +86,6 @@ postgres.env
 /xapi_output/
 /xapi_test_output/
 /datashop_output/
-/docker-compose-dev*.yml
 assets/yarn.lock
 lib/oli/analytics/test.xml
 .devcontainer/data
@@ -98,6 +97,7 @@ supervisord.pid
 stacks.out
 .mnesia
 yarn-error.log
+/scripts/dev/ha-proxy/combined.pem
 /priv/superactivity/
 /assets/src/components/activities/oli_ctat2/
 /assets/storybook-static
