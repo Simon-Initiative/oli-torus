@@ -668,17 +668,17 @@
       },
       "evidence": [
         {
-          "line": 608,
+          "line": 627,
           "signal": "direct_field_access",
           "rule": "liveview_render_prd",
-          "finding_id": "89b59134bcff97f1",
+          "finding_id": "016f51e958afd1eb",
           "ast_kind": "field_access"
         },
         {
-          "line": 608,
+          "line": 627,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "89b59134bcff97f1",
+          "finding_id": "016f51e958afd1eb",
           "ast_kind": "token"
         }
       ],
@@ -687,7 +687,7 @@
         "function": "save_page_title/2",
         "module": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive",
         "lines": [
-          608
+          627
         ],
         "file_path": "lib/oli_web/live/workspaces/course_author/editor_live.ex"
       },
@@ -6634,7 +6634,7 @@
         "function": "index_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          863
+          878
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -8142,7 +8142,7 @@
         "function": "discussion_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          934
+          949
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -8478,24 +8478,24 @@
       },
       "evidence": [
         {
-          "line": 757,
+          "line": 772,
           "signal": "direct_field_access",
           "rule": "http_response_prd",
-          "finding_id": "5bb90ad465d8f811",
+          "finding_id": "7bf3f096960199dd",
           "ast_kind": "field_access"
         },
         {
-          "line": 757,
+          "line": 772,
           "signal": "key_match",
           "rule": "http_response_prd",
-          "finding_id": "5bb90ad465d8f811",
+          "finding_id": "7bf3f096960199dd",
           "ast_kind": "key_match"
         },
         {
-          "line": 757,
+          "line": 772,
           "signal": "token_match",
           "rule": "http_response_prd",
-          "finding_id": "5bb90ad465d8f811",
+          "finding_id": "7bf3f096960199dd",
           "ast_kind": "token"
         }
       ],
@@ -8504,7 +8504,7 @@
         "function": "render_adaptive_fullscreen_content/4",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          757
+          772
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -17409,25 +17409,6 @@
       "data_refs": []
     },
     {
-      "id": "psn_663634b724bf02f5",
-      "node_type": "source",
-      "role": {
-        "kind": "database_read",
-        "callee": "Repo.preload"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "context/2",
-        "module": "OliWeb.LegacySuperactivityController",
-        "lines": [
-          59
-        ],
-        "file_path": "lib/oli_web/controllers/legacy_superactivity_controller.ex"
-      },
-      "data_refs": []
-    },
-    {
       "id": "psn_663c6dad56feba29",
       "node_type": "sink",
       "role": {
@@ -19279,24 +19260,24 @@
       },
       "evidence": [
         {
-          "line": 1044,
+          "line": 1059,
           "signal": "direct_field_access",
           "rule": "http_response_prd",
-          "finding_id": "b72667b62df17435",
+          "finding_id": "58b0d94439c8717a",
           "ast_kind": "field_access"
         },
         {
-          "line": 1044,
+          "line": 1059,
           "signal": "key_match",
           "rule": "http_response_prd",
-          "finding_id": "b72667b62df17435",
+          "finding_id": "58b0d94439c8717a",
           "ast_kind": "key_match"
         },
         {
-          "line": 1044,
+          "line": 1059,
           "signal": "token_match",
           "rule": "http_response_prd",
-          "finding_id": "b72667b62df17435",
+          "finding_id": "58b0d94439c8717a",
           "ast_kind": "token"
         }
       ],
@@ -19305,7 +19286,7 @@
         "function": "page_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          1044
+          1059
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -25335,24 +25316,24 @@
       },
       "evidence": [
         {
-          "line": 666,
+          "line": 685,
           "signal": "direct_field_access",
           "rule": "liveview_render_prd",
-          "finding_id": "f35d3cc921973dbe",
+          "finding_id": "7dcafd1056ebe890",
           "ast_kind": "field_access"
         },
         {
-          "line": 666,
+          "line": 685,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "f35d3cc921973dbe",
+          "finding_id": "7dcafd1056ebe890",
           "ast_kind": "token"
         },
         {
-          "line": 666,
+          "line": 685,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "f35d3cc921973dbe",
+          "finding_id": "7dcafd1056ebe890",
           "ast_kind": "unknown"
         }
       ],
@@ -25361,7 +25342,7 @@
         "function": "maybe_assign_app_params/3",
         "module": "OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive",
         "lines": [
-          666
+          685
         ],
         "file_path": "lib/oli_web/live/workspaces/course_author/editor_live.ex"
       },
@@ -26391,6 +26372,63 @@
       ]
     },
     {
+      "id": "psn_9855d536e1192b44",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.preload"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "fetch_delivery_context/4",
+        "module": "OliWeb.LegacySuperactivityController",
+        "lines": [
+          574
+        ],
+        "file_path": "lib/oli_web/controllers/legacy_superactivity_controller.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_9855d536e1192b44",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.preload"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "fetch_delivery_context/4",
+        "module": "OliWeb.LegacySuperactivityController",
+        "lines": [
+          591
+        ],
+        "file_path": "lib/oli_web/controllers/legacy_superactivity_controller.ex"
+      },
+      "data_refs": []
+    },
+    {
+      "id": "psn_9855d536e1192b44",
+      "node_type": "source",
+      "role": {
+        "kind": "database_read",
+        "callee": "Repo.preload"
+      },
+      "evidence": [],
+      "confidence": 0.7,
+      "code_context": {
+        "function": "fetch_delivery_context/4",
+        "module": "OliWeb.LegacySuperactivityController",
+        "lines": [
+          597
+        ],
+        "file_path": "lib/oli_web/controllers/legacy_superactivity_controller.ex"
+      },
+      "data_refs": []
+    },
+    {
       "id": "psn_985d75f8306fd543",
       "node_type": "source",
       "role": {
@@ -26934,7 +26972,7 @@
         "function": "project_allows_triggers?/1",
         "module": "Oli.Authoring.Editing.ActivityEditor",
         "lines": [
-          807
+          849
         ],
         "file_path": "lib/oli/authoring/editing/activity_editor.ex"
       },
@@ -27048,7 +27086,7 @@
         "function": "fetch_update_resource_map/1",
         "module": "Oli.Authoring.Editing.ActivityEditor",
         "lines": [
-          429
+          471
         ],
         "file_path": "lib/oli/authoring/editing/activity_editor.ex"
       },
@@ -28702,7 +28740,7 @@
         "function": "project_page_targets/1",
         "module": "Oli.Authoring.Editing.ActivityEditor",
         "lines": [
-          1244
+          1286
         ],
         "file_path": "lib/oli/authoring/editing/activity_editor.ex"
       },
@@ -29533,24 +29571,24 @@
       },
       "evidence": [
         {
-          "line": 168,
+          "line": 169,
           "signal": "direct_field_access",
           "rule": "liveview_render_prd",
-          "finding_id": "26a0df34ab4c7acc",
+          "finding_id": "5fc2c403516b5cc0",
           "ast_kind": "field_access"
         },
         {
-          "line": 168,
+          "line": 169,
           "signal": "token_match",
           "rule": "liveview_render_prd",
-          "finding_id": "26a0df34ab4c7acc",
+          "finding_id": "5fc2c403516b5cc0",
           "ast_kind": "token"
         },
         {
-          "line": 168,
+          "line": 169,
           "signal": "unknown",
           "rule": "liveview_render_prd",
-          "finding_id": "26a0df34ab4c7acc",
+          "finding_id": "5fc2c403516b5cc0",
           "ast_kind": "unknown"
         }
       ],
@@ -29559,7 +29597,7 @@
         "function": "mount/3",
         "module": "OliWeb.Delivery.Student.LessonLive",
         "lines": [
-          168
+          169
         ],
         "file_path": "lib/oli_web/live/delivery/student/lesson_live.ex"
       },
@@ -32839,7 +32877,7 @@
         "function": "exploration_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          900
+          915
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -33012,63 +33050,6 @@
           20
         ],
         "file_path": "lib/oli_web/live/sections/assessment_settings/settings_live.ex"
-      },
-      "data_refs": []
-    },
-    {
-      "id": "psn_ba0c7dbb950a79ae",
-      "node_type": "source",
-      "role": {
-        "kind": "database_read",
-        "callee": "Repo.preload"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "fetch_context/4",
-        "module": "OliWeb.LegacySuperactivityController",
-        "lines": [
-          142
-        ],
-        "file_path": "lib/oli_web/controllers/legacy_superactivity_controller.ex"
-      },
-      "data_refs": []
-    },
-    {
-      "id": "psn_ba0c7dbb950a79ae",
-      "node_type": "source",
-      "role": {
-        "kind": "database_read",
-        "callee": "Repo.preload"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "fetch_context/4",
-        "module": "OliWeb.LegacySuperactivityController",
-        "lines": [
-          156
-        ],
-        "file_path": "lib/oli_web/controllers/legacy_superactivity_controller.ex"
-      },
-      "data_refs": []
-    },
-    {
-      "id": "psn_ba0c7dbb950a79ae",
-      "node_type": "source",
-      "role": {
-        "kind": "database_read",
-        "callee": "Repo.preload"
-      },
-      "evidence": [],
-      "confidence": 0.7,
-      "code_context": {
-        "function": "fetch_context/4",
-        "module": "OliWeb.LegacySuperactivityController",
-        "lines": [
-          162
-        ],
-        "file_path": "lib/oli_web/controllers/legacy_superactivity_controller.ex"
       },
       "data_refs": []
     },
@@ -37674,7 +37655,7 @@
         "function": "create_activity_log/1",
         "module": "Oli.Delivery.CustomLogs.LegacyLogs",
         "lines": [
-          191
+          197
         ],
         "file_path": "lib/oli/delivery/custom_logs/legacy_logs.ex"
       },
@@ -41308,7 +41289,7 @@
         "function": "deliberate_practice_preview/2",
         "module": "OliWeb.PageDeliveryController",
         "lines": [
-          917
+          932
         ],
         "file_path": "lib/oli_web/controllers/page_delivery_controller.ex"
       },
@@ -41623,7 +41604,7 @@
         "function": "get_latest_revision/2",
         "module": "Oli.Authoring.Editing.ActivityEditor",
         "lines": [
-          1752
+          2130
         ],
         "file_path": "lib/oli/authoring/editing/activity_editor.ex"
       },
@@ -44641,7 +44622,7 @@
     "version": "0.3.0"
   },
   "git": {
-    "commit": "c886b9063af7651192974acd9226137d1e7bf3d5"
+    "commit": "b1bf7a2c0a22374ac4bee92a89bbd45fa0305bf4"
   },
   "schema_version": "1",
   "summary": {
@@ -44652,9 +44633,9 @@
       "persistent_pseudonymous_identifier": 49,
       "sensitive_context_indicator": 18
     },
-    "files_scanned": 1613,
-    "scan_duration_ms": 1742,
-    "node_count": 1533,
+    "files_scanned": 1615,
+    "scan_duration_ms": 2094,
+    "node_count": 1532,
     "data_node_count": 122,
     "flow_count": 781,
     "scan_error_count": 0,
@@ -44663,14 +44644,14 @@
     "proto_flows_enabled": true,
     "node_type_counts": {
       "sink": 611,
-      "source": 922
+      "source": 921
     },
     "boundary_counts": {
       "external": 481,
       "internal": 300
     },
     "confirmed_count": 162,
-    "possible_count": 1371
+    "possible_count": 1370
   },
   "flows": [
     {
