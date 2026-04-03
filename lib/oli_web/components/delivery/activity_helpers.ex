@@ -50,7 +50,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         page_revision,
         activity_types_map,
         students,
-        only_for_activity_ids
+        only_for_activity_ids,
+        opts \\ []
       ) do
     page_id = page_revision.resource_id
     graded = page_revision.graded
@@ -111,12 +112,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, activity_ids)
       |> Enum.reduce(%{}, fn revision, acc -> Map.put(acc, revision.resource_id, revision) end)
 
+    response_summaries_by_activity_part =
+      group_response_summaries_by_activity_part(response_summaries)
+
     adaptive_manual_analytics =
-      fetch_adaptive_manual_part_analytics(
-        section.id,
-        revisions_by_resource_id,
-        activity_types_map
-      )
+      if Keyword.get(opts, :include_adaptive_manual_analytics, true) do
+        fetch_adaptive_manual_part_analytics(
+          section.id,
+          revisions_by_resource_id,
+          activity_types_map
+        )
+      else
+        %{}
+      end
 
     # NOTE: From this point forward, we make no more DB queries
 
@@ -186,7 +194,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     |> stage_performance_details(
       activity_types_map,
       response_summaries,
-      adaptive_manual_analytics
+      adaptive_manual_analytics,
+      response_summaries_by_activity_part
     )
     |> Enum.map(fn activity ->
       ordinal = Map.get(ordinal_mapping, activity.resource_id)
@@ -282,7 +291,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         activities,
         activity_types_map,
         response_summaries,
-        adaptive_manual_analytics \\ %{}
+        adaptive_manual_analytics \\ %{},
+        response_summaries_by_activity_part \\ nil
       ) do
     multiple_choice_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
@@ -309,10 +319,32 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         if Map.get(v, :slug) == "oli_adaptive", do: k
       end)
 
+    has_adaptive_activities =
+      Enum.any?(activities, fn activity ->
+        activity.revision.activity_type_id == adaptive_type_id
+      end)
+
+    response_summaries_by_activity_part =
+      cond do
+        response_summaries_by_activity_part ->
+          response_summaries_by_activity_part
+
+        has_adaptive_activities ->
+          group_response_summaries_by_activity_part(response_summaries)
+
+        true ->
+          %{}
+      end
+
     Enum.map(activities, fn a ->
       case a.revision.activity_type_id do
         ^adaptive_type_id ->
-          add_adaptive_input_details(a, response_summaries, adaptive_manual_analytics)
+          add_adaptive_input_details(
+            a,
+            response_summaries,
+            adaptive_manual_analytics,
+            response_summaries_by_activity_part
+          )
 
         ^multiple_choice_type_id ->
           add_choices_frequencies(a, response_summaries)
@@ -1636,11 +1668,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     )
   end
 
-  defp add_adaptive_input_details(activity_attempt, response_summaries, adaptive_manual_analytics) do
+  defp add_adaptive_input_details(
+         activity_attempt,
+         _response_summaries,
+         adaptive_manual_analytics,
+         response_summaries_by_activity_part
+       ) do
     parts_layout = activity_attempt.revision.content["partsLayout"] || []
-
-    response_summaries_by_activity_part =
-      group_response_summaries_by_activity_part(response_summaries)
 
     authored_parts =
       get_in(activity_attempt.revision.content, ["authoring", "parts"]) || []

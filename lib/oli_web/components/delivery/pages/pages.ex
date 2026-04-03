@@ -780,6 +780,7 @@ defmodule OliWeb.Components.Delivery.Pages do
       |> Map.update!(:data, fn data ->
         Map.merge(data, %{
           activity_summary_cache: activity_summary_cache,
+          loaded_activity_summaries: loaded_activity_summaries,
           expanded_activity_ids: expanded_activity_ids,
           expanded_rows: expanded_rows,
           scripts: scripts,
@@ -826,9 +827,6 @@ defmodule OliWeb.Components.Delivery.Pages do
   defp load_activity_summary(socket, activity_id, opts) do
     %{
       activities: activities,
-      section: section,
-      page_revision: page_revision,
-      students: students,
       activity_types_map: activity_types_map
     } = socket.assigns
 
@@ -848,59 +846,27 @@ defmodule OliWeb.Components.Delivery.Pages do
           end
 
         summary =
-          socket.assigns.activity_summary_cache
-          |> Map.get(activity_id)
-          |> case do
-            nil ->
-              case activity_type do
-                %{slug: "oli_adaptive"} ->
-                  base_summary = %{
-                    id: revision.resource_id,
-                    resource_id: revision.resource_id,
-                    graded: page_revision.graded,
-                    title: revision.title,
-                    revision: revision,
-                    resource_summaries: [],
-                    transformed_model: nil,
-                    first_attempt_pct: 0.0,
-                    all_attempt_pct: 0.0,
-                    total_attempts_count: 0,
-                    students_with_attempts: [],
-                    students_with_attempts_count: 0,
-                    student_emails_without_attempts: Enum.map(students, & &1.email)
-                  }
+          case activity_type do
+            %{slug: "oli_adaptive"} ->
+              build_detailed_adaptive_activity_summary(
+                socket,
+                activity,
+                revision,
+                repair_status
+              )
 
-                  base_summary =
-                    ActivityHelpers.stage_performance_details(
-                      [base_summary],
-                      activity_types_map,
-                      []
-                    )
-                    |> List.first()
+            _ ->
+              socket.assigns.activity_summary_cache
+              |> Map.get(activity_id)
+              |> case do
+                nil ->
+                  maybe_put_adaptive_summary_repair_status(activity, repair_status)
 
-                  base_summary
-                  |> Map.put(
-                    :preview_rendered,
-                    ActivityHelpers.preview_render(
-                      section,
-                      page_revision,
-                      revision,
-                      activity_types_map,
-                      Map.get(activity, :order),
-                      Map.get(base_summary, :student_responses, %{})
-                    )
-                  )
+                summary ->
+                  summary
                   |> maybe_put_adaptive_summary_repair_status(repair_status)
                   |> Map.put(:order, activity.order)
-
-                _ ->
-                  maybe_put_adaptive_summary_repair_status(activity, repair_status)
               end
-
-            summary ->
-              summary
-              |> maybe_put_adaptive_summary_repair_status(repair_status)
-              |> Map.put(:order, activity.order)
           end
 
         assign(
@@ -926,11 +892,75 @@ defmodule OliWeb.Components.Delivery.Pages do
       page_revision,
       activity_types_map,
       students,
-      activity_ids
+      activity_ids,
+      include_adaptive_manual_analytics: false
     )
     |> Enum.reduce(%{}, fn summary, acc ->
       Map.put(acc, summary.resource_id, summary)
     end)
+  end
+
+  defp build_detailed_adaptive_activity_summary(socket, activity, revision, repair_status) do
+    %{
+      section: section,
+      page_revision: page_revision,
+      activity_types_map: activity_types_map,
+      students: students
+    } = socket.assigns
+
+    case ActivityHelpers.summarize_activity_performance(
+           section,
+           page_revision,
+           activity_types_map,
+           students,
+           [revision.resource_id],
+           include_adaptive_manual_analytics: true
+         ) do
+      [summary | _] ->
+        summary
+        |> maybe_put_adaptive_summary_repair_status(repair_status)
+        |> Map.put(:order, activity.order)
+
+      [] ->
+        base_summary = %{
+          id: revision.resource_id,
+          resource_id: revision.resource_id,
+          graded: page_revision.graded,
+          title: revision.title,
+          revision: revision,
+          resource_summaries: [],
+          transformed_model: nil,
+          first_attempt_pct: 0.0,
+          all_attempt_pct: 0.0,
+          total_attempts_count: 0,
+          students_with_attempts: [],
+          students_with_attempts_count: 0,
+          student_emails_without_attempts: Enum.map(students, & &1.email)
+        }
+
+        base_summary =
+          ActivityHelpers.stage_performance_details(
+            [base_summary],
+            activity_types_map,
+            []
+          )
+          |> List.first()
+
+        base_summary
+        |> Map.put(
+          :preview_rendered,
+          ActivityHelpers.preview_render(
+            section,
+            page_revision,
+            revision,
+            activity_types_map,
+            Map.get(activity, :order),
+            Map.get(base_summary, :student_responses, %{})
+          )
+        )
+        |> maybe_put_adaptive_summary_repair_status(repair_status)
+        |> Map.put(:order, activity.order)
+    end
   end
 
   defp refresh_adaptive_repairs(socket) do

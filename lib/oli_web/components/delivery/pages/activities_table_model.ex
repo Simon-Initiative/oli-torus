@@ -119,9 +119,12 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
   def render_assessment_details(assigns, assessment) do
     expanded_activity_ids = Map.get(assigns.model.data, :expanded_activity_ids, MapSet.new())
     activity_summary_cache = Map.get(assigns.model.data, :activity_summary_cache, %{})
+    loaded_activity_summaries = Map.get(assigns.model.data, :loaded_activity_summaries, %{})
 
     # Find the specific activity data for this assessment
-    current_activity = Map.get(activity_summary_cache, assessment.resource_id)
+    current_activity =
+      Map.get(loaded_activity_summaries, assessment.resource_id) ||
+        Map.get(activity_summary_cache, assessment.resource_id)
 
     should_show_details = MapSet.member?(expanded_activity_ids, assessment.resource_id)
     has_loaded_activity = not is_nil(current_activity)
@@ -157,7 +160,6 @@ defmodule OliWeb.Delivery.Pages.ActivitiesTableModel do
           phx-hook="LoadSurveyScripts"
           data-preview-activity-bridge="true"
           data-script-sources={Jason.encode!(@scripts || [])}
-          phx-update="ignore"
         >
           <div
             :if={@adaptive_summary_repair_status == :refreshing}

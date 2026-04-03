@@ -339,7 +339,7 @@ defmodule Oli.Analytics.Summary.UpsertTest do
                %ResponseSummary{resource_part_response_id: rid_2, count: 1}
              ] = section_rollups
 
-      assert [response_1.id, response_2.id] == [rid_1, rid_2]
+      assert Enum.sort([response_1.id, response_2.id]) == Enum.sort([rid_1, rid_2])
 
       project_rollups =
         from(rs in ResponseSummary,
