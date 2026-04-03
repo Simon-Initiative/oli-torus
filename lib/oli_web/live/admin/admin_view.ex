@@ -164,7 +164,7 @@ defmodule OliWeb.Admin.AdminView do
             <%= if @clickhouse_olap_enabled? do %>
               <li>
                 <a href={~p"/admin/clickhouse"}>
-                  Clickhouse Analytics Dashboard
+                  Clickhouse Dashboard
                 </a>
               </li>
               <%= if @clickhouse_olap_bulk_ingest_enabled? do %>
