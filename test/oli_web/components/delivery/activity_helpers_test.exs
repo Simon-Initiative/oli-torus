@@ -2037,6 +2037,9 @@ defmodule OliWeb.Delivery.ActivityHelpersTest do
       assert response_pattern_html =~ "x+1"
       assert response_pattern_html =~ "3 of 4 responses"
 
+      assert response_pattern_html =~
+               "Showing all 2 unique submission patterns. This view shows up to 2 patterns."
+
       numeric_html =
         render_component(&ActivityHelpers.rendered_activity/1, %{
           activity: %{

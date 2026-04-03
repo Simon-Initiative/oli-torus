@@ -886,6 +886,21 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         >
           {@visualization.explanation}
         </div>
+        <div class="mt-3 rounded-lg bg-sky-50 px-3 py-3 text-sm leading-6 text-sky-900 dark:bg-sky-500/10 dark:text-sky-100">
+          <div class="font-medium">
+            {if Map.get(@visualization, :hidden_pattern_count, 0) > 0 do
+              "Showing the top #{Map.get(@visualization, :visible_pattern_limit, length(@visualization.entries))} of #{Map.get(@visualization, :unique_pattern_count, length(@visualization.entries))} unique submission patterns."
+            else
+              "Showing all #{Map.get(@visualization, :unique_pattern_count, length(@visualization.entries))} unique submission patterns. This view shows up to #{Map.get(@visualization, :visible_pattern_limit, length(@visualization.entries))} patterns."
+            end}
+          </div>
+          <div
+            :if={Map.get(@visualization, :hidden_pattern_count, 0) > 0}
+            class="mt-1 text-xs text-sky-800 dark:text-sky-200"
+          >
+            {Map.get(@visualization, :hidden_pattern_count, 0)} additional pattern(s) are not shown here and remain in the long tail.
+          </div>
+        </div>
         <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
           Bar width represents the share of responses recorded for this input.
         </div>
@@ -1974,7 +1989,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     denominator =
       Enum.reduce(responses, 0, fn response_summary, total -> total + response_summary.count end)
 
-    entries =
+    sorted_entries =
       responses
       |> Enum.map(fn response_summary ->
         label = adaptive_response_display_label(response_summary)
@@ -1987,7 +2002,11 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         }
       end)
       |> Enum.sort_by(fn entry -> {-entry.count, entry.label} end)
-      |> Enum.take(6)
+
+    unique_pattern_count = length(sorted_entries)
+    visible_pattern_limit = 6
+    entries = Enum.take(sorted_entries, visible_pattern_limit)
+    hidden_pattern_count = max(unique_pattern_count - length(entries), 0)
 
     %{
       kind: :response_patterns,
@@ -1996,6 +2015,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       summary: summary,
       explanation:
         "Responses are grouped by identical normalized submission patterns, then ranked by frequency. This view shows the most frequent patterns only, so highly varied responses may appear in the long tail rather than in the visible list.",
+      unique_pattern_count: unique_pattern_count,
+      visible_pattern_limit: visible_pattern_limit,
+      hidden_pattern_count: hidden_pattern_count,
       denominator_count: denominator,
       entries: entries
     }
