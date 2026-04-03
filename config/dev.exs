@@ -99,6 +99,9 @@ config :oli, :cashnet_provider,
 # For development, we disable any cache and enable
 https_enabled? =
   case System.get_env("ENABLE_HTTPS") do
+    # Preserve the master/dev default of enabling the HTTPS listener unless
+    # it is explicitly disabled. SCHEME controls the public URL and may still
+    # be "http" while the local HTTPS listener remains available.
     nil -> true
     value when is_binary(value) -> String.downcase(value) != "false"
     _ -> true

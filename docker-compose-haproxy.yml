@@ -41,10 +41,11 @@ services:
   haproxy:
     build:
       context: ./scripts/dev/ha-proxy
-      dockerfile: Dockerfile.minio
+      dockerfile: Dockerfile
     container_name: oli_haproxy
     depends_on:
       - minio
+    env_file: ./oli.env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

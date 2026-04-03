@@ -1,11 +1,15 @@
 # HAProxy Dev Setup
 
-This directory contains the local-development HAProxy configs and Dockerfiles used to front Torus over HTTPS.
+This directory contains the local-development HAProxy setup used to front Torus over HTTPS.
 
-There are two supported modes:
+There is a single Docker image, a single Compose file, and one runtime mode switch:
 
-- MinIO-backed local media routing
-- regular external media-origin routing
+- `HA_PROXY_MODE=minio` routes media traffic to local MinIO
+- `HA_PROXY_MODE=s3` routes media traffic to an external media origin such as CloudFront
+
+The shared Compose file is:
+
+- [`docker-compose-haproxy.yml`](/Users/raph/staff/all_sources/oli/docker-compose-haproxy.yml)
 
 ## 1. Prerequisites
 
@@ -76,126 +80,149 @@ For inline help:
 
 The script runs `mkcert -install` as needed to create or trust the local development CA.
 
-## 3. Choose A Proxy Mode
+## 3. Configure `oli.env`
 
-### Option A: MinIO-Backed Local Media Routing
+The shared Compose file loads `oli.env` into HAProxy. Set these values there.
 
-Use this when you want `/super_media/...` and `/superactivity/...` routed to local MinIO.
-
-Files used:
-
-- `scripts/dev/ha-proxy/Dockerfile.minio`
-- `scripts/dev/ha-proxy/haproxy_minio_docker.cfg`
-- `docker-compose-dev-minio.yml`
-
-Build the services:
+Always set:
 
 ```bash
-docker compose -f docker-compose-dev-minio.yml build haproxy
+ENABLE_HTTPS=false
+HA_PROXY_MODE=minio
 ```
 
-Start the local services:
+or
 
 ```bash
-docker compose -f docker-compose-dev-minio.yml up -d
+ENABLE_HTTPS=false
+HA_PROXY_MODE=s3
 ```
+
+### When `HA_PROXY_MODE=minio`
+
+Recommended values:
+
+```bash
+HA_PROXY_MODE=minio
+HTTP_PORT=8080
+AWS_S3_PORT=9000
+S3_MEDIA_BUCKET_NAME=torus-media-dev
+```
+
+### When `HA_PROXY_MODE=s3`
+
+Required values:
+
+```bash
+HA_PROXY_MODE=s3
+MEDIA_ORIGIN_HOST=media-origin.example.com
+MEDIA_ORIGIN_PORT=80
+TORUS_BACKEND_HOST=host.docker.internal
+HTTP_PORT=8080
+```
+
+Notes:
+
+- `TORUS_BACKEND_PORT` is optional and defaults to `HTTP_PORT`
+- `docker-compose-haproxy.yml` still includes MinIO and ClickHouse for local parity, but in `s3` mode HAProxy routes media to `MEDIA_ORIGIN_HOST`, not to local MinIO
+
+## 4. Build The HAProxy Image
+
+The single image is built from:
+
+- `scripts/dev/ha-proxy/Dockerfile`
+
+Build it with:
+
+```bash
+docker compose -f docker-compose-haproxy.yml build haproxy
+```
+
+## 5. Start The Stack
+
+Start everything with:
+
+```bash
+docker compose -f docker-compose-haproxy.yml up -d
+```
+
+This Compose file includes:
+
+- `postgres`
+- `minio`
+- `clickhouse`
+- `haproxy`
 
 If you changed MinIO-related config and want a clean container refresh:
 
 ```bash
-docker compose -f docker-compose-dev-minio.yml up -d --force-recreate minio
+docker compose -f docker-compose-haproxy.yml up -d --force-recreate minio
 ```
 
-Create the expected local buckets:
+## 6. Create Local MinIO Buckets When Using MinIO Mode
+
+If `HA_PROXY_MODE=minio`, create the expected local buckets:
 
 ```bash
 ./scripts/dev/setup_minio_buckets.sh
 ```
 
-### Option B: Regular External Media-Origin Routing
+That helper defaults to:
 
-Use this when you want HAProxy to send media traffic to an external origin such as CloudFront.
+- `docker-compose-haproxy.yml`
+- service name `minio`
 
-Files used:
+## 7. Run Without Compose
 
-- `scripts/dev/ha-proxy/Dockerfile.docker`
-- `scripts/dev/ha-proxy/haproxy_docker.cfg`
-- `docker-compose-dev-s3.yml`
-
-Required values in `oli.env`:
-
-- `MEDIA_ORIGIN_HOST`
-- `MEDIA_ORIGIN_PORT`
-- `TORUS_BACKEND_HOST`
-- `HTTP_PORT`
-
-Build the services:
+If you want to run the same image without Compose:
 
 ```bash
-docker compose -f docker-compose-dev-s3.yml build haproxy
-```
-
-Start the local services:
-
-```bash
-docker compose -f docker-compose-dev-s3.yml up -d
-```
-
-Notes for this mode:
-
-- `docker-compose-dev-s3.yml` loads `./oli.env` into the HAProxy container.
-- HAProxy derives the Torus backend port from `HTTP_PORT` by default.
-- `TORUS_BACKEND_PORT` is available as an override if you run the image directly instead of compose.
-- `docker-compose-dev-s3.yml` includes MinIO for local parity, but this HAProxy mode routes media to `MEDIA_ORIGIN_HOST`, not to that MinIO instance.
-
-If you want to run the regular Docker-safe variant without Compose:
-
-```bash
-docker build -f scripts/dev/ha-proxy/Dockerfile.docker -t oli-haproxy-docker scripts/dev/ha-proxy
+docker build -f scripts/dev/ha-proxy/Dockerfile -t oli-haproxy scripts/dev/ha-proxy
 docker run --rm \
   --add-host=host.docker.internal:host-gateway \
   --env-file oli.env \
   -p 80:80 \
   -p 443:443 \
-  oli-haproxy-docker
+  oli-haproxy
 ```
 
-## 4. Reference
+## 8. Reference
 
-Config files:
+Templates:
 
 - `haproxy_minio_docker.cfg`
-  - Docker-safe HAProxy config for local Torus + local MinIO.
-  - Proxies Torus to `host.docker.internal:${HTTP_PORT}` in practice.
-  - Proxies MinIO API to `host.docker.internal:9000`.
-  - Proxies MinIO Console to `host.docker.internal:9001`.
-  - Rewrites `/super_media/...` and `/superactivity/...` to the local MinIO bucket layout.
+  - Template for local Torus + local MinIO
+  - Proxies Torus to `host.docker.internal:${HTTP_PORT}` in practice
+  - Proxies MinIO API and Console to the configured local MinIO endpoints
+  - Rewrites `/super_media/...` and `/superactivity/...` to the local media bucket layout
 
 - `haproxy_docker.cfg`
-  - Docker-safe HAProxy config for local Torus + the regular external media/CDN flow.
-  - Rendered as a template by environment at container start.
-  - Proxies Torus to `host.docker.internal:${HTTP_PORT}` by default.
-  - Requires the media origin host to be provided explicitly.
+  - Template for local Torus + external media-origin routing
+  - Rendered at container start
+  - Proxies Torus to `host.docker.internal:${HTTP_PORT}` by default
+  - Requires `MEDIA_ORIGIN_HOST` in `s3` mode
 
-Dockerfiles:
+Runtime entrypoint:
 
-- `Dockerfile.minio`
-  - Builds the MinIO-backed variant.
-  - Copies `combined.pem` to `/certs/combined.pem`.
-  - Bakes in `haproxy_minio_docker.cfg`.
+- `docker-entrypoint.sh`
+  - Selects the template based on `HA_PROXY_MODE`
+  - Renders the final HAProxy config to `/tmp/haproxy.cfg`
+  - Starts HAProxy with the rendered config
 
-- `Dockerfile.docker`
-  - Builds the regular Docker-safe variant.
-  - Copies `combined.pem` to `/certs/combined.pem`.
-  - Renders `haproxy_docker.cfg` from environment at container start.
+Docker image:
+
+- `Dockerfile`
+  - Single HAProxy image for both `minio` and `s3` modes
+  - Copies `combined.pem` to `/certs/combined.pem`
+  - Copies both config templates and the shared entrypoint
 
 Generated certificate:
 
 - `combined.pem`
-  - PEM file used by HAProxy for HTTPS on port `443`.
-  - Contains both the private key and certificate.
+  - PEM file used by HAProxy for HTTPS on port `443`
+  - Contains both the private key and certificate
 
 General notes:
 
-- Both Docker variants expect Phoenix to be reachable on `host.docker.internal`.
-- On Linux, `host.docker.internal` may require `--add-host=host.docker.internal:host-gateway` or the equivalent Compose `extra_hosts` entry.
+- Both modes expect Phoenix to be reachable on `host.docker.internal`
+- On Linux, `host.docker.internal` may require `--add-host=host.docker.internal:host-gateway` or the equivalent Compose `extra_hosts` entry

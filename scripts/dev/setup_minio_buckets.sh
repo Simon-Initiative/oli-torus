@@ -11,7 +11,7 @@
 # - oli.env should define AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 #
 # Optional environment overrides:
-# - COMPOSE_FILE: compose file to use instead of docker-compose-dev-minio.yml
+# - COMPOSE_FILE: compose file to use instead of docker-compose-haproxy.yml
 # - MINIO_SERVICE: compose service name, defaults to "minio"
 # - MINIO_ENDPOINT: MinIO API endpoint, defaults to http://localhost:${AWS_S3_PORT:-9000}
 # - S3_MEDIA_BUCKET_NAME: media bucket name, defaults to torus-media-dev
@@ -48,8 +48,8 @@ if [ -z "$MINIO_ACCESS_KEY" ] || [ -z "$MINIO_SECRET_KEY" ]; then
 fi
 
 compose_args=()
-if [ -z "${COMPOSE_FILE:-}" ] && [ -f "$ROOT_DIR/docker-compose-dev-minio.yml" ]; then
-  compose_args=(-f docker-compose-dev-minio.yml)
+if [ -z "${COMPOSE_FILE:-}" ] && [ -f "$ROOT_DIR/docker-compose-haproxy.yml" ]; then
+  compose_args=(-f docker-compose-haproxy.yml)
 fi
 
 echo "## Setting up MinIO buckets..."

@@ -87,5 +87,5 @@ echo "Wrote HAProxy PEM to:"
 echo "  $OUTPUT_FILE"
 echo
 echo "You can now rebuild the HAProxy image:"
-echo "  docker compose -f docker-compose-dev-minio.yml build haproxy"
-echo "  docker compose -f docker-compose-dev-minio.yml up -d haproxy"
+echo "  docker compose -f docker-compose-haproxy.yml build haproxy"
+echo "  docker compose -f docker-compose-haproxy.yml up -d haproxy"

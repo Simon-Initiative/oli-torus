@@ -162,7 +162,7 @@ A local static-file fallback was considered, but it is not part of the current i
 
 For local `oli_embedded` work that needs the full runtime path behavior, use the MinIO-backed local emulation stack:
 
-- [`../../docker-compose-dev-minio.yml`](../../docker-compose-dev-minio.yml)
+- [`../../docker-compose-haproxy.yml`](../../docker-compose-haproxy.yml)
 - [`../../scripts/dev/ha-proxy/README.md`](../../scripts/dev/ha-proxy/README.md)
 - [`../../scripts/dev/setup_minio_buckets.sh`](../../scripts/dev/setup_minio_buckets.sh)
 
@@ -206,8 +206,8 @@ Important settings:
 3. Start the local proxy-backed services:
 
 ```bash
-docker compose -f docker-compose-dev-minio.yml build haproxy
-docker compose -f docker-compose-dev-minio.yml up -d
+docker compose -f docker-compose-haproxy.yml build haproxy
+docker compose -f docker-compose-haproxy.yml up -d
 ```
 
 4. Create the MinIO buckets:
