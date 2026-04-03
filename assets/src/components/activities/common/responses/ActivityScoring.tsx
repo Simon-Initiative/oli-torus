@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { GradingApproach, HasParts } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
@@ -27,9 +27,16 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptFo
   const isManualGrading = gradingApproach === GradingApproach.manual;
   const outOfPoints = getOutOfPoints(model, partId);
   const incorrectPoints = getIncorrectPoints(model, partId);
-  const useDefaultScoring = !!promptForDefault && !hasCustomScoring(model, partId);
+  const modelUsesDefaultScoring = !!promptForDefault && !hasCustomScoring(model, partId);
+  const [useDefaultScoring, setUseDefaultScoring] = useState(modelUsesDefaultScoring);
+
+  useEffect(() => {
+    setUseDefaultScoring(modelUsesDefaultScoring);
+  }, [modelUsesDefaultScoring]);
 
   const onChangeDefault = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUseDefaultScoring(e.target.checked);
+
     if (e.target.checked) {
       // custom to default: sets outOf to null to indicate
       dispatch(ScoringActions.editPartScore(partId, null, null, 'average'));
