@@ -285,7 +285,16 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
           # After successful evaluation, restore the original response structure
           restore_original_responses(part_attempts)
 
-          maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
+          case RollUp.rollup_evaluated(activity_attempt.attempt_guid) do
+            :ok ->
+              maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
+
+            :error ->
+              Repo.rollback(:rollup_failed)
+
+            other ->
+              Repo.rollback(other)
+          end
 
           manual_part_attempt_guids
 

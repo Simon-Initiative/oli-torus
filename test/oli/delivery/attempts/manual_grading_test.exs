@@ -517,6 +517,69 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
 
       assert Enum.sort(returned_guids) == Enum.sort(manual_part_attempt_guids)
     end
+
+    test "applies manual scoring and evaluates activity even with untouched automatic parts", %{
+      section: section,
+      attempt_1a: attempt_1a
+    } do
+      automatic_part =
+        %Part{id: "2", responses: [], hints: [], grading_approach: :automatic, out_of: 1.0}
+
+      {:ok, _automatic_part_attempt} =
+        Core.create_part_attempt(%{
+          attempt_guid: UUID.uuid4(),
+          activity_attempt_id: attempt_1a.id,
+          attempt_number: 1,
+          part_id: automatic_part.id,
+          grading_approach: :automatic,
+          lifecycle_state: :active,
+          datashop_session_id: "stale-after-apply-test-session",
+          out_of: 1.0
+        })
+
+      results =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 1, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      attempt = Enum.find(results, fn a -> a.id == attempt_1a.id end)
+
+      assert {:ok, _} =
+               ManualGrading.apply_manual_scoring(
+                 section,
+                 attempt,
+                 create_score_feedbacks(attempt)
+               )
+
+      aa = Core.get_activity_attempt_by(id: attempt_1a.id)
+      assert aa.lifecycle_state == :evaluated
+
+      ra = Core.get_resource_attempt_by(id: aa.resource_attempt_id)
+      assert ra.lifecycle_state == :evaluated
+
+      assert [] ==
+               ManualGrading.browse_submitted_attempts(
+                 section,
+                 %Paging{limit: 10, offset: 0},
+                 %Sorting{field: :date_submitted, direction: :desc},
+                 %BrowseOptions{
+                   user_id: nil,
+                   activity_id: nil,
+                   page_id: nil,
+                   graded: nil,
+                   text_search: nil
+                 }
+               )
+    end
   end
 
   describe "resolving stale submitted attempts" do
