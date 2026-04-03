@@ -20228,6 +20228,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: transparent;
 }
 
+.bg-warning {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 156 18 / var(--tw-bg-opacity));
+}
+
 .bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
@@ -30078,9 +30083,24 @@ Not supports in Firefox and IE */
   border-width: 1px;
 }
 
+.dark .dark\:\!border-gray-500 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(115 115 115 / var(--tw-border-opacity)) !important;
+}
+
 .dark .dark\:\!border-gray-600 {
   --tw-border-opacity: 1 !important;
   border-color: rgb(82 82 82 / var(--tw-border-opacity)) !important;
+}
+
+.dark .dark\:\!border-slate-100 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(241 245 249 / var(--tw-border-opacity)) !important;
+}
+
+.dark .dark\:\!border-slate-600 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(71 85 105 / var(--tw-border-opacity)) !important;
 }
 
 .dark .dark\:\!border-zinc-400 {
@@ -30275,6 +30295,11 @@ Not supports in Firefox and IE */
 .dark .dark\:\!bg-neutral-800 {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity)) !important;
+}
+
+.dark .dark\:\!bg-slate-100 {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(241 245 249 / var(--tw-bg-opacity)) !important;
 }
 
 .dark .dark\:\!bg-slate-800 {
@@ -30807,6 +30832,21 @@ Not supports in Firefox and IE */
   font-weight: 300;
 }
 
+.dark .dark\:\!text-gray-100 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(245 245 245 / var(--tw-text-opacity)) !important;
+}
+
+.dark .dark\:\!text-gray-300 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(212 212 212 / var(--tw-text-opacity)) !important;
+}
+
+.dark .dark\:\!text-slate-900 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(15 23 42 / var(--tw-text-opacity)) !important;
+}
+
 .dark .dark\:\!text-white {
   --tw-text-opacity: 1 !important;
   color: rgb(255 255 255 / var(--tw-text-opacity)) !important;
@@ -31264,6 +31304,11 @@ Not supports in Firefox and IE */
   background-color: rgb(64 64 64 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:hover\:\!border-gray-400:hover {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(163 163 163 / var(--tw-border-opacity)) !important;
+}
+
 .dark .dark\:hover\:border-\[\#0056ad\]:hover {
   --tw-border-opacity: 1;
   border-color: rgb(0 86 173 / var(--tw-border-opacity));
@@ -31299,9 +31344,19 @@ Not supports in Firefox and IE */
   background-color: rgb(126 40 153 / var(--tw-bg-opacity)) !important;
 }
 
+.dark .dark\:hover\:\!bg-gray-700:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(64 64 64 / var(--tw-bg-opacity)) !important;
+}
+
 .dark .dark\:hover\:\!bg-gray-900:hover {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(23 23 23 / var(--tw-bg-opacity)) !important;
+}
+
+.dark .dark\:hover\:\!bg-white:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity)) !important;
 }
 
 .dark .dark\:hover\:bg-\[\#0056ad\]:hover {
