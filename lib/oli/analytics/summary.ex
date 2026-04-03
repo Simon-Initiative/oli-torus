@@ -444,10 +444,12 @@ defmodule Oli.Analytics.Summary do
           | values
         ]
 
-        params = params ++ [response, label]
+        params = [label, response | params]
 
         {values, params}
       end)
+
+    params = Enum.reverse(params)
 
     values = Enum.join(values, ", ")
 
@@ -502,10 +504,12 @@ defmodule Oli.Analytics.Summary do
           | values
         ]
 
-        params = params ++ [response, label]
+        params = [label, response | params]
 
         {values, params}
       end)
+
+    params = Enum.reverse(params)
 
     sql = """
     INSERT INTO resource_part_responses (resource_id, part_id, response, label)
