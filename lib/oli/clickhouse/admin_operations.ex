@@ -134,7 +134,12 @@ defmodule Oli.Clickhouse.AdminOperations do
   defp validate_capabilities(:setup, %{setup_enabled: true}), do: {:ok, :allowed}
   defp validate_capabilities(:setup, _), do: {:error, :setup_not_available}
 
-  defp validate_capabilities(kind, %{reachable: true}) when kind in [:migrate_up, :migrate_down],
+  defp validate_capabilities(:migrate_up, %{migrate_up_enabled: true}), do: {:ok, :allowed}
+
+  defp validate_capabilities(:migrate_up, %{reachable: true}),
+    do: {:error, :migrate_up_not_available}
+
+  defp validate_capabilities(kind, %{reachable: true}) when kind in [:migrate_down],
     do: {:ok, :allowed}
 
   defp validate_capabilities(kind, _capabilities) when kind in [:migrate_up, :migrate_down],

@@ -1332,7 +1332,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLiveTest do
       assert html =~ "Processed: 4"
       refute html =~ ">Queued<"
       assert has_element?(view, "tbody span", "Running")
-      assert html =~ "Progress is still being applied from the latest persisted chunk update."
     end
   end
 end

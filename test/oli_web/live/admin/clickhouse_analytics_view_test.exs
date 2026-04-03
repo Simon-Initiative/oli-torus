@@ -24,19 +24,30 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
   test "shows setup card first, enabled when available, and hides dangerous operations",
        %{conn: conn} do
-    stub_clickhouse_http(%{database_exists: false, raw_events_exists: false})
+    stub_clickhouse_http(%{
+      database_exists: false,
+      raw_events_exists: false,
+      pending_migrations: 1
+    })
 
     {:ok, view, _html} = live(conn, @route)
 
     html = render_async(view)
 
     assert String.contains?(html, "Setup Database")
-    assert String.contains?(html, "Run Setup Database")
+
+    assert String.contains?(
+             html,
+             "Required before torus analytics can use this ClickHouse database."
+           )
+
     assert html =~ "✓ Reachable"
     assert html =~ "✗ Database exists"
     assert html =~ "✗ Table exists"
-    assert html =~ "Run Migrate Up"
-    assert html =~ "Run Migrate Down"
+    assert html =~ "1 pending migration"
+    assert html =~ ">Setup Database<"
+    assert html =~ ">Migrate Up<"
+    assert html =~ ">Migrate Down<"
     refute html =~ "Create Database"
     refute html =~ "Drop Database"
     refute html =~ "Reset Database"
@@ -49,31 +60,49 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
   end
 
   test "shows setup card disabled when the database is already initialized", %{conn: conn} do
-    stub_clickhouse_http(%{database_exists: true, raw_events_exists: true})
+    stub_clickhouse_http(%{
+      database_exists: true,
+      raw_events_exists: true,
+      pending_migrations: 0
+    })
 
     {:ok, view, _html} = live(conn, @route)
 
     html = render_async(view)
 
     assert html =~ "Setup Database"
-    assert html =~ "Run Setup Database"
+    assert html =~ "Required before torus analytics can use this ClickHouse database."
     assert html =~ "✓ Reachable"
     assert html =~ "✓ Database exists"
     assert html =~ "✓ Table exists"
-    assert html =~ "Run Migrate Up"
-    assert html =~ "Run Migrate Down"
+    assert html =~ "No pending migrations"
+    assert html =~ ">Setup Database<"
+    assert html =~ ">Migrate Up<"
+    assert html =~ ">Migrate Down<"
 
     [button_html] = Regex.run(~r/<button[^>]*phx-value-kind="setup"[^>]*>/, html)
     assert Regex.match?(~r/\sdisabled(?:=| |>)/, button_html)
+
+    [migrate_button_html] = Regex.run(~r/<button[^>]*phx-value-kind="migrate_up"[^>]*>/, html)
+    assert Regex.match?(~r/\sdisabled(?:=| |>)/, migrate_button_html)
   end
 
-  test "shows current-operation progress and success messages for supported operations", %{conn: conn} do
-    stub_clickhouse_http(%{database_exists: false, raw_events_exists: false})
+  test "shows current-operation progress and success messages for supported operations", %{
+    conn: conn
+  } do
+    stub_clickhouse_http(%{
+      database_exists: false,
+      raw_events_exists: false,
+      pending_migrations: 1
+    })
 
     {:ok, view, _html} = live(conn, @route)
     _ = render_async(view)
 
     render_click(element(view, "button[phx-value-kind=\"migrate_up\"]"))
+    assert render(view) =~ "Confirm Migrate Up"
+
+    render_click(element(view, "button[phx-click=\"confirm_clickhouse_operation\"]"))
 
     html = render_async(view)
 
@@ -83,6 +112,28 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
     assert html =~ "Operation completed successfully."
     assert html =~ "COMPLETED"
     refute html =~ "Recent Operation History"
+  end
+
+  test "canceling migration confirmation modal does not start the operation", %{conn: conn} do
+    stub_clickhouse_http(%{
+      database_exists: false,
+      raw_events_exists: false,
+      pending_migrations: 1
+    })
+
+    {:ok, view, _html} = live(conn, @route)
+    _ = render_async(view)
+
+    render_click(element(view, "button[phx-value-kind=\"migrate_down\"]"))
+    assert render(view) =~ "Confirm Migrate Down"
+
+    render_click(element(view, "button[phx-click=\"cancel_clickhouse_operation\"]"))
+
+    html = render(view)
+
+    refute html =~ "Confirm Migrate Down"
+    refute html =~ "migrate_down started"
+    refute html =~ "Current Operation"
   end
 
   test "shows an error when ClickHouse health check fails", %{conn: conn} do
@@ -163,14 +214,30 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
   defp stub_clickhouse_http(%{
          database_exists: database_exists,
-         raw_events_exists: raw_events_exists
+         raw_events_exists: raw_events_exists,
+         pending_migrations: pending_migrations
        }) do
     stub(MockHTTP, :post, fn _url, body, _headers, _opts ->
-      {:ok, %{status_code: 200, body: response_body(body, database_exists, raw_events_exists)}}
+      {:ok,
+       %{
+         status_code: 200,
+         body: response_body(body, database_exists, raw_events_exists, pending_migrations)
+       }}
     end)
   end
 
-  defp response_body(body, database_exists, raw_events_exists) do
+  defp stub_clickhouse_http(%{
+         database_exists: database_exists,
+         raw_events_exists: raw_events_exists
+       }) do
+    stub_clickhouse_http(%{
+      database_exists: database_exists,
+      raw_events_exists: raw_events_exists,
+      pending_migrations: if(raw_events_exists, do: 0, else: 1)
+    })
+  end
+
+  defp response_body(body, database_exists, raw_events_exists, pending_migrations) do
     cond do
       String.contains?(body, "version() AS version") ->
         Jason.encode!(%{
@@ -221,7 +288,23 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsViewTest do
 
       String.contains?(body, "count() > 0 AS exists") and
           String.contains?(body, "FROM system.tables") ->
-        Jason.encode!(%{"data" => [%{"exists" => if(raw_events_exists, do: 1, else: 0)}]})
+        exists =
+          cond do
+            String.contains?(body, "name = 'raw_events'") -> raw_events_exists
+            String.contains?(body, "name = 'goose_db_version'") -> pending_migrations == 0
+            true -> false
+          end
+
+        Jason.encode!(%{"data" => [%{"exists" => if(exists, do: 1, else: 0)}]})
+
+      String.contains?(body, "max(version_id) AS version_id") ->
+        Jason.encode!(%{
+          "data" => [
+            %{
+              "version_id" => if(pending_migrations == 0, do: "20260326213833", else: nil)
+            }
+          ]
+        })
 
       true ->
         Jason.encode!(%{"data" => []})

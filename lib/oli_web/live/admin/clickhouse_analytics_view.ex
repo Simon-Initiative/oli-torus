@@ -4,6 +4,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   alias Oli.Analytics.ClickhouseAnalytics
   alias Oli.Clickhouse.AdminOperations
   alias Oli.Features
+  import OliWeb.Components.Modal
   alias OliWeb.Common.Breadcrumb
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
@@ -16,7 +17,8 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
         |> assign(
           title: "ClickHouse Analytics",
           breadcrumbs: breadcrumbs(),
-          current_operation: nil
+          current_operation: nil,
+          pending_confirmation: nil
         )
         |> load_dashboard_async()
 
@@ -35,33 +37,64 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
 
   def handle_event("run_clickhouse_operation", %{"kind" => kind}, socket) do
     case parse_operation_kind(kind) do
+      {:ok, operation_kind} when operation_kind in [:migrate_up, :migrate_down] ->
+        {:noreply, assign(socket, pending_confirmation: operation_kind)}
+
       {:ok, operation_kind} ->
-        case AdminOperations.start(operation_kind, socket.assigns.current_author) do
-          {:ok, operation} ->
-            {:noreply,
-             socket
-             |> put_flash(:info, operation_started_message(operation_kind))
-             |> assign(current_operation: operation)
-             |> load_dashboard_async()}
-
-          {:error, :setup_not_available} ->
-            {:noreply,
-             put_flash(socket, :error, "Setup database is not currently available.")}
-
-          {:error, :clickhouse_unreachable} ->
-            {:noreply,
-             put_flash(socket, :error, "ClickHouse must be reachable before running migrations.")}
-
-          {:error, reason} ->
-            {:noreply, put_flash(socket, :error, format_error(reason))}
-        end
+        {:noreply, run_clickhouse_operation(socket, operation_kind)}
 
       :error ->
         {:noreply, put_flash(socket, :error, "Unsupported ClickHouse operation.")}
     end
   end
 
-  def handle_info({:clickhouse_admin_operation_started, _operation}, socket), do: {:noreply, socket}
+  def handle_event(
+        "confirm_clickhouse_operation",
+        _params,
+        %{assigns: %{pending_confirmation: nil}} = socket
+      ) do
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "confirm_clickhouse_operation",
+        _params,
+        %{assigns: %{pending_confirmation: operation_kind}} = socket
+      ) do
+    {:noreply,
+     socket
+     |> assign(pending_confirmation: nil)
+     |> run_clickhouse_operation(operation_kind)}
+  end
+
+  def handle_event("cancel_clickhouse_operation", _params, socket) do
+    {:noreply, assign(socket, pending_confirmation: nil)}
+  end
+
+  defp run_clickhouse_operation(socket, operation_kind) do
+    case AdminOperations.start(operation_kind, socket.assigns.current_author) do
+      {:ok, operation} ->
+        socket
+        |> put_flash(:info, operation_started_message(operation_kind))
+        |> assign(current_operation: operation)
+        |> load_dashboard_async()
+
+      {:error, :setup_not_available} ->
+        put_flash(socket, :error, "Setup database is not currently available.")
+
+      {:error, :clickhouse_unreachable} ->
+        put_flash(socket, :error, "ClickHouse must be reachable before running migrations.")
+
+      {:error, :migrate_up_not_available} ->
+        put_flash(socket, :error, "There are no pending ClickHouse migrations.")
+
+      {:error, reason} ->
+        put_flash(socket, :error, format_error(reason))
+    end
+  end
+
+  def handle_info({:clickhouse_admin_operation_started, _operation}, socket),
+    do: {:noreply, socket}
 
   def handle_info(
         {:clickhouse_admin_operation_progress, %{operation_id: operation_id, event: event}},
@@ -85,9 +118,9 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     ~H"""
     <div class="w-full bg-white dark:bg-gray-900 dark:text-white p-6">
       <div class="max-w-6xl mx-auto">
-        <h1 class="text-3xl font-bold mb-6">ClickHouse Analytics Dashboard</h1>
+        <h1 class="text-3xl font-bold mb-6">ClickHouse Dashboard</h1>
         <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
-          <h2 class="text-xl font-semibold mb-2">ClickHouse Health</h2>
+          <h2 class="text-xl font-semibold mb-2">Health</h2>
           <p class="text-gray-600 dark:text-gray-400 mb-4">
             Live health and metadata metrics for the ClickHouse connection and raw events storage.
           </p>
@@ -161,7 +194,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
         <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
           <h2 class="text-xl font-semibold mb-2">Database Operations</h2>
           <p class="text-gray-600 dark:text-gray-400 mb-4">
-            Safe admin operations only. Create, drop, and reset remain shell-only workflows.
+            Admin database operations. Create, drop, and reset operations must be performed in the iex shell
           </p>
 
           <.async_result :let={capabilities} assign={@clickhouse_capabilities}>
@@ -178,7 +211,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
               <div class="flex h-full flex-col bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg p-4">
                 <h3 class="text-lg font-semibold">Setup Database</h3>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  Required before analytics writes can use this ClickHouse database.
+                  Required before torus analytics can use this ClickHouse database.
                 </p>
                 <div class="mt-2 flex flex-col items-start gap-1 text-xs text-gray-500 dark:text-gray-400">
                   <span class={status_indicator_class(capabilities.reachable)}>
@@ -195,10 +228,10 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   type="button"
                   phx-click="run_clickhouse_operation"
                   phx-value-kind="setup"
-                  class="mt-auto self-start inline-flex items-center rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  class="mt-4 self-start inline-flex items-center rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!capabilities.setup_enabled}
                 >
-                  Run Setup Database
+                  Setup Database
                 </button>
               </div>
 
@@ -207,14 +240,17 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                   Apply pending ClickHouse migrations.
                 </p>
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  {pending_migrations_label(capabilities.pending_migration_count)}
+                </p>
                 <button
                   type="button"
                   phx-click="run_clickhouse_operation"
                   phx-value-kind="migrate_up"
                   class="mt-auto self-start inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={!capabilities.reachable}
+                  disabled={!capabilities.migrate_up_enabled}
                 >
-                  Run Migrate Up
+                  Migrate Up
                 </button>
               </div>
 
@@ -230,10 +266,9 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
                   class="mt-auto self-start inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={!capabilities.reachable}
                 >
-                  Run Migrate Down
+                  Migrate Down
                 </button>
               </div>
-
             </div>
           </.async_result>
 
@@ -289,6 +324,40 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
             </div>
           <% end %>
         </div>
+
+        <.modal
+          :if={@pending_confirmation in [:migrate_up, :migrate_down]}
+          id="clickhouse-operation-confirmation"
+          show
+          on_cancel={JS.push("cancel_clickhouse_operation")}
+        >
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-lg font-semibold">
+                Confirm {operation_title(@pending_confirmation)}
+              </h3>
+              <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                {confirmation_message(@pending_confirmation)}
+              </p>
+            </div>
+            <div class="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                phx-click="cancel_clickhouse_operation"
+                class="inline-flex items-center rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 dark:border-gray-600 dark:text-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                phx-click="confirm_clickhouse_operation"
+                class="inline-flex items-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </.modal>
       </div>
     </div>
     """
@@ -314,7 +383,7 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
     OliWeb.Admin.AdminView.breadcrumb() ++
       [
         Breadcrumb.new(%{
-          full_title: "ClickHouse Analytics Dashboard",
+          full_title: "ClickHouse Dashboard",
           link: ~p"/admin/clickhouse"
         })
       ]
@@ -411,6 +480,19 @@ defmodule OliWeb.Admin.ClickHouseAnalyticsView do
   defp operation_title(:setup), do: "Setup Database"
   defp operation_title(:migrate_up), do: "Migrate Up"
   defp operation_title(:migrate_down), do: "Migrate Down"
+
+  defp confirmation_message(:migrate_up),
+    do: "This will apply all pending ClickHouse migrations."
+
+  defp confirmation_message(:migrate_down),
+    do: "This will roll back the most recent ClickHouse migration which may result in data loss."
+
+  defp pending_migrations_label(1), do: "1 pending migration"
+
+  defp pending_migrations_label(count) when is_integer(count) and count > 1,
+    do: "#{count} pending migrations"
+
+  defp pending_migrations_label(_), do: "No pending migrations"
 
   defp format_timestamp(nil), do: "n/a"
 

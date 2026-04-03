@@ -1485,12 +1485,6 @@ defmodule OliWeb.Admin.ClickhouseBackfillLive do
                         <%= if batch.error do %>
                           <div class="text-red-600 break-words">{batch.error}</div>
                         <% end %>
-                        <div
-                          :if={display_status != batch.status}
-                          class="text-gray-500 dark:text-gray-400 break-words"
-                        >
-                          Progress is still being applied from the latest persisted chunk update.
-                        </div>
                         <.button
                           :if={batch.status == :failed}
                           phx-click="retry_inventory_batch"
